@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { explainFigure, explainCashOnHand } from "@shared/financeExplain";
+import { partnerAccounts, reconcile, ownershipCheck, partnershipTotals, statement } from "@shared/partnerLedger";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -932,6 +933,76 @@ export const expenseAlertsRouter = router({
 });
 
 export const partnersRouter = router({
+    /**
+     * Every partner, with both their books worked out.
+     *
+     * One call rather than one per partner, and the arithmetic happens here
+     * rather than in the page. The screen has no business deciding what counts
+     * as capital and what counts as a loan — that rule lives in
+     * shared/partnerLedger.ts, and anything that renders these figures reads
+     * the same answer.
+     */
+    overview: adminProcedure.query(async () => {
+      const [partners, allTransactions] = await Promise.all([
+        db.getAllPartners(),
+        db.getAllPartnerTransactions(),
+      ]);
+
+      // Oldest first: a running balance that starts at the newest row counts
+      // the account backwards.
+      const byPartner = new Map<number, typeof allTransactions>();
+      for (const tx of [...allTransactions].reverse()) {
+        const list = byPartner.get(tx.partnerId);
+        if (list) list.push(tx);
+        else byPartner.set(tx.partnerId, [tx]);
+      }
+
+      const rows = partners.map((partner) => {
+        const txs = byPartner.get(partner.id) ?? [];
+        const accounts = partnerAccounts(txs, partner.initialCapital);
+
+        return {
+          partner,
+          accounts,
+          reconciliation: reconcile(accounts, partner.currentBalance),
+          entryCount: txs.length,
+          lastMovement: txs.length ? txs[txs.length - 1].transactionDate : null,
+        };
+      });
+
+      return {
+        rows,
+        totals: partnershipTotals(rows),
+        ownership: ownershipCheck(partners),
+      };
+    }),
+
+    /** One partner's account, line by line, oldest first. */
+    ledger: adminProcedure
+      .input(z.object({ partnerId: idSchema }))
+      .query(async ({ input }) => {
+        const partner = await db.getPartnerById(input.partnerId);
+        if (!partner) throw new TRPCError({ code: "NOT_FOUND", message: "Partner not found" });
+
+        const txs = (await db.getPartnerTransactions(input.partnerId, 500)).slice().reverse();
+        const accounts = partnerAccounts(txs, partner.initialCapital);
+
+        return {
+          partner,
+          accounts,
+          reconciliation: reconcile(accounts, partner.currentBalance),
+          // The statement lines carry the balances; the rows carry the detail
+          // the lines do not (date, description, who entered it).
+          lines: statement(txs, partner.initialCapital).map((line) => ({
+            ...line,
+            transactionDate: txs[line.index].transactionDate,
+            description: txs[line.index].description,
+            referenceNumber: txs[line.index].referenceNumber,
+            amount: Number(txs[line.index].amountUsd),
+          })),
+        };
+      }),
+
     list: adminProcedure.query(async () => {
       return db.getAllPartners();
     }),
@@ -1242,10 +1313,19 @@ export const financialReportsRouter = router({
         const overview = await db.getCompanyFinancialOverview();
         const debts = await db.getAllCompanyDebts();
         const partners = await db.getAllPartners();
-        
+        const partnerTxs = await db.getAllPartnerTransactions();
+        const partnerBooks = partnershipTotals(
+          partners.map((p) => ({
+            accounts: partnerAccounts(
+              partnerTxs.filter((t) => t.partnerId === p.id).reverse(),
+              p.initialCapital,
+            ),
+          })),
+        );
+
         // Get customer receivables from ledger
         const totalReceivables = 0; // Would need to query customer accounts separately
-        
+
         const pdfUrl = await generateBalanceSheetPDF({
           date: new Date().toLocaleDateString(),
           assets: {
@@ -1254,14 +1334,33 @@ export const financialReportsRouter = router({
             receivables: totalReceivables,
             total: overview.totalCash + totalReceivables,
           },
+          // Taking partner loans out of equity means putting them where they
+          // belong rather than letting them fall off the sheet — money that
+          // vanishes from one side and appears on neither is a worse error
+          // than the one being corrected.
           liabilities: {
-            debts: debts.map(d => ({ name: d.creditorName, amount: parseFloat(d.remainingAmount) })),
-            total: overview.totalDebt,
+            debts: [
+              ...debts.map(d => ({ name: d.creditorName, amount: parseFloat(d.remainingAmount) })),
+              ...partners
+                .map((p) => ({
+                  name: p.nameKu || p.name,
+                  amount: partnerAccounts(
+                    partnerTxs.filter((t) => t.partnerId === p.id).reverse(),
+                    p.initialCapital,
+                  ).loan.outstanding,
+                }))
+                .filter((row) => row.amount !== 0),
+            ],
+            total: overview.totalDebt + partnerBooks.liability,
           },
+          // Equity is what the partners own, and a loan they made to the
+          // company is not that — it is a debt the company has to repay.
+          // Adding initialCapital to currentBalance counted every such loan as
+          // ownership, and put money on the wrong side of the sheet.
           equity: {
-            partnerCapital: partners.reduce((sum, p) => sum + parseFloat(p.initialCapital), 0),
-            retainedEarnings: partners.reduce((sum, p) => sum + parseFloat(p.currentBalance), 0),
-            total: partners.reduce((sum, p) => sum + parseFloat(p.initialCapital) + parseFloat(p.currentBalance), 0),
+            partnerCapital: partnerBooks.contributed,
+            retainedEarnings: partnerBooks.profitShare - partnerBooks.drawings,
+            total: partnerBooks.equity,
           },
         });
         return { url: pdfUrl };

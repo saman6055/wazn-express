@@ -50,7 +50,8 @@ import {
   Percent,
   Trash2,
   Eye,
-  Download
+  Download,
+  AlertTriangle
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -89,10 +90,12 @@ const [activeTab, setActiveTab] = useState("partners");
 
   // Queries
   const { data: partners = [], refetch: refetchPartners } = trpc.partners.list.useQuery();
-  const { data: partnerTransactions = [] } = trpc.partners.getTransactions.useQuery(
-    { partnerId: selectedPartnerId || 0, limit: 100 },
+  // The statement, already ordered oldest-first with both balances carried.
+  const { data: ledger } = trpc.partners.ledger.useQuery(
+    { partnerId: selectedPartnerId || 0 },
     { enabled: !!selectedPartnerId }
   );
+  const ledgerLines = ledger?.lines ?? [];
 
   // Mutations
   const createPartner = trpc.partners.create.useMutation({
@@ -221,10 +224,23 @@ const [activeTab, setActiveTab] = useState("partners");
     return labels[type] || { label: type, color: "text-gray-600", icon: null };
   };
 
-  // Calculate totals
-  const totalCapital = partners.reduce((sum, p) => sum + Number(p.initialCapital), 0);
-  const totalRetained = partners.reduce((sum, p) => sum + Number(p.currentBalance), 0);
-  const totalEquity = totalCapital + totalRetained;
+  /**
+   * Both books, worked out on the server.
+   *
+   * The page used to add initialCapital to currentBalance and call the result
+   * equity. currentBalance holds every movement there has ever been — capital,
+   * profit, drawings, and money the partner merely *lent* the company — so the
+   * figure counted a loan the company has to pay back as ownership the partner
+   * holds. Two different things under one heading.
+   *
+   * shared/partnerLedger.ts separates them, and this reads its answer rather
+   * than doing arithmetic of its own.
+   */
+  const { data: overview } = trpc.partners.overview.useQuery();
+  const rows = overview?.rows ?? [];
+  const totals = overview?.totals;
+  const ownership = overview?.ownership;
+  const unreconciled = rows.filter((r) => !r.reconciliation.agrees);
 
   // PDF Export
   const generatePartnerPDF = trpc.financialReports.generatePartnerReportPDF.useMutation({
@@ -522,60 +538,120 @@ const [activeTab, setActiveTab] = useState("partners");
           </div>
         </div>
 
-        {/* Summary Cards */}
+        {/* What the books say, before anything else on the page.
+            A discrepancy stated at the top is a question to answer; the same
+            discrepancy found three screens later is a system nobody trusts. */}
+        {(unreconciled.length > 0 || (ownership && !ownership.agrees)) && (
+          <div className="space-y-2">
+            {unreconciled.map((row) => (
+              <div
+                key={row.partner.id}
+                className="flex flex-wrap items-center gap-2 rounded-lg border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-sm text-red-800 dark:text-red-200"
+              >
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span className="font-semibold">{row.partner.nameKu || row.partner.name}</span>
+                <span>— {t("partners.booksDisagree")}.</span>
+                <span>{t("partners.reconcileExplain")}</span>
+                <span className="font-mono font-bold">{formatCurrency(row.reconciliation.difference)}</span>
+              </div>
+            ))}
+            {ownership && !ownership.agrees && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-sm text-amber-800 dark:text-amber-200">
+                <AlertTriangle className="h-4 w-4 shrink-0" />
+                <span>{t("partners.ownershipIncomplete")}.</span>
+                <span>{t("partners.ownershipExplain")}</span>
+                <span className="font-mono font-bold">{ownership.total.toFixed(2)}%</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* The four figures, each meaning one thing */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+          <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-900/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("partners.totalCapital")}</CardTitle>
-              <PiggyBank className="h-4 w-4 text-blue-500 dark:text-blue-400" />
+              <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-200">{t("partners.totalPaidIn")}</CardTitle>
+              <PiggyBank className="h-4 w-4 text-blue-600 dark:text-blue-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-blue-600 dark:text-blue-300">
-                {formatCurrency(totalCapital)}
+              <div className="text-2xl font-bold font-mono text-blue-700 dark:text-blue-200">
+                {formatCurrency(totals?.contributed ?? 0)}
               </div>
-              <p className="text-xs text-muted-foreground">{t("partners.initialCapitalDesc")}</p>
+              <p className="text-xs text-blue-600/80 dark:text-blue-300/80">{t("partners.contributedCapital")}</p>
             </CardContent>
           </Card>
-          <Card>
+
+          <Card className="bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-900/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("partners.accumulatedBalance")}</CardTitle>
-              <Wallet className="h-4 w-4 text-green-500 dark:text-green-400" />
+              <CardTitle className="text-sm font-medium text-emerald-700 dark:text-emerald-200">{t("partners.profitShareTotal")}</CardTitle>
+              <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
             </CardHeader>
             <CardContent>
-              <div className={`text-2xl font-bold ${totalRetained >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                {formatCurrency(totalRetained)}
+              <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-200">
+                {formatCurrency(totals?.profitShare ?? 0)}
               </div>
-              <p className="text-xs text-muted-foreground">{t("partners.retainedEarnings")}</p>
+              <p className="text-xs text-emerald-600/80 dark:text-emerald-300/80">{t("partners.capitalAccount")}</p>
             </CardContent>
           </Card>
-          <Card>
+
+          <Card className="bg-orange-50 dark:bg-orange-950/40 border-orange-200 dark:border-orange-900/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("partners.totalOwnersEquity")}</CardTitle>
-              <DollarSign className="h-4 w-4 text-purple-500 dark:text-purple-400" />
+              <CardTitle className="text-sm font-medium text-orange-700 dark:text-orange-200">{t("partners.totalDrawings")}</CardTitle>
+              <ArrowDownRight className="h-4 w-4 text-orange-600 dark:text-orange-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-purple-600 dark:text-purple-300">
-                {formatCurrency(totalEquity)}
+              <div className="text-2xl font-bold font-mono text-orange-700 dark:text-orange-200">
+                {formatCurrency(totals?.drawings ?? 0)}
               </div>
-              <p className="text-xs text-muted-foreground">{t("partners.capitalPlusBalance")}</p>
+              <p className="text-xs text-orange-600/80 dark:text-orange-300/80">{t("partners.drawings")}</p>
             </CardContent>
           </Card>
-          <Card>
+
+          <Card className="bg-violet-50 dark:bg-violet-950/40 border-violet-200 dark:border-violet-900/60">
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("partners.partnerCount")}</CardTitle>
-              <Users className="h-4 w-4 text-muted-foreground" />
+              <CardTitle className="text-sm font-medium text-violet-700 dark:text-violet-200">{t("partners.totalEquityNow")}</CardTitle>
+              <DollarSign className="h-4 w-4 text-violet-600 dark:text-violet-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{partners.length}</div>
-              <p className="text-xs text-muted-foreground">{t("partners.activePartner")}</p>
+              <div className="text-2xl font-bold font-mono text-violet-700 dark:text-violet-200">
+                {formatCurrency(totals?.equity ?? 0)}
+              </div>
+              <p className="text-xs text-violet-600/80 dark:text-violet-300/80">{t("partners.equityNote")}</p>
             </CardContent>
           </Card>
         </div>
 
+        {/* Partner loans are a liability. They only appear when they exist —
+            a $0.00 tile for something the company does not owe is noise. */}
+        {(totals?.liability ?? 0) !== 0 && (
+          <Card className="bg-sky-50 dark:bg-sky-950/40 border-sky-200 dark:border-sky-900/60">
+            <CardContent className="flex flex-wrap items-center justify-between gap-2 p-4">
+              <div className="flex items-center gap-2">
+                <Wallet className="h-5 w-5 text-sky-600 dark:text-sky-300" />
+                <div>
+                  <p className="text-sm font-medium text-sky-700 dark:text-sky-200">{t("partners.totalOwedToPartners")}</p>
+                  <p className="text-xs text-sky-600/80 dark:text-sky-300/80">{t("partners.liabilityNote")}</p>
+                </div>
+              </div>
+              <p className="text-2xl font-bold font-mono text-sky-700 dark:text-sky-200">
+                {formatCurrency(totals?.liability ?? 0)}
+              </p>
+            </CardContent>
+          </Card>
+        )}
+
         {/* Partner Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {partners.map((partner) => {
-            const equity = Number(partner.initialCapital) + Number(partner.currentBalance);
+            // Both books for this partner, as the server worked them out. Until
+            // the query lands there is nothing to show, so the card falls back
+            // to empty accounts rather than to a wrong number.
+            const row = rows.find((r) => r.partner.id === partner.id);
+            const accounts = row?.accounts ?? {
+              capital: { opening: Number(partner.initialCapital) || 0, contributed: 0, profitShare: 0, adjustments: 0, drawings: 0, closing: Number(partner.initialCapital) || 0 },
+              loan: { lent: 0, repaid: 0, outstanding: 0 },
+              unclassified: 0,
+            };
             return (
               <Card key={partner.id} className="overflow-hidden">
                 <CardHeader className="bg-gradient-to-r from-primary/10 to-primary/5 pb-4">
@@ -614,31 +690,105 @@ const [activeTab, setActiveTab] = useState("partners");
                       )}
                     </div>
 
-                    {/* Financial Summary */}
-                    <div className="grid grid-cols-2 gap-4">
-                      <div className="rounded-lg bg-blue-50 dark:bg-blue-950/30 p-3">
-                        <p className="text-xs text-muted-foreground">{t("partners.initialCapitalDesc")}</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">
-                          {formatCurrency(partner.initialCapital)}
-                        </p>
-                      </div>
-                      <div className={`rounded-lg p-3 ${Number(partner.currentBalance) >= 0 ? 'bg-green-50 dark:bg-green-950/30' : 'bg-red-50 dark:bg-red-950/30'}`}>
-                        <p className="text-xs text-muted-foreground">{t("partners.accumulatedBalance")}</p>
-                        <p className={`text-lg font-bold ${Number(partner.currentBalance) >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-                          {formatCurrency(partner.currentBalance)}
-                        </p>
-                      </div>
+                    {/* The capital account, laid out the way it is read:
+                        each line, then the rule, then the figure it comes to.
+                        A total with its workings hidden is a number you have
+                        to take on trust. */}
+                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                      <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {t("partners.capitalAccount")}
+                      </p>
+                      <dl className="space-y-1.5 text-sm">
+                        {accounts.capital.opening !== 0 && (
+                          <div className="flex items-center justify-between gap-2">
+                            <dt className="text-muted-foreground">{t("partners.openingCapital")}</dt>
+                            <dd className="font-mono">{formatCurrency(accounts.capital.opening)}</dd>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between gap-2">
+                          <dt className="text-muted-foreground">{t("partners.contributedCapital")}</dt>
+                          <dd className="font-mono text-blue-600 dark:text-blue-300">
+                            {formatCurrency(accounts.capital.contributed)}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-2">
+                          <dt className="text-muted-foreground">{t("partners.profitShareTotal")}</dt>
+                          <dd className="font-mono text-emerald-600 dark:text-emerald-300">
+                            {formatCurrency(accounts.capital.profitShare)}
+                          </dd>
+                        </div>
+                        {accounts.capital.adjustments !== 0 && (
+                          <div className="flex items-center justify-between gap-2">
+                            <dt className="text-muted-foreground">{t("partners.adjustments")}</dt>
+                            <dd className="font-mono">{formatCurrency(accounts.capital.adjustments)}</dd>
+                          </div>
+                        )}
+                        <div className="flex items-center justify-between gap-2">
+                          <dt className="text-muted-foreground">{t("partners.drawings")}</dt>
+                          <dd className="font-mono text-orange-600 dark:text-orange-300">
+                            −{formatCurrency(accounts.capital.drawings)}
+                          </dd>
+                        </div>
+                        <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
+                          <dt className="font-semibold">{t("partners.closingCapital")}</dt>
+                          <dd
+                            className={`font-mono text-lg font-bold ${
+                              accounts.capital.closing >= 0
+                                ? "text-violet-600 dark:text-violet-300"
+                                : "text-red-600 dark:text-red-300"
+                            }`}
+                          >
+                            {formatCurrency(accounts.capital.closing)}
+                          </dd>
+                        </div>
+                      </dl>
                     </div>
 
-                    {/* Total Equity */}
-                    <div className="rounded-lg bg-purple-50 dark:bg-purple-950/30 p-3">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm text-muted-foreground">{t("partners.totalCapital")}</p>
-                        <p className="text-xl font-bold text-purple-600 dark:text-purple-300">
-                          {formatCurrency(equity)}
+                    {/* The loan account, kept in its own box because it is not
+                        the partner's money in the company — it is the
+                        company's debt to them. */}
+                    {accounts.loan.outstanding !== 0 && (
+                      <div className="rounded-lg border border-sky-200 dark:border-sky-900/60 bg-sky-50 dark:bg-sky-950/40 p-3">
+                        <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-200">
+                          {t("partners.loanAccount")}
                         </p>
+                        <dl className="space-y-1.5 text-sm">
+                          <div className="flex items-center justify-between gap-2">
+                            <dt className="text-sky-700/80 dark:text-sky-300/80">{t("partners.lentToCompany")}</dt>
+                            <dd className="font-mono text-sky-700 dark:text-sky-200">{formatCurrency(accounts.loan.lent)}</dd>
+                          </div>
+                          <div className="flex items-center justify-between gap-2">
+                            <dt className="text-sky-700/80 dark:text-sky-300/80">{t("partners.repaidByCompany")}</dt>
+                            <dd className="font-mono text-sky-700 dark:text-sky-200">−{formatCurrency(accounts.loan.repaid)}</dd>
+                          </div>
+                          <div className="flex items-center justify-between gap-2 border-t border-sky-200 dark:border-sky-900/60 pt-2">
+                            <dt className="font-semibold text-sky-800 dark:text-sky-100">{t("partners.loanOutstanding")}</dt>
+                            <dd className="font-mono text-lg font-bold text-sky-800 dark:text-sky-100">
+                              {formatCurrency(accounts.loan.outstanding)}
+                            </dd>
+                          </div>
+                        </dl>
+                        <p className="mt-2 text-xs text-sky-600/80 dark:text-sky-300/80">{t("partners.liabilityNote")}</p>
                       </div>
-                    </div>
+                    )}
+
+                    {row && !row.reconciliation.agrees && (
+                      <div className="flex items-center gap-2 rounded-lg border border-red-300 dark:border-red-900/60 bg-red-50 dark:bg-red-950/40 px-3 py-2 text-xs text-red-800 dark:text-red-200">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <span>
+                          {t("partners.booksDisagree")}: {formatCurrency(row.reconciliation.difference)}
+                        </span>
+                      </div>
+                    )}
+
+                    {accounts.unclassified > 0 && (
+                      <div className="flex items-center gap-2 rounded-lg border border-amber-300 dark:border-amber-900/60 bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-xs text-amber-800 dark:text-amber-200">
+                        <AlertTriangle className="h-4 w-4 shrink-0" />
+                        <span>
+                          {t("partners.unclassifiedEntries")}: {accounts.unclassified}
+                        </span>
+                      </div>
+                    )}
 
                     {/* Actions */}
                     <div className="flex gap-2">
@@ -693,6 +843,11 @@ const [activeTab, setActiveTab] = useState("partners");
                  partners.find(p => p.id === selectedPartnerId)?.name}
               </DialogDescription>
             </DialogHeader>
+            {/* Two balances, carried down the page separately.
+                The stored balanceAfter this used to print is the single mixed
+                figure, so a loan repayment made a partner's capital appear to
+                shrink. Oldest first, because a running balance read from the
+                newest row down is the account run backwards. */}
             <div className="overflow-auto max-h-[50vh]">
               <Table>
                 <TableHeader>
@@ -701,23 +856,24 @@ const [activeTab, setActiveTab] = useState("partners");
                     <TableHead>{t("common.type")}</TableHead>
                     <TableHead>{t("common.description")}</TableHead>
                     <TableHead className="text-right">{t("common.amount")}</TableHead>
-                    <TableHead className="text-right">{t("finance.balance")}</TableHead>
+                    <TableHead className="text-right">{t("partners.capitalBalance")}</TableHead>
+                    <TableHead className="text-right">{t("partners.loanBalance")}</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {partnerTransactions.length === 0 ? (
+                  {ledgerLines.length === 0 ? (
                     <TableRow>
-                      <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
-                        {t("partners.noTransactionsFound")}
+                      <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                        {t("partners.noMovements")}
                       </TableCell>
                     </TableRow>
                   ) : (
-                    partnerTransactions.map((txn) => {
-                      const typeInfo = getTransactionTypeLabel(txn.transactionType);
+                    ledgerLines.map((line) => {
+                      const typeInfo = getTransactionTypeLabel(line.transactionType);
                       return (
-                        <TableRow key={txn.id}>
-                          <TableCell className="font-medium">
-                            {formatDate(txn.transactionDate)}
+                        <TableRow key={line.index}>
+                          <TableCell className="font-medium whitespace-nowrap">
+                            {formatDate(line.transactionDate)}
                           </TableCell>
                           <TableCell>
                             <div className={`flex items-center gap-1 ${typeInfo.color}`}>
@@ -725,12 +881,15 @@ const [activeTab, setActiveTab] = useState("partners");
                               {typeInfo.label}
                             </div>
                           </TableCell>
-                          <TableCell>{txn.description || "-"}</TableCell>
-                          <TableCell className={`text-right font-medium ${typeInfo.color}`}>
-                            {formatCurrency(txn.amountUsd)}
+                          <TableCell>{line.description || "-"}</TableCell>
+                          <TableCell className={`text-right font-mono font-medium ${line.movement < 0 ? "text-orange-600 dark:text-orange-300" : "text-emerald-600 dark:text-emerald-300"}`}>
+                            {line.movement < 0 ? "−" : "+"}{formatCurrency(Math.abs(line.movement))}
                           </TableCell>
-                          <TableCell className="text-right font-medium">
-                            {formatCurrency(txn.balanceAfter)}
+                          <TableCell className={`text-right font-mono ${line.book === "capital" ? "font-semibold" : "text-muted-foreground"}`}>
+                            {formatCurrency(line.capitalBalance)}
+                          </TableCell>
+                          <TableCell className={`text-right font-mono ${line.book === "loan" ? "font-semibold text-sky-700 dark:text-sky-200" : "text-muted-foreground"}`}>
+                            {formatCurrency(line.loanBalance)}
                           </TableCell>
                         </TableRow>
                       );
