@@ -99,7 +99,7 @@ export function DailyBrief({ language }: { language: string }) {
   const [, setLocation] = useLocation();
   const [showAll, setShowAll] = useState(false);
 
-  const { data, isLoading, isFetching, refetch } = trpc.audit.brief.useQuery(undefined, {
+  const { data, isLoading, isFetching, error, refetch } = trpc.audit.brief.useQuery(undefined, {
     // The brief reads the whole system. It runs when the dashboard opens and
     // when somebody asks again — not because a tab was left open.
     refetchOnWindowFocus: false,
@@ -124,6 +124,46 @@ export function DailyBrief({ language }: { language: string }) {
   };
 
   if (isLoading) return <Skeleton className="h-48 w-full rounded-2xl" />;
+
+  /**
+   * It failed, and it says so.
+   *
+   * This returned null on error, so the panel simply was not there — which
+   * is indistinguishable from "not deployed yet" and from "there is nothing
+   * to report". A brief whose whole argument is that silence is dangerous
+   * must not go silent itself.
+   */
+  if (error) {
+    return (
+      <div className="rounded-2xl border border-red-300 bg-red-50 p-4 dark:border-red-900/60 dark:bg-red-950/40">
+        <p className="flex items-center gap-2 font-semibold text-red-800 dark:text-red-200">
+          <AlertTriangle className="h-5 w-5 shrink-0" />
+          {pickLang(language, {
+            ku: "ڕاپۆرتی بەیانی نەهات",
+            en: "The morning brief could not load",
+            ar: "تعذّر تحميل موجز الصباح",
+            zh: "晨间简报无法加载",
+          })}
+        </p>
+        <p className="mt-1 text-sm text-red-700 dark:text-red-300">
+          {pickLang(language, {
+            ku: "ئەمە واتای ئەوە نییە هەموو شتێک ڕێکە — واتای ئەوەیە سەیر نەکراوە.",
+            en: "This does not mean all is well. It means nothing looked.",
+            ar: "هذا لا يعني أن كل شيء سليم، بل أن أحداً لم ينظر.",
+            zh: "这不代表一切正常，而是根本没有检查。",
+          })}
+        </p>
+        <p className="mt-2 rounded bg-background/70 p-2 font-mono text-xs text-red-800 dark:text-red-200">
+          {error.message}
+        </p>
+        <Button variant="outline" size="sm" className="mt-3" onClick={() => refetch()}>
+          <RefreshCw className="me-2 h-4 w-4" />
+          {pickLang(language, { ku: "دووبارە هەوڵ بدە", en: "Try again", ar: "إعادة المحاولة", zh: "重试" })}
+        </Button>
+      </div>
+    );
+  }
+
   if (!data) return null;
 
   const visible = showAll ? data.signals : data.signals.slice(0, 6);
