@@ -653,7 +653,7 @@ export default function ModernPortalHome() {
                             isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                           )}
                         >
-                          {describeLedgerRef(tx.description, language) ||
+                          {describeLedgerRef(tx.description, language, ledgerTypeName(tx.transactionType, language)) ||
                             ledgerTypeName(tx.transactionType, language)}
                         </p>
                         <p

@@ -745,7 +745,7 @@ const { t, language } = useLanguage();
                       
                       {tx.description && (
                         <p className={cn("text-sm mt-2 ps-16", isDark ? "text-slate-500" : "text-slate-500")}>
-                          {describeLedgerRef(tx.description, language)}
+                          {describeLedgerRef(tx.description, language, getTransactionTypeName(String(tx.transactionType ?? "")))}
                         </p>
                       )}
                     </div>
@@ -1105,7 +1105,7 @@ const { t, language } = useLanguage();
                               "whitespace-pre-line leading-relaxed flex-1 min-w-0",
                               isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300",
                             )}>
-                              {describeLedgerRef(item.description, language)}
+                              {describeLedgerRef(item.description, language, pickLang(language, { ku: "بڕگە", en: "Item", ar: "بند", zh: "项目" }))}
                             </span>
                             <span className={cn(
                               "font-mono font-semibold text-sm shrink-0",

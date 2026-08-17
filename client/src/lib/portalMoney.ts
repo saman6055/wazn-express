@@ -241,15 +241,74 @@ export const INVOICE_STATE_PRINT: Record<InvoiceState, string> = {
  * a tracking number and a batch code — so the stored shapes are recognised
  * here and written out again around the same codes in the language being read.
  *
- * Anything that does not match a known shape is returned exactly as stored. A
- * description we cannot parse is still the only record of what a charge was
- * for, and dropping it to avoid showing Kurdish would be the worse trade.
+ * What happens to a shape nobody has taught it about is the part that matters.
+ * Returning the stored text was the obvious answer and the wrong one: a list of
+ * recognised sentences always lags the sentences being written, so an Arabic
+ * statement kept finding new Kurdish to show. The rule now is absolute — if the
+ * text still carries Kurdish letters and the reader is not reading Kurdish, the
+ * Kurdish does not go out. What goes out instead is the codes, which are the
+ * only part of these sentences that ever carried information, under whatever
+ * label the caller passes for the transaction's own type.
  */
+
+/**
+ * Letters that exist in Kurdish and not in Arabic.
+ *
+ * ە and ڕ and ێ and ۆ and ڵ are Kurdish alone; ک, ی, چ, گ, پ, ژ, ڤ are shared
+ * with Persian but never appear in Arabic, which writes ك and ي. Any of them
+ * in a string an Arabic reader is about to see means something leaked.
+ */
+const KURDISH_LETTERS = /[ەڕێۆڵکیچگپژڤ]/;
+
+/** Order codes, tracking numbers, batch codes — the part worth keeping. */
+const CODE = /[A-Za-z][A-Za-z0-9]*(?:[_-][A-Za-z0-9]+)*[A-Za-z0-9]/g;
+
 export function describeLedgerRef(
   description: string | null | undefined,
   language: string,
+  /** What this transaction's type is called, for when the sentence cannot be read. */
+  fallbackLabel?: string,
 ): string {
-  const raw = (description ?? "").trim();
+  const rendered = renderLedgerRef(description, language, fallbackLabel);
+
+  // The last gate, and the only one that can be relied on. A recognised
+  // shape can still carry Kurdish through: the payment line ends in a free
+  // note the office typed, and "فیب" inside a sentence we thought we had
+  // translated is exactly the leak this is here to stop. Checked once,
+  // where every path meets, rather than in each pattern that might forget.
+  if (language === "ku" || !KURDISH_LETTERS.test(rendered)) return rendered;
+  return safeFallback(description, language, fallbackLabel);
+}
+
+/** The codes, and whatever the caller calls this kind of charge. */
+function safeFallback(
+  description: string | null | undefined,
+  language: string,
+  fallbackLabel?: string,
+): string {
+  const codes = String(description ?? "").match(CODE) ?? [];
+  const parts = [fallbackLabel, ...codes].filter(Boolean);
+  if (parts.length > 0) return parts.join(" · ");
+
+  const CHARGE: L = { ku: "چارج", en: "Charge", ar: "رسوم", zh: "费用" };
+  return CHARGE[(["ku", "en", "ar", "zh"].includes(language) ? language : "en") as keyof L];
+}
+
+function renderLedgerRef(
+  description: string | null | undefined,
+  language: string,
+  fallbackLabel?: string,
+): string {
+  // Normalised before anything is matched. The office types an en dash on one
+  // screen and a hyphen on another, and an Arabic keyboard puts ك where a
+  // Kurdish one puts ک — none of which changes what the line means, and all of
+  // which used to defeat the patterns below one row at a time.
+  const raw = (description ?? "")
+    .trim()
+    .replace(/[‐-―]/g, "-")
+    .replace(/ك/g, "ک")
+    .replace(/ي|ى/g, "ی")
+    .replace(/\s+/g, " ");
   if (!raw) return "";
 
   const PARCEL: L = { ku: "پاکەت", en: "Parcel", ar: "طرد", zh: "包裹" };

@@ -406,3 +406,64 @@ describe("no portal screen prints a stored description raw", () => {
     expect(offenders, `these print the office's Kurdish to whoever is reading:\n${offenders.join("\n")}`).toEqual([]);
   });
 });
+
+describe("not one Kurdish letter reaches a reader who did not ask for Kurdish", () => {
+  // The phrase list was the wrong shape of fix. The office keeps writing new
+  // sentences, so a list of the ones we know always lags the ones being
+  // stored, and the Arabic statement kept finding fresh Kurdish to show.
+  // This is the guarantee instead: whatever the sentence, none of it goes out.
+  const KURDISH_LETTERS = /[ەڕێۆڵکیچگپژڤ]/;
+
+  const stored = [
+    "کڕین بە تێچوو CM-MRKF79NX - کرێی گواستنەوە (پاشاکەوتکراو)",
+    "کڕین بە تێچوو CM-MRKF79NX - Nike Air Max (کاڵا + عمولە)",
+    "پاکێجی تەواو FP-0012 - Samsung A54 - گەیاندن",
+    "پارەدانی کڕیار: AZ1024 - فیب",
+    // Shapes nobody has taught it about — the ones that will be written next.
+    "شتێکی نوێ کە کەس نەیزانیوە CM-9999 لەگەڵ ووردەکاری زیاتر",
+    "گەڕاندنەوەی پارە بۆ باچی BT-2026-08 بەهۆی هەڵەیەک",
+    "بەبێ هیچ کۆدێک تەنها دەقی کوردی",
+  ];
+
+  it("holds for every stored sentence, known or not", () => {
+    for (const text of stored) {
+      for (const lang of ["ar", "en", "zh"]) {
+        const out = describeLedgerRef(text, lang, "Charge");
+        expect(KURDISH_LETTERS.test(out), `"${text}" leaked Kurdish into ${lang}: "${out}"`).toBe(false);
+      }
+    }
+  });
+
+  it("still gives the customer the code to match the charge to an order", () => {
+    expect(describeLedgerRef(stored[4], "ar", "رسوم")).toContain("CM-9999");
+    expect(describeLedgerRef(stored[5], "ar", "رسوم")).toContain("BT-2026-08");
+  });
+
+  it("says what kind of charge it was when the sentence is unreadable", () => {
+    const out = describeLedgerRef(stored[6], "ar", "رسوم التوصيل");
+    expect(out).toBe("رسوم التوصيل");
+  });
+
+  it("still says something when there is no label and no code", () => {
+    // Blank would be worse: the customer would see an amount attached to
+    // nothing at all.
+    expect(describeLedgerRef(stored[6], "ar")).toBeTruthy();
+    expect(describeLedgerRef(stored[6], "en")).toBe("Charge");
+  });
+
+  it("leaves a Kurdish reader every word the office wrote", () => {
+    for (const text of stored) {
+      expect(describeLedgerRef(text, "ku", "چارج")).toContain(text.split(" ")[0]);
+    }
+  });
+
+  it("is not fooled by a different dash or an Arabic keyboard", () => {
+    // The same sentence typed on another machine: an en dash instead of a
+    // hyphen, ك instead of ک. It means the same thing and used to defeat the
+    // patterns one row at a time.
+    const variant = "كڕین بە تێچوو CM-MRKF79NX – كرێی گواستنەوە (پاشاكەوتكراو)";
+    const out = describeLedgerRef(variant, "ar", "رسوم");
+    expect(KURDISH_LETTERS.test(out), `leaked: "${out}"`).toBe(false);
+    expect(out).toContain("CM-MRKF79NX");
+  });
+});
