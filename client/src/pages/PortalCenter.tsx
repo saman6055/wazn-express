@@ -183,6 +183,7 @@ export default function PortalCenter() {
             <TabsTrigger value="prohibited" className={TAB_TRIGGER_CLS}><Ban className="h-4 w-4" />{p({ ku: "قەدەغە", en: "Prohibited", ar: "ممنوعة", zh: "违禁" })}</TabsTrigger>
             <TabsTrigger value="ratings" className={TAB_TRIGGER_CLS}><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
             <TabsTrigger value="announcements" className={TAB_TRIGGER_CLS}><Megaphone className="h-4 w-4" />{p({ ku: "ڕاگەیاندن", en: "Announce", ar: "إعلانات", zh: "公告" })}</TabsTrigger>
+            <TabsTrigger value="features" className={TAB_TRIGGER_CLS}><Sparkles className="h-4 w-4" />{p({ ku: "تایبەتمەندییەکان", en: "Features", ar: "المميزات", zh: "功能" })}</TabsTrigger>
             <TabsTrigger value="yuan" className={TAB_TRIGGER_CLS}>
               <span className="font-black text-sm leading-none">¥</span>
               {p({ ku: "یوان", en: "Yuan", ar: "اليوان", zh: "人民币" })}
@@ -202,6 +203,7 @@ export default function PortalCenter() {
           <TabsContent value="activity"><ActivityTab p={p} /></TabsContent>
           <TabsContent value="declared"><DeclaredTab p={p} /></TabsContent>
           <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>
+          <TabsContent value="features"><FeaturesTab p={p} /></TabsContent>
           <TabsContent value="prohibited"><ProhibitedTab p={p} /></TabsContent>
           <TabsContent value="ratings"><RatingsTab p={p} /></TabsContent>
           <TabsContent value="yuan"><YuanTab p={p} /></TabsContent>
@@ -2166,6 +2168,155 @@ function YuanOrderRow({ row, p }: { row: any; p: (v: L) => string }) {
           {update.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : p({ ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" })}
         </Button>
       </div>
+    </div>
+  );
+}
+
+/**
+ * Features handed out one customer at a time.
+ *
+ * The alternative was a switch that turned a feature on for everybody or
+ * nobody. This is the owner's own suggestion and the better one: build it,
+ * hold it back, then give it to the customers it suits — a VIP, a long
+ * account, somebody who asked — and watch how it lands before opening it wider.
+ *
+ * Nothing here is a permission. Every screen behind these features is already
+ * scoped to the customer's own data; a customer without a grant is not being
+ * kept away from anything, only not shown it yet.
+ */
+function FeaturesTab({ p }: { p: (v: L) => string }) {
+  const { language } = useLanguage();
+  const utils = trpc.useUtils();
+  const [feature, setFeature] = useState<string>("finance_detail");
+  const [search, setSearch] = useState("");
+  const [note, setNote] = useState("");
+
+  const { data: features = [] } = trpc.portalCenter.listFeatures.useQuery();
+  const { data: grants = [], isLoading } = trpc.portalCenter.listFeatureGrants.useQuery({ feature });
+  const { data: found } = trpc.portalCenter.listCustomers.useQuery(
+    { search: search || undefined, page: 1, pageSize: 8 },
+    { enabled: search.trim().length > 1 },
+  );
+
+  const refresh = () => utils.portalCenter.listFeatureGrants.invalidate();
+  const grant = trpc.portalCenter.grantFeature.useMutation({
+    onSuccess: () => { toast.success(p({ ku: "درا", en: "Granted", ar: "تم المنح", zh: "已授予" })); setSearch(""); setNote(""); refresh(); },
+    onError: (e) => toast.error(e.message),
+  });
+  const revoke = trpc.portalCenter.revokeFeature.useMutation({
+    onSuccess: () => { toast.success(p({ ku: "لابرا", en: "Removed", ar: "تمت الإزالة", zh: "已移除" })); refresh(); },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const chosen = features.find((f: any) => f.id === feature);
+  const alreadyHas = new Set(grants.map((g: any) => g.customerId));
+
+  return (
+    <div className="space-y-4">
+      <Card className="rounded-2xl">
+        <CardContent className="p-4 space-y-3">
+          <div className="flex flex-wrap gap-2">
+            {features.map((f: any) => (
+              <Button
+                key={f.id}
+                size="sm"
+                variant={feature === f.id ? "default" : "outline"}
+                onClick={() => setFeature(f.id)}
+              >
+                {pickLang(language, f.name)}
+              </Button>
+            ))}
+          </div>
+          {chosen && (
+            <p className="text-sm text-muted-foreground">{pickLang(language, chosen.description)}</p>
+          )}
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl">
+        <CardContent className="p-4 space-y-3">
+          <p className="text-sm font-medium">
+            {p({ ku: "زیادکردنی موشتەری", en: "Give it to a customer", ar: "منحها لعميل", zh: "授予客户" })}
+          </p>
+          <div className="relative max-w-sm">
+            <Search className="absolute start-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="ps-9"
+              placeholder={p({ ku: "گەڕان بە ناو/کۆد/مۆبایل", en: "Search name / code / mobile", ar: "بحث بالاسم/الرمز/الهاتف", zh: "按姓名/编号/手机搜索" })}
+            />
+          </div>
+
+          {search.trim().length > 1 && (
+            <div className="space-y-1.5">
+              {(found?.data ?? []).length === 0 ? (
+                <EmptyRow text={p({ ku: "هیچ موشتەرێک نەدۆزرایەوە", en: "No customers found", ar: "لا يوجد عملاء", zh: "未找到客户" })} />
+              ) : (
+                (found?.data ?? []).map((c: any) => (
+                  <div key={c.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium">{c.fullName}</p>
+                      <p className="truncate font-mono text-xs text-muted-foreground">{c.customerCode}</p>
+                    </div>
+                    <Button
+                      size="sm"
+                      disabled={alreadyHas.has(c.id) || grant.isPending}
+                      onClick={() => grant.mutate({ customerId: c.id, feature, note: note || undefined })}
+                    >
+                      {alreadyHas.has(c.id)
+                        ? p({ ku: "هەیەتی", en: "Has it", ar: "لديه", zh: "已拥有" })
+                        : p({ ku: "بیدەرێ", en: "Grant", ar: "منح", zh: "授予" })}
+                    </Button>
+                  </div>
+                ))
+              )}
+            </div>
+          )}
+
+          <Input
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={p({ ku: "تێبینی (ئارەزوومەندانە) — بۆچی درا", en: "Note (optional) — why it was given", ar: "ملاحظة (اختياري) — سبب المنح", zh: "备注（可选）——授予原因" })}
+          />
+        </CardContent>
+      </Card>
+
+      <Card className="rounded-2xl">
+        <CardContent className="p-4">
+          <p className="mb-3 text-sm font-medium">
+            {p({ ku: "ئەوانەی هەیانە", en: "Customers who have it", ar: "العملاء الذين لديهم", zh: "已拥有的客户" })}
+            {" "}({grants.length})
+          </p>
+          {isLoading ? (
+            <TableSkeleton />
+          ) : grants.length === 0 ? (
+            <EmptyRow text={p({ ku: "هێشتا بە کەس نەدراوە", en: "Nobody has it yet", ar: "لم تُمنح لأحد بعد", zh: "尚未授予任何人" })} />
+          ) : (
+            <div className="space-y-1.5">
+              {grants.map((g: any) => (
+                <div key={g.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-2">
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-medium">{g.fullName}</p>
+                    <p className="truncate font-mono text-xs text-muted-foreground">
+                      {g.customerCode}
+                      {g.note ? ` · ${g.note}` : ""}
+                    </p>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    disabled={revoke.isPending}
+                    onClick={() => revoke.mutate({ customerId: g.customerId, feature })}
+                  >
+                    {p({ ku: "لایبە", en: "Remove", ar: "إزالة", zh: "移除" })}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 }

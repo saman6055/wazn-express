@@ -606,6 +606,23 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
+  // Features handed to one customer at a time. Not a permission in the
+  // security sense — every screen behind these is already scoped to the
+  // customer's own data — but the record of who has been shown what.
+  {
+    name: "customerFeatures",
+    dependencies: ["customers"],
+    sql: `CREATE TABLE IF NOT EXISTS customerFeatures (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      feature VARCHAR(64) NOT NULL,
+      note TEXT,
+      grantedById INT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_customer_feature (customerId, feature),
+      INDEX idx_customer_features_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
   {
     name: "permissions",
     dependencies: ["users"],

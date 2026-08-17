@@ -4,7 +4,8 @@ import * as bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
-import { phoneSchema } from "./schemas";
+import { phoneSchema, idSchema } from "./schemas";
+import { FEATURES, isKnownFeature } from "@shared/customerFeatures";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import * as db from "../db";
 
@@ -158,6 +159,64 @@ export const portalCenterRouter = router({
     }),
 
   // ---- Internal notes ----
+  /* ── features handed to one customer at a time ────────────────────── */
+
+  /** The catalogue, so the screen names a feature the same way everywhere. */
+  listFeatures: adminProcedure.query(() => FEATURES),
+
+  /** Who currently holds a given feature. */
+  listFeatureGrants: adminProcedure
+    .input(z.object({ feature: z.string().max(64) }))
+    .query(async ({ input }) => {
+      if (!isKnownFeature(input.feature)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "تایبەتمەندی نەناسراو" });
+      }
+      return db.getCustomersWithFeature(input.feature);
+    }),
+
+  /**
+   * Give it to a customer.
+   *
+   * The feature id is checked against the catalogue rather than trusted: a
+   * typo would otherwise write a row that grants nothing and reads, on the
+   * screen, exactly like a row that grants something.
+   */
+  grantFeature: adminProcedure
+    .input(z.object({
+      customerId: idSchema,
+      feature: z.string().max(64),
+      note: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      if (!isKnownFeature(input.feature)) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "تایبەتمەندی نەناسراو" });
+      }
+      await db.grantCustomerFeature(input.customerId, input.feature, ctx.user.id, input.note);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "grant_customer_feature",
+        entityType: "customer",
+        entityId: input.customerId,
+        newValues: { feature: input.feature, note: input.note },
+      });
+      return { success: true };
+    }),
+
+  revokeFeature: adminProcedure
+    .input(z.object({ customerId: idSchema, feature: z.string().max(64) }))
+    .mutation(async ({ input, ctx }) => {
+      await db.revokeCustomerFeature(input.customerId, input.feature);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "revoke_customer_feature",
+        entityType: "customer",
+        entityId: input.customerId,
+        oldValues: { feature: input.feature },
+      });
+      return { success: true };
+    }),
   listNotes: adminProcedure
     .input(z.object({ customerId: z.number().int() }))
     .query(async ({ input }) => {

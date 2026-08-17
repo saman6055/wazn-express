@@ -7,6 +7,7 @@ import {
   index,
   mysqlEnum,
   decimal,
+  text,
 } from "drizzle-orm/mysql-core";
 
 // ---------------------------------------------------------------------------
@@ -132,3 +133,25 @@ export const yuanExchangeOrders = mysqlTable(
 
 export type YuanExchangeOrder = typeof yuanExchangeOrders.$inferSelect;
 export type InsertYuanExchangeOrder = typeof yuanExchangeOrders.$inferInsert;
+
+// ============ CUSTOMER FEATURES (تایبەتمەندییەکانی کڕیار) ============
+
+/**
+ * A feature handed to one customer.
+ *
+ * Not a permission: every screen behind these is already scoped to the
+ * customer's own data, and a customer without a row here is not being kept
+ * away from anything — they are simply not being shown it yet. What the row
+ * records is a decision somebody made, and who made it.
+ */
+export const customerFeatures = mysqlTable("customerFeatures", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  feature: varchar("feature", { length: 64 }).notNull(),
+  note: text("note"),
+  grantedById: int("grantedById"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export type CustomerFeature = typeof customerFeatures.$inferSelect;
+export type InsertCustomerFeature = typeof customerFeatures.$inferInsert;

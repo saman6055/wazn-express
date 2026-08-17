@@ -140,6 +140,16 @@ export const customerPortalRouter = router({
      * The customer's own delivery boxes — the goods packed for them
      * specifically, as opposed to the batch they travelled in.
      */
+    /**
+     * Which features this customer has been given.
+     *
+     * Read by the portal to decide what to draw. Nothing behind these is
+     * withheld for safety — each of those screens is already scoped to this
+     * customer — so this list decides what is shown, not what is allowed.
+     */
+    getMyFeatures: customerProcedure.query(async ({ ctx }) => {
+      return db.getCustomerFeatures(ctx.customerId);
+    }),
     getMyDeliveryBoxes: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
       return db.getCustomerVisibleBoxes(customerId);

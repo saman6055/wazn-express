@@ -9,6 +9,7 @@ import { getBatchStatusTimestamps, getBatchRateForCustomer } from './batches.db'
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
+  customerFeatures,
   customerCodePrefixes, InsertCustomerCodePrefix, CustomerCodePrefix,
   countries, InsertCountry, Country,
   warehouses, InsertWarehouse, Warehouse,
@@ -1587,4 +1588,78 @@ export async function getCustomerPackageDetail(packageId: number, customerId: nu
     .limit(1);
 
   return rows[0] ?? null;
+}
+
+// ============ CUSTOMER FEATURES ============
+
+/**
+ * The feature ids one customer holds.
+ *
+ * Returns bare strings rather than rows: every caller asks the same question —
+ * "does this customer have X" — and handing them the row would invite each
+ * screen to answer it differently.
+ */
+export async function getCustomerFeatures(customerId: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db.select({ feature: customerFeatures.feature })
+    .from(customerFeatures)
+    .where(eq(customerFeatures.customerId, customerId));
+
+  return rows.map((r) => r.feature);
+}
+
+/** Everyone who holds a given feature, with enough of the customer to name them. */
+export async function getCustomersWithFeature(feature: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select({
+    id: customerFeatures.id,
+    customerId: customers.id,
+    customerCode: customers.customerCode,
+    fullName: customers.fullName,
+    note: customerFeatures.note,
+    grantedById: customerFeatures.grantedById,
+    createdAt: customerFeatures.createdAt,
+  })
+    .from(customerFeatures)
+    .innerJoin(customers, eq(customers.id, customerFeatures.customerId))
+    .where(eq(customerFeatures.feature, feature))
+    .orderBy(desc(customerFeatures.createdAt));
+}
+
+/**
+ * Give a customer a feature.
+ *
+ * Idempotent: granting twice is not an error, it is somebody making sure. The
+ * unique key on (customerId, feature) makes the second attempt a no-op rather
+ * than a duplicate row that would later need deduplicating.
+ */
+export async function grantCustomerFeature(
+  customerId: number,
+  feature: string,
+  grantedById: number,
+  note?: string,
+): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  const existing = await db.select({ id: customerFeatures.id })
+    .from(customerFeatures)
+    .where(and(eq(customerFeatures.customerId, customerId), eq(customerFeatures.feature, feature)))
+    .limit(1);
+
+  if (existing.length > 0) return;
+
+  await db.insert(customerFeatures).values({ customerId, feature, grantedById, note });
+}
+
+export async function revokeCustomerFeature(customerId: number, feature: string): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+
+  await db.delete(customerFeatures)
+    .where(and(eq(customerFeatures.customerId, customerId), eq(customerFeatures.feature, feature)));
 }

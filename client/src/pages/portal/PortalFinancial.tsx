@@ -20,6 +20,7 @@ import { BatchInvoiceView } from "@/components/BatchInvoiceView";
 import { AccountRowList } from "@/components/AccountRowList";
 import { BoxInvoiceView } from "@/components/BoxInvoiceView";
 import { rowMeta } from "@shared/batchInvoice";
+import { hasFeature } from "@shared/customerFeatures";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
@@ -80,7 +81,7 @@ const { t, language } = useLanguage();
     // no such tab, only an invoice dialog opened from a transaction row.
     // The union and the URL check are deliberately in step — a value accepted
     // by one and not the other is exactly how that blank body happened.
-    urlTab === "transactions" || urlTab === "batches" || urlTab === "boxes" ? urlTab : "overview"
+    urlTab === "transactions" ? urlTab : "overview"
   );
   // Keep the active tab in the URL so navigating to an order and pressing Back
   // returns the customer to the same tab (e.g. "transactions") they came from.
@@ -247,6 +248,12 @@ const { t, language } = useLanguage();
   const [invoiceBatchId, setInvoiceBatchId] = useState<number | null>(null);
   const { data: myBatchesRaw } = trpc.customerPortal.getMyBatches.useQuery();
   const myBatches = Array.isArray(myBatchesRaw) ? myBatchesRaw : [];
+  // What this customer has been given. Absent while it loads, which reads as
+  // "not granted" — a tab arriving a moment late beats one that appears and
+  // then has nothing behind it.
+  const { data: myFeatures } = trpc.customerPortal.getMyFeatures.useQuery();
+  const financeDetail = hasFeature(myFeatures, "finance_detail");
+
   const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(null);
   const { data: myBoxesRaw } = trpc.customerPortal.getMyDeliveryBoxes.useQuery();
   const myBoxes = Array.isArray(myBoxesRaw) ? myBoxesRaw : [];
@@ -262,8 +269,14 @@ const { t, language } = useLanguage();
   const tabs = [
     { id: "overview", label: pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" }), icon: PieChart },
     { id: "transactions", label: pickLang(language, { ku: "مامەڵەکان", en: "Transactions", ar: "المعاملات", zh: "交易记录" }), icon: Receipt },
+    // Shown only to customers the office has given it to. Granted from
+    // Portal Center; see shared/customerFeatures.ts.
+    ...(financeDetail
+      ? [
     { id: "batches", label: pickLang(language, { ku: "پسووڵەی باچ", en: "Batch invoices", ar: "فواتير الدفعات", zh: "批次账单" }), icon: Package },
     { id: "boxes", label: pickLang(language, { ku: "حیسابی سندوق", en: "Box accounts", ar: "حسابات الصناديق", zh: "箱子账目" }), icon: Boxes },
+        ]
+      : []),
   ];
 
   return (
@@ -598,7 +611,7 @@ const { t, language } = useLanguage();
             what did each parcel cost me, and why that much for carriage —
             had no answer on any screen, so it arrived by WhatsApp and
             somebody worked it out by hand. */}
-        {activeTab === "batches" && (
+        {financeDetail && activeTab === "batches" && (
           <div className="px-4 pb-8 space-y-3">
               <AccountRowList
                 language={language}
@@ -640,7 +653,7 @@ const { t, language } = useLanguage();
         {/* The other half of what a customer is billed for: the box that
             actually arrives at their door. Same rows, same expand, same
             document. */}
-        {activeTab === "boxes" && (
+        {financeDetail && activeTab === "boxes" && (
           <div className="px-4 pb-8">
             <AccountRowList
               language={language}

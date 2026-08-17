@@ -11,10 +11,10 @@ describe("Migration System", () => {
     
     // A count, so adding a table is a deliberate act rather than something
     // that slips in. Bump it in the same commit that adds the table.
-    it("should have 90 table definitions", () => {
-      // 90 since deletedRecords — the recycle bin — which arrived without
-      // this being bumped, so the count sat red and stopped guarding anything.
-      expect(TABLE_DEFINITIONS.length).toBe(90);
+    it("should have 91 table definitions", () => {
+      // 91 since customerFeatures — features handed to one customer at a
+      // time, granted from Portal Center.
+      expect(TABLE_DEFINITIONS.length).toBe(91);
     });
     
     it("should have unique table names", () => {
