@@ -4,6 +4,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Lightbulb, X, ChevronDown, ChevronUp } from "lucide-react";
 import { STAFF_TIPS, MOTIVATION_MESSAGES, type TipLang } from "@/constants/staffTips";
+import { dueSlot, msUntilNextCheck, pruneKeys, slotKey } from "@/lib/tipSchedule";
 
 // A "tip of the day" card that teaches good system use, plus a
 // delightful, one-time motivation celebration 10 minutes into the session.
@@ -13,16 +14,22 @@ import { STAFF_TIPS, MOTIVATION_MESSAGES, type TipLang } from "@/constants/staff
 // left put the card underneath the sidebar the moment anyone switched to
 // English, where it was clipped by the screen edge.
 //
-// Timing is deliberately UN-intrusive: a tip greets the staff member on each
-// app (re)load, but NOT again while they're actively working. It only goes quiet
-// after 10 minutes of no mouse/keyboard activity, and a fresh tip appears the
-// next time they become active. Rendered once at the app root (not in the
-// per-page layout) so the idle timer stays continuous across navigation.
+// Timing: TWO a day, at fixed hours — see lib/tipSchedule.
+//
+// It used to greet on every app load and again on every return from ten
+// minutes idle, which on a normal day is a card in the corner a dozen times.
+// That is not a tip, it is an interruption, and it trained people to dismiss
+// it without reading. Fixed hours are predictable: having read the morning
+// one, staff know there is nothing more until the afternoon.
+//
+// The lightbulb button stays, so anyone who wants a tip can still ask for one.
 const TIP_INDEX_KEY = "wazn-tip-index";
+// Which of today's two slots have already been shown.
+const TIP_SHOWN_KEY = "wazn-tip-shown";
 const SESSION_START_KEY = "wazn-session-start";
 const MOTIVATION_SHOWN_KEY = "wazn-motivation-shown";
-const IDLE_MS = 10 * 60 * 1000;
-const ACTIVITY_THROTTLE_MS = 1500;
+// How long into a shift the one celebration lands.
+const MOTIVATION_AFTER_MS = 10 * 60 * 1000;
 const MOTIVATION_VISIBLE_MS = 8500;
 const AUTO_DISMISS_MS = 15 * 1000;
 
@@ -145,9 +152,6 @@ export function StaffTips() {
   const [expanded, setExpanded] = useState(false);
   const [motivation, setMotivation] = useState<string | null>(null);
 
-  const lastActivityRef = useRef(0);
-  const idleRef = useRef(false);
-  const idleTimerRef = useRef<number | null>(null);
 
   const showNextTip = useCallback(() => {
     setExpanded(false);
@@ -159,37 +163,36 @@ export function StaffTips() {
     setOpen(true);
   }, []);
 
-  // Greet on each app load, then drive show/hide off real activity.
+  // The two slots. Checked on the turn of each minute so a tip appears at
+  // its hour while somebody is working, rather than only on the next reload.
   useEffect(() => {
-    setOpen(true);
+    let timer: number | null = null;
 
-    const armIdleTimer = () => {
-      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
-      idleTimerRef.current = window.setTimeout(() => {
-        idleRef.current = true;
-        setOpen(false); // go quiet while the desk is idle
-      }, IDLE_MS);
-    };
+    const check = () => {
+      const now = new Date();
+      const stored = (() => {
+        try {
+          const raw = JSON.parse(localStorage.getItem(TIP_SHOWN_KEY) || "[]");
+          return Array.isArray(raw) ? (raw as string[]) : [];
+        } catch {
+          // A corrupted value must not stop the tips forever, and must not
+          // throw on a screen that has nothing to do with tips.
+          return [];
+        }
+      })();
 
-    const onActivity = () => {
-      const now = Date.now();
-      if (now - lastActivityRef.current < ACTIVITY_THROTTLE_MS) return;
-      lastActivityRef.current = now;
-      // Returned to the desk after being idle → surface a fresh tip.
-      if (idleRef.current && onStaffAreaRef.current) {
-        idleRef.current = false;
+      const due = onStaffAreaRef.current ? dueSlot(now, stored) : null;
+      if (due) {
+        localStorage.setItem(TIP_SHOWN_KEY, JSON.stringify(pruneKeys(now, [...stored, slotKey(now, due)])));
         showNextTip();
       }
-      armIdleTimer();
+
+      timer = window.setTimeout(check, msUntilNextCheck(new Date()));
     };
 
-    window.addEventListener("mousemove", onActivity, { passive: true });
-    window.addEventListener("keydown", onActivity);
-    armIdleTimer();
+    check();
     return () => {
-      window.removeEventListener("mousemove", onActivity);
-      window.removeEventListener("keydown", onActivity);
-      if (idleTimerRef.current) window.clearTimeout(idleTimerRef.current);
+      if (timer) window.clearTimeout(timer);
     };
   }, [showNextTip]);
 
@@ -202,19 +205,23 @@ export function StaffTips() {
     return () => window.clearTimeout(t);
   }, [open, expanded, index]);
 
-  // One personalised motivation celebration, 10 minutes into the session.
+  // One personalised celebration a day, ten minutes in.
+  //
+  // It was once per browser session, which means once per reload — a
+  // screenful of confetti several times a day, on top of the tips. The
+  // gesture only works if it is rare.
   useEffect(() => {
-    if (sessionStorage.getItem(MOTIVATION_SHOWN_KEY) === "1") return;
+    if (localStorage.getItem(MOTIVATION_SHOWN_KEY) === todayStr()) return;
     let start = Number(sessionStorage.getItem(SESSION_START_KEY) || "0");
     if (!start) {
       start = Date.now();
       sessionStorage.setItem(SESSION_START_KEY, String(start));
     }
-    const remaining = Math.max(0, IDLE_MS - (Date.now() - start));
+    const remaining = Math.max(0, MOTIVATION_AFTER_MS - (Date.now() - start));
     const timer = window.setTimeout(() => {
-      if (sessionStorage.getItem(MOTIVATION_SHOWN_KEY) === "1") return;
+      if (localStorage.getItem(MOTIVATION_SHOWN_KEY) === todayStr()) return;
       if (!onStaffAreaRef.current) return;
-      sessionStorage.setItem(MOTIVATION_SHOWN_KEY, "1");
+      localStorage.setItem(MOTIVATION_SHOWN_KEY, todayStr());
       const name = ((user?.name as string) || "").trim() || (lang === "ku" ? "هاوکار" : lang === "ar" ? "زميلنا" : lang === "zh" ? "同事" : "colleague");
       const msg = MOTIVATION_MESSAGES[Math.floor(Math.random() * MOTIVATION_MESSAGES.length)];
       const text = (msg.text[lang] || msg.text.ku).replace(/\{name\}/g, name);
@@ -237,7 +244,6 @@ export function StaffTips() {
         {overlay}
         <button
           onClick={() => {
-            idleRef.current = false;
             showNextTip();
           }}
           title={labels.tip}
