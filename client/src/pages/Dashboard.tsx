@@ -45,6 +45,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
+import { DailyBrief } from "@/components/DailyBrief";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, memo, useEffect } from "react";
 import { useLocation } from "wouter";
@@ -335,6 +336,14 @@ export default function Dashboard() {
           }
         />
 
+        {/* The morning brief, above everything.
+
+            The tiles and charts below are excellent at showing a figure and
+            silent on whether it moved or whether anybody should act. This
+            answers both, ranked, before the reader has to choose where to
+            look — which is the whole difference between a dashboard and a
+            briefing. */}
+        <DailyBrief language={language} />
         {/* Batches travelling without their waybill or container number.
             The Batches page already chases these; on the dashboard it is the
             first thing seen in the morning, which is when there is still time

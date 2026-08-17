@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { router } from "../_core/trpc";
-import { auditorProcedure } from "../middleware/auth";
+import { auditorProcedure, staffProcedure } from "../middleware/auth";
+import { buildDailyBrief } from "../services/dailyBrief.service";
 import { CHECKS, headline, rankResults, summarise } from "@shared/auditSweep";
 import { movementsSince, runSweep } from "../services/auditSweep.service";
 
@@ -45,6 +46,17 @@ export const auditRouter = router({
     };
   }),
 
+  /**
+   * The morning brief.
+   *
+   * Today measured live, yesterday and last week from the snapshots, the
+   * sweep folded in, everything ranked worst-first. staffProcedure rather
+   * than admin: the point is that somebody reads it, and the read-only
+   * auditor is on that list too.
+   */
+  brief: staffProcedure.query(async () => {
+    return buildDailyBrief();
+  }),
   /**
    * Everything that changed since a moment, newest first.
    *

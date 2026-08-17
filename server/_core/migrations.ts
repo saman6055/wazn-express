@@ -609,6 +609,26 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   // Features handed to one customer at a time. Not a permission in the
   // security sense — every screen behind these is already scoped to the
   // customer's own data — but the record of who has been shown what.
+  // One row per day, written the morning after. Without a stored yesterday
+  // the brief can only describe today, which is a dashboard with sentences.
+  {
+    name: "dailySnapshots",
+    dependencies: [],
+    sql: `CREATE TABLE IF NOT EXISTS dailySnapshots (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      snapshotDate DATE NOT NULL,
+      revenueUsd DECIMAL(14,2) NOT NULL DEFAULT 0,
+      expensesUsd DECIMAL(14,2) NOT NULL DEFAULT 0,
+      parcelsRegistered INT NOT NULL DEFAULT 0,
+      parcelsDelivered INT NOT NULL DEFAULT 0,
+      newCustomers INT NOT NULL DEFAULT 0,
+      kilos DECIMAL(14,3) NOT NULL DEFAULT 0,
+      outstandingDebtUsd DECIMAL(14,2) NOT NULL DEFAULT 0,
+      openBatches INT NOT NULL DEFAULT 0,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uniq_snapshot_date (snapshotDate)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
   {
     name: "customerFeatures",
     dependencies: ["customers"],

@@ -1252,6 +1252,26 @@ a:focus-visible,
 
 /* Clean print output — drop the app chrome so invoices, reports and any page
    print as a tidy document. */
+/* Printing the morning brief.
+
+   PDF here is the browser's own print dialog rather than a generated file:
+   no library, no server round trip, and it saves or prints to whatever the
+   reader actually uses. What it needs is for the page to stop being a
+   dashboard for the length of one sheet.
+
+   `body.printing-brief` is set for the duration of the dialog, and hides
+   every sibling of the brief so a single card prints on a clean page rather
+   than after four screens of charts. */
+@media print {
+  body.printing-brief .wazn-brief ~ *,
+  body.printing-brief .wazn-brief-hide {
+    display: none !important;
+  }
+  body.printing-brief .wazn-brief {
+    border: none !important;
+    padding: 0 !important;
+  }
+}
 @media print {
   aside#sidebar,
   .fixed {

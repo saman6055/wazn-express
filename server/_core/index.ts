@@ -13,6 +13,7 @@ import { createContext } from "./context";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
+import { startDailySnapshots } from "../services/dailyBrief.service";
 import { runMigration } from "../services/migration.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
 import { startScheduledCampaignsPoller } from "../services/push.service";
@@ -260,6 +261,8 @@ async function startServer() {
     // Watches the airport's arrivals board for the flights our shipments are
     // on, and tells the office and the customers when one lands.
     await startFlightWatch();
+    // Yesterday, written down. The memory the morning brief compares against.
+    startDailySnapshots();
     appLogger.info("Flight arrival watcher started");
   } catch (error) {
     appLogger.error("Failed to start tracking alert scheduler", { error: error instanceof Error ? error.message : String(error) });
