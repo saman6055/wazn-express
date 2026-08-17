@@ -39,6 +39,8 @@ import {
   txSign,
   isInvoiceOutstanding,
   describeLedgerRef,
+  balanceState,
+  BALANCE_WORDING,
 } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
@@ -231,6 +233,8 @@ const { t, language } = useLanguage();
   // Zero is neither owed nor in credit, and the old ternary printed it as
   // "-/usr/bin/bash.00" in green — a cleared account reading like a negative number.
   const isCredit = isCreditBalance(balance);
+  // Three states, named once. See lib/portalMoney.
+  const balanceKind = balanceState(balance);
 
   const tabs = [
     { id: "overview", label: pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" }), icon: PieChart },
@@ -304,28 +308,35 @@ const { t, language } = useLanguage();
               </div>
             </div>
 
-            {/* Status Badge */}
+            {/* Status Badge — three states, not two.
+                Credit used to land in "no outstanding balance": true, and it
+                hides the only fact the customer cares about, which is that
+                money of theirs is sitting with us. */}
             <div className={cn(
               "mt-4 px-4 py-2 rounded-xl inline-flex items-center gap-2",
-              isDebt 
-                ? isDark ? "bg-red-900/30" : "bg-red-50 dark:bg-red-950/40" 
-                : isDark ? "bg-emerald-900/30" : "bg-emerald-50 dark:bg-emerald-950/40"
+              balanceKind === "debt"
+                ? isDark ? "bg-red-900/30" : "bg-red-50 dark:bg-red-950/40"
+                : balanceKind === "credit"
+                  ? isDark ? "bg-sky-900/30" : "bg-sky-50 dark:bg-sky-950/40"
+                  : isDark ? "bg-emerald-900/30" : "bg-emerald-50 dark:bg-emerald-950/40"
             )}>
-              {isDebt ? (
-                <>
-                  <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400" />
-                  <span className={cn("text-sm font-medium", isDebt ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300")}>
-                    {pickLang(language, { ku: "قەرزت هەیە", en: "You have outstanding balance", ar: "لديك رصيد مستحق", zh: "您有未结余额" })}
-                  </span>
-                </>
+              {balanceKind === "debt" ? (
+                <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400" />
+              ) : balanceKind === "credit" ? (
+                <Wallet className="w-4 h-4 text-sky-500 dark:text-sky-400" />
               ) : (
-                <>
-                  <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
-                  <span className="text-sm font-medium text-emerald-600 dark:text-emerald-300">
-                    {pickLang(language, { ku: "هیچ قەرزێکت نییە", en: "No outstanding balance", ar: "لا يوجد رصيد مستحق", zh: "无未结余额" })}
-                  </span>
-                </>
+                <CheckCircle2 className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
               )}
+              <span className={cn(
+                "text-sm font-medium",
+                balanceKind === "debt"
+                  ? "text-red-600 dark:text-red-300"
+                  : balanceKind === "credit"
+                    ? "text-sky-600 dark:text-sky-300"
+                    : "text-emerald-600 dark:text-emerald-300"
+              )}>
+                {pickLang(language, BALANCE_WORDING[balanceKind])}
+              </span>
             </div>
           </div>
 

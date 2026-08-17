@@ -3,6 +3,8 @@ import fs from "fs";
 import path from "path";
 import {
   INVOICE_STATE_PRINT,
+  balanceState,
+  BALANCE_WORDING,
   invoiceState,
   isCreditTx,
   LEDGER_TYPE_LABEL,
@@ -266,5 +268,41 @@ describe("one sign, from the customer's side", () => {
       const src = fs.readFileSync(path.join(SKIN_ROOT, skin), "utf8");
       expect(src, `${skin} redefines isCredit`).not.toMatch(/const isCredit\s*=/);
     }
+  });
+});
+
+describe("the three states a balance can be in", () => {
+  it("names each one", () => {
+    expect(balanceState(120)).toBe("debt");
+    expect(balanceState(0)).toBe("settled");
+    expect(balanceState(-45)).toBe("credit");
+  });
+
+  it("does not fold credit into 'no debt'", () => {
+    // The bug. Every screen asked "is there debt?" and treated both other
+    // answers alike, so a customer holding $45 with us was told they had no
+    // outstanding balance — true, and it hides the only fact they care about.
+    expect(balanceState(-45)).not.toBe(balanceState(0));
+  });
+
+  it("treats a missing balance as settled, not as credit", () => {
+    // Undefined means "not loaded yet". Announcing credit the customer may
+    // not have is the one wrong answer here.
+    expect(balanceState(null)).toBe("settled");
+    expect(balanceState(undefined)).toBe("settled");
+  });
+
+  it("has wording for all three, in every language", () => {
+    for (const state of ["debt", "settled", "credit"] as const) {
+      for (const lang of ["ku", "en", "ar", "zh"] as const) {
+        expect(BALANCE_WORDING[state][lang], `${state} has no ${lang}`).toBeTruthy();
+      }
+    }
+  });
+
+  it("tells a customer in credit that the money is theirs", () => {
+    // Not "no debt" — the point is that they can spend it.
+    expect(BALANCE_WORDING.credit.en.toLowerCase()).toContain("credit");
+    expect(BALANCE_WORDING.credit.ku).toContain("ساڵب");
   });
 });

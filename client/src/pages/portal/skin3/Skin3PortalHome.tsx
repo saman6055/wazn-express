@@ -32,7 +32,7 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { ProhibitedDecisionAlert } from "@/components/portal/ProhibitedDecisionAlert";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
-import { isDebt, isCreditTx, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
+import { isDebt, isCreditTx, balanceState, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
 import { formatPortalDate } from "@/lib/portalClock";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
@@ -397,9 +397,15 @@ export default function Skin3PortalHome() {
                   </span>
                   {/* Was `< 0` — inverted, so the badge appeared for customers
                       in credit and hid from the ones who owed money. */}
-                  {isDebt(balanceValue) && (
+                  {balanceState(balanceValue) === "debt" && (
                     <span className="ms-2 px-2 py-1 rounded-lg bg-red-500/30 text-red-200 text-xs font-black uppercase">
                       {pickLang(language, { ku: "قەرز", en: "Owed", ar: "مستحق", zh: "欠款" })}
+                    </span>
+                  )}
+                  {/* Credit had no badge here either. Three skins, one gap. */}
+                  {balanceState(balanceValue) === "credit" && (
+                    <span className="ms-2 px-2 py-1 rounded-lg bg-sky-500/30 text-sky-100 text-xs font-black uppercase">
+                      {pickLang(language, { ku: "ڕەسیدی ساڵب", en: "In credit", ar: "رصيد دائن", zh: "贷方余额" })}
                     </span>
                   )}
                 </div>

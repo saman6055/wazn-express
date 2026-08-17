@@ -33,7 +33,7 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { ProhibitedDecisionAlert } from "@/components/portal/ProhibitedDecisionAlert";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
-import { isDebt, isCreditTx, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
+import { isDebt, isCreditTx, balanceState, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
 import { formatPortalDate } from "@/lib/portalClock";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
@@ -412,9 +412,17 @@ export default function ModernPortalHome() {
                   {/* Was `< 0`. Positive is what the ledger means by "owes us"
                       — so this badge was on for customers in credit and off
                       for the ones who actually owed money. */}
-                  {isDebt(balanceValue) && (
+                  {balanceState(balanceValue) === "debt" && (
                     <span className="text-red-200 text-xs font-medium ms-2 px-2 py-0.5 rounded-full bg-red-500/30">
                       {pickLang(language, { ku: "قەرز", en: "Owed", ar: "مستحق", zh: "欠款" })}
+                    </span>
+                  )}
+                  {/* A customer in credit was shown nothing at all: the badge
+                      asked only about debt, so their own money, held by us,
+                      went unmentioned on the page built to show it. */}
+                  {balanceState(balanceValue) === "credit" && (
+                    <span className="text-sky-100 text-xs font-medium ms-2 px-2 py-0.5 rounded-full bg-sky-500/30">
+                      {pickLang(language, { ku: "ڕەسیدی ساڵب", en: "In credit", ar: "رصيد دائن", zh: "贷方余额" })}
                     </span>
                   )}
                 </div>

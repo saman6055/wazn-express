@@ -40,6 +40,49 @@ export function isCredit(balanceUsd: number | null | undefined): boolean {
   return Number(balanceUsd ?? 0) < 0;
 }
 
+export type BalanceState = "debt" | "settled" | "credit";
+
+/**
+ * Which of the three states a balance is in.
+ *
+ * Every screen so far asked one question — "is there debt?" — and treated
+ * both other answers as the same thing. So a customer whose balance is
+ * negative, meaning we are holding their money, was told "you have no
+ * outstanding balance": true, and it hides the only fact they care about.
+ * Credit is not the absence of debt; it is money of theirs sitting with us,
+ * and if nobody tells them, nobody claims it.
+ */
+export function balanceState(balanceUsd: number | null | undefined): BalanceState {
+  if (isDebt(balanceUsd)) return "debt";
+  if (isCredit(balanceUsd)) return "credit";
+  return "settled";
+}
+
+/** What each state is called, in the reader's language. */
+export const BALANCE_WORDING: Record<BalanceState, { ku: string; en: string; ar: string; zh: string }> = {
+  debt: {
+    ku: "قەرزت هەیە",
+    en: "You have an outstanding balance",
+    ar: "لديك رصيد مستحق",
+    zh: "您有未结余额",
+  },
+  settled: {
+    ku: "هیچ قەرزێکت نییە",
+    en: "No outstanding balance",
+    ar: "لا يوجد رصيد مستحق",
+    zh: "无未结余额",
+  },
+  credit: {
+    // Said as plainly as possible: this is the customer's own money, held by
+    // us, and it comes off their next invoice. A customer who does not know
+    // it exists never asks for it.
+    ku: "ڕەسیدت بە ساڵبە — ئەم بڕە پارەیەی تۆ لای ئێمەیە",
+    en: "Your balance is in credit — this money of yours is held with us",
+    ar: "رصيدك دائن — هذا المبلغ لك محفوظ لدينا",
+    zh: "您的余额为贷方——这笔款项属于您，由我们保管",
+  },
+};
+
 /**
  * Money moving toward the customer (a payment they made, a refund, a discount).
  *
