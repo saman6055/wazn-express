@@ -1,4 +1,5 @@
 import { useState, useMemo, Fragment } from "react";
+import { BatchInvoiceView } from "@/components/BatchInvoiceView";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -105,6 +106,16 @@ export default function CustomerFinance() {
   const [receiptNumber, setReceiptNumber] = useState("");
   const [paymentCashAccountId, setPaymentCashAccountId] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+
+  // Which batch's invoice is open, and the two queries behind it. Nothing is
+  // fetched until a batch is chosen.
+  const [invoiceBatchId, setInvoiceBatchId] = useState<number | null>(null);
+  const { data: customerBatchesRaw } = trpc.customerBatchInvoice.batchesForCustomer.useQuery({ customerId });
+  const customerBatches = Array.isArray(customerBatchesRaw) ? customerBatchesRaw : [];
+  const { data: officeInvoice } = trpc.customerBatchInvoice.forCustomer.useQuery(
+    { batchId: invoiceBatchId ?? 0, customerId },
+    { enabled: invoiceBatchId != null },
+  );
   const [selectedTransaction, setSelectedTransaction] = useState<any>(null);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   // Tracks which invoice groups are currently expanded in the ledger table.
@@ -1628,7 +1639,50 @@ export default function CustomerFinance() {
                   <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款记录" })}
                   </TabsTrigger>
+                  <TabsTrigger value="batchInvoices" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    {pickLang(language, { ku: "پسووڵەی باچ", en: "Batch invoices", ar: "فواتير الدفعات", zh: "批次账单" })}
+                  </TabsTrigger>
                 </TabsList>
+
+                {/* The customer's own invoice, on the office's screen.
+                    Same component, same shared rule, same figures — so the
+                    person on the phone and the person answering are reading
+                    one document rather than two that mostly agree. */}
+                <TabsContent value="batchInvoices" className="mt-4 space-y-3">
+                  {customerBatches.length === 0 ? (
+                    <p className="py-10 text-center text-sm text-muted-foreground">
+                      {pickLang(language, { ku: "ئەم کڕیارە لە هیچ باچێکدا نییە", en: "This customer is in no batch", ar: "هذا العميل ليس في أي دفعة", zh: "该客户不在任何批次中" })}
+                    </p>
+                  ) : (
+                    <>
+                      <div className="flex flex-wrap gap-2">
+                        {customerBatches.map((b: any) => (
+                          <Button
+                            key={b.id}
+                            size="sm"
+                            variant={invoiceBatchId === b.id ? "default" : "outline"}
+                            className="font-mono"
+                            onClick={() => setInvoiceBatchId(b.id)}
+                          >
+                            {b.batchCode}
+                          </Button>
+                        ))}
+                      </div>
+
+                      {officeInvoice && (
+                        <BatchInvoiceView
+                          invoice={officeInvoice.invoice}
+                          batchCode={officeInvoice.batch.batchCode}
+                          shippingType={officeInvoice.batch.shippingType}
+                          arrivedAt={officeInvoice.batch.actualArrival}
+                          language={language}
+                          customerLabel={officeInvoice.customer?.customerCode ?? null}
+                          onPrint={() => window.print()}
+                        />
+                      )}
+                    </>
+                  )}
+                </TabsContent>
                 
                 <TabsContent value="transactions" className="mt-4">
                   <Card className="border-0 shadow-lg">

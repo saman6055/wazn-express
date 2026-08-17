@@ -16,6 +16,7 @@ import {
   BarChart3, PieChart, Eye, Search, Filter, XCircle, Printer,
   Building2, MapPin, Phone, Mail, Hash, Package
 } from "lucide-react";
+import { BatchInvoiceView } from "@/components/BatchInvoiceView";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
@@ -71,10 +72,12 @@ const { t, language } = useLanguage();
   const [selectedTransaction, setSelectedTransaction] = useState<number | null>(null);
   const searchString = useSearch();
   const urlTab = new URLSearchParams(searchString).get("tab");
-  const [activeTab, setActiveTab] = useState<"overview" | "transactions">(
+  const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "batches">(
     // "invoices" used to be accepted here and rendered a blank body: there is
     // no such tab, only an invoice dialog opened from a transaction row.
-    urlTab === "transactions" ? urlTab : "overview"
+    // The union and the URL check are deliberately in step — a value accepted
+    // by one and not the other is exactly how that blank body happened.
+    urlTab === "transactions" || urlTab === "batches" ? urlTab : "overview"
   );
   // Keep the active tab in the URL so navigating to an order and pressing Back
   // returns the customer to the same tab (e.g. "transactions") they came from.
@@ -236,9 +239,20 @@ const { t, language } = useLanguage();
   // Three states, named once. See lib/portalMoney.
   const balanceKind = balanceState(balance);
 
+  // The batch whose invoice is open. Null until one is picked, so the tab
+  // does not fetch an invoice nobody asked for.
+  const [invoiceBatchId, setInvoiceBatchId] = useState<number | null>(null);
+  const { data: myBatchesRaw } = trpc.customerPortal.getMyBatches.useQuery();
+  const myBatches = Array.isArray(myBatchesRaw) ? myBatchesRaw : [];
+  const { data: batchInvoice } = trpc.customerPortal.getMyBatchInvoice.useQuery(
+    { batchId: invoiceBatchId ?? 0 },
+    { enabled: invoiceBatchId != null },
+  );
+
   const tabs = [
     { id: "overview", label: pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" }), icon: PieChart },
     { id: "transactions", label: pickLang(language, { ku: "مامەڵەکان", en: "Transactions", ar: "المعاملات", zh: "交易记录" }), icon: Receipt },
+    { id: "batches", label: pickLang(language, { ku: "پسووڵەی باچ", en: "Batch invoices", ar: "فواتير الدفعات", zh: "批次账单" }), icon: Package },
   ];
 
   return (
@@ -569,6 +583,48 @@ const { t, language } = useLanguage();
         )}
 
         {/* Transactions Tab */}
+        {/* One batch, itemised. The question a customer actually asks —
+            what did each parcel cost me, and why that much for carriage —
+            had no answer on any screen, so it arrived by WhatsApp and
+            somebody worked it out by hand. */}
+        {activeTab === "batches" && (
+          <div className="px-4 pb-8 space-y-3">
+            {myBatches.length === 0 ? (
+              <p className="py-10 text-center text-sm text-muted-foreground">
+                {pickLang(language, { ku: "هیچ باچێکت نییە", en: "You have no batches yet", ar: "لا توجد دفعات بعد", zh: "您还没有批次" })}
+              </p>
+            ) : (
+              <>
+                <div className="flex flex-wrap gap-2">
+                  {myBatches.map((b: any) => (
+                    <button
+                      key={b.id}
+                      onClick={() => setInvoiceBatchId(b.id)}
+                      className={cn(
+                        "rounded-lg border px-3 py-1.5 font-mono text-sm transition-colors",
+                        invoiceBatchId === b.id
+                          ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
+                          : "border-border hover:bg-muted"
+                      )}
+                    >
+                      {b.batchCode}
+                    </button>
+                  ))}
+                </div>
+
+                {batchInvoice && (
+                  <BatchInvoiceView
+                    invoice={batchInvoice.invoice}
+                    batchCode={batchInvoice.batch.batchCode}
+                    shippingType={batchInvoice.batch.shippingType}
+                    arrivedAt={batchInvoice.batch.actualArrival}
+                    language={language}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        )}
         {activeTab === "transactions" && (
           <div className="space-y-4">
             {/* Date Filter */}

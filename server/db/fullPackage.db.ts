@@ -1500,3 +1500,50 @@ export async function getCustomerOrderRegistrationProgress(customerId: number): 
   const remaining = total - registered;
   return { total, registered, remaining, allRegistered: total > 0 && remaining === 0 };
 }
+
+/**
+ * One customer's orders inside one batch, with only the columns an invoice
+ * needs.
+ *
+ * Deliberately not `select()`. The row carries purchasePriceUsd,
+ * grossProfitUsd and netProfitUsd, and this feeds a document the customer
+ * reads — the surest way to keep our margin off their invoice is never to
+ * fetch it. The portal endpoint and the office endpoint share this function
+ * so the two documents cannot describe the same batch differently.
+ */
+export async function getCustomerOrdersInBatch(batchId: number, customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select({
+      id: fullPackageOrders.id,
+      orderCode: fullPackageOrders.orderCode,
+      orderType: fullPackageOrders.orderType,
+      productName: fullPackageOrders.productName,
+      productImage: fullPackageOrders.productImage,
+      trackingNumber: fullPackageOrders.trackingNumber,
+      weightKg: fullPackageOrders.weightKg,
+      shippingCostUsd: fullPackageOrders.shippingCostUsd,
+      itemPriceUsd: fullPackageOrders.itemPriceUsd,
+      commissionFeeUsd: fullPackageOrders.commissionFeeUsd,
+      sellingPriceUsd: fullPackageOrders.sellingPriceUsd,
+      advancePaidUsd: fullPackageOrders.advancePaidUsd,
+    })
+    .from(fullPackageOrders)
+    .where(and(eq(fullPackageOrders.batchId, batchId), eq(fullPackageOrders.customerId, customerId)))
+    .orderBy(fullPackageOrders.id);
+}
+
+/** Every customer with something in this batch. The office's side of the same view. */
+export async function getCustomersInBatch(batchId: number): Promise<number[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .selectDistinct({ customerId: fullPackageOrders.customerId })
+    .from(fullPackageOrders)
+    .where(eq(fullPackageOrders.batchId, batchId));
+
+  return rows.map((r) => r.customerId);
+}

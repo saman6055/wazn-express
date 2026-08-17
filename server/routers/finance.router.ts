@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { explainFigure, explainCashOnHand } from "@shared/financeExplain";
 import { partnerAccounts, reconcile, ownershipCheck, partnershipTotals, statement } from "@shared/partnerLedger";
+import { buildBatchInvoice } from "@shared/batchInvoice";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -1077,6 +1078,51 @@ export const partnersRouter = router({
       }),
 });
 
+/**
+ * The office's copy of what the customer sees.
+ *
+ * Same rule, same function, same figures — buildBatchInvoice in shared/ — so
+ * a customer on the phone and the member of staff answering are reading one
+ * document rather than two that agree most of the time. Every earlier attempt
+ * at "the same thing, on the other screen" in this system drifted, which is
+ * why this one is a call rather than a copy.
+ *
+ * Staff see one extra thing the customer does not: which batch a customer is
+ * in at all, so they can pick. What each line costs is identical.
+ */
+export const customerBatchInvoiceRouter = router({
+  forCustomer: staffProcedure
+    .input(z.object({ batchId: idSchema, customerId: idSchema }))
+    .query(async ({ input }) => {
+      const batch = await db.getBatchById(input.batchId);
+      if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "باچ نەدۆزرایەوە" });
+
+      const [orders, customer] = await Promise.all([
+        db.getCustomerOrdersInBatch(input.batchId, input.customerId),
+        db.getCustomerById(input.customerId),
+      ]);
+
+      return {
+        batch: {
+          id: batch.id,
+          batchCode: batch.batchCode,
+          shippingType: batch.shippingType,
+          status: batch.status,
+          actualArrival: batch.actualArrival,
+          createdAt: batch.createdAt,
+        },
+        customer: customer ? { id: customer.id, customerCode: customer.customerCode, fullName: customer.fullName } : null,
+        invoice: buildBatchInvoice(orders, 0),
+      };
+    }),
+
+  /** Which batches this customer has anything in, newest first. */
+  batchesForCustomer: staffProcedure
+    .input(z.object({ customerId: idSchema }))
+    .query(async ({ input }) => {
+      return db.getCustomerBatches(input.customerId);
+    }),
+});
 export const companyDebtsRouter = router({
     list: adminProcedure.query(async () => {
       return db.getAllCompanyDebts();
@@ -1661,6 +1707,7 @@ export const financeRouters = {
   cashAccounts: cashAccountsRouter,
   financialReports: financialReportsRouter,
   financeIntegration: financeIntegrationRouter,
+  customerBatchInvoice: customerBatchInvoiceRouter,
 };
 
 function getMonthNumber(month: string): number {

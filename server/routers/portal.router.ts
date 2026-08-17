@@ -5,6 +5,7 @@ import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, customerProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+import { buildBatchInvoice } from "@shared/batchInvoice";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
 import { isSafeAvatar, isSafeCustomerImage, MAX_CUSTOMER_IMAGES } from "@shared/customerImages";
@@ -254,6 +255,46 @@ export const customerPortalRouter = router({
         return db.getCustomerPackagesInBatch(customerId, input.batchId);
       }),
     
+    /**
+     * One batch, itemised.
+     *
+     * The customer gets four parcels and one figure, and the question they
+     * actually ask — what did each of these cost me, and why that much for
+     * carriage — has never had an answer on any screen. It arrives by
+     * WhatsApp instead and somebody works it out by hand.
+     *
+     * Scoped to ctx.customerId, never to an id from the request: a batch
+     * holds many customers' parcels, and reading the batch id from the
+     * caller while trusting it for ownership is how one customer is handed
+     * another's invoice.
+     */
+    getMyBatchInvoice: customerProcedure
+      .input(z.object({ batchId: idSchema }))
+      .query(async ({ ctx, input }) => {
+        const customerId = ctx.customerId;
+        const batch = await db.getBatchById(input.batchId);
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "باچ نەدۆزرایەوە" });
+
+        const orders = await db.getCustomerOrdersInBatch(input.batchId, customerId);
+        if (orders.length === 0) {
+          // Nothing of theirs is in it. Said as not-found rather than as an
+          // empty invoice, so a guessed batch id reveals nothing about
+          // whether that batch exists at all.
+          throw new TRPCError({ code: "NOT_FOUND", message: "باچ نەدۆزرایەوە" });
+        }
+
+        return {
+          batch: {
+            id: batch.id,
+            batchCode: batch.batchCode,
+            shippingType: batch.shippingType,
+            status: batch.status,
+            actualArrival: batch.actualArrival,
+            createdAt: batch.createdAt,
+          },
+          invoice: buildBatchInvoice(orders, 0),
+        };
+      }),
     // Get unbatched packages
     getMyUnbatchedPackages: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
