@@ -588,6 +588,13 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         subPermissions: [],
       },
       {
+        module: "audit_sweep",
+        label: "System Sweep",
+        labelKu: "پشکنینی سیستەم",
+        actions: ["view"],
+        subPermissions: [],
+      },
+      {
         module: "audit_logs",
         label: "Audit Logs",
         labelKu: "لۆگی چاودێری",
@@ -760,6 +767,7 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/staff-management": "staff_management",
   "/permissions-management": "permissions_management",
   "/audit-logs": "audit_logs",
+  "/audit-sweep": "audit_sweep",
   "/trash": "trash",
   "/settings/label-templates": "label_templates",
   "/label-printing": "label_printing",

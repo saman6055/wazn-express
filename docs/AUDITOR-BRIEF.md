@@ -103,7 +103,19 @@ owner as: *"this has now appeared three times; it should be a test."*
 
 ## Reaching the data
 
-### Start here: one call that reads everything
+### Start here: the sweep page
+
+Sign in with the `auditor` account and open **System sweep**
+(`/audit-sweep`, in the sidebar under Users & Permissions). It runs all
+eighteen checks and lists them worst-first, each expanding to the rows it
+found. **Copy report** puts the whole thing on the clipboard as plain text —
+that is what to paste into a chat when you want somebody to act on it.
+
+The endpoint behind it, `audit.sweep`, sits behind a session cookie on the
+production server, so a tool outside a signed-in browser cannot call it. The
+page is how it is reached.
+
+### What the sweep is saying
 
 `audit.sweep` runs all eighteen checks above server-side and returns them
 ranked worst-first, each with up to ten offending rows. `audit.catalogue`

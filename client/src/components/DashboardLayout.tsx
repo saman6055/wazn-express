@@ -78,6 +78,7 @@ import {
   Minus,
   Trash2,
   Eye,
+  ShieldQuestion,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
@@ -526,6 +527,7 @@ function DashboardLayoutContent({
           { icon: Users, label: t("nav.staffManagement") || "بەڕێوەبردنی ستاف", path: "/staff-management" },
           { icon: Shield, label: t("nav.permissionsManagement") || "بەڕێوەبردنی مۆڵەتەکان", path: "/permissions-management" },
           { icon: FileText, label: t("nav.auditLogs") || "لۆگی چاودێری", path: "/audit-logs" },
+          { icon: ShieldQuestion, label: t("nav.auditSweep") || "پشکنینی سیستەم", path: "/audit-sweep" },
           { icon: Trash2, label: t("nav.trash") || "سەبەتەی سڕاوەکان", path: "/trash" },
         ]
       });
