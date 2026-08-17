@@ -103,7 +103,26 @@ owner as: *"this has now appeared three times; it should be a test."*
 
 ## Reaching the data
 
-Two ways, and the second is where the real work is.
+### Start here: one call that reads everything
+
+`audit.sweep` runs all eighteen checks above server-side and returns them
+ranked worst-first, each with up to ten offending rows. `audit.catalogue`
+gives the wording for each check in four languages, so a report names a
+finding properly instead of inventing a phrase for it.
+
+Read the `headline` before anything else. It refuses to say "nothing to
+report" if any check failed to run — a sweep that could not see everything
+must not claim everything is fine, and `status: "failed"` on a check means
+exactly that: **it did not look**, which is not the same as finding nothing.
+Report those first; they are usually a bug in the query, and they are yours
+to flag rather than to fix.
+
+`audit.movements` answers "what changed since yesterday" from the audit log —
+who moved which record, and when. Pass `since`; the default is 24 hours. If
+`truncated` comes back true you were given a window, not the period you
+asked for, and the report should say so.
+
+### Then the two general-purpose routes
 
 **The API.** Sign in with the `auditor` account. Every read the office has,
 you have, plus the audit log — which answers "who changed this figure, and
