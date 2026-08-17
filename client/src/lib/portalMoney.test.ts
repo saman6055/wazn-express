@@ -376,29 +376,54 @@ describe("no Kurdish sentence reaches an Arabic statement", () => {
 });
 
 describe("no portal screen prints a stored description raw", () => {
-  // The translator only helps where it is called. Three screens rendered
-  // `tx.description` directly, which is how Kurdish reached an Arabic
-  // statement in the first place — the rule existed and the screen skipped it.
+  // The translator only helps where it is called, and the first version of
+  // this test named four files. A fifth existed — OrderBillingGroups, written
+  // after the rule and never told about it — and it was the one on screen.
+  // A list of files to check has the same flaw as a list of phrases to
+  // translate: it is only ever as current as the last person who remembered.
+  // So this walks the portal instead.
+  function portalFiles(dir: string): string[] {
+    const out: string[] = [];
+    for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+      const full = path.join(dir, entry.name);
+      if (entry.isDirectory()) out.push(...portalFiles(full));
+      else if (entry.name.endsWith(".tsx")) out.push(full);
+    }
+    return out;
+  }
+
+  const ROOT = path.join(__dirname, "..");
   const files = [
-    "client/src/pages/portal/PortalFinancial.tsx",
-    "client/src/pages/portal/modern/ModernPortalHome.tsx",
-    "client/src/pages/portal/modern/ModernPortalFinancial.tsx",
-    "client/src/pages/portal/skin3/Skin3PortalHome.tsx",
+    ...portalFiles(path.join(ROOT, "pages/portal")),
+    ...portalFiles(path.join(ROOT, "components/portal")),
   ];
 
-  it("routes every one through describeLedgerRef", () => {
+  it("finds the portal at all", () => {
+    // Guard the guard: a wrong path here would pass the test below silently.
+    expect(files.length).toBeGreaterThan(10);
+  });
+
+  it("routes every stored description through describeLedgerRef", () => {
     const offenders: string[] = [];
 
     for (const file of files) {
-      const src = fs
-        .readFileSync(path.join(__dirname, "..", "..", "..", file), "utf8")
-        .replace(/\r\n/g, "\n");
+      const src = fs.readFileSync(file, "utf8").replace(/\r\n/g, "\n");
+
+      // A file that builds its own descriptions with pickLang is describing
+      // menu items, not ledger rows — those are already in the reader's
+      // language and have nothing to translate. PortalProfile's settings list
+      // is the case: `item.description` there never came from the database.
+      const buildsItsOwn = /description:\s*(pickLang|language ===)/.test(src);
 
       src.split("\n").forEach((line, i) => {
-        // A bare `{tx.description}` or `{item.description}` in JSX, with no
-        // translator wrapped around it.
-        if (/\{\s*(tx|item|transaction)\.description\s*(\|\||\})/.test(line)) {
-          offenders.push(`${file}:${i + 1}`);
+        if (buildsItsOwn && /\bitem\??\.description/.test(line)) return;
+        // A bare `{tx.description}` in JSX, or one used as a string with no
+        // translator around it.
+        if (/\{\s*(tx|item|line|transaction|txn)\??\.description\s*(\|\||\})/.test(line)) {
+          offenders.push(`${path.relative(ROOT, file)}:${i + 1}`);
+        }
+        if (/(?<!describeLedgerRef\()(tx|item|line|lastLine)\??\.description \|\| ""\)/.test(line)) {
+          offenders.push(`${path.relative(ROOT, file)}:${i + 1}`);
         }
       });
     }

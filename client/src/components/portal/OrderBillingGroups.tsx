@@ -6,6 +6,7 @@ import { useMemo, useState } from "react";
 import { WhatsAppHelpButton } from "./WhatsAppHelpButton";
 import { PhotoStack } from "@/components/PhotoStack";
 import { formatPortalDate } from "@/lib/portalClock";
+import { describeLedgerRef, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 
 // ---------------------------------------------------------------------------
 // OrderBillingGroups — presentation-only fix for "one item, three receipts".
@@ -65,6 +66,12 @@ export function OrderBillingGroups({
   isDark?: boolean;
 }) {
   const pick = (v: L10n) => pickLang(language, v);
+
+  /** What this kind of charge is called, for lines whose sentence cannot be read. */
+  const ledgerTypeName = (type: string | null | undefined, lang: string) => {
+    const label = LEDGER_TYPE_LABEL[String(type ?? "")];
+    return label ? pickLang(lang, label) : undefined;
+  };
   const [openKey, setOpenKey] = useState<string | null>(null);
 
   // Read-only enrichment: join each billing group to the order/package it
@@ -147,7 +154,16 @@ export function OrderBillingGroups({
         const open = openKey === g.key;
         // The first line's description usually carries the order code — use it
         // as the card subtitle so the customer recognises the order.
-        const subtitle = (g.lines[g.lines.length - 1]?.description || "").split("\n")[0];
+        // Through describeLedgerRef, like every other stored description in
+        // the portal. This card was written after that rule existed and never
+        // learned about it, so it printed the office's Kurdish onto an Arabic
+        // statement while four other screens did not.
+        const lastLine = g.lines[g.lines.length - 1];
+        const subtitle = describeLedgerRef(
+          (lastLine?.description || "").split("\n")[0],
+          language,
+          ledgerTypeName(lastLine?.transactionType, language),
+        );
         // Client-side join to the source order/package for identity info.
         const fp = g.refType !== "package" ? orderById.get(g.refId) : undefined;
         const pkg = g.refType === "package" ? pkgById.get(g.refId) : undefined;
@@ -283,7 +299,7 @@ export function OrderBillingGroups({
                     <div key={line.id} className="flex items-start justify-between gap-3 py-1.5">
                       <div className="min-w-0 flex-1">
                         <p className={cn("text-xs font-medium leading-snug", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
-                          {line.description ||
+                          {describeLedgerRef(line.description, language, ledgerTypeName(line.transactionType, language)) ||
                             pick({ ku: "بڕگە", en: "Charge", ar: "بند", zh: "费用" })}
                         </p>
                         <p className={cn("text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
