@@ -14,9 +14,12 @@ import {
   TrendingUp, TrendingDown, Download, CreditCard, Receipt,
   ChevronRight, DollarSign, Clock, CheckCircle2, AlertCircle,
   BarChart3, PieChart, Eye, Search, Filter, XCircle, Printer,
-  Building2, MapPin, Phone, Mail, Hash, Package
+  Building2, MapPin, Phone, Mail, Hash, Package, Ship, Plane, Boxes
 } from "lucide-react";
 import { BatchInvoiceView } from "@/components/BatchInvoiceView";
+import { AccountRowList } from "@/components/AccountRowList";
+import { BoxInvoiceView } from "@/components/BoxInvoiceView";
+import { rowMeta } from "@shared/batchInvoice";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
@@ -72,12 +75,12 @@ const { t, language } = useLanguage();
   const [selectedTransaction, setSelectedTransaction] = useState<number | null>(null);
   const searchString = useSearch();
   const urlTab = new URLSearchParams(searchString).get("tab");
-  const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "batches">(
+  const [activeTab, setActiveTab] = useState<"overview" | "transactions" | "batches" | "boxes">(
     // "invoices" used to be accepted here and rendered a blank body: there is
     // no such tab, only an invoice dialog opened from a transaction row.
     // The union and the URL check are deliberately in step — a value accepted
     // by one and not the other is exactly how that blank body happened.
-    urlTab === "transactions" || urlTab === "batches" ? urlTab : "overview"
+    urlTab === "transactions" || urlTab === "batches" || urlTab === "boxes" ? urlTab : "overview"
   );
   // Keep the active tab in the URL so navigating to an order and pressing Back
   // returns the customer to the same tab (e.g. "transactions") they came from.
@@ -244,6 +247,13 @@ const { t, language } = useLanguage();
   const [invoiceBatchId, setInvoiceBatchId] = useState<number | null>(null);
   const { data: myBatchesRaw } = trpc.customerPortal.getMyBatches.useQuery();
   const myBatches = Array.isArray(myBatchesRaw) ? myBatchesRaw : [];
+  const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(null);
+  const { data: myBoxesRaw } = trpc.customerPortal.getMyDeliveryBoxes.useQuery();
+  const myBoxes = Array.isArray(myBoxesRaw) ? myBoxesRaw : [];
+  const { data: boxInvoice } = trpc.customerPortal.getMyBoxInvoice.useQuery(
+    { boxId: invoiceBoxId ?? 0 },
+    { enabled: invoiceBoxId != null },
+  );
   const { data: batchInvoice } = trpc.customerPortal.getMyBatchInvoice.useQuery(
     { batchId: invoiceBatchId ?? 0 },
     { enabled: invoiceBatchId != null },
@@ -253,6 +263,7 @@ const { t, language } = useLanguage();
     { id: "overview", label: pickLang(language, { ku: "پوختە", en: "Overview", ar: "نظرة عامة", zh: "概览" }), icon: PieChart },
     { id: "transactions", label: pickLang(language, { ku: "مامەڵەکان", en: "Transactions", ar: "المعاملات", zh: "交易记录" }), icon: Receipt },
     { id: "batches", label: pickLang(language, { ku: "پسووڵەی باچ", en: "Batch invoices", ar: "فواتير الدفعات", zh: "批次账单" }), icon: Package },
+    { id: "boxes", label: pickLang(language, { ku: "حیسابی سندوق", en: "Box accounts", ar: "حسابات الصناديق", zh: "箱子账目" }), icon: Boxes },
   ];
 
   return (
@@ -589,40 +600,78 @@ const { t, language } = useLanguage();
             somebody worked it out by hand. */}
         {activeTab === "batches" && (
           <div className="px-4 pb-8 space-y-3">
-            {myBatches.length === 0 ? (
-              <p className="py-10 text-center text-sm text-muted-foreground">
-                {pickLang(language, { ku: "هیچ باچێکت نییە", en: "You have no batches yet", ar: "لا توجد دفعات بعد", zh: "您还没有批次" })}
-              </p>
-            ) : (
-              <>
-                <div className="flex flex-wrap gap-2">
-                  {myBatches.map((b: any) => (
-                    <button
-                      key={b.id}
-                      onClick={() => setInvoiceBatchId(b.id)}
-                      className={cn(
-                        "rounded-lg border px-3 py-1.5 font-mono text-sm transition-colors",
-                        invoiceBatchId === b.id
-                          ? "border-emerald-500 bg-emerald-50 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
-                          : "border-border hover:bg-muted"
-                      )}
-                    >
-                      {b.batchCode}
-                    </button>
-                  ))}
-                </div>
-
-                {batchInvoice && (
-                  <BatchInvoiceView
-                    invoice={batchInvoice.invoice}
-                    batchCode={batchInvoice.batch.batchCode}
-                    shippingType={batchInvoice.batch.shippingType}
-                    arrivedAt={batchInvoice.batch.actualArrival}
+              <AccountRowList
+                language={language}
+                rows={myBatches.map((b: any) => ({
+                  key: b.id,
+                  code: b.batchCode,
+                  icon: b.shippingType === "sea" ? Ship : Plane,
+                  meta: rowMeta(
+                    b,
+                    Number(b.myPackageCount ?? b.packageCount ?? 0),
+                    { weightKg: Number(b.myWeightKg ?? 0), volumeCbm: Number(b.myVolumeCbm ?? 0) },
+                    (d: Date | string) => formatPortalDate(d, language),
+                    {
+                      parcels: pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" }),
+                      kg: "kg",
+                      cbm: "cbm",
+                    },
+                  ),
+                }))}
+                openKey={invoiceBatchId}
+                onToggle={setInvoiceBatchId}
+                emptyText={pickLang(language, { ku: "هیچ باچێکت نییە", en: "You have no batches yet", ar: "لا توجد دفعات بعد", zh: "您还没有批次" })}
+                renderExpanded={() =>
+                  batchInvoice ? (
+                    <BatchInvoiceView
+                      invoice={batchInvoice.invoice}
+                      batchCode={batchInvoice.batch.batchCode}
+                      shippingType={batchInvoice.batch.shippingType}
+                      arrivedAt={batchInvoice.batch.actualArrival}
+                      language={language}
+                    />
+                  ) : (
+                    <Skeleton className="h-40 w-full" />
+                  )
+                }
+              />
+          </div>
+        )}
+        {/* The other half of what a customer is billed for: the box that
+            actually arrives at their door. Same rows, same expand, same
+            document. */}
+        {activeTab === "boxes" && (
+          <div className="px-4 pb-8">
+            <AccountRowList
+              language={language}
+              rows={myBoxes.map((b: any) => ({
+                key: b.id,
+                code: b.boxCode,
+                icon: Boxes,
+                meta: [
+                  b.deliveredAt ? formatPortalDate(b.deliveredAt, language) : null,
+                  `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
+                  Number(b.totalWeightKg) > 0 ? `${Number(b.totalWeightKg)} kg` : null,
+                  b.destinationCity || null,
+                ].filter(Boolean).join(" · "),
+              }))}
+              openKey={invoiceBoxId}
+              onToggle={setInvoiceBoxId}
+              emptyText={pickLang(language, { ku: "هیچ سندوقێکت نییە", en: "You have no boxes yet", ar: "لا توجد صناديق بعد", zh: "您还没有箱子" })}
+              renderExpanded={() =>
+                boxInvoice ? (
+                  <BoxInvoiceView
+                    invoice={boxInvoice.invoice}
+                    boxCode={boxInvoice.box.boxCode}
+                    destination={boxInvoice.box.destinationCity}
+                    deliveredAt={boxInvoice.box.deliveredAt}
                     language={language}
                   />
-                )}
-              </>
-            )}
+                ) : (
+                  <Skeleton className="h-40 w-full" />
+                )
+              }
+            />
           </div>
         )}
         {activeTab === "transactions" && (

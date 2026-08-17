@@ -1,5 +1,8 @@
 import { useState, useMemo, Fragment } from "react";
 import { BatchInvoiceView } from "@/components/BatchInvoiceView";
+import { AccountRowList } from "@/components/AccountRowList";
+import { BoxInvoiceView } from "@/components/BoxInvoiceView";
+import { rowMeta } from "@shared/batchInvoice";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -85,6 +88,9 @@ import {
   RotateCcw,
   AlertTriangle,
   Loader2,
+  Ship,
+  Plane,
+  Boxes,
 } from "lucide-react";
 import { Link, useParams } from "wouter";
 import { toast } from "sonner";
@@ -112,6 +118,13 @@ export default function CustomerFinance() {
   const [invoiceBatchId, setInvoiceBatchId] = useState<number | null>(null);
   const { data: customerBatchesRaw } = trpc.customerBatchInvoice.batchesForCustomer.useQuery({ customerId });
   const customerBatches = Array.isArray(customerBatchesRaw) ? customerBatchesRaw : [];
+  const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(null);
+  const { data: customerBoxesRaw } = trpc.customerBatchInvoice.boxesForCustomer.useQuery({ customerId });
+  const customerBoxes = Array.isArray(customerBoxesRaw) ? customerBoxesRaw : [];
+  const { data: officeBoxInvoice } = trpc.customerBatchInvoice.boxForCustomer.useQuery(
+    { boxId: invoiceBoxId ?? 0, customerId },
+    { enabled: invoiceBoxId != null },
+  );
   const { data: officeInvoice } = trpc.customerBatchInvoice.forCustomer.useQuery(
     { batchId: invoiceBatchId ?? 0, customerId },
     { enabled: invoiceBatchId != null },
@@ -1639,6 +1652,9 @@ export default function CustomerFinance() {
                   <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款记录" })}
                   </TabsTrigger>
+                  <TabsTrigger value="boxAccounts" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                    {pickLang(language, { ku: "حیسابی سندوق", en: "Box accounts", ar: "حسابات الصناديق", zh: "箱子账目" })}
+                  </TabsTrigger>
                   <TabsTrigger value="batchInvoices" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "پسووڵەی باچ", en: "Batch invoices", ar: "فواتير الدفعات", zh: "批次账单" })}
                   </TabsTrigger>
@@ -1648,6 +1664,42 @@ export default function CustomerFinance() {
                     Same component, same shared rule, same figures — so the
                     person on the phone and the person answering are reading
                     one document rather than two that mostly agree. */}
+                {/* The box that reaches their door, in the same shape as the
+                    batch it travelled in. */}
+                <TabsContent value="boxAccounts" className="mt-4">
+                  <AccountRowList
+                    language={language}
+                    searchable
+                    rows={customerBoxes.map((b: any) => ({
+                      key: b.id,
+                      code: b.boxCode,
+                      icon: Boxes,
+                      meta: [
+                        b.deliveredAt ? new Date(b.deliveredAt).toLocaleDateString() : null,
+                        `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
+                        Number(b.totalWeightKg) > 0 ? `${Number(b.totalWeightKg)} kg` : null,
+                        b.destinationCity || null,
+                      ].filter(Boolean).join(" · "),
+                    }))}
+                    openKey={invoiceBoxId}
+                    onToggle={setInvoiceBoxId}
+                    emptyText={pickLang(language, { ku: "ئەم کڕیارە هیچ سندوقێکی نییە", en: "This customer has no boxes", ar: "لا توجد صناديق لهذا العميل", zh: "该客户没有箱子" })}
+                    renderExpanded={() =>
+                      officeBoxInvoice ? (
+                        <BoxInvoiceView
+                          invoice={officeBoxInvoice.invoice}
+                          boxCode={officeBoxInvoice.box.boxCode}
+                          destination={officeBoxInvoice.box.destinationCity}
+                          deliveredAt={officeBoxInvoice.box.deliveredAt}
+                          language={language}
+                          onPrint={() => window.print()}
+                        />
+                      ) : (
+                        <Skeleton className="h-40 w-full" />
+                      )
+                    }
+                  />
+                </TabsContent>
                 <TabsContent value="batchInvoices" className="mt-4 space-y-3">
                   {customerBatches.length === 0 ? (
                     <p className="py-10 text-center text-sm text-muted-foreground">
@@ -1655,31 +1707,43 @@ export default function CustomerFinance() {
                     </p>
                   ) : (
                     <>
-                      <div className="flex flex-wrap gap-2">
-                        {customerBatches.map((b: any) => (
-                          <Button
-                            key={b.id}
-                            size="sm"
-                            variant={invoiceBatchId === b.id ? "default" : "outline"}
-                            className="font-mono"
-                            onClick={() => setInvoiceBatchId(b.id)}
-                          >
-                            {b.batchCode}
-                          </Button>
-                        ))}
-                      </div>
-
-                      {officeInvoice && (
-                        <BatchInvoiceView
-                          invoice={officeInvoice.invoice}
-                          batchCode={officeInvoice.batch.batchCode}
-                          shippingType={officeInvoice.batch.shippingType}
-                          arrivedAt={officeInvoice.batch.actualArrival}
-                          language={language}
-                          customerLabel={officeInvoice.customer?.customerCode ?? null}
-                          onPrint={() => window.print()}
-                        />
-                      )}
+                      <AccountRowList
+                        language={language}
+                        searchable
+                        rows={customerBatches.map((b: any) => ({
+                          key: b.id,
+                          code: b.batchCode,
+                          icon: b.shippingType === "sea" ? Ship : Plane,
+                          meta: rowMeta(
+                            b,
+                            Number(b.myPackageCount ?? b.packageCount ?? 0),
+                            { weightKg: Number(b.myWeightKg ?? 0), volumeCbm: Number(b.myVolumeCbm ?? 0) },
+                            (d: Date | string) => new Date(d).toLocaleDateString(),
+                            {
+                              parcels: pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" }),
+                              kg: "kg",
+                              cbm: "cbm",
+                            },
+                          ),
+                        }))}
+                        openKey={invoiceBatchId}
+                        onToggle={setInvoiceBatchId}
+                        renderExpanded={() =>
+                          officeInvoice ? (
+                            <BatchInvoiceView
+                              invoice={officeInvoice.invoice}
+                              batchCode={officeInvoice.batch.batchCode}
+                              shippingType={officeInvoice.batch.shippingType}
+                              arrivedAt={officeInvoice.batch.actualArrival}
+                              language={language}
+                              customerLabel={officeInvoice.customer?.customerCode ?? null}
+                              onPrint={() => window.print()}
+                            />
+                          ) : (
+                            <Skeleton className="h-40 w-full" />
+                          )
+                        }
+                      />
                     </>
                   )}
                 </TabsContent>

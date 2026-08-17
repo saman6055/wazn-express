@@ -6,6 +6,7 @@ import { staffProcedure, adminProcedure, accountantProcedure, customerProcedure 
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { buildBatchInvoice } from "@shared/batchInvoice";
+import { buildBoxInvoice } from "@shared/boxInvoice";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
 import { isSafeAvatar, isSafeCustomerImage, MAX_CUSTOMER_IMAGES } from "@shared/customerImages";
@@ -144,6 +145,25 @@ export const customerPortalRouter = router({
       return db.getCustomerVisibleBoxes(customerId);
     }),
 
+    /**
+     * One box, itemised — the same document as a batch invoice, for the thing
+     * that actually arrives at the customer's door.
+     *
+     * Ownership is proved by the query, not checked after it: the box is
+     * fetched by id AND customerId together, so a guessed id returns nothing
+     * rather than somebody else's parcels.
+     */
+    getMyBoxInvoice: customerProcedure
+      .input(z.object({ boxId: idSchema }))
+      .query(async ({ ctx, input }) => {
+        const customerId = ctx.customerId;
+        const boxes = await db.getCustomerVisibleBoxes(customerId, 200);
+        const box = boxes.find((b) => b.id === input.boxId);
+        if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "سندوق نەدۆزرایەوە" });
+
+        const items = await db.getBoxItems(box.id);
+        return { box, invoice: buildBoxInvoice(items, box.deliveryChargeUsd) };
+      }),
     /**
      * The photo and signature taken when a box was handed over.
      *

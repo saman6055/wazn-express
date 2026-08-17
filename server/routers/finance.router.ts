@@ -3,6 +3,7 @@ import { z } from "zod";
 import { explainFigure, explainCashOnHand } from "@shared/financeExplain";
 import { partnerAccounts, reconcile, ownershipCheck, partnershipTotals, statement } from "@shared/partnerLedger";
 import { buildBatchInvoice } from "@shared/batchInvoice";
+import { buildBoxInvoice } from "@shared/boxInvoice";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -1116,6 +1117,24 @@ export const customerBatchInvoiceRouter = router({
       };
     }),
 
+  /** The customer's delivery boxes, newest first. */
+  boxesForCustomer: staffProcedure
+    .input(z.object({ customerId: idSchema }))
+    .query(async ({ input }) => {
+      return db.getCustomerVisibleBoxes(input.customerId, 200);
+    }),
+
+  /** One box, itemised. Same rule and same shape as the customer's own copy. */
+  boxForCustomer: staffProcedure
+    .input(z.object({ boxId: idSchema, customerId: idSchema }))
+    .query(async ({ input }) => {
+      const boxes = await db.getCustomerVisibleBoxes(input.customerId, 200);
+      const box = boxes.find((b) => b.id === input.boxId);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "سندوق نەدۆزرایەوە" });
+
+      const items = await db.getBoxItems(box.id);
+      return { box, invoice: buildBoxInvoice(items, box.deliveryChargeUsd) };
+    }),
   /** Which batches this customer has anything in, newest first. */
   batchesForCustomer: staffProcedure
     .input(z.object({ customerId: idSchema }))

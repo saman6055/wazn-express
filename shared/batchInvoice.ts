@@ -228,3 +228,32 @@ export function buildBatchInvoice(
     unpriced,
   };
 }
+
+/**
+ * The line under a batch's code in the picker: when, how many, how big.
+ *
+ * A sea batch is billed by volume and an air batch by weight, so printing kg
+ * against a sea shipment is both the wrong unit and a number the customer was
+ * never charged on. The rule is already in the portal for shipment cards; it
+ * belongs here too, because this is the second place it is needed and that is
+ * exactly how the first two drifted.
+ */
+export function rowMeta(
+  batch: { shippingType?: string | null; actualArrival?: Date | string | null; createdAt?: Date | string | null },
+  parcelCount: number,
+  size: { weightKg?: number | null; volumeCbm?: number | null },
+  formatDate: (d: Date | string) => string,
+  words: { parcels: string; kg: string; cbm: string },
+): string {
+  const when = batch.actualArrival ?? batch.createdAt;
+  const isSea = batch.shippingType === "sea";
+  const amount = isSea ? size.volumeCbm : size.weightKg;
+
+  const parts = [
+    when ? formatDate(when) : null,
+    `${parcelCount} ${words.parcels}`,
+    amount != null && amount > 0 ? `${amount} ${isSea ? words.cbm : words.kg}` : null,
+  ].filter(Boolean);
+
+  return parts.join(" · ");
+}
