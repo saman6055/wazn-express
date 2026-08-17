@@ -5,6 +5,7 @@ import {
   INVOICE_STATE_PRINT,
   balanceState,
   BALANCE_WORDING,
+  describeLedgerRef,
   invoiceState,
   isCreditTx,
   LEDGER_TYPE_LABEL,
@@ -304,5 +305,104 @@ describe("the three states a balance can be in", () => {
     // Not "no debt" — the point is that they can spend it.
     expect(BALANCE_WORDING.credit.en.toLowerCase()).toContain("credit");
     expect(BALANCE_WORDING.credit.ku).toContain("ساڵب");
+  });
+});
+
+describe("no Kurdish sentence reaches an Arabic statement", () => {
+  // The office writes these into the ledger in Kurdish when a batch is
+  // delivered, and the portal printed them back word for word. A customer
+  // reading Arabic saw Kurdish in the middle of their own account.
+  const commissionShipping = "کڕین بە تێچوو CM-MRKF79NX - کرێی گواستنەوە (پاشاکەوتکراو)";
+  const commissionGoods = "کڕین بە تێچوو CM-MRKF79NX - Nike Air Max (کاڵا + عمولە)";
+  const fullPackage = "پاکێجی تەواو FP-0012 - Samsung A54 - گەیاندن";
+  const carriage = "🚚 کرێی گواستنەوە — Nike Air Max";
+  const payment = "پارەدانی کڕیار: AZ1024 - فیب";
+
+  const KURDISH_ONLY = ["کڕین بە تێچوو", "پاکێجی تەواو", "کرێی گواستنەوە", "پاشاکەوتکراو", "گەیاندن", "پارەدانی کڕیار"];
+
+  it("rewrites every stored phrase for an Arabic reader", () => {
+    for (const stored of [commissionShipping, commissionGoods, fullPackage, carriage, payment]) {
+      const out = describeLedgerRef(stored, "ar");
+      for (const kurdish of KURDISH_ONLY) {
+        expect(out, `"${stored}" still carries "${kurdish}" in Arabic`).not.toContain(kurdish);
+      }
+    }
+  });
+
+  it("does the same for English and Chinese", () => {
+    for (const lang of ["en", "zh"]) {
+      for (const stored of [commissionShipping, commissionGoods, fullPackage, carriage, payment]) {
+        const out = describeLedgerRef(stored, lang);
+        for (const kurdish of KURDISH_ONLY) {
+          expect(out, `"${stored}" still carries "${kurdish}" in ${lang}`).not.toContain(kurdish);
+        }
+      }
+    }
+  });
+
+  it("keeps the codes, so a customer can still match a line to an order", () => {
+    expect(describeLedgerRef(commissionShipping, "ar")).toContain("CM-MRKF79NX");
+    expect(describeLedgerRef(fullPackage, "ar")).toContain("FP-0012");
+    expect(describeLedgerRef(payment, "ar")).toContain("AZ1024");
+  });
+
+  it("never translates a product name", () => {
+    // The customer wrote it. Rendering "Nike Air Max" in any other form would
+    // be inventing a product they never ordered.
+    expect(describeLedgerRef(commissionGoods, "ar")).toContain("Nike Air Max");
+    expect(describeLedgerRef(fullPackage, "zh")).toContain("Samsung A54");
+    expect(describeLedgerRef(carriage, "en")).toContain("Nike Air Max");
+  });
+
+  it("says the deferred shipping line is deferred, in the reader's language", () => {
+    expect(describeLedgerRef(commissionShipping, "en")).toContain("deferred");
+    expect(describeLedgerRef(commissionShipping, "ar")).toContain("مؤجل");
+    // And the plain one does not claim to be.
+    expect(describeLedgerRef("کڕین بە تێچوو CM-1 - کرێی گواستنەوە", "en")).not.toContain("deferred");
+  });
+
+  it("leaves Kurdish readers with Kurdish", () => {
+    expect(describeLedgerRef(commissionShipping, "ku")).toContain("کڕین بە تێچوو");
+    expect(describeLedgerRef(commissionShipping, "ku")).toContain("پاشاکەوتکراو");
+  });
+
+  it("hands back anything it does not recognise rather than blanking it", () => {
+    // A line nobody has taught it about is still the customer's line. Losing
+    // it would be worse than showing it in the wrong language.
+    expect(describeLedgerRef("something nobody planned for", "ar")).toBe("something nobody planned for");
+    expect(describeLedgerRef("", "ar")).toBe("");
+    expect(describeLedgerRef(null, "ar")).toBe("");
+  });
+});
+
+describe("no portal screen prints a stored description raw", () => {
+  // The translator only helps where it is called. Three screens rendered
+  // `tx.description` directly, which is how Kurdish reached an Arabic
+  // statement in the first place — the rule existed and the screen skipped it.
+  const files = [
+    "client/src/pages/portal/PortalFinancial.tsx",
+    "client/src/pages/portal/modern/ModernPortalHome.tsx",
+    "client/src/pages/portal/modern/ModernPortalFinancial.tsx",
+    "client/src/pages/portal/skin3/Skin3PortalHome.tsx",
+  ];
+
+  it("routes every one through describeLedgerRef", () => {
+    const offenders: string[] = [];
+
+    for (const file of files) {
+      const src = fs
+        .readFileSync(path.join(__dirname, "..", "..", "..", file), "utf8")
+        .replace(/\r\n/g, "\n");
+
+      src.split("\n").forEach((line, i) => {
+        // A bare `{tx.description}` or `{item.description}` in JSX, with no
+        // translator wrapped around it.
+        if (/\{\s*(tx|item|transaction)\.description\s*(\|\||\})/.test(line)) {
+          offenders.push(`${file}:${i + 1}`);
+        }
+      });
+    }
+
+    expect(offenders, `these print the office's Kurdish to whoever is reading:\n${offenders.join("\n")}`).toEqual([]);
   });
 });

@@ -1105,7 +1105,7 @@ const { t, language } = useLanguage();
                               "whitespace-pre-line leading-relaxed flex-1 min-w-0",
                               isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300",
                             )}>
-                              {item.description}
+                              {describeLedgerRef(item.description, language)}
                             </span>
                             <span className={cn(
                               "font-mono font-semibold text-sm shrink-0",

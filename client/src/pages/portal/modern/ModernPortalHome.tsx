@@ -33,7 +33,7 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { ProhibitedDecisionAlert } from "@/components/portal/ProhibitedDecisionAlert";
 import { PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
-import { isDebt, isCreditTx, balanceState, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
+import { isDebt, isCreditTx, balanceState, describeLedgerRef, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { pickLang } from "@/lib/lang";
 import { formatPortalDate } from "@/lib/portalClock";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
@@ -653,7 +653,7 @@ export default function ModernPortalHome() {
                             isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                           )}
                         >
-                          {tx.description ||
+                          {describeLedgerRef(tx.description, language) ||
                             ledgerTypeName(tx.transactionType, language)}
                         </p>
                         <p

@@ -262,6 +262,53 @@ export function describeLedgerRef(
   };
   const pick = (l: L) => l[(["ku", "en", "ar", "zh"].includes(language) ? language : "en") as keyof L];
 
+  const COMMISSION: L = { ku: "کڕین بە تێچوو", en: "Buy at cost", ar: "شراء بالتكلفة", zh: "代购" };
+  const FULL_PACKAGE: L = { ku: "پاکێجی تەواو", en: "Full package", ar: "الباقة الكاملة", zh: "全包套餐" };
+  const CARRIAGE: L = { ku: "کرێی گواستنەوە", en: "Shipping", ar: "أجرة الشحن", zh: "运费" };
+  const DEFERRED: L = { ku: "پاشاکەوتکراو", en: "deferred", ar: "مؤجل", zh: "延后收取" };
+  const GOODS_PLUS_FEE: L = { ku: "کاڵا + کرێی کڕین", en: "goods + fee", ar: "البضاعة + الأجرة", zh: "货款 + 代购费" };
+  const DELIVERY: L = { ku: "گەیاندن", en: "delivery", ar: "التسليم", zh: "派送" };
+  const PAYMENT: L = { ku: "پارەدانی کڕیار", en: "Customer payment", ar: "دفعة العميل", zh: "客户付款" };
+
+  // The office writes these into the ledger in Kurdish when a batch is
+  // delivered, and the portal printed them back verbatim — so an Arabic
+  // statement carried Kurdish sentences. The stored text is the office's own
+  // record and is left alone; what the customer reads is rebuilt here, which
+  // also repairs every row already written. Product names are the customer's
+  // own words and are never translated.
+  const commissionShipping = raw.match(
+    /^کڕین بە تێچوو\s+(\S+)\s*-\s*کرێی گواستنەوە\s*(\(پاشاکەوتکراو\))?$/,
+  );
+  if (commissionShipping) {
+    const [, code, deferred] = commissionShipping;
+    const text = `${pick(COMMISSION)} ${code} · ${pick(CARRIAGE)}`;
+    return deferred ? `${text} (${pick(DEFERRED)})` : text;
+  }
+
+  const commissionGoods = raw.match(/^کڕین بە تێچوو\s+(\S+)\s*-\s*(.+?)\s*\(کاڵا \+ عمولە\)$/);
+  if (commissionGoods) {
+    const [, code, product] = commissionGoods;
+    return `${pick(COMMISSION)} ${code} · ${product} (${pick(GOODS_PLUS_FEE)})`;
+  }
+
+  const fullPackageDelivery = raw.match(/^پاکێجی تەواو\s+(\S+)\s*-\s*(.+?)\s*-\s*گەیاندن$/);
+  if (fullPackageDelivery) {
+    const [, code, product] = fullPackageDelivery;
+    return `${pick(FULL_PACKAGE)} ${code} · ${product} · ${pick(DELIVERY)}`;
+  }
+
+  // The stored line begins with a lorry emoji. Stripped rather than reprinted:
+  // it is decoration the office chose, not part of what happened.
+  // Anything non-Kurdish before the phrase is the emoji the office prefixes.
+  const carriageOnly = raw.match(/^[^؀-ۿ]*کرێی گواستنەوە\s*[—-]\s*(.+)$/);
+  if (carriageOnly) return `${pick(CARRIAGE)} · ${carriageOnly[1]}`;
+
+  const payment = raw.match(/^پارەدانی کڕیار:\s*(\S+)(?:\s*-\s*(.+))?$/);
+  if (payment) {
+    const [, code, note] = payment;
+    return note ? `${pick(PAYMENT)}: ${code} · ${note}` : `${pick(PAYMENT)}: ${code}`;
+  }
+
   // `پاکەت <tracking> - باچ <batch>`, optionally trailed by `(چارجی دواکەوتوو)`.
   const both = raw.match(/^پاکەت\s+(\S+)\s*-\s*باچ\s*(\S*)\s*(\(چارجی دواکەوتوو\))?$/);
   if (both) {
