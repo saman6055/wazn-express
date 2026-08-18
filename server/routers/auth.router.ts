@@ -108,10 +108,14 @@ export const authRouter = router({
         isCustomer: true,
       })
         .setProtectedHeader({ alg: "HS256" })
-        .setExpirationTime("7d")
+        // A year, not a week: the owner's rule is that a customer stays
+        // signed in until they delete the app. The session also renews
+        // itself on use (see renewCustomerSession in _core/context.ts), so
+        // in practice it only ever expires on a device that was abandoned.
+        .setExpirationTime("365d")
         .sign(secret);
       const cookieOptions = getSessionCookieOptions(ctx.req);
-      ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 7 * 24 * 60 * 60 * 1000 });
+      ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 365 * 24 * 60 * 60 * 1000 });
       // Observability only (never blocks login): stamp last portal login and
       // log the sign-in event for the admin Portal Center.
       void db.updateCustomerLastSignedIn(customer.id);

@@ -7,10 +7,24 @@ import { pickLang } from '@/lib/lang';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 
 /**
- * Remembered for good once the app has been installed, so the prompt does not
- * come back when the customer later opens the site in an ordinary tab.
+ * Remembered once the app has been installed, so the prompt does not come
+ * back when the customer later opens the site in an ordinary tab.
+ *
+ * Remembered — but not for good. The owner's rule is: installed, never ask;
+ * deleted, ask again. Deletion is learned two different ways:
+ *
+ * - Android says so directly: Chrome only fires `beforeinstallprompt` when
+ *   the app is NOT currently installed, so that event firing proves the
+ *   remembered install is gone.
+ * - iOS says nothing, ever. So the memory expires instead: every open inside
+ *   the app refreshes this timestamp, and once the app has not been opened
+ *   for IOS_INSTALL_STALE_MS while visits keep arriving through Safari, the
+ *   install is presumed deleted and the instructions come back.
  */
 const INSTALLED_KEY = 'pwa-installed';
+
+/** Two weeks without a single open inside the app — presume it was deleted. */
+const IOS_INSTALL_STALE_MS = 14 * 24 * 60 * 60 * 1000;
 
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
@@ -42,24 +56,20 @@ export function PWAInstallPrompt() {
      * app already sitting on their home screen. Being asked to do something
      * you have already done reads as the app not knowing you.
      *
-     * So the fact is remembered the first time it is seen, and remembered for
-     * good. Two ways to learn it: the browser fires `appinstalled` at the
-     * moment it happens, and running in standalone mode proves it after the
-     * fact — which is the only signal iOS gives, since it never fires the
-     * event.
+     * Two ways to learn it: the browser fires `appinstalled` at the moment
+     * it happens, and running in standalone mode proves it after the fact —
+     * which is the only signal iOS gives, since it never fires the event.
+     * Every standalone open refreshes the timestamp; the iOS staleness rule
+     * on INSTALLED_KEY reads it to tell "installed and resting" apart from
+     * "deleted".
      */
     if (standalone) localStorage.setItem(INSTALLED_KEY, String(Date.now()));
     const onInstalled = () => {
       localStorage.setItem(INSTALLED_KEY, String(Date.now()));
+      setAlreadyInstalled(true);
       setShowPrompt(false);
     };
     window.addEventListener('appinstalled', onInstalled);
-
-    // Installed once, never asked again.
-    if (localStorage.getItem(INSTALLED_KEY)) {
-      setAlreadyInstalled(true);
-      return () => window.removeEventListener('appinstalled', onInstalled);
-    }
 
     // Check if iOS
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
@@ -76,10 +86,14 @@ export function PWAInstallPrompt() {
       return Number.isFinite(ts) && Date.now() - ts < DISMISS_TTL_MS;
     };
 
-    // Listen for install prompt
+    // Listen for install prompt. Chrome only fires this when the app is NOT
+    // currently installed — so if it fires while an install is remembered,
+    // the app was deleted since. Forget the memory and ask again.
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
+      localStorage.removeItem(INSTALLED_KEY);
+      setAlreadyInstalled(false);
 
       if (!isDismissedRecently()) {
         setTimeout(() => setShowPrompt(true), 3000); // Show after 3 seconds
@@ -88,11 +102,21 @@ export function PWAInstallPrompt() {
 
     window.addEventListener('beforeinstallprompt', handleBeforeInstall);
 
-    // Show iOS prompt after delay
-    if (iOS && !standalone) {
-      if (!isDismissedRecently()) {
-        setTimeout(() => setShowPrompt(true), 5000);
-      }
+    // Is the remembered install still believable? On Android the browser
+    // corrects a stale memory itself (above). On iOS the memory expires when
+    // the app has not been opened for two weeks. Legacy non-numeric values
+    // count as stale on iOS so an old phantom flag cannot suppress forever.
+    const installedRaw = localStorage.getItem(INSTALLED_KEY);
+    const installedAt = Number(installedRaw);
+    const installedFresh = !!installedRaw && (
+      !iOS || (Number.isFinite(installedAt) && Date.now() - installedAt < IOS_INSTALL_STALE_MS)
+    );
+
+    if (installedFresh) {
+      setAlreadyInstalled(true);
+    } else if (iOS && !standalone && !isDismissedRecently()) {
+      // Show iOS prompt after delay
+      setTimeout(() => setShowPrompt(true), 5000);
     }
 
     return () => {

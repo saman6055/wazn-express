@@ -7,7 +7,6 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePortalWidthClass } from "@/hooks/usePortalWidth";
 import { PortalWidthSwitch } from "@/components/portal/PortalWidthSwitch";
-import { usePortalIdleLogout } from "@/hooks/usePortalIdleLogout";
 import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
@@ -32,9 +31,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   // How wide this portal sits: grows with the screen unless the reader
   // has chosen a fixed width for themselves.
   const portalWidth = usePortalWidthClass();
-  // Half an hour of nothing and the customer is signed out. A shared computer
-  // at an internet cafe should not stay open behind them.
-  usePortalIdleLogout(true);
   const { language, t } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
