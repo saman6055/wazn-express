@@ -22,6 +22,8 @@ export interface BoxItem {
   weightKg?: string | number | null;
   /** What this parcel was charged at. Not what it cost us. */
   calculatedCostUsd?: string | number | null;
+  /** regular | full_package | commission — decides what the customer may see. */
+  itemType?: string | null;
 }
 
 export interface BoxLine {
@@ -30,6 +32,13 @@ export interface BoxLine {
   trackingNumber: string | null;
   weightKg: number;
   cost: number;
+  /**
+   * Set on full-package lines when the invoice was built for the customer:
+   * the weight is zeroed and the screen prints nothing in its place. The
+   * price stays — for a full-package carton it is the agreed goods figure,
+   * which is exactly what the customer is meant to see.
+   */
+  sizeConcealed?: boolean;
 }
 
 export interface BoxInvoice {
@@ -70,20 +79,25 @@ export function buildBoxInvoice(
   items: readonly BoxItem[],
   deliveryChargeUsd: string | number | null | undefined = 0,
   fallbackLabel = "—",
+  // The customer edition: a full-package carton shows its agreed price and
+  // no weight — the weight is half of our margin. Staff callers pass nothing
+  // and see everything. See shared/fullPackagePrivacy.ts.
+  opts: { concealFullPackageSize?: boolean } = {},
 ): BoxInvoice {
   let goods = 0;
   let weight = 0;
   let unpriced = 0;
 
   const lines: BoxLine[] = items.map((item) => {
+    const concealed = opts.concealFullPackageSize === true && item.itemType === "full_package";
     const cost = cents(item.calculatedCostUsd);
-    const w = grams(item.weightKg);
+    const w = concealed ? 0 : grams(item.weightKg);
 
     if (cost === 0) unpriced += 1;
     goods += cost;
     weight += w;
 
-    return {
+    const line: BoxLine = {
       id: item.id,
       // The description the warehouse typed, else the code it was scanned by.
       // A blank line on an invoice is worse than a code the customer can look up.
@@ -92,6 +106,8 @@ export function buildBoxInvoice(
       weightKg: kilos(w),
       cost: money(cost),
     };
+    if (concealed) line.sizeConcealed = true;
+    return line;
   });
 
   const delivery = cents(deliveryChargeUsd);

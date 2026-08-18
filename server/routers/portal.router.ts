@@ -172,7 +172,9 @@ export const customerPortalRouter = router({
         if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "سندوق نەدۆزرایەوە" });
 
         const items = await db.getBoxItems(box.id);
-        return { box, invoice: buildBoxInvoice(items, box.deliveryChargeUsd) };
+        // Customer edition: full-package cartons show their agreed price and
+        // no weight. The staff box invoice (finance.router) shows everything.
+        return { box, invoice: buildBoxInvoice(items, box.deliveryChargeUsd, "—", { concealFullPackageSize: true }) };
       }),
     /**
      * The photo and signature taken when a box was handed over.
@@ -322,7 +324,9 @@ export const customerPortalRouter = router({
             actualArrival: batch.actualArrival,
             createdAt: batch.createdAt,
           },
-          invoice: buildBatchInvoice(orders, 0),
+          // Customer edition: agreed-price lines carry no weight, share or
+          // carriage. The staff batch invoice (finance.router) shows all.
+          invoice: buildBatchInvoice(orders, 0, { concealAgreedPriceSize: true }),
         };
       }),
     // Get unbatched packages
@@ -463,7 +467,11 @@ export const customerPortalRouter = router({
       .input(z.object({ query: z.string().trim().min(1).max(100) }))
       .query(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
-        return db.searchCustomerOrder(customerId, input.query);
+        const order = await db.searchCustomerOrder(customerId, input.query);
+        // Through the same gate as every other order the portal serves: the
+        // raw row carries the purchase price and the profit, and the search
+        // box was handing it over whole.
+        return order ? toCustomerVisibleOrder(order as any) : null;
       }),
 
     // Unified-search fallback: when a tracking isn't one of the customer's own

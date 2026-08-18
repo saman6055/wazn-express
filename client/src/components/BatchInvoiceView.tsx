@@ -92,19 +92,24 @@ function Line({ line, language }: { line: InvoiceLine; language: string }) {
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-2">
-          <dt className="text-muted-foreground">
-            {pickLang(language, { ku: "تێچووی گواستنەوە", en: "Shipping", ar: "أجرة الشحن", zh: "运费" })}
-            {/* The weight beside the figure, because otherwise the carriage
-                charge is a number the customer simply has to accept. */}
-            {line.weightKg > 0 && (
-              <span className="ms-1 font-mono text-xs opacity-70">
-                · {line.weightKg} kg ({line.weightShare}%)
-              </span>
-            )}
-          </dt>
-          <dd className="font-mono">{money(line.shipping)}</dd>
-        </div>
+        {/* A concealed (full-package) line has no shipping row at all: the
+            agreed price is the whole story, and a $0.00 carriage row would
+            only invite the question it exists to close. */}
+        {!line.sizeConcealed && (
+          <div className="flex items-center justify-between gap-2">
+            <dt className="text-muted-foreground">
+              {pickLang(language, { ku: "تێچووی گواستنەوە", en: "Shipping", ar: "أجرة الشحن", zh: "运费" })}
+              {/* The weight beside the figure, because otherwise the carriage
+                  charge is a number the customer simply has to accept. */}
+              {line.weightKg > 0 && (
+                <span className="ms-1 font-mono text-xs opacity-70">
+                  · {line.weightKg} kg ({line.weightShare}%)
+                </span>
+              )}
+            </dt>
+            <dd className="font-mono">{money(line.shipping)}</dd>
+          </div>
+        )}
 
         {line.advancePaid > 0 && (
           <div className="flex items-center justify-between gap-2">
@@ -179,12 +184,16 @@ export function BatchInvoiceView({
             </p>
             <p className="mt-0.5 font-mono text-lg font-bold">{money(totals.shipping)}</p>
           </div>
-          <div className="bg-card p-3">
-            <p className="text-xs text-muted-foreground">
-              {pickLang(language, { ku: "کێشی گشتی", en: "Total weight", ar: "الوزن الكلي", zh: "总重量" })}
-            </p>
-            <p className="mt-0.5 font-mono text-lg font-bold">{totals.weightKg} kg</p>
-          </div>
+          {/* Skipped when nothing on the invoice carries a visible weight —
+              an all-full-package invoice would otherwise print "0 kg". */}
+          {totals.weightKg > 0 && (
+            <div className="bg-card p-3">
+              <p className="text-xs text-muted-foreground">
+                {pickLang(language, { ku: "کێشی گشتی", en: "Total weight", ar: "الوزن الكلي", zh: "总重量" })}
+              </p>
+              <p className="mt-0.5 font-mono text-lg font-bold">{totals.weightKg} kg</p>
+            </div>
+          )}
           <div className="bg-emerald-50 p-3 dark:bg-emerald-950/40">
             <p className="text-xs text-emerald-700 dark:text-emerald-300">
               {pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}

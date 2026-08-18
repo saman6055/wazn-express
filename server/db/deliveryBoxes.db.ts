@@ -982,13 +982,28 @@ const CUSTOMER_BOX_FIELDS = {
 export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
   const db = await getDb();
   if (!db) return [];
-  return db.select(CUSTOMER_BOX_FIELDS).from(deliveryBoxes)
+  const rows = await db.select(CUSTOMER_BOX_FIELDS).from(deliveryBoxes)
     .where(and(
       eq(deliveryBoxes.customerId, customerId),
       inArray(deliveryBoxes.status, ['ready', 'in_transit', 'delivered']),
     ))
     .orderBy(desc(deliveryBoxes.id))
     .limit(limit);
+
+  if (rows.length === 0) return rows;
+
+  // A box holding a full-package carton shows no total weight to its
+  // customer: most boxes hold one order, so the box total IS the concealed
+  // weight. One batched lookup; staff box queries never pass through here.
+  // See shared/fullPackagePrivacy.ts.
+  const fpRows = await db.select({ boxId: deliveryBoxItems.boxId })
+    .from(deliveryBoxItems)
+    .where(and(
+      inArray(deliveryBoxItems.boxId, rows.map(r => r.id)),
+      eq(deliveryBoxItems.itemType, 'full_package'),
+    ));
+  const fpBoxes = new Set(fpRows.map(r => r.boxId));
+  return rows.map(r => (fpBoxes.has(r.id) ? { ...r, totalWeightKg: null, sizeConcealed: true as const } : r));
 }
 
 /**

@@ -366,14 +366,16 @@ export default function Skin3PortalShipments() {
                         {getPackageStatusConfig((searchResult as any).status).label}
                       </p>
                     </div>
-                    <span
-                      className={cn(
-                        "text-sm font-black tabular-nums",
-                        isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300"
-                      )}
-                    >
-                      {Number((searchResult as any).weightKg || 0).toFixed(1)} kg
-                    </span>
+                    {!(searchResult as any).sizeConcealed && (
+                      <span
+                        className={cn(
+                          "text-sm font-black tabular-nums",
+                          isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300"
+                        )}
+                      >
+                        {Number((searchResult as any).weightKg || 0).toFixed(1)} kg
+                      </span>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -698,23 +700,28 @@ export default function Skin3PortalShipments() {
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-4 text-xs font-bold">
-                                          <span
-                                            className={cn(
-                                              "flex items-center gap-1",
-                                              isDark
-                                                ? "text-zinc-500"
-                                                : "text-gray-500"
-                                            )}
-                                          >
-                                            <Weight
-                                              className="w-3 h-3"
-                                              strokeWidth={2.5}
-                                            />
-                                            {Number(
-                                              pkg.weightKg || 0
-                                            ).toFixed(1)}{" "}
-                                            kg
-                                          </span>
+                                          {/* A full-package parcel shows no weight: the customer
+                                              agreed to one figure and the size is ours. The server
+                                              nulls it and sets sizeConcealed. */}
+                                          {!pkg.sizeConcealed && (
+                                            <span
+                                              className={cn(
+                                                "flex items-center gap-1",
+                                                isDark
+                                                  ? "text-zinc-500"
+                                                  : "text-gray-500"
+                                              )}
+                                            >
+                                              <Weight
+                                                className="w-3 h-3"
+                                                strokeWidth={2.5}
+                                              />
+                                              {Number(
+                                                pkg.weightKg || 0
+                                              ).toFixed(1)}{" "}
+                                              kg
+                                            </span>
+                                          )}
                                           {pkgPrice.kind !== "pending" && (
                                             <span
                                               className={cn(

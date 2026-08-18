@@ -25,6 +25,7 @@ import {
   type VolumetricAssessment,
 } from '@shared/volumetricAlert';
 import { getSetting } from './settings.db';
+import { concealsSizeAndCarriage } from '@shared/fullPackagePrivacy';
 import { createActivityAlert } from './admin.db';
 import { getUploadsDir } from '../services/localUpload';
 import { createCustomerNotification } from './portal.db';
@@ -1220,7 +1221,21 @@ export async function raiseVolumetricAlert(params: {
     });
   }
 
-  if (customerId) {
+  // A full-package customer is billed one agreed figure and is never charged
+  // by weight — so a message quoting their parcel's kilograms is both alarming
+  // and a leak of the size we deliberately keep to ourselves. The staff alert
+  // below still fires; the surcharge is our affair to settle.
+  let customerMayKnow = true;
+  if (trackingNumber) {
+    try {
+      const linkedOrder = await getFullPackageOrderByTrackingNumber(trackingNumber);
+      customerMayKnow = !concealsSizeAndCarriage(linkedOrder?.orderType);
+    } catch {
+      // Lookup failure keeps today's behaviour: the notification goes out.
+    }
+  }
+
+  if (customerId && customerMayKnow) {
     try {
       await createCustomerNotification({
         customerId,

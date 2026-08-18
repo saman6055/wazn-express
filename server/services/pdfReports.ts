@@ -2,8 +2,9 @@
 import fs from 'fs';
 import path from 'path';
 import { getDb } from '../db';
-import { packages, users, customers, ledgerTransactions, customerAccounts, paymentRecords, batches } from '../../drizzle/schema';
+import { packages, users, customers, ledgerTransactions, customerAccounts, paymentRecords, batches, fullPackageOrders } from '../../drizzle/schema';
 import { sql, count, eq, desc, asc, gte, lte, and, sum, inArray } from 'drizzle-orm';
+import { concealsSizeAndCarriage } from '@shared/fullPackagePrivacy';
 
 // Ledger transaction-type buckets for the statement's "type" filter.
 // These were written out here, correctly, while the classic money page split
@@ -37,6 +38,8 @@ interface CustomerReportData {
     costUsd: number;
     createdAt: Date;
     batchCode: string | null;
+    /** Full-package parcels print a dash instead of size and carriage. */
+    sizeConcealed?: boolean;
   }>;
   payments: Array<{
     amount: number;
@@ -103,7 +106,8 @@ export async function getCustomerReportData(
     weightKg: packages.weightKg,
     costUsd: packages.calculatedCostUsd,
     createdAt: packages.createdAt,
-    batchId: packages.batchId
+    batchId: packages.batchId,
+    fullPackageOrderId: packages.fullPackageOrderId
   }).from(packages).where(eq(packages.customerId, customerId));
 
   if (startDate && endDate) {
@@ -113,7 +117,8 @@ export async function getCustomerReportData(
       weightKg: packages.weightKg,
       costUsd: packages.calculatedCostUsd,
       createdAt: packages.createdAt,
-      batchId: packages.batchId
+      batchId: packages.batchId,
+      fullPackageOrderId: packages.fullPackageOrderId
     }).from(packages).where(and(
       eq(packages.customerId, customerId),
       gte(packages.createdAt, startDate),
@@ -125,6 +130,20 @@ export async function getCustomerReportData(
   // old limit(50) silently dropped packages and customers noticed.
   const customerPackages = await packagesQuery.orderBy(desc(packages.createdAt)).limit(1000);
 
+  // Full-package parcels print no size and no carriage on a customer
+  // document — the agreed price is their whole story. One batched lookup.
+  // See shared/fullPackagePrivacy.ts.
+  const fpOrderIds = Array.from(new Set(customerPackages.map(p => p.fullPackageOrderId).filter((id): id is number => id != null)));
+  const concealedOrderIds = new Set<number>();
+  if (fpOrderIds.length > 0) {
+    const fpOrders = await db.select({ id: fullPackageOrders.id, orderType: fullPackageOrders.orderType })
+      .from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.id, fpOrderIds));
+    for (const o of fpOrders) {
+      if (concealsSizeAndCarriage(o.orderType)) concealedOrderIds.add(o.id);
+    }
+  }
+
   // Get batch codes for packages
   const packagesWithBatch = await Promise.all(customerPackages.map(async (pkg) => {
     let batchCode = null;
@@ -132,13 +151,15 @@ export async function getCustomerReportData(
       const [batch] = await db.select({ batchCode: batches.batchCode }).from(batches).where(eq(batches.id, pkg.batchId));
       batchCode = batch?.batchCode || null;
     }
+    const sizeConcealed = pkg.fullPackageOrderId != null && concealedOrderIds.has(pkg.fullPackageOrderId);
     return {
       trackingNumber: pkg.trackingNumber || '',
       status: pkg.status,
-      weightKg: Number(pkg.weightKg) || 0,
-      costUsd: Number(pkg.costUsd) || 0,
+      weightKg: sizeConcealed ? 0 : Number(pkg.weightKg) || 0,
+      costUsd: sizeConcealed ? 0 : Number(pkg.costUsd) || 0,
       createdAt: pkg.createdAt,
-      batchCode
+      batchCode,
+      sizeConcealed
     };
   }));
 
@@ -521,8 +542,8 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
           doc.font(rtl ? FR : 'Helvetica').fillColor(getStatusColor(pkg.status))
              .text(statusText(pkg.status), mx(pk.status.x, pk.status.w), y + 4, { width: pk.status.w, align: alignStart });
           doc.font('Helvetica').fillColor('#2d3748');
-          doc.text(`${pkg.weightKg.toFixed(1)} kg`, mx(pk.weight.x, pk.weight.w), y + 4, { width: pk.weight.w, align: 'center' });
-          doc.text(`$${pkg.costUsd.toFixed(2)}`, mx(pk.cost.x, pk.cost.w), y + 4, { width: pk.cost.w, align: 'center' });
+          doc.text(pkg.sizeConcealed ? '—' : `${pkg.weightKg.toFixed(1)} kg`, mx(pk.weight.x, pk.weight.w), y + 4, { width: pk.weight.w, align: 'center' });
+          doc.text(pkg.sizeConcealed ? '—' : `$${pkg.costUsd.toFixed(2)}`, mx(pk.cost.x, pk.cost.w), y + 4, { width: pk.cost.w, align: 'center' });
           doc.text(pkg.batchCode || '-', mx(pk.batch.x, pk.batch.w), y + 4, { width: pk.batch.w, align: alignStart });
           doc.text(fmtDate(pkg.createdAt), mx(pk.date.x, pk.date.w), y + 4, { width: pk.date.w, align: alignStart });
           y += 16;

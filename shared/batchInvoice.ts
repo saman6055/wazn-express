@@ -53,6 +53,12 @@ export interface InvoiceLine {
   weightKg: number;
   /** The share of the batch's weight this parcel is, as a percentage. */
   weightShare: number;
+  /**
+   * Set on agreed-price lines when the invoice was built for the customer:
+   * weight, share and carriage are zeroed and the screen prints nothing in
+   * their place. Absent on staff invoices, which show everything.
+   */
+  sizeConcealed?: boolean;
   goods: number;
   basis: GoodsBasis;
   /** Present only when the basis is item + commission. */
@@ -156,10 +162,20 @@ function shippingShares(orders: readonly InvoiceOrder[], batchShippingCents: num
  *
  * `batchShippingUsd` is only consulted when the orders carry no stored
  * carriage of their own.
+ *
+ * `concealAgreedPriceSize` is the customer edition of an agreed-price line.
+ * The owner's rule: a full-package customer agreed to one figure, and weight
+ * and carriage are the two halves of our margin. The ledger already bills
+ * these orders at selling price alone (computeOrderChargeAmount), so zeroing
+ * the carriage here makes the document MATCH the bill rather than restate a
+ * freight figure the customer was never charged. Staff invoices pass nothing
+ * and keep every number. Commission lines are untouched either way — that
+ * customer pays carriage by weight and must be able to check it.
  */
 export function buildBatchInvoice(
   orders: readonly InvoiceOrder[],
   batchShippingUsd: string | number | null | undefined = 0,
+  opts: { concealAgreedPriceSize?: boolean } = {},
 ): BatchInvoice {
   const shipping = shippingShares(orders, cents(batchShippingUsd));
   const totalWeightGrams = orders.reduce((sum, o) => sum + grams(o.weightKg), 0);
@@ -167,10 +183,12 @@ export function buildBatchInvoice(
   let goodsTotal = 0;
   let shippingTotal = 0;
   let advanceTotal = 0;
+  let visibleWeightGrams = 0;
   let unpriced = 0;
 
   const lines: InvoiceLine[] = orders.map((order, index) => {
     const basis = goodsBasis(order.orderType);
+    const concealed = opts.concealAgreedPriceSize === true && basis === "agreed_price";
     const itemPrice = cents(order.itemPriceUsd);
     const commissionFee = cents(order.commissionFeeUsd);
     const goods = basis === "item_plus_commission" ? itemPrice + commissionFee : cents(order.sellingPriceUsd);
@@ -178,12 +196,13 @@ export function buildBatchInvoice(
     if (goods === 0) unpriced += 1;
 
     const weight = grams(order.weightKg);
-    const carriage = shipping[index] ?? 0;
+    const carriage = concealed ? 0 : shipping[index] ?? 0;
     const advance = cents(order.advancePaidUsd);
 
     goodsTotal += goods;
     shippingTotal += carriage;
     advanceTotal += advance;
+    if (!concealed) visibleWeightGrams += weight;
 
     const line: InvoiceLine = {
       orderId: order.id,
@@ -192,14 +211,16 @@ export function buildBatchInvoice(
       productName: order.productName,
       image: order.productImage ?? null,
       trackingNumber: order.trackingNumber ?? null,
-      weightKg: kilos(weight),
-      weightShare: totalWeightGrams > 0 ? Math.round((weight / totalWeightGrams) * 1000) / 10 : 0,
+      weightKg: concealed ? 0 : kilos(weight),
+      weightShare: !concealed && totalWeightGrams > 0 ? Math.round((weight / totalWeightGrams) * 1000) / 10 : 0,
       goods: money(goods),
       basis,
       shipping: money(carriage),
       total: money(goods + carriage),
       advancePaid: money(advance),
     };
+
+    if (concealed) line.sizeConcealed = true;
 
     // Only a commission line carries the two halves. A resale line has no
     // second number the customer is entitled to see, so it has none at all.
@@ -218,7 +239,9 @@ export function buildBatchInvoice(
     totals: {
       goods: money(goodsTotal),
       shipping: money(shippingTotal),
-      weightKg: kilos(totalWeightGrams),
+      // Visible lines only: printing the true batch total beside concealed
+      // lines hands the hidden weight back as one subtraction.
+      weightKg: kilos(opts.concealAgreedPriceSize ? visibleWeightGrams : totalWeightGrams),
       advancePaid: money(advanceTotal),
       grand: money(grand),
       // An advance larger than the invoice leaves credit, which belongs on the

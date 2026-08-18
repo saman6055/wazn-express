@@ -326,9 +326,11 @@ export default function ModernPortalShipments() {
                         {getPackageStatusConfig((searchResult as any).status).label}
                       </p>
                     </div>
-                    <span className="text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-300">
-                      {Number((searchResult as any).weightKg || 0).toFixed(1)} kg
-                    </span>
+                    {!(searchResult as any).sizeConcealed && (
+                      <span className="text-sm font-mono font-semibold text-emerald-700 dark:text-emerald-300">
+                        {Number((searchResult as any).weightKg || 0).toFixed(1)} kg
+                      </span>
+                    )}
                   </div>
                 </div>
               ) : (
@@ -636,20 +638,25 @@ export default function ModernPortalShipments() {
                                           </span>
                                         </div>
                                         <div className="flex items-center gap-4 text-xs">
-                                          <span
-                                            className={cn(
-                                              "flex items-center gap-1",
-                                              isDark
-                                                ? "text-zinc-500"
-                                                : "text-gray-500"
-                                            )}
-                                          >
-                                            <Weight className="w-3 h-3" />
-                                            {Number(
-                                              pkg.weightKg || 0
-                                            ).toFixed(1)}{" "}
-                                            kg
-                                          </span>
+                                          {/* A full-package parcel shows no weight: the customer
+                                              agreed to one figure and the size is ours. The server
+                                              nulls it and sets sizeConcealed. */}
+                                          {!pkg.sizeConcealed && (
+                                            <span
+                                              className={cn(
+                                                "flex items-center gap-1",
+                                                isDark
+                                                  ? "text-zinc-500"
+                                                  : "text-gray-500"
+                                              )}
+                                            >
+                                              <Weight className="w-3 h-3" />
+                                              {Number(
+                                                pkg.weightKg || 0
+                                              ).toFixed(1)}{" "}
+                                              kg
+                                            </span>
+                                          )}
                                           {pkgPrice.kind !== "pending" && (
                                             <span
                                               className={cn(

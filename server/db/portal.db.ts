@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
+import { concealsSizeAndCarriage, concealParcelSize } from '@shared/fullPackagePrivacy';
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from '@shared/ledgerTypes';
 import { getVolumetricDivisor } from './settings.db';
 import { getCustomerAccountByCustomerId } from './finance.db';
@@ -206,7 +207,16 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
       const bySea = String(batch.shippingType) === "sea";
       // Internal: these trackings cover every customer in the batch, so one
       // could follow another's goods. Container/AWB are shown instead.
-      const { shipmentTrackings: _internalTrackings, ...customerVisible } = batch;
+      // The cost columns are our side of the trade — what the carrier and
+      // supplier charge US per kg/cbm — and next to the selling rate they
+      // spell out the margin, so they never leave the building.
+      const {
+        costPerKg: _costPerKg,
+        costPerCbm: _costPerCbm,
+        shippingCost: _shippingCost,
+        shipmentTrackings: _internalTrackings,
+        ...customerVisible
+      } = batch;
       return {
         ...customerVisible,
         customerPackageCount: countByBatch.get(batch.id) || 0,
@@ -291,13 +301,13 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
   for (const pkg of customerPackages) {
     let isFullPackage = false;
     let fullPackageOrderId = null;
-    let fullPackageOrderType: 'full_package' | 'commission' | null = null;
+    let fullPackageOrderType: 'full_package' | 'purchase_request' | 'commission' | null = null;
 
     const fpOrder = pkg.trackingNumber ? fpOrderByTracking.get(pkg.trackingNumber) : undefined;
     if (fpOrder) {
       isFullPackage = true;
       fullPackageOrderId = fpOrder.id;
-      fullPackageOrderType = fpOrder.orderType as 'full_package' | 'commission';
+      fullPackageOrderType = fpOrder.orderType as 'full_package' | 'purchase_request' | 'commission';
     }
 
     // Live-computed cost for in-flight batches; stored value otherwise.
@@ -317,7 +327,7 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
       }
     }
 
-    result.push({
+    const row = {
       ...pkg,
       weightKg: Number(pkg.weightKg) || 0,
       volumeCbm: Number(pkg.volumeCbm) || 0,
@@ -328,7 +338,11 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
       isFullPackage,
       fullPackageOrderId,
       fullPackageOrderType,
-    });
+    };
+
+    // A full-package parcel is sold at one agreed figure; its size and
+    // carriage stay ours. See shared/fullPackagePrivacy.ts.
+    result.push(concealsSizeAndCarriage(fullPackageOrderType) ? concealParcelSize(row) : row);
   }
 
   return result;
@@ -370,6 +384,34 @@ const CUSTOMER_PACKAGE_FIELDS = {
 } as const;
 
 /**
+ * Strip size and carriage off any row that belongs to a full-package order,
+ * before it leaves for the portal.
+ *
+ * The allow-list above says which columns a customer may see at all; this says
+ * which of those a FULL-PACKAGE customer may see — weight, volume, dimensions
+ * and the shipping figure are the other half of our margin, so for parcels
+ * sold at one agreed price they are nulled server-side. One batched lookup of
+ * the linked orders' types; rows with no order pass through untouched.
+ * The rule itself lives in shared/fullPackagePrivacy.ts.
+ */
+async function concealFullPackageParcels<T extends { fullPackageOrderId: number | null }>(
+  rows: T[],
+): Promise<Array<T | (T & { sizeConcealed: true })>> {
+  const db = await getDb();
+  const orderIds = Array.from(new Set(rows.map(r => r.fullPackageOrderId).filter((id): id is number => id != null)));
+  if (!db || orderIds.length === 0) return rows;
+
+  const orders = await db.select({ id: fullPackageOrders.id, orderType: fullPackageOrders.orderType })
+    .from(fullPackageOrders)
+    .where(inArray(fullPackageOrders.id, orderIds));
+  const concealed = new Set(orders.filter(o => concealsSizeAndCarriage(o.orderType)).map(o => o.id));
+
+  return rows.map(r =>
+    r.fullPackageOrderId != null && concealed.has(r.fullPackageOrderId) ? concealParcelSize(r) : r,
+  );
+}
+
+/**
  * Parcels not yet loaded into a shipment.
  *
  * Was `select()` with no ceiling — the same two faults as the list below it:
@@ -381,13 +423,14 @@ export async function getCustomerUnbatchedPackages(customerId: number, limit = 2
   const db = await getDb();
   if (!db) return [];
 
-  return db.select(CUSTOMER_PACKAGE_FIELDS).from(packages)
+  const rows = await db.select(CUSTOMER_PACKAGE_FIELDS).from(packages)
     .where(and(
       eq(packages.customerId, customerId),
       isNull(packages.batchId)
     ))
     .orderBy(desc(packages.createdAt))
     .limit(limit);
+  return concealFullPackageParcels(rows);
 }
 
 /**
@@ -409,12 +452,13 @@ export async function getCustomerVisiblePackages(customerId: number, limit = 200
   const db = await getDb();
   if (!db) return [];
 
-  return db
+  const rows = await db
     .select(CUSTOMER_PACKAGE_FIELDS)
     .from(packages)
     .where(eq(packages.customerId, customerId))
     .orderBy(desc(packages.createdAt))
     .limit(limit);
+  return concealFullPackageParcels(rows);
 }
 
 /**
@@ -604,12 +648,15 @@ export async function getCustomerTransactionHistory(customerId: number, limit = 
   return transactions;
 }
 
-// Search package by tracking number for customer
+// Search package by tracking number for customer.
+// The allow-list, not `select()`: a bare select hands the browser the QR
+// signature, staff notes and delivery photo along with the row — the search
+// box was the one door left off the list.
 export async function searchCustomerPackage(customerId: number, trackingNumber: string) {
   const db = await getDb();
   if (!db) return null;
-  
-  const result = await db.select().from(packages)
+
+  const result = await db.select(CUSTOMER_PACKAGE_FIELDS).from(packages)
     .where(and(
       eq(packages.customerId, customerId),
       or(
@@ -619,7 +666,9 @@ export async function searchCustomerPackage(customerId: number, trackingNumber: 
     ))
     .limit(1);
 
-  return result[0] || null;
+  if (!result[0]) return null;
+  const [row] = await concealFullPackageParcels(result);
+  return row;
 }
 
 // Search the customer's full-package/commission orders by order number
@@ -1587,7 +1636,9 @@ export async function getCustomerPackageDetail(packageId: number, customerId: nu
     ))
     .limit(1);
 
-  return rows[0] ?? null;
+  if (!rows[0]) return null;
+  const [row] = await concealFullPackageParcels(rows);
+  return row;
 }
 
 // ============ CUSTOMER FEATURES ============

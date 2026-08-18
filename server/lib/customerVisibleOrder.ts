@@ -18,6 +18,8 @@
  * it to what the portal publishes, and the client keeps precise types.
  */
 
+import { concealsSizeAndCarriage, concealOrderSize } from "@shared/fullPackagePrivacy";
+
 type AnyRow = Record<string, any>;
 
 export function toCustomerVisibleOrder(order: AnyRow) {
@@ -59,6 +61,14 @@ export function toCustomerVisibleOrders(orders: AnyRow[] | null | undefined) {
 }
 
 function customerVisibleOrderFields(o: AnyRow) {
+  const fields = visibleFields(o);
+  // A full-package order is one agreed figure; its weight, volume, dimensions
+  // and freight cost stay ours. Commission passes through untouched.
+  // See shared/fullPackagePrivacy.ts.
+  return concealsSizeAndCarriage(o.orderType) ? concealOrderSize(fields) : fields;
+}
+
+function visibleFields(o: AnyRow) {
   return {
     id: o.id,
     orderCode: o.orderCode ?? null,

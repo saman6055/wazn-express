@@ -114,6 +114,11 @@ function isSeaBox(box: BoxForPrint): boolean {
 // "kg 0.00". The item's own shippingType wins when it is known; otherwise we
 // fall back to the box-level unit.
 function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
+  // A full-package carton prints no measurement at all. The customer bought
+  // it at one agreed figure; its weight or volume is the other half of our
+  // margin, and this paper goes into their hands.
+  // See shared/fullPackagePrivacy.ts.
+  if (item.itemType === "full_package") return "—";
   const sea = item.shippingType ? item.shippingType === "sea" : isSeaBox(box);
   return sea
     ? `${formatNum(item.volumeCbm, 3)} CBM`
@@ -121,9 +126,16 @@ function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
 }
 
 function totalMeasure(box: BoxForPrint, items: BoxItemForPrint[]): string {
+  // Summed over the rows that print a measurement — a true box total beside
+  // dashed full-package rows hands the hidden weight back as one subtraction.
+  const visible = items.filter((i) => i.itemType !== "full_package");
   if (isSeaBox(box)) {
-    const totalCbm = items.reduce((s, i) => s + Number(i.volumeCbm || 0), 0);
+    const totalCbm = visible.reduce((s, i) => s + Number(i.volumeCbm || 0), 0);
     return `${totalCbm.toFixed(3)} CBM`;
+  }
+  if (visible.length !== items.length) {
+    const totalKg = visible.reduce((s, i) => s + Number(i.weightKg || 0), 0);
+    return `${totalKg.toFixed(2)} kg`;
   }
   return `${formatNum(box.totalWeightKg)} kg`;
 }
