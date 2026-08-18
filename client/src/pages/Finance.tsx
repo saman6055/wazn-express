@@ -81,6 +81,7 @@ import { Link } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { normalizePhone } from "@shared/phone";
 
 type SortField = 'balance' | 'name' | 'date' | 'code';
 type SortDirection = 'asc' | 'desc';
@@ -146,14 +147,26 @@ export default function Finance() {
     if (!accounts) return [];
     
     let filtered = accounts.filter(account => {
-      // Search filter
-      if (searchQuery) {
+      // Search filter.
+      //
+      // Trimmed, because a code copied from a message arrives with a space
+      // on the end and would otherwise match nothing at all.
+      //
+      // The phone is compared through normalizePhone rather than as raw text:
+      // the office types 0750 123 4567 and the column holds +9647501234567,
+      // and a plain includes() finds neither from the other. That rule already
+      // exists in shared/phone.ts and is the same one the login uses.
+      const query = searchQuery.trim();
+      if (query) {
         const customer = account.customer;
         if (!customer) return false;
-        const matchesSearch = 
-          customer.customerCode?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          customer.fullName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          customer.mobileNumber?.includes(searchQuery);
+        const needle = query.toLowerCase();
+        const digits = normalizePhone(query);
+        const matchesSearch =
+          customer.customerCode?.toLowerCase().includes(needle) ||
+          customer.fullName?.toLowerCase().includes(needle) ||
+          account.accountNumber?.toLowerCase().includes(needle) ||
+          (digits.length >= 3 && normalizePhone(customer.mobileNumber).includes(digits));
         if (!matchesSearch) return false;
       }
       
@@ -989,6 +1002,29 @@ export default function Finance() {
           </Card>
         </div>
         
+        {/* One search, above the tabs.
+
+            It used to live inside the accounts tab's toolbar, so somebody
+            landing on the finance page saw a list of customers and no way to
+            search it — the box was three clicks away on a screen they had no
+            reason to visit first. A feature nobody can find is a feature that
+            does not exist.
+
+            Typing moves to the accounts tab, because that is the full list
+            with the filters and the sorting. Searching from the summary and
+            being shown five of the matches would be worse than no search. */}
+        <div className="relative max-w-md">
+          <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={searchQuery}
+            onChange={(e) => {
+              setSearchQuery(e.target.value);
+              if (e.target.value.trim() && activeTab !== "accounts") setActiveTab("accounts");
+            }}
+            className="h-11 ps-9"
+            placeholder={pickLang(language, { ku: "گەڕان بە کۆد، ناو، یان مۆبایل...", en: "Search by code, name, or mobile...", ar: "ابحث بالرمز أو الاسم أو الهاتف...", zh: "按编号、姓名或手机搜索..." })}
+          />
+        </div>
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="bg-muted/50 p-1 h-12 w-full justify-start gap-1">
@@ -1175,17 +1211,7 @@ export default function Finance() {
                   </CardTitle>
                   
                   <div className="flex flex-wrap items-center gap-3 lg:mr-auto">
-                    {/* Search */}
-                    <div className="relative w-64">
-                      <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
-                      <Input
-                        placeholder={pickLang(language, { ku: "گەڕان بە کۆد، ناو، یان مۆبایل...", en: "Search by code, name, or mobile...", ar: "ابحث بالرمز أو الاسم أو الهاتف...", zh: "按编号、姓名或手机搜索..." })}
-                        value={searchQuery}
-                        onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-9 h-10"
-                      />
-                    </div>
-                    
+
                     {/* Filter Dropdown */}
                     <DropdownMenu>
                       <DropdownMenuTrigger asChild>
