@@ -273,7 +273,7 @@ const orderTypeConfig: Record<string, { label: string; labelKu: string; labelAr:
   },
   commission: { 
     label: "Commission",
-    labelKu: "عمولە",
+    labelKu: "کڕین بە تێچوو",
     labelAr: "عمولة",
     labelZh: "代购佣金",
     color: "bg-amber-500", 
@@ -637,7 +637,7 @@ export default function PortalFullPackage() {
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
             )}
           >
-{pickLang(language, { ku: "عمولە", en: "Commission", ar: "عمولة", zh: "代购佣金" })}
+{pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "عمولة", zh: "代购佣金" })}
           </button>
           {/* Only offered when there is something in it: a customer who always
               orders through us should not be asked to think about a category
@@ -1065,7 +1065,7 @@ export default function PortalFullPackage() {
                           )}
                           <WhatsAppHelpButton
                             language={language}
-                            section={language === "ku" ? "پاکێجی تەواو / عمولە" : language === "ar" ? "الطرد الكامل / العمولة" : language === "zh" ? "全包裹/佣金" : "Full package / commission"}
+                            section={language === "ku" ? "پاکێجی تەواو / کڕین بە تێچوو" : language === "ar" ? "الطرد الكامل / العمولة" : language === "zh" ? "全包裹/佣金" : "Full package / commission"}
                             topic={[
                               `${order.orderCode}${order.status ? ` — ${order.status}` : ""}`,
                               order.trackingNumber
