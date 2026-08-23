@@ -2570,6 +2570,28 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // Backfill so rows written under either shape read correctly from both.
   { name: "expenseCategories.backfill.nameEn", sql: "UPDATE expenseCategories SET nameEn = name WHERE (nameEn IS NULL OR nameEn = '') AND name IS NOT NULL" },
 
+  // ---- expenses: the same disease as its categories, one table over
+  //
+  // CREATE TABLE above makes `expenseNumber` NOT NULL UNIQUE and
+  // `description` NOT NULL, and makes no `exchangeRate` or `recurringDay` at
+  // all. The code writes the other shape: exchangeRate and recurringDay, and
+  // nothing anywhere has ever written an expenseNumber. So recording an
+  // expense failed on a column that does not exist, and reading the list
+  // selected that same column — which is why the screen showed $0.00 and no
+  // rows. It was not reporting that nothing had been spent; it could not
+  // read the table at all.
+  //
+  // Additive and idempotent, so it repairs a table created either way.
+  { name: "expenses.exchangeRate", sql: "ALTER TABLE expenses ADD COLUMN exchangeRate DECIMAL(10,4) NULL" },
+  { name: "expenses.recurringDay", sql: "ALTER TABLE expenses ADD COLUMN recurringDay INT NULL" },
+  // expenseNumber is NOT NULL with no default and no writer, so on its own it
+  // would refuse every insert. Widened to accept nothing rather than dropped,
+  // for the same reason as expenseCategories.name. MySQL lets a UNIQUE index
+  // hold any number of NULLs, so the constraint stays meaningful.
+  { name: "expenses.expenseNumber.nullable", sql: "ALTER TABLE expenses MODIFY COLUMN expenseNumber VARCHAR(50) NULL" },
+  // The description is a note, and the form has always let it be left empty.
+  { name: "expenses.description.nullable", sql: "ALTER TABLE expenses MODIFY COLUMN description TEXT NULL" },
+
   // ---- the categories this company actually spends money on
   //
   // The table shipped empty, so the expenses screen opened with nothing to

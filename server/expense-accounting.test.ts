@@ -46,6 +46,7 @@ function slice(src: string, startMarker: string, endMarker: string, label: strin
 const router = read("server/routers/finance.router.ts");
 const financeDb = read("server/db/finance.db.ts");
 const migrations = read("server/_core/migrations.ts");
+const financeSchema = read("drizzle/schema/finance.schema.ts");
 
 const expensesRouter = () =>
   slice(router, "export const expensesRouter", "export const expenseAlertsRouter", "expensesRouter");
@@ -190,5 +191,50 @@ describe("expense categories exist and match the code", () => {
     // the statement fails.
     const seed = slice(migrations, "// ---- the categories this company", "].map(", "category seed rows");
     expect(seed).not.toMatch(/SELECT\s+"/);
+  });
+});
+
+/**
+ * The table the code writes and the table that exists have to be the same
+ * table. They were not: the CREATE TABLE has no `exchangeRate` and no
+ * `recurringDay`, and carries an `expenseNumber` that is NOT NULL with no
+ * default and no writer anywhere. Recording an expense died on the missing
+ * column, and so did reading the list — which is why the screen reported
+ * $0.00 and no rows rather than an error anyone could act on.
+ */
+describe("the expenses table the code writes is the expenses table that exists", () => {
+  const createTable = () =>
+    slice(migrations, 'name: "expenses",', 'name: "partnerTransactions"', "expenses CREATE TABLE");
+
+  const declaredColumns = () => {
+    const body = slice(
+      financeSchema,
+      'export const expenses = mysqlTable("expenses", {',
+      "}, (table) => ({",
+      "expenses schema",
+    );
+    const columns = [...body.matchAll(/^ {2}(\w+): /gm)].map((m) => m[1]);
+    expect(columns.length, "no columns parsed out of the expenses schema").toBeGreaterThan(10);
+    return columns;
+  };
+
+  it("has somewhere to put every column the code writes", () => {
+    const created = createTable();
+    const patched = SCHEMA_PATCHES.map((p) => p.name);
+    for (const column of declaredColumns()) {
+      const inTable = created.includes(`
+      ${column} `);
+      const inPatches = patched.includes(`expenses.${column}`);
+      expect(
+        inTable || inPatches,
+        `expenses.${column} is written by the code but neither created nor patched in`,
+      ).toBe(true);
+    }
+  });
+
+  it("no longer refuses an insert over a column nothing writes", () => {
+    // expenseNumber: NOT NULL, no default, and not one line of code sets it.
+    expect(createTable(), "the assumption behind the patch changed").toContain("expenseNumber");
+    expect(migrations).toContain("expenses.expenseNumber.nullable");
   });
 });
