@@ -131,10 +131,16 @@ export async function autoMigrate(config: AutoMigrateConfig): Promise<AutoMigrat
       result.tablesSkipped = migrationResult.tablesSkipped.length;
       result.errors = migrationResult.errors.map(e => `${e.table}: ${e.error}`);
       if (!result.success) {
-        log(`Migration completed with ${result.errors.length} errors`, 'error');
-        result.duration = Date.now() - startTime;
-        await connection.end();
-        return result;
+        // Reported, not fatal. This used to return here, which meant one table
+        // that would not create switched off every schema patch below — and a
+        // table that fails once fails on every deploy, so the patches were
+        // never going to run again. Columns the code writes went on missing
+        // from tables the code reads, and the screens that used them failed
+        // with an error naming a column, miles from the cause.
+        //
+        // The tables that did create are fine, the ones that did not are named
+        // in result.errors, and the repairs still get their turn.
+        log(`Migration completed with ${result.errors.length} errors; continuing to schema patches`, 'error');
       }
     } else {
       log('All tables already exist', 'success');

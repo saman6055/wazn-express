@@ -3,7 +3,9 @@
  */
 
 import { describe, it, expect } from "vitest";
-import { TABLE_DEFINITIONS } from "./migrations";
+import fs from "fs";
+import path from "path";
+import { TABLE_DEFINITIONS, orderByDependencies } from "./migrations";
 
 describe("Migration System", () => {
   
@@ -171,4 +173,66 @@ describe("Migration System", () => {
     
   });
   
+});
+
+/**
+ * A table is created before the tables it points at, and a table that will not
+ * create does not silence the repairs.
+ *
+ * packageOrderLinks declares `dependencies: ["packages", ...]` and carries a
+ * foreign key to packages(id) — but the runner created tables in array order
+ * and packages sits 300 lines further down, so MySQL answered "Failed to open
+ * the referenced table" on every deploy. That one failure returned out of
+ * autoMigrate before runSchemaPatches, so every ALTER in SCHEMA_PATCHES was
+ * dead: columns the code writes stayed missing, and the screens that used them
+ * failed with an error naming a column rather than the cause.
+ */
+describe("the migration runner finishes its work", () => {
+  it("creates every table after the tables it depends on", () => {
+    const position = new Map<string, number>();
+    orderByDependencies(TABLE_DEFINITIONS).forEach((t, i) => position.set(t.name, i));
+
+    expect(position.size, "ordering dropped or duplicated a table").toBe(TABLE_DEFINITIONS.length);
+
+    for (const table of TABLE_DEFINITIONS) {
+      for (const dep of table.dependencies) {
+        if (!position.has(dep)) continue; // checked separately below
+        expect(
+          position.get(dep)!,
+          `${table.name} is created before ${dep}, which it depends on`,
+        ).toBeLessThan(position.get(table.name)!);
+      }
+    }
+  });
+
+  it("actually creates them in that order", () => {
+    // The ordering above is only worth anything if the runner uses it. It sat
+    // unread in every definition for as long as the file has existed.
+    const src = fs.readFileSync(path.join(__dirname, "migrations.ts"), "utf8");
+    expect(src, "runMigrations must loop over the dependency-ordered list")
+      .toContain("for (const table of orderByDependencies(TABLE_DEFINITIONS))");
+  });
+
+  it("names a real table in every dependency", () => {
+    // A typo here reads as "no dependency" and silently restores the old order.
+    const names = new Set(TABLE_DEFINITIONS.map((t) => t.name));
+    for (const table of TABLE_DEFINITIONS) {
+      for (const dep of table.dependencies) {
+        expect(names.has(dep), `${table.name} depends on "${dep}", which is not a table`).toBe(true);
+      }
+    }
+  });
+
+  it("still runs the schema patches when a table failed to create", () => {
+    const src = fs.readFileSync(path.join(__dirname, "autoMigrate.ts"), "utf8");
+
+    const start = src.indexOf("const migrationResult = await runMigrations");
+    expect(start, "runMigrations call not found in autoMigrate").toBeGreaterThan(-1);
+    const end = src.indexOf("runSchemaPatches", start);
+    expect(end, "runSchemaPatches call not found after runMigrations").toBeGreaterThan(start);
+
+    const between = src.slice(start, end);
+    expect(between.length, "slice between the two calls is empty").toBeGreaterThan(50);
+    expect(between, "a failed table must not return before the patches run").not.toContain("return result");
+  });
 });

@@ -2221,6 +2221,45 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
 // ============ MIGRATION FUNCTIONS ============
 
 /**
+ * Create-order that respects `dependencies`.
+ *
+ * Every definition already declares what it needs, and nothing read it — the
+ * runner created tables in the order they happen to sit in the array. A table
+ * whose foreign key points at one declared further down cannot be created at
+ * all: MySQL answers "Failed to open the referenced table", and it answers it
+ * again on every deploy, because the table is still missing next time.
+ *
+ * Depth-first, dependencies before dependents, declared order preserved
+ * everywhere it does not conflict. A cycle or a name that matches no
+ * definition is left to the declared order rather than throwing — a bad edge
+ * should cost one table, not the whole migration.
+ */
+export function orderByDependencies(
+  tables: { name: string; sql: string; dependencies: string[] }[],
+): { name: string; sql: string; dependencies: string[] }[] {
+  const byName = new Map(tables.map((t) => [t.name, t]));
+  const done = new Set<string>();
+  const onStack = new Set<string>();
+  const ordered: typeof tables = [];
+
+  const visit = (table: (typeof tables)[number]) => {
+    if (done.has(table.name) || onStack.has(table.name)) return;
+    onStack.add(table.name);
+    for (const dep of table.dependencies) {
+      const dependency = byName.get(dep);
+      if (dependency) visit(dependency);
+    }
+    onStack.delete(table.name);
+    done.add(table.name);
+    ordered.push(table);
+  };
+
+  for (const table of tables) visit(table);
+  return ordered;
+}
+
+
+/**
  * Run all migrations
  */
 export async function runMigrations(config: MigrationConfig): Promise<MigrationResult> {
@@ -2241,7 +2280,7 @@ export async function runMigrations(config: MigrationConfig): Promise<MigrationR
 
   log(`Starting migration for ${TABLE_DEFINITIONS.length} tables...`, 'info');
 
-  for (const table of TABLE_DEFINITIONS) {
+  for (const table of orderByDependencies(TABLE_DEFINITIONS)) {
     try {
       if (config.dryRun) {
         log(`[DRY RUN] Would create table: ${table.name}`, 'info');
