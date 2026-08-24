@@ -2698,9 +2698,39 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "batches.cartonCount", sql: "ALTER TABLE batches ADD COLUMN cartonCount INT NULL" },
 ];
 
-export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[] }> {
+/**
+ * "doesn't exist" means the patch was already applied only when the patch is
+ * the thing that removes something. On a statement that ADDs or MODIFIEs, the
+ * same words mean the target table is not there at all — and swallowing that
+ * turns a repair that never ran into one reported as done.
+ *
+ * That is how four ALTERs on `expenses` could be counted as skipped on every
+ * boot while the screen went on failing on the columns they were supposed to
+ * add.
+ */
+function isAlreadyApplied(sql: string, message: string): boolean {
+  const lower = message.toLowerCase();
+  if (
+    lower.includes("duplicate column") ||
+    lower.includes("duplicate key name") ||
+    lower.includes("already exists")
+  ) {
+    return true;
+  }
+  // Only a statement that drops something may read a missing target as done.
+  const drops = /DROP/i.test(sql);
+  return (
+    drops &&
+    (lower.includes("check that column/key exists") ||
+      lower.includes("doesn't exist") ||
+      lower.includes("does not exist"))
+  );
+}
+
+export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[]; failed: { name: string; error: string }[] }> {
   const applied: string[] = [];
   const skipped: string[] = [];
+  const failed: { name: string; error: string }[] = [];
   const log = config.logger || (() => {});
 
   for (const patch of SCHEMA_PATCHES) {
@@ -2715,27 +2745,18 @@ export async function runSchemaPatches(config: MigrationConfig): Promise<{ appli
       applied.push(patch.name);
     } catch (error: unknown) {
       const msg = error instanceof Error ? error.message : String(error);
-      const lower = msg.toLowerCase();
-      // Swallow "already exists" errors so patches are idempotent across restarts.
-      // MySQL reports them as "Duplicate column", "Duplicate key name", or
-      // generic "already exists" depending on statement type (ALTER vs CREATE INDEX).
-      // For DROP INDEX/COLUMN statements, "check that column/key exists" (1091)
-      // and "doesn't exist" mean the patch was already applied (or never needed).
-      if (
-        lower.includes("duplicate column") ||
-        lower.includes("duplicate key name") ||
-        lower.includes("already exists") ||
-        lower.includes("check that column/key exists") ||
-        lower.includes("doesn't exist") ||
-        lower.includes("does not exist")
-      ) {
+      if (isAlreadyApplied(patch.sql, msg)) {
         skipped.push(patch.name);
       } else {
-        log(`Schema patch failed ${patch.name}: ${msg}`, "warn");
+        // Loud, and carried back to the caller. A repair that did not happen
+        // is the reason a screen fails later, and a warn line nobody reads is
+        // the same as silence.
+        log(`Schema patch FAILED ${patch.name}: ${msg}`, "error");
+        failed.push({ name: patch.name, error: msg });
       }
     }
   }
-  return { applied, skipped };
+  return { applied, skipped, failed };
 }
 
 export default {

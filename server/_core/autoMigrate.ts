@@ -156,6 +156,12 @@ export async function autoMigrate(config: AutoMigrateConfig): Promise<AutoMigrat
     if (patchResult.applied.length > 0) {
       log(`Schema patches applied: ${patchResult.applied.length}`, 'success');
     }
+    // A repair that did not happen belongs in the boot result, next to the
+    // tables that did not create. It is the reason a screen fails later.
+    for (const f of patchResult.failed) {
+      result.errors.push(`patch ${f.name}: ${f.error}`);
+      result.success = false;
+    }
 
     // Data-level backfill: idempotent. Mirrors packages.fullPackageOrderId into
     // packageOrderLinks so the multi-link layer is consistent for legacy rows.

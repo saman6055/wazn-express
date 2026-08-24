@@ -4,8 +4,48 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import type { TrpcContext } from "./context";
 
+/**
+ * The reason an error happened travels with it. It has to arrive.
+ *
+ * A failed database call reaches here as a drizzle error whose message is the
+ * SQL it tried to run — `Failed query: select \`id\`, \`categoryId\`, ...` —
+ * while what MySQL actually objected to ("Unknown column", "Table doesn't
+ * exist", "Field has no default value") sits on `cause`. tRPC serializes the
+ * message and nothing else, so the screen showed a list of column names and
+ * the office had no way to learn, or report, what was wrong. Three deploys
+ * were spent guessing at a sentence that existed the whole time.
+ *
+ * Walks the chain, because drizzle wraps mysql2 and something may yet wrap
+ * drizzle. Deduplicated, so an error that already carries its cause in the
+ * message does not say it twice.
+ */
+function causeChain(error: unknown, depth = 0): string[] {
+  if (!error || depth > 4) return [];
+  const message =
+    error instanceof Error
+      ? error.message
+      : typeof error === "string"
+        ? error
+        : ((error as { message?: string }).message ?? "");
+  const cause = (error as { cause?: unknown }).cause;
+  return [message, ...causeChain(cause, depth + 1)].filter(Boolean);
+}
+
+export function withCause(message: string, error: unknown): string {
+  const reasons = causeChain(error)
+    .slice(1)
+    .filter((reason) => !message.includes(reason));
+  return reasons.length ? `${message}\n\n${reasons.join("\n")}` : message;
+}
+
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
+  errorFormatter({ shape, error }) {
+    return {
+      ...shape,
+      message: withCause(shape.message, error.cause ?? error),
+    };
+  },
 });
 
 export const router = t.router;
