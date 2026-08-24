@@ -11,7 +11,7 @@
 
 import mysql from "mysql2/promise";
 import { appLogger } from "../utils/logger";
-import { runMigrations, getMigrationStatus, TABLE_DEFINITIONS, runSchemaPatches } from "./migrations";
+import { runMigrations, getMigrationStatus, TABLE_DEFINITIONS, runSchemaPatches, reconcileColumns } from "./migrations";
 
 // ============ CONFIGURATION ============
 
@@ -160,6 +160,27 @@ export async function autoMigrate(config: AutoMigrateConfig): Promise<AutoMigrat
     // tables that did not create. It is the reason a screen fails later.
     for (const f of patchResult.failed) {
       result.errors.push(`patch ${f.name}: ${f.error}`);
+      result.success = false;
+    }
+
+    // Last, and deciding by looking rather than by guessing: bring the tables
+    // the code writes up to the columns it writes. A named ALTER above is a
+    // guess at what the live table is missing, and a guess can be wrong more
+    // than once — MySQL names only the first column it cannot find, so each
+    // deploy reveals one and the next one is waiting behind it.
+    const reconciled = await reconcileColumns({
+      connection,
+      logger: (msg, level) => log(msg, level),
+      dryRun: false,
+    });
+    if (reconciled.added.length > 0) {
+      log(`Columns added to match the code: ${reconciled.added.join(', ')}`, 'success');
+    }
+    if (reconciled.widened.length > 0) {
+      log(`Columns relaxed so an insert can pass: ${reconciled.widened.join(', ')}`, 'success');
+    }
+    for (const e of reconciled.errors) {
+      result.errors.push(`column ${e.column}: ${e.error}`);
       result.success = false;
     }
 

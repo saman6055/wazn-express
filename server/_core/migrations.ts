@@ -2727,6 +2727,132 @@ function isAlreadyApplied(sql: string, message: string): boolean {
   );
 }
 
+/**
+ * The columns a table must have, because the code writes them.
+ *
+ * A hand-written ALTER per column is a guess at what the live table looks
+ * like, and guessing cost five days on `expenses`: the patches named
+ * `exchangeRate` and `recurringDay`, while what the live table was actually
+ * missing was `categoryId`. MySQL only ever names the first column it cannot
+ * find, so a list of guesses can be wrong several times over and each deploy
+ * only reveals one of them.
+ *
+ * This says what the table must end up with instead, and reconcileColumns
+ * reads the live table to work out the difference. It cannot be wrong about
+ * the current shape, because it looks.
+ *
+ * Types match drizzle/schema/finance.schema.ts. Everything is added NULL:
+ * a column added to a table that already has rows cannot be NOT NULL without
+ * inventing a value for them, and the code supplies these on every write
+ * anyway. Widening is the only direction this ever moves.
+ */
+export const REQUIRED_COLUMNS: Record<string, { name: string; ddl: string }[]> = {
+  expenses: [
+    { name: "categoryId", ddl: "INT NULL" },
+    { name: "amount", ddl: "DECIMAL(12,2) NULL" },
+    { name: "currency", ddl: "ENUM('USD','IQD') NOT NULL DEFAULT 'USD'" },
+    { name: "exchangeRate", ddl: "DECIMAL(10,4) NULL" },
+    { name: "amountUsd", ddl: "DECIMAL(12,2) NULL" },
+    { name: "description", ddl: "TEXT NULL" },
+    { name: "expenseDate", ddl: "TIMESTAMP NULL" },
+    { name: "receiptUrl", ddl: "VARCHAR(500) NULL" },
+    { name: "paymentMethod", ddl: "ENUM('cash','bank_transfer','card','other') NOT NULL DEFAULT 'cash'" },
+    { name: "cashAccountId", ddl: "INT NULL" },
+    { name: "isRecurring", ddl: "BOOLEAN NOT NULL DEFAULT FALSE" },
+    { name: "recurringDay", ddl: "INT NULL" },
+    { name: "vendor", ddl: "VARCHAR(255) NULL" },
+    { name: "referenceNumber", ddl: "VARCHAR(100) NULL" },
+    { name: "notes", ddl: "TEXT NULL" },
+    { name: "createdById", ddl: "INT NULL" },
+    // drizzle names these in the insert like any other column, so a table
+    // without them fails the same way — and they are the two most likely to
+    // be missing from a table somebody made by hand.
+    { name: "createdAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+    { name: "updatedAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" },
+  ],
+};
+
+/**
+ * Bring each table in REQUIRED_COLUMNS up to what the code writes.
+ *
+ * Two moves, both widening, both decided by reading information_schema rather
+ * than by catching an error and reading its wording:
+ *
+ *   1. Add any column that is missing.
+ *   2. Relax any column that is NOT NULL with no default and that the code
+ *      never writes. Such a column refuses every insert on its own, and no
+ *      amount of fixing the other columns will get past it — `expenseNumber`
+ *      on this table was exactly that.
+ *
+ * A table that does not exist is left alone; creating it is runMigrations'
+ * job, and this runs after it.
+ */
+export async function reconcileColumns(config: MigrationConfig): Promise<{
+  added: string[];
+  widened: string[];
+  errors: { column: string; error: string }[];
+}> {
+  const added: string[] = [];
+  const widened: string[] = [];
+  const errors: { column: string; error: string }[] = [];
+  const log = config.logger || (() => {});
+
+  for (const [table, required] of Object.entries(REQUIRED_COLUMNS)) {
+    const [rows] = (await config.connection.execute(
+      `SELECT COLUMN_NAME, COLUMN_TYPE, IS_NULLABLE, COLUMN_DEFAULT, EXTRA
+         FROM information_schema.columns
+        WHERE table_schema = DATABASE() AND table_name = ?`,
+      [table],
+    )) as unknown as [
+      Array<{ COLUMN_NAME: string; COLUMN_TYPE: string; IS_NULLABLE: string; COLUMN_DEFAULT: string | null; EXTRA: string }>,
+    ];
+
+    if (rows.length === 0) continue;
+
+    const live = new Map(rows.map((r) => [r.COLUMN_NAME.toLowerCase(), r]));
+    const written = new Set(required.map((c) => c.name.toLowerCase()));
+
+    for (const column of required) {
+      if (live.has(column.name.toLowerCase())) continue;
+      const name = `${table}.${column.name}`;
+      try {
+        await config.connection.execute(`ALTER TABLE \`${table}\` ADD COLUMN \`${column.name}\` ${column.ddl}`);
+        log(`Added missing column ${name}`, "success");
+        added.push(name);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        log(`Could not add column ${name}: ${msg}`, "error");
+        errors.push({ column: name, error: msg });
+      }
+    }
+
+    for (const row of rows) {
+      const isWritten = written.has(row.COLUMN_NAME.toLowerCase());
+      const blocksInsert =
+        row.IS_NULLABLE === "NO" &&
+        row.COLUMN_DEFAULT === null &&
+        !/auto_increment/i.test(row.EXTRA ?? "") &&
+        !/on update/i.test(row.EXTRA ?? "");
+      if (isWritten || !blocksInsert) continue;
+
+      const name = `${table}.${row.COLUMN_NAME}`;
+      try {
+        await config.connection.execute(
+          `ALTER TABLE \`${table}\` MODIFY COLUMN \`${row.COLUMN_NAME}\` ${row.COLUMN_TYPE} NULL`,
+        );
+        log(`Relaxed ${name}: NOT NULL with no default, and nothing writes it`, "success");
+        widened.push(name);
+      } catch (error: unknown) {
+        const msg = error instanceof Error ? error.message : String(error);
+        log(`Could not relax ${name}: ${msg}`, "error");
+        errors.push({ column: name, error: msg });
+      }
+    }
+  }
+
+  return { added, widened, errors };
+}
+
 export async function runSchemaPatches(config: MigrationConfig): Promise<{ applied: string[]; skipped: string[]; failed: { name: string; error: string }[] }> {
   const applied: string[] = [];
   const skipped: string[] = [];

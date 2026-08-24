@@ -5,7 +5,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { TABLE_DEFINITIONS, orderByDependencies } from "./migrations";
+import { TABLE_DEFINITIONS, orderByDependencies, REQUIRED_COLUMNS } from "./migrations";
 
 describe("Migration System", () => {
   
@@ -234,5 +234,73 @@ describe("the migration runner finishes its work", () => {
     const between = src.slice(start, end);
     expect(between.length, "slice between the two calls is empty").toBeGreaterThan(50);
     expect(between, "a failed table must not return before the patches run").not.toContain("return result");
+  });
+});
+
+/**
+ * A named ALTER is a guess at what the live table is missing, and a guess can
+ * be wrong more than once: the patches said `exchangeRate`, and what the live
+ * expenses table actually lacked was `categoryId`. MySQL names only the first
+ * column it cannot find, so each deploy revealed one and the next was waiting
+ * behind it. REQUIRED_COLUMNS says what the table must end up with instead,
+ * and the reconciler reads the live table to work out the difference.
+ *
+ * This test is the thing that keeps the list honest as the schema grows.
+ */
+describe("the columns the code writes all have somewhere to go", () => {
+  const schemaColumns = (table: string, file: string) => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "..", "drizzle", "schema", file),
+      "utf8",
+    );
+    const start = src.indexOf(`export const ${table} = mysqlTable("${table}", {`);
+    expect(start, `${table} not found in ${file}`).toBeGreaterThan(-1);
+    // The declaration ends at the first line that closes the object, whether
+    // the table has an index block after it or not.
+    const withIndexes = src.indexOf("}, (table)", start);
+    const plain = src.indexOf("\n});", start);
+    const end = withIndexes > -1 && (plain === -1 || withIndexes < plain) ? withIndexes : plain;
+    expect(end, `could not find the end of ${table}`).toBeGreaterThan(start);
+    const body = src.slice(start, end);
+    expect(body.length, "schema slice is empty").toBeGreaterThan(100);
+    return [...body.matchAll(/^ {2}(\w+): /gm)].map((m) => m[1]!);
+  };
+
+  for (const table of Object.keys(REQUIRED_COLUMNS)) {
+    it(`${table}: every declared column is in REQUIRED_COLUMNS`, () => {
+      const declared = schemaColumns(table, "finance.schema.ts");
+      const required = new Set(REQUIRED_COLUMNS[table]!.map((c) => c.name));
+      for (const column of declared) {
+        // `id` is the auto-increment key; it cannot be added after the fact
+        // and a table without one is not repairable by widening.
+        if (column === "id") continue;
+        expect(required.has(column), `${table}.${column} is written by the code but not in REQUIRED_COLUMNS`).toBe(true);
+      }
+    });
+
+    it(`${table}: nothing in REQUIRED_COLUMNS was invented`, () => {
+      const declared = new Set(schemaColumns(table, "finance.schema.ts"));
+      for (const column of REQUIRED_COLUMNS[table]!) {
+        expect(declared.has(column.name), `${table}.${column.name} is not a column the code writes`).toBe(true);
+      }
+    });
+
+    it(`${table}: every added column is nullable or carries a default`, () => {
+      // A column added NOT NULL with no default cannot be added to a table
+      // that already has rows — MySQL has nothing to put in them.
+      for (const column of REQUIRED_COLUMNS[table]!) {
+        const ddl = column.ddl.toUpperCase();
+        const safe = !ddl.includes("NOT NULL") || ddl.includes("DEFAULT");
+        expect(safe, `${table}.${column.name} would fail on a table with rows: ${column.ddl}`).toBe(true);
+      }
+    });
+  }
+
+  it("runs after the patches, on every boot", () => {
+    const src = fs.readFileSync(path.join(__dirname, "autoMigrate.ts"), "utf8");
+    const patches = src.indexOf("runSchemaPatches({");
+    const reconcile = src.indexOf("reconcileColumns({");
+    expect(patches, "runSchemaPatches not called").toBeGreaterThan(-1);
+    expect(reconcile, "reconcileColumns is not called at boot").toBeGreaterThan(patches);
   });
 });
