@@ -3534,7 +3534,10 @@
     "equivalentInUsd": "Equivalent in dollars",
     "dollarRateHint": "Enter the amount in dinars — it converts itself.",
     "referencePrefix": "Receipt number prefix",
-    "referencePrefixHint": "Receipt numbers fill themselves in, like {{example}}. Left empty, the English name is used."
+    "referencePrefixHint": "Receipt numbers fill themselves in, like {{example}}. Left empty, the English name is used.",
+    "converterTitle": "Dinar to dollar",
+    "amountInDinars": "Amount in dinars",
+    "converterFillsAmount": "Type the dinars — the dollar figure goes into the amount box."
   },
   "partners": {
     "title": "Partners",

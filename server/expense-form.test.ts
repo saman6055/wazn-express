@@ -47,15 +47,48 @@ describe("a dinar expense is converted at a rate somebody chose", () => {
 
   it("shows and saves the same figure", () => {
     // Two conversions is how the preview comes to disagree with what was
-    // stored, and the reader believes the one they saw.
+    // stored, and the reader believes the one they saw. For a dinar expense
+    // the previewed figure is literally the stored one; for a dollar expense
+    // the converter's answer went into the amount box, and the stored figure
+    // is that box.
     const conversions = screen.split("amountUsd: amountInUsd.toFixed(2)").length - 1;
-    expect(conversions, "the saved figure must come from the previewed one").toBe(1);
-    expect(screen, "the preview must use the same value").toContain("${amountInUsd.toFixed(2)}");
+    expect(conversions, "the saved figure must be computed in one place").toBe(1);
+    expect(screen, "the preview must show the value that will be stored")
+      .toContain('expenseForm.currency === "IQD" ? amountInUsd : converterUsd');
+  });
+
+  it("is there in both currencies", () => {
+    // A receipt in dinars turns up whether the expense is being kept in
+    // dinars or in dollars, and the arithmetic is the same either way.
+    const body = slice(screen, "expenses.converterTitle", "expenses.equivalentInUsd", "converter block");
+    expect(body, "the converter is hidden behind a currency again")
+      .not.toContain('currency === "IQD" && (');
+    expect(screen).toContain("expenses.amountInDinars");
+  });
+
+  it("writes the dollar figure into the amount box", () => {
+    // The whole point of reaching for it in a dollar expense: somebody is
+    // holding a receipt in dinars and the box above wants dollars.
+    const body = slice(screen, "const handleConverterIqdChange", "const handleAmountChange", "converter handler");
+    expect(body).toContain("dinars / activeIqdRate");
+    expect(body, "a dinar expense's amount is the dinars themselves").toContain('form.currency === "IQD"');
+  });
+
+  it("keeps the two fields in step when the expense is in dinars", () => {
+    // They are one number shown twice; letting them drift would store one
+    // figure and show another.
+    const body = slice(screen, "const handleAmountChange", "const handleCurrencyChange", "amount handler");
+    expect(body).toContain("setConverterIqd");
+  });
+
+  it("does not throw away dinars already typed when the currency changes", () => {
+    const body = slice(screen, "const handleCurrencyChange", "const suggestReference", "currency handler");
+    expect(body).toContain("converterIqd");
   });
 
   it("keeps the rate with the expense it converted", () => {
     // Editing a March expense must not restate it at August's dinar.
-    expect(screen).toContain("exchangeRate: expenseForm.currency === \"IQD\"");
+    expect(screen).toContain("expenseForm.currency === \"IQD\" || Number(converterIqd) > 0");
     expect(screen, "editing must load the rate that was used").toContain("expense.exchangeRate");
   });
 });

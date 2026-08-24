@@ -115,6 +115,15 @@ const [activeTab, setActiveTab] = useState("expenses");
   /** The last number this screen suggested, so a hand-typed one is never
    *  overwritten. */
   const lastSuggestedReference = useRef("");
+  /**
+   * The dinar figure in the converter.
+   *
+   * Separate from the amount on purpose. When the expense is in dollars this
+   * is scratch paper — somebody was handed a receipt in dinars and needs the
+   * dollar figure to put in the box. When the expense is in dinars the two
+   * are the same number and are kept in step.
+   */
+  const [converterIqd, setConverterIqd] = useState("");
 
   const [expenseForm, setExpenseForm] = useState({
     categoryId: "",
@@ -304,9 +313,59 @@ const [activeTab, setActiveTab] = useState("expenses");
     return expenseForm.currency === "USD" ? amount : amount / activeIqdRate;
   })();
 
+  /** What the dinars in the converter come to. */
+  const converterUsd = (() => {
+    const dinars = Number(converterIqd);
+    if (!Number.isFinite(dinars) || dinars <= 0) return 0;
+    return dinars / activeIqdRate;
+  })();
+
+  /**
+   * Typing dinars into the converter.
+   *
+   * In a dollar expense the answer goes straight into the amount box — that
+   * is the whole point of reaching for it: somebody is holding a receipt in
+   * dinars and the expense is being kept in dollars. In a dinar expense the
+   * amount *is* the dinars, so the two fields are one number and stay in step.
+   */
+  const handleConverterIqdChange = (value: string) => {
+    setConverterIqd(value);
+    const dinars = Number(value);
+    const valid = Number.isFinite(dinars) && dinars > 0;
+    setExpenseForm((form) =>
+      form.currency === "IQD"
+        ? { ...form, amount: value }
+        : { ...form, amount: valid ? (dinars / activeIqdRate).toFixed(2) : "" },
+    );
+  };
+
+  /** Typing in the amount box. In a dinar expense it is the same number as
+   *  the converter's, so the converter follows it. */
+  const handleAmountChange = (value: string) => {
+    setExpenseForm((form) => ({ ...form, amount: value }));
+    if (expenseForm.currency === "IQD") setConverterIqd(value);
+  };
+
+  /** Switching currency. Dinars already typed are not thrown away: they are
+   *  either the amount itself, or they convert into it. */
+  const handleCurrencyChange = (currency: string) => {
+    setExpenseForm((form) => {
+      if (currency === form.currency) return { ...form, currency };
+      if (currency === "IQD") {
+        const dinars = converterIqd || (Number(form.amount) > 0 ? String(Number(form.amount) * activeIqdRate) : "");
+        setConverterIqd(dinars);
+        return { ...form, currency, amount: dinars };
+      }
+      const dinars = Number(converterIqd || form.amount);
+      const usd = Number.isFinite(dinars) && dinars > 0 ? (dinars / activeIqdRate).toFixed(2) : form.amount;
+      return { ...form, currency, amount: usd };
+    });
+  };
+
   const resetExpenseForm = () => {
     setEditingExpenseId(null);
     lastSuggestedReference.current = "";
+    setConverterIqd("");
     setExpenseForm({
       categoryId: "",
       amount: "",
@@ -326,6 +385,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   /** Open the dialog on an existing expense, filled in as it stands. */
   const startEditingExpense = (expense: (typeof expenses)[number]) => {
     setEditingExpenseId(expense.id);
+    setConverterIqd(expense.currency === "IQD" ? (expense.amount?.toString() ?? "") : "");
     setExpenseForm({
       categoryId: expense.categoryId?.toString() ?? "",
       // Edit shows the figure as it was entered, in the currency it was
@@ -404,9 +464,13 @@ const [activeTab, setActiveTab] = useState("expenses");
       amount: expenseForm.amount,
       currency: expenseForm.currency as "USD" | "IQD",
       amountUsd: amountInUsd.toFixed(2),
-      // Kept with the row, so a dinar expense can always be read back at the
-      // rate it was actually converted at.
-      exchangeRate: expenseForm.currency === "IQD" ? String(activeIqdRate) : undefined,
+      // Kept with the row whenever a conversion happened, so the figure can
+      // always be read back at the rate it was actually arrived at — whether
+      // the expense was stored in dinars or converted into dollars first.
+      exchangeRate:
+        expenseForm.currency === "IQD" || Number(converterIqd) > 0
+          ? String(activeIqdRate)
+          : undefined,
       description: expenseForm.description || undefined,
       expenseDate: new Date(expenseForm.expenseDate),
       paymentMethod: expenseForm.paymentMethod as "cash" | "bank_transfer" | "card" | "other",
@@ -790,7 +854,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                         type="number"
                         step="0.01"
                         value={expenseForm.amount}
-                        onChange={(e) => setExpenseForm({ ...expenseForm, amount: e.target.value })}
+                        onChange={(e) => handleAmountChange(e.target.value)}
                         placeholder="0.00"
                       />
                     </div>
@@ -798,7 +862,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                       <Label htmlFor="currency">{t("countries.currency")}</Label>
                       <Select
                         value={expenseForm.currency}
-                        onValueChange={(value) => setExpenseForm({ ...expenseForm, currency: value })}
+                        onValueChange={handleCurrencyChange}
                       >
                         <SelectTrigger>
                           <SelectValue />
@@ -811,48 +875,76 @@ const [activeTab, setActiveTab] = useState("expenses");
                     </div>
                   </div>
 
-                  {/* Dinars in, dollars stored. The rate is on the form rather
-                      than buried in the code, because the rate an expense was
-                      actually paid at is a fact about that expense. */}
-                  {expenseForm.currency === "IQD" && (
-                    <div className="grid gap-2 rounded-lg border p-3">
-                      <div className="grid grid-cols-2 items-end gap-4">
-                        <div className="grid gap-2">
-                          <Label htmlFor="exchangeRate">{t("expenses.dollarRate")}</Label>
-                          <Input
-                            id="exchangeRate"
-                            type="number"
-                            min="1"
-                            step="1"
-                            inputMode="decimal"
-                            dir="ltr"
-                            value={expenseForm.exchangeRate}
-                            onChange={(e) =>
-                              setExpenseForm({ ...expenseForm, exchangeRate: e.target.value })
-                            }
-                            placeholder={String(defaultIqdRate)}
-                          />
-                        </div>
-                        <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">
-                            {t("expenses.equivalentInUsd")}
-                          </span>
-                          <span
-                            className="text-xl font-semibold tabular-nums"
-                            data-testid="iqd-converted"
-                            dir="ltr"
-                          >
-                            ${amountInUsd.toFixed(2)}
-                          </span>
-                        </div>
+                  {/* Always here, in both currencies.
+
+                      In a dollar expense it is scratch paper: somebody is
+                      holding a receipt in dinars and needs the dollar figure
+                      for the box above, so the answer is written there. In a
+                      dinar expense the amount *is* the dinars, and this shows
+                      what will actually be stored.
+
+                      The rate is on the form rather than buried in the code,
+                      because the rate an expense was paid at is a fact about
+                      that expense and not about today. */}
+                  <div className="grid gap-3 rounded-lg border p-3">
+                    <span className="text-xs font-medium text-muted-foreground">
+                      {t("expenses.converterTitle")}
+                    </span>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div className="grid gap-2">
+                        <Label htmlFor="converterIqd">{t("expenses.amountInDinars")}</Label>
+                        <Input
+                          id="converterIqd"
+                          type="number"
+                          min="0"
+                          step="250"
+                          inputMode="decimal"
+                          dir="ltr"
+                          data-testid="converter-iqd"
+                          value={converterIqd}
+                          onChange={(e) => handleConverterIqdChange(e.target.value)}
+                          placeholder="0"
+                        />
                       </div>
-                      <p className="text-xs text-muted-foreground" dir="ltr">
-                        {Number(expenseForm.amount) > 0
-                          ? `${Number(expenseForm.amount).toLocaleString()} IQD ÷ ${activeIqdRate.toLocaleString()} = $${amountInUsd.toFixed(2)}`
-                          : t("expenses.dollarRateHint")}
-                      </p>
+                      <div className="grid gap-2">
+                        <Label htmlFor="exchangeRate">{t("expenses.dollarRate")}</Label>
+                        <Input
+                          id="exchangeRate"
+                          type="number"
+                          min="1"
+                          step="10"
+                          inputMode="decimal"
+                          dir="ltr"
+                          value={expenseForm.exchangeRate}
+                          onChange={(e) =>
+                            setExpenseForm({ ...expenseForm, exchangeRate: e.target.value })
+                          }
+                          placeholder={String(defaultIqdRate)}
+                        />
+                      </div>
                     </div>
-                  )}
+                    <div className="flex items-baseline justify-between gap-3">
+                      <span className="text-xs text-muted-foreground">
+                        {t("expenses.equivalentInUsd")}
+                      </span>
+                      <span
+                        className="text-xl font-semibold tabular-nums"
+                        data-testid="iqd-converted"
+                        dir="ltr"
+                      >
+                        ${(expenseForm.currency === "IQD" ? amountInUsd : converterUsd).toFixed(2)}
+                      </span>
+                    </div>
+                    <p className="text-xs text-muted-foreground" dir="ltr">
+                      {Number(converterIqd) > 0
+                        ? `${Number(converterIqd).toLocaleString()} IQD ÷ ${activeIqdRate.toLocaleString()} = $${(expenseForm.currency === "IQD" ? amountInUsd : converterUsd).toFixed(2)}`
+                        : t(
+                            expenseForm.currency === "IQD"
+                              ? "expenses.dollarRateHint"
+                              : "expenses.converterFillsAmount",
+                          )}
+                    </p>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="expenseDate">{t("common.date")}</Label>

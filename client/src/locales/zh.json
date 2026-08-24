@@ -3538,7 +3538,10 @@
     "equivalentInUsd": "折合美元",
     "dollarRateHint": "输入第纳尔金额 — 会自动换算。",
     "referencePrefix": "收据编号前缀",
-    "referencePrefixHint": "收据编号自动生成，如 {{example}}。留空则使用英文名称。"
+    "referencePrefixHint": "收据编号自动生成，如 {{example}}。留空则使用英文名称。",
+    "converterTitle": "第纳尔转美元",
+    "amountInDinars": "第纳尔金额",
+    "converterFillsAmount": "输入第纳尔 — 美元金额会自动填入金额栏。"
   },
   "partners": {
     "title": "合伙人",
