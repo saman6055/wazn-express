@@ -45,6 +45,27 @@ describe("a dinar expense is converted at a rate somebody chose", () => {
     expect(screen, "the hard-coded rate may only be the last resort").toContain("defaultIqdRate");
   });
 
+  it("remembers the rate that was used last", () => {
+    // The rate holds for days at a time, and typing it again on every
+    // expense is both tedious and a way to get it wrong.
+    const body = slice(
+      financeDb,
+      "export async function getLastUsedExchangeRate",
+      END_OF_FN,
+      "getLastUsedExchangeRate",
+    );
+    // Most recently recorded, not most recent expense date: an expense
+    // entered today for last week was still converted at today's rate.
+    expect(body).toContain("desc(expenses.createdAt)");
+    expect(body, "an expense with no rate must not wipe the memory")
+      .toContain("isNotNull(expenses.exchangeRate)");
+    expect(screen).toContain("trpc.expenses.lastExchangeRate.useQuery");
+  });
+
+  it("prefers what was used last over a company figure that may be months old", () => {
+    expect(screen).toContain("lastRate?.rate ??");
+  });
+
   it("shows and saves the same figure", () => {
     // Two conversions is how the preview comes to disagree with what was
     // stored, and the reader believes the one they saw. For a dinar expense

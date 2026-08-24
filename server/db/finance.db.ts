@@ -2036,6 +2036,32 @@ export async function getNextExpenseReference(categoryId: number): Promise<strin
   return `${prefix}-${String(highest + 1).padStart(3, "0")}`;
 }
 
+/**
+ * The dinar rate the last expense was converted at.
+ *
+ * The rate holds for days at a time, and typing it again on every expense is
+ * both tedious and a way to get it wrong. What somebody entered last is the
+ * best guess at what they will enter next — better than a company-wide
+ * figure that may be months old, and better than a number in the source.
+ *
+ * The most recently *recorded* one, not the most recent expense date: an
+ * expense entered today for last week was still converted at today's rate.
+ */
+export async function getLastUsedExchangeRate(): Promise<number | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const [row] = await db
+    .select({ exchangeRate: expenses.exchangeRate })
+    .from(expenses)
+    .where(isNotNull(expenses.exchangeRate))
+    .orderBy(desc(expenses.createdAt))
+    .limit(1);
+
+  const rate = Number(row?.exchangeRate ?? 0);
+  return Number.isFinite(rate) && rate > 0 ? rate : null;
+}
+
 // ============ EXPENSE BUDGETS ============
 
 /**

@@ -294,10 +294,16 @@ const [activeTab, setActiveTab] = useState("expenses");
    * is a fact about that expense and not about today.
    */
   const { data: exchangeRates = [] } = trpc.exchangeRates.list.useQuery();
+  const { data: lastRate } = trpc.expenses.lastExchangeRate.useQuery();
   const storedIqdRate = exchangeRates.find(
     (r) => r.targetCurrency === "IQD" && r.baseCurrency === "USD",
   )?.rate;
-  const defaultIqdRate = storedIqdRate ? Number(storedIqdRate) : IQD_PER_USD;
+  // What was used last wins: the rate holds for days at a time, and the
+  // person recording this expense is almost always the person who recorded
+  // the last one. The company-wide figure is the fallback, and the constant
+  // below it the last resort.
+  const defaultIqdRate =
+    lastRate?.rate ?? (storedIqdRate ? Number(storedIqdRate) : IQD_PER_USD);
 
   /** The rate in force on the form: what was typed, else the default. */
   const activeIqdRate = (() => {
@@ -374,7 +380,7 @@ const [activeTab, setActiveTab] = useState("expenses");
       expenseDate: new Date().toISOString().split('T')[0],
       paymentMethod: "cash",
       cashAccountId: defaultCashAccountId,
-      exchangeRate: "",
+      exchangeRate: String(defaultIqdRate),
       vendor: "",
       referenceNumber: "",
       notes: "",
@@ -603,6 +609,13 @@ const [activeTab, setActiveTab] = useState("expenses");
     }
     return filters;
   }, [selectedCategory, categories, showOnlyUnassigned]);
+
+  useEffect(() => {
+    if (!defaultIqdRate) return;
+    setExpenseForm((form) =>
+      form.exchangeRate === "" ? { ...form, exchangeRate: String(defaultIqdRate) } : form,
+    );
+  }, [defaultIqdRate]);
 
   useEffect(() => {
     if (!defaultCashAccountId) return;

@@ -684,6 +684,12 @@ export const expensesRouter = router({
         return { referenceNumber: await db.getNextExpenseReference(input.categoryId) };
       }),
 
+    /** What the last expense was converted at, so nobody types a rate that
+     *  has not moved in a week. */
+    lastExchangeRate: accountantProcedure.query(async () => {
+      return { rate: await db.getLastUsedExchangeRate() };
+    }),
+
     listBudgets: accountantProcedure.query(async () => {
       return db.getExpenseBudgets();
     }),
