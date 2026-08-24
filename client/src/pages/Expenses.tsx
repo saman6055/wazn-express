@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
 import { ExpensesDashboard } from "@/components/expenses/ExpensesDashboard";
 import { BudgetDialog } from "@/components/expenses/BudgetDialog";
+import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import type { Localised } from "@shared/listLinks";
 import { useLocation } from "wouter";
@@ -862,14 +863,24 @@ const [activeTab, setActiveTab] = useState("expenses");
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="amount">{t("common.amount")}</Label>
-                      <Input
-                        id="amount"
-                        type="number"
-                        step="0.01"
-                        value={expenseForm.amount}
-                        onChange={(e) => handleAmountChange(e.target.value)}
-                        placeholder="0.00"
-                      />
+                      {expenseForm.currency === "IQD" ? (
+                        <GroupedNumberInput
+                          id="amount"
+                          data-testid="amount-iqd"
+                          value={expenseForm.amount}
+                          onValueChange={handleAmountChange}
+                          placeholder="0"
+                        />
+                      ) : (
+                        <Input
+                          id="amount"
+                          type="number"
+                          step="0.01"
+                          value={expenseForm.amount}
+                          onChange={(e) => handleAmountChange(e.target.value)}
+                          placeholder="0.00"
+                        />
+                      )}
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="currency">{t("countries.currency")}</Label>
@@ -906,31 +917,22 @@ const [activeTab, setActiveTab] = useState("expenses");
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="converterIqd">{t("expenses.amountInDinars")}</Label>
-                        <Input
+                        <GroupedNumberInput
                           id="converterIqd"
-                          type="number"
-                          min="0"
-                          step="250"
-                          inputMode="decimal"
-                          dir="ltr"
                           data-testid="converter-iqd"
                           value={converterIqd}
-                          onChange={(e) => handleConverterIqdChange(e.target.value)}
+                          onValueChange={handleConverterIqdChange}
                           placeholder="0"
                         />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="exchangeRate">{t("expenses.dollarRate")}</Label>
-                        <Input
+                        <GroupedNumberInput
                           id="exchangeRate"
-                          type="number"
-                          min="1"
-                          step="10"
-                          inputMode="decimal"
-                          dir="ltr"
+                          data-testid="exchange-rate"
                           value={expenseForm.exchangeRate}
-                          onChange={(e) =>
-                            setExpenseForm({ ...expenseForm, exchangeRate: e.target.value })
+                          onValueChange={(raw) =>
+                            setExpenseForm({ ...expenseForm, exchangeRate: raw })
                           }
                           placeholder={String(defaultIqdRate)}
                         />
