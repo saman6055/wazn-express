@@ -13,15 +13,32 @@ import { buildErrorReport, getErrorBoundaryStrings } from "@/components/ErrorBou
  *
  * Same report the error screens use, on a button, next to the message.
  */
+function toError(error: unknown, fallbackMessage?: string): Error {
+  return error instanceof Error
+    ? error
+    : new Error(
+        typeof error === "string"
+          ? error
+          : ((error as { message?: string } | null)?.message ?? fallbackMessage ?? ""),
+      );
+}
+
+/**
+ * The same report, for a failure that is shown in the page rather than in a
+ * toast — a read that did not come back, where an empty screen would
+ * otherwise read as an answer.
+ */
+export function copyErrorReport(error: unknown) {
+  const report = buildErrorReport(toError(error));
+  const { copyDetails, copied } = getErrorBoundaryStrings();
+  navigator.clipboard
+    .writeText(report)
+    .then(() => toast.success(copied))
+    .catch(() => window.prompt(copyDetails, report));
+}
+
 export function showErrorToast(error: unknown, fallbackMessage?: string) {
-  const err =
-    error instanceof Error
-      ? error
-      : new Error(
-          typeof error === "string"
-            ? error
-            : ((error as { message?: string } | null)?.message ?? fallbackMessage ?? ""),
-        );
+  const err = toError(error, fallbackMessage);
 
   const message = err.message || fallbackMessage || "";
   const report = buildErrorReport(err);

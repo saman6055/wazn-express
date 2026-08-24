@@ -59,6 +59,19 @@ describe("a failed action can be reported", () => {
     expect(toast.error.mock.calls.map((c) => c[0])).toEqual(["plain object", "a string", "fallback"]);
   });
 
+  it("does not let a failed read look like an empty screen", () => {
+    // `const { data: expenses = [] }` turns a broken query into "no expenses
+    // found", which reads as an answer rather than a failure.
+    const src = fs.readFileSync(
+      path.join(__dirname, "..", "pages", "Expenses.tsx"),
+      "utf8",
+    );
+    expect(src, "the list query's error is not captured").toContain("expensesError");
+    expect(src, "the totals query's error is not captured").toContain("summaryError");
+    expect(src, "nothing renders the failed read").toContain("expenses-load-error");
+    expect(src, "the failed read has no copy button").toContain("copyErrorReport");
+  });
+
   it("is what the expenses screen actually uses", () => {
     // The screen used to print `toast.error(error.message)` straight out,
     // which is the clamped, uncopyable form this module exists to replace.

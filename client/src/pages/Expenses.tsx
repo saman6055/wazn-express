@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
-import { showErrorToast } from "@/lib/errorToast";
+import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
+import { getErrorBoundaryStrings } from "@/components/ErrorBoundary";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -103,13 +104,14 @@ const [activeTab, setActiveTab] = useState("expenses");
   });
 
   // Queries
-  const { data: categories = [], refetch: refetchCategories } = trpc.expenseCategories.listActive.useQuery();
-  const { data: expenses = [], refetch: refetchExpenses } = trpc.expenses.list.useQuery({
+  const { data: categories = [], refetch: refetchCategories, error: categoriesError } =
+    trpc.expenseCategories.listActive.useQuery();
+  const { data: expenses = [], refetch: refetchExpenses, error: expensesError } = trpc.expenses.list.useQuery({
     categoryId: selectedCategory !== "all" ? parseInt(selectedCategory) : undefined,
     startDate: new Date(dateRange.start),
     endDate: new Date(dateRange.end),
   });
-  const { data: summary } = trpc.expenses.getSummary.useQuery({
+  const { data: summary, error: summaryError } = trpc.expenses.getSummary.useQuery({
     startDate: new Date(dateRange.start),
     endDate: new Date(dateRange.end),
   });
@@ -265,9 +267,36 @@ const [activeTab, setActiveTab] = useState("expenses");
     });
   };
 
+  // A failed read must say so. `data = []` above turns a broken query into an
+  // empty screen, and an empty expenses screen reads as "nothing was spent"
+  // — an answer, not a failure. The list and the totals were doing exactly
+  // that while the table underneath them could not be read at all.
+  const loadError = expensesError ?? summaryError ?? categoriesError ?? null;
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        {loadError && (
+          <div
+            className="rounded-md border border-destructive/50 bg-destructive/10 p-4"
+            data-testid="expenses-load-error"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <p className="text-sm text-destructive break-words [overflow-wrap:anywhere]">
+                {loadError.message}
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="shrink-0"
+                onClick={() => copyErrorReport(loadError)}
+              >
+                {getErrorBoundaryStrings().copyDetails}
+              </Button>
+            </div>
+          </div>
+        )}
+
         {/* Header */}
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
           <div>
