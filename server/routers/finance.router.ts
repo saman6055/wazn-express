@@ -599,6 +599,7 @@ export const expenseCategoriesRouter = router({
         nameEn: z.string().min(1),
         nameAr: z.string().optional(),
         nameKu: z.string().optional(),
+        code: z.string().optional(),
         icon: z.string().optional(),
         color: z.string().optional(),
         description: z.string().optional(),
@@ -614,6 +615,7 @@ export const expenseCategoriesRouter = router({
         nameEn: z.string().optional(),
         nameAr: z.string().optional(),
         nameKu: z.string().optional(),
+        code: z.string().optional(),
         icon: z.string().optional(),
         color: z.string().optional(),
         description: z.string().optional(),
@@ -674,6 +676,14 @@ export const expensesRouter = router({
      */
     /** What the office means to spend. Reading is for anyone who can see the
      *  screen; setting one is an owner's decision, so it is admin-only. */
+    /** Suggested next receipt number for a category. A suggestion, not a
+     *  reservation — the field stays editable. */
+    nextReference: accountantProcedure
+      .input(z.object({ categoryId: z.number() }))
+      .query(async ({ input }) => {
+        return { referenceNumber: await db.getNextExpenseReference(input.categoryId) };
+      }),
+
     listBudgets: accountantProcedure.query(async () => {
       return db.getExpenseBudgets();
     }),

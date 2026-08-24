@@ -3529,7 +3529,12 @@
     "budgetExcludesRecurring": "Recurring expenses (rent, salaries, utilities) are not counted here.",
     "budgetSaved": "Budget saved",
     "noAccountsYet": "No accounts created yet.",
-    "manageAccounts": "Create an account"
+    "manageAccounts": "Create an account",
+    "dollarRate": "Dollar rate in dinars",
+    "equivalentInUsd": "Equivalent in dollars",
+    "dollarRateHint": "Enter the amount in dinars — it converts itself.",
+    "referencePrefix": "Receipt number prefix",
+    "referencePrefixHint": "Receipt numbers fill themselves in, like {{example}}. Left empty, the English name is used."
   },
   "partners": {
     "title": "Partners",

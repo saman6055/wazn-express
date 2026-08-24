@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
 import { ExpensesDashboard } from "@/components/expenses/ExpensesDashboard";
@@ -111,6 +111,10 @@ const [activeTab, setActiveTab] = useState("expenses");
   // recorded since without answering. Not "paid personally" — unknown.
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
   const [showBudgets, setShowBudgets] = useState(false);
+  const utils = trpc.useUtils();
+  /** The last number this screen suggested, so a hand-typed one is never
+   *  overwritten. */
+  const lastSuggestedReference = useRef("");
 
   const [expenseForm, setExpenseForm] = useState({
     categoryId: "",
@@ -120,6 +124,7 @@ const [activeTab, setActiveTab] = useState("expenses");
     expenseDate: new Date().toISOString().split('T')[0],
     paymentMethod: "cash",
     cashAccountId: "",
+    exchangeRate: "",
     vendor: "",
     referenceNumber: "",
     notes: "",
@@ -129,6 +134,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   const [categoryForm, setCategoryForm] = useState({
     nameEn: "",
     nameKu: "",
+    code: "",
     icon: "receipt",
     color: "#3b82f6",
     description: "",
@@ -270,8 +276,37 @@ const [activeTab, setActiveTab] = useState("expenses");
    */
   const defaultCashAccountId = cashAccounts.length === 1 ? String(cashAccounts[0]!.id) : "";
 
+  /**
+   * The dinar rate the form starts at.
+   *
+   * Whatever the company has recorded as USD→IQD, and only failing that the
+   * fallback below. It is a starting point, not a rule: the rate on the form
+   * is editable, because the rate a particular expense was actually paid at
+   * is a fact about that expense and not about today.
+   */
+  const { data: exchangeRates = [] } = trpc.exchangeRates.list.useQuery();
+  const storedIqdRate = exchangeRates.find(
+    (r) => r.targetCurrency === "IQD" && r.baseCurrency === "USD",
+  )?.rate;
+  const defaultIqdRate = storedIqdRate ? Number(storedIqdRate) : IQD_PER_USD;
+
+  /** The rate in force on the form: what was typed, else the default. */
+  const activeIqdRate = (() => {
+    const typed = Number(expenseForm.exchangeRate);
+    return Number.isFinite(typed) && typed > 0 ? typed : defaultIqdRate;
+  })();
+
+  /** What the form will store in USD. One place, so the preview under the
+   *  field and the figure that is saved cannot disagree. */
+  const amountInUsd = (() => {
+    const amount = Number(expenseForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) return 0;
+    return expenseForm.currency === "USD" ? amount : amount / activeIqdRate;
+  })();
+
   const resetExpenseForm = () => {
     setEditingExpenseId(null);
+    lastSuggestedReference.current = "";
     setExpenseForm({
       categoryId: "",
       amount: "",
@@ -280,6 +315,7 @@ const [activeTab, setActiveTab] = useState("expenses");
       expenseDate: new Date().toISOString().split('T')[0],
       paymentMethod: "cash",
       cashAccountId: defaultCashAccountId,
+      exchangeRate: "",
       vendor: "",
       referenceNumber: "",
       notes: "",
@@ -301,6 +337,9 @@ const [activeTab, setActiveTab] = useState("expenses");
       expenseDate: new Date(expense.expenseDate).toISOString().split("T")[0]!,
       paymentMethod: expense.paymentMethod ?? "cash",
       cashAccountId: expense.cashAccountId?.toString() ?? "",
+      // The rate this expense was actually converted at, not today's. Editing
+      // a March expense must not restate it at August's dinar.
+      exchangeRate: expense.exchangeRate ? String(Number(expense.exchangeRate)) : "",
       vendor: expense.vendor ?? "",
       referenceNumber: expense.referenceNumber ?? "",
       notes: expense.notes ?? "",
@@ -314,11 +353,38 @@ const [activeTab, setActiveTab] = useState("expenses");
     setCategoryForm({
       nameEn: "",
       nameKu: "",
+      code: "",
       icon: "receipt",
       color: "#3b82f6",
       description: "",
       isRecurring: false,
     });
+  };
+
+  /**
+   * Fill in the next receipt number for the chosen category.
+   *
+   * Only when the field is empty or still holds a suggestion this function
+   * put there — somebody who typed their own number has said what they mean,
+   * and changing the category must not quietly overwrite it. The suggestion
+   * is remembered rather than pattern-matched, because a number typed by hand
+   * can look exactly like a generated one.
+   */
+  const suggestReference = async (categoryId: string) => {
+    if (!categoryId || editingExpenseId !== null) return;
+    const current = expenseForm.referenceNumber.trim();
+    if (current !== "" && current !== lastSuggestedReference.current) return;
+    try {
+      const { referenceNumber } = await utils.expenses.nextReference.fetch({
+        categoryId: Number(categoryId),
+      });
+      if (!referenceNumber) return;
+      lastSuggestedReference.current = referenceNumber;
+      setExpenseForm((form) => ({ ...form, referenceNumber }));
+    } catch {
+      // A suggestion is a convenience. Failing to produce one must not stop
+      // anybody recording an expense.
+    }
   };
 
   const handleSaveExpense = () => {
@@ -337,8 +403,10 @@ const [activeTab, setActiveTab] = useState("expenses");
       categoryId: parseInt(expenseForm.categoryId),
       amount: expenseForm.amount,
       currency: expenseForm.currency as "USD" | "IQD",
-      amountUsd:
-        expenseForm.currency === "USD" ? expenseForm.amount : (amount / IQD_PER_USD).toFixed(2),
+      amountUsd: amountInUsd.toFixed(2),
+      // Kept with the row, so a dinar expense can always be read back at the
+      // rate it was actually converted at.
+      exchangeRate: expenseForm.currency === "IQD" ? String(activeIqdRate) : undefined,
       description: expenseForm.description || undefined,
       expenseDate: new Date(expenseForm.expenseDate),
       paymentMethod: expenseForm.paymentMethod as "cash" | "bank_transfer" | "card" | "other",
@@ -364,6 +432,7 @@ const [activeTab, setActiveTab] = useState("expenses");
     setCategoryForm({
       nameEn: category.nameEn ?? "",
       nameKu: category.nameKu ?? "",
+      code: category.code ?? "",
       icon: category.icon ?? "receipt",
       color: category.color ?? "#3b82f6",
       description: category.description ?? "",
@@ -381,6 +450,7 @@ const [activeTab, setActiveTab] = useState("expenses");
     const payload = {
       nameEn: categoryForm.nameEn,
       nameKu: categoryForm.nameKu || undefined,
+      code: categoryForm.code || undefined,
       icon: categoryForm.icon || undefined,
       color: categoryForm.color || undefined,
       description: categoryForm.description || undefined,
@@ -582,6 +652,21 @@ const [activeTab, setActiveTab] = useState("expenses");
                       placeholder={t("expenses.warehouseRent")}
                     />
                   </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="catCode">{t("expenses.referencePrefix")}</Label>
+                    <Input
+                      id="catCode"
+                      value={categoryForm.code}
+                      onChange={(e) => setCategoryForm({ ...categoryForm, code: e.target.value })}
+                      placeholder={categoryForm.nameEn || "Banzin"}
+                      dir="ltr"
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      {t("expenses.referencePrefixHint", {
+                        example: `${(categoryForm.code || categoryForm.nameEn || "Banzin").split(" ")[0]}-001`,
+                      })}
+                    </p>
+                  </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="catIcon">{t("common.icon")}</Label>
@@ -680,7 +765,10 @@ const [activeTab, setActiveTab] = useState("expenses");
                     <Label htmlFor="category">{t("common.category")}</Label>
                     <Select
                       value={expenseForm.categoryId}
-                      onValueChange={(value) => setExpenseForm({ ...expenseForm, categoryId: value })}
+                      onValueChange={(value) => {
+                        setExpenseForm({ ...expenseForm, categoryId: value });
+                        suggestReference(value);
+                      }}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder={t("expenses.selectCategory")} />
@@ -722,6 +810,49 @@ const [activeTab, setActiveTab] = useState("expenses");
                       </Select>
                     </div>
                   </div>
+
+                  {/* Dinars in, dollars stored. The rate is on the form rather
+                      than buried in the code, because the rate an expense was
+                      actually paid at is a fact about that expense. */}
+                  {expenseForm.currency === "IQD" && (
+                    <div className="grid gap-2 rounded-lg border p-3">
+                      <div className="grid grid-cols-2 items-end gap-4">
+                        <div className="grid gap-2">
+                          <Label htmlFor="exchangeRate">{t("expenses.dollarRate")}</Label>
+                          <Input
+                            id="exchangeRate"
+                            type="number"
+                            min="1"
+                            step="1"
+                            inputMode="decimal"
+                            dir="ltr"
+                            value={expenseForm.exchangeRate}
+                            onChange={(e) =>
+                              setExpenseForm({ ...expenseForm, exchangeRate: e.target.value })
+                            }
+                            placeholder={String(defaultIqdRate)}
+                          />
+                        </div>
+                        <div className="grid gap-1">
+                          <span className="text-xs text-muted-foreground">
+                            {t("expenses.equivalentInUsd")}
+                          </span>
+                          <span
+                            className="text-xl font-semibold tabular-nums"
+                            data-testid="iqd-converted"
+                            dir="ltr"
+                          >
+                            ${amountInUsd.toFixed(2)}
+                          </span>
+                        </div>
+                      </div>
+                      <p className="text-xs text-muted-foreground" dir="ltr">
+                        {Number(expenseForm.amount) > 0
+                          ? `${Number(expenseForm.amount).toLocaleString()} IQD ÷ ${activeIqdRate.toLocaleString()} = $${amountInUsd.toFixed(2)}`
+                          : t("expenses.dollarRateHint")}
+                      </p>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
                       <Label htmlFor="expenseDate">{t("common.date")}</Label>

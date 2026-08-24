@@ -299,6 +299,10 @@ export const expenseCategories = mysqlTable("expenseCategories", {
   nameEn: varchar("nameEn", { length: 100 }).notNull(),
   nameAr: varchar("nameAr", { length: 100 }),
   nameKu: varchar("nameKu", { length: 100 }),
+  // What a receipt number for this category starts with — "Banzin" gives
+  // Banzin-001, Banzin-002. Left empty, the English name is used, because a
+  // reference nobody can read is worse than a longer one.
+  code: varchar("code", { length: 20 }),
   icon: varchar("icon", { length: 50 }), // Emoji or icon
   color: varchar("color", { length: 20 }), // Color for UI
   description: text("description"),

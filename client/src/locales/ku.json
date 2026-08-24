@@ -3573,7 +3573,12 @@
     "budgetExcludesRecurring": "خەرجییە دووبارەبووەکان (کرێ، موچە، کارەبا) لەم ژمێریارییەدا نین.",
     "budgetSaved": "بودجە پاشەکەوت کرا",
     "noAccountsYet": "هێشتا هیچ حسابێک دروست نەکراوە.",
-    "manageAccounts": "دروستکردنی حساب"
+    "manageAccounts": "دروستکردنی حساب",
+    "dollarRate": "نرخی دۆلار بە دینار",
+    "equivalentInUsd": "بەرامبەری بە دۆلار",
+    "dollarRateHint": "بڕەکە بە دینار بنووسە — خۆی دەیگۆڕێت بۆ دۆلار.",
+    "referencePrefix": "پێشگری ژمارەی پسوڵە",
+    "referencePrefixHint": "ژمارەی پسوڵە خۆی دروست دەبێت، وەک {{example}}. بەتاڵ بێت، ناوی ئینگلیزی بەکاردەهێنرێت."
   },
   "partners": {
     "title": "هاوبەشەکان",

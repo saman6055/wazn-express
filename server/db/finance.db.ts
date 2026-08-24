@@ -1990,6 +1990,52 @@ export async function getExpensesPaymentSplit(
   };
 }
 
+/**
+ * The next receipt number for a category: Banzin-001, Banzin-002, and so on.
+ *
+ * The prefix is the category's own `code` when somebody has set one, and the
+ * English name otherwise — "Fuel" is a poor label for a category everybody
+ * calls بەنزین, which is exactly why the field exists.
+ *
+ * The number is one past the highest already used with that prefix, not a
+ * count of rows: deleting Banzin-004 must not hand the next expense a number
+ * that already appeared on a receipt somebody is holding.
+ *
+ * Not reserved and not unique — two people recording at the same second can
+ * be handed the same suggestion, and the field is editable precisely so that
+ * a human can settle it. A reference number is a label, not an identity.
+ */
+export async function getNextExpenseReference(categoryId: number): Promise<string> {
+  const db = await getDb();
+  if (!db) return "";
+
+  const [category] = await db
+    .select({ code: expenseCategories.code, nameEn: expenseCategories.nameEn })
+    .from(expenseCategories)
+    .where(eq(expenseCategories.id, categoryId));
+  if (!category) return "";
+
+  const raw = (category.code || category.nameEn || "").trim();
+  // First word only, letters and digits only: "Vehicle maintenance" would
+  // otherwise give a reference with a space in the middle of it.
+  const prefix = (raw.split(/\s+/)[0] ?? "").replace(/[^A-Za-z0-9]/g, "").slice(0, 20);
+  if (!prefix) return "";
+
+  const rows = await db
+    .select({ referenceNumber: expenses.referenceNumber })
+    .from(expenses)
+    .where(like(expenses.referenceNumber, `${prefix}-%`));
+
+  let highest = 0;
+  for (const row of rows) {
+    const match = /-(\d+)$/.exec(row.referenceNumber ?? "");
+    if (!match) continue;
+    highest = Math.max(highest, Number(match[1]));
+  }
+
+  return `${prefix}-${String(highest + 1).padStart(3, "0")}`;
+}
+
 // ============ EXPENSE BUDGETS ============
 
 /**

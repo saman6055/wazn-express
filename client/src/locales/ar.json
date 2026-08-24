@@ -3529,7 +3529,12 @@
     "budgetExcludesRecurring": "المصروفات المتكررة (إيجار، رواتب، خدمات) غير محتسبة هنا.",
     "budgetSaved": "تم حفظ الميزانية",
     "noAccountsYet": "لم يتم إنشاء أي حساب بعد.",
-    "manageAccounts": "إنشاء حساب"
+    "manageAccounts": "إنشاء حساب",
+    "dollarRate": "سعر الدولار بالدينار",
+    "equivalentInUsd": "المعادل بالدولار",
+    "dollarRateHint": "أدخل المبلغ بالدينار — يُحوَّل تلقائيًا.",
+    "referencePrefix": "بادئة رقم الإيصال",
+    "referencePrefixHint": "تُملأ أرقام الإيصالات تلقائيًا، مثل {{example}}. إذا تُركت فارغة يُستخدم الاسم الإنجليزي."
   },
   "partners": {
     "title": "الشركاء",

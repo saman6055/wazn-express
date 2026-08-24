@@ -2619,6 +2619,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "expenseCategories.color", sql: "ALTER TABLE expenseCategories ADD COLUMN color VARCHAR(20)" },
   { name: "expenseCategories.isRecurring", sql: "ALTER TABLE expenseCategories ADD COLUMN isRecurring BOOLEAN NOT NULL DEFAULT FALSE" },
   { name: "expenseCategories.sortOrder", sql: "ALTER TABLE expenseCategories ADD COLUMN sortOrder INT NOT NULL DEFAULT 0" },
+  // The prefix a receipt number for this category starts with.
+  { name: "expenseCategories.code", sql: "ALTER TABLE expenseCategories ADD COLUMN code VARCHAR(20)" },
   // The legacy `name` column is NOT NULL and nothing writes it any more, so
   // every insert failed on it. Widened to accept nothing rather than dropped:
   // a column that existing rows may still be read through is not worth
