@@ -3508,7 +3508,9 @@
     "noVendorsYet": "No suppliers recorded yet",
     "alertsTriggered": "{{count}} expense alert(s) active — a threshold was passed",
     "filteredByCategory": "Category: {{name}}",
-    "filteredByVendor": "Supplier: {{name}}"
+    "filteredByVendor": "Supplier: {{name}}",
+    "editCategory": "Edit category",
+    "editCategoryDesc": "Change the name, colour and description"
   },
   "partners": {
     "title": "Partners",

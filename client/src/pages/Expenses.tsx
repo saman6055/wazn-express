@@ -105,6 +105,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   // The same form serves both: an expense that can be recorded and not
   // corrected is a ledger nobody can trust.
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
+  const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
 
   const [expenseForm, setExpenseForm] = useState({
     categoryId: "",
@@ -228,10 +229,26 @@ const [activeTab, setActiveTab] = useState("expenses");
     },
   });
 
+  const updateCategory = trpc.expenseCategories.update.useMutation({
+    onSuccess: () => {
+      toast.success(t("messages.categoryUpdated"));
+      setShowAddCategory(false);
+      refetchCategories();
+      // A renamed or recoloured category is on every figure above the list,
+      // so the report has to be told as well.
+      refetchAll();
+      resetCategoryForm();
+    },
+    onError: (error) => {
+      showErrorToast(error);
+    },
+  });
+
   const deleteCategory = trpc.expenseCategories.delete.useMutation({
     onSuccess: () => {
       toast.success(t("messages.categoryDeleted"));
       refetchCategories();
+      refetchAll();
     },
     onError: (error) => {
       showErrorToast(error);
@@ -278,6 +295,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   };
 
   const resetCategoryForm = () => {
+    setEditingCategoryId(null);
     setCategoryForm({
       nameEn: "",
       nameKu: "",
@@ -325,20 +343,40 @@ const [activeTab, setActiveTab] = useState("expenses");
     }
   };
 
-  const handleCreateCategory = () => {
+  /** Open the category dialog on an existing one, filled in as it stands. */
+  const startEditingCategory = (category: (typeof categories)[number]) => {
+    setEditingCategoryId(category.id);
+    setCategoryForm({
+      nameEn: category.nameEn ?? "",
+      nameKu: category.nameKu ?? "",
+      icon: category.icon ?? "receipt",
+      color: category.color ?? "#3b82f6",
+      description: category.description ?? "",
+      isRecurring: category.isRecurring ?? false,
+    });
+    setShowAddCategory(true);
+  };
+
+  const handleSaveCategory = () => {
     if (!categoryForm.nameEn) {
       toast.error(t("expenses.enterCategoryName"));
       return;
     }
 
-    createCategory.mutate({
+    const payload = {
       nameEn: categoryForm.nameEn,
       nameKu: categoryForm.nameKu || undefined,
       icon: categoryForm.icon || undefined,
       color: categoryForm.color || undefined,
       description: categoryForm.description || undefined,
       isRecurring: categoryForm.isRecurring,
-    });
+    };
+
+    if (editingCategoryId !== null) {
+      updateCategory.mutate({ id: editingCategoryId, ...payload });
+    } else {
+      createCategory.mutate(payload);
+    }
   };
 
   const getCategoryById = (id: number) => categories.find(c => c.id === id);
@@ -483,9 +521,13 @@ const [activeTab, setActiveTab] = useState("expenses");
               </DialogTrigger>
               <DialogContent className="sm:max-w-[425px]">
                 <DialogHeader>
-                  <DialogTitle>{t("expenses.addCategory")}</DialogTitle>
+                  <DialogTitle>
+                    {editingCategoryId !== null ? t("expenses.editCategory") : t("expenses.addCategory")}
+                  </DialogTitle>
                   <DialogDescription>
-                    {t("expenses.addCategoryDesc")}
+                    {editingCategoryId !== null
+                      ? t("expenses.editCategoryDesc")
+                      : t("expenses.addCategoryDesc")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4">
@@ -559,9 +601,24 @@ const [activeTab, setActiveTab] = useState("expenses");
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowAddCategory(false)}>{t("forms.cancel")}</Button>
-                  <Button onClick={handleCreateCategory} disabled={createCategory.isPending}>
-                    {createCategory.isPending ? t("common.loading") : t("common.add")}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAddCategory(false);
+                      resetCategoryForm();
+                    }}
+                  >
+                    {t("forms.cancel")}
+                  </Button>
+                  <Button
+                    onClick={handleSaveCategory}
+                    disabled={createCategory.isPending || updateCategory.isPending}
+                  >
+                    {createCategory.isPending || updateCategory.isPending
+                      ? t("common.loading")
+                      : editingCategoryId !== null
+                        ? t("forms.save")
+                        : t("common.add")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -947,17 +1004,29 @@ const [activeTab, setActiveTab] = useState("expenses");
                         )}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        if (confirm(t("expenses.confirmDeleteCategory"))) {
-                          deleteCategory.mutate({ id: category.id });
-                        }
-                      }}
-                    >
-                      <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                    </Button>
+                    <div className="flex shrink-0 items-center">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("expenses.editCategory")}
+                        data-testid={`edit-category-${category.id}`}
+                        onClick={() => startEditingCategory(category)}
+                      >
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        aria-label={t("forms.delete")}
+                        onClick={() => {
+                          if (confirm(t("expenses.confirmDeleteCategory"))) {
+                            deleteCategory.mutate({ id: category.id });
+                          }
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
+                      </Button>
+                    </div>
                   </CardHeader>
                   <CardContent>
                     <p className="text-xs text-muted-foreground">

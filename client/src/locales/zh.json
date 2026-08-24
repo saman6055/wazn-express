@@ -3512,7 +3512,9 @@
     "noVendorsYet": "尚未记录供应商",
     "alertsTriggered": "{{count}} 条支出提醒 — 已超过阈值",
     "filteredByCategory": "类别：{{name}}",
-    "filteredByVendor": "供应商：{{name}}"
+    "filteredByVendor": "供应商：{{name}}",
+    "editCategory": "编辑类别",
+    "editCategoryDesc": "修改名称、颜色和描述"
   },
   "partners": {
     "title": "合伙人",

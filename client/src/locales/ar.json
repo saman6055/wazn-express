@@ -3508,7 +3508,9 @@
     "noVendorsYet": "لا يوجد موردون مسجلون بعد",
     "alertsTriggered": "{{count}} تنبيه مصروفات نشط — تم تجاوز حد",
     "filteredByCategory": "الفئة: {{name}}",
-    "filteredByVendor": "المورد: {{name}}"
+    "filteredByVendor": "المورد: {{name}}",
+    "editCategory": "تعديل الفئة",
+    "editCategoryDesc": "غيّر الاسم واللون والوصف"
   },
   "partners": {
     "title": "الشركاء",

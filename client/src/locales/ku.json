@@ -3552,7 +3552,9 @@
     "noVendorsYet": "هێشتا هیچ فرۆشیارێک تۆمار نەکراوە",
     "alertsTriggered": "{{count}} ئاگادارکردنەوەی خەرجی چالاکە — سنوورێک تێپەڕیوە",
     "filteredByCategory": "پۆل: {{name}}",
-    "filteredByVendor": "فرۆشیار: {{name}}"
+    "filteredByVendor": "فرۆشیار: {{name}}",
+    "editCategory": "دەستکاری پۆل",
+    "editCategoryDesc": "ناو، ڕەنگ و وەسفی پۆلەکە بگۆڕە"
   },
   "partners": {
     "title": "هاوبەشەکان",

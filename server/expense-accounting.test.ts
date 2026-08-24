@@ -292,6 +292,22 @@ describe("the expenses screen is wired to the accounting", () => {
     expect(src).toContain("daysInRange");
   });
 
+  it("lets a category be corrected, not only made and destroyed", () => {
+    // The server has had an update procedure all along; the screen offered
+    // only a plus and a bin, so a category with a typo in its name had to be
+    // deleted — taking its expenses' classification with it — and remade.
+    const src = screen();
+    expect(src, "no update mutation for categories").toContain("trpc.expenseCategories.update.useMutation");
+    expect(src, "no way to open a category for editing").toContain("startEditingCategory");
+    expect(src, "one save path, or the two forms drift").toContain("handleSaveCategory");
+  });
+
+  it("tells the report when a category changed", () => {
+    // A renamed or recoloured category is on every figure above the list.
+    const body = slice(screen(), "const updateCategory = trpc", "const deleteCategory", "updateCategory");
+    expect(body).toContain("refetchAll()");
+  });
+
   it("says so when the money left an account that was already short", () => {
     expect(screen(), "the overdraw warning is dropped on the floor").toContain("cashWarning");
   });
