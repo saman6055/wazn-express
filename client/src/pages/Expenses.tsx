@@ -4,6 +4,8 @@ import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
 import { ExpensesDashboard } from "@/components/expenses/ExpensesDashboard";
 import { BudgetDialog } from "@/components/expenses/BudgetDialog";
 import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
+import { CATEGORY_ICON_KEYS, categoryIcon } from "@/components/expenses/categoryIcons";
+import { cn } from "@/lib/utils";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import type { Localised } from "@shared/listLinks";
 import { useLocation } from "wouter";
@@ -65,16 +67,6 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 
-// Icon mapping for expense categories
-const categoryIcons: Record<string, React.ReactNode> = {
-  building: <Building2 className="h-4 w-4" />,
-  users: <Users className="h-4 w-4" />,
-  zap: <Zap className="h-4 w-4" />,
-  truck: <Truck className="h-4 w-4" />,
-  phone: <Phone className="h-4 w-4" />,
-  wrench: <Wrench className="h-4 w-4" />,
-  receipt: <Receipt className="h-4 w-4" />,
-};
 
 /**
  * The dinar rate this screen converts with.
@@ -745,26 +737,36 @@ const [activeTab, setActiveTab] = useState("expenses");
                       })}
                     </p>
                   </div>
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="catIcon">{t("common.icon")}</Label>
-                      <Select
-                        value={categoryForm.icon}
-                        onValueChange={(value) => setCategoryForm({ ...categoryForm, icon: value })}
+                      <Label>{t("common.icon")}</Label>
+                      {/* A grid rather than a dropdown: choosing a picture
+                          from a list of names is choosing blind. */}
+                      <div
+                        className="grid grid-cols-8 gap-1 rounded-lg border p-2"
+                        role="radiogroup"
+                        aria-label={t("common.icon")}
                       >
-                        <SelectTrigger>
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="building">🏢 {t("expenses.building")}</SelectItem>
-                          <SelectItem value="users">👥 {t("expenses.employees")}</SelectItem>
-                          <SelectItem value="zap">⚡ {t("expenses.electricity")}</SelectItem>
-                          <SelectItem value="truck">🚚 {t("expenses.transportation")}</SelectItem>
-                          <SelectItem value="phone">📱 {t("expenses.phone")}</SelectItem>
-                          <SelectItem value="wrench">🔧 {t("expenses.maintenance")}</SelectItem>
-                          <SelectItem value="receipt">🧾 {t("common.other")}</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        {CATEGORY_ICON_KEYS.map((key) => (
+                          <button
+                            key={key}
+                            type="button"
+                            role="radio"
+                            aria-checked={categoryForm.icon === key}
+                            aria-label={key}
+                            data-testid={`category-icon-${key}`}
+                            onClick={() => setCategoryForm({ ...categoryForm, icon: key })}
+                            className={cn(
+                              "flex h-8 w-8 items-center justify-center rounded-md transition-colors",
+                              categoryForm.icon === key
+                                ? "bg-primary text-primary-foreground"
+                                : "text-muted-foreground hover:bg-muted",
+                            )}
+                          >
+                            {categoryIcon(key, "h-4 w-4")}
+                          </button>
+                        ))}
+                      </div>
                     </div>
                     <div className="grid gap-2">
                       <Label htmlFor="catColor">{t("fullPackage.color")}</Label>
@@ -1296,7 +1298,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                         className="flex h-8 w-8 items-center justify-center rounded-lg"
                         style={{ backgroundColor: `${category.color}20` }}
                       >
-                        {categoryIcons[category.icon || "receipt"] || <Receipt className="h-4 w-4" />}
+                        {categoryIcon(category.icon)}
                       </div>
                       <div>
                         <CardTitle className="text-sm font-medium">

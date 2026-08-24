@@ -41,7 +41,7 @@ import {
   Building2,
   Receipt,
   Landmark,
-  PiggyBank,
+  Vault,
   Scale,
   Activity,
   AlertTriangle,
@@ -454,7 +454,8 @@ function DashboardLayoutContent({
           { icon: Receipt, label: t("nav.expenses") || "خەرجییەکان", path: "/company/expenses" },
           { icon: AlertTriangle, label: t("nav.expenseAlerts") || "ئاگادارکردنەوەی خەرجی", path: "/company/expense-alerts" },
           { icon: Users, label: t("nav.partners") || "هاوبەشەکان", path: "/company/partners" },
-          { icon: PiggyBank, label: t("nav.treasury") || "خەزنە", path: "/company/treasury" },
+          // A safe, not a piggy bank: this is the company's cash, not savings.
+          { icon: Vault, label: t("nav.treasury") || "خەزنە", path: "/company/treasury" },
           { icon: Banknote, label: t("nav.companyDebts") || "قەرزەکانی کۆمپانیا", path: "/company/debts" },
         ]
       });
