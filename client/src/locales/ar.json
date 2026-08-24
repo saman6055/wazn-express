@@ -3480,7 +3480,13 @@
     "recurringMonthly": "شهري",
     "selectCategory": "اختر فئة",
     "vendorSupplier": "المورد",
-    "warehouseRent": "إيجار المستودع"
+    "warehouseRent": "إيجار المستودع",
+    "editExpenseDesc": "تعديل هذا المصروف",
+    "paidFromAccount": "مدفوع من حساب",
+    "selectAccount": "اختر حسابًا",
+    "noAccount": "بدون حساب (دُفع بطريقة أخرى)",
+    "paidFromAccountHint": "اختيار حساب يخصم المبلغ منه.",
+    "amountMustBePositive": "يجب أن يكون المبلغ أكبر من صفر"
   },
   "partners": {
     "title": "الشركاء",

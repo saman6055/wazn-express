@@ -238,3 +238,61 @@ describe("the expenses table the code writes is the expenses table that exists",
     expect(migrations).toContain("expenses.expenseNumber.nullable");
   });
 });
+
+/**
+ * The screen has to send what the accounting needs.
+ *
+ * Everything below the router was already right — the cash movement, the
+ * reversal on edit, the daily summary, the alerts. The screen simply never
+ * asked which account the money came out of, so none of it ever ran: the
+ * Treasury went on showing money that had already left the building. And an
+ * expense could be recorded but not corrected, which makes a ledger nobody
+ * can act on.
+ */
+describe("the expenses screen is wired to the accounting", () => {
+  const screen = () => read("client/src/pages/Expenses.tsx");
+
+  it("asks which account the money came out of, and sends it", () => {
+    const src = screen();
+    expect(src, "no account picker on the form").toContain("cashAccounts.listActive");
+    expect(src, "the account never reaches the server").toMatch(/cashAccountId:\s*expenseForm\.cashAccountId/);
+  });
+
+  it("lets an expense be corrected, not only recorded", () => {
+    const src = screen();
+    expect(src, "no update mutation").toContain("trpc.expenses.update.useMutation");
+    expect(src, "no way to open an expense for editing").toContain("startEditingExpense");
+  });
+
+  it("builds one payload for recording and correcting", () => {
+    // Two copies of this object is how the edit path comes to convert dinars
+    // at a different rate from the create path.
+    const src = screen();
+    const payloads = src.split('expenseForm.currency === "USD"').length - 1;
+    expect(payloads, "the dinar conversion is written more than once").toBe(1);
+    expect(src).toContain("updateExpense.mutate({ id: editingExpenseId, ...payload })");
+  });
+
+  it("refreshes the totals, not just the rows", () => {
+    // The cards read $0.00 over a table with money in it, because recording
+    // an expense refetched the list and left the summary as it was.
+    const src = screen();
+    const refetchAll = slice(src, "const refetchAll = ()", "const createExpense", "refetchAll");
+    expect(refetchAll).toContain("refetchExpenses()");
+    expect(refetchAll).toContain("refetchSummary()");
+    for (const mutation of ["createExpense", "updateExpense", "deleteExpense"]) {
+      const body = slice(src, `const ${mutation} = trpc.expenses.`, "onError", mutation);
+      expect(body, `${mutation} does not refresh the totals`).toContain("refetchAll()");
+    }
+  });
+
+  it("averages over the range on screen, not a fixed month", () => {
+    const src = screen();
+    expect(src, "still dividing by a hard-coded 30").not.toContain("|| 0) / 30)");
+    expect(src).toContain("daysInRange");
+  });
+
+  it("says so when the money left an account that was already short", () => {
+    expect(screen(), "the overdraw warning is dropped on the floor").toContain("cashWarning");
+  });
+});

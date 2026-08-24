@@ -3480,7 +3480,13 @@
     "recurringMonthly": "Monthly",
     "selectCategory": "Select Category",
     "vendorSupplier": "Vendor/Supplier",
-    "warehouseRent": "Warehouse Rent"
+    "warehouseRent": "Warehouse Rent",
+    "editExpenseDesc": "Change this expense",
+    "paidFromAccount": "Paid from account",
+    "selectAccount": "Select an account",
+    "noAccount": "No account (paid another way)",
+    "paidFromAccountHint": "Choosing an account takes the amount out of it.",
+    "amountMustBePositive": "The amount must be greater than zero"
   },
   "partners": {
     "title": "Partners",

@@ -52,7 +52,8 @@ import {
   Trash2,
   Search,
   Filter,
-  Download
+  Download,
+  Pencil
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -68,6 +69,20 @@ const categoryIcons: Record<string, React.ReactNode> = {
   receipt: <Receipt className="h-4 w-4" />,
 };
 
+/**
+ * The dinar rate this screen converts with.
+ *
+ * It was written inline in the middle of the create call, which made it look
+ * like an implementation detail rather than a company figure that somebody
+ * has to keep current. Named here so it can be found — and so the edit path
+ * cannot drift from the create path, which is what happens when a number is
+ * typed twice.
+ */
+const IQD_PER_USD = 1480;
+
+/** Radix refuses an empty SelectItem value, so "paid from nobody" needs one. */
+const NO_ACCOUNT = "__none__";
+
 export default function Expenses() {
     const { t } = useTranslation();
 const [activeTab, setActiveTab] = useState("expenses");
@@ -81,6 +96,11 @@ const [activeTab, setActiveTab] = useState("expenses");
   });
 
   // Form states
+  // Which expense the dialog is editing, or null when recording a new one.
+  // The same form serves both: an expense that can be recorded and not
+  // corrected is a ledger nobody can trust.
+  const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
+
   const [expenseForm, setExpenseForm] = useState({
     categoryId: "",
     amount: "",
@@ -88,6 +108,7 @@ const [activeTab, setActiveTab] = useState("expenses");
     description: "",
     expenseDate: new Date().toISOString().split('T')[0],
     paymentMethod: "cash",
+    cashAccountId: "",
     vendor: "",
     referenceNumber: "",
     notes: "",
@@ -111,17 +132,45 @@ const [activeTab, setActiveTab] = useState("expenses");
     startDate: new Date(dateRange.start),
     endDate: new Date(dateRange.end),
   });
-  const { data: summary, error: summaryError } = trpc.expenses.getSummary.useQuery({
+  // Which account the money left. The screen has always asked for a payment
+  // method and never for the account, so the Treasury went on showing money
+  // that had already gone out of the door.
+  const { data: cashAccounts = [] } = trpc.cashAccounts.listActive.useQuery();
+  const { data: summary, refetch: refetchSummary, error: summaryError } = trpc.expenses.getSummary.useQuery({
     startDate: new Date(dateRange.start),
     endDate: new Date(dateRange.end),
   });
 
   // Mutations
+  // The list and the totals are one answer, and used to disagree: recording
+  // an expense refreshed the rows underneath and left the cards above them
+  // reading whatever they read when the page opened — $0.00 over a table with
+  // money in it.
+  const refetchAll = () => {
+    refetchExpenses();
+    refetchSummary();
+  };
+
   const createExpense = trpc.expenses.create.useMutation({
-    onSuccess: () => {
+    onSuccess: (result) => {
       toast.success(t("expenses.expenseAdded"));
+      // The money left an account that was already short. Recorded either
+      // way — refusing would not bring it back — but somebody should look.
+      if (result?.cashWarning) toast.warning(result.cashWarning, { duration: 10000 });
       setShowAddExpense(false);
-      refetchExpenses();
+      refetchAll();
+      resetExpenseForm();
+    },
+    onError: (error) => {
+      showErrorToast(error);
+    },
+  });
+
+  const updateExpense = trpc.expenses.update.useMutation({
+    onSuccess: () => {
+      toast.success(t("expenses.expenseUpdated"));
+      setShowAddExpense(false);
+      refetchAll();
       resetExpenseForm();
     },
     onError: (error) => {
@@ -132,7 +181,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   const deleteExpense = trpc.expenses.delete.useMutation({
     onSuccess: () => {
       toast.success(t("expenses.expenseDeleted"));
-      refetchExpenses();
+      refetchAll();
     },
     onError: (error) => {
       showErrorToast(error);
@@ -162,6 +211,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   });
 
   const resetExpenseForm = () => {
+    setEditingExpenseId(null);
     setExpenseForm({
       categoryId: "",
       amount: "",
@@ -169,11 +219,34 @@ const [activeTab, setActiveTab] = useState("expenses");
       description: "",
       expenseDate: new Date().toISOString().split('T')[0],
       paymentMethod: "cash",
+      cashAccountId: "",
       vendor: "",
       referenceNumber: "",
       notes: "",
       isRecurring: false,
     });
+  };
+
+  /** Open the dialog on an existing expense, filled in as it stands. */
+  const startEditingExpense = (expense: (typeof expenses)[number]) => {
+    setEditingExpenseId(expense.id);
+    setExpenseForm({
+      categoryId: expense.categoryId?.toString() ?? "",
+      // Edit shows the figure as it was entered, in the currency it was
+      // entered in. Re-deriving it from amountUsd would quietly round every
+      // dinar expense on its way through the form.
+      amount: expense.amount?.toString() ?? "",
+      currency: expense.currency ?? "USD",
+      description: expense.description ?? "",
+      expenseDate: new Date(expense.expenseDate).toISOString().split("T")[0]!,
+      paymentMethod: expense.paymentMethod ?? "cash",
+      cashAccountId: expense.cashAccountId?.toString() ?? "",
+      vendor: expense.vendor ?? "",
+      referenceNumber: expense.referenceNumber ?? "",
+      notes: expense.notes ?? "",
+      isRecurring: expense.isRecurring ?? false,
+    });
+    setShowAddExpense(true);
   };
 
   const resetCategoryForm = () => {
@@ -187,25 +260,41 @@ const [activeTab, setActiveTab] = useState("expenses");
     });
   };
 
-  const handleCreateExpense = () => {
+  const handleSaveExpense = () => {
     if (!expenseForm.categoryId || !expenseForm.amount) {
       toast.error(t("common.fillAllFields"));
       return;
     }
 
-    createExpense.mutate({
+    const amount = parseFloat(expenseForm.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast.error(t("expenses.amountMustBePositive"));
+      return;
+    }
+
+    const payload = {
       categoryId: parseInt(expenseForm.categoryId),
       amount: expenseForm.amount,
       currency: expenseForm.currency as "USD" | "IQD",
-      amountUsd: expenseForm.currency === "USD" ? expenseForm.amount : (parseFloat(expenseForm.amount) / 1480).toFixed(2),
+      amountUsd:
+        expenseForm.currency === "USD" ? expenseForm.amount : (amount / IQD_PER_USD).toFixed(2),
       description: expenseForm.description || undefined,
       expenseDate: new Date(expenseForm.expenseDate),
       paymentMethod: expenseForm.paymentMethod as "cash" | "bank_transfer" | "card" | "other",
+      // Optional on purpose: some expenses are paid out of somebody's own
+      // pocket and reimbursed later, and those must still be recordable.
+      cashAccountId: expenseForm.cashAccountId ? parseInt(expenseForm.cashAccountId) : undefined,
       vendor: expenseForm.vendor || undefined,
       referenceNumber: expenseForm.referenceNumber || undefined,
       notes: expenseForm.notes || undefined,
       isRecurring: expenseForm.isRecurring,
-    });
+    };
+
+    if (editingExpenseId !== null) {
+      updateExpense.mutate({ id: editingExpenseId, ...payload });
+    } else {
+      createExpense.mutate(payload);
+    }
   };
 
   const handleCreateCategory = () => {
@@ -272,6 +361,16 @@ const [activeTab, setActiveTab] = useState("expenses");
   // — an answer, not a failure. The list and the totals were doing exactly
   // that while the table underneath them could not be read at all.
   const loadError = expensesError ?? summaryError ?? categoriesError ?? null;
+
+  // The daily average divided by a fixed 30 whatever range was on screen, so
+  // a week of expenses read as a third of what it was and a quarter read as
+  // three times. Both ends included: Aug 1 to Aug 1 is one day, not zero.
+  const daysInRange = Math.max(
+    1,
+    Math.round(
+      (new Date(dateRange.end).getTime() - new Date(dateRange.start).getTime()) / 86_400_000,
+    ) + 1,
+  );
 
   return (
     <DashboardLayout>
@@ -422,9 +521,13 @@ const [activeTab, setActiveTab] = useState("expenses");
               </DialogTrigger>
               <DialogContent className="sm:max-w-[500px]">
                 <DialogHeader>
-                  <DialogTitle>{t("expenses.recordExpense")}</DialogTitle>
+                  <DialogTitle>
+                    {editingExpenseId !== null ? t("expenses.editExpense") : t("expenses.recordExpense")}
+                  </DialogTitle>
                   <DialogDescription>
-                    {t("expenses.recordExpenseDesc")}
+                    {editingExpenseId !== null
+                      ? t("expenses.editExpenseDesc")
+                      : t("expenses.recordExpenseDesc")}
                   </DialogDescription>
                 </DialogHeader>
                 <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
@@ -503,6 +606,36 @@ const [activeTab, setActiveTab] = useState("expenses");
                     </div>
                   </div>
                   <div className="grid gap-2">
+                    <Label htmlFor="cashAccount">{t("expenses.paidFromAccount")}</Label>
+                    <Select
+                      value={expenseForm.cashAccountId || NO_ACCOUNT}
+                      onValueChange={(value) =>
+                        setExpenseForm({
+                          ...expenseForm,
+                          cashAccountId: value === NO_ACCOUNT ? "" : value,
+                        })
+                      }
+                    >
+                      <SelectTrigger id="cashAccount">
+                        <SelectValue placeholder={t("expenses.selectAccount")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value={NO_ACCOUNT}>{t("expenses.noAccount")}</SelectItem>
+                        {cashAccounts.map((account) => (
+                          <SelectItem key={account.id} value={account.id.toString()}>
+                            {account.accountNameKu || account.accountName}
+                            {account.currency === "USD"
+                              ? ` — $${Number(account.currentBalance).toFixed(2)}`
+                              : ` — ${Number(account.currentBalance).toLocaleString()} IQD`}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    <p className="text-xs text-muted-foreground">
+                      {t("expenses.paidFromAccountHint")}
+                    </p>
+                  </div>
+                  <div className="grid gap-2">
                     <Label htmlFor="description">{t("common.description")}</Label>
                     <Input
                       id="description"
@@ -542,9 +675,24 @@ const [activeTab, setActiveTab] = useState("expenses");
                   </div>
                 </div>
                 <DialogFooter>
-                  <Button variant="outline" onClick={() => setShowAddExpense(false)}>{t("forms.cancel")}</Button>
-                  <Button onClick={handleCreateExpense} disabled={createExpense.isPending}>
-                    {createExpense.isPending ? t("common.loading") : t("common.register")}
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      setShowAddExpense(false);
+                      resetExpenseForm();
+                    }}
+                  >
+                    {t("forms.cancel")}
+                  </Button>
+                  <Button
+                    onClick={handleSaveExpense}
+                    disabled={createExpense.isPending || updateExpense.isPending}
+                  >
+                    {createExpense.isPending || updateExpense.isPending
+                      ? t("common.loading")
+                      : editingExpenseId !== null
+                        ? t("forms.save")
+                        : t("common.register")}
                   </Button>
                 </DialogFooter>
               </DialogContent>
@@ -595,7 +743,7 @@ const [activeTab, setActiveTab] = useState("expenses");
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
-                ${((summary?.totalAmount || 0) / 30).toFixed(2)}
+                ${(((summary?.totalAmount || 0) / daysInRange)).toFixed(2)}
               </div>
               <p className="text-xs text-muted-foreground">{t("common.average")}</p>
             </CardContent>
@@ -708,7 +856,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                       <TableHead>{t("fullPackage.supplier")}</TableHead>
                       <TableHead>{t("finance.method")}</TableHead>
                       <TableHead className="text-right">{t("common.amount")}</TableHead>
-                      <TableHead className="w-[50px]"></TableHead>
+                      <TableHead className="w-[100px]"></TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -754,6 +902,16 @@ const [activeTab, setActiveTab] = useState("expenses");
                               <Button
                                 variant="ghost"
                                 size="icon"
+                                aria-label={t("expenses.editExpense")}
+                                data-testid={`edit-expense-${expense.id}`}
+                                onClick={() => startEditingExpense(expense)}
+                              >
+                                <Pencil className="h-4 w-4" />
+                              </Button>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                aria-label={t("forms.delete")}
                                 onClick={() => {
                                   if (confirm(t("expenses.confirmDeleteExpense"))) {
                                     deleteExpense.mutate({ id: expense.id });

@@ -3484,7 +3484,13 @@
     "recurringMonthly": "每月",
     "selectCategory": "选择分类",
     "vendorSupplier": "供应商",
-    "warehouseRent": "仓库租金"
+    "warehouseRent": "仓库租金",
+    "editExpenseDesc": "修改此支出",
+    "paidFromAccount": "支付账户",
+    "selectAccount": "选择账户",
+    "noAccount": "无账户（以其他方式支付）",
+    "paidFromAccountHint": "选择账户后将从中扣除该金额。",
+    "amountMustBePositive": "金额必须大于零"
   },
   "partners": {
     "title": "合伙人",
