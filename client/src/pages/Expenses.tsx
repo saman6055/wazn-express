@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { showErrorToast } from "@/lib/errorToast";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -122,7 +123,7 @@ const [activeTab, setActiveTab] = useState("expenses");
       resetExpenseForm();
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error);
     },
   });
 
@@ -132,7 +133,7 @@ const [activeTab, setActiveTab] = useState("expenses");
       refetchExpenses();
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error);
     },
   });
 
@@ -144,7 +145,7 @@ const [activeTab, setActiveTab] = useState("expenses");
       resetCategoryForm();
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error);
     },
   });
 
@@ -154,7 +155,7 @@ const [activeTab, setActiveTab] = useState("expenses");
       refetchCategories();
     },
     onError: (error) => {
-      toast.error(error.message);
+      showErrorToast(error);
     },
   });
 
