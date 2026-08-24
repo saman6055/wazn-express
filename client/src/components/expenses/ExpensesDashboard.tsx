@@ -39,6 +39,16 @@ export interface ExpensesDashboardData {
   previousDaily: { date: string; total: number }[];
   byVendor: { vendor: string; total: number; count: number }[];
   paymentSplit: { fromAccounts: number; outOfPocket: number };
+  budgetMonth: { startDate: Date | string; endDate: Date | string };
+  budgets: {
+    categoryId: number | null;
+    categoryName: string | null;
+    isOverall: boolean;
+    budget: number;
+    spent: number;
+    projected: number;
+    breached: boolean;
+  }[];
   profit: { grossProfit: number; netProfit: number; expensesInPeriod: number };
 }
 
@@ -235,6 +245,7 @@ export function ExpensesDashboard({
   onSelectCategory,
   onSelectVendor,
   onShowUnassigned,
+  onEditBudgets,
   alertCount,
   onOpenAlerts,
 }: {
@@ -244,6 +255,8 @@ export function ExpensesDashboard({
   onSelectCategory: (categoryId: number) => void;
   onSelectVendor: (vendor: string) => void;
   onShowUnassigned: () => void;
+  /** Absent for anyone not allowed to set one — the panel still reports. */
+  onEditBudgets?: () => void;
   alertCount: number;
   onOpenAlerts: () => void;
 }) {
@@ -358,6 +371,91 @@ export function ExpensesDashboard({
           onClick={data.paymentSplit.outOfPocket > 0 ? onShowUnassigned : undefined}
         />
       </div>
+
+      {(data.budgets.length > 0 || onEditBudgets) && (
+        <Card>
+          <CardContent className="p-4">
+            <div className="mb-3 flex items-center justify-between gap-3 text-xs">
+              <span className="font-medium text-muted-foreground">{t("expenses.budgetThisMonth")}</span>
+              {onEditBudgets && (
+                <button
+                  type="button"
+                  onClick={onEditBudgets}
+                  data-testid="edit-budgets"
+                  className="text-primary hover:underline"
+                >
+                  {t("expenses.setBudget")}
+                </button>
+              )}
+            </div>
+
+            {data.budgets.length === 0 ? (
+              <p className="py-4 text-center text-sm text-muted-foreground">
+                {t("expenses.noBudgetYet")}
+              </p>
+            ) : (
+              <div className="space-y-3">
+                {data.budgets.map((line) => {
+                  const used = line.budget > 0 ? (line.spent / line.budget) * 100 : 0;
+                  const projectedOver = !line.breached && line.projected > line.budget;
+                  return (
+                    <div
+                      key={line.categoryId ?? "overall"}
+                      data-testid={`budget-line-${line.categoryId ?? "overall"}`}
+                      className={cn(
+                        "cursor-default rounded-md px-2 py-1.5",
+                        line.categoryId != null && "cursor-pointer hover:bg-muted",
+                      )}
+                      onClick={
+                        line.categoryId != null
+                          ? () => onSelectCategory(line.categoryId!)
+                          : undefined
+                      }
+                    >
+                      <div className="flex items-baseline justify-between gap-3 text-sm">
+                        <span className="truncate">
+                          {line.isOverall ? t("expenses.variableSpending") : line.categoryName}
+                        </span>
+                        <span className="shrink-0 tabular-nums text-muted-foreground">
+                          {money(line.spent)} / {money(line.budget)}
+                        </span>
+                      </div>
+                      <div className="mt-1.5 h-2 overflow-hidden rounded-full bg-muted">
+                        <span
+                          className={cn(
+                            "block h-full rounded-full",
+                            line.breached ? "bg-red-500 dark:bg-red-400" : projectedOver ? "bg-amber-500 dark:bg-amber-400" : "bg-primary",
+                          )}
+                          style={{ width: `${Math.min(100, used)}%` }}
+                        />
+                      </div>
+                      <div className="mt-1 text-xs text-muted-foreground">
+                        {line.breached ? (
+                          <span className="text-red-600 dark:text-red-400">
+                            {t("expenses.overBudgetBy", { amount: money(line.spent - line.budget) })}
+                          </span>
+                        ) : projectedOver ? (
+                          <span className="text-amber-600 dark:text-amber-400">
+                            {t("expenses.projectedOver", { amount: money(line.projected) })}
+                          </span>
+                        ) : (
+                          t("expenses.remainingBudget", {
+                            amount: money(Math.max(0, line.budget - line.spent)),
+                            percent: used.toFixed(0),
+                          })
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+                <p className="pt-1 text-xs text-muted-foreground">
+                  {t("expenses.budgetExcludesRecurring")}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
       <Card>
         <CardContent className="p-4">

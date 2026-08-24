@@ -3513,7 +3513,21 @@
     "editCategoryDesc": "غيّر الاسم واللون والوصف",
     "leftTheAccounts": "خرج من الحسابات",
     "unassignedHint": "{{amount}} بدون حساب مسجّل — انقر للعرض",
-    "allAssigned": "كل مصروف له حساب"
+    "allAssigned": "كل مصروف له حساب",
+    "budgetThisMonth": "ميزانية هذا الشهر",
+    "setBudget": "تحديد الميزانية",
+    "setBudgetDesc": "حدد المبلغ الشهري الذي تنوي إنفاقه",
+    "noBudgetYet": "لم تُحدَّد ميزانية بعد",
+    "variableSpending": "الإنفاق المتغيّر",
+    "overallBudgetHint": "يشمل المصروفات غير المتكررة فقط — الإيجار والرواتب والخدمات ليست ضمنه.",
+    "perCategoryBudget": "لكل فئة",
+    "recurringExcluded": "غير محتسبة في الميزانية",
+    "recurringExcludedHint": "هذه تأتي كل شهر ومتوقّعة، فالتنبيه عنها ضجيج. حدّد الفئة كمتكررة أو لا من تبويب الفئات.",
+    "overBudgetBy": "{{amount}} فوق الميزانية",
+    "projectedOver": "بهذا المعدل يصل إلى {{amount}} — فوق الميزانية",
+    "remainingBudget": "بقي {{amount}} — استُخدم {{percent}}٪",
+    "budgetExcludesRecurring": "المصروفات المتكررة (إيجار، رواتب، خدمات) غير محتسبة هنا.",
+    "budgetSaved": "تم حفظ الميزانية"
   },
   "partners": {
     "title": "الشركاء",

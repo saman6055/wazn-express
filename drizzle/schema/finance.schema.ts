@@ -683,6 +683,35 @@ export type InsertDailyFinancialSummary = typeof dailyFinancialSummary.$inferIns
 // ============ BLOG POSTS (Announcements) ============
 
 
+/**
+ * What the office means to spend this month, so the screen can say how much
+ * of it is left while there is still time to act on the answer.
+ *
+ * A budget is set per category, or once for everything variable — the row
+ * with no categoryId. Either way it is measured against **non-recurring**
+ * spending only: rent, salaries, water and electricity are known months in
+ * advance, and a warning that fires for them every month is a warning nobody
+ * reads by the third month. What a budget is for is the spending that is
+ * still a decision.
+ *
+ * The amount is monthly and in USD, the currency every expense is already
+ * converted to before it is stored.
+ */
+export const expenseBudgets = mysqlTable("expenseBudgets", {
+  id: int("id").autoincrement().primaryKey(),
+  // null = one budget covering every variable category together.
+  categoryId: int("categoryId"),
+  monthlyAmountUsd: decimal("monthlyAmountUsd", { precision: 12, scale: 2 }).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
+  notes: text("notes"),
+  createdById: int("createdById"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type ExpenseBudget = typeof expenseBudgets.$inferSelect;
+export type InsertExpenseBudget = typeof expenseBudgets.$inferInsert;
+
 export const expenseAlerts = mysqlTable("expenseAlerts", {
   id: int("id").autoincrement().primaryKey(),
   alertType: mysqlEnum("alertType", ["daily", "weekly", "monthly", "per_transaction"]).notNull(),

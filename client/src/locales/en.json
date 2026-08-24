@@ -3513,7 +3513,21 @@
     "editCategoryDesc": "Change the name, colour and description",
     "leftTheAccounts": "Left the accounts",
     "unassignedHint": "{{amount}} with no account recorded — click to see",
-    "allAssigned": "Every expense has an account"
+    "allAssigned": "Every expense has an account",
+    "budgetThisMonth": "Budget this month",
+    "setBudget": "Set budget",
+    "setBudgetDesc": "Set the monthly amount you mean to spend",
+    "noBudgetYet": "No budget set yet",
+    "variableSpending": "Variable spending",
+    "overallBudgetHint": "Covers only non-recurring expenses — rent, salaries and utilities are not in it.",
+    "perCategoryBudget": "Per category",
+    "recurringExcluded": "Not counted in the budget",
+    "recurringExcludedHint": "These arrive every month and are expected, so warning about them is noise. Mark a category as recurring or not in the categories tab.",
+    "overBudgetBy": "{{amount}} over budget",
+    "projectedOver": "At this rate it reaches {{amount}} — over budget",
+    "remainingBudget": "{{amount}} left — {{percent}}% used",
+    "budgetExcludesRecurring": "Recurring expenses (rent, salaries, utilities) are not counted here.",
+    "budgetSaved": "Budget saved"
   },
   "partners": {
     "title": "Partners",

@@ -13,10 +13,12 @@ describe("Migration System", () => {
     
     // A count, so adding a table is a deliberate act rather than something
     // that slips in. Bump it in the same commit that adds the table.
-    it("should have 92 table definitions", () => {
-      // 92 since dailySnapshots — the memory the morning brief compares
+    it("should have 93 table definitions", () => {
+      // 93 since expenseBudgets — what the office means to spend, so the
+      // screen can say how much is left while there is time to act. 92 was
+      // dailySnapshots — the memory the morning brief compares
       // against. 91 was customerFeatures.
-      expect(TABLE_DEFINITIONS.length).toBe(92);
+      expect(TABLE_DEFINITIONS.length).toBe(93);
     });
     
     it("should have unique table names", () => {

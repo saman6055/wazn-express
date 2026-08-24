@@ -33,6 +33,9 @@ const financeDb = read("server/db/finance.db.ts");
 const screen = read("client/src/pages/Expenses.tsx");
 const dashboard = read("client/src/components/expenses/ExpensesDashboard.tsx");
 
+/** A function's closing brace at column 0, spelled once. */
+const END_OF_FN = ["", "}", ""].join("\n");
+
 const getDashboard = () =>
   slice(router, "getDashboard: accountantProcedure", "update: accountantProcedure", "expenses.getDashboard");
 
@@ -149,5 +152,64 @@ describe("the report refuses to state what it cannot know", () => {
     // The opposite of a revenue figure, and the mistake is invisible: green
     // on a number that went up looks like good news.
     expect(dashboard).toContain("const bad = invert ? !up : up");
+  });
+});
+
+/**
+ * A budget is only worth reading if it can be breached by a decision.
+ *
+ * Rent, salaries, water and electricity arrive whether anybody watches or
+ * not. A budget that counts them is breached on the same day every month by
+ * the same amount, and a warning that fires every month is one nobody reads
+ * by the third. So the overall budget covers non-recurring spending only —
+ * the owner's own words, and the reason the feature exists.
+ */
+describe("a budget covers what is still a decision", () => {
+  const budgetStatus = () =>
+    slice(financeDb, "export async function getExpenseBudgetStatus", END_OF_FN, "getExpenseBudgetStatus");
+
+  it("leaves recurring categories out of the overall figure", () => {
+    const body = budgetStatus();
+    expect(body, "recurring categories are not identified at all").toContain("isRecurring");
+    expect(body, "and are not excluded from the overall total").toContain("!recurring.has(categoryId)");
+  });
+
+  it("measures a category budget against that category alone", () => {
+    // Somebody who set a budget on one category has said which spending
+    // they mean, recurring or not.
+    expect(budgetStatus()).toContain("spentByCategory.get(b.categoryId!)");
+  });
+
+  it("answers for the calendar month, not the window on screen", () => {
+    // A monthly promise measured over eleven days reports every month as
+    // comfortably under.
+    const body = getDashboard();
+    expect(body).toContain("monthStart");
+    expect(body).toContain("getExpenseBudgetStatus(monthStart, monthEnd, endDate)");
+  });
+
+  it("counts the days of the month from the calendar", () => {
+    // monthEnd carries the last day's 23:59, so measuring the gap and adding
+    // one for "both ends" invents a thirty-second of August.
+    const body = budgetStatus();
+    expect(body).toContain("monthStart.getMonth() + 1, 0).getDate()");
+  });
+
+  it("treats clearing a budget as removing it", () => {
+    // "No budget" and "a budget of zero" are different statements, and a
+    // budget of zero is breached by the first expense of the month.
+    const body = slice(financeDb, "export async function setExpenseBudget", END_OF_FN, "setExpenseBudget");
+    expect(body).toContain("monthlyAmountUsd <= 0");
+    expect(body).toContain("db.delete(expenseBudgets)");
+  });
+
+  it("lets anyone read a budget and only an owner set one", () => {
+    expect(router).toContain("listBudgets: accountantProcedure");
+    expect(router).toContain("setBudget: adminProcedure");
+  });
+
+  it("says on the screen which spending it does not count", () => {
+    expect(dashboard, "the exclusion must be stated, or the figure misleads")
+      .toContain("budgetExcludesRecurring");
   });
 });

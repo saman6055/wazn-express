@@ -3517,7 +3517,21 @@
     "editCategoryDesc": "修改名称、颜色和描述",
     "leftTheAccounts": "从账户支出",
     "unassignedHint": "{{amount}} 未记录账户 — 点击查看",
-    "allAssigned": "每笔支出都有账户"
+    "allAssigned": "每笔支出都有账户",
+    "budgetThisMonth": "本月预算",
+    "setBudget": "设置预算",
+    "setBudgetDesc": "设置你打算每月支出的金额",
+    "noBudgetYet": "尚未设置预算",
+    "variableSpending": "可变支出",
+    "overallBudgetHint": "仅包含非经常性支出 — 不含房租、工资和水电。",
+    "perCategoryBudget": "按类别",
+    "recurringExcluded": "不计入预算",
+    "recurringExcludedHint": "这些每月都会发生且可预期，提醒只是噪音。可在类别标签页标记是否为经常性。",
+    "overBudgetBy": "超出预算 {{amount}}",
+    "projectedOver": "按此速度将达到 {{amount}} — 超出预算",
+    "remainingBudget": "剩余 {{amount}} — 已用 {{percent}}%",
+    "budgetExcludesRecurring": "经常性支出（房租、工资、水电）不计入此处。",
+    "budgetSaved": "预算已保存"
   },
   "partners": {
     "title": "合伙人",

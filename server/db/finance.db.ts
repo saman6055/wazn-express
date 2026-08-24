@@ -39,6 +39,7 @@ import {
   notificationSettings, InsertNotificationSetting, NotificationSetting,
   expenseCategories, InsertExpenseCategory, ExpenseCategory,
   expenses, InsertExpense, Expense,
+  expenseBudgets, InsertExpenseBudget, ExpenseBudget,
   partners, InsertPartner, Partner,
   partnerTransactions, InsertPartnerTransaction, PartnerTransaction,
   companyDebts, InsertCompanyDebt, CompanyDebt,
@@ -1987,6 +1988,158 @@ export async function getExpensesPaymentSplit(
     fromAccounts: Number(row?.fromAccounts ?? 0),
     outOfPocket: Number(row?.outOfPocket ?? 0),
   };
+}
+
+// ============ EXPENSE BUDGETS ============
+
+/**
+ * What the office means to spend, and what it has spent.
+ *
+ * The rule that makes this worth reading: **recurring categories are left
+ * out**. Rent, salaries, water and electricity are known months ahead and
+ * arrive whether anybody watches or not. A budget that counts them is
+ * breached on the same day every month by the same amount, and a warning
+ * that fires every month is one nobody reads by the third. A budget is for
+ * the spending that is still a decision.
+ *
+ * So the overall budget — the row with no categoryId — is measured against
+ * non-recurring categories only. A budget set on one category is measured
+ * against that category alone, because somebody asking for it has said which
+ * spending they mean.
+ */
+export async function getExpenseBudgets(): Promise<ExpenseBudget[]> {
+  const db = await getDb();
+  if (!db) return [];
+  return await db.select().from(expenseBudgets).orderBy(desc(expenseBudgets.categoryId));
+}
+
+/**
+ * Sets, changes or clears the budget for one scope. An amount of zero or
+ * less clears it: "no budget" and "a budget of nothing" are different
+ * statements, and only the first is ever meant.
+ */
+export async function setExpenseBudget(params: {
+  categoryId: number | null;
+  monthlyAmountUsd: number;
+  createdById?: number | null;
+  notes?: string | null;
+}): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const scope = params.categoryId ?? null;
+  const [existing] = await db
+    .select()
+    .from(expenseBudgets)
+    .where(scope === null ? isNull(expenseBudgets.categoryId) : eq(expenseBudgets.categoryId, scope));
+
+  if (params.monthlyAmountUsd <= 0) {
+    if (existing) await db.delete(expenseBudgets).where(eq(expenseBudgets.id, existing.id));
+    return;
+  }
+
+  const amount = params.monthlyAmountUsd.toFixed(2);
+  if (existing) {
+    await db
+      .update(expenseBudgets)
+      .set({ monthlyAmountUsd: amount, notes: params.notes ?? null, isActive: true })
+      .where(eq(expenseBudgets.id, existing.id));
+    return;
+  }
+
+  await db.insert(expenseBudgets).values({
+    categoryId: scope,
+    monthlyAmountUsd: amount,
+    notes: params.notes ?? null,
+    createdById: params.createdById ?? null,
+  } as InsertExpenseBudget);
+}
+
+export interface BudgetLine {
+  categoryId: number | null;
+  categoryName: string | null;
+  /** True when this line covers every variable category together. */
+  isOverall: boolean;
+  budget: number;
+  spent: number;
+  /** What the month ends at if the rest of it runs at the rate so far. */
+  projected: number;
+  /** True once spent passes budget. Projection alone is a warning, not this. */
+  breached: boolean;
+}
+
+/**
+ * Budget against actual for a calendar month, one line per budget set.
+ *
+ * The projection is the plainest one that can be defended: what has been
+ * spent, divided by the days elapsed, times the days in the month. It is a
+ * statement about the current rate and nothing more — no seasonality, no
+ * weighting — which is why it is labelled as a rate on the screen rather than
+ * as a forecast.
+ */
+export async function getExpenseBudgetStatus(
+  monthStart: Date,
+  monthEnd: Date,
+  today: Date,
+): Promise<BudgetLine[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const budgets = await db.select().from(expenseBudgets).where(eq(expenseBudgets.isActive, true));
+  if (budgets.length === 0) return [];
+
+  // Which categories arrive whether anybody watches or not.
+  const categories = await db
+    .select({ id: expenseCategories.id, nameEn: expenseCategories.nameEn, nameKu: expenseCategories.nameKu, isRecurring: expenseCategories.isRecurring })
+    .from(expenseCategories);
+  const recurring = new Set(categories.filter((c) => c.isRecurring).map((c) => c.id));
+  const nameOf = new Map(categories.map((c) => [c.id, c.nameKu || c.nameEn || String(c.id)]));
+
+  const spentRows = await db
+    .select({
+      categoryId: expenses.categoryId,
+      total: sql<string>`COALESCE(SUM(CAST(${expenses.amountUsd} AS DECIMAL(14,2))), 0)`,
+    })
+    .from(expenses)
+    .where(and(gte(expenses.expenseDate, monthStart), lte(expenses.expenseDate, monthEnd)))
+    .groupBy(expenses.categoryId);
+
+  const spentByCategory = new Map<number, number>();
+  for (const row of spentRows) {
+    if (row.categoryId == null) continue;
+    spentByCategory.set(row.categoryId, Number(row.total));
+  }
+
+  // Asked of the calendar rather than derived from a subtraction: monthEnd
+  // carries the last day's 23:59, so measuring the gap and adding one for
+  // "both ends" counts a day that is not there and quietly flatters every
+  // projection by a thirty-first.
+  const daysInMonth = new Date(monthStart.getFullYear(), monthStart.getMonth() + 1, 0).getDate();
+  const dayOfMonth = Math.min(
+    daysInMonth,
+    Math.max(1, Math.round((today.getTime() - monthStart.getTime()) / 86_400_000) + 1),
+  );
+
+  return budgets.map((b) => {
+    const isOverall = b.categoryId == null;
+    const spent = isOverall
+      ? // Everything still a decision, and nothing that is not.
+        Array.from(spentByCategory.entries())
+          .filter(([categoryId]) => !recurring.has(categoryId))
+          .reduce((sum, [, amount]) => sum + amount, 0)
+      : (spentByCategory.get(b.categoryId!) ?? 0);
+
+    const budget = Number(b.monthlyAmountUsd);
+    return {
+      categoryId: b.categoryId,
+      categoryName: isOverall ? null : (nameOf.get(b.categoryId!) ?? null),
+      isOverall,
+      budget,
+      spent,
+      projected: (spent / dayOfMonth) * daysInMonth,
+      breached: spent > budget,
+    };
+  });
 }
 
 // ============ PARTNERS ============

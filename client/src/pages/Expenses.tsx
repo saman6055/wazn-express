@@ -2,6 +2,7 @@ import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
 import { ExpensesDashboard } from "@/components/expenses/ExpensesDashboard";
+import { BudgetDialog } from "@/components/expenses/BudgetDialog";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import type { Localised } from "@shared/listLinks";
 import { useLocation } from "wouter";
@@ -109,6 +110,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   // Rows recorded before the screen asked which account paid, plus any
   // recorded since without answering. Not "paid personally" — unknown.
   const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
+  const [showBudgets, setShowBudgets] = useState(false);
 
   const [expenseForm, setExpenseForm] = useState({
     categoryId: "",
@@ -824,6 +826,16 @@ const [activeTab, setActiveTab] = useState("expenses");
           </div>
         </div>
 
+        {/* Setting a budget is an owner's decision, so the button is only
+            there for the roles the endpoint accepts — the panel itself
+            reports to everybody. */}
+        <BudgetDialog
+          open={showBudgets}
+          onOpenChange={setShowBudgets}
+          categories={categories}
+          onSaved={refetchAll}
+        />
+
         {/* Everything the screen reports, above the list it reports on. */}
         <ExpensesDashboard
           data={dashboard}
@@ -831,6 +843,7 @@ const [activeTab, setActiveTab] = useState("expenses");
           daysInRange={daysInRange}
           alertCount={activeAlertCount}
           onOpenAlerts={() => setLocation("/company/expense-alerts")}
+          onEditBudgets={canSeeAlerts ? () => setShowBudgets(true) : undefined}
           onShowUnassigned={() => {
             setShowOnlyUnassigned(true);
             setSelectedCategory("all");

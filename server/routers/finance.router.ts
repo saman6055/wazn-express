@@ -672,6 +672,28 @@ export const expensesRouter = router({
      * a week and a quarter with a quarter. Comparing against a calendar month
      * would make the first days of a month look like a collapse.
      */
+    /** What the office means to spend. Reading is for anyone who can see the
+     *  screen; setting one is an owner's decision, so it is admin-only. */
+    listBudgets: accountantProcedure.query(async () => {
+      return db.getExpenseBudgets();
+    }),
+    setBudget: adminProcedure
+      .input(z.object({
+        // null = one budget covering every variable category together.
+        categoryId: z.number().nullable(),
+        monthlyAmountUsd: z.number(),
+        notes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        await db.setExpenseBudget({
+          categoryId: input.categoryId,
+          monthlyAmountUsd: input.monthlyAmountUsd,
+          notes: input.notes ?? null,
+          createdById: ctx.user.id,
+        });
+        return { success: true };
+      }),
+
     getDashboard: accountantProcedure
       .input(z.object({
         startDate: z.date(),
@@ -684,7 +706,14 @@ export const expensesRouter = router({
         const previousEnd = new Date(startDate.getTime() - DAY);
         const previousStart = new Date(previousEnd.getTime() - spanMs);
 
-        const [current, previous, daily, previousDaily, byVendor, paymentSplit, profitLoss] =
+        // A budget is a monthly promise, so it is answered for the calendar
+        // month the chosen window ends in — not for the window itself. A
+        // budget measured over eleven days would report every month as
+        // comfortably under.
+        const monthStart = new Date(endDate.getFullYear(), endDate.getMonth(), 1);
+        const monthEnd = new Date(endDate.getFullYear(), endDate.getMonth() + 1, 0, 23, 59, 59);
+
+        const [current, previous, daily, previousDaily, byVendor, paymentSplit, profitLoss, budgets] =
           await Promise.all([
             db.getExpensesSummary(startDate, endDate),
             db.getExpensesSummary(previousStart, previousEnd),
@@ -695,11 +724,14 @@ export const expensesRouter = router({
             // Revenue and cost for the same window, so the share of profit is
             // a share of *this* period's profit and not of the year's.
             db.calculateProfitLoss(startDate, endDate),
+            db.getExpenseBudgetStatus(monthStart, monthEnd, endDate),
           ]);
 
         return {
           period: { startDate, endDate },
           previousPeriod: { startDate: previousStart, endDate: previousEnd },
+          budgetMonth: { startDate: monthStart, endDate: monthEnd },
+          budgets,
           current,
           previous,
           daily,

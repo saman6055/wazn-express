@@ -1215,6 +1215,24 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "expenseBudgets",
+    dependencies: ["expenseCategories", "users"],
+    // One row per category, plus at most one with categoryId NULL covering
+    // every variable category together. See drizzle/schema/finance.schema.ts.
+    sql: `CREATE TABLE IF NOT EXISTS expenseBudgets (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      categoryId INT NULL,
+      monthlyAmountUsd DECIMAL(12, 2) NOT NULL,
+      isActive BOOLEAN NOT NULL DEFAULT TRUE,
+      notes TEXT,
+      createdById INT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY expense_budget_scope (categoryId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "expenses",
     dependencies: ["expenseCategories", "cashAccounts", "users"],
     sql: `CREATE TABLE IF NOT EXISTS expenses (
