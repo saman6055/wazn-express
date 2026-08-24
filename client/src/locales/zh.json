@@ -3514,7 +3514,10 @@
     "filteredByCategory": "类别：{{name}}",
     "filteredByVendor": "供应商：{{name}}",
     "editCategory": "编辑类别",
-    "editCategoryDesc": "修改名称、颜色和描述"
+    "editCategoryDesc": "修改名称、颜色和描述",
+    "leftTheAccounts": "从账户支出",
+    "unassignedHint": "{{amount}} 未记录账户 — 点击查看",
+    "allAssigned": "每笔支出都有账户"
   },
   "partners": {
     "title": "合伙人",

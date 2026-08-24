@@ -3510,7 +3510,10 @@
     "filteredByCategory": "Category: {{name}}",
     "filteredByVendor": "Supplier: {{name}}",
     "editCategory": "Edit category",
-    "editCategoryDesc": "Change the name, colour and description"
+    "editCategoryDesc": "Change the name, colour and description",
+    "leftTheAccounts": "Left the accounts",
+    "unassignedHint": "{{amount}} with no account recorded — click to see",
+    "allAssigned": "Every expense has an account"
   },
   "partners": {
     "title": "Partners",

@@ -125,6 +125,16 @@ describe("every figure leads to the rows behind it", () => {
 });
 
 describe("the report refuses to state what it cannot know", () => {
+  it("does not call a missing account a personal payment", () => {
+    // A row with no cashAccountId is not "paid out of pocket" — nobody
+    // wrote down where the money came from. Every expense recorded before
+    // the screen asked is in that state, and calling it personal spending
+    // invents a debt to somebody.
+    expect(dashboard).toContain("leftTheAccounts");
+    expect(dashboard, "the gap must be named, not interpreted").toContain("unassignedHint");
+    expect(dashboard, "and it must open the rows it counted").toContain("onShowUnassigned");
+  });
+
   it("does not report a share of a profit that was never made", () => {
     // Zero revenue does not mean expenses ate 0% of the profit.
     expect(dashboard).toContain("grossProfit > 0 ?");

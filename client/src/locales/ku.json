@@ -3554,7 +3554,10 @@
     "filteredByCategory": "پۆل: {{name}}",
     "filteredByVendor": "فرۆشیار: {{name}}",
     "editCategory": "دەستکاری پۆل",
-    "editCategoryDesc": "ناو، ڕەنگ و وەسفی پۆلەکە بگۆڕە"
+    "editCategoryDesc": "ناو، ڕەنگ و وەسفی پۆلەکە بگۆڕە",
+    "leftTheAccounts": "پارەی دەرچوو لە حسابەکان",
+    "unassignedHint": "{{amount}} حسابی بۆ دیاری نەکراوە — کلیک بکە",
+    "allAssigned": "هەموو خەرجییەک حسابی هەیە"
   },
   "partners": {
     "title": "هاوبەشەکان",

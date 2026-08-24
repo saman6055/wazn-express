@@ -234,6 +234,7 @@ export function ExpensesDashboard({
   daysInRange,
   onSelectCategory,
   onSelectVendor,
+  onShowUnassigned,
   alertCount,
   onOpenAlerts,
 }: {
@@ -242,6 +243,7 @@ export function ExpensesDashboard({
   daysInRange: number;
   onSelectCategory: (categoryId: number) => void;
   onSelectVendor: (vendor: string) => void;
+  onShowUnassigned: () => void;
   alertCount: number;
   onOpenAlerts: () => void;
 }) {
@@ -339,12 +341,21 @@ export function ExpensesDashboard({
           onClick={biggest ? () => onSelectCategory(biggest.categoryId) : undefined}
         />
 
+        {/* Absence of an answer is not an answer. A row with no account is
+            not "paid personally" — nobody wrote down where the money came
+            from, and until somebody does, the Treasury cannot be reconciled
+            against it. So the card names the gap and opens it. */}
         <Figure
           testId="figure-paid-from"
-          label={t("expenses.paidFromAccounts")}
+          label={t("expenses.leftTheAccounts")}
           value={money(data.paymentSplit.fromAccounts)}
-          hint={t("expenses.outOfPocketHint", { amount: money(data.paymentSplit.outOfPocket) })}
+          hint={
+            data.paymentSplit.outOfPocket > 0
+              ? t("expenses.unassignedHint", { amount: money(data.paymentSplit.outOfPocket) })
+              : t("expenses.allAssigned")
+          }
           icon={<Wallet className="h-4 w-4" />}
+          onClick={data.paymentSplit.outOfPocket > 0 ? onShowUnassigned : undefined}
         />
       </div>
 

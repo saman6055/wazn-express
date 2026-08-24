@@ -3510,7 +3510,10 @@
     "filteredByCategory": "الفئة: {{name}}",
     "filteredByVendor": "المورد: {{name}}",
     "editCategory": "تعديل الفئة",
-    "editCategoryDesc": "غيّر الاسم واللون والوصف"
+    "editCategoryDesc": "غيّر الاسم واللون والوصف",
+    "leftTheAccounts": "خرج من الحسابات",
+    "unassignedHint": "{{amount}} بدون حساب مسجّل — انقر للعرض",
+    "allAssigned": "كل مصروف له حساب"
   },
   "partners": {
     "title": "الشركاء",

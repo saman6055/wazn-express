@@ -106,6 +106,9 @@ const [activeTab, setActiveTab] = useState("expenses");
   // corrected is a ledger nobody can trust.
   const [editingExpenseId, setEditingExpenseId] = useState<number | null>(null);
   const [editingCategoryId, setEditingCategoryId] = useState<number | null>(null);
+  // Rows recorded before the screen asked which account paid, plus any
+  // recorded since without answering. Not "paid personally" — unknown.
+  const [showOnlyUnassigned, setShowOnlyUnassigned] = useState(false);
 
   const [expenseForm, setExpenseForm] = useState({
     categoryId: "",
@@ -396,6 +399,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   ];
 
   const filteredExpenses = expenses.filter(expense => {
+    if (showOnlyUnassigned && expense.cashAccountId != null) return false;
     if (!searchQuery) return true;
     const category = getCategoryById(expense.categoryId);
     return (
@@ -443,8 +447,16 @@ const [activeTab, setActiveTab] = useState("expenses");
         zh: `类别：${name}`,
       });
     }
+    if (showOnlyUnassigned) {
+      filters.push({
+        ku: "بێ حسابی دیاریکراو",
+        en: "No account recorded",
+        ar: "بدون حساب مسجّل",
+        zh: "未记录账户",
+      });
+    }
     return filters;
-  }, [selectedCategory, categories]);
+  }, [selectedCategory, categories, showOnlyUnassigned]);
 
   const activeAlertCount = useMemo(() => {
     const from = new Date(dateRange.start).getTime();
@@ -819,15 +831,24 @@ const [activeTab, setActiveTab] = useState("expenses");
           daysInRange={daysInRange}
           alertCount={activeAlertCount}
           onOpenAlerts={() => setLocation("/company/expense-alerts")}
+          onShowUnassigned={() => {
+            setShowOnlyUnassigned(true);
+            setSelectedCategory("all");
+            setSearchQuery("");
+            setActiveTab("expenses");
+            document.getElementById("expenses-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
           onSelectCategory={(categoryId) => {
             setSelectedCategory(categoryId.toString());
             setSearchQuery("");
+            setShowOnlyUnassigned(false);
             setActiveTab("expenses");
             document.getElementById("expenses-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
           }}
           onSelectVendor={(vendor) => {
             setSearchQuery(vendor);
             setSelectedCategory("all");
+            setShowOnlyUnassigned(false);
             setActiveTab("expenses");
             document.getElementById("expenses-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
           }}
@@ -848,6 +869,7 @@ const [activeTab, setActiveTab] = useState("expenses");
               onClear={() => {
                 setSelectedCategory("all");
                 setSearchQuery("");
+                setShowOnlyUnassigned(false);
               }}
             />
             {/* Filters */}
