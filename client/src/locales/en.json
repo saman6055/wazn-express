@@ -3527,7 +3527,9 @@
     "projectedOver": "At this rate it reaches {{amount}} — over budget",
     "remainingBudget": "{{amount}} left — {{percent}}% used",
     "budgetExcludesRecurring": "Recurring expenses (rent, salaries, utilities) are not counted here.",
-    "budgetSaved": "Budget saved"
+    "budgetSaved": "Budget saved",
+    "noAccountsYet": "No accounts created yet.",
+    "manageAccounts": "Create an account"
   },
   "partners": {
     "title": "Partners",

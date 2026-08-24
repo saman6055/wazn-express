@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
 import { ExpensesDashboard } from "@/components/expenses/ExpensesDashboard";
@@ -260,6 +260,16 @@ const [activeTab, setActiveTab] = useState("expenses");
     },
   });
 
+  /**
+   * The account a new expense is assumed to have come out of.
+   *
+   * Most of the time there is one — the company cash box — and asking which
+   * of one is friction that gets answered wrong or not at all. When there is
+   * exactly one active account it is filled in; when there are several the
+   * question is real and stays unanswered until somebody answers it.
+   */
+  const defaultCashAccountId = cashAccounts.length === 1 ? String(cashAccounts[0]!.id) : "";
+
   const resetExpenseForm = () => {
     setEditingExpenseId(null);
     setExpenseForm({
@@ -269,7 +279,7 @@ const [activeTab, setActiveTab] = useState("expenses");
       description: "",
       expenseDate: new Date().toISOString().split('T')[0],
       paymentMethod: "cash",
-      cashAccountId: "",
+      cashAccountId: defaultCashAccountId,
       vendor: "",
       referenceNumber: "",
       notes: "",
@@ -459,6 +469,15 @@ const [activeTab, setActiveTab] = useState("expenses");
     }
     return filters;
   }, [selectedCategory, categories, showOnlyUnassigned]);
+
+  useEffect(() => {
+    if (!defaultCashAccountId) return;
+    setExpenseForm((form) =>
+      form.cashAccountId === "" && editingExpenseId === null
+        ? { ...form, cashAccountId: defaultCashAccountId }
+        : form,
+    );
+  }, [defaultCashAccountId, editingExpenseId]);
 
   const activeAlertCount = useMemo(() => {
     const from = new Date(dateRange.start).getTime();
@@ -758,7 +777,20 @@ const [activeTab, setActiveTab] = useState("expenses");
                       </SelectContent>
                     </Select>
                     <p className="text-xs text-muted-foreground">
-                      {t("expenses.paidFromAccountHint")}
+                      {cashAccounts.length === 0 ? (
+                        <>
+                          {t("expenses.noAccountsYet")}{" "}
+                          <button
+                            type="button"
+                            className="text-primary hover:underline"
+                            onClick={() => setLocation("/finance/bank-accounts")}
+                          >
+                            {t("expenses.manageAccounts")}
+                          </button>
+                        </>
+                      ) : (
+                        t("expenses.paidFromAccountHint")
+                      )}
                     </p>
                   </div>
                   <div className="grid gap-2">

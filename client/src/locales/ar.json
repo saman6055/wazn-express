@@ -3527,7 +3527,9 @@
     "projectedOver": "بهذا المعدل يصل إلى {{amount}} — فوق الميزانية",
     "remainingBudget": "بقي {{amount}} — استُخدم {{percent}}٪",
     "budgetExcludesRecurring": "المصروفات المتكررة (إيجار، رواتب، خدمات) غير محتسبة هنا.",
-    "budgetSaved": "تم حفظ الميزانية"
+    "budgetSaved": "تم حفظ الميزانية",
+    "noAccountsYet": "لم يتم إنشاء أي حساب بعد.",
+    "manageAccounts": "إنشاء حساب"
   },
   "partners": {
     "title": "الشركاء",

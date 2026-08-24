@@ -308,6 +308,21 @@ describe("the expenses screen is wired to the accounting", () => {
     expect(body).toContain("refetchAll()");
   });
 
+  it("does not ask which of one account the money came from", () => {
+    // Most companies keep the money in one place — the cash box. Asking
+    // which of one is friction that gets answered wrong or not at all, and
+    // an unanswered account is an expense the Treasury never sees.
+    const src = screen();
+    expect(src).toContain("defaultCashAccountId");
+    expect(src, "the question is real once there is more than one account")
+      .toContain("cashAccounts.length === 1");
+  });
+
+  it("says where accounts are made when there are none", () => {
+    // An empty picker with no explanation reads as a broken screen.
+    expect(screen()).toContain("noAccountsYet");
+  });
+
   it("says so when the money left an account that was already short", () => {
     expect(screen(), "the overdraw warning is dropped on the floor").toContain("cashWarning");
   });

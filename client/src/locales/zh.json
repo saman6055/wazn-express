@@ -3531,7 +3531,9 @@
     "projectedOver": "按此速度将达到 {{amount}} — 超出预算",
     "remainingBudget": "剩余 {{amount}} — 已用 {{percent}}%",
     "budgetExcludesRecurring": "经常性支出（房租、工资、水电）不计入此处。",
-    "budgetSaved": "预算已保存"
+    "budgetSaved": "预算已保存",
+    "noAccountsYet": "尚未创建账户。",
+    "manageAccounts": "创建账户"
   },
   "partners": {
     "title": "合伙人",

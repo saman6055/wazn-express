@@ -3571,7 +3571,9 @@
     "projectedOver": "بەم ڕەوتە دەگاتە {{amount}} — لە بودجە تێدەپەڕێت",
     "remainingBudget": "{{amount}} ماوە — {{percent}}٪ بەکارهاتووە",
     "budgetExcludesRecurring": "خەرجییە دووبارەبووەکان (کرێ، موچە، کارەبا) لەم ژمێریارییەدا نین.",
-    "budgetSaved": "بودجە پاشەکەوت کرا"
+    "budgetSaved": "بودجە پاشەکەوت کرا",
+    "noAccountsYet": "هێشتا هیچ حسابێک دروست نەکراوە.",
+    "manageAccounts": "دروستکردنی حساب"
   },
   "partners": {
     "title": "هاوبەشەکان",
