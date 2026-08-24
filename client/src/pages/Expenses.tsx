@@ -1,6 +1,11 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
+import { ExpensesDashboard } from "@/components/expenses/ExpensesDashboard";
+import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
+import type { Localised } from "@shared/listLinks";
+import { useLocation } from "wouter";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { getErrorBoundaryStrings } from "@/components/ErrorBoundary";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -136,6 +141,28 @@ const [activeTab, setActiveTab] = useState("expenses");
   // method and never for the account, so the Treasury went on showing money
   // that had already gone out of the door.
   const { data: cashAccounts = [] } = trpc.cashAccounts.listActive.useQuery();
+  const [, setLocation] = useLocation();
+  const { user } = useAuth();
+
+  // The alerts endpoints are admin-only. An accountant asking for them would
+  // be refused, and the refusal would now surface as an error banner on a
+  // screen they are perfectly entitled to use — so they simply do not ask,
+  // and see no strip. Permissions are not changed here, only respected.
+  const canSeeAlerts = user?.role === "admin" || user?.role === "super_admin";
+  const { data: alertLogs = [] } = trpc.expenseAlerts.logs.useQuery(
+    { limit: 100 },
+    { enabled: canSeeAlerts },
+  );
+
+  const {
+    data: dashboard,
+    isLoading: isDashboardLoading,
+    refetch: refetchDashboard,
+  } = trpc.expenses.getDashboard.useQuery({
+    startDate: new Date(dateRange.start),
+    endDate: new Date(dateRange.end),
+  });
+
   const { data: summary, refetch: refetchSummary, error: summaryError } = trpc.expenses.getSummary.useQuery({
     startDate: new Date(dateRange.start),
     endDate: new Date(dateRange.end),
@@ -149,6 +176,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   const refetchAll = () => {
     refetchExpenses();
     refetchSummary();
+    refetchDashboard();
   };
 
   const createExpense = trpc.expenses.create.useMutation({
@@ -361,6 +389,33 @@ const [activeTab, setActiveTab] = useState("expenses");
   // — an answer, not a failure. The list and the totals were doing exactly
   // that while the table underneath them could not be read at all.
   const loadError = expensesError ?? summaryError ?? categoriesError ?? null;
+
+  // Named in the reader's own language, with one way out. Only filters that
+  // came from clicking a figure are listed — typing in the search box is not
+  // something anybody needs to be told about.
+  const clickFilters = useMemo(() => {
+    const filters: Localised[] = [];
+    if (selectedCategory !== "all") {
+      const category = categories.find((c) => c.id.toString() === selectedCategory);
+      const name = category?.nameKu || category?.nameEn || selectedCategory;
+      filters.push({
+        ku: `پۆل: ${name}`,
+        en: `Category: ${name}`,
+        ar: `الفئة: ${name}`,
+        zh: `类别：${name}`,
+      });
+    }
+    return filters;
+  }, [selectedCategory, categories]);
+
+  const activeAlertCount = useMemo(() => {
+    const from = new Date(dateRange.start).getTime();
+    const to = new Date(dateRange.end).getTime();
+    return alertLogs.filter((log) => {
+      const at = new Date(log.triggeredAt).getTime();
+      return at >= from && at <= to;
+    }).length;
+  }, [alertLogs, dateRange.start, dateRange.end]);
 
   // The daily average divided by a fixed 30 whatever range was on screen, so
   // a week of expenses read as a third of what it was and a quarter read as
@@ -700,97 +755,26 @@ const [activeTab, setActiveTab] = useState("expenses");
           </div>
         </div>
 
-        {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("expenses.totalExpenses")}</CardTitle>
-              <TrendingDown className="h-4 w-4 text-red-500 dark:text-red-400" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-300">
-                ${summary?.totalAmount.toFixed(2) || "0.00"}
-              </div>
-              <p className="text-xs text-muted-foreground">
-                {t("common.from")} {formatDate(dateRange.start)} {t("common.to")} {formatDate(dateRange.end)}
-              </p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("expenses.recordCount")}</CardTitle>
-              <Receipt className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{expenses.length}</div>
-              <p className="text-xs text-muted-foreground">{t("expenses.expenses")}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("expenses.categories")}</CardTitle>
-              <FolderOpen className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">{categories.length}</div>
-              <p className="text-xs text-muted-foreground">{t("expenses.activeCategory")}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle className="text-sm font-medium">{t("expenses.dailyAverage")}</CardTitle>
-              <Calendar className="h-4 w-4 text-muted-foreground" />
-            </CardHeader>
-            <CardContent>
-              <div className="text-2xl font-bold">
-                ${(((summary?.totalAmount || 0) / daysInRange)).toFixed(2)}
-              </div>
-              <p className="text-xs text-muted-foreground">{t("common.average")}</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Expense by Category */}
-        {summary && summary.byCategory.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">{t("expenses.expensesByCategory")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {summary.byCategory.map((cat) => {
-                  const percentage = (cat.total / summary.totalAmount) * 100;
-                  const category = categories.find(c => c.id === cat.categoryId);
-                  return (
-                    <div key={cat.categoryId} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-2">
-                          <div
-                            className="h-3 w-3 rounded-full"
-                            style={{ backgroundColor: category?.color || "#3b82f6" }}
-                          />
-                          <span className="text-sm font-medium">
-                            {category?.nameKu || category?.nameEn || cat.categoryName}
-                          </span>
-                        </div>
-                        <span className="text-sm font-medium">${cat.total.toFixed(2)}</span>
-                      </div>
-                      <div className="h-2 w-full rounded-full bg-secondary">
-                        <div
-                          className="h-2 rounded-full transition-all"
-                          style={{
-                            width: `${percentage}%`,
-                            backgroundColor: category?.color || "#3b82f6",
-                          }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+        {/* Everything the screen reports, above the list it reports on. */}
+        <ExpensesDashboard
+          data={dashboard}
+          isLoading={isDashboardLoading}
+          daysInRange={daysInRange}
+          alertCount={activeAlertCount}
+          onOpenAlerts={() => setLocation("/company/expense-alerts")}
+          onSelectCategory={(categoryId) => {
+            setSelectedCategory(categoryId.toString());
+            setSearchQuery("");
+            setActiveTab("expenses");
+            document.getElementById("expenses-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+          onSelectVendor={(vendor) => {
+            setSearchQuery(vendor);
+            setSelectedCategory("all");
+            setActiveTab("expenses");
+            document.getElementById("expenses-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
+        />
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab}>
@@ -799,7 +783,16 @@ const [activeTab, setActiveTab] = useState("expenses");
             <TabsTrigger value="categories">{t("expenses.categories")}</TabsTrigger>
           </TabsList>
 
-          <TabsContent value="expenses" className="space-y-4">
+          <TabsContent value="expenses" className="space-y-4" id="expenses-list">
+            {/* Why this list arrived shorter than usual. Without saying so, a
+                list filtered by a click on a figure reads as missing data. */}
+            <FilteredByLinkBanner
+              filters={clickFilters}
+              onClear={() => {
+                setSelectedCategory("all");
+                setSearchQuery("");
+              }}
+            />
             {/* Filters */}
             <Card>
               <CardContent className="pt-6">

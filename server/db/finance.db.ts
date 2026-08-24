@@ -1896,6 +1896,99 @@ export async function getExpensesSummary(startDate: Date, endDate: Date): Promis
 }
 
 
+/**
+ * Three read-only views of the same expenses, for the screen that reports on
+ * them. Nothing here decides anything: no expense is created, changed or
+ * classified differently than it already is, and the figures below are the
+ * same rows the list shows, added up along a different axis.
+ *
+ * They live beside getExpensesSummary rather than inside it because a caller
+ * that only wants a total should not pay for a per-day breakdown.
+ */
+
+/** Per-day totals, for a trend the eye can read. Days with no spending are
+ *  absent rather than zero — the caller knows the window it asked for. */
+export async function getExpensesDailyTotals(
+  startDate: Date,
+  endDate: Date,
+): Promise<{ date: string; total: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select({
+      date: sql<string>`DATE(${expenses.expenseDate})`,
+      total: sql<string>`COALESCE(SUM(CAST(${expenses.amountUsd} AS DECIMAL(14,2))), 0)`,
+    })
+    .from(expenses)
+    .where(and(gte(expenses.expenseDate, startDate), lte(expenses.expenseDate, endDate)))
+    .groupBy(sql`DATE(${expenses.expenseDate})`)
+    .orderBy(sql`DATE(${expenses.expenseDate})`);
+
+  return rows.map((r) => ({ date: String(r.date), total: Number(r.total) }));
+}
+
+/** Who the money went to. Expenses with no vendor recorded are left out
+ *  rather than lumped into one "unknown" bar that would outrank everybody. */
+export async function getExpensesByVendor(
+  startDate: Date,
+  endDate: Date,
+  limit = 5,
+): Promise<{ vendor: string; total: number; count: number }[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select({
+      vendor: expenses.vendor,
+      total: sql<string>`COALESCE(SUM(CAST(${expenses.amountUsd} AS DECIMAL(14,2))), 0)`,
+      count: sql<number>`COUNT(*)`,
+    })
+    .from(expenses)
+    .where(
+      and(
+        gte(expenses.expenseDate, startDate),
+        lte(expenses.expenseDate, endDate),
+        isNotNull(expenses.vendor),
+        ne(expenses.vendor, ""),
+      ),
+    )
+    .groupBy(expenses.vendor)
+    .orderBy(desc(sql`SUM(CAST(${expenses.amountUsd} AS DECIMAL(14,2)))`))
+    .limit(limit);
+
+  return rows.map((r) => ({ vendor: r.vendor ?? "", total: Number(r.total), count: Number(r.count) }));
+}
+
+/**
+ * How much of the spending actually left a company account, and how much did
+ * not. The second figure is money somebody paid out of their own pocket and
+ * is owed back — it is spending either way, which is why both are counted as
+ * expenses, but only the first has moved through the Treasury.
+ */
+export async function getExpensesPaymentSplit(
+  startDate: Date,
+  endDate: Date,
+): Promise<{ fromAccounts: number; outOfPocket: number }> {
+  const db = await getDb();
+  if (!db) return { fromAccounts: 0, outOfPocket: 0 };
+
+  const [row] = await db
+    .select({
+      fromAccounts: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.cashAccountId} IS NOT NULL
+        THEN CAST(${expenses.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+      outOfPocket: sql<string>`COALESCE(SUM(CASE WHEN ${expenses.cashAccountId} IS NULL
+        THEN CAST(${expenses.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    })
+    .from(expenses)
+    .where(and(gte(expenses.expenseDate, startDate), lte(expenses.expenseDate, endDate)));
+
+  return {
+    fromAccounts: Number(row?.fromAccounts ?? 0),
+    outOfPocket: Number(row?.outOfPocket ?? 0),
+  };
+}
+
 // ============ PARTNERS ============
 
 export async function getAllPartners(): Promise<Partner[]> {

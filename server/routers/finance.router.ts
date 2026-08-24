@@ -657,6 +657,66 @@ export const expensesRouter = router({
       .query(async ({ input }) => {
         return db.getExpensesSummary(input.startDate, input.endDate);
       }),
+    /**
+     * Everything the expenses screen reports, for one window and the window
+     * before it.
+     *
+     * Composed, not recalculated: the totals come from getExpensesSummary and
+     * the profit figures from calculateProfitLoss, the same functions the
+     * finance screens use. Nothing here decides what an expense is or what it
+     * costs — it reads the same rows the list reads and adds them up along a
+     * few more axes.
+     *
+     * The comparison window is the same length as the chosen one and ends the
+     * day before it starts, so "18% more than last time" compares a week with
+     * a week and a quarter with a quarter. Comparing against a calendar month
+     * would make the first days of a month look like a collapse.
+     */
+    getDashboard: accountantProcedure
+      .input(z.object({
+        startDate: z.date(),
+        endDate: z.date(),
+      }))
+      .query(async ({ input }) => {
+        const { startDate, endDate } = input;
+        const DAY = 86_400_000;
+        const spanMs = Math.max(0, endDate.getTime() - startDate.getTime());
+        const previousEnd = new Date(startDate.getTime() - DAY);
+        const previousStart = new Date(previousEnd.getTime() - spanMs);
+
+        const [current, previous, daily, previousDaily, byVendor, paymentSplit, profitLoss] =
+          await Promise.all([
+            db.getExpensesSummary(startDate, endDate),
+            db.getExpensesSummary(previousStart, previousEnd),
+            db.getExpensesDailyTotals(startDate, endDate),
+            db.getExpensesDailyTotals(previousStart, previousEnd),
+            db.getExpensesByVendor(startDate, endDate, 5),
+            db.getExpensesPaymentSplit(startDate, endDate),
+            // Revenue and cost for the same window, so the share of profit is
+            // a share of *this* period's profit and not of the year's.
+            db.calculateProfitLoss(startDate, endDate),
+          ]);
+
+        return {
+          period: { startDate, endDate },
+          previousPeriod: { startDate: previousStart, endDate: previousEnd },
+          current,
+          previous,
+          daily,
+          previousDaily,
+          byVendor,
+          paymentSplit,
+          profit: {
+            grossProfit: profitLoss.grossProfit,
+            netProfit: profitLoss.netProfit,
+            // Deliberately the expenses figure this screen owns, so the panel
+            // sums to the card above it. calculateProfitLoss counts costs the
+            // expenses table knows nothing about, and mixing the two would
+            // print a subtraction that does not work out.
+            expensesInPeriod: current.totalAmount,
+          },
+        };
+      }),
     create: accountantProcedure
       .input(z.object({
         categoryId: z.number(),
