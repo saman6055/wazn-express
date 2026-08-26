@@ -58,6 +58,57 @@ describe("a failure has to be acknowledged", () => {
   });
 });
 
+/**
+ * Which failures. The rule the owner set: anything that can lose goods, or
+ * put a big error into the accounts.
+ *
+ * Every one of these ends with somebody's parcel in the wrong place or the
+ * wrong customer's invoice, and every one of them used to be a small notice
+ * in the corner of a warehouse screen.
+ */
+describe("the failures that lose goods all stop the operator", () => {
+  const boxPanel = read(path.join(HERE, "delivery", "BoxDetailPanel.tsx"));
+  const arrival = read(path.join(HERE, "..", "pages", "ArrivalVerificationScanner.tsx"));
+  const batchAssign = read(path.join(HERE, "..", "pages", "BatchAssignmentScanner.tsx"));
+
+  it("a parcel that belongs to another customer, or is already in a box", () => {
+    // The server refuses it. What was missing was making the refusal
+    // impossible to walk past.
+    expect(boxPanel).toContain("systemAlert({");
+    expect(boxPanel).toContain("delivery.cannotAddToBox");
+  });
+
+  it("a parcel the system has never heard of, in a container on the floor", () => {
+    expect(arrival).toContain("scan.packageNotFoundExcl");
+    expect(batchAssign).toContain("scan.packageNotFound");
+    for (const src of [arrival, batchAssign]) {
+      expect(src).toContain("systemAlert({");
+    }
+  });
+
+  it("a parcel scanned twice, so the count and the list have parted", () => {
+    expect(arrival).toContain("scan.alreadyVerified");
+    expect(batchAssign).toContain("scan.alreadyInBatch");
+  });
+
+  it("an arrival that never reached the database", () => {
+    // On screen it looks verified. Tomorrow it is still "in China".
+    expect(arrival).toContain("scan.arrivalNotSaved");
+  });
+
+  it("none of them left on a toast", () => {
+    // The whole point. A toast beside these is a notice nobody reads.
+    for (const [name, src] of [
+      ["BoxDetailPanel", boxPanel],
+      ["ArrivalVerificationScanner", arrival],
+      ["BatchAssignmentScanner", batchAssign],
+    ] as const) {
+      const hasAlert = src.includes("useSystemAlert()");
+      expect(hasAlert, `${name} does not raise blocking alerts at all`).toBe(true);
+    }
+  });
+});
+
 describe("only failures come through it", () => {
   it("offers no success kind at all", () => {
     expect(alert).toContain('export type SystemAlertKind = "error" | "warning"');

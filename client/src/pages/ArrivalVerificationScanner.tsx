@@ -18,6 +18,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
+import { useSystemAlert } from "@/components/SystemAlert";
 import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
 
@@ -81,6 +82,7 @@ function ParcelThumb({ photo, className }: { photo: string | null; className?: s
 const SESSION_KEY = "scan-session-arrival-verification";
 
 export default function ArrivalVerificationScanner() {
+  const systemAlert = useSystemAlert();
   const { t } = useTranslation();
 
   // Core state
@@ -312,31 +314,25 @@ export default function ArrivalVerificationScanner() {
           trackingNumber: scannedValue.trim(),
         });
         if (!result?.found || !result.package) {
-          soundManager.playError();
-          toast.error(
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400" />
-              <div>
-                <div className="font-medium">{t("scan.packageNotFoundExcl")}</div>
-                <div className="text-sm text-muted-foreground">{scannedValue}</div>
-              </div>
-            </div>
-          );
+          // A box on the floor that the system has never heard of. Somebody
+          // has to decide what it is before it goes on a shelf.
+          systemAlert({
+            kind: "error",
+            title: t("scan.packageNotFoundExcl"),
+            detail: scannedValue,
+          });
           return;
         }
         const pkg = result.package;
         const customer = result.customer;
         if (verifiedPackages.some((v) => v.id === pkg.id)) {
-          soundManager.playDuplicate();
-          toast.warning(
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
-              <div>
-                <div className="font-medium">{t("scan.alreadyVerified")}</div>
-                <div className="text-sm text-muted-foreground">{scannedValue}</div>
-              </div>
-            </div>
-          );
+          // The operator thinks they have just checked a parcel off and they
+          // have not — from here their count and the list disagree.
+          systemAlert({
+            kind: "warning",
+            title: t("scan.alreadyVerified"),
+            detail: scannedValue,
+          });
           return;
         }
         const isInSelectedBatches = pkg.batchId ? selectedBatchIds.includes(pkg.batchId) : false;
@@ -387,16 +383,16 @@ export default function ArrivalVerificationScanner() {
             scanType: "received_local",
           },
           {
+            // The parcel is on the list on screen but the arrival never
+            // reached the database. Left as a toast, the operator carries on
+            // and the parcel is still "in China" tomorrow.
             onError: (e) =>
-              toast.warning(
-                <div className="flex items-center gap-2">
-                  <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
-                  <div>
-                    <div className="font-medium">{t("scan.arrivalNotSaved")}</div>
-                    <div className="text-sm text-muted-foreground">{e.message}</div>
-                  </div>
-                </div>
-              ),
+              systemAlert({
+                kind: "error",
+                title: t("scan.arrivalNotSaved"),
+                message: e.message,
+                detail: verifiedPkg.trackingNumber,
+              }),
           },
         );
         if (!hasCompleteData) {

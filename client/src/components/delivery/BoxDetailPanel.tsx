@@ -4,6 +4,7 @@ import { loadLocale } from "@/lib/i18nRegistry";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
+import { useSystemAlert } from "@/components/SystemAlert";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -113,6 +114,7 @@ interface BoxDetailPanelProps {
 }
 
 export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProps) {
+  const systemAlert = useSystemAlert();
   const { t, language } = useTranslation();
   const isRtl = language === "ku" || language === "ar";
   const utils = trpc.useUtils();
@@ -153,8 +155,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       scanInputRef.current?.focus();
     },
     onError: (err) => {
-      toast.error(err.message);
-      soundManager.playError();
+      // The refusals that reach here are the expensive ones: a parcel
+      // belonging to another customer, or one already sitting in another
+      // box. Both end with somebody's goods handed to the wrong person, and
+      // a toast in the corner of a warehouse screen does not stop that.
+      systemAlert({
+        kind: "error",
+        title: t("delivery.cannotAddToBox"),
+        message: err.message,
+        detail: scanInput,
+      });
       setScanInput("");
       scanInputRef.current?.focus();
     },

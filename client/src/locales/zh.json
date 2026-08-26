@@ -6014,7 +6014,8 @@
     "cancelledBecause": "已取消：{{reason}}",
     "deleteBox": "删除箱子",
     "deleteBoxConfirm": "此箱及其中所有内容将移入回收站，可从那里恢复。",
-    "toastBoxDeleted": "箱子「{{code}}」已移入回收站"
+    "toastBoxDeleted": "箱子「{{code}}」已移入回收站",
+    "cannotAddToBox": "无法加入此箱"
   },
   "pushAdmin": {
     "title": "推送通知中心",

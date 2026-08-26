@@ -6027,7 +6027,8 @@
     "cancelledBecause": "Cancelled: {{reason}}",
     "deleteBox": "Delete box",
     "deleteBoxConfirm": "This box and everything in it goes to the recycle bin. You can restore it from there.",
-    "toastBoxDeleted": "Box \"{{code}}\" moved to the bin"
+    "toastBoxDeleted": "Box \"{{code}}\" moved to the bin",
+    "cannotAddToBox": "Cannot add to this box"
   },
   "pushAdmin": {
     "title": "Push Notification Center",

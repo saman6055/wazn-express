@@ -16,6 +16,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
+import { useSystemAlert } from "@/components/SystemAlert";
 import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
 import { ScannedList, type ScannedItem } from "@/components/scanner/ScannedList";
@@ -43,6 +44,7 @@ interface BatchChangeDialog {
 
 // ==================== MAIN COMPONENT ====================
 export default function BatchAssignmentScanner() {
+  const systemAlert = useSystemAlert();
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
@@ -191,16 +193,13 @@ export default function BatchAssignmentScanner() {
         });
 
         if (!result?.found || !result.package) {
-          soundManager.playError();
-          toast.error(
-            <div className="flex items-center gap-2">
-              <AlertCircle className="h-5 w-5 text-red-500 dark:text-red-400" />
-              <div>
-                <div className="font-medium">{t("scan.packageNotFound")}</div>
-                <div className="text-sm text-muted-foreground">{trackingValue}</div>
-              </div>
-            </div>
-          );
+          // A parcel nobody can find is a parcel about to be put in the
+          // wrong place. It stops the operator.
+          systemAlert({
+            kind: "error",
+            title: t("scan.packageNotFound"),
+            detail: trackingValue,
+          });
           return;
         }
 
@@ -208,16 +207,14 @@ export default function BatchAssignmentScanner() {
         const customer = result.customer;
 
         if (pkg.batchId === parseInt(selectedBatchId)) {
-          soundManager.playDuplicate();
-          toast.warning(
-            <div className="flex items-center gap-2">
-              <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
-              <div>
-                <div className="font-medium">{t("scan.alreadyInBatch")}</div>
-                <div className="text-sm text-muted-foreground">{trackingValue}</div>
-              </div>
-            </div>
-          );
+          // Scanned twice into the same batch. Harmless in itself, but the
+          // operator believes they have just added a parcel and they have
+          // not — so the count they are working to is wrong from here on.
+          systemAlert({
+            kind: "warning",
+            title: t("scan.alreadyInBatch"),
+            detail: trackingValue,
+          });
           return;
         }
 
