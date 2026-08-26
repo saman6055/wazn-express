@@ -36,6 +36,8 @@ import {
   Package,
 } from "lucide-react";
 import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { trpc } from "@/lib/trpc";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -159,6 +161,8 @@ export function BoxTable({
     );
   };
 
+  const { logoUrl } = useCompanyInfo();
+
   const handlePrintReceipt = async (box: DeliveryBox, lang: Language) => {
     // Locales load on demand now; fetch the chosen one before translating.
     await loadLocale(lang);
@@ -191,7 +195,7 @@ export function BoxTable({
           }
         : null,
       createTranslator(lang),
-      { direction: getLanguageDirection(lang) }
+      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrl) }
     );
   };
 

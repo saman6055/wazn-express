@@ -473,7 +473,7 @@ export function printBoxReceipt(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
-  options?: { documentTitle?: string; direction?: 'ltr' | 'rtl' },
+  options?: { documentTitle?: string; direction?: 'ltr' | 'rtl'; logoUrl?: string },
 ): void {
   // Direction follows the chosen receipt language (rtl for ku/ar, ltr for
   // en/zh). Defaults to rtl for back-compat with callers that don't pass it.
@@ -524,6 +524,9 @@ export function printBoxReceipt(
          second page, so a big box still prints cleanly. */
       thead { display: table-header-group; }
       tr { page-break-inside: avoid; }
+      /* Never a sheet whose only content is the closing lines. */
+      .receipt-close { page-break-inside: avoid; break-inside: avoid; }
+      .receipt-card { break-inside: auto; }
     }
     .receipt-card {
       border: 1px solid #e5e7eb;
@@ -630,17 +633,42 @@ export function printBoxReceipt(
       font-weight: 800;
       color: ${PRIMARY_COLOR};
     }
+    /* The mark, centred in the header row rather than above it: a banner of
+       its own costs a strip of every sheet and says nothing the row does
+       not. Height is capped so a tall logo cannot push the table down. */
+    .header-logo {
+      max-height: 34px;
+      max-width: 140px;
+      object-fit: contain;
+      flex-shrink: 0;
+    }
+    /*
+     * The closing block, kept whole.
+     *
+     * Two sentences and two signature lines used to break onto a second
+     * sheet of their own — a whole page of paper to say thank you, on a
+     * receipt that money is collected against. They stay together now, and
+     * the closing line is one line rather than two.
+     */
+    .receipt-close {
+      page-break-inside: avoid;
+      break-inside: avoid;
+    }
     .receipt-footer {
       border-top: 1px dashed #d1d5db;
-      padding-top: 10px;
-      margin-top: 12px;
+      padding-top: 6px;
+      margin-top: 8px;
       text-align: center;
+      display: flex;
+      align-items: baseline;
+      justify-content: center;
+      gap: 8px;
+      flex-wrap: wrap;
     }
     .thank-you {
-      font-size: 13px;
+      font-size: 12px;
       font-weight: 600;
       color: ${PRIMARY_COLOR};
-      margin-bottom: 4px;
     }
     .footer-note {
       font-size: 10px;
@@ -649,7 +677,7 @@ export function printBoxReceipt(
     .signatures {
       display: flex;
       justify-content: space-between;
-      margin-top: 16px;
+      margin-top: 10px;
       padding: 0 20px;
     }
     .signature-block {
@@ -677,6 +705,7 @@ export function printBoxReceipt(
         <div class="company-name">Wazn Express</div>
         <div class="company-subtitle">${t("delivery.companyTagline") || "Shipping & Logistics Services"}</div>
       </div>
+      ${options?.logoUrl ? `<img class="header-logo" src="${options.logoUrl}" alt="" />` : ""}
       <div class="header-receipt-meta">
         <div class="header-receipt-title">${t("delivery.receipt")}</div>
         <div class="receipt-code">${box.boxCode}</div>
@@ -787,21 +816,23 @@ export function printBoxReceipt(
       ` : ""}
 
       <!-- Signatures -->
-      <div class="signatures">
-        <div class="signature-block">
-          <div class="signature-line-receipt"></div>
-          <div class="signature-label">${t("delivery.staffSignature")}</div>
+      <!-- Signatures and the closing line travel together. Split across a
+           page break they cost a whole extra sheet to say two sentences. -->
+      <div class="receipt-close">
+        <div class="signatures">
+          <div class="signature-block">
+            <div class="signature-line-receipt"></div>
+            <div class="signature-label">${t("delivery.staffSignature")}</div>
+          </div>
+          <div class="signature-block">
+            <div class="signature-line-receipt"></div>
+            <div class="signature-label">${t("delivery.customerSignature")}</div>
+          </div>
         </div>
-        <div class="signature-block">
-          <div class="signature-line-receipt"></div>
-          <div class="signature-label">${t("delivery.customerSignature")}</div>
+        <div class="receipt-footer">
+          <span class="thank-you">${t("delivery.thankYou")}</span>
+          <span class="footer-note">${t("delivery.receiptNote") || "This receipt is a proof of delivery. Please keep it for your records."}</span>
         </div>
-      </div>
-
-      <!-- Footer -->
-      <div class="receipt-footer">
-        <div class="thank-you">${t("delivery.thankYou")}</div>
-        <div class="footer-note">${t("delivery.receiptNote") || "This receipt is a proof of delivery. Please keep it for your records."}</div>
       </div>
     </div>
   </div>
@@ -835,10 +866,11 @@ export function downloadBoxReceiptPDF(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
-  options?: { direction?: 'ltr' | 'rtl' },
+  options?: { direction?: 'ltr' | 'rtl'; logoUrl?: string },
 ): void {
   printBoxReceipt(box, items, customer, t, {
     documentTitle: `${box.boxCode}.pdf`,
     direction: options?.direction,
+    logoUrl: options?.logoUrl,
   });
 }

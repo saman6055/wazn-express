@@ -5,6 +5,8 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -115,6 +117,7 @@ interface BoxDetailPanelProps {
 
 export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProps) {
   const systemAlert = useSystemAlert();
+  const { logoUrl } = useCompanyInfo();
   const { t, language } = useTranslation();
   const isRtl = language === "ku" || language === "ar";
   const utils = trpc.useUtils();
@@ -446,13 +449,19 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     // document that is about to be printed.
     await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
-    printBoxReceipt(b, its, c, createTranslator(lang), { direction: getLanguageDirection(lang) });
+    printBoxReceipt(b, its, c, createTranslator(lang), {
+      direction: getLanguageDirection(lang),
+      logoUrl: absoluteLogoUrl(logoUrl),
+    });
   };
 
   const handleDownloadReceiptPDF = async (lang: Language) => {
     await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
-    downloadBoxReceiptPDF(b, its, c, createTranslator(lang), { direction: getLanguageDirection(lang) });
+    downloadBoxReceiptPDF(b, its, c, createTranslator(lang), {
+      direction: getLanguageDirection(lang),
+      logoUrl: absoluteLogoUrl(logoUrl),
+    });
   };
 
   return (
