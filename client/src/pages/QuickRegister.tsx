@@ -1490,44 +1490,58 @@ export default function QuickRegister() {
                       )}
                     </div>
 
-                    {/* Customer's overall commission + full_package orders —
-                        how many have arrived/registered vs. still expected. */}
+                    {/*
+                      What the person at the counter needs, in the order they
+                      need it.
+
+                      This said "13 of 38 registered" under the heading "this
+                      customer's orders", which reads as though 13 of their
+                      orders exist and 25 do not. Both numbers were true and
+                      neither was the question. The question, with a box in
+                      hand and a queue behind, is: how many more of this
+                      customer's parcels am I still waiting for?
+
+                      So the sentence leads with that, in words, and the
+                      ratio stays underneath for anyone who wants it.
+                      "Arrived" rather than "registered": the order was
+                      registered the day it was placed.
+                    */}
                     {customerOrderProgress && customerOrderProgress.total > 0 && (() => {
                       const { total, registered, remaining, allRegistered } = customerOrderProgress;
                       const pct = Math.min(100, Math.round((registered / total) * 100));
                       return (
                         <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 p-3 space-y-2">
-                          <div className="flex items-center justify-between gap-2">
-                            <div className="flex items-center gap-2 min-w-0">
-                              <span className={cn("h-2.5 w-2.5 rounded-full shrink-0", allRegistered ? "bg-emerald-500" : "bg-red-500")} />
-                              <span className="text-sm font-semibold truncate">{pickLang(language, { ku: "ئۆردەرەکانی ئەم کڕیارە", en: "This customer's orders", ar: "طلبات هذا العميل", zh: "该客户的订单" })}</span>
+                          {/* Nothing here when everything has arrived: the
+                              green banner underneath says so, and says what
+                              to do next. */}
+                          {!allRegistered && (
+                            <div className="flex items-center gap-2">
+                              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+                              <span className="text-sm font-semibold">
+                                {pickLang(language, {
+                                  ku: `${remaining} پاکێجی تری ئەم کڕیارە چاوەڕوانە`,
+                                  en: `${remaining} more parcels expected for this customer`,
+                                  ar: `${remaining} طرد آخر متوقع لهذا العميل`,
+                                  zh: `该客户还有 ${remaining} 件包裹待到达`,
+                                })}
+                              </span>
                             </div>
-                            {/* "4 of 16 registered", not "4/16".
-                                In a right-to-left line the slash and its two
-                                numbers come apart — the 4 lands on one side
-                                and the /16 on the other, and the reader has
-                                to work out which is which. Words do not
-                                reorder. */}
-                            <span className="shrink-0 text-sm">
-                              <b className={cn("font-bold text-lg", allRegistered ? "text-emerald-600" : "text-indigo-700 dark:text-indigo-300")}>{registered}</b>
-                              <span className="text-muted-foreground"> {pickLang(language, { ku: "لە", en: "of", ar: "من", zh: "/" })} </span>
-                              <b className="font-bold">{total}</b>
-                              <span className="text-muted-foreground"> {pickLang(language, { ku: "تۆمار کراون", en: "registered", ar: "مسجّلة", zh: "已登记" })}</span>
-                            </span>
-                          </div>
+                          )}
                           <div className="h-2 w-full rounded-full bg-red-200 dark:bg-red-950/50 overflow-hidden">
                             <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
                           </div>
-                          {remaining > 0 && (
-                            <span className="text-xs font-medium text-red-600 dark:text-red-400">
-                              {pickLang(language, {
-                                ku: `${remaining} ئۆردەر ماوە بۆ گەیشتن و تۆمارکردن`,
-                                en: `${remaining} still to arrive and be registered`,
-                                ar: `${remaining} طلب متبقٍ للوصول والتسجيل`,
-                                zh: `还有 ${remaining} 单待到达并登记`,
-                              })}
-                            </span>
-                          )}
+                          {/* "13 of 38 arrived", not "13/38". In a
+                              right-to-left line the slash and its two numbers
+                              come apart — the 13 lands on one side and the
+                              /38 on the other. Words do not reorder. */}
+                          <span className="text-xs text-muted-foreground">
+                            {pickLang(language, {
+                              ku: `${registered} لە ${total} ئۆردەری ئەم کڕیارە گەیشتووە`,
+                              en: `${registered} of this customer's ${total} orders have arrived`,
+                              ar: `وصل ${registered} من أصل ${total} من طلبات هذا العميل`,
+                              zh: `该客户 ${total} 张订单中已到 ${registered} 张`,
+                            })}
+                          </span>
                         </div>
                       );
                     })()}
@@ -1537,7 +1551,7 @@ export default function QuickRegister() {
                       <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 px-3 py-2.5">
                         <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
                         <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
-                          {pickLang(language, { ku: "سەرجەمی ئۆردەرەکانی ئەم کڕیارە تۆمار کران — ئامادەیە بۆ ئامادەکاری گەیاندن", en: "All of this customer's orders are registered — ready for delivery prep", ar: "تم تسجيل جميع طلبات هذا العميل — جاهز لتحضير التسليم", zh: "该客户所有订单已登记 — 可准备配送" })}
+                          {pickLang(language, { ku: "هەموو پاکێجەکانی ئەم کڕیارە گەیشتوون — ئامادەیە بۆ ئامادەکاری گەیاندن", en: "Every parcel for this customer has arrived — ready for delivery prep", ar: "وصلت كل طرود هذا العميل — جاهز لتحضير التسليم", zh: "该客户的包裹已全部到达 — 可准备配送" })}
                         </span>
                       </div>
                     )}
