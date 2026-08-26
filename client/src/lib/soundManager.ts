@@ -75,6 +75,19 @@ class ScanSoundManager {
   /** Low buzz — error occurred */
   playError() { this.playTone(300, 0.3, 'sawtooth'); }
 
+  /**
+   * The one that has to be heard across a warehouse.
+   *
+   * playError is a low sawtooth at a third of full volume — fine as a hint
+   * beside a toast, inaudible next to a strapping table with a compressor
+   * running. This is the sound that goes with a dialog somebody has to
+   * dismiss, so it is allowed to be rude: two sharp descending tones near
+   * full volume, the shape every operator already reads as "stop".
+   */
+  playAlert() {
+    this.playSequence([988, 740], 0.16, 0.16, 'square', 0.9);
+  }
+
   /** Triple short beep — duplicate detected */
   playDuplicate() { this.playSequence([330, 330, 330], 0.1, 0.06, 'square'); }
 

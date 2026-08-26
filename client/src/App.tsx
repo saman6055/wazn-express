@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { SystemAlertProvider } from "@/components/SystemAlert";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -386,11 +387,16 @@ function App() {
                 <Toaster />
                 <MutationToastHandler />
                 <OfflineIndicator />
+                {/* Inside the router, so any screen can raise a blocking
+                    alert; outside the error boundary, so one still shows
+                    when a screen has fallen over. */}
+                <SystemAlertProvider>
                 <QueryErrorBoundary>
                   <PortalHistoryProvider>
                     <Router />
                   </PortalHistoryProvider>
                 </QueryErrorBoundary>
+                </SystemAlertProvider>
                 <Suspense fallback={null}>
                   <StaffTips />
                 </Suspense>

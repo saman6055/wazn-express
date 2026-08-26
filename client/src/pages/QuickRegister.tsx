@@ -16,9 +16,11 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 
 import { soundManager } from "@/lib/soundManager";
+import { useSystemAlert } from "@/components/SystemAlert";
 import { PhotoStack } from "@/components/PhotoStack";
 
 export default function QuickRegister() {
+  const systemAlert = useSystemAlert();
   const { t, language } = useTranslation();
   const { user } = useAuth();
 
@@ -249,8 +251,20 @@ export default function QuickRegister() {
           }, 100);
         } else {
           setDeclaredMatch(null);
-          soundManager.playNotFound();
-          toast.info(t("quickRegister.trackingNotFound"));
+          // Not a toast. On a warehouse screen at arm's length a notice in
+          // the corner is not read: the parcel goes on the shelf and nobody
+          // learns it was never registered until the customer asks.
+          systemAlert({
+            kind: "warning",
+            title: t("quickRegister.trackingNotFound"),
+            message: pickLang(language, {
+              ku: "ئەم ژمارە تراکینگە لە سیستەمدا نییە. دەتوانیت بەردەوام بیت و پاکێجەکە بە نوێی تۆمار بکەیت.",
+              en: "This tracking number is not in the system. You can carry on and register the parcel as new.",
+              ar: "رقم التتبع هذا غير موجود في النظام. يمكنك المتابعة وتسجيل الطرد كجديد.",
+              zh: "系统中没有此运单号。可以继续，将该包裹登记为新包裹。",
+            }),
+            detail: trackingNumber,
+          });
           setTimeout(() => {
             weightRef.current?.focus();
             weightRef.current?.select();
