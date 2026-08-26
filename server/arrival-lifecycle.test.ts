@@ -123,3 +123,53 @@ describe("the scan box stays ready for the next parcel", () => {
     expect(body).toContain("isRepeat");
   });
 });
+
+/**
+ * A tracking number identifies a parcel to the system. It does not identify
+ * it to the man holding it: he has a box in his hands and a shelf of other
+ * boxes, and what tells him which is which is the picture and the order it
+ * belongs to.
+ */
+describe("the scanner shows what identifies the box to a person", () => {
+  const manifest = () =>
+    slice(packagesDb, "export async function getBatchManifest", END_OF_FN, "getBatchManifest");
+  const scanner = read("client/src/pages/ArrivalVerificationScanner.tsx");
+
+  it("resolves the order by both routes a parcel can be linked", () => {
+    // The link table and the legacy tracking column. Reading only one leaves
+    // half the orders looking unlinked.
+    const body = manifest();
+    expect(body).toContain("packageOrderLinks");
+    expect(body).toContain("fullPackageOrders.trackingNumber");
+  });
+
+  it("prefers the ordered product's picture over the parcel's own", () => {
+    // The product image is what the customer chose and what the box should
+    // contain; the parcel photo is what the China warehouse saw.
+    expect(manifest()).toContain("order?.productImage ?? ownPhoto");
+  });
+
+  it("asks once per batch, not once per parcel", () => {
+    // A container is two hundred boxes and this screen opens with it on the
+    // floor already.
+    expect(scanner).toContain("packages.batchManifest.fetch({ batchId })");
+    expect(scanner, "back to a lookup per parcel").not.toContain("packages.list.fetch({ batchId");
+  });
+
+  it("shows the order and the picture in both lists", () => {
+    // The missing list matters most: those are the boxes somebody has to go
+    // and find.
+    const missing = slice(scanner, 'TabsContent value="unverified"', 'TabsContent value="verified"', "missing list");
+    expect(missing).toContain("ParcelThumb");
+    expect(missing).toContain("pkg.orderCode");
+    const verified = slice(scanner, 'TabsContent value="verified"', "verifiedAt.toLocaleTimeString", "verified list");
+    expect(verified).toContain("ParcelThumb");
+    expect(verified).toContain("pkg.orderCode");
+  });
+
+  it("falls back to an outline rather than a broken image", () => {
+    const body = slice(scanner, "function ParcelThumb", "// ==================== MAIN", "ParcelThumb");
+    expect(body).toContain("photo ?");
+    expect(body).toContain("<Package");
+  });
+});

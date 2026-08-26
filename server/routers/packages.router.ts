@@ -124,6 +124,18 @@ export const packagesRouter = router({
       }),
 
     /** Trackings we know about that have not reached the China warehouse. */
+    /**
+     * Everything in one batch, with the order and the picture attached.
+     *
+     * For the arrival scanner: the man checking a container off has a box in
+     * his hands, and a tracking number does not tell him which box it is.
+     */
+    batchManifest: staffProcedure
+      .input(z.object({ batchId: idSchema }))
+      .query(async ({ input }) => {
+        return db.getBatchManifest(input.batchId);
+      }),
+
     awaitingArrival: staffProcedure
       .input(z.object({ lateOnly: z.boolean().optional() }).optional())
       .query(async ({ input }) => {

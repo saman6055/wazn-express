@@ -1438,6 +1438,126 @@ export type AwaitedParcel = {
   order: { id: number; orderCode: string; orderType: string; status: string } | null;
 };
 
+/**
+ * What the person verifying a batch's arrival needs on screen.
+ *
+ * A tracking number and a customer code identify a parcel to the system. They
+ * do not identify it to the man holding it: he has a box in his hands and a
+ * shelf of other boxes, and what tells him which is which is the picture and
+ * the order it belongs to. Without them, checking a parcel off the list is an
+ * act of faith in a string of digits.
+ *
+ * The picture is the order's product image where there is one — that is what
+ * the customer chose and what the box should contain — and the parcel's own
+ * photograph otherwise, which is what the China warehouse saw. Both are
+ * better than nothing, and this is the order of preference.
+ *
+ * One query per batch rather than one per parcel: a container is two hundred
+ * boxes, and this screen is opened with the container already on the floor.
+ */
+export type BatchManifestRow = {
+  id: number;
+  trackingNumber: string | null;
+  customerCode: string | null;
+  customerName: string | null;
+  weightKg: string | null;
+  volumeCbm: string | null;
+  status: string;
+  /** The order this parcel belongs to, when it belongs to one. */
+  orderCode: string | null;
+  orderType: string | null;
+  productName: string | null;
+  /** Order picture first, parcel photograph second, nothing third. */
+  photo: string | null;
+};
+
+export async function getBatchManifest(batchId: number): Promise<BatchManifestRow[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select({
+      id: packages.id,
+      trackingNumber: packages.trackingNumber,
+      weightKg: packages.weightKg,
+      volumeCbm: packages.volumeCbm,
+      status: packages.status,
+      photos: packages.photos,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+    })
+    .from(packages)
+    .leftJoin(customers, eq(packages.customerId, customers.id))
+    .where(eq(packages.batchId, batchId));
+
+  if (rows.length === 0) return [];
+
+  // Every order reachable from these parcels, by both routes: the link table
+  // and the legacy tracking column. A parcel can be shared between orders;
+  // the first is shown, because the box is one box.
+  const trackingNumbers = rows.map((r) => r.trackingNumber).filter((t): t is string => !!t);
+  const packageIds = rows.map((r) => r.id);
+
+  const byLink = packageIds.length
+    ? await db
+        .select({
+          packageId: packageOrderLinks.packageId,
+          orderCode: fullPackageOrders.orderCode,
+          orderType: fullPackageOrders.orderType,
+          productName: fullPackageOrders.productName,
+          productImage: fullPackageOrders.productImage,
+        })
+        .from(packageOrderLinks)
+        .innerJoin(fullPackageOrders, eq(packageOrderLinks.fullPackageOrderId, fullPackageOrders.id))
+        .where(inArray(packageOrderLinks.packageId, packageIds))
+    : [];
+
+  const byTracking = trackingNumbers.length
+    ? await db
+        .select({
+          trackingNumber: fullPackageOrders.trackingNumber,
+          orderCode: fullPackageOrders.orderCode,
+          orderType: fullPackageOrders.orderType,
+          productName: fullPackageOrders.productName,
+          productImage: fullPackageOrders.productImage,
+        })
+        .from(fullPackageOrders)
+        .where(inArray(fullPackageOrders.trackingNumber, trackingNumbers))
+    : [];
+
+  const orderByPackageId = new Map<number, (typeof byLink)[number]>();
+  for (const row of byLink) if (!orderByPackageId.has(row.packageId)) orderByPackageId.set(row.packageId, row);
+
+  const orderByTracking = new Map<string, (typeof byTracking)[number]>();
+  for (const row of byTracking) {
+    if (row.trackingNumber && !orderByTracking.has(row.trackingNumber)) {
+      orderByTracking.set(row.trackingNumber, row);
+    }
+  }
+
+  return rows.map((row) => {
+    const order =
+      orderByPackageId.get(row.id) ??
+      (row.trackingNumber ? orderByTracking.get(row.trackingNumber) : undefined) ??
+      null;
+    const ownPhoto = Array.isArray(row.photos) ? (row.photos[0] ?? null) : null;
+
+    return {
+      id: row.id,
+      trackingNumber: row.trackingNumber,
+      customerCode: row.customerCode,
+      customerName: row.customerName,
+      weightKg: row.weightKg,
+      volumeCbm: row.volumeCbm,
+      status: row.status,
+      orderCode: order?.orderCode ?? null,
+      orderType: order?.orderType ?? null,
+      productName: order?.productName ?? null,
+      photo: order?.productImage ?? ownPhoto,
+    };
+  });
+}
+
 /** A tracking is normal for a week; after that it wants a person. */
 export const AWAITING_LATE_AFTER_DAYS = 7;
 

@@ -27,6 +27,9 @@ interface VerifiedPackage {
   trackingNumber: string;
   customerCode: string;
   customerName: string;
+  /** What identifies the box to the person holding it. */
+  orderCode: string | null;
+  photo: string | null;
   weight: number | null;
   cbm: number | null;
   hasCompleteData: boolean;
@@ -41,10 +44,37 @@ interface BatchPackage {
   trackingNumber: string;
   customerCode: string;
   customerName: string;
+  orderCode: string | null;
+  photo: string | null;
   weight: number | null;
   cbm: number | null;
   hasCompleteData: boolean;
   verified: boolean;
+}
+
+/**
+ * The picture of what should be in the box.
+ *
+ * A tracking number identifies a parcel to the system; a photograph
+ * identifies it to the man holding it. Falls back to a parcel outline rather
+ * than a broken image, and never grows past its square — a supplier photo is
+ * whatever size the supplier felt like.
+ */
+function ParcelThumb({ photo, className }: { photo: string | null; className?: string }) {
+  return (
+    <div
+      className={cn(
+        "flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-md border bg-muted",
+        className,
+      )}
+    >
+      {photo ? (
+        <img src={photo} alt="" loading="lazy" className="h-full w-full object-cover" />
+      ) : (
+        <Package className="h-5 w-5 text-muted-foreground" />
+      )}
+    </div>
+  );
 }
 
 // ==================== MAIN COMPONENT ====================
@@ -170,6 +200,18 @@ export default function ArrivalVerificationScanner() {
     return unverified;
   }, [batchPackages, batches]);
   
+  /** The manifest row for a parcel, from whichever batch it is on. */
+  const manifestRowFor = useCallback(
+    (packageId: number): BatchPackage | undefined => {
+      for (const packages of Array.from(batchPackages.values())) {
+        const found = packages.find((p) => p.id === packageId);
+        if (found) return found;
+      }
+      return undefined;
+    },
+    [batchPackages],
+  );
+
   // Load batch packages when batches are selected
   useEffect(() => {
     const loadBatchPackages = async () => {
@@ -177,16 +219,19 @@ export default function ArrivalVerificationScanner() {
       
       for (const batchId of selectedBatchIds) {
         try {
-          const result = await trpcUtils.packages.list.fetch({ batchId, pageSize: 1000 });
-          const packages = result.data || [];
-          const batchPkgs: BatchPackage[] = packages.map((pkg: any) => ({
+          // One query per batch, joined server-side. A container is two
+          // hundred boxes and this screen opens with it already on the floor.
+          const packages = await trpcUtils.packages.batchManifest.fetch({ batchId });
+          const batchPkgs: BatchPackage[] = packages.map((pkg) => ({
             id: pkg.id,
             trackingNumber: pkg.trackingNumber || "",
-            customerCode: pkg.customer?.customerCode || "نەناسراو",
-            customerName: pkg.customer?.fullName || "",
+            customerCode: pkg.customerCode || "نەناسراو",
+            customerName: pkg.customerName || "",
+            orderCode: pkg.orderCode,
+            photo: pkg.photo,
             weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
             cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
-            hasCompleteData: !!(pkg.weightKg || (pkg.lengthCm && pkg.widthCm && pkg.heightCm)),
+            hasCompleteData: !!(pkg.weightKg || pkg.volumeCbm),
             verified: verifiedPackages.some(v => v.id === pkg.id),
           }));
           newBatchPackages.set(batchId, batchPkgs);
@@ -311,6 +356,11 @@ export default function ArrivalVerificationScanner() {
           trackingNumber: pkg.trackingNumber || scannedValue,
           customerCode: customer?.customerCode || "—",
           customerName: customer?.fullName || "",
+          // The manifest already resolved the order and the picture for this
+          // batch; a lookup on the scanned parcel would ask the same question
+          // a second time, once per box.
+          orderCode: manifestRowFor(pkg.id)?.orderCode ?? null,
+          photo: manifestRowFor(pkg.id)?.photo ?? null,
           weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
           cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
           hasCompleteData,
@@ -393,6 +443,9 @@ export default function ArrivalVerificationScanner() {
       trackingNumber: pkg.trackingNumber || extraPackageDialog.trackingNumber,
       customerCode: pkg.customer?.customerCode || "نەناسراو",
       customerName: pkg.customer?.fullName || "",
+      // A parcel from outside the chosen batches, so no manifest to ask.
+      orderCode: manifestRowFor(pkg.id)?.orderCode ?? null,
+      photo: manifestRowFor(pkg.id)?.photo ?? null,
       weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
       cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
       hasCompleteData,
@@ -622,18 +675,26 @@ export default function ArrivalVerificationScanner() {
                                   key={`${pkg.id}-${index}`}
                                   className="flex items-center justify-between p-3 rounded-lg border bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/60"
                                 >
+                                  <ParcelThumb photo={pkg.photo} />
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                       <span className="font-mono text-sm font-medium">{pkg.trackingNumber}</span>
                                       <Badge variant="outline" className="text-xs">{pkg.batchNumber}</Badge>
+                                      {pkg.orderCode && (
+                                        <Badge variant="secondary" className="text-xs font-mono">
+                                          {pkg.orderCode}
+                                        </Badge>
+                                      )}
                                     </div>
-                                    <div className="text-xs text-muted-foreground mt-1">
+                                    <div className="text-xs text-muted-foreground mt-1 truncate">
                                       <span className="font-medium">{pkg.customerCode}</span>
+                                      {pkg.customerName && <span className="mx-1">—</span>}
+                                      {pkg.customerName && <span>{pkg.customerName}</span>}
                                       {pkg.weight && <span className="mx-2">•</span>}
                                       {pkg.weight && <span>{pkg.weight}kg</span>}
                                     </div>
                                   </div>
-                                  <XCircle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
+                                  <XCircle className="h-5 w-5 shrink-0 text-yellow-500 dark:text-yellow-400" />
                                 </div>
                               ))}
                             </div>
@@ -662,9 +723,15 @@ export default function ArrivalVerificationScanner() {
                                         : "bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800/60"
                                   )}
                                 >
+                                  <ParcelThumb photo={pkg.photo} />
                                   <div className="flex-1 min-w-0">
-                                    <div className="flex items-center gap-2">
+                                    <div className="flex flex-wrap items-center gap-2">
                                       <span className="font-mono text-sm font-medium">{pkg.trackingNumber}</span>
+                                      {pkg.orderCode && (
+                                        <Badge variant="secondary" className="text-xs font-mono">
+                                          {pkg.orderCode}
+                                        </Badge>
+                                      )}
                                       {pkg.isExtra && (
                                         <Badge className="text-xs bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
                                           {t("scan.extra")}
@@ -677,13 +744,15 @@ export default function ArrivalVerificationScanner() {
                                         </Badge>
                                       )}
                                     </div>
-                                    <div className="text-xs text-muted-foreground mt-1">
+                                    <div className="text-xs text-muted-foreground mt-1 truncate">
                                       <span className="font-medium">{pkg.customerCode}</span>
+                                      {pkg.customerName && <span className="mx-1">—</span>}
+                                      {pkg.customerName && <span>{pkg.customerName}</span>}
                                       <span className="mx-2">•</span>
                                       <span>{pkg.batchNumber}</span>
                                     </div>
                                   </div>
-                                  <div className="text-xs text-muted-foreground">
+                                  <div className="shrink-0 text-xs text-muted-foreground">
                                     {pkg.verifiedAt.toLocaleTimeString()}
                                   </div>
                                 </div>
