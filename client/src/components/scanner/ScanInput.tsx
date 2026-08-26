@@ -69,6 +69,7 @@ export function ScanInput({
   const [trackingNumber, setTrackingNumber] = useState("");
   const [scanMode, setScanMode] = useState<"manual" | "camera">("manual");
   const inputRef = useRef<HTMLInputElement>(null);
+  const lastScanValue = useRef("");
   const lastScanTime = useRef<number>(0);
 
   // Auto-focus on mount
@@ -83,15 +84,32 @@ export function ScanInput({
     soundManager.setEnabled(soundEnabled);
   }, [soundEnabled]);
 
+  // Focus follows the field being usable. The parent re-renders a results
+  // list under every scan, and a batch being chosen flips `disabled` — either
+  // can take the caret away without anyone touching the keyboard.
+  useEffect(() => {
+    if (disabled || scanMode !== "manual") return;
+    if (document.activeElement === inputRef.current) return;
+    inputRef.current?.focus();
+  }, [disabled, isProcessing, scanMode]);
+
   // Handle manual submit
   const handleSubmit = useCallback(() => {
     const value = trackingNumber.trim();
     if (!value || isProcessing) return;
 
-    // Debounce rapid scans (500ms)
+    // Guard the double-fire, not the next parcel.
+    //
+    // A flat 500ms window dropped the second barcode of a fast operator
+    // silently — the parcel was never verified and nothing said so. What
+    // actually needs blocking is the *same* code arriving twice, which is
+    // what a gun that fires on press and release produces.
     const now = Date.now();
-    if (now - lastScanTime.current < 500) return;
+    const isRepeat = value === lastScanValue.current;
+    if (isRepeat && now - lastScanTime.current < 1500) return;
+    if (!isRepeat && now - lastScanTime.current < 120) return;
     lastScanTime.current = now;
+    lastScanValue.current = value;
 
     onScan(value);
 
@@ -233,7 +251,10 @@ export function ScanInput({
               "Tracking number..."
             }
             className="pl-10 pr-20 h-14 text-lg font-mono"
-            disabled={isProcessing || disabled}
+            // Not disabled while a scan is in flight. A disabled input loses
+            // focus, nothing gives it back, and the operator has to put the
+            // gun down and click the box between every parcel.
+            disabled={disabled}
             autoFocus={autoFocus}
           />
           <Button

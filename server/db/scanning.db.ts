@@ -3,7 +3,7 @@ import { advanceStatus, type PackageStatus } from '../lib/scanStatus';
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
-import { getPackageById, getPackageOrderLinks } from './packages.db';
+import { getPackageById, getPackageOrderLinks, updatePackage } from './packages.db';
 import { getFullPackageOrderByTrackingNumber, getAllOrdersByTrackingNumber, updateFullPackageOrder } from './fullPackage.db';
 import {
   InsertUser, users,
@@ -282,11 +282,18 @@ export async function updatePackageStatusViaScan(
   const resolved = advanceStatus(oldStatus, newStatus as PackageStatus);
   if (!resolved) return { skipped: true, oldStatus, newStatus };
 
-  // Update package status
-  await db.update(packages).set({
-    status: resolved,
-    updatedAt: new Date()
-  }).where(eq(packages.id, packageId));
+  // Through updatePackage, not straight at the column.
+  //
+  // The write itself is the same one; what was missing is everything
+  // updatePackage does after it. Chief among them is syncing the status onto
+  // every full-package and commission order linked to this parcel — so a
+  // scan at the Erbil depot moves the customer's order to "arrived", and the
+  // delivery scan moves it to "delivered".
+  //
+  // Writing the column directly meant no scan in the system's history ever
+  // moved an order. The goods reached the customer's hand while their order
+  // still said "in transit", on the portal and on every purchase report.
+  await updatePackage(packageId, { status: resolved, updatedAt: new Date() });
   
   // Create status history
   await createStatusHistory({

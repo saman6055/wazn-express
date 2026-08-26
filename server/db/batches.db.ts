@@ -258,6 +258,56 @@ export async function getBatchById(id: number): Promise<Batch | undefined> {
  * `changedById` is optional and stays null for a background job. Inventing a
  * user id for one would be worse than recording none.
  */
+/**
+ * How far along a batch is. Only used to stop it going backwards.
+ *
+ * `closed` is an ending rather than a step, and `delivered` means the goods
+ * are with customers — neither may be undone by a stray scan of a parcel
+ * that turns up late.
+ */
+const BATCH_RANK: Record<string, number> = {
+  preparing: 0,
+  in_transit: 1,
+  arrived: 2,
+  customs: 3,
+  at_depot: 4,
+  delivered: 5,
+  closed: 6,
+};
+
+/**
+ * A batch reaches the Erbil depot the moment somebody starts verifying its
+ * arrival, because that is where and when the verification happens.
+ *
+ * Until this existed, arrival verification moved every parcel and left the
+ * batch where it was — usually `preparing`, which the portal renders as "in
+ * the China warehouse". A customer whose goods were sitting in Erbil, already
+ * checked in, was being told they had not left China.
+ *
+ * Only ever forwards, and never onto a batch that is already delivered or
+ * closed.
+ */
+export async function advanceBatchToDepot(
+  batchId: number,
+  changedById?: number | null,
+): Promise<{ moved: boolean; from?: string }> {
+  const db = await getDb();
+  if (!db) return { moved: false };
+
+  const [batch] = await db.select().from(batches).where(eq(batches.id, batchId));
+  if (!batch) return { moved: false };
+
+  const current = BATCH_RANK[batch.status] ?? 0;
+  if (current >= BATCH_RANK.at_depot!) return { moved: false, from: batch.status };
+
+  await updateBatch(batchId, { status: "at_depot" }, changedById ?? null);
+  appLogger.info("[ArrivalVerification] Batch moved to the Erbil depot", {
+    batchId,
+    from: batch.status,
+  });
+  return { moved: true, from: batch.status };
+}
+
 export async function updateBatch(
   id: number,
   data: Partial<InsertBatch>,

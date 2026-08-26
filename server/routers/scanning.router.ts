@@ -213,6 +213,26 @@ export const scanningRouter = router({
             // Notify the customer at the meaningful lifecycle stages (in-app
             // notification centre + live SSE). Keyed on the clean scanType.
             await notifyStageInApp(input.packageId, input.scanType);
+
+            // Verifying a parcel's arrival is the moment its batch reached
+            // the Erbil depot, and it was the one fact nobody wrote down:
+            // every parcel moved and the batch stayed where it was, so the
+            // portal went on telling the customer their goods were still in
+            // China. Forward only, and never onto a delivered batch.
+            if (newStatus === "ready_for_delivery") {
+              try {
+                const pkg = await db.getPackageById(input.packageId);
+                if (pkg?.batchId) await db.advanceBatchToDepot(pkg.batchId, ctx.user.id);
+              } catch (e) {
+                // The scan is the record that matters. A batch that did not
+                // move can be moved by hand; a scan that failed cannot be
+                // recovered from the warehouse floor.
+                appLogger.error("[ArrivalVerification] Could not advance the batch", {
+                  packageId: input.packageId,
+                  error: e instanceof Error ? e.message : String(e),
+                });
+              }
+            }
             // NOTE: Charging is handled at batch delivery (batches.router.ts).
             // Scanning must NEVER charge customers to prevent double-charging.
           }
