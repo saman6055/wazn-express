@@ -173,3 +173,71 @@ describe("the scanner shows what identifies the box to a person", () => {
     expect(body).toContain("<Package");
   });
 });
+
+/**
+ * A session of two hundred scans, read back afterwards.
+ *
+ * Somebody working a container has no way of knowing they have reached the
+ * end except by counting, and counting is what the scanner exists to avoid.
+ * And a finished batch left on screen is how the next container gets scanned
+ * into the wrong list.
+ */
+describe("a finished batch says so and steps aside", () => {
+  const scanner = read("client/src/pages/ArrivalVerificationScanner.tsx");
+
+  it("announces a batch only when every parcel on its manifest is in", () => {
+    const body = slice(scanner, "for (const batchId of selectedBatchIds)", "}, [batchPackages", "completion watch");
+    expect(body).toContain("packages.every((p) => verifiedPackages.some");
+    // An empty map means the manifest has not arrived yet, not that the
+    // batch is done — announcing there would fire on every batch at once.
+    expect(body).toContain("packages.length === 0");
+  });
+
+  it("announces each batch once", () => {
+    // A parcel from outside, scanned afterwards, must not raise it again.
+    expect(scanner).toContain("announcedBatches.current.has(batchId)");
+    expect(scanner).toContain("announcedBatches.current.add(batchId)");
+  });
+
+  it("takes the batch off the selection when acknowledged", () => {
+    const body = slice(scanner, 'data-testid="batch-complete-ok"', "</Button>", "batch complete OK");
+    expect(body).toContain("setSelectedBatchIds");
+    expect(body).toContain("filter((id) => id !== completedBatch.id)");
+  });
+
+  it("keeps the parcels in the session after the batch leaves", () => {
+    // They are still on the report and still in the verified list; only the
+    // batch's place in the picker goes.
+    const body = slice(scanner, 'data-testid="batch-complete-ok"', "</Button>", "batch complete OK");
+    expect(body, "clearing the verified list would lose the session")
+      .not.toContain("setVerifiedPackages");
+  });
+});
+
+describe("the session can be read back two ways", () => {
+  const scanner = read("client/src/pages/ArrivalVerificationScanner.tsx");
+
+  it("by scan order and by customer code", () => {
+    expect(scanner).toContain("scan.arrangeByScan");
+    expect(scanner).toContain("scan.arrangeByCustomer");
+  });
+
+  it("groups a customer's parcels together rather than merely sorting them", () => {
+    // A sorted list with no rule in it is a list that happens to be in
+    // order; the eye still has to find where one customer ends.
+    expect(scanner).toContain("startsGroup");
+  });
+
+  it("keeps a code that comes back later in its own group", () => {
+    // Sorting by code first, time second — otherwise a parcel scanned half
+    // an hour later starts a second group further down the list.
+    const body = slice(scanner, "const arrangedVerified", "}, [verifiedPackages", "arrangedVerified");
+    expect(body).toContain("localeCompare");
+    expect(body).toContain("verifiedAt.getTime()");
+  });
+
+  it("puts a copy button on both identifiers a person reads aloud", () => {
+    expect(scanner).toContain("<CopyButton value={pkg.trackingNumber} />");
+    expect(scanner).toContain("<CopyButton value={pkg.orderCode} />");
+  });
+});

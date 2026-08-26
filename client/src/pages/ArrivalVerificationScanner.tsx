@@ -19,6 +19,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
+import { CopyButton } from "@/components/CopyButton";
 import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
 
@@ -89,6 +90,20 @@ export default function ArrivalVerificationScanner() {
   const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [continuousMode, setContinuousMode] = useState(true);
+  /**
+   * How the verified list is arranged.
+   *
+   * "scan" is the order things actually happened, which is what somebody
+   * reconciling a session wants. "customer" gathers a customer's parcels
+   * together with a rule under each group — that is the arrangement for
+   * building boxes, where the question is not "what did I scan" but "what
+   * belongs to AZ112".
+   */
+  const [verifiedOrder, setVerifiedOrder] = useState<"scan" | "customer">("scan");
+  /** The batch whose last parcel has just been checked off. */
+  const [completedBatch, setCompletedBatch] = useState<{ id: number; code: string; count: number } | null>(null);
+  /** Batches already announced, so a later scan does not announce them again. */
+  const announcedBatches = useRef<Set<number>>(new Set());
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [verifiedPackages, setVerifiedPackages] = useState<VerifiedPackage[]>([]);
   const [batchPackages, setBatchPackages] = useState<Map<number, BatchPackage[]>>(new Map());
@@ -202,6 +217,56 @@ export default function ArrivalVerificationScanner() {
     return unverified;
   }, [batchPackages, batches]);
   
+  /**
+   * The verified list in the chosen arrangement.
+   *
+   * Grouping by customer sorts by code and keeps the newest scan first
+   * inside each group, so a code scanned again half an hour later joins its
+   * own parcels rather than starting a second group further down.
+   */
+  const arrangedVerified = useMemo(() => {
+    if (verifiedOrder === "scan") return verifiedPackages;
+    return [...verifiedPackages].sort((a, b) => {
+      const byCode = a.customerCode.localeCompare(b.customerCode, undefined, { numeric: true });
+      if (byCode !== 0) return byCode;
+      return b.verifiedAt.getTime() - a.verifiedAt.getTime();
+    });
+  }, [verifiedPackages, verifiedOrder]);
+
+  /**
+   * The moment a batch is finished.
+   *
+   * Somebody working a container has no way of knowing they have reached the
+   * end except by counting, and counting is what they were trying to avoid.
+   * When the last parcel of a batch is checked off, the screen says so and
+   * takes the batch out of the selection — because leaving a finished batch
+   * on screen is how the next container gets scanned into the wrong list.
+   *
+   * Announced once per batch: a parcel from outside, scanned afterwards,
+   * must not raise it a second time.
+   */
+  useEffect(() => {
+    for (const batchId of selectedBatchIds) {
+      if (announcedBatches.current.has(batchId)) continue;
+      const packages = batchPackages.get(batchId);
+      // An empty map means the manifest has not arrived yet, not that the
+      // batch is done.
+      if (!packages || packages.length === 0) continue;
+      const allIn = packages.every((p) => verifiedPackages.some((v) => v.id === p.id));
+      if (!allIn) continue;
+
+      announcedBatches.current.add(batchId);
+      const batch = batches?.find((b: any) => b.id === batchId);
+      setCompletedBatch({
+        id: batchId,
+        code: batch?.batchCode || `#${batchId}`,
+        count: packages.length,
+      });
+      soundManager.playSuccess();
+      break;
+    }
+  }, [batchPackages, verifiedPackages, selectedBatchIds, batches]);
+
   /** The manifest row for a parcel, from whichever batch it is on. */
   const manifestRowFor = useCallback(
     (packageId: number): BatchPackage | undefined => {
@@ -675,12 +740,14 @@ export default function ArrivalVerificationScanner() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
                                       <span className="font-mono text-sm font-medium">{pkg.trackingNumber}</span>
+                                      <CopyButton value={pkg.trackingNumber} />
                                       <Badge variant="outline" className="text-xs">{pkg.batchNumber}</Badge>
                                       {pkg.orderCode && (
                                         <Badge variant="secondary" className="text-xs font-mono">
                                           {pkg.orderCode}
                                         </Badge>
                                       )}
+                                      {pkg.orderCode && <CopyButton value={pkg.orderCode} />}
                                     </div>
                                     <div className="text-xs text-muted-foreground mt-1 truncate">
                                       <span className="font-medium">{pkg.customerCode}</span>
@@ -704,10 +771,49 @@ export default function ArrivalVerificationScanner() {
                       </TabsContent>
                       
                       <TabsContent value="verified" className="mt-0">
+                        {/* Two ways to read the same session. By scan is what
+                            happened; by customer is what belongs to whom,
+                            which is the question when boxes are being built. */}
+                        {verifiedPackages.length > 1 && (
+                          <div className="mb-2 flex items-center gap-1">
+                            {(["scan", "customer"] as const).map((mode) => (
+                              <Button
+                                key={mode}
+                                type="button"
+                                size="sm"
+                                variant={verifiedOrder === mode ? "secondary" : "ghost"}
+                                className="h-7 text-xs"
+                                data-testid={`arrange-${mode}`}
+                                onClick={() => setVerifiedOrder(mode)}
+                              >
+                                {mode === "scan" ? t("scan.arrangeByScan") : t("scan.arrangeByCustomer")}
+                              </Button>
+                            ))}
+                          </div>
+                        )}
                         <ScrollArea className="h-[300px]">
                           {verifiedPackages.length > 0 ? (
                             <div className="space-y-2">
-                              {verifiedPackages.map((pkg, index) => (
+                              {arrangedVerified.map((pkg, index) => {
+                                // A rule and a code above the first parcel of
+                                // each customer. Without it a sorted list is
+                                // just a list that happens to be in order.
+                                const startsGroup =
+                                  verifiedOrder === "customer" &&
+                                  (index === 0 || arrangedVerified[index - 1]!.customerCode !== pkg.customerCode);
+                                return (
+                                <div key={`g-${pkg.id}-${index}`}>
+                                {startsGroup && (
+                                  <div className="mb-1 mt-3 flex items-center gap-2 first:mt-0">
+                                    <span className="font-mono text-xs font-semibold text-muted-foreground">
+                                      {pkg.customerCode}
+                                    </span>
+                                    <span className="text-xs text-muted-foreground">
+                                      {arrangedVerified.filter((p) => p.customerCode === pkg.customerCode).length}
+                                    </span>
+                                    <span className="h-px flex-1 bg-border" />
+                                  </div>
+                                )}
                                 <div
                                   key={`${pkg.id}-${index}`}
                                   className={cn(
@@ -723,11 +829,13 @@ export default function ArrivalVerificationScanner() {
                                   <div className="flex-1 min-w-0">
                                     <div className="flex flex-wrap items-center gap-2">
                                       <span className="font-mono text-sm font-medium">{pkg.trackingNumber}</span>
+                                      <CopyButton value={pkg.trackingNumber} />
                                       {pkg.orderCode && (
                                         <Badge variant="secondary" className="text-xs font-mono">
                                           {pkg.orderCode}
                                         </Badge>
                                       )}
+                                      {pkg.orderCode && <CopyButton value={pkg.orderCode} />}
                                       {pkg.isExtra && (
                                         <Badge className="text-xs bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
                                           {t("scan.extra")}
@@ -752,7 +860,9 @@ export default function ArrivalVerificationScanner() {
                                     {pkg.verifiedAt.toLocaleTimeString()}
                                   </div>
                                 </div>
-                              ))}
+                                </div>
+                                );
+                              })}
                             </div>
                           ) : (
                             <div className="text-center py-8 text-muted-foreground">
@@ -921,6 +1031,48 @@ export default function ArrivalVerificationScanner() {
         </div>
         
         {/* Extra Package Dialog */}
+        {/* A batch finished. Said once, acknowledged once, and then the
+            batch leaves the selection so the next container cannot be
+            scanned into it. */}
+        <Dialog
+          open={!!completedBatch}
+          onOpenChange={(open) => {
+            if (!open) setCompletedBatch(null);
+          }}
+        >
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+                {t("scan.batchFullyVerified")}
+              </DialogTitle>
+              <DialogDescription>
+                {t("scan.batchFullyVerifiedDesc", {
+                  count: completedBatch?.count ?? 0,
+                  batch: completedBatch?.code ?? "",
+                })}
+              </DialogDescription>
+            </DialogHeader>
+            <DialogFooter>
+              <Button
+                autoFocus
+                data-testid="batch-complete-ok"
+                onClick={() => {
+                  if (completedBatch) {
+                    // Off the selection, not out of the session: the parcels
+                    // stay in the verified list and on the report.
+                    setSelectedBatchIds((ids) => ids.filter((id) => id !== completedBatch.id));
+                  }
+                  setCompletedBatch(null);
+                }}
+                className="px-10"
+              >
+                OK
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+
         <Dialog open={extraPackageDialog.open} onOpenChange={(open) => !open && setExtraPackageDialog({ open: false, package: null, trackingNumber: "" })}>
           <DialogContent>
             <DialogHeader>

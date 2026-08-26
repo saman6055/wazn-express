@@ -2059,7 +2059,11 @@
     "verifiedExcl": "پشکنرا!",
     "verifiedIncomplete": "پشکنراو — زانیاری ناتەواو",
     "waiting": "چاوەڕوانە",
-    "weight": "کێش"
+    "weight": "کێش",
+    "arrangeByScan": "بەپێی سکان",
+    "arrangeByCustomer": "بەپێی کۆدی کڕیار",
+    "batchFullyVerified": "هەموو پاکێجەکانی ئەم باچە گەیشتن",
+    "batchFullyVerifiedDesc": "هەموو {{count}} پاکێجەکەی {{batch}} پشکنینیان بۆ کرا. باچەکە لە لیستەکە لادەبرێت."
   },
   "finance": {
     "title": "دارایی",

@@ -2039,7 +2039,11 @@
     "verifiedExcl": "Verified!",
     "verifiedIncomplete": "Verified — incomplete data",
     "waiting": "Waiting",
-    "weight": "Weight"
+    "weight": "Weight",
+    "arrangeByScan": "By scan",
+    "arrangeByCustomer": "By customer code",
+    "batchFullyVerified": "Every parcel in this batch has arrived",
+    "batchFullyVerifiedDesc": "All {{count}} parcels in {{batch}} are verified. The batch will be taken off the list."
   },
   "finance": {
     "title": "Finance",

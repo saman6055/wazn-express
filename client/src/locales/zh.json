@@ -1978,7 +1978,11 @@
     "verifiedExcl": "已核验！",
     "verifiedIncomplete": "已核验 — 数据不完整",
     "waiting": "等待中",
-    "weight": "重量"
+    "weight": "重量",
+    "arrangeByScan": "按扫描顺序",
+    "arrangeByCustomer": "按客户编码",
+    "batchFullyVerified": "该批次的包裹已全部到达",
+    "batchFullyVerifiedDesc": "{{batch}} 的全部 {{count}} 件包裹已核验。该批次将从列表中移除。"
   },
   "finance": {
     "title": "财务",

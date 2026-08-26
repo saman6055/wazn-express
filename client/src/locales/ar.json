@@ -2039,7 +2039,11 @@
     "verifiedExcl": "تم التحقق!",
     "verifiedIncomplete": "تم التحقق — بيانات غير مكتملة",
     "waiting": "في الانتظار",
-    "weight": "الوزن"
+    "weight": "الوزن",
+    "arrangeByScan": "حسب المسح",
+    "arrangeByCustomer": "حسب كود العميل",
+    "batchFullyVerified": "وصلت كل طرود هذه الدفعة",
+    "batchFullyVerifiedDesc": "تم التحقق من كل {{count}} طرد في {{batch}}. ستُزال الدفعة من القائمة."
   },
   "finance": {
     "title": "المالية",
