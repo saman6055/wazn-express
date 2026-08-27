@@ -1984,7 +1984,9 @@
     "batchFullyVerified": "该批次的包裹已全部到达",
     "batchFullyVerifiedDesc": "{{batch}} 的全部 {{count}} 件包裹已核验。该批次将从列表中移除。",
     "batchHasNoPrice": "此批次未设置售价",
-    "batchHasNoPriceDesc": "若不设置，批次交付时收据将为零，款项即告损失。请在交付前设置批次售价。"
+    "batchHasNoPriceDesc": "若不设置，批次交付时收据将为零，款项即告损失。请在交付前设置批次售价。",
+    "batchPickedFromParcel": "已根据包裹选择批次 {{batch}}",
+    "batchOptionalHint": "无需选择批次 — 扫描即可，包裹会自行确定批次。"
   },
   "finance": {
     "title": "财务",

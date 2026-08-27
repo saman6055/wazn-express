@@ -256,6 +256,11 @@ export default function QuickRegister() {
           // learns it was never registered until the customer asks.
           systemAlert({
             kind: "warning",
+            // Loud and large, but it takes itself away: on this screen a
+            // tracking the system has never seen is the ordinary case — the
+            // parcel is new and about to be registered. A dismissal per
+            // parcel is what makes a warning stop being read.
+            autoDismissMs: 4000,
             title: t("quickRegister.trackingNotFound"),
             message: pickLang(language, {
               ku: "ئەم ژمارە تراکینگە لە سیستەمدا نییە. دەتوانیت بەردەوام بیت و پاکێجەکە بە نوێی تۆمار بکەیت.",

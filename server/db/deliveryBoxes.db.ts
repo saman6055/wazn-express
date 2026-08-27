@@ -105,6 +105,11 @@ export async function getAllDeliveryBoxes(filters?: {
         WHERE ${deliveryBoxItems.boxId} = ${deliveryBoxes.id}
           AND (${deliveryBoxItems.trackingNumber} LIKE ${like} OR ${deliveryBoxItems.packageCode} LIKE ${like})
       )
+      OR EXISTS (
+        SELECT 1 FROM ${customers}
+        WHERE ${customers.id} = ${deliveryBoxes.customerId}
+          AND (${customers.customerCode} LIKE ${like} OR ${customers.fullName} LIKE ${like})
+      )
     )`);
   }
   if (filters?.startDate) conditions.push(gte(deliveryBoxes.createdAt, filters.startDate));

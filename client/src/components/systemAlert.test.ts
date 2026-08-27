@@ -17,22 +17,32 @@ const HERE = __dirname;
 const read = (p: string) => fs.readFileSync(p, "utf8").replace(/\r\n/g, "\n");
 
 const alert = read(path.join(HERE, "SystemAlert.tsx"));
+
+function slice(src: string, startMarker: string, endMarker: string, label: string): string {
+  const start = src.indexOf(startMarker);
+  expect(start, `${label}: start marker not found`).toBeGreaterThan(-1);
+  const end = src.indexOf(endMarker, start + startMarker.length);
+  expect(end, `${label}: end marker not found`).toBeGreaterThan(start);
+  return src.slice(start, end);
+}
 const app = read(path.join(HERE, "..", "App.tsx"));
 const quickRegister = read(path.join(HERE, "..", "pages", "QuickRegister.tsx"));
 const sound = read(path.join(HERE, "..", "lib", "soundManager.ts"));
 
 describe("a failure has to be acknowledged", () => {
   it("takes the middle of the screen and dims what is behind it", () => {
-    expect(alert).toContain("fixed inset-0");
-    expect(alert).toContain("items-center justify-center");
-    expect(alert).toContain("bg-black/60");
+    // The blocking branch only. The transient one deliberately sits at the
+    // top with no backdrop so the scan box stays reachable.
+    expect(alert).toContain('"inset-0 items-center justify-center bg-black/60"');
   });
 
   it("stays until somebody dismisses it", () => {
-    // No timer anywhere: a dialog that closes itself is a toast with extra
-    // steps, and the operator was looking at the parcel.
-    expect(alert, "an alert that closes itself was not acknowledged")
-      .not.toMatch(/setTimeout\([^)]*dismiss/);
+    // A blocking alert that closes itself is a toast with extra steps, and
+    // the operator was looking at the parcel. Only a request that explicitly
+    // asks to be transient may carry a timer.
+    const body = slice(alert, "const id = window.setTimeout(dismiss", "}, [current, dismiss]);", "auto dismiss");
+    expect(body, "the timer must be gated on an explicit request").toContain("autoDismissMs");
+    expect(alert).toContain("if (!current?.autoDismissMs) return;");
   });
 
   it("can be dismissed without finding the mouse", () => {
@@ -127,6 +137,34 @@ describe("a batch that cannot be charged for stops the operator", () => {
     // Two hundred parcels cannot be two hundred dialogs.
     expect(batchAssign).toContain("pricelessBatchWarned.current.has");
     expect(batchAssign).toContain("pricelessBatchWarned.current.add");
+  });
+});
+
+describe("a routine failure gets out of the way", () => {
+  const quickReg = read(path.join(HERE, "..", "pages", "QuickRegister.tsx"));
+
+  it("takes itself away rather than waiting for a hand", () => {
+    // On quick register a tracking the system has never seen is the ordinary
+    // case: the parcel is new and about to be registered. A dismissal per
+    // parcel is how the dialog everywhere else stops being read.
+    expect(quickReg).toContain("autoDismissMs:");
+    expect(alert).toContain("window.setTimeout(dismiss, current.autoDismissMs)");
+  });
+
+  it("does not cover the screen or take the caret", () => {
+    // The gun keeps firing underneath it.
+    expect(alert).toContain("pointer-events-none");
+    expect(alert).toContain("if (current.autoDismissMs) return; // never pull the caret");
+  });
+
+  it("has no button to press", () => {
+    expect(alert).toContain("{!current.autoDismissMs && (");
+  });
+
+  it("is still loud", () => {
+    // Transient does not mean quiet. The sound plays for both kinds.
+    const body = slice(alert, "soundManager.playAlert()", "}, [current]);", "sound effect");
+    expect(body.indexOf("autoDismissMs")).toBeGreaterThan(-1);
   });
 });
 

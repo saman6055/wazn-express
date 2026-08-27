@@ -367,11 +367,9 @@ export default function ArrivalVerificationScanner() {
   const handleScan = useCallback(
     async (scannedValue: string) => {
       if (!scannedValue.trim()) return;
-      if (selectedBatchIds.length === 0) {
-        soundManager.playError();
-        toast.error(t("scan.selectBatchFirst"));
-        return;
-      }
+      // No batch chosen is no longer a refusal. The parcel knows which batch
+      // it is on; asking the operator to say it first is asking them to look
+      // it up on the box before scanning the box.
       soundManager.playBeep();
       setIsSearching(true);
       try {
@@ -400,7 +398,20 @@ export default function ArrivalVerificationScanner() {
           });
           return;
         }
-        const isInSelectedBatches = pkg.batchId ? selectedBatchIds.includes(pkg.batchId) : false;
+        // A parcel that belongs to a batch nobody has selected selects it —
+        // once, and only when it is the first parcel of the session. After
+        // that a parcel from elsewhere is genuinely an extra and still asks.
+        if (pkg.batchId && selectedBatchIds.length === 0) {
+          setSelectedBatchIds([pkg.batchId]);
+          const found = batches?.find((b: any) => b.id === pkg.batchId);
+          toast.info(
+            t("scan.batchPickedFromParcel", { batch: found?.batchCode || `#${pkg.batchId}` }),
+          );
+        }
+
+        const isInSelectedBatches = pkg.batchId
+          ? selectedBatchIds.includes(pkg.batchId) || selectedBatchIds.length === 0
+          : false;
         if (!isInSelectedBatches) {
           soundManager.playWarning();
           setExtraPackageDialog({
@@ -665,14 +676,14 @@ export default function ArrivalVerificationScanner() {
               {/* Scanner Input */}
               <Card className={cn(
                 "border-0 shadow-lg overflow-hidden transition-all",
-                selectedBatchIds.length === 0 && "opacity-50 pointer-events-none"
+                // Never locked: a parcel names its own batch.
               )}>
                 <div className={cn(
                   "h-1 transition-all duration-300",
                   continuousMode && selectedBatchIds.length > 0 ? "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500 animate-pulse" : "bg-slate-200 dark:bg-slate-800/50"
                 )} />
                 <CardContent className="p-6">
-                  <div className={cn("transition-all", selectedBatchIds.length === 0 && "pointer-events-none")}>
+                  <div className="transition-all">
                     <ScanInput
                       onScan={handleScan}
                       isProcessing={isSearching}
@@ -680,7 +691,7 @@ export default function ArrivalVerificationScanner() {
                       onContinuousModeChange={setContinuousMode}
                       soundEnabled={soundEnabled}
                       onSoundEnabledChange={setSoundEnabled}
-                      disabled={selectedBatchIds.length === 0}
+
                       placeholder={t("scan.trackingPlaceholder")}
                       labels={{
                         manualMode: t("scan.manualMode"),
@@ -691,9 +702,9 @@ export default function ArrivalVerificationScanner() {
                     />
                   </div>
                   {selectedBatchIds.length === 0 && (
-                    <div className="flex items-center justify-center gap-2 text-sm text-amber-600 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/20 rounded-lg p-3 mt-3">
-                      <AlertTriangle className="h-4 w-4" />
-                      {t("scan.selectBatchFirst")}
+                    <div className="mt-3 flex items-center justify-center gap-2 rounded-lg bg-muted p-3 text-sm text-muted-foreground">
+                      <Search className="h-4 w-4 shrink-0" />
+                      {t("scan.batchOptionalHint")}
                     </div>
                   )}
                   <div className="mt-3 flex justify-end">

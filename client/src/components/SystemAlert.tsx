@@ -34,6 +34,20 @@ export interface SystemAlertRequest {
   detail?: string;
   /** Named so the button can say what happens, not just "OK". */
   actionLabel?: string;
+  /**
+   * Show it, say it loudly, and get out of the way after this many
+   * milliseconds — no backdrop, no button, no focus taken.
+   *
+   * For the failures that are part of the work rather than a mistake in it.
+   * A tracking that is not in the system is exactly what quick register
+   * expects to meet: the parcel is new, and the operator is about to
+   * register it. Making them dismiss that is asking for a click per parcel,
+   * which is how the dialog everywhere else stops being read.
+   *
+   * Never set this on something that loses goods or money. Those have to be
+   * acknowledged.
+   */
+  autoDismissMs?: number;
 }
 
 type Ctx = (request: SystemAlertRequest) => void;
@@ -67,15 +81,24 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
   useEffect(() => {
     if (!current) return;
     soundManager.playAlert();
+    if (current.autoDismissMs) return; // never pull the caret out of a scan box
     // After the sound, not before: the button must exist to be focused.
     const id = window.setTimeout(() => okRef.current?.focus(), 0);
     return () => window.clearTimeout(id);
   }, [current]);
 
+  // A transient notice takes itself away. Keyed on the request object so a
+  // second one arriving mid-countdown gets its own full span.
+  useEffect(() => {
+    if (!current?.autoDismissMs) return;
+    const id = window.setTimeout(dismiss, current.autoDismissMs);
+    return () => window.clearTimeout(id);
+  }, [current, dismiss]);
+
   // Enter and Escape both dismiss. A hand already on the keyboard should not
   // have to find the mouse, and both keys mean "I have read it".
   useEffect(() => {
-    if (!current) return;
+    if (!current || current.autoDismissMs) return;
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Enter" || e.key === "Escape") {
         e.preventDefault();
@@ -93,12 +116,22 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
       {children}
       {current && (
         <div
-          role="alertdialog"
-          aria-modal="true"
+          role={current.autoDismissMs ? "status" : "alertdialog"}
+          aria-modal={current.autoDismissMs ? undefined : "true"}
+          aria-live={current.autoDismissMs ? "assertive" : undefined}
           aria-labelledby="system-alert-title"
           data-testid="system-alert"
-          className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 p-4"
+          data-transient={current.autoDismissMs ? "true" : undefined}
+          className={cn(
+            "fixed z-[100] flex p-4",
+            current.autoDismissMs
+              ? // No backdrop and no pointer capture: the caret stays in the
+                // scan box and the gun keeps firing underneath it.
+                "inset-x-0 top-0 justify-center pointer-events-none"
+              : "inset-0 items-center justify-center bg-black/60",
+          )}
           onMouseDown={(e) => {
+            if (current.autoDismissMs) return;
             // Clicking the dark area dismisses too. Reaching a small button
             // is the last thing wanted from someone holding a parcel.
             if (e.target === e.currentTarget) dismiss();
@@ -106,7 +139,10 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
         >
           <div
             dir="rtl"
-            className="w-full max-w-md overflow-hidden rounded-xl border bg-card shadow-2xl"
+            className={cn(
+              "w-full max-w-md overflow-hidden rounded-xl border bg-card shadow-2xl",
+              current.autoDismissMs && "pointer-events-auto animate-in fade-in slide-in-from-top-4",
+            )}
           >
             <div className="flex items-center gap-3 border-b p-5">
               <span
@@ -142,17 +178,19 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
               </div>
             )}
 
-            <div className="flex items-center gap-3 border-t p-4">
-              <Button ref={okRef} onClick={dismiss} className="px-10" data-testid="system-alert-ok">
-                {current.actionLabel || "OK"}
-              </Button>
-              <span className="text-xs text-muted-foreground">Enter · Esc</span>
-              {queue.length > 1 && (
-                <span className="ms-auto text-xs text-muted-foreground">
-                  {queue.length - 1}
-                </span>
-              )}
-            </div>
+            {!current.autoDismissMs && (
+              <div className="flex items-center gap-3 border-t p-4">
+                <Button ref={okRef} onClick={dismiss} className="px-10" data-testid="system-alert-ok">
+                  {current.actionLabel || "OK"}
+                </Button>
+                <span className="text-xs text-muted-foreground">Enter · Esc</span>
+                {queue.length > 1 && (
+                  <span className="ms-auto text-xs text-muted-foreground">
+                    {queue.length - 1}
+                  </span>
+                )}
+              </div>
+            )}
           </div>
         </div>
       )}
