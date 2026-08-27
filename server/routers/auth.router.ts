@@ -29,6 +29,19 @@ export const authRouter = router({
     .input(z.object({
       mobileNumber: phoneSchema,
       password: z.string().min(1).max(500),
+      /**
+       * Hand the session token back in the response as well as setting the
+       * cookie.
+       *
+       * For clients with no cookie jar to lean on — a native app, which has
+       * to keep the token itself and send it as `Authorization: Bearer`.
+       *
+       * Off by default, and the browser never asks. That matters: the cookie
+       * is HttpOnly precisely so script on the page cannot read the token,
+       * and returning it in a body every login would hand that protection
+       * away for the sake of a client that is not asking for it.
+       */
+      issueToken: z.boolean().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       const customer = await db.getCustomerByMobile(input.mobileNumber);
@@ -129,6 +142,8 @@ export const authRouter = router({
       return {
         success: true,
         customer: { id: customer.id, name: customer.fullName, customerCode: customer.customerCode },
+        // Only when asked for. A browser gets the cookie and nothing else.
+        ...(input.issueToken ? { token } : {}),
       };
     }),
   staffLogin: publicProcedure

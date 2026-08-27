@@ -201,7 +201,7 @@ class SDKServer {
     cookieValue: string | undefined | null
   ): Promise<{ openId: string; appId: string; name: string; userId?: number; role?: string; customerCode?: string; customerId?: number; isCustomer?: boolean; isStaff?: boolean } | null> {
     if (!cookieValue) {
-      appLogger.warn("[Auth] Missing session cookie");
+      appLogger.warn("[Auth] Missing session token");
       return null;
     }
 
@@ -280,14 +280,36 @@ class SDKServer {
     } as GetUserInfoWithJwtResponse;
   }
 
+  /**
+   * The session token, from wherever this client can carry one.
+   *
+   * A browser carries it in an HttpOnly cookie, which is right: script on the
+   * page cannot read it, so an injected script cannot steal it. A native app
+   * has no such cookie jar to lean on and carries it in a header instead,
+   * which is the same token verified the same way — the transport differs,
+   * the trust does not.
+   *
+   * Cookie first, deliberately. A browser that somehow sends both is a
+   * browser, and its cookie is the one the server set.
+   */
+  private sessionTokenFrom(req: Request): string | undefined {
+    const fromCookie = this.parseCookies(req.headers.cookie).get(COOKIE_NAME);
+    if (fromCookie) return fromCookie;
+
+    const header = (req.headers as Record<string, unknown>)["authorization"];
+    const value = Array.isArray(header) ? header[0] : header;
+    if (typeof value !== "string") return undefined;
+    const match = /^Bearer\s+(.+)$/i.exec(value.trim());
+    return match?.[1]?.trim() || undefined;
+  }
+
   async authenticateRequest(req: Request): Promise<any> {
     // Regular authentication flow
-    const cookies = this.parseCookies(req.headers.cookie);
-    const sessionCookie = cookies.get(COOKIE_NAME);
-    const session = await this.verifySession(sessionCookie);
+    const sessionToken = this.sessionTokenFrom(req);
+    const session = await this.verifySession(sessionToken);
 
     if (!session) {
-      throw ForbiddenError("Invalid session cookie");
+      throw ForbiddenError("Invalid session");
     }
 
     const signedInAt = new Date();
@@ -344,7 +366,7 @@ class SDKServer {
     // If user not in DB, sync from OAuth server automatically
     if (!user) {
       try {
-        const userInfo = await this.getUserInfoWithJwt(sessionCookie ?? "");
+        const userInfo = await this.getUserInfoWithJwt(sessionToken ?? "");
         await db.upsertUser({
           openId: userInfo.openId,
           name: userInfo.name || null,
