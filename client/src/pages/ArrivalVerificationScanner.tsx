@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import {
   Package, CheckCircle2, AlertTriangle, XCircle,
   Target, BarChart3, RefreshCw, FileText,
-  Plus, Printer, Info, AlertCircle, Search, Zap
+  Plus, Printer, Info, Search, Zap
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";

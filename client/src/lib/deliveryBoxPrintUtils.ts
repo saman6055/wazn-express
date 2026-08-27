@@ -125,6 +125,32 @@ function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
     : `${formatNum(item.weightKg)} kg`;
 }
 
+/**
+ * What the customer has already paid against this box, and what is left.
+ *
+ * The server has always enriched each item with `advanceAppliedUsd` — its
+ * own doc comment says the receipt subtracts the sum "so the customer sees
+ * only the balance still owed at delivery". The receipt did not. Money is
+ * collected against this sheet at the counter, so an advance missing from it
+ * is an advance collected twice.
+ *
+ * Only shown when there is one. A receipt with no prepayment on it should
+ * look exactly as it always has.
+ */
+function advanceAndDue(
+  items: BoxItemForPrint[],
+  grandTotal: number,
+): { advance: number; due: number; hasAdvance: boolean } {
+  const advance = items.reduce((sum, i) => sum + (Number(i.advanceAppliedUsd || 0) || 0), 0);
+  return {
+    advance,
+    // Never negative: an advance larger than the box is a credit to settle on
+    // the account, not a refund to hand over at the door.
+    due: Math.max(0, grandTotal - advance),
+    hasAdvance: advance > 0,
+  };
+}
+
 function totalMeasure(box: BoxForPrint, items: BoxItemForPrint[]): string {
   // Summed over the rows that print a measurement — a true box total beside
   // dashed full-package rows hands the hidden weight back as one subtraction.
@@ -236,7 +262,9 @@ export function printBoxLabel(
 ): void {
   const totalValue = formatNum(box.totalValueUsd);
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
-  const grandTotal = (Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0)).toFixed(2);
+  const grandTotalNumber = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
+  const grandTotal = grandTotalNumber.toFixed(2);
+  const labelAdvance = advanceAndDue(items, grandTotalNumber);
 
   const itemsRows = items.map((item, idx) => `
     <tr>
@@ -437,6 +465,15 @@ export function printBoxLabel(
         <div style="font-size:9px; color:${PRIMARY_COLOR};">${t("delivery.grandTotal")}</div>
         <div style="font-size:16px; font-weight:800; color:${PRIMARY_COLOR};">$${grandTotal}</div>
       </div>
+      ${labelAdvance.hasAdvance ? `
+      <div class="total-cell">
+        <div style="font-size:9px; color:#6b7280;">${t("delivery.advancePaid")}</div>
+        <div style="font-weight:700;">− $${labelAdvance.advance.toFixed(2)}</div>
+      </div>
+      <div class="grand-total-cell">
+        <div style="font-size:9px; color:${PRIMARY_COLOR};">${t("delivery.amountDue")}</div>
+        <div style="font-size:16px; font-weight:800; color:${PRIMARY_COLOR};">$${labelAdvance.due.toFixed(2)}</div>
+      </div>` : ""}
     </div>
 
     <!-- Footer -->
@@ -482,6 +519,7 @@ export function printBoxReceipt(
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
   const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
   const grandTotal = grandTotalNum.toFixed(2);
+  const a4Advance = advanceAndDue(items, grandTotalNum);
   // The customer receipt deliberately stays a plain goods document:
   // packages / measure / value / delivery / grand total. Advance payments
   // are NOT credited here — they live on the customer's account, and showing
@@ -807,6 +845,15 @@ export function printBoxReceipt(
           <span>${t("delivery.grandTotal")}:</span>
           <span>$${grandTotal}</span>
         </div>
+        ${a4Advance.hasAdvance ? `
+        <div class="financial-row">
+          <span>${t("delivery.advancePaid")}:</span>
+          <span style="font-weight:600;">− $${a4Advance.advance.toFixed(2)}</span>
+        </div>
+        <div class="financial-row total">
+          <span>${t("delivery.amountDue")}:</span>
+          <span>$${a4Advance.due.toFixed(2)}</span>
+        </div>` : ""}
       </div>
 
       ${box.notes ? `

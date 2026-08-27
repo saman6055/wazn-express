@@ -67,3 +67,48 @@ describe("the logo resolves from a print window", () => {
     expect(absoluteLogoUrl("   ")).toBeUndefined();
   });
 });
+
+/**
+ * The receipt is what money is collected against at the counter.
+ *
+ * The server has always enriched each item with `advanceAppliedUsd`, and its
+ * own doc comment says the receipt subtracts the sum "so the customer sees
+ * only the balance still owed at delivery". The receipt did not — it printed
+ * the full total, and a customer who had already paid an advance was asked
+ * for it a second time. The staff panel showed the balance; the sheet handed
+ * over did not, and the sheet is what gets read.
+ */
+describe("a prepayment is on the receipt", () => {
+  const helper = src.slice(src.indexOf("function advanceAndDue"), src.indexOf("function totalMeasure"));
+
+  it("sums what has been paid across the items", () => {
+    expect(helper).toContain("advanceAppliedUsd");
+    expect(helper).toContain("reduce");
+  });
+
+  it("never shows a negative amount due", () => {
+    // An advance larger than the box is a credit to settle on the account,
+    // not cash to hand back at the door.
+    expect(helper).toContain("Math.max(0, grandTotal - advance)");
+  });
+
+  it("shows the paid line and the balance on both receipts", () => {
+    // The A4 sheet and the compact one are both handed over.
+    expect(src.split("delivery.advancePaid").length - 1, "one of the two receipts is missing it").toBe(2);
+    expect(src.split("delivery.amountDue").length - 1).toBe(2);
+  });
+
+  it("leaves a receipt with no prepayment exactly as it was", () => {
+    // Two extra rows on every receipt would be two rows of nothing on most
+    // of them.
+    expect(src).toContain("a4Advance.hasAdvance ?");
+    expect(src).toContain("labelAdvance.hasAdvance ?");
+  });
+
+  it("subtracts from the same grand total it prints", () => {
+    // Computing the balance from a separately derived total is how the two
+    // figures come to disagree on the same sheet.
+    expect(src).toContain("advanceAndDue(items, grandTotalNum)");
+    expect(src).toContain("advanceAndDue(items, grandTotalNumber)");
+  });
+});
