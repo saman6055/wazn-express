@@ -80,8 +80,14 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
   // because each is a separate thing gone wrong.
   useEffect(() => {
     if (!current) return;
+    if (current.autoDismissMs) {
+      // A quiet single tone, not the two-tone siren. This one is not an
+      // emergency — it is the ordinary answer to an ordinary question, and a
+      // siren for it teaches the operator to stop hearing the siren.
+      soundManager.playNotFound();
+      return; // and never pull the caret out of a scan box
+    }
     soundManager.playAlert();
-    if (current.autoDismissMs) return; // never pull the caret out of a scan box
     // After the sound, not before: the button must exist to be focused.
     const id = window.setTimeout(() => okRef.current?.focus(), 0);
     return () => window.clearTimeout(id);
@@ -140,31 +146,67 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
           <div
             dir="rtl"
             className={cn(
-              "w-full max-w-md overflow-hidden rounded-xl border bg-card shadow-2xl",
-              current.autoDismissMs && "pointer-events-auto animate-in fade-in slide-in-from-top-4",
+              "overflow-hidden border bg-card",
+              current.autoDismissMs
+                ? // Plain and small: a line of text that appears, is read
+                  // without stopping, and goes. Anything grander here reads
+                  // as a fault, and this is not one.
+                  "pointer-events-auto w-auto max-w-lg rounded-lg shadow-md animate-in fade-in slide-in-from-top-2"
+                : "w-full max-w-md rounded-xl shadow-2xl",
             )}
           >
-            <div className="flex items-center gap-3 border-b p-5">
+            <div
+              className={cn(
+                "flex items-center gap-3",
+                current.autoDismissMs ? "px-4 py-3" : "border-b p-5",
+              )}
+            >
               <span
                 className={cn(
-                  "flex h-14 w-14 shrink-0 items-center justify-center rounded-full",
+                  "flex shrink-0 items-center justify-center rounded-full",
+                  current.autoDismissMs ? "h-8 w-8" : "h-14 w-14",
                   current.kind === "warning"
                     ? "bg-amber-100 text-amber-600 dark:bg-amber-950/50 dark:text-amber-400"
                     : "bg-red-100 text-red-600 dark:bg-red-950/50 dark:text-red-400",
                 )}
               >
                 {current.kind === "warning" ? (
-                  <AlertTriangle className="h-7 w-7" />
+                  <AlertTriangle className={current.autoDismissMs ? "h-4 w-4" : "h-7 w-7"} />
                 ) : (
-                  <XCircle className="h-7 w-7" />
+                  <XCircle className={current.autoDismissMs ? "h-4 w-4" : "h-7 w-7"} />
                 )}
               </span>
-              <h2 id="system-alert-title" className="text-lg font-semibold leading-snug">
+              <h2
+                id="system-alert-title"
+                className={cn(
+                  "leading-snug",
+                  current.autoDismissMs ? "text-sm font-medium" : "text-lg font-semibold",
+                )}
+              >
                 {current.title}
               </h2>
+              {/* The tracking sits on the same line: it is what identifies
+                  the parcel, and a second line for it makes a banner. */}
+              {current.autoDismissMs && current.detail && (
+                <span
+                  dir="ltr"
+                  className="ms-auto shrink-0 rounded bg-muted px-2 py-1 font-mono text-xs text-muted-foreground"
+                >
+                  {current.detail}
+                </span>
+              )}
             </div>
 
-            {(current.message || current.detail) && (
+            {/* Compact, but nothing the caller passed is thrown away: the
+                sentence that says what to do next is the reason the notice
+                is worth showing at all. */}
+            {current.autoDismissMs && current.message && (
+              <p className="px-4 pb-3 text-xs leading-relaxed text-muted-foreground">
+                {current.message}
+              </p>
+            )}
+
+            {!current.autoDismissMs && (current.message || current.detail) && (
               <div className="space-y-3 p-5 text-[15px] leading-relaxed">
                 {current.message && <p>{current.message}</p>}
                 {current.detail && (

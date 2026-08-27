@@ -154,17 +154,39 @@ describe("a routine failure gets out of the way", () => {
   it("does not cover the screen or take the caret", () => {
     // The gun keeps firing underneath it.
     expect(alert).toContain("pointer-events-none");
-    expect(alert).toContain("if (current.autoDismissMs) return; // never pull the caret");
+    expect(alert).toContain("return; // and never pull the caret out of a scan box");
   });
 
   it("has no button to press", () => {
     expect(alert).toContain("{!current.autoDismissMs && (");
   });
 
-  it("is still loud", () => {
-    // Transient does not mean quiet. The sound plays for both kinds.
-    const body = slice(alert, "soundManager.playAlert()", "}, [current]);", "sound effect");
-    expect(body.indexOf("autoDismissMs")).toBeGreaterThan(-1);
+  it("sounds ordinary, because it is ordinary", () => {
+    // This started out sharing the two-tone siren with the blocking alert,
+    // on the reasoning that transient does not mean quiet. On the floor it
+    // was wrong: a siren for the commonest event of the shift is how an
+    // operator learns to stop hearing sirens, and then the one that means a
+    // parcel is about to be lost goes unheard too.
+    const body = slice(alert, "if (!current) return;", "}, [current]);", "sound effect");
+    const quiet = body.indexOf("soundManager.playNotFound()");
+    const loud = body.indexOf("soundManager.playAlert()");
+    expect(quiet, "the transient notice has no sound of its own").toBeGreaterThan(-1);
+    expect(loud, "the blocking alert must still be loud").toBeGreaterThan(-1);
+    expect(quiet, "the quiet tone must belong to the transient branch").toBeLessThan(loud);
+    expect(body.slice(0, quiet)).toContain("if (current.autoDismissMs) {");
+  });
+
+  it("is a line of text, not a dialog missing its button", () => {
+    // "Ordinary" was the whole request: small, plain, gone. The blocking
+    // alert keeps its full size — the two must not be styled as one thing.
+    expect(alert).toContain('current.autoDismissMs ? "h-8 w-8" : "h-14 w-14"');
+    expect(alert).toContain('current.autoDismissMs ? "px-4 py-3" : "border-b p-5"');
+  });
+
+  it("still says what to do next", () => {
+    // Shrinking it must not quietly drop the sentence that tells the
+    // operator they can carry on and register the parcel.
+    expect(alert).toContain("{current.autoDismissMs && current.message && (");
   });
 });
 
