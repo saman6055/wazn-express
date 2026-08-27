@@ -2043,7 +2043,9 @@
     "arrangeByScan": "حسب المسح",
     "arrangeByCustomer": "حسب كود العميل",
     "batchFullyVerified": "وصلت كل طرود هذه الدفعة",
-    "batchFullyVerifiedDesc": "تم التحقق من كل {{count}} طرد في {{batch}}. ستُزال الدفعة من القائمة."
+    "batchFullyVerifiedDesc": "تم التحقق من كل {{count}} طرد في {{batch}}. ستُزال الدفعة من القائمة.",
+    "batchHasNoPrice": "هذه الدفعة بلا سعر بيع",
+    "batchHasNoPriceDesc": "إن بقي غير محدد، سيصدر الإيصال بصفر عند تسليم الدفعة ويضيع المبلغ. حدّد سعر بيع الدفعة قبل التسليم."
   },
   "finance": {
     "title": "المالية",

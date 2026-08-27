@@ -109,6 +109,27 @@ describe("the failures that lose goods all stop the operator", () => {
   });
 });
 
+describe("a batch that cannot be charged for stops the operator", () => {
+  const batchAssign = read(path.join(HERE, "..", "pages", "BatchAssignmentScanner.tsx"));
+
+  it("warns when the batch has no selling price", () => {
+    expect(batchAssign).toContain("batchMissingSellingPrice");
+    expect(batchAssign).toContain("scan.batchHasNoPrice");
+  });
+
+  it("uses the shared rule rather than its own opinion", () => {
+    // The scanner's warning and any server check must be the same rule, or
+    // they drift and one of them is wrong about money.
+    expect(batchAssign).toContain('from "@shared/batchPricing"');
+  });
+
+  it("says it once per batch, not once per parcel", () => {
+    // Two hundred parcels cannot be two hundred dialogs.
+    expect(batchAssign).toContain("pricelessBatchWarned.current.has");
+    expect(batchAssign).toContain("pricelessBatchWarned.current.add");
+  });
+});
+
 describe("only failures come through it", () => {
   it("offers no success kind at all", () => {
     expect(alert).toContain('export type SystemAlertKind = "error" | "warning"');

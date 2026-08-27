@@ -2043,7 +2043,9 @@
     "arrangeByScan": "By scan",
     "arrangeByCustomer": "By customer code",
     "batchFullyVerified": "Every parcel in this batch has arrived",
-    "batchFullyVerifiedDesc": "All {{count}} parcels in {{batch}} are verified. The batch will be taken off the list."
+    "batchFullyVerifiedDesc": "All {{count}} parcels in {{batch}} are verified. The batch will be taken off the list.",
+    "batchHasNoPrice": "This batch has no selling price",
+    "batchHasNoPriceDesc": "Left unset, the receipt comes out at zero when the batch is delivered and the money is gone. Set the batch selling price before delivery."
   },
   "finance": {
     "title": "Finance",

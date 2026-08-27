@@ -17,6 +17,7 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
+import { batchMissingSellingPrice } from "@shared/batchPricing";
 import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
 import { ScannedList, type ScannedItem } from "@/components/scanner/ScannedList";
@@ -45,6 +46,8 @@ interface BatchChangeDialog {
 // ==================== MAIN COMPONENT ====================
 export default function BatchAssignmentScanner() {
   const systemAlert = useSystemAlert();
+  /** Batches already warned about, so the warning is said once, not per parcel. */
+  const pricelessBatchWarned = useRef<Set<number>>(new Set());
   const { t } = useTranslation();
   const [, setLocation] = useLocation();
 
@@ -205,6 +208,23 @@ export default function BatchAssignmentScanner() {
 
         const pkg = result.package;
         const customer = result.customer;
+
+        // A batch with no selling price invoices at nothing when it is
+        // delivered. Nobody notices at the counter: the receipt comes out
+        // short, the customer pays what it says, and the difference is gone.
+        //
+        // Said once per batch per session. Two hundred parcels cannot be two
+        // hundred dialogs — that is how a warning stops being read.
+        const batch = batches?.find((b: any) => b.id === parseInt(selectedBatchId));
+        if (batch && !pricelessBatchWarned.current.has(batch.id) && batchMissingSellingPrice(batch)) {
+          pricelessBatchWarned.current.add(batch.id);
+          systemAlert({
+            kind: "warning",
+            title: t("scan.batchHasNoPrice"),
+            message: t("scan.batchHasNoPriceDesc"),
+            detail: batch.batchCode,
+          });
+        }
 
         if (pkg.batchId === parseInt(selectedBatchId)) {
           // Scanned twice into the same batch. Harmless in itself, but the
