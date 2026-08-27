@@ -187,18 +187,47 @@ export default function QuickRegister() {
           };
 
           if (result.source === "package") {
-            soundManager.playDuplicate();
-            toast.warning(
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-yellow-500 dark:text-yellow-400" />
-                <div>
-                  <div className="font-medium">{t("quickRegister.trackingAlreadyRegistered")}</div>
-                  <div className="text-sm text-muted-foreground">
-                    {t("quickRegister.customerLabel")}: {result.customer?.customerCode || t("quickRegister.unknown")}
-                  </div>
-                </div>
-              </div>
-            );
+            /**
+             * This parcel has been registered before, and saying so in the
+             * corner of the screen was not enough.
+             *
+             * The operator scanned, the toast appeared and faded behind the
+             * form, and they went on weighing, photographing and choosing a
+             * customer — finding out only when the save came back refusing
+             * it. A minute of work per parcel, and on a bad day the second
+             * registration is the one that gets kept.
+             *
+             * So it stops them at the scan, which is the moment the
+             * information is worth anything. This one is not routine: a
+             * parcel registered twice is a parcel charged twice.
+             */
+            const already = result.package as {
+              packageCode?: string | null;
+              registeredAt?: Date | string | null;
+              weightKg?: string | number | null;
+            } | null;
+            const when = already?.registeredAt ? new Date(already.registeredAt) : null;
+            systemAlert({
+              kind: "warning",
+              title: t("quickRegister.trackingAlreadyRegistered"),
+              message: pickLang(language, {
+                ku: `ئەم پاکێجە پێشتر تۆمار کراوە${
+                  result.customer?.customerCode ? ` بۆ ${result.customer.customerCode}` : ""
+                }${when ? ` لە ${when.toLocaleString()}` : ""}. دووبارە تۆمارکردنی واتە دوو جار حیسابکردنی.`,
+                en: `This parcel is already registered${
+                  result.customer?.customerCode ? ` to ${result.customer.customerCode}` : ""
+                }${when ? ` on ${when.toLocaleString()}` : ""}. Registering it again means charging for it twice.`,
+                ar: `هذا الطرد مسجل مسبقاً${
+                  result.customer?.customerCode ? ` باسم ${result.customer.customerCode}` : ""
+                }${when ? ` بتاريخ ${when.toLocaleString()}` : ""}. إعادة تسجيله تعني احتسابه مرتين.`,
+                zh: `该包裹已登记${
+                  result.customer?.customerCode ? `（${result.customer.customerCode}）` : ""
+                }${when ? `，时间 ${when.toLocaleString()}` : ""}。再次登记会重复计费。`,
+              }),
+              // The parcel's own code, not the tracking: it is what finds the
+              // existing row, and the tracking is already on screen.
+              detail: already?.packageCode || currentTracking.trim(),
+            });
           } else {
             soundManager.playFound();
             toast.success(
@@ -214,6 +243,15 @@ export default function QuickRegister() {
             );
           }
           setTimeout(() => {
+            if (result.source === "package") {
+              // A duplicate: the next thing to happen is the next parcel,
+              // not the weight of this one. Putting the caret in the weight
+              // box would be the form inviting exactly the second
+              // registration the dialog just warned about.
+              trackingRef.current?.focus();
+              trackingRef.current?.select();
+              return;
+            }
             weightRef.current?.focus();
             weightRef.current?.select();
           }, 100);

@@ -2,6 +2,9 @@
  * Shared Sound Manager for all scanner modules
  * Singleton pattern — import and use anywhere
  */
+/** Long enough to kill the click, short enough that nothing sounds slow. */
+const ATTACK = 0.008;
+
 class ScanSoundManager {
   private audioContext: AudioContext | null = null;
   private _enabled: boolean = true;
@@ -37,7 +40,12 @@ class ScanSoundManager {
     gain.connect(ctx.destination);
     osc.frequency.value = frequency;
     osc.type = type;
-    gain.gain.setValueAtTime(volume, ctx.currentTime);
+    // Ramp up over a few milliseconds instead of starting at full gain. A
+    // square edge on the waveform's first sample is a click, and the click
+    // is most of what makes a short beep sound harsh — it is heard as part
+    // of the tone rather than as a separate noise.
+    gain.gain.setValueAtTime(0.0001, ctx.currentTime);
+    gain.gain.exponentialRampToValueAtTime(volume, ctx.currentTime + ATTACK);
     gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + duration);
     osc.start(ctx.currentTime);
     osc.stop(ctx.currentTime + duration);
@@ -53,8 +61,10 @@ class ScanSoundManager {
       gain.connect(ctx.destination);
       osc.frequency.value = freq;
       osc.type = type;
-      gain.gain.setValueAtTime(volume, ctx.currentTime + i * interval);
-      gain.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + i * interval + duration);
+      const at = ctx.currentTime + i * interval;
+      gain.gain.setValueAtTime(0.0001, at);
+      gain.gain.exponentialRampToValueAtTime(volume, at + ATTACK);
+      gain.gain.exponentialRampToValueAtTime(0.01, at + duration);
       osc.start(ctx.currentTime + i * interval);
       osc.stop(ctx.currentTime + i * interval + duration);
     });
@@ -87,6 +97,18 @@ class ScanSoundManager {
   playAlert() {
     this.playSequence([988, 740], 0.16, 0.16, 'square', 0.9);
   }
+
+  /**
+   * The transient notice, and nothing else.
+   *
+   * A tracking the system has never seen is the commonest event of a quick
+   * register shift, and for a while it shared playAlert's siren. It has to
+   * be audible over a warehouse without being something anyone minds hearing
+   * two hundred times: a sine wave, which has no harmonics to rasp; one
+   * note in the middle of the range, so it neither booms nor pierces; an
+   * eighth of the volume the siren uses; and gone in a sixth of a second.
+   */
+  playNotice() { this.playTone(660, 0.16, 'sine', 0.12); }
 
   /** Triple short beep — duplicate detected */
   playDuplicate() { this.playSequence([330, 330, 330], 0.1, 0.06, 'square'); }

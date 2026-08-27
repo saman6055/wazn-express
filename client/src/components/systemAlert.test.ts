@@ -168,7 +168,7 @@ describe("a routine failure gets out of the way", () => {
     // operator learns to stop hearing sirens, and then the one that means a
     // parcel is about to be lost goes unheard too.
     const body = slice(alert, "if (!current) return;", "}, [current]);", "sound effect");
-    const quiet = body.indexOf("soundManager.playNotFound()");
+    const quiet = body.indexOf("soundManager.playNotice()");
     const loud = body.indexOf("soundManager.playAlert()");
     expect(quiet, "the transient notice has no sound of its own").toBeGreaterThan(-1);
     expect(loud, "the blocking alert must still be loud").toBeGreaterThan(-1);
@@ -206,5 +206,90 @@ describe("only failures come through it", () => {
     // Continuous scanning survives only if a good scan needs no dismissal.
     const successes = quickRegister.split("toast.success(").length - 1;
     expect(successes, "successes moved into the blocking dialog").toBeGreaterThan(0);
+  });
+});
+
+/**
+ * A parcel scanned twice.
+ *
+ * It was always detected at the scan — and said so in a toast, in the corner,
+ * behind the form. The operator weighed it, photographed it, chose a
+ * customer, and learned it was a duplicate only when the save came back
+ * refusing it. On a bad day the second registration is the one that gets
+ * kept, and then the parcel is charged for twice.
+ */
+describe("a duplicate stops the operator where it is worth knowing", () => {
+  const quickReg = read(path.join(HERE, "..", "pages", "QuickRegister.tsx"));
+  const branch = () =>
+    slice(quickReg, 'if (result.source === "package") {', "} else {", "duplicate branch");
+
+  it("raises the blocking alert, not a toast in the corner", () => {
+    const body = branch();
+    expect(body).toContain("systemAlert({");
+    expect(body, "a toast is what failed here").not.toContain("toast.warning(");
+  });
+
+  it("waits for a hand", () => {
+    // The transient form is for the routine case. This is not routine, and
+    // an alert that takes itself away is one the operator can miss.
+    expect(branch(), "a duplicate must not auto-dismiss").not.toContain("autoDismissMs");
+  });
+
+  it("says who has it and when it was registered", () => {
+    // Enough to settle it at the bench: either this is the same parcel come
+    // round twice, or two parcels carry one tracking, and the answer is in
+    // the customer and the date.
+    const body = branch();
+    expect(body).toContain("result.customer?.customerCode");
+    expect(body).toContain("registeredAt");
+  });
+
+  it("names the existing parcel, so the row can be found", () => {
+    expect(branch()).toContain("already?.packageCode");
+  });
+
+  it("sends the caret back to the scan box, not into the weight", () => {
+    // Landing in the weight field is the form inviting the second
+    // registration the dialog just warned about.
+    const body = slice(quickReg, 'if (result.source === "package") {', "}, 100);", "focus after duplicate");
+    expect(body).toContain("trackingRef.current?.focus()");
+  });
+});
+
+/**
+ * The sound of the notice, after the owner heard it on the floor.
+ */
+describe("the transient notice is quiet enough to hear all day", () => {
+  const sounds = read(path.join(HERE, "..", "lib", "soundManager.ts"));
+
+  it("has a tone of its own rather than borrowing a failure's", () => {
+    expect(sounds).toContain("playNotice()");
+    expect(alert).toContain("soundManager.playNotice()");
+  });
+
+  it("is a sine, which has no harmonics to rasp", () => {
+    const body = slice(sounds, "playNotice()", ";", "playNotice");
+    expect(body).toContain("'sine'");
+  });
+
+  it("is far below the siren", () => {
+    const notice = slice(sounds, "playNotice()", ";", "playNotice");
+    const volume = Number(notice.match(/,\s*([0-9.]+)\s*\)/)?.[1]);
+    expect(volume, "playNotice must declare a volume").toBeGreaterThan(0);
+    expect(volume).toBeLessThanOrEqual(0.15);
+  });
+
+  it("ramps up instead of starting at full gain", () => {
+    // A square edge on the first sample is a click, and the click is most of
+    // what makes a short beep sound harsh — it is heard as part of the tone.
+    expect(sounds).toContain("const ATTACK =");
+    expect(sounds).toContain("gain.gain.setValueAtTime(0.0001, ctx.currentTime)");
+    expect(sounds).toContain("exponentialRampToValueAtTime(volume, ctx.currentTime + ATTACK)");
+  });
+
+  it("ramps every tone in the sequence too", () => {
+    const body = slice(sounds, "private playSequence", "playAlert()", "playSequence");
+    expect(body).toContain("setValueAtTime(0.0001, at)");
+    expect(body).toContain("exponentialRampToValueAtTime(volume, at + ATTACK)");
   });
 });

@@ -84,7 +84,7 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
       // A quiet single tone, not the two-tone siren. This one is not an
       // emergency — it is the ordinary answer to an ordinary question, and a
       // siren for it teaches the operator to stop hearing the siren.
-      soundManager.playNotFound();
+      soundManager.playNotice();
       return; // and never pull the caret out of a scan box
     }
     soundManager.playAlert();
