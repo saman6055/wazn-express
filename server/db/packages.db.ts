@@ -545,6 +545,58 @@ async function resolveLinkedOrdersForPackage(pkg: Package | undefined) {
   return out;
 }
 
+/**
+ * Move every order linked to these parcels to `delivered`.
+ *
+ * `updatePackage` already does this, one parcel at a time, and every path
+ * that goes through it is fine. The customer's own "I have received my box"
+ * button does not: it writes `packages.status` in a single statement, because
+ * a forty-parcel box was firing forty sequential round trips at a phone. The
+ * speed was worth keeping; the silence was not. The parcels were handed over
+ * and the customer's purchase order went on saying "لە ڕێگادا" underneath
+ * them — the same fault the scanner had, in the one place the customer sees.
+ *
+ * Status only. The shipping cost that `updatePackage` writes on delivery is
+ * settled for boxes by the delivery flow's own split, and writing it a second
+ * time here would charge for the same freight twice.
+ *
+ * Both routes a parcel can reach an order are followed, and an order already
+ * delivered is left alone.
+ */
+export async function markLinkedOrdersDelivered(packageIds: number[]): Promise<number> {
+  if (packageIds.length === 0) return 0;
+  const db = await getDb();
+  if (!db) return 0;
+
+  const rows = await db.select().from(packages).where(inArray(packages.id, packageIds));
+
+  const seen = new Set<number>();
+  let moved = 0;
+  for (const pkg of rows) {
+    const linked = await resolveLinkedOrdersForPackage(pkg);
+    for (const order of linked) {
+      if (!order || seen.has(order.id)) continue;
+      seen.add(order.id);
+      if (order.status === 'delivered' || order.status === 'cancelled') continue;
+      try {
+        await updateFullPackageOrder(order.id, {
+          status: 'delivered',
+          deliveredDate: new Date(),
+          actualDeliveryDate: new Date(),
+        });
+        moved++;
+      } catch (e) {
+        // One order that will not move must not cost the customer their
+        // receipt; the box is already marked.
+        appLogger.error('[FullPackage] Failed to deliver linked order on box confirm', {
+          orderId: order.id, error: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+  }
+  return moved;
+}
+
 export async function updatePackage(id: number, data: Partial<InsertPackage>) {
   const db = await getDb();
   if (!db) return;

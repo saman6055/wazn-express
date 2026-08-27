@@ -3,7 +3,8 @@ import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
 import { appLogger } from "../utils/logger";
-import { commissionGoodsTotal } from "./fullPackage.db";
+import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
+import { markLinkedOrdersDelivered } from "./packages.db";
 import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 
 // ============ BOX CODE GENERATION ============
@@ -1089,6 +1090,38 @@ export async function confirmBoxReceivedByCustomer(
     } catch (err) {
       // The box is already marked; a failure here must not fail the receipt.
       appLogger.error("confirmBoxReceivedByCustomer: package status update failed", { boxId, err });
+    }
+
+    /**
+     * The parcels moved; the orders behind them have to move with them.
+     *
+     * The bulk statement above skips `updatePackage`, and with it the sync
+     * that carries a delivery onto the purchase order it belongs to. Without
+     * this, a customer confirms their box and their own order page goes on
+     * saying the goods are in transit.
+     */
+    try {
+      await markLinkedOrdersDelivered(packageIds);
+    } catch (err) {
+      appLogger.error("confirmBoxReceivedByCustomer: linked order sync failed", { boxId, err });
+    }
+  }
+
+  /**
+   * An order attached to the box itself rather than through a parcel. The
+   * staff delivery scan handles these; the customer's confirmation has to as
+   * well, or which of the two happened decides what the customer is told.
+   */
+  for (const item of items) {
+    if (!item.fullPackageOrderId) continue;
+    try {
+      await updateFullPackageOrder(item.fullPackageOrderId, {
+        status: 'delivered',
+        deliveredDate: now,
+        actualDeliveryDate: now,
+      });
+    } catch (err) {
+      appLogger.error("confirmBoxReceivedByCustomer: box-linked order sync failed", { boxId, err });
     }
   }
 

@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
+import { customerBatchStatus } from '@shared/customerBatchStage';
 import { concealsSizeAndCarriage, concealParcelSize } from '@shared/fullPackagePrivacy';
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from '@shared/ledgerTypes';
 import { getVolumetricDivisor } from './settings.db';
@@ -170,6 +171,8 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
     heightCm: packages.heightCm,
     volumeCbm: packages.volumeCbm,
     shippingType: packages.shippingType,
+    status: packages.status,
+    deliveredAt: packages.deliveredAt,
   }).from(packages)
     .where(and(
       eq(packages.customerId, customerId),
@@ -177,8 +180,13 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
     ));
 
   const sizeByBatch = new Map<number, { kg: number; cbm: number }>();
+  /** This customer's parcels in each batch, for the per-customer status. */
+  const parcelsByBatch = new Map<number, { status: string | null; deliveredAt: Date | null }[]>();
   for (const p of mine) {
     if (p.batchId == null) continue;
+    const seen = parcelsByBatch.get(p.batchId) ?? [];
+    seen.push({ status: p.status, deliveredAt: p.deliveredAt });
+    parcelsByBatch.set(p.batchId, seen);
     const acc = sizeByBatch.get(p.batchId) ?? { kg: 0, cbm: 0 };
     if (isAirShipping(String(p.shippingType))) {
       acc.kg += chargeableWeight(p, divisor).chargeableKg;
@@ -204,6 +212,17 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
   return batchRows
     .map(batch => {
       const size = sizeByBatch.get(batch.id) ?? { kg: 0, cbm: 0 };
+      const myParcels = parcelsByBatch.get(batch.id) ?? [];
+      const customerStatus = customerBatchStatus(String(batch.status), myParcels);
+      /**
+       * The stepper dates its steps from batchStatusHistory, which records
+       * the container. When this customer collected before the container was
+       * closed, its delivered step has no date of its own — theirs does.
+       */
+      const myDeliveredAt = myParcels
+        .map((p) => p.deliveredAt)
+        .filter((d): d is Date => !!d)
+        .sort((a, b) => b.getTime() - a.getTime())[0];
       const bySea = String(batch.shippingType) === "sea";
       // Internal: these trackings cover every customer in the batch, so one
       // could follow another's goods. Container/AWB are shown instead.
@@ -215,16 +234,44 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
         costPerCbm: _costPerCbm,
         shippingCost: _shippingCost,
         shipmentTrackings: _internalTrackings,
+        /**
+         * Free text written by staff about the whole container — a customer
+         * who has not paid, a parcel held back, whatever needed saying that
+         * day. It was travelling to every customer in the batch and being
+         * rendered by none of them.
+         */
+        notes: _notes,
+        /**
+         * The rest of the container's own measurements, and who made it.
+         * Everybody's goods added together, and an internal user id. The
+         * customer's own share is `customerChargeable`, computed above.
+         */
+        totalWeight: _totalWeight,
+        actualWeightKg: _actualWeightKg,
+        actualCbm: _actualCbm,
+        chargedWeightKg: _chargedWeightKg,
+        chargedCbm: _chargedCbm,
+        createdById: _createdById,
         ...customerVisible
       } = batch;
       return {
         ...customerVisible,
+        /**
+         * The container's own status is replaced by this customer's, so no
+         * screen can print the shared one by accident. The original is kept
+         * beside it for anything that genuinely means the whole batch.
+         */
+        status: customerStatus,
+        batchStatus: batch.status,
         customerPackageCount: countByBatch.get(batch.id) || 0,
         /** This customer's own total, in the unit this batch is billed by. */
         customerChargeable: Number((bySea ? size.cbm : size.kg).toFixed(bySea ? 3 : 2)),
         customerUnit: (bySea ? "cbm" : "kg") as "cbm" | "kg",
         /** Keyed by batch status: preparing, in_transit, arrived, customs, … */
-        statusDates: statusDatesByBatch.get(batch.id) ?? {},
+        statusDates: {
+          ...(statusDatesByBatch.get(batch.id) ?? {}),
+          ...(customerStatus === "delivered" && myDeliveredAt ? { delivered: myDeliveredAt } : {}),
+        },
       };
     })
     .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());

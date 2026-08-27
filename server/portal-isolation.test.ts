@@ -175,3 +175,49 @@ describe("what the sanitiser strips from an order", () => {
     expect(toCustomerVisibleOrders(undefined)).toEqual([]);
   });
 });
+
+/**
+ * The batch card is one container's row, handed to every customer with goods
+ * in it. Its cost columns and internal trackings were already stripped for
+ * that reason; the rest of the row had not been looked at since.
+ *
+ * `notes` is the one that matters — free text a member of staff wrote about
+ * the whole container, on a day when nobody was thinking about who reads it.
+ * It was going out to every customer in the batch and rendered by none of
+ * them, which is how it stayed unnoticed.
+ */
+describe("the batch card carries nothing internal", () => {
+  const portalDb = fs
+    .readFileSync(path.join(ROOT, "db/portal.db.ts"), "utf8")
+    .replace(/\r\n/g, "\n");
+
+  const stripped = () => {
+    const at = portalDb.indexOf("        shipmentTrackings: _internalTrackings,");
+    expect(at, "the strip block has moved or gone").toBeGreaterThan(-1);
+    return portalDb.slice(portalDb.lastIndexOf("const {", at), portalDb.indexOf("} = batch;", at));
+  };
+
+  it("drops staff notes about the container", () => {
+    expect(stripped()).toContain("notes: _notes,");
+  });
+
+  it("drops the container's own measurements", () => {
+    // Everybody's goods added together. The customer's own share is
+    // `customerChargeable`, computed from their parcels alone.
+    const body = stripped();
+    for (const field of ["totalWeight", "actualWeightKg", "actualCbm", "chargedWeightKg", "chargedCbm"]) {
+      expect(body, `${field} still travels`).toContain(`${field}: _`);
+    }
+  });
+
+  it("drops the internal user id", () => {
+    expect(stripped()).toContain("createdById: _createdById,");
+  });
+
+  it("keeps stripping what it already stripped", () => {
+    const body = stripped();
+    expect(body).toContain("costPerKg: _costPerKg,");
+    expect(body).toContain("costPerCbm: _costPerCbm,");
+    expect(body).toContain("shippingCost: _shippingCost,");
+  });
+});

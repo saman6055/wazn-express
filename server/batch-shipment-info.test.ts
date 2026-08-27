@@ -63,9 +63,14 @@ describe("batch shipment identifiers", () => {
       "getCustomerBatches"
     );
     // The whole batch row is spread into the portal payload, so the internal
-    // field must be destructured away explicitly before that spread.
+    // field must be destructured away explicitly before that spread. It is
+    // one name in a list of stripped fields now — what matters is that it is
+    // named and that the rest goes out through the same rest element, not
+    // that it is the last one written.
     expect(fn, "shipmentTrackings must be stripped from the portal payload")
-      .toMatch(/shipmentTrackings:\s*_\w+\s*,\s*\.\.\./);
+      .toMatch(/shipmentTrackings:\s*_\w+\s*,/);
+    expect(fn, "the stripped fields must feed a rest element, not a fresh object")
+      .toMatch(/\.\.\.customerVisible\s*\} = batch;/);
     expect(fn, "the portal payload must not spread the raw batch row")
       .not.toMatch(/return\s*\{\s*\.\.\.batch\s*,/);
   });
