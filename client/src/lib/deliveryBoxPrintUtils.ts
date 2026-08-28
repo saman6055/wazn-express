@@ -137,6 +137,29 @@ function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
  * Only shown when there is one. A receipt with no prepayment on it should
  * look exactly as it always has.
  */
+/**
+ * What the counter settled, for the sheet the customer takes home.
+ *
+ * A discount is nearly always agreed before the receipt is printed — the box
+ * is nine hundred, call it eight-eighty — and the sheet has to say so. Not
+ * only because the total must be the discounted one, but because the
+ * customer should be able to see the discount they were given. A receipt that
+ * quietly shows 880 with no line explaining it invites the question of what
+ * the other twenty was.
+ *
+ * Optional throughout: a box printed before any money is taken prints exactly
+ * as it always did.
+ */
+export interface SettlementForPrint {
+  discountUsd?: number;
+  paidUsd?: number;
+  amountIqd?: number;
+  exchangeRate?: number | null;
+  settlementNumber?: string | null;
+  /** Short money that stayed owed after this receipt. */
+  debtUsd?: number;
+}
+
 function advanceAndDue(
   items: BoxItemForPrint[],
   grandTotal: number,
@@ -510,7 +533,13 @@ export function printBoxReceipt(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
-  options?: { documentTitle?: string; direction?: 'ltr' | 'rtl'; logoUrl?: string },
+  options?: {
+    documentTitle?: string;
+    direction?: 'ltr' | 'rtl';
+    logoUrl?: string;
+    /** Present once money has been taken; absent before that. */
+    settlement?: SettlementForPrint;
+  },
 ): void {
   // Direction follows the chosen receipt language (rtl for ku/ar, ltr for
   // en/zh). Defaults to rtl for back-compat with callers that don't pass it.
@@ -520,6 +549,13 @@ export function printBoxReceipt(
   const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
   const grandTotal = grandTotalNum.toFixed(2);
   const a4Advance = advanceAndDue(items, grandTotalNum);
+  // The discount comes off the grand total, so the figure the customer is
+  // asked for is the one they agreed to — and the line above it says why it
+  // is not the number they can add up from the rows.
+  const settlement = options?.settlement;
+  const discountNum = Number(settlement?.discountUsd || 0);
+  const afterDiscountNum = Math.max(0, grandTotalNum - discountNum);
+  const afterDiscount = afterDiscountNum.toFixed(2);
   // The customer receipt deliberately stays a plain goods document:
   // packages / measure / value / delivery / grand total. Advance payments
   // are NOT credited here — they live on the customer's account, and showing
@@ -841,10 +877,29 @@ export function printBoxReceipt(
           <span>${t("delivery.deliveryCharge")}:</span>
           <span style="font-weight:600; color:${PRIMARY_COLOR};">$${deliveryCharge}</span>
         </div>` : ""}
-        <div class="financial-row total">
+        <div class="financial-row${discountNum > 0 ? "" : " total"}">
           <span>${t("delivery.grandTotal")}:</span>
-          <span>$${grandTotal}</span>
+          <span${discountNum > 0 ? ' style="font-weight:600;"' : ""}>$${grandTotal}</span>
         </div>
+        ${discountNum > 0 ? `
+        <div class="financial-row">
+          <span>${t("delivery.discount")}:</span>
+          <span style="font-weight:600; color:#b45309;">− $${discountNum.toFixed(2)}</span>
+        </div>
+        <div class="financial-row total">
+          <span>${t("delivery.afterDiscount")}:</span>
+          <span>$${afterDiscount}</span>
+        </div>` : ""}
+        ${settlement?.amountIqd && settlement.exchangeRate ? `
+        <div class="financial-row">
+          <span>${t("delivery.paidInIqd")}:</span>
+          <span style="font-weight:600;" dir="ltr">${Number(settlement.amountIqd).toLocaleString()} @ ${Number(settlement.exchangeRate).toLocaleString()}</span>
+        </div>` : ""}
+        ${settlement?.debtUsd && settlement.debtUsd > 0 ? `
+        <div class="financial-row">
+          <span>${t("delivery.remainingDebt")}:</span>
+          <span style="font-weight:600; color:#b91c1c;">$${Number(settlement.debtUsd).toFixed(2)}</span>
+        </div>` : ""}
         ${a4Advance.hasAdvance ? `
         <div class="financial-row">
           <span>${t("delivery.advancePaid")}:</span>

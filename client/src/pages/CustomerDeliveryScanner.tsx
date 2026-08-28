@@ -16,6 +16,7 @@ import { BoxTable } from "@/components/delivery/BoxTable";
 import { BoxDetailPanel } from "@/components/delivery/BoxDetailPanel";
 import { CreateBoxDialog } from "@/components/delivery/CreateBoxDialog";
 import { CustomerBoxCodes } from "@/components/delivery/CustomerBoxCodes";
+import { DiscountReport } from "@/components/delivery/DiscountReport";
 
 const PAGE_SIZE = 20;
 
@@ -230,6 +231,9 @@ export default function CustomerDeliveryScanner() {
             />
           </CardContent>
         </Card>
+
+        {/* Money that left through this same door, and why */}
+        <DiscountReport />
 
         {/* Create Dialog */}
         <CreateBoxDialog

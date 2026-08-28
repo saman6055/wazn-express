@@ -6024,7 +6024,11 @@
     "deleteBoxConfirm": "此箱及其中所有内容将移入回收站，可从那里恢复。",
     "toastBoxDeleted": "箱子「{{code}}」已移入回收站",
     "cannotAddToBox": "无法加入此箱",
-    "amountDue": "应收金额"
+    "amountDue": "应收金额",
+    "discount": "折扣",
+    "afterDiscount": "折后金额",
+    "paidInIqd": "第纳尔付款",
+    "remainingDebt": "剩余欠款"
   },
   "pushAdmin": {
     "title": "推送通知中心",

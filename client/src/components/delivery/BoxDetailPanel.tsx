@@ -55,6 +55,7 @@ import {
   Unlock,
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
+import { BoxSettlementPanel } from "@/components/delivery/BoxSettlementPanel";
 import { CopyButton } from "@/components/CopyButton";
 
 // Languages offered for the printable box receipt / PDF. Staff can print
@@ -147,6 +148,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     { id: boxId },
     { refetchInterval: 15000 }
   );
+
+  // Read, not fetched twice: the settlement panel below runs the same query,
+  // and TanStack hands both the one result. What the paper says and what the
+  // screen says come from the same place.
+  const { data: settlementView } = trpc.deliveryBox.settlementView.useQuery({ boxId });
 
   // Mutations
   const addItem = trpc.deliveryBox.addItem.useMutation({
@@ -444,6 +450,34 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         : null,
     ] as const;
 
+  /**
+   * What the counter settled, for the printed sheet.
+   *
+   * The discount is nearly always agreed before the receipt is printed — the
+   * box is nine hundred, call it eight-eighty — so the sheet has to show it
+   * and total to the discounted figure. Read from the same query the
+   * settlement panel uses, so the paper and the screen cannot disagree.
+   *
+   * Reversed receipts are skipped: their money went back.
+   */
+  const settlementForPrint = (() => {
+    const confirmed = (settlementView?.settlements ?? []).filter((s) => s.status === "confirmed");
+    if (confirmed.length === 0) return undefined;
+    const sum = (pick: (s: (typeof confirmed)[number]) => number) =>
+      Math.round(confirmed.reduce((total, s) => total + pick(s), 0) * 100) / 100;
+    return {
+      discountUsd: sum((s) => Number(s.discountUsd || 0)),
+      paidUsd: sum((s) => Number(s.paidUsd || 0)),
+      amountIqd: sum((s) => Number(s.amountIqd || 0)),
+      // The rate of the most recent one; they are all the same day in
+      // practice, and a receipt showing two rates would raise more questions
+      // than it answers.
+      exchangeRate: Number(confirmed[0]?.exchangeRate ?? 0) || null,
+      settlementNumber: confirmed[0]?.settlementNumber ?? null,
+      debtUsd: sum((s) => (s.differenceKind === "debt" ? Number(s.differenceUsd || 0) : 0)),
+    };
+  })();
+
   const handlePrintReceipt = async (lang: Language) => {
     // Locales load on demand now; fetch the chosen one before translating a
     // document that is about to be printed.
@@ -452,6 +486,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     printBoxReceipt(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrl),
+      settlement: settlementForPrint,
     });
   };
 
@@ -465,6 +500,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   };
 
   return (
+    <>
     <Card dir={isRtl ? "rtl" : "ltr"} className="border-primary/20 shadow-md">
       {/* Header */}
       <CardHeader className="pb-3">
@@ -952,5 +988,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         onSaved={() => refetchBox()}
       />
     </Card>
+
+    {/* Money comes back through the box, so it is taken on the box — below
+        its contents, where the parcels being paid for are already on screen. */}
+    <BoxSettlementPanel boxId={boxId} onSettled={() => refetchBox()} />
+    </>
   );
 }

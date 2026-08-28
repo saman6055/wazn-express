@@ -6037,7 +6037,11 @@
     "deleteBoxConfirm": "This box and everything in it goes to the recycle bin. You can restore it from there.",
     "toastBoxDeleted": "Box \"{{code}}\" moved to the bin",
     "cannotAddToBox": "Cannot add to this box",
-    "amountDue": "Amount due"
+    "amountDue": "Amount due",
+    "discount": "Discount",
+    "afterDiscount": "After discount",
+    "paidInIqd": "Paid in dinars",
+    "remainingDebt": "Remaining debt"
   },
   "pushAdmin": {
     "title": "Push Notification Center",
