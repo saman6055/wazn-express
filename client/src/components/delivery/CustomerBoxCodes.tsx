@@ -7,6 +7,7 @@ import { Users, Search, X, Package, ChevronLeft } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { splitCustomerCode } from "@shared/customerCode";
 
 /**
  * Who has goods waiting, answered by customer instead of by box.
@@ -187,7 +188,7 @@ export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect
           <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm dark:border-blue-900 dark:bg-blue-950/40">
             <ChevronLeft className="h-4 w-4 shrink-0 text-blue-600 rtl:rotate-180 dark:text-blue-400" />
             <span className="font-medium" dir="ltr">
-              {selected.customerCode || selected.fullName}
+              {splitCustomerCode(selected.customerCode).code || selected.fullName}
             </span>
             <span className="text-muted-foreground">
               {selected.openBoxes} {label.boxes}
@@ -220,6 +221,7 @@ export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect
             <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">
               {shown.map((row) => {
                 const isSelected = row.customerId === selectedCustomerId;
+                const split = splitCustomerCode(row.customerCode);
                 return (
                   <button
                     key={row.customerId}
@@ -227,7 +229,7 @@ export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect
                     // Pressing the open code closes it: the tile is the
                     // handle both ways, so nobody hunts for how to get back.
                     onClick={() => onSelect(isSelected ? null : row.customerId)}
-                    title={row.fullName ?? undefined}
+                    title={[split.code, split.name || row.fullName].filter(Boolean).join(" — ")}
                     data-testid={`customer-box-code-${row.customerId}`}
                     className={cn(
                       "flex flex-col items-start gap-1 rounded-lg border p-3 text-start transition-colors",
@@ -236,21 +238,31 @@ export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect
                         : "hover:border-blue-300 hover:bg-muted/60 dark:hover:border-blue-800",
                     )}
                   >
-                    <span className="w-full truncate font-mono text-sm font-semibold" dir="ltr">
-                      {row.customerCode || row.fullName || `#${row.customerId}`}
+                    {/* The code alone on its line. The whole stored value is
+                        `AZ047(Lubna Hikmat Dawood)`, and in a tile this wide
+                        it truncated to "AZ04…" — a grid of codes that could
+                        not be told apart, on a screen for telling them
+                        apart. */}
+                    <span className="font-mono text-base font-semibold leading-none" dir="ltr">
+                      {split.code || row.fullName || `#${row.customerId}`}
                     </span>
+                    {(split.name || row.fullName) && (
+                      <span className="w-full truncate text-xs leading-tight text-muted-foreground">
+                        {split.name || row.fullName}
+                      </span>
+                    )}
                     <span className="flex items-center gap-1.5">
                       <Badge variant={isSelected ? "default" : "secondary"} className="px-1.5">
                         {row.openBoxes}
                       </Badge>
                       <span className="text-xs text-muted-foreground">{label.boxes}</span>
+                      {row.totalPackages > 0 && (
+                        <span className="ms-1 flex items-center gap-1 text-xs text-muted-foreground">
+                          <Package className="h-3 w-3" />
+                          {row.totalPackages}
+                        </span>
+                      )}
                     </span>
-                    {row.totalPackages > 0 && (
-                      <span className="flex items-center gap-1 text-xs text-muted-foreground">
-                        <Package className="h-3 w-3" />
-                        {row.totalPackages}
-                      </span>
-                    )}
                   </button>
                 );
               })}

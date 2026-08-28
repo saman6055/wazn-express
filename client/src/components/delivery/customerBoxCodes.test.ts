@@ -133,7 +133,7 @@ describe("the card stays readable as the list grows", () => {
 
   it("names the code left-to-right whatever the interface language", () => {
     // AZ047 is a code, not a word; RTL would reorder it.
-    const tile = slice(card, "w-full truncate font-mono", "</span>", "code tile");
+    const tile = slice(card, "font-mono text-base font-semibold", "</span>", "code tile");
     expect(tile).toContain('dir="ltr"');
   });
 });
@@ -192,5 +192,41 @@ describe("it is one icon, and then a window", () => {
   it("still shows which code the list is narrowed to, back on the page", () => {
     // The window is gone by then; without this the filter has no handle.
     expect(page).toContain('data-testid="clear-customer-drill"');
+  });
+});
+
+/**
+ * The codes could not be told apart.
+ *
+ * The stored value is `AZ047(Lubna Hikmat Dawood)` — an identifier with the
+ * name folded in — and in a tile that width it truncated to "AZ04…". A grid
+ * of "AZ08…", "AZ19…", "AZ21…" on the one screen whose entire job is telling
+ * customers apart.
+ */
+describe("every code can be read at a glance", () => {
+  it("prints the identifying half on a line of its own", () => {
+    expect(card).toContain("splitCustomerCode(row.customerCode)");
+    expect(card).toContain("{split.code || row.fullName");
+  });
+
+  it("does not truncate the code itself", () => {
+    // The name is what may be cut; the code never is.
+    const tile = slice(card, "font-mono text-base font-semibold", "</span>", "code line");
+    expect(tile, "the code line must not truncate").not.toContain("truncate");
+  });
+
+  it("keeps the name, underneath, where there is room for it to be cut", () => {
+    expect(card).toContain("{split.name || row.fullName}");
+    expect(card).toContain("truncate text-xs");
+  });
+
+  it("names the person on hover, not the code twice over", () => {
+    expect(card).toContain("[split.code, split.name || row.fullName]");
+  });
+
+  it("still finds somebody by name, because the search reads the whole value", () => {
+    // customerCode carries the name, so searching "Lubna" still matches.
+    expect(card).toContain('(r.customerCode ?? "").toLowerCase().includes(q)');
+    expect(card).toContain('(r.fullName ?? "").toLowerCase().includes(q)');
   });
 });
