@@ -11,7 +11,7 @@ import { customers, users } from "../../drizzle/schema/users.schema";
 import { batches } from "../../drizzle/schema/batches.schema";
 import type { BoxSettlement } from "../../drizzle/schema/finance.schema";
 import { appLogger } from "../utils/logger";
-import { recordPaymentReceived, adjustCharge } from "./finance.db";
+import { recordPaymentReceived, adjustCharge, recordPackageChargeWithoutInvoice } from "./finance.db";
 import {
   settlementTotals,
   differenceOf,
@@ -202,7 +202,20 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
     .filter((r) => r.item.packageId)
     .map((r) => {
       const packageId = Number(r.item.packageId);
-      const chargedUsd = round2(charged.get(packageId) ?? 0);
+      const fromLedger = charged.get(packageId);
+      /**
+       * The parcel's own price, when the ledger has not been told about it.
+       *
+       * Charges are posted at batch delivery. A box can be made, sealed and
+       * handed over before that ever runs — and once there is a box, the
+       * goods have gone to the customer, so the money is collectable now.
+       * The box item carries the price it was built with; showing $0.00 next
+       * to a customer holding $629 of goods is the screen being wrong, not
+       * the box being free.
+       */
+      const chargedUsd = round2(
+        fromLedger !== undefined ? fromLedger : Number(r.item.calculatedCostUsd || 0),
+      );
       const discountedUsd = round2(discounted.get(packageId) ?? 0);
       const settledUsd = round2(settled.get(packageId) ?? 0);
       return {
@@ -215,6 +228,11 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
         discountedUsd,
         settledUsd,
         outstandingUsd: round2(chargedUsd - discountedUsd - settledUsd),
+        /**
+         * True when nothing has been posted to the customer's account for
+         * this parcel yet. Not a refusal — settling posts the charge and the
+         * payment together, which is what actually happened.
+         */
         notChargedYet: !seenAnyCharge.has(packageId),
       };
     });
@@ -333,13 +351,24 @@ export async function createBoxSettlement(
   const parcels = view.parcels.filter((p) => requested.has(p.packageId));
   if (parcels.length === 0) throw new Error("هیچ پارسێلێک هەڵنەبژێردراوە");
 
-  const notCharged = parcels.filter((p) => p.notChargedYet && !input.lines.find((l) => l.packageId === p.packageId)?.held);
-  if (notCharged.length > 0) {
-    // Nothing to settle, and settling it as zero would silently mark it paid.
-    throw new Error(
-      `${notCharged.length} پارسێل هێشتا پارەیان نەچووەتە سەر کڕیار — باچەکەیان نەگەیشتووە. یان تەحدیدیان بکە یان دوایی واصڵیان بکە.`,
-    );
-  }
+  /**
+   * Parcels the customer's account has never been told about.
+   *
+   * This used to be a refusal, and it was wrong: a box exists because the
+   * goods went to the customer, and the owner settles when they decide to —
+   * straight away, or when the courier gets back. The charge simply had not
+   * been posted yet, because that happens at batch delivery.
+   *
+   * So it is posted here instead, from the price the box was built with, in
+   * the same transaction as the payment that clears it. Both sides of what
+   * actually happened, recorded together. Held parcels are left alone: they
+   * are not being paid for, so there is nothing to charge for.
+   */
+  const toCharge = parcels.filter(
+    (p) => p.notChargedYet
+      && p.chargedUsd > 0
+      && !input.lines.find((l) => l.packageId === p.packageId)?.held,
+  );
 
   // A discount on the whole box is spread over its parcels first, then added
   // to whatever was already forgiven on a line of its own. Both end up in the
@@ -383,6 +412,24 @@ export async function createBoxSettlement(
   const now = new Date();
 
   return await db.transaction(async (tx) => {
+    // 0. Charge what was never charged. Before the corrections, because a
+    //    correction adjusts a charge and there has to be one to adjust.
+    for (const parcel of toCharge) {
+      await recordPackageChargeWithoutInvoice(
+        customer.id,
+        customer.customerCode ?? String(customer.id),
+        parcel.packageId,
+        parcel.chargedUsd,
+        `${box.boxCode} — ${parcel.trackingNumber ?? parcel.packageCode ?? ""}`.trim(),
+        userId,
+        undefined,
+        tx,
+      );
+      // The flag every other charging path checks, so this parcel cannot be
+      // charged a second time when its batch is eventually marked delivered.
+      await tx.update(packages).set({ isCharged: true }).where(eq(packages.id, parcel.packageId));
+    }
+
     // 1. Corrections change the price, so they go in before anything is paid.
     for (const line of input.lines) {
       const delta = Number(line.correctionUsd ?? 0);

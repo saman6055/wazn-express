@@ -32,6 +32,9 @@ function slice(src: string, start: string, end: string, label: string): string {
 const create = () =>
   slice(settleDb, "export async function createBoxSettlement", "\n/**", "createBoxSettlement");
 
+const view = () =>
+  slice(settleDb, "export async function getBoxSettlementView", "export interface SettlementLineInput", "view");
+
 describe("the money is written once, or not at all", () => {
   it("does everything inside one transaction", () => {
     // A payment that committed while the receipt rows failed would leave
@@ -92,30 +95,72 @@ describe("nothing is given away without a reason", () => {
   });
 });
 
-describe("a parcel nobody has been charged for is never marked paid", () => {
-  it("stops and says so instead of settling zero", () => {
-    // A parcel whose batch has not been delivered has no ledger charge at
-    // all. Settling it as zero would tick it off forever.
+/**
+ * A parcel the customer's account has never been told about.
+ *
+ * This began as a refusal — nothing to settle, so settle nothing — and it was
+ * wrong. Charges are posted at batch delivery, and a box can be made, sealed
+ * and handed over long before that runs. The owner's correction: once there
+ * is a box, the goods have gone to the customer, and the money is theirs to
+ * collect whenever they decide to. The charge had simply not been written
+ * down yet.
+ */
+describe("settling a parcel that was never charged writes both sides", () => {
+  it("posts the charge instead of refusing", () => {
     const body = create();
-    expect(body).toContain("notChargedYet");
-    expect(body).toContain("هێشتا پارەیان نەچووەتە سەر کڕیار");
+    expect(body).toContain("const toCharge = parcels.filter(");
+    expect(body).toContain("recordPackageChargeWithoutInvoice(");
+    expect(body, "the old refusal must be gone")
+      .not.toContain("هێشتا پارەیان نەچووەتە سەر کڕیار");
   });
 
-  it("still allows it to be set aside", () => {
-    // Held is the honest answer for a parcel with nothing on it yet.
-    expect(create()).toContain("?.held");
+  it("charges before it corrects, because a correction needs a charge", () => {
+    const body = create();
+    const charge = body.indexOf("recordPackageChargeWithoutInvoice(");
+    const correct = body.indexOf("adjustCharge(");
+    expect(charge).toBeGreaterThan(-1);
+    expect(correct).toBeGreaterThan(-1);
+    expect(charge, "the charge must exist before it is adjusted").toBeLessThan(correct);
   });
 
-  it("marks the state on the way out, so the screen can show it", () => {
-    const body = slice(settleDb, "export async function getBoxSettlementView", "\nexport interface SettlementLineInput", "view");
-    expect(body).toContain("notChargedYet: !seenAnyCharge.has(packageId)");
+  it("does it in the same transaction as the payment that clears it", () => {
+    // Half of a charge-and-payment pair committing alone is worse than
+    // neither: the customer would owe money nobody took.
+    const body = create();
+    const call = body.slice(body.indexOf("recordPackageChargeWithoutInvoice("));
+    expect(call.slice(0, 400)).toContain("tx,");
+    expect(financeDb).toContain("existingTx?: DbTx");
+  });
+
+  it("marks the parcel charged, so nothing charges it again", () => {
+    expect(create()).toContain("set({ isCharged: true })");
+  });
+
+  it("makes the batch flow honour that flag", () => {
+    // It was being written and read by nobody, so a box settled before its
+    // batch was marked delivered was charged twice.
+    const batches = read("server/routers/batches.router.ts");
+    expect(batches).toContain("if (pkgPrice > 0 && !pkg.isCharged) {");
+  });
+
+  it("leaves a parcel that is being set aside alone", () => {
+    // Nobody is paying for it, so there is nothing to charge for.
+    expect(create()).toContain("?.held,");
+  });
+
+  it("falls back to the price the box was built with", () => {
+    // The box item carries it. Showing $0.00 beside a customer holding $629
+    // of goods is the screen being wrong, not the box being free.
+    expect(view()).toContain("Number(r.item.calculatedCostUsd || 0)");
+  });
+
+  it("still says which parcels were in that state", () => {
+    expect(view()).toContain("notChargedYet: !seenAnyCharge.has(packageId)");
   });
 });
 
-describe("the figures come from the ledger, never from a second copy", () => {
-  const view = () =>
-    slice(settleDb, "export async function getBoxSettlementView", "\nexport interface SettlementLineInput", "view");
 
+describe("the figures come from the ledger, never from a second copy", () => {
   it("reads charges out of ledgerTransactions", () => {
     const body = view();
     expect(body).toContain("from(ledgerTransactions)");

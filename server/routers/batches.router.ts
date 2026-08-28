@@ -1627,7 +1627,12 @@ export const batchesRouter = router({
                       pkgPrice = chargeableKg * custRateKg;
                     }
 
-                    if (pkgPrice > 0) {
+                    if (pkgPrice > 0 && !pkg.isCharged) {
+                      // `isCharged` was being set below and read by nobody, so
+                      // a parcel already charged elsewhere — a box settled at
+                      // the counter before its batch was marked delivered —
+                      // was charged a second time here, and the customer owed
+                      // twice for one parcel.
                       // Use recordPackageChargeWithoutInvoice to avoid creating duplicate invoices
                       await db.recordPackageChargeWithoutInvoice(
                         customerId,

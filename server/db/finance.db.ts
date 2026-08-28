@@ -679,7 +679,11 @@ export async function recordPackageChargeWithoutInvoice(
   amountUsd: number,
   description: string,
   createdById: number,
-  invoiceId?: number
+  invoiceId?: number,
+  /** Join a transaction the caller already has open. Same reason as
+   *  `recordPaymentReceived`: box settlement posts a charge and its payment
+   *  together, and half of that pair committing alone is worse than neither. */
+  existingTx?: DbTx,
 ): Promise<LedgerTransaction> {
   if (amountUsd < 0) throw new Error("Amount cannot be negative");
   if (amountUsd === 0) throw new Error("Amount must be greater than zero");
@@ -687,7 +691,7 @@ export async function recordPackageChargeWithoutInvoice(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.transaction(async (tx) => {
+  const run = async (tx: DbTx) => {
     let accountRows = await tx.select().from(customerAccounts)
       .where(eq(customerAccounts.customerId, customerId))
       .for('update')
@@ -740,7 +744,9 @@ export async function recordPackageChargeWithoutInvoice(
     const [transaction] = await tx.select().from(ledgerTransactions).where(eq(ledgerTransactions.id, txnInsertId));
     if (!transaction) throw new Error("Failed to read back created ledger transaction");
     return transaction;
-  });
+  };
+
+  return existingTx ? run(existingTx) : db.transaction(run);
 }
 
 /**

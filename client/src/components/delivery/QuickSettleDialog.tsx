@@ -74,7 +74,6 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
     [data],
   );
   const totals = useMemo(() => settlementTotals(parcels), [parcels]);
-  const notCharged = parcels.filter((p) => p.notChargedYet);
 
   const rateNum = Number(rate) || 0;
   const nothingEntered = !iqd && !usd;
@@ -118,7 +117,6 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   };
 
   const code = splitCustomerCode(data?.customer?.customerCode);
-  const blocked = notCharged.length > 0;
   const nothingToPay = !isLoading && parcels.length === 0;
 
   return (
@@ -167,84 +165,72 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
               )}
             </div>
 
-            {blocked ? (
-              <p className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40">
-                {t({
-                  ku: `${notCharged.length} پارسێل هێشتا پارەیان نەچووەتە سەر کڕیار. لە «پارسێلەکان» تەحدیدیان بکە.`,
-                  en: `${notCharged.length} parcel(s) have not been charged yet. Set them aside under "the parcels".`,
-                  ar: `${notCharged.length} طرد لم يُحمّل بعد. استبعدها من "الطرود".`,
-                  zh: `${notCharged.length} 件包裹尚未计费。请在“包裹”中搁置。`,
-                })}
+
+            {/* One question: how much came back. Already answered. */}
+            <div className="grid grid-cols-2 gap-2">
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">
+              {t({ ku: "وەرگیراو بە دینار", en: "Received in dinars", ar: "المستلم بالدينار", zh: "收到（第纳尔）" })}
+                </span>
+                <GroupedNumberInput
+              value={iqd} onValueChange={setIqd} className="h-10"
+              placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
+              data-testid="quick-iqd"
+                />
+              </label>
+              <label className="space-y-1">
+                <span className="text-xs text-muted-foreground">
+              {t({ ku: "نرخی دۆلار", en: "Dollar rate", ar: "سعر الدولار", zh: "美元汇率" })}
+                </span>
+                <GroupedNumberInput value={rate} onValueChange={setRate} className="h-10"
+                                data-testid="quick-rate" />
+              </label>
+            </div>
+            <label className="block space-y-1">
+              <span className="text-xs text-muted-foreground">
+                {t({ ku: "یان بە دۆلار", en: "Or in dollars", ar: "أو بالدولار", zh: "或美元" })}
+              </span>
+              <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-10"
+                              data-testid="quick-usd" />
+            </label>
+
+            {/* Only when the money is not the money. */}
+            {difference.kind === "none" ? (
+              <p className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400"
+                 data-testid="quick-exact">
+                <Check className="h-4 w-4" />
+                {t({ ku: "پارەکە تەواوە", en: "Paid in full", ar: "مدفوع بالكامل", zh: "已全额支付" })}
+              </p>
+            ) : difference.kind === "credit" ? (
+              <p className="text-sm text-blue-600 dark:text-blue-400">
+                {t({ ku: "زیادە", en: "Over", ar: "زائد", zh: "多付" })}
+                {" "}${difference.amountUsd.toFixed(2)} —{" "}
+                {t({ ku: "دەبێتە کریدیت لەسەر کڕیار", en: "becomes credit on the customer", ar: "يصبح رصيداً للعميل", zh: "转为客户余额" })}
               </p>
             ) : (
-              <>
-                {/* One question: how much came back. Already answered. */}
-                <div className="grid grid-cols-2 gap-2">
-                  <label className="space-y-1">
-                    <span className="text-xs text-muted-foreground">
-                      {t({ ku: "وەرگیراو بە دینار", en: "Received in dinars", ar: "المستلم بالدينار", zh: "收到（第纳尔）" })}
-                    </span>
-                    <GroupedNumberInput
-                      value={iqd} onValueChange={setIqd} className="h-10"
-                      placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
-                      data-testid="quick-iqd"
-                    />
-                  </label>
-                  <label className="space-y-1">
-                    <span className="text-xs text-muted-foreground">
-                      {t({ ku: "نرخی دۆلار", en: "Dollar rate", ar: "سعر الدولار", zh: "美元汇率" })}
-                    </span>
-                    <GroupedNumberInput value={rate} onValueChange={setRate} className="h-10"
-                                        data-testid="quick-rate" />
-                  </label>
-                </div>
-                <label className="block space-y-1">
-                  <span className="text-xs text-muted-foreground">
-                    {t({ ku: "یان بە دۆلار", en: "Or in dollars", ar: "أو بالدولار", zh: "或美元" })}
-                  </span>
-                  <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-10"
-                                      data-testid="quick-usd" />
-                </label>
-
-                {/* Only when the money is not the money. */}
-                {difference.kind === "none" ? (
-                  <p className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400"
-                     data-testid="quick-exact">
-                    <Check className="h-4 w-4" />
-                    {t({ ku: "پارەکە تەواوە", en: "Paid in full", ar: "مدفوع بالكامل", zh: "已全额支付" })}
-                  </p>
-                ) : difference.kind === "credit" ? (
-                  <p className="text-sm text-blue-600 dark:text-blue-400">
-                    {t({ ku: "زیادە", en: "Over", ar: "زائد", zh: "多付" })}
-                    {" "}${difference.amountUsd.toFixed(2)} —{" "}
-                    {t({ ku: "دەبێتە کریدیت لەسەر کڕیار", en: "becomes credit on the customer", ar: "يصبح رصيداً للعميل", zh: "转为客户余额" })}
-                  </p>
-                ) : (
-                  <div className="space-y-2 rounded-lg border border-red-300 p-3 dark:border-red-800">
-                    <p className="text-sm font-medium text-red-600 dark:text-red-400">
-                      {t({ ku: "کەمە بە", en: "Short by", ar: "ناقص", zh: "少付" })}
-                      {" "}${difference.amountUsd.toFixed(2)}
-                    </p>
-                    <Select value={treatShortAs} onValueChange={(v) => setTreatShortAs(v as "debt" | "discount")}>
-                      <SelectTrigger className="h-9" data-testid="quick-short-as"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="debt">
-                          {t({ ku: "قەرز لەسەر کڕیار", en: "Debt on the customer", ar: "دين على العميل", zh: "记为欠款" })}
-                        </SelectItem>
-                        <SelectItem value="discount">
-                          {t({ ku: "داشکاندن", en: "Written off", ar: "خصم", zh: "折扣核销" })}
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Textarea
-                      value={reason} onChange={(e) => setReason(e.target.value)} rows={2}
-                      className={cn("text-sm", needsReason && "border-red-400 dark:border-red-700")}
-                      placeholder={t({ ku: "هۆکار — داواکراوە", en: "Reason — required", ar: "السبب — مطلوب", zh: "原因——必填" })}
-                      data-testid="quick-reason"
-                    />
-                  </div>
-                )}
-              </>
+              <div className="space-y-2 rounded-lg border border-red-300 p-3 dark:border-red-800">
+                <p className="text-sm font-medium text-red-600 dark:text-red-400">
+              {t({ ku: "کەمە بە", en: "Short by", ar: "ناقص", zh: "少付" })}
+              {" "}${difference.amountUsd.toFixed(2)}
+                </p>
+                <Select value={treatShortAs} onValueChange={(v) => setTreatShortAs(v as "debt" | "discount")}>
+              <SelectTrigger className="h-9" data-testid="quick-short-as"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="debt">
+                  {t({ ku: "قەرز لەسەر کڕیار", en: "Debt on the customer", ar: "دين على العميل", zh: "记为欠款" })}
+                </SelectItem>
+                <SelectItem value="discount">
+                  {t({ ku: "داشکاندن", en: "Written off", ar: "خصم", zh: "折扣核销" })}
+                </SelectItem>
+              </SelectContent>
+                </Select>
+                <Textarea
+              value={reason} onChange={(e) => setReason(e.target.value)} rows={2}
+              className={cn("text-sm", needsReason && "border-red-400 dark:border-red-700")}
+              placeholder={t({ ku: "هۆکار — داواکراوە", en: "Reason — required", ar: "السبب — مطلوب", zh: "原因——必填" })}
+              data-testid="quick-reason"
+                />
+              </div>
             )}
 
             {/* One line, for the day a parcel is actually in dispute. */}
@@ -272,7 +258,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             </Button>
             <Button
               onClick={submit}
-              disabled={blocked || needsReason || settle.isPending}
+              disabled={needsReason || settle.isPending}
               data-testid="quick-settle"
             >
               {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
