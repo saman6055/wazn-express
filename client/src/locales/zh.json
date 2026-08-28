@@ -6028,7 +6028,8 @@
     "discount": "折扣",
     "afterDiscount": "折后金额",
     "paidInIqd": "第纳尔付款",
-    "remainingDebt": "剩余欠款"
+    "remainingDebt": "剩余欠款",
+    "takePayment": "收款"
   },
   "pushAdmin": {
     "title": "推送通知中心",

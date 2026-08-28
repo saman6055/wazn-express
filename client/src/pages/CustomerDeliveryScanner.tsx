@@ -2,7 +2,7 @@ import { useState, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { partitionArchived, FINISHED_BOX_STATUSES } from "@shared/archive";
 import { toast } from "sonner";
-import { Package, Plus, Archive, Users, Percent, X, Wallet } from "lucide-react";
+import { Package, Plus, Archive, Users, Percent, X } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -10,8 +10,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { pickLang } from "@/lib/lang";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { BoxSettlementPanel } from "@/components/delivery/BoxSettlementPanel";
+import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { Button } from "@/components/ui/button";
 import { exportToExcel } from "@/components/ExportUtils";
 import { DeliveryStats } from "@/components/delivery/DeliveryStats";
@@ -38,6 +37,8 @@ export default function CustomerDeliveryScanner() {
   const [drilledCustomerId, setDrilledCustomerId] = useState<number | null>(null);
   const [codesOpen, setCodesOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
+  /** The box whose money is being taken, if any. */
+  const [payingBoxId, setPayingBoxId] = useState<number | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -181,6 +182,16 @@ export default function CustomerDeliveryScanner() {
         {/* Stats */}
         <DeliveryStats boxes={boxes} isLoading={boxesLoading} />
 
+        {/* The open box, back on the page where it was. The window it moved
+            into was worse: narrower, and it hid the list behind it. */}
+        {activeBoxId && (
+          <BoxDetailPanel
+            boxId={activeBoxId}
+            onClose={() => setActiveBoxId(null)}
+            customers={customers as any}
+          />
+        )}
+
         {/* Boxes Card */}
         <Card>
           <CardContent className="space-y-4 pt-6">
@@ -260,53 +271,12 @@ export default function CustomerDeliveryScanner() {
               pageSize={PAGE_SIZE}
               onPageChange={handlePageChange}
               onBoxSelect={handleBoxSelect}
+              onTakePayment={setPayingBoxId}
               customers={customers as any}
               isLoading={boxesLoading}
             />
           </CardContent>
         </Card>
-
-        {/* ── the box, opened into rather than unrolled underneath ── */}
-        <Dialog open={activeBoxId !== null} onOpenChange={(o) => !o && setActiveBoxId(null)}>
-          <DialogContent
-            dir={isRtl ? "rtl" : "ltr"}
-            className="max-w-5xl max-h-[92vh] overflow-y-auto p-4 sm:p-6"
-          >
-            <DialogHeader className="sr-only">
-              <DialogTitle>{t("delivery.boxDetails")}</DialogTitle>
-            </DialogHeader>
-            {activeBoxId && (
-              /* Two jobs, two tabs. Stacking the contents and the money made
-                 one window nobody could take in at a glance, and the money is
-                 the reason most people open a box at all. */
-              <Tabs defaultValue="contents">
-                <TabsList className="w-full">
-                  <TabsTrigger value="contents" className="flex-1" data-testid="box-tab-contents">
-                    <Package className="h-4 w-4 me-1.5" />
-                    {L({ ku: "ناوەڕۆک", en: "Contents", ar: "المحتويات", zh: "内容" })}
-                  </TabsTrigger>
-                  <TabsTrigger value="money" className="flex-1" data-testid="box-tab-money">
-                    <Wallet className="h-4 w-4 me-1.5" />
-                    {L({ ku: "پارە", en: "Money", ar: "المبلغ", zh: "款项" })}
-                  </TabsTrigger>
-                </TabsList>
-                <TabsContent value="contents" className="mt-4">
-                  <BoxDetailPanel
-                    boxId={activeBoxId}
-                    onClose={() => setActiveBoxId(null)}
-                    customers={customers as any}
-                  />
-                </TabsContent>
-                <TabsContent value="money" className="mt-4">
-                  <BoxSettlementPanel
-                    boxId={activeBoxId}
-                    onSettled={() => { refetchBoxes(); }}
-                  />
-                </TabsContent>
-              </Tabs>
-            )}
-          </DialogContent>
-        </Dialog>
 
         {/* ── who has goods waiting ─────────────────────────────────── */}
         <Dialog open={codesOpen} onOpenChange={setCodesOpen}>
@@ -337,6 +307,13 @@ export default function CustomerDeliveryScanner() {
             <DiscountReport alwaysOpen />
           </DialogContent>
         </Dialog>
+
+        {/* Money for one box, in one press */}
+        <QuickSettleDialog
+          boxId={payingBoxId}
+          onOpenChange={(o) => !o && setPayingBoxId(null)}
+          onSettled={() => refetchBoxes()}
+        />
 
         {/* Create Dialog */}
         <CreateBoxDialog

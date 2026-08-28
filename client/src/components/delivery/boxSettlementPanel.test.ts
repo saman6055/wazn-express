@@ -18,6 +18,7 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(
 const panel = read("client/src/components/delivery/BoxSettlementPanel.tsx");
 const detail = read("client/src/components/delivery/BoxDetailPanel.tsx");
 const page = read("client/src/pages/CustomerDeliveryScanner.tsx");
+const quick = read("client/src/components/delivery/QuickSettleDialog.tsx");
 
 function slice(src: string, start: string, end: string, label: string): string {
   const a = src.indexOf(start);
@@ -183,31 +184,75 @@ describe("every word is in all four languages", () => {
 });
 
 /**
- * Where it sits, after the owner opened the delivery screen and found
- * everything unrolled onto it at once: the codes, the box, and the money all
- * stacked down one page.
+ * Where it sits, after two rounds of the owner telling me it was too much.
  *
- * So a box is now opened INTO — its own window — and inside that window the
- * contents and the money are two tabs rather than one long scroll.
+ * The box reached the customer, the customer paid for it, and that is nearly
+ * always the whole story — parcels rarely have anything wrong with them and
+ * the full amount comes back. So the ordinary path is a button on the box
+ * row, one figure, one press. This panel is the machinery for the rare day,
+ * and it now lives one line down inside that dialog rather than in front of
+ * somebody doing this forty times an afternoon.
  */
-describe("it is opened into, not unrolled underneath", () => {
-  it("lives behind the money tab of the box window", () => {
-    expect(page).toContain('<TabsTrigger value="money"');
-    expect(page).toContain("<BoxSettlementPanel");
+describe("the full panel is the rare path, not the first thing seen", () => {
+  it("is reached from one line inside the payment dialog", () => {
+    expect(quick).toContain('data-testid="quick-show-parcels"');
+    expect(quick).toContain("<BoxSettlementPanel");
   });
 
-  it("is not stacked under the box contents any more", () => {
+  it("stays out of sight until that line is pressed", () => {
+    expect(quick).toContain("{showParcels && boxId !== null && (");
+  });
+
+  it("is not stacked under the box contents", () => {
     expect(detail, "the settlement panel must not be inside the box detail card")
       .not.toContain("<BoxSettlementPanel");
   });
+});
 
-  it("opens the box as its own window rather than in the page flow", () => {
-    const body = slice(page, "activeBoxId !== null", "</Dialog>", "box window");
-    expect(body).toContain("<DialogContent");
-    expect(body).toContain("<BoxDetailPanel");
+/**
+ * The ordinary path: a button on the box, a figure already filled in, and a
+ * press.
+ */
+describe("taking the money is one press from the list", () => {
+  it("puts a payment button on every box row", () => {
+    const table = read("client/src/components/delivery/BoxTable.tsx");
+    expect(table).toContain('data-testid={`take-payment-${box.id}`}');
+    expect(table).toContain("onTakePayment(box.id)");
   });
 
-  it("refreshes the list when money moves", () => {
-    expect(page).toContain("onSettled={() => { refetchBoxes(); }}");
+  it("opens the small dialog, not the whole panel", () => {
+    expect(page).toContain("<QuickSettleDialog");
+    expect(page).toContain("onTakePayment={setPayingBoxId}");
+  });
+
+  it("fills the amount in before anything is typed", () => {
+    // The customer paid what was asked. Typing 900 to say so is the fuss.
+    expect(quick).toContain("const nothingEntered = !iqd && !usd");
+    expect(quick).toContain("? totals.dueUsd");
+    expect(quick).toContain("nothingEntered ? totals.dueUsd : (Number(usd) || undefined)");
+  });
+
+  it("shows what is owed, large, before asking anything", () => {
+    expect(quick).toContain('data-testid="quick-due"');
+  });
+
+  it("says paid in full rather than asking a question", () => {
+    expect(quick).toContain('data-testid="quick-exact"');
+  });
+
+  it("asks for a reason only when the money is short", () => {
+    expect(quick).toContain("const needsReason = difference.reasonRequired && !reason.trim()");
+    expect(quick).toContain('data-testid="quick-reason"');
+  });
+
+  it("clears itself between boxes", () => {
+    // Last box's figures sitting in the next box's fields is a way to take
+    // the wrong amount.
+    expect(quick).toContain("}, [boxId]);");
+  });
+
+  it("leaves the box itself open on the page, as it was", () => {
+    expect(page).toContain("{activeBoxId && (");
+    expect(page).toContain("<BoxDetailPanel");
   });
 });

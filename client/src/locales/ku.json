@@ -6038,7 +6038,8 @@
     "discount": "داشکاندن",
     "afterDiscount": "دوای داشکاندن",
     "paidInIqd": "دراوە بە دینار",
-    "remainingDebt": "قەرزی ماوە"
+    "remainingDebt": "قەرزی ماوە",
+    "takePayment": "پارەدان"
   },
   "pushAdmin": {
     "title": "ناوەندی ناردنی ئاگادارکردنەوەکان",

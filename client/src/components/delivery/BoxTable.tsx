@@ -25,6 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import {
   MoreHorizontal,
+  Wallet,
   Eye,
   Printer,
   FileText,
@@ -100,6 +101,8 @@ interface BoxTableProps {
   pageSize: number;
   onPageChange: (page: number) => void;
   onBoxSelect: (boxId: number) => void;
+  /** Take the money for this box, without opening it. */
+  onTakePayment?: (boxId: number) => void;
   customers: Customer[];
   isLoading: boolean;
 }
@@ -111,6 +114,7 @@ export function BoxTable({
   pageSize,
   onPageChange,
   onBoxSelect,
+  onTakePayment,
   customers,
   isLoading,
 }: BoxTableProps) {
@@ -303,6 +307,21 @@ export function BoxTable({
                   {new Date(box.createdAt).toLocaleDateString("en-GB")}
                 </TableCell>
                 <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                  {/* The commonest thing anybody does to a box once it has
+                      gone out: take the money for it. It was three clicks
+                      and a window deep; now it is here. */}
+                  {onTakePayment && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="me-1 h-8"
+                      onClick={() => onTakePayment(box.id)}
+                      data-testid={`take-payment-${box.id}`}
+                    >
+                      <Wallet className="h-4 w-4 me-1" />
+                      {t("delivery.takePayment")}
+                    </Button>
+                  )}
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
                       <Button variant="ghost" size="sm" className="h-8 w-8 p-0">

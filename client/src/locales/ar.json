@@ -6041,7 +6041,8 @@
     "discount": "الخصم",
     "afterDiscount": "بعد الخصم",
     "paidInIqd": "المدفوع بالدينار",
-    "remainingDebt": "المتبقي"
+    "remainingDebt": "المتبقي",
+    "takePayment": "استلام"
   },
   "pushAdmin": {
     "title": "مركز إرسال الإشعارات",

@@ -6041,7 +6041,8 @@
     "discount": "Discount",
     "afterDiscount": "After discount",
     "paidInIqd": "Paid in dinars",
-    "remainingDebt": "Remaining debt"
+    "remainingDebt": "Remaining debt",
+    "takePayment": "Take payment"
   },
   "pushAdmin": {
     "title": "Push Notification Center",
