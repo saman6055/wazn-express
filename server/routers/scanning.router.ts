@@ -1000,6 +1000,17 @@ export const deliveryBoxRouter = router({
       });
     }),
 
+  /**
+   * One row per customer who has a box, rather than one row per box.
+   *
+   * Read-only and unfiltered: it is the standing answer to "who has goods
+   * waiting", and a summary that moved with the table's filters would be a
+   * second filter nobody asked for.
+   */
+  customerSummary: staffProcedure.query(async () => {
+    return db.getDeliveryBoxCustomerSummary();
+  }),
+
   // Update box details (cost, charge, destination, etc.)
   update: staffProcedure
     .input(z.object({

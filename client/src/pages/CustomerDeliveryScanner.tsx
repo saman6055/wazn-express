@@ -15,6 +15,7 @@ import { BoxFilters, type FilterState } from "@/components/delivery/BoxFilters";
 import { BoxTable } from "@/components/delivery/BoxTable";
 import { BoxDetailPanel } from "@/components/delivery/BoxDetailPanel";
 import { CreateBoxDialog } from "@/components/delivery/CreateBoxDialog";
+import { CustomerBoxCodes } from "@/components/delivery/CustomerBoxCodes";
 
 const PAGE_SIZE = 20;
 
@@ -26,6 +27,8 @@ export default function CustomerDeliveryScanner() {
   const [activeBoxId, setActiveBoxId] = useState<number | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
+  /** The customer code drilled into from the summary card, if any. */
+  const [drilledCustomerId, setDrilledCustomerId] = useState<number | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -40,6 +43,7 @@ export default function CustomerDeliveryScanner() {
       limit: PAGE_SIZE,
       offset: currentPage * PAGE_SIZE,
     };
+    if (drilledCustomerId) params.customerId = drilledCustomerId;
     if (filters.search) params.search = filters.search;
     if (filters.status !== "all") params.status = filters.status;
     if (filters.deliveryMethod !== "all") params.deliveryMethod = filters.deliveryMethod;
@@ -50,10 +54,12 @@ export default function CustomerDeliveryScanner() {
       params.endDate = new Date(filters.endDate + "T23:59:59").toISOString();
     }
     return params;
-  }, [filters, currentPage]);
+  }, [filters, currentPage, drilledCustomerId]);
 
   // Queries
   const { data: customersData } = trpc.customers.list.useQuery();
+  const { data: customerBoxRows, isLoading: customerBoxRowsLoading } =
+    trpc.deliveryBox.customerSummary.useQuery();
   const {
     data: boxesData,
     isLoading: boxesLoading,
@@ -83,6 +89,18 @@ export default function CustomerDeliveryScanner() {
 
   const handlePageChange = useCallback((page: number) => {
     setCurrentPage(page);
+  }, []);
+
+  /**
+   * Drilling into a code always starts at the first page. Staying on page
+   * three of the old list would show an empty table and read as "no boxes".
+   */
+  const handleDrillToCustomer = useCallback((customerId: number | null) => {
+    setDrilledCustomerId(customerId);
+    setCurrentPage(0);
+    // Their finished boxes are part of "everything of theirs", and the
+    // customer at the counter may be asking about one of them.
+    if (customerId !== null) setShowArchivedBoxes(true);
   }, []);
 
   const handleBoxSelect = useCallback((boxId: number) => {
@@ -151,6 +169,14 @@ export default function CustomerDeliveryScanner() {
 
         {/* Stats */}
         <DeliveryStats boxes={boxes} isLoading={boxesLoading} />
+
+        {/* Who has goods waiting, before the flat list of boxes */}
+        <CustomerBoxCodes
+          rows={customerBoxRows ?? []}
+          isLoading={customerBoxRowsLoading}
+          selectedCustomerId={drilledCustomerId}
+          onSelect={handleDrillToCustomer}
+        />
 
         {/* Active Box Detail Panel */}
         {activeBoxId && (

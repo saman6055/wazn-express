@@ -563,6 +563,78 @@ async function recalculateBoxTotals(boxId: number): Promise<void> {
   }).where(eq(deliveryBoxes.id, boxId));
 }
 
+/**
+ * Every customer who has a box waiting, and how many.
+ *
+ * The delivery screen is a flat list of boxes, twenty to a page, and the work
+ * on it is not done box by box — a customer arrives at the counter and the
+ * question is "what have you got for AZ047", which a paginated list of box
+ * codes cannot answer without paging through it.
+ *
+ * So this groups the other way round: one row per customer, with the count.
+ * Finished boxes are left out for the same reason the table hides them — a
+ * box delivered last week is not work — but they are counted separately, so
+ * a customer whose boxes are all finished does not silently vanish from a
+ * screen someone is using to find them.
+ */
+export async function getDeliveryBoxCustomerSummary(): Promise<Array<{
+  customerId: number;
+  customerCode: string | null;
+  fullName: string | null;
+  phone: string | null;
+  openBoxes: number;
+  finishedBoxes: number;
+  totalPackages: number;
+  totalValueUsd: number;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+
+  try {
+    const rows = await db.select({
+      customerId: deliveryBoxes.customerId,
+      customerCode: customers.customerCode,
+      fullName: customers.fullName,
+      phone: customers.mobileNumber,
+      // FINISHED_BOX_STATUSES, written as SQL. The two lists are checked
+      // against each other by a guard test rather than shared at runtime,
+      // because this side has to be a column expression.
+      openBoxes: sql<number>`SUM(CASE WHEN ${deliveryBoxes.status} NOT IN ('delivered','cancelled') THEN 1 ELSE 0 END)`,
+      finishedBoxes: sql<number>`SUM(CASE WHEN ${deliveryBoxes.status} IN ('delivered','cancelled') THEN 1 ELSE 0 END)`,
+      // Only the open boxes' contents: the totals beside a code are there to
+      // say how much is waiting, not how much has ever been handed over.
+      totalPackages: sql<number>`COALESCE(SUM(CASE WHEN ${deliveryBoxes.status} NOT IN ('delivered','cancelled') THEN ${deliveryBoxes.totalPackages} ELSE 0 END), 0)`,
+      totalValueUsd: sql<number>`COALESCE(SUM(CASE WHEN ${deliveryBoxes.status} NOT IN ('delivered','cancelled') THEN ${deliveryBoxes.totalValueUsd} ELSE 0 END), 0)`,
+    })
+      .from(deliveryBoxes)
+      .leftJoin(customers, eq(deliveryBoxes.customerId, customers.id))
+      .groupBy(deliveryBoxes.customerId, customers.customerCode, customers.fullName, customers.mobileNumber);
+
+    return rows
+      .filter((r) => r.customerId != null)
+      .map((r) => ({
+        customerId: Number(r.customerId),
+        customerCode: r.customerCode ?? null,
+        fullName: r.fullName ?? null,
+        phone: r.phone ?? null,
+        openBoxes: Number(r.openBoxes || 0),
+        finishedBoxes: Number(r.finishedBoxes || 0),
+        totalPackages: Number(r.totalPackages || 0),
+        totalValueUsd: Number(r.totalValueUsd || 0),
+      }))
+      // Most waiting first, then by code so the order is stable between
+      // refreshes rather than whatever the group by happened to return.
+      .sort((a, b) =>
+        b.openBoxes - a.openBoxes ||
+        (a.customerCode ?? "").localeCompare(b.customerCode ?? ""));
+  } catch (err) {
+    appLogger.error("getDeliveryBoxCustomerSummary failed", {
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return [];
+  }
+}
+
 // ============ DELIVERY BOX PROFIT REPORTS ============
 
 export async function getDeliveryBoxProfitBreakdown(startDate: Date, endDate: Date) {
