@@ -55,7 +55,6 @@ import {
   Unlock,
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
-import { BoxSettlementPanel } from "@/components/delivery/BoxSettlementPanel";
 import { CopyButton } from "@/components/CopyButton";
 
 // Languages offered for the printable box receipt / PDF. Staff can print
@@ -500,7 +499,6 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   };
 
   return (
-    <>
     <Card dir={isRtl ? "rtl" : "ltr"} className="border-primary/20 shadow-md">
       {/* Header */}
       <CardHeader className="pb-3">
@@ -988,10 +986,5 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         onSaved={() => refetchBox()}
       />
     </Card>
-
-    {/* Money comes back through the box, so it is taken on the box — below
-        its contents, where the parcels being paid for are already on screen. */}
-    <BoxSettlementPanel boxId={boxId} onSettled={() => refetchBox()} />
-    </>
   );
 }

@@ -2,12 +2,16 @@ import { useState, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { partitionArchived, FINISHED_BOX_STATUSES } from "@shared/archive";
 import { toast } from "sonner";
-import { Package, Plus, Archive } from "lucide-react";
+import { Package, Plus, Archive, Users, Percent, X, Wallet } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { pickLang } from "@/lib/lang";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { BoxSettlementPanel } from "@/components/delivery/BoxSettlementPanel";
 import { Button } from "@/components/ui/button";
 import { exportToExcel } from "@/components/ExportUtils";
 import { DeliveryStats } from "@/components/delivery/DeliveryStats";
@@ -22,14 +26,18 @@ const PAGE_SIZE = 20;
 
 export default function CustomerDeliveryScanner() {
   const { t, language } = useTranslation();
+  /** For the few labels added here; the page's own `t` takes keys, not objects. */
+  const L = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, k);
   const isRtl = language === "ku" || language === "ar";
 
   // State
   const [activeBoxId, setActiveBoxId] = useState<number | null>(null);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [currentPage, setCurrentPage] = useState(0);
-  /** The customer code drilled into from the summary card, if any. */
+  /** The customer code drilled into from the codes window, if any. */
   const [drilledCustomerId, setDrilledCustomerId] = useState<number | null>(null);
+  const [codesOpen, setCodesOpen] = useState(false);
+  const [reportOpen, setReportOpen] = useState(false);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -68,6 +76,8 @@ export default function CustomerDeliveryScanner() {
   } = trpc.deliveryBox.list.useQuery(queryParams);
 
   const customers = customersData ?? [];
+  /** On the icon, so the page says how many people are waiting without a panel. */
+  const waitingCodes = (customerBoxRows ?? []).filter((r) => r.openBoxes > 0).length;
   const [showArchivedBoxes, setShowArchivedBoxes] = useState(false);
   const allBoxes = boxesData?.boxes ?? [];
   const totalBoxes = boxesData?.total ?? 0;
@@ -171,23 +181,6 @@ export default function CustomerDeliveryScanner() {
         {/* Stats */}
         <DeliveryStats boxes={boxes} isLoading={boxesLoading} />
 
-        {/* Who has goods waiting, before the flat list of boxes */}
-        <CustomerBoxCodes
-          rows={customerBoxRows ?? []}
-          isLoading={customerBoxRowsLoading}
-          selectedCustomerId={drilledCustomerId}
-          onSelect={handleDrillToCustomer}
-        />
-
-        {/* Active Box Detail Panel */}
-        {activeBoxId && (
-          <BoxDetailPanel
-            boxId={activeBoxId}
-            onClose={() => setActiveBoxId(null)}
-            customers={customers as any}
-          />
-        )}
-
         {/* Boxes Card */}
         <Card>
           <CardContent className="space-y-4 pt-6">
@@ -200,11 +193,52 @@ export default function CustomerDeliveryScanner() {
                   onExport={handleExport}
                 />
               </div>
+              {/* Two doors, not two panels. Both used to sit open on this
+                  page and between them they buried the list of boxes, which
+                  is what the screen is for. */}
+              <Button
+                variant="outline" size="icon" className="shrink-0 relative"
+                onClick={() => setCodesOpen(true)}
+                title={L({ ku: "کۆدی کڕیارەکان", en: "Customer codes", ar: "أكواد العملاء", zh: "客户代码" })}
+                data-testid="open-customer-codes"
+              >
+                <Users className="h-4 w-4" />
+                {waitingCodes > 0 && (
+                  <span className="absolute -top-1.5 -end-1.5 flex h-5 min-w-5 items-center justify-center rounded-full bg-blue-600 px-1 text-[10px] font-semibold text-white">
+                    {waitingCodes}
+                  </span>
+                )}
+              </Button>
+              <Button
+                variant="outline" size="icon" className="shrink-0"
+                onClick={() => setReportOpen(true)}
+                title={L({ ku: "ڕاپۆرتی داشکاندن", en: "Discount report", ar: "تقرير الخصومات", zh: "折扣报表" })}
+                data-testid="open-discount-report"
+              >
+                <Percent className="h-4 w-4" />
+              </Button>
               <Button onClick={() => setCreateDialogOpen(true)} className="shrink-0">
                 <Plus className="h-4 w-4 me-1" />
                 {t("delivery.createBox")}
               </Button>
             </div>
+
+            {/* Which code the list is narrowed to, if any — a filter with no
+                visible handle is one somebody forgets is on. */}
+            {drilledCustomerId && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-200 bg-blue-50 px-3 py-2 text-sm dark:border-blue-900 dark:bg-blue-950/40">
+                <Users className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-400" />
+                <span className="font-medium" dir="ltr">
+                  {customerBoxRows?.find((r) => r.customerId === drilledCustomerId)?.customerCode}
+                </span>
+                <Button variant="ghost" size="sm" className="ms-auto h-7"
+                        onClick={() => handleDrillToCustomer(null)}
+                        data-testid="clear-customer-drill">
+                  <X className="h-4 w-4 me-1" />
+                  {L({ ku: "هەموو بۆکسەکان", en: "All boxes", ar: "كل الصناديق", zh: "全部箱子" })}
+                </Button>
+              </div>
+            )}
 
             {archivedBoxes.length > 0 && (
               <div className="flex items-center justify-between gap-2 mb-4 text-sm">
@@ -232,8 +266,77 @@ export default function CustomerDeliveryScanner() {
           </CardContent>
         </Card>
 
-        {/* Money that left through this same door, and why */}
-        <DiscountReport />
+        {/* ── the box, opened into rather than unrolled underneath ── */}
+        <Dialog open={activeBoxId !== null} onOpenChange={(o) => !o && setActiveBoxId(null)}>
+          <DialogContent
+            dir={isRtl ? "rtl" : "ltr"}
+            className="max-w-5xl max-h-[92vh] overflow-y-auto p-4 sm:p-6"
+          >
+            <DialogHeader className="sr-only">
+              <DialogTitle>{t("delivery.boxDetails")}</DialogTitle>
+            </DialogHeader>
+            {activeBoxId && (
+              /* Two jobs, two tabs. Stacking the contents and the money made
+                 one window nobody could take in at a glance, and the money is
+                 the reason most people open a box at all. */
+              <Tabs defaultValue="contents">
+                <TabsList className="w-full">
+                  <TabsTrigger value="contents" className="flex-1" data-testid="box-tab-contents">
+                    <Package className="h-4 w-4 me-1.5" />
+                    {L({ ku: "ناوەڕۆک", en: "Contents", ar: "المحتويات", zh: "内容" })}
+                  </TabsTrigger>
+                  <TabsTrigger value="money" className="flex-1" data-testid="box-tab-money">
+                    <Wallet className="h-4 w-4 me-1.5" />
+                    {L({ ku: "پارە", en: "Money", ar: "المبلغ", zh: "款项" })}
+                  </TabsTrigger>
+                </TabsList>
+                <TabsContent value="contents" className="mt-4">
+                  <BoxDetailPanel
+                    boxId={activeBoxId}
+                    onClose={() => setActiveBoxId(null)}
+                    customers={customers as any}
+                  />
+                </TabsContent>
+                <TabsContent value="money" className="mt-4">
+                  <BoxSettlementPanel
+                    boxId={activeBoxId}
+                    onSettled={() => { refetchBoxes(); }}
+                  />
+                </TabsContent>
+              </Tabs>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* ── who has goods waiting ─────────────────────────────────── */}
+        <Dialog open={codesOpen} onOpenChange={setCodesOpen}>
+          <DialogContent dir={isRtl ? "rtl" : "ltr"} className="max-w-4xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {L({ ku: "کۆدی کڕیارەکان", en: "Customer codes", ar: "أكواد العملاء", zh: "客户代码" })}
+              </DialogTitle>
+            </DialogHeader>
+            <CustomerBoxCodes
+              rows={customerBoxRows ?? []}
+              isLoading={customerBoxRowsLoading}
+              selectedCustomerId={drilledCustomerId}
+              onSelect={(id) => { handleDrillToCustomer(id); setCodesOpen(false); }}
+              inDialog
+            />
+          </DialogContent>
+        </Dialog>
+
+        {/* ── money that left through this same door, and why ───────── */}
+        <Dialog open={reportOpen} onOpenChange={setReportOpen}>
+          <DialogContent dir={isRtl ? "rtl" : "ltr"} className="max-w-3xl max-h-[85vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>
+                {L({ ku: "ڕاپۆرتی داشکاندن", en: "Discount report", ar: "تقرير الخصومات", zh: "折扣报表" })}
+              </DialogTitle>
+            </DialogHeader>
+            <DiscountReport alwaysOpen />
+          </DialogContent>
+        </Dialog>
 
         {/* Create Dialog */}
         <CreateBoxDialog

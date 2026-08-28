@@ -40,9 +40,14 @@ function monthStart(): string {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-01`;
 }
 
-export function DiscountReport() {
+/**
+ * `alwaysOpen` is for when the report is already inside its own window: the
+ * collapse header would then be a door inside a door.
+ */
+export function DiscountReport({ alwaysOpen = false }: { alwaysOpen?: boolean } = {}) {
   const { language } = useTranslation();
-  const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const open = alwaysOpen || expanded;
   const [startDate, setStartDate] = useState(monthStart());
   const [endDate, setEndDate] = useState("");
 
@@ -68,8 +73,8 @@ export function DiscountReport() {
       <CardContent className="space-y-4 pt-6">
         <button
           type="button"
-          onClick={() => setOpen((v) => !v)}
-          className="flex w-full items-center gap-3 text-start"
+          onClick={() => setExpanded((v) => !v)}
+          className={cn("flex w-full items-center gap-3 text-start", alwaysOpen && "hidden")}
           data-testid="discount-report-toggle"
         >
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-amber-100 dark:bg-amber-950/50">

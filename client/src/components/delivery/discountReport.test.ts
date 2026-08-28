@@ -89,9 +89,21 @@ describe("all four languages, and numbers that read correctly", () => {
   });
 });
 
-describe("it sits on the delivery screen, where the money left", () => {
-  it("is mounted there", () => {
+describe("it is behind an icon, not a panel on the page", () => {
+  it("is reached from a single button", () => {
+    // It used to sit open on the delivery screen and helped bury the list of
+    // boxes, which is what that screen is for.
     expect(page).toContain("import { DiscountReport }");
-    expect(page).toContain("<DiscountReport />");
+    expect(page).toContain('data-testid="open-discount-report"');
+  });
+
+  it("opens in its own window", () => {
+    expect(page).toContain("<DiscountReport alwaysOpen />");
+  });
+
+  it("drops its own collapse header once it is inside one", () => {
+    // A door inside a door.
+    expect(report).toContain("alwaysOpen = false");
+    expect(report).toContain('alwaysOpen && "hidden"');
   });
 });

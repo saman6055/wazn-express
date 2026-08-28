@@ -40,6 +40,11 @@ interface Props {
   /** The code currently drilled into, or null for the whole list. */
   selectedCustomerId: number | null;
   onSelect: (customerId: number | null) => void;
+  /**
+   * Rendered inside its own window, which already carries the heading and the
+   * frame. Repeating them would be a card inside a card.
+   */
+  inDialog?: boolean;
 }
 
 /** Above this many codes the grid stops being scannable and needs a filter. */
@@ -47,7 +52,7 @@ const SEARCH_THRESHOLD = 12;
 /** How many to draw before "show the rest" — a wall of codes is not a card. */
 const COLLAPSED_COUNT = 18;
 
-export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect }: Props) {
+export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect, inDialog = false }: Props) {
   const { language } = useTranslation();
   const [search, setSearch] = useState("");
   const [expanded, setExpanded] = useState(false);
@@ -133,26 +138,43 @@ export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect
     }),
   };
 
-  return (
-    <Card data-testid="customer-box-codes">
-      <CardContent className="space-y-4 pt-6">
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950/50">
-            <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold leading-tight">{label.title}</p>
-            <p className="truncate text-sm text-muted-foreground">{label.subtitle}</p>
-          </div>
+  const Frame = inDialog
+    ? ({ children }: { children: React.ReactNode }) => (
+        <div data-testid="customer-box-codes" className="space-y-4">{children}</div>
+      )
+    : ({ children }: { children: React.ReactNode }) => (
+        <Card data-testid="customer-box-codes">
+          <CardContent className="space-y-4 pt-6">{children}</CardContent>
+        </Card>
+      );
 
-          {waiting.length > SEARCH_THRESHOLD && (
-            <div className="relative w-full sm:w-64">
+  return (
+    <Frame>
+        <div className="flex flex-wrap items-center gap-3">
+          {/* The heading belongs to the window when there is one. */}
+          {!inDialog && (
+            <>
+              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-950/50">
+                <Users className="h-5 w-5 text-blue-600 dark:text-blue-400" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <p className="font-semibold leading-tight">{label.title}</p>
+                <p className="truncate text-sm text-muted-foreground">{label.subtitle}</p>
+              </div>
+            </>
+          )}
+
+          {/* In a window the search is always there: finding a code is the
+              only reason the window was opened. */}
+          {(inDialog || waiting.length > SEARCH_THRESHOLD) && (
+            <div className={cn("relative", inDialog ? "w-full" : "w-full sm:w-64")}>
               <Search className="pointer-events-none absolute inset-inline-start-0 top-1/2 ms-3 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
               <Input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
                 placeholder={label.search}
                 className="ps-9"
+                autoFocus={inDialog}
                 data-testid="customer-box-codes-search"
               />
             </div>
@@ -247,7 +269,6 @@ export function CustomerBoxCodes({ rows, isLoading, selectedCustomerId, onSelect
             )}
           </>
         )}
-      </CardContent>
-    </Card>
+    </Frame>
   );
 }

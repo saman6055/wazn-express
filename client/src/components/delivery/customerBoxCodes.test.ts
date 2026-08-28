@@ -154,3 +154,43 @@ describe("the procedure is mounted and reachable", () => {
     expect(router).toContain("customerSummary: staffProcedure");
   });
 });
+
+/**
+ * Where it sits, after the owner said it should have been one icon.
+ *
+ * It opened as a grid of every code on the delivery screen, above the list of
+ * boxes, and between it and the discount report the list itself was pushed
+ * off the first screen. An icon opens a window; the window has the codes.
+ */
+describe("it is one icon, and then a window", () => {
+  it("is reached from a single button carrying the count", () => {
+    expect(page).toContain('data-testid="open-customer-codes"');
+    expect(page).toContain("waitingCodes");
+  });
+
+  it("opens in its own window rather than on the page", () => {
+    expect(page).toContain("<CustomerBoxCodes");
+    expect(page).toContain("inDialog");
+  });
+
+  it("closes itself once a code is picked", () => {
+    // The window did its job; leaving it open hides the list it just filtered.
+    expect(page).toContain("setCodesOpen(false)");
+  });
+
+  it("drops its own heading and frame inside the window", () => {
+    // A card inside a dialog, with the title written twice.
+    expect(card).toContain("const Frame = inDialog");
+    expect(card).toContain("{!inDialog && (");
+  });
+
+  it("always offers the search there, because that is why it was opened", () => {
+    expect(card).toContain("(inDialog || waiting.length > SEARCH_THRESHOLD)");
+    expect(card).toContain("autoFocus={inDialog}");
+  });
+
+  it("still shows which code the list is narrowed to, back on the page", () => {
+    // The window is gone by then; without this the filter has no handle.
+    expect(page).toContain('data-testid="clear-customer-drill"');
+  });
+});

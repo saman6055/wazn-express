@@ -17,6 +17,7 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(
 
 const panel = read("client/src/components/delivery/BoxSettlementPanel.tsx");
 const detail = read("client/src/components/delivery/BoxDetailPanel.tsx");
+const page = read("client/src/pages/CustomerDeliveryScanner.tsx");
 
 function slice(src: string, start: string, end: string, label: string): string {
   const a = src.indexOf(start);
@@ -181,13 +182,32 @@ describe("every word is in all four languages", () => {
   });
 });
 
-describe("it is mounted where the parcels already are", () => {
-  it("sits inside the box detail panel", () => {
-    expect(detail).toContain("import { BoxSettlementPanel }");
-    expect(detail).toContain("<BoxSettlementPanel boxId={boxId}");
+/**
+ * Where it sits, after the owner opened the delivery screen and found
+ * everything unrolled onto it at once: the codes, the box, and the money all
+ * stacked down one page.
+ *
+ * So a box is now opened INTO — its own window — and inside that window the
+ * contents and the money are two tabs rather than one long scroll.
+ */
+describe("it is opened into, not unrolled underneath", () => {
+  it("lives behind the money tab of the box window", () => {
+    expect(page).toContain('<TabsTrigger value="money"');
+    expect(page).toContain("<BoxSettlementPanel");
   });
 
-  it("refreshes the box when money moves", () => {
-    expect(detail).toContain("onSettled={() => refetchBox()}");
+  it("is not stacked under the box contents any more", () => {
+    expect(detail, "the settlement panel must not be inside the box detail card")
+      .not.toContain("<BoxSettlementPanel");
+  });
+
+  it("opens the box as its own window rather than in the page flow", () => {
+    const body = slice(page, "activeBoxId !== null", "</Dialog>", "box window");
+    expect(body).toContain("<DialogContent");
+    expect(body).toContain("<BoxDetailPanel");
+  });
+
+  it("refreshes the list when money moves", () => {
+    expect(page).toContain("onSettled={() => { refetchBoxes(); }}");
   });
 });
