@@ -18,7 +18,7 @@ describe("Migration System", () => {
       // screen can say how much is left while there is time to act. 92 was
       // dailySnapshots — the memory the morning brief compares
       // against. 91 was customerFeatures.
-      expect(TABLE_DEFINITIONS.length).toBe(93);
+      expect(TABLE_DEFINITIONS.length).toBe(97);
     });
     
     it("should have unique table names", () => {
@@ -162,15 +162,23 @@ describe("Migration System", () => {
     });
     
     it("ledgerTransactions table should have required columns", () => {
+      // This used to require debitUsd and creditUsd — columns from a design
+      // the code left behind years ago and has never written. The CREATE was
+      // still producing them, and on a fresh database the first charge ever
+      // posted failed on the columns that actually exist. What is asserted
+      // now is what drizzle/schema/finance.schema.ts declares.
       const ledgerTable = TABLE_DEFINITIONS.find(t => t.name === "ledgerTransactions");
       expect(ledgerTable).toBeDefined();
-      
+
       const sql = ledgerTable!.sql.toLowerCase();
-      expect(sql).toContain("accountid");
-      expect(sql).toContain("transactionnumber");
-      expect(sql).toContain("transactiontype");
-      expect(sql).toContain("debitusd");
-      expect(sql).toContain("creditusd");
+      for (const column of [
+        "accountid", "transactionnumber", "transactiontype",
+        "amountusd", "amountiqd",
+        "balancebeforeusd", "balanceafterusd", "balancebeforeiqd", "balanceafteriqd",
+        "referencetype", "referenceid",
+      ]) {
+        expect(sql, `${column} is missing from the ledger CREATE`).toContain(column);
+      }
     });
     
   });

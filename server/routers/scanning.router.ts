@@ -1000,6 +1000,93 @@ export const deliveryBoxRouter = router({
       });
     }),
 
+  /* ── money coming back through the box ──────────────────────────── */
+
+  /**
+   * Everything the settlement screen needs, in one call.
+   *
+   * Read-only. The figures come from the ledger, not from a column of their
+   * own, so this can never disagree with what the customer's account says.
+   */
+  settlementView: staffProcedure
+    .input(z.object({ boxId: z.number() }))
+    .query(async ({ input }) => {
+      return db.getBoxSettlementView(input.boxId);
+    }),
+
+  /**
+   * Take the money.
+   *
+   * Every rule that protects it lives in the db layer, inside one
+   * transaction — a reason for every discount and every shortfall, a refusal
+   * to settle a parcel that has not been charged yet, and corrections applied
+   * to the price before anything is paid against it.
+   */
+  settle: staffProcedure
+    .input(z.object({
+      boxId: z.number(),
+      lines: z.array(z.object({
+        packageId: z.number(),
+        held: z.boolean().optional(),
+        heldReason: z.string().max(500).optional(),
+        correctionUsd: z.number().optional(),
+        correctionReason: z.string().max(500).optional(),
+        discountUsd: z.number().min(0).optional(),
+        discountReason: z.enum(["damaged", "late", "goodwill", "loyal", "rounding", "other"]).optional(),
+        discountNote: z.string().max(500).optional(),
+      })).min(1),
+      boxDiscount: z.object({
+        mode: z.enum(["none", "amount", "newTotal", "perKg"]),
+        value: z.number().optional(),
+        fromRatePerKg: z.number().optional(),
+        toRatePerKg: z.number().optional(),
+      }).optional(),
+      boxDiscountReason: z.enum(["damaged", "late", "goodwill", "loyal", "rounding", "other"]).optional(),
+      boxDiscountNote: z.string().max(500).optional(),
+      amountIqd: z.number().min(0).optional(),
+      amountUsd: z.number().min(0).optional(),
+      exchangeRate: z.number().min(0).optional(),
+      treatShortAs: z.enum(["debt", "discount"]).optional(),
+      differenceReason: z.string().max(500).optional(),
+      paymentMethod: z.enum([
+        "CASH", "BANK_TRANSFER", "FIB", "FASTPAY", "ZAINCASH", "ASIAHAWALA", "CARD", "OTHER",
+      ]).optional(),
+      notes: z.string().max(2000).optional(),
+      replacesSettlementId: z.number().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return db.createBoxSettlement(input, ctx.user.id);
+    }),
+
+  /**
+   * Undo one, with the reason it was wrong.
+   *
+   * The row stays and is marked reversed rather than edited, because the
+   * receipt it produced is already in a customer's hand. A corrected
+   * settlement is then written beside it, pointing back.
+   */
+  reverseSettlement: staffProcedure
+    .input(z.object({
+      settlementId: z.number(),
+      reason: z.string().min(3).max(500),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return db.reverseBoxSettlement(input.settlementId, input.reason, ctx.user.id);
+    }),
+
+  /** How much has been given away, and on what grounds. */
+  discountReport: staffProcedure
+    .input(z.object({
+      startDate: z.string().optional(),
+      endDate: z.string().optional(),
+    }).optional())
+    .query(async ({ input }) => {
+      return db.getDiscountReport(
+        input?.startDate ? new Date(input.startDate) : undefined,
+        input?.endDate ? new Date(input.endDate) : undefined,
+      );
+    }),
+
   /**
    * One row per customer who has a box, rather than one row per box.
    *

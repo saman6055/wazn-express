@@ -863,7 +863,16 @@ export async function recordPaymentReceived(
   notes?: string,
   receiptNumber?: string,
   cashAccountId?: number,
-  cashDescription?: string
+  cashDescription?: string,
+  /**
+   * Join a transaction the caller already has open, rather than starting one.
+   *
+   * Box settlement writes a payment, several charge corrections and its own
+   * receipt rows together; if the payment committed on its own and the rest
+   * then failed, the money would be on the customer's account with nothing
+   * saying what it was for. Same pattern, and same reason, as `adjustCharge`.
+   */
+  existingTx?: DbTx,
 ): Promise<{ transaction: LedgerTransaction; payment: PaymentRecord }> {
   if (amountUsd < 0 || amountIqd < 0) throw new Error("Amount cannot be negative");
   if (amountUsd === 0 && amountIqd === 0) throw new Error("Amount must be greater than zero");
@@ -871,7 +880,7 @@ export async function recordPaymentReceived(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  return await db.transaction(async (tx) => {
+  const run = async (tx: DbTx) => {
     let accountRows = await tx.select().from(customerAccounts)
       .where(eq(customerAccounts.customerId, customerId))
       .for('update')
@@ -969,7 +978,9 @@ export async function recordPaymentReceived(
     }
 
     return { transaction, payment };
-  });
+  };
+
+  return existingTx ? run(existingTx) : db.transaction(run);
 }
 
 // Reverse an advance payment (or part of it) — creates an ADJUSTMENT_DEBIT

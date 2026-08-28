@@ -22,3 +22,4 @@ export * from './yuanExchange.db';
 
 export * from './productAttributes.db';
 export * from "./tutorials.db";
+export * from './boxSettlement.db';

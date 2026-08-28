@@ -750,3 +750,161 @@ export const expenseAlertLogs = mysqlTable("expenseAlertLogs", {
 
 export type ExpenseAlertLog = typeof expenseAlertLogs.$inferSelect;
 export type InsertExpenseAlertLog = typeof expenseAlertLogs.$inferInsert;
+
+/**
+ * Money coming back through the box.
+ *
+ * A box is the last thing that happens before goods leave the building, and
+ * the only door the money returns through. Everything else in this file
+ * records what a customer owes; this records the moment they pay it, at the
+ * counter, with the parcels in front of both people.
+ *
+ * The charge itself is not stored again here — it already lives in
+ * `ledgerTransactions` as one DEBIT_PACKAGE per parcel, and duplicating it
+ * would create a second opinion about what a customer owes. What is stored is
+ * what happened at the counter: how much was taken, in which currency, at
+ * what rate, what was forgiven and why, and which parcels it settled.
+ */
+export const boxSettlements = mysqlTable("boxSettlements", {
+  id: int("id").autoincrement().primaryKey(),
+  boxId: int("boxId").notNull(),
+  customerId: int("customerId").notNull(),
+  /** RCP-20260828-0001 — printed on the receipt handed over. */
+  settlementNumber: varchar("settlementNumber", { length: 50 }).notNull().unique(),
+
+  /**
+   * What the parcels on this settlement came to, after corrections and
+   * discounts. A snapshot: the ledger can move afterwards, and the receipt
+   * in the customer's hand cannot.
+   */
+  dueUsd: decimal("dueUsd", { precision: 12, scale: 2 }).notNull(),
+  /** The USD value actually settled — what the payment is worth. */
+  paidUsd: decimal("paidUsd", { precision: 12, scale: 2 }).notNull(),
+  /** Everything forgiven on this settlement, across all its lines. */
+  discountUsd: decimal("discountUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+
+  /**
+   * Charged in dollars, collected in dinars.
+   *
+   * Both are kept with the rate that connects them, because a month later
+   * "we took 1,305,000" means nothing without knowing what a dollar cost
+   * that day — and the rate moves.
+   */
+  amountIqd: decimal("amountIqd", { precision: 15, scale: 0 }).default("0").notNull(),
+  exchangeRate: decimal("exchangeRate", { precision: 10, scale: 2 }),
+
+  /**
+   * paid − due. Zero on the ordinary day, which is most days.
+   *
+   * Negative is short: it stays owed unless it was forgiven, and either way
+   * somebody had to say why. Positive is over: it sits as credit on the
+   * customer's balance and comes off their next box.
+   */
+  differenceUsd: decimal("differenceUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  differenceKind: mysqlEnum("differenceKind", ["none", "debt", "discount", "credit"])
+    .default("none").notNull(),
+  differenceReason: text("differenceReason"),
+
+  paymentMethod: mysqlEnum("paymentMethod", [
+    "CASH", "BANK_TRANSFER", "FIB", "FASTPAY", "ZAINCASH", "ASIAHAWALA", "CARD", "OTHER",
+  ]).default("CASH").notNull(),
+
+  /** The rows this settlement wrote into the customer's account. */
+  ledgerTransactionId: int("ledgerTransactionId"),
+  paymentRecordId: int("paymentRecordId"),
+
+  /**
+   * A settlement is never deleted, and never quietly edited.
+   *
+   * Numbers do have to be correctable after the money is in — somebody
+   * typed 45,000 for 54,000, or a parcel was discounted that should not have
+   * been. But the receipt that produced them is already in a customer's hand
+   * and out of the building, so changing the row underneath it would leave
+   * two different truths with the same number on them.
+   *
+   * So a correction is a reversal and a replacement: the original stays,
+   * marked `reversed` with the reason it was wrong, and the new one points
+   * back at it. Both are readable afterwards, in order, which is the only
+   * way anyone can later see what actually happened at that counter.
+   */
+  status: mysqlEnum("status", ["confirmed", "reversed"]).default("confirmed").notNull(),
+  reversedAt: timestamp("reversedAt"),
+  reversedById: int("reversedById"),
+  reversalReason: text("reversalReason"),
+  /** Set on the replacement, pointing at the settlement it corrects. */
+  replacesSettlementId: int("replacesSettlementId"),
+
+  notes: text("notes"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  boxIdIdx: index("idx_box_settlements_box").on(table.boxId),
+  customerIdIdx: index("idx_box_settlements_customer").on(table.customerId),
+  createdAtIdx: index("idx_box_settlements_created").on(table.createdAt),
+}));
+
+export type BoxSettlement = typeof boxSettlements.$inferSelect;
+export type InsertBoxSettlement = typeof boxSettlements.$inferInsert;
+
+/**
+ * Which parcels a settlement paid for, and what happened to each.
+ *
+ * This is the table that answers "if one parcel's money is not paid, how do
+ * we receipt the others" — a settlement covers the lines it names, and a
+ * parcel left out is simply not on it and stays owed.
+ *
+ * It is also where the discount report comes from. Every discount is a line
+ * with a reason attached to a parcel, and a parcel knows its batch and its
+ * customer — so "how much did we discount this month / on this batch / to
+ * this code" are all the same query.
+ */
+export const boxSettlementLines = mysqlTable("boxSettlementLines", {
+  id: int("id").autoincrement().primaryKey(),
+  settlementId: int("settlementId").notNull(),
+  packageId: int("packageId").notNull(),
+
+  /** What the ledger said this parcel cost when the settlement was made. */
+  chargedUsd: decimal("chargedUsd", { precision: 12, scale: 2 }).notNull(),
+
+  /**
+   * A correction to the charge itself, applied to the ledger through
+   * `adjustCharge`. Signed: negative when we had overcharged, positive when
+   * we had undercharged and the customer sent the difference.
+   *
+   * Deliberately not a discount. A discount means the price was right and we
+   * gave some back; a correction means the price was wrong. Mixing them
+   * makes the discount report a record of our own arithmetic mistakes.
+   */
+  correctionUsd: decimal("correctionUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  correctionReason: text("correctionReason"),
+
+  discountUsd: decimal("discountUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  /** Coarse enough to report on, with the free text for what it does not cover. */
+  discountReason: mysqlEnum("discountReason", [
+    "damaged",       // شکاون لە ڕێگا
+    "late",          // دواکەوتن
+    "goodwill",      // هاندان و ستایش
+    "loyal",         // کڕیاری باش
+    "rounding",      // خڕکردنەوەی دینار
+    "other",
+  ]),
+  discountNote: text("discountNote"),
+
+  /** How much of this parcel's charge this settlement actually pays. */
+  paidUsd: decimal("paidUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+
+  /**
+   * Set aside on purpose — the customer disputes it, or it is not with the
+   * rest. It is on the box but not on this receipt, and stays owed.
+   */
+  isHeld: boolean("isHeld").default(false).notNull(),
+  heldReason: text("heldReason"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  settlementIdIdx: index("idx_box_settlement_lines_settlement").on(table.settlementId),
+  packageIdIdx: index("idx_box_settlement_lines_package").on(table.packageId),
+}));
+
+export type BoxSettlementLine = typeof boxSettlementLines.$inferSelect;
+export type InsertBoxSettlementLine = typeof boxSettlementLines.$inferInsert;

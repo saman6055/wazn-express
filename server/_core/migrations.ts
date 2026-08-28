@@ -1215,6 +1215,137 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "deliveryBoxes",
+    dependencies: ["customers", "batches", "users"],
+    // Declared here only from August 2026. The table existed in production
+    // long before that and was reaching new databases by another route, so
+    // every column it grew in the meantime is also an ALTER in
+    // SCHEMA_PATCHES below — harmless, since those are all IF-NOT-EXISTS in
+    // effect and this CREATE already has them. See
+    // drizzle/schema/packages.schema.ts.
+    sql: `CREATE TABLE IF NOT EXISTS deliveryBoxes (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      boxCode VARCHAR(50) NOT NULL UNIQUE,
+      customerId INT NOT NULL,
+      batchId INT NULL,
+      deliveryMethod ENUM('warehouse_pickup','home_delivery','city_transfer') NOT NULL DEFAULT 'warehouse_pickup',
+      destinationCity VARCHAR(100),
+      destinationAddress TEXT,
+      recipientName VARCHAR(255),
+      recipientPhone VARCHAR(20),
+      deliveryCostUsd DECIMAL(10, 2) DEFAULT 0,
+      deliveryChargeUsd DECIMAL(10, 2) DEFAULT 0,
+      deliveryProfitUsd DECIMAL(10, 2) DEFAULT 0,
+      totalPackages INT NOT NULL DEFAULT 0,
+      totalWeightKg DECIMAL(10, 3) DEFAULT 0,
+      totalValueUsd DECIMAL(10, 2) DEFAULT 0,
+      status ENUM('open','ready','in_transit','delivered','cancelled') NOT NULL DEFAULT 'open',
+      cancellationReason TEXT,
+      cancelledById INT NULL,
+      cancelledAt TIMESTAMP NULL,
+      signature TEXT,
+      deliveryPhoto TEXT,
+      invoiceId INT NULL,
+      isCharged BOOLEAN NOT NULL DEFAULT FALSE,
+      notes TEXT,
+      createdById INT NOT NULL,
+      sealedById INT NULL,
+      deliveredById INT NULL,
+      customerConfirmedAt TIMESTAMP NULL,
+      sealedAt TIMESTAMP NULL,
+      inTransitAt TIMESTAMP NULL,
+      deliveredAt TIMESTAMP NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_delivery_boxes_batch_id (batchId),
+      INDEX idx_delivery_boxes_customer_id (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "deliveryBoxItems",
+    dependencies: ["deliveryBoxes", "packages", "fullPackageOrders", "users"],
+    sql: `CREATE TABLE IF NOT EXISTS deliveryBoxItems (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      boxId INT NOT NULL,
+      packageId INT NULL,
+      fullPackageOrderId INT NULL,
+      trackingNumber VARCHAR(100),
+      packageCode VARCHAR(50),
+      description TEXT,
+      weightKg DECIMAL(10, 3),
+      calculatedCostUsd DECIMAL(10, 2),
+      itemType ENUM('regular','full_package','commission') NOT NULL DEFAULT 'regular',
+      sourceInfo VARCHAR(255),
+      scannedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      scannedById INT NOT NULL,
+      INDEX idx_delivery_box_items_box (boxId),
+      INDEX idx_delivery_box_items_package (packageId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "boxSettlements",
+    // deliveryBoxes has no CREATE here yet — only ALTERs — so it is named as a
+    // dependency for ordering and simply skipped if absent. No foreign keys,
+    // matching every other table in this file.
+    dependencies: ["deliveryBoxes", "customers", "users"],
+    // Money coming back through the box. See drizzle/schema/finance.schema.ts.
+    sql: `CREATE TABLE IF NOT EXISTS boxSettlements (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      boxId INT NOT NULL,
+      customerId INT NOT NULL,
+      settlementNumber VARCHAR(50) NOT NULL UNIQUE,
+      dueUsd DECIMAL(12, 2) NOT NULL,
+      paidUsd DECIMAL(12, 2) NOT NULL,
+      discountUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      amountIqd DECIMAL(15, 0) NOT NULL DEFAULT 0,
+      exchangeRate DECIMAL(10, 2) NULL,
+      differenceUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      differenceKind ENUM('none','debt','discount','credit') NOT NULL DEFAULT 'none',
+      differenceReason TEXT,
+      paymentMethod ENUM('CASH','BANK_TRANSFER','FIB','FASTPAY','ZAINCASH','ASIAHAWALA','CARD','OTHER') NOT NULL DEFAULT 'CASH',
+      ledgerTransactionId INT NULL,
+      paymentRecordId INT NULL,
+      status ENUM('confirmed','reversed') NOT NULL DEFAULT 'confirmed',
+      reversedAt TIMESTAMP NULL,
+      reversedById INT NULL,
+      reversalReason TEXT,
+      replacesSettlementId INT NULL,
+      notes TEXT,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_box_settlements_box (boxId),
+      INDEX idx_box_settlements_customer (customerId),
+      INDEX idx_box_settlements_created (createdAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "boxSettlementLines",
+    dependencies: ["boxSettlements", "packages"],
+    // One line per parcel on a settlement — and the source of the discount
+    // report, since every discount here carries a reason and a parcel.
+    sql: `CREATE TABLE IF NOT EXISTS boxSettlementLines (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      settlementId INT NOT NULL,
+      packageId INT NOT NULL,
+      chargedUsd DECIMAL(12, 2) NOT NULL,
+      correctionUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      correctionReason TEXT,
+      discountUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      discountReason ENUM('damaged','late','goodwill','loyal','rounding','other') NULL,
+      discountNote TEXT,
+      paidUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      isHeld BOOLEAN NOT NULL DEFAULT FALSE,
+      heldReason TEXT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_box_settlement_lines_settlement (settlementId),
+      INDEX idx_box_settlement_lines_package (packageId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "expenseBudgets",
     dependencies: ["expenseCategories", "users"],
     // One row per category, plus at most one with categoryId NULL covering
@@ -1671,31 +1802,43 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   {
     name: "ledgerTransactions",
     dependencies: ["customerAccounts", "packages", "fullPackageOrders", "invoices", "users"],
+    // Rewritten August 2026 to match drizzle/schema/finance.schema.ts.
+    //
+    // What stood here was an older design entirely — debit/credit column
+    // pairs, a different set of transaction types, `relatedPackageId` instead
+    // of a reference pair — and the code had moved on years ago without it.
+    // On any database that already has the table this changes nothing (IF NOT
+    // EXISTS); on a new one it is the difference between a working ledger and
+    // one that fails on the first charge ever posted.
     sql: `CREATE TABLE IF NOT EXISTS ledgerTransactions (
       id INT AUTO_INCREMENT PRIMARY KEY,
       accountId INT NOT NULL,
       transactionNumber VARCHAR(50) NOT NULL UNIQUE,
-      transactionType ENUM('package_charge', 'full_package_charge', 'purchase_request_charge', 'commission_charge', 'payment', 'refund', 'credit_adjustment', 'debit_adjustment', 'transfer', 'opening_balance') NOT NULL,
-      description TEXT,
-      debitUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
-      creditUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      transactionType ENUM(
+        'DEBIT_PACKAGE','DEBIT_FULL_PACKAGE','DEBIT_PURCHASE_REQUEST','DEBIT_COMMISSION',
+        'DEBIT_SERVICE','DEBIT_PENALTY','DEBIT_OTHER',
+        'CREDIT_PAYMENT','CREDIT_DEPOSIT','CREDIT_REFUND','CREDIT_DISCOUNT','CREDIT_OTHER',
+        'ADJUSTMENT_DEBIT','ADJUSTMENT_CREDIT'
+      ) NOT NULL,
+      amountUsd DECIMAL(10, 2) DEFAULT 0,
+      amountIqd DECIMAL(15, 0) DEFAULT 0,
+      exchangeRate DECIMAL(10, 2),
+      balanceBeforeUsd DECIMAL(12, 2) NOT NULL,
       balanceAfterUsd DECIMAL(12, 2) NOT NULL,
-      debitIqd DECIMAL(15, 0) NOT NULL DEFAULT 0,
-      creditIqd DECIMAL(15, 0) NOT NULL DEFAULT 0,
+      balanceBeforeIqd DECIMAL(15, 0) NOT NULL,
       balanceAfterIqd DECIMAL(15, 0) NOT NULL,
-      currency ENUM('USD', 'IQD') NOT NULL DEFAULT 'USD',
-      exchangeRate DECIMAL(12, 2),
-      relatedPackageId INT,
-      relatedFullPackageId INT,
-      relatedInvoiceId INT,
-      relatedPaymentId INT,
-      referenceNumber VARCHAR(100),
-      notes TEXT,
-      createdById INT,
+      referenceType ENUM('package','full_package','purchase_request','commission','payment','adjustment','service','manual'),
+      referenceId INT,
+      description TEXT,
+      invoiceId INT,
+      createdById INT NOT NULL,
+      approvedById INT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      INDEX idx_account (accountId),
-      INDEX idx_type (transactionType),
-      INDEX idx_created (createdAt)
+      INDEX idx_ledger_account_id (accountId),
+      INDEX idx_ledger_created_at (createdAt),
+      INDEX idx_ledger_transaction_type (transactionType),
+      INDEX idx_ledger_account_created (accountId, createdAt),
+      INDEX idx_ledger_account_created_type (accountId, createdAt, transactionType)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -2767,6 +2910,87 @@ function isAlreadyApplied(sql: string, message: string): boolean {
  * anyway. Widening is the only direction this ever moves.
  */
 export const REQUIRED_COLUMNS: Record<string, { name: string; ddl: string }[]> = {
+  /**
+   * Twelve columns the ledger reads on every charge and every payment, and
+   * which a fresh database did not have.
+   *
+   * The CREATE below was written before the account grew them; production
+   * picked them up some other way and nothing ever failed there, so the gap
+   * survived. On a new deployment the first charge died on
+   * `Unknown column 'serviceDebtUsd'` — which is to say the entire ledger did,
+   * from the first customer onward.
+   *
+   * Found while building box settlement, by running the real migration
+   * against an empty MySQL and then trying to charge somebody.
+   */
+  /**
+   * Every column of the two tables the whole ledger runs on.
+   *
+   * The list is complete rather than only the ones found missing, because a
+   * partial list is exactly the failure this mechanism exists to prevent:
+   * `reconcileColumns` adds what is absent and says nothing about what it was
+   * never told to look for.
+   *
+   * Both gaps were found the same way — running the real migration against an
+   * empty MySQL and then trying to charge somebody. The first charge died on
+   * `Unknown column 'serviceDebtUsd'`, and after that on `'amountUsd'`, which
+   * is to say the entire ledger did, from the first customer onward.
+   *
+   * A wider sweep of the same kind found around 250 such columns across two
+   * dozen other tables. They are their own job; widening a money table blind,
+   * in the middle of another one, is how a column gets the wrong type.
+   *
+   * NOT NULL without a default is written NULL here on purpose: this path
+   * only ever adds a column to a table that already has rows, and MySQL has
+   * nothing to put in them. The CREATE statement carries the real constraint.
+   */
+  ledgerTransactions: [
+    { name: "accountId", ddl: "INT NULL" },
+    { name: "transactionNumber", ddl: "VARCHAR(50) NULL" },
+    { name: "transactionType", ddl: "ENUM('DEBIT_PACKAGE','DEBIT_FULL_PACKAGE','DEBIT_PURCHASE_REQUEST','DEBIT_COMMISSION','DEBIT_SERVICE','DEBIT_PENALTY','DEBIT_OTHER','CREDIT_PAYMENT','CREDIT_DEPOSIT','CREDIT_REFUND','CREDIT_DISCOUNT','CREDIT_OTHER','ADJUSTMENT_DEBIT','ADJUSTMENT_CREDIT') NULL" },
+    { name: "amountUsd", ddl: "DECIMAL(10,2) DEFAULT 0" },
+    { name: "amountIqd", ddl: "DECIMAL(15,0) DEFAULT 0" },
+    { name: "exchangeRate", ddl: "DECIMAL(10,2) NULL" },
+    { name: "balanceBeforeUsd", ddl: "DECIMAL(12,2) NULL" },
+    { name: "balanceAfterUsd", ddl: "DECIMAL(12,2) NULL" },
+    { name: "balanceBeforeIqd", ddl: "DECIMAL(15,0) NULL" },
+    { name: "balanceAfterIqd", ddl: "DECIMAL(15,0) NULL" },
+    { name: "referenceType", ddl: "ENUM('package','full_package','purchase_request','commission','payment','adjustment','service','manual') NULL" },
+    { name: "referenceId", ddl: "INT NULL" },
+    { name: "description", ddl: "TEXT NULL" },
+    { name: "invoiceId", ddl: "INT NULL" },
+    { name: "createdById", ddl: "INT NULL" },
+    { name: "approvedById", ddl: "INT NULL" },
+    { name: "createdAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+  ],
+
+  customerAccounts: [
+    { name: "customerId", ddl: "INT NULL" },
+    { name: "accountNumber", ddl: "VARCHAR(50) NULL" },
+    { name: "currentBalanceUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "currentBalanceIqd", ddl: "DECIMAL(15,0) NOT NULL DEFAULT 0" },
+    { name: "packageDebtUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "fullPackageDebtUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "purchaseRequestDebtUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "commissionDebtUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "serviceDebtUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "creditBalanceUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "creditBalanceIqd", ddl: "DECIMAL(15,0) NOT NULL DEFAULT 0" },
+    { name: "creditLimitUsd", ddl: "DECIMAL(10,2) DEFAULT 500" },
+    { name: "creditLimitIqd", ddl: "DECIMAL(15,0) DEFAULT 750000" },
+    { name: "totalDebitUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "totalCreditUsd", ddl: "DECIMAL(12,2) NOT NULL DEFAULT 0" },
+    { name: "totalDebitIqd", ddl: "DECIMAL(15,0) NOT NULL DEFAULT 0" },
+    { name: "totalCreditIqd", ddl: "DECIMAL(15,0) NOT NULL DEFAULT 0" },
+    { name: "accountStatus", ddl: "ENUM('active','suspended','blocked') NOT NULL DEFAULT 'active'" },
+    { name: "customerScore", ddl: "DECIMAL(3,1) DEFAULT 5.0" },
+    { name: "paymentRating", ddl: "ENUM('excellent','good','fair','poor') DEFAULT 'good'" },
+    { name: "lastTransactionAt", ddl: "TIMESTAMP NULL" },
+    { name: "lastPaymentAt", ddl: "TIMESTAMP NULL" },
+    { name: "createdAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+    { name: "updatedAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+  ],
+
   expenses: [
     { name: "categoryId", ddl: "INT NULL" },
     { name: "amount", ddl: "DECIMAL(12,2) NULL" },
