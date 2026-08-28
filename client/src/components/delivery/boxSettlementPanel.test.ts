@@ -256,3 +256,41 @@ describe("taking the money is one press from the list", () => {
     expect(page).toContain("<BoxDetailPanel");
   });
 });
+
+/**
+ * The same button, on the open box.
+ *
+ * With the box in front of you, going back to the list to find the same box
+ * again is the kind of small stupidity that makes a screen tiring.
+ */
+describe("the open box can be paid for without leaving it", () => {
+  it("carries the payment button in its action row", () => {
+    expect(detail).toContain('data-testid="box-take-payment"');
+    expect(detail).toContain("setPayingOpen(true)");
+  });
+
+  it("opens the same small dialog, not a second way of doing it", () => {
+    expect(detail).toContain("<QuickSettleDialog");
+  });
+
+  it("puts the figure on the button, so it is known before it is pressed", () => {
+    expect(detail).toContain("$${settlementDueUsd.toFixed(2)}");
+  });
+
+  it("works that figure out with the shared rule the dialog uses", () => {
+    // A button promising one number and a dialog showing another is worse
+    // than no number at all.
+    expect(detail).toContain('import { settlementTotals } from "@shared/boxSettlement"');
+    expect(detail).toContain("const settlementDueUsd = settlementTotals(");
+  });
+
+  it("says settled rather than offering to take nothing", () => {
+    expect(detail).toContain("disabled={settlementDueUsd <= 0}");
+    expect(detail).toContain('ku: "واصڵ کراوە"');
+  });
+
+  it("refreshes the box once the money is in", () => {
+    const body = slice(detail, "<QuickSettleDialog", "/>", "quick settle mount");
+    expect(body).toContain("onSettled={() => refetchBox()}");
+  });
+});

@@ -52,9 +52,12 @@ import {
   RefreshCw,
   ChevronDown,
   Pencil,
+  Wallet,
   Unlock,
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
+import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
+import { settlementTotals } from "@shared/boxSettlement";
 import { CopyButton } from "@/components/CopyButton";
 
 // Languages offered for the printable box receipt / PDF. Staff can print
@@ -132,6 +135,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const [scanInput, setScanInput] = useState("");
   const [isScanning, setIsScanning] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
+  const [payingOpen, setPayingOpen] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
   // Latest input value kept in a ref so submit reads the COMPLETE code even
   // when a scanner's trailing Enter fires before React re-renders (avoids the
@@ -459,6 +463,15 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
    *
    * Reversed receipts are skipped: their money went back.
    */
+  /**
+   * What is still owed on this box, for the payment button's own label.
+   * Same query, same shared rule as the payment dialog — the button cannot
+   * promise a figure the dialog then disagrees with.
+   */
+  const settlementDueUsd = settlementTotals(
+    (settlementView?.parcels ?? []).filter((p) => p.outstandingUsd > 0 || p.notChargedYet),
+  ).dueUsd;
+
   const settlementForPrint = (() => {
     const confirmed = (settlementView?.settlements ?? []).filter((s) => s.status === "confirmed");
     if (confirmed.length === 0) return undefined;
@@ -756,6 +769,24 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
 
         {/* Action Buttons */}
         <div className="flex flex-wrap items-center gap-2 border-t pt-4">
+          {/* First in the row, and carrying the figure: with the box open in
+              front of you, taking the money should not mean going back to the
+              list to find the same box again. */}
+          <Button
+            onClick={() => setPayingOpen(true)}
+            disabled={settlementDueUsd <= 0}
+            className="bg-emerald-600 text-white hover:bg-emerald-700 disabled:opacity-60"
+            data-testid="box-take-payment"
+          >
+            <Wallet className="h-4 w-4 me-1" />
+            {t("delivery.takePayment")}
+            {settlementDueUsd > 0
+              ? ` — $${settlementDueUsd.toFixed(2)}`
+              : ` · ${pickLang(language, {
+                  ku: "واصڵ کراوە", en: "settled", ar: "تم الاستلام", zh: "已结清",
+                })}`}
+          </Button>
+
           {isOpen && (
             <Button
               onClick={() => sealBox.mutate({ id: boxId })}
@@ -978,6 +1009,12 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           </DropdownMenu>
         </div>
       </CardContent>
+
+      <QuickSettleDialog
+        boxId={payingOpen ? boxId : null}
+        onOpenChange={(o) => setPayingOpen(o)}
+        onSettled={() => refetchBox()}
+      />
 
       <EditBoxDialog
         open={editOpen}
