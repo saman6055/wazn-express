@@ -6,6 +6,7 @@ import { appLogger } from "../utils/logger";
 import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
 import { markLinkedOrdersDelivered } from "./packages.db";
 import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
+import { boxSettlements } from "../../drizzle/schema/finance.schema";
 
 // ============ BOX CODE GENERATION ============
 
@@ -1081,7 +1082,46 @@ export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
       eq(deliveryBoxItems.itemType, 'full_package'),
     ));
   const fpBoxes = new Set(fpRows.map(r => r.boxId));
-  return rows.map(r => (fpBoxes.has(r.id) ? { ...r, totalWeightKg: null, sizeConcealed: true as const } : r));
+
+  /**
+   * Whether the money for each box has been taken, and on which receipt.
+   *
+   * The accounts already show the payment — it is a CREDIT_PAYMENT on the
+   * customer's ledger with the box code in its description — but a list of
+   * boxes that says nothing about which of them are paid for makes anyone
+   * reading it cross-reference two screens to answer one question.
+   *
+   * One grouped query for the whole list. Reversed receipts are left out:
+   * their money went back, so a box settled and then unsettled is unsettled.
+   */
+  const settleRows = await db.select({
+    boxId: boxSettlements.boxId,
+    paid: sql<string>`SUM(${boxSettlements.paidUsd})`,
+    discount: sql<string>`SUM(${boxSettlements.discountUsd})`,
+    lastNumber: sql<string>`MAX(${boxSettlements.settlementNumber})`,
+    lastAt: sql<Date>`MAX(${boxSettlements.createdAt})`,
+  })
+    .from(boxSettlements)
+    .where(and(
+      inArray(boxSettlements.boxId, rows.map(r => r.id)),
+      eq(boxSettlements.status, 'confirmed'),
+    ))
+    .groupBy(boxSettlements.boxId);
+  const settled = new Map(settleRows.map(r => [Number(r.boxId), r]));
+
+  return rows.map(r => {
+    const paidRow = settled.get(r.id);
+    const withMoney = {
+      ...r,
+      settledUsd: Number(paidRow?.paid ?? 0),
+      settledDiscountUsd: Number(paidRow?.discount ?? 0),
+      settlementNumber: paidRow?.lastNumber ?? null,
+      settledAt: paidRow?.lastAt ?? null,
+    };
+    return fpBoxes.has(r.id)
+      ? { ...withMoney, totalWeightKg: null, sizeConcealed: true as const }
+      : withMoney;
+  });
 }
 
 /**

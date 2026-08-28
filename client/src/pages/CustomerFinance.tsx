@@ -1674,11 +1674,28 @@ export default function CustomerFinance() {
                       key: b.id,
                       code: b.boxCode,
                       icon: Boxes,
+                      // Whether this box's money has been taken, said on the
+                      // row rather than found by reading the ledger below it.
+                      badge: Number(b.settledUsd) > 0
+                        ? {
+                            text: `${pickLang(language, { ku: "واصڵ", en: "Paid", ar: "مستلم", zh: "已收" })} $${Number(b.settledUsd).toFixed(2)}`,
+                            tone: "paid" as const,
+                          }
+                        : {
+                            text: pickLang(language, { ku: "واصڵ نەکراوە", en: "Unpaid", ar: "غير مستلم", zh: "未收" }),
+                            tone: "owed" as const,
+                          },
                       meta: [
                         b.deliveredAt ? new Date(b.deliveredAt).toLocaleDateString() : null,
                         `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
                         Number(b.totalWeightKg) > 0 ? `${Number(b.totalWeightKg)} kg` : null,
                         b.destinationCity || null,
+                        // The receipt handed over, so a customer holding a
+                        // printed slip can be matched to a row here.
+                        b.settlementNumber || null,
+                        Number(b.settledDiscountUsd) > 0
+                          ? `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} $${Number(b.settledDiscountUsd).toFixed(2)}`
+                          : null,
                       ].filter(Boolean).join(" · "),
                     }))}
                     openKey={invoiceBoxId}

@@ -661,11 +661,21 @@ const { t, language } = useLanguage();
                 key: b.id,
                 code: b.boxCode,
                 icon: Boxes,
+                // The customer's own money, said on their own row. They paid
+                // at the counter and should not have to ask whether it was
+                // written down.
+                badge: Number(b.settledUsd) > 0
+                  ? {
+                      text: `${pickLang(language, { ku: "دراوە", en: "Paid", ar: "مدفوع", zh: "已付" })} $${Number(b.settledUsd).toFixed(2)}`,
+                      tone: "paid" as const,
+                    }
+                  : null,
                 meta: [
                   b.deliveredAt ? formatPortalDate(b.deliveredAt, language) : null,
                   `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
                   Number(b.totalWeightKg) > 0 ? `${Number(b.totalWeightKg)} kg` : null,
                   b.destinationCity || null,
+                  b.settlementNumber || null,
                 ].filter(Boolean).join(" · "),
               }))}
               openKey={invoiceBoxId}

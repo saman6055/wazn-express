@@ -28,6 +28,13 @@ export interface AccountRow {
   /** Date, count, weight — whatever makes this row recognisable at a glance. */
   meta: string;
   amount?: number | null;
+  /**
+   * A short state chip beside the code — "paid", and nothing when there is
+   * nothing to say. A list of boxes that says nothing about which are paid
+   * for makes anyone reading it cross-reference two screens to answer one
+   * question.
+   */
+  badge?: { text: string; tone: "paid" | "owed" | "neutral" } | null;
 }
 
 interface Props {
@@ -120,7 +127,23 @@ export function AccountRowList({
                 />
               )}
               <div className="min-w-0 flex-1">
-                <p className="truncate font-mono text-sm font-medium">{row.code}</p>
+                <div className="flex flex-wrap items-center gap-2">
+                  <p className="truncate font-mono text-sm font-medium">{row.code}</p>
+                  {row.badge && (
+                    <span
+                      className={cn(
+                        "shrink-0 rounded-full border px-2 py-0.5 text-[11px] font-semibold",
+                        row.badge.tone === "paid" &&
+                          "border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-800 dark:bg-emerald-950/50 dark:text-emerald-300",
+                        row.badge.tone === "owed" &&
+                          "border-amber-300 bg-amber-50 text-amber-700 dark:border-amber-800 dark:bg-amber-950/50 dark:text-amber-300",
+                        row.badge.tone === "neutral" && "border-border bg-muted text-muted-foreground",
+                      )}
+                    >
+                      {row.badge.text}
+                    </span>
+                  )}
+                </div>
                 <p className="mt-0.5 truncate text-xs text-muted-foreground">{row.meta}</p>
               </div>
               {row.amount != null && (
