@@ -1,6 +1,6 @@
 import { useState, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { partitionArchived, FINISHED_BOX_STATUSES } from "@shared/archive";
+import { partitionBoxes } from "@shared/archive";
 import { toast } from "sonner";
 import { Package, Plus, Archive, Users, Percent, X } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -83,12 +83,13 @@ export default function CustomerDeliveryScanner() {
   const allBoxes = boxesData?.boxes ?? [];
   const totalBoxes = boxesData?.total ?? 0;
 
-  // Finished boxes drop out of the table after ten days — the same rule, and
-  // the same ten days, as batches. Delivered and cancelled both count as
-  // finished: a box cancelled by mistake is still a record of what happened,
-  // so it stops crowding the list rather than disappearing.
+  // A box drops out once the money for it is in — immediately, whatever its
+  // age — and stays while it is not, however old. Sealed and unpaid is the
+  // most important row on this screen, and the one carrying the button that
+  // collects it. Cancelled goes at once; there was never anything to collect.
+  // See isBoxArchived in shared/archive.ts.
   const { current: currentBoxes, archived: archivedBoxes } = useMemo(
-    () => partitionArchived(allBoxes as any[], FINISHED_BOX_STATUSES),
+    () => partitionBoxes(allBoxes as any[]),
     [allBoxes]
   );
   const boxes = showArchivedBoxes ? allBoxes : currentBoxes;

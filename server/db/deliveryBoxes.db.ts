@@ -159,8 +159,30 @@ export async function getAllDeliveryBoxes(filters?: {
     }
   }
 
+  /**
+   * Money taken against each box, from confirmed receipts only.
+   *
+   * The list uses it to decide what is still work: a box drops out once it is
+   * paid for, and stays however old it is while it is not. See
+   * `isBoxArchived` in shared/archive.ts.
+   */
+  const settleRows = boxes.length
+    ? await db.select({
+        boxId: boxSettlements.boxId,
+        paid: sql<string>`SUM(${boxSettlements.paidUsd})`,
+      })
+        .from(boxSettlements)
+        .where(and(
+          inArray(boxSettlements.boxId, boxes.map(b => b.id)),
+          eq(boxSettlements.status, 'confirmed'),
+        ))
+        .groupBy(boxSettlements.boxId)
+    : [];
+  const settledByBox = new Map(settleRows.map(r => [Number(r.boxId), Number(r.paid || 0)]));
+
   const boxesWithType = boxes.map(b => ({
     ...b,
+    settledUsd: settledByBox.get(b.id) ?? 0,
     shippingType: resolveBoxShippingType(
       b.batchId ? (shippingTypeByBatch.get(b.batchId) ?? null) : null,
       (itemTypesByBox.get(b.id) || []).map(t => ({ shippingType: t })),

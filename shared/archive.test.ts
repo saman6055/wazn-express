@@ -6,6 +6,8 @@ import {
   isArchived,
   isBatchArchived,
   partitionArchived,
+  isBoxArchived,
+  partitionBoxes,
 } from "./archive";
 
 const NOW = new Date("2026-08-13T00:00:00Z");
@@ -92,5 +94,78 @@ describe("archiving delivery boxes", () => {
     for (const status of ["open", "ready", "in_transit"]) {
       expect(isArchived({ status, updatedAt: daysAgo(400) }, FINISHED_BOX_STATUSES, NOW), status).toBe(false);
     }
+  });
+});
+
+/**
+ * A box leaves the list when the money is in, not when the lid goes on.
+ *
+ * The owner asked for a sealed box to archive at once — it has gone to the
+ * customer, so it is off the warehouse's hands. But it is not off the
+ * company's: a box handed over and not paid for is the most important row on
+ * that screen, and the one carrying the button that collects it. Archiving on
+ * the seal alone hides exactly the boxes somebody still has to chase.
+ */
+describe("a delivery box drops out once nothing is left to do with it", () => {
+  const now = new Date("2026-08-29T12:00:00Z");
+  const daysAgo = (n: number) => new Date(now.getTime() - n * 24 * 60 * 60 * 1000);
+
+  it("goes the moment it is paid for, however new", () => {
+    expect(isBoxArchived(
+      { status: "ready", updatedAt: now, totalValueUsd: "629.64", settledUsd: 629.64 }, now,
+    )).toBe(true);
+  });
+
+  it("stays while it is sealed and unpaid, however old", () => {
+    // The whole point. This row carries the payment button.
+    expect(isBoxArchived(
+      { status: "ready", updatedAt: daysAgo(90), totalValueUsd: "629.64", settledUsd: 0 }, now,
+    )).toBe(false);
+  });
+
+  it("stays while it is only part paid", () => {
+    // Somebody is owed the rest.
+    expect(isBoxArchived(
+      { status: "delivered", updatedAt: daysAgo(1), totalValueUsd: "629.64", settledUsd: 400 }, now,
+    )).toBe(false);
+  });
+
+  it("forgives a rounding cent rather than keeping a settled box forever", () => {
+    expect(isBoxArchived(
+      { status: "delivered", updatedAt: now, totalValueUsd: "629.64", settledUsd: 629.639 }, now,
+    )).toBe(true);
+  });
+
+  it("goes at once when cancelled — there was never anything to collect", () => {
+    expect(isBoxArchived({ status: "cancelled", updatedAt: now }, now)).toBe(true);
+  });
+
+  it("keeps the ten-day floor for boxes from before receipts existed", () => {
+    // Every box handed over before this feature has no receipt against it and
+    // would otherwise come flooding back into the list on the day it ships.
+    expect(isBoxArchived({ status: "delivered", updatedAt: daysAgo(30) }, now)).toBe(true);
+    expect(isBoxArchived({ status: "delivered", updatedAt: daysAgo(2) }, now)).toBe(false);
+  });
+
+  it("counts money taken against a box with no recorded worth as done", () => {
+    // The money is the better evidence of what happened.
+    expect(isBoxArchived(
+      { status: "delivered", updatedAt: now, totalValueUsd: null, settledUsd: 50 }, now,
+    )).toBe(true);
+  });
+
+  it("leaves an open box alone whatever else is true of it", () => {
+    expect(isBoxArchived({ status: "open", updatedAt: daysAgo(90) }, now)).toBe(false);
+  });
+
+  it("splits a list into what is still work and what is not", () => {
+    const boxes = [
+      { id: 1, status: "ready", updatedAt: now, totalValueUsd: "100", settledUsd: 100 },
+      { id: 2, status: "ready", updatedAt: now, totalValueUsd: "100", settledUsd: 0 },
+      { id: 3, status: "cancelled", updatedAt: now },
+    ];
+    const { current, archived } = partitionBoxes(boxes, now);
+    expect(current.map((b) => b.id)).toEqual([2]);
+    expect(archived.map((b) => b.id)).toEqual([1, 3]);
   });
 });
