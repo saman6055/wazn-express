@@ -11,6 +11,7 @@ import { backups } from "../../drizzle/schema";
 import { systemRouter } from "../_core/systemRouter";
 import { getConfig } from "../config";
 import { appLogger } from "../utils/logger";
+import { sendWhatsAppTemplate, toWhatsAppNumber } from "../services/whatsapp.service";
 import { runMigration } from "../services/migration.service";
 import {
   getDashboardReportData,
@@ -833,6 +834,53 @@ export const notificationsRouter = router({
         // Save WhatsApp config to all notification settings
         await db.updateWhatsappConfig(input.apiKey, input.phoneNumberId, ctx.user.id);
         return { success: true };
+      }),
+
+    /**
+     * Send one message to a number the admin names, and say what happened.
+     *
+     * Setting WhatsApp up means a Meta business account, a verified number
+     * and templates approved one at a time, and any of those can be almost
+     * right. Without this the first anybody learns that something is wrong is
+     * a customer who never got told their goods had arrived — which is
+     * exactly the silence this channel was added to end.
+     *
+     * The reason comes back plainly so it can be acted on: the wrong token
+     * and an unapproved template fail in ways that look identical from
+     * outside and need completely different fixing.
+     */
+    testWhatsapp: adminProcedure
+      .input(z.object({
+        to: z.string().min(6).max(20),
+        template: z.string().min(1).max(100),
+        language: z.string().min(2).max(10).default("ar"),
+        parameters: z.array(z.string().max(200)).max(10).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const setting = await db.getNotificationSettingFor("ready_for_collection");
+        const normalised = toWhatsAppNumber(input.to);
+        if (!normalised) {
+          return { ok: false as const, reason: "bad_number" as const, to: null };
+        }
+        const result = await sendWhatsAppTemplate(
+          {
+            // Deliberately ignores the per-event switch: this is a test of the
+            // credentials, and asking somebody to turn the feature on before
+            // they can find out whether it works is the wrong way round.
+            enabled: true,
+            apiKey: setting?.whatsappApiKey ?? null,
+            phoneNumberId: setting?.whatsappPhoneNumberId ?? null,
+          },
+          {
+            to: input.to,
+            template: input.template,
+            language: input.language,
+            parameters: input.parameters,
+          },
+        );
+        return result.sent
+          ? { ok: true as const, messageId: result.messageId, to: normalised }
+          : { ok: false as const, reason: result.reason, to: normalised };
       }),
 });
 
