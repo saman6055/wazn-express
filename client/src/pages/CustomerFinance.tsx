@@ -96,6 +96,7 @@ import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { boxPaidState } from "@shared/boxSettlement";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
@@ -1676,15 +1677,25 @@ export default function CustomerFinance() {
                       icon: Boxes,
                       // Whether this box's money has been taken, said on the
                       // row rather than found by reading the ledger below it.
-                      badge: Number(b.settledUsd) > 0
-                        ? {
-                            text: `${pickLang(language, { ku: "واصڵ", en: "Paid", ar: "مستلم", zh: "已收" })} $${Number(b.settledUsd).toFixed(2)}`,
-                            tone: "paid" as const,
-                          }
-                        : {
-                            text: pickLang(language, { ku: "واصڵ نەکراوە", en: "Unpaid", ar: "غير مستلم", zh: "未收" }),
-                            tone: "owed" as const,
-                          },
+                      // Part paid is its own state and the one most worth
+                      // seeing: "Paid $190" on a $200 box is true about the
+                      // money and wrong about the box.
+                      badge: (() => {
+                        const state = boxPaidState(b.settledUsd, b.totalValueUsd);
+                        const owed = Number(b.totalValueUsd || 0) - Number(b.settledUsd || 0);
+                        if (state === "paid") return {
+                          text: pickLang(language, { ku: "واصڵ کراوە", en: "Paid", ar: "مستلم", zh: "已收" }),
+                          tone: "paid" as const,
+                        };
+                        if (state === "partly") return {
+                          text: `${pickLang(language, { ku: "ماوە", en: "Owing", ar: "متبقٍ", zh: "尚欠" })} $${owed.toFixed(2)}`,
+                          tone: "owed" as const,
+                        };
+                        return {
+                          text: pickLang(language, { ku: "واصڵ نەکراوە", en: "Unpaid", ar: "غير مستلم", zh: "未收" }),
+                          tone: "owed" as const,
+                        };
+                      })(),
                       meta: [
                         b.deliveredAt ? new Date(b.deliveredAt).toLocaleDateString() : null,
                         `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,

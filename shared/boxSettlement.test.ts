@@ -8,6 +8,7 @@ import {
   DISCOUNT_REASONS,
   boxDiscountUsd,
   allocateBoxDiscount,
+  boxPaidState,
 } from "./boxSettlement";
 
 /**
@@ -275,5 +276,44 @@ describe("a discount on the whole box", () => {
     expect(t.discountUsd).toBe(20);
     expect(t.dueUsd).toBe(880);
     expect(differenceOf(t.dueUsd, 880).kind).toBe("none");
+  });
+});
+
+/**
+ * "Paid $190" on a box worth $200 is true about the money and wrong about
+ * the box — on the two screens where somebody checks whether a customer
+ * still owes.
+ */
+describe("a box is paid, part paid, or not paid", () => {
+  it("calls a fully settled box paid", () => {
+    expect(boxPaidState(200, "200.00")).toBe("paid");
+    expect(boxPaidState(629.64, 629.64)).toBe("paid");
+  });
+
+  it("calls a part settled box part paid, not paid", () => {
+    expect(boxPaidState(190, "200.00")).toBe("partly");
+    expect(boxPaidState(0.01, "200.00")).toBe("partly");
+  });
+
+  it("calls an untouched box unpaid", () => {
+    expect(boxPaidState(0, "200.00")).toBe("unpaid");
+    expect(boxPaidState(null, "200.00")).toBe("unpaid");
+    expect(boxPaidState(undefined, undefined)).toBe("unpaid");
+  });
+
+  it("does not strand a box on a rounded dinar", () => {
+    // 275,500 IQD at 1,450 is $190.00 to the cent, but rates rarely divide
+    // that cleanly. Half a cent of slack, or boxes look part paid forever.
+    expect(boxPaidState(199.999, "200.00")).toBe("paid");
+    expect(boxPaidState(199.98, "200.00")).toBe("partly");
+  });
+
+  it("trusts the money over a box with no recorded worth", () => {
+    expect(boxPaidState(50, null)).toBe("paid");
+    expect(boxPaidState(50, 0)).toBe("paid");
+  });
+
+  it("treats money over the total as paid, not as something odd", () => {
+    expect(boxPaidState(250, "200.00")).toBe("paid");
   });
 });

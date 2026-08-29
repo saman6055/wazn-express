@@ -277,3 +277,32 @@ export function usdToIqd(amountUsd: number, rate: number): number {
   if (!Number.isFinite(rate) || rate <= 0) return 0;
   return Math.round(amountUsd * rate);
 }
+
+/**
+ * Whether a box has been paid for, from a list row.
+ *
+ * A row that showed the amount taken read "Paid $190" on a box worth $200 —
+ * true about the money and wrong about the box, on the two screens where
+ * somebody checks whether a customer still owes. Part-paid is not paid, and
+ * it is the state most worth seeing.
+ *
+ * Shared because the office list and the customer's own list must never
+ * disagree about it: the customer reading "paid" while the counter reads
+ * "owes" is an argument nobody can win.
+ */
+export type BoxPaidState = "paid" | "partly" | "unpaid";
+
+export function boxPaidState(
+  settledUsd: number | null | undefined,
+  totalValueUsd: string | number | null | undefined,
+): BoxPaidState {
+  const paid = Number(settledUsd ?? 0);
+  if (!(paid > 0)) return "unpaid";
+  const worth = Number(totalValueUsd ?? 0);
+  // A box with no recorded worth but money taken against it counts as paid:
+  // the money is the better evidence of what happened.
+  if (!(worth > 0)) return "paid";
+  // Half a cent of slack, so a rounded dinar payment does not leave a box
+  // looking part-paid forever.
+  return paid + 0.005 >= worth ? "paid" : "partly";
+}

@@ -367,11 +367,28 @@ describe("money moving reaches the customer's notifications", () => {
     expect(create()).toContain('type: "payment"');
   });
 
-  it("names the box, the receipt and anything still owed", () => {
+  it("reads like good news when the box is paid in full", () => {
+    // The owner's standing rule for the portal: every customer has to be
+    // able to read it, and they come from very different backgrounds. A
+    // thank-you costs nothing, and a sentence of receipt numbers and
+    // decimals is one they will not finish.
     const body = create();
+    expect(body).toContain("const settledInFull = short <= 0;");
+    expect(body).toContain("دەست خۆش");
     expect(body).toContain("box.boxCode");
-    expect(body).toContain("result.settlementNumber");
-    expect(body).toContain("ماوە $");
+  });
+
+  it("says the one number that matters when money is still owed", () => {
+    expect(create()).toContain("ماوە.");
+  });
+
+  it("carries the receipt as a link, not as words in the sentence", () => {
+    // relatedId points the app at the settlement; the message stays plain.
+    const body = create();
+    expect(body).toContain("relatedId: result.settlementId");
+    const message = body.slice(body.indexOf("title: settledInFull"), body.indexOf("} catch (err)"));
+    expect(message, "the receipt number does not belong in the sentence")
+      .not.toContain("settlementNumber");
   });
 
   it("tells them when it is given back, which matters more", () => {

@@ -563,16 +563,32 @@ export async function createBoxSettlement(
      */
     try {
       const short = result.differenceKind === "debt" ? difference.amountUsd : 0;
+      const settledInFull = short <= 0;
+
+      /**
+       * Two different pieces of news, so two different messages.
+       *
+       * Paid in full is the good day, and it should read like one — a thank
+       * you, in plain words, with the numbers a customer might want to check
+       * kept short. Every customer has to be able to read this: not all of
+       * them are comfortable with paperwork, and a sentence full of receipt
+       * numbers and decimals is one they will not finish.
+       *
+       * Money still owed is the other kind, and it says the one number that
+       * matters and nothing else. No jargon either way.
+       */
       await createCustomerNotification({
         customerId: customer.id,
         type: "payment",
         relatedType: "payment",
         relatedId: result.settlementId,
-        title: "پارەکەت وەرگیرا",
-        message:
-          `$${result.paidUsd.toFixed(2)} بۆ ${box.boxCode} — وەسڵ ${result.settlementNumber}` +
-          (result.discountTotal > 0 ? ` · داشکاندن $${result.discountTotal.toFixed(2)}` : "") +
-          (short > 0 ? ` · ماوە $${short.toFixed(2)}` : ""),
+        title: settledInFull ? "سوپاس — پارەکەت وەرگیرا" : "بەشێکی پارەکەت وەرگیرا",
+        message: settledInFull
+          ? `دەست خۆش. پارەی بۆکسی ${box.boxCode} بە تەواوی وەرگیرا — $${result.paidUsd.toFixed(2)}.` +
+            (result.discountTotal > 0
+              ? ` داشکاندنی $${result.discountTotal.toFixed(2)}ت بۆ کرا.`
+              : "")
+          : `$${result.paidUsd.toFixed(2)}ت دا بۆ بۆکسی ${box.boxCode}. $${short.toFixed(2)} ماوە.`,
       });
     } catch (err) {
       appLogger.error("[BoxSettlement] customer notification failed", {
@@ -736,8 +752,10 @@ export async function reverseBoxSettlement(
         type: "payment",
         relatedType: "payment",
         relatedId: settlementId,
-        title: "واصڵێک هەڵوەشێنرایەوە",
-        message: `وەسڵ ${settlement.settlementNumber} — $${putBack.toFixed(2)} گەڕایەوە سەر حیسابەکەت · ${reason.trim()}`,
+        title: "پارەیەک گەڕایەوە سەر حیسابەکەت",
+        // Plain words, and the reason first: the customer's balance has just
+        // gone up and the only question they have is why.
+        message: `$${putBack.toFixed(2)} گەڕایەوە سەر حیسابەکەت. هۆکار: ${reason.trim()}`,
       });
     } catch (err) {
       appLogger.error("[BoxSettlement] reversal notification failed", { settlementId, err });

@@ -296,3 +296,35 @@ describe("status wording has one home", () => {
     }
   });
 });
+
+/**
+ * The office and the customer read the same money.
+ *
+ * The box rows showed the amount taken: "Paid $190" on a box worth $200 —
+ * true about the money and wrong about the box, on the two screens somebody
+ * uses to check whether a customer still owes. A customer reading "paid"
+ * while the counter reads "owes" is an argument nobody can win.
+ */
+describe("paid, part paid and unpaid are one rule", () => {
+  const office = fs.readFileSync(path.join(SRC, "pages", "CustomerFinance.tsx"), "utf8");
+  const portal = fs.readFileSync(path.join(SRC, "pages", "portal", "PortalFinancial.tsx"), "utf8");
+
+  it("both screens ask the shared rule rather than comparing to zero", () => {
+    for (const [name, src] of [["office", office], ["portal", portal]] as const) {
+      expect(src, `${name} must use boxPaidState`).toContain("boxPaidState(b.settledUsd, b.totalValueUsd)");
+      expect(src, `${name} still decides for itself`).not.toContain("Number(b.settledUsd) > 0");
+    }
+  });
+
+  it("both say how much is still owed rather than how much came in", () => {
+    for (const [name, src] of [["office", office], ["portal", portal]] as const) {
+      expect(src, `${name} does not name the outstanding amount`)
+        .toContain('state === "partly"');
+    }
+  });
+
+  it("the rule itself lives in shared, not in a screen", () => {
+    const rule = fs.readFileSync(path.join(SRC, "..", "..", "shared", "boxSettlement.ts"), "utf8");
+    expect(rule).toContain("export function boxPaidState(");
+  });
+});

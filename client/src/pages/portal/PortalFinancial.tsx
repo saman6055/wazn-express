@@ -31,6 +31,7 @@ import { StatementPdfButton } from "@/components/portal/StatementPdfButton";
 import { OrderBillingGroups } from "@/components/portal/OrderBillingGroups";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { pickLang } from "@/lib/lang";
+import { boxPaidState } from "@shared/boxSettlement";
 import { toast } from "sonner";
 import {
   isDebt as isDebtBalance,
@@ -664,12 +665,20 @@ const { t, language } = useLanguage();
                 // The customer's own money, said on their own row. They paid
                 // at the counter and should not have to ask whether it was
                 // written down.
-                badge: Number(b.settledUsd) > 0
-                  ? {
-                      text: `${pickLang(language, { ku: "دراوە", en: "Paid", ar: "مدفوع", zh: "已付" })} $${Number(b.settledUsd).toFixed(2)}`,
-                      tone: "paid" as const,
-                    }
-                  : null,
+                // The same rule the office reads. A customer seeing "paid"
+                // while the counter says "owes" is an argument nobody wins.
+                badge: (() => {
+                  const state = boxPaidState(b.settledUsd, b.totalValueUsd);
+                  if (state === "paid") return {
+                    text: pickLang(language, { ku: "پارەکەی دراوە", en: "Paid", ar: "مدفوع", zh: "已付" }),
+                    tone: "paid" as const,
+                  };
+                  if (state === "partly") return {
+                    text: `${pickLang(language, { ku: "ماوە", en: "Still owing", ar: "متبقٍ", zh: "尚欠" })} $${(Number(b.totalValueUsd || 0) - Number(b.settledUsd || 0)).toFixed(2)}`,
+                    tone: "owed" as const,
+                  };
+                  return null;
+                })(),
                 meta: [
                   b.deliveredAt ? formatPortalDate(b.deliveredAt, language) : null,
                   `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
