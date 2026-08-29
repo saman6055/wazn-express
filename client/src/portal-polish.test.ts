@@ -103,3 +103,71 @@ describe("the portal's sounds are a phone's sounds, not a warehouse's", () => {
       .not.toContain("soundManager.play");
   });
 });
+
+/**
+ * The line a customer opens the portal for.
+ *
+ * Everything on the home screen said what had already happened — three in
+ * transit, two delivered. Nothing said what happens next, which is the only
+ * thing somebody checking their phone on the way to work wants.
+ */
+describe("the portal says what happens next, not only what happened", () => {
+  const home = read("pages/portal/PortalHome.tsx");
+
+  it("puts it above the counts", () => {
+    const card = home.indexOf("<NextStepCard");
+    const stats = home.indexOf("{/* Stats Cards */}");
+    expect(card).toBeGreaterThan(-1);
+    expect(card, "the answer must come before the tally").toBeLessThan(stats);
+  });
+
+  it("shows one shipment — the one closest to reaching them", () => {
+    expect(home).toContain("mostRelevantShipment(batches ?? [])");
+  });
+
+  it("names every stage of the ladder in all four languages", () => {
+    const block = home.slice(home.indexOf("const HEADLINE"), home.indexOf("const ready ="));
+    for (const key of ["leaving_china", "arriving_iraq", "clearing_customs", "reaching_depot", "ready_to_collect"]) {
+      expect(block, `${key} has no wording`).toContain(key);
+    }
+    const starts = [...block.matchAll(/\bku:\s/g)].map((m) => m.index!);
+    expect(starts.length).toBeGreaterThan(4);
+    for (let i = 0; i < starts.length; i++) {
+      const next = i + 1 < starts.length ? starts[i + 1]! : block.length;
+      const text = block.slice(starts[i]!, next);
+      for (const lang of ["en:", "ar:", "zh:"]) {
+        expect(text.includes(lang), `a stage is missing ${lang}`).toBe(true);
+      }
+    }
+  });
+
+  it("never prints a date nobody recorded", () => {
+    // An invented date becomes a promise the customer holds you to.
+    expect(home).toContain("const date = step.expectedAt");
+    expect(home).toContain("{date && (");
+  });
+
+  it("says 'expected', not a commitment", () => {
+    const block = home.slice(home.indexOf("{date && ("), home.indexOf("batchCode"));
+    expect(block).toContain('ku: "چاوەڕوانە"');
+    expect(block).toContain('ku: "چاوەڕوان بوو"');
+  });
+
+  it("marks a late shipment without shouting about it", () => {
+    // Amber, and a change of tense. Not red, and no alarm: late is common
+    // and the customer can do nothing about it.
+    const block = home.slice(home.indexOf("{date && ("), home.indexOf("batchCode"));
+    expect(block).toContain("step.overdue");
+    expect(block).toContain("text-amber");
+    expect(block, "lateness is not an error").not.toContain("text-red");
+  });
+
+  it("says nothing at all when nothing is moving", () => {
+    // A customer with everything delivered gets no card, not an empty one.
+    expect(home).toContain("if (loading || !best) return null;");
+  });
+
+  it("leads somewhere — the shipment itself", () => {
+    expect(home).toContain("/portal/shipments/${(shipment as any).id}");
+  });
+});

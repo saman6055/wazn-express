@@ -8,13 +8,14 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import {
-  Package, Bell, ChevronRight, Truck, CheckCircle, Clock,
+  Package, PackageCheck, Bell, ChevronRight, Truck, CheckCircle, Clock,
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
   CreditCard, MessageCircle, FileText, DollarSign,
   Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X,
   Scale, Ban, ShoppingBag, Wallet, User, BookOpen, GraduationCap, PhoneCall
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
+import { mostRelevantShipment } from "@shared/nextStep";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -200,6 +201,99 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
   
   // Featured posts → the Wazn News auto-rotating carousel (5 slides, 5s each).
   return <WaznNewsCarousel language={language} isDark={isDark} />;
+}
+
+/**
+ * The one line a customer opens the portal for.
+ *
+ * Everything below this said what has already happened — three in transit,
+ * two delivered. None of it said what happens next, which is the only thing
+ * somebody checking their phone on the way to work actually wants.
+ *
+ * One shipment: the one closest to reaching them. What it is waiting on, and
+ * when that is expected — but only when a date was genuinely recorded. A date
+ * the system does not know becomes a promise the customer holds you to.
+ */
+function NextStepCard({
+  batches, isDark, language, loading,
+}: { batches: any[]; isDark: boolean; language: string; loading: boolean }) {
+  const best = mostRelevantShipment(batches ?? []);
+  if (loading || !best) return null;
+
+  const { shipment, step } = best;
+  const L = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, k);
+
+  const HEADLINE: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+    leaving_china: { ku: "لە کۆگای چین، چاوەڕوانی ناردن", en: "In the China warehouse, waiting to ship", ar: "في مستودع الصين بانتظار الشحن", zh: "在中国仓库，等待发运" },
+    arriving_iraq: { ku: "لە ڕێگادایە بۆ عێراق", en: "On its way to Iraq", ar: "في طريقها إلى العراق", zh: "正在运往伊拉克" },
+    clearing_customs: { ku: "گەیشتووەتە عێراق، لە گومرگدایە", en: "In Iraq, clearing customs", ar: "وصلت العراق، في الجمارك", zh: "已抵达伊拉克，清关中" },
+    reaching_depot: { ku: "لە گومرگ دەرچووە، بەرەو کۆگای هەولێر", en: "Through customs, heading to the Erbil depot", ar: "خرجت من الجمارك، في طريقها إلى مستودع أربيل", zh: "已清关，正运往埃尔比勒仓库" },
+    ready_to_collect: { ku: "لە کۆگای هەولێرە — ئامادەیە بۆ وەرگرتن", en: "At the Erbil depot — ready to collect", ar: "في مستودع أربيل — جاهزة للاستلام", zh: "在埃尔比勒仓库——可领取" },
+    done: { ku: "", en: "", ar: "", zh: "" },
+  };
+
+  const ready = step.key === "ready_to_collect";
+  const date = step.expectedAt
+    ? new Intl.DateTimeFormat(language === "ku" || language === "ar" ? "ar" : language, {
+        day: "numeric", month: "long",
+      }).format(step.expectedAt)
+    : null;
+
+  return (
+    <div className="px-4 mt-6">
+      <div className={cn(
+        "rounded-2xl p-4 flex items-start gap-3.5 ring-1",
+        ready
+          ? isDark ? "bg-emerald-950/40 ring-emerald-800" : "bg-emerald-50 dark:bg-emerald-950/40 ring-emerald-200 dark:ring-emerald-800"
+          : isDark ? "bg-slate-800/60 ring-white/5" : "bg-white dark:bg-slate-800/60 ring-slate-200 dark:ring-white/5 shadow-sm",
+      )}>
+        <div className={cn(
+          "w-11 h-11 shrink-0 rounded-xl flex items-center justify-center",
+          ready ? "bg-emerald-500" : isDark ? "bg-blue-600" : "bg-blue-500",
+        )}>
+          {ready ? <PackageCheck className="w-5 h-5 text-white" /> : <Truck className="w-5 h-5 text-white" />}
+        </div>
+
+        <div className="min-w-0 flex-1">
+          <p className={cn("text-[11px] font-medium uppercase tracking-wide",
+                           isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+            {L({ ku: "دواتر", en: "Next", ar: "التالي", zh: "接下来" })}
+          </p>
+          <p className={cn("font-semibold leading-snug",
+                           isDark ? "text-white" : "text-slate-800 dark:text-slate-100")}>
+            {L(HEADLINE[step.key] ?? HEADLINE.leaving_china!)}
+          </p>
+
+          {/* Only ever shown when a date was recorded, and always as an
+              estimate — never as a commitment nobody made. */}
+          {date && (
+            <p className={cn("text-sm mt-0.5",
+                             step.overdue
+                               ? isDark ? "text-amber-400" : "text-amber-600 dark:text-amber-400"
+                               : isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")}>
+              {step.overdue
+                ? L({ ku: "چاوەڕوان بوو", en: "Was expected", ar: "كان متوقعًا", zh: "原预计" })
+                : L({ ku: "چاوەڕوانە", en: "Expected", ar: "متوقع", zh: "预计" })}
+              {" "}{date}
+            </p>
+          )}
+
+          <p className={cn("text-xs mt-1 font-mono", isDark ? "text-slate-500" : "text-slate-400 dark:text-slate-500")} dir="ltr">
+            {(shipment as any).batchCode}
+          </p>
+        </div>
+
+        <Link href={`/portal/shipments/${(shipment as any).id}`}>
+          <span className={cn("inline-flex items-center shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg",
+                              ready
+                                ? "bg-emerald-500 text-white"
+                                : isDark ? "bg-slate-700 text-slate-200" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200")}>
+            {L({ ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
+          </span>
+        </Link>
+      </div>
+    </div>
+  );
 }
 
 export default function PortalHome() {
@@ -751,6 +845,9 @@ const { t, language } = useLanguage();
 
       {/* Price List Section — admin-curated shipping rates & services */}
       <PriceListSection />
+
+      {/* What happens next, before the counts of what has happened */}
+      <NextStepCard batches={batches ?? []} isDark={isDark} language={language} loading={batchesLoading} />
 
       {/* Stats Cards */}
       <div className="px-4 mt-6">
