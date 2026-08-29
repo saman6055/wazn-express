@@ -167,15 +167,32 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       scanInputRef.current?.focus();
     },
     onError: (err) => {
-      // The refusals that reach here are the expensive ones: a parcel
-      // belonging to another customer, or one already sitting in another
-      // box. Both end with somebody's goods handed to the wrong person, and
-      // a toast in the corner of a warehouse screen does not stop that.
+      /**
+       * Two very different refusals arrive here, and they were being shown
+       * the same way.
+       *
+       * A parcel already in a box is somebody scanning the same barcode
+       * twice — the commonest thing that happens while filling one. Nothing
+       * is lost, nothing is wrong, and stopping the screen dead for it, with
+       * a button to find and press, is a tax on every box assembled.
+       *
+       * A parcel belonging to another customer is the opposite: it ends with
+       * somebody's goods handed to the wrong person, and a notice that takes
+       * itself away is a notice that gets missed.
+       *
+       * The server already tells them apart — CONFLICT for the first,
+       * BAD_REQUEST or NOT_FOUND for the rest — so the code is read rather
+       * than the sentence.
+       */
+      const routine = err.data?.code === "CONFLICT";
       systemAlert({
-        kind: "error",
+        kind: routine ? "warning" : "error",
         title: t("delivery.cannotAddToBox"),
         message: err.message,
         detail: scanInput,
+        // Shown, said quietly, and gone. The caret stays in the scan box and
+        // the gun keeps firing underneath it.
+        ...(routine ? { autoDismissMs: 3500 } : {}),
       });
       setScanInput("");
       scanInputRef.current?.focus();

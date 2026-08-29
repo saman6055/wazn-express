@@ -81,11 +81,29 @@ describe("the failures that lose goods all stop the operator", () => {
   const arrival = read(path.join(HERE, "..", "pages", "ArrivalVerificationScanner.tsx"));
   const batchAssign = read(path.join(HERE, "..", "pages", "BatchAssignmentScanner.tsx"));
 
-  it("a parcel that belongs to another customer, or is already in a box", () => {
+  it("a parcel that belongs to another customer", () => {
     // The server refuses it. What was missing was making the refusal
-    // impossible to walk past.
+    // impossible to walk past: this one ends with somebody's goods handed to
+    // the wrong person.
     expect(boxPanel).toContain("systemAlert({");
     expect(boxPanel).toContain("delivery.cannotAddToBox");
+    expect(boxPanel).toContain('kind: routine ? "warning" : "error"');
+  });
+
+  it("but a barcode scanned twice does not stop the work", () => {
+    // The commonest thing that happens while filling a box. Nothing is lost
+    // and nothing is wrong, so a dialog with a button to find and press is a
+    // tax on every box assembled.
+    expect(boxPanel).toContain('const routine = err.data?.code === "CONFLICT"');
+    expect(boxPanel).toContain("...(routine ? { autoDismissMs: 3500 } : {})");
+  });
+
+  it("tells them apart by the code, not by the sentence", () => {
+    // The server already says which is which. Reading the Kurdish text to
+    // decide would break the first time anybody rewords it.
+    const body = slice(boxPanel, "onError: (err) =>", "setScanInput(\"\");", "add-item error");
+    expect(body, "the wording must not be what decides")
+      .not.toMatch(/err\.message\.(includes|startsWith|indexOf)/);
   });
 
   it("a parcel the system has never heard of, in a container on the floor", () => {
