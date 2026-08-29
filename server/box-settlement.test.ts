@@ -287,3 +287,67 @@ describe("the procedures are mounted, and staff-only", () => {
     }
   });
 });
+
+/**
+ * The question the owner asked: if I settle a box now and the batch is closed
+ * later, does the customer get charged twice?
+ *
+ * For plain parcels, no — batch delivery re-reads each package and skips any
+ * with `isCharged` set, and settlement sets it.
+ *
+ * For a parcel belonging to a full-package order, it did. Batch delivery
+ * charges those down a different path guarded by a different flag, on the
+ * order rather than the package, and settlement was setting only the one on
+ * the package. Proven against real MySQL before it was fixed: the order came
+ * back with isCharged = 0, which is a second charge appearing days later with
+ * nothing on the screen to explain it.
+ */
+describe("a box settled early is not charged again when its batch closes", () => {
+  const packagesDb = read("server/db/packages.db.ts");
+  const marker = () =>
+    slice(packagesDb, "export async function markLinkedOrdersCharged", "export async function markLinkedOrdersDelivered", "marker");
+
+  it("sets the flag on the package, which stops the package path", () => {
+    expect(create()).toContain("set({ isCharged: true })");
+  });
+
+  it("sets the flag on the linked orders, which stops the order path", () => {
+    expect(create()).toContain("markLinkedOrdersCharged(toCharge.map((p) => p.packageId), tx)");
+  });
+
+  it("sets both order flags, because the two paths read different ones", () => {
+    const body = marker();
+    expect(body).toContain("isCharged: true");
+    expect(body).toContain("isChargedToCustomer: true");
+  });
+
+  it("follows both routes a parcel can reach an order", () => {
+    const body = marker();
+    expect(body).toContain("packageOrderLinks");
+    expect(body).toContain("fullPackageOrderTrackings");
+    expect(body).toContain("fullPackageOrders.trackingNumber");
+  });
+
+  it("reads ids, not whole orders, inside a money transaction", () => {
+    // The obvious helper returns full rows across three joins — a hundred
+    // columns per order, to read two booleans, while the customer waits.
+    const body = marker();
+    expect(body).toContain("select({ id: fullPackageOrders.id, isCharged: fullPackageOrders.isCharged })");
+    expect(body, "the heavy resolver must not be called here")
+      .not.toContain("await resolveLinkedOrdersForPackage(");
+  });
+
+  it("never lets this cost somebody their payment", () => {
+    // A flag that did not get set is a possible second charge, which is
+    // visible and reversible. A payment that did not get taken is a customer
+    // walking out of the door.
+    const body = marker();
+    expect(body).toContain("try {");
+    expect(body).toContain("catch (e)");
+    expect(body).toContain("return marked;");
+  });
+
+  it("leaves an order that was already charged alone", () => {
+    expect(marker()).toContain("if (order.isCharged) continue;");
+  });
+});

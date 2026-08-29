@@ -563,6 +563,95 @@ async function resolveLinkedOrdersForPackage(pkg: Package | undefined) {
  * Both routes a parcel can reach an order are followed, and an order already
  * delivered is left alone.
  */
+/**
+ * Mark every order behind these parcels as already charged.
+ *
+ * Batch delivery charges plain packages and full-package orders down two
+ * different paths, guarded by two different flags: `packages.isCharged` and
+ * `fullPackageOrders.isCharged`. Settling a box at the counter charges the
+ * parcel and sets the first one — which stops the package path and does
+ * nothing at all to the order path.
+ *
+ * So a parcel belonging to a full-package order, paid for at the counter
+ * before its batch was marked delivered, was charged once here and once
+ * again there: the customer owed twice for one parcel, and the second charge
+ * appeared days later with nothing on the screen to explain it.
+ *
+ * Both flags are set, because the two paths read different ones and a fix
+ * that sets only the newer of them would leave the same hole in a year.
+ */
+export async function markLinkedOrdersCharged(packageIds: number[], tx?: any): Promise<number> {
+  if (packageIds.length === 0) return 0;
+  const db = await getDb();
+  if (!db) return 0;
+  const runner = (tx ?? db) as typeof db;
+  let marked = 0;
+
+  // The whole thing is inside the guard, not just the write. This runs in
+  // the transaction that takes the customer's money: a flag that did not get
+  // set means a possible second charge, which is visible and reversible,
+  // while a payment that did not get taken is a customer walking out.
+  try {
+    const rows = await db
+      .select({ id: packages.id, trackingNumber: packages.trackingNumber, fpId: packages.fullPackageOrderId })
+      .from(packages)
+      .where(inArray(packages.id, packageIds));
+
+    /**
+     * Order ids only, by narrow query.
+     *
+     * `resolveLinkedOrdersForPackage` would answer the same question, but it
+     * returns whole order rows across three joins — a hundred columns per
+     * order, fetched inside a money transaction to read two booleans. The
+     * ids are all that is needed, and both routes a parcel can reach an order
+     * are still followed.
+     */
+    const orderIds = new Set<number>();
+    for (const pkg of rows) if (pkg.fpId) orderIds.add(pkg.fpId);
+
+    const links = await db
+      .select({ fullPackageOrderId: packageOrderLinks.fullPackageOrderId })
+      .from(packageOrderLinks)
+      .where(inArray(packageOrderLinks.packageId, packageIds));
+    for (const l of links) orderIds.add(l.fullPackageOrderId);
+
+    const trackings = rows.map((r) => r.trackingNumber).filter((t): t is string => !!t);
+    if (trackings.length > 0) {
+      const direct = await db
+        .select({ id: fullPackageOrders.id })
+        .from(fullPackageOrders)
+        .where(inArray(fullPackageOrders.trackingNumber, trackings));
+      for (const o of direct) orderIds.add(o.id);
+
+      const shared = await db
+        .select({ id: fullPackageOrderTrackings.fullPackageOrderId })
+        .from(fullPackageOrderTrackings)
+        .where(inArray(fullPackageOrderTrackings.trackingNumber, trackings));
+      for (const o of shared) orderIds.add(o.id);
+    }
+
+    if (orderIds.size === 0) return 0;
+
+    const existing = await db
+      .select({ id: fullPackageOrders.id, isCharged: fullPackageOrders.isCharged })
+      .from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.id, Array.from(orderIds)));
+
+    for (const order of existing) {
+      if (order.isCharged) continue;
+      await runner.update(fullPackageOrders)
+        .set({ isCharged: true, isChargedToCustomer: true, chargedAt: new Date() } as any)
+        .where(eq(fullPackageOrders.id, order.id));
+      marked++;
+    }
+  } catch (e) {
+    appLogger.error('[FullPackage] Failed to mark linked orders charged', {
+      packageIds, error: e instanceof Error ? e.message : String(e),
+    });
+  }
+  return marked;
+}
+
 export async function markLinkedOrdersDelivered(packageIds: number[]): Promise<number> {
   if (packageIds.length === 0) return 0;
   const db = await getDb();

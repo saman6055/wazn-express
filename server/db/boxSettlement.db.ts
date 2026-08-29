@@ -12,6 +12,7 @@ import { batches } from "../../drizzle/schema/batches.schema";
 import type { BoxSettlement } from "../../drizzle/schema/finance.schema";
 import { appLogger } from "../utils/logger";
 import { recordPaymentReceived, adjustCharge, recordPackageChargeWithoutInvoice } from "./finance.db";
+import { markLinkedOrdersCharged } from "./packages.db";
 import {
   settlementTotals,
   differenceOf,
@@ -428,6 +429,12 @@ export async function createBoxSettlement(
       // The flag every other charging path checks, so this parcel cannot be
       // charged a second time when its batch is eventually marked delivered.
       await tx.update(packages).set({ isCharged: true }).where(eq(packages.id, parcel.packageId));
+    }
+    // And the other flag, on the other path. Batch delivery charges plain
+    // packages and full-package orders separately, guarded separately; the
+    // line above stops one of them and this stops the other.
+    if (toCharge.length > 0) {
+      await markLinkedOrdersCharged(toCharge.map((p) => p.packageId), tx);
     }
 
     // 1. Corrections change the price, so they go in before anything is paid.
