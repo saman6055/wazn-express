@@ -351,3 +351,53 @@ describe("a box settled early is not charged again when its batch closes", () =>
     expect(marker()).toContain("if (order.isCharged) continue;");
   });
 });
+
+/**
+ * The customer is told when their money moves.
+ *
+ * Found on a second audit of the wiring. The system notifies a customer when
+ * a parcel is scanned, and said nothing at all when the company took their
+ * money — the single most important thing that happens to them here. Their
+ * balance simply changed, on a screen they might open a week later, with
+ * nothing to say why.
+ */
+describe("money moving reaches the customer's notifications", () => {
+  it("tells them when it is taken", () => {
+    expect(create()).toContain("createCustomerNotification({");
+    expect(create()).toContain('type: "payment"');
+  });
+
+  it("names the box, the receipt and anything still owed", () => {
+    const body = create();
+    expect(body).toContain("box.boxCode");
+    expect(body).toContain("result.settlementNumber");
+    expect(body).toContain("ماوە $");
+  });
+
+  it("tells them when it is given back, which matters more", () => {
+    // A debt reappearing with nothing to explain it is how somebody decides
+    // the company is cheating them.
+    const body = slice(settleDb, "export async function reverseBoxSettlement", "export interface DiscountReportRow", "reverse");
+    expect(body).toContain("createCustomerNotification({");
+    expect(body).toContain("گەڕایەوە سەر حیسابەکەت");
+    expect(body).toContain("reason.trim()");
+  });
+
+  it("sends it outside the transaction, so it can never undo the money", () => {
+    // The payment is committed by this point. A notification that fails must
+    // not roll it back; a customer who was not told is survivable, and is
+    // exactly where this started.
+    const body = create();
+    const notify = body.indexOf("createCustomerNotification({");
+    const commit = body.indexOf("}).then(async (result) =>");
+    expect(commit, "the notification must run after the transaction resolves").toBeGreaterThan(-1);
+    expect(notify).toBeGreaterThan(commit);
+  });
+
+  it("never lets a failed notice cost somebody their payment", () => {
+    const body = create();
+    const after = body.slice(body.indexOf("}).then(async (result) =>"));
+    expect(after).toContain("try {");
+    expect(after).toContain("catch (err)");
+  });
+});

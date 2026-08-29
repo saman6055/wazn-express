@@ -12,6 +12,7 @@ import { batches } from "../../drizzle/schema/batches.schema";
 import type { BoxSettlement } from "../../drizzle/schema/finance.schema";
 import { appLogger } from "../utils/logger";
 import { recordPaymentReceived, adjustCharge, recordPackageChargeWithoutInvoice } from "./finance.db";
+import { createCustomerNotification } from "./portal.db";
 import { markLinkedOrdersCharged } from "./packages.db";
 import {
   settlementTotals,
@@ -545,7 +546,40 @@ export async function createBoxSettlement(
       });
     }
 
-    return { settlementId, settlementNumber, paidUsd, differenceKind: difference.kind };
+    return { settlementId, settlementNumber, paidUsd, differenceKind: difference.kind, discountTotal };
+  }).then(async (result) => {
+    /**
+     * Tell the customer their money arrived.
+     *
+     * The system tells them when a parcel is scanned. It said nothing at all
+     * when the company took their money — the single most important thing
+     * that happens to them here. Their balance simply changed, on a screen
+     * they might open a week later, with nothing to say why.
+     *
+     * Outside the transaction on purpose. The money is committed by this
+     * point and a notification that fails must never roll it back; the worst
+     * case is a customer who was not told, which is exactly where this
+     * started and is survivable.
+     */
+    try {
+      const short = result.differenceKind === "debt" ? difference.amountUsd : 0;
+      await createCustomerNotification({
+        customerId: customer.id,
+        type: "payment",
+        relatedType: "payment",
+        relatedId: result.settlementId,
+        title: "پارەکەت وەرگیرا",
+        message:
+          `$${result.paidUsd.toFixed(2)} بۆ ${box.boxCode} — وەسڵ ${result.settlementNumber}` +
+          (result.discountTotal > 0 ? ` · داشکاندن $${result.discountTotal.toFixed(2)}` : "") +
+          (short > 0 ? ` · ماوە $${short.toFixed(2)}` : ""),
+      });
+    } catch (err) {
+      appLogger.error("[BoxSettlement] customer notification failed", {
+        settlementId: result.settlementId, err,
+      });
+    }
+    return result;
   });
 }
 
@@ -690,6 +724,24 @@ export async function reverseBoxSettlement(
         reversalReason: reason.trim(),
       })
       .where(eq(boxSettlements.id, settlementId));
+
+    /**
+     * And when it is undone. This one matters more than the payment: the
+     * customer's balance goes back UP, and a debt reappearing with nothing
+     * to explain it is how somebody decides the company is cheating them.
+     */
+    try {
+      await createCustomerNotification({
+        customerId: settlement.customerId,
+        type: "payment",
+        relatedType: "payment",
+        relatedId: settlementId,
+        title: "واصڵێک هەڵوەشێنرایەوە",
+        message: `وەسڵ ${settlement.settlementNumber} — $${putBack.toFixed(2)} گەڕایەوە سەر حیسابەکەت · ${reason.trim()}`,
+      });
+    } catch (err) {
+      appLogger.error("[BoxSettlement] reversal notification failed", { settlementId, err });
+    }
 
     appLogger.info("[BoxSettlement] reversed", { settlementId, putBack, userId });
     return { ok: true as const };
