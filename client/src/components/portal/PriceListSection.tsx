@@ -875,15 +875,20 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
 // ---------------------------------------------------------------------------
 // Main section
 // ---------------------------------------------------------------------------
+/** The four things this section can be showing. */
+export type TabKey = "shipping" | "services" | "calculator" | "guide";
+
 interface PriceListSectionProps {
   /** "dark" forces the dark theme regardless of the global toggle — used by the
    * skin3 layout which has its own theme. Default: follow ThemeContext. */
   forceDark?: boolean;
   /** Override the default horizontal padding. */
   className?: string;
+  /** Which tab to open on. Defaults to the rates, which is the page's subject. */
+  defaultTab?: TabKey;
 }
 
-export function PriceListSection({ forceDark, className }: PriceListSectionProps) {
+export function PriceListSection({ forceDark, className, defaultTab }: PriceListSectionProps) {
   const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = forceDark ?? (theme === "dark");
@@ -895,8 +900,16 @@ export function PriceListSection({ forceDark, className }: PriceListSectionProps
     staleTime: 60_000,
   });
 
-  type TabKey = "shipping" | "services" | "calculator" | "guide";
-  const [activeTab, setActiveTab] = useState<TabKey>("shipping");
+  /**
+   * Which tab opens first.
+   *
+   * The rates by default, because that is the page's own subject. But
+   * "how much will mine cost" is the question customers actually telephone
+   * about, and it was two levels down — this section sits well below the
+   * fold, and the calculator was behind a tab inside it. /portal/calculator
+   * opens straight onto it.
+   */
+  const [activeTab, setActiveTab] = useState<TabKey>(defaultTab ?? "shipping");
   // Per-section "what is this?" helper — hidden until the ⓘ on the active tab
   // is tapped (never auto-shown).
   const [infoOpen, setInfoOpen] = useState(false);

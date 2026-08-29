@@ -229,3 +229,60 @@ describe("a greeting is found, not announced", () => {
     }
   });
 });
+
+/**
+ * "How much will mine cost?"
+ *
+ * The question customers telephone the office about more than any other, and
+ * the one somebody wants answered before deciding to ship at all. The answer
+ * existed and was two levels down: behind a tab, inside a section that sits
+ * well below the fold on the home page.
+ */
+describe("the price question has a direct answer", () => {
+  const home = read("pages/portal/PortalHome.tsx");
+  const section = read("components/portal/PriceListSection.tsx");
+  const page = read("pages/portal/PortalCalculator.tsx");
+  const app = read("App.tsx");
+
+  it("is the first thing in the quick actions", () => {
+    const actions = home.slice(home.indexOf("const quickActions = ["), home.indexOf("const quickActions = [") + 1400);
+    expect(actions).toContain('href: "/portal/calculator"');
+    const calc = actions.indexOf("/portal/calculator");
+    const terms = actions.indexOf("/portal/terms");
+    expect(calc, "the commonest question should not be behind the terms").toBeLessThan(terms);
+  });
+
+  it("has an address of its own, so it can be sent to somebody", () => {
+    expect(app).toContain('<Route path="/portal/calculator"');
+  });
+
+  it("opens straight onto the calculator", () => {
+    expect(page).toContain('defaultTab="calculator"');
+    expect(section).toContain('useState<TabKey>(defaultTab ?? "shipping")');
+  });
+
+  it("reuses the calculator rather than copying it", () => {
+    // A second copy of a price calculation is the worst possible thing to
+    // duplicate: two answers to the same question, and the customer met one
+    // of them.
+    expect(page).toContain("<PriceListSection");
+    // Nothing that would let it work out a price for itself.
+    for (const forbidden of ["chargeableWeight", "volumetricDivisor", "pricePerKg", "toFixed"]) {
+      expect(page, `the page must not compute: ${forbidden}`).not.toContain(forbidden);
+    }
+    // And small enough that it plainly is not a second implementation.
+    expect(page.length, "this page should be a wrapper, not a screen").toBeLessThan(1200);
+  });
+
+  it("leaves the section's own default alone", () => {
+    // The price list is still about the rates when opened from the home page.
+    expect(section).toContain('defaultTab ?? "shipping"');
+  });
+
+  it("asks in all four languages", () => {
+    const action = home.slice(home.indexOf("چەندم لەسەر دەبێت؟") - 200, home.indexOf("چەندم لەسەر دەبێت؟") + 600);
+    for (const lang of ["en:", "ar:", "zh:"]) {
+      expect(action.includes(lang), `the label is missing ${lang}`).toBe(true);
+    }
+  });
+});

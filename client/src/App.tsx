@@ -187,6 +187,7 @@ const StaffLogin = lazy(() => import("./pages/StaffLogin"));
 // The only page in the system anybody may read without an account.
 const PublicTracking = lazy(() => import("./pages/PublicTracking"));
 const PortalHome = lazy(() => import("./pages/portal/PortalHome"));
+const PortalCalculator = lazy(() => import("./pages/portal/PortalCalculator"));
 const PortalShipments = lazy(() => import("./pages/portal/PortalShipments"));
 const PortalBatchDetail = lazy(() => import("./pages/portal/PortalBatchDetail"));
 const PortalFinancial = lazy(() => import("./pages/portal/PortalFinancial"));
@@ -351,6 +352,8 @@ function Router() {
         <Route path="/portal/financial" component={PortalFinancial} />
         <Route path="/portal/profile" component={PortalProfile} />
         <Route path="/portal/search" component={PortalSearch} />
+        {/* The question customers telephone about most, at its own address. */}
+        <Route path="/portal/calculator" component={PortalCalculator} />
         <Route path="/portal/no-mark" component={PortalUnclaimedPackages} />
         <Route path="/portal/declare" component={PortalDeclarePackage} />
         <Route path="/portal/full-package" component={PortalFullPackage} />

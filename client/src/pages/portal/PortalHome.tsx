@@ -8,7 +8,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import {
-  Package, PackageCheck, Bell, ChevronRight, Truck, CheckCircle, Clock,
+  Package, PackageCheck, Bell, ChevronRight, Truck, CheckCircle, Clock, Calculator,
   AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
   CreditCard, MessageCircle, FileText, DollarSign,
   Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X,
@@ -459,6 +459,32 @@ const { t, language } = useLanguage();
   // Order is deliberate — set by the owner. Every destination already exists;
   // these tiles are shortcuts, not new pages.
   const quickActions = [
+    {
+      /**
+       * First, because it is the question customers telephone the office
+       * about more than any other — and the one a person wants answered
+       * before they decide to ship at all. The answer already existed, two
+       * levels down: behind a tab, inside a section below the fold.
+       */
+      icon: Calculator,
+      label: pickLang(language, { ku: "چەندم لەسەر دەبێت؟", en: "What will it cost?", ar: "كم ستكلفني؟", zh: "运费多少？" }),
+      href: "/portal/calculator",
+      info: {
+        title: pickLang(language, { ku: "حیسابکردنی نرخ", en: "Work out the price", ar: "احسب السعر", zh: "计算价格" }),
+        desc: pickLang(language, {
+          ku: "کێش و قەبارەی کاڵاکەت بنووسە و نرخەکەی پێش ناردن بزانە.",
+          en: "Enter the weight and size and see the price before you send.",
+          ar: "أدخل الوزن والحجم واعرف السعر قبل الإرسال.",
+          zh: "输入重量和尺寸，发货前先看价格。",
+        }),
+        example: pickLang(language, {
+          ku: "نموونە: کارتۆنێکی ٥ کگ بە ئاسمانی",
+          en: "e.g. a 5 kg carton by air",
+          ar: "مثال: كرتون ٥ كغ جوًا",
+          zh: "例如：5 公斤纸箱空运",
+        }),
+      },
+    },
     {
       icon: Scale,
       label: pickLang(language, { ku: "مەرج و ڕێسا", en: "Terms & rules", ar: "الشروط والأحكام", zh: "条款与规则" }),

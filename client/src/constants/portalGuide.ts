@@ -100,6 +100,30 @@ export const guideSections: GuideSection[] = [
     },
   },
   {
+    id: "calculator",
+    icon: Calculator,
+    gradient: "from-emerald-600 to-teal-700",
+    path: "/portal/calculator",
+    title: { ku: "حیسابکردنی نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "运费计算器" },
+    what: {
+      ku: "پێش ئەوەی هیچ بنێریت، کێش و قەبارەی کاڵاکەت بنووسە و بزانە چەندت لەسەر دەبێت",
+      en: "Before you send anything, enter the weight and size and see what it will cost",
+      ar: "قبل أن ترسل أي شيء، أدخل الوزن والحجم واعرف كم سيكلفك",
+      zh: "发货之前，输入重量和尺寸即可知道运费",
+    },
+    points: [
+      { ku: "کێشی تەرازوو و درێژی و پانی و بەرزی بنووسە — نرخەکە یەکسەر دەردەکەوێت", en: "Enter the scale weight and the length, width and height — the price appears at once", ar: "أدخل وزن الميزان والطول والعرض والارتفاع — يظهر السعر فورًا", zh: "输入称重与长宽高——价格立即显示" },
+      { ku: "بۆ ئاسمانی، ئەوەی گەورەترە — کێشی تەرازوو یان کێشی قەبارەیی — حیساب دەکرێت", en: "For air, whichever is greater — the scale weight or the volumetric weight — is what you pay for", ar: "في الشحن الجوي يُحتسب الأكبر بين وزن الميزان والوزن الحجمي", zh: "空运按实际重量与体积重中较大者计费" },
+      { ku: "بە دینار و دۆلار هەردووکیان پیشان دەدرێت", en: "Shown in both dinars and dollars", ar: "يُعرض بالدينار والدولار معًا", zh: "同时以第纳尔和美元显示" },
+    ],
+    example: {
+      ku: "لانە کارتۆنێکی ٥ کگی هەیە بە ٤٠×٣٠×٣٠ — لێرە دەینووسێت و پێش ئەوەی بینێرێت نرخەکە دەزانێت",
+      en: "Lana has a 5 kg carton at 40×30×30 — she enters it here and knows the price before sending",
+      ar: "لانا لديها كرتون ٥ كغ بمقاس ٤٠×٣٠×٣٠ — تدخله هنا وتعرف السعر قبل الإرسال",
+      zh: "拉娜有一个 5 公斤、40×30×30 的纸箱——在这里输入即可在发货前知道价格",
+    },
+  },
+  {
     id: "search",
     icon: Search,
     gradient: "from-blue-600 to-indigo-700",
