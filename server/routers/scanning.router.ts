@@ -4,6 +4,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
+import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { notifyPackageStatusChange } from "../services/notification.service";
@@ -223,6 +224,23 @@ export const scanningRouter = router({
               try {
                 const pkg = await db.getPackageById(input.packageId);
                 if (pkg?.batchId) await db.advanceBatchToDepot(pkg.batchId, ctx.user.id);
+
+                /**
+                 * "Your goods are in Erbil, come and collect."
+                 *
+                 * The one message most worth sending: it is what a customer
+                 * telephones the office to ask, and people here live in
+                 * WhatsApp rather than in an app. Silent unless the company
+                 * switched this event on and the customer opted in.
+                 *
+                 * Not awaited. A scan happens with somebody standing at a
+                 * bench holding a parcel, and Meta's reply time is not their
+                 * problem; the scan is the record, and a message can be sent
+                 * again.
+                 */
+                if (pkg?.customerId) {
+                  notifyReadyForCollection(pkg.customerId, 1).catch(() => {});
+                }
               } catch (e) {
                 // The scan is the record that matters. A batch that did not
                 // move can be moved by hand; a scan that failed cannot be

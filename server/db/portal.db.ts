@@ -1761,3 +1761,22 @@ export async function revokeCustomerFeature(customerId: number, feature: string)
   await db.delete(customerFeatures)
     .where(and(eq(customerFeatures.customerId, customerId), eq(customerFeatures.feature, feature)));
 }
+
+/**
+ * What this customer has agreed to be contacted about.
+ *
+ * Returns null when there is no row, and the caller must treat that as
+ * consent withheld rather than as a default. Somebody who has never opened
+ * the settings has never opted in — and WhatsApp in particular costs money
+ * and lands on a personal phone.
+ */
+export async function getCustomerNotificationPrefs(customerId: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select()
+    .from(customerNotificationPrefs)
+    .where(eq(customerNotificationPrefs.customerId, customerId))
+    .limit(1);
+  return row ?? null;
+}

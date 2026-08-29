@@ -1061,3 +1061,23 @@ export async function getOriginCountryIds(): Promise<Set<number>> {
   const rows = await getOriginCountries();
   return new Set(rows.map((c) => c.id));
 }
+
+/**
+ * The channel settings for one event, and nothing else.
+ *
+ * `notificationSettings` holds a row per event type, each with its own
+ * channel toggles and its own copy of the WhatsApp credentials — so an admin
+ * can switch a single kind of message on without opening the rest. Callers
+ * want exactly one row, and fetching all of them to find it is how a small
+ * table becomes a slow one.
+ */
+export async function getNotificationSettingFor(eventType: string) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select()
+    .from(notificationSettings)
+    .where(eq(notificationSettings.eventType, eventType))
+    .limit(1);
+  return row ?? null;
+}
