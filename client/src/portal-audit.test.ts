@@ -199,3 +199,100 @@ describe("all four languages carry the portal", () => {
     }
   });
 });
+
+/**
+ * No screen keeps its own copy of a status vocabulary.
+ *
+ * This is the fault that keeps coming back, in the same shape every time. A
+ * screen writes a small private map of the statuses it happens to know, the
+ * enum grows or the wording is improved somewhere else, and the private copy
+ * stays behind — so one page tells the customer something the next page
+ * contradicts, or shows them a raw database value.
+ *
+ * Found again on the two screens a customer uses most:
+ *
+ *   PortalHome said "ئامادەکردن" where the rest of the portal says "لە کۆگای
+ *   چین", used one word for a shipment reaching Iraq and another that reads
+ *   the same for it reaching the customer, and had no entry for at_depot at
+ *   all — so goods waiting in the Erbil depot displayed as `at_depot`.
+ *
+ *   PortalSearch knew seven of the package enum's nine values. The two it did
+ *   not know, returned and cancelled, reached the customer as Latin words on
+ *   a Kurdish page — on the screen somebody opens when they are already
+ *   worried about a parcel.
+ */
+describe("status wording has one home", () => {
+  const PORTAL_DIRS = [
+    path.join(SRC, "pages", "portal"),
+    path.join(SRC, "components", "portal"),
+  ];
+
+  const portalFiles = (): string[] => {
+    const out: string[] = [];
+    const walk = (dir: string) => {
+      if (!fs.existsSync(dir)) return;
+      for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, entry.name);
+        if (entry.isDirectory()) walk(full);
+        else if (entry.name.endsWith(".tsx")) out.push(full);
+      }
+    };
+    PORTAL_DIRS.forEach(walk);
+    return out;
+  };
+
+  it("no portal screen builds its own map of batch statuses", () => {
+    // A local object literal keyed by the batch ladder is the shape the drift
+    // always takes. Grouping, colours and icons are fine — those are
+    // presentation. Words are not.
+    const offenders: string[] = [];
+    for (const file of portalFiles()) {
+      const src = fs.readFileSync(file, "utf8");
+      // `preparing:` inside an object, alongside a translation call, is a
+      // wording map. `case "preparing":` in a switch is a colour or an icon.
+      const lines = src.split(/\r?\n/);
+      lines.forEach((line, i) => {
+        if (/^\s+preparing:\s*t\(/.test(line) || /^\s+preparing:\s*["'\u0600-\u06FF]/.test(line)) {
+          offenders.push(`${path.relative(SRC, file)}:${i + 1}`);
+        }
+      });
+    }
+    expect(offenders, `these keep their own batch wording — use STATUS_LABEL:\n${offenders.join("\n")}`)
+      .toEqual([]);
+  });
+
+  it("no portal screen builds its own map of package statuses", () => {
+    const offenders: string[] = [];
+    for (const file of portalFiles()) {
+      const src = fs.readFileSync(file, "utf8");
+      const lines = src.split(/\r?\n/);
+      lines.forEach((line, i) => {
+        if (/^\s+ready_for_delivery:\s*t\(/.test(line) || /^\s+in_batch:\s*t\(/.test(line)) {
+          offenders.push(`${path.relative(SRC, file)}:${i + 1}`);
+        }
+      });
+    }
+    expect(offenders, `these keep their own package wording — use PACKAGE_STATUS_LABEL:\n${offenders.join("\n")}`)
+      .toEqual([]);
+  });
+
+  it("the two screens that had drifted now read the shared maps", () => {
+    const home = fs.readFileSync(path.join(SRC, "pages", "portal", "PortalHome.tsx"), "utf8");
+    const search = fs.readFileSync(path.join(SRC, "pages", "portal", "PortalSearch.tsx"), "utf8");
+    expect(home).toContain("STATUS_LABEL[status as BatchStatus]");
+    expect(search).toContain("PACKAGE_STATUS_LABEL[status]");
+  });
+
+  it("the shared batch map still covers every stage a customer can be shown", () => {
+    // Checked against the imported object rather than its source text:
+    // at_depot was the one missing on the home screen, and it is the state
+    // the whole Erbil depot step exists to describe.
+    for (const status of ["preparing", "in_transit", "arrived", "customs", "at_depot", "delivered", "closed"] as const) {
+      const label = STATUS_LABEL[status];
+      expect(label, `${status} has no wording`).toBeTruthy();
+      for (const lang of ["ku", "en", "ar", "zh"] as const) {
+        expect(label[lang], `${status} has no ${lang}`).toBeTruthy();
+      }
+    }
+  });
+});

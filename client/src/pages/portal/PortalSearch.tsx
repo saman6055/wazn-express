@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatPortalDate, formatPortalDateTime } from "@/lib/portalClock";
@@ -137,18 +138,22 @@ export default function PortalSearch() {
     }
   };
 
-  const getStatusText = (status: string) => {
-    const statusMap: Record<string, string> = {
-      registered: t("registered") || "Registered",
-      in_batch: t("inBatch") || "In Batch",
-      in_transit: t("inTransit") || "In Transit",
-      customs_processing: t("customsProcessing") || "Customs",
-      ready_for_delivery: t("readyForDelivery") || "Ready",
-      out_for_delivery: t("outForDelivery") || "Out for Delivery",
-      delivered: t("delivered") || "Delivered",
-    };
-    return statusMap[status] || status;
-  };
+  /**
+   * The shared wording, not a seventh copy of it.
+   *
+   * This screen kept its own map and it knew seven of the enum's nine values.
+   * The two it did not know — returned and cancelled — reached the customer
+   * as the raw column value: the Latin word "returned" on a Kurdish page, on
+   * the one screen somebody uses when they are already worried about a
+   * parcel.
+   *
+   * lib/packageStatus.ts holds all nine, and portal-audit.test.ts fails if it
+   * and the enum ever disagree again.
+   */
+  const getStatusText = (status: string) =>
+    PACKAGE_STATUS_LABEL[status]
+      ? pickLang(language, PACKAGE_STATUS_LABEL[status]!)
+      : status;
 
   const getStatusColor = (status: string) => {
     switch (status) {

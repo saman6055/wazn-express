@@ -31,7 +31,7 @@ import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/po
 import { PhotoStack } from "@/components/PhotoStack";
 import { isDebt } from "@/lib/portalMoney";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
-import { stageOf } from "@/lib/shipmentFilters";
+import { stageOf, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
@@ -423,17 +423,24 @@ const { t, language } = useLanguage();
     }
   };
 
-  const getStatusText = (status: string) => {
-    const statusMap: Record<string, string> = {
-      preparing: t("preparing") || "Preparing",
-      in_transit: t("inTransit") || "In Transit",
-      arrived: t("arrived") || "Arrived",
-      customs: t("customs") || "Customs",
-      delivered: t("delivered") || "Delivered",
-      closed: t("closed") || "Closed",
-    };
-    return statusMap[status] || status;
-  };
+  /**
+   * The shared wording, not a second copy of it.
+   *
+   * This screen kept its own map and it had drifted twice over. It said
+   * "ئامادەکردن" where every other screen says "لە کۆگای چین"; it said
+   * "گەیشت" for arrived and "گەیەنرا" for delivered, which are the same word
+   * to a reader and hide the one difference a customer most wants — their
+   * goods reaching Iraq versus reaching them. And it had no entry for
+   * at_depot at all, so a shipment waiting in the Erbil depot showed the
+   * customer the raw database value `at_depot`.
+   *
+   * shipmentFilters.ts exists precisely because two screens naming these
+   * independently is how that happens. This one now reads it like the rest.
+   */
+  const getStatusText = (status: string) =>
+    STATUS_LABEL[status as BatchStatus]
+      ? pickLang(language, STATUS_LABEL[status as BatchStatus]!)
+      : status;
 
   const getShippingIcon = (type: string) => {
     if (type?.includes("sea")) return <Ship className="w-5 h-5" />;
