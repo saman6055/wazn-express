@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { soundManager } from "@/lib/soundManager";
 import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -138,6 +139,10 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
 
   const confirm = trpc.customerPortal.confirmBoxReceived.useMutation({
     onSuccess: () => {
+      // The one moment in the portal worth a sound: the customer has just
+      // said, on the record, that they have their goods. Two soft notes —
+      // this is somebody's phone, not a warehouse.
+      soundManager.playPortalDone();
       toast.success(label({
         ku: "سوپاس — وەرگرتنەکەت تۆمار کرا",
         en: "Thank you — your receipt is recorded",
@@ -147,7 +152,10 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
       utils.customerPortal.getMyDeliveryBoxes.invalidate();
       utils.customerPortal.getMyPackages.invalidate();
     },
-    onError: (e) => toast.error(e.message),
+    onError: (e) => {
+      soundManager.playPortalFailed();
+      toast.error(e.message);
+    },
     onSettled: () => setConfirming(null),
   });
 

@@ -5,14 +5,38 @@
 /** Long enough to kill the click, short enough that nothing sounds slow. */
 const ATTACK = 0.008;
 
+/** Where the reader's own choice about sound is kept. */
+const MUTE_KEY = "wazn-sound-enabled";
+
 class ScanSoundManager {
   private audioContext: AudioContext | null = null;
-  private _enabled: boolean = true;
+  /**
+   * Remembered, not reset every visit.
+   *
+   * This flag existed and lived only in memory, so somebody who turned the
+   * sound off got it back on the next page load — which is the same as not
+   * having the setting at all. It is read once here and written whenever it
+   * changes.
+   */
+  private _enabled: boolean = (() => {
+    try {
+      return localStorage.getItem(MUTE_KEY) !== "off";
+    } catch {
+      // Private windows and blocked storage: sound on, which is the default
+      // everywhere else too.
+      return true;
+    }
+  })();
 
   get enabled() { return this._enabled; }
 
   setEnabled(enabled: boolean) {
     this._enabled = enabled;
+    try {
+      localStorage.setItem(MUTE_KEY, enabled ? "on" : "off");
+    } catch {
+      // Nothing to do: the choice holds for this visit and no longer.
+    }
   }
 
   private getContext(): AudioContext | null {
@@ -109,6 +133,24 @@ class ScanSoundManager {
    * eighth of the volume the siren uses; and gone in a sixth of a second.
    */
   playNotice() { this.playTone(660, 0.16, 'sine', 0.12); }
+
+  /**
+   * The two the customer portal uses, and nothing else.
+   *
+   * A warehouse tool can be loud: it competes with a compressor and the
+   * operator chose to be there. A customer's phone is the opposite — it may
+   * be in a meeting, a mosque, or somebody's hand at midnight. So these are
+   * quiet, short, and only ever fire on something the customer just pressed.
+   * Nothing here plays on a page load or on anything arriving in the
+   * background.
+   *
+   * Two soft notes rising, which is the shape every phone on earth already
+   * uses for "that worked".
+   */
+  playPortalDone() { this.playSequence([587, 880], 0.11, 0.14, 'sine', 0.10); }
+
+  /** The same shape falling, and no louder. Nothing here is an emergency. */
+  playPortalFailed() { this.playSequence([494, 370], 0.12, 0.16, 'sine', 0.10); }
 
   /** Triple short beep — duplicate detected */
   playDuplicate() { this.playSequence([330, 330, 330], 0.1, 0.06, 'square'); }

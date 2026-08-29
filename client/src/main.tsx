@@ -151,6 +151,31 @@ async function mount() {
     }
   })();
   const initial = (["ku", "en", "ar", "zh"] as const).find((l) => l === stored) ?? "ku";
+
+  /**
+   * Start the page's own chunk downloading beside the locale, not after it.
+   *
+   * Getting to a customer's shipments used to be four round trips in a line:
+   * the entry chunk, then the locale it awaits, then React mounts and asks
+   * for the route's chunk, then that chunk asks for the data. Two of those
+   * four have nothing to say to each other, so they can happen at once.
+   *
+   * Deliberately fire-and-forget. If the preload fails the router will ask
+   * for the same module a moment later and get the real error then; a boot
+   * that dies because a speculative fetch failed would be a worse trade than
+   * the wait it was trying to save.
+   */
+  const path = typeof window !== "undefined" ? window.location.pathname : "";
+  const preload =
+    path === "/portal" || path === "/portal/"
+      ? import("./pages/portal/PortalHome")
+      : path.startsWith("/portal/shipments")
+        ? import("./pages/portal/PortalShipments")
+        : path.startsWith("/portal/financial")
+          ? import("./pages/portal/PortalFinancial")
+          : null;
+  preload?.catch(() => {});
+
   await loadLocale(initial);
 
   createRoot(document.getElementById("root")!).render(
