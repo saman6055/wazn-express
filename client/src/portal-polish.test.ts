@@ -171,3 +171,61 @@ describe("the portal says what happens next, not only what happened", () => {
     expect(home).toContain("/portal/shipments/${(shipment as any).id}");
   });
 });
+
+/**
+ * Greetings, and where they are allowed to appear.
+ *
+ * The owner's rule, and the right one: the cards must not tire the customer.
+ * Not on top of the screen, not a popup — a card found part-way down while
+ * scrolling, the way the rating card is.
+ */
+describe("a greeting is found, not announced", () => {
+  const card = read("components/portal/GreetingCard.tsx");
+  const home = read("pages/portal/PortalHome.tsx");
+
+  it("sits low on the page, beside the rating card", () => {
+    const greeting = home.indexOf("<GreetingCard");
+    const rating = home.indexOf("<DeliveryRatingCard");
+    const stats = home.indexOf("{/* Stats Cards */}");
+    expect(greeting).toBeGreaterThan(-1);
+    expect(greeting, "a greeting must not sit above the page's own content").toBeGreaterThan(stats);
+    expect(Math.abs(greeting - rating), "it belongs beside the rating card").toBeLessThan(600);
+  });
+
+  it("is never a notification", () => {
+    // The channel that carries "your goods are in Erbil" is the one thing a
+    // customer must not learn to ignore.
+    expect(card, "greetings must not push").not.toContain("push");
+    expect(card).not.toContain("createCustomerNotification");
+  });
+
+  it("takes no space at all on an ordinary day", () => {
+    expect(card).toContain("if (!data) return null;");
+  });
+
+  it("asks once, not on every focus", () => {
+    expect(card).toContain("refetchOnWindowFocus: false");
+    expect(card).toContain("staleTime:");
+  });
+
+  it("never breaks the page it sits on", () => {
+    // A greeting is the least important thing on this screen.
+    expect(card).toContain("retry: false");
+  });
+
+  it("is written in the reader's own language", () => {
+    expect(card).toContain('import { pickLang } from "@/lib/lang"');
+    expect(card).toContain("L(data.title)");
+    expect(card).toContain("L(data.message)");
+  });
+
+  it("pairs every colour for dark mode", () => {
+    // The project's own guard checks this too; this one names the file so a
+    // failure points at the card rather than at a list of line numbers.
+    for (const light of ["bg-amber-50", "bg-violet-50"]) {
+      const line = card.split("\n").find((l) => l.includes(light));
+      expect(line, `${light} not found`).toBeTruthy();
+      expect(line, `${light} has no dark counterpart`).toContain("dark:bg-");
+    }
+  });
+});

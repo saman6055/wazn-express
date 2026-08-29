@@ -10,6 +10,10 @@ import { buildBoxInvoice } from "@shared/boxInvoice";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
 import { isSafeAvatar, isSafeCustomerImage, MAX_CUSTOMER_IMAGES } from "@shared/customerImages";
+import { appLogger } from "../utils/logger";
+import { occasionsFor } from "@shared/occasions";
+import { milestoneReached, milestoneGreeting } from "@shared/milestones";
+import { getHijriOccasionDates } from "../services/hijriCalendar.service";
 
 /**
  * Photos a customer attaches, checked before they are stored.
@@ -639,6 +643,65 @@ export const customerPortalRouter = router({
       }),
 
     // Get notification count
+    /**
+     * Today's greeting for this customer, if there is one.
+     *
+     * Deliberately not a notification. The channel that carries "your goods
+     * are in Erbil, come and collect" is the one thing a customer must never
+     * learn to ignore, and a greeting a day is how that happens. This is a
+     * card found part-way down the portal instead — pleasant when it appears,
+     * costing nothing when it does not.
+     *
+     * Returns null on any ordinary day, which is most of them.
+     */
+    getGreeting: customerProcedure.query(async ({ ctx }) => {
+      const customerId = ctx.customerId;
+      try {
+        const customer = await db.getCustomerById(customerId);
+        if (!customer) return null;
+
+        const today = new Date();
+
+        // A milestone outranks a calendar day: it is about this customer
+        // alone, and it happens once.
+        const parcelCount = await db.countCustomerPackages(customerId);
+        const reached = milestoneReached(parcelCount, Number((customer as any).lastMilestoneCelebrated ?? 0));
+        if (reached) {
+          // Marked before it is shown, not after. A customer who opens the
+          // portal twice must not be congratulated twice, and losing one
+          // greeting to a refresh is a far smaller failure than repeating it.
+          await db.markMilestoneCelebrated(customerId, reached);
+          const greeting = milestoneGreeting(reached);
+          return { kind: "milestone" as const, key: `milestone_${reached}`, ...greeting };
+        }
+
+        const hijri = await getHijriOccasionDates(today.getFullYear());
+        const [occasion] = occasionsFor(
+          today,
+          {
+            gender: (customer as any).gender ?? null,
+            birthMonth: (customer as any).birthMonth ?? null,
+            birthDay: (customer as any).birthDay ?? null,
+          },
+          hijri,
+        );
+        if (!occasion) return null;
+        return {
+          kind: "occasion" as const,
+          key: occasion.key,
+          title: occasion.title,
+          message: occasion.message,
+        };
+      } catch (err) {
+        // A greeting is the least important thing on this screen. It must
+        // never be the reason the portal fails to load.
+        appLogger.warn("[Portal] greeting lookup failed", {
+          customerId, error: err instanceof Error ? err.message : String(err),
+        });
+        return null;
+      }
+    }),
+
     getNotificationCount: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
       return db.getCustomerNotificationCount(customerId);

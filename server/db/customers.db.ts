@@ -454,3 +454,35 @@ export async function getVipPricing(customerId: number, shippingType: 'air' | 's
     tier: vip.tier,
   };
 }
+
+/**
+ * How many parcels this customer has ever had with us.
+ *
+ * Counted rather than stored, so it cannot drift from the parcels
+ * themselves. One aggregate query; the milestone card asks for it once a
+ * page load and nothing else does.
+ */
+export async function countCustomerPackages(customerId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db
+    .select({ n: sql<number>`COUNT(*)` })
+    .from(packages)
+    .where(eq(packages.customerId, customerId));
+  return Number(row?.n ?? 0);
+}
+
+/**
+ * Remember that this customer has been congratulated up to here.
+ *
+ * Never moves backwards: two tabs open at once must not let a lower
+ * milestone overwrite a higher one and reopen a greeting already given.
+ */
+export async function markMilestoneCelebrated(customerId: number, milestone: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(customers)
+    .set({ lastMilestoneCelebrated: milestone })
+    .where(and(eq(customers.id, customerId), lt(customers.lastMilestoneCelebrated, milestone)));
+}

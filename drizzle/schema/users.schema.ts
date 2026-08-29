@@ -58,6 +58,24 @@ export const customers = mysqlTable("customers", {
   // password we handed out or one the customer chose, and this answers that
   // without keeping anything readable.
   passwordChangedAt: timestamp("passwordChangedAt"),
+
+  /**
+   * Day and month of birth, for the one greeting that is about them alone.
+   *
+   * Split rather than a date, and no year: the company has no business
+   * knowing anybody's age, and a birthday only ever needs the day. Both null
+   * until the customer chooses to say — never asked for, never required.
+   */
+  birthDay: int("birthDay"),
+  birthMonth: int("birthMonth"),
+
+  /**
+   * The highest parcel-count milestone this customer has been congratulated
+   * for. Without it, somebody at 120 parcels is told about their hundredth
+   * every time they open the portal, and a compliment that arrives twice was
+   * not meant the first time.
+   */
+  lastMilestoneCelebrated: int("lastMilestoneCelebrated").default(0),
   /**
    * Wrong passwords in the current run, and when the account reopens.
    *

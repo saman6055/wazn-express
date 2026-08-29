@@ -24,6 +24,7 @@ import { useState, useEffect } from "react";
 import { PriceListSection } from "@/components/portal/PriceListSection";
 import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
+import { GreetingCard } from "@/components/portal/GreetingCard";
 import { ReferralCard } from "@/components/portal/ReferralCard";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
@@ -1251,6 +1252,11 @@ const { t, language } = useLanguage();
 
       {/* Announcements Section */}
       <AnnouncementsSection isDark={isDark} language={language} t={t} />
+
+      {/* A word on the days worth one — birthdays, Newroz, Eid, or a
+          hundredth parcel. Down here on purpose: found while scrolling, like
+          the rating card, rather than announced at the top of the screen. */}
+      <GreetingCard isDark={isDark} language={language} />
 
       {/* Rate your delivery — a gentle inline card at the very bottom, never a
           blocking popup. Shows for the latest delivered, unrated package. */}

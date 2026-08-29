@@ -2674,6 +2674,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // deliveredById so a staff handover with a signature stays distinguishable
   // from the customer's own word.
   { name: "deliveryBoxes.customerConfirmedAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN customerConfirmedAt TIMESTAMP NULL" },
+  // Greetings: the day and month a customer chooses to share, and the last
+  // milestone they were congratulated for. All three are optional and all
+  // three default to nothing being known.
+  { name: "customers.birthDay", sql: "ALTER TABLE customers ADD COLUMN birthDay INT NULL" },
+  { name: "customers.birthMonth", sql: "ALTER TABLE customers ADD COLUMN birthMonth INT NULL" },
+  { name: "customers.lastMilestoneCelebrated", sql: "ALTER TABLE customers ADD COLUMN lastMilestoneCelebrated INT DEFAULT 0" },
 
   // Volumetric billing acknowledgement.
   //
