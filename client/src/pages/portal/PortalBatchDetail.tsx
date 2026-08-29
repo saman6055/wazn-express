@@ -1,5 +1,6 @@
 ﻿import { PortalLayout } from "@/components/portal/PortalLayout";
 import { pickLang } from "@/lib/lang";
+import { ShareParcelButton } from "@/components/portal/ShareParcelButton";
 import { copyText } from "@/lib/copyText";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { STATUS_LABEL, SHIPPING_TYPE_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
@@ -488,6 +489,11 @@ const { t, language } = useLanguage();
                       </div>
                     </div>
                     
+                    {/* Send this one parcel to whoever is receiving it. They
+                        need no account: the link shows that parcel and
+                        nothing else. */}
+                    <ShareParcelButton packageId={pkg.id} compact className="shrink-0" />
+
                     {/* Photo indicator button */}
                     {hasPhotos && (
                       <button

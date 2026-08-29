@@ -1285,6 +1285,27 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "packageShareLinks",
+    dependencies: ["packages", "customers"],
+    // A link a customer sends to whoever is receiving their parcel. The token
+    // is the whole of the security; see shared/shareLink.ts for what the
+    // holder is allowed to see.
+    sql: `CREATE TABLE IF NOT EXISTS packageShareLinks (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      token VARCHAR(64) NOT NULL UNIQUE,
+      packageId INT NOT NULL,
+      customerId INT NOT NULL,
+      expiresAt TIMESTAMP NOT NULL,
+      revokedAt TIMESTAMP NULL,
+      viewCount INT NOT NULL DEFAULT 0,
+      lastViewedAt TIMESTAMP NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_share_links_package (packageId),
+      INDEX idx_share_links_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "boxSettlements",
     // deliveryBoxes has no CREATE here yet — only ALTERs — so it is named as a
     // dependency for ordering and simply skipped if absent. No foreign keys,

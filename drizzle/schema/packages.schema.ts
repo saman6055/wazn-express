@@ -451,3 +451,40 @@ export type InsertCustomerDeclaredPackage = typeof customerDeclaredPackages.$inf
 
 
 // Customer Messages - پەیامەکانی کڕیار (Chat System)
+
+
+/**
+ * A link a customer can send to whoever is receiving their parcel.
+ *
+ * The recipient has no account and should not need one: they were sent a
+ * link, and it shows them one parcel and nothing else. See
+ * shared/shareLink.ts for exactly what that view contains.
+ *
+ * The token is the whole of the security, so it is long and random and never
+ * derived from the tracking number — that one a courier already knows and
+ * anybody could try. Every link expires, every link can be turned off, and
+ * every view is counted so a customer can see if a link has travelled
+ * further than they meant.
+ */
+export const packageShareLinks = mysqlTable("packageShareLinks", {
+  id: int("id").autoincrement().primaryKey(),
+  /** URL-safe random. Long enough that guessing is not a strategy. */
+  token: varchar("token", { length: 64 }).notNull().unique(),
+  packageId: int("packageId").notNull(),
+  /** Who made it, so only they can revoke it. */
+  customerId: int("customerId").notNull(),
+
+  expiresAt: timestamp("expiresAt").notNull(),
+  revokedAt: timestamp("revokedAt"),
+
+  viewCount: int("viewCount").default(0).notNull(),
+  lastViewedAt: timestamp("lastViewedAt"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  packageIdx: index("idx_share_links_package").on(table.packageId),
+  customerIdx: index("idx_share_links_customer").on(table.customerId),
+}));
+
+export type PackageShareLink = typeof packageShareLinks.$inferSelect;
+export type InsertPackageShareLink = typeof packageShareLinks.$inferInsert;

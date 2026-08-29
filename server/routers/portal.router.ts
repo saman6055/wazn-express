@@ -702,6 +702,32 @@ export const customerPortalRouter = router({
       }
     }),
 
+    /**
+     * A link to send to whoever is receiving this parcel.
+     *
+     * They have no account and should not need one: they were sent a link,
+     * and it shows them one parcel and nothing else. See shared/shareLink.ts
+     * for exactly what that view contains.
+     */
+    createShareLink: customerProcedure
+      .input(z.object({ packageId: z.number() }))
+      .mutation(async ({ input, ctx }) => {
+        const link = await db.createShareLink(input.packageId, ctx.customerId);
+        if (!link) throw new TRPCError({ code: "NOT_FOUND", message: "پاکێج نەدۆزرایەوە" });
+        return link;
+      }),
+
+    revokeShareLink: customerProcedure
+      .input(z.object({ token: z.string().min(10).max(64) }))
+      .mutation(async ({ input, ctx }) => {
+        await db.revokeShareLink(input.token, ctx.customerId);
+        return { ok: true };
+      }),
+
+    myShareLinks: customerProcedure.query(async ({ ctx }) => {
+      return db.listShareLinks(ctx.customerId);
+    }),
+
     getNotificationCount: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
       return db.getCustomerNotificationCount(customerId);

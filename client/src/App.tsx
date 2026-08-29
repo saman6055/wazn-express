@@ -184,6 +184,8 @@ const StaffLogin = lazy(() => import("./pages/StaffLogin"));
 // ---------------------------------------------------------------------------
 // Customer Portal routes
 // ---------------------------------------------------------------------------
+// The only page in the system anybody may read without an account.
+const PublicTracking = lazy(() => import("./pages/PublicTracking"));
 const PortalHome = lazy(() => import("./pages/portal/PortalHome"));
 const PortalShipments = lazy(() => import("./pages/portal/PortalShipments"));
 const PortalBatchDetail = lazy(() => import("./pages/portal/PortalBatchDetail"));
@@ -340,6 +342,9 @@ function Router() {
         <Route path="/tracking-alerts" component={TrackingAlerts} />
         <Route path="/customer-login" component={CustomerLogin} />
         <Route path="/staff-login" component={StaffLogin} />
+        {/* A link a customer sent to whoever is receiving their parcel. */}
+        <Route path="/t/:token" component={PublicTracking} />
+
         <Route path="/portal" component={PortalHome} />
         <Route path="/portal/shipments" component={PortalShipments} />
         <Route path="/portal/shipments/:id" component={PortalBatchDetail} />

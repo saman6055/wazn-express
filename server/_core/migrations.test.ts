@@ -18,7 +18,7 @@ describe("Migration System", () => {
       // screen can say how much is left while there is time to act. 92 was
       // dailySnapshots — the memory the morning brief compares
       // against. 91 was customerFeatures.
-      expect(TABLE_DEFINITIONS.length).toBe(97);
+      expect(TABLE_DEFINITIONS.length).toBe(98);
     });
     
     it("should have unique table names", () => {
