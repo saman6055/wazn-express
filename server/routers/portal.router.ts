@@ -795,8 +795,29 @@ export const customerPortalRouter = router({
           db.getPackageScans(input.packageId),
         ]);
         const events = [
-          ...history.map((h: any) => ({ kind: "status" as const, status: h.toStatus as string, at: h.changedAt as Date })),
-          ...scans.map((s: any) => ({ kind: "scan" as const, status: s.scanType as string, at: s.scannedAt as Date })),
+          ...history.map((h: any) => ({
+            kind: "status" as const, status: h.toStatus as string, at: h.changedAt as Date,
+            photoUrl: null as string | null,
+          })),
+          /**
+           * The scan's photo travels with it.
+           *
+           * Staff photograph parcels as they scan them and the customer was
+           * never shown any of it — the timeline read the scans and dropped
+           * the picture. Seeing their own goods on the shelf in Erbil is the
+           * cheapest trust the company can buy: nothing to say, nothing to
+           * promise, just the thing itself.
+           *
+           * Only the photo. The scan also carries a location, a device and
+           * the staff member who made it, and none of that is the customer's
+           * business.
+           */
+          ...scans.map((s: any) => ({
+            kind: "scan" as const,
+            status: s.scanType as string,
+            at: s.scannedAt as Date,
+            photoUrl: (s.photoUrl as string | null) ?? null,
+          })),
         ].filter((e) => e.status && e.at);
         events.sort((a, b) => new Date(a.at).getTime() - new Date(b.at).getTime());
         return events;

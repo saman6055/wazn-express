@@ -286,3 +286,54 @@ describe("the price question has a direct answer", () => {
     }
   });
 });
+
+/**
+ * The pictures were already being taken and the customer was never shown any
+ * of them. Seeing their own goods on a shelf in Erbil is the cheapest trust
+ * the company can buy: nothing to promise, just the thing itself.
+ */
+describe("the journey carries its photographs", () => {
+  const timeline = read("components/portal/PackageTrackingTimeline.tsx");
+  const router = fs.readFileSync(
+    path.join(HERE, "..", "..", "server", "routers", "portal.router.ts"), "utf8",
+  ).replace(/\r\n/g, "\n");
+
+  it("sends the scan's photo to the customer", () => {
+    // The timeline already read the scans and dropped the picture.
+    const fn = router.slice(router.indexOf("getPackageTimeline:"), router.indexOf("UNCLAIMED PACKAGES"));
+    expect(fn).toContain("photoUrl: (s.photoUrl as string | null) ?? null");
+  });
+
+  it("sends only the photo, not the rest of the scan", () => {
+    // A scan also carries a location, a device and the staff member who made
+    // it, and none of that is the customer's business.
+    const fn = router.slice(router.indexOf("getPackageTimeline:"), router.indexOf("UNCLAIMED PACKAGES"));
+    for (const internal of ["locationName", "deviceInfo", "scannedById", "latitude"]) {
+      expect(fn, `${internal} must not reach the customer`).not.toContain(internal);
+    }
+  });
+
+  it("shows one photo per stage, the first that recorded it", () => {
+    expect(timeline).toContain("const stagePhotos = new Map<string, string>()");
+    expect(timeline).toContain("if (photo && !stagePhotos.has(stage)) stagePhotos.set(stage, photo);");
+  });
+
+  it("shows nothing where nobody took a picture", () => {
+    expect(timeline).toContain("{photo && (isDone || isCurrent) && (");
+  });
+
+  it("does not show a photo for a stage not yet reached", () => {
+    // A picture beside a future step would read as having already happened.
+    const block = timeline.slice(timeline.indexOf("{photo &&"), timeline.indexOf("{photo &&") + 400);
+    expect(block).toContain("isDone || isCurrent");
+  });
+
+  it("opens full size, and closes on a key as well as a tap", () => {
+    expect(timeline).toContain('data-testid="timeline-photo-viewer"');
+    expect(timeline).toContain('e.key === "Escape"');
+  });
+
+  it("does not load every picture before they are looked at", () => {
+    expect(timeline).toContain('loading="lazy"');
+  });
+});

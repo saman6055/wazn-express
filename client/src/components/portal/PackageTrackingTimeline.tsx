@@ -1,6 +1,8 @@
-import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship, AlertCircle } from "lucide-react";
+import { useState } from "react";
+import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship, AlertCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { onImageError } from "@/lib/imageFallback";
 import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
 import { progressIndex, stageReachedBy, stagesFor, type JourneyStage } from "@shared/packageJourney";
 
@@ -83,10 +85,24 @@ export function PackageTrackingTimeline({
   // The journey this parcel actually has. One registered in Erbil never sees
   // the China warehouse, so that step is not merely un-reached — it is not
   // coming, and showing it pending promises something that will not happen.
+  const [openPhoto, setOpenPhoto] = useState<string | null>(null);
+
   const journey = { registeredAtOrigin };
   const stages = STAGES.filter((s) => stagesFor(journey).includes(s.key as JourneyStage));
   // First timestamp per canonical stage, from real events.
   const stageDates = new Map<string, string | Date>();
+  /**
+   * The picture taken at each step, where somebody took one.
+   *
+   * Staff photograph parcels as they scan them, and the customer was never
+   * shown any of it. Seeing their own goods on the shelf in Erbil is the
+   * cheapest trust the company can buy — nothing to promise, just the thing
+   * itself.
+   *
+   * First photo per stage. A stage scanned three times has three, and the
+   * first is the one that recorded it arriving.
+   */
+  const stagePhotos = new Map<string, string>();
   for (const e of events ?? []) {
     const raw = RAW_TO_STAGE[e.status];
     if (!raw) continue;
@@ -94,6 +110,8 @@ export function PackageTrackingTimeline({
     // registering it there is the same moment as arriving.
     const stage = stageReachedBy(raw as JourneyStage, journey);
     if (!stageDates.has(stage)) stageDates.set(stage, e.at);
+    const photo = (e as any).photoUrl;
+    if (photo && !stagePhotos.has(stage)) stagePhotos.set(stage, photo);
   }
 
   const normalizedCurrent = RAW_TO_STAGE[currentStatus] ?? currentStatus;
@@ -167,6 +185,7 @@ export function PackageTrackingTimeline({
   }
 
   return (
+    <>
     <div className={cn("space-y-0", className)}>
       {stages.map((stage, index) => {
         const isDone = index < safeIndex || isDeliveredAll;
@@ -174,6 +193,7 @@ export function PackageTrackingTimeline({
         const Icon = stage.icon;
         const label = pickLang(language, stage.label);
         const date = stageDates.get(stage.key);
+        const photo = stagePhotos.get(stage.key);
 
         return (
           <div key={stage.key} className="flex gap-3">
@@ -208,6 +228,25 @@ export function PackageTrackingTimeline({
                   {fmtDate(date, language)}
                 </p>
               )}
+
+              {/* The picture taken at that step. Small, and only where one
+                  exists — this is evidence beside a date, not a gallery. */}
+              {photo && (isDone || isCurrent) && (
+                <button
+                  type="button"
+                  onClick={() => setOpenPhoto(photo)}
+                  className="mt-1.5 block overflow-hidden rounded-lg border border-border"
+                  data-testid={`timeline-photo-${stage.key}`}
+                >
+                  <img
+                    src={photo}
+                    alt=""
+                    loading="lazy"
+                    onError={onImageError}
+                    className="h-20 w-28 object-cover transition-transform hover:scale-105"
+                  />
+                </button>
+              )}
               {isCurrent && stage.key === "in_transit" && estimatedDelivery && (
                 <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
@@ -220,5 +259,29 @@ export function PackageTrackingTimeline({
         );
       })}
     </div>
+
+      {/* Full size, for somebody who wants to look properly. A plain overlay
+          rather than a dialog: it exists to show one picture and go. */}
+      {openPhoto && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 p-4"
+          onClick={() => setOpenPhoto(null)}
+          role="button"
+          tabIndex={0}
+          onKeyDown={(e) => { if (e.key === "Escape" || e.key === "Enter") setOpenPhoto(null); }}
+          data-testid="timeline-photo-viewer"
+        >
+          <button
+            type="button"
+            onClick={() => setOpenPhoto(null)}
+            className="absolute end-4 top-4 rounded-full bg-white/10 p-2 text-white"
+            aria-label={pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
+          >
+            <X className="h-5 w-5" />
+          </button>
+          <img src={openPhoto} alt="" onError={onImageError} className="max-h-full max-w-full rounded-xl object-contain" />
+        </div>
+      )}
+    </>
   );
 }
