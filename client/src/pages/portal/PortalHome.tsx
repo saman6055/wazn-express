@@ -25,6 +25,7 @@ import { PriceListSection } from "@/components/portal/PriceListSection";
 import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { GreetingCard } from "@/components/portal/GreetingCard";
+import { MyShareLinks } from "@/components/portal/MyShareLinks";
 import { ReferralCard } from "@/components/portal/ReferralCard";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
@@ -1278,6 +1279,11 @@ const { t, language } = useLanguage();
 
       {/* Announcements Section */}
       <AnnouncementsSection isDark={isDark} language={language} t={t} />
+
+      {/* The links they have handed out, and the way to close one. A link
+          that cannot be seen cannot be turned off. Renders nothing when
+          nothing has been shared, which is most customers. */}
+      <MyShareLinks isDark={isDark} language={language} />
 
       {/* A word on the days worth one — birthdays, Newroz, Eid, or a
           hundredth parcel. Down here on purpose: found while scrolling, like

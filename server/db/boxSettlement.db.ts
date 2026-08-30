@@ -14,6 +14,7 @@ import { appLogger } from "../utils/logger";
 import { recordPaymentReceived, adjustCharge, recordPackageChargeWithoutInvoice } from "./finance.db";
 import { createCustomerNotification } from "./portal.db";
 import { markLinkedOrdersCharged } from "./packages.db";
+import { notifyPaymentReceived } from "../services/customerWhatsApp.service";
 import {
   settlementTotals,
   differenceOf,
@@ -595,6 +596,21 @@ export async function createBoxSettlement(
         settlementId: result.settlementId, err,
       });
     }
+
+    /**
+     * And on WhatsApp, where people here actually read things.
+     *
+     * The portal notice above reaches somebody who opens the portal. This
+     * reaches everybody else, which for money is the difference between a
+     * customer who knows their payment was recorded and one who telephones
+     * to ask.
+     *
+     * Silent unless the company switched it on and the customer opted in,
+     * and never awaited: the money is committed, and Meta's reply time is
+     * nobody's problem but its own.
+     */
+    notifyPaymentReceived(customer.id, result.paidUsd, box.boxCode).catch(() => {});
+
     return result;
   });
 }

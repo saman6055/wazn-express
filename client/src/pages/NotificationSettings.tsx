@@ -21,7 +21,8 @@ import {
   AlertTriangle,
   Settings,
   ChevronDown,
-  ChevronUp
+  ChevronUp,
+  Send,
 } from "lucide-react";
 import { toast } from "sonner";
 import {
@@ -111,6 +112,21 @@ type NotificationSetting = {
   customBody?: string;
 };
 
+/**
+ * What each refusal means, and what to do about it.
+ *
+ * The reasons come back as codes on purpose: a wrong token and an unapproved
+ * template look identical from outside and need completely different fixing,
+ * and "it failed" sends somebody back to Meta with nothing to go on.
+ */
+const WHATSAPP_TEST_REASONS: Record<string, string> = {
+  unconfigured: "تۆکن یان ژمارە دانەنراوە — سەرەتا خەزنی بکە",
+  bad_number: "ژمارەکە دروست نییە — بە شێوەی ٠٧٥٠… بینووسە",
+  rejected: "مێتا ڕەتی کردەوە — تێمپلەیت پەسەند نەکراوە، یان تۆکن بەسەرچووە",
+  unreachable: "نەگەیشتە مێتا — ئینتەرنێتی سێرڤەر بپشکنە",
+  disabled: "کوژاوەیە",
+};
+
 export default function NotificationSettings() {
     const { t } = useTranslation();
 const [settings, setSettings] = useState<Record<string, NotificationSetting>>({});
@@ -132,6 +148,17 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
     onError: (error: any) => {
       toast.error(`Failed to save: ${error.message}`);
     },
+  });
+
+  const [testTo, setTestTo] = useState("");
+  const [testTemplate, setTestTemplate] = useState("wazn_ready_for_collection");
+  const [testResult, setTestResult] = useState<
+    { ok: true; to: string | null } | { ok: false; reason: string } | null
+  >(null);
+
+  const testWhatsapp = trpc.notifications.testWhatsapp.useMutation({
+    onSuccess: (r) => setTestResult(r.ok ? { ok: true, to: r.to } : { ok: false, reason: r.reason }),
+    onError: (e) => setTestResult({ ok: false, reason: e.message }),
   });
 
   const saveWhatsappConfig = trpc.notifications.saveWhatsappConfig.useMutation({
@@ -314,6 +341,77 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
             <span className="text-sm text-muted-foreground">
               Get your credentials from <a href="https://business.facebook.com/settings/whatsapp-business-accounts" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Meta Business Suite</a>
             </span>
+          </div>
+
+          {/* Prove it works, rather than hoping.
+
+              Setting WhatsApp up means a Meta business account, a verified
+              number, and templates approved one at a time — any of which can
+              be almost right. Without this the first anybody learns that
+              something is wrong is a customer who never got told their goods
+              had arrived, which is the silence this channel was added to end. */}
+          <div className="mt-6 rounded-lg border p-4 space-y-3">
+            <div>
+              <Label htmlFor="whatsapp-test-to">تاقیکردنەوە · Send a test message</Label>
+              <p className="text-sm text-muted-foreground mt-0.5">
+                ژمارەی خۆت بنووسە. یەک نامە دەنێردرێت و ئەنجامەکەی لێرە دەردەکەوێت.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-end gap-3">
+              <div className="space-y-1.5">
+                <Label htmlFor="whatsapp-test-to" className="text-xs text-muted-foreground">ژمارە</Label>
+                <Input
+                  id="whatsapp-test-to"
+                  placeholder="07501234567"
+                  dir="ltr"
+                  className="w-52"
+                  value={testTo}
+                  onChange={(e) => setTestTo(e.target.value)}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label htmlFor="whatsapp-test-template" className="text-xs text-muted-foreground">تێمپلەیت</Label>
+                <Input
+                  id="whatsapp-test-template"
+                  dir="ltr"
+                  className="w-64"
+                  value={testTemplate}
+                  onChange={(e) => setTestTemplate(e.target.value)}
+                />
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => testWhatsapp.mutate({
+                  to: testTo,
+                  template: testTemplate,
+                  language: "ar",
+                  // The two the ready-for-collection template expects.
+                  parameters: ["AZ001", "1"],
+                })}
+                disabled={testWhatsapp.isPending || !testTo || !testTemplate}
+                data-testid="whatsapp-test-send"
+              >
+                {testWhatsapp.isPending
+                  ? <Loader2 className="me-2 h-4 w-4 animate-spin" />
+                  : <Send className="me-2 h-4 w-4" />}
+                ناردنی تاقیکردنەوە
+              </Button>
+            </div>
+
+            {/* The reason, plainly. A wrong token and an unapproved template
+                fail identically from outside and need different fixing. */}
+            {testResult && (
+              <p
+                className={testResult.ok
+                  ? "text-sm font-medium text-emerald-600 dark:text-emerald-400"
+                  : "text-sm font-medium text-red-600 dark:text-red-400"}
+                data-testid="whatsapp-test-result"
+              >
+                {testResult.ok
+                  ? `نێردرا بۆ ${testResult.to}`
+                  : WHATSAPP_TEST_REASONS[testResult.reason] ?? testResult.reason}
+              </p>
+            )}
           </div>
         </CardContent>
       </Card>
