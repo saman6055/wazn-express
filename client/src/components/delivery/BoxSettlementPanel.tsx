@@ -117,10 +117,10 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
 
   const intents: ParcelIntent[] = useMemo(
     () => parcels.map((p) => ({
-      packageId: p.packageId,
-      held: p.packageId in held,
-      correctionUsd: Number(corrections[p.packageId]?.amount || 0),
-      discountUsd: Number(lineDiscounts[p.packageId]?.amount || 0) + (cutByParcel.get(p.packageId) ?? 0),
+      lineId: p.lineId,
+      held: p.lineId in held,
+      correctionUsd: Number(corrections[p.lineId]?.amount || 0),
+      discountUsd: Number(lineDiscounts[p.lineId]?.amount || 0) + (cutByParcel.get(p.lineId) ?? 0),
     })),
     [parcels, held, corrections, lineDiscounts, cutByParcel],
   );
@@ -186,17 +186,17 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
   }
   if (!data?.box) return null;
 
-  const notCharged = parcels.filter((p) => p.notChargedYet && !(p.packageId in held));
+  const notCharged = parcels.filter((p) => p.notChargedYet && !(p.lineId in held));
   const blocked = notCharged.length > 0;
   const needsReason = difference.reasonRequired && !differenceReason.trim();
   const discountNeedsReason = boxCut > 0 && !discountReason;
   const canSettle = !blocked && !needsReason && !discountNeedsReason && parcels.length > 0;
 
-  const toggleHold = (packageId: number) => {
+  const toggleHold = (lineId: number) => {
     setHeld((h) => {
       const next = { ...h };
-      if (packageId in next) delete next[packageId];
-      else next[packageId] = "";
+      if (lineId in next) delete next[lineId];
+      else next[lineId] = "";
       return next;
     });
   };
@@ -205,13 +205,13 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
     settle.mutate({
       boxId,
       lines: parcels.map((p) => ({
-        packageId: p.packageId,
-        held: p.packageId in held,
-        heldReason: held[p.packageId] || undefined,
-        correctionUsd: Number(corrections[p.packageId]?.amount || 0) || undefined,
-        correctionReason: corrections[p.packageId]?.reason || undefined,
-        discountUsd: Number(lineDiscounts[p.packageId]?.amount || 0) || undefined,
-        discountReason: lineDiscounts[p.packageId]?.reason,
+        lineId: p.lineId,
+        held: p.lineId in held,
+        heldReason: held[p.lineId] || undefined,
+        correctionUsd: Number(corrections[p.lineId]?.amount || 0) || undefined,
+        correctionReason: corrections[p.lineId]?.reason || undefined,
+        discountUsd: Number(lineDiscounts[p.lineId]?.amount || 0) || undefined,
+        discountReason: lineDiscounts[p.lineId]?.reason,
       })),
       boxDiscount: boxCut > 0 ? boxDiscount : undefined,
       boxDiscountReason: boxCut > 0 ? discountReason : undefined,
@@ -285,13 +285,13 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
               </thead>
               <tbody>
                 {totals.lines.map((line) => {
-                  const parcel = parcels.find((p) => p.packageId === line.packageId)!;
+                  const parcel = parcels.find((p) => p.lineId === line.lineId)!;
                   const isHeld = line.held;
                   return (
                     <tr
-                      key={line.packageId}
+                      key={line.lineId}
                       className={cn("border-b last:border-0", isHeld && "bg-red-50 dark:bg-red-950/30")}
-                      data-testid={`settle-row-${line.packageId}`}
+                      data-testid={`settle-row-${line.lineId}`}
                     >
                       <td className="p-2">
                         <span className="font-mono text-xs" dir="ltr">
@@ -325,8 +325,8 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                         <div className="flex items-center justify-center gap-1">
                           <Button
                             type="button" variant="ghost" size="sm" className="h-7 px-2"
-                            onClick={() => toggleHold(line.packageId)}
-                            data-testid={`settle-hold-${line.packageId}`}
+                            onClick={() => toggleHold(line.lineId)}
+                            data-testid={`settle-hold-${line.lineId}`}
                             title={t({ ku: "تەحدید", en: "Set aside", ar: "استبعاد", zh: "搁置" })}
                           >
                             {isHeld ? <Undo2 className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}

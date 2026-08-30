@@ -1,4 +1,4 @@
-import { eq, and, desc, inArray, sql, gte, lte } from "drizzle-orm";
+import { eq, and, or, desc, inArray, sql, gte, lte } from "drizzle-orm";
 import { getDb } from "./connection";
 import {
   boxSettlements,
@@ -6,7 +6,7 @@ import {
   ledgerTransactions,
   customerAccounts,
 } from "../../drizzle/schema/finance.schema";
-import { deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
+import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders } from "../../drizzle/schema";
 import { customers, users } from "../../drizzle/schema/users.schema";
 import { batches } from "../../drizzle/schema/batches.schema";
 import type { BoxSettlement } from "../../drizzle/schema/finance.schema";
@@ -72,7 +72,19 @@ async function nextSettlementNumber(tx: any, when: Date): Promise<string> {
 }
 
 export interface BoxParcelView {
-  packageId: number;
+  /**
+   * The box item. The only identity every line has.
+   *
+   * This was the package id, which quietly cost money: a full-package or
+   * commission order scanned into a box carries an order id and no package
+   * row, so it disappeared from the settlement and the customer's payment
+   * was recorded against nothing.
+   */
+  lineId: number;
+  /** Set when the item is an ordinary parcel. */
+  packageId: number | null;
+  /** Set when it is a full-package or commission order instead. */
+  fullPackageOrderId: number | null;
   trackingNumber: string | null;
   packageCode: string | null;
   description: string | null;
@@ -149,25 +161,49 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
 
   // Every ledger row that touches these parcels, in one query rather than one
   // per parcel — a box can hold forty.
-  const ledgerRows = packageIds.length
+  /**
+   * Every ledger row touching anything in this box, in one query.
+   *
+   * Both references, because a box holds both kinds. An ordinary parcel is
+   * billed as a package; a full-package or commission order is billed in two
+   * parts against the order — the goods when it was approved, the freight
+   * separately — and reading only the package reference left those items
+   * looking free.
+   */
+  const orderIds = Array.from(new Set(
+    items.map((r) => r.item.fullPackageOrderId).filter((id): id is number => !!id),
+  ));
+  const ledgerRows = (packageIds.length || orderIds.length)
     ? await db
         .select({
+          referenceType: ledgerTransactions.referenceType,
           referenceId: ledgerTransactions.referenceId,
           transactionType: ledgerTransactions.transactionType,
           amountUsd: ledgerTransactions.amountUsd,
         })
         .from(ledgerTransactions)
-        .where(and(
-          eq(ledgerTransactions.referenceType, "package"),
-          inArray(ledgerTransactions.referenceId, packageIds),
+        .where(or(
+          packageIds.length
+            ? and(
+                eq(ledgerTransactions.referenceType, "package"),
+                inArray(ledgerTransactions.referenceId, packageIds),
+              )
+            : undefined,
+          orderIds.length
+            ? and(
+                inArray(ledgerTransactions.referenceType, ["full_package", "commission"]),
+                inArray(ledgerTransactions.referenceId, orderIds),
+              )
+            : undefined,
         ))
     : [];
 
-  const charged = new Map<number, number>();
-  const discounted = new Map<number, number>();
-  const seenAnyCharge = new Set<number>();
+  const charged = new Map<string, number>();
+  const discounted = new Map<string, number>();
+  const seenAnyCharge = new Set<string>();
   for (const row of ledgerRows) {
-    const id = Number(row.referenceId);
+    // Keyed by both halves: package 9 and order 9 are different debts.
+    const id = `${row.referenceType}:${row.referenceId}`;
     const amount = Number(row.amountUsd || 0);
     const type = String(row.transactionType);
     if ((CHARGE_TYPES as readonly string[]).includes(type) || type === "ADJUSTMENT_DEBIT") {
@@ -185,27 +221,41 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
 
   // What earlier settlements already paid. Reversed ones are excluded: their
   // money was handed back out of the ledger and must not still count.
-  const settledRows = packageIds.length
+  /**
+   * What earlier settlements already paid, per box item.
+   *
+   * Keyed on the item rather than the package for the same reason everything
+   * else here is: a full-package order in a box has no package to key on.
+   * Reversed settlements are excluded — their money went back out of the
+   * ledger and must not still count as paid.
+   */
+  const itemIds = items.map((r) => Number(r.item.id));
+  const settledRows = itemIds.length
     ? await db
         .select({
-          packageId: boxSettlementLines.packageId,
+          boxItemId: boxSettlementLines.boxItemId,
           paid: sql<string>`SUM(${boxSettlementLines.paidUsd})`,
         })
         .from(boxSettlementLines)
         .innerJoin(boxSettlements, eq(boxSettlements.id, boxSettlementLines.settlementId))
         .where(and(
-          inArray(boxSettlementLines.packageId, packageIds),
+          inArray(boxSettlementLines.boxItemId, itemIds),
           eq(boxSettlements.status, "confirmed"),
         ))
-        .groupBy(boxSettlementLines.packageId)
+        .groupBy(boxSettlementLines.boxItemId)
     : [];
-  const settled = new Map(settledRows.map((r) => [Number(r.packageId), Number(r.paid || 0)]));
+  const settledByItem = new Map(settledRows.map((r) => [Number(r.boxItemId), Number(r.paid || 0)]));
 
   const parcels: BoxParcelView[] = items
-    .filter((r) => r.item.packageId)
     .map((r) => {
-      const packageId = Number(r.item.packageId);
-      const fromLedger = charged.get(packageId);
+      const packageId = r.item.packageId ? Number(r.item.packageId) : null;
+      const orderId = r.item.fullPackageOrderId ? Number(r.item.fullPackageOrderId) : null;
+      const key = packageId !== null
+        ? `package:${packageId}`
+        : orderId !== null
+          ? [`full_package:${orderId}`, `commission:${orderId}`].find((k) => charged.has(k)) ?? `full_package:${orderId}`
+          : "";
+      const fromLedger = charged.get(key);
       /**
        * The parcel's own price, when the ledger has not been told about it.
        *
@@ -219,10 +269,12 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
       const chargedUsd = round2(
         fromLedger !== undefined ? fromLedger : Number(r.item.calculatedCostUsd || 0),
       );
-      const discountedUsd = round2(discounted.get(packageId) ?? 0);
-      const settledUsd = round2(settled.get(packageId) ?? 0);
+      const discountedUsd = round2(discounted.get(key) ?? 0);
+      const settledUsd = round2(settledByItem.get(Number(r.item.id)) ?? 0);
       return {
+        lineId: Number(r.item.id),
         packageId,
+        fullPackageOrderId: orderId,
         trackingNumber: r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null,
         packageCode: r.item.packageCode ?? r.pkg?.packageCode ?? null,
         description: r.item.description ?? null,
@@ -236,7 +288,7 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
          * this parcel yet. Not a refusal — settling posts the charge and the
          * payment together, which is what actually happened.
          */
-        notChargedYet: !seenAnyCharge.has(packageId),
+        notChargedYet: !seenAnyCharge.has(key),
       };
     });
 
@@ -285,7 +337,8 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
 }
 
 export interface SettlementLineInput {
-  packageId: number;
+  /** The box item, from the view. Not the package: some items have none. */
+  lineId: number;
   held?: boolean;
   heldReason?: string;
   correctionUsd?: number;
@@ -350,8 +403,8 @@ export async function createBoxSettlement(
   if (!box) throw new Error("بۆکس نەدۆزرایەوە");
   if (!customer) throw new Error("کڕیاری بۆکس نەدۆزرایەوە");
 
-  const requested = new Set(input.lines.map((l) => l.packageId));
-  const parcels = view.parcels.filter((p) => requested.has(p.packageId));
+  const requested = new Set(input.lines.map((l) => l.lineId));
+  const parcels = view.parcels.filter((p) => requested.has(p.lineId));
   if (parcels.length === 0) throw new Error("هیچ پارسێلێک هەڵنەبژێردراوە");
 
   /**
@@ -367,16 +420,36 @@ export async function createBoxSettlement(
    * actually happened, recorded together. Held parcels are left alone: they
    * are not being paid for, so there is nothing to charge for.
    */
-  const toCharge = parcels.filter(
-    (p) => p.notChargedYet
-      && p.chargedUsd > 0
-      && !input.lines.find((l) => l.packageId === p.packageId)?.held,
-  );
+  /**
+   * Only an ordinary parcel can be charged from here.
+   *
+   * A full-package or commission order carries its money on the order and is
+   * charged by the order flow; posting a package charge for it would be a
+   * second bill for the same goods. Its line is still settled — the payment
+   * is recorded against it — which is the part that was missing.
+   */
+  const settling = (p: BoxParcelView) =>
+    !input.lines.find((l) => l.lineId === p.lineId)?.held && p.chargedUsd > 0;
 
-  // A discount on the whole box is spread over its parcels first, then added
-  // to whatever was already forgiven on a line of its own. Both end up in the
-  // same column, which is what keeps the report and the balance honest.
-  const held = input.lines.filter((l) => l.held).map((l) => l.packageId);
+  const toCharge = parcels.filter((p) => p.packageId !== null && p.notChargedYet && settling(p));
+
+  /** Parcels deliberately left off this receipt; nothing is forgiven on them. */
+  const held = input.lines.filter((l) => l.held).map((l) => l.lineId);
+
+  /**
+   * Orders are never charged from here.
+   *
+   * A full-package or commission order is billed in two parts, and the
+   * system already knows it: the goods at the moment the order is approved
+   * (`isCharged`), and the freight separately (`isShippingCharged`). The box
+   * item's own `calculatedCostUsd` is the goods price — a copy of what the
+   * ledger already holds — so posting it here would bill the customer twice
+   * for the same things.
+   *
+   * What the settlement does for an order is settle it: read what the ledger
+   * says is outstanding, and record the payment against it.
+   */
+
   const boxCut = input.boxDiscount ? boxDiscountUsd(input.boxDiscount, parcels) : 0;
   if (boxCut > 0 && !input.boxDiscountReason) {
     throw new Error("هۆکاری داشکاندن پێویستە — بەبێ ئەو، ڕاپۆرتی داشکاندن بێ واتایە");
@@ -384,10 +457,10 @@ export async function createBoxSettlement(
   const boxCutByParcel = allocateBoxDiscount(boxCut, parcels, held);
 
   const intents: ParcelIntent[] = input.lines.map((l) => ({
-    packageId: l.packageId,
+    lineId: l.lineId,
     held: l.held,
     correctionUsd: l.correctionUsd,
-    discountUsd: round2((l.discountUsd ?? 0) + (boxCutByParcel.get(l.packageId) ?? 0)),
+    discountUsd: round2((l.discountUsd ?? 0) + (boxCutByParcel.get(l.lineId) ?? 0)),
   }));
   const totals = settlementTotals(parcels, intents);
 
@@ -421,7 +494,7 @@ export async function createBoxSettlement(
       await recordPackageChargeWithoutInvoice(
         customer.id,
         customer.customerCode ?? String(customer.id),
-        parcel.packageId,
+        parcel.packageId!,
         parcel.chargedUsd,
         `${box.boxCode} — ${parcel.trackingNumber ?? parcel.packageCode ?? ""}`.trim(),
         userId,
@@ -430,33 +503,34 @@ export async function createBoxSettlement(
       );
       // The flag every other charging path checks, so this parcel cannot be
       // charged a second time when its batch is eventually marked delivered.
-      await tx.update(packages).set({ isCharged: true }).where(eq(packages.id, parcel.packageId));
+      await tx.update(packages).set({ isCharged: true }).where(eq(packages.id, parcel.packageId!));
     }
     // And the other flag, on the other path. Batch delivery charges plain
     // packages and full-package orders separately, guarded separately; the
     // line above stops one of them and this stops the other.
     if (toCharge.length > 0) {
-      await markLinkedOrdersCharged(toCharge.map((p) => p.packageId), tx);
+      await markLinkedOrdersCharged(toCharge.map((p) => p.packageId!), tx);
     }
 
     // 1. Corrections change the price, so they go in before anything is paid.
     for (const line of input.lines) {
       const delta = Number(line.correctionUsd ?? 0);
       if (delta === 0) continue;
-      const parcel = parcels.find((p) => p.packageId === line.packageId);
-      if (!parcel) continue;
+      const parcel = parcels.find((p) => p.lineId === line.lineId);
+      // Only an ordinary parcel has a ledger charge to adjust.
+      if (!parcel || parcel.packageId === null) continue;
       const [chargeTxn] = await tx
         .select({ id: ledgerTransactions.id })
         .from(ledgerTransactions)
         .where(and(
           eq(ledgerTransactions.referenceType, "package"),
-          eq(ledgerTransactions.referenceId, line.packageId),
+          eq(ledgerTransactions.referenceId, parcel.packageId),
           inArray(ledgerTransactions.transactionType, [...CHARGE_TYPES]),
         ))
         .orderBy(desc(ledgerTransactions.id))
         .limit(1);
       if (!chargeTxn) {
-        throw new Error(`ناتوانرێت نرخی پارسێلی ${line.packageId} ڕاست بکرێتەوە — بارکردنی سەرەکی نەدۆزرایەوە`);
+        throw new Error(`ناتوانرێت نرخی پارسێلی ${parcel.packageCode ?? parcel.lineId} ڕاست بکرێتەوە — بارکردنی سەرەکی نەدۆزرایەوە`);
       }
       await adjustCharge(
         chargeTxn.id,
@@ -476,7 +550,16 @@ export async function createBoxSettlement(
     if (discountTotal > 0) {
       await postDiscountCredits(tx, {
         customerId: customer.id,
-        lines: totals.lines.filter((l) => l.discountUsd > 0),
+        // A discount credit is posted against the parcel it forgave, so the
+        // report can add it up by batch and by code. An item with no parcel —
+        // a full-package order — has its discount recorded on the settlement
+        // line and credited to the account without a parcel reference.
+        lines: totals.lines
+          .filter((l) => l.discountUsd > 0)
+          .map((l) => ({
+            packageId: parcels.find((p) => p.lineId === l.lineId)?.packageId ?? null,
+            discountUsd: l.discountUsd,
+          })),
         extraUsd: difference.kind === "discount" ? difference.amountUsd : 0,
         reason: input.differenceReason ?? "",
         userId,
@@ -529,10 +612,13 @@ export async function createBoxSettlement(
     const settlementId = Number(inserted[0].insertId);
 
     for (const line of totals.lines) {
-      const source = input.lines.find((l) => l.packageId === line.packageId);
+      const source = input.lines.find((l) => l.lineId === line.lineId);
+      const parcel = parcels.find((p) => p.lineId === line.lineId);
       await tx.insert(boxSettlementLines).values({
         settlementId,
-        packageId: line.packageId,
+        boxItemId: line.lineId,
+        packageId: parcel?.packageId ?? null,
+        fullPackageOrderId: parcel?.fullPackageOrderId ?? null,
         chargedUsd: line.chargedUsd.toFixed(2),
         correctionUsd: line.correctionUsd.toFixed(2),
         correctionReason: source?.correctionReason ?? null,
@@ -627,7 +713,7 @@ async function postDiscountCredits(
   tx: any,
   args: {
     customerId: number;
-    lines: Array<{ packageId: number; discountUsd: number }>;
+    lines: Array<{ packageId: number | null; discountUsd: number }>;
     extraUsd: number;
     reason: string;
     userId: number;

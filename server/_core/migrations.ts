@@ -1350,7 +1350,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
     sql: `CREATE TABLE IF NOT EXISTS boxSettlementLines (
       id INT AUTO_INCREMENT PRIMARY KEY,
       settlementId INT NOT NULL,
-      packageId INT NOT NULL,
+      boxItemId INT NULL,
+      packageId INT NULL,
+      fullPackageOrderId INT NULL,
       chargedUsd DECIMAL(12, 2) NOT NULL,
       correctionUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       correctionReason TEXT,
@@ -2701,6 +2703,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "customers.birthDay", sql: "ALTER TABLE customers ADD COLUMN birthDay INT NULL" },
   { name: "customers.birthMonth", sql: "ALTER TABLE customers ADD COLUMN birthMonth INT NULL" },
   { name: "customers.lastMilestoneCelebrated", sql: "ALTER TABLE customers ADD COLUMN lastMilestoneCelebrated INT DEFAULT 0" },
+  // A settlement line began keyed on the package, which left a full-package
+  // or commission item — which has an order id and no package row — out of
+  // the settlement entirely, and its money uncollected.
+  { name: "boxSettlementLines.boxItemId", sql: "ALTER TABLE boxSettlementLines ADD COLUMN boxItemId INT NULL" },
+  { name: "boxSettlementLines.fullPackageOrderId", sql: "ALTER TABLE boxSettlementLines ADD COLUMN fullPackageOrderId INT NULL" },
+  { name: "boxSettlementLines.packageId.nullable", sql: "ALTER TABLE boxSettlementLines MODIFY COLUMN packageId INT NULL" },
 
   // Volumetric billing acknowledgement.
   //

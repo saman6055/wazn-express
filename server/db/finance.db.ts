@@ -684,6 +684,22 @@ export async function recordPackageChargeWithoutInvoice(
    *  `recordPaymentReceived`: box settlement posts a charge and its payment
    *  together, and half of that pair committing alone is worse than neither. */
   existingTx?: DbTx,
+  /**
+   * What is being charged for.
+   *
+   * A package by default, which is what every existing caller means. A box
+   * can also hold a full-package or commission order — which carries its
+   * money on the order and has no package row at all — and settling one
+   * without posting its charge leaves the payment on the account with
+   * nothing to clear.
+   *
+   * Parameterised rather than copied: the balance arithmetic below is the
+   * part that must never have two versions.
+   */
+  kind: {
+    transactionType: "DEBIT_PACKAGE" | "DEBIT_FULL_PACKAGE" | "DEBIT_COMMISSION";
+    referenceType: "package" | "full_package" | "commission";
+  } = { transactionType: "DEBIT_PACKAGE", referenceType: "package" },
 ): Promise<LedgerTransaction> {
   if (amountUsd < 0) throw new Error("Amount cannot be negative");
   if (amountUsd === 0) throw new Error("Amount must be greater than zero");
@@ -721,14 +737,14 @@ export async function recordPackageChargeWithoutInvoice(
     const txnResult = await tx.insert(ledgerTransactions).values({
       accountId: account.id,
       transactionNumber: generateTransactionNumber(),
-      transactionType: 'DEBIT_PACKAGE' as any,
+      transactionType: kind.transactionType as any,
       amountUsd: amountUsd.toFixed(2),
       amountIqd: '0',
       balanceBeforeUsd: currentBalanceUsd.toFixed(2),
       balanceAfterUsd: newBalanceUsd.toFixed(2),
       balanceBeforeIqd: currentBalanceIqd.toFixed(0),
       balanceAfterIqd: currentBalanceIqd.toFixed(0),
-      referenceType: 'package' as any,
+      referenceType: kind.referenceType as any,
       referenceId: packageId,
       description,
       invoiceId: invoiceId ?? null,

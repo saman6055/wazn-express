@@ -107,7 +107,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
     if (!boxId) return;
     settle.mutate({
       boxId,
-      lines: parcels.map((p) => ({ packageId: p.packageId })),
+      lines: parcels.map((p) => ({ lineId: p.lineId })),
       amountIqd: Number(iqd) || undefined,
       amountUsd: nothingEntered ? totals.dueUsd : (Number(usd) || undefined),
       exchangeRate: rateNum || undefined,

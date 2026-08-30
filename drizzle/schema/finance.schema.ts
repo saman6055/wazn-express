@@ -861,7 +861,23 @@ export type InsertBoxSettlement = typeof boxSettlements.$inferInsert;
 export const boxSettlementLines = mysqlTable("boxSettlementLines", {
   id: int("id").autoincrement().primaryKey(),
   settlementId: int("settlementId").notNull(),
-  packageId: int("packageId").notNull(),
+
+  /**
+   * The box item this line settles — always present, and the only identity
+   * that is.
+   *
+   * This began keyed on the package, which was wrong and quietly cost money:
+   * a full-package or commission order scanned into a box carries its order
+   * id and no package row at all, so it vanished from the settlement
+   * entirely. A $350 box would offer $150 to collect and record nothing at
+   * all against the other $200 the customer had just handed over.
+   */
+  boxItemId: int("boxItemId"),
+
+  /** Set when the item is an ordinary parcel. */
+  packageId: int("packageId"),
+  /** Set when it is a full-package or commission order instead. */
+  fullPackageOrderId: int("fullPackageOrderId"),
 
   /** What the ledger said this parcel cost when the settlement was made. */
   chargedUsd: decimal("chargedUsd", { precision: 12, scale: 2 }).notNull(),

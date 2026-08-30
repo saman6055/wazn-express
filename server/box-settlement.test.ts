@@ -145,7 +145,7 @@ describe("settling a parcel that was never charged writes both sides", () => {
 
   it("leaves a parcel that is being set aside alone", () => {
     // Nobody is paying for it, so there is nothing to charge for.
-    expect(create()).toContain("?.held,");
+    expect(create()).toContain("?.held");
   });
 
   it("falls back to the price the box was built with", () => {
@@ -155,7 +155,7 @@ describe("settling a parcel that was never charged writes both sides", () => {
   });
 
   it("still says which parcels were in that state", () => {
-    expect(view()).toContain("notChargedYet: !seenAnyCharge.has(packageId)");
+    expect(view()).toContain("notChargedYet: !seenAnyCharge.has(key)");
   });
 });
 
@@ -312,7 +312,7 @@ describe("a box settled early is not charged again when its batch closes", () =>
   });
 
   it("sets the flag on the linked orders, which stops the order path", () => {
-    expect(create()).toContain("markLinkedOrdersCharged(toCharge.map((p) => p.packageId), tx)");
+    expect(create()).toContain("markLinkedOrdersCharged(toCharge.map((p) => p.packageId!), tx)");
   });
 
   it("sets both order flags, because the two paths read different ones", () => {

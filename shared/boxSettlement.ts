@@ -23,7 +23,14 @@ export const DISCOUNT_REASONS = ["damaged", "late", "goodwill", "loyal", "roundi
 export type DiscountReason = (typeof DISCOUNT_REASONS)[number];
 
 export interface ParcelMoney {
-  packageId: number;
+  /**
+   * Whatever the caller uses to identify one line — the box item, in
+   * practice. Deliberately not the package: a full-package or commission
+   * order in a box has an order id and no package row, and keying on the
+   * package left those items out of the settlement and their money
+   * uncollected.
+   */
+  lineId: number;
   /** Chargeable kilos, for a discount expressed as a lower rate per kilo. */
   weightKg?: number;
   /** Ledger debits net of any correction already applied. The price. */
@@ -36,7 +43,7 @@ export interface ParcelMoney {
 
 /** What the operator has decided to do with one parcel, on this settlement. */
 export interface ParcelIntent {
-  packageId: number;
+  lineId: number;
   /** Set aside: not on this receipt, still owed. */
   held?: boolean;
   /** Signed change to the price itself, because the price was wrong. */
@@ -53,7 +60,7 @@ export function outstandingOf(parcel: ParcelMoney): number {
 }
 
 export interface SettlementLineResult {
-  packageId: number;
+  lineId: number;
   chargedUsd: number;
   correctionUsd: number;
   discountUsd: number;
@@ -92,10 +99,10 @@ export function settlementTotals(
   parcels: ParcelMoney[],
   intents: ParcelIntent[] = [],
 ): SettlementTotals {
-  const byId = new Map(intents.map((i) => [i.packageId, i]));
+  const byId = new Map(intents.map((i) => [i.lineId, i]));
 
   const lines = parcels.map((parcel): SettlementLineResult => {
-    const intent = byId.get(parcel.packageId);
+    const intent = byId.get(parcel.lineId);
     const correctionUsd = round2(intent?.correctionUsd ?? 0);
     const held = intent?.held === true;
     // A held parcel is not being argued about today; forgiving money on a
@@ -110,7 +117,7 @@ export function settlementTotals(
     const paidUsd = held ? 0 : payable;
 
     return {
-      packageId: parcel.packageId,
+      lineId: parcel.lineId,
       chargedUsd: round2(parcel.chargedUsd),
       correctionUsd,
       discountUsd,
@@ -204,7 +211,7 @@ export function allocateBoxDiscount(
   heldPackageIds: number[] = [],
 ): Map<number, number> {
   const held = new Set(heldPackageIds);
-  const eligible = parcels.filter((p) => !held.has(p.packageId) && outstandingOf(p) > 0);
+  const eligible = parcels.filter((p) => !held.has(p.lineId) && outstandingOf(p) > 0);
   const out = new Map<number, number>();
   if (!(amountUsd > 0) || eligible.length === 0) return out;
 
@@ -215,14 +222,14 @@ export function allocateBoxDiscount(
   let assigned = 0;
   for (const parcel of eligible) {
     const share = round2((outstandingOf(parcel) / total) * capped);
-    out.set(parcel.packageId, share);
+    out.set(parcel.lineId, share);
     assigned = round2(assigned + share);
   }
 
   const remainder = round2(capped - assigned);
   if (remainder !== 0) {
     const biggest = eligible.reduce((a, b) => (outstandingOf(b) > outstandingOf(a) ? b : a));
-    out.set(biggest.packageId, round2((out.get(biggest.packageId) ?? 0) + remainder));
+    out.set(biggest.lineId, round2((out.get(biggest.lineId) ?? 0) + remainder));
   }
   return out;
 }

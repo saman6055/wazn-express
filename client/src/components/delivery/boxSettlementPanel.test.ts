@@ -92,7 +92,7 @@ describe("the exceptions are there, and each one costs a reason", () => {
   });
 
   it("lets a disputed parcel be set aside rather than blocking the rest", () => {
-    expect(panel).toContain('data-testid={`settle-hold-${line.packageId}`}');
+    expect(panel).toContain('data-testid={`settle-hold-${line.lineId}`}');
     expect(panel).toContain("const toggleHold");
   });
 });

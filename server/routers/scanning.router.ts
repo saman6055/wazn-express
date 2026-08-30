@@ -1044,7 +1044,9 @@ export const deliveryBoxRouter = router({
     .input(z.object({
       boxId: z.number(),
       lines: z.array(z.object({
-        packageId: z.number(),
+        // The box item, not the package: a full-package or commission item
+        // has an order id and no package row at all.
+        lineId: z.number(),
         held: z.boolean().optional(),
         heldReason: z.string().max(500).optional(),
         correctionUsd: z.number().optional(),
