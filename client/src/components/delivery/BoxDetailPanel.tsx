@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
+import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
 import { CopyButton } from "@/components/CopyButton";
 
@@ -671,6 +672,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                       {item.itemType === 'full_package' && item.calculatedCostUsd && (
                         <p className="text-muted-foreground">{t("delivery.sellingPrice")}: <span className="font-mono font-semibold text-purple-600 dark:text-purple-300">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
                       )}
+                      {/* Whatever was written on the order when it was taken.
+                          The person packing the box is the one who needs it. */}
+                      <OrderNote note={(item as any).orderNote} compact className="mt-1.5" />
                     </TableCell>
                     {/* Source (batch code / order code). sourceInfo comes as
                         "CM-A + CM-B - باچ AIR-2026-028" (or just "باچ …") —

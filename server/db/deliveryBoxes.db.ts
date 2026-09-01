@@ -302,6 +302,13 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
  */
 export type BoxItemWithAdvance = DeliveryBoxItem & {
   advanceAppliedUsd: string;
+  /**
+   * What somebody wrote on the order when they took it.
+   *
+   * Needed by whoever is packing the box, and it never used to leave the
+   * order — so the only person who ever saw it was the one who wrote it.
+   */
+  orderNote: string | null;
   // Product photo resolved from the linked commission/full-package order
   // (productImage / first of productImages) or, for regular packages, the
   // first package photo. null when the source order/package has no image.
@@ -486,10 +493,25 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     const productImage = imageFor(item);
     const { volumeCbm, shippingType } = measureFor(item);
 
+    /**
+     * The note somebody wrote when the order was taken.
+     *
+     * Written at the moment somebody knew something the system did not, and
+     * needed later by whoever is packing the box. It never left the order,
+     * so the only person who ever saw it was the one who wrote it.
+     *
+     * Both routes to an order, because which one a parcel happens to be
+     * linked by must not decide whether the note is seen.
+     */
+    const orderNote =
+      (item.fullPackageOrderId ? fpById.get(item.fullPackageOrderId)?.notes : null) ??
+      (item.trackingNumber ? fpsByTracking.get(item.trackingNumber)?.[0]?.notes : null) ??
+      null;
+
     // Direct FP-order scan path — single order owns the item, no sibling sum.
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, orderNote };
     }
 
     // Tracking-based path — sum every linked order's advance, but skip
@@ -497,10 +519,10 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
       const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
-      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType };
+      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, orderNote };
     }
 
-    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType };
+    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, orderNote };
   });
 }
 

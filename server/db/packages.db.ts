@@ -1647,6 +1647,9 @@ export async function getBatchManifest(batchId: number): Promise<BatchManifestRo
           orderType: fullPackageOrders.orderType,
           productName: fullPackageOrders.productName,
           productImage: fullPackageOrders.productImage,
+          // Both routes to an order must carry it, or which route a parcel
+          // happens to be linked by decides whether the note is seen.
+          notes: fullPackageOrders.notes,
         })
         .from(packageOrderLinks)
         .innerJoin(fullPackageOrders, eq(packageOrderLinks.fullPackageOrderId, fullPackageOrders.id))
@@ -1661,6 +1664,9 @@ export async function getBatchManifest(batchId: number): Promise<BatchManifestRo
           orderType: fullPackageOrders.orderType,
           productName: fullPackageOrders.productName,
           productImage: fullPackageOrders.productImage,
+          // Written by whoever took the order, needed by whoever has the
+          // parcel in their hands. It was reaching nobody.
+          notes: fullPackageOrders.notes,
         })
         .from(fullPackageOrders)
         .where(inArray(fullPackageOrders.trackingNumber, trackingNumbers))
@@ -1688,6 +1694,15 @@ export async function getBatchManifest(batchId: number): Promise<BatchManifestRo
       trackingNumber: row.trackingNumber,
       customerCode: row.customerCode,
       customerName: row.customerName,
+      /**
+       * The note somebody wrote on the order.
+       *
+       * A note is written at the moment somebody knows something the system
+       * does not — this one is fragile, this one belongs with another — and
+       * it is needed later by whoever is holding the box. It was never
+       * leaving the order.
+       */
+      note: (order as any)?.notes ?? null,
       weightKg: row.weightKg,
       volumeCbm: row.volumeCbm,
       status: row.status,

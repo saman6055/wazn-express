@@ -76,30 +76,44 @@ describe("batch shipment identifiers", () => {
   });
 
   it("the batch list carries every field the edit dialog writes back", () => {
-    // The edit dialog is populated from a row of the LIST query, not from a
-    // fresh fetch of the batch. That query names its columns explicitly, so
-    // one left out arrives as undefined, renders as an empty field, and is
-    // saved back over a real value. Trackings and carton count are sent
-    // unconditionally by the form, so for those the loss is silent.
+    /**
+     * Derived from the router, not from a list kept by hand.
+     *
+     * The edit dialog is populated from a row of the LIST query, not from a
+     * fresh fetch of the batch. A column left out of that query arrives as
+     * undefined, renders as an empty field, and the operator sees their own
+     * work gone.
+     *
+     * This began as a hand-written list of the shipment fields, and four
+     * more slipped past it — notes among them, which is what the owner
+     * reported: written, saved, and blank the next time the dialog was
+     * opened. So the list is now taken from what the update procedure
+     * actually accepts, and a field added there can never again be missed
+     * here.
+     */
+    const router = read("server/routers/batches.router.ts");
+    const seg = router.slice(router.indexOf("update: staffProcedure"), router.indexOf("update: staffProcedure") + 2500);
+    const accepts = [...new Set([...seg.matchAll(/^ {8}(\w+):/gm)].map((m) => m[1]!))];
+    expect(accepts.length, "could not read the update procedure").toBeGreaterThan(10);
+
     const listQuery = slice(
       read("server/db/batches.db.ts"),
       "export async function getAllBatches",
       "export async function getBatchById",
       "getAllBatches"
     );
-    for (const field of [
-      "awbNumber",
-      "containerNumber",
-      "vesselName",
-      "airlineName",
-      "flightNumber",
-      "shippingCompany",
-      "shipmentTrackings",
-      "cartonCount",
-    ]) {
-      expect(listQuery, `${field} must be selected — the edit form writes it back`)
-        .toContain(`${field}: batches.${field}`);
-    }
+    const schema = read("drizzle/schema/batches.schema.ts");
+
+    const missing = accepts.filter((field) => {
+      if (field === "id") return false;
+      // Only real columns of the batch. Tiers and per-customer pricing are
+      // separate tables the dialog loads on its own.
+      if (!schema.includes(`${field}: `)) return false;
+      return !listQuery.includes(`${field}: batches.${field}`);
+    });
+
+    expect(missing, `the edit form writes these and the list does not return them: ${missing.join(", ")}`)
+      .toEqual([]);
   });
 
   it("the new columns are additive and nullable, safe on live data", () => {

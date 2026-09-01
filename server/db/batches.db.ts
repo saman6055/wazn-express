@@ -193,6 +193,16 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
     pricePerKg: batches.pricePerKg,
     pricePerCbm: batches.pricePerCbm,
     useTieredPricing: batches.useTieredPricing,
+    /**
+     * The edit dialog is filled from a row of THIS query, not from a fresh
+     * fetch of the batch. Anything missing here opens as an empty field and
+     * is written back empty — which is how a batch note somebody had typed
+     * carefully came back blank the next time it was opened.
+     */
+    notes: batches.notes,
+    shippingCost: batches.shippingCost,
+    chargedWeightKg: batches.chargedWeightKg,
+    chargedCbm: batches.chargedCbm,
     departureDate: batches.departureDate,
     estimatedArrival: batches.estimatedArrival,
     actualArrival: batches.actualArrival,

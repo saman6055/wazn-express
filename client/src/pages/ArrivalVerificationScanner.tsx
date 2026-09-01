@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
+import { OrderNote } from "@/components/scanner/OrderNote";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -295,6 +296,8 @@ export default function ArrivalVerificationScanner() {
             customerCode: pkg.customerCode || "نەناسراو",
             customerName: pkg.customerName || "",
             orderCode: pkg.orderCode,
+            // Carried through the session so the verified list can show it too.
+            note: (pkg as any).note ?? null,
             photo: pkg.photo,
             weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
             cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
@@ -767,6 +770,10 @@ export default function ArrivalVerificationScanner() {
                                       {pkg.weight && <span className="mx-2">•</span>}
                                       {pkg.weight && <span>{pkg.weight}kg</span>}
                                     </div>
+                                    {/* These are the boxes somebody has to go
+                                        and find. A note about one matters
+                                        more here than anywhere. */}
+                                    <OrderNote note={(pkg as any).note} compact className="mt-1.5" />
                                   </div>
                                   <XCircle className="h-5 w-5 shrink-0 text-yellow-500 dark:text-yellow-400" />
                                 </div>

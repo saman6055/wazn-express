@@ -14,6 +14,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useLocation } from "wouter";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
+import { OrderNote } from "@/components/scanner/OrderNote";
 
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
@@ -1872,6 +1873,11 @@ export default function QuickRegister() {
                     </div>
                     <span className="font-bold text-lg">{t("quickRegister.summary")}</span>
                   </div>
+
+                  {/* Whatever somebody wrote on this order when they took it.
+                      Above the tiles, because it is an instruction and the
+                      tiles are only facts. */}
+                  <OrderNote note={(foundOrder as any)?.order?.notes} className="mb-2.5" />
 
                   {/* Info tiles stack in the narrow sidebar (2-up on mid widths) */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 text-sm">
