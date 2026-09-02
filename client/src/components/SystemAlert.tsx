@@ -131,9 +131,20 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
           className={cn(
             "fixed z-[100] flex p-4",
             current.autoDismissMs
-              ? // No backdrop and no pointer capture: the caret stays in the
+              ? // Bottom left, and physically left rather than start: the app
+                // runs right-to-left, so `start` would put it back on the side
+                // the eye has just left.
+                //
+                // It sat top-centre and was not being read. On this screen the
+                // eye lives on the scan box and the row of figures under it —
+                // the top of the window is where the browser's own furniture
+                // is, and anything appearing there is furniture too. The
+                // bottom corner is out of the way of the work and still inside
+                // the field of view.
+                //
+                // No backdrop and no pointer capture: the caret stays in the
                 // scan box and the gun keeps firing underneath it.
-                "inset-x-0 top-0 justify-center pointer-events-none"
+                "bottom-0 left-0 pointer-events-none"
               : "inset-0 items-center justify-center bg-black/60",
           )}
           onMouseDown={(e) => {
@@ -151,10 +162,28 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
                 ? // Plain and small: a line of text that appears, is read
                   // without stopping, and goes. Anything grander here reads
                   // as a fault, and this is not one.
-                  "pointer-events-auto w-auto max-w-lg rounded-lg shadow-md animate-in fade-in slide-in-from-top-2"
+                  // A red ring rather than the card's own hairline: at a
+                  // glance across a warehouse it is the ring that says
+                  // something appeared, before a word of it is read.
+                  "relative pointer-events-auto w-auto max-w-lg rounded-lg border-red-400 shadow-lg ring-2 ring-red-500/60 dark:border-red-700 dark:ring-red-500/50 animate-in fade-in slide-in-from-bottom-2"
                 : "w-full max-w-md rounded-xl shadow-2xl",
             )}
           >
+            {/* A red circle on the corner, pulsing once into view.
+                Peripheral vision reads movement and colour long before it
+                reads text, so this is what actually gets somebody to look
+                down — the words are for after they have. */}
+            {current.autoDismissMs && (
+              <span
+                aria-hidden="true"
+                data-testid="system-alert-marker"
+                className="absolute -top-1.5 -left-1.5 flex h-3.5 w-3.5"
+              >
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-red-500 opacity-75 dark:bg-red-400" />
+                <span className="relative inline-flex h-3.5 w-3.5 rounded-full bg-red-500 ring-2 ring-card dark:bg-red-400" />
+              </span>
+            )}
+
             <div
               className={cn(
                 "flex items-center gap-3",

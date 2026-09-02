@@ -311,3 +311,69 @@ describe("the transient notice is quiet enough to hear all day", () => {
     expect(body).toContain("exponentialRampToValueAtTime(volume, at + ATTACK)");
   });
 });
+
+/**
+ * Where the transient notice sits, after it was reported unread.
+ *
+ * It appeared centred at the top of the window. That is where the browser's
+ * own furniture lives — address bar, tabs, the page's own header — and a
+ * notice there is read as more furniture. Meanwhile the eye on this screen
+ * lives on the scan box and the row of figures under it, and never goes up.
+ *
+ * The bottom corner is out of the way of the work and still inside the field
+ * of view, and a red circle that pulses once is what actually turns a head:
+ * peripheral vision reads movement and colour well before it reads words.
+ */
+describe("the transient notice sits where it will be seen", () => {
+  const transient = slice(alert, "current.autoDismissMs\n              ?", ": \"inset-0", "transient position");
+
+  it("sits at the bottom of the window, not the top", () => {
+    expect(transient).toContain("bottom-0");
+    expect(transient, "the top is where the browser's own furniture is").not.toContain("top-0");
+  });
+
+  it("sits on the left, physically, not on the start edge", () => {
+    // The app runs right-to-left, so `start-0` would put it back on the side
+    // the eye has just left.
+    expect(transient).toContain("left-0");
+    expect(transient).not.toContain("start-0");
+    expect(transient, "centred is what it was, and it was not read").not.toContain("justify-center");
+  });
+
+  it("still lets the scan gun fire underneath it", () => {
+    // The whole reason this form exists. A notice that swallows a keystroke
+    // costs a parcel.
+    expect(transient).toContain("pointer-events-none");
+  });
+
+  it("rises from the bottom, in the direction it now comes from", () => {
+    expect(alert).toContain("slide-in-from-bottom-2");
+    expect(alert).not.toContain("slide-in-from-top-2");
+  });
+
+  it("carries a red circle that pulses once into view", () => {
+    expect(alert).toContain('data-testid="system-alert-marker"');
+    expect(alert).toContain("animate-ping");
+    expect(alert).toContain("rounded-full bg-red-500");
+  });
+
+  it("wears a red ring, so it reads as something new before it is read", () => {
+    expect(alert).toContain("ring-2 ring-red-500/60");
+  });
+
+  it("shows the circle only on the transient form", () => {
+    // A blocking alert has the whole screen and a dimmed backdrop. A dot in
+    // its corner would be decoration.
+    const at = alert.indexOf('data-testid="system-alert-marker"');
+    expect(at, "the marker is not there at all").toBeGreaterThan(-1);
+    const around = alert.slice(at - 400, at + 400);
+    expect(around, "the marker must be gated on the transient branch")
+      .toContain("{current.autoDismissMs && (");
+    expect(around, "the marker is decoration, not content").toContain('aria-hidden="true"');
+  });
+
+  it("pairs the marker's colours for dark mode", () => {
+    expect(alert).toContain("dark:bg-red-400");
+    expect(alert).toContain("dark:ring-red-500/50");
+  });
+});

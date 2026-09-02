@@ -13,6 +13,8 @@ import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
+import { affectsCost } from "@shared/parcelCost";
+import { resolveParcelCost } from "../services/parcelPricing.service";
 
 export const packagesRouter = router({
     list: staffProcedure
@@ -560,36 +562,31 @@ export const packagesRouter = router({
             )
           : null;
 
-        // Get applicable pricing
-        const country = await db.getCountryById(warehouse.countryId);
-        const destCountries = await db.getDestinationCountries();
-        const destCountry = destCountries[0];
-        
-        let calculatedCostUsd: string | undefined;
-        let appliedPricingRuleId: number | undefined;
-        
-        if (country && destCountry) {
-          const pricingRule = await db.getApplicablePricingRule(
-            country.id,
-            destCountry.id,
-            input.shippingType
-          );
-          
-          if (pricingRule) {
-            appliedPricingRuleId = pricingRule.id;
-            const pricePerUnit = parseFloat(pricingRule.pricePerUnit);
-            
-            if (pricingRule.unit === "kg" && input.weightKg) {
-              // Bill what the batch invoice will bill. This used to multiply
-              // the actual weight, so a 2 kg carton measuring 12 kg by volume
-              // was stored at a sixth of its real price — and that small number
-              // is the one staff and the customer saw first.
-              calculatedCostUsd = (pricePerUnit * (breakdown ? breakdown.chargeableKg : parseFloat(input.weightKg))).toFixed(2);
-            } else if (pricingRule.unit === "cbm" && volumeCbm) {
-              calculatedCostUsd = (pricePerUnit * parseFloat(volumeCbm)).toFixed(2);
-            }
-          }
-        }
+        /**
+         * The price, from the same resolver that runs on every later edit.
+         *
+         * This used to consult the general route rule and nothing else, while
+         * approving a claim consulted the batch and nothing else, and delivery
+         * consulted both. Three answers to one question, and a parcel's stored
+         * price depended on which of them had last touched it.
+         *
+         * The shipment's own rate first now, as at delivery, so a parcel
+         * registered straight into a rated batch is stored at the rate its
+         * invoice will use rather than at the route default.
+         */
+        const priced = await resolveParcelCost({
+          customerId: input.isUnclaimed ? null : effectiveCustomerId,
+          batchId: input.batchId,
+          originWarehouseId: input.originWarehouseId,
+          shippingType: input.shippingType,
+          weightKg: input.weightKg,
+          lengthCm: input.lengthCm,
+          widthCm: input.widthCm,
+          heightCm: input.heightCm,
+          volumeCbm,
+        });
+        const calculatedCostUsd = priced.costUsd;
+        const appliedPricingRuleId = priced.pricingRuleId;
 
         // Generate package code and insert; retry on duplicate key (concurrent quick-register)
         const maxAttempts = 4;
@@ -854,45 +851,38 @@ export const packagesRouter = router({
         
         const result = await db.approveClaimRequest(input.requestId, ctx.user.id, input.adminNote);
         
-        // Calculate and apply pricing if package is in a batch
+        /**
+         * The parcel now has an owner, so it now has a price.
+         *
+         * Unclaimed parcels are registered without one deliberately — there is
+         * no customer to bill and no rate to bill them at. The moment a claim
+         * is approved both exist, and this is the only chance to work it out
+         * before the parcel reaches a delivery box with $0.00 on it.
+         *
+         * This used to carry its own copy of the arithmetic, with the air
+         * divisor written in as 6000, and it consulted the shipment's rate
+         * only — so a claimed parcel that was not in a batch stayed at zero
+         * even where a route rule would have priced it.
+         */
         const pkg = await db.getPackageById(request.packageId);
-        if (pkg && pkg.batchId) {
-          const batch = await db.getBatchById(pkg.batchId);
-          if (batch) {
-            // The new owner's own rate where they have one, so this stored
-            // figure matches the invoice they will actually receive.
-            const isSea = batch.shippingType === 'sea';
-            const owner = pkg.customerId;
-            const ownerRate = owner
-              ? (await db.getBatchRateForCustomer(pkg.batchId, owner, { unit: isSea ? 'cbm' : 'kg' })).rate
-              : 0;
-            const ratePerKg = !isSea && ownerRate > 0
-              ? ownerRate
-              : parseFloat(batch.pricePerKg?.toString() || "0") || 0;
-            const ratePerCbm = isSea && ownerRate > 0
-              ? ownerRate
-              : parseFloat(batch.pricePerCbm?.toString() || "0") || 0;
-
-            let calculatedCost = 0;
-            if (ratePerKg > 0 && pkg.weightKg) {
-              // Use chargeable weight (max of actual and volumetric)
-              const actualKg = parseFloat(pkg.weightKg?.toString() || "0");
-              const lengthCm = parseFloat(pkg.lengthCm?.toString() || "0");
-              const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
-              const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
-              const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-              const chargeableKg = Math.max(actualKg, volumetricKg);
-              calculatedCost = ratePerKg * chargeableKg;
-            } else if (ratePerCbm > 0 && pkg.volumeCbm) {
-              calculatedCost = ratePerCbm * parseFloat(pkg.volumeCbm);
-            }
-            
-            if (calculatedCost > 0) {
-              await db.updatePackage(request.packageId, {
-                calculatedCostUsd: calculatedCost.toFixed(2),
-              });
-              // Charge happens when batch is delivered — NOT here
-            }
+        if (pkg && !pkg.isCharged) {
+          const priced = await resolveParcelCost({
+            customerId: pkg.customerId,
+            batchId: pkg.batchId,
+            originWarehouseId: pkg.originWarehouseId,
+            shippingType: pkg.shippingType,
+            weightKg: pkg.weightKg,
+            lengthCm: pkg.lengthCm,
+            widthCm: pkg.widthCm,
+            heightCm: pkg.heightCm,
+            volumeCbm: pkg.volumeCbm,
+          });
+          if (priced.costUsd) {
+            await db.updatePackage(request.packageId, {
+              calculatedCostUsd: priced.costUsd,
+              ...(priced.pricingRuleId ? { appliedPricingRuleId: priced.pricingRuleId } : {}),
+            });
+            // Charge happens when batch is delivered — NOT here
           }
         }
         
@@ -1491,7 +1481,57 @@ export const packagesRouter = router({
             }
           }
         }
-        
+
+        /**
+         * Work the price out again, because the facts it rests on just moved.
+         *
+         * This is the fault the owner reported: a parcel registered with the
+         * weight left at zero, or registered unclaimed, stores no cost.
+         * Somebody spots it, opens the parcel, corrects the weight — and
+         * $0.00 stays there for ever, because the edit wrote the weight and
+         * never asked what the weight was for.
+         *
+         * Three rules, and each one is a way of getting this wrong:
+         *
+         *  - Only when a fact behind the price changed. Fixing a description
+         *    must not quietly reprice a parcel.
+         *  - Never after the customer has been charged. That figure is on an
+         *    invoice in somebody's hands; it is corrected deliberately, not
+         *    as a side effect of an edit.
+         *  - Never write zero over a real price. A rate that has gone missing
+         *    means "not known", and blanking a good figure is worse than
+         *    leaving it.
+         */
+        if (affectsCost(data as Record<string, unknown>)) {
+          const pkg = await db.getPackageById(id);
+          if (pkg && !pkg.isCharged && !pkg.isUnclaimed) {
+            const merged = { ...pkg, ...updateData };
+            const priced = await resolveParcelCost({
+              customerId: merged.customerId,
+              batchId: merged.batchId,
+              originWarehouseId: merged.originWarehouseId,
+              shippingType: merged.shippingType,
+              weightKg: merged.weightKg,
+              lengthCm: merged.lengthCm,
+              widthCm: merged.widthCm,
+              heightCm: merged.heightCm,
+              volumeCbm: merged.volumeCbm,
+            });
+            if (priced.costUsd) {
+              updateData.calculatedCostUsd = priced.costUsd;
+              if (priced.pricingRuleId) updateData.appliedPricingRuleId = priced.pricingRuleId;
+              appLogger.info("[Pricing] Parcel repriced on edit", {
+                packageId: id,
+                from: pkg.calculatedCostUsd,
+                to: priced.costUsd,
+                rate: priced.rate,
+                unit: priced.unit,
+                source: priced.source,
+              });
+            }
+          }
+        }
+
         await db.updatePackage(id, updateData);
         
         await db.createAuditLog({
