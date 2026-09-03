@@ -1,9 +1,18 @@
 import { getDb } from './connection';
 import { appLogger } from '../utils/logger';
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
+import {
+  BATCH_SEARCH_FIELDS,
+  MIN_BATCH_SEARCH_LENGTH,
+  batchFieldMatch,
+  likePattern,
+  type BatchSearchMatch,
+  type SearchableBatchField,
+} from '@shared/batchSearch';
 import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
 import { getSetting, getVolumetricDivisor } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import type { MySqlColumn } from "drizzle-orm/mysql-core";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -149,6 +158,88 @@ export async function getBatchByCode(batchCode: string): Promise<Batch | null> {
 
 const BATCH_LIST_DEFAULT_LIMIT = 50;
 
+/**
+ * The columns every list-shaped read of batches selects — the page list and
+ * the search share it, so a search result renders (and edits) exactly like a
+ * list row. A column present in one and not the other is how a search hit
+ * would open in the edit dialog with a field blank and get saved over blank.
+ */
+const BATCH_LIST_COLUMNS = {
+  id: batches.id,
+  batchCode: batches.batchCode,
+  originWarehouseId: batches.originWarehouseId,
+  destinationCountryId: batches.destinationCountryId,
+  shippingType: batches.shippingType,
+  carrierInfo: batches.carrierInfo,
+  // The carrier's own identifiers. These are not decoration on the list:
+  // the edit dialog is populated from this very row, so a column missing
+  // here reaches the form as blank — and a blank the operator then saves
+  // over is how a recorded container number or tracking list disappears.
+  airlineName: batches.airlineName,
+  flightNumber: batches.flightNumber,
+  shippingCompany: batches.shippingCompany,
+  containerNumber: batches.containerNumber,
+  vesselName: batches.vesselName,
+  awbNumber: batches.awbNumber,
+  shipmentTrackings: batches.shipmentTrackings,
+  cartonCount: batches.cartonCount,
+  // Where the work was done — Guangzhou or Erbil.
+  createdInCountryId: batches.createdInCountryId,
+  createdInCity: batches.createdInCity,
+  createdById: batches.createdById,
+  status: batches.status,
+  totalPackages: batches.totalPackages,
+  totalWeight: batches.totalWeight,
+  actualWeightKg: batches.actualWeightKg,
+  actualCbm: batches.actualCbm,
+  costPerKg: batches.costPerKg,
+  costPerCbm: batches.costPerCbm,
+  pricePerKg: batches.pricePerKg,
+  pricePerCbm: batches.pricePerCbm,
+  useTieredPricing: batches.useTieredPricing,
+  /**
+   * The edit dialog is filled from a row of THIS query, not from a fresh
+   * fetch of the batch. Anything missing here opens as an empty field and
+   * is written back empty — which is how a batch note somebody had typed
+   * carefully came back blank the next time it was opened.
+   */
+  notes: batches.notes,
+  shippingCost: batches.shippingCost,
+  chargedWeightKg: batches.chargedWeightKg,
+  chargedCbm: batches.chargedCbm,
+  departureDate: batches.departureDate,
+  estimatedArrival: batches.estimatedArrival,
+  actualArrival: batches.actualArrival,
+  createdAt: batches.createdAt,
+  updatedAt: batches.updatedAt,
+} as const;
+
+/**
+ * The real number of parcels in each batch, counted rather than read.
+ *
+ * `batches.totalPackages` is incremented when a package is assigned and is
+ * never decremented, never recomputed, and not written at all by some of
+ * the paths that assign one — so it drifts in both directions. Every batch
+ * in the list was showing 0 while holding parcels, and the delete button
+ * (offered only for an empty batch) appeared on batches that were not
+ * empty. The server refused those, so nothing was lost, but the screen was
+ * lying either way.
+ *
+ * One grouped query for the whole set, not one per row.
+ */
+async function countPackagesPerBatch(
+  db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
+  batchIds: number[]
+): Promise<Map<number, number>> {
+  if (batchIds.length === 0) return new Map();
+  const counts = await db
+    .select({ batchId: packages.batchId, n: count() })
+    .from(packages)
+    .where(inArray(packages.batchId, batchIds))
+    .groupBy(packages.batchId);
+  return new Map(counts.map((r) => [r.batchId as number, Number(r.n)]));
+}
+
 export async function getAllBatches(options: { page?: number; pageSize?: number } = {}) {
   const db = await getDb();
   if (!db) return { data: [], total: 0, page: 1, pageSize: BATCH_LIST_DEFAULT_LIMIT, totalPages: 0 };
@@ -160,82 +251,13 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
   const total = countResult[0]?.count ?? 0;
   const totalPages = Math.ceil(total / pageSize);
 
-  const data = await db.select({
-    id: batches.id,
-    batchCode: batches.batchCode,
-    originWarehouseId: batches.originWarehouseId,
-    destinationCountryId: batches.destinationCountryId,
-    shippingType: batches.shippingType,
-    carrierInfo: batches.carrierInfo,
-    // The carrier's own identifiers. These are not decoration on the list:
-    // the edit dialog is populated from this very row, so a column missing
-    // here reaches the form as blank — and a blank the operator then saves
-    // over is how a recorded container number or tracking list disappears.
-    airlineName: batches.airlineName,
-    flightNumber: batches.flightNumber,
-    shippingCompany: batches.shippingCompany,
-    containerNumber: batches.containerNumber,
-    vesselName: batches.vesselName,
-    awbNumber: batches.awbNumber,
-    shipmentTrackings: batches.shipmentTrackings,
-    cartonCount: batches.cartonCount,
-    // Where the work was done — Guangzhou or Erbil.
-    createdInCountryId: batches.createdInCountryId,
-    createdInCity: batches.createdInCity,
-    createdById: batches.createdById,
-    status: batches.status,
-    totalPackages: batches.totalPackages,
-    totalWeight: batches.totalWeight,
-    actualWeightKg: batches.actualWeightKg,
-    actualCbm: batches.actualCbm,
-    costPerKg: batches.costPerKg,
-    costPerCbm: batches.costPerCbm,
-    pricePerKg: batches.pricePerKg,
-    pricePerCbm: batches.pricePerCbm,
-    useTieredPricing: batches.useTieredPricing,
-    /**
-     * The edit dialog is filled from a row of THIS query, not from a fresh
-     * fetch of the batch. Anything missing here opens as an empty field and
-     * is written back empty — which is how a batch note somebody had typed
-     * carefully came back blank the next time it was opened.
-     */
-    notes: batches.notes,
-    shippingCost: batches.shippingCost,
-    chargedWeightKg: batches.chargedWeightKg,
-    chargedCbm: batches.chargedCbm,
-    departureDate: batches.departureDate,
-    estimatedArrival: batches.estimatedArrival,
-    actualArrival: batches.actualArrival,
-    createdAt: batches.createdAt,
-    updatedAt: batches.updatedAt,
-  })
+  const data = await db.select(BATCH_LIST_COLUMNS)
     .from(batches)
     .orderBy(desc(batches.createdAt))
     .limit(pageSize)
     .offset(offset);
 
-  /**
-   * The real number of parcels in each batch, counted rather than read.
-   *
-   * `batches.totalPackages` is incremented when a package is assigned and is
-   * never decremented, never recomputed, and not written at all by some of
-   * the paths that assign one — so it drifts in both directions. Every batch
-   * in the list was showing 0 while holding parcels, and the delete button
-   * (offered only for an empty batch) appeared on batches that were not
-   * empty. The server refused those, so nothing was lost, but the screen was
-   * lying either way.
-   *
-   * One grouped query for the whole page, not one per row.
-   */
-  const ids = data.map((b) => b.id);
-  const counts = ids.length
-    ? await db
-        .select({ batchId: packages.batchId, n: count() })
-        .from(packages)
-        .where(inArray(packages.batchId, ids))
-        .groupBy(packages.batchId)
-    : [];
-  const countByBatch = new Map(counts.map((r) => [r.batchId, Number(r.n)]));
+  const countByBatch = await countPackagesPerBatch(db, data.map((b) => b.id));
 
   const withCounts = data.map((batch) => ({
     ...batch,
@@ -243,6 +265,171 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
   }));
 
   return { data: withCounts, total, page, pageSize, totalPages };
+}
+
+/**
+ * How many rows a search may return, and how many child-table hits it will
+ * chase. Search is for finding one shipment, not for browsing — a query
+ * that legitimately matches more than this needs more digits, not more rows.
+ */
+const BATCH_SEARCH_ROW_CAP = 60;
+const BATCH_SEARCH_CHILD_CAP = 200;
+const BATCH_SEARCH_CUSTOMER_CAP = 25;
+
+/**
+ * Find batches by any number somebody might be holding.
+ *
+ * The list the page loads is one page of the newest batches, so a
+ * client-side filter would quietly stop finding older shipments the moment
+ * the fleet outgrew a page — and search exists precisely for the shipment
+ * that is NOT in front of you. So the whole thing runs here, against every
+ * batch, archived ones included.
+ *
+ * Four places are searched, in the order a match is reported:
+ *   1. The batch row itself — code, container, AWB, flight, vessel, and the
+ *      courier trackings its cartons travelled under (see @shared/batchSearch;
+ *      the field list there and the WHERE here must agree).
+ *   2. Parcels: a single parcel's tracking number finds the batch it was
+ *      scanned into.
+ *   3. Orders: a full-package/commission order's tracking number(s) find the
+ *      batch the order is assigned to.
+ *   4. Customers: a customer code finds every batch holding that customer's
+ *      parcels or orders.
+ *
+ * Each row carries `matchedBy` so the screen can say why it is there — a
+ * batch surfaced by a parcel deep inside it would otherwise look like a
+ * wrong answer, and a search that seems wrong stops being used.
+ */
+export async function searchBatches(rawQuery: string) {
+  const db = await getDb();
+  const query = rawQuery.trim();
+  if (!db || query.length < MIN_BATCH_SEARCH_LENGTH) return [];
+  const pattern = likePattern(query);
+  const loweredQuery = query.toLowerCase();
+
+  // Keyed by the shared field list, so a field added there without a column
+  // here fails to compile instead of silently searching less than it says.
+  const columnFor: Record<SearchableBatchField, MySqlColumn> = {
+    batchCode: batches.batchCode,
+    containerNumber: batches.containerNumber,
+    awbNumber: batches.awbNumber,
+    flightNumber: batches.flightNumber,
+    vesselName: batches.vesselName,
+  };
+
+  // 1) The batch's own fields. shipmentTrackings is JSON, so it is matched
+  // as text — CAST keeps MySQL from refusing to LIKE a JSON value.
+  const directRows = await db.select(BATCH_LIST_COLUMNS)
+    .from(batches)
+    .where(or(
+      ...BATCH_SEARCH_FIELDS.map((field) => like(columnFor[field], pattern)),
+      sql`CAST(${batches.shipmentTrackings} AS CHAR) LIKE ${pattern}`,
+    ))
+    .orderBy(desc(batches.createdAt))
+    .limit(BATCH_SEARCH_ROW_CAP);
+
+  const matchByBatch = new Map<number, BatchSearchMatch>();
+  for (const row of directRows) {
+    // The JS mirror of the SQL WHERE names the field. If they ever disagree
+    // (e.g. a query matching across the JSON punctuation), fall back to the
+    // batch code rather than dropping a row the SQL already returned.
+    matchByBatch.set(
+      row.id,
+      batchFieldMatch(row, query) ?? { kind: "field", field: "batchCode", value: row.batchCode }
+    );
+  }
+
+  const claim = (batchId: number | null, match: BatchSearchMatch) => {
+    if (batchId != null && !matchByBatch.has(batchId)) matchByBatch.set(batchId, match);
+  };
+
+  // 2) A parcel's tracking number finds the batch it was scanned into.
+  const parcelHits = await db
+    .select({ batchId: packages.batchId, trackingNumber: packages.trackingNumber })
+    .from(packages)
+    .where(and(isNotNull(packages.batchId), like(packages.trackingNumber, pattern)))
+    .limit(BATCH_SEARCH_CHILD_CAP);
+  for (const hit of parcelHits) {
+    claim(hit.batchId, { kind: "parcelTracking", value: hit.trackingNumber ?? query });
+  }
+
+  // 3) An order's tracking number(s) find the batch the order is assigned to.
+  const orderHits = await db
+    .select({
+      batchId: fullPackageOrders.batchId,
+      trackingNumber: fullPackageOrders.trackingNumber,
+      trackingNumbers: fullPackageOrders.trackingNumbers,
+    })
+    .from(fullPackageOrders)
+    .where(and(
+      isNotNull(fullPackageOrders.batchId),
+      or(
+        like(fullPackageOrders.trackingNumber, pattern),
+        sql`CAST(${fullPackageOrders.trackingNumbers} AS CHAR) LIKE ${pattern}`,
+      ),
+    ))
+    .limit(BATCH_SEARCH_CHILD_CAP);
+  for (const hit of orderHits) {
+    const inList = Array.isArray(hit.trackingNumbers)
+      ? hit.trackingNumbers.find((n) => typeof n === "string" && n.toLowerCase().includes(loweredQuery))
+      : undefined;
+    const value = hit.trackingNumber?.toLowerCase().includes(loweredQuery)
+      ? hit.trackingNumber
+      : inList ?? hit.trackingNumber ?? query;
+    claim(hit.batchId, { kind: "orderTracking", value });
+  }
+
+  // 4) A customer code finds every batch holding that customer's goods. The
+  // code in this system usually embeds the name — "AZ003(Saman …)" — so this
+  // also answers a search by name without a second rule.
+  const customerHits = await db
+    .select({ id: customers.id, customerCode: customers.customerCode })
+    .from(customers)
+    .where(like(customers.customerCode, pattern))
+    .limit(BATCH_SEARCH_CUSTOMER_CAP);
+  if (customerHits.length > 0) {
+    const customerIds = customerHits.map((c) => c.id);
+    const codeById = new Map(customerHits.map((c) => [c.id, c.customerCode]));
+
+    const viaParcels = await db
+      .select({ batchId: packages.batchId, customerId: packages.customerId })
+      .from(packages)
+      .where(and(isNotNull(packages.batchId), inArray(packages.customerId, customerIds)))
+      .groupBy(packages.batchId, packages.customerId)
+      .limit(BATCH_SEARCH_CHILD_CAP);
+    for (const hit of viaParcels) {
+      claim(hit.batchId, { kind: "customer", value: codeById.get(hit.customerId ?? -1) ?? query });
+    }
+
+    const viaOrders = await db
+      .select({ batchId: fullPackageOrders.batchId, customerId: fullPackageOrders.customerId })
+      .from(fullPackageOrders)
+      .where(and(isNotNull(fullPackageOrders.batchId), inArray(fullPackageOrders.customerId, customerIds)))
+      .groupBy(fullPackageOrders.batchId, fullPackageOrders.customerId)
+      .limit(BATCH_SEARCH_CHILD_CAP);
+    for (const hit of viaOrders) {
+      claim(hit.batchId, { kind: "customer", value: codeById.get(hit.customerId ?? -1) ?? query });
+    }
+  }
+
+  // Rows found only through children still need their batch fetched.
+  const haveRow = new Set(directRows.map((r) => r.id));
+  const missingIds = Array.from(matchByBatch.keys()).filter((id) => !haveRow.has(id));
+  const childRows = missingIds.length > 0
+    ? await db.select(BATCH_LIST_COLUMNS).from(batches).where(inArray(batches.id, missingIds))
+    : [];
+
+  const allRows = [...directRows, ...childRows]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, BATCH_SEARCH_ROW_CAP);
+
+  const countByBatch = await countPackagesPerBatch(db, allRows.map((b) => b.id));
+
+  return allRows.map((batch) => ({
+    ...batch,
+    packageCount: countByBatch.get(batch.id) ?? 0,
+    matchedBy: matchByBatch.get(batch.id) ?? null,
+  }));
 }
 
 export async function getBatchById(id: number): Promise<Batch | undefined> {

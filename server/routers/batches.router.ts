@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
+import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -546,6 +547,32 @@ export const batchesRouter = router({
           return { ...result, data: batchesWithPricingInfo };
         }
         return batchesWithPricingInfo;
+      }),
+    /**
+     * One search box over everything a shipment can be held by: batch code,
+     * container, AWB, flight, vessel, the batch's own courier trackings, a
+     * parcel's tracking number, an order's tracking number, or a customer
+     * code. Runs server-side so it also finds batches beyond the loaded page
+     * and inside the archive — see db.searchBatches for the four lookups.
+     */
+    search: staffProcedure
+      .input(z.object({ query: z.string().min(MIN_BATCH_SEARCH_LENGTH).max(100) }))
+      .query(async ({ input }) => {
+        const rows = await db.searchBatches(input.query);
+        // Same enrichment as `list`, so a search hit renders (VIP chip and
+        // all) exactly like the row it replaces.
+        const ids = rows.map((b) => b.id);
+        const pricingByBatch = ids.length > 0
+          ? await db.getBatchCustomerPricingForBatches(ids)
+          : new Map<number, unknown[]>();
+        return rows.map((batch) => {
+          const customerPricing = pricingByBatch.get(batch.id) ?? [];
+          return {
+            ...batch,
+            hasCustomerPricing: customerPricing.length > 0,
+            customerPricingCount: customerPricing.length,
+          };
+        });
       }),
     getActive: staffProcedure.query(async () => {
       return db.getActiveBatches();

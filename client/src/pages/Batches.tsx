@@ -18,7 +18,7 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X } from "lucide-react";
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { BAND_CLASS, BAND_MEANING, ageLabel, batchAge } from "@shared/batchAge";
@@ -32,7 +32,9 @@ import {
   type Localised,
 } from "@shared/listLinks";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
+import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch } from "@shared/batchDeletion";
+import { keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState, useEffect, useMemo } from "react";
@@ -48,6 +50,21 @@ const statusColors: Record<string, string> = {
   at_depot: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200",
   delivered: "bg-green-200 text-green-900 dark:text-green-200",
   closed: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
+};
+
+/**
+ * Chip label for a search hit whose matching number is not visible on the
+ * row. Batch code, container and AWB already show in the first cell, so a
+ * match on those needs no explanation — every other kind of match does,
+ * or a batch surfaced by a parcel deep inside it looks like a wrong answer.
+ */
+const SEARCH_MATCH_LABEL_KEYS: Record<string, string> = {
+  flightNumber: "batches.matchFlight",
+  vesselName: "batches.matchVessel",
+  shipmentTracking: "batches.matchBatchTracking",
+  parcelTracking: "batches.matchParcelTracking",
+  orderTracking: "batches.matchOrderTracking",
+  customer: "batches.matchCustomer",
 };
 
 interface PricingTier {
@@ -510,6 +527,30 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     ),
     [shownBatches, linkFilters.status, linkFilters.type],
   );
+
+  /**
+   * Search, answered by the server rather than filtered here: the list this
+   * page holds is one page of the newest batches, and search exists for the
+   * shipment that is NOT in front of you — an older page, the archive, or a
+   * batch reachable only through a parcel tracking or a customer code the
+   * list rows don't carry. Debounced so typing (or a barcode scanner) does
+   * not fire a query per keystroke.
+   */
+  const [searchText, setSearchText] = useState("");
+  const [debouncedSearch, setDebouncedSearch] = useState("");
+  useEffect(() => {
+    const handle = setTimeout(() => setDebouncedSearch(searchText.trim()), 300);
+    return () => clearTimeout(handle);
+  }, [searchText]);
+  const searchActive = debouncedSearch.length >= MIN_BATCH_SEARCH_LENGTH;
+  const searchQuery = trpc.batches.search.useQuery(
+    { query: debouncedSearch },
+    { enabled: searchActive, placeholderData: keepPreviousData }
+  );
+  // While searching, the server's answer replaces the local list. The link
+  // filter and the archive split describe the unsearched list, so they stand
+  // aside rather than silently hiding a hit the search just found.
+  const rowsToRender: any[] = searchActive ? (searchQuery.data ?? []) : visibleBatches;
 
   const linkFilterLabels: Localised[] = [
     linkFilters.status && linkFilters.status !== "all"
@@ -1129,22 +1170,69 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
         <Card>
           <CardContent className="pt-6">
-            {/* Why the table arrived short, when it came from a dashboard figure */}
-            <FilteredByLinkBanner filters={linkFilterLabels} onClear={clearLinkFilters} />
-
-            {/* Finished shipments drop out of the table but stay in the counts
-                above — sixteen delivered batches were burying the four that
-                anyone was actually working on. */}
-            {archivedBatches.length > 0 && (
-              <div className="flex items-center justify-between gap-2 mb-4 text-sm">
-                <span className="text-muted-foreground">
-                  {t("batches.archivedHidden", { count: archivedBatches.length })}
-                </span>
-                <Button variant="outline" size="sm" onClick={() => setShowArchived((v) => !v)}>
-                  <Archive className="h-4 w-4 me-2" />
-                  {showArchived ? t("batches.hideArchived") : t("batches.showArchived")}
-                </Button>
+            {/* One box for whichever number the phone call gave you: batch
+                code, container, AWB, flight, vessel, the batch's own courier
+                trackings, a parcel's tracking, an order's tracking, or a
+                customer code. */}
+            <div className="mb-4 space-y-2">
+              <div className="relative max-w-xl">
+                <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={searchText}
+                  onChange={(e) => setSearchText(e.target.value)}
+                  placeholder={t("batches.searchPlaceholder")}
+                  className="ps-9 pe-9"
+                />
+                {searchText && (
+                  <button
+                    type="button"
+                    onClick={() => setSearchText("")}
+                    className="absolute end-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    aria-label={t("common.cancel")}
+                  >
+                    <X className="h-4 w-4" />
+                  </button>
+                )}
               </div>
+              {searchActive && searchQuery.error && (
+                <div className="flex items-center gap-2 text-sm text-red-600 dark:text-red-400">
+                  <AlertTriangle className="h-4 w-4 shrink-0" />
+                  <span className="break-all">{t("batches.searchFailed")}: {searchQuery.error.message}</span>
+                  <CopyButton value={searchQuery.error.message} label={t("batches.searchFailed")} />
+                </div>
+              )}
+              {searchActive && !searchQuery.error && (
+                <p className="flex items-center gap-2 text-sm text-muted-foreground">
+                  {searchQuery.isFetching && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  {searchQuery.data !== undefined && (
+                    <span>{t("batches.searchResultsCount", { count: rowsToRender.length })}</span>
+                  )}
+                </p>
+              )}
+            </div>
+
+            {/* The link filter and the archive split describe the unsearched
+                list; while a search is typed they stand aside. */}
+            {!searchActive && (
+              <>
+                {/* Why the table arrived short, when it came from a dashboard figure */}
+                <FilteredByLinkBanner filters={linkFilterLabels} onClear={clearLinkFilters} />
+
+                {/* Finished shipments drop out of the table but stay in the counts
+                    above — sixteen delivered batches were burying the four that
+                    anyone was actually working on. */}
+                {archivedBatches.length > 0 && (
+                  <div className="flex items-center justify-between gap-2 mb-4 text-sm">
+                    <span className="text-muted-foreground">
+                      {t("batches.archivedHidden", { count: archivedBatches.length })}
+                    </span>
+                    <Button variant="outline" size="sm" onClick={() => setShowArchived((v) => !v)}>
+                      <Archive className="h-4 w-4 me-2" />
+                      {showArchived ? t("batches.hideArchived") : t("batches.showArchived")}
+                    </Button>
+                  </div>
+                )}
+              </>
             )}
             <Table pageSticky>
               <TableHeader>
@@ -1161,7 +1249,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {visibleBatches.map((batch) => (
+                {rowsToRender.map((batch) => (
                   <TableRow
                     key={batch.id}
                     className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
@@ -1176,6 +1264,24 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <span className="font-mono font-medium">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                       </div>
+                      {/* Why this row is in the search results, when the
+                          matching number is nowhere on it — a batch found by
+                          a parcel deep inside it would otherwise look like a
+                          wrong answer. */}
+                      {(() => {
+                        const match = batch.matchedBy;
+                        if (!match) return null;
+                        const labelKey = SEARCH_MATCH_LABEL_KEYS[match.kind === "field" ? match.field : match.kind];
+                        if (!labelKey) return null;
+                        return (
+                          <div className="mt-1">
+                            <Badge variant="secondary" className="max-w-[260px] px-1.5 py-0 text-[10px] font-normal">
+                              <span className="shrink-0">{t(labelKey)}:</span>
+                              <span className="ms-1 truncate font-mono" dir="ltr">{match.value}</span>
+                            </Badge>
+                          </div>
+                        );
+                      })()}
                       {/* Where the work was done. Some customers' goods never
                           reach the China warehouse — they arrive in Erbil and
                           are registered, batched and boxed there — and until
@@ -1435,7 +1541,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </TableCell>
                   </TableRow>
                 ))}
-                {(!batches || batches.length === 0) && (
+                {searchActive && !searchQuery.isFetching && !searchQuery.error && rowsToRender.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                      {t("batches.searchNoResults", { query: debouncedSearch })}
+                    </TableCell>
+                  </TableRow>
+                )}
+                {!searchActive && (!batches || batches.length === 0) && (
                   <TableRow>
                     <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
                       No batches created yet
