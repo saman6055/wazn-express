@@ -192,18 +192,32 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     }
   }, [existingCustomerPricing]);
   
+  /**
+   * After any change to a batch, refresh BOTH reads of it.
+   *
+   * The table has two sources now: the list, and the search. `refetch()`
+   * only renews the list — so a batch found through search, edited, and
+   * reopened came back from the STALE search cache, and the note (or AWB,
+   * or anything) just typed looked like it had never been saved. The save
+   * was fine; the row the dialog was refilled from was old.
+   */
+  const refreshBatchLists = () => {
+    refetch();
+    trpcUtilsForAudit.batches.search.invalidate();
+  };
+
   const onBatchCreateSuccess = () => {
     toast.success(t("batches.batchCreated"));
     setIsCreateOpen(false);
     resetForm();
-    refetch();
+    refreshBatchLists();
   };
   const onBatchUpdateSuccess = () => {
     toast.success(t("batches.batchUpdated"));
     setIsEditOpen(false);
     setEditingBatch(null);
     resetForm();
-    refetch();
+    refreshBatchLists();
   };
   const onMutationErrorEarly = (error: unknown) => {
     const err = error as { message?: string; data?: { zodError?: { errors?: { message: string }[] } } };
@@ -221,7 +235,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         `❌ ${pickLang(language, { ku: "هەڵە لە چاکسازی باچ", en: "Error fixing batch", ar: "خطأ في معالجة الدفعة", zh: "批次处理出错" })}\nVersion: ${diag.version || 'unknown'}\n${diag.note || ''}\nError: ${diag.error}`,
         { duration: 30000 }
       );
-      refetch();
+      refreshBatchLists();
       return;
     }
 
@@ -261,7 +275,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       }
       toast.info(summary.join('\n'), { duration: 15000 });
     }
-    refetch();
+    refreshBatchLists();
   };
 
   const reprocessMutation = trpc.batches.reprocessInvoicing.useMutation({
@@ -276,7 +290,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 🧾 ${pickLang(language, { ku: "پسوڵەی نوێ", en: "New invoices", ar: "فواتير جديدة", zh: "新发票" })}: ${(d.recoveryFpInvoices || 0) + (d.recoveryCmInvoices || 0)}`
         : pickLang(language, { ku: "پشکنی تەواو بوو", en: "Check complete", ar: "اكتمل الفحص", zh: "检查完成" });
       toast.success(msg, { duration: 12000 });
-      refetch();
+      refreshBatchLists();
     },
     onError: onMutationErrorEarly,
   });
@@ -434,7 +448,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       pricingTiers: pricingTiers,
       // Customer-specific pricing
       customerPricing: customerPricing,
-      notes: formData.get("notes") as string || undefined,
+      // "" is a decision (the note was deleted on purpose) and must clear;
+      // null means the field never reached the form, and must not touch
+      // what is stored. `|| undefined` treated both as "keep", so a note
+      // somebody had deliberately erased kept coming back.
+      notes: formData.get("notes") === null ? undefined : (formData.get("notes") as string),
     }, { onSuccess: onBatchUpdateSuccess, onError: onMutationError });
   };
 
@@ -1591,7 +1609,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     await deleteMutation.mutateAsync({ id: deletingBatch.id });
                     toast.success(t("batches.batchDeleted", { code: deletingBatch.batchCode }));
                     setDeletingBatch(null);
-                    refetch();
+                    refreshBatchLists();
                   } catch (error: any) {
                     toast.error(error?.message || t("common.error"));
                   }
@@ -1603,20 +1621,25 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </AlertDialogContent>
         </AlertDialog>
 
-        {/* Batch Packages Dialog */}
+        {/* Batch Packages Dialog. Wide on purpose: at 2xl the table was cut
+            off sideways and read through a scrollbar; every column the row
+            has must be visible at once. */}
         <Dialog open={!!selectedBatch} onOpenChange={(open) => !open && setSelectedBatch(null)}>
-          <DialogContent className="max-w-2xl">
+          <DialogContent className="max-w-5xl">
             <DialogHeader>
               <DialogTitle>{t("batches.batchPackages")}</DialogTitle>
               <DialogDescription>
-                Packages in batch {batches?.find(b => b.id === selectedBatch)?.batchCode}
+                {/* A batch opened from a search hit may not be in the list
+                    page at all, so look in what the table is showing too. */}
+                Packages in batch {(batches?.find(b => b.id === selectedBatch) ?? rowsToRender.find((b: any) => b.id === selectedBatch))?.batchCode}
               </DialogDescription>
             </DialogHeader>
-            <div className="max-h-[400px] overflow-y-auto">
+            <div className="max-h-[70vh] overflow-y-auto">
               <Table>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("batches.packageCode")}</TableHead>
+                    <TableHead>{t("packages.trackingNumber")}</TableHead>
                     <TableHead>{t("batches.customer")}</TableHead>
                     <TableHead>{t("batches.weight")}</TableHead>
                     <TableHead>{t("common.status")}</TableHead>
@@ -1625,7 +1648,25 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 <TableBody>
                   {batchPackages?.map((pkg) => (
                     <TableRow key={pkg.id}>
-                      <TableCell className="font-mono">{pkg.packageCode}</TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1">
+                          <span className="font-mono">{pkg.packageCode}</span>
+                          <CopyButton value={pkg.packageCode} label={t("common.copy")} />
+                        </div>
+                      </TableCell>
+                      {/* The number the customer and the courier both quote —
+                          it was reachable only by opening the parcel itself,
+                          and it is copied constantly, so the icon sits here. */}
+                      <TableCell>
+                        {pkg.trackingNumber ? (
+                          <div className="flex items-center gap-1">
+                            <span className="font-mono" dir="ltr">{pkg.trackingNumber}</span>
+                            <CopyButton value={pkg.trackingNumber} label={t("common.copy")} />
+                          </div>
+                        ) : (
+                          "-"
+                        )}
+                      </TableCell>
                       <TableCell>{pkg.customerId ? getCustomerName(pkg.customerId) : t("packages.unclaimed")}</TableCell>
                       <TableCell>
                         {(() => {
@@ -1659,7 +1700,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   ))}
                   {(!batchPackages || batchPackages.length === 0) && (
                     <TableRow>
-                      <TableCell colSpan={4} className="text-center py-4 text-muted-foreground">
+                      <TableCell colSpan={5} className="text-center py-4 text-muted-foreground">
                         No packages in this batch
                       </TableCell>
                     </TableRow>
