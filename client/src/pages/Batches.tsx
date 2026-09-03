@@ -18,7 +18,8 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal } from "lucide-react";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { BAND_CLASS, BAND_MEANING, ageLabel, batchAge } from "@shared/batchAge";
@@ -504,7 +505,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           : "-";
     
     return (
-      <div className="flex items-center gap-1">
+      <div className="flex items-center justify-center gap-1">
         {priceText}
         {batch.hasCustomerPricing && (
           <span title={`${batch.customerPricingCount} ${t('batches.vipCustomers')}`} className="inline-flex items-center justify-center w-5 h-5 text-xs font-bold text-purple-600 dark:text-purple-300 bg-purple-100 dark:bg-purple-950/40 rounded-full">
@@ -1253,17 +1254,21 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               </>
             )}
             <Table pageSticky>
+              {/* Header and cell share one alignment per column: text columns
+                  start-aligned, everything numeric or badge-shaped centered —
+                  a header pointing one way over content pointing another was
+                  half of what made the table look crooked. Status and alert
+                  are one column now; they were always read together. */}
               <TableHeader>
                 <TableRow>
                   <TableHead>{t("batches.batchCode")}</TableHead>
                   <TableHead>{t("batches.origin")} → {t("batches.destination")}</TableHead>
-                  <TableHead>{t("batches.shippingType")}</TableHead>
-                  <TableHead>{t("common.price")}</TableHead>
-                  <TableHead>{t("batches.packages")}</TableHead>
-                  <TableHead>{t("batches.departureDate")}</TableHead>
-                  <TableHead>{t("common.status")}</TableHead>
-                  <TableHead>{t("common.alert")}</TableHead>
-                  <TableHead className="text-right">{t("common.actions")}</TableHead>
+                  <TableHead className="text-center">{t("batches.shippingType")}</TableHead>
+                  <TableHead className="text-center">{t("common.price")}</TableHead>
+                  <TableHead className="text-center">{t("batches.packages")}</TableHead>
+                  <TableHead className="text-center">{t("batches.departureDate")}</TableHead>
+                  <TableHead className="text-center">{t("common.status")}</TableHead>
+                  <TableHead className="text-center">{t("common.actions")}</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -1275,85 +1280,69 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <TableCell>
                       <div className="flex items-center gap-2">
                         {batch.shippingType === "sea" ? (
-                          <Ship className="h-4 w-4 text-blue-600 dark:text-blue-300" />
+                          <Ship className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-300" />
                         ) : (
-                          <Plane className="h-4 w-4 text-amber-600 dark:text-amber-300" />
+                          <Plane className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
                         )}
-                        <span className="font-mono font-medium">{batch.batchCode}</span>
+                        <span className="font-mono font-medium whitespace-nowrap">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                       </div>
-                      {/* Why this row is in the search results, when the
-                          matching number is nowhere on it — a batch found by
-                          a parcel deep inside it would otherwise look like a
-                          wrong answer. */}
-                      {(() => {
-                        const match = batch.matchedBy;
-                        if (!match) return null;
-                        const labelKey = SEARCH_MATCH_LABEL_KEYS[match.kind === "field" ? match.field : match.kind];
-                        if (!labelKey) return null;
-                        return (
-                          <div className="mt-1">
+                      {/* Everything else about the shipment sits on ONE
+                          wrapping chip line. Stacked one-per-line, five short
+                          facts made every row five lines tall and the rest of
+                          the table was mostly empty space. */}
+                      <div className="mt-1 flex flex-wrap items-center gap-1">
+                        {/* Why this row is in the search results, when the
+                            matching number is nowhere on it. */}
+                        {(() => {
+                          const match = batch.matchedBy;
+                          if (!match) return null;
+                          const labelKey = SEARCH_MATCH_LABEL_KEYS[match.kind === "field" ? match.field : match.kind];
+                          if (!labelKey) return null;
+                          return (
                             <Badge variant="secondary" className="max-w-[260px] px-1.5 py-0 text-[10px] font-normal">
                               <span className="shrink-0">{t(labelKey)}:</span>
                               <span className="ms-1 truncate font-mono" dir="ltr">{match.value}</span>
                             </Badge>
-                          </div>
-                        );
-                      })()}
-                      {/* Where the work was done. Some customers' goods never
-                          reach the China warehouse — they arrive in Erbil and
-                          are registered, batched and boxed there — and until
-                          now nothing said which was which. */}
-                      {batch.createdInCity && (
-                        <div className="mt-1">
+                          );
+                        })()}
+                        {/* Where the work was done — Guangzhou or Erbil. */}
+                        {batch.createdInCity && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal">
                             <MapPin className="h-3 w-3 me-1" />
                             {batch.createdInCity}
                           </Badge>
-                        </div>
-                      )}
-                      {/* How long this one has been open.
-                          Green for the first three weeks, amber past twenty
-                          days, red past thirty. On a list sorted by date, a
-                          shipment that is late and one that nobody closed
-                          look identical — both are just an old row. */}
-                      {(() => {
-                        const age = batchAge(batch as never);
-                        if (age.band === "settled") return null;
-                        return (
-                          <div className="mt-1">
+                        )}
+                        {/* How long this one has been open. */}
+                        {(() => {
+                          const age = batchAge(batch as never);
+                          if (age.band === "settled") return null;
+                          return (
                             <span
-                              className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold", BAND_CLASS[age.band])}
+                              className={cn("inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap", BAND_CLASS[age.band])}
                               title={pickLang(language, BAND_MEANING[age.band])}
                             >
                               {pickLang(language, ageLabel(age.days))}
                             </span>
-                          </div>
-                        );
-                      })()}
-                      {/* Whether the airport is being checked for this batch,
-                          and if not, why not.
-                          The decision was already being made every six hours
-                          and thrown away, so a shipment nobody was watching
-                          looked exactly like one watched four times a day.
-                          Two of the reasons are ordinary and stay quiet in
-                          grey; two of them mean somebody has to do something,
-                          and those are the ones that were silent. */}
-                      {(() => {
-                        const decision = watchDecision(batch as never, new Date());
-                        const explain = watchExplain(decision);
-                        if (!explain.needsAction && !decision.watch) {
-                          return (
-                            <div className="mt-1 text-[10px] text-muted-foreground">
-                              {pickLang(language, explain.text)}
-                            </div>
                           );
-                        }
-                        return (
-                          <div className="mt-1">
+                        })()}
+                        {/* Whether the airport is being checked for this
+                            batch, and if not, why not. Quiet reasons stay
+                            grey; the two that need somebody stay loud. */}
+                        {(() => {
+                          const decision = watchDecision(batch as never, new Date());
+                          const explain = watchExplain(decision);
+                          if (!explain.needsAction && !decision.watch) {
+                            return (
+                              <span className="text-[10px] text-muted-foreground whitespace-nowrap">
+                                {pickLang(language, explain.text)}
+                              </span>
+                            );
+                          }
+                          return (
                             <span
                               className={cn(
-                                "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                                "inline-block rounded-full px-2 py-0.5 text-[10px] font-semibold whitespace-nowrap",
                                 explain.needsAction
                                   ? "bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-200"
                                   : "bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200"
@@ -1361,40 +1350,45 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             >
                               {pickLang(language, explain.text)}
                             </span>
-                          </div>
-                        );
-                      })()}
-                      {/* One click from the list to wherever the carrier says
-                          the shipment is — the number is no use sitting here. */}
-                      {(batch.awbNumber || batch.containerNumber) && (
-                        <div className="mt-1 text-xs">
-                          <TrackingNumberLink
-                            kind={batch.containerNumber ? "container" : "awb"}
-                            value={batch.containerNumber || batch.awbNumber}
-                            shippingCompany={batch.shippingCompany}
-                          />
-                        </div>
-                      )}
+                          );
+                        })()}
+                        {/* One click from the list to wherever the carrier
+                            says the shipment is. */}
+                        {(batch.awbNumber || batch.containerNumber) && (
+                          <span className="text-xs">
+                            <TrackingNumberLink
+                              kind={batch.containerNumber ? "container" : "awb"}
+                              value={batch.containerNumber || batch.awbNumber}
+                              shippingCompany={batch.shippingCompany}
+                            />
+                          </span>
+                        )}
+                      </div>
                     </TableCell>
                     <TableCell>
-                      {getWarehouseName(batch.originWarehouseId)} → {getCountryName(batch.destinationCountryId)}
+                      {/* Isolated LTR so "A → B" keeps its direction inside
+                          an RTL row instead of reading back to front. */}
+                      <span dir="ltr" className="whitespace-nowrap [unicode-bidi:isolate]">
+                        {getWarehouseName(batch.originWarehouseId)} → {getCountryName(batch.destinationCountryId)}
+                      </span>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       <Badge variant="outline" className="capitalize">
                         {batch.shippingType.replace(/_/g, " ")}
                       </Badge>
                     </TableCell>
-                    <TableCell>
+                    <TableCell className="text-center">
                       <span className="font-medium text-green-600 dark:text-green-300">{formatPrice(batch)}</span>
                     </TableCell>
-                    <TableCell>{batch.packageCount ?? 0}</TableCell>
-                    <TableCell>
+                    <TableCell className="text-center font-mono tabular-nums" dir="ltr">{batch.packageCount ?? 0}</TableCell>
+                    <TableCell className="text-center font-mono tabular-nums whitespace-nowrap" dir="ltr">
                       {batch.departureDate ? new Date(batch.departureDate).toLocaleDateString() : "-"}
                     </TableCell>
-                    <TableCell>
-                      <StatusBadge status={batch.status} kind="batch" />
-                    </TableCell>
-                    <TableCell>
+                    {/* Status and its alert in one column — the two badges
+                        are one piece of news and were always read together. */}
+                    <TableCell className="text-center">
+                      <div className="flex flex-col items-center gap-1">
+                        <StatusBadge status={batch.status} kind="batch" />
                       {(() => {
                         const isCompleted = batch.status === "arrived" || batch.status === "delivered" || batch.status === "closed";
                         if (isCompleted) {
@@ -1431,68 +1425,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         
                         return <Badge variant="outline" className="bg-gray-50 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800/60">{t("auto.text_ed2a98")} </Badge>;
                       })()}
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right">
-                      <div className="flex items-center justify-end gap-1">
+                    {/* Daily actions stay visible: see the parcels, edit,
+                        move the status. Everything occasional lives in one
+                        ⋯ menu — eight buttons per row were what pushed the
+                        table past the edge of the screen. */}
+                    <TableCell className="text-center">
+                      <div className="flex items-center justify-center gap-1">
                         <Button variant="ghost" size="icon" onClick={() => setSelectedBatch(batch.id)} title={t("batches.viewPackages")}>
                           <Eye className="h-4 w-4" />
-                        </Button>
-                        {/* Straight to the scanner with this batch already
-                            chosen — picking it again from a long dropdown is
-                            the step people get wrong. Only while it is still
-                            open; a delivered batch takes no more packages. */}
-                        {(batch.status === "preparing" || batch.status === "in_transit") && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setLocation(`/batch-assignment-scanner?batch=${batch.id}`)}
-                            title={t("batches.scanIntoThisBatch")}
-                          >
-                            <ScanLine className="h-4 w-4" />
-                          </Button>
-                        )}
-                        {/* Only offered for an empty batch — a mistake worth
-                            undoing, before anything has been filed into it.
-                            The counter is only ever incremented, never
-                            decremented, so a zero here really is empty; the
-                            server counts the rows itself and refuses if
-                            anything at all is attached. */}
-                        {canDeleteBatch({
-                          role: userRole,
-                          status: batch.status,
-                          createdAt: batch.createdAt,
-                          // The list does not carry these counts, so the
-                          // button is offered optimistically and the server
-                          // refuses with the reason. Better than hiding it
-                          // and leaving no way to find out why.
-                          ties: { invoices: 0, deliveryBoxes: 0, fullPackageOrders: 0 },
-                        }).allowed && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => setDeletingBatch(batch)}
-                            title={t("batches.deleteBatch")}
-                          >
-                            <Trash2 className="h-4 w-4 text-red-500 dark:text-red-400" />
-                          </Button>
-                        )}
-                        <Link href={`/batches/${batch.id}/financial`}>
-                          <Button variant="ghost" size="icon" title={t("batches.financialReport")}>
-                            <BarChart3 className="h-4 w-4" />
-                          </Button>
-                        </Link>
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => handleExportBatchPDF(batch.id)} 
-                          title={t("common.exportPdf")}
-                          disabled={exportingBatchId === batch.id}
-                        >
-                          {exportingBatchId === batch.id ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <FileDown className="h-4 w-4" />
-                          )}
                         </Button>
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(batch)} title={t("batches.editBatch")}>
                           <Edit className="h-4 w-4" />
@@ -1539,36 +1481,87 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </SelectContent>
                           </Select>
                         )}
-                        {(batch.status === "delivered" || batch.status === "closed") && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 text-xs"
-                            disabled={reprocessMutation.isPending}
-                            onClick={() => {
-                              if (window.confirm(pickLang(language, { ku: "دووبارە چارجکردنی ئۆردەرە چارج نەکراوەکانی ئەم باچە؟ (Idempotent)", en: "Re-charge the uncharged orders of this batch? (Idempotent)", ar: "إعادة محاسبة الطلبات غير المحاسَبة في هذه الدفعة؟ (عملية متكررة آمنة)", zh: "重新对该批次未计费的订单计费？（幂等）" }))) {
-                                reprocessMutation.mutate({ batchId: batch.id });
-                              }
-                            }}
-                            title={pickLang(language, { ku: "دووبارە پرۆسێسکردنی پسوڵەی ئۆردەرە چارجنەکراوەکان", en: "Reprocess invoices for uncharged orders", ar: "إعادة معالجة فواتير الطلبات غير المحاسَبة", zh: "重新处理未计费订单的发票" })}
-                          >
-                            {reprocessMutation.isPending ? "..." : "🧾 Reprocess"}
-                          </Button>
-                        )}
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" title={t("common.actions")}>
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            {/* Straight to the scanner with this batch already
+                                chosen — picking it again from a long dropdown
+                                is the step people get wrong. Only while it is
+                                still open. */}
+                            {(batch.status === "preparing" || batch.status === "in_transit") && (
+                              <DropdownMenuItem onClick={() => setLocation(`/batch-assignment-scanner?batch=${batch.id}`)}>
+                                <ScanLine className="h-4 w-4 me-2" />
+                                {t("batches.scanIntoThisBatch")}
+                              </DropdownMenuItem>
+                            )}
+                            <DropdownMenuItem onClick={() => setLocation(`/batches/${batch.id}/financial`)}>
+                              <BarChart3 className="h-4 w-4 me-2" />
+                              {t("batches.financialReport")}
+                            </DropdownMenuItem>
+                            <DropdownMenuItem
+                              disabled={exportingBatchId === batch.id}
+                              onClick={() => handleExportBatchPDF(batch.id)}
+                            >
+                              {exportingBatchId === batch.id ? (
+                                <Loader2 className="h-4 w-4 me-2 animate-spin" />
+                              ) : (
+                                <FileDown className="h-4 w-4 me-2" />
+                              )}
+                              {t("common.exportPdf")}
+                            </DropdownMenuItem>
+                            {(batch.status === "delivered" || batch.status === "closed") && (
+                              <DropdownMenuItem
+                                disabled={reprocessMutation.isPending}
+                                onClick={() => {
+                                  if (window.confirm(pickLang(language, { ku: "دووبارە چارجکردنی ئۆردەرە چارج نەکراوەکانی ئەم باچە؟ (Idempotent)", en: "Re-charge the uncharged orders of this batch? (Idempotent)", ar: "إعادة محاسبة الطلبات غير المحاسَبة في هذه الدفعة؟ (عملية متكررة آمنة)", zh: "重新对该批次未计费的订单计费？（幂等）" }))) {
+                                    reprocessMutation.mutate({ batchId: batch.id });
+                                  }
+                                }}
+                              >
+                                <ShieldCheck className="h-4 w-4 me-2" />
+                                {pickLang(language, { ku: "دووبارە پرۆسێسکردنی پسوڵەکان", en: "Reprocess invoices", ar: "إعادة معالجة الفواتير", zh: "重新处理发票" })}
+                              </DropdownMenuItem>
+                            )}
+                            {/* Only offered for an empty batch — the server
+                                counts the rows itself and refuses if anything
+                                at all is attached. */}
+                            {canDeleteBatch({
+                              role: userRole,
+                              status: batch.status,
+                              createdAt: batch.createdAt,
+                              ties: { invoices: 0, deliveryBoxes: 0, fullPackageOrders: 0 },
+                            }).allowed && (
+                              <>
+                                <DropdownMenuSeparator />
+                                <DropdownMenuItem
+                                  className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
+                                  onClick={() => setDeletingBatch(batch)}
+                                >
+                                  <Trash2 className="h-4 w-4 me-2" />
+                                  {t("batches.deleteBatch")}
+                                </DropdownMenuItem>
+                              </>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                       </div>
                     </TableCell>
                   </TableRow>
                 ))}
                 {searchActive && !searchQuery.isFetching && !searchQuery.error && rowsToRender.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       {t("batches.searchNoResults", { query: debouncedSearch })}
                     </TableCell>
                   </TableRow>
                 )}
                 {!searchActive && (!batches || batches.length === 0) && (
                   <TableRow>
-                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                       No batches created yet
                     </TableCell>
                   </TableRow>
