@@ -157,8 +157,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { data: warehouses } = trpc.warehouses.list.useQuery({ activeOnly: true });
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
   const { packages: batchPackages } = useBatchPackages(selectedBatch);
-  const { tiers: existingTiers } = useBatchPricingTiers(editingBatch?.id ?? null);
-  const { customerPricing: existingCustomerPricing } = useBatchCustomerPricing(editingBatch?.id ?? null);
+  const { tiers: existingTiers, isSuccess: tiersLoaded } = useBatchPricingTiers(editingBatch?.id ?? null);
+  const { customerPricing: existingCustomerPricing, isSuccess: customerPricingLoaded } = useBatchCustomerPricing(editingBatch?.id ?? null);
   const { financialSummary } = useBatchFinancialSummary(financialBatchId);
   const { data: customers } = trpc.customers.list.useQuery();
   
@@ -300,6 +300,53 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     const msg = err.data?.zodError?.errors?.[0]?.message || err.message || t("common.error");
     toast.error(msg);
   };
+
+  /**
+   * Post-delivery adjustment (داشکاندن / ڕاستکردنەوە) for one customer of a
+   * delivered batch. The dialog only collects inputs and shows the server's
+   * preview; the amount that posts is recomputed server-side, so what the
+   * person confirmed is what the ledger gets.
+   */
+  const [adjustTarget, setAdjustTarget] = useState<{ batchId: number; customerId: number } | null>(null);
+  const [adjustMode, setAdjustMode] = useState<"rate" | "amount">("rate");
+  const [adjustNewRate, setAdjustNewRate] = useState("");
+  const [adjustAmount, setAdjustAmount] = useState("");
+  const [adjustDirection, setAdjustDirection] = useState<"discount" | "surcharge">("discount");
+  const [adjustReason, setAdjustReason] = useState("");
+  const canAdjust = ["super_admin", "admin", "accountant"].includes(userRole ?? "");
+  const resetAdjustForm = () => {
+    setAdjustTarget(null);
+    setAdjustMode("rate");
+    setAdjustNewRate("");
+    setAdjustAmount("");
+    setAdjustDirection("discount");
+    setAdjustReason("");
+  };
+  const adjustValueTyped = adjustMode === "rate" ? adjustNewRate.trim() !== "" : adjustAmount.trim() !== "";
+  const adjustPreview = trpc.batches.previewCustomerAdjustment.useQuery(
+    {
+      batchId: adjustTarget?.batchId ?? 0,
+      customerId: adjustTarget?.customerId ?? 0,
+      mode: adjustMode,
+      newRate: adjustMode === "rate" && adjustValueTyped ? Number(adjustNewRate) : undefined,
+      amountUsd: adjustMode === "amount" && adjustValueTyped ? Number(adjustAmount) : undefined,
+      direction: adjustMode === "amount" ? adjustDirection : undefined,
+    },
+    { enabled: !!adjustTarget }
+  );
+  const applyAdjustmentMutation = trpc.batches.applyCustomerAdjustment.useMutation({
+    onSuccess: (result) => {
+      toast.success(
+        result.direction === "discount"
+          ? pickLang(language, { ku: `داشکاندنی $${result.amountUsd.toFixed(2)} تۆمار کرا`, en: `Discount of $${result.amountUsd.toFixed(2)} recorded`, ar: `سُجِّل خصم $${result.amountUsd.toFixed(2)}`, zh: `已记录折扣 $${result.amountUsd.toFixed(2)}` })
+          : pickLang(language, { ku: `زیادکردنی $${result.amountUsd.toFixed(2)} تۆمار کرا`, en: `Adjustment of $${result.amountUsd.toFixed(2)} recorded`, ar: `سُجِّلت تسوية $${result.amountUsd.toFixed(2)}`, zh: `已记录调整 $${result.amountUsd.toFixed(2)}` })
+      );
+      resetAdjustForm();
+      trpcUtilsForAudit.batches.getFinancialSummary.invalidate();
+      trpcUtilsForAudit.batches.getCustomerPricing.invalidate();
+    },
+    onError: onMutationErrorEarly,
+  });
 
   const resetForm = () => {
     setShippingType("");
@@ -444,11 +491,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Selling price
       pricePerKg: formData.get("pricePerKg") as string || undefined,
       pricePerCbm: formData.get("pricePerCbm") as string || undefined,
-      // Tiered pricing
+      // Tiered pricing / customer pricing: sent ONLY once the stored lists
+      // have actually loaded. The server replaces the whole list on every
+      // update, so a save racing the load used to overwrite somebody's
+      // negotiated prices with an empty array. undefined = leave untouched.
       useTieredPricing: useTieredPricing,
-      pricingTiers: pricingTiers,
-      // Customer-specific pricing
-      customerPricing: customerPricing,
+      pricingTiers: tiersLoaded ? pricingTiers : undefined,
+      customerPricing: customerPricingLoaded ? customerPricing : undefined,
       // "" is a decision (the note was deleted on purpose) and must clear;
       // null means the field never reached the form, and must not touch
       // what is stored. `|| undefined` treated both as "keep", so a note
@@ -1086,7 +1135,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             
                             {customerPricing.length === 0 && (
                               <p className="text-sm text-muted-foreground text-center py-2">
-                                {t("auto.text_143ec0")}.
+                                {/* This said "هیچ باچێک نییە" — the empty state
+                                    of a different list, pasted here. */}
+                                {pickLang(language, {
+                                  ku: "هیچ نرخێکی تایبەت زیاد نەکراوە — لە سەرەوە کڕیارێک هەڵبژێرە.",
+                                  en: "No special price added yet — pick a customer above.",
+                                  ar: "لم يُضف أي سعر خاص بعد — اختر عميلاً من الأعلى.",
+                                  zh: "尚未添加特殊价格——请在上方选择客户。",
+                                })}
                               </p>
                             )}
                           </CardContent>
@@ -1747,10 +1803,17 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </CardHeader>
                     <CardContent>
                       <p className="text-2xl font-bold text-red-700 dark:text-red-300">${financialSummary.totalCost.toFixed(2)}</p>
+                      {/* Where the figure came from — a rate, the carrier's
+                          recorded total, or nothing. A 0 with no source used
+                          to read as "free shipment". */}
                       <p className="text-xs text-muted-foreground mt-1">
-                        {financialSummary.shippingType === 'sea' 
-                          ? `${financialSummary.chargedCbm} CBM × $${financialSummary.costPerCbm}`
-                          : `${financialSummary.chargedWeight} KG × $${financialSummary.costPerKg}`
+                        {financialSummary.costSource === "none"
+                          ? pickLang(language, { ku: "تێچوو تۆمار نەکراوە", en: "No cost recorded", ar: "لم تُسجَّل التكلفة", zh: "未记录成本" })
+                          : financialSummary.costSource === "total"
+                            ? `${pickLang(language, { ku: "کۆی تۆمارکراو", en: "Recorded total", ar: "الإجمالي المسجَّل", zh: "记录的总额" })} ≈ $${financialSummary.effectiveCostRate.toFixed(2)}/${financialSummary.shippingType === 'sea' ? 'CBM' : 'KG'}`
+                            : financialSummary.shippingType === 'sea'
+                              ? `${financialSummary.chargedCbm} CBM × $${financialSummary.costPerCbm}`
+                              : `${financialSummary.chargedWeight} KG × $${financialSummary.costPerKg}`
                         }
                       </p>
                     </CardContent>
@@ -1821,12 +1884,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           <TableHead>{financialSummary.shippingType === 'sea' ? t('batches.cbm') : t('batches.weight')}</TableHead>
                           <TableHead>{t('batches.revenue')}</TableHead>
                           <TableHead className="text-right">{t('batches.profitMargin')}</TableHead>
+                          <TableHead />
                         </TableRow>
                       </TableHeader>
                       <TableBody>
                         {financialSummary.customerBreakdown.map((cb) => {
                           const customerRevenue = cb.revenue;
-                          const avgPricePerUnit = financialSummary.shippingType === 'sea' 
+                          const avgPricePerUnit = financialSummary.shippingType === 'sea'
                             ? (cb.cbm > 0 ? customerRevenue / cb.cbm : 0)
                             : (cb.weight > 0 ? customerRevenue / cb.weight : 0);
                           return (
@@ -1836,7 +1900,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 <Badge variant="outline">{cb.packages}</Badge>
                               </TableCell>
                               <TableCell>
-                                {financialSummary.shippingType === 'sea' 
+                                {financialSummary.shippingType === 'sea'
                                   ? `${cb.cbm.toFixed(4)} CBM`
                                   : `${cb.weight.toFixed(2)} KG`
                                 }
@@ -1847,12 +1911,30 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <TableCell className="text-right text-muted-foreground">
                                 ${avgPricePerUnit.toFixed(2)}/{financialSummary.shippingType === 'sea' ? 'CBM' : 'KG'}
                               </TableCell>
+                              {/* داشکاندن دوای گەیشتن — the price talk often
+                                  happens at the counter, after the invoices
+                                  are out. Only on a delivered/closed batch,
+                                  only for money roles. */}
+                              <TableCell className="text-right">
+                                {canAdjust
+                                  && (financialSummary.batchStatus === "delivered" || financialSummary.batchStatus === "closed")
+                                  && (
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      className="h-7 text-xs"
+                                      onClick={() => setAdjustTarget({ batchId: financialSummary.batchId, customerId: cb.customerId })}
+                                    >
+                                      {pickLang(language, { ku: "داشکاندن", en: "Adjust", ar: "خصم", zh: "调整" })}
+                                    </Button>
+                                  )}
+                              </TableCell>
                             </TableRow>
                           );
                         })}
                         {financialSummary.customerBreakdown.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                               <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               {t('common.noData')}
                             </TableCell>
@@ -1864,6 +1946,128 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 </Card>
               </div>
             )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Post-delivery adjustment dialog. The figure shown is the server's
+            preview and the figure posted is recomputed server-side — the
+            screen only collects the inputs and the reason. */}
+        <Dialog open={!!adjustTarget} onOpenChange={(open) => !open && resetAdjustForm()}>
+          <DialogContent className="max-w-md">
+            <DialogHeader>
+              <DialogTitle>
+                {pickLang(language, { ku: "داشکاندن / ڕاستکردنەوەی حساب", en: "Discount / account adjustment", ar: "خصم / تسوية الحساب", zh: "折扣 / 账目调整" })}
+              </DialogTitle>
+              <DialogDescription>
+                {adjustTarget ? getCustomerName(adjustTarget.customerId) : ""}
+                {adjustPreview.data ? ` — ${adjustPreview.data.batchCode}` : ""}
+              </DialogDescription>
+            </DialogHeader>
+
+            {adjustPreview.data && (
+              <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{pickLang(language, { ku: "نرخی ئێستا", en: "Current rate", ar: "السعر الحالي", zh: "当前价格" })}</span>
+                  <span className="font-mono" dir="ltr">${adjustPreview.data.currentRate.toFixed(2)}/{adjustPreview.data.unit === "cbm" ? "CBM" : "KG"}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span className="text-muted-foreground">{adjustPreview.data.unit === "cbm" ? t("batches.cbm") : t("batches.weight")}</span>
+                  <span className="font-mono" dir="ltr">{adjustPreview.data.customerTotal.toFixed(2)} {adjustPreview.data.unit === "cbm" ? "m³" : "kg"}</span>
+                </div>
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-2">
+              <Button type="button" variant={adjustMode === "rate" ? "default" : "outline"} size="sm" onClick={() => setAdjustMode("rate")}>
+                {pickLang(language, { ku: "نرخی نوێ", en: "New rate", ar: "سعر جديد", zh: "新价格" })}
+              </Button>
+              <Button type="button" variant={adjustMode === "amount" ? "default" : "outline"} size="sm" onClick={() => setAdjustMode("amount")}>
+                {pickLang(language, { ku: "بڕی دیاریکراو", en: "Flat amount", ar: "مبلغ محدد", zh: "固定金额" })}
+              </Button>
+            </div>
+
+            {adjustMode === "rate" ? (
+              <div className="grid gap-1.5">
+                <Label>{pickLang(language, { ku: "نرخی نوێ بۆ ئەم کڕیارە (دۆلار)", en: "New rate for this customer ($)", ar: "السعر الجديد لهذا العميل ($)", zh: "该客户的新价格（$）" })}</Label>
+                <Input type="number" step="0.01" min="0" value={adjustNewRate} onChange={(e) => setAdjustNewRate(e.target.value)} placeholder="e.g., 10.00" />
+                <p className="text-xs text-muted-foreground">
+                  {pickLang(language, { ku: "جیاوازییەکە خۆی حساب دەکرێت و نرخە نوێکە وەک نرخی تایبەت تۆمار دەبێت.", en: "The difference is computed automatically and the new rate is saved as this customer's price.", ar: "يُحسب الفرق تلقائياً ويُحفظ السعر الجديد كسعر خاص للعميل.", zh: "差额自动计算，新价格将保存为该客户的专属价格。" })}
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <div className="grid grid-cols-2 gap-2">
+                  <Button type="button" variant={adjustDirection === "discount" ? "default" : "outline"} size="sm" onClick={() => setAdjustDirection("discount")}>
+                    {pickLang(language, { ku: "داشکاندن (کەمکردنەوە)", en: "Discount (down)", ar: "خصم (تخفيض)", zh: "折扣（减少）" })}
+                  </Button>
+                  <Button type="button" variant={adjustDirection === "surcharge" ? "default" : "outline"} size="sm" onClick={() => setAdjustDirection("surcharge")}>
+                    {pickLang(language, { ku: "زیادکردن", en: "Increase", ar: "زيادة", zh: "增加" })}
+                  </Button>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label>{pickLang(language, { ku: "بڕ (دۆلار)", en: "Amount ($)", ar: "المبلغ ($)", zh: "金额（$）" })}</Label>
+                  <Input type="number" step="0.01" min="0" value={adjustAmount} onChange={(e) => setAdjustAmount(e.target.value)} placeholder="e.g., 50.00" />
+                </div>
+              </div>
+            )}
+
+            <div className="grid gap-1.5">
+              <Label>{pickLang(language, { ku: "هۆکار (پێویستە)", en: "Reason (required)", ar: "السبب (مطلوب)", zh: "原因（必填）" })}</Label>
+              <Input value={adjustReason} onChange={(e) => setAdjustReason(e.target.value)} placeholder={pickLang(language, { ku: "بۆ نموونە: ڕێککەوتن لەگەڵ کڕیار", en: "e.g., agreed with customer", ar: "مثال: اتفاق مع العميل", zh: "例如：与客户协商" })} />
+            </div>
+
+            {adjustPreview.data && adjustValueTyped && (
+              adjustPreview.data.allowed ? (
+                <div className={cn(
+                  "rounded-lg border p-3 text-sm font-medium",
+                  adjustPreview.data.direction === "discount"
+                    ? "border-green-200 dark:border-green-800/60 bg-green-50 dark:bg-green-950/40 text-green-800 dark:text-green-200"
+                    : "border-amber-200 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200"
+                )}>
+                  {adjustPreview.data.direction === "discount"
+                    ? pickLang(language, { ku: `داشکاندن: $${adjustPreview.data.amountUsd.toFixed(2)} لە حسابی کڕیار کەم دەکرێتەوە`, en: `Discount: $${adjustPreview.data.amountUsd.toFixed(2)} will be credited to the customer`, ar: `خصم: سيُخصم $${adjustPreview.data.amountUsd.toFixed(2)} من حساب العميل`, zh: `折扣：将为客户减免 $${adjustPreview.data.amountUsd.toFixed(2)}` })
+                    : pickLang(language, { ku: `زیادکردن: $${adjustPreview.data.amountUsd.toFixed(2)} دەخرێتە سەر حسابی کڕیار`, en: `Increase: $${adjustPreview.data.amountUsd.toFixed(2)} will be added to the customer's account`, ar: `زيادة: سيُضاف $${adjustPreview.data.amountUsd.toFixed(2)} إلى حساب العميل`, zh: `增加：将向客户账户加收 $${adjustPreview.data.amountUsd.toFixed(2)}` })}
+                </div>
+              ) : (
+                <div className="rounded-lg border border-red-200 dark:border-red-800/60 bg-red-50 dark:bg-red-950/40 p-3 text-sm text-red-700 dark:text-red-300">
+                  {adjustPreview.data.refusal === "not_delivered"
+                    ? pickLang(language, { ku: "تەنیا بۆ باچی گەیشتوو/داخراو — پێش گەیشتن نرخی تایبەت لە ئیدیتی باچەوە دابنێ.", en: "Delivered/closed batches only — before delivery, set a customer price in the batch edit.", ar: "للدُفعات المسلَّمة/المغلقة فقط — قبل التسليم ضع سعراً خاصاً من تعديل الدفعة.", zh: "仅限已送达/已关闭的批次——送达前请在批次编辑中设置专属价格。" })
+                    : adjustPreview.data.refusal === "no_base"
+                      ? pickLang(language, { ku: "ئەم کڕیارە کێش/CBMی تۆمارکراوی نییە — بڕی دیاریکراو بەکاربهێنە.", en: "This customer has no recorded weight/CBM — use a flat amount.", ar: "لا يوجد وزن/حجم مسجَّل لهذا العميل — استخدم مبلغاً محدداً.", zh: "该客户没有记录的重量/体积——请使用固定金额。" })
+                      : pickLang(language, { ku: "بڕی ژمێردراو سفرە.", en: "The computed amount is zero.", ar: "المبلغ المحسوب صفر.", zh: "计算出的金额为零。" })}
+                </div>
+              )
+            )}
+
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={resetAdjustForm}>{t("common.cancel")}</Button>
+              <Button
+                type="button"
+                disabled={
+                  !adjustTarget
+                  || !adjustValueTyped
+                  || adjustReason.trim().length < 3
+                  || !adjustPreview.data?.allowed
+                  || applyAdjustmentMutation.isPending
+                }
+                onClick={() => {
+                  if (!adjustTarget) return;
+                  applyAdjustmentMutation.mutate({
+                    batchId: adjustTarget.batchId,
+                    customerId: adjustTarget.customerId,
+                    mode: adjustMode,
+                    newRate: adjustMode === "rate" ? Number(adjustNewRate) : undefined,
+                    amountUsd: adjustMode === "amount" ? Number(adjustAmount) : undefined,
+                    direction: adjustMode === "amount" ? adjustDirection : undefined,
+                    reason: adjustReason.trim(),
+                  });
+                }}
+              >
+                {applyAdjustmentMutation.isPending
+                  ? t("common.creating")
+                  : pickLang(language, { ku: "تۆمارکردن", en: "Record", ar: "تسجيل", zh: "记录" })}
+              </Button>
+            </DialogFooter>
           </DialogContent>
         </Dialog>
 
@@ -2072,6 +2276,25 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               </div>
                             </>
                           )}
+                          {/* The carrier's one figure for the whole shipment.
+                              It usually arrives AFTER the batch exists, and
+                              the create form was the only place it could be
+                              typed. Leave the per-unit blank and this total
+                              is divided over the kilos when the batch is
+                              delivered. */}
+                          <Label className="mt-2">{t("batches.totalShippingCost")}</Label>
+                          <div className="relative">
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                            <Input name="shippingCost" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.shippingCost || ""} placeholder={t("batches.totalAmountToCompany")} />
+                          </div>
+                          <p className="text-xs text-muted-foreground">
+                            {pickLang(language, {
+                              ku: "ئەگەر تێچووی یەکە بەتاڵ بێت، لە کاتی گەیشتندا ئەم کۆیە دابەش دەکرێت بەسەر کێش/CBM و تێچووی یەکە خۆی تۆمار دەبێت.",
+                              en: "If the per-unit cost is blank, this total is divided over the weight/CBM at delivery and the per-unit cost fills itself in.",
+                              ar: "إذا تُركت تكلفة الوحدة فارغة، يُقسَّم هذا الإجمالي على الوزن/الحجم عند التسليم وتُسجَّل تكلفة الوحدة تلقائياً.",
+                              zh: "若单价成本留空，送达时系统会将此总额除以重量/体积并自动填入单价成本。",
+                            })}
+                          </p>
                         </div>
                       </CardContent>
                     </Card>

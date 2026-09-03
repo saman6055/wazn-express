@@ -24,22 +24,32 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(
 describe("a note written on a batch comes back", () => {
   const batchesDb = read("server/db/batches.db.ts");
 
+  // The columns moved into one shared object (BATCH_LIST_COLUMNS) when
+  // search arrived, so the list and the search cannot drift — the edit
+  // dialog is filled from a row of EITHER now. The guarantee is the same:
+  // whatever the dialog writes back must come back to it.
+  const columnsStart = batchesDb.indexOf("const BATCH_LIST_COLUMNS");
+  const columnsEnd = batchesDb.indexOf("export async function getAllBatches");
+  const columns = batchesDb.slice(columnsStart, columnsEnd);
+
+  it("the shared column list exists and the list-shaped reads use it", () => {
+    expect(columnsStart, "BATCH_LIST_COLUMNS not found").toBeGreaterThan(-1);
+    expect(columnsEnd, "getAllBatches not found").toBeGreaterThan(columnsStart);
+    // One for the page list, two for the search (direct rows + child rows).
+    expect(
+      batchesDb.match(/db\.select\(BATCH_LIST_COLUMNS\)/g)?.length ?? 0,
+      "a list-shaped read stopped selecting the shared columns",
+    ).toBeGreaterThanOrEqual(2);
+  });
+
   it("is returned by the query the edit dialog is filled from", () => {
-    const list = batchesDb.slice(
-      batchesDb.indexOf("export async function getAllBatches"),
-      batchesDb.indexOf("export async function getBatchById"),
-    );
-    expect(list).toContain("notes: batches.notes");
+    expect(columns).toContain("notes: batches.notes");
   });
 
   it("and so is everything else that dialog writes back", () => {
     // Three more went the same way and nobody had noticed yet.
-    const list = batchesDb.slice(
-      batchesDb.indexOf("export async function getAllBatches"),
-      batchesDb.indexOf("export async function getBatchById"),
-    );
     for (const field of ["shippingCost", "chargedWeightKg", "chargedCbm"]) {
-      expect(list, `${field} is written back by the form and not returned`)
+      expect(columns, `${field} is written back by the form and not returned`)
         .toContain(`${field}: batches.${field}`);
     }
   });

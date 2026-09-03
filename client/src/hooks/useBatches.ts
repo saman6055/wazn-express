@@ -54,14 +54,17 @@ export function useBatchPricingTiers(batchId: number | null) {
   const enabled = batchId != null;
   const query = trpc.batches.getPricingTiers.useQuery({ batchId: batchId ?? 0 }, { enabled });
   const tiers = useMemo(() => query.data ?? EMPTY_ARRAY, [query.data]);
-  return { tiers, isLoading: query.isLoading, refetch: query.refetch };
+  // isSuccess so the edit dialog can refuse to SEND tiers it never received —
+  // saving before this query lands used to replace stored tiers with [].
+  return { tiers, isLoading: query.isLoading, isSuccess: query.isSuccess, refetch: query.refetch };
 }
 
 export function useBatchCustomerPricing(batchId: number | null) {
   const enabled = batchId != null;
   const query = trpc.batches.getCustomerPricing.useQuery({ batchId: batchId ?? 0 }, { enabled });
   const customerPricing = useMemo(() => query.data ?? EMPTY_ARRAY, [query.data]);
-  return { customerPricing, isLoading: query.isLoading, refetch: query.refetch };
+  // Same contract as useBatchPricingTiers: only a loaded list may be written back.
+  return { customerPricing, isLoading: query.isLoading, isSuccess: query.isSuccess, refetch: query.refetch };
 }
 
 export function useBatchFinancialSummary(batchId: number | null) {

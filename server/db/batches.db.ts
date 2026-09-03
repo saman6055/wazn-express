@@ -10,6 +10,8 @@ import {
   type SearchableBatchField,
 } from '@shared/batchSearch';
 import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
+import { deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
+import { createCustomerNotification } from './portal.db';
 import { getSetting, getVolumetricDivisor } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import type { MySqlColumn } from "drizzle-orm/mysql-core";
@@ -858,6 +860,88 @@ export async function getCustomerPriceInBatch(batchId: number, customerId: numbe
   return null;
 }
 
+/**
+ * Divide the carrier's one figure over the kilos, once they are final.
+ *
+ * The office often knows a shipment's cost only as a total — the $2,000 on
+ * the carrier's invoice — and the per-kg cost every report multiplies by was
+ * simply never filled in. This runs when the batch is marked delivered (the
+ * moment the weights stop changing): if a total is recorded and the per-unit
+ * cost is not, it derives the rate and writes it, so every existing reader
+ * of costPerKg / costPerCbm — the profit report, the self-order report, the
+ * financial dialog — sees a real number without learning a new rule.
+ *
+ * The billed base prefers what was typed from the carrier's invoice
+ * (chargedWeightKg / chargedCbm — it is literally what the total was priced
+ * on) and falls back to the parcels' own chargeable sum.
+ */
+export async function deriveBatchCostRateIfMissing(batchId: number): Promise<{
+  derived: boolean;
+  rate?: number;
+  unit?: "kg" | "cbm";
+  base?: number;
+}> {
+  const db = await getDb();
+  if (!db) return { derived: false };
+  const batch = await getBatchById(batchId);
+  if (!batch) return { derived: false };
+
+  const isSea = batch.shippingType === "sea";
+
+  // Work out the billed base only if there is anything to derive.
+  const quickCheck = deriveCostRate({
+    shippingType: batch.shippingType,
+    costPerKg: batch.costPerKg,
+    costPerCbm: batch.costPerCbm,
+    shippingCost: batch.shippingCost,
+    // A fake base — this call only answers "is a rate already set / is
+    // there a total at all". The real base is computed below.
+    chargeableKg: 1,
+    totalCbm: 1,
+  });
+  if (quickCheck === null) return { derived: false };
+
+  const batchPackages = await db.select().from(packages).where(eq(packages.batchId, batchId));
+  let base: number;
+  if (isSea) {
+    const summedCbm = batchPackages.reduce((sum, pkg) => sum + (Number(pkg.volumeCbm) || 0), 0);
+    base = Number(batch.chargedCbm) || summedCbm;
+  } else {
+    const divisor = await getVolumetricDivisor();
+    const summedKg = batchPackages.reduce(
+      (sum, pkg) => sum + chargeableWeight(pkg, divisor).chargeableKg,
+      0
+    );
+    base = Number(batch.chargedWeightKg) || summedKg;
+  }
+
+  const rate = deriveCostRate({
+    shippingType: batch.shippingType,
+    costPerKg: batch.costPerKg,
+    costPerCbm: batch.costPerCbm,
+    shippingCost: batch.shippingCost,
+    chargeableKg: base,
+    totalCbm: base,
+  });
+  if (rate === null) return { derived: false };
+
+  await db
+    .update(batches)
+    .set(isSea ? { costPerCbm: rate.toFixed(2) } : { costPerKg: rate.toFixed(2) })
+    .where(eq(batches.id, batchId));
+
+  appLogger.info("[BatchCost] derived per-unit cost from the recorded total", {
+    batchId,
+    batchCode: batch.batchCode,
+    shippingCost: batch.shippingCost,
+    base,
+    rate,
+    unit: isSea ? "cbm" : "kg",
+  });
+
+  return { derived: true, rate, unit: isSea ? "cbm" : "kg", base };
+}
+
 // Get batch financial summary
 export async function getBatchFinancialSummary(batchId: number) {
   const db = await getDb();
@@ -890,16 +974,20 @@ export async function getBatchFinancialSummary(batchId: number) {
   const chargedWeight = Number(batchData.chargedWeightKg) || totalChargeableWeight;
   const chargedCbm = Number(batchData.chargedCbm) || packageTotalCbm;
   
-  // Calculate total cost using chargeable weight (from packages) × cost per KG
-  let totalCost = 0;
-  if (batchData.shippingType === 'sea') {
-    const costPerCbm = Number(batchData.costPerCbm) || 0;
-    totalCost = chargedCbm * costPerCbm;
-  } else {
-    const costPerKg = Number(batchData.costPerKg) || 0;
-    // Use totalChargeableWeight (sum of max(actual, volumetric) for each package)
-    totalCost = totalChargeableWeight * costPerKg;
-  }
+  // What the shipment cost the company. One shared rule (@shared/batchCost):
+  // an explicit per-unit rate × the billed base, else the carrier's recorded
+  // total as-is — a batch known only by its total used to report zero cost
+  // and a fantasy profit. `costSource` is returned so the screen can say
+  // which of the two (or neither) the figure came from.
+  const resolvedCost = resolveBatchCost({
+    shippingType: batchData.shippingType,
+    costPerKg: batchData.costPerKg,
+    costPerCbm: batchData.costPerCbm,
+    shippingCost: batchData.shippingCost,
+    chargeableKg: totalChargeableWeight,
+    totalCbm: chargedCbm,
+  });
+  const totalCost = resolvedCost.totalCostUsd;
 
   // Per-customer breakdown — built in TWO passes:
   //  1. Sum chargeable weight / cbm per customer.
@@ -983,6 +1071,9 @@ export async function getBatchFinancialSummary(batchId: number) {
   return {
     batchId,
     shippingType: batchData.shippingType,
+    // So the dialog can offer post-delivery actions only when the batch
+    // actually is post-delivery.
+    batchStatus: batchData.status,
     actualWeight,
     actualCbm,
     chargedWeight,
@@ -991,6 +1082,13 @@ export async function getBatchFinancialSummary(batchId: number) {
     costPerKg: Number(batchData.costPerKg) || 0,
     costPerCbm: Number(batchData.costPerCbm) || 0,
     totalCost,
+    // Where the cost figure came from, so the dialog can explain itself:
+    // "rate" (per-unit × base), "total" (the carrier's one figure, with the
+    // per-unit derived), or "none" (nothing recorded — 0 is an absence, not
+    // a free shipment).
+    costSource: resolvedCost.source as BatchCostSource,
+    effectiveCostRate: resolvedCost.effectiveRate,
+    shippingCostTotal: Number(batchData.shippingCost) || 0,
     totalRevenue,
     profit: totalRevenue - totalCost,
     profitMargin: totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue * 100) : 0,
@@ -1178,4 +1276,269 @@ export async function reattachPackagesToBatch(
   }
 
   return { reattached: freeIds.length, movedOn: packageIds.length - freeIds.length };
+}
+
+// ============ POST-DELIVERY CUSTOMER ADJUSTMENT ============
+
+/**
+ * A price agreed after the goods went out.
+ *
+ * The invoices for a batch are emitted the moment it is marked delivered —
+ * but the conversation that ends in "باشە، بۆ تۆ $10" often happens at the
+ * counter, after that moment. Changing the stored customer price then does
+ * nothing: the invoice is out, the DEBIT is on the ledger, and the system
+ * had no way to say "and now $118 less".
+ *
+ * The rule here is the accountant's rule, the same one the box-settlement
+ * flow already follows: an issued invoice is never edited. The correction is
+ * a NEW ledger row — CREDIT_DISCOUNT downward, ADJUSTMENT_DEBIT upward —
+ * that names the batch, the rates, and the reason. The statement then reads
+ * as what actually happened: billed at $11, discounted $118, in that order.
+ *
+ * Preview and apply are split so the screen can show the computed figure
+ * and make a person confirm it; apply recomputes everything server-side and
+ * trusts nothing the screen sends except the inputs themselves.
+ */
+export type BatchAdjustmentDirection = "discount" | "surcharge";
+
+export interface BatchAdjustmentInput {
+  batchId: number;
+  customerId: number;
+  /** "rate": a new per-unit price; the delta is computed from the customer's
+   *  billed base. "amount": a flat figure with an explicit direction. */
+  mode: "rate" | "amount";
+  newRate?: number;
+  amountUsd?: number;
+  direction?: BatchAdjustmentDirection;
+}
+
+export interface BatchAdjustmentPreview {
+  batchId: number;
+  batchCode: string;
+  batchStatus: string;
+  customerId: number;
+  customerCode: string | null;
+  unit: "kg" | "cbm";
+  /** The customer's billed base in this batch (chargeable kg or CBM). */
+  customerTotal: number;
+  /** What the rate rule resolves for them today, and where it came from. */
+  currentRate: number;
+  currentRateSource: string;
+  newRate: number | null;
+  amountUsd: number;
+  direction: BatchAdjustmentDirection;
+  allowed: boolean;
+  refusal: "not_delivered" | "zero_amount" | "no_base" | null;
+}
+
+const round2 = (n: number) => Math.round(n * 100) / 100;
+
+export async function previewBatchCustomerAdjustment(
+  input: BatchAdjustmentInput
+): Promise<BatchAdjustmentPreview | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const batch = await getBatchById(input.batchId);
+  if (!batch) return null;
+
+  const unit = billingUnit(batch.shippingType);
+  const customerTotal = await getCustomerTotalInBatch(input.batchId, input.customerId, unit);
+  const current = await getBatchRateForCustomer(input.batchId, input.customerId, {
+    unit,
+    customerTotal,
+  });
+  const customer = await db
+    .select({ customerCode: customers.customerCode })
+    .from(customers)
+    .where(eq(customers.id, input.customerId))
+    .limit(1);
+
+  let amountUsd: number;
+  let direction: BatchAdjustmentDirection;
+  let newRate: number | null = null;
+  if (input.mode === "rate") {
+    newRate = round2(Math.max(0, input.newRate ?? 0));
+    const delta = round2((current.rate - newRate) * customerTotal);
+    direction = delta >= 0 ? "discount" : "surcharge";
+    amountUsd = Math.abs(delta);
+  } else {
+    amountUsd = round2(Math.max(0, input.amountUsd ?? 0));
+    direction = input.direction ?? "discount";
+  }
+
+  const delivered = batch.status === "delivered" || batch.status === "closed";
+  const refusal = !delivered
+    ? ("not_delivered" as const)
+    : input.mode === "rate" && customerTotal <= 0
+      ? ("no_base" as const)
+      : amountUsd < 0.01
+        ? ("zero_amount" as const)
+        : null;
+
+  return {
+    batchId: input.batchId,
+    batchCode: batch.batchCode,
+    batchStatus: batch.status,
+    customerId: input.customerId,
+    customerCode: customer[0]?.customerCode ?? null,
+    unit,
+    customerTotal: round2(customerTotal),
+    currentRate: current.rate,
+    currentRateSource: current.source,
+    newRate,
+    amountUsd,
+    direction,
+    allowed: refusal === null,
+    refusal,
+  };
+}
+
+export async function applyBatchCustomerAdjustment(args: {
+  input: BatchAdjustmentInput;
+  reason: string;
+  userId: number;
+}): Promise<{
+  transactionId: number;
+  transactionNumber: string;
+  amountUsd: number;
+  direction: BatchAdjustmentDirection;
+  newBalanceUsd: number;
+  description: string;
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  // Recomputed here, not trusted from the screen: the person confirmed a
+  // figure, and this is what guarantees the figure they confirmed is the
+  // figure that posts.
+  const preview = await previewBatchCustomerAdjustment(args.input);
+  if (!preview) throw new Error("باچەکە نەدۆزرایەوە");
+  if (!preview.allowed) {
+    const message =
+      preview.refusal === "not_delivered"
+        ? "ئەم کردارە تەنیا بۆ باچی گەیشتوو/داخراوە — پێش گەیشتن نرخی تایبەت لە ئیدیتی باچەوە دابنێ"
+        : preview.refusal === "no_base"
+          ? "ئەم کڕیارە هیچ کێش/CBMێکی تۆمارکراوی نییە لەم باچەدا — بڕی دیاریکراو بەکاربهێنە"
+          : "بڕی ژمێردراو سفرە — هیچ شتێک بۆ تۆمارکردن نییە";
+    throw new Error(message);
+  }
+
+  const reason = args.reason.trim();
+  if (!reason) throw new Error("هۆکار پێویستە — لە داهاتوودا کەس نازانێت ئەم بڕە بۆچی گۆڕدرا");
+
+  const isDiscount = preview.direction === "discount";
+  const rateDetail =
+    preview.newRate !== null
+      ? ` — نرخ $${preview.currentRate.toFixed(2)} → $${preview.newRate.toFixed(2)} × ${preview.customerTotal.toFixed(2)}${preview.unit === "cbm" ? "m³" : "kg"}`
+      : "";
+  const description =
+    (isDiscount ? `داشکاندنی دوای گەیشتن — باچ ${preview.batchCode}` : `ڕاستکردنەوەی نرخ (زیادکردن) — باچ ${preview.batchCode}`) +
+    rateDetail +
+    ` — ${reason}`;
+
+  const result = await db.transaction(async (tx) => {
+    const accountRows = await tx
+      .select()
+      .from(customerAccounts)
+      .where(eq(customerAccounts.customerId, preview.customerId))
+      .for("update")
+      .limit(1);
+    const account = accountRows[0];
+    // A customer invoiced at delivery always has an account; one without has
+    // never been charged, so there is nothing here to correct.
+    if (!account) throw new Error("حیسابی کڕیار نەدۆزرایەوە — ئەم کڕیارە هیچ چارجێکی نییە");
+
+    const balanceBefore = Number(account.currentBalanceUsd || 0);
+    const balanceIqd = Number(account.currentBalanceIqd || 0);
+    const balanceAfter = round2(balanceBefore + (isDiscount ? -preview.amountUsd : preview.amountUsd));
+
+    const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
+    const transactionNumber = `TXN-${day}-${Math.floor(Math.random() * 100000).toString().padStart(5, "0")}`;
+    const inserted = await tx.insert(ledgerTransactions).values({
+      accountId: account.id,
+      transactionNumber,
+      transactionType: isDiscount ? "CREDIT_DISCOUNT" : "ADJUSTMENT_DEBIT",
+      amountUsd: preview.amountUsd.toFixed(2),
+      amountIqd: "0",
+      balanceBeforeUsd: balanceBefore.toFixed(2),
+      balanceAfterUsd: balanceAfter.toFixed(2),
+      balanceBeforeIqd: balanceIqd.toFixed(0),
+      balanceAfterIqd: balanceIqd.toFixed(0),
+      // The enum has no "batch" — "adjustment" with the batch id, and the
+      // description names the batch code, which is what a reader searches by.
+      referenceType: "adjustment",
+      referenceId: preview.batchId,
+      description,
+      createdById: args.userId,
+    });
+
+    await tx
+      .update(customerAccounts)
+      .set({ currentBalanceUsd: balanceAfter.toFixed(2), lastTransactionAt: new Date() })
+      .where(eq(customerAccounts.id, account.id));
+
+    // A new rate is also remembered as this customer's price in this batch,
+    // so the portal and the reports tell the same story as the ledger.
+    if (args.input.mode === "rate" && preview.newRate !== null) {
+      const unitField = preview.unit === "cbm" ? "pricePerCbm" : "pricePerKg";
+      const existing = await tx
+        .select()
+        .from(batchCustomerPricing)
+        .where(and(
+          eq(batchCustomerPricing.batchId, preview.batchId),
+          eq(batchCustomerPricing.customerId, preview.customerId)
+        ))
+        .limit(1);
+      const noteLine = `دوای گەیشتن: ${reason}`;
+      if (existing[0]) {
+        await tx
+          .update(batchCustomerPricing)
+          .set({
+            [unitField]: preview.newRate.toFixed(2),
+            notes: existing[0].notes ? `${existing[0].notes}\n${noteLine}` : noteLine,
+          })
+          .where(eq(batchCustomerPricing.id, existing[0].id));
+      } else {
+        await tx.insert(batchCustomerPricing).values({
+          batchId: preview.batchId,
+          customerId: preview.customerId,
+          [unitField]: preview.newRate.toFixed(2),
+          notes: noteLine,
+          createdById: args.userId,
+        });
+      }
+    }
+
+    return {
+      transactionId: Number(inserted[0].insertId),
+      transactionNumber,
+      amountUsd: preview.amountUsd,
+      direction: preview.direction,
+      newBalanceUsd: balanceAfter,
+      description,
+    };
+  });
+
+  // Outside the transaction on purpose — the money is committed, and a
+  // notification that fails must never roll it back.
+  try {
+    await createCustomerNotification({
+      customerId: preview.customerId,
+      type: "payment",
+      relatedType: "batch",
+      relatedId: preview.batchId,
+      title: isDiscount ? "داشکاندنت بۆ کرا" : "ڕاستکردنەوەی حساب",
+      message: isDiscount
+        ? `داشکاندنی $${preview.amountUsd.toFixed(2)}ت بۆ کرا لەسەر باچی ${preview.batchCode}.`
+        : `حسابەکەت ڕاستکرایەوە: $${preview.amountUsd.toFixed(2)} زیادکرا لەسەر باچی ${preview.batchCode}.`,
+    });
+  } catch (err) {
+    appLogger.error("[BatchAdjustment] customer notification failed", {
+      batchId: preview.batchId,
+      customerId: preview.customerId,
+      err,
+    });
+  }
+
+  return result;
 }

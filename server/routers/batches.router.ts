@@ -577,6 +577,62 @@ export const batchesRouter = router({
     getActive: staffProcedure.query(async () => {
       return db.getActiveBatches();
     }),
+
+    /**
+     * A discount (or upward correction) agreed AFTER the batch was delivered
+     * and invoiced. The invoice is never edited: preview shows the person the
+     * exact figure, apply recomputes it server-side and posts one new ledger
+     * row — CREDIT_DISCOUNT down, ADJUSTMENT_DEBIT up — naming the batch,
+     * the rates and the reason. See db.applyBatchCustomerAdjustment.
+     *
+     * accountantProcedure: admin + accountant. The auditor passes this list
+     * but is a read-only role — the global mutation guard refuses it before
+     * the apply ever runs, so it can preview and never post.
+     */
+    previewCustomerAdjustment: accountantProcedure
+      .input(z.object({
+        batchId: idSchema,
+        customerId: idSchema,
+        mode: z.enum(["rate", "amount"]),
+        newRate: z.number().min(0).max(100000).optional(),
+        amountUsd: z.number().min(0).max(1000000).optional(),
+        direction: z.enum(["discount", "surcharge"]).optional(),
+      }))
+      .query(async ({ input }) => {
+        const preview = await db.previewBatchCustomerAdjustment(input);
+        if (!preview) throw new TRPCError({ code: "NOT_FOUND", message: "باچەکە نەدۆزرایەوە" });
+        return preview;
+      }),
+
+    applyCustomerAdjustment: accountantProcedure
+      .input(z.object({
+        batchId: idSchema,
+        customerId: idSchema,
+        mode: z.enum(["rate", "amount"]),
+        newRate: z.number().min(0).max(100000).optional(),
+        amountUsd: z.number().min(0).max(1000000).optional(),
+        direction: z.enum(["discount", "surcharge"]).optional(),
+        reason: z.string().min(3).max(500),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const { reason, ...adjustment } = input;
+        const result = await db.applyBatchCustomerAdjustment({
+          input: adjustment,
+          reason,
+          userId: ctx.user.id,
+        });
+
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "batch_customer_adjustment",
+          entityType: "batch",
+          entityId: input.batchId,
+          newValues: { ...input, ...result },
+        });
+
+        return result;
+      }),
     getById: staffProcedure
       .input(z.object({ id: idSchema }))
       .query(async ({ input }) => {
@@ -1113,6 +1169,19 @@ export const batchesRouter = router({
           // toast even when zero invoices got created.
           let topLevelError: string | null = null;
           try {
+          // The "divide the $2,000 over the kilos" step: if the cost was
+          // recorded only as the carrier's total, derive and store the
+          // per-unit cost now — the weights are final at delivery, and every
+          // profit reader multiplies by the per-unit field. Never fatal: a
+          // failure here must not stop the invoicing run.
+          try {
+            await db.deriveBatchCostRateIfMissing(id);
+          } catch (e) {
+            appLogger.error("[BatchDelivered] cost derivation failed", {
+              batchId: id,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
           // Build a diagnostic report so the caller can see exactly what
           // happened in the consolidated invoice flow without needing
           // server logs. Surfaced back to the UI as part of the response.
