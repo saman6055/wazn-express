@@ -1,267 +1,64 @@
-// Wazn Express Service Worker
-// Bump the version when caching behavior changes so the activate handler
-// purges stale caches. v3: push notifications now explicitly non-silent
-// with stronger vibration so phones ring for every notification.
-const CACHE_NAME = 'wazn-express-v3';
-const STATIC_CACHE = 'wazn-static-v3';
-const DYNAMIC_CACHE = 'wazn-dynamic-v3';
+/**
+ * Wazn Express service worker.
+ *
+ * This file existed only as a registration call — main.tsx has asked for
+ * /sw.js on every load since the PWA work landed, and every load got a 404.
+ * Two things quietly depended on it and were dead the whole time: web push
+ * (usePushSubscription awaits `serviceWorker.ready`, which never resolved)
+ * and, on older Android WebViews, installability itself.
+ *
+ * Deliberately does NOT cache or intercept any fetch. A cached app shell
+ * outlives deploys, and this system ships fixes that the owner redeploys the
+ * same day — a stale shell serving last week's money rules is a worse bug
+ * than no offline support. The app is useless offline anyway (all data is
+ * remote); the worker exists for installability and push, nothing more.
+ */
 
-// Static assets to cache on install
-const STATIC_ASSETS = [
-  '/',
-  '/manifest.json',
-  '/icons/icon-192x192.png',
-  '/icons/icon-512x512.png',
-  '/icons/apple-touch-icon.png'
-];
+self.addEventListener("install", () => {
+  self.skipWaiting();
+});
 
-// API routes that should always go to network
-const NETWORK_ONLY = [
-  '/api/',
-  '/trpc/'
-];
+self.addEventListener("activate", (event) => {
+  event.waitUntil(self.clients.claim());
+});
 
-// Install event - cache static assets
-self.addEventListener('install', (event) => {
-  console.log('[SW] Installing service worker...');
+/**
+ * Push payload contract: `{ title, body, url }` — exactly what
+ * server/services/push.service.ts sends (bodyFor / campaign sender).
+ */
+self.addEventListener("push", (event) => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (e) {
+    data = { body: event.data ? event.data.text() : "" };
+  }
+  const title = data.title || "Wazn Express";
   event.waitUntil(
-    caches.open(STATIC_CACHE)
-      .then((cache) => {
-        console.log('[SW] Caching static assets');
-        return cache.addAll(STATIC_ASSETS);
-      })
-      .then(() => self.skipWaiting())
+    self.registration.showNotification(title, {
+      body: data.body || "",
+      icon: "/icons/icon-192x192.png",
+      badge: "/icons/icon-96x96.png",
+      dir: "rtl",
+      data: { url: data.url || "/portal" },
+    })
   );
 });
 
-// Activate event - clean up old caches
-self.addEventListener('activate', (event) => {
-  console.log('[SW] Activating service worker...');
-  event.waitUntil(
-    caches.keys()
-      .then((keys) => {
-        return Promise.all(
-          keys
-            .filter((key) => key !== STATIC_CACHE && key !== DYNAMIC_CACHE)
-            .map((key) => {
-              console.log('[SW] Removing old cache:', key);
-              return caches.delete(key);
-            })
-        );
-      })
-      .then(() => self.clients.claim())
-  );
-});
-
-// Fetch event - serve from cache or network
-self.addEventListener('fetch', (event) => {
-  const { request } = event;
-  const url = new URL(request.url);
-
-  // Skip cross-origin requests
-  if (url.origin !== location.origin) {
-    return;
-  }
-
-  // Network only for API calls
-  if (NETWORK_ONLY.some(path => url.pathname.startsWith(path))) {
-    event.respondWith(
-      fetch(request)
-        .catch(() => {
-          // Return offline response for API calls
-          return new Response(
-            JSON.stringify({ error: 'Offline', message: 'ئینتەرنێت نییە' }),
-            { headers: { 'Content-Type': 'application/json' } }
-          );
-        })
-    );
-    return;
-  }
-
-  // Cache first for static assets
-  if (request.destination === 'image' || 
-      url.pathname.startsWith('/icons/') ||
-      url.pathname.endsWith('.css') ||
-      url.pathname.endsWith('.js')) {
-    event.respondWith(
-      caches.match(request)
-        .then((cached) => {
-          if (cached) {
-            return cached;
-          }
-          return fetch(request)
-            .then((response) => {
-              if (response.ok) {
-                const clone = response.clone();
-                caches.open(DYNAMIC_CACHE)
-                  .then((cache) => cache.put(request, clone));
-              }
-              return response;
-            });
-        })
-    );
-    return;
-  }
-
-  // Network first for HTML pages
-  event.respondWith(
-    fetch(request)
-      .then((response) => {
-        if (response.ok) {
-          const clone = response.clone();
-          caches.open(DYNAMIC_CACHE)
-            .then((cache) => cache.put(request, clone));
-        }
-        return response;
-      })
-      .catch(() => {
-        return caches.match(request)
-          .then((cached) => {
-            if (cached) {
-              return cached;
-            }
-            // Return offline page for navigation requests
-            if (request.mode === 'navigate') {
-              return caches.match('/');
-            }
-            return new Response('Offline', { status: 503 });
-          });
-      })
-  );
-});
-
-// Push notification event
-self.addEventListener('push', (event) => {
-  console.log('[SW] Push notification received');
-  
-  let data = { title: 'Wazn Express', body: 'ئاگادارکردنەوەی نوێ' };
-  
-  if (event.data) {
-    try {
-      data = event.data.json();
-    } catch (e) {
-      data.body = event.data.text();
-    }
-  }
-
-  const options = {
-    body: data.body,
-    icon: '/icons/icon-192x192.png',
-    badge: '/icons/icon-72x72.png',
-    // Explicitly audible: silent=false makes the OS play its notification
-    // sound; renotify+tag re-alerts (sound + vibration) on every push
-    // instead of silently replacing the previous notification.
-    silent: false,
-    renotify: true,
-    tag: data.tag || 'wazn-express',
-    vibrate: [200, 100, 200, 100, 300],
-    data: {
-      url: data.url || '/'
-    },
-    actions: [
-      { action: 'open', title: 'بینین' },
-      { action: 'close', title: 'داخستن' }
-    ],
-    dir: 'rtl',
-    lang: 'ku'
-  };
-
-  event.waitUntil(
-    self.registration.showNotification(data.title, options)
-  );
-});
-
-// Notification click event
-self.addEventListener('notificationclick', (event) => {
-  console.log('[SW] Notification clicked');
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-
-  if (event.action === 'close') {
-    return;
-  }
-
-  const url = event.notification.data?.url || '/';
-  
+  const url = (event.notification.data && event.notification.data.url) || "/portal";
   event.waitUntil(
-    clients.matchAll({ type: 'window', includeUncontrolled: true })
-      .then((windowClients) => {
-        // Check if there's already a window open
-        for (const client of windowClients) {
-          if (client.url === url && 'focus' in client) {
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clientList) => {
+        for (const client of clientList) {
+          if ("focus" in client) {
+            client.navigate(url);
             return client.focus();
           }
         }
-        // Open new window
-        if (clients.openWindow) {
-          return clients.openWindow(url);
-        }
+        return self.clients.openWindow(url);
       })
   );
 });
-
-// Background sync for offline actions
-self.addEventListener('sync', (event) => {
-  console.log('[SW] Background sync:', event.tag);
-  
-  if (event.tag === 'sync-scans') {
-    event.waitUntil(syncOfflineScans());
-  }
-});
-
-async function syncOfflineScans() {
-  try {
-    const db = await openIndexedDB();
-    const scans = await getOfflineScans(db);
-    
-    for (const scan of scans) {
-      try {
-        await fetch('/api/trpc/scanner.registerScan', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify(scan)
-        });
-        await deleteOfflineScan(db, scan.id);
-      } catch (e) {
-        console.error('[SW] Failed to sync scan:', e);
-      }
-    }
-  } catch (e) {
-    console.error('[SW] Sync failed:', e);
-  }
-}
-
-function openIndexedDB() {
-  return new Promise((resolve, reject) => {
-    const request = indexedDB.open('wazn-offline', 1);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-    request.onupgradeneeded = (event) => {
-      const db = event.target.result;
-      if (!db.objectStoreNames.contains('scans')) {
-        db.createObjectStore('scans', { keyPath: 'id', autoIncrement: true });
-      }
-    };
-  });
-}
-
-function getOfflineScans(db) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('scans', 'readonly');
-    const store = tx.objectStore('scans');
-    const request = store.getAll();
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve(request.result);
-  });
-}
-
-function deleteOfflineScan(db, id) {
-  return new Promise((resolve, reject) => {
-    const tx = db.transaction('scans', 'readwrite');
-    const store = tx.objectStore('scans');
-    const request = store.delete(id);
-    request.onerror = () => reject(request.error);
-    request.onsuccess = () => resolve();
-  });
-}
-
-console.log('[SW] Service Worker loaded');

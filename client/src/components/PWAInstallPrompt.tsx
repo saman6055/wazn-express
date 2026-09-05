@@ -1,5 +1,7 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
+import { useLocation } from 'wouter';
 import { Button } from '@/components/ui/button';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { X, Download, Smartphone } from 'lucide-react';
 import { useOffline } from '@/contexts/OfflineContext';
 import { useTranslation } from '@/contexts/LanguageContext';
@@ -26,6 +28,27 @@ const INSTALLED_KEY = 'pwa-installed';
 /** Two weeks without a single open inside the app — presume it was deleted. */
 const IOS_INSTALL_STALE_MS = 14 * 24 * 60 * 60 * 1000;
 
+/**
+ * In the customer portal the ask is a different animal.
+ *
+ * The owner's rule: a customer entering the portal is asked to put the app
+ * on their phone straight away, every visit, until it is installed. So on
+ * /portal routes the quiet bottom card becomes a front-and-center dialog
+ * that appears immediately, and "later" only quiets it for THIS visit —
+ * sessionStorage, not the three-day localStorage truce the staff-side card
+ * keeps. Installed stays installed: nobody is ever asked twice for an app
+ * already on their home screen.
+ */
+const PORTAL_SESSION_DISMISS_KEY = 'pwa-portal-install-dismissed';
+
+const isPortalSessionDismissed = () => {
+  try {
+    return sessionStorage.getItem(PORTAL_SESSION_DISMISS_KEY) === '1';
+  } catch {
+    return false;
+  }
+};
+
 interface BeforeInstallPromptEvent extends Event {
   prompt: () => Promise<void>;
   userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
@@ -34,12 +57,20 @@ interface BeforeInstallPromptEvent extends Event {
 export function PWAInstallPrompt() {
   const company = useCompanyInfo();
   const { language } = useTranslation();
+  const [locationPath] = useLocation();
+  const onPortal = locationPath.startsWith('/portal');
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
   /** Installed at some point, whether or not this visit is inside the app. */
   const [alreadyInstalled, setAlreadyInstalled] = useState(false);
+  // The beforeinstallprompt handler is registered once, but "am I in the
+  // portal" changes with navigation — a ref keeps the handler honest.
+  const onPortalRef = useRef(onPortal);
+  useEffect(() => {
+    onPortalRef.current = onPortal;
+  }, [onPortal]);
 
   useEffect(() => {
     // Check if the app is running as an installed app right now
@@ -89,13 +120,15 @@ export function PWAInstallPrompt() {
     // Listen for install prompt. Chrome only fires this when the app is NOT
     // currently installed — so if it fires while an install is remembered,
     // the app was deleted since. Forget the memory and ask again.
+    // In the portal the timing is handled by the navigation effect below —
+    // this handler only covers the quiet staff-side card.
     const handleBeforeInstall = (e: Event) => {
       e.preventDefault();
       setDeferredPrompt(e as BeforeInstallPromptEvent);
       localStorage.removeItem(INSTALLED_KEY);
       setAlreadyInstalled(false);
 
-      if (!isDismissedRecently()) {
+      if (!onPortalRef.current && !isDismissedRecently()) {
         setTimeout(() => setShowPrompt(true), 3000); // Show after 3 seconds
       }
     };
@@ -114,8 +147,9 @@ export function PWAInstallPrompt() {
 
     if (installedFresh) {
       setAlreadyInstalled(true);
-    } else if (iOS && !standalone && !isDismissedRecently()) {
-      // Show iOS prompt after delay
+    } else if (iOS && !standalone && !onPortalRef.current && !isDismissedRecently()) {
+      // Staff-side iOS card after a polite delay; the portal dialog has its
+      // own immediate timing below.
       setTimeout(() => setShowPrompt(true), 5000);
     }
 
@@ -124,6 +158,21 @@ export function PWAInstallPrompt() {
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
+
+  /**
+   * Entering the portal asks straight away — including the customer who
+   * logged in at /login and was navigated here a moment later, which the
+   * mount effect above never sees. Fires when either install path becomes
+   * possible: Android's captured prompt, or iOS where the path is manual.
+   * "Later" earlier this visit keeps it quiet until the next visit.
+   */
+  useEffect(() => {
+    if (!onPortal || showPrompt || isStandalone || alreadyInstalled) return;
+    if (!deferredPrompt && !isIOS) return;
+    if (isPortalSessionDismissed()) return;
+    const timer = setTimeout(() => setShowPrompt(true), 600);
+    return () => clearTimeout(timer);
+  }, [onPortal, deferredPrompt, isIOS, isStandalone, alreadyInstalled, showPrompt]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -139,12 +188,84 @@ export function PWAInstallPrompt() {
 
   const handleDismiss = () => {
     setShowPrompt(false);
+    if (onPortal) {
+      // This visit only. The next time they open the portal, the ask is
+      // back — the owner's rule: every visit, until it is installed.
+      try {
+        sessionStorage.setItem(PORTAL_SESSION_DISMISS_KEY, '1');
+      } catch {
+        /* private mode: it will simply ask again */
+      }
+      return;
+    }
     // Timestamp, not a flag — the prompt comes back after the TTL passes.
     localStorage.setItem('pwa-install-dismissed', String(Date.now()));
   };
 
   // Never ask somebody to install what they have already installed.
   if (isStandalone || alreadyInstalled || !showPrompt) return null;
+
+  // The portal ask: a dialog in the middle of the screen, immediately on
+  // entry. One picture, one sentence, one button — every customer must be
+  // able to read it (iOS gets the three taps Safari requires instead).
+  if (onPortal) {
+    return (
+      <Dialog open onOpenChange={(open) => !open && handleDismiss()}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <div className="mx-auto mb-2 h-20 w-20 overflow-hidden rounded-2xl shadow-lg">
+              <img src="/icons/icon-192x192.png" alt="" className="h-full w-full object-cover" />
+            </div>
+            <DialogTitle className="text-center text-xl">
+              {pickLang(language, {
+                ku: `${company.name} بخە سەر شاشەکەت`,
+                en: `Put ${company.name} on your screen`,
+                ar: `ضع ${company.name} على شاشتك`,
+                zh: `把 ${company.name} 放到主屏幕`,
+              })}
+            </DialogTitle>
+            <DialogDescription className="text-center">
+              {pickLang(language, {
+                ku: "وەک ئەپ دایبنێ — بە یەک کلیک شوێن شەحنەکانت بکەوە.",
+                en: "Install it as an app — track your shipments with one tap.",
+                ar: "ثبّته كتطبيق — تتبّع شحناتك بنقرة واحدة.",
+                zh: "安装为应用，一键跟踪您的货物。",
+              })}
+            </DialogDescription>
+          </DialogHeader>
+
+          {isIOS ? (
+            <ol className="list-decimal space-y-2 ps-5 text-sm">
+              <li className="leading-6">
+                {pickLang(language, { ku: "لە خوارەوەی سەفاری کلیک لە دوگمەی", en: "In Safari, tap the", ar: "في سفاري اضغط زر", zh: "在 Safari 底部点击" })}{' '}
+                <span className="inline-flex items-center rounded bg-muted px-1.5 py-0.5 align-middle">
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                    <path d="M12 15V3m0 0L8 7m4-4l4 4M4 13v6a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-6" />
+                  </svg>
+                </span>{' '}
+                {pickLang(language, { ku: "(هاوبەشکردن) بکە", en: "(Share) button", ar: "(المشاركة)", zh: "（分享）按钮" })}
+              </li>
+              <li className="leading-6">
+                {pickLang(language, { ku: "«Add to Home Screen» هەڵبژێرە", en: 'Choose "Add to Home Screen"', ar: 'اختر "Add to Home Screen"', zh: '选择“添加到主屏幕”' })}
+              </li>
+              <li className="leading-6">
+                {pickLang(language, { ku: "«Add» دابگرە — تەواو!", en: 'Tap "Add" — done!', ar: 'اضغط "Add" — انتهى!', zh: '点“添加”——完成！' })}
+              </li>
+            </ol>
+          ) : (
+            <Button onClick={handleInstall} size="lg" className="w-full bg-orange-500 text-white hover:bg-orange-600">
+              <Download className="h-5 w-5 me-2" />
+              {pickLang(language, { ku: "دامەزراندن", en: "Install", ar: "تثبيت", zh: "安装" })}
+            </Button>
+          )}
+
+          <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleDismiss}>
+            {pickLang(language, { ku: "دواتر", en: "Later", ar: "لاحقاً", zh: "稍后" })}
+          </Button>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <div className="fixed bottom-20 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
