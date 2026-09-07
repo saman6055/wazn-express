@@ -53,10 +53,12 @@ describe("one control, announced once", () => {
    * the only thing that said "you are here" before.
    */
   it("the bottom navigation marks the current page", () => {
+    // The raised centre button is now the ➕ register action rather than
+    // Home; it still has to announce itself when the customer is on it.
     const layout = fs.readFileSync(
       path.resolve(__dirname, "components/CustomerPortalLayout.tsx"), "utf8");
     expect(layout).toMatch(/aria-current=\{isActive \? "page" : undefined\}/);
-    expect(layout).toMatch(/aria-current=\{isHomeActive \? "page" : undefined\}/);
+    expect(layout).toMatch(/aria-current=\{isDeclareActive \? "page" : undefined\}/);
   });
 });
 

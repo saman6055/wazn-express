@@ -1,8 +1,9 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { useLocation, Link, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Home, Package, Wallet, User, ShoppingBag, Search } from "lucide-react";
+import { Home, Package, Wallet, User, Plus, Search } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { usePortalWidthClass } from "@/hooks/usePortalWidth";
@@ -113,39 +114,44 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     },
   });
 
-  // Left side items
+  /**
+   * The owner's five slots: home, my shipments, the blue ➕ register button
+   * in the centre, finance, account. The orders page lost its tab to the ➕
+   * and keeps a permanent door in the Me menu until the merged My-shipments
+   * tab absorbs it.
+   */
   const leftItems = [
-    { 
-      icon: Package, 
-      label: t('portal.shipments'), 
-      path: "/portal/shipments",
-      activeColor: "text-emerald-500",
-      activeBg: "bg-emerald-500/10",
-      activeGlow: "shadow-emerald-500/20",
+    {
+      icon: Home,
+      label: t('portal.home'),
+      path: "/portal",
+      activeColor: "text-blue-500",
+      activeBg: "bg-blue-500/10",
+      activeGlow: "shadow-blue-500/20",
     },
-    { 
-      icon: ShoppingBag, 
-      label: t('portal.fullPack'), 
-      path: "/portal/full-package",
-      activeColor: "text-purple-500",
-      activeBg: "bg-purple-500/10",
-      activeGlow: "shadow-purple-500/20",
+    {
+      icon: Package,
+      label: pickLang(language, { ku: "بارەکانم", en: "My shipments", ar: "شحناتي", zh: "我的货件" }),
+      path: "/portal/shipments",
+      activeColor: "text-sky-500",
+      activeBg: "bg-sky-500/10",
+      activeGlow: "shadow-sky-500/20",
     },
   ];
 
   // Right side items
   const rightItems = [
-    { 
-      icon: Wallet, 
-      label: t('portal.financial'), 
+    {
+      icon: Wallet,
+      label: t('portal.financial'),
       path: "/portal/financial",
       activeColor: "text-amber-500",
       activeBg: "bg-amber-500/10",
       activeGlow: "shadow-amber-500/20",
     },
-    { 
-      icon: User, 
-      label: t('portal.me'), 
+    {
+      icon: User,
+      label: pickLang(language, { ku: "هەژمار", en: "Account", ar: "حسابي", zh: "我的" }),
       path: "/portal/profile",
       activeColor: "text-blue-500",
       activeBg: "bg-blue-500/10",
@@ -153,14 +159,14 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     },
   ];
 
-  // Home item (center)
-  const homeItem = { 
-    icon: Home, 
-    label: t('portal.home'), 
-    path: "/portal",
+  // Centre ➕ — quick tracking registration, reachable from every page.
+  const declareItem = {
+    icon: Plus,
+    label: pickLang(language, { ku: "تۆماری تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
+    path: "/portal/declare",
   };
 
-  const isHomeActive = location === "/portal";
+  const isDeclareActive = location.startsWith("/portal/declare");
 
   const renderNavItem = (item: typeof leftItems[0], isActive: boolean) => (
     <Link
@@ -307,56 +313,26 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
               })}
             </div>
 
-            {/* Center - Home Button (Large & Prominent).
-                Raised further than the four flat items so its label, which
-                sits below the circle rather than beside it, has somewhere to
-                go. At -top-4 the label ran past the bottom of the bar. */}
-            <div className="relative -top-6">
+            {/* Center — the ➕ register-tracking button, in the same electric
+                blue as the home hero so the two read as one action. Raised
+                above the flat items; no visible label (the hero card names
+                the action), an aria-label carries it for screen readers. */}
+            <div className="relative -top-5">
               <Link
-                href={homeItem.path}
-                aria-current={isHomeActive ? "page" : undefined}
+                href={declareItem.path}
+                aria-current={isDeclareActive ? "page" : undefined}
+                aria-label={declareItem.label}
                 className="relative group block"
               >
-                  {/* Outer glow ring */}
                   <div className={cn(
-                    "absolute -inset-2 rounded-full transition-all duration-500",
-                    isHomeActive 
-                      ? "bg-gradient-to-r from-blue-500 via-purple-500 to-pink-500 opacity-70 blur-lg animate-pulse" 
-                      : "bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 opacity-0 group-hover:opacity-40 blur-md"
-                  )} />
-                  
-                  {/* Main button */}
-                  <div className={cn(
-                    "relative w-16 h-16 rounded-full flex items-center justify-center transition-all duration-300",
-                    "shadow-2xl",
-                    isHomeActive
-                      ? "bg-gradient-to-br from-blue-500 via-purple-500 to-pink-500 scale-110"
-                      : isDark
-                        ? "bg-gradient-to-br from-slate-700 to-slate-800 group-hover:from-blue-600 group-hover:to-purple-600"
-                        : "bg-gradient-to-br from-slate-800 to-slate-900 group-hover:from-blue-600 group-hover:to-purple-600",
+                    "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300",
+                    "bg-gradient-to-br from-[#2563EB] to-[#1D4ED8]",
+                    "shadow-[0_8px_20px_-4px_rgba(37,99,235,0.5)]",
+                    isDeclareActive && "ring-4 ring-blue-500/30 scale-105",
                     "group-hover:scale-105 group-active:scale-95"
                   )}>
-                    {/* Inner shine effect */}
-                    <div className="absolute inset-0.5 rounded-full bg-gradient-to-b from-white/20 to-transparent" />
-                    
-                    {/* Icon */}
-                    <homeItem.icon className={cn(
-                      "w-7 h-7 text-white relative z-10 transition-transform duration-300",
-                      isHomeActive && "scale-110"
-                    )} strokeWidth={2.5} />
+                    <declareItem.icon className="w-7 h-7 text-white relative z-10" strokeWidth={2.5} />
                   </div>
-
-                  {/* Label below */}
-                  <span className={cn(
-                    "absolute -bottom-5 left-1/2 -translate-x-1/2 text-[10px] font-bold whitespace-nowrap transition-colors duration-300",
-                    isHomeActive 
-                      ? "text-purple-500" 
-                      : isDark 
-                        ? "text-slate-400" 
-                        : "text-slate-500"
-                  )}>
-                    {homeItem.label}
-                  </span>
               </Link>
             </div>
 
