@@ -76,18 +76,14 @@ describe("every status the database can hold has a customer-facing name", () => 
   });
 
   it("the home-tile stage groups only name statuses a package can hold", () => {
-    // Both alternate skins once counted packages against BATCH statuses
+    // The alternate skin homes once counted packages against BATCH statuses
     // ("arrived", "customs", "closed"), so the arrived tile was stuck at zero.
-    // Group membership through the shared map makes that impossible to
-    // reintroduce without this failing.
+    // Those homes are gone (one unified home now), but the shared map itself
+    // must keep naming only real package statuses for whoever reads it.
     const statuses = enumValues("drizzle/schema/packages.schema.ts", 'status: mysqlEnum("status", [');
     const grouped = Object.values(PACKAGE_STAGE_GROUPS).flat();
     const unknown = grouped.filter((s) => !statuses.includes(s));
     expect(unknown, `not package statuses:\n${unknown.join("\n")}`).toEqual([]);
-
-    for (const skin of ["pages/portal/modern/ModernPortalHome.tsx", "pages/portal/skin3/Skin3PortalHome.tsx"]) {
-      expect(read(path.join(SRC, skin)), `${skin} must count via PACKAGE_STAGE_GROUPS`).toContain("PACKAGE_STAGE_GROUPS");
-    }
   });
 
   it("batch statuses all have a stage and a label", () => {

@@ -10,6 +10,8 @@ import {
   SHIPPING_TYPE_LABEL,
   orderStageOf,
   orderStatusLabel,
+  isInIraqNotDelivered,
+  IN_IRAQ_STATUSES,
   type BatchStatus,
 } from "./shipmentFilters";
 
@@ -258,5 +260,33 @@ describe("the pills and the list agree", () => {
     expect(src).toContain("matchesRoute(batch.shippingType, shippingType)");
     expect(src, "a strict equality here is how the two drifted apart")
       .not.toContain("batch.shippingType === shippingType");
+  });
+});
+
+describe("the Iraq-side tail of the road", () => {
+  it("is exactly arrived, customs and at_depot", () => {
+    for (const s of ["arrived", "customs", "at_depot"]) {
+      expect(isInIraqNotDelivered(s), `${s} is in Iraq`).toBe(true);
+    }
+    for (const s of ["preparing", "in_transit", "delivered", "closed", "nonsense"]) {
+      expect(isInIraqNotDelivered(s), `${s} is not`).toBe(false);
+    }
+  });
+
+  it("stays inside the in_transit stage, so the shipments page still agrees", () => {
+    // The home pipeline splits in_transit into road / Iraq. Every Iraq status
+    // must still answer in_transit to stageOf, or a tap on the card and the
+    // shipments filter would count different worlds.
+    for (const s of IN_IRAQ_STATUSES) {
+      expect(stageOf(s)).toBe("in_transit");
+    }
+  });
+
+  it("the home pipeline counts and filters through this one rule", () => {
+    const src = fs.readFileSync(
+      path.resolve(__dirname, "../pages/portal/PortalHome.tsx"), "utf8");
+    expect(src).toContain("isInIraqNotDelivered(b.status)");
+    expect(src, "no private list of Iraq statuses on the screen")
+      .not.toMatch(/"arrived"\s*,\s*"customs"\s*,\s*"at_depot"/);
   });
 });

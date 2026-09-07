@@ -54,31 +54,22 @@ describe("every portal page wears the chosen skin", () => {
 });
 
 describe("things that existed on only one skin", () => {
-  it("the prohibited-decision alert reaches all three homes", () => {
+  // The home page no longer forks per skin: the owner ordered one unified
+  // design, and the modern/skin3 home files are gone. These guards now hold
+  // the one home to what the three used to drift on.
+  it("the prohibited-decision alert reaches the home", () => {
     // A parcel held at the depot awaiting a return-or-destroy decision, with
-    // storage accruing. It was on the classic home only; the other two skins
-    // linked to the static policy page instead of the customer's own parcels.
-    for (const home of [
-      "PortalHome.tsx",
-      "modern/ModernPortalHome.tsx",
-      "skin3/Skin3PortalHome.tsx",
-    ]) {
-      const src = fs.readFileSync(path.join(PORTAL, home), "utf8");
-      expect(src, `${home} must surface the pending decision`).toMatch(
-        /ProhibitedDecisionAlert|prohibited\.getMine/,
-      );
-    }
+    // storage accruing. Two skins once linked to the static policy page
+    // instead of the customer's own parcels.
+    const src = fs.readFileSync(path.join(PORTAL, "PortalHome.tsx"), "utf8");
+    expect(src, "PortalHome must surface the pending decision").toMatch(
+      /ProhibitedDecisionAlert|prohibited\.getMine/,
+    );
   });
 
-  it("the welcome card reaches all three homes", () => {
-    for (const home of [
-      "PortalHome.tsx",
-      "modern/ModernPortalHome.tsx",
-      "skin3/Skin3PortalHome.tsx",
-    ]) {
-      const src = fs.readFileSync(path.join(PORTAL, home), "utf8");
-      expect(src, `${home} must welcome a new customer`).toContain("PortalWelcomeCard");
-    }
+  it("the welcome card reaches the home", () => {
+    const src = fs.readFileSync(path.join(PORTAL, "PortalHome.tsx"), "utf8");
+    expect(src, "PortalHome must welcome a new customer").toContain("PortalWelcomeCard");
   });
 });
 

@@ -83,17 +83,14 @@ export function PortalHeaderControls({
   showClock?: boolean;
   className?: string;
 }) {
-  const { language, setLanguage } = useLanguage();
+  const { language } = useLanguage();
   const [mode, setMode] = usePortalMode();
-  const [langOpen, setLangOpen] = useState(false);
 
   const light = onLight ?? isLightHeader(mode);
 
   const glass = light
     ? "bg-slate-900/[0.06] border-slate-900/10 text-slate-800 dark:text-slate-200"
     : "bg-white/10 border-white/20 text-white";
-
-  const current = LANGUAGES.find((l) => l.code === language);
 
   return (
     <div className={cn("flex items-center justify-between gap-2", className)}>
@@ -132,48 +129,62 @@ export function PortalHeaderControls({
         <PortalWidthPicker />
         {showClock && <PortalClock onLight={light} compact />}
 
-        {/* Language */}
-        <div className="relative">
-          <button
-            type="button"
-            onClick={() => setLangOpen((o) => !o)}
-            className={cn(
-              "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition active:scale-95",
-              glass,
-            )}
-          >
-            <Languages className="h-3.5 w-3.5" />
-            {current?.nativeName ?? language}
-          </button>
-
-          {langOpen && (
-            <>
-              {/* Tap-away layer — a dropdown with no way out is worse than none. */}
-              <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-              <div className="absolute end-0 z-50 mt-2 w-36 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-                {LANGUAGES.map((l) => (
-                  <button
-                    key={l.code}
-                    type="button"
-                    onClick={() => {
-                      setLanguage(l.code as Language);
-                      setLangOpen(false);
-                    }}
-                    className={cn(
-                      "flex w-full items-center gap-2 px-3 py-2 text-sm transition hover:bg-slate-100 dark:hover:bg-slate-800",
-                      language === l.code && "font-semibold",
-                    )}
-                  >
-                    <span>{l.flag}</span>
-                    <span className="flex-1 text-start">{l.nativeName}</span>
-                    {language === l.code && <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" />}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <PortalLanguagePicker glass={glass} />
       </div>
+    </div>
+  );
+}
+
+/**
+ * The language dropdown on its own, so a header that carries no colour modes
+ * (the redesigned home) offers the same picker rather than a second copy.
+ * `glass` is the pill's surface classes — the caller knows what it sits on.
+ */
+export function PortalLanguagePicker({ glass, className }: { glass: string; className?: string }) {
+  const { language, setLanguage } = useLanguage();
+  const [langOpen, setLangOpen] = useState(false);
+  const current = LANGUAGES.find((l) => l.code === language);
+
+  return (
+    <div className={cn("relative", className)}>
+      <button
+        type="button"
+        onClick={() => setLangOpen((o) => !o)}
+        className={cn(
+          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition active:scale-95",
+          glass,
+        )}
+      >
+        <Languages className="h-3.5 w-3.5" />
+        {current?.nativeName ?? language}
+      </button>
+
+      {langOpen && (
+        <>
+          {/* Tap-away layer — a dropdown with no way out is worse than none. */}
+          <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
+          <div className="absolute end-0 z-50 mt-2 w-36 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
+            {LANGUAGES.map((l) => (
+              <button
+                key={l.code}
+                type="button"
+                onClick={() => {
+                  setLanguage(l.code as Language);
+                  setLangOpen(false);
+                }}
+                className={cn(
+                  "flex w-full items-center gap-2 px-3 py-2 text-sm transition hover:bg-slate-100 dark:hover:bg-slate-800",
+                  language === l.code && "font-semibold",
+                )}
+              >
+                <span>{l.flag}</span>
+                <span className="flex-1 text-start">{l.nativeName}</span>
+                {language === l.code && <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" />}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
     </div>
   );
 }

@@ -14,7 +14,6 @@ import { Input } from "@/components/ui/input";
 import CompanyLogo from "@/components/CompanyLogo";
 import { PortalNavButtons } from "@/components/PortalNavButtons";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
-import { DeclarePackageBanner } from "@/components/portal/DeclarePackageBanner";
 import { NewsTicker } from "@/components/portal/NewsTicker";
 import { usePortalSSE } from "@/hooks/usePortalSSE";
 import { toast } from "sonner";
@@ -27,6 +26,10 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   useDynamicFavicon();
   const [location, setLocation] = useLocation();
   const isSearchPage = location.startsWith("/portal/search");
+  // The redesigned home carries its own header (identity, search, bell, and
+  // a slim bar that appears on scroll) — a second chrome bar above it would
+  // double the search entry and eat the screen.
+  const isHome = location === "/portal";
   const searchString = useSearch();
   // How wide this portal sits: grows with the screen unless the reader
   // has chosen a fixed width for themselves.
@@ -212,7 +215,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       {isInstalled && (
         <div className={cn("h-safe-area-top", isDark ? "bg-slate-950" : "bg-slate-900")} />
       )}
-      {/* Global search bar - sticky at top */}
+      {/* Global search bar - sticky at top. Hidden on the home page, whose
+          own header carries search and the notification bell. */}
+      {!isHome && (
       <div className={cn(
         "sticky top-0 z-40 border-b transition-colors duration-300",
         isDark ? "bg-slate-900/95 border-slate-700/50 backdrop-blur-sm" : "bg-slate-50/95 border-slate-200/50 backdrop-blur-sm"
@@ -246,6 +251,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           )}
         </div>
       </div>
+      )}
       {/* Main Content. Grows to fill the viewport so the news strip below can
           be pushed to the bottom on a short page — without it the strip landed
           wherever the content happened to end, halfway up the screen on a page
@@ -253,8 +259,8 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       <main className={cn(portalWidth, "mx-auto w-full flex-1 flex flex-col")}>
         {/* Admin-set announcement banner — shown on every portal page */}
         <AnnouncementBanner />
-        {/* Prominent pre-declaration CTA — home only, above every skin */}
-        {location === "/portal" && <DeclarePackageBanner />}
+        {/* The pre-declaration CTA that used to sit here is now the home
+            page's own hero card — one register-your-tracking action, not two. */}
         {children}
         {/* Wazn News ticker — in-flow, and mt-auto pins it to the bottom of a
             short page while still sitting at the end of a long one. Never

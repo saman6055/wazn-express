@@ -114,11 +114,17 @@ describe("the portal's sounds are a phone's sounds, not a warehouse's", () => {
 describe("the portal says what happens next, not only what happened", () => {
   const home = read("pages/portal/PortalHome.tsx");
 
-  it("puts it above the counts", () => {
+  it("sits directly under the pipeline it details", () => {
+    // The redesign leads with the three-stage pipeline (the owner's order);
+    // this card is the sentence under those numbers — the nearest shipment
+    // and what it is waiting on. It must still exist, and still sit in the
+    // pipeline's shadow rather than buried below the lists.
     const card = home.indexOf("<NextStepCard");
     const stats = home.indexOf("{/* Stats Cards */}");
+    const recent = home.indexOf("portal.recentShipments");
     expect(card).toBeGreaterThan(-1);
-    expect(card, "the answer must come before the tally").toBeLessThan(stats);
+    expect(card, "the next-step line belongs under the stage cards").toBeGreaterThan(stats);
+    expect(card, "but above the recent-shipments list").toBeLessThan(recent);
   });
 
   it("shows one shipment — the one closest to reaching them", () => {
@@ -245,11 +251,17 @@ describe("the price question has a direct answer", () => {
   const app = read("App.tsx");
 
   it("is the first thing in the quick actions", () => {
+    // The redesign trimmed the grid to the owner's four tools; the price
+    // question stays first among them. Terms and the rest of the reading
+    // material move behind the Me tab, off the home screen.
     const actions = home.slice(home.indexOf("const quickActions = ["), home.indexOf("const quickActions = [") + 1400);
     expect(actions).toContain('href: "/portal/calculator"');
     const calc = actions.indexOf("/portal/calculator");
-    const terms = actions.indexOf("/portal/terms");
-    expect(calc, "the commonest question should not be behind the terms").toBeLessThan(terms);
+    for (const later of ["/portal/yuan-exchange", "/portal/no-mark", "/portal/guide"]) {
+      const at = actions.indexOf(later);
+      expect(at, `${later} must be one of the four tools`).toBeGreaterThan(-1);
+      expect(calc, "the commonest question comes first").toBeLessThan(at);
+    }
   });
 
   it("has an address of its own, so it can be sent to somebody", () => {

@@ -1,18 +1,11 @@
-﻿import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
-import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import { lazy } from "react";
-// Lazy: only the active skin's chunk is downloaded (global admin setting).
-const ModernPortalHome = lazy(() => import("./modern/ModernPortalHome"));
-const Skin3PortalHome = lazy(() => import("./skin3/Skin3PortalHome"));
+import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import {
   Package, PackageCheck, Bell, ChevronRight, Truck, CheckCircle, Clock, Calculator,
-  AlertCircle, Plane, Ship, Megaphone, TrendingUp, Search,
-  CreditCard, MessageCircle, FileText, DollarSign,
-  Sun, Moon, Sparkles, AlertTriangle, PackagePlus, Info, X,
-  Scale, Ban, ShoppingBag, Wallet, User, BookOpen, GraduationCap, PhoneCall
+  AlertCircle, Plane, Ship, Megaphone, Search, Plus,
+  MessageCircle, AlertTriangle, BookOpen, Coins, User,
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { mostRelevantShipment } from "@shared/nextStep";
@@ -21,141 +14,57 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect } from "react";
-import { PriceListSection } from "@/components/portal/PriceListSection";
 import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { GreetingCard } from "@/components/portal/GreetingCard";
 import { MyShareLinks } from "@/components/portal/MyShareLinks";
 import { ReferralCard } from "@/components/portal/ReferralCard";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
-import { PortalHeaderControls, PortalClock, usePortalMode } from "@/components/portal/PortalHeaderControls";
-import { headerGradient, isLightHeader, modeDef, tint, gradient } from "@/lib/portalModes";
-import { PhotoStack } from "@/components/PhotoStack";
+import { PortalClock, PortalLanguagePicker } from "@/components/portal/PortalHeaderControls";
+import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
 import { isDebt } from "@/lib/portalMoney";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
-import { stageOf, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
+import { stageOf, isInIraqNotDelivered, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
   const [count, setCount] = useState(0);
-  
+
   useEffect(() => {
     if (value === 0) {
       setCount(0);
       return;
     }
-    
+
     let startTime: number;
     let animationFrame: number;
-    
+
     const animate = (timestamp: number) => {
       if (!startTime) startTime = timestamp;
       const progress = Math.min((timestamp - startTime) / duration, 1);
-      
+
       setCount(Math.floor(progress * value));
-      
+
       if (progress < 1) {
         animationFrame = requestAnimationFrame(animate);
       }
     };
-    
+
     animationFrame = requestAnimationFrame(animate);
-    
+
     return () => cancelAnimationFrame(animationFrame);
   }, [value, duration]);
-  
+
   return <>{count}</>;
-}
-
-// Get time-based greeting
-function getGreeting(language: string): string {
-  const hour = new Date().getHours();
-  
-  if (language === "ku") {
-    if (hour < 12) return "بەیانیت باش";
-    if (hour < 17) return "ڕۆژت باش";
-    if (hour < 21) return "ئێوارەت باش";
-    return "شەوت باش";
-  }
-  
-  if (hour < 12) return "Good Morning";
-  if (hour < 17) return "Good Afternoon";
-  if (hour < 21) return "Good Evening";
-  return "Good Night";
-}
-
-// Get greeting icon
-function GreetingIcon() {
-  const hour = new Date().getHours();
-  if (hour >= 6 && hour < 18) {
-    return <Sun className="w-5 h-5 text-amber-400" />;
-  }
-  return <Moon className="w-5 h-5 text-indigo-300" />;
 }
 
 // Announcements Section Component
 function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; language: string; t: (key: string, params?: Record<string, string | number>) => string }) {
   const company = useCompanyInfo();
   const { data: blogPosts, isLoading } = trpc.blog.featured.useQuery();
-  
-  // Get title based on language
-  const getTitle = (post: any) => {
-    if (language === "ku" && post.titleKu) return post.titleKu;
-    if (language === "ar" && post.titleAr) return post.titleAr;
-    return post.titleEn;
-  };
-  
-  // Get summary based on language
-  const getSummary = (post: any) => {
-    if (language === "ku" && post.summaryKu) return post.summaryKu;
-    if (language === "ar" && post.summaryAr) return post.summaryAr;
-    return post.summaryEn || post.contentEn?.substring(0, 100) + "...";
-  };
-  
-  // Get category gradient
-  const getCategoryGradient = (category: string) => {
-    switch (category) {
-      case "announcement": return "from-blue-600 via-blue-500 to-indigo-600";
-      case "news": return "from-emerald-600 via-emerald-500 to-teal-600";
-      case "promotion": return "from-amber-600 via-amber-500 to-orange-600";
-      case "update": return "from-purple-600 via-purple-500 to-violet-600";
-      case "guide": return "from-cyan-600 via-cyan-500 to-sky-600";
-      default: return "from-blue-600 via-blue-500 to-indigo-600";
-    }
-  };
-  
-  const getCategoryShadow = (category: string) => {
-    switch (category) {
-      case "announcement": return "shadow-blue-500/30";
-      case "news": return "shadow-emerald-500/30";
-      case "promotion": return "shadow-amber-500/30";
-      case "update": return "shadow-purple-500/30";
-      case "guide": return "shadow-cyan-500/30";
-      default: return "shadow-blue-500/30";
-    }
-  };
-  
-  const getCategoryLabel = (category: string) => {
-    switch (category) {
-      case "announcement": return pickLang(language, { ku: "ڕاگەیاندن", en: "Announcement", ar: "إعلان", zh: "公告" });
-      case "news": return pickLang(language, { ku: "هەواڵ", en: "News", ar: "أخبار", zh: "新闻" });
-      case "promotion": return pickLang(language, { ku: "داشکاندن", en: "Promotion", ar: "عرض", zh: "促销" });
-      case "update": return pickLang(language, { ku: "نوێکردنەوە", en: "Update", ar: "تحديث", zh: "更新" });
-      case "guide": return pickLang(language, { ku: "ڕێنمایی", en: "Guide", ar: "دليل", zh: "指南" });
-      default: return category;
-    }
-  };
-  
-  // Check if post is new (within last 7 days)
-  const isNew = (date: Date | string) => {
-    const postDate = new Date(date);
-    const now = new Date();
-    const diffDays = Math.floor((now.getTime() - postDate.getTime()) / (1000 * 60 * 60 * 24));
-    return diffDays <= 7;
-  };
-  
+
   if (isLoading) {
     return (
       <div className="px-4 mt-6 mb-6">
@@ -169,7 +78,7 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
       </div>
     );
   }
-  
+
   // If no blog posts, show default welcome message
   if (!blogPosts || blogPosts.length === 0) {
     return (
@@ -180,11 +89,11 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
             {t("portal.announcements") || "ڕاگەیاندنەکان"}
           </h2>
         </div>
-        
+
         <div className="relative overflow-hidden bg-gradient-to-br from-blue-600 via-blue-500 to-indigo-600 rounded-2xl p-5 text-white shadow-lg shadow-blue-500/30">
           <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full -translate-y-1/2 translate-x-1/2" />
           <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full translate-y-1/2 -translate-x-1/2" />
-          
+
           <div className="relative">
             <div className="flex items-center gap-2 mb-2">
               <span className="px-2 py-0.5 bg-white/20 rounded-full text-xs font-medium backdrop-blur-sm">
@@ -200,21 +109,18 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
       </div>
     );
   }
-  
+
   // Featured posts → the Wazn News auto-rotating carousel (5 slides, 5s each).
   return <WaznNewsCarousel language={language} isDark={isDark} />;
 }
 
 /**
- * The one line a customer opens the portal for.
+ * The one line a customer opens the portal for — and, when a shipment is
+ * ready in the Erbil depot, the pulsing green collect-me banner.
  *
- * Everything below this said what has already happened — three in transit,
- * two delivered. None of it said what happens next, which is the only thing
- * somebody checking their phone on the way to work actually wants.
- *
- * One shipment: the one closest to reaching them. What it is waiting on, and
- * when that is expected — but only when a date was genuinely recorded. A date
- * the system does not know becomes a promise the customer holds you to.
+ * One component on purpose: "what happens next" and "your goods are ready"
+ * are the same question at different stages, and two separate banners had
+ * them repeating each other.
  */
 function NextStepCard({
   batches, isDark, language, loading,
@@ -230,7 +136,7 @@ function NextStepCard({
     arriving_iraq: { ku: "لە ڕێگادایە بۆ عێراق", en: "On its way to Iraq", ar: "في طريقها إلى العراق", zh: "正在运往伊拉克" },
     clearing_customs: { ku: "گەیشتووەتە عێراق، لە گومرگدایە", en: "In Iraq, clearing customs", ar: "وصلت العراق، في الجمارك", zh: "已抵达伊拉克，清关中" },
     reaching_depot: { ku: "لە گومرگ دەرچووە، بەرەو کۆگای هەولێر", en: "Through customs, heading to the Erbil depot", ar: "خرجت من الجمارك، في طريقها إلى مستودع أربيل", zh: "已清关，正运往埃尔比勒仓库" },
-    ready_to_collect: { ku: "لە کۆگای هەولێرە — ئامادەیە بۆ وەرگرتن", en: "At the Erbil depot — ready to collect", ar: "في مستودع أربيل — جاهزة للاستلام", zh: "在埃尔比勒仓库——可领取" },
+    ready_to_collect: { ku: "بارت ئامادەیە بۆ وەرگرتن — کۆگای هەولێر", en: "Ready to collect — Erbil depot", ar: "شحنتك جاهزة للاستلام — مستودع أربيل", zh: "可领取——埃尔比勒仓库" },
     done: { ku: "", en: "", ar: "", zh: "" },
   };
 
@@ -242,27 +148,39 @@ function NextStepCard({
     : null;
 
   return (
-    <div className="px-4 mt-6">
+    <div className="px-4 mt-3">
       <div className={cn(
-        "rounded-2xl p-4 flex items-start gap-3.5 ring-1",
+        "rounded-2xl p-4 flex items-start gap-3.5 border",
         ready
-          ? isDark ? "bg-emerald-950/40 ring-emerald-800" : "bg-emerald-50 dark:bg-emerald-950/40 ring-emerald-200 dark:ring-emerald-800"
-          : isDark ? "bg-slate-800/60 ring-white/5" : "bg-white dark:bg-slate-800/60 ring-slate-200 dark:ring-white/5 shadow-sm",
+          ? isDark ? "bg-emerald-950/50 border-emerald-500/50" : "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-500/50"
+          : isDark ? "bg-[#152238] border-white/10" : "bg-white dark:bg-[#152238] border-slate-200 dark:border-slate-700 shadow-sm",
       )}>
-        <div className={cn(
-          "w-11 h-11 shrink-0 rounded-xl flex items-center justify-center",
-          ready ? "bg-emerald-500" : isDark ? "bg-blue-600" : "bg-blue-500",
-        )}>
-          {ready ? <PackageCheck className="w-5 h-5 text-white" /> : <Truck className="w-5 h-5 text-white" />}
-        </div>
+        {/* The pulsing dot is the "come and collect" signal; before that,
+            a plain truck. Green is reserved for goods actually arrived. */}
+        {ready ? (
+          <span className="mt-1 flex h-11 w-11 shrink-0 items-center justify-center">
+            <span className="relative flex h-4 w-4">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-60" />
+              <span className="relative inline-flex h-4 w-4 rounded-full bg-emerald-500" />
+            </span>
+          </span>
+        ) : (
+          <div className={cn("w-11 h-11 shrink-0 rounded-xl flex items-center justify-center", isDark ? "bg-[#2563EB]" : "bg-blue-500 dark:bg-[#2563EB]")}>
+            <Truck className="w-5 h-5 text-white" />
+          </div>
+        )}
 
         <div className="min-w-0 flex-1">
           <p className={cn("text-[11px] font-medium uppercase tracking-wide",
-                           isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                           ready
+                             ? isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400"
+                             : isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
             {L({ ku: "دواتر", en: "Next", ar: "التالي", zh: "接下来" })}
           </p>
           <p className={cn("font-semibold leading-snug",
-                           isDark ? "text-white" : "text-slate-800 dark:text-slate-100")}>
+                           ready
+                             ? isDark ? "text-emerald-200" : "text-emerald-800 dark:text-emerald-200"
+                             : isDark ? "text-white" : "text-slate-800 dark:text-slate-100")}>
             {L(HEADLINE[step.key] ?? HEADLINE.leaving_china!)}
           </p>
 
@@ -290,6 +208,7 @@ function NextStepCard({
                               ready
                                 ? "bg-emerald-500 text-white"
                                 : isDark ? "bg-slate-700 text-slate-200" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200")}>
+            {ready ? <PackageCheck className="w-3.5 h-3.5 me-1" /> : null}
             {L({ ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
           </span>
         </Link>
@@ -298,104 +217,100 @@ function NextStepCard({
   );
 }
 
+/**
+ * The redesigned home — one design for every customer, laid out in the order
+ * the owner fixed: rates, identity, the register-your-tracking action, money,
+ * the three-stage pipeline, what happens next, recent shipments, four tools.
+ * Blue is for actions, emerald strictly for success/arrival, amber for debt.
+ */
 export default function PortalHome() {
-  const { portalTheme } = usePortalTheme();
-  
-  if (portalTheme === "skin3") return <Skin3PortalHome />;
-  if (portalTheme === "modern") return <ModernPortalHome />;
-  
-  // Classic theme (current design)
-  return <ClassicPortalHome />;
-}
-
-function ClassicPortalHome() {
-const { t, language } = useLanguage();
+  const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
-  // Which quick-action's "what is this?" card is open (index), or null — the
-  // info stays hidden until the tile's ⓘ is tapped, never auto-shown.
-  const [openTileInfo, setOpenTileInfo] = useState<number | null>(null);
-  // Colour mode drives the header wash and, in light mode, flips the header
-  // text from white to slate so it stays readable on the pale gradient.
-  const [portalMode] = usePortalMode();
-  const lightHeader = isLightHeader(portalMode);
-  // Brand colour for this mode. Semantic colours — red for debt, amber for a
-  // warning — are left alone; they mean something and must not follow it.
-  const pal = modeDef(portalMode).palette;
-  // Every surface in this header was written for white-on-colour. In light
-  // mode the text and the glass panels have to flip, or the header is a blank
-  // pale rectangle.
-  const headStrong = lightHeader ? "text-slate-900 dark:text-slate-200" : "text-white";
-  const headSoft = lightHeader ? "text-slate-700 dark:text-slate-300" : "text-white/90";
-  const headMuted = lightHeader ? "text-slate-600" : "text-white/70";
-  const headGlass = lightHeader
-    ? "bg-slate-900/[0.05] border-slate-900/10 hover:bg-slate-900/[0.09]"
-    : "bg-white/10 border-white/20 hover:bg-white/15";
-  /** The pale brand tint, for icons on the header. */
-  const paleStyle = lightHeader ? undefined : { color: pal.pale };
-  /**
-   * Small text on the header is white, not the pale tint.
-   *
-   * pale measures 3.3:1 against pink's brand colour, and small text wants
-   * 4.5:1 — so the customer code and the example chip were below the readable
-   * floor in that one mode. Icons keep the tint: a mark needs 3:1, which pale
-   * clears in every mode. portalModes.test.ts holds both numbers.
-   */
-  const headTextStyle = lightHeader ? undefined : { color: "#FFFFFF" };
 
   const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
   const batchesQuery = trpc.customerPortal.getMyBatches.useQuery();
   const summaryQuery = trpc.customerPortal.getMyFinancialSummary.useQuery();
-  const declaredQuery = trpc.customerPortal.getMyDeclaredPackages.useQuery();
 
   const { data: account, isLoading: accountLoading } = accountQuery;
   const { data: batches, isLoading: batchesLoading } = batchesQuery;
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
   const { data: financialSummary } = summaryQuery;
   const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery();
-  const { data: declaredPackages } = declaredQuery;
   const { data: prohibitedPackages } = trpc.prohibited.getMine.useQuery();
+  // The admin-curated price list already carries today's exchange rates; the
+  // ticker reads the same row rather than growing a second source of truth.
+  const { data: priceList } = trpc.customerPortal.getPriceList.useQuery();
+
+  // Everything the customer has sitting in the China depot — loose parcels
+  // and bought orders, deduplicated by tracking (the shared hook's job).
+  const chinaItems = useChinaDepotItems();
 
   /**
-   * One banner rather than eight.
-   *
-   * This screen runs eight queries and none of them checked isError, so a
-   * dropped connection showed a customer $0.00, four zero counters and "no
-   * shipments" — their account, apparently emptied. Per-list error cards would
-   * fill the page with the same message repeated; a single line at the top
-   * that says what happened and retries everything is what a person needs.
+   * One banner rather than several: a dropped connection must say so once at
+   * the top, not show $0.00 and four zero counters as though the account
+   * were emptied.
    */
   const homeFailed =
-    accountQuery.isError || batchesQuery.isError || summaryQuery.isError || declaredQuery.isError;
+    accountQuery.isError || batchesQuery.isError || summaryQuery.isError;
   const homeRetrying =
-    accountQuery.isFetching || batchesQuery.isFetching || summaryQuery.isFetching || declaredQuery.isFetching;
+    accountQuery.isFetching || batchesQuery.isFetching || summaryQuery.isFetching;
   const retryHome = () => {
     void accountQuery.refetch();
     void batchesQuery.refetch();
     void summaryQuery.refetch();
-    void declaredQuery.refetch();
   };
   const prohibitedPending = (prohibitedPackages || []).filter((p: any) => p.status === "pending").length;
 
-  // Get recent batches (last 3)
-  const recentBatches = batches?.slice(0, 3) || [];
-  
-  // Calculate stats.
-  //
   // Grouped with stageOf — the same grouping the shipments page filters by —
-  // because each tile deep-links to that page with its stage. This page used
-  // to keep a private grouping (customs counted as "pending" here but as
-  // "in transit" there, and arrived/at_depot counted nowhere), so the number
-  // on the tile and the list the tap landed on disagreed.
+  // so no number on this screen can disagree with the list a tap opens.
   const totalBatches = batches?.length || 0;
-  const inTransitCount = batches?.filter(b => stageOf(b.status) === "in_transit").length || 0;
   const deliveredCount = batches?.filter(b => stageOf(b.status) === "delivered").length || 0;
-  const pendingCount = batches?.filter(b => stageOf(b.status) === "in_china").length || 0;
-  
+  // Parcels already boxed into a still-in-China batch are still in China:
+  // the depot card counts loose items plus those batches' parcels.
+  const chinaBatchParcels = (batches ?? [])
+    .filter(b => stageOf(b.status) === "in_china")
+    .reduce((sum, b) => sum + (Number((b as any).customerPackageCount) || 0), 0);
+  const chinaCount = chinaItems.length + chinaBatchParcels;
+  // The middle card is the road itself; the third is Iraq-side but not yet
+  // handed over. Same predicates the tap-filter below uses — one rule.
+  const onTheWay = (batches ?? []).filter(b => stageOf(b.status) === "in_transit" && !isInIraqNotDelivered(b.status));
+  const inIraq = (batches ?? []).filter(b => isInIraqNotDelivered(b.status));
+
+  // The soonest recorded arrival among what is moving. Never invented: no
+  // date recorded means no countdown shown.
+  const nextEtaDays = (() => {
+    const now = Date.now();
+    const days = onTheWay
+      .map(b => (b as any).estimatedArrival ? new Date((b as any).estimatedArrival as any).getTime() : NaN)
+      .filter(tms => Number.isFinite(tms) && tms > now)
+      .map(tms => Math.ceil((tms - now) / 86400000));
+    return days.length ? Math.min(...days) : null;
+  })();
+
+  // Tapping a pipeline card filters the list below in place; tapping it
+  // again clears. The screen behaves as one board, not three doors.
+  const [pipelineFilter, setPipelineFilter] = useState<null | "in_china" | "on_the_way" | "in_iraq">(null);
+  const togglePipeline = (key: "in_china" | "on_the_way" | "in_iraq") =>
+    setPipelineFilter(prev => (prev === key ? null : key));
+
+  // The slim fixed bar appears once the full header has scrolled away, so
+  // search and the bell stay reachable without the header eating the screen.
+  const [pastHeader, setPastHeader] = useState(false);
+  useEffect(() => {
+    const onScroll = () => setPastHeader(window.scrollY > 150);
+    onScroll();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, []);
+
   // Balance info
   const balance = financialSummary?.balanceUsd || 0;
   const hasDebt = isDebt(balance);
+
+  const rmbRate = priceList?.rates?.rmb != null && Number(priceList.rates.rmb) > 0 ? Number(priceList.rates.rmb) : null;
+  const iqdRate = priceList?.rates?.iqd != null && Number(priceList.rates.iqd) > 0 ? Number(priceList.rates.iqd) : null;
 
   const getStatusIcon = (status: string) => {
     switch (status) {
@@ -417,28 +332,15 @@ const { t, language } = useLanguage();
       case "closed":
         return isDark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300";
       case "in_transit":
-        return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300";
+        return isDark ? "bg-sky-900/50 text-sky-400" : "bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300";
       case "customs":
         return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300";
       default:
-        return isDark ? "bg-slate-700 text-slate-300" : "bg-gray-100 dark:bg-gray-950/40 text-gray-600";
+        return isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300";
     }
   };
 
-  /**
-   * The shared wording, not a second copy of it.
-   *
-   * This screen kept its own map and it had drifted twice over. It said
-   * "ئامادەکردن" where every other screen says "لە کۆگای چین"; it said
-   * "گەیشت" for arrived and "گەیەنرا" for delivered, which are the same word
-   * to a reader and hide the one difference a customer most wants — their
-   * goods reaching Iraq versus reaching them. And it had no entry for
-   * at_depot at all, so a shipment waiting in the Erbil depot showed the
-   * customer the raw database value `at_depot`.
-   *
-   * shipmentFilters.ts exists precisely because two screens naming these
-   * independently is how that happens. This one now reads it like the rest.
-   */
+  // The shared wording, not a second copy of it — see shipmentFilters.ts.
   const getStatusText = (status: string) =>
     STATUS_LABEL[status as BatchStatus]
       ? pickLang(language, STATUS_LABEL[status as BatchStatus]!)
@@ -454,845 +356,572 @@ const { t, language } = useLanguage();
     <span className={cn("flex items-center justify-center text-xl font-black leading-none", className)}>¥</span>
   );
 
-  // Quick Actions
-  // One cohesive navy→blue palette for every tile so the grid reads as a set,
-  // not a clashing rainbow. (#4988C4 → #1C4D8D from the portal palette.)
-  // Order is deliberate — set by the owner. Every destination already exists;
-  // these tiles are shortcuts, not new pages.
+  /**
+   * Four tools, one row — everything else the fifteen-tile grid used to hold
+   * now lives behind the bottom tabs (My shipments, Finance, Me) by the
+   * owner's placement map. Order is deliberate: the price question first.
+   */
   const quickActions = [
     {
-      /**
-       * First, because it is the question customers telephone the office
-       * about more than any other — and the one a person wants answered
-       * before they decide to ship at all. The answer already existed, two
-       * levels down: behind a tab, inside a section below the fold.
-       */
       icon: Calculator,
       label: pickLang(language, { ku: "چەندم لەسەر دەبێت؟", en: "What will it cost?", ar: "كم ستكلفني؟", zh: "运费多少？" }),
       href: "/portal/calculator",
-      info: {
-        title: pickLang(language, { ku: "حیسابکردنی نرخ", en: "Work out the price", ar: "احسب السعر", zh: "计算价格" }),
-        desc: pickLang(language, {
-          ku: "کێش و قەبارەی کاڵاکەت بنووسە و نرخەکەی پێش ناردن بزانە.",
-          en: "Enter the weight and size and see the price before you send.",
-          ar: "أدخل الوزن والحجم واعرف السعر قبل الإرسال.",
-          zh: "输入重量和尺寸，发货前先看价格。",
-        }),
-        example: pickLang(language, {
-          ku: "نموونە: کارتۆنێکی ٥ کگ بە ئاسمانی",
-          en: "e.g. a 5 kg carton by air",
-          ar: "مثال: كرتون ٥ كغ جوًا",
-          zh: "例如：5 公斤纸箱空运",
-        }),
-      },
-    },
-    {
-      icon: Scale,
-      label: pickLang(language, { ku: "مەرج و ڕێسا", en: "Terms & rules", ar: "الشروط والأحكام", zh: "条款与规则" }),
-      href: "/portal/terms",
-      info: {
-        title: pickLang(language, { ku: "مەرج و ڕێساکان", en: "Terms & rules", ar: "الشروط والأحكام", zh: "条款与规则" }),
-        desc: pickLang(language, { ku: "مەرجەکانی گواستنەوە و بەرپرسیارێتی — پێش ناردن بیانخوێنەوە.", en: "Shipping terms and responsibilities — read them before sending.", ar: "شروط الشحن والمسؤوليات — اقرأها قبل الإرسال.", zh: "运输条款与责任 — 发货前请阅读。" }),
-        example: pickLang(language, { ku: "نموونە: بەرپرسیارێتی لە کاتی زیانی کاڵا", en: "e.g. liability if an item is damaged", ar: "مثال: المسؤولية عند تلف البضاعة", zh: "例如：货物损坏时的责任" }),
-      },
-    },
-    {
-      icon: Ban,
-      label: pickLang(language, { ku: "کاڵای قەدەغە", en: "Prohibited items", ar: "المواد الممنوعة", zh: "违禁物品" }),
-      href: "/portal/prohibited-packages",
-      info: {
-        title: pickLang(language, { ku: "کاڵا قەدەغەکان", en: "Prohibited items", ar: "المواد الممنوعة", zh: "违禁物品" }),
-        desc: pickLang(language, { ku: "ئەو کاڵایانەی ناگوازرێنەوە — پێش کڕین دڵنیابەرەوە.", en: "Items we can't ship — check before you buy.", ar: "المواد التي لا يمكن شحنها — تحقق قبل الشراء.", zh: "我们无法运输的物品 — 购买前请查看。" }),
-        example: pickLang(language, { ku: "نموونە: باتری، شلە، ماددەی هەڵگیرسێنەر", en: "e.g. batteries, liquids, flammables", ar: "مثال: البطاريات، السوائل، المواد القابلة للاشتعال", zh: "例如：电池、液体、易燃品" }),
-      },
-    },
-    {
-      icon: ShoppingBag,
-      label: t("portal.fullPack"),
-      href: "/portal/full-package",
-      info: {
-        title: pickLang(language, { ku: "کاڵاکانم", en: "My items", ar: "بضائعي", zh: "我的商品" }),
-        desc: pickLang(language, { ku: "ئەو کاڵایانەی بۆت کڕدراون یان داوات کردوون — دۆخیان ببینە.", en: "The items bought for you or requested — see their status.", ar: "البضائع المشتراة لك أو المطلوبة — شاهد حالتها.", zh: "为您购买或您请求的商品 — 查看状态。" }),
-        example: pickLang(language, { ku: "نموونە: دۆخی ئۆردەرەکانت ببینە", en: "e.g. see the status of your orders", ar: "مثال: شاهد حالة طلباتك", zh: "例如：查看订单状态" }),
-      },
-    },
-    {
-      icon: Truck,
-      label: t("portal.shipments"),
-      href: "/portal/shipments",
-      info: {
-        title: pickLang(language, { ku: "گواستنەوە", en: "Transport", ar: "النقل", zh: "运输" }),
-        desc: pickLang(language, { ku: "بارەکانت لە ڕێگادان — بزانە لە کوێن و کەی دەگەن.", en: "Your shipments on the way — where they are and when they arrive.", ar: "شحناتك في الطريق — أين هي ومتى تصل.", zh: "在途货物 — 位置与预计到达时间。" }),
-        example: pickLang(language, { ku: "نموونە: بارەکە لە ڕێگای ئاسمانییە → بەرواری گەیشتن", en: "e.g. shipment is in the air → arrival date", ar: "مثال: الشحنة جوًا → تاريخ الوصول", zh: "例如：空运中 → 到达日期" }),
-      },
-    },
-    {
-      icon: Search,
-      label: t("portal.track"),
-      href: "/portal/search",
-      info: {
-        title: pickLang(language, { ku: "شوێنکەوتنی بار", en: "Track shipment", ar: "تتبع الشحنة", zh: "追踪货物" }),
-        desc: pickLang(language, { ku: "دۆخی پاکێج یان بارەکەت بەدواداچوون بکە بە ژمارەی تراک.", en: "Follow your package/shipment status by its tracking number.", ar: "تابع حالة طردك/شحنتك برقم التتبع.", zh: "通过运单号跟踪您的包裹/货物状态。" }),
-        example: pickLang(language, { ku: "نموونە: ژمارەی تراک بنووسە → دۆخ ببینە", en: "e.g. enter a tracking number → see its status", ar: "مثال: أدخل رقم التتبع → شاهد الحالة", zh: "例如：输入运单号 → 查看状态" }),
-      },
-    },
-    {
-      icon: AlertTriangle,
-      label: pickLang(language, { ku: "بێ خاوەن", en: "Unclaimed", ar: "غير مُطالب به", zh: "无主" }),
-      href: "/portal/no-mark",
-      info: {
-        title: pickLang(language, { ku: "پاکێجی بێ‌خاوەن", en: "Unclaimed packages", ar: "طرود بلا مالك", zh: "无主包裹" }),
-        desc: pickLang(language, { ku: "پاکێجە گەیشتووەکان کە کۆدی تۆیان پێوە نییە — لێرە داوایان بکە.", en: "Arrived packages with no customer code — claim yours here.", ar: "طرود وصلت بدون كود العميل — طالب بها هنا.", zh: "已到达但没有客户代码的包裹——在此认领。" }),
-        example: pickLang(language, { ku: "نموونە: پاکێجێک بێ کۆد گەیشتووە → داوای بکە", en: "e.g. a package arrived without a code → claim it", ar: "مثال: وصل طرد بلا كود → طالب به", zh: "例如：包裹无代码到达 → 认领" }),
-      },
-    },
-    {
-      icon: PackagePlus,
-      label: pickLang(language, { ku: "تۆماری تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
-      href: "/portal/declare",
-      info: {
-        title: pickLang(language, { ku: "تۆمارکردنی تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
-        desc: pickLang(language, { ku: "ژمارەی تراکی کاڵاکەت لە چین پێش‌وەخت تۆمار بکە بۆ بەدواداچوونی خۆکار.", en: "Pre-register your item's China tracking number for automatic follow-up.", ar: "سجّل رقم تتبع بضاعتك من الصين مسبقًا للمتابعة التلقائية.", zh: "提前登记您在中国的运单号以便自动跟进。" }),
-        example: pickLang(language, { ku: "نموونە: دوای کڕین، تراکەکە لێرە بنووسە", en: "e.g. after buying, enter the tracking here", ar: "مثال: بعد الشراء، أدخل التتبع هنا", zh: "例如：购买后在此输入运单号" }),
-      },
-    },
-    {
-      icon: Wallet,
-      label: t("portal.financial"),
-      href: "/portal/financial",
-      info: {
-        title: pickLang(language, { ku: "دارایی و پارەدان", en: "Finance & payment", ar: "المالية والدفع", zh: "财务与付款" }),
-        desc: pickLang(language, { ku: "باڵانس و مامەڵەکانت ببینە و قەرزەکەت بدە.", en: "See your balance and transactions, and settle what you owe.", ar: "شاهد رصيدك ومعاملاتك وسدّد ما عليك.", zh: "查看余额和交易并结清欠款。" }),
-        example: pickLang(language, { ku: "نموونە: قەرزەکەت ببینە → بە واتساپ پارە بدە", en: "e.g. see your balance → pay via WhatsApp", ar: "مثال: شاهد رصيدك → ادفع عبر واتساب", zh: "例如：查看余额 → 通过 WhatsApp 付款" }),
-      },
-    },
-    {
-      icon: FileText,
-      label: t("portal.request"),
-      href: "/portal/full-package",
-      info: {
-        title: pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" }),
-        desc: pickLang(language, { ku: "داوای کڕینی کاڵا بکە (پاکێجی تەواو/عمولە) و ئێمە بۆت دەیکڕین.", en: "Ask us to buy an item for you (full-package / commission).", ar: "اطلب منا شراء منتج لك (باقة كاملة/عمولة).", zh: "让我们为您购买商品（全包/代购）。" }),
-        example: pickLang(language, { ku: "نموونە: لینکی کاڵا بنێرە → بۆت دەکڕدرێت", en: "e.g. send a product link → we buy it for you", ar: "مثال: أرسل رابط المنتج → نشتريه لك", zh: "例如：发送商品链接 → 我们为您购买" }),
-      },
     },
     {
       icon: YuanIcon,
       label: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
       href: "/portal/yuan-exchange",
-      info: {
-        title: pickLang(language, { ku: "کڕینی یوان", en: "Buy Yuan", ar: "شراء اليوان", zh: "购买人民币" }),
-        desc: pickLang(language, { ku: "یوان بکڕە بۆ کڕینەکانت لە چین بە نرخی ئەمڕۆ.", en: "Buy Yuan for your China purchases at today's rate.", ar: "اشترِ اليوان لمشترياتك من الصين بسعر اليوم.", zh: "以今日汇率购买人民币用于中国采购。" }),
-        example: pickLang(language, { ku: "نموونە: $100 → یوان بەپێی نرخی ئەمڕۆ", en: "e.g. $100 → Yuan at today's rate", ar: "مثال: 100$ → يوان بسعر اليوم", zh: "例如：$100 → 按今日汇率兑换人民币" }),
-      },
+    },
+    {
+      icon: AlertTriangle,
+      label: pickLang(language, { ku: "بێ خاوەن", en: "Unclaimed", ar: "غير مُطالب به", zh: "无主" }),
+      href: "/portal/no-mark",
     },
     {
       icon: BookOpen,
-      label: pickLang(language, { ku: "ڕێبەری پۆرتاڵ", en: "Portal guide", ar: "دليل البوابة", zh: "门户指南" }),
+      label: pickLang(language, { ku: "ڕێبەر", en: "Guide", ar: "الدليل", zh: "指南" }),
       href: "/portal/guide",
-      info: {
-        title: pickLang(language, { ku: "ڕێبەری پۆرتاڵ", en: "Portal guide", ar: "دليل البوابة", zh: "门户指南" }),
-        desc: pickLang(language, { ku: "چۆنیەتی بەکارهێنانی پۆرتاڵ — هەنگاو بە هەنگاو.", en: "How to use the portal — step by step.", ar: "كيفية استخدام البوابة — خطوة بخطوة.", zh: "如何使用门户 — 分步说明。" }),
-        example: pickLang(language, { ku: "نموونە: چۆن تراک تۆمار بکەم؟", en: "e.g. how do I register a tracking number?", ar: "مثال: كيف أسجّل رقم التتبع؟", zh: "例如：如何登记运单号？" }),
-      },
-    },
-    {
-      icon: GraduationCap,
-      label: pickLang(language, { ku: "فێرکاری", en: "Tutorials", ar: "الشروحات", zh: "教程" }),
-      href: "/portal/tutorials",
-      info: {
-        title: pickLang(language, { ku: "فێرکاری بە ڤیدیۆ", en: "Video tutorials", ar: "شروحات بالفيديو", zh: "视频教程" }),
-        desc: pickLang(language, { ku: "ڤیدیۆی کورت کە پیشانت دەدەن چۆن لە تاوباو و پیندودو داوای کاڵا بکەیت و پۆرتاڵ بەکاربهێنیت.", en: "Short videos showing how to order from Taobao and Pinduoduo and use the portal.", ar: "فيديوهات قصيرة تشرح الطلب من تاوباو وبيندودو واستخدام البوابة.", zh: "简短视频，演示如何在淘宝和拼多多下单并使用门户。" }),
-        example: pickLang(language, { ku: "نموونە: «چۆن لە تاوباو کاڵا داوا بکەیت» ببینە", en: "e.g. watch \"how to order from Taobao\"", ar: "مثال: شاهد «كيف تطلب من تاوباو»", zh: "例如：观看「如何在淘宝下单」" }),
-      },
-    },
-    {
-      icon: PhoneCall,
-      label: pickLang(language, { ku: "پەیوەندی", en: "Contact", ar: "تواصل", zh: "联系我们" }),
-      href: "/portal/contact",
-      info: {
-        title: pickLang(language, { ku: "پەیوەندی", en: "Contact us", ar: "تواصل معنا", zh: "联系我们" }),
-        desc: pickLang(language, { ku: "ژمارە و ناونیشان و هەموو سەکۆکانی کۆمەڵایەتیمان لە یەک شوێن.", en: "Our numbers, address, and every social channel in one place.", ar: "أرقامنا وعنواننا وكل قنوات التواصل في مكان واحد.", zh: "我们的电话、地址和所有社交渠道，尽在一处。" }),
-        example: pickLang(language, { ku: "نموونە: نەخشەی شوێنمان بکەرەوە", en: "e.g. open our location on the map", ar: "مثال: افتح موقعنا على الخريطة", zh: "例如：在地图上打开我们的位置" }),
-      },
-    },
-    {
-      icon: User,
-      label: t("portal.me"),
-      href: "/portal/profile",
-      info: {
-        title: pickLang(language, { ku: "پرۆفایلی من", en: "My profile", ar: "ملفي الشخصي", zh: "我的资料" }),
-        desc: pickLang(language, { ku: "زانیاری خۆت، کۆدی کڕیار و ناونیشانەکانت ببینە و بگۆڕە.", en: "See and edit your details, customer code and addresses.", ar: "شاهد وعدّل بياناتك وكود العميل وعناوينك.", zh: "查看和修改您的资料、客户代码和地址。" }),
-        example: pickLang(language, { ku: "نموونە: ژمارەی مۆبایل یان ناونیشان بگۆڕە", en: "e.g. change your mobile number or address", ar: "مثال: غيّر رقم جوالك أو عنوانك", zh: "例如：修改手机号或地址" }),
-      },
     },
   ];
 
+  const card = isDark ? "bg-[#152238] border-white/10" : "bg-white dark:bg-[#152238] border-slate-200 dark:border-slate-700";
+  const glassPill = isDark
+    ? "bg-white/10 border-white/20 text-white"
+    : "bg-slate-900/[0.06] border-slate-900/10 text-slate-800 dark:text-slate-200";
+
+  const recentSource =
+    pipelineFilter === "on_the_way" ? onTheWay
+    : pipelineFilter === "in_iraq" ? inIraq
+    : (batches?.slice(0, 3) || []);
+
   return (
     <CustomerPortalLayout>
-      {/* Premium Header with Gradient */}
-      <div className="relative overflow-hidden">
-        {/* The wash follows the colour mode the customer picked, so the choice
-            is felt across the whole header rather than in small accents. */}
-        <div
-          className="absolute inset-0 transition-[background-image] duration-500"
-          style={{ backgroundImage: headerGradient(portalMode) }}
-        />
-        <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmYiIGZpbGwtb3BhY2l0eT0iMC4wMyI+PHBhdGggZD0iTTM2IDM0djItSDI0di0yaDEyek0zNiAyNHYySDI0di0yaDEyeiIvPjwvZz48L2c+PC9zdmc+')] opacity-50" />
-        
-        {/* Aurora glow orbs. They were tuned to sit on a deep blue; on the pale
-            light wash the same opacity reads as blue smudges, so they fade back
-            to a hint of depth. */}
-        <div className="absolute -top-16 -right-10 w-64 h-64 rounded-full" style={{ background: `radial-gradient(circle, rgba(73,136,196,${lightHeader ? 0.18 : 0.55}) 0%, transparent 68%)` }} />
-        <div className="absolute top-16 -left-20 w-60 h-60 rounded-full" style={{ background: `radial-gradient(circle, rgba(28,77,141,${lightHeader ? 0.14 : 0.5}) 0%, transparent 70%)` }} />
-        <div className="absolute -bottom-10 right-0 w-56 h-56 rounded-full" style={{ background: `radial-gradient(circle, rgba(189,232,245,${lightHeader ? 0.5 : 0.3}) 0%, transparent 70%)` }} />
-        
-        <div className={cn("relative px-5 pt-14 pb-12", lightHeader ? "text-slate-900 dark:text-slate-200" : "text-white")}>
-          {/* Colour modes, language, and the date — above the greeting so the
-              controls read as chrome rather than as part of the account. */}
-          <PortalHeaderControls onLight={lightHeader} className="mb-5" />
+      <div className={cn("min-h-screen", isDark ? "bg-[#0B1120]" : "bg-slate-50 dark:bg-slate-950")}>
 
-          {/* Top Row */}
-          <div className="flex items-start justify-between mb-6">
-            <div>
-              {/* Time-based greeting */}
-              <div className="flex items-center gap-2 mb-2">
-                <GreetingIcon />
-                <p className={cn("text-sm font-medium", headMuted)}>
-                  {getGreeting(language)}
-                </p>
-              </div>
-              {accountLoading ? (
-                <Skeleton className="h-8 w-40 bg-white/20" />
-              ) : (
-                <h1 className="text-2xl font-bold flex items-center gap-2">
-                  <span className={lightHeader ? "text-slate-900 dark:text-slate-200" : "bg-clip-text text-transparent"} style={lightHeader ? undefined : { backgroundImage: gradient("to left", "#ffffff", pal.pale, pal.light) }}>
-                    {account?.fullName || account?.customerCode}
-                  </span>
-                  <Sparkles className="w-5 h-5" style={paleStyle} />
-                </h1>
-              )}
-            </div>
-            
-            {/* Notification Bell — rings (shake animation) while unread.
-                Note: guard with a boolean comparison, not `count && ...` —
-                React renders a literal "0" for the latter when count is 0. */}
-            <Link href="/portal/notifications">
-              <span className={cn(
-                "relative inline-block p-3 backdrop-blur-sm rounded-2xl transition-all duration-300 group",
-                (notificationCount ?? 0) > 0
-                  ? "bg-red-500/25 hover:bg-red-500/35 ring-2 ring-red-400/60"
-                  : headGlass
-              )}>
-                <Bell className={cn(
-                  "w-5 h-5 group-hover:scale-110 transition-transform", headStrong,
-                  (notificationCount ?? 0) > 0 && "animate-bell-ring"
-                )} />
-                {(notificationCount ?? 0) > 0 && (
-                  <span className="absolute -top-1 -right-1 min-w-[20px] h-5 bg-red-500 rounded-full text-xs font-bold flex items-center justify-center text-white px-1 animate-pulse">
-                    {notificationCount! > 99 ? "99+" : notificationCount}
+        {/* Slim fixed bar — code, search, bell — once the header scrolls away */}
+        <div className={cn(
+          "fixed inset-x-0 top-0 z-40 transition-transform duration-300",
+          pastHeader ? "translate-y-0" : "-translate-y-full pointer-events-none",
+        )}>
+          <div
+            className={cn(
+              "border-b backdrop-blur-md",
+              isDark ? "bg-[#0B1120]/95 border-white/10" : "bg-white/95 dark:bg-[#0B1120]/95 border-slate-200 dark:border-slate-700",
+            )}
+            style={{ paddingTop: "env(safe-area-inset-top)" }}
+          >
+            <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
+              <div className="flex items-center gap-2 min-w-0">
+                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                  <User className="h-4 w-4 text-blue-100" />
+                </div>
+                {account?.customerCode && (
+                  <span dir="ltr" className={cn("truncate rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums", isDark ? "border-blue-500/40 bg-blue-600/20 text-blue-300" : "border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300")}>
+                    {account.customerCode}
                   </span>
                 )}
+              </div>
+              <div className="flex items-center gap-1.5">
+                <Link href="/portal/search" aria-label={pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}>
+                  <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
+                    <Search className={cn("h-4 w-4", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                  </span>
+                </Link>
+                <Link href="/portal/notifications" aria-label={pickLang(language, { ku: "ئاگادارییەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}>
+                  <span className={cn("relative inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
+                    <Bell className={cn("h-4 w-4", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                    {(notificationCount ?? 0) > 0 && (
+                      <span className="absolute top-1.5 end-1.5 h-2 w-2 rounded-full bg-red-500" />
+                    )}
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Full header — language + clock, then identity and the two icons */}
+        <div className="px-4 pt-3">
+          <div className="flex items-center justify-between gap-2">
+            <PortalLanguagePicker glass={glassPill} />
+            <PortalClock onLight={!isDark} compact />
+          </div>
+
+          <div className="mt-3 flex items-center justify-between gap-3">
+            <div className="flex min-w-0 items-center gap-3">
+              <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                <User className="h-5 w-5 text-blue-100" />
+              </div>
+              <div className="min-w-0">
+                {accountLoading ? (
+                  <Skeleton className={cn("h-6 w-36", isDark && "bg-slate-700")} />
+                ) : (
+                  <h1 className={cn("truncate text-base font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                    {account?.fullName || account?.customerCode}
+                  </h1>
+                )}
+                {account?.customerCode && (
+                  <span dir="ltr" className={cn("mt-0.5 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tabular-nums", isDark ? "border-blue-500/40 bg-blue-600/20 text-blue-300" : "border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300")}>
+                    {account.customerCode}
+                  </span>
+                )}
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Link href="/portal/search" aria-label={pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}>
+                <span className={cn("inline-flex h-11 w-11 items-center justify-center rounded-xl border", card)}>
+                  <Search className={cn("h-[18px] w-[18px]", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                </span>
+              </Link>
+              {/* A red dot, not a number: "something is new" is the whole
+                  message. Guard with a boolean — React renders a literal 0. */}
+              <Link href="/portal/notifications" aria-label={pickLang(language, { ku: "ئاگادارییەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}>
+                <span className={cn("relative inline-flex h-11 w-11 items-center justify-center rounded-xl border", card)}>
+                  <Bell className={cn("h-[18px] w-[18px]", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                  {(notificationCount ?? 0) > 0 && (
+                    <span className="absolute top-2 end-2 h-2 w-2 animate-pulse rounded-full bg-red-500" />
+                  )}
+                </span>
+              </Link>
+            </div>
+          </div>
+        </div>
+
+        {/* Currency ticker — admin-set rates; hidden entirely until set */}
+        {(rmbRate || iqdRate) && (
+          <div className="px-4 mt-3">
+            <div className={cn(
+              "flex items-center gap-2 overflow-hidden whitespace-nowrap rounded-xl border px-3 py-1.5 text-xs",
+              isDark ? "border-sky-500/25 bg-sky-950/40 text-sky-300" : "border-sky-200 dark:border-sky-500/25 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
+            )}>
+              <Coins className="h-3.5 w-3.5 shrink-0" />
+              <span dir="ltr" className="tabular-nums">
+                {rmbRate ? `$1 = ¥${rmbRate}` : ""}
+                {rmbRate && iqdRate ? "  •  " : ""}
+                {iqdRate ? `$100 = ${(iqdRate * 100).toLocaleString("en-US")} IQD` : ""}
+              </span>
+            </div>
+          </div>
+        )}
+
+        {/* Hero action — the one thing a customer should do after every
+            purchase. Blue is the action colour; green stays for arrival. */}
+        <div className="px-4 mt-4">
+          <Link href="/portal/declare">
+            <span className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] p-4 shadow-lg shadow-blue-600/30 transition-transform active:scale-[0.99]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
+                <Plus className="h-5 w-5 text-white" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-white">
+                  {pickLang(language, { ku: "هەرچیت کڕیوە؟ تراکەکەی تۆمار بکە", en: "Bought something? Register its tracking", ar: "اشتريت شيئًا؟ سجّل رقم تتبعه", zh: "买了东西？登记运单号" })}
+                </span>
+                <span className="block text-[11px] text-white/85">
+                  {pickLang(language, { ku: "بەدواداچوونی خۆکار بۆ هەموو کڕینەکانت", en: "Automatic follow-up for every purchase", ar: "متابعة تلقائية لكل مشترياتك", zh: "自动跟进您的每一笔购买" })}
+                </span>
+              </span>
+            </span>
+          </Link>
+        </div>
+
+        {/* Money — amber while anything is owed, calm green when clear */}
+        <div className="px-4 mt-3">
+          {hasDebt ? (
+            <Link href="/portal/financial">
+              <div className={cn(
+                "rounded-2xl border p-4",
+                isDark ? "border-amber-500/40 bg-amber-950/40" : "border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/40",
+              )}>
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <p className={cn("text-xs", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")}>
+                      {t("portal.outstandingBalance")}
+                    </p>
+                    <p dir="ltr" className={cn("text-2xl font-bold tabular-nums", isDark ? "text-amber-400" : "text-amber-600 dark:text-amber-400")}>
+                      ${Math.abs(balance).toFixed(2)}
+                    </p>
+                  </div>
+                  {/* Direct WhatsApp line for paying. Stops propagation so
+                      tapping it doesn't follow the card into the finance page. */}
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      const msg = pickLang(language, {
+                        ku: `سڵاو، دەمەوێت باڵانسەکەم بدەم ($${Math.abs(balance).toFixed(2)}). تکایە شێوازەکانی پارەدانم بۆ بنێرن.`,
+                        en: `Hello, I'd like to pay my balance ($${Math.abs(balance).toFixed(2)}). Please send me the payment options.`,
+                        ar: `مرحبًا، أودّ دفع رصيدي ($${Math.abs(balance).toFixed(2)}). الرجاء إرسال طرق الدفع.`,
+                        zh: `您好，我想支付我的余额（$${Math.abs(balance).toFixed(2)}）。请发送付款方式。`,
+                      });
+                      window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+                    }}
+                    className="flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-950 transition active:scale-95"
+                  >
+                    <MessageCircle className="h-4 w-4" />
+                    {pickLang(language, { ku: "پارەدان لە واتساپ", en: "Pay via WhatsApp", ar: "الدفع عبر واتساب", zh: "通过 WhatsApp 付款" })}
+                  </button>
+                </div>
+              </div>
+            </Link>
+          ) : (
+            <Link href="/portal/financial">
+              <div className={cn(
+                "flex items-center justify-between gap-3 rounded-2xl border p-4",
+                isDark ? "border-emerald-500/30 bg-emerald-950/30" : "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30",
+              )}>
+                <div className="flex min-w-0 items-center gap-2.5">
+                  <CheckCircle className={cn("h-5 w-5 shrink-0", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")} />
+                  <p className={cn("truncate text-sm font-semibold", isDark ? "text-emerald-200" : "text-emerald-800 dark:text-emerald-200")}>
+                    {pickLang(language, { ku: "هیچ قەرزێکت لەسەر نییە", en: "Nothing owed", ar: "لا يوجد رصيد مستحق", zh: "没有欠款" })}
+                  </p>
+                </div>
+                {balance !== 0 && (
+                  <span dir="ltr" className={cn("shrink-0 text-sm font-bold tabular-nums", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
+                    +${Math.abs(balance).toFixed(2)}
+                  </span>
+                )}
+              </div>
+            </Link>
+          )}
+        </div>
+
+        {/* Prohibited packages — flashes while any item awaits the customer's decision */}
+        {prohibitedPackages && prohibitedPackages.length > 0 && (
+          <div className="px-4 mt-3">
+            <Link href="/portal/prohibited-packages">
+              <div className={cn(
+                "rounded-2xl border p-3.5 cursor-pointer flex items-center gap-3 transition-all",
+                prohibitedPending > 0
+                  ? "wazn-prohibited-flash border-red-400"
+                  : card,
+              )}>
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-rose-600 text-white">
+                  <AlertTriangle className="h-5 w-5" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <p className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                    {pickLang(language, { ku: "کەل و پەلی قەدەغە", en: "Prohibited packages", ar: "طرود ممنوعة", zh: "违禁包裹" })}
+                  </p>
+                  <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                    {prohibitedPending > 0
+                      ? pickLang(language, { ku: `${prohibitedPending} پاکێج پێویستی بە بڕیارتە`, en: `${prohibitedPending} need your decision`, ar: `${prohibitedPending} بحاجة لقرارك`, zh: `${prohibitedPending} 项需要您处理` })
+                      : pickLang(language, { ku: "بینینی وردەکاری", en: "View details", ar: "عرض التفاصيل", zh: "查看详情" })}
+                  </p>
+                </div>
+                <ChevronRight className={cn("h-5 w-5 shrink-0", isDark ? "text-slate-500" : "text-slate-400", isRTL && "rotate-180")} />
+              </div>
+            </Link>
+          </div>
+        )}
+
+        {/* Something did not load. Say so once, near the top, rather than
+            letting zero counters imply the account is empty. */}
+        {homeFailed && (
+          <div className="px-4 mt-3">
+            <PortalErrorState compact onRetry={retryHome} isRetrying={homeRetrying} />
+          </div>
+        )}
+
+        {/* Stats Cards */}
+        {/* The three-stage pipeline: China → the road → Iraq. Tapping a card
+            filters the list below in place; tapping again clears it. */}
+        <div className="px-4 mt-4">
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => togglePipeline("in_china")}
+              aria-pressed={pipelineFilter === "in_china"}
+              className={cn(
+                "rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
+                card,
+                pipelineFilter === "in_china" && "ring-2 ring-blue-500",
+              )}
+            >
+              <Package className={cn("mx-auto h-5 w-5", isDark ? "text-blue-300" : "text-blue-600 dark:text-blue-300")} />
+              <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                {batchesLoading ? "…" : <AnimatedCounter value={chinaCount} />}
+              </p>
+              <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                {pickLang(language, STATUS_LABEL.preparing)}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => togglePipeline("on_the_way")}
+              aria-pressed={pipelineFilter === "on_the_way"}
+              className={cn(
+                "rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
+                isDark ? "border-sky-500/35 bg-[#152238]" : "border-sky-300 dark:border-sky-500/35 bg-white dark:bg-[#152238]",
+                pipelineFilter === "on_the_way" && "ring-2 ring-sky-500",
+              )}
+            >
+              <Plane className={cn("mx-auto h-5 w-5", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")} />
+              <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")}>
+                {batchesLoading ? "…" : <AnimatedCounter value={onTheWay.length} />}
+              </p>
+              <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-sky-300" : "text-sky-700 dark:text-sky-300")}>
+                {pickLang(language, STATUS_LABEL.in_transit)}
+                {nextEtaDays !== null && (
+                  <span className="block tabular-nums">
+                    {pickLang(language, { ku: `~${nextEtaDays} ڕۆژ ماوە`, en: `~${nextEtaDays} days left`, ar: `~${nextEtaDays} يومًا متبقية`, zh: `约剩 ${nextEtaDays} 天` })}
+                  </span>
+                )}
+              </p>
+            </button>
+
+            <button
+              type="button"
+              onClick={() => togglePipeline("in_iraq")}
+              aria-pressed={pipelineFilter === "in_iraq"}
+              className={cn(
+                "rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
+                isDark ? "border-emerald-500/50 bg-emerald-950/40" : "border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40",
+                pipelineFilter === "in_iraq" && "ring-2 ring-emerald-500",
+              )}
+            >
+              <CheckCircle className={cn("mx-auto h-5 w-5", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")} />
+              <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")}>
+                {batchesLoading ? "…" : <AnimatedCounter value={inIraq.length} />}
+              </p>
+              <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
+                {pickLang(language, STATUS_LABEL.arrived)}
+              </p>
+            </button>
+          </div>
+        </div>
+
+        {/* What happens next — becomes the pulsing collect-me banner when a
+            shipment is waiting in the Erbil depot */}
+        <NextStepCard batches={batches ?? []} isDark={isDark} language={language} loading={batchesLoading} />
+
+        {/* Recent shipments — or, with the China card tapped, the depot list */}
+        <div className="px-4 mt-5">
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+              {t("portal.recentShipments") || "گواستنەوە نوێیەکان"}
+            </h2>
+            <Link href="/portal/shipments">
+              <span className="flex items-center gap-1 text-sm font-medium text-blue-500 dark:text-blue-400 transition-colors hover:text-blue-600">
+                {t("portal.viewAll") || "هەموو ببینە"}
+                <ChevronRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
               </span>
             </Link>
           </div>
 
-          {/* Customer Code Badge + clock, on one line so the header keeps its
-              height instead of growing a third row. */}
-          <div className="flex items-end justify-between gap-3">
-            {account?.customerCode ? (
-              <div className={cn(
-                "inline-flex items-center gap-2 border px-4 py-2 rounded-full backdrop-blur-sm",
-                lightHeader
-                  ? "bg-slate-900/[0.06] border-slate-900/10"
-                  : ""
-              )} style={lightHeader ? undefined : { backgroundImage: gradient("to right", tint(pal.pale, 0.15), tint(pal.light, 0.2)), borderColor: tint(pal.pale, 0.3) }}>
-                <Package className={cn("w-4 h-4", lightHeader && "text-slate-700 dark:text-slate-300")} style={paleStyle} />
-                <span className={cn("text-sm font-semibold", lightHeader && "text-slate-800 dark:text-slate-200")} style={headTextStyle}>
-                  {account.customerCode}
-                </span>
+          {pipelineFilter === "in_china" ? (
+            chinaItems.length > 0 ? (
+              <ChinaDepotList items={chinaItems} isDark={isDark} className="mt-0" />
+            ) : (
+              <div className={cn("rounded-2xl border p-6 text-center", card)}>
+                <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                  {pickLang(language, { ku: "هیچ پاکەتێکت لە کۆگای چین نییە", en: "Nothing of yours is in the China depot", ar: "لا توجد طرود لك في مستودع الصين", zh: "您在中国仓库没有包裹" })}
+                </p>
               </div>
-            ) : <span />}
+            )
+          ) : batchesLoading ? (
+            <div className="space-y-3">
+              {[1, 2, 3].map(i => (
+                <Skeleton key={i} className={cn("h-24 w-full rounded-2xl", isDark && "bg-slate-800")} />
+              ))}
+            </div>
+          ) : recentSource.length === 0 ? (
+            /* A brand-new customer used to get a grey box saying "nothing
+               here" at the one moment they most need telling what to do. */
+            totalBatches === 0 ? (
+              <PortalWelcomeCard customerCode={account?.customerCode} isDark={isDark} />
+            ) : (
+              <div className={cn("rounded-2xl border p-8 text-center", card)}>
+                <Package className={cn("mx-auto mb-3 h-8 w-8", isDark ? "text-slate-500" : "text-slate-400")} />
+                <p className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-500 dark:text-slate-300")}>
+                  {pipelineFilter
+                    ? pickLang(language, { ku: "لەم قۆناغەدا هیچ نییە", en: "Nothing in this stage", ar: "لا يوجد شيء في هذه المرحلة", zh: "此阶段没有货件" })
+                    : (t("portal.noShipments") || "هیچ گواستنەوەیەک نییە")}
+                </p>
+              </div>
+            )
+          ) : (
+            <div className="space-y-2.5">
+              {recentSource.map((batch) => (
+                <Link key={batch.id} href={`/portal/shipments/${batch.id}`}>
+                  <div className={cn(
+                    "rounded-2xl border p-3.5 transition-all hover:-translate-y-0.5 hover:shadow-lg",
+                    card,
+                  )}>
+                    <div className="flex items-center gap-3.5">
+                      <div className={cn(
+                        "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
+                        batch.shippingType?.includes("sea")
+                          ? (isDark ? "bg-cyan-900/50 text-cyan-400" : "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-600 dark:text-cyan-400")
+                          : (isDark ? "bg-sky-900/50 text-sky-400" : "bg-sky-100 dark:bg-sky-950/40 text-sky-600 dark:text-sky-400")
+                      )}>
+                        {getShippingIcon(batch.shippingType || "")}
+                      </div>
 
-            <PortalClock onLight={lightHeader} />
-          </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="mb-1 flex items-center gap-2">
+                          <p dir="ltr" className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                            {batch.batchCode}
+                          </p>
+                          <span className={cn(
+                            "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
+                            getStatusColor(batch.status)
+                          )}>
+                            {getStatusIcon(batch.status)}
+                            {getStatusText(batch.status)}
+                          </span>
+                        </div>
+                        <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                          {batch.customerPackageCount}{" "}
+                          {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "件包裹" })}
+                        </p>
+                      </div>
 
-          {/* Quick Actions — bento glass tiles */}
-          <div className="mt-6 grid grid-cols-3 gap-2.5">
+                      <ChevronRight className={cn(
+                        "h-5 w-5 shrink-0",
+                        isDark ? "text-slate-500" : "text-slate-400",
+                        isRTL && "rotate-180"
+                      )} />
+                    </div>
+                  </div>
+                </Link>
+              ))}
+            </div>
+          )}
+
+          {/* The delivered history, one tap away — the pipeline shows the
+              live stages, this line keeps the past reachable. */}
+          {pipelineFilter === null && deliveredCount > 0 && (
+            <Link href="/portal/shipments?status=delivered">
+              <span className={cn("mt-2.5 flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-medium", card, isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                <CheckCircle className="h-3.5 w-3.5" />
+                {pickLang(language, {
+                  ku: `${deliveredCount} باری گەیشتوو ببینە`,
+                  en: `See ${deliveredCount} delivered shipments`,
+                  ar: `شاهد ${deliveredCount} شحنة مسلّمة`,
+                  zh: `查看 ${deliveredCount} 个已送达货件`,
+                })}
+              </span>
+            </Link>
+          )}
+        </div>
+
+        {/* Four tools, one row — the owner's shortlist */}
+        <div className="px-4 mt-5">
+          <div className="grid grid-cols-4 gap-2">
             {quickActions.map((action, index) => (
               <Link key={index} href={action.href}>
-                <span className={cn("relative w-full h-full flex flex-col items-start gap-2.5 rounded-2xl p-3 border backdrop-blur-sm transition-all duration-300 hover:-translate-y-0.5 active:scale-[0.98]", headGlass)}>
-                  {/* ⓘ — reveals "what is this?" without navigating; hidden until tapped. */}
-                  <span
-                    role="button"
-                    tabIndex={0}
-                    aria-label={pickLang(language, { ku: "زانیاری", en: "info", ar: "معلومات", zh: "信息" })}
-                    onClick={(e) => { e.preventDefault(); e.stopPropagation(); setOpenTileInfo(openTileInfo === index ? null : index); }}
-                    className={cn("absolute top-0 end-0 flex h-11 w-11 items-center justify-center transition-colors", lightHeader ? "text-slate-500 dark:text-slate-400 hover:text-slate-900" : "opacity-70 hover:opacity-100")} style={paleStyle}
-                  >
-                    <Info className="w-3.5 h-3.5" />
-                  </span>
-                  <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center shadow-lg"
-                    style={{
-                      backgroundImage: `linear-gradient(135deg, ${pal.light}, ${pal.brand})`,
-                      boxShadow: `0 8px 16px -6px ${tint(pal.brand, 0.5)}`,
-                    }}
-                  >
-                    <action.icon className="w-5 h-5 text-white" />
-                  </div>
-                  <span className={cn("text-xs font-medium text-start leading-tight", headSoft)}>
+                <span className={cn("flex h-full flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all active:scale-[0.97]", card)}>
+                  <action.icon className={cn("h-5 w-5", isDark ? "text-blue-300" : "text-blue-600 dark:text-blue-300")} />
+                  <span className={cn("text-[11px] font-medium leading-tight", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")}>
                     {action.label}
                   </span>
                 </span>
               </Link>
             ))}
           </div>
-
-          {/* "What is this?" card — shown only after a tile's ⓘ is tapped. */}
-          {openTileInfo !== null && (
-            <div className={cn("mt-3 relative flex gap-3 rounded-2xl p-3.5 border backdrop-blur-sm", headGlass)}>
-              <div className="w-10 h-10 rounded-xl bg-white dark:bg-card flex items-center justify-center shrink-0">
-                <Info className="w-5 h-5" style={{ color: pal.brand }} />
-              </div>
-              <div className="flex-1 min-w-0 pe-5">
-                <h4 className={cn("text-sm font-bold", headStrong)}>{quickActions[openTileInfo].info.title}</h4>
-                <p className={cn("text-xs mt-0.5 leading-relaxed", headSoft)}>{quickActions[openTileInfo].info.desc}</p>
-                <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", lightHeader && "bg-slate-900/[0.07] text-slate-700 dark:text-slate-300")} style={lightHeader ? undefined : { backgroundColor: tint(pal.pale, 0.2), color: "#FFFFFF" }}>
-                  {quickActions[openTileInfo].info.example}
-                </span>
-              </div>
-              <button onClick={() => setOpenTileInfo(null)} aria-label={pickLang(language, { ku: "داخستن", en: "close", ar: "إغلاق", zh: "关闭" })}
-                className={cn("absolute top-2 end-2 p-1 rounded-full transition-colors", lightHeader ? "text-slate-500 dark:text-slate-400 hover:bg-slate-900/10" : "text-white/60 hover:bg-white/10")}>
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-          )}
         </div>
-      </div>
 
-      {/* Balance Card - Floating */}
-      <div className="px-4 -mt-5 relative z-10">
-        <Link href="/portal/financial">
-          <div
-            className={cn(
-              "rounded-2xl p-5 shadow-lg transition-all duration-300 hover:shadow-xl hover:-translate-y-0.5 cursor-pointer",
-              // Debt keeps its amber warning colour in every mode.
-              hasDebt && "bg-gradient-to-br from-[#d97706] to-[#b45309] shadow-[#b45309]/40",
-            )}
-            style={hasDebt ? undefined : {
-              backgroundImage: `linear-gradient(135deg, ${pal.brand}, ${pal.light})`,
-              boxShadow: `0 10px 20px -8px ${tint(pal.brand, 0.5)}`,
-            }}
-          >
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="text-white/80 text-sm font-medium mb-1">
-                  {hasDebt 
-                    ? t("portal.outstandingBalance")
-                    : t("portal.balance")
-                  }
-                </p>
-                <p className="text-3xl font-bold text-white">
-                  ${Math.abs(balance).toFixed(2)}
-                </p>
-              </div>
-              {/* Dollar sign flashes red when in debt, green when clear/credit. */}
-              <div className="w-14 h-14 rounded-2xl flex items-center justify-center bg-white dark:bg-card shadow-md">
-                <DollarSign className={cn(
-                  "w-7 h-7 animate-pulse",
-                  hasDebt ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300",
-                )} />
-              </div>
-            </div>
-            {hasDebt && (
-              <>
-                <div className="mt-3 flex items-center gap-2">
-                  <div className="flex-1 h-2 bg-white/20 rounded-full overflow-hidden">
-                    <div className="h-full bg-white/60 rounded-full w-3/4 animate-pulse" />
-                  </div>
-                  <span className="text-xs text-white/80 font-medium">
-                    {t("portal.payNow")} →
-                  </span>
-                </div>
-                {/* Direct WhatsApp line for paying: ask for account numbers /
-                    confirm a transfer. Stops propagation so tapping it doesn't
-                    follow the card's link to the financial page. */}
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    const msg = pickLang(language, {
-                      ku: `سڵاو، دەمەوێت باڵانسەکەم بدەم ($${Math.abs(balance).toFixed(2)}). تکایە شێوازەکانی پارەدانم بۆ بنێرن.`,
-                      en: `Hello, I'd like to pay my balance ($${Math.abs(balance).toFixed(2)}). Please send me the payment options.`,
-                      ar: `مرحبًا، أودّ دفع رصيدي ($${Math.abs(balance).toFixed(2)}). الرجاء إرسال طرق الدفع.`,
-                      zh: `您好，我想支付我的余额（$${Math.abs(balance).toFixed(2)}）。请发送付款方式。`,
-                    });
-                    window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
-                  }}
-                  className="mt-3 w-full flex items-center justify-center gap-2 rounded-xl bg-white/15 hover:bg-white/25 active:scale-[0.98] transition py-2 text-sm font-bold text-white"
-                >
-                  <MessageCircle className="w-4 h-4" />
-                  {pickLang(language, { ku: "پەیوەندی بۆ پارەدان (واتساپ)", en: "Contact us to pay (WhatsApp)", ar: "تواصل معنا للدفع (واتساب)", zh: "联系我们付款（WhatsApp）" })}
-                </button>
-              </>
-            )}
-          </div>
-        </Link>
-      </div>
-
-      {/* Prohibited packages — flashes while any item awaits the customer's decision */}
-      {prohibitedPackages && prohibitedPackages.length > 0 && (
-        <div className="px-4 mt-4">
-          <Link href="/portal/prohibited-packages">
-            <div className={cn(
-              "rounded-2xl border p-4 cursor-pointer flex items-center gap-3 transition-all hover:scale-[1.01]",
-              prohibitedPending > 0
-                ? "wazn-prohibited-flash border-red-400"
-                : isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60",
-            )}>
-              <div className="w-11 h-11 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white shrink-0 shadow-lg">
-                <AlertTriangle className="w-6 h-6" />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className={cn("font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
-                  {pickLang(language, { ku: "کەل و پەلی قەدەغە", en: "Prohibited packages", ar: "طرود ممنوعة", zh: "违禁包裹" })}
-                </p>
-                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                  {prohibitedPending > 0
-                    ? pickLang(language, { ku: `${prohibitedPending} پاکێج پێویستی بە بڕیارتە`, en: `${prohibitedPending} need your decision`, ar: `${prohibitedPending} بحاجة لقرارك`, zh: `${prohibitedPending} 项需要您处理` })
-                    : pickLang(language, { ku: "بینینی وردەکاری", en: "View details", ar: "عرض التفاصيل", zh: "查看详情" })}
-                </p>
-              </div>
-              <ChevronRight className={cn("w-5 h-5 shrink-0", isDark ? "text-slate-500" : "text-slate-400", isRTL && "rotate-180")} />
-            </div>
-          </Link>
-        </div>
-      )}
-
-      {/* Something did not load. Say so once, near the top, rather than
-          letting four zero counters imply the account is empty. */}
-      {homeFailed && (
-        <div className="px-4 mt-4">
-          <PortalErrorState compact onRetry={retryHome} isRetrying={homeRetrying} />
-        </div>
-      )}
-
-      {/* Price List Section — admin-curated shipping rates & services */}
-      <PriceListSection />
-
-      {/* What happens next, before the counts of what has happened */}
-      <NextStepCard batches={batches ?? []} isDark={isDark} language={language} loading={batchesLoading} />
-
-      {/* Stats Cards */}
-      <div className="px-4 mt-6">
-        {/* Section heading — accent bar */}
-        <div className="flex items-center gap-2.5 mb-3">
-          <div className="w-1.5 h-6 rounded-full bg-gradient-to-b from-violet-500 to-fuchsia-500" />
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-            {pickLang(language, { ku: "بارەکانم", en: "My shipments", ar: "شحناتي", zh: "我的货件" })}
-          </h2>
-        </div>
-        <div className={cn(
-          "rounded-2xl shadow-lg p-5 transition-colors duration-300",
-          isDark ? "bg-slate-800 shadow-slate-900/50" : "bg-white shadow-slate-200/50"
-        )}>
-          <div className="grid grid-cols-4 gap-2">
-            {/* Total Batches */}
-            <Link href="/portal/shipments">
+        {/* Pending Orders — orders not yet delivered, no invoice yet.
+            Moves into the My-shipments tab in the next phase; until that tab
+            exists this card is the road to those orders. Renders only when
+            there is something pending. */}
+        {pendingOrders && pendingOrders.count > 0 && (
+          <div className="px-4 mt-5">
+            <Link href="/portal/full-package">
               <div className={cn(
-                "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
-                isDark 
-                  ? "bg-slate-700/50 hover:bg-slate-700" 
-                  : "bg-gradient-to-br from-slate-50 dark:from-slate-950/40 to-slate-100 dark:to-slate-900/40 hover:from-slate-100 hover:to-slate-200"
+                "relative overflow-hidden rounded-2xl border p-4 transition-all hover:scale-[1.01]",
+                isDark
+                  ? "border-amber-700/50 bg-gradient-to-br from-amber-900/50 to-orange-900/40"
+                  : "border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40"
               )}>
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
-                  isDark ? "bg-slate-600 shadow-slate-900" : "bg-slate-800 shadow-slate-300"
-                )}>
-                  <Package className="w-5 h-5 text-white" />
-                </div>
-                {batchesLoading ? (
-                  <Skeleton className={cn("h-7 w-8 mx-auto mb-1", isDark && "bg-slate-600")} />
-                ) : (
-                  <p className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                    <AnimatedCounter value={totalBatches} />
-                  </p>
-                )}
-                <p className={cn("text-[10px] font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
-                  {t("portal.total")}
-                </p>
-              </div>
-            </Link>
-
-            {/* In Transit */}
-            <Link href="/portal/shipments?status=in_transit">
-              <div className={cn(
-                "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
-                isDark 
-                  ? "bg-blue-900/30 hover:bg-blue-900/50" 
-                  : "bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40 hover:from-blue-100 hover:to-blue-200"
-              )}>
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
-                  isDark ? "bg-blue-600 shadow-blue-900" : "bg-blue-500 shadow-blue-200"
-                )}>
-                  <TrendingUp className="w-5 h-5 text-white" />
-                </div>
-                {batchesLoading ? (
-                  <Skeleton className={cn("h-7 w-8 mx-auto mb-1", isDark && "bg-slate-600")} />
-                ) : (
-                  <p className={cn("text-xl font-bold", isDark ? "text-blue-400" : "text-blue-600")}>
-                    <AnimatedCounter value={inTransitCount} />
-                  </p>
-                )}
-                <p className={cn("text-[10px] font-medium", isDark ? "text-blue-400/70" : "text-blue-600/70")}>
-                  {t("portal.inTransit")}
-                </p>
-              </div>
-            </Link>
-
-            {/* Pending — the in_china stage: registered or preparing, not yet
-                moving. `?status=pending` was never a stage the shipments page
-                understood, so this tile used to land on an empty list. */}
-            <Link href="/portal/shipments?status=in_china">
-              <div className={cn(
-                "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
-                isDark 
-                  ? "bg-amber-900/30 hover:bg-amber-900/50" 
-                  : "bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-amber-100 dark:to-amber-900/40 hover:from-amber-100 hover:to-amber-200"
-              )}>
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
-                  isDark ? "bg-amber-600 shadow-amber-900" : "bg-amber-500 shadow-amber-200"
-                )}>
-                  <Clock className="w-5 h-5 text-white" />
-                </div>
-                {batchesLoading ? (
-                  <Skeleton className={cn("h-7 w-8 mx-auto mb-1", isDark && "bg-slate-600")} />
-                ) : (
-                  <p className={cn("text-xl font-bold", isDark ? "text-amber-400" : "text-amber-600")}>
-                    <AnimatedCounter value={pendingCount} />
-                  </p>
-                )}
-                <p className={cn("text-[10px] font-medium", isDark ? "text-amber-400/70" : "text-amber-600/70")}>
-                  {t("portal.pending")}
-                </p>
-              </div>
-            </Link>
-
-            {/* Delivered */}
-            <Link href="/portal/shipments?status=delivered">
-              <div className={cn(
-                "text-center p-3 rounded-xl transition-all duration-300 cursor-pointer hover:scale-105",
-                isDark 
-                  ? "bg-emerald-900/30 hover:bg-emerald-900/50" 
-                  : "bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-emerald-100 dark:to-emerald-900/40 hover:from-emerald-100 hover:to-emerald-200"
-              )}>
-                <div className={cn(
-                  "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2 shadow-lg",
-                  isDark ? "bg-emerald-600 shadow-emerald-900" : "bg-emerald-500 shadow-emerald-200"
-                )}>
-                  <CheckCircle className="w-5 h-5 text-white" />
-                </div>
-                {batchesLoading ? (
-                  <Skeleton className={cn("h-7 w-8 mx-auto mb-1", isDark && "bg-slate-600")} />
-                ) : (
-                  <p className={cn("text-xl font-bold", isDark ? "text-emerald-400" : "text-emerald-600")}>
-                    <AnimatedCounter value={deliveredCount} />
-                  </p>
-                )}
-                <p className={cn("text-[10px] font-medium", isDark ? "text-emerald-400/70" : "text-emerald-600/70")}>
-                  {t("portal.delivered")}
-                </p>
-              </div>
-            </Link>
-          </div>
-        </div>
-      </div>
-
-      {/* Pending Orders — orders not yet delivered, no invoice yet */}
-      {pendingOrders && pendingOrders.count > 0 && (
-        <div className="px-4 mt-6">
-          <Link href="/portal/full-package">
-            <div className={cn(
-              "relative overflow-hidden rounded-2xl p-5 shadow-lg cursor-pointer hover:scale-[1.01] transition-all",
-              isDark
-                ? "bg-gradient-to-br from-amber-900/60 to-orange-900/60 border border-amber-700/50"
-                : "bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 border border-amber-200 dark:border-amber-800/60"
-            )}>
-              <div className="absolute top-0 right-0 w-24 h-24 bg-amber-500/10 rounded-full -translate-y-1/2 translate-x-1/2" />
-              <div className="relative flex items-start justify-between">
-                <div className="flex-1">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className={cn(
-                      "p-2 rounded-xl",
-                      isDark ? "bg-amber-600/30" : "bg-amber-500/20"
-                    )}>
-                      <Clock className={cn("w-5 h-5", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")} />
-                    </div>
-                    <div>
-                      <h3 className={cn("font-bold text-base", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
-                        {t("portal.pendingOrdersTitle")}
-                      </h3>
-                      <p className={cn("text-xs", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
-                        {t("portal.pendingOrdersSubtitle")}
-                      </p>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-3 gap-2 mt-4">
-                    <div className="text-center">
-                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
-                        📦 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "完整套餐" })}
-                      </p>
-                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
-                        <AnimatedCounter value={pendingOrders.byType.full_package} />
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
-                        🛍️ {pickLang(language, { ku: "کڕین بە تێچوو", en: "Markup purchase", ar: "شراء بهامش", zh: "加价采购" })}
-                      </p>
-                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
-                        <AnimatedCounter value={pendingOrders.byType.commission} />
-                      </p>
-                    </div>
-                    <div className="text-center">
-                      <p className={cn("text-[11px] font-medium leading-tight min-h-[28px] flex items-center justify-center", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
-                        📝 {pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })}
-                      </p>
-                      <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
-                        <AnimatedCounter value={pendingOrders.byType.purchase_request} />
-                      </p>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="text-end">
-                  <p className={cn("text-xs font-medium mb-1", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
-                    {t("portal.estimatedTotal")}
-                  </p>
-                  <p className={cn("text-2xl font-bold font-mono", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
-                    ${pendingOrders.totalPriceUsd.toFixed(2)}
-                  </p>
-                  <div className={cn(
-                    "mt-2 px-2 py-0.5 rounded-full text-xs font-semibold inline-block",
-                    isDark ? "bg-amber-600/30 text-amber-200" : "bg-amber-200 text-amber-900 dark:text-amber-200"
-                  )}>
-                    {pendingOrders.count} {t("portal.orders")}
-                  </div>
-                </div>
-              </div>
-            </div>
-          </Link>
-        </div>
-      )}
-
-      {/* My declared packages — tracking numbers + photos the customer entered
-          themselves, with live status. Prominent so they can watch their
-          incoming purchases at a glance. */}
-      {declaredPackages && declaredPackages.length > 0 && (
-        <div className="px-4 mt-6">
-          <div className="flex items-center justify-between mb-3">
-            <h2 className={cn("text-lg font-bold flex items-center gap-2", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-              <Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />
-              {pickLang(language, { ku: "بارە خۆدەرخستووەکانم", en: "My declared packages", ar: "طرودي المُعلنة", zh: "我申报的包裹" })}
-            </h2>
-            <Link href="/portal/declare">
-              <span className="text-sm text-blue-500 dark:text-blue-400 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
-                {t("portal.viewAll") || "هەموو ببینە"}
-                <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
-              </span>
-            </Link>
-          </div>
-
-          <div className="space-y-2.5">
-            {declaredPackages.slice(0, 5).map((d: any) => {
-              const imgs: string[] = Array.isArray(d.productImages) ? d.productImages : [];
-              const status = d.status as "pending" | "matched" | "received" | "cancelled";
-              const statusMeta: Record<string, { label: { ku: string; en: string; ar: string; zh: string }; cls: string }> = {
-                pending:  { label: { ku: "چاوەڕوانی گەیشتن", en: "Awaiting arrival", ar: "بانتظار الوصول", zh: "等待到达" }, cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300" },
-                matched:  { label: { ku: "دۆزرایەوە",        en: "Found",           ar: "تم العثور",     zh: "已匹配" }, cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300" },
-                received: { label: { ku: "گەیشت",           en: "Received",        ar: "تم الاستلام",   zh: "已收到" }, cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" },
-                cancelled:{ label: { ku: "هەڵوەشاوە",        en: "Cancelled",       ar: "ملغى",          zh: "已取消" }, cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-400" },
-              };
-              const sm = statusMeta[status] ?? statusMeta.pending;
-              return (
-                <Link key={d.id} href="/portal/declare">
-                  <div className={cn(
-                    "flex items-center gap-3 rounded-2xl p-3 shadow-sm cursor-pointer transition-all hover:scale-[1.01]",
-                    isDark ? "bg-slate-800 hover:bg-slate-700/70" : "bg-white hover:bg-slate-50"
-                  )}>
-                    {/* Thumbnail */}
-                    <PhotoStack
-                      photos={imgs}
-                      className="w-14 h-14 rounded-xl"
-                      fallback={
-                        <div className={cn(
-                          "w-14 h-14 rounded-xl overflow-hidden flex-shrink-0 flex items-center justify-center",
-                          isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
-                        )}>
-                          <Package className={cn("w-6 h-6", isDark ? "text-slate-500" : "text-slate-400")} />
-                        </div>
-                      }
-                    />
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <p className={cn("font-mono text-sm font-bold truncate", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                        {d.trackingNumber}
-                      </p>
-                      {d.productName && (
-                        <p className={cn("text-xs truncate", isDark ? "text-slate-400" : "text-slate-500")}>{d.productName}</p>
-                      )}
-                      <div className="flex items-center gap-1.5 mt-1">
-                        {d.platform && (
-                          <span className={cn("text-[10px] px-1.5 py-0.5 rounded-md", isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600")}>
-                            {d.platform}
-                          </span>
-                        )}
-                        <span className={cn("text-[10px] font-bold px-2 py-0.5 rounded-full", sm.cls)}>
-                          {pickLang(language, sm.label)}
-                        </span>
+                <div className="flex items-start justify-between gap-3">
+                  <div className="min-w-0 flex-1">
+                    <div className="mb-2 flex items-center gap-2">
+                      <div className={cn("rounded-xl p-2", isDark ? "bg-amber-600/30" : "bg-amber-500/20")}>
+                        <Clock className={cn("h-5 w-5", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")} />
                       </div>
-                    </div>
-                    <ChevronRight className={cn("w-4 h-4 flex-shrink-0", isDark ? "text-slate-600" : "text-slate-300", isRTL && "rotate-180")} />
-                  </div>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Recent Shipments */}
-      <div className="px-4 mt-6">
-        <div className="flex items-center justify-between mb-4">
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-            {t("portal.recentShipments") || "گواستنەوە نوێیەکان"}
-          </h2>
-          <Link href="/portal/shipments">
-            <span className="text-sm text-blue-500 dark:text-blue-400 font-medium flex items-center gap-1 hover:text-blue-600 transition-colors">
-              {t("portal.viewAll") || "هەموو ببینە"}
-              <ChevronRight className={cn("w-4 h-4", isRTL && "rotate-180")} />
-            </span>
-          </Link>
-        </div>
-
-        {batchesLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className={cn("h-24 w-full rounded-2xl", isDark && "bg-slate-800")} />
-            ))}
-          </div>
-        ) : recentBatches.length === 0 ? (
-          /* A brand-new customer used to get a grey box saying "nothing here"
-             at the one moment they most need telling what to do. If they have
-             never sent anything, show them how; if they have and this is just
-             a quiet week, the plain message is right. */
-          totalBatches === 0 ? (
-            <PortalWelcomeCard customerCode={account?.customerCode} isDark={isDark} />
-          ) : (
-          <div className={cn(
-            "rounded-2xl p-10 text-center shadow-sm transition-colors duration-300",
-            isDark ? "bg-slate-800" : "bg-white"
-          )}>
-            <div className={cn(
-              "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
-              isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
-            )}>
-              <Package className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
-            </div>
-            <p className={cn("font-medium", isDark ? "text-slate-300" : "text-slate-500")}>
-              {t("portal.noShipments") || "هیچ گواستنەوەیەک نییە"}
-            </p>
-            <p className={cn("text-sm mt-1", isDark ? "text-slate-500" : "text-slate-400")}>
-              {t("portal.shipmentsWillAppear") || "گواستنەوەکانت لێرە دەردەکەون"}
-            </p>
-          </div>
-          )
-        ) : (
-          <div className="space-y-3">
-            {recentBatches.map((batch) => (
-              <Link key={batch.id} href={`/portal/shipments/${batch.id}`}>
-                <div className={cn(
-                  "rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border",
-                  isDark 
-                    ? "bg-slate-800 border-slate-700 hover:bg-slate-750" 
-                    : "bg-white border-slate-100 dark:border-slate-800/60"
-                )}>
-                  <div className="flex items-center gap-4">
-                    {/* Icon */}
-                    <div className={cn(
-                      "w-12 h-12 rounded-xl flex items-center justify-center shrink-0",
-                      batch.shippingType?.includes("sea") 
-                        ? (isDark ? "bg-cyan-900/50 text-cyan-400" : "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-600")
-                        : (isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 dark:bg-blue-950/40 text-blue-600")
-                    )}>
-                      {getShippingIcon(batch.shippingType || "")}
-                    </div>
-                    
-                    {/* Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                          {batch.batchCode}
+                      <div className="min-w-0">
+                        <h3 className={cn("truncate text-base font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                          {t("portal.pendingOrdersTitle")}
+                        </h3>
+                        <p className={cn("text-xs", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                          {t("portal.pendingOrdersSubtitle")}
                         </p>
-                        <span className={cn(
-                          "px-2 py-0.5 rounded-full text-xs font-medium flex items-center gap-1",
-                          getStatusColor(batch.status)
-                        )}>
-                          {getStatusIcon(batch.status)}
-                          {getStatusText(batch.status)}
-                        </span>
                       </div>
-                      <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-                        {/* `t("packages")` is not a key in any of the four
-                            locale files, so this always fell through to the
-                            English literal beside it. */}
-                        {batch.customerPackageCount}{" "}
-                        {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "件包裹" })}
-                      </p>
                     </div>
-                    
-                    {/* Arrow */}
-                    <ChevronRight className={cn(
-                      "w-5 h-5 shrink-0",
-                      isDark ? "text-slate-500" : "text-slate-400",
-                      isRTL && "rotate-180"
-                    )} />
+
+                    <div className="mt-3 grid grid-cols-3 gap-2">
+                      <div className="text-center">
+                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                          📦 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "完整套餐" })}
+                        </p>
+                        <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                          <AnimatedCounter value={pendingOrders.byType.full_package} />
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                          🛍️ {pickLang(language, { ku: "کڕین بە تێچوو", en: "Markup purchase", ar: "شراء بهامش", zh: "加价采购" })}
+                        </p>
+                        <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                          <AnimatedCounter value={pendingOrders.byType.commission} />
+                        </p>
+                      </div>
+                      <div className="text-center">
+                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                          📝 {pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })}
+                        </p>
+                        <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                          <AnimatedCounter value={pendingOrders.byType.purchase_request} />
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="shrink-0 text-end">
+                    <p className={cn("mb-1 text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                      {t("portal.estimatedTotal")}
+                    </p>
+                    <p dir="ltr" className={cn("font-mono text-xl font-bold tabular-nums", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                      ${pendingOrders.totalPriceUsd.toFixed(2)}
+                    </p>
+                    <div className={cn(
+                      "mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-semibold",
+                      isDark ? "bg-amber-600/30 text-amber-200" : "bg-amber-200 dark:bg-amber-900/50 text-amber-900 dark:text-amber-200"
+                    )}>
+                      {pendingOrders.count} {t("portal.orders")}
+                    </div>
                   </div>
                 </div>
-              </Link>
-            ))}
+              </div>
+            </Link>
           </div>
         )}
+
+        {/* The customer's own boxes. A box waiting to be confirmed is the most
+            actionable thing on the page. Renders nothing when there are none. */}
+        <MyDeliveryBoxes className="mt-4" />
+
+        {/* Invite a friend — customer's code doubles as a referral code */}
+        <ReferralCard isDark={isDark} language={language} />
+
+        {/* Announcements Section */}
+        <AnnouncementsSection isDark={isDark} language={language} t={t} />
+
+        {/* The links they have handed out, and the way to close one. Renders
+            nothing when nothing has been shared, which is most customers. */}
+        <MyShareLinks isDark={isDark} language={language} />
+
+        {/* A word on the days worth one — birthdays, Newroz, Eid. Down here on
+            purpose: found while scrolling, never announced at the top. */}
+        <GreetingCard isDark={isDark} language={language} />
+
+        {/* Rate your delivery — a gentle inline card at the very bottom, never
+            a blocking popup. Shows for the latest delivered, unrated package. */}
+        <DeliveryRatingCard isDark={isDark} language={language} />
       </div>
-
-      {/* The customer's own boxes. Sits above the referral card because a
-          box waiting to be confirmed is the most actionable thing on the page.
-          Renders nothing when there are none. */}
-      <MyDeliveryBoxes className="mt-4" />
-
-      {/* Invite a friend — customer's code doubles as a referral code */}
-      <ReferralCard isDark={isDark} language={language} />
-
-      {/* Announcements Section */}
-      <AnnouncementsSection isDark={isDark} language={language} t={t} />
-
-      {/* The links they have handed out, and the way to close one. A link
-          that cannot be seen cannot be turned off. Renders nothing when
-          nothing has been shared, which is most customers. */}
-      <MyShareLinks isDark={isDark} language={language} />
-
-      {/* A word on the days worth one — birthdays, Newroz, Eid, or a
-          hundredth parcel. Down here on purpose: found while scrolling, like
-          the rating card, rather than announced at the top of the screen. */}
-      <GreetingCard isDark={isDark} language={language} />
-
-      {/* Rate your delivery — a gentle inline card at the very bottom, never a
-          blocking popup. Shows for the latest delivered, unrated package. */}
-      <DeliveryRatingCard isDark={isDark} language={language} />
     </CustomerPortalLayout>
   );
 }

@@ -135,6 +135,20 @@ export function orderStatusLabel(
   }
 }
 
+/**
+ * Landed in Iraq but not yet handed over: arrived, customs, at_depot.
+ *
+ * The home pipeline's third card. It is a finer cut of the "in_transit"
+ * stage — stageOf stays the shipments page's three-way contract — and it
+ * lives here so the card's number and the list its tap shows come from the
+ * same predicate instead of two screens deciding "in Iraq" for themselves.
+ */
+export const IN_IRAQ_STATUSES = ["arrived", "customs", "at_depot"] as const;
+
+export function isInIraqNotDelivered(status: string): boolean {
+  return (IN_IRAQ_STATUSES as readonly string[]).includes(status);
+}
+
 /** How many batches sit in each stage, for the filter counts. */
 export function countByStage(statuses: string[]): Record<Exclude<ShipmentStage, "">, number> {
   const counts = { in_china: 0, in_transit: 0, delivered: 0 };
