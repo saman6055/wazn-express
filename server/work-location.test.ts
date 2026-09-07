@@ -109,13 +109,24 @@ describe("the location is stamped, not looked up later", () => {
   });
 
   it("carries the location out to the list that displays it", () => {
+    // The columns moved out of getAllBatches into the shared
+    // BATCH_LIST_COLUMNS set (so list and search select alike); the guard
+    // follows them there, and checks the list still reads that set.
+    const src = read("server/db/batches.db.ts");
+    const columns = slice(
+      src,
+      "const BATCH_LIST_COLUMNS",
+      "} as const;",
+      "batch list columns"
+    );
+    expect(columns).toContain("createdInCity: batches.createdInCity");
     const listQuery = slice(
-      read("server/db/batches.db.ts"),
+      src,
       "export async function getAllBatches",
       "export async function getBatchById",
       "getAllBatches"
     );
-    expect(listQuery).toContain("createdInCity: batches.createdInCity");
+    expect(listQuery, "the list must select the shared column set").toContain("db.select(BATCH_LIST_COLUMNS)");
     expect(read("client/src/pages/Batches.tsx")).toContain("batch.createdInCity");
   });
 });
