@@ -11,7 +11,8 @@ import {
   User, MessageSquare, Bell, MapPin, FileText, HelpCircle, 
   AlertTriangle, ChevronRight, LogOut, Settings, Shield, Phone, Mail,
   Package, CreditCard, Star, Moon, Sun, Headphones, MessageCircle, PhoneCall,
-  Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen, Check, Truck
+  Globe, Languages, Info, Heart, Share2, ExternalLink, BookOpen, Check, Truck,
+  GraduationCap
 } from "lucide-react";
 import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -80,6 +81,14 @@ const { t, language, setLanguage } = useLanguage();
       iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500",
     },
     {
+      // Its bottom-nav slot became the ➕ register button; the orders page
+      // keeps a permanent door here until the merged My-shipments tab lands.
+      icon: Package,
+      label: pickLang(language, { ku: "کاڵاکانم و داواکارییەکان", en: "My items & requests", ar: "بضائعي وطلباتي", zh: "我的商品与请求" }),
+      path: "/portal/full-package",
+      iconBg: "bg-gradient-to-br from-purple-400 to-fuchsia-500",
+    },
+    {
       icon: CreditCard,
       label: language === "ku" ? "کڕینی یوانی چینی" : language === "ar" ? "شراء اليوان الصيني" : language === "zh" ? "购买人民币" : "Buy Chinese Yuan",
       path: "/portal/yuan-exchange",
@@ -116,6 +125,15 @@ const { t, language, setLanguage } = useLanguage();
       description: language === "ku" ? "هەموو بەشەکان بە نموونەوە" : language === "ar" ? "كل الأقسام بأمثلة" : language === "zh" ? "所有版块及示例" : "Every section, with examples",
       path: "/portal/guide",
       iconBg: "bg-gradient-to-br from-indigo-400 to-fuchsia-500",
+    },
+    {
+      // The home grid's shortcut is gone; the Me menu is where the video
+      // lessons live now (a proper Help Center gathers these in phase 3).
+      icon: GraduationCap,
+      label: pickLang(language, { ku: "فێرکاری بە ڤیدیۆ", en: "Video tutorials", ar: "شروحات بالفيديو", zh: "视频教程" }),
+      description: pickLang(language, { ku: "چۆن لە تاوباو داوا بکەیت و پۆرتاڵ بەکاربهێنیت", en: "How to order from Taobao and use the portal", ar: "كيفية الطلب من تاوباو واستخدام البوابة", zh: "如何在淘宝下单并使用门户" }),
+      path: "/portal/tutorials",
+      iconBg: "bg-gradient-to-br from-violet-400 to-purple-500",
     },
     {
       icon: Headphones,
