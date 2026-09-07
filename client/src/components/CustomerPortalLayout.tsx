@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { useLocation, Link, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Home, Package, Wallet, User, Plus, Search } from "lucide-react";
+import { Home, Package, Wallet, User, Plus, Search, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -137,6 +137,16 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       activeBg: "bg-sky-500/10",
       activeGlow: "shadow-sky-500/20",
     },
+    {
+      // The owner's word: my-items keeps its own tab — for the merchants
+      // and full-package customers it is the page they live on.
+      icon: ShoppingBag,
+      label: pickLang(language, { ku: "کاڵاکانم", en: "My items", ar: "بضائعي", zh: "我的商品" }),
+      path: "/portal/full-package",
+      activeColor: "text-purple-500",
+      activeBg: "bg-purple-500/10",
+      activeGlow: "shadow-purple-500/20",
+    },
   ];
 
   // Right side items
@@ -174,7 +184,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       href={item.path}
       aria-current={isActive ? "page" : undefined}
       className={cn(
-        "flex flex-col items-center justify-center gap-1 px-3 py-2 rounded-2xl transition-all duration-300 min-w-[60px]",
+        // Five flat tabs plus the raised centre now share the bar, so each
+        // target slims down; 46px still clears the touch-size floor.
+        "flex flex-col items-center justify-center gap-1 px-1.5 py-2 rounded-2xl transition-all duration-300 min-w-[46px]",
         isActive 
           ? `${item.activeColor} ${item.activeBg} shadow-lg ${item.activeGlow}` 
           : isDark 
@@ -303,7 +315,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
             bottom edge and the home button's label — which hangs below the
             button — was cut in half by it. This is that missing clearance. */}
         <div className={cn("relative", "max-w-lg", "mx-auto", "pb-3")}>
-          <div className="flex items-end justify-between px-4 h-20">
+          <div className="flex items-end justify-between px-2 h-20">
             {/* Left Side - Shipments & Full Pack */}
             <div className="flex items-center gap-1">
               {leftItems.map((item) => {

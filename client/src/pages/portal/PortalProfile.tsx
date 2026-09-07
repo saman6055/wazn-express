@@ -81,14 +81,6 @@ const { t, language, setLanguage } = useLanguage();
       iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500",
     },
     {
-      // Its bottom-nav slot became the ➕ register button; the orders page
-      // keeps a permanent door here until the merged My-shipments tab lands.
-      icon: Package,
-      label: pickLang(language, { ku: "کاڵاکانم و داواکارییەکان", en: "My items & requests", ar: "بضائعي وطلباتي", zh: "我的商品与请求" }),
-      path: "/portal/full-package",
-      iconBg: "bg-gradient-to-br from-purple-400 to-fuchsia-500",
-    },
-    {
       icon: CreditCard,
       label: language === "ku" ? "کڕینی یوانی چینی" : language === "ar" ? "شراء اليوان الصيني" : language === "zh" ? "购买人民币" : "Buy Chinese Yuan",
       path: "/portal/yuan-exchange",
