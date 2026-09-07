@@ -139,3 +139,25 @@ describe("the resolver answers in the order the invoice will", () => {
     expect(service).toContain('return answer(0, "none");');
   });
 });
+
+describe("the figure quoted on the register screen", () => {
+  // A customer with an agreed $9/kg was being quoted $11 at the counter: the
+  // screen multiplied the batch's list rate itself, and the list rate knows
+  // nothing about per-customer prices or tiers. The stored price was right
+  // all along — the quote pointed away from it.
+  it("comes from the same resolver, through a read-only estimate procedure", () => {
+    const estimate = slice(router, "estimateCost: staffProcedure", "getUnclaimed: staffProcedure", "estimate endpoint");
+    expect(estimate).toContain("await resolveParcelCost({");
+    expect(estimate).toContain("customerId: input.customerId");
+    expect(estimate, "an estimate must never write anything").not.toContain(".mutation(");
+  });
+
+  it("the screen asks the server instead of multiplying the list rate", () => {
+    const screen = read("client/src/pages/QuickRegister.tsx");
+    expect(screen).toContain("estimateCost.useQuery");
+    expect(screen, "the batch list rate must not be multiplied on the screen")
+      .not.toContain("parseFloat(selectedBatch.pricePerKg)");
+    expect(screen, "nor the sea rate")
+      .not.toContain("parseFloat(selectedBatch.pricePerCbm)");
+  });
+});

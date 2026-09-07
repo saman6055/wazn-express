@@ -5,6 +5,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { keepPreviousData } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers } from "lucide-react";
@@ -499,17 +500,38 @@ export default function QuickRegister() {
     setPhotos(prev => prev.filter((_, i) => i !== index));
   };
   
-  const estimatedPrice = useMemo(() => {
-    const selectedBatch = batches?.find((b: any) => b.id === parseInt(batchId));
-    if (!selectedBatch) return 0;
-    
-    if ((shippingType === "air_regular" || shippingType === "air_irregular") && selectedBatch.pricePerKg && chargeableWeight > 0) {
-      return parseFloat(selectedBatch.pricePerKg) * chargeableWeight;
-    } else if (shippingType === "sea" && selectedBatch.pricePerCbm && cbm > 0) {
-      return parseFloat(selectedBatch.pricePerCbm) * cbm;
-    }
-    return 0;
-  }, [batches, batchId, shippingType, chargeableWeight, cbm]);
+  /**
+   * The quoted price, from the server's own resolver — the same one the
+   * register will store with. The screen used to multiply the batch's list
+   * rate here itself, which is how a customer with an agreed $9/kg watched
+   * the counter quote $11 while the invoice was going to say $9: the list
+   * rate knows nothing about per-customer prices or tiers.
+   */
+  const estimateFacts = useMemo(() => ({
+    customerId: isUnclaimed ? null : customerId,
+    batchId: batchId && batchId !== "none" ? parseInt(batchId) : null,
+    originWarehouseId: selectedWarehouse?.id ?? null,
+    shippingType,
+    weightKg: weightKg || undefined,
+    lengthCm: lengthCm || undefined,
+    widthCm: widthCm || undefined,
+    heightCm: heightCm || undefined,
+    volumeCbm: shippingType === "sea" && directCbm ? directCbm : undefined,
+  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm]);
+
+  // A keystroke in the weight field should not fire a request per digit.
+  const [debouncedFacts, setDebouncedFacts] = useState(estimateFacts);
+  useEffect(() => {
+    const id = setTimeout(() => setDebouncedFacts(estimateFacts), 250);
+    return () => clearTimeout(id);
+  }, [estimateFacts]);
+
+  const hasMeasure = shippingType === "sea" ? cbm > 0 : chargeableWeight > 0;
+  const { data: estimate } = trpc.packages.estimateCost.useQuery(debouncedFacts, {
+    enabled: hasMeasure,
+    placeholderData: keepPreviousData,
+  });
+  const estimatedPrice = hasMeasure && estimate ? estimate.amountUsd : 0;
   
   const [, setLocation] = useLocation();
   const [returnToScanner, setReturnToScanner] = useState<string | null>(null);
@@ -1943,6 +1965,11 @@ export default function QuickRegister() {
                       <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1 p-4 bg-primary/5 rounded-xl border border-primary/20 min-w-0">
                         <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
                         <span className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</span>
+                        {estimate && estimate.rate > 0 && (
+                          <span className="text-xs text-muted-foreground font-mono" dir="ltr">
+                            ${estimate.rate.toFixed(2)}/{estimate.unit}
+                          </span>
+                        )}
                       </div>
                     )}
                   </div>

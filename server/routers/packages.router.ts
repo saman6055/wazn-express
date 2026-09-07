@@ -805,6 +805,53 @@ export const packagesRouter = router({
 
         return pkg;
       }),
+    /**
+     * The figure the register screen quotes before Save.
+     *
+     * The screen used to multiply the batch's list rate by the weight itself,
+     * and nothing else — so a customer with an agreed rate watched the counter
+     * quote the list price while the register was about to store, and the
+     * invoice to charge, their own. Same resolver as the register, read-only:
+     * it prices nothing and writes nothing.
+     */
+    estimateCost: staffProcedure
+      .input(z.object({
+        customerId: idSchema.nullish(),
+        batchId: idSchema.nullish(),
+        originWarehouseId: idSchema.nullish(),
+        shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
+        weightKg: z.string().max(50).optional(),
+        lengthCm: z.string().max(50).optional(),
+        widthCm: z.string().max(50).optional(),
+        heightCm: z.string().max(50).optional(),
+        volumeCbm: z.string().max(50).optional(),
+      }))
+      .query(async ({ input }) => {
+        // Sea with dimensions but no typed CBM: derive it exactly as the
+        // register will, so the quote and the stored price cannot differ.
+        let volumeCbm = input.volumeCbm;
+        if (input.shippingType === "sea" && !volumeCbm && input.lengthCm && input.widthCm && input.heightCm) {
+          const vol = (parseFloat(input.lengthCm) * parseFloat(input.widthCm) * parseFloat(input.heightCm)) / 1000000;
+          volumeCbm = vol.toFixed(6);
+        }
+        const priced = await resolveParcelCost({
+          customerId: input.customerId,
+          batchId: input.batchId,
+          originWarehouseId: input.originWarehouseId,
+          shippingType: input.shippingType,
+          weightKg: input.weightKg,
+          lengthCm: input.lengthCm,
+          widthCm: input.widthCm,
+          heightCm: input.heightCm,
+          volumeCbm,
+        });
+        return {
+          amountUsd: priced.amountUsd,
+          rate: priced.rate,
+          unit: priced.unit,
+          source: priced.source,
+        };
+      }),
     // Get unclaimed packages
     getUnclaimed: staffProcedure
       .query(async () => {
