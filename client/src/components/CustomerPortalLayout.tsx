@@ -315,11 +315,13 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
             bottom edge and the home button's label — which hangs below the
             button — was cut in half by it. This is that missing clearance. */}
         <div className={cn("relative", "max-w-lg", "mx-auto", "pb-3")}>
-          <div className="flex items-end justify-between px-2 h-20">
-            {/* Left Side - Shipments & Full Pack */}
-            <div className="flex items-center gap-1">
+          <div className="flex items-end px-1 h-20">
+            {/* Each side takes exactly half the bar and spreads its tabs
+                evenly toward the centre — justify-between hugged the edges
+                and left a hand-span of nothing beside the ➕. */}
+            <div className="flex flex-1 items-center justify-evenly">
               {leftItems.map((item) => {
-                const isActive = location === item.path || 
+                const isActive = location === item.path ||
                   (item.path !== "/portal" && location.startsWith(item.path));
                 return renderNavItem(item, isActive);
               })}
@@ -329,7 +331,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
                 blue as the home hero so the two read as one action. Raised
                 above the flat items; no visible label (the hero card names
                 the action), an aria-label carries it for screen readers. */}
-            <div className="relative -top-5">
+            <div className="relative -top-5 shrink-0 px-1">
               <Link
                 href={declareItem.path}
                 aria-current={isDeclareActive ? "page" : undefined}
@@ -349,9 +351,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
             </div>
 
             {/* Right Side - Financial & Me */}
-            <div className="flex items-center gap-1">
+            <div className="flex flex-1 items-center justify-evenly">
               {rightItems.map((item) => {
-                const isActive = location === item.path || 
+                const isActive = location === item.path ||
                   (item.path !== "/portal" && location.startsWith(item.path));
                 return renderNavItem(item, isActive);
               })}
