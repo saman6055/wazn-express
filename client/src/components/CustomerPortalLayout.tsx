@@ -1,7 +1,7 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { useLocation, Link, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Home, Package, Wallet, User, Plus, Search, ShoppingBag } from "lucide-react";
+import { Home, Package, Wallet, Plus, Search, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -137,6 +137,12 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       activeBg: "bg-sky-500/10",
       activeGlow: "shadow-sky-500/20",
     },
+  ];
+
+  // Right side items. The account tab is gone from here — the avatar at the
+  // top of the home header is the account button now, by the owner's word —
+  // which lets the bar sit balanced, two tabs a side around the plus.
+  const rightItems = [
     {
       // The owner's word: my-items keeps its own tab — for the merchants
       // and full-package customers it is the page they live on.
@@ -147,10 +153,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       activeBg: "bg-purple-500/10",
       activeGlow: "shadow-purple-500/20",
     },
-  ];
-
-  // Right side items
-  const rightItems = [
     {
       icon: Wallet,
       label: t('portal.financial'),
@@ -158,14 +160,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       activeColor: "text-amber-500",
       activeBg: "bg-amber-500/10",
       activeGlow: "shadow-amber-500/20",
-    },
-    {
-      icon: User,
-      label: pickLang(language, { ku: "هەژمار", en: "Account", ar: "حسابي", zh: "我的" }),
-      path: "/portal/profile",
-      activeColor: "text-blue-500",
-      activeBg: "bg-blue-500/10",
-      activeGlow: "shadow-blue-500/20",
     },
   ];
 

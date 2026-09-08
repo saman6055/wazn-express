@@ -411,16 +411,18 @@ export default function PortalHome() {
             style={{ paddingTop: "env(safe-area-inset-top)" }}
           >
             <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
-              <div className="flex items-center gap-2 min-w-0">
-                <div className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
-                  <User className="h-4 w-4 text-blue-100" />
-                </div>
-                {account?.customerCode && (
-                  <span dir="ltr" className={cn("truncate rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums", isDark ? "border-blue-500/40 bg-blue-600/20 text-blue-300" : "border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300")}>
-                    {account.customerCode}
+              <Link href="/portal/profile" aria-label={pickLang(language, { ku: "هەژماری من", en: "My account", ar: "حسابي", zh: "我的账户" })}>
+                <span className="flex items-center gap-2 min-w-0">
+                  <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                    <User className="h-4 w-4 text-blue-100" />
                   </span>
-                )}
-              </div>
+                  {account?.customerCode && (
+                    <span dir="ltr" className={cn("truncate rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums", isDark ? "border-blue-500/40 bg-blue-600/20 text-blue-300" : "border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300")}>
+                      {account.customerCode}
+                    </span>
+                  )}
+                </span>
+              </Link>
               <div className="flex items-center gap-1.5">
                 <Link href="/portal/search" aria-label={pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}>
                   <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
@@ -448,25 +450,29 @@ export default function PortalHome() {
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center gap-3">
-              <div className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
-                <User className="h-5 w-5 text-blue-100" />
-              </div>
-              <div className="min-w-0">
-                {accountLoading ? (
-                  <Skeleton className={cn("h-6 w-36", isDark && "bg-slate-700")} />
-                ) : (
-                  <h1 className={cn("truncate text-base font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
-                    {account?.fullName || account?.customerCode}
-                  </h1>
-                )}
-                {account?.customerCode && (
-                  <span dir="ltr" className={cn("mt-0.5 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tabular-nums", isDark ? "border-blue-500/40 bg-blue-600/20 text-blue-300" : "border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300")}>
-                    {account.customerCode}
-                  </span>
-                )}
-              </div>
-            </div>
+            {/* The avatar IS the account button — the owner removed the
+                account tab from the bottom bar and pointed here instead. */}
+            <Link href="/portal/profile" aria-label={pickLang(language, { ku: "هەژماری من", en: "My account", ar: "حسابي", zh: "我的账户" })}>
+              <span className="flex min-w-0 items-center gap-3">
+                <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                  <User className="h-5 w-5 text-blue-100" />
+                </span>
+                <span className="min-w-0 block">
+                  {accountLoading ? (
+                    <Skeleton className={cn("h-6 w-36", isDark && "bg-slate-700")} />
+                  ) : (
+                    <h1 className={cn("truncate text-base font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                      {account?.fullName || account?.customerCode}
+                    </h1>
+                  )}
+                  {account?.customerCode && (
+                    <span dir="ltr" className={cn("mt-0.5 inline-block rounded-full border px-2.5 py-0.5 text-[11px] font-semibold tabular-nums", isDark ? "border-blue-500/40 bg-blue-600/20 text-blue-300" : "border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300")}>
+                      {account.customerCode}
+                    </span>
+                  )}
+                </span>
+              </span>
+            </Link>
 
             <div className="flex items-center gap-2">
               <Link href="/portal/search" aria-label={pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}>
