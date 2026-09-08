@@ -11,6 +11,7 @@ import {
 } from '@shared/batchSearch';
 import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
 import { deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
+import { diffPriceFields, normalizePriceValue, PRICE_HISTORY_FIELDS } from '@shared/batchPriceHistory';
 import { createCustomerNotification } from './portal.db';
 import { getSetting, getVolumetricDivisor } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
@@ -24,6 +25,7 @@ import {
   pricingRules, InsertPricingRule, PricingRule,
   batches, InsertBatch, Batch,
   batchStatusHistory,
+  batchPriceHistory,
   packages, InsertPackage, Package,
   deliveryBoxes,
   invoices, InsertInvoice, Invoice,
@@ -515,19 +517,44 @@ export async function updateBatch(
   const db = await getDb();
   if (!db) return;
 
-  // Read the old status before the write, and only when the write might
-  // change it — an unrelated update should not cost a query.
+  // Read the old row before the write, and only when the write might
+  // change something worth remembering — an unrelated update should not
+  // cost a query. Two things are remembered: the status (for the journey
+  // timeline) and the five money fields (for the price history).
   const nextStatus = (data as Partial<InsertBatch>).status;
+  const touchesPrices = PRICE_HISTORY_FIELDS.some(
+    (field) => (data as Record<string, unknown>)[field] !== undefined,
+  );
   let previousStatus: string | null = null;
-  if (nextStatus !== undefined) {
-    const [before] = await db.select({ status: batches.status })
+  let priceChanges: ReturnType<typeof diffPriceFields> = [];
+  if (nextStatus !== undefined || touchesPrices) {
+    const [before] = await db.select()
       .from(batches)
       .where(eq(batches.id, id))
       .limit(1);
     previousStatus = before?.status ?? null;
+    if (before && touchesPrices) {
+      priceChanges = diffPriceFields(before, data as Record<string, string | null | undefined>);
+    }
   }
 
   await db.update(batches).set(data).where(eq(batches.id, id));
+
+  if (priceChanges.length > 0) {
+    try {
+      await db.insert(batchPriceHistory).values(priceChanges.map((change) => ({
+        batchId: id,
+        field: change.field,
+        oldValue: change.oldValue,
+        newValue: change.newValue,
+        changedById: changedById ?? null,
+      })));
+    } catch (err) {
+      // The save has already happened; losing the history line costs a row
+      // in a side panel, not the price itself. Same stance as status history.
+      appLogger.error("[Batch] price history write failed", { batchId: id, err });
+    }
+  }
 
   if (nextStatus !== undefined && nextStatus !== previousStatus) {
     try {
@@ -930,6 +957,20 @@ export async function deriveBatchCostRateIfMissing(batchId: number): Promise<{
     .set(isSea ? { costPerCbm: rate.toFixed(2) } : { costPerKg: rate.toFixed(2) })
     .where(eq(batches.id, batchId));
 
+  // The one price write a person doesn't make. changedById NULL is how the
+  // history box knows to say "سیستەم" instead of a name.
+  try {
+    await db.insert(batchPriceHistory).values({
+      batchId,
+      field: isSea ? "costPerCbm" : "costPerKg",
+      oldValue: normalizePriceValue(isSea ? batch.costPerCbm : batch.costPerKg),
+      newValue: rate.toFixed(2),
+      changedById: null,
+    });
+  } catch (err) {
+    appLogger.error("[BatchCost] derived-rate history write failed", { batchId, err });
+  }
+
   appLogger.info("[BatchCost] derived per-unit cost from the recorded total", {
     batchId,
     batchCode: batch.batchCode,
@@ -940,6 +981,29 @@ export async function deriveBatchCostRateIfMissing(batchId: number): Promise<{
   });
 
   return { derived: true, rate, unit: isSea ? "cbm" : "kg", base };
+}
+
+/**
+ * One batch's price history, newest first, with the name of whoever made
+ * each change — null name means the system wrote it (delivery derivation).
+ * Read by the small history box in the batch edit dialog.
+ */
+export async function getBatchPriceHistory(batchId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    id: batchPriceHistory.id,
+    field: batchPriceHistory.field,
+    oldValue: batchPriceHistory.oldValue,
+    newValue: batchPriceHistory.newValue,
+    changedAt: batchPriceHistory.changedAt,
+    changedByName: users.name,
+  })
+    .from(batchPriceHistory)
+    .leftJoin(users, eq(batchPriceHistory.changedById, users.id))
+    .where(eq(batchPriceHistory.batchId, batchId))
+    .orderBy(desc(batchPriceHistory.changedAt), desc(batchPriceHistory.id))
+    .limit(30);
 }
 
 // Get batch financial summary

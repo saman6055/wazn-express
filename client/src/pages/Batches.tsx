@@ -18,7 +18,7 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
@@ -35,6 +35,7 @@ import {
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch } from "@shared/batchDeletion";
+import { isBatchEditLocked } from "@shared/batchPriceHistory";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -205,6 +206,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const refreshBatchLists = () => {
     refetch();
     trpcUtilsForAudit.batches.search.invalidate();
+    // A save may have added price-history rows (so may a delivery — the
+    // derived rate writes one); the box must not show yesterday's list.
+    trpcUtilsForAudit.batches.priceHistory.invalidate();
   };
 
   const onBatchCreateSuccess = () => {
@@ -455,12 +459,48 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     }, { onSuccess: onBatchCreateSuccess, onError: onMutationError });
   };
 
+  // A delivered batch is settled — the server refuses edits, the form is
+  // read-only, and the save button is gone. The owner's rule (Sep 2026).
+  const editLocked = !!editingBatch && isBatchEditLocked(editingBatch.status);
+
+  /**
+   * The five money fields, old → new, who and when — shown as a small box
+   * under the cost section of the edit dialog. Fetched only while it's open.
+   */
+  const priceHistoryQuery = trpc.batches.priceHistory.useQuery(
+    { batchId: editingBatch?.id ?? 0 },
+    { enabled: isEditOpen && !!editingBatch?.id },
+  );
+  const PRICE_FIELD_LABELS: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+    costPerKg: { ku: "تێچووی کگم", en: "Cost/kg", ar: "التكلفة/كغم", zh: "成本/公斤" },
+    costPerCbm: { ku: "تێچووی CBM", en: "Cost/CBM", ar: "التكلفة/م³", zh: "成本/立方" },
+    shippingCost: { ku: "کۆی کرێی گەیاندن", en: "Total shipping cost", ar: "إجمالي كلفة الشحن", zh: "运费总额" },
+    pricePerKg: { ku: "نرخی فرۆشتنی کگم", en: "Selling price/kg", ar: "سعر البيع/كغم", zh: "售价/公斤" },
+    pricePerCbm: { ku: "نرخی فرۆشتنی CBM", en: "Selling price/CBM", ar: "سعر البيع/م³", zh: "售价/立方" },
+  };
+  const priceFieldLabel = (field: string) =>
+    PRICE_FIELD_LABELS[field] ? pickLang(language, PRICE_FIELD_LABELS[field]) : field;
+  const emptyPriceWord = () =>
+    pickLang(language, { ku: "بەتاڵ", en: "empty", ar: "فارغ", zh: "空" });
+
   const handleEdit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     if (!editingBatch) return;
-    
+    // Belt to the server's suspenders: a locked batch never even sends.
+    if (isBatchEditLocked(editingBatch.status)) return;
+
     const formData = new FormData(e.currentTarget);
-    
+
+    // "" is a decision (the number was erased on purpose) and must clear
+    // the stored value — erasing the per-unit cost is exactly how the
+    // recorded total gets divided at delivery. null means the field wasn't
+    // on this form at all (air vs sea) and must not touch what is stored.
+    const clearable = (name: string) => {
+      const value = formData.get(name) as string | null;
+      if (value === null) return undefined;
+      return value.trim() ? value : null;
+    };
+
     updateMutation.mutate({
       id: editingBatch.id,
       batchCode: formData.get("batchCode") as string || undefined,
@@ -476,7 +516,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // null clears a count that was entered and is now known to be wrong;
       // undefined would leave the old value in place.
       cartonCount: cartonCount.trim() ? Number(cartonCount) : null,
-      shippingCost: formData.get("shippingCost") as string || undefined,
+      shippingCost: clearable("shippingCost"),
       departureDate: formData.get("departureDate") ? new Date(formData.get("departureDate") as string) : undefined,
       estimatedArrival: formData.get("estimatedArrival") ? new Date(formData.get("estimatedArrival") as string) : undefined,
       // Actual measurements
@@ -485,9 +525,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Charged measurements
       chargedWeightKg: formData.get("chargedWeightKg") as string || undefined,
       chargedCbm: formData.get("chargedCbm") as string || undefined,
-      // Cost
-      costPerKg: formData.get("costPerKg") as string || undefined,
-      costPerCbm: formData.get("costPerCbm") as string || undefined,
+      // Cost — erasable on purpose, see clearable above.
+      costPerKg: clearable("costPerKg"),
+      costPerCbm: clearable("costPerCbm"),
       // Selling price
       pricePerKg: formData.get("pricePerKg") as string || undefined,
       pricePerCbm: formData.get("pricePerCbm") as string || undefined,
@@ -2082,13 +2122,30 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </DialogHeader>
             {editingBatch && (
               <form onSubmit={handleEdit}>
+                {editLocked && (
+                  <div className="mb-3 flex items-center gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-800 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-300">
+                    <Lock className="h-4 w-4 shrink-0" />
+                    <span>
+                      {pickLang(language, {
+                        ku: "ئەم باچە گەیشتووە — هیچ خانەیەک ناگۆڕدرێت، تەنیا خوێندنەوەیە.",
+                        en: "This batch is delivered — fields are locked, view only.",
+                        ar: "هذه الدفعة سُلِّمت — الحقول مقفلة، للعرض فقط.",
+                        zh: "该批次已送达——字段已锁定，仅供查看。",
+                      })}
+                    </span>
+                  </div>
+                )}
                 <Tabs defaultValue="basic" className="w-full">
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="basic">{t("batches.basicInfo")}</TabsTrigger>
                     <TabsTrigger value="volume">{t("batches.volumeCost")}</TabsTrigger>
                     <TabsTrigger value="pricing">{t("batches.sellingPrice")}</TabsTrigger>
                   </TabsList>
-                  
+                  {/* One fieldset around all three tab panels (not the tab
+                      buttons): disabling it is what makes a delivered batch
+                      read-only — every input and button inside goes inert. */}
+                  <fieldset disabled={editLocked} className="min-w-0 border-0 p-0 m-0">
+
                   {/* Tab 1: Basic Info */}
                   <TabsContent value="basic" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
                     <div className="grid gap-2">
@@ -2298,6 +2355,46 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </div>
                       </CardContent>
                     </Card>
+
+                    {/* The owner's rule: an overwritten price stays on the
+                        record. Cost AND selling-price changes both land here;
+                        a row with no name is the system dividing the total
+                        at delivery. */}
+                    {(priceHistoryQuery.data?.length ?? 0) > 0 && (
+                      <Card className="border-slate-200 dark:border-slate-700/60 bg-slate-50/60 dark:bg-slate-900/40">
+                        <CardHeader className="pb-2">
+                          <CardTitle className="text-sm flex items-center gap-2">
+                            <History className="h-4 w-4" />
+                            {pickLang(language, { ku: "مێژووی نرخەکان", en: "Price history", ar: "سجل الأسعار", zh: "价格历史" })}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                          <div className="max-h-40 space-y-1.5 overflow-y-auto text-xs">
+                            {(priceHistoryQuery.data ?? []).map((entry) => (
+                              <div key={entry.id} className="flex items-start justify-between gap-3">
+                                <span className="min-w-0">
+                                  {priceFieldLabel(entry.field)}
+                                  {": "}
+                                  {pickLang(language, { ku: "لە", en: "from", ar: "من", zh: "从" })}{" "}
+                                  <b dir="ltr" className="font-semibold">
+                                    {entry.oldValue != null ? `$${entry.oldValue}` : emptyPriceWord()}
+                                  </b>{" "}
+                                  {pickLang(language, { ku: "بۆ", en: "to", ar: "إلى", zh: "到" })}{" "}
+                                  <b dir="ltr" className="font-semibold">
+                                    {entry.newValue != null ? `$${entry.newValue}` : emptyPriceWord()}
+                                  </b>
+                                </span>
+                                <span dir="ltr" className="shrink-0 text-muted-foreground tabular-nums">
+                                  {new Date(entry.changedAt as unknown as string).toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "2-digit" })}
+                                  {" · "}
+                                  {entry.changedByName ?? pickLang(language, { ku: "سیستەم", en: "System", ar: "النظام", zh: "系统" })}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
                   </TabsContent>
                   
                   {/* Tab 3: Selling Price */}
@@ -2402,13 +2499,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </Card>
                     )}
                   </TabsContent>
+                  </fieldset>
                 </Tabs>
-                
+
                 <DialogFooter className="mt-6">
                   <Button type="button" variant="outline" onClick={() => { setIsEditOpen(false); setEditingBatch(null); resetForm(); }}>{t("common.cancel")}</Button>
-                  <Button type="submit" disabled={updateMutation.isPending}>
-                    {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
-                  </Button>
+                  {!editLocked && (
+                    <Button type="submit" disabled={updateMutation.isPending}>
+                      {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
+                    </Button>
+                  )}
                 </DialogFooter>
               </form>
             )}

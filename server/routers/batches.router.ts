@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
+import { isBatchEditLocked } from "@shared/batchPriceHistory";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -1908,7 +1909,7 @@ export const batchesRouter = router({
         awbNumber: z.string().optional(),
         shipmentTrackings: shipmentTrackingsSchema,
         cartonCount: z.number().int().min(0).max(100000).nullable().optional(),
-        shippingCost: z.string().optional(),
+        shippingCost: z.string().nullable().optional(),
         departureDate: z.date().optional(),
         estimatedArrival: z.date().optional(),
         // Actual measurements
@@ -1917,9 +1918,10 @@ export const batchesRouter = router({
         // Charged measurements (what we pay)
         chargedWeightKg: z.string().optional(),
         chargedCbm: z.string().optional(),
-        // Cost fields (our cost)
-        costPerKg: z.string().optional(),
-        costPerCbm: z.string().optional(),
+        // Cost fields (our cost). null = deliberately cleared, so the
+        // recorded total divides itself at delivery; undefined = untouched.
+        costPerKg: z.string().nullable().optional(),
+        costPerCbm: z.string().nullable().optional(),
         // Selling price fields
         pricePerKg: z.string().optional(),
         pricePerCbm: z.string().optional(),
@@ -1941,8 +1943,22 @@ export const batchesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, pricingTiers, customerPricing, ...data } = input;
+
+        // A delivered batch is settled: weights final, cost derived, money
+        // invoiced from them. The owner's rule — no field changes after
+        // delivery. Corrections go through the adjustment flow, or by
+        // moving the status back on purpose.
+        const existing = await db.getBatchById(id);
+        if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
+        if (isBatchEditLocked(existing.status)) {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: "ئەم باچە گەیشتووە و داخراوە — هیچ خانەیەک ناگۆڕدرێت",
+          });
+        }
+
         await db.updateBatch(id, data, ctx.user.id);
-        
+
         // Update pricing tiers if provided
         if (pricingTiers !== undefined) {
           await db.setBatchPricingTiers(id, pricingTiers.map((tier, index) => ({
@@ -1974,6 +1990,16 @@ export const batchesRouter = router({
         });
         return { success: true };
       }),
+
+    // The small history box in the edit dialog: every change to the five
+    // money fields, old → new, who and when. Staff-only on purpose — the
+    // portal must never see what a shipment cost the company.
+    priceHistory: staffProcedure
+      .input(z.object({ batchId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBatchPriceHistory(input.batchId);
+      }),
+
     // Get batches filtered by shipping type
     getByShippingType: staffProcedure
       .input(z.object({ shippingType: z.enum(["air_regular", "air_irregular", "sea"]) }))

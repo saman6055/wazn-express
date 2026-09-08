@@ -188,3 +188,33 @@ export const batchStatusHistory = mysqlTable("batchStatusHistory", {
 
 export type BatchStatusHistory = typeof batchStatusHistory.$inferSelect;
 export type InsertBatchStatusHistory = typeof batchStatusHistory.$inferInsert;
+
+/**
+ * Every change to a batch's money fields — cost per kg/CBM, the carrier's
+ * total, selling price per kg/CBM — with the value it replaced. Written by
+ * updateBatch on staff edits and by the delivery-time cost derivation
+ * (changedById NULL = the system divided the total itself). The owner's
+ * rule: an overwritten price must stay on the record.
+ */
+export const batchPriceHistory = mysqlTable("batchPriceHistory", {
+  id: int("id").autoincrement().primaryKey(),
+  batchId: int("batchId").notNull(),
+
+  // One of shared/batchPriceHistory.ts PRICE_HISTORY_FIELDS.
+  field: varchar("field", { length: 32 }).notNull(),
+
+  // Null means the field was empty on that side of the change.
+  oldValue: decimal("oldValue", { precision: 12, scale: 2 }),
+  newValue: decimal("newValue", { precision: 12, scale: 2 }),
+
+  // Null when the system wrote it (delivery-time derivation), not a person.
+  changedById: int("changedById"),
+
+  changedAt: timestamp("changedAt").defaultNow().notNull(),
+}, (table) => ({
+  // The edit dialog reads one batch's history at once, newest first.
+  batchIdIdx: index("idx_bph_batch_id").on(table.batchId),
+}));
+
+export type BatchPriceHistory = typeof batchPriceHistory.$inferSelect;
+export type InsertBatchPriceHistory = typeof batchPriceHistory.$inferInsert;

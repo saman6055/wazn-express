@@ -1787,6 +1787,29 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    // Every change to a batch's money fields, with the value it replaced.
+    //
+    // Cost per kg, cost per CBM, the carrier's total, and the two selling
+    // prices could each be overwritten in the edit dialog and the old
+    // figure was simply gone — the owner asked for the previous number to
+    // stay on the record (Sep 2026). changedById NULL marks the one write
+    // a person doesn't make: the delivery-time derivation dividing the
+    // recorded total over the final weight.
+    name: "batchPriceHistory",
+    dependencies: ["batches", "users"],
+    sql: `CREATE TABLE IF NOT EXISTS batchPriceHistory (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      batchId INT NOT NULL,
+      field VARCHAR(32) NOT NULL,
+      oldValue DECIMAL(12,2),
+      newValue DECIMAL(12,2),
+      changedById INT,
+      changedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_bph_batch_id (batchId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "packageClaimRequests",
     dependencies: ["packages", "customers", "users"],
     sql: `CREATE TABLE IF NOT EXISTS packageClaimRequests (
