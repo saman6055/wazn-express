@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { usePackages } from "@/hooks/usePackages";
-import { Plus, Search, QrCode, Eye, Zap, Layers, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Printer, Trash2, Download, Filter, CalendarIcon, X, Package, Plane, Ship, User, CheckCircle2, Tags, FileText, Calculator, Clock, MapPin, Weight, Ruler, DollarSign, Hash, Calendar as CalendarIcon2, PackageX, Link2Off, Truck, BarChart3, ImagePlus, Loader2, Camera, PackagePlus } from "lucide-react";
+import { Plus, Search, QrCode, Eye, Zap, Layers, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Printer, Trash2, Download, Filter, CalendarIcon, X, Package, Plane, Ship, User, CheckCircle2, Tags, FileText, Calculator, Clock, MapPin, Weight, Ruler, DollarSign, Hash, Calendar as CalendarIcon2, PackageX, Link2Off, Truck, BarChart3, ImagePlus, Loader2, Camera, PackagePlus, PackageSearch } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -51,6 +51,7 @@ import { toast } from "sonner";
 import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { readPackagesLink } from "@shared/listLinks";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel";
@@ -316,8 +317,11 @@ const PackageTableRow = memo(function PackageTableRow({
   );
 });
 
+/** "AZ225(Muhammad Ismail Omar)" → "AZ225" — what a person types and reads. */
+const shortCustomerCode = (code?: string | null) => (code ?? "").split("(")[0]!.trim();
+
 export default function Packages() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [, setLocation] = useLocation();
   // Deep link: /packages/all?search=PKG-XYZ opens the table already looking
   // for that parcel. Anything that used to link to /packages/:id — which has
@@ -434,11 +438,39 @@ const [, setLocation] = useLocation();
    * hides it until a different code is typed. /packages/all?customer=AZ002
    * deep-links straight into it.
    */
-  const journeyCustomer = useMemo(() => {
+  // Codes are stored as "AZ225(Muhammad Ismail Omar)" — name and all — so
+  // the match accepts what a person actually types: the short code before
+  // the parenthesis, or the full stored string pasted whole.
+  const searchMatchedCustomer = useMemo(() => {
     const q = debouncedSearch.trim().toLowerCase();
     if (!q || !customers) return null;
-    return customers.find(c => c.customerCode?.toLowerCase() === q) ?? null;
+    return customers.find(c => {
+      const full = (c.customerCode ?? "").toLowerCase();
+      if (!full) return false;
+      return full === q || shortCustomerCode(full) === q;
+    }) ?? null;
   }, [customers, debouncedSearch]);
+
+  // The named door: the «گەشتی کڕیار» button with its own little picker.
+  const [journeyPickerOpen, setJourneyPickerOpen] = useState(false);
+  const [journeyPickerQuery, setJourneyPickerQuery] = useState("");
+  const [pickedJourneyCustomerId, setPickedJourneyCustomerId] = useState<number | null>(null);
+  const journeyPickerMatches = useMemo(() => {
+    if (!customers) return [];
+    const q = journeyPickerQuery.trim().toLowerCase();
+    const list = q
+      ? customers.filter(c =>
+          (c.customerCode ?? "").toLowerCase().includes(q) ||
+          (c.fullName ?? "").toLowerCase().includes(q))
+      : customers;
+    return list.slice(0, 8);
+  }, [customers, journeyPickerQuery]);
+
+  const pickedJourneyCustomer = useMemo(
+    () => customers?.find(c => c.id === pickedJourneyCustomerId) ?? null,
+    [customers, pickedJourneyCustomerId],
+  );
+  const journeyCustomer = pickedJourneyCustomer ?? searchMatchedCustomer;
   const [journeyDismissedFor, setJourneyDismissedFor] = useState<number | null>(null);
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -1190,9 +1222,12 @@ const [, setLocation] = useLocation();
         {journeyCustomer && journeyDismissedFor !== journeyCustomer.id && (
           <CustomerJourneyPanel
             customerId={journeyCustomer.id}
-            customerCode={journeyCustomer.customerCode ?? null}
+            customerCode={shortCustomerCode(journeyCustomer.customerCode)}
             customerName={journeyCustomer.fullName ?? null}
-            onClose={() => setJourneyDismissedFor(journeyCustomer.id)}
+            onClose={() => {
+              setPickedJourneyCustomerId(null);
+              setJourneyDismissedFor(journeyCustomer.id);
+            }}
           />
         )}
 
@@ -1220,6 +1255,58 @@ const [, setLocation] = useLocation();
                     onChange={(e) => setSearchInput(e.target.value)}
                     className="pl-9"
                   />
+                </div>
+                {/* The journey lookup's named, visible door — beside the
+                    filters, not hidden inside the search box's behaviour. */}
+                <div className="relative">
+                  <Button
+                    variant={journeyCustomer ? "default" : "outline"}
+                    onClick={() => setJourneyPickerOpen(o => !o)}
+                    className="relative"
+                  >
+                    <PackageSearch className="h-4 w-4 me-2" />
+                    {pickLang(language, { ku: "بارودۆخی پاکەتەکان", en: "Package status", ar: "حالة الطرود", zh: "包裹状态" })}
+                    {journeyCustomer && (
+                      <Badge className="ms-2" variant="secondary">
+                        <span dir="ltr">{shortCustomerCode(journeyCustomer.customerCode)}</span>
+                      </Badge>
+                    )}
+                  </Button>
+                  {journeyPickerOpen && (
+                    <>
+                      <div className="fixed inset-0 z-40" onClick={() => setJourneyPickerOpen(false)} />
+                      <div className="absolute start-0 top-full z-50 mt-2 w-80 rounded-xl border bg-card p-2 shadow-xl">
+                        <Input
+                          autoFocus
+                          placeholder={pickLang(language, { ku: "کۆد یان ناوی کڕیار بنووسە…", en: "Type a customer code or name…", ar: "اكتب كود أو اسم العميل…", zh: "输入客户代码或姓名…" })}
+                          value={journeyPickerQuery}
+                          onChange={(e) => setJourneyPickerQuery(e.target.value)}
+                        />
+                        <div className="mt-1 max-h-64 overflow-y-auto">
+                          {journeyPickerMatches.length === 0 ? (
+                            <p className="p-3 text-center text-sm text-muted-foreground">
+                              {pickLang(language, { ku: "هیچ کڕیارێک نەدۆزرایەوە", en: "No customer found", ar: "لم يُعثر على عميل", zh: "未找到客户" })}
+                            </p>
+                          ) : journeyPickerMatches.map(c => (
+                            <button
+                              key={c.id}
+                              type="button"
+                              onClick={() => {
+                                setPickedJourneyCustomerId(c.id);
+                                setJourneyDismissedFor(null);
+                                setJourneyPickerOpen(false);
+                                setJourneyPickerQuery("");
+                              }}
+                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm hover:bg-muted"
+                            >
+                              <span dir="ltr" className="font-mono font-semibold">{shortCustomerCode(c.customerCode)}</span>
+                              <span className="truncate text-muted-foreground">{c.fullName}</span>
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    </>
+                  )}
                 </div>
                 <ShippingRouteFilter
                   value={routeFilter}

@@ -228,7 +228,7 @@ export function CustomerJourneyPanel({
         <div className="mb-3 flex items-center justify-between gap-3">
           <div className="min-w-0">
             <p className="text-sm font-bold">
-              {pickLang(language, { ku: "گەشتی کڕیار", en: "Customer journey", ar: "رحلة العميل", zh: "客户旅程" })}
+              {pickLang(language, { ku: "بارودۆخی پاکەتەکان", en: "Package status", ar: "حالة الطرود", zh: "包裹状态" })}
               {" — "}
               <span dir="ltr" className="font-mono">{customerCode}</span>
               {customerName && <span className="text-muted-foreground"> · {customerName}</span>}
