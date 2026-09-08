@@ -8,6 +8,20 @@ export interface CompressionOptions {
   maxHeight?: number;
   quality?: number;
   maxSizeMB?: number;
+  /**
+   * Re-encode even files under the small-file shortcut, so the OUTPUT type
+   * is always one we produced. Without it a small HEIC slips through as
+   * HEIC and is refused later with a message about the wrong thing.
+   */
+  alwaysProcess?: boolean;
+  /**
+   * Always emit JPEG. The avatar path needs this: a PNG screenshot kept as
+   * PNG at "quality 1" lands over the avatar size cap and is refused as
+   * "too large" when the real answer was "should have been a JPEG". With
+   * this set, a file the browser cannot decode REJECTS instead of passing
+   * the original through — the caller owns the honest error message.
+   */
+  forceJpeg?: boolean;
 }
 
 const defaultOptions: CompressionOptions = {
@@ -33,9 +47,9 @@ export async function compressImage(
   if (!file.type.startsWith('image/')) {
     return file;
   }
-  
+
   // Skip if file is already small enough (less than 100KB)
-  if (file.size < 100 * 1024) {
+  if (!opts.alwaysProcess && file.size < 100 * 1024) {
     return file;
   }
 
@@ -72,24 +86,31 @@ export async function compressImage(
         }
 
         // Convert to blob with quality setting
-        const outputType = file.type === 'image/png' ? 'image/png' : 'image/jpeg';
-        const quality = file.type === 'image/png' ? 1 : (opts.quality || 0.8);
+        const outputType = opts.forceJpeg
+          ? 'image/jpeg'
+          : file.type === 'image/png' ? 'image/png' : 'image/jpeg';
+        const quality = !opts.forceJpeg && file.type === 'image/png' ? 1 : (opts.quality || 0.8);
+        const outputName = opts.forceJpeg ? file.name.replace(/\.[^.]+$/, '') + '.jpg' : file.name;
 
         canvas.toBlob(
           (blob) => {
             if (blob) {
               // Create new file with compressed data
-              const compressedFile = new File([blob], file.name, {
+              const compressedFile = new File([blob], outputName, {
                 type: outputType,
                 lastModified: Date.now(),
               });
-              
-              // If compressed file is larger, return original
-              if (compressedFile.size >= file.size) {
+
+              // If compressed file is larger, return original — unless the
+              // caller asked for JPEG specifically, where the normalised
+              // type is the point, not the byte count.
+              if (!opts.forceJpeg && compressedFile.size >= file.size) {
                 resolve(file);
               } else {
                 resolve(compressedFile);
               }
+            } else if (opts.forceJpeg) {
+              reject(new Error('Image could not be encoded'));
             } else {
               resolve(file); // Return original if compression fails
             }
@@ -99,13 +120,18 @@ export async function compressImage(
         );
       } catch (error) {
         console.error('Image compression error:', error);
-        resolve(file); // Return original on error
+        if (opts.forceJpeg) reject(error instanceof Error ? error : new Error('Image compression failed'));
+        else resolve(file); // Return original on error
       }
     };
 
     img.onerror = () => {
       console.error('Failed to load image for compression');
-      resolve(file); // Return original on error
+      // A file the browser cannot decode (HEIC on an older device, a corrupt
+      // download) must not slip through as-is when the caller demanded JPEG:
+      // downstream it would be refused with a message about the wrong thing.
+      if (opts.forceJpeg) reject(new Error('Image could not be decoded'));
+      else resolve(file); // Return original on error
     };
 
     // Load image from file

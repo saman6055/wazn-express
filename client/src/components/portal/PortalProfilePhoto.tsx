@@ -111,10 +111,16 @@ export function PortalProfilePhoto({
 
     setBusy(true);
     try {
+      // forceJpeg + alwaysProcess: a PNG screenshot stays under the avatar
+      // cap once it is a JPEG, and a small HEIC either decodes into one or
+      // fails HERE with the honest message, instead of slipping through and
+      // being refused later as the wrong thing.
       const small = await compressImage(file, {
         maxWidth: AVATAR_MAX_PX,
         maxHeight: AVATAR_MAX_PX,
         quality: 0.8,
+        forceJpeg: true,
+        alwaysProcess: true,
       });
       const dataUrl = await new Promise<string>((resolve, reject) => {
         const reader = new FileReader();

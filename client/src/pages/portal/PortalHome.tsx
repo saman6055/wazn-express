@@ -23,6 +23,7 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalClock, PortalLanguagePicker } from "@/components/portal/PortalHeaderControls";
 import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
 import { isDebt } from "@/lib/portalMoney";
+import { onImageError } from "@/lib/imageFallback";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf, isInIraqNotDelivered, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
@@ -415,8 +416,12 @@ export default function PortalHome() {
                 <span className="flex items-center gap-2 min-w-0">
                   <span className="relative shrink-0">
                     <span aria-hidden="true" className="wazn-breathe absolute -inset-0.5 rounded-full bg-blue-500 blur-sm" />
-                    <span className={cn("relative flex h-7 w-7 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
-                      <User className="h-4 w-4 text-blue-100" />
+                    <span className={cn("relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                      {account?.photoUrl ? (
+                        <img src={account.photoUrl} alt="" className="h-full w-full object-cover" onError={onImageError} />
+                      ) : (
+                        <User className="h-4 w-4 text-blue-100" />
+                      )}
                     </span>
                   </span>
                   {account?.customerCode && (
@@ -459,8 +464,12 @@ export default function PortalHome() {
               <span className="flex min-w-0 items-center gap-3">
                 <span className="relative shrink-0">
                   <span aria-hidden="true" className="wazn-breathe absolute -inset-1 rounded-full bg-blue-500 blur-md" />
-                  <span className={cn("relative flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
-                    <User className="h-5 w-5 text-blue-100" />
+                  <span className={cn("relative flex h-10 w-10 items-center justify-center overflow-hidden rounded-full transition active:scale-95", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                    {account?.photoUrl ? (
+                      <img src={account.photoUrl} alt="" className="h-full w-full object-cover" onError={onImageError} />
+                    ) : (
+                      <User className="h-5 w-5 text-blue-100" />
+                    )}
                   </span>
                 </span>
                 <span className="min-w-0 block">
