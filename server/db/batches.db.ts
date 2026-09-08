@@ -776,6 +776,26 @@ export async function getCustomerTotalInBatch(batchId: number, customerId: numbe
 }
 
 
+/**
+ * The few batch facts the customer-journey lookup needs, one query for the
+ * whole set. Full rows carry money columns nobody there asks about.
+ */
+export async function getBatchesLiteByIds(ids: number[]): Promise<Array<{
+  id: number;
+  batchCode: string;
+  status: string;
+  shippingType: string;
+}>> {
+  const db = await getDb();
+  if (!db || ids.length === 0) return [];
+  return db.select({
+    id: batches.id,
+    batchCode: batches.batchCode,
+    status: batches.status,
+    shippingType: batches.shippingType,
+  }).from(batches).where(inArray(batches.id, ids));
+}
+
 // ============ BATCH CUSTOMER PRICING FUNCTIONS ============
 
 export async function getBatchCustomerPricing(batchId: number) {

@@ -53,6 +53,7 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { readPackagesLink } from "@shared/listLinks";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
+import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
@@ -425,6 +426,26 @@ const [, setLocation] = useLocation();
 
   const packages = packagesFromHook;
   const { data: customers } = trpc.customers.list.useQuery();
+
+  /**
+   * Typing a customer code into the ordinary search opens the journey panel
+   * above the table — the "how many of my pieces are missing?" answer. The
+   * table below keeps filtering as it always has; closing the panel only
+   * hides it until a different code is typed. /packages/all?customer=AZ002
+   * deep-links straight into it.
+   */
+  const journeyCustomer = useMemo(() => {
+    const q = debouncedSearch.trim().toLowerCase();
+    if (!q || !customers) return null;
+    return customers.find(c => c.customerCode?.toLowerCase() === q) ?? null;
+  }, [customers, debouncedSearch]);
+  const [journeyDismissedFor, setJourneyDismissedFor] = useState<number | null>(null);
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const code = new URLSearchParams(window.location.search).get("customer");
+    if (code) setSearchInput(code);
+  }, []);
+
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: categories } = trpc.productCategories.list.useQuery();
@@ -1163,6 +1184,17 @@ const [, setLocation] = useLocation();
             </div>
           </div>
         </div>
+
+        {/* The customer-journey lookup: search a customer code and the five
+            stations answer before the table does. */}
+        {journeyCustomer && journeyDismissedFor !== journeyCustomer.id && (
+          <CustomerJourneyPanel
+            customerId={journeyCustomer.id}
+            customerCode={journeyCustomer.customerCode ?? null}
+            customerName={journeyCustomer.fullName ?? null}
+            onClose={() => setJourneyDismissedFor(journeyCustomer.id)}
+          />
+        )}
 
         <Card>
           <CardHeader>

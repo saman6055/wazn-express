@@ -175,6 +175,72 @@ export const packagesRouter = router({
       .query(async ({ input }) => {
         return db.getPackagesByCustomer(input.customerId);
       }),
+    /**
+     * Everything one customer has moving, from every record source, raw.
+     *
+     * Orders, portal pre-declarations, scanned parcels, their batches and
+     * their boxes — gathered here and CLASSIFIED ON THE CLIENT by the same
+     * shared stage rules the portal home uses (lib/customerJourney.ts), so
+     * the counter and the customer's own app cannot tell two stories.
+     *
+     * Product photos ride along only for orders still on the road: they are
+     * base64 and heavy, and a delivered cohort shows the scan photo (a URL)
+     * instead. A single oversized image is dropped rather than sinking the
+     * whole payload.
+     */
+    customerJourney: staffProcedure
+      .input(z.object({ customerId: idSchema }))
+      .query(async ({ input }) => {
+        const [pkgs, orders, declared, boxed] = await Promise.all([
+          db.getPackagesByCustomer(input.customerId),
+          db.getFullPackageOrdersByCustomer(input.customerId),
+          db.getDeclaredPackagesByCustomer(input.customerId),
+          db.getCustomerBoxedPackages(input.customerId),
+        ]);
+        const batchIds = Array.from(new Set(pkgs.map(p => p.batchId).filter((b): b is number => b != null)));
+        const batchRows = await db.getBatchesLiteByIds(batchIds);
+
+        const firstImage = (arr: unknown): string | null => {
+          const img = Array.isArray(arr) && typeof arr[0] === "string" ? (arr[0] as string) : null;
+          return img && img.length <= 400_000 ? img : null;
+        };
+
+        return {
+          packages: pkgs.map(p => ({
+            id: p.id,
+            trackingNumber: p.trackingNumber ?? null,
+            packageCode: p.packageCode,
+            status: p.status,
+            batchId: p.batchId ?? null,
+            weightKg: p.weightKg ?? null,
+            volumeCbm: p.volumeCbm ?? null,
+            photo: firstImage(p.photos),
+            description: p.description ?? null,
+            createdAt: p.createdAt,
+          })),
+          orders: orders.map(o => ({
+            id: o.id,
+            orderCode: o.orderCode,
+            orderType: o.orderType,
+            status: o.status,
+            productName: o.productName,
+            trackingNumber: o.trackingNumber ?? null,
+            trackingNumbers: (o.trackingNumbers as string[] | null) ?? null,
+            photo: o.status === "delivered" ? null : firstImage(o.productImages),
+            createdAt: o.createdAt,
+          })),
+          declared: declared.map(d => ({
+            id: d.id,
+            trackingNumber: d.trackingNumber,
+            status: d.status,
+            productName: d.productName ?? null,
+            photo: d.status === "received" ? null : firstImage(d.productImages),
+            createdAt: d.createdAt,
+          })),
+          boxed,
+          batches: batchRows,
+        };
+      }),
     getByStatus: staffProcedure
       .input(z.object({ status: z.string().max(50) }))
       .query(async ({ input }) => {

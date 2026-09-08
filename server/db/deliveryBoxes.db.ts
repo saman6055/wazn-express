@@ -1169,6 +1169,35 @@ export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
 }
 
 /**
+ * Which of a customer's parcels sit in which box, and whether that box was
+ * actually handed over. The journey lookup's last station reads this: "in a
+ * box" only counts as "in the customer's hands" once the box says delivered —
+ * a packed box on the depot shelf is still Erbil.
+ */
+export async function getCustomerBoxedPackages(customerId: number): Promise<Array<{
+  packageId: number;
+  boxId: number;
+  boxCode: string;
+  boxStatus: string;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db.select({
+    packageId: deliveryBoxItems.packageId,
+    boxId: deliveryBoxes.id,
+    boxCode: deliveryBoxes.boxCode,
+    boxStatus: deliveryBoxes.status,
+  })
+    .from(deliveryBoxItems)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
+    .where(and(
+      eq(deliveryBoxes.customerId, customerId),
+      ne(deliveryBoxes.status, "cancelled"),
+    ));
+  return rows.filter((r): r is typeof r & { packageId: number } => r.packageId != null);
+}
+
+/**
  * The proof of delivery for one box: the photo taken at handover and the
  * signature given for it.
  *

@@ -149,6 +149,13 @@ export function isInIraqNotDelivered(status: string): boolean {
   return (IN_IRAQ_STATUSES as readonly string[]).includes(status);
 }
 
+/** The order ladder's twin of IN_IRAQ_STATUSES, kept beside it on purpose. */
+export const ORDER_IN_IRAQ_STATUSES = ["arrived", "ready_for_delivery"] as const;
+
+export function isOrderInIraqNotDelivered(status: string): boolean {
+  return (ORDER_IN_IRAQ_STATUSES as readonly string[]).includes(status);
+}
+
 /** How many batches sit in each stage, for the filter counts. */
 export function countByStage(statuses: string[]): Record<Exclude<ShipmentStage, "">, number> {
   const counts = { in_china: 0, in_transit: 0, delivered: 0 };
