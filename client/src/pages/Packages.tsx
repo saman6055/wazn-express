@@ -1035,19 +1035,19 @@ const [, setLocation] = useLocation();
     <DashboardLayout>
       <div className="space-y-6">
         {/* Professional Header with Gradient */}
-        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 p-6 text-white">
+        <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-blue-600 via-blue-500 to-cyan-500 p-4 text-white">
           <div className="absolute inset-0 bg-black/10" />
           <div className="absolute -top-24 -right-24 h-48 w-48 rounded-full bg-white/10" />
           <div className="absolute -bottom-12 -left-12 h-32 w-32 rounded-full bg-white/10" />
           
           <div className="relative flex items-center justify-between">
             <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl">
-                <Package className="h-8 w-8" />
+              <div className="p-2 bg-white/20 rounded-xl">
+                <Package className="h-5 w-5" />
               </div>
               <div>
-                <h1 className="text-2xl font-bold">{t('packages.title')}</h1>
-                <p className="text-white/80">{t('packages.subtitle')}</p>
+                <h1 className="text-lg font-bold leading-tight">{t('packages.title')}</h1>
+                <p className="text-white/75 text-xs">{t('packages.subtitle')}</p>
               </div>
             </div>
             <div className="flex gap-2">
@@ -1091,129 +1091,112 @@ const [, setLocation] = useLocation();
             </div>
           </div>
           
-          {/* Stats Cards in Header */}
-          <div className="relative mt-6 grid grid-cols-5 gap-4">
-            <div 
-              className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'all' ? 'ring-2 ring-white' : ''}`}
+          {/* One slim chip row instead of two grids of tiles — the owner's
+              note: the header ate a third of the screen. Every old tile's
+              action and warning colour survives as a chip; only the bulk is
+              gone. Wraps on narrow screens. */}
+          <div className="relative mt-3 flex flex-wrap items-center gap-1.5">
+            <button
+              type="button"
               onClick={() => setActiveTab('all')}
+              className={`flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-white/20 ${activeTab === 'all' ? 'ring-2 ring-white' : ''}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Package className="h-4 w-4 text-white/70" />
-                <p className="text-white/70 text-sm">{t('common.all')}</p>
-              </div>
-              <p className="text-2xl font-bold">{stats.total}</p>
-            </div>
-            <div 
-              className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'no_batch' ? 'ring-2 ring-white' : ''}`}
+              <Package className="h-3.5 w-3.5 text-white/70" />
+              <span className="text-white/80">{t('common.all')}</span>
+              <span className="text-sm font-bold tabular-nums">{stats.total}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('no_batch')}
+              title={stats.noBatch > 0 ? t('packages.needsBatch') : undefined}
+              className={`flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-white/20 ${activeTab === 'no_batch' ? 'ring-2 ring-white' : ''}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <PackageX className="h-4 w-4 text-amber-300" />
-                <p className="text-white/70 text-sm">{t('packages.noBatch')}</p>
-              </div>
-              <p className="text-2xl font-bold">{stats.noBatch}</p>
-              {stats.noBatch > 0 && <p className="text-xs text-amber-300 mt-1">⚠️ {t('packages.needsBatch')}</p>}
-            </div>
-            <div 
-              className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'no_tracking' ? 'ring-2 ring-white' : ''}`}
+              <PackageX className="h-3.5 w-3.5 text-amber-300" />
+              <span className="text-white/80">{t('packages.noBatch')}</span>
+              <span className={`text-sm font-bold tabular-nums ${stats.noBatch > 0 ? 'text-amber-300' : ''}`}>{stats.noBatch}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('no_tracking')}
+              title={stats.noTracking > 0 ? t('packages.noTrackingWarning') : undefined}
+              className={`flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-white/20 ${activeTab === 'no_tracking' ? 'ring-2 ring-white' : ''}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Link2Off className="h-4 w-4 text-red-300" />
-                <p className="text-white/70 text-sm">{t('packages.noTracking')}</p>
-              </div>
-              <p className="text-2xl font-bold">{stats.noTracking}</p>
-              {stats.noTracking > 0 && <p className="text-xs text-red-300 mt-1">❓ {t('packages.noTrackingWarning')}</p>}
-            </div>
-            <div 
-              className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'pending_delivery' ? 'ring-2 ring-white' : ''}`}
+              <Link2Off className="h-3.5 w-3.5 text-red-300" />
+              <span className="text-white/80">{t('packages.noTracking')}</span>
+              <span className={`text-sm font-bold tabular-nums ${stats.noTracking > 0 ? 'text-red-300' : ''}`}>{stats.noTracking}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('pending_delivery')}
+              className={`flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-white/20 ${activeTab === 'pending_delivery' ? 'ring-2 ring-white' : ''}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <Truck className="h-4 w-4 text-cyan-300" />
-                <p className="text-white/70 text-sm">{t('packages.pendingDelivery')}</p>
-              </div>
-              <p className="text-2xl font-bold">{stats.pendingDelivery}</p>
-            </div>
-            <div 
-              className={`bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20 ${activeTab === 'delivered' ? 'ring-2 ring-white' : ''}`}
+              <Truck className="h-3.5 w-3.5 text-cyan-300" />
+              <span className="text-white/80">{t('packages.pendingDelivery')}</span>
+              <span className="text-sm font-bold tabular-nums">{stats.pendingDelivery}</span>
+            </button>
+            <button
+              type="button"
               onClick={() => setActiveTab('delivered')}
+              className={`flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-white/20 ${activeTab === 'delivered' ? 'ring-2 ring-white' : ''}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <CheckCircle2 className="h-4 w-4 text-green-300" />
-                <p className="text-white/70 text-sm">{t('packages.delivered')}</p>
-              </div>
-              <p className="text-2xl font-bold">{stats.delivered}</p>
-            </div>
-            {/* Everything taken in at Quick Register. The card carries today's
-                count and the gaps, because a parcel with no weight cannot be
-                priced or batched and one with no owner sits in the depot
-                belonging to nobody — those are the ones needing a person. */}
-            {/* Sends you to the registrations page rather than switching a tab
-                here: this generic table has no photos and no record of who
-                entered what, which is most of what you come looking for. */}
-            <div
-              className="bg-white/10 backdrop-blur rounded-xl p-4 cursor-pointer transition-all hover:bg-white/20"
+              <CheckCircle2 className="h-3.5 w-3.5 text-green-300" />
+              <span className="text-white/80">{t('packages.delivered')}</span>
+              <span className="text-sm font-bold tabular-nums">{stats.delivered}</span>
+            </button>
+            {/* Sends you to the registrations page rather than switching a
+                tab here: that page has the photos and who-entered-what. */}
+            <button
+              type="button"
               onClick={() => setLocation('/packages/registrations')}
+              className="flex items-center gap-1.5 rounded-lg bg-white/10 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-white/20"
             >
-              <div className="flex items-center gap-2 mb-1">
-                <PackagePlus className="h-4 w-4 text-teal-300" />
-                <p className="text-white/70 text-sm">
-                  {t('packages.registrations')}
-                </p>
-              </div>
-              <p className="text-2xl font-bold">{registrationSummary.total}</p>
-              <div className="mt-1 flex flex-wrap gap-x-2 gap-y-0.5 text-xs">
-                <span className="text-white/70">
-                  {t('packages.registeredToday')} {registrationSummary.today}
+              <PackagePlus className="h-3.5 w-3.5 text-teal-300" />
+              <span className="text-white/80">{t('packages.registrations')}</span>
+              <span className="text-sm font-bold tabular-nums">{registrationSummary.total}</span>
+              <span className="text-[10px] text-white/60">
+                {t('packages.registeredToday')} {registrationSummary.today}
+              </span>
+              {registrationSummary.missingWeight > 0 && (
+                <span className="text-[10px] text-amber-300">
+                  {t('packages.noWeightShort')} {registrationSummary.missingWeight}
                 </span>
-                {registrationSummary.missingWeight > 0 && (
-                  <span className="text-amber-300">
-                    {t('packages.noWeightShort')} {registrationSummary.missingWeight}
-                  </span>
-                )}
-                {registrationSummary.unclaimed > 0 && (
-                  <span className="text-amber-300">
-                    {t('packages.unclaimedShort')} {registrationSummary.unclaimed}
-                  </span>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Package Type Stats Cards */}
-          <div className="relative mt-4 grid grid-cols-4 gap-3">
-            <div 
-              className={`bg-slate-600/30 backdrop-blur rounded-lg p-3 cursor-pointer transition-all hover:bg-slate-600/50 ${packageTypeFilter === 'regular' ? 'ring-2 ring-slate-300' : ''}`}
-              onClick={() => setPackageTypeFilter(packageTypeFilter === 'regular' ? 'all' : 'regular')}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">📦</span>
-                <p className="text-white/70 text-xs">{t('packages.regular')}</p>
-              </div>
-              <p className="text-xl font-bold">{stats.regular}</p>
-            </div>
-            <div 
-              className={`bg-purple-600/30 backdrop-blur rounded-lg p-3 cursor-pointer transition-all hover:bg-purple-600/50 ${packageTypeFilter === 'full_package' ? 'ring-2 ring-purple-300' : ''}`}
-              onClick={() => setPackageTypeFilter(packageTypeFilter === 'full_package' ? 'all' : 'full_package')}
-            >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">📦</span>
-                <p className="text-white/70 text-xs">{t('packages.fullPackage')}</p>
-              </div>
-              <p className="text-xl font-bold">{stats.fullPackage}</p>
-            </div>
+              )}
+              {registrationSummary.unclaimed > 0 && (
+                <span className="text-[10px] text-amber-300">
+                  {t('packages.unclaimedShort')} {registrationSummary.unclaimed}
+                </span>
+              )}
+            </button>
 
-            <div 
-              className={`bg-orange-600/30 backdrop-blur rounded-lg p-3 cursor-pointer transition-all hover:bg-orange-600/50 ${packageTypeFilter === 'commission' ? 'ring-2 ring-orange-300' : ''}`}
-              onClick={() => setPackageTypeFilter(packageTypeFilter === 'commission' ? 'all' : 'commission')}
+            <span className="mx-1 h-5 w-px bg-white/20" />
+
+            <button
+              type="button"
+              onClick={() => setPackageTypeFilter(packageTypeFilter === 'regular' ? 'all' : 'regular')}
+              className={`flex items-center gap-1.5 rounded-lg bg-slate-600/30 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-slate-600/50 ${packageTypeFilter === 'regular' ? 'ring-2 ring-slate-300' : ''}`}
             >
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-lg">💰</span>
-                <p className="text-white/70 text-xs">{t('packages.commission')}</p>
-              </div>
-              <p className="text-xl font-bold">{stats.commission}</p>
-            </div>
+              <span>📦</span>
+              <span className="text-white/80">{t('packages.regular')}</span>
+              <span className="text-sm font-bold tabular-nums">{stats.regular}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPackageTypeFilter(packageTypeFilter === 'full_package' ? 'all' : 'full_package')}
+              className={`flex items-center gap-1.5 rounded-lg bg-purple-600/30 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-purple-600/50 ${packageTypeFilter === 'full_package' ? 'ring-2 ring-purple-300' : ''}`}
+            >
+              <span>📦</span>
+              <span className="text-white/80">{t('packages.fullPackage')}</span>
+              <span className="text-sm font-bold tabular-nums">{stats.fullPackage}</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setPackageTypeFilter(packageTypeFilter === 'commission' ? 'all' : 'commission')}
+              className={`flex items-center gap-1.5 rounded-lg bg-orange-600/30 px-3 py-1.5 text-xs backdrop-blur transition-all hover:bg-orange-600/50 ${packageTypeFilter === 'commission' ? 'ring-2 ring-orange-300' : ''}`}
+            >
+              <span>💰</span>
+              <span className="text-white/80">{t('packages.commission')}</span>
+              <span className="text-sm font-bold tabular-nums">{stats.commission}</span>
+            </button>
           </div>
         </div>
 

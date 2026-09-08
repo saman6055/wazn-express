@@ -16,7 +16,7 @@ import {
 import { STATUS_LABEL } from "@/lib/shipmentFilters";
 import {
   X, Package, Plane, ClockAlert, MapPinCheck, Box, Camera,
-  ChevronDown, ChevronUp, CalendarDays, ImageOff,
+  ChevronDown, ChevronUp, CalendarDays, ImageOff, LayoutGrid,
 } from "lucide-react";
 
 /**
@@ -148,38 +148,58 @@ function ItemRow({ item, onOpenPhoto }: { item: JourneyItem; onOpenPhoto: (src: 
   );
 }
 
-function CohortCard({ cohort, onOpenPhoto }: { cohort: JourneyCohort; onOpenPhoto: (src: string) => void }) {
+function CohortCard({ cohort, stationFilter, onOpenPhoto }: {
+  cohort: JourneyCohort;
+  stationFilter: JourneyStation | null;
+  onOpenPhoto: (src: string) => void;
+}) {
   const { language } = useLanguage();
-  // A day with something missing opens itself: that is the day being asked about.
-  const [open, setOpen] = useState(cohort.pending > 0);
+  // A day with something missing opens itself: that is the day being asked
+  // about. Under a station filter every shown day opens — the reader picked
+  // exactly what they want to see.
+  const [open, setOpen] = useState(stationFilter !== null || cohort.pending > 0);
+
+  const visible = stationFilter
+    ? cohort.items.filter(i => i.station === stationFilter)
+    : cohort.items;
+  if (visible.length === 0) return null;
 
   const date = new Date(`${cohort.date}T12:00:00`);
   const dateLabel = new Intl.DateTimeFormat(language === "ku" || language === "ar" ? "ar" : language, {
     day: "numeric", month: "long", year: "numeric",
   }).format(date);
   const pct = cohort.items.length > 0 ? Math.round((cohort.arrived / cohort.items.length) * 100) : 0;
+  const flagged = stationFilter === null && cohort.pending > 0;
 
   return (
-    <div className={cn("overflow-hidden rounded-xl border", cohort.pending > 0 ? "border-rose-300 dark:border-rose-500/40" : "border-border")}>
+    <div className={cn("overflow-hidden rounded-xl border", flagged ? "border-rose-300 dark:border-rose-500/40" : "border-border")}>
       <button
         type="button"
         onClick={() => setOpen(o => !o)}
         aria-expanded={open}
-        className={cn("flex w-full items-center gap-3 px-3 py-2.5 text-start", cohort.pending > 0 && "bg-rose-50/60 dark:bg-rose-950/20")}
+        className={cn("flex w-full items-center gap-3 px-3 py-2.5 text-start", flagged && "bg-rose-50/60 dark:bg-rose-950/20")}
       >
         {open ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold">
-            {dateLabel} · <span className="tabular-nums">{cohort.items.length}</span>
+            {dateLabel} · <span className="tabular-nums">{visible.length}</span>
           </p>
-          <div className="mt-1 h-1.5 max-w-[220px] overflow-hidden rounded-full bg-muted">
-            <div
-              className={cn("h-full rounded-full", cohort.pending > 0 ? "bg-blue-500" : "bg-emerald-500")}
-              style={{ width: `${pct}%` }}
-            />
-          </div>
+          {/* The arrival bar describes the whole day; under a station filter
+              it would describe rows that are not on screen, so it rests. */}
+          {stationFilter === null && (
+            <div className="mt-1 h-1.5 max-w-[220px] overflow-hidden rounded-full bg-muted">
+              <div
+                className={cn("h-full rounded-full", cohort.pending > 0 ? "bg-blue-500" : "bg-emerald-500")}
+                style={{ width: `${pct}%` }}
+              />
+            </div>
+          )}
         </div>
-        {cohort.pending > 0 ? (
+        {stationFilter !== null ? (
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-semibold text-muted-foreground">
+            {pickLang(language, STATION_META[stationFilter].label)}
+          </span>
+        ) : cohort.pending > 0 ? (
           <>
             <span className="shrink-0 rounded-full bg-blue-100 dark:bg-blue-900/40 px-2 py-0.5 text-[10px] font-semibold text-blue-700 dark:text-blue-300 tabular-nums">
               {cohort.arrived} {pickLang(language, { ku: "گەیشتووە", en: "arrived", ar: "وصلت", zh: "已到" })}
@@ -194,7 +214,7 @@ function CohortCard({ cohort, onOpenPhoto }: { cohort: JourneyCohort; onOpenPhot
           </span>
         )}
       </button>
-      {open && cohort.items.map(item => <ItemRow key={item.key} item={item} onOpenPhoto={onOpenPhoto} />)}
+      {open && visible.map(item => <ItemRow key={item.key} item={item} onOpenPhoto={onOpenPhoto} />)}
     </div>
   );
 }
@@ -214,6 +234,8 @@ export function CustomerJourneyPanel({
   const query = trpc.packages.customerJourney.useQuery({ customerId });
   const [photoOpen, setPhotoOpen] = useState<string | null>(null);
   const [showAllCohorts, setShowAllCohorts] = useState(false);
+  // Tapping a station shows only that station's rows; «هەموو» clears it.
+  const [stationFilter, setStationFilter] = useState<JourneyStation | null>(null);
 
   const journey: CustomerJourney | null = useMemo(
     () => (query.data ? buildCustomerJourney(query.data) : null),
@@ -265,19 +287,52 @@ export function CustomerJourneyPanel({
           </div>
         ) : journey && (
           <>
-            <div className="grid grid-cols-2 gap-2 md:grid-cols-5">
+            <div className="grid grid-cols-3 gap-2 md:grid-cols-6">
+              <button
+                type="button"
+                onClick={() => setStationFilter(null)}
+                aria-pressed={stationFilter === null}
+                className={cn(
+                  "rounded-xl border border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-950/30 p-3 text-center transition-all active:scale-[0.98]",
+                  stationFilter === null && "ring-2 ring-blue-500",
+                )}
+              >
+                <LayoutGrid className="mx-auto h-4 w-4 text-blue-600 dark:text-blue-400" />
+                <p className="mt-1 text-xl font-bold tabular-nums text-blue-600 dark:text-blue-400">
+                  {(Object.values(journey.counts) as number[]).reduce((a, b) => a + b, 0)}
+                </p>
+                <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">
+                  {pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
+                </p>
+              </button>
               {(Object.keys(STATION_META) as JourneyStation[]).map(st => {
                 const meta = STATION_META[st];
                 const Icon = meta.icon;
                 return (
-                  <div key={st} className={cn("rounded-xl border p-3 text-center", meta.tile)}>
+                  <button
+                    key={st}
+                    type="button"
+                    onClick={() => setStationFilter(prev => (prev === st ? null : st))}
+                    aria-pressed={stationFilter === st}
+                    className={cn(
+                      "rounded-xl border p-3 text-center transition-all active:scale-[0.98]",
+                      meta.tile,
+                      stationFilter === st && "ring-2 ring-blue-500",
+                    )}
+                  >
                     <Icon className={cn("mx-auto h-4 w-4", meta.value)} />
                     <p className={cn("mt-1 text-xl font-bold tabular-nums", meta.value)}>{journey.counts[st]}</p>
                     <p className="mt-0.5 text-[10px] leading-tight text-muted-foreground">{pickLang(language, meta.label)}</p>
-                  </div>
+                  </button>
                 );
               })}
             </div>
+
+            {stationFilter !== null && journey.counts[stationFilter] === 0 && (
+              <p className="mt-3 rounded-xl border border-border p-3 text-center text-xs text-muted-foreground">
+                {pickLang(language, { ku: "لەم وێستگەیەدا هیچ نییە", en: "Nothing in this station", ar: "لا يوجد شيء في هذه المحطة", zh: "此站没有任何内容" })}
+              </p>
+            )}
 
             {journey.orderCohorts.length > 0 && (
               <div className="mt-4">
@@ -286,7 +341,14 @@ export function CustomerJourneyPanel({
                   {pickLang(language, { ku: "ئۆردەرەکان بە بەرواری تۆمارکردن", en: "Orders by entry date", ar: "الطلبات حسب تاريخ التسجيل", zh: "按登记日期分组的订单" })}
                 </p>
                 <div className="space-y-2">
-                  {cohorts.map(c => <CohortCard key={c.date} cohort={c} onOpenPhoto={setPhotoOpen} />)}
+                  {cohorts.map(c => (
+                    <CohortCard
+                      key={`${c.date}-${stationFilter ?? "all"}`}
+                      cohort={c}
+                      stationFilter={stationFilter}
+                      onOpenPhoto={setPhotoOpen}
+                    />
+                  ))}
                 </div>
                 {!showAllCohorts && journey.orderCohorts.length > 8 && (
                   <Button variant="ghost" size="sm" className="mt-2 w-full" onClick={() => setShowAllCohorts(true)}>
@@ -308,7 +370,12 @@ export function CustomerJourneyPanel({
                 </p>
                 <div className="space-y-2">
                   {journey.scanCohorts.slice(0, showAllCohorts ? undefined : 4).map(c => (
-                    <CohortCard key={c.date} cohort={c} onOpenPhoto={setPhotoOpen} />
+                    <CohortCard
+                      key={`${c.date}-${stationFilter ?? "all"}`}
+                      cohort={c}
+                      stationFilter={stationFilter}
+                      onOpenPhoto={setPhotoOpen}
+                    />
                   ))}
                 </div>
               </div>
