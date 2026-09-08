@@ -413,8 +413,11 @@ export default function PortalHome() {
             <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
               <Link href="/portal/profile" aria-label={pickLang(language, { ku: "هەژماری من", en: "My account", ar: "حسابي", zh: "我的账户" })}>
                 <span className="flex items-center gap-2 min-w-0">
-                  <span className={cn("flex h-7 w-7 shrink-0 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
-                    <User className="h-4 w-4 text-blue-100" />
+                  <span className="relative shrink-0">
+                    <span aria-hidden="true" className="wazn-breathe absolute -inset-0.5 rounded-full bg-blue-500 blur-sm" />
+                    <span className={cn("relative flex h-7 w-7 items-center justify-center rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                      <User className="h-4 w-4 text-blue-100" />
+                    </span>
                   </span>
                   {account?.customerCode && (
                     <span dir="ltr" className={cn("truncate rounded-full border px-2.5 py-0.5 text-xs font-semibold tabular-nums", isDark ? "border-blue-500/40 bg-blue-600/20 text-blue-300" : "border-blue-300 dark:border-blue-500/40 bg-blue-50 dark:bg-blue-600/20 text-blue-700 dark:text-blue-300")}>
@@ -454,8 +457,11 @@ export default function PortalHome() {
                 account tab from the bottom bar and pointed here instead. */}
             <Link href="/portal/profile" aria-label={pickLang(language, { ku: "هەژماری من", en: "My account", ar: "حسابي", zh: "我的账户" })}>
               <span className="flex min-w-0 items-center gap-3">
-                <span className={cn("flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition active:scale-95", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
-                  <User className="h-5 w-5 text-blue-100" />
+                <span className="relative shrink-0">
+                  <span aria-hidden="true" className="wazn-breathe absolute -inset-1 rounded-full bg-blue-500 blur-md" />
+                  <span className={cn("relative flex h-10 w-10 items-center justify-center rounded-full transition active:scale-95", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
+                    <User className="h-5 w-5 text-blue-100" />
+                  </span>
                 </span>
                 <span className="min-w-0 block">
                   {accountLoading ? (
@@ -536,7 +542,7 @@ export default function PortalHome() {
           {hasDebt ? (
             <Link href="/portal/financial">
               <div className={cn(
-                "rounded-2xl border p-4",
+                "rounded-2xl border p-4 transition-transform active:scale-[0.99]",
                 isDark ? "border-amber-500/40 bg-amber-950/40" : "border-amber-300 dark:border-amber-500/40 bg-amber-50 dark:bg-amber-950/40",
               )}>
                 <div className="flex items-center justify-between gap-3">
@@ -573,7 +579,7 @@ export default function PortalHome() {
           ) : (
             <Link href="/portal/financial">
               <div className={cn(
-                "flex items-center justify-between gap-3 rounded-2xl border p-4",
+                "flex items-center justify-between gap-3 rounded-2xl border p-4 transition-transform active:scale-[0.99]",
                 isDark ? "border-emerald-500/30 bg-emerald-950/30" : "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30",
               )}>
                 <div className="flex min-w-0 items-center gap-2.5">
@@ -752,7 +758,7 @@ export default function PortalHome() {
               {recentSource.map((batch) => (
                 <Link key={batch.id} href={`/portal/shipments/${batch.id}`}>
                   <div className={cn(
-                    "rounded-2xl border p-3.5 transition-all hover:-translate-y-0.5 hover:shadow-lg",
+                    "rounded-2xl border p-3.5 transition-all hover:-translate-y-0.5 hover:shadow-lg active:scale-[0.99]",
                     card,
                   )}>
                     <div className="flex items-center gap-3.5">
@@ -837,7 +843,7 @@ export default function PortalHome() {
           <div className="px-4 mt-5">
             <Link href="/portal/full-package">
               <div className={cn(
-                "relative overflow-hidden rounded-2xl border p-4 transition-all hover:scale-[1.01]",
+                "relative overflow-hidden rounded-2xl border p-4 transition-all hover:scale-[1.01] active:scale-[0.99]",
                 isDark
                   ? "border-amber-700/50 bg-gradient-to-br from-amber-900/50 to-orange-900/40"
                   : "border-amber-200 dark:border-amber-800/60 bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40"

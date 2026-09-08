@@ -953,6 +953,22 @@ body.pwa-mode {
   animation: wazn-prohibited-flash 1.7s ease-in-out infinite;
 }
 
+/* Slow breathing glow behind the portal's two blue actions (the account
+   avatar and the centre ➕). Animates opacity/scale only — GPU-cheap — and
+   sits on a blurred layer behind the control, never on the control itself.
+   Deliberately slower and softer than the prohibited flash and the pickup
+   dot: those mean "act now"; this only says "I am alive, press me". */
+@keyframes wazn-breathe {
+  0%, 100% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.75; transform: scale(1.12); }
+}
+.wazn-breathe {
+  animation: wazn-breathe 2.8s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wazn-breathe { animation: none; opacity: 0.4; }
+}
+
 .status-badge-error {
   animation: pulse-red 2s ease-in-out infinite;
 }
