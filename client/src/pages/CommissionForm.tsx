@@ -1,4 +1,6 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orderTrackingSanity";
+import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
 import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -451,6 +453,40 @@ export default function CommissionForm() {
     );
   })();
 
+  // Quick switch to the sibling form (the owner's ask): everything already
+  // typed goes along — customer, shipping, product, images — and ONLY the
+  // money section starts over, because the two services price differently.
+  const switchToFullPackage = () => {
+    stashOrderFormDraft(pickOrderFormDraft(formData, productImages));
+    setLocation("/full-package/new");
+  };
+
+  // Arriving from the sibling form's switch: refill what was carried; the
+  // money fields keep their fresh-empty start.
+  useEffect(() => {
+    if (isEditMode) return;
+    const draft = takeOrderFormDraft();
+    if (!draft) return;
+    const { productImages: draftImages, ...fields } = draft;
+    setFormData((prev) => ({ ...prev, ...(fields as Partial<typeof prev>) }));
+    if (draftImages.length > 0) setProductImages(draftImages);
+  }, [isEditMode]);
+
+  // Save-time "you forgot this" navigation (the owner's ask): the toast
+  // says WHAT is missing, but the form must also take you TO it — scroll
+  // to the field, and if it's a dropdown, open it by itself.
+  const shippingMethodRef = useRef<HTMLDivElement>(null);
+  const productTypeRef = useRef<HTMLDivElement>(null);
+  const [productTypeOpen, setProductTypeOpen] = useState(false);
+  const goToMissingProductType = () => {
+    productTypeRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+    // Let the scroll land first, then drop the list open.
+    window.setTimeout(() => setProductTypeOpen(true), 350);
+  };
+  const goToMissingShippingMethod = () => {
+    shippingMethodRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  };
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -461,6 +497,7 @@ export default function CommissionForm() {
 
     if (!formData.productType) {
       toast.error(pickLang(language, { ku: "تکایە جۆری کاڵا هەڵبژێرە", en: "Please select a product type", ar: "يرجى اختيار نوع المنتج", zh: "请选择商品类型" }));
+      goToMissingProductType();
       return;
     }
 
@@ -468,6 +505,16 @@ export default function CommissionForm() {
     if (!formData.orderNumber.trim()) {
       toast.error(pickLang(language, { ku: "تکایە ئۆردەر نەمبەر داخڵ بکە", en: "Please enter the order number", ar: "يرجى إدخال رقم الطلب", zh: "请输入订单编号" }));
       return;
+    }
+
+    // The owner's observation: an order number is longer than a tracking
+    // number. A swapped or oddly short pair still saves — never silently.
+    const idWarnings = orderTrackingWarnings(formData.orderNumber, formData.trackingNumber);
+    if (idWarnings.length > 0) {
+      toast.warning(
+        idWarnings.map((w) => pickLang(language, ORDER_TRACKING_WARNING_TEXT[w])).join("\n"),
+        { duration: 9000 },
+      );
     }
 
     // Saving without a picture is allowed, but never silent — the order is
@@ -500,6 +547,7 @@ export default function CommissionForm() {
 
     if (!formData.shippingType) {
       toast.error(pickLang(language, { ku: "تکایە شێوازی گواستنەوە دیاری بکە", en: "Please choose a shipping method", ar: "يرجى تحديد طريقة الشحن", zh: "请选择运输方式" }));
+      goToMissingShippingMethod();
       return;
     }
 
@@ -648,6 +696,19 @@ export default function CommissionForm() {
               )}
             </div>
           </div>
+          {/* Quick switch — what's typed goes along, the money starts over. */}
+          {!isEditMode && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="ms-auto shrink-0 gap-1.5"
+              onClick={switchToFullPackage}
+            >
+              <ArrowLeftRight className="h-4 w-4" />
+              <span className="hidden sm:inline">{pickLang(language, { ku: "گۆڕین بۆ پاکێجی تەواو", en: "Switch to full package", ar: "تحويل إلى الحزمة الكاملة", zh: "切换为完整套餐" })}</span>
+            </Button>
+          )}
         </div>
 
         {/* Wait for the order before showing a form full of empty fields —
@@ -744,7 +805,7 @@ export default function CommissionForm() {
           {/* ── Shipping Method (moved to top) ── */}
           <Section icon={Plane} title={pickLang(language, { ku: "ریگاکانی گواستنەوە", en: "Shipping methods", ar: "طرق الشحن", zh: "运输方式" })} hint={pickLang(language, { ku: "ریگای گواستنەوەی کاڵاکە هەڵبژێرە", en: "Choose the shipping method for the item", ar: "اختر طريقة شحن المنتج", zh: "选择商品的运输方式" })} accent="sky">
             {/* Method Selector — compact horizontal pills */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-3 gap-3" ref={shippingMethodRef}>
               {/* Air Regular */}
               <button
                 type="button"
@@ -825,11 +886,13 @@ export default function CommissionForm() {
             <div className="space-y-3">
               {/* Row 1: type / order# / link / tracking — tracking sits directly under order# (2-col grid) */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="space-y-1.5">
+                <div className="space-y-1.5" ref={productTypeRef}>
                   <Label className="text-xs">{pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })}</Label>
                   <Select
                     value={formData.productType}
                     onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
+                    open={productTypeOpen}
+                    onOpenChange={setProductTypeOpen}
                   >
                     <SelectTrigger className={cn("h-10", filledCls(formData.productType))}>
                       <SelectValue placeholder={pickLang(language, { ku: "جۆر هەڵبژێرە", en: "Select type", ar: "اختر النوع", zh: "选择类型" })} />
