@@ -14,6 +14,7 @@ import {
   type JourneyStation,
 } from "@/lib/customerJourney";
 import { STATUS_LABEL } from "@/lib/shipmentFilters";
+import { fmtDate, fmtDateTime } from "@/lib/numericDate";
 import {
   X, Package, Plane, ClockAlert, MapPinCheck, Box, Camera,
   ChevronDown, ChevronUp, CalendarDays, ImageOff, LayoutGrid,
@@ -63,11 +64,6 @@ const STATION_META: Record<JourneyStation, {
     value: "text-violet-600 dark:text-violet-400",
   },
 };
-
-/** Dates as plain numbers, the way the owner reads them: 8.9.2026. */
-const fmtDate = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
-const fmtDateTime = (d: Date) =>
-  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} · ${fmtDate(d)}`;
 
 const BOX_STATUS_LABEL: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
   open: { ku: "ئامادە دەکرێت", en: "Being packed", ar: "قيد التجهيز", zh: "装箱中" },

@@ -16,7 +16,7 @@ import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { trpc } from "@/lib/trpc";
 import { usePackages } from "@/hooks/usePackages";
-import { Plus, Search, QrCode, Eye, Zap, Layers, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Printer, Trash2, Download, Filter, CalendarIcon, X, Package, Plane, Ship, User, CheckCircle2, Tags, FileText, Calculator, Clock, MapPin, Weight, Ruler, DollarSign, Hash, Calendar as CalendarIcon2, PackageX, Link2Off, Truck, BarChart3, ImagePlus, Loader2, Camera, PackagePlus, PackageSearch } from "lucide-react";
+import { Plus, Search, QrCode, Eye, Zap, Layers, AlertTriangle, ChevronDown, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight, Pencil, Trash2, Download, Filter, CalendarIcon, X, Package, Plane, Ship, User, CheckCircle2, Tags, FileText, Calculator, Clock, MapPin, Weight, Ruler, DollarSign, Hash, Calendar as CalendarIcon2, PackageX, Link2Off, Truck, BarChart3, ImagePlus, Loader2, Camera, PackagePlus, PackageSearch } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -44,7 +44,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo, useEffect, useCallback, memo } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { useLocation } from "wouter";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { toast } from "sonner";
@@ -52,11 +51,11 @@ import { format } from "date-fns";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { fmtDate } from "@/lib/numericDate";
 import { readPackagesLink } from "@shared/listLinks";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel";
 import { StatusBadge } from "@/components/ui/status-badge";
-import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 
 const statusColors: Record<string, string> = {
@@ -158,7 +157,6 @@ type PackageRowProps = {
   onStatusChange: (pkg: Package, newStatus: string) => void;
   onView: (pkg: Package) => void;
   onEdit: (pkg: Package) => void;
-  onPrintLabel: (pkg: Package) => void;
   t: (key: string, opts?: Record<string, string | number>) => string;
 };
 
@@ -170,17 +168,21 @@ const PackageTableRow = memo(function PackageTableRow({
   onStatusChange,
   onView,
   onEdit,
-  onPrintLabel,
   t,
 }: PackageRowProps) {
   return (
     <TableRow className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
       <TableCell>
-        <div className="flex items-center gap-2">
-          <QrCode className="h-4 w-4 text-muted-foreground" />
-          <span className="font-mono text-sm">{pkg.packageCode}</span>
-          <CopyButton value={pkg.packageCode} label="کۆپی کۆد" />
-        </div>
+        {/* The order's own number, not the internal package code — the code
+            meant nothing at the counter. A self-order parcel has none. */}
+        {(pkg as any).orderCode ? (
+          <div className="flex items-center gap-1">
+            <span dir="ltr" className="font-mono text-sm">{(pkg as any).orderCode}</span>
+            <CopyButton value={(pkg as any).orderCode} label="کۆپی ئۆردەر نەمبەر" />
+          </div>
+        ) : (
+          <span className="text-muted-foreground">—</span>
+        )}
       </TableCell>
       <TableCell>
         {(() => {
@@ -198,7 +200,7 @@ const PackageTableRow = memo(function PackageTableRow({
         <div className="flex items-center gap-1">
           <div>
             <p className="font-medium">{getCustomerName(pkg.customerId)}</p>
-            <p className="text-xs text-muted-foreground font-mono">{getCustomerCode(pkg.customerId)}</p>
+            <p dir="ltr" className="text-xs text-muted-foreground font-mono text-end">{shortCustomerCode(getCustomerCode(pkg.customerId))}</p>
           </div>
           <CopyButton value={getCustomerName(pkg.customerId)} label="کۆپی ناوی کڕیار" />
         </div>
@@ -298,7 +300,8 @@ const PackageTableRow = memo(function PackageTableRow({
         })()}
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">
-        <RelativeTime date={pkg.createdAt} />
+        {/* Numbers, not "days ago" — 8.9.2026, LTR so digits keep their order */}
+        <span dir="ltr" className="tabular-nums">{fmtDate(new Date(pkg.createdAt))}</span>
       </TableCell>
       <TableCell className="text-right">
         <div className="flex items-center justify-end gap-1">
@@ -307,9 +310,6 @@ const PackageTableRow = memo(function PackageTableRow({
           </Button>
           <Button variant="ghost" size="icon" title={t("packages.editPackage")} onClick={() => onEdit(pkg)}>
             <Pencil className="h-4 w-4" />
-          </Button>
-          <Button variant="ghost" size="icon" title={t("packages.printLabel")} onClick={() => onPrintLabel(pkg)}>
-            <Printer className="h-4 w-4" />
           </Button>
         </div>
       </TableCell>
@@ -373,7 +373,6 @@ const [, setLocation] = useLocation();
     deletePackageMutation,
   } = usePackages();
 
-  const { data: settings } = trpc.settings.list.useQuery();
 
   const dateFrom = dateFromStr ? new Date(dateFromStr) : undefined;
   const dateTo = dateToStr ? new Date(dateToStr) : undefined;
@@ -519,7 +518,6 @@ const [, setLocation] = useLocation();
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: categories } = trpc.productCategories.list.useQuery();
-  const { data: labelTemplates } = trpc.labelTemplates.list.useQuery();
 
   const onStatusSuccess = () => {
     toast.success(t("packages.statusUpdated"));
@@ -945,75 +943,9 @@ const [, setLocation] = useLocation();
     setShowEditCustomerDropdown(false);
   };
 
-  const handlePrintLabel = (pkg: Package) => {
-    const printWindow = window.open("", "_blank", "width=400,height=600");
-    if (!printWindow) {
-      toast.error(t("packages.allowPopups"));
-      return;
-    }
-
-    const company = getCompanyInfoFromSettings(settings || []);
-    const customer = customers?.find(c => c.id === pkg.customerId);
-    const template = labelTemplates?.[0];
-
-    printWindow.document.write(`
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Label - ${pkg.packageCode}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { font-family: Arial, sans-serif; padding: 10mm; }
-          .label { 
-            width: ${template?.widthMm || 100}mm; 
-            height: ${template?.heightMm || 150}mm; 
-            border: 1px solid #000; 
-            padding: 5mm;
-            position: relative;
-          }
-          .header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5mm; }
-          .logo { font-size: 16pt; font-weight: bold; color: #0066cc; }
-          .qr { width: 25mm; height: 25mm; }
-          .tracking { 
-            font-size: 14pt; 
-            font-weight: bold; 
-            text-align: center; 
-            padding: 3mm; 
-            background: #e8f5e9; 
-            border-radius: 2mm;
-            margin: 3mm 0;
-          }
-          .info { font-size: 10pt; margin: 2mm 0; }
-          .info strong { display: inline-block; width: 25mm; }
-          .barcode { text-align: center; margin-top: 5mm; font-family: monospace; font-size: 12pt; }
-          @media print {
-            body { padding: 0; }
-            .label { border: none; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="label">
-          <div class="header">
-            <div class="logo">${company.name}</div>
-            <img class="qr" src="https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(pkg.trackingNumber || pkg.packageCode)}" />
-          </div>
-          <div class="tracking">${pkg.trackingNumber || pkg.packageCode}</div>
-          <div class="info"><strong>Customer:</strong> ${customer?.fullName || "Unclaimed"}</div>
-          <div class="info"><strong>Code:</strong> ${customer?.customerCode || "UNC"}</div>
-          <div class="info"><strong>Weight:</strong> ${pkg.weightKg || "-"} kg</div>
-          <div class="info"><strong>Type:</strong> ${pkg.shippingType.replace(/_/g, " ")}</div>
-          <div class="info"><strong>Date:</strong> ${new Date(pkg.createdAt).toLocaleDateString()}</div>
-          <div class="barcode">||||| ${pkg.packageCode} |||||</div>
-        </div>
-        <script>
-          window.onload = function() { window.print(); }
-        </script>
-      </body>
-      </html>
-    `);
-    printWindow.document.close();
-  };
+  // The per-row label print left with its button — the owner's call: not
+  // needed on this table for now. Git remembers the label HTML if it comes
+  // back as its own feature.
 
   const exportToExcel = () => {
     if (!filteredPackages || filteredPackages.length === 0) {
@@ -1575,10 +1507,12 @@ const [, setLocation] = useLocation();
             {filterChips.length > 0 && (
               <FilterChips chips={filterChips} onClearAll={clearAllFilters} className="mb-4" />
             )}
-            <Table>
+            {/* Dense on purpose: every column visible without a horizontal
+                scroll — the owner's ask off the live screen. */}
+            <Table className="text-xs [&_th]:px-2 [&_th]:whitespace-nowrap [&_td]:px-2 [&_td]:py-2">
               <TableHeader>
                 <TableRow>
-                  <TableHead>{t("packages.packageCode")}</TableHead>
+                  <TableHead>{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order no.", ar: "رقم الطلب", zh: "订单号" })}</TableHead>
                   <TableHead>{t('packages.packageType')}</TableHead>
                   <TableHead>{t("customers.title")}</TableHead>
                   <TableHead>{t("packages.trackingNumber")}</TableHead>
@@ -1610,7 +1544,6 @@ const [, setLocation] = useLocation();
                       onStatusChange={onStatusChange}
                       onView={handleViewClick}
                       onEdit={handleEditClick}
-                      onPrintLabel={handlePrintLabel}
                       t={t}
                     />
                   ))

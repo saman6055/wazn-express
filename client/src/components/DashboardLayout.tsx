@@ -1161,7 +1161,10 @@ function DashboardLayoutContent({
             </div>
           </div>
         )}
-        <div className="p-4 md:p-6 max-w-[1600px] mx-auto">
+        {/* Full width. The 1600px cap centred the content and left dead
+            margins either side on a wide monitor — the owner's note, sent
+            with a screenshot of the packages table squeezed in the middle. */}
+        <div className="p-4 md:p-6">
           {children}
         </div>
       </main>

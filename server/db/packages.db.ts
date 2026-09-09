@@ -415,6 +415,9 @@ export async function getAllPackages(options: {
     registeredByName: users.name,
     // Full package order type for display
     orderType: fullPackageOrders.orderType,
+    // The order's own number — the table shows this, not the internal
+    // package code; a self-order parcel simply has none.
+    orderCode: fullPackageOrders.orderCode,
   })
     .from(packages)
     .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
