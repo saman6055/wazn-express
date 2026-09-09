@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatCurrency } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -49,7 +50,7 @@ function BarChart({ data, maxValue }: { data: { label: string; value: number; co
         <div key={index} className="space-y-1">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{item.label}</span>
-            <span className="font-medium">${item.value.toLocaleString()}</span>
+            <span className="font-medium">{formatCurrency(item.value)}</span>
           </div>
           <div className="h-3 bg-muted rounded-full overflow-hidden">
             <div 
@@ -101,7 +102,7 @@ function DonutChart({ data, total }: { data: { label: string; value: number; col
       >
         <div className="absolute inset-4 bg-background rounded-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-lg font-bold">${total.toLocaleString()}</p>
+            <p className="text-lg font-bold">{formatCurrency(total)}</p>
             <p className="text-xs text-muted-foreground">Total</p>
           </div>
         </div>
@@ -375,19 +376,19 @@ const [timeRange, setTimeRange] = useState("all");
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Revenue"
-          value={`$${data.totalRevenue.toLocaleString()}`}
+          value={formatCurrency(data.totalRevenue)}
           icon={DollarSign}
           color="text-green-600"
         />
         <StatCard
           title="Total Cost"
-          value={`$${data.totalCost.toLocaleString()}`}
+          value={formatCurrency(data.totalCost)}
           icon={TrendingDown}
           color="text-red-600"
         />
         <StatCard
           title="Net Profit"
-          value={`$${data.totalProfit.toLocaleString()}`}
+          value={formatCurrency(data.totalProfit)}
           icon={data.totalProfit >= 0 ? TrendingUp : TrendingDown}
           trend={data.totalProfit >= 0 ? "up" : "down"}
           color={data.totalProfit >= 0 ? "text-green-600" : "text-red-600"}
@@ -506,16 +507,16 @@ const [timeRange, setTimeRange] = useState("all");
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Revenue</span>
-                <span className="font-medium text-green-600 dark:text-green-300">${data.byType.airRegular.revenue.toLocaleString()}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(data.byType.airRegular.revenue)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cost</span>
-                <span className="font-medium text-red-600 dark:text-red-300">${data.byType.airRegular.cost.toLocaleString()}</span>
+                <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(data.byType.airRegular.cost)}</span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Profit</span>
                 <span className={`font-bold ${data.byType.airRegular.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
-                  ${data.byType.airRegular.profit.toLocaleString()}
+                  {formatCurrency(data.byType.airRegular.profit)}
                 </span>
               </div>
             </div>
@@ -531,16 +532,16 @@ const [timeRange, setTimeRange] = useState("all");
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Revenue</span>
-                <span className="font-medium text-green-600 dark:text-green-300">${data.byType.airIrregular.revenue.toLocaleString()}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(data.byType.airIrregular.revenue)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cost</span>
-                <span className="font-medium text-red-600 dark:text-red-300">${data.byType.airIrregular.cost.toLocaleString()}</span>
+                <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(data.byType.airIrregular.cost)}</span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Profit</span>
                 <span className={`font-bold ${data.byType.airIrregular.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
-                  ${data.byType.airIrregular.profit.toLocaleString()}
+                  {formatCurrency(data.byType.airIrregular.profit)}
                 </span>
               </div>
             </div>
@@ -556,16 +557,16 @@ const [timeRange, setTimeRange] = useState("all");
             <div className="space-y-2 text-sm">
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Revenue</span>
-                <span className="font-medium text-green-600 dark:text-green-300">${data.byType.sea.revenue.toLocaleString()}</span>
+                <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(data.byType.sea.revenue)}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Cost</span>
-                <span className="font-medium text-red-600 dark:text-red-300">${data.byType.sea.cost.toLocaleString()}</span>
+                <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(data.byType.sea.cost)}</span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="font-medium">Profit</span>
                 <span className={`font-bold ${data.byType.sea.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
-                  ${data.byType.sea.profit.toLocaleString()}
+                  {formatCurrency(data.byType.sea.profit)}
                 </span>
               </div>
             </div>
@@ -610,10 +611,10 @@ const [timeRange, setTimeRange] = useState("all");
                     </Badge>
                   </TableCell>
                   <TableCell>{batch.packageCount}</TableCell>
-                  <TableCell className="text-right text-red-600 dark:text-red-300">${batch.cost.toLocaleString()}</TableCell>
-                  <TableCell className="text-right text-green-600 dark:text-green-300">${batch.revenue.toLocaleString()}</TableCell>
+                  <TableCell className="text-right text-red-600 dark:text-red-300">{formatCurrency(batch.cost)}</TableCell>
+                  <TableCell className="text-right text-green-600 dark:text-green-300">{formatCurrency(batch.revenue)}</TableCell>
                   <TableCell className={`text-right font-medium ${batch.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
-                    ${batch.profit.toLocaleString()}
+                    {formatCurrency(batch.profit)}
                   </TableCell>
                   <TableCell className="text-right">
                     <Badge variant={batch.profitMargin >= 20 ? "default" : batch.profitMargin >= 10 ? "secondary" : "destructive"}>

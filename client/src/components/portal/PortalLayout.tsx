@@ -19,9 +19,12 @@ const Skin3PortalLayout = lazy(() => import("@/components/Skin3PortalLayout"));
  * app changed shape as they walked through it, which reads as unfinished
  * however good each screen is on its own.
  *
- * Every page renders this instead. The four screens that have real per-skin
- * designs still branch on their own, because for those the difference is the
- * point; for the rest, the chrome follows and the content stays as it is.
+ * Every page renders this instead. Three screens still branch on their own —
+ * shipments, financial and profile — because for those the difference is the
+ * point; for the rest, the chrome follows and the content stays as it is. The
+ * home page used to be a fourth: it is one design for everybody now, so it
+ * carries the classic chrome directly and the skin navs were aligned to match
+ * it rather than the other way round.
  */
 export function PortalLayout({ children }: { children: ReactNode }) {
   const { portalTheme } = usePortalTheme();

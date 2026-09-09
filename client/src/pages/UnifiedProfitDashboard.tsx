@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { formatCurrency } from "@/lib/format";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,7 +72,7 @@ function SimpleBarChart({ data }: { data: { label: string; value: number; color:
         <div key={index} className="space-y-1">
           <div className="flex justify-between text-sm">
             <span className="text-muted-foreground">{item.label}</span>
-            <span className="font-medium">${item.value.toLocaleString()}</span>
+            <span className="font-medium">{formatCurrency(item.value)}</span>
           </div>
           <div className="h-3 bg-muted rounded-full overflow-hidden">
             <div 
@@ -122,7 +123,7 @@ function DonutChart({ data, total, totalLabel }: { data: { label: string; value:
       >
         <div className="absolute inset-4 bg-background rounded-full flex items-center justify-center">
           <div className="text-center">
-            <p className="text-lg font-bold">${total.toLocaleString()}</p>
+            <p className="text-lg font-bold">{formatCurrency(total)}</p>
             <p className="text-xs text-muted-foreground">{totalLabel}</p>
           </div>
         </div>
@@ -312,7 +313,7 @@ export default function UnifiedProfitDashboard() {
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 bg-blue-400" />
                   ) : (
-                    <p className="text-3xl font-bold">${totalProfit.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">{formatCurrency(totalProfit)}</p>
                   )}
                 </div>
                 <div className="w-12 h-12 bg-white/20 rounded-xl flex items-center justify-center">
@@ -334,7 +335,7 @@ export default function UnifiedProfitDashboard() {
                     <Skeleton className="h-7 w-20" />
                   ) : (
                     <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
-                      ${profitByType.full_package.toLocaleString()}
+                      {formatCurrency(profitByType.full_package)}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
@@ -361,7 +362,7 @@ export default function UnifiedProfitDashboard() {
                     <Skeleton className="h-7 w-20" />
                   ) : (
                     <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">
-                      ${profitByType.commission.toLocaleString()}
+                      {formatCurrency(profitByType.commission)}
                     </p>
                   )}
                   <p className="text-xs text-muted-foreground mt-1">
@@ -472,14 +473,14 @@ export default function UnifiedProfitDashboard() {
                       <TableRow key={row.month}>
                         <TableCell className="font-medium">{row.monthLabel}</TableCell>
                         <TableCell className="text-right">
-                          <span className="text-emerald-600 dark:text-emerald-300">${row.full_package.toLocaleString()}</span>
+                          <span className="text-emerald-600 dark:text-emerald-300">{formatCurrency(row.full_package)}</span>
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <span className="text-amber-600 dark:text-amber-300">${row.commission.toLocaleString()}</span>
+                          <span className="text-amber-600 dark:text-amber-300">{formatCurrency(row.commission)}</span>
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          ${row.total.toLocaleString()}
+                          {formatCurrency(row.total)}
                         </TableCell>
                       </TableRow>
                     ))}

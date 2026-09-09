@@ -753,10 +753,16 @@ export default function CommissionOrders() {
                         {new Date(order.createdAt).toLocaleDateString()}
                       </TableCell>
                       <TableCell>
+                        {/* Two actions, both named. There was a third here:
+                            the same eye icon again, blue, with no onClick, no
+                            title and no label — a button that looked live and
+                            did nothing when pressed. */}
                         <div className="flex items-center gap-1">
-                          <Button 
-                            variant="ghost" 
+                          <Button
+                            variant="ghost"
                             size="icon"
+                            title={pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
+                            aria-label={pickLang(language, { ku: "بینینی ئۆردەر", en: "View order", ar: "عرض الطلب", zh: "查看订单" })}
                             onClick={() => setLocation(`/commission/${order.id}`)}
                           >
                             <Eye className="h-4 w-4" />
@@ -764,6 +770,8 @@ export default function CommissionOrders() {
                           <Button
                             variant="ghost"
                             size="icon"
+                            title={pickLang(language, { ku: "دەستکاری", en: "Edit", ar: "تعديل", zh: "编辑" })}
+                            aria-label={pickLang(language, { ku: "دەستکاری ئۆردەر", en: "Edit order", ar: "تعديل الطلب", zh: "编辑订单" })}
                             /* This table lists commission orders only (see the
                                orderType filter above), so both actions must open
                                the commission screens — the full-package edit form
@@ -771,13 +779,6 @@ export default function CommissionOrders() {
                             onClick={() => setLocation(`/commission/${order.id}/edit`)}
                           >
                             <Pencil className="h-4 w-4" />
-                          </Button>
-                          <Button 
-                            variant="ghost" 
-                            size="icon"
-                            className="text-blue-600 dark:text-blue-300 hover:text-blue-800"
-                          >
-                            <Eye className="h-4 w-4" />
                           </Button>
                         </div>
                       </TableCell>

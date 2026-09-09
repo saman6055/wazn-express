@@ -1,7 +1,7 @@
 import { NewsTicker } from "@/components/portal/NewsTicker";
 import { ReactNode, useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, Package, Wallet, User, ShoppingBag } from "lucide-react";
+import { Home, Package, Wallet, Plus, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,15 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
   const { isInstalled } = usePWA();
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  /**
+   * The same five destinations the classic bar carries, in the same words.
+   *
+   * The home page is one design for every skin now, and it ships the classic
+   * chrome — so a customer on this skin saw a ➕ bar on the home screen and a
+   * Profile-tab bar everywhere else, with "بارەکان" here against "بارەکانم"
+   * there. Same tabs, same labels; the account still opens from the avatar
+   * at the top of the home, and the centre ➕ registers a tracking number.
+   */
   const navItems = [
     {
       icon: Home,
@@ -39,23 +48,23 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
     },
     {
       icon: Package,
-      label: language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : "Shipments",
+      label: language === "ku" ? "بارەکانم" : language === "ar" ? "شحناتي" : "My shipments",
       path: "/portal/shipments",
     },
     {
+      icon: Plus,
+      label: language === "ku" ? "تۆماری تراک" : language === "ar" ? "تسجيل التتبع" : "Register tracking",
+      path: "/portal/declare",
+    },
+    {
       icon: ShoppingBag,
-      label: language === "ku" ? "کڕین" : language === "ar" ? "الطلبات" : "Orders",
+      label: language === "ku" ? "کاڵاکانم" : language === "ar" ? "بضائعي" : "My items",
       path: "/portal/full-package",
     },
     {
       icon: Wallet,
       label: language === "ku" ? "دارایی" : language === "ar" ? "المالية" : "Finance",
       path: "/portal/financial",
-    },
-    {
-      icon: User,
-      label: language === "ku" ? "من" : language === "ar" ? "حسابي" : "Profile",
-      path: "/portal/profile",
     },
   ];
 

@@ -4,11 +4,15 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 
 /**
- * Prominent home-screen call-to-action inviting the customer to pre-register
- * (declare) the tracking number of anything they've just bought, so it is
- * auto-owned to them the moment it reaches our warehouse. Rendered by
- * CustomerPortalLayout only on the portal home route, so it shows above every
- * home skin. Doubles as guidance ("whatever you bought, register its track").
+ * NOT RENDERED ANYWHERE. Kept, not deleted, and marked so nobody trusts the
+ * comment that used to be here.
+ *
+ * It was the home-screen call to action inviting a customer to pre-register
+ * the tracking of anything they had just bought. The redesigned home carries
+ * that invitation itself, as the blue hero card, and the layout stopped
+ * rendering this one — but the doc above still claimed the layout rendered it
+ * "above every home skin", which is the kind of comment that sends the next
+ * reader looking for a banner that is not on the screen.
  */
 export function DeclarePackageBanner() {
   const { language } = useLanguage();

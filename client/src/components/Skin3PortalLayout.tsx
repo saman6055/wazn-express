@@ -1,7 +1,7 @@
 import { NewsTicker } from "@/components/portal/NewsTicker";
 import { ReactNode, useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, Package, Wallet, User, ShoppingBag } from "lucide-react";
+import { Home, Package, Wallet, Plus, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
@@ -31,6 +31,11 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
   const { isInstalled } = usePWA();
   const [isChatOpen, setIsChatOpen] = useState(false);
 
+  /**
+   * The same five destinations as the classic bar, in the same words — see
+   * ModernPortalLayout for why. The home page no longer forks per skin, so a
+   * bar that disagrees with it changes shape as the customer walks around.
+   */
   const navItems = [
     {
       icon: Home,
@@ -39,23 +44,23 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
     },
     {
       icon: Package,
-      label: language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : "Shipments",
+      label: language === "ku" ? "بارەکانم" : language === "ar" ? "شحناتي" : "My shipments",
       path: "/portal/shipments",
     },
     {
+      icon: Plus,
+      label: language === "ku" ? "تۆماری تراک" : language === "ar" ? "تسجيل التتبع" : "Register tracking",
+      path: "/portal/declare",
+    },
+    {
       icon: ShoppingBag,
-      label: language === "ku" ? "کڕین" : language === "ar" ? "الطلبات" : "Orders",
+      label: language === "ku" ? "کاڵاکانم" : language === "ar" ? "بضائعي" : "My items",
       path: "/portal/full-package",
     },
     {
       icon: Wallet,
       label: language === "ku" ? "دارایی" : language === "ar" ? "المالية" : "Finance",
       path: "/portal/financial",
-    },
-    {
-      icon: User,
-      label: language === "ku" ? "من" : language === "ar" ? "حسابي" : "Profile",
-      path: "/portal/profile",
     },
   ];
 

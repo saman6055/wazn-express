@@ -6,6 +6,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { copyText } from "@/lib/copyText";
 import { cn } from "@/lib/utils";
+import { formatPortalDate } from "@/lib/portalClock";
 
 /**
  * The links this customer has handed out, and the way to close one.
@@ -87,8 +88,10 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
                 <p className={cn("text-[11px] mt-0.5",
                                  isDark ? "text-slate-500" : "text-slate-400 dark:text-slate-500")}>
                   {L({ ku: "بەسەردەچێت", en: "Expires", ar: "ينتهي", zh: "到期" })}{" "}
-                  {new Intl.DateTimeFormat("ar", { day: "numeric", month: "long" })
-                    .format(new Date(link.expiresAt))}
+                  {/* Was hardcoded to the Arabic locale with a spelled-out
+                      month, so an English or Chinese reader was told their
+                      link expires "٢٤ تموز". The portal has one formatter. */}
+                  {formatPortalDate(link.expiresAt, language)}
                 </p>
               </div>
 

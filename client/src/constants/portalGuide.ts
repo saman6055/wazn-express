@@ -81,22 +81,26 @@ export const guideSections: GuideSection[] = [
     gradient: "from-slate-700 to-slate-900",
     path: "/portal",
     title: { ku: "پەڕەی سەرەکی", en: "Home", ar: "الرئيسية", zh: "首页" },
+    // Rewritten for the redesigned home: no fifteen-tile grid, no calculator
+    // embedded here (it has its own page now), and the account opens from the
+    // photo at the top rather than a tab in the bottom bar.
     what: {
-      ku: "یەکەم پەڕەیە کە دەیبینیت — کورتەیەکی هەموو شتێک: باڵانس، بارە چالاکەکان، کردارە خێراکان و حیسابکەری نرخ",
-      en: "The first page you see — a summary of everything: balance, active shipments, quick actions and the price calculator",
-      ar: "أول صفحة تراها — ملخص كل شيء: الرصيد، الشحنات النشطة، الإجراءات السريعة وحاسبة الأسعار",
-      zh: "您看到的第一页——一切的摘要：余额、进行中的货运、快捷操作和价格计算器",
+      ku: "یەکەم پەڕەیە کە دەیبینیت — کورتەیەکی هەموو شتێک: قەرزەکەت، سێ قۆناغی بارەکانت، و دوگمەی تۆمارکردنی تراک",
+      en: "The first page you see — a summary of everything: what you owe, the three stages of your goods, and the register-tracking button",
+      ar: "أول صفحة تراها — ملخص كل شيء: ما عليك، مراحل بضائعك الثلاث، وزر تسجيل التتبع",
+      zh: "您看到的第一页——一切的摘要：您的欠款、货物的三个阶段，以及登记运单按钮",
     },
     points: [
-      { ku: "بە یەک نەزەر باڵانس و قەرزەکەت ببینە", en: "See your balance and debt at a glance", ar: "شاهد رصيدك وديونك بنظرة واحدة", zh: "一眼看到您的余额和欠款" },
-      { ku: "کردارە خێراکان: شوێنکەوتن، کڕینی یوان، تۆماری تراک...", en: "Quick actions: track, buy yuan, register tracking...", ar: "إجراءات سريعة: التتبع، شراء اليوان، تسجيل التتبع...", zh: "快捷操作：追踪、购买人民币、登记运单..." },
-      { ku: "حیسابکەری نرخ: کێش یان قەبارە بنووسە، نرخی گواستنەوە ببینە", en: "Price calculator: enter weight or size, see the shipping cost", ar: "حاسبة الأسعار: أدخل الوزن أو الحجم وشاهد كلفة الشحن", zh: "价格计算器：输入重量或尺寸，查看运费" },
+      { ku: "بە یەک نەزەر قەرزەکەت ببینە و لە واتساپ بیدە", en: "See what you owe at a glance and pay over WhatsApp", ar: "شاهد ما عليك بنظرة واحدة وادفع عبر واتساب", zh: "一眼看到欠款，并通过 WhatsApp 付款" },
+      { ku: "سێ قۆناغەکە: لە کۆگای چین، لە ڕێگادایە، گەیشتووەتە عێراق — پەنجەیان لێبدە بۆ وردەکاری", en: "The three stages — in the China depot, on the way, arrived in Iraq — tap one for the details", ar: "المراحل الثلاث — في مستودع الصين، في الطريق، وصلت العراق — اضغط واحدة للتفاصيل", zh: "三个阶段——在中国仓库、在途、已抵达伊拉克——点击查看详情" },
+      { ku: "چوار ئامرازە خێراکە: حاسیبەی نرخ، کڕینی یوان، بێ خاوەن، ڕێبەر", en: "The four quick tools: price calculator, buy yuan, unclaimed parcels, this guide", ar: "الأدوات الأربع: حاسبة الأسعار، شراء اليوان، الطرود غير المطالب بها، هذا الدليل", zh: "四个快捷工具：价格计算器、购买人民币、无主包裹、本指南" },
+      { ku: "وێنەی پرۆفایلەکەت لە سەرەوە — پەنجەی لێبدە بۆ هەژمارەکەت", en: "Your photo at the top — tap it for your account", ar: "صورتك في الأعلى — اضغط عليها للوصول إلى حسابك", zh: "顶部的头像——点击进入您的账户" },
     ],
     example: {
-      ku: "دانا دەیەوێت بزانێت ٥ کیلۆ جل بە ئاسمانی چەندی تێدەچێت — لە حیسابکەرەکە ٥ دەنووسێت و یەکسەر نرخەکە دەبینێت",
-      en: "Dana wants to know what 5 kg of clothes costs by air — she types 5 in the calculator and sees the price instantly",
-      ar: "دانا تريد معرفة كلفة ٥ كغم ملابس جواً — تكتب ٥ في الحاسبة وترى السعر فوراً",
-      zh: "达娜想知道5公斤衣服空运多少钱——在计算器输入5，立即看到价格",
+      ku: "دانا پۆرتاڵ دەکاتەوە: دەبینێت ١٤ پاکەتی لە چینە و ٢ لە ڕێگان، و قەرزەکەی $16.93ـە — هەموویان بەبێ سکڕۆڵ",
+      en: "Dana opens the portal: 14 parcels in China, 2 on the way, $16.93 owed — all of it without scrolling",
+      ar: "تفتح دانا البوابة: ١٤ طرداً في الصين، ٢ في الطريق، و$16.93 مستحقة — كل ذلك دون تمرير",
+      zh: "达娜打开门户：14 件在中国、2 件在途、欠款 $16.93——无需滚动即可看到",
     },
   },
   {

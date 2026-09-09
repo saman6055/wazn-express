@@ -148,11 +148,15 @@ export const faqCategories: FaqCategory[] = [
           ar: "ما عنوان مستودعكم في الصين؟",
           zh: "你们在中国的仓库地址是什么？",
         },
+        // The old answer sent customers to /portal/addresses, which holds
+        // THEIR delivery addresses in Iraq — not our depot in China. Until
+        // the depot address has a page of its own, the honest answer is to
+        // ask us for it.
         a: {
-          ku: "ناونیشانی کۆگاکەمان لە بەشی «ناونیشانەکان» دەبینیت — بە کۆدی تایبەت بە تۆ. ئەم ناونیشانە بدە بە فرۆشیارە چینییەکان کاتی ناردن.",
-          en: "You'll find our warehouse address in the 'Addresses' section — with your personal code. Give this address to Chinese sellers when they ship.",
-          ar: "ستجد عنوان مستودعنا في قسم «العناوين» — مع رمزك الشخصي. أعطِ هذا العنوان للبائعين الصينيين عند الشحن.",
-          zh: "你可在「地址」部分找到我们的仓库地址——含你的专属代码。发货时把此地址给中国卖家。",
+          ku: "ناونیشانی کۆگاکەمان لە چین لە واتساپ داوا بکە یان لە بەشی «پەیوەندی» پەیوەندیمان پێوە بکە — ناونیشانەکەت بۆ دەنێرین لەگەڵ کۆدی تایبەت بە تۆ، کە دەبێت لەگەڵ ناونیشانەکە بنووسرێت.",
+          en: "Ask us for our China depot address on WhatsApp, or through the Contact section — we send it with your personal code, which must be written together with the address.",
+          ar: "اطلب عنوان مستودعنا في الصين عبر واتساب أو من قسم «تواصل» — نرسله لك مع رمزك الشخصي الذي يجب كتابته مع العنوان.",
+          zh: "请通过 WhatsApp 或「联系我们」向我们索取中国仓库地址——我们会连同您的专属代码一起发送，该代码必须与地址一同填写。",
         },
       },
       {
@@ -185,10 +189,10 @@ export const faqCategories: FaqCategory[] = [
           zh: "如何知道我的运费？",
         },
         a: {
-          ku: "نرخ بەپێی کێش (بۆ ئاسمانی) یان قەبارە (بۆ دەریایی) حساب دەکرێت. نرخە نوێکراوەکان لە پەڕەی سەرەکی دەبینیت، و کۆستی هەر پاکەتێک لە کاتی گەیشتن لە بەشی «دارایی» دەردەکەوێت.",
-          en: "Cost is calculated by weight (for air) or volume (for sea). You can see the current rates on the home page, and each package's cost appears in the 'Finance' section once it arrives.",
-          ar: "تُحسب التكلفة بالوزن (للجوي) أو الحجم (للبحري). يمكنك رؤية الأسعار الحالية في الصفحة الرئيسية، وتظهر تكلفة كل طرد في قسم «المالية» عند وصوله.",
-          zh: "费用按重量（空运）或体积（海运）计算。你可在首页查看当前价格，每个包裹的费用在到达后显示于「财务」部分。",
+          ku: "نرخ بەپێی کێش (بۆ ئاسمانی) یان قەبارە (بۆ دەریایی) حساب دەکرێت. نرخە نوێکراوەکان لە «حاسیبەی نرخ» دەبینیت (لە پەڕەی سەرەکی دوگمەکەی هەیە)، و کۆستی هەر پاکەتێک لە کاتی گەیشتن لە بەشی «دارایی» دەردەکەوێت.",
+          en: "Cost is calculated by weight (for air) or volume (for sea). Current rates are in the price calculator — its button is on the home screen — and each package's cost appears in the 'Finance' section once it arrives.",
+          ar: "تُحسب التكلفة بالوزن (للجوي) أو الحجم (للبحري). الأسعار الحالية في «حاسبة الأسعار» — زرها في الصفحة الرئيسية — وتظهر تكلفة كل طرد في قسم «المالية» عند وصوله.",
+          zh: "费用按重量（空运）或体积（海运）计算。当前价格在「价格计算器」中（首页有按钮），每个包裹的费用在到达后显示于「财务」部分。",
         },
       },
       {
@@ -235,10 +239,10 @@ export const faqCategories: FaqCategory[] = [
           zh: "如何购买人民币？",
         },
         a: {
-          ku: "بڕۆ بۆ بەشی «کڕینی یوانی چینی» لە پەڕەی سەرەکی، بڕی دۆلار یان یوان بنووسە، حاسیبەکە بڕەکەت پیشان دەدات بەپێی نرخی ئەمڕۆ، پاشان داواکارییەکە بنێرە.",
-          en: "Go to 'Buy Chinese Yuan' on the home page, enter the dollar or yuan amount, the calculator shows the result at today's rate, then submit your request.",
-          ar: "اذهب إلى «شراء اليوان الصيني» في الصفحة الرئيسية، أدخل مبلغ الدولار أو اليوان، تعرض الحاسبة النتيجة بسعر اليوم، ثم أرسل طلبك.",
-          zh: "在首页进入「购买人民币」，输入美元或人民币金额，计算器按当日汇率显示结果，然后提交请求。",
+          ku: "لە پەڕەی سەرەکی دوگمەی «کڕینی یوان» دابگرە — پەڕەکە دەکرێتەوە؛ بڕی دۆلار یان یوان بنووسە، بڕەکەت بەپێی نرخی ئەمڕۆ دەردەکەوێت، پاشان داواکارییەکە بنێرە.",
+          en: "Tap 'Buy Yuan' on the home screen — it opens the Yuan page; enter the dollar or yuan amount, see the result at today's rate, then submit your request.",
+          ar: "اضغط «شراء اليوان» في الصفحة الرئيسية — تُفتح صفحة اليوان؛ أدخل مبلغ الدولار أو اليوان، شاهد النتيجة بسعر اليوم، ثم أرسل طلبك.",
+          zh: "在首页点击「购买人民币」——将打开人民币页面；输入美元或人民币金额，按当日汇率查看结果，然后提交请求。",
         },
       },
       {

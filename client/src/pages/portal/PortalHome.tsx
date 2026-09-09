@@ -21,6 +21,7 @@ import { MyShareLinks } from "@/components/portal/MyShareLinks";
 import { ReferralCard } from "@/components/portal/ReferralCard";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalClock, PortalLanguagePicker } from "@/components/portal/PortalHeaderControls";
+import { formatPortalDate } from "@/lib/portalClock";
 import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
 import { isDebt } from "@/lib/portalMoney";
 import { onImageError } from "@/lib/imageFallback";
@@ -142,11 +143,15 @@ function NextStepCard({
   };
 
   const ready = step.key === "ready_to_collect";
-  const date = step.expectedAt
-    ? new Intl.DateTimeFormat(language === "ku" || language === "ar" ? "ar" : language, {
-        day: "numeric", month: "long",
-      }).format(step.expectedAt)
-    : null;
+  /**
+   * The portal's own date formatter, not a named month.
+   *
+   * This spelled the month out through the Arabic locale for Kurdish
+   * readers — the exact thing lib/portalClock was written to stop, because
+   * the Kurdish month names are the Levantine Arabic set and plenty of
+   * customers cannot say which month تەممووز is without stopping to think.
+   */
+  const date = step.expectedAt ? formatPortalDate(step.expectedAt, language) : null;
 
   return (
     <div className="px-4 mt-3">

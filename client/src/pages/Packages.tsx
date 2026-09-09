@@ -275,7 +275,9 @@ const PackageTableRow = memo(function PackageTableRow({
           );
         })()}
       </TableCell>
-      <TableCell className="font-mono">${pkg.calculatedCostUsd || "0.00"}</TableCell>
+      {/* The raw decimal string printed $12.5 in one row and $12.50 in the
+          next, from the same column. */}
+      <TableCell className="font-mono tabular-nums">${Number(pkg.calculatedCostUsd || 0).toFixed(2)}</TableCell>
       <TableCell>
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
@@ -2313,7 +2315,7 @@ const [, setLocation] = useLocation();
                   <div className="grid grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm text-muted-foreground">{t("packages.calculatedCost")}</p>
-                      <p className="font-bold text-xl text-green-600 dark:text-green-300">${viewPackage.calculatedCostUsd || "0.00"}</p>
+                      <p className="font-bold text-xl text-green-600 dark:text-green-300 tabular-nums">${Number(viewPackage.calculatedCostUsd || 0).toFixed(2)}</p>
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t("packages.registrationDate")}</p>
