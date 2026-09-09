@@ -37,6 +37,8 @@ import {
   Package,
 } from "lucide-react";
 import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
+import { boxUnpaidAlert } from "@/lib/boxAlert";
+import { pickLang } from "@/lib/lang";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { trpc } from "@/lib/trpc";
@@ -250,11 +252,18 @@ export function BoxTable({
             const statusCfg = STATUS_CONFIG[box.status as BoxStatus] || STATUS_CONFIG.open;
             const methodCfg = METHOD_CONFIG[box.deliveryMethod as DeliveryMethod] || METHOD_CONFIG.warehouse_pickup;
             const MethodIcon = methodCfg.icon;
+            // The forgotten-box flag: handed over unpaid flashes, merely
+            // overdue sits in red — see lib/boxAlert.ts for the rule.
+            const alert = boxUnpaidAlert(box);
 
             return (
               <TableRow
                 key={box.id}
-                className="cursor-pointer transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
+                className={cn(
+                  "cursor-pointer transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50",
+                  alert?.kind === "handed_unpaid" && "wazn-prohibited-flash",
+                  alert?.kind === "aging_unpaid" && "bg-red-50/70 dark:bg-red-950/25",
+                )}
                 onClick={() => onBoxSelect(box.id)}
               >
                 <TableCell>
@@ -295,6 +304,23 @@ export function BoxTable({
                   <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", statusCfg.className)}>
                     {t(statusCfg.key)}
                   </span>
+                  {alert && (
+                    <span className="mt-1 block w-fit rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-900/40 dark:text-red-300">
+                      {alert.kind === "handed_unpaid"
+                        ? pickLang(language, {
+                            ku: `ڕادەستکراوە بێ پارەدان — $${alert.outstandingUsd.toFixed(2)}`,
+                            en: `Handed over unpaid — $${alert.outstandingUsd.toFixed(2)}`,
+                            ar: `سُلّم دون دفع — $${alert.outstandingUsd.toFixed(2)}`,
+                            zh: `已交付未付款 — $${alert.outstandingUsd.toFixed(2)}`,
+                          })
+                        : pickLang(language, {
+                            ku: `${alert.days} ڕۆژە بێ پارەدان — $${alert.outstandingUsd.toFixed(2)}`,
+                            en: `${alert.days} days unpaid — $${alert.outstandingUsd.toFixed(2)}`,
+                            ar: `${alert.days} يومًا دون دفع — $${alert.outstandingUsd.toFixed(2)}`,
+                            zh: `${alert.days} 天未付款 — $${alert.outstandingUsd.toFixed(2)}`,
+                          })}
+                    </span>
+                  )}
                 </TableCell>
                 <TableCell className="text-center font-medium">{box.totalPackages}</TableCell>
                 <TableCell className="text-end font-mono text-sm">

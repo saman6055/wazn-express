@@ -170,6 +170,9 @@ export async function getAllDeliveryBoxes(filters?: {
     ? await db.select({
         boxId: boxSettlements.boxId,
         paid: sql<string>`SUM(${boxSettlements.paidUsd})`,
+        // Forgiven money settles a box as surely as paid money — without it
+        // a fully-discounted box would wear the unpaid alert for ever.
+        discount: sql<string>`SUM(${boxSettlements.discountUsd})`,
       })
         .from(boxSettlements)
         .where(and(
@@ -179,10 +182,12 @@ export async function getAllDeliveryBoxes(filters?: {
         .groupBy(boxSettlements.boxId)
     : [];
   const settledByBox = new Map(settleRows.map(r => [Number(r.boxId), Number(r.paid || 0)]));
+  const discountByBox = new Map(settleRows.map(r => [Number(r.boxId), Number(r.discount || 0)]));
 
   const boxesWithType = boxes.map(b => ({
     ...b,
     settledUsd: settledByBox.get(b.id) ?? 0,
+    settledDiscountUsd: discountByBox.get(b.id) ?? 0,
     shippingType: resolveBoxShippingType(
       b.batchId ? (shippingTypeByBatch.get(b.batchId) ?? null) : null,
       (itemTypesByBox.get(b.id) || []).map(t => ({ shippingType: t })),
