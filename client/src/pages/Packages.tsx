@@ -52,6 +52,8 @@ import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { fmtDate } from "@/lib/numericDate";
+import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { readPackagesLink } from "@shared/listLinks";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel";
@@ -70,29 +72,20 @@ const statusColors: Record<string, string> = {
   returned: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
 };
 
-const statusLabels: Record<string, string> = {
-  registered: "Registered",
-  in_batch: "In Batch",
-  in_transit: "In Transit",
-  customs_processing: "Customs",
-  ready_for_delivery: "Ready",
-  out_for_delivery: "Out for Delivery",
-  delivered: "Delivered",
-  cancelled: "Cancelled",
-  returned: "Returned",
-};
+/**
+ * The status names come from the shared map, in the reader's language.
+ *
+ * There were two private maps here, both English-only on a Kurdish page, and
+ * they disagreed with each other on the same screen: the badge said "Customs"
+ * and "Ready" while the dropdown that changes it said "Customs Processing"
+ * and "Ready for Delivery". Both now read lib/packageStatus.ts, which is
+ * where every other screen reads them.
+ */
+const statusLabel = (status: string, language: string) =>
+  PACKAGE_STATUS_LABEL[status] ? pickLang(language, PACKAGE_STATUS_LABEL[status]!) : status.replace(/_/g, " ");
 
-const statusOptions = [
-  { value: "registered", label: "Registered" },
-  { value: "in_batch", label: "In Batch" },
-  { value: "in_transit", label: "In Transit" },
-  { value: "customs_processing", label: "Customs Processing" },
-  { value: "ready_for_delivery", label: "Ready for Delivery" },
-  { value: "out_for_delivery", label: "Out for Delivery" },
-  { value: "delivered", label: "Delivered" },
-  { value: "cancelled", label: "Cancelled" },
-  { value: "returned", label: "Returned" },
-];
+const statusOptionsFor = (language: string) =>
+  Object.keys(PACKAGE_STATUS_LABEL).map(value => ({ value, label: statusLabel(value, language) }));
 
 const shippingTypeOptions = [
   { value: "air_regular", label: "Air Regular", labelKu: "فڕۆکەی ئاسایی" },
@@ -157,6 +150,9 @@ type PackageRowProps = {
   onStatusChange: (pkg: Package, newStatus: string) => void;
   onView: (pkg: Package) => void;
   onEdit: (pkg: Package) => void;
+  /** The install's volumetric divisor, from settings — never a literal. */
+  divisor: number;
+  language: string;
   t: (key: string, opts?: Record<string, string | number>) => string;
 };
 
@@ -168,6 +164,8 @@ const PackageTableRow = memo(function PackageTableRow({
   onStatusChange,
   onView,
   onEdit,
+  divisor,
+  language,
   t,
 }: PackageRowProps) {
   return (
@@ -260,18 +258,15 @@ const PackageTableRow = memo(function PackageTableRow({
       </TableCell>
       <TableCell>
         {(() => {
-          const actualWeight = parseFloat(pkg.weightKg || "0");
-          const volumetricWeight =
-            pkg.lengthCm && pkg.widthCm && pkg.heightCm
-              ? (parseFloat(pkg.lengthCm) * parseFloat(pkg.widthCm) * parseFloat(pkg.heightCm)) / 6000
-              : 0;
-          const chargeableWeight = Math.max(actualWeight, volumetricWeight);
-          const isVolumetric = volumetricWeight > actualWeight && volumetricWeight > 0;
-          if (chargeableWeight === 0) return "-";
+          // The shared rule with the configured divisor — a hardcoded 6000
+          // here showed a different weight than the invoice whenever the
+          // setting was changed.
+          const { chargeableKg, billedOnVolume } = chargeableWeight(pkg, divisor);
+          if (chargeableKg === 0) return "-";
           return (
             <div className="flex items-center gap-1">
-              <span>{chargeableWeight.toFixed(2)} kg</span>
-              {isVolumetric && (
+              <span>{chargeableKg.toFixed(2)} kg</span>
+              {billedOnVolume && (
                 <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
                   {t('packages.volumetric')}
                 </Badge>
@@ -293,7 +288,7 @@ const PackageTableRow = memo(function PackageTableRow({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start">
-            {statusOptions.map((option) => (
+            {statusOptionsFor(language).map((option) => (
               <DropdownMenuItem
                 key={option.value}
                 onClick={() => option.value !== pkg.status && onStatusChange(pkg, option.value)}
@@ -312,8 +307,18 @@ const PackageTableRow = memo(function PackageTableRow({
           const registeredAt = new Date(pkg.createdAt);
           const now = new Date();
           const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
-          const isDelivered = pkg.status === "delivered" || pkg.status === "cancelled" || pkg.status === "returned";
-          if (isDelivered) return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {t("packages.delivered")}</Badge>;
+          // A cancelled or returned parcel is not a delivered one. Grouping
+          // the three together put a green ✅ "Delivered" badge on parcels
+          // that were cancelled — the alert column saying the opposite of
+          // the status column two cells away.
+          if (pkg.status === "delivered") return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {t("packages.delivered")}</Badge>;
+          if (pkg.status === "cancelled" || pkg.status === "returned") {
+            return (
+              <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
+                {pickLang(language, PACKAGE_STATUS_LABEL[pkg.status]!)}
+              </Badge>
+            );
+          }
           if (daysSince > 20) return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} {t("common.days")}</Badge>;
           if (daysSince > 10) return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysSince} {t("common.days")}</Badge>;
           return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} {t("common.days")}</Badge>;
@@ -449,6 +454,8 @@ const [, setLocation] = useLocation();
 
   const packages = packagesFromHook;
   const { data: customers } = trpc.customers.list.useQuery();
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
 
   /**
    * Typing a customer code into the ordinary search opens the journey panel
@@ -800,7 +807,7 @@ const [, setLocation] = useLocation();
   const filterChips = useMemo<FilterChip[]>(() => {
     const chips: FilterChip[] = [];
     if (statusFilter !== "all") {
-      const opt = statusOptions.find(o => o.value === statusFilter);
+      const opt = statusOptionsFor(language).find(o => o.value === statusFilter);
       chips.push({
         id: "status",
         label: `${t("common.status")}: ${t(`status.${statusFilter}`) || opt?.label || statusFilter}`,
@@ -1334,7 +1341,7 @@ const [, setLocation] = useLocation();
                       </SelectTrigger>
                       <SelectContent>
                         <SelectItem value="all">{t("common.all")}</SelectItem>
-                        {statusOptions.map(opt => (
+                        {statusOptionsFor(language).map(opt => (
                           <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
                         ))}
                       </SelectContent>
@@ -1564,6 +1571,8 @@ const [, setLocation] = useLocation();
                       onStatusChange={onStatusChange}
                       onView={handleViewClick}
                       onEdit={handleEditClick}
+                      divisor={volumetricDivisor}
+                      language={language}
                       t={t}
                     />
                   ))
@@ -1694,7 +1703,7 @@ const [, setLocation] = useLocation();
                 <SelectValue placeholder={t("packages.selectStatus")} />
               </SelectTrigger>
               <SelectContent>
-                {statusOptions.map((option) => (
+                {statusOptionsFor(language).map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     <div className="flex items-center gap-2">
                       <span className={`w-2 h-2 rounded-full ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
@@ -2170,7 +2179,7 @@ const [, setLocation] = useLocation();
                 </div>
                 <div className="flex flex-col items-end gap-2">
                   <Badge className={`${statusColors[viewPackage.status]} text-sm px-3 py-1`}>
-                    {statusLabels[viewPackage.status] || viewPackage.status}
+                    {statusLabel(viewPackage.status, language)}
                   </Badge>
                   {(() => {
                     const pkgType = (viewPackage as any).orderType || 'regular';

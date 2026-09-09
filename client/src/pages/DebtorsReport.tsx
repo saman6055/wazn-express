@@ -370,7 +370,7 @@ const [searchTerm, setSearchTerm] = useState("");
                         {formatCurrency(parseFloat(debtor.currentBalanceUsd || '0'))}
                       </TableCell>
                       <TableCell>{getAgingBadge(debtor.agingCategory)}</TableCell>
-                      <TableCell>{debtor.daysSinceActivity} ڕ{t("auto.text_05f45d")}</TableCell>
+                      <TableCell>{debtor.daysSinceActivity} {t("auto.text_05f45d")}</TableCell>
                       <TableCell>
                         {debtor.lastTransactionDate 
                           ? new Date(debtor.lastTransactionDate).toLocaleDateString()

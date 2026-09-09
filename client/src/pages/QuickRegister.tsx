@@ -97,6 +97,13 @@ export default function QuickRegister() {
   const { data: warehouses, isError: warehousesError, refetch: refetchWarehouses } = trpc.warehouses.list.useQuery();
   const { data: categories, isError: categoriesError, refetch: refetchCategories } = trpc.productCategories.list.useQuery();
   const { data: packageStats, isError: statsError, refetch: refetchStats } = trpc.packages.stats.useQuery();
+  // The configured divisor, not the literal: with the default state alone,
+  // an install that changed the setting saw one weight here and another on
+  // the invoice. The price was already server-resolved; the kg now agrees too.
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  useEffect(() => {
+    if (divisorData?.divisor) setVolumetricDivisor(String(divisorData.divisor));
+  }, [divisorData]);
 
   // Customer-level order progress (commission + full_package only) — display
   // only. Powers the "N of this customer's orders registered / remaining"

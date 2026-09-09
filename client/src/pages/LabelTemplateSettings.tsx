@@ -488,7 +488,7 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
               {isCreating ? t("auto.text_92328a") : t("common.create")}
             </DialogTitle>
             <DialogDescription>
-              ڕ{t("auto.text_7fed9f")}
+              {t("auto.text_7fed9f")}
             </DialogDescription>
           </DialogHeader>
 

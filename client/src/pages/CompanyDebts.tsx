@@ -656,7 +656,13 @@ const [showAddDebt, setShowAddDebt] = useState(false);
         {/* Debts List */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
           {debts.map((debt) => {
-            const progress = (Number(debt.paidAmount) / Number(debt.totalAmount)) * 100;
+            // Guarded and clamped: a zero-total debt printed "NaN%" beside a
+            // bar of width NaN, and an overpaid one printed 120% next to a bar
+            // that visually stops at 100.
+            const debtTotal = Number(debt.totalAmount) || 0;
+            const progress = debtTotal > 0
+              ? Math.min(100, Math.max(0, (Number(debt.paidAmount) || 0) / debtTotal * 100))
+              : 0;
             return (
               <Card key={debt.id} className="overflow-hidden">
                 <CardHeader className="pb-2">

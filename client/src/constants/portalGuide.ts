@@ -342,22 +342,27 @@ export const guideSections: GuideSection[] = [
     icon: MapPin,
     gradient: "from-green-600 to-emerald-700",
     path: "/portal/addresses",
-    title: { ku: "ناونیشانەکان", en: "Addresses", ar: "العناوين", zh: "地址" },
+    title: { ku: "ناونیشانەکان", en: "My addresses", ar: "عناويني", zh: "我的地址" },
+    // The old text here claimed this page held OUR China depot addresses for
+    // pasting into Taobao. It never did — the page is the customer's own
+    // delivery addresses in Iraq, and a customer following the old words
+    // pasted their Erbil address into a Chinese shop. Words now match the
+    // page; the China address feature, when it is built, gets its own entry.
     what: {
-      ku: "ناونیشانی کۆگاکانمان لە چین — ئەمانە بەکاربهێنە وەک ناونیشانی گەیاندن کاتێک لە ماڵپەڕە چینییەکان دەکڕیت",
-      en: "Our depot addresses in China — use these as the delivery address when buying on Chinese sites",
-      ar: "عناوين مخازننا في الصين — استخدمها كعنوان التسليم عند الشراء من المواقع الصينية",
-      zh: "我们在中国的仓库地址——在中国网站购物时用作收货地址",
+      ku: "ناونیشانەکانی گەیاندنی خۆت لە عێراق — بۆ ئەوەی گەیاندن بۆ ماڵ یان دوکانەکەت خێراتر بێت",
+      en: "Your own delivery addresses in Iraq — so home or shop delivery reaches you faster",
+      ar: "عناوين التسليم الخاصة بك في العراق — ليصلك التوصيل إلى البيت أو المحل أسرع",
+      zh: "您在伊拉克的收货地址——让送货上门更快到达",
     },
     points: [
-      { ku: "ناونیشانەکە کۆپی بکە و لە تاوباو/1688 دایبنێ", en: "Copy the address and paste it on Taobao/1688", ar: "انسخ العنوان وألصقه في تاوباو/1688", zh: "复制地址并粘贴到淘宝/1688" },
-      { ku: "کۆدی کڕیاری خۆت لەگەڵ ناونیشانەکە بنووسە تا پاکێجەکە بناسرێتەوە", en: "Include your customer code with the address so the package is recognized", ar: "أضف رمز العميل الخاص بك مع العنوان ليُعرف الطرد", zh: "地址中包含您的客户编码以便识别包裹" },
+      { ku: "ناونیشانی ماڵ یان دوکانەکەت زیاد بکە و بیکە بە سەرەکی", en: "Add your home or shop address and set it as default", ar: "أضف عنوان بيتك أو محلك واجعله الافتراضي", zh: "添加家或店铺地址并设为默认" },
+      { ku: "چەند ناونیشانێکت دەبێت — کاتی گەیاندن ئەوە هەڵدەبژێریت کە دەتەوێت", en: "Keep several addresses — pick the one you want at delivery time", ar: "احتفظ بعدة عناوين — اختر ما تريده وقت التسليم", zh: "可保存多个地址——送货时选择所需地址" },
     ],
     example: {
-      ku: "زانا لە 1688 کڕی — ناونیشانی کۆگای گوانجۆی کۆپی کرد و کۆدەکەی (AZ012) لە کۆتایی زیاد کرد، پاکێجەکەی ڕاستەوخۆ ناسرایەوە",
-      en: "Zana bought on 1688 — he copied the Guangzhou depot address and added his code (AZ012) at the end; his package was recognized right away",
-      ar: "زانا اشترى من 1688 — نسخ عنوان مخزن غوانزو وأضاف رمزه (AZ012) في النهاية؛ عُرف طرده فوراً",
-      zh: "扎纳在1688购物——复制了广州仓库地址并在末尾加上他的编码（AZ012），包裹立即被识别",
+      ku: "زانا ناونیشانی دوکانەکەی زیاد کرد و کردی بە سەرەکی — ئیتر هەموو گەیاندنێک ڕاستەوخۆ دەچێتە دوکانەکەی",
+      en: "Zana added his shop address and set it as default — every delivery now goes straight to his shop",
+      ar: "أضاف زانا عنوان محله وجعله الافتراضي — كل توصيل يذهب الآن مباشرة إلى محله",
+      zh: "扎纳添加了店铺地址并设为默认——现在每次送货都直接送到他的店里",
     },
   },
   {

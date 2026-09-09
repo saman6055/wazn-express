@@ -12,6 +12,7 @@ import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { 
   Package, DollarSign, TrendingUp, TrendingDown, Plane, Ship, AlertTriangle,
   Eye, Search, Filter, Download, FileSpreadsheet, Printer, BarChart3,
@@ -61,14 +62,23 @@ const shippingTypeConfig: Record<string, { label: LangMap; icon: React.ReactNode
   }
 };
 
-// Status labels and colors
-const statusConfig: Record<string, { label: LangMap; color: string; bgColor: string; icon: React.ReactNode }> = {
-  preparing: { label: { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" }, color: "text-yellow-700 dark:text-yellow-300", bgColor: "bg-yellow-100 dark:bg-yellow-950/40", icon: <Clock className="h-3 w-3" /> },
-  in_transit: { label: { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" }, color: "text-blue-700 dark:text-blue-300", bgColor: "bg-blue-100 dark:bg-blue-950/40", icon: <Truck className="h-3 w-3" /> },
-  arrived: { label: { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }, color: "text-green-700 dark:text-green-300", bgColor: "bg-green-100 dark:bg-green-950/40", icon: <CheckCircle className="h-3 w-3" /> },
-  customs: { label: { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" }, color: "text-purple-700 dark:text-purple-300", bgColor: "bg-purple-100 dark:bg-purple-950/40", icon: <Building2 className="h-3 w-3" /> },
-  delivered: { label: { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }, color: "text-emerald-700 dark:text-emerald-300", bgColor: "bg-emerald-100 dark:bg-emerald-950/40", icon: <CheckCircle className="h-3 w-3" /> },
-  closed: { label: { ku: "داخراوە", en: "Closed", ar: "مغلقة", zh: "已关闭" }, color: "text-gray-700 dark:text-gray-300", bgColor: "bg-gray-100 dark:bg-gray-950/40", icon: <Archive className="h-3 w-3" /> }
+/**
+ * Colours and icons per status — the WORDS come from the shared map.
+ *
+ * They used to live here too, and had drifted: "ئامادەکاری" where every
+ * other screen says "لە کۆگای چین", "گەیشتووە" for a batch that reached
+ * Iraq where the shared word is "گەیشتە عێراق". `at_depot` was missing
+ * entirely, so a batch waiting in the Erbil depot fell through to the
+ * Preparing chip and read as though it were still in China.
+ */
+const statusConfig: Record<string, { color: string; bgColor: string; icon: React.ReactNode }> = {
+  preparing: { color: "text-yellow-700 dark:text-yellow-300", bgColor: "bg-yellow-100 dark:bg-yellow-950/40", icon: <Clock className="h-3 w-3" /> },
+  in_transit: { color: "text-blue-700 dark:text-blue-300", bgColor: "bg-blue-100 dark:bg-blue-950/40", icon: <Truck className="h-3 w-3" /> },
+  arrived: { color: "text-green-700 dark:text-green-300", bgColor: "bg-green-100 dark:bg-green-950/40", icon: <CheckCircle className="h-3 w-3" /> },
+  customs: { color: "text-purple-700 dark:text-purple-300", bgColor: "bg-purple-100 dark:bg-purple-950/40", icon: <Building2 className="h-3 w-3" /> },
+  at_depot: { color: "text-cyan-700 dark:text-cyan-300", bgColor: "bg-cyan-100 dark:bg-cyan-950/40", icon: <Building2 className="h-3 w-3" /> },
+  delivered: { color: "text-emerald-700 dark:text-emerald-300", bgColor: "bg-emerald-100 dark:bg-emerald-950/40", icon: <CheckCircle className="h-3 w-3" /> },
+  closed: { color: "text-gray-700 dark:text-gray-300", bgColor: "bg-gray-100 dark:bg-gray-950/40", icon: <Archive className="h-3 w-3" /> }
 };
 
 // Generate month options
@@ -272,7 +282,7 @@ export default function BatchReports() {
     const rows = filteredBatches.map(batch => [
       batch.batchCode,
       shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType,
-      statusConfig[batch.status] ? pickLang(language, statusConfig[batch.status].label) : batch.status,
+      STATUS_LABEL[batch.status as BatchStatus] ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]!) : batch.status,
       batch.packageCount,
       batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} KG`,
       formatNumber(batch.totalCost),
@@ -381,7 +391,7 @@ export default function BatchReports() {
               <tr>
                 <td>${batch.batchCode}</td>
                 <td>${shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType}</td>
-                <td>${statusConfig[batch.status] ? pickLang(language, statusConfig[batch.status].label) : batch.status}</td>
+                <td>${STATUS_LABEL[batch.status as BatchStatus] ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]!) : batch.status}</td>
                 <td>${batch.packageCount}</td>
                 <td>${batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} KG`}</td>
                 <td style="color: #dc2626;">${formatCurrency(batch.totalCost)}</td>
@@ -612,12 +622,12 @@ export default function BatchReports() {
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">{pickLang(language, { ku: "هەموو دۆخەکان", en: "All statuses", ar: "كل الحالات", zh: "所有状态" })}</SelectItem>
-                  <SelectItem value="preparing">{pickLang(language, { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" })}</SelectItem>
-                  <SelectItem value="in_transit">{pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" })}</SelectItem>
-                  <SelectItem value="arrived">{pickLang(language, { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" })}</SelectItem>
-                  <SelectItem value="customs">{pickLang(language, { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" })}</SelectItem>
-                  <SelectItem value="delivered">{pickLang(language, { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" })}</SelectItem>
-                  <SelectItem value="closed">{pickLang(language, { ku: "داخراوە", en: "Closed", ar: "مغلقة", zh: "已关闭" })}</SelectItem>
+                  {/* Generated from the shared map, so a status can never be
+                      missing from the filter while still counting in "all" —
+                      at_depot was, and Erbil-depot batches were unfilterable. */}
+                  {(Object.keys(STATUS_LABEL) as BatchStatus[]).map(s => (
+                    <SelectItem key={s} value={s}>{pickLang(language, STATUS_LABEL[s])}</SelectItem>
+                  ))}
                 </SelectContent>
               </Select>
             </div>
@@ -906,6 +916,9 @@ export default function BatchReports() {
                     {filteredBatches.map((batch) => {
                       const typeConfig = shippingTypeConfig[batch.shippingType] || shippingTypeConfig.air_regular;
                       const statusCfg = statusConfig[batch.status] || statusConfig.preparing;
+                      const statusWord = STATUS_LABEL[batch.status as BatchStatus]
+                        ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]!)
+                        : batch.status;
                       const isProfitable = batch.profit >= 0;
                       const isSelected = selectedBatches.has(batch.id);
 
@@ -936,7 +949,7 @@ export default function BatchReports() {
                           <TableCell>
                             <Badge variant="outline" className={`${statusCfg.color} ${statusCfg.bgColor} border-0 flex items-center gap-1 w-fit`}>
                               {statusCfg.icon}
-                              {pickLang(language, statusCfg.label)}
+                              {statusWord}
                             </Badge>
                           </TableCell>
                           <TableCell>

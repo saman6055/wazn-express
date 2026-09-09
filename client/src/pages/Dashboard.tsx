@@ -41,6 +41,8 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
+import { SHIPPING_TYPE_LABEL } from "@/lib/shipmentFilters";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
@@ -167,6 +169,8 @@ export default function Dashboard() {
     [batchesForReminder]
   );
   const { data: packageStats } = trpc.reports.packagesByStatus.useQuery();
+  // Carries the real by-shipping-type breakdown the pie below needs.
+  const { data: parcelStats } = trpc.packages.stats.useQuery();
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: topCustomers } = trpc.reports.topCustomers.useQuery({ limit: 10 });
   const { data: vipCustomers } = trpc.vip.list.useQuery();
@@ -237,14 +241,31 @@ export default function Dashboard() {
     );
   }, [profitLossChart]);
 
-  const shippingTypeData = useMemo(
-    () => [
-      { name: 'Air Regular', value: packageStats?.find((s: any) => s.status === 'in_transit')?.count || 30, color: '#3b82f6' },
-      { name: 'Air Irregular', value: 15, color: '#f59e0b' },
-      { name: 'Sea', value: 10, color: '#10b981' },
-    ],
-    [packageStats]
-  );
+  /**
+   * How the parcels actually travel, counted.
+   *
+   * This pie was three invented numbers: the in-transit STATUS count
+   * mislabelled "Air Regular" (falling back to a literal 30 when the query
+   * had not answered), plus a flat 15 and 10 for the other two. Whatever the
+   * warehouse was doing, the picture said the same thing. The real breakdown
+   * was already coming back from packages.stats and nothing read it.
+   */
+  const shippingTypeData = useMemo(() => {
+    const colors: Record<string, string> = {
+      air_regular: '#3b82f6',
+      air_irregular: '#f59e0b',
+      sea: '#10b981',
+    };
+    return (parcelStats?.byShippingType || [])
+      .filter(row => Number(row.count) > 0)
+      .map(row => ({
+        name: SHIPPING_TYPE_LABEL[row.shippingType]
+          ? pickLang(language, SHIPPING_TYPE_LABEL[row.shippingType]!)
+          : row.shippingType,
+        value: Number(row.count),
+        color: colors[row.shippingType] || '#8b5cf6',
+      }));
+  }, [parcelStats, language]);
 
   // Defer the heavy below-the-fold charts until the browser is idle, so the
   // first dashboard paint isn't blocked by Recharts. The DOM is identical once
@@ -1208,7 +1229,7 @@ export default function Dashboard() {
             <CardContent className="p-4">
               <div className="space-y-3">
                 {packageStats?.map((stat: { status: string; count: number | string }) => (
-                  <StatusBar key={stat.status} status={stat.status} count={Number(stat.count)} total={totalPackages} />
+                  <StatusBar key={stat.status} status={stat.status} count={Number(stat.count)} total={totalPackages} language={language} />
                 ))}
               </div>
             </CardContent>
@@ -1353,9 +1374,9 @@ function QuickActionButton({
 }
 
 // Status Bar Component
-const StatusBar = memo(function StatusBar({ status, count, total }: { status: string; count: number; total: number }) {
+const StatusBar = memo(function StatusBar({ status, count, total, language }: { status: string; count: number; total: number; language: string }) {
   const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
-  
+
   const statusConfig: Record<string, { color: string; bg: string }> = {
     delivered: { color: 'bg-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
     in_transit: { color: 'bg-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/30' },
@@ -1369,7 +1390,11 @@ const StatusBar = memo(function StatusBar({ status, count, total }: { status: st
 
   return (
     <div className="flex items-center gap-3">
-      <span className="text-sm font-medium w-32 capitalize truncate">{status.replace(/_/g, ' ')}</span>
+      {/* The shared wording. This printed the raw enum — "customs processing",
+          "out for delivery" — in Latin letters on an otherwise Kurdish page. */}
+      <span className="text-sm font-medium w-32 truncate" title={status}>
+        {PACKAGE_STATUS_LABEL[status] ? pickLang(language, PACKAGE_STATUS_LABEL[status]!) : status.replace(/_/g, ' ')}
+      </span>
       <div className="flex-1 h-3 rounded-full bg-muted overflow-hidden">
         <div 
           className={`h-full rounded-full transition-all duration-700 ${config.color}`}

@@ -84,22 +84,6 @@
       "icons": [{ "src": "/icons/shortcut-scan.png", "sizes": "96x96" }]
     }
   ],
-  "screenshots": [
-    {
-      "src": "/screenshots/home.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Home Screen"
-    },
-    {
-      "src": "/screenshots/shipments.png",
-      "sizes": "1080x1920",
-      "type": "image/png",
-      "form_factor": "narrow",
-      "label": "Shipments"
-    }
-  ],
   "related_applications": [],
   "prefer_related_applications": false
 }

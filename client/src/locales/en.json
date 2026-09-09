@@ -134,7 +134,9 @@
     "downloadFailed": "Download failed",
     "deleteFailed": "Delete failed",
     "saveFailed": "Save failed",
-    "loadFailed": "Load failed"
+    "loadFailed": "Load failed",
+    "offlineBanner": "You are offline — your work is saved",
+    "backOnline": "Back online"
   },
   "errorBoundary": {
     "title": "Something went wrong",
@@ -507,7 +509,14 @@
     "deleted": "Deleted",
     "quickActions": "Quick Actions",
     "remove": "Remove",
-    "mobileNumber": "Mobile number"
+    "mobileNumber": "Mobile number",
+    "password": "Password",
+    "role": "Role",
+    "change": "Change",
+    "packages": "Packages",
+    "noName": "No name",
+    "downloading": "Downloading…",
+    "downloadPDF": "Download PDF"
   },
   "nav": {
     "back": "Back",
@@ -627,7 +636,8 @@
     "batchLabelTemplate": "Batch label template",
     "registrations": "Registrations",
     "awaitingArrival": "Not yet arrived",
-    "trash": "Recycle bin"
+    "trash": "Recycle bin",
+    "auditSweep": "Audit sweep"
   },
   "dashboard": {
     "problemsTitle": "Problems & action needed",
@@ -1018,7 +1028,8 @@
       "nameRequired": "Customer name is required",
       "mobileRequired": "Mobile number is required",
       "passwordRequired": "Password is required"
-    }
+    },
+    "customer": "Customer"
   },
   "fullPackage": {
     "shippingMethodLabel": "Shipping method",
@@ -1308,7 +1319,12 @@
     "imagesCount": "images",
     "noImages": "No images",
     "noNotes": "No notes",
-    "searchChip": "Search"
+    "searchChip": "Search",
+    "batch": "Batch",
+    "commission": "Commission",
+    "purchaseRequest": "Purchase request",
+    "fullPackage": "Full package",
+    "price": "Price"
   },
   "commission": {
     "title": "Commission Purchase",
@@ -1901,7 +1917,9 @@
       "awb": "No AWB",
       "container": "No container number",
       "flightNumber": "No flight number"
-    }
+    },
+    "reportDownloaded": "Report downloaded",
+    "vipCustomers": "VIP customers"
   },
   "scanning": {
     "title": "Scanning",
@@ -2266,7 +2284,13 @@
     "reconciles": "The parts add up to the figure above",
     "doesNotReconcile": "Warning: the parts do not add up to the figure above",
     "copyExplanation": "Copy explanation",
-    "explanationCopied": "Explanation copied"
+    "explanationCopied": "Explanation copied",
+    "mobileWallet": "Mobile wallet",
+    "withdrawal": "Withdrawal",
+    "transferIn": "Transfer in",
+    "transferOut": "Transfer out",
+    "adjustment": "Adjustment",
+    "cashAccount": "Cash account"
   },
   "companyFinance": {
     "dashboardTitle": "Company Finance Dashboard",
@@ -2445,7 +2469,8 @@
     "scanReport": "Scan Report",
     "invoiceReport": "Invoice Report",
     "businessAnalytics": "Business Analytics",
-    "monthlyProfitReport": "Monthly Profit Report"
+    "monthlyProfitReport": "Monthly Profit Report",
+    "platformReport": "Platform report"
   },
   "settings": {
     "title": "Settings",
@@ -2631,7 +2656,8 @@
     "openAdvancedSettings": "Open advanced settings",
     "ipWhitelist": "IP whitelist",
     "landingVariantProfessional": "Professional page",
-    "landingVariantProfessionalDesc": "Bright editorial layout in amber – large type, bento, and ample whitespace"
+    "landingVariantProfessionalDesc": "Bright editorial layout in amber – large type, bento, and ample whitespace",
+    "example": "Example"
   },
   "blog": {
     "title": "Blog",
@@ -2678,7 +2704,14 @@
     "postContent": "Post Content",
     "featuredImage": "Featured Image",
     "readMore": "Read More",
-    "noPostsYet": "No posts yet."
+    "noPostsYet": "No posts yet.",
+    "categories": {
+      "announcement": "Announcement",
+      "news": "News",
+      "promotion": "Promotion",
+      "update": "Update",
+      "guide": "Guide"
+    }
   },
   "portal": {
     "title": "Customer Portal",
@@ -3065,7 +3098,8 @@
     "actionCannotBeUndone": "This action cannot be undone",
     "searching": "Searching...",
     "sending": "Sending...",
-    "statusUpdated": "Status updated successfully"
+    "statusUpdated": "Status updated successfully",
+    "invoiceDownloaded": "Invoice downloaded"
   },
   "tables": {
     "noData": "No data available",
@@ -3133,7 +3167,11 @@
     "characters": "characters",
     "remaining": "remaining",
     "minimum": "Minimum",
-    "maximum": "Maximum"
+    "maximum": "Maximum",
+    "create": "Create",
+    "creating": "Creating…",
+    "update": "Update",
+    "updating": "Updating…"
   },
   "time": {
     "justNow": "Just now",
@@ -3403,7 +3441,9 @@
     "downloadInvoice": "Download Invoice",
     "sendInvoice": "Send Invoice",
     "invoiceTemplate": "Invoice Template",
-    "invoiceSettings": "Invoice Settings"
+    "invoiceSettings": "Invoice Settings",
+    "invoiceDetails": "Invoice details",
+    "invoice": "Invoice"
   },
   "pricing": {
     "title": "Pricing",
@@ -3928,7 +3968,12 @@
     "healthCleanupNeeded": "Over 1,000 delivered packages need cleanup",
     "healthFailedBackups": "Failed backups detected",
     "noDataYet": "No data to display",
-    "dragOrClick": "Drag file here or click to select"
+    "dragOrClick": "Drag file here or click to select",
+    "csvDetected": "CSV file detected",
+    "invalidFile": "Unsupported file",
+    "csvParsed": "File parsed",
+    "noDataFound": "No data found",
+    "templateDownloaded": "Template downloaded"
   },
   "warehouse": {
     "title": "Warehouse Operations",
@@ -5752,7 +5797,8 @@
     "adminNote": "Admin Note",
     "requestNumber": "Request Number",
     "trackingNumber": "Tracking Number",
-    "customerNote": "Customer Note"
+    "customerNote": "Customer Note",
+    "proofImages": "Proof images"
   },
   "services": {
     "management": "Services Management",

@@ -546,14 +546,17 @@ export default function BatchFinancialReportFull() {
                           </td>
                           <td className="text-center py-4 px-4">
                             <div className="flex items-center justify-center gap-2">
+                              {/* Guarded like the sibling report already is: a
+                                  batch with no revenue printed "NaN%" and a
+                                  bar of width NaN. */}
                               <div className="w-16 h-2 bg-slate-200 dark:bg-slate-800/50 rounded-full overflow-hidden">
-                                <div 
+                                <div
                                   className="h-full bg-gradient-to-r from-indigo-500 to-purple-500 rounded-full"
-                                  style={{ width: `${((item.revenue / financial.totalRevenue) * 100).toFixed(0)}%` }}
+                                  style={{ width: `${financial.totalRevenue > 0 ? Math.min(100, (item.revenue / financial.totalRevenue) * 100).toFixed(0) : 0}%` }}
                                 />
                               </div>
                               <span className="text-sm font-medium text-slate-600 dark:text-slate-300">
-                                {((item.revenue / financial.totalRevenue) * 100).toFixed(0)}%
+                                {financial.totalRevenue > 0 ? ((item.revenue / financial.totalRevenue) * 100).toFixed(0) : "0"}%
                               </span>
                             </div>
                           </td>

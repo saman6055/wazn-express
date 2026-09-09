@@ -1507,11 +1507,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           const daysUntil = Math.floor((eta.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
                           
                           if (daysOverdue > 5) {
-                            return <Badge variant="destructive" className="animate-pulse">🔴 {daysOverdue} ڕ{t("auto.text_d4f9af")}</Badge>;
+                            return <Badge variant="destructive" className="animate-pulse">🔴 {daysOverdue} {t("auto.text_d4f9af")}</Badge>;
                           } else if (daysOverdue > 0) {
-                            return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysOverdue} ڕ{t("auto.text_d4f9af")}</Badge>;
+                            return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysOverdue} {t("auto.text_d4f9af")}</Badge>;
                           } else if (daysUntil <= 2) {
-                            return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60">⏰ {daysUntil} ڕ{t("auto.text_60c814")}</Badge>;
+                            return <Badge variant="outline" className="bg-blue-50 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 border-blue-200 dark:border-blue-800/60">⏰ {daysUntil} {t("auto.text_60c814")}</Badge>;
                           }
                         }
                         
@@ -1521,11 +1521,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           const daysSince = Math.floor((now.getTime() - departure.getTime()) / (1000 * 60 * 60 * 24));
                           
                           if (daysSince > 30) {
-                            return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
+                            return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} {t("auto.text_0145a3")}</Badge>;
                           } else if (daysSince > 15) {
-                            return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
+                            return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysSince} {t("auto.text_0145a3")}</Badge>;
                           }
-                          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} ڕ{t("auto.text_0145a3")}</Badge>;
+                          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} {t("auto.text_0145a3")}</Badge>;
                         }
                         
                         return <Badge variant="outline" className="bg-gray-50 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800/60">{t("auto.text_ed2a98")} </Badge>;

@@ -148,7 +148,7 @@ const [activeTab, setActiveTab] = useState("pnl");
           <div>
             <h1 className="text-2xl font-bold tracking-tight">{t("auto.text_faf2f8")} </h1>
             <p className="text-muted-foreground">
-              ڕ{t("auto.text_b94fcd")}
+              {t("auto.text_b94fcd")}
             </p>
           </div>
           <div className="flex items-center gap-2">
@@ -275,7 +275,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                 <div>
                   <CardTitle className="flex items-center gap-2">
                     <FileText className="h-5 w-5" />
-                    ڕ{t("auto.text_009b83")}
+                    {t("auto.text_009b83")}
                   </CardTitle>
                   <CardDescription>
                     {monthNames[selectedMonth - 1]} {selectedYear}

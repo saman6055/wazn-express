@@ -321,7 +321,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </div>
 
                   <div className="flex items-center justify-between pt-2">
-                    <Badge variant="outline">ڕ{t("auto.text_97a05e")}: {type.sortOrder}</Badge>
+                    <Badge variant="outline">{t("auto.text_97a05e")}: {type.sortOrder}</Badge>
                     <div className="flex gap-1">
                       <Button
                         variant="ghost"

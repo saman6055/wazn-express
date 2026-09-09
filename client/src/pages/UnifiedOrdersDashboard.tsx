@@ -1,7 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { orderStageOf } from "@/lib/shipmentFilters";
+import { fmtDate } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,6 +20,17 @@ import {
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 
 const COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6'];
+
+/** Sunday-first, matching Date#getDay, for the seven-day chart. */
+const WEEKDAY_LABELS: Record<number, { ku: string; en: string; ar: string; zh: string }> = {
+  0: { ku: 'یەکشەممە', en: 'Sun', ar: 'الأحد', zh: '周日' },
+  1: { ku: 'دووشەممە', en: 'Mon', ar: 'الإثنين', zh: '周一' },
+  2: { ku: 'سێشەممە', en: 'Tue', ar: 'الثلاثاء', zh: '周二' },
+  3: { ku: 'چوارشەممە', en: 'Wed', ar: 'الأربعاء', zh: '周三' },
+  4: { ku: 'پێنجشەممە', en: 'Thu', ar: 'الخميس', zh: '周四' },
+  5: { ku: 'هەینی', en: 'Fri', ar: 'الجمعة', zh: '周五' },
+  6: { ku: 'شەممە', en: 'Sat', ar: 'السبت', zh: '周六' },
+};
 
 export default function UnifiedOrdersDashboard() {
   const { t, language } = useTranslation();
@@ -60,21 +73,57 @@ export default function UnifiedOrdersDashboard() {
 
     commission: allOrders.filter(o => o.type === 'commission').length,
     totalRevenue: allOrders.reduce((sum, o) => sum + (o.sellingPrice || o.totalPrice || 0), 0),
-    pending: allOrders.filter(o => ['pending', 'quoted', 'approved'].includes(o.status)).length,
-    inTransit: allOrders.filter(o => ['purchasing', 'purchased', 'in_transit', 'arrived_china'].includes(o.status)).length,
-    delivered: allOrders.filter(o => o.status === 'delivered').length,
+    /**
+     * Three buckets that add up.
+     *
+     * They used to test for `purchasing`, `purchased` and `arrived_china` —
+     * three statuses the order enum has never held — so "in transit" counted
+     * only literal in_transit, and everything ordered, tracked, sitting in
+     * the China depot, in a batch or waiting in Erbil was counted nowhere.
+     * The tiles never summed to the total beside them. Grouped now through
+     * the shared order ladder (lib/shipmentFilters), which is the same
+     * grouping the portal counts by.
+     */
+    pending: allOrders.filter(o =>
+      orderStageOf(o.status) === null &&
+      !['cancelled', 'refunded', 'returned', 'rejected'].includes(o.status)).length,
+    inTransit: allOrders.filter(o => {
+      const stage = orderStageOf(o.status);
+      return stage === 'in_china' || stage === 'in_transit';
+    }).length,
+    delivered: allOrders.filter(o => orderStageOf(o.status) === 'delivered').length,
   };
 
-  // Chart data
-  const weeklyData = [
-    { name: pickLang(language, { ku: 'شەممە', en: 'Sat', ar: 'السبت', zh: '周六' }), orders: 12, revenue: 450 },
-    { name: pickLang(language, { ku: 'یەکشەممە', en: 'Sun', ar: 'الأحد', zh: '周日' }), orders: 19, revenue: 680 },
-    { name: pickLang(language, { ku: 'دووشەممە', en: 'Mon', ar: 'الإثنين', zh: '周一' }), orders: 15, revenue: 520 },
-    { name: pickLang(language, { ku: 'سێشەممە', en: 'Tue', ar: 'الثلاثاء', zh: '周二' }), orders: 22, revenue: 890 },
-    { name: pickLang(language, { ku: 'چوارشەممە', en: 'Wed', ar: 'الأربعاء', zh: '周三' }), orders: 18, revenue: 720 },
-    { name: pickLang(language, { ku: 'پێنجشەممە', en: 'Thu', ar: 'الخميس', zh: '周四' }), orders: 25, revenue: 950 },
-    { name: pickLang(language, { ku: 'هەینی', en: 'Fri', ar: 'الجمعة', zh: '周五' }), orders: 20, revenue: 800 },
-  ];
+  /**
+   * The last seven days, counted from the orders themselves.
+   *
+   * This was seven hardcoded pairs — 12 orders/$450 on Saturday, 25/$950 on
+   * Thursday — invented numbers drawn as a real chart on a real dashboard.
+   * Whatever the office actually did that week, the picture said the same
+   * thing every time.
+   */
+  const weeklyData = useMemo(() => {
+    const days: { name: string; orders: number; revenue: number }[] = [];
+    const startOfDay = (d: Date) => new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    const today = startOfDay(new Date());
+    for (let back = 6; back >= 0; back--) {
+      const day = new Date(today - back * 86_400_000);
+      const dayStart = day.getTime();
+      const dayEnd = dayStart + 86_400_000;
+      const onDay = allOrders.filter(o => {
+        const created = o.createdAt ? new Date(o.createdAt).getTime() : NaN;
+        return Number.isFinite(created) && created >= dayStart && created < dayEnd;
+      });
+      days.push({
+        name: WEEKDAY_LABELS[day.getDay()]
+          ? pickLang(language, WEEKDAY_LABELS[day.getDay()]!)
+          : fmtDate(day),
+        orders: onDay.length,
+        revenue: Math.round(onDay.reduce((sum, o) => sum + (Number(o.sellingPrice) || Number(o.totalPrice) || 0), 0) * 100) / 100,
+      });
+    }
+    return days;
+  }, [allOrders, language]);
 
   const typeDistribution = [
     { name: pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全包' }), value: stats.fullPackage, color: '#10b981' },

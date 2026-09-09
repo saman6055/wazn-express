@@ -69,7 +69,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
         <div>
           <h1 className="text-2xl font-bold tracking-tight flex items-center gap-2">
             <Users className="h-6 w-6 text-purple-600 dark:text-purple-300" />
-            ڕ{t("auto.text_4d8c25")}
+            {t("auto.text_4d8c25")}
           </h1>
           <p className="text-muted-foreground">{t("auto.text_90dc76")} </p>
         </div>

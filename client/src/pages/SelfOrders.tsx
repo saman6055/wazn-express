@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { Card, CardContent } from "@/components/ui/card";
 import {
@@ -42,17 +43,15 @@ const SHIP_LABEL: Record<string, LangText> = {
   sea: { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" },
 };
 
-const STATUS_LABEL: Record<string, LangText> = {
-  registered: { ku: "تۆمارکراو", en: "Registered", ar: "مُسجّل", zh: "已登记" },
-  in_batch: { ku: "لە باچدا", en: "In Batch", ar: "في الدفعة", zh: "在批次中" },
-  in_transit: { ku: "لە ڕێگادا", en: "In Transit", ar: "في الطريق", zh: "运输中" },
-  customs_processing: { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关处理" },
-  ready_for_delivery: { ku: "ئامادەی گەیاندن", en: "Ready for Delivery", ar: "جاهز للتسليم", zh: "待派送" },
-  out_for_delivery: { ku: "لە گەیاندندا", en: "Out for Delivery", ar: "قيد التوصيل", zh: "派送中" },
-  delivered: { ku: "گەیەنرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" },
-  returned: { ku: "گەڕێنراوە", en: "Returned", ar: "مُرتجَع", zh: "已退回" },
-  cancelled: { ku: "هەڵوەشێنرا", en: "Cancelled", ar: "مُلغى", zh: "已取消" },
-};
+/**
+ * The shared wording, not a tenth copy of it.
+ *
+ * This map was named STATUS_LABEL — shadowing the shared export of that very
+ * name — and disagreed with it on seven of nine values: "تۆمارکراو" where
+ * every other screen says "لە کۆگای چین", "گەیەنرا" where they say
+ * "گەیەندرا". One parcel, two words, depending which page you opened.
+ */
+const STATUS_LABEL = PACKAGE_STATUS_LABEL;
 
 function money(n: number | undefined) {
   return `$${(n ?? 0).toFixed(2)}`;

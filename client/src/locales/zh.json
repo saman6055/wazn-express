@@ -134,7 +134,9 @@
     "downloadFailed": "下载失败",
     "deleteFailed": "删除失败",
     "saveFailed": "保存失败",
-    "loadFailed": "加载失败"
+    "loadFailed": "加载失败",
+    "offlineBanner": "已离线——您的操作已保存",
+    "backOnline": "已恢复连接"
   },
   "errorBoundary": {
     "title": "出错了",
@@ -507,7 +509,14 @@
     "deleted": "已删除",
     "quickActions": "快捷操作",
     "remove": "移除",
-    "mobileNumber": "手机号码"
+    "mobileNumber": "手机号码",
+    "password": "密码",
+    "role": "角色",
+    "change": "更改",
+    "packages": "包裹",
+    "noName": "无名称",
+    "downloading": "下载中…",
+    "downloadPDF": "下载 PDF"
   },
   "nav": {
     "back": "返回",
@@ -627,7 +636,8 @@
     "batchLabelTemplate": "批次标签模板",
     "registrations": "登记记录",
     "awaitingArrival": "尚未到达",
-    "trash": "回收站"
+    "trash": "回收站",
+    "auditSweep": "系统审查"
   },
   "dashboard": {
     "problemsTitle": "问题与待办事项",
@@ -1019,7 +1029,8 @@
       "nameRequired": "客户姓名为必填项",
       "mobileRequired": "手机号码为必填项",
       "passwordRequired": "密码为必填项"
-    }
+    },
+    "customer": "客户"
   },
   "fullPackage": {
     "shippingMethodLabel": "运输方式",
@@ -1309,7 +1320,12 @@
     "imagesCount": "张图片",
     "noImages": "无图片",
     "noNotes": "无备注",
-    "searchChip": "搜索"
+    "searchChip": "搜索",
+    "batch": "批次",
+    "commission": "代购",
+    "purchaseRequest": "采购请求",
+    "fullPackage": "全包",
+    "price": "价格"
   },
   "commission": {
     "title": "佣金采购",
@@ -1906,7 +1922,9 @@
       "awb": "无提单号",
       "container": "无集装箱号",
       "flightNumber": "无航班号"
-    }
+    },
+    "reportDownloaded": "报表已下载",
+    "vipCustomers": "VIP 客户"
   },
   "scan": {
     "register": "登记",
@@ -2205,7 +2223,13 @@
     "reconciles": "各部分之和等于上方数字",
     "doesNotReconcile": "警告：各部分之和与上方数字不符",
     "copyExplanation": "复制说明",
-    "explanationCopied": "说明已复制"
+    "explanationCopied": "说明已复制",
+    "mobileWallet": "手机钱包",
+    "withdrawal": "取款",
+    "transferIn": "转入",
+    "transferOut": "转出",
+    "adjustment": "调整",
+    "cashAccount": "现金账户"
   },
   "reports": {
     "title": "报告",
@@ -2302,7 +2326,8 @@
     "scanReport": "扫描报告",
     "invoiceReport": "发票报告",
     "businessAnalytics": "商业分析",
-    "monthlyProfitReport": "月度利润报告"
+    "monthlyProfitReport": "月度利润报告",
+    "platformReport": "平台报表"
   },
   "settings": {
     "title": "设置",
@@ -2487,7 +2512,9 @@
     "teamMemberRole": "职位 / 头衔",
     "teamMemberImageUrl": "图片 URL",
     "teamMemberDescription": "描述",
-    "add": "添加"
+    "add": "添加",
+    "example": "示例",
+    "staffManagement": "员工管理"
   },
   "blog": {
     "title": "博客",
@@ -2534,7 +2561,14 @@
     "featuredImage": "特色图片",
     "latestPosts": "最新文章",
     "readMore": "阅读更多",
-    "noPostsYet": "暂无文章。"
+    "noPostsYet": "暂无文章。",
+    "categories": {
+      "announcement": "公告",
+      "news": "新闻",
+      "promotion": "促销",
+      "update": "更新",
+      "guide": "指南"
+    }
   },
   "portal": {
     "pushPromptTitle": "开启通知",
@@ -2921,7 +2955,8 @@
     "actionCannotBeUndone": "此操作无法撤销",
     "searching": "搜索中...",
     "sending": "发送中...",
-    "statusUpdated": "状态更新成功"
+    "statusUpdated": "状态更新成功",
+    "invoiceDownloaded": "发票已下载"
   },
   "scanning": {
     "title": "扫描",
@@ -3137,7 +3172,11 @@
     "characters": "字符",
     "remaining": "剩余",
     "minimum": "最小",
-    "maximum": "最大"
+    "maximum": "最大",
+    "create": "创建",
+    "creating": "创建中…",
+    "update": "更新",
+    "updating": "更新中…"
   },
   "time": {
     "justNow": "刚刚",
@@ -3407,7 +3446,9 @@
     "downloadInvoice": "下载发票",
     "sendInvoice": "发送发票",
     "invoiceTemplate": "发票模板",
-    "invoiceSettings": "发票设置"
+    "invoiceSettings": "发票设置",
+    "invoiceDetails": "发票明细",
+    "invoice": "发票"
   },
   "pricing": {
     "title": "定价",
@@ -3932,7 +3973,12 @@
     "healthCleanupNeeded": "超过1,000个已送达包裹需要清理",
     "healthFailedBackups": "检测到备份失败",
     "noDataYet": "暂无数据可显示",
-    "dragOrClick": "将文件拖到此处或点击选择"
+    "dragOrClick": "将文件拖到此处或点击选择",
+    "csvDetected": "已识别 CSV 文件",
+    "invalidFile": "不支持的文件",
+    "csvParsed": "文件已解析",
+    "noDataFound": "未找到数据",
+    "templateDownloaded": "模板已下载"
   },
   "warehouse": {
     "title": "仓库操作",
@@ -5629,7 +5675,8 @@
     "adminNote": "管理员备注",
     "requestNumber": "请求编号",
     "trackingNumber": "追踪号",
-    "customerNote": "客户备注"
+    "customerNote": "客户备注",
+    "proofImages": "证明图片"
   },
   "bankAccounts": {
     "pageTitle": "账户管理",

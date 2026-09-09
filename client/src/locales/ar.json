@@ -134,7 +134,9 @@
     "downloadFailed": "فشل التنزيل",
     "deleteFailed": "فشل الحذف",
     "saveFailed": "فشل الحفظ",
-    "loadFailed": "فشل التحميل"
+    "loadFailed": "فشل التحميل",
+    "offlineBanner": "أنت غير متصل — يتم حفظ عملك",
+    "backOnline": "عاد الاتصال"
   },
   "errorBoundary": {
     "title": "حدث خطأ ما",
@@ -507,7 +509,14 @@
     "deleted": "تم الحذف",
     "quickActions": "إجراءات سريعة",
     "remove": "إزالة",
-    "mobileNumber": "رقم الجوال"
+    "mobileNumber": "رقم الجوال",
+    "password": "كلمة المرور",
+    "role": "الدور",
+    "change": "تغيير",
+    "packages": "الطرود",
+    "noName": "بدون اسم",
+    "downloading": "جاري التنزيل…",
+    "downloadPDF": "تنزيل PDF"
   },
   "nav": {
     "back": "رجوع",
@@ -627,7 +636,8 @@
     "batchLabelTemplate": "قالب ملصق الدفعة",
     "registrations": "التسجيلات",
     "awaitingArrival": "لم تصل بعد",
-    "trash": "سلة المحذوفات"
+    "trash": "سلة المحذوفات",
+    "auditSweep": "فحص النظام"
   },
   "dashboard": {
     "problemsTitle": "المشاكل والإجراءات المطلوبة",
@@ -1018,7 +1028,8 @@
       "nameRequired": "اسم العميل مطلوب",
       "mobileRequired": "رقم الجوال مطلوب",
       "passwordRequired": "كلمة المرور مطلوبة"
-    }
+    },
+    "customer": "العميل"
   },
   "fullPackage": {
     "shippingMethodLabel": "طريقة الشحن",
@@ -1308,7 +1319,12 @@
     "imagesCount": "صور",
     "noImages": "لا توجد صور",
     "noNotes": "لا توجد ملاحظات",
-    "searchChip": "بحث"
+    "searchChip": "بحث",
+    "batch": "الدفعة",
+    "commission": "بعمولة",
+    "purchaseRequest": "طلب شراء",
+    "fullPackage": "حزمة كاملة",
+    "price": "السعر"
   },
   "commission": {
     "title": "الشراء بالعمولة",
@@ -1901,7 +1917,9 @@
       "awb": "لا يوجد AWB",
       "container": "لا يوجد رقم حاوية",
       "flightNumber": "لا يوجد رقم رحلة"
-    }
+    },
+    "reportDownloaded": "تم تنزيل التقرير",
+    "vipCustomers": "عملاء VIP"
   },
   "scanning": {
     "title": "المسح",
@@ -2266,7 +2284,13 @@
     "reconciles": "مجموع الأجزاء يساوي الرقم أعلاه",
     "doesNotReconcile": "تحذير: الأجزاء لا تساوي الرقم أعلاه",
     "copyExplanation": "نسخ الشرح",
-    "explanationCopied": "تم نسخ الشرح"
+    "explanationCopied": "تم نسخ الشرح",
+    "mobileWallet": "محفظة الجوال",
+    "withdrawal": "سحب",
+    "transferIn": "تحويل وارد",
+    "transferOut": "تحويل صادر",
+    "adjustment": "تسوية",
+    "cashAccount": "حساب نقدي"
   },
   "companyFinance": {
     "dashboard": "لوحة التحكم",
@@ -2445,7 +2469,8 @@
     "scanReport": "تقرير المسح",
     "invoiceReport": "تقرير الفواتير",
     "businessAnalytics": "تحليلات الأعمال",
-    "monthlyProfitReport": "تقرير الأرباح الشهرية"
+    "monthlyProfitReport": "تقرير الأرباح الشهرية",
+    "platformReport": "تقرير المنصات"
   },
   "settings": {
     "title": "الإعدادات",
@@ -2631,7 +2656,8 @@
     "teamMemberRole": "الدور / المسمى",
     "teamMemberImageUrl": "رابط الصورة URL",
     "teamMemberDescription": "الوصف",
-    "add": "إضافة"
+    "add": "إضافة",
+    "example": "مثال"
   },
   "blog": {
     "title": "المدونة",
@@ -2678,7 +2704,14 @@
     "featuredImage": "الصورة المميزة",
     "latestPosts": "أحدث المنشورات",
     "readMore": "اقرأ المزيد",
-    "noPostsYet": "لا توجد منشورات بعد."
+    "noPostsYet": "لا توجد منشورات بعد.",
+    "categories": {
+      "announcement": "إعلان",
+      "news": "أخبار",
+      "promotion": "عرض",
+      "update": "تحديث",
+      "guide": "دليل"
+    }
   },
   "portal": {
     "title": "بوابة العملاء",
@@ -3065,7 +3098,8 @@
     "actionCannotBeUndone": "لا يمكن التراجع عن هذا الإجراء",
     "searching": "جاري البحث...",
     "sending": "جاري الإرسال...",
-    "statusUpdated": "تم تحديث الحالة بنجاح"
+    "statusUpdated": "تم تحديث الحالة بنجاح",
+    "invoiceDownloaded": "تم تنزيل الفاتورة"
   },
   "tables": {
     "noData": "لا توجد بيانات",
@@ -3133,7 +3167,11 @@
     "characters": "أحرف",
     "remaining": "متبقي",
     "minimum": "الحد الأدنى",
-    "maximum": "الحد الأقصى"
+    "maximum": "الحد الأقصى",
+    "create": "إنشاء",
+    "creating": "جاري الإنشاء…",
+    "update": "تحديث",
+    "updating": "جاري التحديث…"
   },
   "time": {
     "justNow": "الآن",
@@ -3403,7 +3441,9 @@
     "downloadInvoice": "تحميل الفاتورة",
     "sendInvoice": "إرسال الفاتورة",
     "invoiceTemplate": "قالب الفاتورة",
-    "invoiceSettings": "إعدادات الفاتورة"
+    "invoiceSettings": "إعدادات الفاتورة",
+    "invoiceDetails": "تفاصيل الفاتورة",
+    "invoice": "فاتورة"
   },
   "pricing": {
     "title": "الأسعار",
@@ -3928,7 +3968,12 @@
     "healthCleanupNeeded": "أكثر من 1,000 طرد مستلم تحتاج تنظيفاً",
     "healthFailedBackups": "تم اكتشاف نسخ احتياطية فاشلة",
     "noDataYet": "لا توجد بيانات لعرضها",
-    "dragOrClick": "اسحب الملف هنا أو انقر للاختيار"
+    "dragOrClick": "اسحب الملف هنا أو انقر للاختيار",
+    "csvDetected": "تم التعرف على ملف CSV",
+    "invalidFile": "ملف غير مدعوم",
+    "csvParsed": "تمت قراءة الملف",
+    "noDataFound": "لم يتم العثور على بيانات",
+    "templateDownloaded": "تم تنزيل النموذج"
   },
   "warehouse": {
     "title": "عمليات المستودع",
@@ -4527,7 +4572,7 @@
     "text_2175a0": "بدون رقم طلب",
     "text_b16144": "مرتفع",
     "text_6bce13": "الارتفاع",
-    "text_034cc3": "تاريخ,دخول,خروج,صافي\\n",
+    "text_034cc3": "تاريخ,دخول,خروج,صافي\n",
     "text_94c07d": "أخرى",
     "text_8b4e44": "تتبع",
     "text_f82d33": "تمت إضافة التتبع",
@@ -4679,9 +4724,9 @@
     "text_265e3b": "تم إنشاء تقرير PDF",
     "text_ec9a23": "تم تنزيل تقرير الدفعة",
     "text_560031": "تم إنشاء تقرير الشريك PDF",
-    "text_1ac88f": "تقرير الأرباح والخسائر\\n\\n",
+    "text_1ac88f": "تقرير الأرباح والخسائر\n\n",
     "text_2af526": "تم إنشاء تقرير المصروفات PDF",
-    "text_7a9474": "تقرير التحصيل\\n\\n",
+    "text_7a9474": "تقرير التحصيل\n\n",
     "text_5f343f": "إعلان",
     "text_6319ab": "يومي",
     "text_8fb01f": "دليل",
@@ -5694,7 +5739,8 @@
     "adminNote": "ملاحظة المسؤول",
     "requestNumber": "رقم الطلب",
     "trackingNumber": "رقم التتبع",
-    "customerNote": "ملاحظة العميل"
+    "customerNote": "ملاحظة العميل",
+    "proofImages": "صور الإثبات"
   },
   "expenseAlerts": {
     "pageTitle": "نظام تنبيه المصروفات",
