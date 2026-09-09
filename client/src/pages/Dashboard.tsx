@@ -41,7 +41,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
-import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
+import { PACKAGE_STATUS_LABEL, PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
 import { SHIPPING_TYPE_LABEL } from "@/lib/shipmentFilters";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Link } from "wouter";
@@ -188,11 +188,30 @@ export default function Dashboard() {
   const { data: newCustomersCount } = trpc.dashboard.newCustomers.useQuery({ days: 7 });
 
   const { totalPackages, deliveredPackages, inTransitPackages, activeCustomers, deliveryRate } = useMemo(() => {
+    const countOf = (statuses: readonly string[]) =>
+      (packageStats ?? []).reduce(
+        (sum: number, s: { status: string; count: number | string }) =>
+          statuses.includes(s.status) ? sum + Number(s.count) : sum, 0);
+
     const total = packageStats?.reduce((sum: number, s: { count: number | string }) => sum + Number(s.count), 0) || 0;
-    const delivered = Number(packageStats?.find((s: { status: string }) => s.status === "delivered")?.count || 0);
-    const inTransit = Number(packageStats?.find((s: { status: string }) => s.status === "in_transit")?.count || 0);
+    const delivered = countOf(PACKAGE_STAGE_GROUPS.delivered);
+    /**
+     * Everything still moving, not the literal in_transit row alone.
+     *
+     * Counting one status left parcels in customs, ready for pickup and out
+     * for delivery in no tile at all — the number under "in transit" was
+     * always smaller than the number of parcels actually on the road.
+     */
+    const inTransit = countOf([...PACKAGE_STAGE_GROUPS.inTransit, ...PACKAGE_STAGE_GROUPS.arrived]);
     const active = customers?.filter(c => c.isActive).length || 0;
-    const rate = total > 0 ? Math.round((delivered / total) * 100) : 0;
+    /**
+     * Cancelled and returned parcels are not failed deliveries, and counting
+     * them in the denominator dragged the rate down for parcels that were
+     * never going to be delivered.
+     */
+    const closedOut = countOf(["cancelled", "returned"]);
+    const deliverable = total - closedOut;
+    const rate = deliverable > 0 ? Math.round((delivered / deliverable) * 100) : 0;
     return { totalPackages: total, deliveredPackages: delivered, inTransitPackages: inTransit, activeCustomers: active, deliveryRate: rate };
   }, [packageStats, customers]);
 

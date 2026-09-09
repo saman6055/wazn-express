@@ -7,6 +7,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { useState, useMemo } from "react";
 import { 
   TrendingUp, 
@@ -312,14 +313,35 @@ export default function BusinessAnalytics() {
             <CardContent>
               <div className="space-y-3">
                 {packageStats?.map((stat: any, index: number) => {
-                  const statusColors: Record<string, { bg: string; text: string; label: string }> = {
-                    registered: { bg: 'bg-blue-100 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300', label: pickLang(language, { ku: 'تۆمارکراو', en: 'Registered', ar: 'مسجل', zh: '已登记' }) },
-                    in_transit: { bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300', label: pickLang(language, { ku: 'لە ڕێگادا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }) },
-                    arrived: { bg: 'bg-purple-100 dark:bg-purple-950/40', text: 'text-purple-700 dark:text-purple-300', label: pickLang(language, { ku: 'گەیشتووە', en: 'Arrived', ar: 'وصل', zh: '已到达' }) },
-                    delivered: { bg: 'bg-green-100 dark:bg-green-950/40', text: 'text-green-700 dark:text-green-300', label: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }) },
-                    customs: { bg: 'bg-orange-100 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-300', label: pickLang(language, { ku: 'گومرک', en: 'Customs', ar: 'الجمارك', zh: '海关' }) },
+                  /**
+                   * Colours only. The words come from the shared package map.
+                   *
+                   * This map carried its own labels, keyed partly on BATCH
+                   * statuses ("arrived", "customs") that a package row can
+                   * never hold — so every real package state except three
+                   * fell through and printed the raw enum
+                   * ("customs_processing") beside a Kurdish count. It also
+                   * spelled customs "گومرک" where the rest of the system
+                   * says "گومرگ".
+                   */
+                  const statusColors: Record<string, { bg: string; text: string }> = {
+                    registered: { bg: 'bg-blue-100 dark:bg-blue-950/40', text: 'text-blue-700 dark:text-blue-300' },
+                    in_batch: { bg: 'bg-purple-100 dark:bg-purple-950/40', text: 'text-purple-700 dark:text-purple-300' },
+                    in_transit: { bg: 'bg-amber-100 dark:bg-amber-950/40', text: 'text-amber-700 dark:text-amber-300' },
+                    customs_processing: { bg: 'bg-orange-100 dark:bg-orange-950/40', text: 'text-orange-700 dark:text-orange-300' },
+                    ready_for_delivery: { bg: 'bg-cyan-100 dark:bg-cyan-950/40', text: 'text-cyan-700 dark:text-cyan-300' },
+                    out_for_delivery: { bg: 'bg-indigo-100 dark:bg-indigo-950/40', text: 'text-indigo-700 dark:text-indigo-300' },
+                    delivered: { bg: 'bg-green-100 dark:bg-green-950/40', text: 'text-green-700 dark:text-green-300' },
+                    returned: { bg: 'bg-slate-100 dark:bg-slate-900/40', text: 'text-slate-700 dark:text-slate-300' },
+                    cancelled: { bg: 'bg-red-100 dark:bg-red-950/40', text: 'text-red-700 dark:text-red-300' },
                   };
-                  const config = statusColors[stat.status] || { bg: 'bg-gray-100 dark:bg-gray-950/40', text: 'text-gray-700 dark:text-gray-300', label: stat.status };
+                  const colors = statusColors[stat.status] || { bg: 'bg-gray-100 dark:bg-gray-950/40', text: 'text-gray-700 dark:text-gray-300' };
+                  const config = {
+                    ...colors,
+                    label: PACKAGE_STATUS_LABEL[stat.status]
+                      ? pickLang(language, PACKAGE_STATUS_LABEL[stat.status]!)
+                      : stat.status,
+                  };
                   
                   return (
                     <div key={index} className={`flex items-center justify-between p-3 rounded-lg ${config.bg}`}>

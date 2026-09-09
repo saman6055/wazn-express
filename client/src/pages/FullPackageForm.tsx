@@ -13,6 +13,7 @@ import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import {
   ArrowRight,
   Package,
@@ -147,6 +148,8 @@ export default function FullPackageForm() {
 
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   const { data: colorAttrs } = trpc.productAttributes.list.useQuery({ type: "color" });
   const { data: sizeAttrs } = trpc.productAttributes.list.useQuery({ type: "size" });
   const { data: typeAttrs } = trpc.productAttributes.list.useQuery({ type: "productType" });
@@ -567,7 +570,7 @@ export default function FullPackageForm() {
   const dimL = parseFloat(formData.dimensionLength) || 0;
   const dimW = parseFloat(formData.dimensionWidth) || 0;
   const dimH = parseFloat(formData.dimensionHeight) || 0;
-  const volumetricKg = dimL && dimW && dimH ? (dimL * dimW * dimH) / 6000 : 0;
+  const volumetricKg = dimL && dimW && dimH ? (dimL * dimW * dimH) / volumetricDivisor : 0;
   const chargeableKg = Math.max(actualKg, volumetricKg);
   const autoCbm = dimL && dimW && dimH ? (dimL * dimW * dimH) / 1_000_000 : 0;
 
@@ -1301,7 +1304,7 @@ export default function FullPackageForm() {
                           </div>
                           {volumetricKg > 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              {pickLang(language, { ku: "کێشی ئەندازەیی:", en: "Volumetric weight:", ar: "الوزن الحجمي:", zh: "体积重量：" })} ({dimL}×{dimW}×{dimH}) ÷ 6000 = <strong>{volumetricKg.toFixed(3)} kg</strong>
+                              {pickLang(language, { ku: "کێشی ئەندازەیی:", en: "Volumetric weight:", ar: "الوزن الحجمي:", zh: "体积重量：" })} ({dimL}×{dimW}×{dimH}) ÷ {volumetricDivisor} = <strong>{volumetricKg.toFixed(3)} kg</strong>
                             </p>
                           )}
                         </div>

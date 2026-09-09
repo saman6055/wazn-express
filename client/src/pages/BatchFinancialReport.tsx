@@ -48,6 +48,8 @@ import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
 import { generateBatchLabelsHtml, openBatchLabelPrintWindow } from "@/lib/batchLabelPrintUtils";
 import { BatchPrintBoxesSection } from "@/components/delivery/BatchPrintBoxesSection";
@@ -99,7 +101,10 @@ function generatePrintContent(
   batch: { batchCode?: string; shippingType?: string } | null | undefined,
   customer: { name: string; code: string } | null,
   company: CompanyInfo,
-  language: string
+  language: string,
+  /** The install's volumetric divisor. Was a hardcoded 6000, so a printed
+   *  customer report could state a weight the invoice never billed. */
+  divisor: number = DEFAULT_VOLUMETRIC_DIVISOR
 ) {
   const unit = batch?.shippingType === 'sea' ? 'CBM' : 'KG';
   const totalActualWeight = batch?.shippingType === 'sea'
@@ -114,7 +119,7 @@ function generatePrintContent(
         const lengthCm = p.lengthCm || 0;
         const widthCm = p.widthCm || 0;
         const heightCm = p.heightCm || 0;
-        const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+        const volumetricKg = (lengthCm * widthCm * heightCm) / divisor;
         return s + Math.max(actualKg, volumetricKg);
       }, 0);
   
@@ -320,7 +325,7 @@ function generatePrintContent(
             const lengthCm = pkg.lengthCm || 0;
             const widthCm = pkg.widthCm || 0;
             const heightCm = pkg.heightCm || 0;
-            const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
+            const volumetricKg = (lengthCm * widthCm * heightCm) / divisor;
             const chargeableKg = Math.max(actualKg, volumetricKg);
             return `
             <tr>
@@ -811,6 +816,11 @@ export default function BatchFinancialReport() {
     enabled: batchId > 0
   });
 
+  // The configured divisor — the weights on this report and the money beside
+  // them must come from the same rule.
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
+
   const { data: financial, isLoading: financialLoading } = trpc.batches.getFinancialSummary.useQuery({ batchId }, {
     enabled: batchId > 0
   });
@@ -871,14 +881,12 @@ export default function BatchFinancialReport() {
     }).format(amount);
   };
   
-  const statusLabels: Record<string, string> = {
-    preparing: pickLang(language, { ku: "ئامادەکاری", en: "Preparing", ar: "قيد التحضير", zh: "准备中" }),
-    in_transit: pickLang(language, { ku: "لە ڕێگادایە", en: "In transit", ar: "في الطريق", zh: "运输中" }),
-    arrived: pickLang(language, { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }),
-    customs: pickLang(language, { ku: "گومرگ", en: "Customs", ar: "الجمارك", zh: "海关" }),
-    delivered: pickLang(language, { ku: "گەیەندراوە", en: "Delivered", ar: "تم التسليم", zh: "已送达" }),
-    closed: pickLang(language, { ku: "داخراوە", en: "Closed", ar: "مغلقة", zh: "已关闭" })
-  };
+  // The shared map. The private one this replaces was missing at_depot (so a
+  // batch in the Erbil depot printed the raw enum on a customer report) and
+  // spelled in-transit "لە ڕێگادایە" where the sibling report said "لە ڕێگادا".
+  const statusLabels: Record<string, string> = Object.fromEntries(
+    (Object.keys(STATUS_LABEL) as BatchStatus[]).map(s => [s, pickLang(language, STATUS_LABEL[s])])
+  );
   
   if (isLoading) {
     return (
@@ -1349,7 +1357,7 @@ export default function BatchFinancialReport() {
                         : customerPackages.reduce((sum, p) => {
                             const actualWeight = p.weightKg || 0;
                             const volumetricWeight = (p.lengthCm && p.widthCm && p.heightCm) 
-                              ? (p.lengthCm * p.widthCm * p.heightCm) / 6000 
+                              ? (p.lengthCm * p.widthCm * p.heightCm) / volumetricDivisor 
                               : 0;
                             return sum + Math.max(actualWeight, volumetricWeight);
                           }, 0).toFixed(2)
@@ -1404,7 +1412,7 @@ export default function BatchFinancialReport() {
                             : (() => {
                                 const actualWeight = pkg.weightKg || 0;
                                 const volumetricWeight = (pkg.lengthCm && pkg.widthCm && pkg.heightCm) 
-                                  ? (pkg.lengthCm * pkg.widthCm * pkg.heightCm) / 6000 
+                                  ? (pkg.lengthCm * pkg.widthCm * pkg.heightCm) / volumetricDivisor 
                                   : 0;
                                 const chargeableWeight = Math.max(actualWeight, volumetricWeight);
                                 const isVolumetric = volumetricWeight > actualWeight && volumetricWeight > 0;
@@ -1458,7 +1466,7 @@ export default function BatchFinancialReport() {
                           : customerPackages.reduce((sum, p) => {
                               const actualWeight = p.weightKg || 0;
                               const volumetricWeight = (p.lengthCm && p.widthCm && p.heightCm) 
-                                ? (p.lengthCm * p.widthCm * p.heightCm) / 6000 
+                                ? (p.lengthCm * p.widthCm * p.heightCm) / volumetricDivisor 
                                 : 0;
                               return sum + Math.max(actualWeight, volumetricWeight);
                             }, 0).toFixed(2)

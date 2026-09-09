@@ -17,6 +17,8 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { customerCodeOnly } from "@shared/customerCode";
 import { readableError, editableSnapshot, advancePayload, numericPayload } from "@/lib/commissionEditUtils";
 import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
 import {
@@ -124,6 +126,8 @@ export default function CommissionForm() {
   // Fetch customers and suppliers
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   const { data: colorAttrs } = trpc.productAttributes.list.useQuery({ type: "color" });
   const { data: sizeAttrs } = trpc.productAttributes.list.useQuery({ type: "size" });
   const { data: typeAttrs } = trpc.productAttributes.list.useQuery({ type: "productType" });
@@ -421,7 +425,7 @@ export default function CommissionForm() {
   const dimL = parseFloat(formData.dimensionLength) || 0;
   const dimW = parseFloat(formData.dimensionWidth) || 0;
   const dimH = parseFloat(formData.dimensionHeight) || 0;
-  const volumetricKg = dimL && dimW && dimH ? (dimL * dimW * dimH) / 6000 : 0;
+  const volumetricKg = dimL && dimW && dimH ? (dimL * dimW * dimH) / volumetricDivisor : 0;
   const chargeableKg = Math.max(actualKg, volumetricKg);
   const autoCbm = dimL && dimW && dimH ? (dimL * dimW * dimH) / 1_000_000 : 0;
 
@@ -687,7 +691,7 @@ export default function CommissionForm() {
                     <>
                       <span>·</span>
                       <span className="font-semibold text-foreground">{selectedCustomer.fullName || selectedCustomer.fullNameKurdish}</span>
-                      <span className="font-mono text-xs" dir="ltr">({selectedCustomer.customerCode})</span>
+                      <span className="font-mono text-xs" dir="ltr">({customerCodeOnly(selectedCustomer.customerCode)})</span>
                     </>
                   )}
                 </div>
@@ -735,7 +739,7 @@ export default function CommissionForm() {
                       className={cn("w-full justify-between h-10", filledCls(formData.customerId))}
                     >
                       {selectedCustomer
-                        ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${selectedCustomer.customerCode})`
+                        ? `${selectedCustomer.fullName || selectedCustomer.fullNameKurdish} (${customerCodeOnly(selectedCustomer.customerCode)})`
                         : pickLang(language, { ku: "کڕیارێک هەڵبژێرە...", en: "Select a customer...", ar: "اختر عميلاً...", zh: "选择客户..." })}
                       <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                     </Button>
@@ -1414,7 +1418,10 @@ export default function CommissionForm() {
                           </div>
                           {volumetricKg > 0 && (
                             <p className="text-xs text-muted-foreground mt-2">
-                              {pickLang(language, { ku: `کێشی ئەندازەیی: (${dimL}×${dimW}×${dimH}) ÷ 6000 = `, en: `Volumetric weight: (${dimL}×${dimW}×${dimH}) ÷ 6000 = `, ar: `الوزن الحجمي: (${dimL}×${dimW}×${dimH}) ÷ 6000 = `, zh: `体积重量：(${dimL}×${dimW}×${dimH}) ÷ 6000 = ` })}<strong>{volumetricKg.toFixed(3)} kg</strong>
+                              {/* The divisor is interpolated, not written in:
+                                  this line taught the clerk a number the
+                                  system might not be using. */}
+                              {pickLang(language, { ku: `کێشی ئەندازەیی: (${dimL}×${dimW}×${dimH}) ÷ ${volumetricDivisor} = `, en: `Volumetric weight: (${dimL}×${dimW}×${dimH}) ÷ ${volumetricDivisor} = `, ar: `الوزن الحجمي: (${dimL}×${dimW}×${dimH}) ÷ ${volumetricDivisor} = `, zh: `体积重量：(${dimL}×${dimW}×${dimH}) ÷ ${volumetricDivisor} = ` })}<strong>{volumetricKg.toFixed(3)} kg</strong>
                             </p>
                           )}
                         </div>

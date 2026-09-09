@@ -45,6 +45,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { pickLang } from "@/lib/lang";
+import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 
 // Format currency helper
 function formatCurrency(amount: number | null | undefined): string {
@@ -107,6 +109,10 @@ export default function BatchFinancialReportFull() {
   
   // Fetch customers list
   const { data: customers } = trpc.customers.list.useQuery();
+  // The configured volumetric divisor, so the kg column and the $ column
+  // beside it are computed from the same rule.
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   
   // Fetch customer packages when modal opens
   const { data: customerPackages, isLoading: packagesLoading } = trpc.batches.getCustomerPackages.useQuery(
@@ -133,14 +139,18 @@ export default function BatchFinancialReportFull() {
 
   const isProfitable = (financial?.profit || 0) >= 0;
   
-  // Status labels
-  const statusLabels: Record<string, string> = {
-    pending: pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' }),
-    in_transit: pickLang(language, { ku: 'لە ڕێگادا', en: 'In transit', ar: 'قيد النقل', zh: '运输中' }),
-    arrived: pickLang(language, { ku: 'گەیشتووە', en: 'Arrived', ar: 'وصلت', zh: '已到达' }),
-    delivered: pickLang(language, { ku: 'گەیشتووە بە کڕیار', en: 'Delivered to customer', ar: 'تم التسليم للزبون', zh: '已交付客户' }),
-    cancelled: pickLang(language, { ku: 'هەڵوەشاوەتەوە', en: 'Cancelled', ar: 'ملغاة', zh: '已取消' })
-  };
+  /**
+   * The batch's status name, from the shared map.
+   *
+   * The private map this replaces was keyed on the wrong ladder entirely:
+   * `pending` and `cancelled` are not batch statuses, while `preparing`,
+   * `customs`, `at_depot` and `closed` — four real ones — were missing, so a
+   * batch in the Erbil depot printed the raw value `at_depot` on a report
+   * that goes to a customer.
+   */
+  const statusLabels: Record<string, string> = Object.fromEntries(
+    (Object.keys(STATUS_LABEL) as BatchStatus[]).map(s => [s, pickLang(language, STATUS_LABEL[s])])
+  );
 
   const shippingTypeLabel = batch?.shippingType === 'sea'
     ? pickLang(language, { ku: 'دەریایی', en: 'Sea', ar: 'بحري', zh: '海运' })
@@ -698,7 +708,7 @@ export default function BatchFinancialReportFull() {
                         : customerPackages.reduce((sum, p) => {
                             const actualWeight = p.weightKg || 0;
                             const volumetricWeight = (p.lengthCm && p.widthCm && p.heightCm) 
-                              ? (p.lengthCm * p.widthCm * p.heightCm) / 6000 
+                              ? (p.lengthCm * p.widthCm * p.heightCm) / volumetricDivisor
                               : 0;
                             return sum + Math.max(actualWeight, volumetricWeight);
                           }, 0).toFixed(2)
@@ -732,7 +742,7 @@ export default function BatchFinancialReportFull() {
                     {customerPackages.map((pkg, idx) => {
                       const actualWeight = pkg.weightKg || 0;
                       const volumetricWeight = (pkg.lengthCm && pkg.widthCm && pkg.heightCm) 
-                        ? (pkg.lengthCm * pkg.widthCm * pkg.heightCm) / 6000 
+                        ? (pkg.lengthCm * pkg.widthCm * pkg.heightCm) / volumetricDivisor
                         : 0;
                       const chargeableWeight = Math.max(actualWeight, volumetricWeight);
                       

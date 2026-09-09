@@ -56,6 +56,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
+import { orderStatusLabel } from "@/lib/shipmentFilters";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 
@@ -72,31 +73,50 @@ const statusColors: Record<string, string> = {
   cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
 };
 
-const getStatusLabels = (language: string): Record<string, string> => ({
-  pending: pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" }),
-  approved: pickLang(language, { ku: "پەسەندکراو", en: "Approved", ar: "تمت الموافقة", zh: "已批准" }),
-  ordered: pickLang(language, { ku: "کڕدرا", en: "Ordered", ar: "تم الطلب", zh: "已下单" }),
-  tracking_added: pickLang(language, { ku: "تراکینگ زیادکرا", en: "Tracking added", ar: "تمت إضافة التتبع", zh: "已添加追踪号" }),
-  in_china_warehouse: pickLang(language, { ku: "لە کۆگای چین", en: "In China warehouse", ar: "في مستودع الصين", zh: "在中国仓库" }),
-  in_batch: pickLang(language, { ku: "لە باچ", en: "In batch", ar: "في الدفعة", zh: "在批次中" }),
-  in_transit: pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" }),
-  arrived: pickLang(language, { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }),
-  delivered: pickLang(language, { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }),
-  cancelled: pickLang(language, { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغاة", zh: "已取消" }),
-});
+/**
+ * The order ladder, spelled once.
+ *
+ * It was written out twice in this one file, and the two copies disagreed
+ * with the shared `orderStatusLabel` besides: "گەیشتووە / Arrived" for a
+ * shipment that reached IRAQ, where the shared wording is "گەیشتە عێراق /
+ * Reached Iraq" — the difference a customer most wants — and Arabic
+ * "قيد الشحن" against the shared "في الطريق". Everything the shared map
+ * knows is used; the few statuses it deliberately leaves out (quotes,
+ * approvals, refunds) keep their local wording here.
+ */
+const EXTRA_ORDER_LABELS: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+  pending_quote: { ku: "چاوەڕوانی نرخ", en: "Awaiting quote", ar: "بانتظار التسعير", zh: "待报价" },
+  quoted: { ku: "نرخ دراوە", en: "Quoted", ar: "تم التسعير", zh: "已报价" },
+  pending: { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" },
+  approved: { ku: "پەسەندکراو", en: "Approved", ar: "تمت الموافقة", zh: "已批准" },
+  rejected: { ku: "ڕەتکرایەوە", en: "Rejected", ar: "مرفوض", zh: "已拒绝" },
+  ordered: { ku: "کڕدرا", en: "Ordered", ar: "تم الطلب", zh: "已下单" },
+  tracking_added: { ku: "تراکینگ زیادکرا", en: "Tracking added", ar: "تمت إضافة التتبع", zh: "已添加追踪号" },
+  quality_check: { ku: "پشکنینی جۆرایەتی", en: "Quality check", ar: "فحص الجودة", zh: "质检中" },
+  cancelled: { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغاة", zh: "已取消" },
+  refunded: { ku: "پارە گەڕێندرایەوە", en: "Refunded", ar: "تم الاسترداد", zh: "已退款" },
+  returned: { ku: "گەڕێندراوەتەوە", en: "Returned", ar: "مُرتجع", zh: "已退回" },
+};
 
-const getStatusOptions = (language: string) => [
-  { value: "pending", label: pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" }) },
-  { value: "approved", label: pickLang(language, { ku: "پەسەندکراو", en: "Approved", ar: "تمت الموافقة", zh: "已批准" }) },
-  { value: "ordered", label: pickLang(language, { ku: "کڕدرا", en: "Ordered", ar: "تم الطلب", zh: "已下单" }) },
-  { value: "tracking_added", label: pickLang(language, { ku: "تراکینگ زیادکرا", en: "Tracking added", ar: "تمت إضافة التتبع", zh: "已添加追踪号" }) },
-  { value: "in_china_warehouse", label: pickLang(language, { ku: "لە کۆگای چین", en: "In China warehouse", ar: "في مستودع الصين", zh: "在中国仓库" }) },
-  { value: "in_batch", label: pickLang(language, { ku: "لە باچ", en: "In batch", ar: "في الدفعة", zh: "在批次中" }) },
-  { value: "in_transit", label: pickLang(language, { ku: "لە ڕێگادا", en: "In transit", ar: "قيد الشحن", zh: "运输中" }) },
-  { value: "arrived", label: pickLang(language, { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" }) },
-  { value: "delivered", label: pickLang(language, { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" }) },
-  { value: "cancelled", label: pickLang(language, { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغاة", zh: "已取消" }) },
+const ORDER_STATUS_ORDER = [
+  "pending_quote", "quoted", "pending", "approved", "rejected", "ordered",
+  "tracking_added", "in_china_warehouse", "quality_check", "in_batch",
+  "in_transit", "arrived", "ready_for_delivery", "delivered", "cancelled",
+  "refunded", "returned",
 ];
+
+const orderLabel = (status: string, language: string): string => {
+  const shared = orderStatusLabel(status);
+  if (shared) return pickLang(language, shared);
+  const extra = EXTRA_ORDER_LABELS[status];
+  return extra ? pickLang(language, extra) : status.replace(/_/g, " ");
+};
+
+const getStatusLabels = (language: string): Record<string, string> =>
+  Object.fromEntries(ORDER_STATUS_ORDER.map(s => [s, orderLabel(s, language)]));
+
+const getStatusOptions = (language: string) =>
+  ORDER_STATUS_ORDER.map(value => ({ value, label: orderLabel(value, language) }));
 
 export default function CommissionOrders() {
   const { language } = useTranslation();

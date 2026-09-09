@@ -46,6 +46,7 @@ import SafeDeleteOrderDialog from "@/components/SafeDeleteOrderDialog";
 import OrderAuditHistory from "@/components/OrderAuditHistory";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { customerCodeOnly } from "@shared/customerCode";
 import TrackingTimeline, { type TrackingStep } from "@/components/TrackingTimeline";
 import {
   Select,
@@ -514,7 +515,7 @@ export default function CommissionDetail() {
                       <SelectContent>
                         {customers?.map((customer) => (
                           <SelectItem key={customer.id} value={customer.id.toString()}>
-                            {customer.fullName} ({customer.customerCode})
+                            {customer.fullName} ({customerCodeOnly(customer.customerCode)})
                           </SelectItem>
                         ))}
                       </SelectContent>

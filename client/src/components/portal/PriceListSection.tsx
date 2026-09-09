@@ -5,7 +5,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
-import { chargeableWeight } from "@shared/chargeableWeight";
+import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -335,7 +335,9 @@ interface CalcSettings {
   seaMinCbm: number;
   seaSurchargePct: number;
 }
-const DEFAULT_CALC: CalcSettings = { volumetricDivisor: 6000, airMinKg: 1, seaMinCbm: 0.25, seaSurchargePct: 25 };
+// The divisor default comes from the shared constant, not a second copy of
+// the number — the customer's quote and the invoice fall back to one value.
+const DEFAULT_CALC: CalcSettings = { volumetricDivisor: DEFAULT_VOLUMETRIC_DIVISOR, airMinKg: 1, seaMinCbm: 0.25, seaSurchargePct: 25 };
 
 // Localized fallback names per shipping type, used when the admin hasn't set
 // a portal label — so chips never show raw enum values like "air_irregular".

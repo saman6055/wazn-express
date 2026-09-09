@@ -67,6 +67,7 @@ import {
 } from "@/components/ui/select";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import TrackingTimeline, { type TrackingStep } from "@/components/TrackingTimeline";
 
 // Maps an order's status enum to a 0-based stage index on the
@@ -177,6 +178,8 @@ export default function FullPackageDetail() {
 
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   // ¥ exchange rate — MUST be declared before any early returns below
@@ -303,7 +306,9 @@ export default function FullPackageDetail() {
         const l = parseFloat(o.dimensionLength?.toString() || "0") || 0;
         const w = parseFloat(o.dimensionWidth?.toString() || "0") || 0;
         const h = parseFloat(o.dimensionHeight?.toString() || "0") || 0;
-        const vol = (l * w * h) / 6000;
+        // The configured divisor: this number becomes each order's SHARE of a
+        // real shipping cost, so a stale 6000 split real money wrongly.
+        const vol = (l * w * h) / volumetricDivisor;
         measure = Math.max(kg, vol);
       }
       totalMeasure += measure;

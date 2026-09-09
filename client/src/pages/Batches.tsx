@@ -10,6 +10,10 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
 import { batchMissingSellingPrice } from "@shared/batchPricing";
+import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { customerCodeOnly } from "@shared/customerCode";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
+import { STATUS_LABEL, countByStage, isInIraqNotDelivered } from "@/lib/shipmentFilters";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -51,7 +55,9 @@ const statusColors: Record<string, string> = {
   arrived: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
   customs: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
   at_depot: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200",
-  delivered: "bg-green-200 text-green-900 dark:text-green-200",
+  // The one entry with no dark background: on the dark theme this rendered
+  // light-green text on a light-green chip, unreadable.
+  delivered: "bg-green-200 dark:bg-green-950/40 text-green-900 dark:text-green-200",
   closed: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
 };
 
@@ -157,6 +163,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [deletingBatch, setDeletingBatch] = useState<any>(null);
   const [showArchived, setShowArchived] = useState(false);
   const { data: warehouses } = trpc.warehouses.list.useQuery({ activeOnly: true });
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
   const { packages: batchPackages } = useBatchPackages(selectedBatch);
   const { tiers: existingTiers, isSuccess: tiersLoaded } = useBatchPricingTiers(editingBatch?.id ?? null);
@@ -582,7 +590,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const getCountryName = (id: number) => countries?.find(c => c.id === id)?.nameEn || t("common.unknown");
   const getCustomerName = (id: number) => {
     const customer = customers?.find(c => c.id === id);
-    return customer ? `${customer.customerCode} (${customer.fullName})` : `Customer #${id}`;
+    // Codes are stored as "AZ070(Lubna Hikmat Dawood)", so pasting the whole
+    // stored value beside the name printed it twice.
+    return customer ? `${customerCodeOnly(customer.customerCode)} (${customer.fullName})` : `Customer #${id}`;
   };
 
   const formatPrice = (batch: any) => {
@@ -1210,40 +1220,34 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         </div>
 
         {/* Summary Cards */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.preparing")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{batches?.filter(b => b.status === "preparing").length || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.inTransit")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{batches?.filter(b => b.status === "in_transit").length || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.customs")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{batches?.filter(b => b.status === "customs").length || 0}</p>
-            </CardContent>
-          </Card>
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-sm font-medium text-muted-foreground">{t("batches.delivered")}</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-2xl font-bold">{batches?.filter(b => b.status === "delivered").length || 0}</p>
-            </CardContent>
-          </Card>
-        </div>
+        {/* Grouped by stage, so every batch is counted exactly once and the
+            four tiles sum to the list below them. Counting raw statuses left
+            arrived, at_depot and closed in no tile at all — a delivered batch
+            that had been closed dropped out of "Delivered" entirely. */}
+        {(() => {
+          const counts = countByStage((batches ?? []).map(b => b.status));
+          const inIraqNotDelivered = (batches ?? []).filter(b => isInIraqNotDelivered(b.status)).length;
+          const tiles = [
+            { label: pickLang(language, STATUS_LABEL.preparing), value: counts.in_china },
+            { label: pickLang(language, STATUS_LABEL.in_transit), value: counts.in_transit - inIraqNotDelivered },
+            { label: pickLang(language, STATUS_LABEL.arrived), value: inIraqNotDelivered },
+            { label: pickLang(language, STATUS_LABEL.delivered), value: counts.delivered },
+          ];
+          return (
+            <div className="grid gap-4 md:grid-cols-4">
+              {tiles.map(tile => (
+                <Card key={tile.label}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground">{tile.label}</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <p className="text-2xl font-bold tabular-nums">{tile.value}</p>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          );
+        })()}
 
         {awaitingNumber.length > 0 && (
           <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
@@ -1769,8 +1773,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <TableCell>
                         {(() => {
                           const actualWeight = Number(pkg.weightKg) || 0;
-                          const volumetricWeight = (pkg.lengthCm && pkg.widthCm && pkg.heightCm) 
-                            ? (Number(pkg.lengthCm) * Number(pkg.widthCm) * Number(pkg.heightCm)) / 6000 
+                          const volumetricWeight = (pkg.lengthCm && pkg.widthCm && pkg.heightCm)
+                            ? (Number(pkg.lengthCm) * Number(pkg.widthCm) * Number(pkg.heightCm)) / volumetricDivisor
                             : 0;
                           const chargeableWeight = Math.max(actualWeight, volumetricWeight);
                           const isVolumetric = volumetricWeight > actualWeight && volumetricWeight > 0;
@@ -1790,8 +1794,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         })()}
                       </TableCell>
                       <TableCell>
-                        <Badge variant="outline" className="capitalize">
-                          {pkg.status.replace(/_/g, " ")}
+                        {/* The shared wording — this leaked the raw enum,
+                            "customs processing" in Latin on a Kurdish page. */}
+                        <Badge variant="outline" title={pkg.status}>
+                          {PACKAGE_STATUS_LABEL[pkg.status]
+                            ? pickLang(language, PACKAGE_STATUS_LABEL[pkg.status]!)
+                            : pkg.status.replace(/_/g, " ")}
                         </Badge>
                       </TableCell>
                     </TableRow>

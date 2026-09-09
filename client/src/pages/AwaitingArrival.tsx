@@ -3,6 +3,7 @@ import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { customerCodeOnly } from "@shared/customerCode";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { Card, CardContent } from "@/components/ui/card";
@@ -275,8 +276,10 @@ function AwaitedCard({
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center gap-2">
-            <span className="rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 px-2.5 py-1 font-mono text-xs font-medium text-white shadow-sm shadow-blue-500/25">
-              {row.customerCode || "—"}
+            {/* The short code: the stored value carries the name too, which
+                overflowed this chip and repeated the name shown beside it. */}
+            <span className="shrink-0 rounded-lg bg-gradient-to-br from-sky-500 to-blue-600 px-2.5 py-1 font-mono text-xs font-medium text-white shadow-sm shadow-blue-500/25">
+              {customerCodeOnly(row.customerCode) || "—"}
             </span>
             <span className="truncate text-sm font-medium">{row.customerName || "—"}</span>
 

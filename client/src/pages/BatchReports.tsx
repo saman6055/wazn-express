@@ -13,6 +13,7 @@ import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
+import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { 
   Package, DollarSign, TrendingUp, TrendingDown, Plane, Ship, AlertTriangle,
   Eye, Search, Filter, Download, FileSpreadsheet, Printer, BarChart3,
@@ -129,6 +130,8 @@ export default function BatchReports() {
   const { data: batchesResponse, isLoading } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
   const { data: packages } = trpc.packages.list.useQuery({ pageSize: 10000 });
+  const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
+  const divisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   const { data: settings } = trpc.settings.list.useQuery();
 
   const monthOptions = useMemo(() => getMonthOptions(), []);
@@ -147,13 +150,13 @@ export default function BatchReports() {
       let totalCbm = 0;
       
       for (const pkg of batchPackages) {
+        // The shared rule with the configured divisor. A hardcoded 6000 here
+        // fed cost, revenue and the profit margin for every row on this page,
+        // so an install that changed the setting reported profits computed on
+        // a weight the invoice never used.
+        const { chargeableKg } = chargeableWeight(pkg, divisor);
         const actualKg = Number(pkg.weightKg) || 0;
-        const lengthCm = Number(pkg.lengthCm) || 0;
-        const widthCm = Number(pkg.widthCm) || 0;
-        const heightCm = Number(pkg.heightCm) || 0;
-        const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-        const chargeableKg = Math.max(actualKg, volumetricKg);
-        
+
         totalChargeableWeight += chargeableKg;
         totalActualWeight += actualKg;
         totalCbm += Number(pkg.volumeCbm) || 0;
@@ -186,7 +189,7 @@ export default function BatchReports() {
         profitMargin
       };
     });
-  }, [batches, packages]);
+  }, [batches, packages, divisor]);
 
   // Filter batches
   const filteredBatches = useMemo(() => {
