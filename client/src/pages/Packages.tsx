@@ -173,16 +173,36 @@ const PackageTableRow = memo(function PackageTableRow({
   return (
     <TableRow className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
       <TableCell>
-        {/* The order's own number, not the internal package code — the code
-            meant nothing at the counter. A self-order parcel has none. */}
-        {(pkg as any).orderCode ? (
-          <div className="flex items-center gap-1">
-            <span dir="ltr" className="font-mono text-sm">{(pkg as any).orderCode}</span>
-            <CopyButton value={(pkg as any).orderCode} label="کۆپی ئۆردەر نەمبەر" />
-          </div>
-        ) : (
-          <span className="text-muted-foreground">—</span>
-        )}
+        {/* Ordered goods carry BOTH numbers: the system's (CM-…/FP-…) and
+            the platform's own (the Taobao/1688 order id) — each with its
+            copy. A self-order has no order, so its system number is the
+            package code, and that alone, per the owner. */}
+        {(() => {
+          const orderCode = (pkg as any).orderCode as string | null;
+          const platformNo = ((pkg as any).platformOrderNumber || (pkg as any).supplierOrderNumber) as string | null;
+          if (orderCode) {
+            return (
+              <div className="space-y-0.5">
+                <div className="flex items-center gap-1">
+                  <span dir="ltr" className="font-mono text-sm">{orderCode}</span>
+                  <CopyButton value={orderCode} label="کۆپی ئۆردەری سیستەم" />
+                </div>
+                {platformNo && (
+                  <div className="flex items-center gap-1">
+                    <span dir="ltr" className="font-mono text-[11px] text-muted-foreground">{platformNo}</span>
+                    <CopyButton value={platformNo} label="کۆپی ئۆردەری پلاتفۆرم" />
+                  </div>
+                )}
+              </div>
+            );
+          }
+          return (
+            <div className="flex items-center gap-1">
+              <span dir="ltr" className="font-mono text-sm text-muted-foreground">{pkg.packageCode}</span>
+              <CopyButton value={pkg.packageCode} label="کۆپی کۆدی سیستەم" />
+            </div>
+          );
+        })()}
       </TableCell>
       <TableCell>
         {(() => {

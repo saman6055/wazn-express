@@ -418,6 +418,11 @@ export async function getAllPackages(options: {
     // The order's own number — the table shows this, not the internal
     // package code; a self-order parcel simply has none.
     orderCode: fullPackageOrders.orderCode,
+    // The number the platform (Taobao/1688) gave the purchase. Two columns
+    // because both have been used over time; the screen shows whichever is
+    // filled, preferring the one the order forms write today.
+    platformOrderNumber: fullPackageOrders.orderNumber,
+    supplierOrderNumber: fullPackageOrders.supplierOrderNumber,
   })
     .from(packages)
     .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
