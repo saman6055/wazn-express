@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -64,6 +64,18 @@ const STATION_META: Record<JourneyStation, {
   },
 };
 
+/** Dates as plain numbers, the way the owner reads them: 8.9.2026. */
+const fmtDate = (d: Date) => `${d.getDate()}.${d.getMonth() + 1}.${d.getFullYear()}`;
+const fmtDateTime = (d: Date) =>
+  `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")} · ${fmtDate(d)}`;
+
+const BOX_STATUS_LABEL: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+  open: { ku: "ئامادە دەکرێت", en: "Being packed", ar: "قيد التجهيز", zh: "装箱中" },
+  ready: { ku: "ئامادەیە بۆ وەرگرتن", en: "Ready to collect", ar: "جاهز للاستلام", zh: "待领取" },
+  in_transit: { ku: "لە گەیاندندایە", en: "Out for delivery", ar: "قيد التوصيل", zh: "配送中" },
+  delivered: { ku: "گەیەنراوە", en: "Delivered", ar: "تم التسليم", zh: "已送达" },
+};
+
 const SOURCE_LABEL: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
   full_package: { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "全包" },
   commission: { ku: "عمولە", en: "Commission", ar: "عمولة", zh: "代购" },
@@ -84,7 +96,12 @@ function Thumb({ item, onOpen }: { item: JourneyItem; onOpen: (src: string) => v
   return (
     <button
       type="button"
-      onClick={() => onOpen(item.photo!)}
+      onClick={(e) => {
+        // The row behind this opens the detail view; the thumbnail opens the
+        // photo. One tap, one meaning.
+        e.stopPropagation();
+        onOpen(item.photo!);
+      }}
       aria-label={pickLang(language, { ku: "گەورەکردنی وێنە", en: "Enlarge photo", ar: "تكبير الصورة", zh: "放大图片" })}
       className="relative h-11 w-11 shrink-0 overflow-hidden rounded-lg border border-border"
     >
@@ -98,51 +115,130 @@ function Thumb({ item, onOpen }: { item: JourneyItem; onOpen: (src: string) => v
   );
 }
 
+function DetailRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="flex items-center justify-between gap-3 py-1">
+      <span className="shrink-0 text-muted-foreground">{label}</span>
+      <span className="min-w-0 truncate text-end font-medium">{children}</span>
+    </div>
+  );
+}
+
 function ItemRow({ item, onOpenPhoto }: { item: JourneyItem; onOpenPhoto: (src: string) => void }) {
   const { language } = useLanguage();
+  // Tapping the row opens everything known about the piece — batch, box,
+  // the dates — without leaving the panel.
+  const [openDetail, setOpenDetail] = useState(false);
   const pending = item.station === "not_arrived";
   const sourceKey = item.source === "order" ? (item.orderType ?? "commission") : item.source;
   const stationLabel = pending
     ? null
     : pickLang(language, STATION_META[item.station].label);
+  const boxLabel = item.boxStatus ? BOX_STATUS_LABEL[item.boxStatus] : null;
 
   return (
-    <div className={cn("flex items-center gap-3 border-t border-border px-3 py-2", pending && "bg-rose-50/50 dark:bg-rose-950/20")}>
-      <Thumb item={item} onOpen={onOpenPhoto} />
-      <div className="min-w-0 flex-1">
-        <p dir="ltr" className="truncate font-mono text-sm font-semibold text-end">
-          {item.tracking ?? pickLang(language, { ku: "بێ تراک", en: "No tracking", ar: "بدون تتبع", zh: "无运单号" })}
-        </p>
-        <p className="truncate text-xs text-muted-foreground">
-          {item.title || "—"}
-          {item.weightKg != null && <span dir="ltr" className="tabular-nums"> · {item.weightKg.toFixed(2)} kg</span>}
-          {item.volumeCbm != null && item.weightKg == null && <span dir="ltr" className="tabular-nums"> · {item.volumeCbm.toFixed(3)} m³</span>}
-          {item.batchCode && <span dir="ltr"> · {item.batchCode}</span>}
-          {item.boxCode && <span dir="ltr"> · {item.boxCode}</span>}
-          {pending && (
-            <span className="text-rose-600 dark:text-rose-400">
-              {" · "}
-              {pickLang(language, {
-                ku: `${item.waitingDays} ڕۆژە چاوەڕوانە`,
-                en: `waiting ${item.waitingDays} days`,
-                ar: `بانتظار ${item.waitingDays} يومًا`,
-                zh: `已等待 ${item.waitingDays} 天`,
-              })}
-            </span>
-          )}
-        </p>
-      </div>
-      <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-        {pickLang(language, SOURCE_LABEL[sourceKey] ?? SOURCE_LABEL.scan)}
-      </span>
-      {pending ? (
-        <span className="shrink-0 rounded-full bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:text-rose-300">
-          {pickLang(language, { ku: "لەگەڵ فرۆشیار چێک بکە", en: "Check with the seller", ar: "راجع البائع", zh: "请与卖家核实" })}
-        </span>
-      ) : (
+    <div className={cn("border-t border-border", pending && "bg-rose-50/50 dark:bg-rose-950/20")}>
+      <div
+        role="button"
+        tabIndex={0}
+        aria-expanded={openDetail}
+        onClick={() => setOpenDetail(o => !o)}
+        onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setOpenDetail(o => !o); } }}
+        className="flex cursor-pointer items-center gap-3 px-3 py-2"
+      >
+        <Thumb item={item} onOpen={onOpenPhoto} />
+        <div className="min-w-0 flex-1">
+          <p dir="ltr" className="truncate font-mono text-sm font-semibold text-end">
+            {item.tracking ?? pickLang(language, { ku: "بێ تراک", en: "No tracking", ar: "بدون تتبع", zh: "无运单号" })}
+          </p>
+          <p className="truncate text-xs text-muted-foreground">
+            {item.title || "—"}
+            {item.weightKg != null && <span dir="ltr" className="tabular-nums"> · {item.weightKg.toFixed(2)} kg</span>}
+            {item.volumeCbm != null && item.weightKg == null && <span dir="ltr" className="tabular-nums"> · {item.volumeCbm.toFixed(3)} m³</span>}
+            {item.batchCode && <span dir="ltr"> · {item.batchCode}</span>}
+            {item.boxCode && (
+              <span>
+                {" · "}
+                <span dir="ltr">{item.boxCode}</span>
+                {boxLabel && <span> ({pickLang(language, boxLabel)}{item.boxDate ? ` ${fmtDate(item.boxDate)}` : ""})</span>}
+              </span>
+            )}
+            {pending && (
+              <span className="text-rose-600 dark:text-rose-400">
+                {" · "}
+                {pickLang(language, {
+                  ku: `${item.waitingDays} ڕۆژە چاوەڕوانە`,
+                  en: `waiting ${item.waitingDays} days`,
+                  ar: `بانتظار ${item.waitingDays} يومًا`,
+                  zh: `已等待 ${item.waitingDays} 天`,
+                })}
+              </span>
+            )}
+          </p>
+        </div>
         <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-          {stationLabel}
+          {pickLang(language, SOURCE_LABEL[sourceKey] ?? SOURCE_LABEL.scan)}
         </span>
+        {pending ? (
+          <span className="shrink-0 rounded-full bg-rose-100 dark:bg-rose-900/40 px-2 py-0.5 text-[10px] font-medium text-rose-700 dark:text-rose-300">
+            {pickLang(language, { ku: "لەگەڵ فرۆشیار چێک بکە", en: "Check with the seller", ar: "راجع البائع", zh: "请与卖家核实" })}
+          </span>
+        ) : (
+          <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+            {stationLabel}
+          </span>
+        )}
+        {openDetail
+          ? <ChevronUp className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
+          : <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+      </div>
+
+      {openDetail && (
+        <div className="mx-3 mb-2 rounded-lg bg-muted/50 px-3 py-2 text-xs">
+          {item.packageCode && (
+            <DetailRow label={pickLang(language, { ku: "کۆدی پاکەت", en: "Package code", ar: "كود الطرد", zh: "包裹编号" })}>
+              <span dir="ltr" className="font-mono">{item.packageCode}</span>
+            </DetailRow>
+          )}
+          <DetailRow label={pickLang(language, { ku: "تۆمارکردن", en: "Registered", ar: "التسجيل", zh: "登记" })}>
+            <span dir="ltr" className="tabular-nums">{fmtDate(item.registeredAt)}</span>
+          </DetailRow>
+          {item.scannedAt && (
+            <DetailRow label={pickLang(language, { ku: "سکانی کۆگای چین", en: "Depot scan", ar: "مسح المستودع", zh: "仓库扫描" })}>
+              <span dir="ltr" className="tabular-nums">{fmtDateTime(item.scannedAt)}</span>
+            </DetailRow>
+          )}
+          {item.batchCode && (
+            <DetailRow label={pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}>
+              <span dir="ltr" className="font-mono">{item.batchCode}</span>
+              {item.batchStatus && STATUS_LABEL[item.batchStatus as keyof typeof STATUS_LABEL] && (
+                <span className="text-muted-foreground"> — {pickLang(language, STATUS_LABEL[item.batchStatus as keyof typeof STATUS_LABEL])}</span>
+              )}
+            </DetailRow>
+          )}
+          {item.boxCode && (
+            <DetailRow label={pickLang(language, { ku: "بۆکس", en: "Box", ar: "الصندوق", zh: "箱子" })}>
+              <span dir="ltr" className="font-mono">{item.boxCode}</span>
+              {boxLabel && <span className="text-muted-foreground"> — {pickLang(language, boxLabel)}</span>}
+              {item.boxDate && <span dir="ltr" className="tabular-nums"> · {fmtDateTime(item.boxDate)}</span>}
+            </DetailRow>
+          )}
+          {item.deliveredAt && (
+            <DetailRow label={pickLang(language, { ku: "گەیشتنە دەست", en: "Handed over", ar: "التسليم", zh: "交付" })}>
+              <span dir="ltr" className="tabular-nums">{fmtDateTime(item.deliveredAt)}</span>
+            </DetailRow>
+          )}
+          {item.weightKg != null && (
+            <DetailRow label={pickLang(language, { ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" })}>
+              <span dir="ltr" className="tabular-nums">{item.weightKg.toFixed(2)} kg</span>
+            </DetailRow>
+          )}
+          {item.volumeCbm != null && (
+            <DetailRow label={pickLang(language, { ku: "قەبارە", en: "Volume", ar: "الحجم", zh: "体积" })}>
+              <span dir="ltr" className="tabular-nums">{item.volumeCbm.toFixed(3)} m³</span>
+            </DetailRow>
+          )}
+        </div>
       )}
     </div>
   );
@@ -164,10 +260,8 @@ function CohortCard({ cohort, stationFilter, onOpenPhoto }: {
     : cohort.items;
   if (visible.length === 0) return null;
 
-  const date = new Date(`${cohort.date}T12:00:00`);
-  const dateLabel = new Intl.DateTimeFormat(language === "ku" || language === "ar" ? "ar" : language, {
-    day: "numeric", month: "long", year: "numeric",
-  }).format(date);
+  // Plain numbers, per the owner: 8.9.2026, not a month name to translate.
+  const dateLabel = fmtDate(new Date(`${cohort.date}T12:00:00`));
   const pct = cohort.items.length > 0 ? Math.round((cohort.arrived / cohort.items.length) * 100) : 0;
   const flagged = stationFilter === null && cohort.pending > 0;
 
@@ -182,7 +276,7 @@ function CohortCard({ cohort, stationFilter, onOpenPhoto }: {
         {open ? <ChevronUp className="h-4 w-4 shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 shrink-0 text-muted-foreground" />}
         <div className="min-w-0 flex-1">
           <p className="text-sm font-bold">
-            {dateLabel} · <span className="tabular-nums">{visible.length}</span>
+            <span dir="ltr" className="tabular-nums">{dateLabel}</span> · <span className="tabular-nums">{visible.length}</span>
           </p>
           {/* The arrival bar describes the whole day; under a station filter
               it would describe rows that are not on screen, so it rests. */}

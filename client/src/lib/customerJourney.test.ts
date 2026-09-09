@@ -161,6 +161,30 @@ describe("date cohorts", () => {
   });
 });
 
+describe("the box carries its dates", () => {
+  it("a delivered box stamps the handover date; a packed one only its packing date", () => {
+    const handed = buildCustomerJourney({
+      ...empty,
+      packages: [pkg()],
+      boxed: [{ packageId: 10, boxCode: "BOX-1", boxStatus: "delivered", boxCreatedAt: "2026-09-07T09:00:00", boxDeliveredAt: "2026-09-08T15:30:00" }],
+    }, NOW);
+    const a = handed.orderCohorts.concat(handed.scanCohorts).flatMap(c => c.items)[0]!;
+    expect(a.boxCode).toBe("BOX-1");
+    expect(a.boxStatus).toBe("delivered");
+    expect(a.deliveredAt?.toISOString()).toBe(new Date("2026-09-08T15:30:00").toISOString());
+
+    const packed = buildCustomerJourney({
+      ...empty,
+      packages: [pkg()],
+      boxed: [{ packageId: 10, boxCode: "BOX-2", boxStatus: "ready", boxCreatedAt: "2026-09-07T09:00:00", boxDeliveredAt: null }],
+    }, NOW);
+    const b = packed.orderCohorts.concat(packed.scanCohorts).flatMap(c => c.items)[0]!;
+    expect(b.boxStatus).toBe("ready");
+    expect(b.boxDate?.toISOString()).toBe(new Date("2026-09-07T09:00:00").toISOString());
+    expect(b.deliveredAt).toBeNull();
+  });
+});
+
 describe("photos", () => {
   it("prefers the shop photo, falls back to the scan photo and says which it was", () => {
     const withProduct = buildCustomerJourney({ ...empty, orders: [order()], packages: [pkg()] }, NOW);

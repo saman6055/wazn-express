@@ -1179,6 +1179,8 @@ export async function getCustomerBoxedPackages(customerId: number): Promise<Arra
   boxId: number;
   boxCode: string;
   boxStatus: string;
+  boxCreatedAt: Date;
+  boxDeliveredAt: Date | null;
 }>> {
   const db = await getDb();
   if (!db) return [];
@@ -1187,6 +1189,8 @@ export async function getCustomerBoxedPackages(customerId: number): Promise<Arra
     boxId: deliveryBoxes.id,
     boxCode: deliveryBoxes.boxCode,
     boxStatus: deliveryBoxes.status,
+    boxCreatedAt: deliveryBoxes.createdAt,
+    boxDeliveredAt: deliveryBoxes.deliveredAt,
   })
     .from(deliveryBoxItems)
     .innerJoin(deliveryBoxes, eq(deliveryBoxItems.boxId, deliveryBoxes.id))

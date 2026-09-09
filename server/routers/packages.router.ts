@@ -217,6 +217,7 @@ export const packagesRouter = router({
             photo: firstImage(p.photos),
             description: p.description ?? null,
             createdAt: p.createdAt,
+            deliveredAt: p.deliveredAt ?? null,
           })),
           orders: orders.map(o => ({
             id: o.id,

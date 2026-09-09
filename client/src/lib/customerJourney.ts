@@ -38,6 +38,7 @@ export interface JourneyPackage {
   photo: string | null;
   description: string | null;
   createdAt: string | Date;
+  deliveredAt?: string | Date | null;
 }
 
 export interface JourneyOrder {
@@ -65,6 +66,8 @@ export interface JourneyBoxRow {
   packageId: number;
   boxCode: string;
   boxStatus: string;
+  boxCreatedAt?: string | Date | null;
+  boxDeliveredAt?: string | Date | null;
 }
 
 export interface JourneyBatch {
@@ -96,7 +99,17 @@ export interface JourneyItem {
   weightKg: number | null;
   volumeCbm: number | null;
   batchCode: string | null;
+  /** The batch's raw status, for the shared label maps. */
+  batchStatus: string | null;
   boxCode: string | null;
+  boxStatus: string | null;
+  /** When the box changed hands, else when it was packed. */
+  boxDate: Date | null;
+  packageCode: string | null;
+  /** When the depot scanned it in. */
+  scannedAt: Date | null;
+  /** When it reached the customer — the parcel's own record, else the box's. */
+  deliveredAt: Date | null;
   registeredAt: Date;
   /** Days since registration; the not-arrived station's "check with the seller" clock. */
   waitingDays: number;
@@ -215,6 +228,12 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
     const station = packageStation(pkg, batch, box);
     if (station === null) return null;
     const scanPhoto = base.photo === null && pkg.photo !== null;
+    const boxDate = box ? asDate((box.boxDeliveredAt ?? box.boxCreatedAt ?? "") as string | Date) : null;
+    const deliveredAt = pkg.deliveredAt
+      ? asDate(pkg.deliveredAt)
+      : box?.boxStatus === "delivered" && box.boxDeliveredAt
+        ? asDate(box.boxDeliveredAt)
+        : null;
     return {
       key: base.key,
       source: base.source,
@@ -227,7 +246,13 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
       weightKg: num(pkg.weightKg),
       volumeCbm: num(pkg.volumeCbm),
       batchCode: batch?.batchCode ?? null,
+      batchStatus: batch?.status ?? null,
       boxCode: box?.boxCode ?? null,
+      boxStatus: box?.boxStatus ?? null,
+      boxDate: boxDate && !Number.isNaN(boxDate.getTime()) ? boxDate : null,
+      packageCode: pkg.packageCode,
+      scannedAt: asDate(pkg.createdAt),
+      deliveredAt: deliveredAt && !Number.isNaN(deliveredAt.getTime()) ? deliveredAt : null,
       registeredAt: base.registeredAt,
       waitingDays: Math.max(0, Math.floor((now.getTime() - base.registeredAt.getTime()) / DAY_MS)),
     };
@@ -259,7 +284,13 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
         weightKg: null,
         volumeCbm: null,
         batchCode: null,
+        batchStatus: null,
         boxCode: null,
+        boxStatus: null,
+        boxDate: null,
+        packageCode: null,
+        scannedAt: null,
+        deliveredAt: null,
         waitingDays: Math.max(0, Math.floor((now.getTime() - registeredAt.getTime()) / DAY_MS)),
       });
     }
@@ -291,7 +322,13 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
         weightKg: null,
         volumeCbm: null,
         batchCode: null,
+        batchStatus: null,
         boxCode: null,
+        boxStatus: null,
+        boxDate: null,
+        packageCode: null,
+        scannedAt: null,
+        deliveredAt: null,
         waitingDays: Math.max(0, Math.floor((now.getTime() - registeredAt.getTime()) / DAY_MS)),
       });
     }
