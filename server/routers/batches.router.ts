@@ -1988,6 +1988,20 @@ export const batchesRouter = router({
           entityId: id,
           newValues: data,
         });
+
+        // The owner's 2026-09-09 rule: shipping debt is born when the price
+        // is, not when the batch closes. Idempotent — charges only parcels
+        // not yet charged, and only on batches under the new policy — so it
+        // simply no-ops on every other edit.
+        try {
+          await db.chargeBatchShippingIfDue(id, ctx.user.id);
+        } catch (e) {
+          appLogger.error("[ChargeOnPricing] batch update trigger failed", {
+            batchId: id,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+
         return { success: true };
       }),
 

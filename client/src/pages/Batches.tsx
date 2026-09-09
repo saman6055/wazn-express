@@ -9,6 +9,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
+import { batchMissingSellingPrice } from "@shared/batchPricing";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -1382,6 +1383,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         )}
                         <span className="font-mono font-medium whitespace-nowrap">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
+                        {/* The owner's ask: priced and unpriced batches must
+                            tell apart at a glance — an unpriced one charges
+                            nobody until its price is typed in. */}
+                        {batchMissingSellingPrice(batch, { hasTiers: !!batch.useTieredPricing, hasCustomerPricing: !!(batch as any).hasCustomerPricing }) && (
+                          <Badge variant="outline" className="ms-1 shrink-0 border-amber-300 bg-amber-50 text-[10px] font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
+                            {pickLang(language, { ku: "بێ نرخی گواستنەوە", en: "No shipping price", ar: "بدون سعر شحن", zh: "无运费" })}
+                          </Badge>
+                        )}
                       </div>
                       {/* Everything else about the shipment sits on ONE
                           wrapping chip line. Stacked one-per-line, five short

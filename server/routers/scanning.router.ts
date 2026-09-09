@@ -407,9 +407,22 @@ export const scanningRouter = router({
         // warehouse worker gets an error for something that already worked.
         await notifyStageInApp(pkg.id, 'registered');
 
+        // Scanned straight into a priced new-policy batch: shipping debt
+        // starts now. Idempotent; no-ops for old-rule and unpriced batches.
+        if (input.batchId != null) {
+          try {
+            await db.chargeBatchShippingIfDue(input.batchId, ctx.user.id);
+          } catch (e) {
+            appLogger.error("[ChargeOnPricing] scan-register trigger failed", {
+              batchId: input.batchId,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
+
         return pkg;
       }),
-    
+
     // Get my recent scans (for employee)
     myRecentScans: staffProcedure
       .input(z.object({ limit: z.number().default(50) }))
@@ -525,7 +538,20 @@ export const scanningRouter = router({
           ...(shippingType !== undefined && { shippingType }),
         };
         const updated = await db.updatePackageFields(packageId, fieldsToUpdate);
-        
+
+        // Assigned to a batch from the arrival scanner: if that batch is a
+        // priced new-policy one, the shipping debt starts now. Idempotent.
+        if (batchId != null) {
+          try {
+            await db.chargeBatchShippingIfDue(batchId, ctx.user.id);
+          } catch (e) {
+            appLogger.error("[ChargeOnPricing] inline-assign trigger failed", {
+              batchId,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
+
         // If status changed, create history and scan
         if (status) {
           const pkg = await db.getPackageById(packageId);

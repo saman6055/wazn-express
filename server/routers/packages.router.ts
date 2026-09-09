@@ -870,6 +870,19 @@ export const packagesRouter = router({
           }
         }
 
+        // Registered straight into a priced new-policy batch: the shipping
+        // debt exists from this moment. Idempotent; no-ops everywhere else.
+        if (input.batchId != null && pkg) {
+          try {
+            await db.chargeBatchShippingIfDue(input.batchId, ctx.user.id);
+          } catch (e) {
+            appLogger.error("[ChargeOnPricing] register trigger failed", {
+              batchId: input.batchId,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
+
         return pkg;
       }),
     /**
@@ -1235,6 +1248,20 @@ export const packagesRouter = router({
           },
         });
 
+        // A claim gives the parcel an owner — if it already sits in a priced
+        // new-policy batch, that owner's shipping debt starts now.
+        const claimedBatchId = (updated as { batchId?: number | null } | undefined)?.batchId;
+        if (claimedBatchId != null) {
+          try {
+            await db.chargeBatchShippingIfDue(claimedBatchId, ctx.user.id);
+          } catch (e) {
+            appLogger.error("[ChargeOnPricing] claim trigger failed", {
+              batchId: claimedBatchId,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
+        }
+
         return { ...updated, lateCharge };
       }),
     /**
@@ -1294,6 +1321,18 @@ export const packagesRouter = router({
           entityId: input.packageId,
           newValues: { batchId: input.batchId },
         });
+
+        // A parcel entering a priced new-policy batch owes its shipping from
+        // this moment. Idempotent; no-ops for old-rule and unpriced batches.
+        try {
+          await db.chargeBatchShippingIfDue(input.batchId, ctx.user.id);
+        } catch (e) {
+          appLogger.error("[ChargeOnPricing] assign trigger failed", {
+            batchId: input.batchId,
+            error: e instanceof Error ? e.message : String(e),
+          });
+        }
+
         return { success: true };
       }),
     updateStatus: staffProcedure
