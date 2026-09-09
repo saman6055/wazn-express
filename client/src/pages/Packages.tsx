@@ -444,7 +444,10 @@ const [, setLocation] = useLocation();
   const [editDirectCbm, setEditDirectCbm] = useState(""); // Direct CBM input for sea shipping
   const [editPhotos, setEditPhotos] = useState<string[]>([]); // Package photos
   const [editIsUploading, setEditIsUploading] = useState(false);
-  const [editVolumetricDivisor, setEditVolumetricDivisor] = useState("6000"); // Divisor for volumetric weight
+  // Seeded from the setting below, not the literal: the row behind this
+  // dialog already uses the configured divisor, so a hardcoded 6000 here
+  // showed two different chargeable weights for one parcel on one screen.
+  const [editVolumetricDivisor, setEditVolumetricDivisor] = useState("");
   const [showEditCustomerDropdown, setShowEditCustomerDropdown] = useState(false);
   
   // View Details dialog
@@ -650,7 +653,7 @@ const [, setLocation] = useLocation();
   // Calculate volumetric weight for air shipping: (L × W × H) ÷ divisor
   const editVolumetricWeight = useMemo(() => {
     if (editLengthCm && editWidthCm && editHeightCm) {
-      const divisor = parseFloat(editVolumetricDivisor) || 6000;
+      const divisor = parseFloat(editVolumetricDivisor) || volumetricDivisor;
       return (parseFloat(editLengthCm) * parseFloat(editWidthCm) * parseFloat(editHeightCm)) / divisor;
     }
     return 0;
@@ -923,7 +926,7 @@ const [, setLocation] = useLocation();
     setEditDescription(pkg.description || "");
     setEditDirectCbm(pkg.volumeCbm || "");
     setEditPhotos(pkg.photos ? (typeof pkg.photos === 'string' ? JSON.parse(pkg.photos) : pkg.photos) : []);
-    setEditVolumetricDivisor("6000");
+    setEditVolumetricDivisor(String(volumetricDivisor));
     setShowEditDialog(true);
   };
 
@@ -2023,6 +2026,7 @@ const [, setLocation] = useLocation();
                         type="number"
                         step="1"
                         className="w-28 h-7 text-xs"
+                        placeholder={String(volumetricDivisor)}
                         value={editVolumetricDivisor}
                         onChange={(e) => setEditVolumetricDivisor(e.target.value)}
                       />

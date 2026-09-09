@@ -30,17 +30,28 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { ChevronDown } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 
-const statusColors: Record<string, { bg: string; text: string; labelKey: string }> = {
-  registered: { bg: "bg-blue-100 dark:bg-blue-950/40", text: "text-blue-800 dark:text-blue-200", labelKey: "packages.stRegistered" },
-  in_batch: { bg: "bg-purple-100 dark:bg-purple-950/40", text: "text-purple-800 dark:text-purple-200", labelKey: "packages.stInBatch" },
-  in_transit: { bg: "bg-amber-100 dark:bg-amber-950/40", text: "text-amber-800 dark:text-amber-200", labelKey: "packages.stInTransit" },
-  customs_processing: { bg: "bg-orange-100 dark:bg-orange-950/40", text: "text-orange-800 dark:text-orange-200", labelKey: "packages.stCustoms" },
-  ready_for_delivery: { bg: "bg-cyan-100 dark:bg-cyan-950/40", text: "text-cyan-800 dark:text-cyan-200", labelKey: "packages.stReady" },
-  out_for_delivery: { bg: "bg-indigo-100 dark:bg-indigo-950/40", text: "text-indigo-800 dark:text-indigo-200", labelKey: "packages.stOutForDelivery" },
-  delivered: { bg: "bg-green-100 dark:bg-green-950/40", text: "text-green-800 dark:text-green-200", labelKey: "packages.stDelivered" },
-  cancelled: { bg: "bg-red-100 dark:bg-red-950/40", text: "text-red-800 dark:text-red-200", labelKey: "packages.stCancelled" },
-  returned: { bg: "bg-gray-100 dark:bg-gray-950/40", text: "text-gray-800 dark:text-gray-200", labelKey: "packages.stReturned" },
+/**
+ * Colours here, words from the shared map.
+ *
+ * The `packages.st*` keys this used were a THIRD Kurdish vocabulary for the
+ * nine package states — "تۆمارکراو" where the shared map says "لە کۆگای
+ * چین", and a third spelling of delivered ("گەیێنرا") alongside the shared
+ * "گەیەندرا" and the self-orders page's "گەیەنرا". The keys stay in the
+ * locale files; nothing reads them here any more.
+ */
+const statusColors: Record<string, { bg: string; text: string }> = {
+  registered: { bg: "bg-blue-100 dark:bg-blue-950/40", text: "text-blue-800 dark:text-blue-200" },
+  in_batch: { bg: "bg-purple-100 dark:bg-purple-950/40", text: "text-purple-800 dark:text-purple-200" },
+  in_transit: { bg: "bg-amber-100 dark:bg-amber-950/40", text: "text-amber-800 dark:text-amber-200" },
+  customs_processing: { bg: "bg-orange-100 dark:bg-orange-950/40", text: "text-orange-800 dark:text-orange-200" },
+  ready_for_delivery: { bg: "bg-cyan-100 dark:bg-cyan-950/40", text: "text-cyan-800 dark:text-cyan-200" },
+  out_for_delivery: { bg: "bg-indigo-100 dark:bg-indigo-950/40", text: "text-indigo-800 dark:text-indigo-200" },
+  delivered: { bg: "bg-green-100 dark:bg-green-950/40", text: "text-green-800 dark:text-green-200" },
+  cancelled: { bg: "bg-red-100 dark:bg-red-950/40", text: "text-red-800 dark:text-red-200" },
+  returned: { bg: "bg-gray-100 dark:bg-gray-950/40", text: "text-gray-800 dark:text-gray-200" },
 };
 
 const shippingTypeConfig: Record<string, { icon: typeof Plane; color: string; labelKey: string }> = {
@@ -50,7 +61,7 @@ const shippingTypeConfig: Record<string, { icon: typeof Plane; color: string; la
 };
 
 export default function PackagesDashboard() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [, setLocation] = useLocation();
   
   const { data: stats, isLoading: statsLoading } = trpc.packages.stats.useQuery();
@@ -221,13 +232,18 @@ const [, setLocation] = useLocation();
             <CardContent>
               <div className="space-y-3">
                 {stats?.byStatus?.map((item) => {
-                  const config = statusColors[item.status] || { bg: "bg-gray-100 dark:bg-gray-950/40", text: "text-gray-800 dark:text-gray-200", label: item.status };
-                  const percentage = ((item.count / totalForChart) * 100).toFixed(1);
+                  const config = statusColors[item.status] || { bg: "bg-gray-100 dark:bg-gray-950/40", text: "text-gray-800 dark:text-gray-200" };
+                  // Guarded: an empty period made every bar read "NaN%".
+                  const percentage = totalForChart > 0 ? ((item.count / totalForChart) * 100).toFixed(1) : "0.0";
                   return (
                     <div key={item.status} className="flex items-center gap-3">
                       <div className="flex-1">
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-sm font-medium">{t(config.labelKey)}</span>
+                          <span className="text-sm font-medium">
+                            {PACKAGE_STATUS_LABEL[item.status]
+                              ? pickLang(language, PACKAGE_STATUS_LABEL[item.status]!)
+                              : item.status.replace(/_/g, " ")}
+                          </span>
                           <span className="text-sm text-muted-foreground">{item.count}</span>
                         </div>
                         <div className="h-2 bg-muted rounded-full overflow-hidden">
@@ -412,7 +428,9 @@ const [, setLocation] = useLocation();
                     </div>
                     <div className="text-right">
                       <Badge className={`${statusConfig.bg} ${statusConfig.text} border-0`}>
-                        {t(statusConfig.labelKey)}
+                        {PACKAGE_STATUS_LABEL[pkg.status]
+                          ? pickLang(language, PACKAGE_STATUS_LABEL[pkg.status]!)
+                          : pkg.status.replace(/_/g, " ")}
                       </Badge>
                       <p className="text-xs text-muted-foreground mt-1">
                         {pkg.weightKg ? `${pkg.weightKg} kg` : '-'}

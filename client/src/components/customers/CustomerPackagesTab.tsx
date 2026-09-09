@@ -3,6 +3,11 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Package } from "lucide-react";
+import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
+import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
+import { SHIPPING_TYPE_LABEL } from "@/lib/shipmentFilters";
+import { fmtDate } from "@/lib/numericDate";
 
 interface PackageRecord {
   id: number;
@@ -22,6 +27,7 @@ interface CustomerPackagesTabProps {
 }
 
 export function CustomerPackagesTab({ packages, t }: CustomerPackagesTabProps) {
+  const { language } = useTranslation();
   return (
     <Card className="border-0 shadow-lg">
       <CardHeader className="pb-3">
@@ -52,12 +58,16 @@ export function CustomerPackagesTab({ packages, t }: CustomerPackagesTabProps) {
                 <TableCell className="font-mono text-sm">{pkg.packageCode}</TableCell>
                 <TableCell className="text-sm">{pkg.trackingNumber ?? "-"}</TableCell>
                 <TableCell>
-                  <Badge variant="outline" className="capitalize text-xs">
-                    {pkg.shippingType.replace(/_/g, " ")}
+                  {/* Shared wording — this leaked "air regular" in Latin on
+                      a Kurdish page. */}
+                  <Badge variant="outline" className="text-xs">
+                    {SHIPPING_TYPE_LABEL[pkg.shippingType]
+                      ? pickLang(language, SHIPPING_TYPE_LABEL[pkg.shippingType]!)
+                      : pkg.shippingType.replace(/_/g, " ")}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm">{pkg.weightKg ? `${pkg.weightKg} kg` : "-"}</TableCell>
-                <TableCell className="font-mono text-sm">${pkg.calculatedCostUsd ?? "0.00"}</TableCell>
+                <TableCell className="font-mono text-sm tabular-nums">${Number(pkg.calculatedCostUsd ?? 0).toFixed(2)}</TableCell>
                 <TableCell>
                   <Badge
                     variant="outline"
@@ -69,11 +79,13 @@ export function CustomerPackagesTab({ packages, t }: CustomerPackagesTabProps) {
                           : "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60"
                     }`}
                   >
-                    {pkg.status.replace(/_/g, " ")}
+                    {PACKAGE_STATUS_LABEL[pkg.status]
+                      ? pickLang(language, PACKAGE_STATUS_LABEL[pkg.status]!)
+                      : pkg.status.replace(/_/g, " ")}
                   </Badge>
                 </TableCell>
                 <TableCell className="text-sm text-muted-foreground">
-                  {new Date(pkg.createdAt).toLocaleDateString()}
+                  <span dir="ltr" className="tabular-nums">{fmtDate(new Date(pkg.createdAt))}</span>
                 </TableCell>
               </TableRow>
             ))}
