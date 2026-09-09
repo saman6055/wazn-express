@@ -451,20 +451,52 @@ const [, setLocation] = useLocation();
     }) ?? null;
   }, [customers, debouncedSearch]);
 
-  // The named door: the «گەشتی کڕیار» button with its own little picker.
+  // The named door: the «بارودۆخی پاکەتەکان» button with its own little picker.
   const [journeyPickerOpen, setJourneyPickerOpen] = useState(false);
   const [journeyPickerQuery, setJourneyPickerQuery] = useState("");
   const [pickedJourneyCustomerId, setPickedJourneyCustomerId] = useState<number | null>(null);
-  const journeyPickerMatches = useMemo(() => {
-    if (!customers) return [];
+
+  // The codes looked up most recently float to the top of the picker — the
+  // owner's ask: the same few customers get checked again and again. Kept in
+  // this browser only; storage that throws (private windows) costs nothing.
+  const [recentJourneyIds, setRecentJourneyIds] = useState<number[]>(() => {
+    try {
+      const raw = localStorage.getItem("wazn-journey-recent");
+      const arr = raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr.filter((n): n is number => typeof n === "number").slice(0, 6) : [];
+    } catch {
+      return [];
+    }
+  });
+  const rememberJourney = useCallback((id: number) => {
+    setRecentJourneyIds(prev => {
+      const next = [id, ...prev.filter(x => x !== id)].slice(0, 6);
+      try { localStorage.setItem("wazn-journey-recent", JSON.stringify(next)); } catch { /* per-browser convenience only */ }
+      return next;
+    });
+  }, []);
+
+  const journeyPickerList = useMemo(() => {
+    if (!customers) return [] as Array<{ customer: NonNullable<typeof customers>[number]; isRecent: boolean }>;
     const q = journeyPickerQuery.trim().toLowerCase();
-    const list = q
-      ? customers.filter(c =>
+    if (q) {
+      return customers
+        .filter(c =>
           (c.customerCode ?? "").toLowerCase().includes(q) ||
           (c.fullName ?? "").toLowerCase().includes(q))
-      : customers;
-    return list.slice(0, 8);
-  }, [customers, journeyPickerQuery]);
+        .slice(0, 8)
+        .map(customer => ({ customer, isRecent: false }));
+    }
+    const recents = recentJourneyIds
+      .map(id => customers.find(c => c.id === id))
+      .filter((c): c is NonNullable<typeof c> => !!c)
+      .map(customer => ({ customer, isRecent: true }));
+    const rest = customers
+      .filter(c => !recentJourneyIds.includes(c.id))
+      .slice(0, Math.max(0, 8 - recents.length))
+      .map(customer => ({ customer, isRecent: false }));
+    return [...recents, ...rest];
+  }, [customers, journeyPickerQuery, recentJourneyIds]);
 
   const pickedJourneyCustomer = useMemo(
     () => customers?.find(c => c.id === pickedJourneyCustomerId) ?? null,
@@ -472,6 +504,12 @@ const [, setLocation] = useLocation();
   );
   const journeyCustomer = pickedJourneyCustomer ?? searchMatchedCustomer;
   const [journeyDismissedFor, setJourneyDismissedFor] = useState<number | null>(null);
+  // However the panel was opened — picked or typed — the code joins the
+  // recents, so tomorrow it is one tap away.
+  useEffect(() => {
+    if (journeyCustomer) rememberJourney(journeyCustomer.id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [journeyCustomer?.id]);
   useEffect(() => {
     if (typeof window === "undefined") return;
     const code = new URLSearchParams(window.location.search).get("customer");
@@ -1266,26 +1304,41 @@ const [, setLocation] = useLocation();
                           onChange={(e) => setJourneyPickerQuery(e.target.value)}
                         />
                         <div className="mt-1 max-h-64 overflow-y-auto">
-                          {journeyPickerMatches.length === 0 ? (
+                          {journeyPickerList.length === 0 ? (
                             <p className="p-3 text-center text-sm text-muted-foreground">
                               {pickLang(language, { ku: "هیچ کڕیارێک نەدۆزرایەوە", en: "No customer found", ar: "لم يُعثر على عميل", zh: "未找到客户" })}
                             </p>
-                          ) : journeyPickerMatches.map(c => (
-                            <button
-                              key={c.id}
-                              type="button"
-                              onClick={() => {
-                                setPickedJourneyCustomerId(c.id);
-                                setJourneyDismissedFor(null);
-                                setJourneyPickerOpen(false);
-                                setJourneyPickerQuery("");
-                              }}
-                              className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm hover:bg-muted"
-                            >
-                              <span dir="ltr" className="font-mono font-semibold">{shortCustomerCode(c.customerCode)}</span>
-                              <span className="truncate text-muted-foreground">{c.fullName}</span>
-                            </button>
-                          ))}
+                          ) : (
+                            <>
+                              {journeyPickerList[0]?.isRecent && (
+                                <p className="px-3 pb-1 pt-2 text-[10px] font-bold text-muted-foreground">
+                                  {pickLang(language, { ku: "دوایین گەڕانەکان", en: "Recent lookups", ar: "آخر عمليات البحث", zh: "最近查询" })}
+                                </p>
+                              )}
+                              {journeyPickerList.map(({ customer: c, isRecent }, i) => (
+                                <div key={c.id}>
+                                  {/* The line between yesterday's codes and the rest */}
+                                  {i > 0 && isRecent === false && journeyPickerList[i - 1]?.isRecent && (
+                                    <div className="mx-3 my-1 h-px bg-border" />
+                                  )}
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      setPickedJourneyCustomerId(c.id);
+                                      setJourneyDismissedFor(null);
+                                      setJourneyPickerOpen(false);
+                                      setJourneyPickerQuery("");
+                                    }}
+                                    className="flex w-full items-center gap-2 rounded-lg px-3 py-2 text-start text-sm hover:bg-muted"
+                                  >
+                                    {isRecent && <Clock className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />}
+                                    <span dir="ltr" className="font-mono font-semibold">{shortCustomerCode(c.customerCode)}</span>
+                                    <span className="truncate text-muted-foreground">{c.fullName}</span>
+                                  </button>
+                                </div>
+                              ))}
+                            </>
+                          )}
                         </div>
                       </div>
                     </>
