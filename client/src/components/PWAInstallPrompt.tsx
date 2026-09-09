@@ -168,11 +168,16 @@ export function PWAInstallPrompt() {
    */
   useEffect(() => {
     if (!onPortal || showPrompt || isStandalone || alreadyInstalled) return;
-    if (!deferredPrompt && !isIOS) return;
     if (isPortalSessionDismissed()) return;
+    // No longer waits for beforeinstallprompt. Chrome keeps that event to
+    // itself inside the WhatsApp/Instagram in-app browsers most customers
+    // arrive through — and sometimes withholds it in Chrome proper — so a
+    // dialog gated on it simply never appeared for them. The ask now always
+    // shows; what changes per situation is the path it offers: the native
+    // install button when the event did arrive, otherwise the menu steps.
     const timer = setTimeout(() => setShowPrompt(true), 600);
     return () => clearTimeout(timer);
-  }, [onPortal, deferredPrompt, isIOS, isStandalone, alreadyInstalled, showPrompt]);
+  }, [onPortal, isStandalone, alreadyInstalled, showPrompt]);
 
   const handleInstall = async () => {
     if (!deferredPrompt) return;
@@ -252,11 +257,38 @@ export function PWAInstallPrompt() {
                 {pickLang(language, { ku: "«Add» دابگرە — تەواو!", en: 'Tap "Add" — done!', ar: 'اضغط "Add" — انتهى!', zh: '点“添加”——完成！' })}
               </li>
             </ol>
-          ) : (
+          ) : deferredPrompt ? (
             <Button onClick={handleInstall} size="lg" className="w-full bg-orange-500 text-white hover:bg-orange-600">
               <Download className="h-5 w-5 me-2" />
               {pickLang(language, { ku: "دامەزراندن", en: "Install", ar: "تثبيت", zh: "安装" })}
             </Button>
+          ) : (
+            <>
+              {/* Chrome held back its install event — the WhatsApp/Instagram
+                  in-app browsers always do. The path still exists; it is just
+                  behind the browser's own menu, so say the steps. */}
+              {/(wv\)|FBAN|FBAV|FB_IAB|Instagram|Messenger)/i.test(navigator.userAgent) && (
+                <p className="rounded-lg bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+                  {pickLang(language, {
+                    ku: "ئەم براوزەرەی ناو ئەپەکە ناتوانێت دایبمەزرێنێت — یەکەم لە میستەری ⋮ «Open in Chrome» هەڵبژێرە.",
+                    en: "This in-app browser can't install it — first choose “Open in Chrome” from the ⋮ menu.",
+                    ar: "متصفح التطبيق هذا لا يستطيع التثبيت — اختر أولاً «Open in Chrome» من قائمة ⋮.",
+                    zh: "应用内浏览器无法安装——请先从 ⋮ 菜单选择“在 Chrome 中打开”。",
+                  })}
+                </p>
+              )}
+              <ol className="list-decimal space-y-2 ps-5 text-sm">
+                <li className="leading-6">
+                  {pickLang(language, { ku: "لە سەرەوەی کرۆم میستەری ⋮ بکەوە", en: "In Chrome, open the ⋮ menu at the top", ar: "في كروم افتح قائمة ⋮ في الأعلى", zh: "在 Chrome 顶部打开 ⋮ 菜单" })}
+                </li>
+                <li className="leading-6">
+                  {pickLang(language, { ku: "«Add to Home screen» یان «Install app» هەڵبژێرە", en: 'Choose "Add to Home screen" or "Install app"', ar: 'اختر "Add to Home screen" أو "Install app"', zh: '选择“添加到主屏幕”或“安装应用”' })}
+                </li>
+                <li className="leading-6">
+                  {pickLang(language, { ku: "«Add» دابگرە — تەواو!", en: 'Tap "Add" — done!', ar: 'اضغط "Add" — انتهى!', zh: '点“添加”——完成！' })}
+                </li>
+              </ol>
+            </>
           )}
 
           <Button variant="ghost" className="w-full text-muted-foreground" onClick={handleDismiss}>
