@@ -161,6 +161,30 @@ describe("date cohorts", () => {
   });
 });
 
+describe("one carton, several orders — counted once", () => {
+  it("orders sharing a tracking fold into one physical row, so the box count matches the receipt", () => {
+    // The AZ112 case: the box receipt listed 45 scanned parcels while the
+    // panel showed ~53 — every extra was an order riding in somebody's
+    // shared carton, drawn as its own row with the same box on it.
+    const j = buildCustomerJourney({
+      ...empty,
+      orders: [
+        order({ id: 1, orderCode: "FP-1", productName: "پێڵاو" }),
+        order({ id: 2, orderCode: "FP-2", productName: "جانتا" }),
+        order({ id: 3, orderCode: "FP-3", productName: "کاتژمێر" }),
+      ],
+      packages: [pkg()],
+      boxed: [{ packageId: 10, boxCode: "BOX-012", boxStatus: "delivered", boxCreatedAt: "2026-09-07T09:00:00", boxDeliveredAt: "2026-09-07T15:00:00" }],
+    }, NOW);
+
+    const rows = j.orderCohorts.flatMap(c => c.items);
+    expect(rows).toHaveLength(1);
+    expect(j.counts.delivered).toBe(1);
+    expect(rows[0]!.boxCode).toBe("BOX-012");
+    expect(rows[0]!.sharedOrders.map(s => s.code)).toEqual(["FP-2", "FP-3"]);
+  });
+});
+
 describe("the box carries its dates", () => {
   it("a delivered box stamps the handover date; a packed one only its packing date", () => {
     const handed = buildCustomerJourney({

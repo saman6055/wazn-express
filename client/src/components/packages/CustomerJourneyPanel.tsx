@@ -172,6 +172,14 @@ function ItemRow({ item, onOpenPhoto }: { item: JourneyItem; onOpenPhoto: (src: 
             )}
           </p>
         </div>
+        {item.sharedOrders.length > 0 && (
+          <span
+            className="shrink-0 rounded-full bg-violet-100 dark:bg-violet-900/40 px-2 py-0.5 text-[10px] font-semibold text-violet-700 dark:text-violet-300 tabular-nums"
+            title={pickLang(language, { ku: "چەند ئۆردەرێک لە یەک کارتۆن", en: "Several orders in one carton", ar: "عدة طلبات في كرتون واحد", zh: "一箱多单" })}
+          >
+            +{item.sharedOrders.length} {pickLang(language, { ku: "هاوبەش", en: "shared", ar: "مشترك", zh: "同箱" })}
+          </span>
+        )}
         <span className="shrink-0 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
           {pickLang(language, SOURCE_LABEL[sourceKey] ?? SOURCE_LABEL.scan)}
         </span>
@@ -233,6 +241,24 @@ function ItemRow({ item, onOpenPhoto }: { item: JourneyItem; onOpenPhoto: (src: 
             <DetailRow label={pickLang(language, { ku: "قەبارە", en: "Volume", ar: "الحجم", zh: "体积" })}>
               <span dir="ltr" className="tabular-nums">{item.volumeCbm.toFixed(3)} m³</span>
             </DetailRow>
+          )}
+          {item.sharedOrders.length > 0 && (
+            <div className="mt-1 border-t border-border pt-1">
+              <p className="py-1 text-muted-foreground">
+                {pickLang(language, {
+                  ku: `ئۆردەری هاوبەش لەم کارتۆنە (${item.sharedOrders.length})`,
+                  en: `Orders sharing this carton (${item.sharedOrders.length})`,
+                  ar: `طلبات تشارك هذا الكرتون (${item.sharedOrders.length})`,
+                  zh: `同箱订单（${item.sharedOrders.length}）`,
+                })}
+              </p>
+              {item.sharedOrders.map(so => (
+                <div key={so.code} className="flex items-center justify-between gap-3 py-0.5">
+                  <span dir="ltr" className="font-mono">{so.code}</span>
+                  <span className="min-w-0 truncate text-end text-muted-foreground">{so.title || "—"}</span>
+                </div>
+              ))}
+            </div>
           )}
         </div>
       )}

@@ -113,6 +113,13 @@ export interface JourneyItem {
   registeredAt: Date;
   /** Days since registration; the not-arrived station's "check with the seller" clock. */
   waitingDays: number;
+  /**
+   * Other orders riding in this same physical carton (shared tracking).
+   * They fold into the parcel's one row instead of drawing their own — the
+   * box receipt counts scanned parcels, and the panel must count the same
+   * thing or the owner is left hunting for pieces that were never missing.
+   */
+  sharedOrders: Array<{ code: string; title: string | null; orderType: string | null }>;
 }
 
 export interface JourneyCohort {
@@ -255,8 +262,13 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
       deliveredAt: deliveredAt && !Number.isNaN(deliveredAt.getTime()) ? deliveredAt : null,
       registeredAt: base.registeredAt,
       waitingDays: Math.max(0, Math.floor((now.getTime() - base.registeredAt.getTime()) / DAY_MS)),
+      sharedOrders: [],
     };
   };
+
+  // One physical parcel, one row. Several orders can share a carton (shared
+  // tracking); the first materialises the parcel, the rest fold into it.
+  const itemByPackageId = new Map<number, JourneyItem>();
 
   for (const o of data.orders) {
     const registeredAt = asDate(o.createdAt);
@@ -272,8 +284,15 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
       registeredAt,
     };
     if (matched) {
+      const existing = itemByPackageId.get(matched.id);
+      if (existing) {
+        existing.sharedOrders.push({ code: o.orderCode, title: o.productName, orderType: o.orderType });
+        continue;
+      }
       consumedPackageIds.add(matched.id);
-      push(fromPackage(matched, base));
+      const item = fromPackage(matched, base);
+      if (item) itemByPackageId.set(matched.id, item);
+      push(item);
     } else {
       const station = orderStation(o.status);
       push({
@@ -292,6 +311,7 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
         scannedAt: null,
         deliveredAt: null,
         waitingDays: Math.max(0, Math.floor((now.getTime() - registeredAt.getTime()) / DAY_MS)),
+        sharedOrders: [],
       });
     }
   }
@@ -330,6 +350,7 @@ export function buildCustomerJourney(data: JourneyData, now: Date = new Date()):
         scannedAt: null,
         deliveredAt: null,
         waitingDays: Math.max(0, Math.floor((now.getTime() - registeredAt.getTime()) / DAY_MS)),
+        sharedOrders: [],
       });
     }
   }
