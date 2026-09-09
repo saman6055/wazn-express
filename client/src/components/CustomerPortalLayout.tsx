@@ -332,9 +332,6 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
                 aria-label={declareItem.label}
                 className="relative group block"
               >
-                  {/* Breathing glow — same pulse as the account avatar, so the
-                      portal's two blue actions read as alive and pressable. */}
-                  <span aria-hidden="true" className="wazn-breathe absolute -inset-1 rounded-full bg-blue-500 blur-md" />
                   <div className={cn(
                     "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300",
                     "bg-gradient-to-br from-[#2563EB] to-[#1D4ED8]",
