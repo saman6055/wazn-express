@@ -7,7 +7,7 @@ import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
-import { BRAND_LOGO_URL } from "@/lib/brand";
+import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -122,7 +122,8 @@ interface BoxDetailPanelProps {
 
 export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProps) {
   const systemAlert = useSystemAlert();
-  const { logoUrl } = useCompanyInfo();
+  const company = useCompanyInfo();
+  const { logoUrl } = company;
   const { t, language } = useTranslation();
   const isRtl = language === "ku" || language === "ar";
   const utils = trpc.useUtils();
@@ -425,7 +426,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             address: customer.address,
           }
         : null,
-      t
+      t,
+      { logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL), company: companyContact(company, language) }
     );
   };
 
@@ -517,6 +519,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     printBoxReceipt(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL),
+      company: companyContact(company, lang),
       settlement: settlementForPrint,
     });
   };
@@ -527,6 +530,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     downloadBoxReceiptPDF(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL),
+      company: companyContact(company, lang),
     });
   };
 

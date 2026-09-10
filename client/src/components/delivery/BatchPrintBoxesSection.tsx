@@ -28,6 +28,9 @@ import { BoxDetailPanel } from "@/components/delivery/BoxDetailPanel";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { printBoxLabel } from "@/lib/deliveryBoxPrintUtils";
+import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
+import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
 
 const PAGE_SIZE = 20;
@@ -39,6 +42,7 @@ interface BatchPrintBoxesSectionProps {
 
 export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSectionProps) {
   const { t, language } = useTranslation();
+  const company = useCompanyInfo();
   const isRtl = language === "ku" || language === "ar";
 
   const [activeBoxId, setActiveBoxId] = useState<number | null>(null);
@@ -199,7 +203,8 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
             },
             items,
             customer ? { fullName: customer.fullName, customerCode: customer.customerCode, mobileNumber: customer.mobileNumber } : null,
-            t
+            t,
+            { logoUrl: absoluteLogoUrl(company.logoUrl || BRAND_LOGO_URL), company: companyContact(company, language) }
           );
         } else {
           // Per-package: batch-generate labels for all items in this box

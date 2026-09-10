@@ -4,6 +4,8 @@
  * Supports RTL (Kurdish/Arabic) and LTR layouts.
  */
 
+import type { CompanyContact } from "./brand";
+
 export interface BoxForPrint {
   boxCode: string;
   status: string;
@@ -83,6 +85,18 @@ const sharedStyles = `
   .mb-4 { margin-bottom: 16px; }
   .p-2 { padding: 8px; }
   .p-4 { padding: 16px; }
+  /* How to find us, at the foot of every receipt: address, mobile, portal, website. */
+  .receipt-contact {
+    margin-top: 6px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 2px 14px;
+    font-size: 10px;
+    color: #4b5563;
+    text-align: center;
+  }
+  .receipt-contact b { font-weight: 600; color: #6b7280; }
   @media print {
     body { -webkit-print-color-adjust: exact; print-color-adjust: exact; }
     @page { margin: 8mm; }
@@ -275,6 +289,31 @@ function deliveryMethodIcon(method: string): string {
   return "&#x1F3ED;"; // warehouse
 }
 
+const HTML_ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+
+/** Company text going into a document.write page is text, never markup. */
+function escapeHtml(value: string): string {
+  return value.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
+}
+
+/**
+ * How to find us, at the foot of every receipt: address, mobile, the customer
+ * portal and the website — the owner's list. Numbers and web addresses sit in
+ * LTR isolates, so "0770…" and "waznexpress.com/portal" never turn round
+ * inside a Kurdish or Arabic line. No company details, no block.
+ */
+export function receiptContactHtml(company: CompanyContact | undefined, t: TFunc): string {
+  if (!company) return "";
+  const line = (label: string, value: string, ltr = false) =>
+    `<span><b>${label}:</b> ${ltr ? `<bdi dir="ltr">${escapeHtml(value)}</bdi>` : escapeHtml(value)}</span>`;
+  return `<div class="receipt-contact">${[
+    company.address ? line(t("delivery.address"), company.address) : "",
+    company.phones.length ? line(t("delivery.phone"), company.phones.join(" · "), true) : "",
+    company.portal ? line(t("delivery.customerPortal"), company.portal, true) : "",
+    company.website ? line(t("delivery.website"), company.website, true) : "",
+  ].join("")}</div>`;
+}
+
 // ==================== LABEL TEMPLATE ====================
 
 export function printBoxLabel(
@@ -282,6 +321,7 @@ export function printBoxLabel(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
+  options?: { logoUrl?: string; company?: CompanyContact },
 ): void {
   const totalValue = formatNum(box.totalValueUsd);
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
@@ -416,7 +456,10 @@ export function printBoxLabel(
   <div class="label-container">
     <!-- Header -->
     <div class="header-bar">
-      <div style="font-weight:700; font-size:14px;">Wazn Express</div>
+      <div style="display:flex; align-items:center; gap:6px;">
+        ${options?.logoUrl ? `<img src="${options.logoUrl}" alt="" style="height:22px; width:auto; background:#fff; border-radius:4px; padding:2px 4px;" />` : ""}
+        <span style="font-weight:700; font-size:14px;">${escapeHtml(options?.company?.name || "Wazn Express")}</span>
+      </div>
       <div style="font-size:10px;">${deliveryMethodIcon(box.deliveryMethod)} ${deliveryMethodLabel(box.deliveryMethod, t)}</div>
     </div>
 
@@ -508,6 +551,7 @@ export function printBoxLabel(
         <div>${t("delivery.signature")}: <span class="signature-line"></span></div>
       </div>
     </div>
+    ${receiptContactHtml(options?.company, t)}
   </div>
 
   <script>
@@ -537,6 +581,8 @@ export function printBoxReceipt(
     documentTitle?: string;
     direction?: 'ltr' | 'rtl';
     logoUrl?: string;
+    /** Name, address, mobile, portal and website, in the receipt's language. */
+    company?: CompanyContact;
     /** Present once money has been taken; absent before that. */
     settlement?: SettlementForPrint;
   },
@@ -715,6 +761,10 @@ export function printBoxReceipt(
       max-width: 140px;
       object-fit: contain;
       flex-shrink: 0;
+      /* The mark is black ink and this band is green: it sits on a white tile. */
+      background: #fff;
+      border-radius: 6px;
+      padding: 3px 6px;
     }
     /*
      * The closing block, kept whole.
@@ -776,7 +826,7 @@ export function printBoxReceipt(
          and box code on the other) -->
     <div class="company-header">
       <div>
-        <div class="company-name">Wazn Express</div>
+        <div class="company-name">${escapeHtml(options?.company?.name || "Wazn Express")}</div>
         <div class="company-subtitle">${t("delivery.companyTagline") || "Shipping & Logistics Services"}</div>
       </div>
       ${options?.logoUrl ? `<img class="header-logo" src="${options.logoUrl}" alt="" />` : ""}
@@ -935,6 +985,7 @@ export function printBoxReceipt(
           <span class="thank-you">${t("delivery.thankYou")}</span>
           <span class="footer-note">${t("delivery.receiptNote") || "This receipt is a proof of delivery. Please keep it for your records."}</span>
         </div>
+        ${receiptContactHtml(options?.company, t)}
       </div>
     </div>
   </div>
@@ -968,11 +1019,12 @@ export function downloadBoxReceiptPDF(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
-  options?: { direction?: 'ltr' | 'rtl'; logoUrl?: string },
+  options?: { direction?: 'ltr' | 'rtl'; logoUrl?: string; company?: CompanyContact },
 ): void {
   printBoxReceipt(box, items, customer, t, {
     documentTitle: `${box.boxCode}.pdf`,
     direction: options?.direction,
     logoUrl: options?.logoUrl,
+    company: options?.company,
   });
 }

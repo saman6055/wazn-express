@@ -5957,6 +5957,9 @@
     "ordersCount": "订单数"
   },
   "delivery": {
+    "website": "网站",
+    "customerPortal": "客户门户",
+    "phone": "电话",
     "editBox": "编辑箱子",
     "editBoxSubtitle": "编辑运费和配送信息",
     "reopenBox": "重新打开箱子以编辑",

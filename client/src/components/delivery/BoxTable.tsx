@@ -41,7 +41,7 @@ import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
-import { BRAND_LOGO_URL } from "@/lib/brand";
+import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
 import { trpc } from "@/lib/trpc";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -164,11 +164,13 @@ export function BoxTable({
             address: customer.address,
           }
         : null,
-      t
+      t,
+      { logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL), company: companyContact(company, language) }
     );
   };
 
-  const { logoUrl } = useCompanyInfo();
+  const company = useCompanyInfo();
+  const { logoUrl } = company;
 
   const handlePrintReceipt = async (box: DeliveryBox, lang: Language) => {
     // Locales load on demand now; fetch the chosen one before translating.
@@ -202,7 +204,7 @@ export function BoxTable({
           }
         : null,
       createTranslator(lang),
-      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL) }
+      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL), company: companyContact(company, lang) }
     );
   };
 
