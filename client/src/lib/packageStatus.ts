@@ -37,3 +37,25 @@ export const PACKAGE_STATUS_LABEL: Record<string, L> = {
   returned: { ku: "گەڕێندراوەتەوە", en: "Returned", ar: "مُرتجع", zh: "已退回" },
   cancelled: { ku: "هەڵوەشێنراوە", en: "Cancelled", ar: "ملغى", zh: "已取消" },
 };
+
+/**
+ * The colour of each package status — the twin of BATCH_STATUS_TONE in
+ * shipmentFilters.ts, and for the same reason: three screens coloured these
+ * chips for themselves, and a returned or cancelled parcel came out grey,
+ * the colour of "nothing to see".
+ */
+export const PACKAGE_STATUS_TONE: Record<string, string> = {
+  registered: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  in_batch: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  in_transit: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+  customs_processing: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  ready_for_delivery: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  out_for_delivery: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+  delivered: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  returned: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+  cancelled: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
+};
+
+export function packageStatusTone(status: string | null | undefined): string {
+  return PACKAGE_STATUS_TONE[status ?? ""] ?? PACKAGE_STATUS_TONE.registered;
+}

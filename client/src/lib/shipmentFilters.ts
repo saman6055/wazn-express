@@ -165,3 +165,32 @@ export function countByStage(statuses: string[]): Record<Exclude<ShipmentStage, 
   }
   return counts;
 }
+
+/**
+ * The colour of each batch status, in one place.
+ *
+ * Four screens kept private colour switches and they disagreed: in transit
+ * was sky on the home, blue on the list; arrived, at_depot and preparing all
+ * fell through to grey everywhere, so a shipment sitting in the Erbil depot
+ * — the one moment a customer needs to act — looked the same as one still
+ * being packed in China. The words already came from STATUS_LABEL; the
+ * colours now do too.
+ *
+ * Owner palette: sky for moving, emerald for anything in Iraq or handed
+ * over, amber for a wait the office cannot shorten, slate for not yet begun.
+ * Both themes in every entry, so a screen never has to branch on the theme.
+ */
+export const BATCH_STATUS_TONE: Record<BatchStatus, string> = {
+  preparing: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  in_transit: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+  arrived: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  customs: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  at_depot: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  delivered: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  closed: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+};
+
+/** The chip classes for a status, or the neutral chip for one nobody knows. */
+export function batchStatusTone(status: string | null | undefined): string {
+  return BATCH_STATUS_TONE[status as BatchStatus] ?? BATCH_STATUS_TONE.preparing;
+}

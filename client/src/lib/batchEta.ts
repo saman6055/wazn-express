@@ -3,6 +3,8 @@
 // from the departure date + shipping type (air 7–14 days, sea 30–45 days).
 // Returns null when the batch has already arrived or nothing can be derived.
 
+import { formatPortalDate } from "./portalClock";
+
 export interface BatchEtaInput {
   status?: string | null;
   shippingType?: string | null;
@@ -50,9 +52,22 @@ export function getBatchEta(batch: BatchEtaInput): BatchEta | null {
   return null;
 }
 
-/** Short display string, e.g. "12 Aug" or "5–12 Aug". */
-export function formatBatchEta(eta: BatchEta, locale = "en-GB"): string {
-  const fmt = (d: Date) => d.toLocaleDateString(locale, { day: "numeric", month: "short" });
-  if (eta.kind === "exact") return fmt(eta.date);
-  return `${fmt(eta.from)} – ${fmt(eta.to)}`;
+/**
+ * The estimate as the portal writes dates — 12/08/2026, or 05/08 – 12/08/2026
+ * for a range.
+ *
+ * This used to print "12 Aug" through the en-GB locale for every reader: an
+ * English month name on a Kurdish page, next to other dates the same screen
+ * wrote as dd/mm/yyyy. Every portal date now goes through formatPortalDate,
+ * so the estimate reads like the dates around it; the range shares its year
+ * once, at the end, because a phone card has no room to say it twice.
+ */
+export function formatBatchEta(eta: BatchEta, language = "en"): string {
+  if (eta.kind === "exact") return formatPortalDate(eta.date, language);
+  const from = formatPortalDate(eta.from, language);
+  const to = formatPortalDate(eta.to, language);
+  if (language === "zh") return `${from} – ${to}`;
+  const sameYear = eta.from.getFullYear() === eta.to.getFullYear();
+  // "05/08 – 12/08/2026": the year belongs to both ends and is said once.
+  return sameYear ? `${from.slice(0, 5)} – ${to}` : `${from} – ${to}`;
 }

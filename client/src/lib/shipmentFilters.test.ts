@@ -12,6 +12,8 @@ import {
   orderStatusLabel,
   isInIraqNotDelivered,
   IN_IRAQ_STATUSES,
+  BATCH_STATUS_TONE,
+  batchStatusTone,
   type BatchStatus,
 } from "./shipmentFilters";
 
@@ -288,5 +290,38 @@ describe("the Iraq-side tail of the road", () => {
     expect(src).toContain("isInIraqNotDelivered(b.status)");
     expect(src, "no private list of Iraq statuses on the screen")
       .not.toMatch(/"arrived"\s*,\s*"customs"\s*,\s*"at_depot"/);
+  });
+});
+
+describe("BATCH_STATUS_TONE", () => {
+  it("colours every status STATUS_LABEL names, so no chip falls back to grey by accident", () => {
+    for (const status of Object.keys(STATUS_LABEL)) {
+      expect(BATCH_STATUS_TONE[status as BatchStatus], `${status} has no tone`).toBeTruthy();
+    }
+  });
+
+  it("carries both themes in every entry, so a screen never branches on the theme", () => {
+    for (const [status, tone] of Object.entries(BATCH_STATUS_TONE)) {
+      expect(tone, `${status} lacks a light background`).toMatch(/(^|\s)bg-/);
+      expect(tone, `${status} lacks a dark background`).toMatch(/dark:bg-/);
+      expect(tone, `${status} lacks a dark text colour`).toMatch(/dark:text-/);
+    }
+  });
+
+  it("keeps the owner's palette: sky on the road, emerald once in Iraq or handed over", () => {
+    expect(BATCH_STATUS_TONE.in_transit).toContain("sky");
+    expect(BATCH_STATUS_TONE.at_depot).toContain("emerald");
+    expect(BATCH_STATUS_TONE.delivered).toContain("emerald");
+    expect(batchStatusTone("not-a-status")).toBe(BATCH_STATUS_TONE.preparing);
+  });
+
+  it("is what the screens use — no private colour switch on a batch status", () => {
+    // The chip colour used to be a switch in each screen, and they disagreed.
+    for (const file of ["PortalHome.tsx", "PortalShipments.tsx"]) {
+      const src = fs.readFileSync(path.resolve(__dirname, "../pages/portal", file), "utf8");
+      expect(src, `${file} should use the shared tone`).toMatch(/batchStatusTone|BatchStatusChip/);
+      expect(src, `${file} still colours a batch status by hand`)
+        .not.toMatch(/case "in_transit":\s*\n\s*return (isDark|\{)/);
+    }
   });
 });
