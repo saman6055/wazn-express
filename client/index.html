@@ -45,11 +45,7 @@
       mounts — and the boot screen below has no way to know which colours to
       use. Reading localStorage here costs nothing and removes the flash.
     -->
-    <script>
-      try {
-        if (localStorage.getItem("theme") === "dark") document.documentElement.classList.add("dark");
-      } catch (e) { /* private mode: light is a fine default */ }
-    </script>
+    <script src="/theme-init.js"></script>
 
     <!--
       Boot screen only. Everything here is scoped to .wazn-boot, which React

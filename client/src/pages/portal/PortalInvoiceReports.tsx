@@ -1,3 +1,4 @@
+import { printWhenReady } from "@/lib/printWindow";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
@@ -274,13 +275,13 @@ function ClassicPortalInvoiceReports() {
           </tbody>
         </table>
         <p class="footer">${pickLang(language, { ku: "دروستکرا لە", en: "Generated on", ar: "أُنشئ في", zh: "生成于" })} ${formatPortalDate(new Date(), language)}</p>
-        <script>window.onload = function() { window.print(); }</script>
       </body>
       </html>
     `;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+    printWhenReady(printWindow);
     toast.success(t('portal.reportReadyForPrint'));
     setShowExportMenu(false);
   };

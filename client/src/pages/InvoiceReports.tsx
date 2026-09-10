@@ -1,3 +1,4 @@
+import { printWhenReady } from "@/lib/printWindow";
 import { escapeHtml } from "@/lib/html";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
@@ -456,17 +457,13 @@ export default function InvoiceReports() {
         
         <p class="footer">Generated on ${new Date().toLocaleDateString()} | ${escapeHtml(company.name)} Invoice Reports</p>
         
-        <script>
-          window.onload = function() {
-            window.print();
-          }
-        </script>
       </body>
       </html>
     `;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+    printWhenReady(printWindow);
     toast.success(pickLang(language, {ku:"ڕاپۆرت ئامادەیە بۆ چاپکردن", en:"Report ready to print", ar:"التقرير جاهز للطباعة", zh:"报告已准备好打印"}));
   };
 

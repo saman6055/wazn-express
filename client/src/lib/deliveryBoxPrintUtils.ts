@@ -4,6 +4,7 @@
  * Supports RTL (Kurdish/Arabic) and LTR layouts.
  */
 
+import { printWhenReady } from "./printWindow";
 import { escapeHtml } from "./html";
 import type { CompanyContact } from "./brand";
 
@@ -548,12 +549,6 @@ export function printBoxLabel(
     ${receiptContactHtml(options?.company, t)}
   </div>
 
-  <script>
-    window.onload = function() {
-      setTimeout(function() { window.print(); }, 300);
-      window.onafterprint = function() { window.close(); };
-    };
-  </script>
 </body>
 </html>`;
 
@@ -561,6 +556,10 @@ export function printBoxLabel(
   if (w) {
     w.document.write(html);
     w.document.close();
+    // Printed from here, not by a script inside the page: the security
+    // policy runs no inline script, so the old onload never fired in production.
+    w.addEventListener("afterprint", () => w.close());
+    printWhenReady(w);
   }
 }
 
@@ -984,12 +983,6 @@ export function printBoxReceipt(
     </div>
   </div>
 
-  <script>
-    window.onload = function() {
-      setTimeout(function() { window.print(); }, 300);
-      window.onafterprint = function() { window.close(); };
-    };
-  </script>
 </body>
 </html>`;
 
@@ -997,6 +990,10 @@ export function printBoxReceipt(
   if (w) {
     w.document.write(html);
     w.document.close();
+    // Printed from here, not by a script inside the page: the security
+    // policy runs no inline script, so the old onload never fired in production.
+    w.addEventListener("afterprint", () => w.close());
+    printWhenReady(w);
   }
 }
 

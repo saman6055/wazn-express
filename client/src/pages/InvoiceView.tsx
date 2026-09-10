@@ -1,3 +1,4 @@
+import { printWhenReady } from "@/lib/printWindow";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -74,7 +75,10 @@ export default function InvoiceView() {
         @media print{body{padding:0}@page{margin:15mm;size:A4}}
       </style></head><body>${el.innerHTML}</body></html>`);
     w.document.close(); w.focus();
-    setTimeout(() => { w.print(); w.close(); }, 500);
+    // Closed after the dialog, not straight after asking for it: on phones
+    // and Safari print() returns at once, and the window vanished unprinted.
+    w.addEventListener("afterprint", () => w.close());
+    printWhenReady(w, 2500);
   };
 
   const handleDownloadPDF = async () => {

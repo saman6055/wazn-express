@@ -7,10 +7,22 @@ import { defineConfig } from "vite";
 import { vitePluginManusRuntime } from "vite-plugin-manus-runtime";
 
 
-const plugins = [react(), tailwindcss(), jsxLocPlugin(), vitePluginManusRuntime()];
-
-export default defineConfig({
-  plugins,
+export default defineConfig(({ command }) => ({
+  // The two editor plugins serve the Manus editor during development only.
+  // In a production build jsxLoc stamped a source-path attribute on every
+  // element (about 29,000 of them, 1.7 MB of text), and the runtime plugin
+  // inlined a 366 KB script into index.html — downloaded on every visit, and
+  // then refused by the production security policy, which runs no inline
+  // script.
+  plugins: [
+    react(),
+    tailwindcss(),
+    ...(command === "serve" ? [jsxLocPlugin(), vitePluginManusRuntime()] : []),
+  ],
+  // console.log / .debug / .info are for development. In a build they printed
+  // tracking numbers and whole error objects into any visitor's console.
+  // Warnings and errors still reach it.
+  esbuild: command === "build" ? { pure: ["console.log", "console.debug", "console.info"] } : undefined,
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),
@@ -44,4 +56,4 @@ export default defineConfig({
       deny: ["**/.*"],
     },
   },
-});
+}));

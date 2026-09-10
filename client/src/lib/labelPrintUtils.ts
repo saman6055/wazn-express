@@ -3,6 +3,7 @@
  * and generates HTML for printing. Used by LabelPrinting page and BatchFinancialReport modal.
  */
 
+import { printWhenReady } from "./printWindow";
 import { escapeHtml } from "./html";
 import { reportLogoHtml } from "./brand";
 
@@ -255,14 +256,6 @@ export function generateLabelsHtml(options: {
       <div class="labels-container">
         ${labelsHtml}
       </div>
-      <script>
-        window.onload = function() {
-          window.print();
-          window.onafterprint = function() {
-            window.close();
-          };
-        };
-      </script>
     </body>
     </html>
   `;
@@ -276,6 +269,9 @@ export function openLabelPrintWindow(html: string): void {
   if (w) {
     w.document.write(html);
     w.document.close();
-    setTimeout(() => w.print(), 250);
+    // Printed from here, not by a script inside the page: the security
+    // policy runs no inline script, so the old onload never fired in production.
+    w.addEventListener("afterprint", () => w.close());
+    printWhenReady(w);
   }
 }

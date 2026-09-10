@@ -1,3 +1,4 @@
+import { printWhenReady } from "./printWindow";
 import { escapeHtml } from "./html";
 import { fmtDate } from "./numericDate";
 import { reportLogoHtml } from "./brand";
@@ -184,9 +185,6 @@ export function generateBatchLabelsHtml(options: {
     </head>
     <body>
       <div class="labels-container">${labelsHtml}</div>
-      <script>
-        window.onload = function() { window.print(); window.onafterprint = function() { window.close(); }; };
-      </script>
     </body>
     </html>
   `;
@@ -197,6 +195,9 @@ export function openBatchLabelPrintWindow(html: string): void {
   if (w) {
     w.document.write(html);
     w.document.close();
-    setTimeout(() => w.print(), 250);
+    // Printed from here, not by a script inside the page: the security
+    // policy runs no inline script, so the old onload never fired in production.
+    w.addEventListener("afterprint", () => w.close());
+    printWhenReady(w);
   }
 }

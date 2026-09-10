@@ -175,8 +175,12 @@ describe('the document shell', () => {
 
   it('applies the saved theme before the first paint', () => {
     // Otherwise the page paints light and flips, and the boot screen has no
-    // way to know which colours to use.
-    expect(html).toContain('localStorage.getItem("theme")');
+    // way to know which colours to use. A file, not an inline script: the
+    // production security policy runs no inline script, so the inline one
+    // never ran where it mattered.
+    expect(html).toContain('<script src="/theme-init.js"></script>');
+    const init = fs.readFileSync(path.resolve(ROOT, '../public/theme-init.js'), 'utf8');
+    expect(init).toContain('localStorage.getItem("theme")');
   });
 });
 
