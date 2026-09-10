@@ -62,17 +62,18 @@ describe("batch shipment identifiers", () => {
       "export async function getCustomerPackagesInBatch",
       "getCustomerBatches"
     );
-    // The whole batch row is spread into the portal payload, so the internal
-    // field must be destructured away explicitly before that spread. It is
-    // one name in a list of stripped fields now — what matters is that it is
-    // named and that the rest goes out through the same rest element, not
-    // that it is the last one written.
-    expect(fn, "shipmentTrackings must be stripped from the portal payload")
-      .toMatch(/shipmentTrackings:\s*_\w+\s*,/);
-    expect(fn, "the stripped fields must feed a rest element, not a fresh object")
-      .toMatch(/\.\.\.customerVisible\s*\} = batch;/);
+    // This used to pin a strip-list that destructured shipmentTrackings away
+    // before spreading the rest of the row. The card is now built from an
+    // allow-list (server/lib/customerVisibleBatch.ts), so the trackings are
+    // absent because nobody listed them — and so is any column added later.
+    expect(fn, "the portal card must be built from the batch allow-list")
+      .toContain("toCustomerVisibleBatch(batch)");
     expect(fn, "the portal payload must not spread the raw batch row")
       .not.toMatch(/return\s*\{\s*\.\.\.batch\s*,/);
+    const allowList = read("server/lib/customerVisibleBatch.ts");
+    const keys = allowList.slice(allowList.indexOf("VISIBLE_BATCH_KEYS = ["), allowList.indexOf("] as const;"));
+    expect(keys.length, "the batch allow-list has moved or gone").toBeGreaterThan(20);
+    expect(keys, "shipmentTrackings must never be allow-listed").not.toContain('"shipmentTrackings"');
   });
 
   it("the batch list carries every field the edit dialog writes back", () => {
