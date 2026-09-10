@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { escapeHtml } from "@/lib/html";
 import { fmtDate, fmtDateTime, fmtTime } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -192,14 +193,8 @@ export default function AuditLogs() {
       log.entityCode || "-",
     ]);
     
-    const csvContent = BOM + [headers, ...rows].map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(",")).join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `audit-logs-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const csvContent = BOM + toCsv([headers, ...rows]);
+    downloadText(csvContent, `audit-logs-${new Date().toISOString().split('T')[0]}.csv`);
     toast.success(pickLang(language, { ku: "فایلی Excel دابەزێنرا", en: "Excel file downloaded", ar: "تم تنزيل ملف Excel", zh: "Excel 文件已下载" }));
   };
 

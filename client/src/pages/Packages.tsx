@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { statusChip, statusDot } from "@/lib/statusTone";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -1015,21 +1016,10 @@ const [, setLocation] = useLocation();
 
     // Add BOM for Excel UTF-8 compatibility
     const BOM = "\uFEFF";
-    const csvContent = BOM + [
-      headers.join(","),
-      ...rows.map(row => row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(","))
-    ].join("\n");
+    const csvContent = BOM + toCsv([headers, ...rows]);
 
     // Create and download file
-    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    const url = URL.createObjectURL(blob);
-    link.setAttribute("href", url);
-    link.setAttribute("download", `packages_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
-    link.style.visibility = "hidden";
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
+    downloadText(csvContent, `packages_${format(new Date(), "yyyy-MM-dd_HH-mm")}.csv`);
 
     toast.success(t("packages.exportSuccess", { count: filteredPackages.length }));
   };

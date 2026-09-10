@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { printWhenReady } from "@/lib/printWindow";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
@@ -189,17 +190,9 @@ function ClassicPortalInvoiceReports() {
       m.unpaid.toFixed(2)
     ]);
 
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => row.join(','))
-    ].join('\n');
+    const csvContent = toCsv([headers, ...data]);
 
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `my-invoice-report-${selectedYear}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    downloadText('\ufeff' + csvContent, `my-invoice-report-${selectedYear}.csv`);
     toast.success(t('portal.reportDownloaded'));
     setShowExportMenu(false);
   };

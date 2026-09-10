@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { printWhenReady } from "@/lib/printWindow";
 import { escapeHtml } from "@/lib/html";
 import { fmtDate } from "@/lib/numericDate";
@@ -155,24 +156,8 @@ export default function InvoiceReports() {
 
   // Export to CSV/Excel
   const exportToCSV = (data: any[], filename: string, headers: string[]) => {
-    const csvContent = [
-      headers.join(','),
-      ...data.map(row => headers.map(h => {
-        const value = row[h] ?? '';
-        // Escape commas and quotes
-        if (typeof value === 'string' && (value.includes(',') || value.includes('"'))) {
-          return `"${value.replace(/"/g, '""')}"`;
-        }
-        return value;
-      }).join(','))
-    ].join('\n');
-
-    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `${filename}.csv`;
-    link.click();
-    URL.revokeObjectURL(link.href);
+    const csvContent = toCsv([headers, ...data.map(row => headers.map(h => row[h] ?? ''))]);
+    downloadText('\ufeff' + csvContent, `${filename}.csv`);
   };
 
   // Export Monthly Report

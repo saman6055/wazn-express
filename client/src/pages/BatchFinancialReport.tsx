@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { escapeHtml } from "@/lib/html";
 import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useEffect } from "react";
@@ -1715,14 +1716,8 @@ export default function BatchFinancialReport() {
                         pkg.calculatedCostUsd?.toFixed(2),
                         pkg.isFullPackage ? (pkg.fullPackageOrderType === 'commission' ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Buy at cost", ar: "شراء بالتكلفة", zh: "代购按成本" }) : pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "整包" })) : pickLang(language, { ku: "ئاسایی", en: "Regular", ar: "عادي", zh: "普通" })
                       ]) || [];
-                      const csv = [headers, ...rows].map(row => row.join(',')).join('\n');
-                      const blob = new Blob([`\uFEFF${csv}`], { type: 'text/csv;charset=utf-8;' });
-                      const url = URL.createObjectURL(blob);
-                      const a = document.createElement('a');
-                      a.href = url;
-                      a.download = `${selectedCustomer?.code}_${batch?.batchCode}_packages.csv`;
-                      a.click();
-                      URL.revokeObjectURL(url);
+                      const csv = toCsv([headers, ...rows]);
+                      downloadText(`\uFEFF${csv}`, `${selectedCustomer?.code}_${batch?.batchCode}_packages.csv`);
                       toast.success(pickLang(language, { ku: "فایلی Excel داونلۆد کرا", en: "Excel file downloaded", ar: "تم تنزيل ملف Excel", zh: "Excel 文件已下载" }));
                     }}
                   >

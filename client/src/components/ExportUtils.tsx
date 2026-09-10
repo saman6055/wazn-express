@@ -1,3 +1,4 @@
+import { csvCell, toCsv, downloadText } from "@/lib/csv";
 import { Button } from "@/components/ui/button";
 import { FileSpreadsheet, FileText, Download } from "lucide-react";
 
@@ -40,32 +41,18 @@ export function exportToCSV(data: ExportData, filename: string) {
   let csv = '';
   
   if (data.title) {
-    csv += data.title + '\n';
+    csv += csvCell(data.title) + '\n';
   }
   if (data.subtitle) {
-    csv += data.subtitle + '\n';
+    csv += csvCell(data.subtitle) + '\n';
   }
   if (data.title || data.subtitle) {
     csv += '\n';
   }
   
-  csv += data.headers.join(',') + '\n';
-  csv += data.rows.map(row => 
-    row.map(cell => {
-      const str = String(cell);
-      // Escape quotes and wrap in quotes if contains comma
-      if (str.includes(',') || str.includes('"') || str.includes('\n')) {
-        return `"${str.replace(/"/g, '""')}"`;
-      }
-      return str;
-    }).join(',')
-  ).join('\n');
+  csv += toCsv([data.headers, ...data.rows]);
 
-  const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-  const link = document.createElement('a');
-  link.href = URL.createObjectURL(blob);
-  link.download = `${filename}.csv`;
-  link.click();
+  downloadText('\ufeff' + csv, `${filename}.csv`);
 }
 
 // Generate PDF (using print)

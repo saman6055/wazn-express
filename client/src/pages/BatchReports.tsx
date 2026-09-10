@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { escapeHtml } from "@/lib/html";
 import { statusTone, TONE_BG, TONE_TEXT } from "@/lib/statusTone";
 import { fmtDate, fmtDateTime, fmtMonth } from "@/lib/numericDate";
@@ -312,14 +313,8 @@ export default function BatchReports() {
       `${overallProfitMargin.toFixed(1)}%`
     ]);
 
-    const csvContent = [headers.join(","), ...rows.map(row => row.join(","))].join("\n");
-    const blob = new Blob(["\ufeff" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `batch-report-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const csvContent = toCsv([headers, ...rows]);
+    downloadText("\ufeff" + csvContent, `batch-report-${new Date().toISOString().split('T')[0]}.csv`);
     toast.success(pickLang(language, { ku: "فایلی Excel داگیرا", en: "Excel file downloaded", ar: "تم تنزيل ملف Excel", zh: "Excel 文件已下载" }));
   };
 

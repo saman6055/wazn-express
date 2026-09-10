@@ -1,3 +1,4 @@
+import { downloadText } from "@/lib/csv";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -135,11 +136,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
     csv += `${label("balanceSheet.equity", "Equity")}\n`;
     csv += `${label("balanceSheet.netWorth", "Net worth")},$${money(equity)}\n`;
 
-    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `balance-sheet-${selectedDate}.csv`;
-    link.click();
+    downloadText('\ufeff' + csv, `balance-sheet-${selectedDate}.csv`);
   };
 
   return (

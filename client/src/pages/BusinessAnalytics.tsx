@@ -1,3 +1,4 @@
+import { csvRow, downloadText } from "@/lib/csv";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -127,7 +128,7 @@ export default function BusinessAnalytics() {
     csv += pickLang(language, { ku: 'باشترین کڕیارەکان', en: 'Top Customers', ar: 'أفضل العملاء', zh: '顶级客户' }) + '\n';
     csv += pickLang(language, { ku: 'کۆد,ناو,کۆی چارج,کۆی پارەدان', en: 'Code,Name,Total Charges,Total Payments', ar: 'الرمز,الاسم,إجمالي الرسوم,إجمالي المدفوعات', zh: '编码,姓名,总费用,总付款' }) + '\n';
     topCustomers?.forEach((c: any) => {
-      csv += `${getCustomerCode(c.customerId)},${getCustomerName(c.customerId)},${c.totalCharges},${c.totalPayments}\n`;
+      csv += csvRow([getCustomerCode(c.customerId), getCustomerName(c.customerId), c.totalCharges, c.totalPayments]) + '\n';
     });
     csv += '\n';
 
@@ -135,16 +136,10 @@ export default function BusinessAnalytics() {
     csv += pickLang(language, { ku: 'قەرزدارەکان', en: 'Debtors', ar: 'المدينون', zh: '欠款客户' }) + '\n';
     csv += pickLang(language, { ku: 'کۆد,ناو,قەرز', en: 'Code,Name,Debt', ar: 'الرمز,الاسم,الدين', zh: '编码,姓名,欠款' }) + '\n';
     topDebtors.forEach(d => {
-      csv += `${d.customer?.customerCode || ''},${d.customer?.fullNameKurdish || d.customer?.fullName || ''},${d.balanceUsd}\n`;
+      csv += csvRow([d.customer?.customerCode || '', d.customer?.fullNameKurdish || d.customer?.fullName || '', d.balanceUsd]) + '\n';
     });
     
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `business-analytics-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    downloadText(csv, `business-analytics-${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   return (

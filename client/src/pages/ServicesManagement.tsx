@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { escapeHtml } from "@/lib/html";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
@@ -384,14 +385,8 @@ export default function ServicesManagement() {
       ];
     });
     
-    const csvContent = [headers, ...rows].map(row => row.join(",")).join("\n");
-    const blob = new Blob(["\uFEFF" + csvContent], { type: "text/csv;charset=utf-8;" });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement("a");
-    link.href = url;
-    link.download = `services-report-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
-    URL.revokeObjectURL(url);
+    const csvContent = toCsv([headers, ...rows]);
+    downloadText("\uFEFF" + csvContent, `services-report-${new Date().toISOString().split('T')[0]}.csv`);
     toast.success(t('services.csvExported'));
   };
 

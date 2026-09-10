@@ -1,3 +1,4 @@
+import { toCsv, downloadText } from "@/lib/csv";
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
@@ -95,17 +96,10 @@ export default function ProfitDashboardByType() {
 
     // Convert to CSV
     const headers = Object.keys(data[0]);
-    const csv = [
-      headers.join(","),
-      ...data.map(row => headers.map(header => row[header as keyof typeof row]).join(","))
-    ].join("\n");
+    const csv = toCsv([headers, ...data.map(row => headers.map(header => row[header as keyof typeof row]))]);
 
     // Download
-    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(blob);
-    link.download = `profit-report-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    downloadText("\uFEFF" + csv, `profit-report-${new Date().toISOString().split('T')[0]}.csv`);
   };
 
   const exportToPDF = () => {
