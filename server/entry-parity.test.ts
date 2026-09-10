@@ -45,6 +45,9 @@ const MUST_BE_IN_BOTH: { name: string; token: string; why: string }[] = [
   { name: 'login rate limiting', token: 'authLimiterMiddleware', why: 'password guessing' },
   { name: 'security headers', token: 'helmet', why: 'clickjacking and MIME sniffing' },
   { name: 'request logging', token: 'requestLoggingMiddleware', why: 'nothing is diagnosable without it' },
+  { name: 'portal live updates', token: 'registerPortalEventsRoute(app)', why: 'no live notice reaches a customer without it' },
+  { name: 'backup download', token: 'registerBackupFileRoute(app)', why: 'the Backups screen links every file here' },
+  { name: 'real client addresses', token: 'app.set("trust proxy"', why: 'without it every rate limit counts all users as one' },
 ];
 
 describe('the dev and production servers do the same job', () => {

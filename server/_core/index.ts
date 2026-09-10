@@ -10,6 +10,8 @@ import { registerOAuthRoutes } from "./oauth";
 import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { registerPortalEventsRoute } from "./portalEventsRoute";
+import { registerBackupFileRoute } from "./backupFileRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
@@ -110,94 +112,10 @@ async function startServer() {
     }
   });
 
-  // Backup file download (admin only; serves local ZIP or redirects to remote URL)
-  app.get("/api/backup-file/:id", async (req, res) => {
-    try {
-      const { sdk } = await import("./sdk.js");
-      const user = await sdk.authenticateRequest(req);
-      if (!user || user.isCustomer || (user.role !== "super_admin" && user.role !== "admin")) {
-        return res.status(403).json({ error: "Forbidden" });
-      }
-      const id = parseInt(req.params.id, 10);
-      if (Number.isNaN(id)) return res.status(400).json({ error: "Invalid backup id" });
-      const { getDb } = await import("../db/connection.js");
-      const { backups } = await import("../../drizzle/schema.js");
-      const { eq } = await import("drizzle-orm");
-      const db = await getDb();
-      if (!db) return res.status(503).json({ error: "Database unavailable" });
-      const [backup] = await db.select().from(backups).where(eq(backups.id, id));
-      if (!backup || !backup.fileUrl) return res.status(404).json({ error: "Backup not found" });
-      const { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } = await import("../services/zipBackup.service.js");
-      if (backup.fileUrl.startsWith(LOCAL_BACKUP_PREFIX)) {
-        const ext = backup.filename?.endsWith(".json") ? "json" : "zip";
-        const localPath = getLocalBackupFilePath(id, ext);
-        return res.download(localPath, backup.filename || `backup-${id}.${ext}`, (err) => {
-          if (err && !res.headersSent) res.status(500).json({ error: "Download failed" });
-        });
-      }
-      return res.redirect(302, backup.fileUrl);
-    } catch {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-  });
+  // Backup download and the portal's live updates — shared with production.
+  registerBackupFileRoute(app);
 
-  // Portal real-time event stream (SSE).
-  // The portal layout opens an EventSource to this endpoint on every
-  // page; without it, real-time toast notifications for package status
-  // changes / new invoices / payments don't fire. Requires an
-  // authenticated customer session; returns 401 otherwise so the
-  // browser stops retrying. Cleanup is attached to `req.on('close')`
-  // so a dropped tab releases its event listener immediately.
-  app.get("/api/portal/events", async (req, res) => {
-    try {
-      const { sdk } = await import("./sdk.js");
-      const user = await sdk.authenticateRequest(req);
-      if (!user || !user.isCustomer) {
-        return res.status(401).json({ error: "Customer login required" });
-      }
-      const { subscribePortalEvents } = await import("../services/portalEvents.service.js");
-
-      // Standard SSE response headers. `X-Accel-Buffering: no` disables
-      // Nginx/proxy buffering so events actually reach the client live.
-      res.status(200);
-      res.setHeader("Content-Type", "text/event-stream");
-      res.setHeader("Cache-Control", "no-cache, no-transform");
-      res.setHeader("Connection", "keep-alive");
-      res.setHeader("X-Accel-Buffering", "no");
-      res.flushHeaders?.();
-
-      // Initial comment so the client knows the stream opened cleanly.
-      res.write(`: connected\n\n`);
-
-      const unsubscribe = subscribePortalEvents(user.id, (event) => {
-        // SSE wire format: `data: <json>\n\n`. JSON.stringify is safe
-        // because PortalEvent only carries primitive fields.
-        try {
-          res.write(`data: ${JSON.stringify(event)}\n\n`);
-        } catch {
-          // Write after close — ignore; cleanup is handled by 'close'.
-        }
-      });
-
-      // Heartbeat every 25s so proxies (and the client) don't time out
-      // an otherwise-idle connection. Comment lines are valid SSE and
-      // are ignored by EventSource.
-      const heartbeat = setInterval(() => {
-        try { res.write(`: heartbeat\n\n`); } catch { /* socket gone */ }
-      }, 25_000);
-
-      req.on("close", () => {
-        clearInterval(heartbeat);
-        unsubscribe();
-        try { res.end(); } catch { /* already closed */ }
-      });
-    } catch (err) {
-      appLogger.error("[SSE] /api/portal/events failed to open", {
-        error: err instanceof Error ? err.message : String(err),
-      });
-      try { res.status(500).end(); } catch { /* response already sent */ }
-    }
-  });
+  registerPortalEventsRoute(app);
 
   // tRPC API (auth limiter applies strict limit to login procedures only)
   app.use(

@@ -15,6 +15,8 @@ import { registerOAuthRoutes } from "./oauth";
 import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
+import { registerPortalEventsRoute } from "./portalEventsRoute";
+import { registerBackupFileRoute } from "./backupFileRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
@@ -57,7 +59,25 @@ function serveStatic(app: express.Express) {
     appLogger.info("Serving static files", { distPath });
   }
 
-  app.use(express.static(distPath));
+  // Hashed build files never change under their name: keep them for a year.
+  // index.html names the current ones, so it is asked for every time.
+  app.use(
+    express.static(distPath, {
+      setHeaders(res, filePath) {
+        if (filePath.endsWith(".html")) res.setHeader("Cache-Control", "no-cache");
+        else if (filePath.includes(`${path.sep}assets${path.sep}`)) {
+          res.setHeader("Cache-Control", "public, max-age=31536000, immutable");
+        }
+      },
+    }),
+  );
+  // A build file that is not there is a 404, not the page shell. After a
+  // deploy, an open tab asking for the last build's chunk must fail as a
+  // missing file — the app then reloads onto the new build — instead of
+  // receiving HTML where it expected JavaScript.
+  app.use("/assets", (_req, res) => {
+    res.status(404).end();
+  });
 
   // Locally-stored uploads (used whenever Forge storage is not configured).
   //
@@ -69,7 +89,13 @@ function serveStatic(app: express.Express) {
   // nothing, which looked exactly like the photo had never been attached.
   const uploadsDir = getUploadsDir();
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
-  app.use(UPLOADS_ROUTE, express.static(uploadsDir, { maxAge: "7d" }));
+  app.use(UPLOADS_ROUTE, express.static(uploadsDir, {
+    // Private: photos, ID scans among them, are one person's business — a
+    // shared proxy or CDN must not keep a copy for the next visitor.
+    setHeaders(res) {
+      res.setHeader("Cache-Control", "private, max-age=604800");
+    },
+  }));
   appLogger.info("Serving uploads", { uploadsDir, route: UPLOADS_ROUTE });
 
   // Without a mounted volume this directory is part of the container and is
@@ -84,6 +110,7 @@ function serveStatic(app: express.Express) {
 
   // fall through to index.html if the file doesn't exist (SPA routing)
   app.use("*", (_req, res) => {
+    res.setHeader("Cache-Control", "no-cache");
     res.sendFile(path.resolve(distPath, "index.html"));
   });
 }
@@ -105,10 +132,36 @@ async function startServer() {
   const app = express();
   const server = createServer(app);
 
-  // Security headers (CSP disabled in dev; prod uses default)
+  // We run behind a reverse proxy (Coolify). Without this, req.ip is the
+  // PROXY's address for every request, so every rate limiter below counted
+  // all users as one: twenty wrong passwords from anyone closed sign-in for
+  // everyone, staff and customers, for a quarter of an hour, and a busy
+  // afternoon could trip the global limit for the whole company. The dev
+  // server has carried this block for months; production never ran it.
+  //
+  // Set to the NUMBER OF PROXY HOPS, never `true`: `true` trusts the whole
+  // X-Forwarded-For chain, which a client can forge to dodge rate limits.
+  // Default 1 = Coolify only. Add another hop for a CDN in front (e.g.
+  // Cloudflare → TRUST_PROXY_HOPS=2).
+  const trustProxyHops = parseInt(process.env.TRUST_PROXY_HOPS ?? "1", 10);
+  app.set("trust proxy", Number.isFinite(trustProxyHops) ? trustProxyHops : 1);
+
+  // Security headers: helmet's default policy, widened in the two places the
+  // dev server has always widened it — which never reached production,
+  // because production does not run the dev server:
+  //   frame-src  the YouTube player the portal tutorials embed;
+  //   img-src    https: and blob: — photos hosted elsewhere, and the preview
+  //              of a photo before it is uploaded.
+  // Scripts stay 'self' only.
   app.use(
     helmet({
-      contentSecurityPolicy: process.env.NODE_ENV === "development" ? false : undefined,
+      contentSecurityPolicy: process.env.NODE_ENV === "development" ? false : {
+        useDefaults: true,
+        directives: {
+          "frame-src": ["'self'", "https://www.youtube.com", "https://www.youtube-nocookie.com"],
+          "img-src": ["'self'", "data:", "blob:", "https://i.ytimg.com", "https:"],
+        },
+      },
     })
   );
 
@@ -130,6 +183,13 @@ async function startServer() {
   // Request logging (method, url, status, duration)
   app.use(requestLoggingMiddleware(appLogger));
 
+  // Nothing an API answers may be kept by a browser or a proxy: one person's
+  // statement must never be what the next person on that machine gets back.
+  app.use("/api", (_req, res, next) => {
+    res.setHeader("Cache-Control", "no-store");
+    next();
+  });
+
   // Rate limiting: global first, then auth-specific for login on /api/trpc
   app.use(globalLimiter);
 
@@ -138,6 +198,10 @@ async function startServer() {
 
   // OAuth callback under /api/oauth/callback
   registerOAuthRoutes(app);
+
+  // Backup download and the portal's live updates — shared with the dev server.
+  registerBackupFileRoute(app);
+  registerPortalEventsRoute(app);
 
   // tRPC API (auth limiter applies strict limit to login procedures only)
   app.use(
@@ -156,6 +220,13 @@ async function startServer() {
   // Dynamic PWA manifest + app icons from the uploaded company logo.
   // MUST be before serveStatic so /manifest.json wins over the bundled file.
   registerAppIconRoutes(app);
+
+  // An /api address that matches nothing is an error, not a page. It fell
+  // through to the SPA and answered 200 with index.html, which the caller
+  // then failed to read as JSON.
+  app.use("/api", (_req, res) => {
+    res.status(404).json({ error: "Not found" });
+  });
 
   // Production mode: serve static files
   serveStatic(app);
