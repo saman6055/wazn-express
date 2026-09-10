@@ -28,7 +28,9 @@ describe("a thumb can hit it", () => {
 
   it("photo controls are there on a phone, not only on hover", () => {
     const src = read("components/CompressedImageUpload.tsx");
-    expect(src).not.toMatch(/opacity-0 group-hover:opacity-100(?![^"]*\[@media\(hover:hover\)\])/);
+    // Bare "opacity-0 group-hover:opacity-100" hides a control from every
+    // touch screen; hidden only where there is a mouse is the fix.
+    expect(src).not.toMatch(/(?<!\[@media\(hover:hover\)\]:)opacity-0 group-hover:opacity-100/);
     expect(src).toContain("opacity-100 [@media(hover:hover)]:opacity-0 group-hover:opacity-100");
   });
 });
