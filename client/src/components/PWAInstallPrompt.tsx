@@ -300,7 +300,7 @@ export function PWAInstallPrompt() {
   }
 
   return (
-    <div className="fixed bottom-20 left-4 right-4 z-50 animate-in slide-in-from-bottom-4 duration-300">
+    <div className="fixed bottom-[calc(6.5rem+env(safe-area-inset-bottom))] start-4 end-4 z-[60] animate-in slide-in-from-bottom-4 duration-300">
       <div className="bg-slate-800 rounded-2xl shadow-2xl border border-slate-700 p-4 mx-auto max-w-md">
         <button
           onClick={handleDismiss}

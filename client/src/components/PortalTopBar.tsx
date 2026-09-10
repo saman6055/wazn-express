@@ -29,7 +29,7 @@ export function PortalTopBar() {
   return (
     <div
       className={cn(
-        "sticky top-0 z-40 border-b backdrop-blur-sm transition-colors duration-300",
+        "sticky top-[env(safe-area-inset-top)] z-40 border-b backdrop-blur-sm transition-colors duration-300",
         isDark ? "bg-zinc-900/90 border-zinc-800/60" : "bg-white/90 border-gray-200/60"
       )}
     >

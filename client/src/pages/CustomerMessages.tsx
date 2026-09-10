@@ -314,7 +314,7 @@ export default function CustomerMessages() {
 
   return (
     <DashboardLayout>
-      <div className="h-[calc(100vh-120px)] flex flex-col">
+      <div className="h-[calc(100vh-120px)] supports-[height:100dvh]:h-[calc(100dvh-120px)] flex flex-col">
         {/* Header */}
         <div className="bg-gradient-to-r from-blue-600 to-blue-700 text-white p-6 rounded-t-xl">
           <div className="flex items-center gap-3">

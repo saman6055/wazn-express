@@ -79,7 +79,7 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
         // A flex column so <main> can grow: that is what lets the news strip
         // sit at the bottom of a short page instead of directly under the
         // content, halfway up the screen.
-        "portal-theme min-h-screen flex flex-col transition-colors duration-300",
+        "portal-theme min-h-screen supports-[height:100dvh]:min-h-dvh flex flex-col transition-colors duration-300",
         isDark ? "bg-zinc-950" : "bg-amber-50/50",
         isRTL && "rtl",
         isInstalled ? "pb-32" : "pb-28"
@@ -89,7 +89,7 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
       {isInstalled && (
         <div
           className={cn(
-            "h-safe-area-top",
+            "sticky top-0 z-50 h-safe-area-top",
             isDark ? "bg-zinc-950" : "bg-amber-50/50"
           )}
         />

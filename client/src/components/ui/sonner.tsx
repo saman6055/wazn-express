@@ -33,7 +33,7 @@ const Toaster = ({ ...props }: ToasterProps) => {
       dir={direction}
       position="bottom-right"
       offset={{ bottom: 80, right: isRTL ? 96 : 24 }}
-      mobileOffset={{ bottom: 72 }}
+      mobileOffset={{ bottom: "calc(6.5rem + env(safe-area-inset-bottom))" }}
       duration={4000}
       visibleToasts={3}
       richColors

@@ -344,7 +344,7 @@ export default function PortalMessages() {
   return (
     <PortalLayout>
       <div className={cn(
-        "flex flex-col h-[calc(100vh-140px)]",
+        "flex flex-col h-[calc(100vh-140px)] supports-[height:100dvh]:h-[calc(100dvh-140px)]",
         isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
       )}>
         {/* Header */}

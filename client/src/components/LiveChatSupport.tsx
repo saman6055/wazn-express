@@ -276,11 +276,13 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
         exit={{ opacity: 0, y: 100, scale: 0.9 }}
         transition={{ type: "spring", duration: 0.5 }}
         className={cn(
-          "fixed bottom-4 z-50 w-[380px] rounded-2xl shadow-2xl overflow-hidden",
-          isRTL ? "left-4" : "right-4",
+          // Full width less a margin on a phone; the 380px panel ran off a
+          // 360px screen and hid its own typing row.
+          "fixed bottom-4 z-50 inset-x-2 sm:inset-x-auto sm:w-[380px] rounded-2xl shadow-2xl overflow-hidden",
+          isRTL ? "sm:left-4" : "sm:right-4",
           isDark ? "bg-slate-900 border border-slate-700" : "bg-white border border-slate-200 dark:border-slate-800/60"
         )}
-        style={{ maxHeight: 'calc(100vh - 100px)' }}
+        style={{ maxHeight: typeof CSS !== "undefined" && CSS.supports?.("height", "100dvh") ? "calc(100dvh - 100px)" : "calc(100vh - 100px)" }}
       >
         {/* Header */}
         <div className={cn(
@@ -590,7 +592,7 @@ export function ChatFloatingButton({ onClick, unreadCount = 0 }: ChatFloatingBut
         "bg-gradient-to-r from-purple-600 to-indigo-600 hover:from-purple-700 hover:to-indigo-700",
         "transition-all duration-300",
         isRTL ? "left-4" : "right-4",
-        "bottom-24" // Above bottom navigation
+        "bottom-[calc(6rem+env(safe-area-inset-bottom))]" // Above the bottom navigation and the home indicator
       )}
     >
       <MessageCircle className="w-6 h-6 text-white" />

@@ -351,7 +351,7 @@ function ClassicPortalInvoiceReports() {
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-sm font-medium border-0 outline-none",
+                  "px-3 py-1.5 rounded-lg text-base md:text-sm font-medium border-0 outline-none",
                   isDark 
                     ? "bg-slate-700 text-white" 
                     : "bg-slate-100 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300"

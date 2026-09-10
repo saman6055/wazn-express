@@ -98,7 +98,7 @@ export default function PortalFAQ() {
               onChange={(e) => setQuery(e.target.value)}
               placeholder={pick(faqHeader.searchPlaceholder)}
               className={cn(
-                "w-full h-12 rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/25 text-white placeholder:text-white/60 text-sm outline-none focus:ring-white/50 transition",
+                "w-full h-12 rounded-2xl bg-white/15 backdrop-blur ring-1 ring-white/25 text-white placeholder:text-white/60 text-base md:text-sm outline-none focus:ring-white/50 transition",
                 isRTL ? "pr-11 pl-10" : "pl-11 pr-10",
               )}
             />

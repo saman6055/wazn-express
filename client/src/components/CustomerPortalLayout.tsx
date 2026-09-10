@@ -178,7 +178,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         // A flex column so <main> can grow: that is what lets the news strip
         // sit at the bottom of a short page instead of directly under the
         // content, halfway up the screen.
-        "portal-theme min-h-screen flex flex-col transition-colors duration-300",
+        "portal-theme min-h-screen supports-[height:100dvh]:min-h-dvh flex flex-col transition-colors duration-300",
         isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40",
         isRTL && "rtl",
         // Bottom room so content (incl. the in-flow news ticker) clears the
@@ -188,13 +188,13 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     >
       {/* PWA Status Bar Spacer for iOS */}
       {isInstalled && (
-        <div className={cn("h-safe-area-top", isDark ? "bg-slate-950" : "bg-slate-900")} />
+        <div className={cn("sticky top-0 z-50 h-safe-area-top", isDark ? "bg-slate-950" : "bg-slate-900")} />
       )}
       {/* Global search bar - sticky at top. Hidden on the home page, whose
           own header carries search and the notification bell. */}
       {!isHome && (
       <div className={cn(
-        "sticky top-0 z-40 border-b transition-colors duration-300",
+        "sticky top-[env(safe-area-inset-top)] z-40 border-b transition-colors duration-300",
         isDark ? "bg-slate-900/95 border-slate-700/50 backdrop-blur-sm" : "bg-slate-50/95 border-slate-200/50 backdrop-blur-sm"
       )}>
         <div className={cn(portalWidth, "mx-auto px-3 py-2 flex items-center gap-2")}>
@@ -213,7 +213,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
                 placeholder={t('portal.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-10 rounded-xl border-0 bg-muted/50 text-sm ps-9 pe-4"
+                className="h-10 rounded-xl border-0 bg-muted/50 text-base md:text-sm ps-9 pe-4"
               />
             </div>
           </form>

@@ -260,7 +260,7 @@ export default function ModernPortalShipments() {
               value={searchQuery}
               onChange={(e) => handleTrackingSearch(e.target.value)}
               className={cn(
-                "w-full bg-transparent py-3.5 text-sm",
+                "w-full bg-transparent py-3.5 text-base md:text-sm",
                 isRTL ? "pe-4 ps-12" : "ps-12 pe-10",
                 isDark
                   ? "text-white placeholder:text-zinc-500"

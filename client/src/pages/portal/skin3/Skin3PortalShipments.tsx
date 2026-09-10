@@ -279,7 +279,7 @@ export default function Skin3PortalShipments() {
               value={searchQuery}
               onChange={(e) => handleTrackingSearch(e.target.value)}
               className={cn(
-                "w-full bg-transparent py-4 text-sm font-bold",
+                "w-full bg-transparent py-4 text-base md:text-sm font-bold",
                 isRTL ? "pe-4 ps-12" : "ps-12 pe-10",
                 isDark
                   ? "text-white placeholder:text-zinc-600"

@@ -101,7 +101,7 @@ export default function PortalSecurity() {
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   const inputCls = cn(
-    "w-full h-12 rounded-xl px-4 pe-11 text-sm font-medium outline-none transition",
+    "w-full h-12 rounded-xl px-4 pe-11 text-base md:text-sm font-medium outline-none transition",
     "border focus:ring-2",
     isDark
       ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-cyan-500/40 focus:border-cyan-500"

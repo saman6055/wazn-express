@@ -204,7 +204,7 @@ export default function PortalProhibitedPackages() {
                           <div className="mt-3">
                             <textarea value={reshipAddress} onChange={(e) => setReshipAddress(e.target.value)} rows={2}
                               placeholder={label({ ku: "ئەدرێسی نوێ بنووسە...", en: "Enter the new address...", ar: "أدخل العنوان الجديد...", zh: "输入新地址..." })}
-                              className={cn("w-full rounded-xl border px-3 py-2 text-sm outline-none", isDark ? "bg-slate-900 border-slate-700 text-white" : "border-slate-200 dark:border-slate-800/60")} />
+                              className={cn("w-full rounded-xl border px-3 py-2 text-base md:text-sm outline-none", isDark ? "bg-slate-900 border-slate-700 text-white" : "border-slate-200 dark:border-slate-800/60")} />
                             <button onClick={() => choose(it, "reship")} disabled={chooseResolution.isPending}
                               className="mt-2 w-full rounded-xl bg-violet-600 text-white py-2.5 text-sm font-medium hover:bg-violet-700 flex items-center justify-center gap-2">
                               {chooseResolution.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}

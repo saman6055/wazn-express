@@ -431,7 +431,7 @@ export default function PermissionsManagement() {
                 <CardDescription className="text-xs">{pickLang(language, { ku: "کارمەندێک هەڵبژێرە بۆ ڕێکخستنی مۆڵەتەکانی", en: "Select a staff member to configure their permissions", ar: "اختر موظفًا لضبط صلاحياته", zh: "选择一名员工以配置其权限" })}</CardDescription>
               </CardHeader>
               <CardContent className="p-0">
-                <ScrollArea className="h-[calc(100vh-280px)]">
+                <ScrollArea className="h-[calc(100vh-280px)] supports-[height:100dvh]:h-[calc(100dvh-280px)]">
                   <div className="p-3 space-y-1.5">
                     {staffMembers.map((user) => {
                       const isSelected = selectedUserId === user.id;

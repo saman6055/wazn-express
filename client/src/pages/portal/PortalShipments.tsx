@@ -376,7 +376,7 @@ function ClassicPortalShipments() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder={pickLang(language, { ku: "گەڕان بە کۆدی بار...", en: "Search by shipment code...", ar: "البحث برمز الشحنة...", zh: "按货运编号搜索..." })}
               className={cn(
-                "w-full ps-12 pe-4 py-3.5 rounded-xl text-sm transition-all duration-300",
+                "w-full ps-12 pe-4 py-3.5 rounded-xl text-base md:text-sm transition-all duration-300",
                 isDark 
                   ? "bg-slate-800 text-white placeholder-slate-500 focus:bg-slate-700" 
                   : "bg-white/10 text-white placeholder-slate-400 focus:bg-white/20"

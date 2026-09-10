@@ -139,7 +139,6 @@ function buildManifest(logoUrl: string | null, info: Record<string, unknown> | n
     display: "standalone",
     background_color: "#1e293b",
     theme_color: "#1e293b",
-    orientation: "portrait-primary",
     scope: "/",
     lang: "ku",
     dir: "rtl",
