@@ -3,6 +3,7 @@ import { Component, ReactNode } from "react";
 import { UNAUTHED_ERR_MSG } from "@shared/const";
 import { getLoginUrl } from "@/const";
 import { QueryErrorFallback } from "./QueryErrorFallback";
+import { isNetworkFault } from "@/lib/networkFault";
 
 interface Props {
   children: ReactNode;
@@ -73,6 +74,8 @@ function isNotFoundError(error: Error): boolean {
 }
 
 function isNetworkError(error: Error): boolean {
+  // The API link names a dropped connection itself, in the reader's language.
+  if (isNetworkFault(error)) return true;
   const msg = error.message?.toLowerCase() ?? "";
   if (msg.includes("network") || msg.includes("fetch") || msg.includes("failed to fetch")) return true;
   if (isTRPCClientError(error) && error.cause) {

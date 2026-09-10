@@ -13,6 +13,8 @@ if (analyticsEndpoint && analyticsWebsiteId) {
 }
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { LANG_HEADER } from "@shared/errorMessages";
+import { networkFault, storedLanguage } from "./lib/networkFault";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
@@ -123,11 +125,23 @@ const trpcClient = trpc.createClient({
       // code had to fall back to "UNKNOWN". Letting tRPC parse the response
       // natively gives us the real TRPCClientError with code, httpStatus,
       // and message populated correctly.
+      //
+      // The reader's language rides along too, so a server fault can be
+      // described to a customer in their own words (shared/errorMessages).
+      headers() {
+        return { [LANG_HEADER]: storedLanguage() };
+      },
       async fetch(input, init) {
-        return globalThis.fetch(input, {
-          ...(init ?? {}),
-          credentials: "include",
-        });
+        try {
+          return await globalThis.fetch(input, {
+            ...(init ?? {}),
+            credentials: "include",
+          });
+        } catch (err) {
+          // An abort is react-query cancelling a request; it must stay one.
+          if ((err as { name?: string } | null)?.name === "AbortError") throw err;
+          throw networkFault(err);
+        }
       },
     }),
   ],

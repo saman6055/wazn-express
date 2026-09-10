@@ -2,6 +2,9 @@ import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { mayPerform, READ_ONLY_REFUSAL } from '@shared/readOnlyRole';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
+import { LANG_HEADER } from "@shared/errorMessages";
+import { appLogger } from "../utils/logger";
+import { clientErrorMessage, isValidationError, newErrorRef } from "./clientError";
 import type { TrpcContext } from "./context";
 
 /**
@@ -38,12 +41,37 @@ export function withCause(message: string, error: unknown): string {
   return reasons.length ? `${message}\n\n${reasons.join("\n")}` : message;
 }
 
+/**
+ * A server fault gets a reference, one log line with the whole cause under
+ * that reference, and — for anyone who is not staff — a plain sentence in the
+ * reader's language instead of the cause. See clientError.ts.
+ */
 const t = initTRPC.context<TrpcContext>().create({
   transformer: superjson,
-  errorFormatter({ shape, error }) {
+  errorFormatter({ shape, error, ctx, path }) {
+    const message = withCause(shape.message, error.cause ?? error);
+    const isStaff = Boolean(ctx?.user && !ctx.user.isCustomer);
+    const validation = isValidationError(error.code, error.cause);
+    const lang = ctx?.req?.headers?.[LANG_HEADER];
+
+    if (error.code !== "INTERNAL_SERVER_ERROR") {
+      return {
+        ...shape,
+        message: clientErrorMessage({ code: error.code, message, isStaff, lang, validation }),
+      };
+    }
+
+    const ref = newErrorRef();
+    appLogger.error(`[${ref}] ${path ?? "unknown"} failed: ${message}`, {
+      ref,
+      path,
+      userId: ctx?.user?.id,
+      role: ctx?.user?.role,
+    });
     return {
       ...shape,
-      message: withCause(shape.message, error.cause ?? error),
+      message: clientErrorMessage({ code: error.code, message, isStaff, lang, validation, ref }),
+      data: { ...shape.data, ref },
     };
   },
 });

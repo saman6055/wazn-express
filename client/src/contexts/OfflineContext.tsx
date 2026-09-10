@@ -10,6 +10,7 @@ import {
 } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { isNetworkFault } from "@/lib/networkFault";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 interface OfflineContextValue {
@@ -22,6 +23,8 @@ interface OfflineContextValue {
 const OfflineContext = createContext<OfflineContextValue | undefined>(undefined);
 
 function isLikelyNetworkError(error: unknown): boolean {
+  // The API link names a dropped connection itself, in the reader's language.
+  if (isNetworkFault(error)) return true;
   if (!(error instanceof Error)) return false;
   const msg = error.message?.toLowerCase() ?? "";
   if (msg.includes("network") || msg.includes("fetch") || msg.includes("failed to fetch")) return true;

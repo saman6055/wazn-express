@@ -6,6 +6,7 @@
 import type { Express, Request, Response } from "express";
 import { createRequire } from "node:module";
 import { getDb } from "../db/connection";
+import { appLogger } from "../utils/logger";
 import { sql } from "drizzle-orm";
 
 let appVersion = "1.0.0";
@@ -44,11 +45,14 @@ export function registerHealthRoutes(app: Express) {
         message: "Database connection OK",
       });
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : String(err);
+      // The driver's own words can name the host and the user. This endpoint
+      // answers anyone, so they go to the log, not into the reply.
+      appLogger.error("Database ping failed", {
+        err: err instanceof Error ? err.message : String(err),
+      });
       res.status(503).json({
         status: "error",
         message: "Database ping failed",
-        error: message,
       });
     }
   });

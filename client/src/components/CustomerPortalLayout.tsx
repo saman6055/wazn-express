@@ -55,7 +55,13 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   // Portal page-view tracking for the admin Portal Center. Best-effort and
   // fire-and-forget: fails silently and never blocks navigation. Skips repeat
   // fires for the same path so a re-render doesn't double-log.
-  const trackActivity = trpc.customerPortal.trackActivity.useMutation();
+  // It said it failed silently, but a failure still reached the global error
+  // toast — a customer on a weak signal was told something broke that they
+  // never did.
+  const trackActivity = trpc.customerPortal.trackActivity.useMutation({
+    meta: { skipGlobalToast: true },
+    onError: () => {},
+  });
   const lastTrackedPath = useRef<string | null>(null);
   useEffect(() => {
     if (lastTrackedPath.current === location) return;
