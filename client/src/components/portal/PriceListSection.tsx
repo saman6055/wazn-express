@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -128,7 +129,7 @@ function ShippingRateCard({
           <Icon className="w-6 h-6" />
         </div>
         {rate.portalBadge && (
-          <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 text-[10px] font-black tracking-wide shadow-sm">
+          <Badge className="bg-white/20 backdrop-blur-md text-white border-white/30 text-[11px] font-black tracking-wide shadow-sm">
             {rate.portalBadge === "POPULAR" ? t("priceList.popular") :
               rate.portalBadge === "NEW" ? t("priceList.new") :
               rate.portalBadge === "RECOMMENDED" ? t("priceList.recommended") :
@@ -233,7 +234,7 @@ function ServiceCard({
       {service.portalBadge && (
         <div className="absolute top-3 end-3">
           <Badge className={cn(
-            "text-[10px] font-bold tracking-wide border-0",
+            "text-[11px] font-bold tracking-wide border-0",
             service.portalBadge === "POPULAR" && "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
             service.portalBadge === "NEW" && "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200",
             service.portalBadge === "RECOMMENDED" && "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
@@ -435,7 +436,7 @@ function PriceCalculator({
         placeholder="0"
         className={cn("pe-9 font-mono font-bold text-center", inputCls)}
       />
-      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[10px] font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>
+      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[11px] font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>
         {label}
       </span>
     </div>
@@ -517,7 +518,7 @@ function PriceCalculator({
 
           <div className="flex items-center gap-3">
             <span className={cn("h-px flex-1", violet ? "bg-white/20" : isDark ? "bg-slate-700" : "bg-slate-200")} />
-            <span className={cn("text-[10px] font-bold uppercase tracking-wide", muted)}>
+            <span className={cn("text-[11px] font-bold uppercase tracking-wide", muted)}>
               {pickLang(lang, { ku: "یان", en: "or", ar: "أو", zh: "或" })}
             </span>
             <span className={cn("h-px flex-1", violet ? "bg-white/20" : isDark ? "bg-slate-700" : "bg-slate-200")} />
@@ -537,7 +538,7 @@ function PriceCalculator({
               {dimInput(wid, setWid, pickLang(lang, { ku: "پانی", en: "W", ar: "عرض", zh: "宽" }))}
               {dimInput(hei, setHei, pickLang(lang, { ku: "بەرزی", en: "H", ar: "ارتفاع", zh: "高" }))}
             </div>
-            <p className={cn("mt-2 text-[10px]", muted)}>
+            <p className={cn("mt-2 text-[11px]", muted)}>
               {pickLang(lang, { ku: "بە سانتیمەتر", en: "In centimetres", ar: "بالسنتيمتر", zh: "单位：厘米" })}
             </p>
             {volCm3 > 0 && (
@@ -596,7 +597,7 @@ function PriceCalculator({
               {dimInput(wid, setWid, pickLang(lang, { ku: "پانی", en: "W", ar: "عرض", zh: "宽" }))}
               {dimInput(hei, setHei, pickLang(lang, { ku: "بەرزی", en: "H", ar: "ارتفاع", zh: "高" }))}
             </div>
-            <p className={cn("mt-2 text-[10px]", muted)}>
+            <p className={cn("mt-2 text-[11px]", muted)}>
               {pickLang(lang, { ku: "بە سانتیمەتر", en: "In centimetres", ar: "بالسنتيمتر", zh: "单位：厘米" })}
             </p>
           </div>
@@ -649,7 +650,7 @@ function PriceCalculator({
                     {pickLang(lang, { ku: "قەبارە: ", en: "Volume: ", ar: "الحجم: ", zh: "体积：" })}
                     <span className="font-mono">{cbm.toFixed(3)} m³</span>
                   </div>
-                  <div className={cn("text-[10px]", muted)}>
+                  <div className={cn("text-[11px]", muted)}>
                     {num(cbmDirect) > 0
                       ? pickLang(lang, { ku: "ئەوەی خۆت نووسیوتە", en: "As you entered it", ar: "كما أدخلته", zh: "按您输入的数值" })
                       : pickLang(lang, { ku: "لە ڕەهەندەکانتەوە دەرهێنراوە", en: "Worked out from your dimensions", ar: "محسوب من أبعادك", zh: "根据您的尺寸算出" })}
@@ -680,7 +681,7 @@ function PriceCalculator({
                 ${total.toFixed(2)}
               </div>
               {showIqd && iqdTotal !== null && (
-                <div className={cn("text-[10px]", muted)}>
+                <div className={cn("text-[11px]", muted)}>
                   ≈ {Math.round(iqdTotal).toLocaleString("en-US")} د.ع
                 </div>
               )}
@@ -895,7 +896,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
   const { theme } = useTheme();
   const isDark = forceDark ?? (theme === "dark");
 
-  const { data, isLoading } = trpc.customerPortal.getPriceList.useQuery(undefined, {
+  const { data, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getPriceList.useQuery(undefined, {
     // The price list is short-lived (admin edits propagate fast) but not
     // latency-critical, so keep it cached for a minute to avoid hammering
     // the server on every nav.
@@ -961,6 +962,14 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
 
   // Disabled, missing, or empty — hide entirely. The portal home has other
   // content so we don't want a ghost section taking space.
+  // A dropped request rendered the calculator page as an empty shell.
+  if (isError) {
+    return (
+      <div className="px-4 py-4">
+        <PortalErrorState compact onRetry={() => void refetch()} isRetrying={isFetching} />
+      </div>
+    );
+  }
   if (!data || !data.settings?.isEnabled) return null;
   const hasShipping = data.shipping.length > 0;
   const hasServices = data.services.length > 0;
@@ -1031,7 +1040,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
               <h2 className="text-base sm:text-lg font-black text-white leading-tight">
                 {title}
               </h2>
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-[10px] font-bold text-amber-200 tracking-wide">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full bg-white/15 border border-white/20 text-[11px] font-bold text-amber-200 tracking-wide">
                 <Sparkles className="w-3 h-3" />
                 {t("priceList.badge")}
               </span>
@@ -1050,7 +1059,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
             second door to the same page taking up header room. */}
         {showIqd && iqdRate && (
           <div className="relative mt-3 flex flex-wrap items-center gap-1.5">
-            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-1.5 text-[12px] font-bold text-white/90">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/10 border border-white/20 px-3 py-1.5 text-xs font-bold text-white/90">
               <span className="font-mono" dir="ltr">1$ ≈ {Math.round(iqdRate).toLocaleString("en-US")}</span>
               <span>د.ع</span>
             </span>
@@ -1075,7 +1084,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
                     key={d.key}
                     onClick={() => setActiveTab(d.key)}
                     className={cn(
-                      "flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-t-lg text-[13px] font-medium transition-colors",
+                      "flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-t-lg text-sm font-medium transition-colors",
                       isActive
                         ? (isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900 dark:text-slate-200")
                         : (isDark ? "text-slate-400 hover:bg-slate-700/50" : "text-slate-600 hover:bg-slate-100/70"),

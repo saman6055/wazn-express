@@ -80,22 +80,22 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
       <div className={cn(
         "relative overflow-hidden rounded-2xl p-5 shadow-sm",
         isDark
-          ? "bg-gradient-to-br from-fuchsia-900/50 to-purple-900/40 border border-fuchsia-800/40"
-          : "bg-gradient-to-br from-fuchsia-50 dark:from-fuchsia-950/40 to-purple-50 dark:to-purple-950/40 border border-fuchsia-200 dark:border-fuchsia-800/60"
+          ? "bg-gradient-to-br from-blue-900/50 to-blue-900/40 border border-blue-800/40"
+          : "bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-50 dark:to-blue-950/40 border border-blue-200 dark:border-blue-800/60"
       )}>
-        <div className="absolute -top-8 -end-8 w-28 h-28 rounded-full bg-fuchsia-500/10" />
+        <div className="absolute -top-8 -end-8 w-28 h-28 rounded-full bg-blue-500/10" />
         <div className="relative flex items-start gap-3">
           <div className={cn(
             "p-2.5 rounded-xl shrink-0",
-            isDark ? "bg-fuchsia-800/50" : "bg-fuchsia-500/15"
+            isDark ? "bg-blue-800/50" : "bg-blue-500/15"
           )}>
-            <Gift className={cn("w-5 h-5", isDark ? "text-fuchsia-300" : "text-fuchsia-600")} />
+            <Gift className={cn("w-5 h-5", isDark ? "text-blue-300" : "text-blue-600")} />
           </div>
           <div className="flex-1 min-w-0">
-            <h3 className={cn("font-bold text-base", isDark ? "text-fuchsia-100" : "text-fuchsia-900 dark:text-fuchsia-200")}>
+            <h3 className={cn("font-bold text-base", isDark ? "text-blue-100" : "text-blue-900 dark:text-blue-200")}>
               {pickLang(language, { ku: "هاوڕێکەت بانگهێشت بکە", en: "Invite a friend", ar: "ادعُ صديقًا", zh: "邀请好友" })}
             </h3>
-            <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-fuchsia-300/80" : "text-fuchsia-700 dark:text-fuchsia-300")}>
+            <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-blue-300/80" : "text-blue-700 dark:text-blue-300")}>
               {pickLang(language, {
                 ku: "پەیامی تەواو لەگەڵ کۆدەکەت — هاوڕێکەت لە کاتی تۆمارکردن باسی بکات.",
                 en: "The full message with your code — your friend mentions it when registering.",
@@ -112,7 +112,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
                 title={pickLang(language, { ku: "کۆپیکردنی پەیامی تەواو", en: "Copy the full message", ar: "نسخ الرسالة كاملة", zh: "复制完整消息" })}
                 className={cn(
                   "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-mono text-sm font-bold transition active:scale-95",
-                  isDark ? "bg-fuchsia-950/60 text-fuchsia-200 hover:bg-fuchsia-950" : "bg-white text-fuchsia-900 dark:text-fuchsia-200 hover:bg-fuchsia-100 shadow-sm"
+                  isDark ? "bg-blue-950/60 text-blue-200 hover:bg-blue-950" : "bg-white text-blue-900 dark:text-blue-200 hover:bg-blue-100 shadow-sm"
                 )}
               >
                 {code}
@@ -120,7 +120,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
               </button>
               <button
                 onClick={handleShare}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-fuchsia-600 hover:bg-fuchsia-700 active:scale-95 transition px-3.5 py-2 text-sm font-bold text-white shadow-sm"
+                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition px-3.5 py-2 text-sm font-bold text-white shadow-sm"
               >
                 <Share2 className="w-4 h-4" />
                 {pickLang(language, { ku: "هاوبەشکردن", en: "Share", ar: "مشاركة", zh: "分享" })}

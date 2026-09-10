@@ -244,19 +244,13 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
           {!isSearchPage && (
           <form onSubmit={handleSearchSubmit} className="flex-1">
             <div className="relative">
-              <Search className={cn(
-                "absolute top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground",
-                isRTL ? "right-3" : "left-3"
-              )} />
+              <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
               <Input
                 type="search"
                 placeholder={t('portal.searchPlaceholder')}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className={cn(
-                  "h-10 rounded-xl border-0 bg-muted/50 text-sm",
-                  isRTL ? "pr-9 pl-4" : "pl-9 pr-4"
-                )}
+                className="h-10 rounded-xl border-0 bg-muted/50 text-sm ps-9 pe-4"
               />
             </div>
           </form>

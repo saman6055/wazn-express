@@ -74,7 +74,7 @@ export default function PortalGuide() {
 
   return (
     <PortalLayout>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
         <div className="relative overflow-hidden text-white px-4 pt-8 pb-10" style={portalBanner}>
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
@@ -105,8 +105,8 @@ export default function PortalGuide() {
         <div className="px-4 py-6 space-y-4 pb-28 max-w-2xl mx-auto">
           {/* Clickable index — only when not searching */}
           {!q && (
-            <div className="rounded-2xl bg-white dark:bg-gray-900 ring-1 ring-gray-100 dark:ring-white/5 p-3">
-              <p className="px-1 pb-2 text-xs font-bold text-gray-500 dark:text-gray-400">
+            <div className="rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-100 dark:ring-white/5 p-3">
+              <p className="px-1 pb-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                 {pick(guideHeader.indexTitle)}
               </p>
               <div className="grid grid-cols-2 gap-1.5">
@@ -115,12 +115,12 @@ export default function PortalGuide() {
                     key={s.id}
                     type="button"
                     onClick={() => jumpTo(s.id)}
-                    className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-start transition hover:bg-gray-50 dark:hover:bg-white/5"
+                    className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-start transition hover:bg-slate-50 dark:hover:bg-white/5"
                   >
                     <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white", s.gradient)}>
                       <s.icon className="h-4 w-4" />
                     </span>
-                    <span className="truncate text-[13px] font-semibold text-gray-700 dark:text-gray-200">
+                    <span className="truncate text-sm font-semibold text-slate-700 dark:text-slate-200">
                       {pick(s.title)}
                     </span>
                   </button>
@@ -131,9 +131,9 @@ export default function PortalGuide() {
 
           {/* Section cards */}
           {filtered.length === 0 ? (
-            <div className="rounded-2xl bg-white dark:bg-gray-900 p-8 text-center ring-1 ring-gray-100 dark:ring-white/5">
-              <Search className="mx-auto h-8 w-8 text-gray-300" />
-              <p className="mt-3 text-sm text-gray-500 dark:text-gray-400">{pick(guideHeader.notFound)}</p>
+            <div className="rounded-2xl bg-white dark:bg-slate-900 p-8 text-center ring-1 ring-slate-100 dark:ring-white/5">
+              <Search className="mx-auto h-8 w-8 text-slate-300" />
+              <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{pick(guideHeader.notFound)}</p>
             </div>
           ) : (
             filtered.map((s) => {
@@ -142,7 +142,7 @@ export default function PortalGuide() {
                 <section
                   key={s.id}
                   id={`guide-${s.id}`}
-                  className="scroll-mt-20 overflow-hidden rounded-3xl bg-white dark:bg-gray-900 shadow-sm ring-1 ring-gray-100 dark:ring-white/5"
+                  className="scroll-mt-20 overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-100 dark:ring-white/5"
                 >
                   {/* Header row — tap to expand */}
                   <button
@@ -170,7 +170,7 @@ export default function PortalGuide() {
                         <p className="mb-1 text-xs font-bold uppercase tracking-wide text-indigo-500 dark:text-indigo-400">
                           {pick(guideHeader.whatTitle)}
                         </p>
-                        <p className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-100">
+                        <p className="text-base leading-relaxed text-slate-800 dark:text-slate-100">
                           {pick(s.what)}
                         </p>
                       </div>
@@ -182,7 +182,7 @@ export default function PortalGuide() {
                         </p>
                         <ul className="space-y-1.5">
                           {s.points.map((p, i) => (
-                            <li key={i} className="flex items-start gap-2 text-sm text-gray-700 dark:text-gray-200">
+                            <li key={i} className="flex items-start gap-2 text-sm text-slate-700 dark:text-slate-200">
                               <span className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full bg-indigo-400" />
                               <span className="leading-relaxed">{pick(p)}</span>
                             </li>

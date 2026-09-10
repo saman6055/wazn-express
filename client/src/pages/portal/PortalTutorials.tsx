@@ -92,7 +92,7 @@ export default function PortalTutorials() {
 
   return (
     <PortalLayout>
-      <div dir={isRTL ? "rtl" : "ltr"} className="px-3 py-4 space-y-5">
+      <div dir={isRTL ? "rtl" : "ltr"} className="px-4 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-sky-500/15 text-sky-600 dark:text-sky-400">
@@ -188,13 +188,13 @@ export default function PortalTutorials() {
                     </span>
                   </span>
                   {duration(t.durationSeconds) && (
-                    <span className="absolute bottom-1.5 start-1.5 rounded bg-black/75 px-1.5 py-0.5 text-[10px] font-medium text-white">
+                    <span className="absolute bottom-1.5 start-1.5 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-medium text-white">
                       {duration(t.durationSeconds)}
                     </span>
                   )}
                   <span className="absolute top-1.5 end-1.5"><PlatformBadge name={t.category} size={20} /></span>
                   {t.isFeatured && (
-                    <span className="absolute top-1.5 start-1.5 inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[10px] font-bold text-white">
+                    <span className="absolute top-1.5 start-1.5 inline-flex items-center gap-1 rounded-full bg-amber-500 px-2 py-0.5 text-[11px] font-bold text-white">
                       <Star className="h-3 w-3" />
                       {label({ ku: "سەرەکی", en: "Start here", ar: "ابدأ هنا", zh: "从这里开始" })}
                     </span>
@@ -208,7 +208,7 @@ export default function PortalTutorials() {
                       card would carry a badge saying what the customer
                       already knows. */}
                   {allLanguages && (
-                    <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
+                    <span className="mt-1.5 inline-flex items-center gap-1 rounded-full bg-muted px-2 py-0.5 text-[11px] font-medium text-muted-foreground">
                       <Languages className="h-3 w-3" />
                       {LANGUAGE_NAME[t.language as keyof typeof LANGUAGE_NAME] ?? t.language}
                     </span>

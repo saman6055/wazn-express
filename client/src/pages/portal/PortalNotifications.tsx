@@ -93,7 +93,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
       case "error":
         return "from-red-400 to-red-500";
       default:
-        return "from-gray-400 to-gray-500";
+        return "from-slate-400 to-slate-500";
     }
   };
   
@@ -121,7 +121,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
 
   return (
     <PortalLayout>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950/40">
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950/40">
         {/* Header */}
         <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
@@ -136,8 +136,8 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                   <Bell className="h-5 w-5 text-white" />
                 </div>
                 <div>
-                  <h1 className="font-semibold">{pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}</h1>
-                  <p className="text-xs text-gray-300">
+                  <h1 className="text-lg font-semibold">{pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}</h1>
+                  <p className="text-xs text-slate-300">
                     {unreadCount > 0 ? `${unreadCount} `+pickLang(language, { ku: "نەخوێندراوە", en: "unread", ar: "غير مقروء", zh: "未读" }) : pickLang(language, { ku: "هەمووی خوێندراوەتەوە", en: "All caught up", ar: "لا جديد", zh: "全部已读" })}
                   </p>
                 </div>
@@ -166,11 +166,11 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
               {[1, 2, 3].map((i) => (
                 <div key={i} className="bg-white dark:bg-card rounded-xl p-4 animate-pulse">
                   <div className="flex items-start gap-3">
-                    <div className="w-10 h-10 rounded-full bg-gray-200 dark:bg-gray-800/50" />
+                    <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800/50" />
                     <div className="flex-1 space-y-2">
-                      <div className="h-4 bg-gray-200 dark:bg-gray-800/50 rounded w-3/4" />
-                      <div className="h-3 bg-gray-200 dark:bg-gray-800/50 rounded w-full" />
-                      <div className="h-3 bg-gray-200 dark:bg-gray-800/50 rounded w-1/4" />
+                      <div className="h-4 bg-slate-200 dark:bg-slate-800/50 rounded w-3/4" />
+                      <div className="h-3 bg-slate-200 dark:bg-slate-800/50 rounded w-full" />
+                      <div className="h-3 bg-slate-200 dark:bg-slate-800/50 rounded w-1/4" />
                     </div>
                   </div>
                 </div>
@@ -184,8 +184,8 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
               <div className="w-20 h-20 rounded-full bg-gradient-to-br from-blue-100 dark:from-blue-900/40 to-blue-200 flex items-center justify-center mb-4">
                 <Bell className="h-10 w-10 text-blue-500 dark:text-blue-400" />
               </div>
-              <h3 className="font-semibold text-gray-800 dark:text-gray-200 mb-2">{pickLang(language, { ku: "هیچ ئاگادارکردنەوەیەک نییە", en: "No notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}</h3>
-              <p className="text-sm text-gray-500 dark:text-gray-400 max-w-xs">
+              <h3 className="font-semibold text-slate-800 dark:text-slate-200 mb-2">{pickLang(language, { ku: "هیچ ئاگادارکردنەوەیەک نییە", en: "No notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}</h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs">
                 {pickLang(language, { ku: "هەموو شتێک خوێندراوەتەوە. کاتێک شتێکی گرنگ ڕوودەدات ئاگادارت دەکەینەوە.", en: "You are all caught up. We will let you know when something happens.", ar: "لا يوجد جديد. سنخبرك عند حدوث شيء مهم.", zh: "暂时没有新消息，有重要动态会通知您。" })}
               </p>
             </div>
@@ -196,7 +196,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                   key={notification.id}
                   className={cn(
                     "bg-white dark:bg-card rounded-xl p-4 shadow-sm transition-all duration-200",
-                    !notification.isRead && "border-l-4 border-blue-500 bg-blue-50/50 dark:bg-blue-950/50"
+                    !notification.isRead && "border-s-4 border-blue-500 bg-blue-50/50 dark:bg-blue-950/50"
                   )}
                   onClick={() => {
                     setExpandedId((prev) => (prev === notification.id ? null : notification.id));
@@ -216,7 +216,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2">
                         <h3 className={cn(
-                          "font-medium text-gray-800 dark:text-gray-200",
+                          "font-medium text-slate-800 dark:text-slate-200",
                           !notification.isRead && "font-semibold"
                         )}>
                           {localised(notification, "title")}
@@ -227,14 +227,14 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                       </div>
                       
                       <p className={cn(
-                        "text-sm text-gray-600 dark:text-gray-300 mt-1 whitespace-pre-wrap",
+                        "text-sm text-slate-600 dark:text-slate-300 mt-1 whitespace-pre-wrap",
                         expandedId !== notification.id && "line-clamp-2"
                       )}>
                         {localised(notification, "message")}
                       </p>
 
                       <div className="flex items-center justify-between mt-2">
-                        <span className="text-xs text-gray-400">
+                        <span className="text-xs text-slate-400">
                           {formatTime(notification.createdAt)}
                         </span>
 

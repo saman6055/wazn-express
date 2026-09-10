@@ -117,7 +117,7 @@ export default function PortalSecurity() {
   return (
     <PortalLayout>
       <div
-        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")}
+        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-slate-50 dark:bg-slate-950/40")}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -155,7 +155,7 @@ export default function PortalSecurity() {
             onSubmit={handleSubmit}
             className={cn(
               "rounded-3xl p-5 shadow-sm ring-1",
-              isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-gray-100",
+              isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-slate-100",
             )}
           >
             <div className="flex items-center gap-2.5 mb-5">
@@ -291,7 +291,7 @@ export default function PortalSecurity() {
           {/* Safety tips */}
           <div className={cn(
             "rounded-3xl p-5 ring-1",
-            isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-gray-100",
+            isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-slate-100",
           )}>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white shrink-0">

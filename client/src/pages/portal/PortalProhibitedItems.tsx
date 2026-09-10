@@ -32,7 +32,7 @@ export default function PortalProhibitedItems() {
   return (
     <PortalLayout>
       <div
-        className={`min-h-screen bg-gray-50 dark:bg-gray-950 ${isRTL ? "rtl" : "ltr"}`}
+        className={`min-h-screen bg-slate-50 dark:bg-slate-950 ${isRTL ? "rtl" : "ltr"}`}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -61,7 +61,7 @@ export default function PortalProhibitedItems() {
           {prohibitedSections.map((section) => (
             <section
               key={section.id}
-              className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm ring-1 ring-gray-100 dark:ring-white/5 overflow-hidden"
+              className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden"
             >
               {/* Section header */}
               <div className={`bg-gradient-to-r ${section.gradient} px-4 py-3.5`}>
@@ -77,7 +77,7 @@ export default function PortalProhibitedItems() {
               </div>
 
               {/* Items — tapping the green pill asks about that item on WhatsApp */}
-              <div className="p-2 sm:p-3 divide-y divide-gray-100 dark:divide-white/5">
+              <div className="p-2 sm:p-3 divide-y divide-slate-100 dark:divide-white/5">
                 {section.items.map((item, itemIndex) => {
                   const text = pick(item);
                   return (
@@ -86,7 +86,7 @@ export default function PortalProhibitedItems() {
                         {itemIndex + 1}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-100 font-medium">
+                        <p className="text-base leading-relaxed text-slate-800 dark:text-slate-100 font-medium">
                           {text}
                         </p>
                         <a

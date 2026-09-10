@@ -75,12 +75,6 @@ export default function Skin3PortalProfile() {
   if (!user) {
     return (
       <Skin3PortalLayout>
-      {/* A failed request used to render the identity card blank. */}
-      {accountQuery.isError && (
-        <div className="px-4 pt-4">
-          <PortalErrorState compact onRetry={() => void accountQuery.refetch()} isRetrying={accountQuery.isFetching} />
-        </div>
-      )}
         <div
           className={cn(
             "min-h-screen flex items-center justify-center",
@@ -376,6 +370,10 @@ export default function Skin3PortalProfile() {
         dir={isRTL ? "rtl" : "ltr"}
       >
         <div className="max-w-lg mx-auto px-4 pt-6 space-y-6">
+          {/* Was inside the signed-out branch, unreachable for a customer. */}
+          {accountQuery.isError && (
+            <PortalErrorState compact onRetry={() => void accountQuery.refetch()} isRetrying={accountQuery.isFetching} />
+          )}
           {/* ── Avatar + Name ── */}
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}

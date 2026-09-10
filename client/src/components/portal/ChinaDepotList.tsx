@@ -6,7 +6,8 @@ import { cn } from "@/lib/utils";
 import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
 import { STATUS_LABEL, orderStageOf } from "@/lib/shipmentFilters";
 import { filterChinaDepot } from "@/lib/chinaDepotFilter";
-import { formatClockDate } from "@/lib/portalClock";
+import { formatPortalDate } from "@/lib/portalClock";
+import { fmtKg } from "@/lib/portalFormat";
 import { Package, Warehouse, Copy, CheckCircle } from "lucide-react";
 import { copyText } from "@/lib/copyText";
 
@@ -220,7 +221,7 @@ export function ChinaDepotList({
               <div className="flex items-center gap-2 px-1">
                 {item.date && (
                   <p className="text-[11px] text-muted-foreground">
-                    {formatClockDate(item.date, language)}
+                    {formatPortalDate(item.date, language)}
                   </p>
                 )}
                 {item.name && <p className="truncate text-[11px] text-muted-foreground">{item.name}</p>}
@@ -229,7 +230,7 @@ export function ChinaDepotList({
 
             {Number.isFinite(Number(item.weightKg)) && Number(item.weightKg) > 0 && (
               <span className="shrink-0 text-xs text-muted-foreground tabular-nums" dir="ltr">
-                {Number(item.weightKg).toFixed(2)} kg
+                {fmtKg(item.weightKg)}
               </span>
             )}
           </div>

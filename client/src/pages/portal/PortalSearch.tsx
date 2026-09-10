@@ -18,6 +18,10 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { formatPortalDate, formatPortalDateTime } from "@/lib/portalClock";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { PortalChip } from "@/components/portal/PortalStatusChip";
+import { packageStatusTone } from "@/lib/packageStatus";
+import { SHIPPING_TYPE_LABEL } from "@/lib/shipmentFilters";
+import { fmtDims, fmtKg } from "@/lib/portalFormat";
 
 function getInitialSearchQuery(): string {
   if (typeof window === "undefined") return "";
@@ -127,14 +131,14 @@ export default function PortalSearch() {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "delivered":
-        return <CheckCircle className="w-5 h-5 text-green-500 dark:text-green-400" />;
+        return <CheckCircle className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />;
       case "in_transit":
       case "out_for_delivery":
-        return <Truck className="w-5 h-5 text-blue-500 dark:text-blue-400" />;
+        return <Truck className="w-5 h-5 text-sky-500 dark:text-sky-400" />;
       case "customs_processing":
-        return <AlertCircle className="w-5 h-5 text-orange-500 dark:text-orange-400" />;
+        return <AlertCircle className="w-5 h-5 text-amber-500 dark:text-amber-400" />;
       default:
-        return <Clock className="w-5 h-5 text-gray-400" />;
+        return <Clock className="w-5 h-5 text-slate-400" />;
     }
   };
 
@@ -154,25 +158,6 @@ export default function PortalSearch() {
     PACKAGE_STATUS_LABEL[status]
       ? pickLang(language, PACKAGE_STATUS_LABEL[status]!)
       : status;
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300";
-      case "out_for_delivery":
-        return "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300";
-      case "ready_for_delivery":
-        return "bg-cyan-100 text-cyan-800 dark:bg-cyan-900/40 dark:text-cyan-300";
-      case "in_transit":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900/40 dark:text-blue-300";
-      case "customs_processing":
-        return "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300";
-      case "in_batch":
-        return "bg-slate-100 text-slate-800 dark:bg-slate-700 dark:text-slate-300";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-800 dark:text-gray-300";
-    }
-  };
 
   const openPhotoViewer = () => {
     setCurrentPhotoIndex(0);
@@ -200,7 +185,7 @@ export default function PortalSearch() {
     <PortalLayout>
       {/* Header */}
       <div className="bg-slate-800 text-white px-4 pt-12 pb-8">
-        <h1 className="text-xl font-bold mb-2">{t("trackPackage") || "Track Package"}</h1>
+        <h1 className="text-2xl font-bold mb-2">{t("trackPackage") || "Track Package"}</h1>
         <TutorialHint section="شوێنکەوتن" className="mb-4" />
         
         {/* Search Input */}
@@ -216,9 +201,9 @@ export default function PortalSearch() {
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             onKeyPress={handleKeyPress}
-            className="w-full h-12 ps-12 pe-12 rounded-xl bg-white dark:bg-card text-slate-800 dark:text-slate-200 placeholder:text-gray-400 border-0"
+            className="w-full h-12 ps-12 pe-12 rounded-xl bg-white dark:bg-card text-slate-800 dark:text-slate-200 placeholder:text-slate-400 border-0"
           />
-          <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+          <Search className="absolute start-4 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
           {searchQuery && (
             <button
               onClick={() => {
@@ -227,7 +212,7 @@ export default function PortalSearch() {
               }}
               className="absolute end-4 top-1/2 -translate-y-1/2"
             >
-              <X className="w-5 h-5 text-gray-400" />
+              <X className="w-5 h-5 text-slate-400" />
             </button>
           )}
         </div>
@@ -235,7 +220,7 @@ export default function PortalSearch() {
         <Button
           onClick={handleSearch}
           disabled={!searchQuery.trim() || isLoading}
-          className="w-full mt-3 h-12 bg-white dark:bg-card text-slate-800 dark:text-slate-200 hover:bg-gray-100 font-medium rounded-xl"
+          className="w-full mt-3 h-12 bg-white dark:bg-card text-slate-800 dark:text-slate-200 hover:bg-slate-100 font-medium rounded-xl"
         >
           {isLoading ? t("searching") || "Searching..." : t("search") || "Search"}
         </Button>
@@ -277,10 +262,10 @@ export default function PortalSearch() {
       <div className="px-4 py-6">
         {!hasSearched ? (
           <div className="text-center py-12">
-            <div className="w-20 h-20 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Search className="w-10 h-10 text-gray-300" />
+            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Search className="w-10 h-10 text-slate-300" />
             </div>
-            <p className="text-gray-500 dark:text-gray-400">
+            <p className="text-slate-500 dark:text-slate-400">
               {pickLang(language, {
                 ku: "تراکینگ نەمبەر یان ئۆردەر نەمبەر (FP-...) بنووسە بۆ گەڕان",
                 en: "Enter a tracking number or order number (FP-...) to search",
@@ -303,12 +288,9 @@ export default function PortalSearch() {
                   <p className="font-semibold text-slate-800 dark:text-slate-100">{result.trackingNumber || result.packageCode}</p>
                   <div className="flex items-center gap-2 mt-1 flex-wrap">
                     {getStatusIcon(result.status)}
-                    <span className={cn(
-                      "text-xs px-2.5 py-1 rounded-full font-medium border-0",
-                      getStatusColor(result.status)
-                    )}>
+                    <PortalChip tone={packageStatusTone(result.status)}>
                       {getStatusText(result.status)}
-                    </span>
+                    </PortalChip>
                   </div>
                 </div>
                 
@@ -327,7 +309,7 @@ export default function PortalSearch() {
 
             {/* Package Photos Preview */}
             {photos && photos.length > 0 && (
-              <div className="p-4 border-b bg-gray-50 dark:bg-gray-950/40">
+              <div className="p-4 border-b bg-slate-50 dark:bg-slate-950/40">
                 <button 
                   onClick={openPhotoViewer}
                   className="flex items-center gap-3 w-full"
@@ -336,7 +318,7 @@ export default function PortalSearch() {
                     {photos.slice(0, 4).map((photo, idx) => (
                       <div 
                         key={idx}
-                        className="w-12 h-12 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-gray-100 dark:bg-gray-950/40"
+                        className="w-12 h-12 rounded-lg border-2 border-white shadow-sm overflow-hidden bg-slate-100 dark:bg-slate-950/40"
                       >
                         <img loading="lazy" decoding="async" 
                           src={photo} 
@@ -349,16 +331,16 @@ export default function PortalSearch() {
                       </div>
                     ))}
                     {photos.length > 4 && (
-                      <div className="w-12 h-12 rounded-lg border-2 border-white shadow-sm bg-gray-200 dark:bg-gray-800/50 flex items-center justify-center">
-                        <span className="text-xs text-gray-600 dark:text-gray-300 font-medium">+{photos.length - 4}</span>
+                      <div className="w-12 h-12 rounded-lg border-2 border-white shadow-sm bg-slate-200 dark:bg-slate-800/50 flex items-center justify-center">
+                        <span className="text-xs text-slate-600 dark:text-slate-300 font-medium">+{photos.length - 4}</span>
                       </div>
                     )}
                   </div>
                   <div className="flex-1 text-start">
                     <p className="text-sm font-medium text-slate-800 dark:text-slate-200">{t("packagePhotos") || "Package Photos"}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{photos.length} {t("photos") || "photos"}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{photos.length} {t("photos") || "photos"}</p>
                   </div>
-                  <ChevronRight className="w-5 h-5 text-gray-400" />
+                  <ChevronRight className="w-5 h-5 text-slate-400" />
                 </button>
               </div>
             )}
@@ -391,21 +373,21 @@ export default function PortalSearch() {
             <div className="p-4 space-y-4">
               {/* Dimensions */}
               <div className="grid grid-cols-2 gap-4">
-                {result.weightKg && (
+                {Number(result.weightKg) > 0 && (
                   <div className="flex items-center gap-2">
-                    <Scale className="w-4 h-4 text-gray-400" />
+                    <Scale className="w-4 h-4 text-slate-400" />
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{t("weight") || "Weight"}</p>
-                      <p className="font-medium text-slate-800 dark:text-slate-200">{result.weightKg} kg</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{t("weight") || "Weight"}</p>
+                      <p className="font-medium text-slate-800 dark:text-slate-200">{fmtKg(result.weightKg)}</p>
                     </div>
                   </div>
                 )}
                 {result.lengthCm && result.widthCm && result.heightCm && (
                   <div className="flex items-center gap-2">
-                    <Ruler className="w-4 h-4 text-gray-400" />
+                    <Ruler className="w-4 h-4 text-slate-400" />
                     <div>
-                      <p className="text-xs text-gray-500 dark:text-gray-400">{t("dimensions") || "Dimensions"}</p>
-                      <p className="font-medium text-slate-800 dark:text-slate-200">{result.lengthCm}×{result.widthCm}×{result.heightCm} cm</p>
+                      <p className="text-xs text-slate-500 dark:text-slate-400">{t("dimensions") || "Dimensions"}</p>
+                      <p className="font-medium text-slate-800 dark:text-slate-200">{fmtDims(result.lengthCm, result.widthCm, result.heightCm)}</p>
                     </div>
                   </div>
                 )}
@@ -413,14 +395,14 @@ export default function PortalSearch() {
 
               {/* Shipping Type */}
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{t("shippingType") || "Shipping Type"}</p>
-                <p className="font-medium text-slate-800 dark:text-slate-200 capitalize">{result.shippingType.replace("_", " ")}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{t("shippingType") || "Shipping Type"}</p>
+                <p className="font-medium text-slate-800 dark:text-slate-200">{SHIPPING_TYPE_LABEL[result.shippingType] ? pickLang(language, SHIPPING_TYPE_LABEL[result.shippingType]) : result.shippingType}</p>
               </div>
 
               {/* Description */}
               {result.description && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("description") || "Description"}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("description") || "Description"}</p>
                   <p className="text-slate-800 dark:text-slate-200">{result.description}</p>
                 </div>
               )}
@@ -428,7 +410,7 @@ export default function PortalSearch() {
               {/* Dates */}
               <div className="grid grid-cols-2 gap-4 pt-3 border-t">
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{t("registered") || "Registered"}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{t("registered") || "Registered"}</p>
                   {/* With the time. A parcel registered and batched on the
                       same day reads as two identical dates otherwise, and the
                       customer cannot tell what happened when. */}
@@ -438,7 +420,7 @@ export default function PortalSearch() {
                 </div>
                 {result.deliveredAt && (
                   <div>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{t("delivered") || "Delivered"}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{t("delivered") || "Delivered"}</p>
                     <p className="text-sm text-slate-800 dark:text-slate-200">
                       {formatPortalDateTime(result.deliveredAt, language)}
                     </p>
@@ -472,12 +454,12 @@ export default function PortalSearch() {
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm">
               <div>
-                <p className="text-xs text-gray-500 dark:text-gray-400">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</p>
                 <p className="font-semibold text-slate-800 dark:text-slate-100">{orderResult.status}</p>
               </div>
               {orderResult.trackingNumber && (
                 <div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{pickLang(language, { ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{pickLang(language, { ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}</p>
                   <p className="font-mono font-semibold text-slate-800 dark:text-slate-100" dir="ltr">{orderResult.trackingNumber}</p>
                 </div>
               )}
@@ -490,20 +472,20 @@ export default function PortalSearch() {
           </div>
         ) : extra?.unclaimed ? (
           <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-sm p-5 text-center space-y-3">
-            <div className="w-16 h-16 bg-orange-100 dark:bg-orange-950/40 rounded-full flex items-center justify-center mx-auto">
-              <AlertTriangle className="w-8 h-8 text-orange-500 dark:text-orange-400" />
+            <div className="w-16 h-16 bg-amber-100 dark:bg-amber-950/40 rounded-full flex items-center justify-center mx-auto">
+              <AlertTriangle className="w-8 h-8 text-amber-500 dark:text-amber-400" />
             </div>
             <div>
               <p className="font-bold text-slate-800 dark:text-slate-100">
                 {pickLang(language, { ku: "ئەم پاکەتە بێ‌خاوەنە", en: "This package is unclaimed", ar: "هذا الطرد بلا صاحب", zh: "此包裹无主" })}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 {pickLang(language, { ku: "ئەگەر هی تۆیە، داوای خاوەنداری بکە و بەڵگە بنێرە", en: "If it's yours, submit a claim with proof", ar: "إذا كان لك، قدّم مطالبة مع الإثبات", zh: "如果是您的，请提交认领并附凭证" })}
               </p>
               <p className="font-mono text-sm mt-2" dir="ltr">{extra.unclaimed.trackingNumber || extra.unclaimed.packageCode}</p>
             </div>
             <Link href="/portal/no-mark">
-              <Button className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white">
+              <Button className="w-full rounded-xl bg-amber-600 hover:bg-amber-700 text-white">
                 <AlertTriangle className="w-4 h-4 me-2" />
                 {pickLang(language, { ku: "داواکاری خاوەنداری", en: "Claim ownership", ar: "المطالبة بالملكية", zh: "认领所有权" })}
               </Button>
@@ -518,7 +500,7 @@ export default function PortalSearch() {
               <p className="font-bold text-slate-800 dark:text-slate-100">
                 {pickLang(language, { ku: "تۆ پێشوەخت ئەم تراکەت داخڵ کردووە", en: "You pre-declared this tracking", ar: "لقد سجّلت هذا التتبع مسبقاً", zh: "您已预先登记此运单号" })}
               </p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+              <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
                 {pickLang(language, { ku: "چاوەڕوانی گەیشتنە — کاتێک بگات ئاگادار دەکرێیتەوە", en: "Awaiting arrival — you'll be notified when it arrives", ar: "بانتظار الوصول — سيتم إعلامك عند وصوله", zh: "等待到货 — 到货后将通知您" })}
               </p>
               <p className="font-mono text-sm mt-2" dir="ltr">{extra.declared.trackingNumber}</p>
@@ -535,13 +517,13 @@ export default function PortalSearch() {
           <PortalErrorState onRetry={() => void refetch()} isRetrying={searchQ.isFetching} />
         ) : (
           <div className="text-center py-12">
-            <div className="w-20 h-20 bg-red-50 dark:bg-red-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
-              <Package className="w-10 h-10 text-red-300" />
+            <div className="w-20 h-20 bg-slate-100 dark:bg-slate-800 rounded-full flex items-center justify-center mx-auto mb-4">
+              <Package className="w-10 h-10 text-slate-400" />
             </div>
-            <p className="text-gray-800 dark:text-gray-200 font-medium">
+            <p className="text-slate-800 dark:text-slate-200 font-medium">
               {pickLang(language, { ku: "هیچ نەدۆزرایەوە", en: "Nothing found", ar: "لم يتم العثور على شيء", zh: "未找到任何结果" })}
             </p>
-            <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">
               {pickLang(language, {
                 ku: "تراکینگ یان ئۆردەر نەمبەرەکە بپشکنە و دووبارە هەوڵبدەرەوە",
                 en: "Check the tracking or order number and try again",
@@ -650,21 +632,21 @@ export default function PortalSearch() {
               {/* Package info footer */}
               <div className="bg-slate-900 p-4 text-white">
                 <div className="flex items-center gap-4 text-sm">
-                  {result.weightKg && (
+                  {Number(result.weightKg) > 0 && (
                     <div className="flex items-center gap-1">
-                      <Scale className="w-4 h-4 text-gray-400" />
-                      <span>{result.weightKg} kg</span>
+                      <Scale className="w-4 h-4 text-slate-400" />
+                      <span>{fmtKg(result.weightKg)}</span>
                     </div>
                   )}
                   {result.lengthCm && result.widthCm && result.heightCm && (
                     <div className="flex items-center gap-1">
-                      <Ruler className="w-4 h-4 text-gray-400" />
-                      <span>{result.lengthCm}×{result.widthCm}×{result.heightCm} cm</span>
+                      <Ruler className="w-4 h-4 text-slate-400" />
+                      <span>{fmtDims(result.lengthCm, result.widthCm, result.heightCm)}</span>
                     </div>
                   )}
                 </div>
                 {result.description && (
-                  <p className="text-sm text-gray-400 mt-2">{result.description}</p>
+                  <p className="text-sm text-slate-400 mt-2">{result.description}</p>
                 )}
               </div>
             </div>

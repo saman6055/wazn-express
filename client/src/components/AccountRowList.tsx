@@ -2,6 +2,7 @@ import { useMemo, useState, type ReactNode } from "react";
 import { ChevronDown, Search, type LucideIcon } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 
 /**
  * A list of things a customer is billed for, each opening underneath itself.
@@ -76,9 +77,10 @@ export function AccountRowList({
 
   if (rows.length === 0) {
     return (
-      <p className="py-10 text-center text-sm text-muted-foreground">
-        {emptyText ?? pickLang(language, { ku: "هیچ نییە", en: "Nothing here", ar: "لا يوجد شيء", zh: "暂无内容" })}
-      </p>
+      <PortalEmptyState
+        compact
+        title={emptyText ?? pickLang(language, { ku: "هیچ نییە", en: "Nothing here", ar: "لا يوجد شيء", zh: "暂无内容" })}
+      />
     );
   }
 

@@ -26,6 +26,8 @@ import { PortalProfilePhoto } from "@/components/portal/PortalProfilePhoto";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { toast } from "sonner";
 import { copyText } from "@/lib/copyText";
+import { isDebt } from "@/lib/portalMoney";
+import { fmtCount, fmtUsd } from "@/lib/portalFormat";
 
 // Language options for the picker — each labelled in its own script (native) so
 // a customer always recognises their language regardless of the current UI
@@ -53,7 +55,8 @@ const { t, language, setLanguage } = useLanguage();
   const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
   const { data: account, isLoading } = accountQuery;
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
-  const { data: summary } = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const summaryQuery = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const { data: summary, isLoading: summaryLoading } = summaryQuery;
   // The Message Center badge was the literal 2, so every customer carried a red
   // "2" on their profile for ever and learned to ignore the badge entirely —
   // while the real count was already an endpoint the layout uses.
@@ -65,32 +68,32 @@ const { t, language, setLanguage } = useLanguage();
       label: pickLang(language, { ku: "ناوەندی پەیام", en: "Message Center", ar: "مركز الرسائل", zh: "消息中心" }),
       path: "/portal/messages",
       badge: unreadMessages || 0,
-      iconBg: "bg-gradient-to-br from-amber-400 to-orange-500",
+      iconBg: "bg-amber-500",
     },
     {
       icon: Bell,
       label: pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" }),
       path: "/portal/notifications",
       badge: notificationCount || 0,
-      iconBg: "bg-gradient-to-br from-blue-400 to-indigo-500",
+      iconBg: "bg-blue-500",
     },
     {
       icon: MapPin,
       label: pickLang(language, { ku: "ناونیشانەکان", en: "Addresses", ar: "العناوين", zh: "地址" }),
       path: "/portal/addresses",
-      iconBg: "bg-gradient-to-br from-emerald-400 to-teal-500",
+      iconBg: "bg-emerald-500",
     },
     {
       icon: CreditCard,
       label: language === "ku" ? "کڕینی یوانی چینی" : language === "ar" ? "شراء اليوان الصيني" : language === "zh" ? "购买人民币" : "Buy Chinese Yuan",
       path: "/portal/yuan-exchange",
-      iconBg: "bg-gradient-to-br from-red-400 to-orange-500",
+      iconBg: "bg-sky-500",
     },
     {
       icon: PhoneCall,
       label: language === "ku" ? "پەیوەندی" : language === "ar" ? "تواصل" : language === "zh" ? "联系我们" : "Contact",
       path: "/portal/contact",
-      iconBg: "bg-gradient-to-br from-emerald-400 to-green-600",
+      iconBg: "bg-emerald-600",
     },
   ];
 
@@ -102,21 +105,21 @@ const { t, language, setLanguage } = useLanguage();
       label: pickLang(language, { ku: "خزمەتگوزارییەکان", en: "Our services", ar: "خدماتنا", zh: "我们的服务" }),
       description: pickLang(language, { ku: "نرخ و ماوەی گەیاندن", en: "Prices and delivery times", ar: "الأسعار وأوقات التسليم", zh: "价格与时效" }),
       path: "/portal/services",
-      iconBg: "bg-gradient-to-br from-teal-400 to-cyan-500",
+      iconBg: "bg-sky-500",
     },
     {
       icon: FileText,
       label: pickLang(language, { ku: "ڕاپۆرتی پسووڵەکانم", en: "My invoice reports", ar: "تقارير فواتيري", zh: "我的发票报表" }),
       description: pickLang(language, { ku: "پوختەی مانگانە و ساڵانە", en: "Monthly and yearly summary", ar: "ملخص شهري وسنوي", zh: "月度与年度汇总" }),
       path: "/portal/invoice-reports",
-      iconBg: "bg-gradient-to-br from-sky-400 to-blue-500",
+      iconBg: "bg-blue-500",
     },
     {
       icon: BookOpen,
       label: language === "ku" ? "ڕێبەری پۆرتاڵ" : language === "ar" ? "دليل البوابة" : language === "zh" ? "门户指南" : "Portal guide",
       description: language === "ku" ? "هەموو بەشەکان بە نموونەوە" : language === "ar" ? "كل الأقسام بأمثلة" : language === "zh" ? "所有版块及示例" : "Every section, with examples",
       path: "/portal/guide",
-      iconBg: "bg-gradient-to-br from-indigo-400 to-fuchsia-500",
+      iconBg: "bg-blue-600",
     },
     {
       // The home grid's shortcut is gone; the Me menu is where the video
@@ -125,13 +128,13 @@ const { t, language, setLanguage } = useLanguage();
       label: pickLang(language, { ku: "فێرکاری بە ڤیدیۆ", en: "Video tutorials", ar: "شروحات بالفيديو", zh: "视频教程" }),
       description: pickLang(language, { ku: "چۆن لە تاوباو داوا بکەیت و پۆرتاڵ بەکاربهێنیت", en: "How to order from Taobao and use the portal", ar: "كيفية الطلب من تاوباو واستخدام البوابة", zh: "如何在淘宝下单并使用门户" }),
       path: "/portal/tutorials",
-      iconBg: "bg-gradient-to-br from-violet-400 to-purple-500",
+      iconBg: "bg-blue-500",
     },
     {
       icon: Headphones,
       label: pickLang(language, { ku: "پشتگیری", en: "Support", ar: "الدعم", zh: "客服" }),
       description: pickLang(language, { ku: "پەیوەندیمان پێوە بکە", en: "Contact us anytime", ar: "تواصل معنا في أي وقت", zh: "随时联系我们" }),
-      iconBg: "bg-gradient-to-br from-indigo-400 to-purple-500",
+      iconBg: "bg-emerald-500",
       // The company WhatsApp — was a placeholder number, so "Support" opened
       // a chat with nobody. Use the shared constant so it can never drift.
       action: () => window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}`, "_blank", "noopener,noreferrer"),
@@ -141,28 +144,28 @@ const { t, language, setLanguage } = useLanguage();
       label: pickLang(language, { ku: "پرسیارە باوەکان", en: "FAQ", ar: "الأسئلة الشائعة", zh: "常见问题" }),
       description: pickLang(language, { ku: "وەڵامی پرسیارەکانت", en: "Find answers", ar: "اعثر على إجابات", zh: "查找答案" }),
       path: "/portal/faq",
-      iconBg: "bg-gradient-to-br from-cyan-400 to-blue-500",
+      iconBg: "bg-sky-500",
     },
     {
       icon: FileText,
       label: pickLang(language, { ku: "مەرج و ڕێساکان", en: "Terms & Conditions", ar: "الشروط والأحكام", zh: "条款与条件" }),
       description: pickLang(language, { ku: "یاساکانی بەکارهێنان", en: "Usage policies", ar: "سياسات الاستخدام", zh: "使用政策" }),
       path: "/portal/terms",
-      iconBg: "bg-gradient-to-br from-purple-400 to-violet-500",
+      iconBg: "bg-slate-600",
     },
     {
       icon: AlertTriangle,
       label: language === "ku" ? "کاڵا قەدەغەکراوەکان" : language === "ar" ? "البضائع الممنوعة" : language === "zh" ? "禁运物品" : "Prohibited items",
       description: language === "ku" ? "پێش ناردن بیزانە" : language === "ar" ? "اعرفها قبل الشحن" : language === "zh" ? "寄送前须知" : "Know before you ship",
       path: "/portal/prohibited-items",
-      iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
+      iconBg: "bg-red-500",
     },
     {
       icon: Info,
       label: pickLang(language, { ku: "دەربارەی ئێمە", en: "About Us", ar: "من نحن", zh: "关于我们" }),
       description: pickLang(language, { ku: "زانیاری کۆمپانیا", en: "Company info", ar: "معلومات الشركة", zh: "公司信息" }),
       path: "/portal/about",
-      iconBg: "bg-gradient-to-br from-pink-400 to-rose-500",
+      iconBg: "bg-slate-600",
     },
   ];
 
@@ -174,40 +177,29 @@ const { t, language, setLanguage } = useLanguage();
         : (pickLang(language, { ku: "مۆدی تاریک", en: "Dark Mode", ar: "الوضع الداكن", zh: "深色模式" })),
       description: pickLang(language, { ku: "گۆڕینی تەما", en: "Toggle theme", ar: "تبديل المظهر", zh: "切换主题" }),
       iconBg: theme === "dark" 
-        ? "bg-gradient-to-br from-yellow-400 to-orange-500" 
-        : "bg-gradient-to-br from-slate-600 to-slate-800",
+        ? "bg-amber-500" 
+        : "bg-slate-700",
       onClick: toggleTheme,
     },
     {
       icon: Languages,
       label: language === "ku" ? "زمان" : language === "ar" ? "اللغة" : language === "zh" ? "语言" : "Language",
       description: LANG_NATIVE_NAMES[language as keyof typeof LANG_NATIVE_NAMES] ?? "English",
-      iconBg: "bg-gradient-to-br from-green-400 to-emerald-500",
+      iconBg: "bg-emerald-500",
       onClick: () => setShowLangPicker(true),
-    },
-    {
-      icon: Bell,
-      label: pickLang(language, { ku: "ئاگادارکردنەوەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" }),
-      description: pickLang(language, { ku: "بینینی ئاگادارکردنەوەکان", en: "View alerts", ar: "عرض التنبيهات", zh: "查看提醒" }),
-      path: "/portal/notifications",
-      iconBg: "bg-gradient-to-br from-red-400 to-rose-500",
     },
     {
       icon: Shield,
       label: pickLang(language, { ku: "پاراستن", en: "Security", ar: "الأمان", zh: "安全" }),
       description: pickLang(language, { ku: "پاسۆرد و ئەمنیەت", en: "Password & security", ar: "كلمة المرور والأمان", zh: "密码与安全" }),
       path: "/portal/security",
-      iconBg: "bg-gradient-to-br from-cyan-400 to-blue-600",
+      iconBg: "bg-blue-600",
     },
   ];
 
   const handleLogout = async () => {
     await logout();
     window.location.href = "/";
-  };
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
   };
 
   // Feedback → WhatsApp with a pre-filled message that says who is writing.
@@ -275,9 +267,13 @@ const { t, language, setLanguage } = useLanguage();
     <CustomerPortalLayout>
       {/* The identity card below is this page. A failed request used to render
           it blank rather than saying anything had gone wrong. */}
-      {accountQuery.isError && (
+      {(accountQuery.isError || summaryQuery.isError) && (
         <div className="px-4 pt-4">
-          <PortalErrorState compact onRetry={() => void accountQuery.refetch()} isRetrying={accountQuery.isFetching} />
+          <PortalErrorState
+            compact
+            onRetry={() => { void accountQuery.refetch(); void summaryQuery.refetch(); }}
+            isRetrying={accountQuery.isFetching || summaryQuery.isFetching}
+          />
         </div>
       )}
       {/* Premium Header with Profile */}
@@ -293,8 +289,8 @@ const { t, language, setLanguage } = useLanguage();
           <div className="absolute bottom-0 left-10 w-32 h-32 bg-purple-500/20 rounded-full blur-2xl" />
         </div>
         
-        <div className="relative px-5 pt-14 pb-6">
-          <h1 className="text-xl font-bold text-white mb-6">{pickLang(language, { ku: "پرۆفایل", en: "Profile", ar: "الملف الشخصي", zh: "个人资料" })}</h1>
+        <div className="relative px-4 pt-12 pb-6">
+          <h1 className="text-2xl font-bold text-white mb-6">{pickLang(language, { ku: "پرۆفایل", en: "Profile", ar: "الملف الشخصي", zh: "个人资料" })}</h1>
           
           {/* Profile Card */}
           <div className="flex items-center gap-4">
@@ -304,12 +300,12 @@ const { t, language, setLanguage } = useLanguage();
                 fullName={account?.fullName}
                 sizeClass="w-20 h-20"
                 shapeClass="rounded-2xl"
-                frameClass="bg-gradient-to-br from-indigo-500 to-purple-600"
+                frameClass="bg-gradient-to-br from-blue-500 to-blue-700"
                 fallback={<User className="w-10 h-10 text-white" />}
               />
               {/* VIP Badge */}
               {summary?.status === "active" && (
-                <div className="absolute -top-1 -right-1 w-7 h-7 bg-gradient-to-br from-amber-400 to-orange-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
+                <div className="absolute -top-1 -end-1 w-7 h-7 bg-amber-500 rounded-full flex items-center justify-center shadow-lg border-2 border-white">
                   <Star className="w-3.5 h-3.5 text-white fill-white" />
                 </div>
               )}
@@ -322,7 +318,7 @@ const { t, language, setLanguage } = useLanguage();
                 </>
               ) : (
                 <>
-                  <h2 className="text-xl font-bold text-white">{account?.fullName || "Customer"}</h2>
+                  <h2 className="text-xl font-bold text-white">{account?.fullName || pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="px-3 py-1 bg-amber-500/20 text-amber-400 text-sm font-medium rounded-full border border-amber-500/30">
                       {account?.customerCode}
@@ -341,7 +337,7 @@ const { t, language, setLanguage } = useLanguage();
           "rounded-2xl shadow-xl p-4",
           isDark ? "bg-slate-800 shadow-slate-900/50" : "bg-white shadow-slate-200/50"
         )}>
-          <div className="grid grid-cols-3 gap-4">
+          <div className="grid grid-cols-3 gap-2">
             <div className="text-center">
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
@@ -349,8 +345,8 @@ const { t, language, setLanguage } = useLanguage();
               )}>
                 <Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />
               </div>
-              <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                {summary?.totalPackages || 0}
+              <p className={cn("text-base font-bold tabular-nums", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                {summaryLoading ? "…" : fmtCount(summary?.totalPackages)}
               </p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                 {pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}
@@ -363,7 +359,7 @@ const { t, language, setLanguage } = useLanguage();
               )}>
                 <CreditCard className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
               </div>
-              <p className="text-lg font-bold text-emerald-500 dark:text-emerald-400">{formatCurrency(summary?.totalPaid || 0)}</p>
+              <p className="text-base font-bold tabular-nums text-emerald-500 dark:text-emerald-400" dir="ltr">{summaryLoading ? "…" : fmtUsd(summary?.totalPaid || 0)}</p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                 {pickLang(language, { ku: "پارەدان", en: "Paid", ar: "المدفوع", zh: "已付" })}
               </p>
@@ -371,20 +367,20 @@ const { t, language, setLanguage } = useLanguage();
             <div className="text-center">
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
-                (summary?.balanceUsd || 0) > 0 
+                isDebt(summary?.balanceUsd) 
                   ? isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40"
                   : isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 <CreditCard className={cn(
                   "w-5 h-5",
-                  (summary?.balanceUsd || 0) > 0 ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
+                  isDebt(summary?.balanceUsd) ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
                 )} />
               </div>
               <p className={cn(
-                "text-lg font-bold",
-                (summary?.balanceUsd || 0) > 0 ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
-              )}>
-                {formatCurrency(Math.abs(summary?.balanceUsd || 0))}
+                "text-base font-bold tabular-nums",
+                isDebt(summary?.balanceUsd) ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
+              )} dir="ltr">
+                {summaryLoading ? "…" : fmtUsd(Math.abs(summary?.balanceUsd || 0))}
               </p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                 {pickLang(language, { ku: "باڵانس", en: "Balance", ar: "الرصيد", zh: "余额" })}
@@ -409,7 +405,7 @@ const { t, language, setLanguage } = useLanguage();
                 )}>
                   <Phone className={cn("w-5 h-5", isDark ? "text-slate-400" : "text-slate-600")} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
                     {pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile", ar: "رقم الهاتف", zh: "手机号" })}
                   </p>
@@ -427,11 +423,11 @@ const { t, language, setLanguage } = useLanguage();
                 )}>
                   <Mail className={cn("w-5 h-5", isDark ? "text-slate-400" : "text-slate-600")} />
                 </div>
-                <div>
+                <div className="min-w-0">
                   <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
                     {pickLang(language, { ku: "ئیمەیل", en: "Email", ar: "البريد الإلكتروني", zh: "邮箱" })}
                   </p>
-                  <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                  <p dir="ltr" className={cn("font-medium break-all text-start", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {account.email}
                   </p>
                 </div>
@@ -623,7 +619,7 @@ const { t, language, setLanguage } = useLanguage();
             </button>
           </div>
           <p className={cn("text-xs", isDark ? "text-slate-600" : "text-slate-400")}>
-            {company.name} v1.0.0
+            {company.name}
           </p>
         </div>
       </div>
@@ -651,7 +647,7 @@ const { t, language, setLanguage } = useLanguage();
                   className={cn(
                     "w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3 my-1 transition-all",
                     active
-                      ? "bg-gradient-to-br from-green-400/15 to-emerald-500/15 ring-1 ring-emerald-500/40"
+                      ? "bg-blue-500/10 ring-1 ring-blue-500/40"
                       : isDark ? "hover:bg-slate-800" : "hover:bg-slate-50"
                   )}
                 >
@@ -664,7 +660,7 @@ const { t, language, setLanguage } = useLanguage();
                     </span>
                   </span>
                   {active && (
-                    <span className="w-6 h-6 rounded-full bg-gradient-to-br from-green-400 to-emerald-500 flex items-center justify-center shrink-0">
+                    <span className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
                       <Check className="w-4 h-4 text-white" />
                     </span>
                   )}

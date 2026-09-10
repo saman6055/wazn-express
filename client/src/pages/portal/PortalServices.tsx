@@ -178,7 +178,7 @@ const { banner: portalBanner } = usePortalPalette();
 
   return (
     <PortalLayout>
-      <div className={`min-h-screen bg-gray-50 dark:bg-gray-950/40 ${isRTL ? 'rtl' : 'ltr'}`}>
+      <div className={`min-h-screen bg-slate-50 dark:bg-slate-950/40 ${isRTL ? 'rtl' : 'ltr'}`}>
         {/* Header */}
         <div className="text-white px-4 pt-6 pb-8" style={portalBanner}>
           <div className="flex items-center gap-3 mb-2">
@@ -200,7 +200,7 @@ const { banner: portalBanner } = usePortalPalette();
         <div className="px-4 py-6 space-y-6 pb-24">
           {/* Shipping Services */}
           <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-200 mb-4 flex items-center gap-2">
               <Package className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               {pickLang(language, { ku: "خزمەتگوزاری بارکردن", en: "Shipping Services", ar: "خدمات الشحن", zh: "运输服务" })}
             </h2>
@@ -227,7 +227,7 @@ const { banner: portalBanner } = usePortalPalette();
                   <div className="p-4">
                     <div className="flex flex-wrap gap-2">
                       {service.features.map((feature, fIndex) => (
-                        <div key={fIndex} className="flex items-center gap-1 text-sm text-gray-600 dark:text-gray-300 bg-gray-100 dark:bg-gray-950/40 px-3 py-1 rounded-full">
+                        <div key={fIndex} className="flex items-center gap-1 text-sm text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-950/40 px-3 py-1 rounded-full">
                           <CheckCircle2 className="w-3 h-3 text-green-500 dark:text-green-400" />
                           {feature}
                         </div>
@@ -241,7 +241,7 @@ const { banner: portalBanner } = usePortalPalette();
 
           {/* Additional Services */}
           <div>
-            <h2 className="text-lg font-bold text-gray-900 dark:text-gray-200 mb-4 flex items-center gap-2">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-200 mb-4 flex items-center gap-2">
               <Sparkles className="w-5 h-5 text-indigo-600 dark:text-indigo-300" />
               {pickLang(language, { ku: "خزمەتگوزاری زیادە", en: "Additional Services", ar: "خدمات إضافية", zh: "增值服务" })}
             </h2>
@@ -251,8 +251,8 @@ const { banner: portalBanner } = usePortalPalette();
                   <div className={`w-10 h-10 ${service.color} rounded-xl flex items-center justify-center mb-3`}>
                     <service.icon className="w-5 h-5" />
                   </div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-200 text-sm mb-1">{service.title}</h3>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{service.description}</p>
+                  <h3 className="font-semibold text-slate-900 dark:text-slate-200 text-sm mb-1">{service.title}</h3>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">{service.description}</p>
                 </div>
               ))}
             </div>
@@ -263,7 +263,7 @@ const { banner: portalBanner } = usePortalPalette();
             <h2 className="text-lg font-bold mb-2">
               {pickLang(language, { ku: "پەیوەندیمان پێوە بکە", en: "Contact Us", ar: "تواصل معنا", zh: "联系我们" })}
             </h2>
-            <p className="text-sm text-gray-300 mb-4">
+            <p className="text-sm text-slate-300 mb-4">
               {pickLang(language, { ku: "بۆ زانیاری زیاتر یان داواکاری", en: "For more information or requests", ar: "للمزيد من المعلومات أو الطلبات", zh: "如需更多信息或下单" })}
             </p>
             <div className="space-y-3">
@@ -273,7 +273,7 @@ const { banner: portalBanner } = usePortalPalette();
                     <info.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <p className="text-xs text-gray-400">{info.label}</p>
+                    <p className="text-xs text-slate-400">{info.label}</p>
                     <p className="font-semibold">{info.value}</p>
                   </div>
                 </div>

@@ -7,6 +7,7 @@ import { WhatsAppHelpButton } from "./WhatsAppHelpButton";
 import { PhotoStack } from "@/components/PhotoStack";
 import { formatPortalDate } from "@/lib/portalClock";
 import { describeLedgerRef, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
+import { fmtUsd } from "@/lib/portalFormat";
 
 // ---------------------------------------------------------------------------
 // OrderBillingGroups — presentation-only fix for "one item, three receipts".
@@ -225,7 +226,7 @@ export function OrderBillingGroups({
                       className={cn("shrink-0 text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}
                       dir="ltr"
                     >
-                      ${g.total.toFixed(2)}
+                      {fmtUsd(g.total)}
                     </span>
                   </div>
                   <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1">
@@ -257,7 +258,7 @@ export function OrderBillingGroups({
                         {pick({ ku: "عەدەد", en: "Qty", ar: "الكمية", zh: "数量" })}: <b dir="ltr">{quantity}</b>
                       </span>
                     )}
-                    <span className={cn("ms-auto shrink-0 text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                    <span className={cn("ms-auto shrink-0 text-[11px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
                       {formatPortalDate(g.firstAt, language)}
                     </span>
                   </div>
@@ -278,7 +279,7 @@ export function OrderBillingGroups({
                 />
               </div>
               {g.lines.length > 1 && !open && (
-                <p className={cn("mt-1.5 text-[10px] font-medium", isDark ? "text-indigo-400" : "text-indigo-600")}>
+                <p className={cn("mt-1.5 text-[11px] font-medium", isDark ? "text-indigo-400" : "text-indigo-600")}>
                   {pick({
                     ku: `${g.lines.length} بڕگە لەم ئۆردەرەدا — کلیک بکە بۆ وردەکاری`,
                     en: `${g.lines.length} charges in this order — tap for details`,
@@ -302,12 +303,12 @@ export function OrderBillingGroups({
                           {describeLedgerRef(line.description, language, ledgerTypeName(line.transactionType, language)) ||
                             pick({ ku: "بڕگە", en: "Charge", ar: "بند", zh: "费用" })}
                         </p>
-                        <p className={cn("text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                        <p className={cn("text-[11px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
                           {formatPortalDate(line.createdAt, language)}
                         </p>
                       </div>
                       <span className={cn("shrink-0 text-xs font-bold tabular-nums", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")} dir="ltr">
-                        ${(Number(line.amountUsd) || 0).toFixed(2)}
+                        {fmtUsd(Number(line.amountUsd) || 0)}
                       </span>
                     </div>
                   ))}
@@ -323,7 +324,7 @@ export function OrderBillingGroups({
                     {pick({ ku: "کۆی ئەم بڕگانە", en: "Total of these charges", ar: "مجموع هذه البنود", zh: "以上费用合计" })}
                   </span>
                   <span className={cn("text-sm font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
-                    ${g.total.toFixed(2)}
+                    {fmtUsd(g.total)}
                   </span>
                 </div>
                 <div className="flex justify-end pb-1 pt-1.5">
@@ -334,7 +335,7 @@ export function OrderBillingGroups({
                       code ? `${code}` : subtitle,
                       quantity != null ? `${pick({ ku: "عەدەد", en: "Qty", ar: "الكمية", zh: "数量" })}: ${quantity}` : null,
                       tracking ? `${pick({ ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}: ${tracking}` : null,
-                      `$${g.total.toFixed(2)}`,
+                      fmtUsd(g.total),
                     ].filter(Boolean).join(" · ")}
                   />
                 </div>

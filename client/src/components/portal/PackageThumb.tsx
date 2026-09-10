@@ -150,7 +150,7 @@ export function PackageThumb({
           way to know there is anything behind the one they can see. */}
       {count > 1 && (
         <span
-          className="pointer-events-none absolute -bottom-1 -start-1 min-w-[1.1rem] rounded-full bg-blue-600 px-1 text-center text-[10px] font-bold leading-[1.1rem] text-white ring-2 ring-white dark:ring-slate-900"
+          className="pointer-events-none absolute -bottom-1 -start-1 min-w-[1.1rem] rounded-full bg-blue-600 px-1 text-center text-[11px] font-bold leading-[1.1rem] text-white ring-2 ring-white dark:ring-slate-900"
           dir="ltr"
         >
           {count}
@@ -177,7 +177,7 @@ export function PackageThumb({
         box
       )}
       {showBadge && source && (
-        <span className={cn("inline-flex items-center gap-1 text-[9px] font-semibold", SOURCE_META[source].text)}>
+        <span className={cn("inline-flex items-center gap-1 text-[11px] font-semibold", SOURCE_META[source].text)}>
           <span className={cn("h-1.5 w-1.5 rounded-full", SOURCE_META[source].dot)} />
           {pick(SOURCE_META[source].label)}
         </span>

@@ -89,7 +89,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
             className="h-28 w-full rounded-lg border object-cover"
             loading="lazy"
           />
-          <figcaption className="mt-1 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+          <figcaption className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
             <Camera className="h-3 w-3" />
             {label({ ku: "وێنەی گەیاندن", en: "Delivery photo", ar: "صورة التسليم", zh: "签收照片" })}
           </figcaption>
@@ -105,7 +105,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
             className="h-28 w-full rounded-lg border bg-white dark:bg-card object-contain p-1"
             loading="lazy"
           />
-          <figcaption className="mt-1 flex items-center gap-1 text-[10.5px] text-muted-foreground">
+          <figcaption className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">
             <PenLine className="h-3 w-3" />
             {label({ ku: "واژوو", en: "Signature", ar: "التوقيع", zh: "签名" })}
           </figcaption>
@@ -247,7 +247,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
                     })}
                   </button>
                   {/* Said plainly, because the button cannot be undone. */}
-                  <p className="mt-1.5 text-center text-[10.5px] text-muted-foreground">
+                  <p className="mt-1.5 text-center text-[11px] text-muted-foreground">
                     {label({
                       ku: "تەنها کاتێک کلیک بکە کە بەڕاستی بەدەستت گەیشتووە",
                       en: "Only tap this once it is actually in your hands",

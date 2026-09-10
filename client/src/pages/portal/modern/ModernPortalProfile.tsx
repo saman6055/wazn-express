@@ -53,12 +53,6 @@ export default function ModernPortalProfile() {
   if (!user) {
     return (
       <ModernPortalLayout>
-      {/* A failed request used to render the identity card blank. */}
-      {accountQuery.isError && (
-        <div className="px-4 pt-4">
-          <PortalErrorState compact onRetry={() => void accountQuery.refetch()} isRetrying={accountQuery.isFetching} />
-        </div>
-      )}
         <div className="min-h-screen flex items-center justify-center">
           <div className="text-center px-6">
             <div className={cn(
@@ -232,6 +226,13 @@ export default function ModernPortalProfile() {
 
   return (
     <ModernPortalLayout>
+      {/* Was inside the signed-out branch above, where no customer could
+          ever reach it; a failed request showed four dashes instead. */}
+      {accountQuery.isError && (
+        <div className="px-4 pt-4">
+          <PortalErrorState compact onRetry={() => void accountQuery.refetch()} isRetrying={accountQuery.isFetching} />
+        </div>
+      )}
       <div className={cn("min-h-screen pb-24", isRTL && "rtl")} dir={isRTL ? "rtl" : "ltr"}>
         <div className="max-w-lg mx-auto px-4 pt-6 space-y-5">
 

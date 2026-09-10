@@ -32,7 +32,7 @@ export function DeclarePackageBanner() {
               <PackagePlus className="h-6 w-6 text-white" />
             </div>
             <div className="min-w-0 flex-1">
-              <p className="text-[15px] font-extrabold leading-tight text-white">
+              <p className="text-base font-extrabold leading-tight text-white">
                 {pickLang(language, {
                   ku: "هەرچیت کڕیوە؟ تراکەکەی تۆمار بکە",
                   en: "Bought something? Register its tracking",

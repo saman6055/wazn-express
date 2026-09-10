@@ -31,6 +31,9 @@ import { tint, gradient } from "@/lib/portalModes";
 import { formatClockDate, formatPortalDate } from "@/lib/portalClock";
 import { filterChinaDepot, matchesRoute } from "@/lib/chinaDepotFilter";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { PortalChip } from "@/components/portal/PortalStatusChip";
+import { batchStatusTone } from "@/lib/shipmentFilters";
+import { fmtChargeable, fmtCount } from "@/lib/portalFormat";
 // "" is no filter — which is what the old "All" chip meant. Dropping the chip
 // and letting nothing-selected mean everything is one less thing to explain.
 type StatusFilter = ShipmentStage;
@@ -201,40 +204,6 @@ function ClassicPortalShipments() {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "delivered":
-      case "closed":
-        return { 
-          bg: isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40", 
-          text: isDark ? "text-emerald-400" : "text-emerald-700 dark:text-emerald-300", 
-          icon: isDark ? "text-emerald-400" : "text-emerald-500",
-          progress: "bg-emerald-500"
-        };
-      case "in_transit":
-        return { 
-          bg: isDark ? "bg-blue-900/50" : "bg-blue-100 dark:bg-blue-950/40", 
-          text: isDark ? "text-blue-400" : "text-blue-700 dark:text-blue-300", 
-          icon: isDark ? "text-blue-400" : "text-blue-500",
-          progress: "bg-blue-500"
-        };
-      case "customs":
-        return { 
-          bg: isDark ? "bg-amber-900/50" : "bg-amber-100 dark:bg-amber-950/40", 
-          text: isDark ? "text-amber-400" : "text-amber-700 dark:text-amber-300", 
-          icon: isDark ? "text-amber-400" : "text-amber-500",
-          progress: "bg-amber-500"
-        };
-      default:
-        return { 
-          bg: isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40", 
-          text: isDark ? "text-slate-300" : "text-slate-600", 
-          icon: isDark ? "text-slate-400" : "text-slate-400",
-          progress: "bg-slate-400"
-        };
-    }
-  };
-
   const getStatusIcon = (status: string) => {
     switch (status) {
       case "delivered":
@@ -366,7 +335,7 @@ function ClassicPortalShipments() {
       {/* Premium Header */}
       <div className="relative overflow-hidden">
         <div className="absolute inset-0" style={portalBanner} />
-        <div className="relative px-5 pt-14 pb-8">
+        <div className="relative px-4 pt-12 pb-8">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
@@ -457,7 +426,7 @@ function ClassicPortalShipments() {
                   "flex items-center justify-center text-center font-semibold leading-tight",
                   "transition-all duration-300 -translate-y-px active:translate-y-0",
                   compactFilters
-                    ? "flex-row gap-1.5 rounded-full px-2 py-1.5 text-[10.5px]"
+                    ? "flex-row gap-1.5 rounded-full px-2 py-1.5 text-[11px]"
                     : "flex-col gap-1.5 rounded-xl px-2 py-2.5 text-[11px]",
                   isActive
                     ? "text-white"
@@ -490,7 +459,7 @@ function ClassicPortalShipments() {
             isDark ? "bg-slate-800/60" : "bg-slate-50 dark:bg-slate-950/40"
           )}>
             <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />
-            <p className={cn("text-[11.5px] leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
+            <p className={cn("text-xs leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
               {shippingHint}
             </p>
           </div>
@@ -623,11 +592,12 @@ function ClassicPortalShipments() {
           isDark ? "bg-slate-900" : "bg-white"
         )}>
           <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
-            {language === "ku" 
-              ? `${totalResults} ئەنجام دۆزرایەوە` 
-              : language === "ar"
-              ? `${totalResults} نتيجة`
-              : `${totalResults} results found`}
+            {pickLang(language, {
+              ku: `${totalResults} ئەنجام دۆزرایەوە`,
+              en: `${totalResults} results found`,
+              ar: `${totalResults} نتيجة`,
+              zh: `找到 ${totalResults} 条结果`,
+            })}
           </p>
         </div>
 
@@ -711,8 +681,6 @@ function ClassicPortalShipments() {
         ) : (
           <div className="space-y-3">
             {filteredBatches.map((batch) => {
-              const statusColors = getStatusColor(batch.status);
-
               return (
                 <Link key={batch.id} href={`/portal/shipments/${batch.id}`}>
                   <div className={cn(
@@ -745,13 +713,9 @@ function ClassicPortalShipments() {
                         </div>
                         
                         {/* Status Badge */}
-                        <div className={cn(
-                          "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-medium",
-                          statusColors.bg, statusColors.text
-                        )}>
-                          <span className={statusColors.icon}>{getStatusIcon(batch.status)}</span>
+                        <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status)}>
                           {getStatusText(batch.status)}
-                        </div>
+                        </PortalChip>
                       </div>
                     </div>
 
@@ -836,7 +800,7 @@ function ClassicPortalShipments() {
                       <div className="flex items-center gap-4">
                         <div className={cn("flex items-center gap-1.5 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
                           <Package className="w-4 h-4" />
-                          <span>{batch.customerPackageCount} {pickLang(language, { ku: "پاکەت", en: "pkgs", ar: "طرد", zh: "件" })}</span>
+                          <span>{fmtCount(batch.customerPackageCount)} {pickLang(language, { ku: "پاکەت", en: "pkgs", ar: "طرد", zh: "件" })}</span>
                         </div>
                         {/* The customer's own total, in the unit this batch is
                             billed by. This used to print batch.totalWeight —
@@ -845,9 +809,8 @@ function ClassicPortalShipments() {
                         {(batch as any).customerChargeable > 0 && (
                           <div className={cn("flex items-center gap-1.5 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
                             <span>{(batch as any).customerUnit === "cbm" ? "📦" : "⚖️"}</span>
-                            <span className="tabular-nums">
-                              {(batch as any).customerChargeable}{" "}
-                              {(batch as any).customerUnit === "cbm" ? "m³" : "kg"}
+                            <span className="tabular-nums" dir="ltr">
+                              {fmtChargeable((batch as any).customerChargeable, (batch as any).customerUnit)}
                             </span>
                           </div>
                         )}
@@ -864,7 +827,7 @@ function ClassicPortalShipments() {
                               isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-50 dark:bg-blue-950/40 text-blue-600"
                             )}>
                               {language === "ku" ? "گەیشتن: " : language === "ar" ? "الوصول: " : language === "zh" ? "预计: " : "ETA: "}
-                              {formatBatchEta(eta)}
+                              {formatBatchEta(eta, language)}
                             </div>
                           );
                         }

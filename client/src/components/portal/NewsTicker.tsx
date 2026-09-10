@@ -99,7 +99,7 @@ export function NewsTicker({ language }: { language: string }) {
           <div className="relative flex-1 overflow-hidden h-full">
             <div ref={trackRef} className="wazn-ticker-track h-full" style={{ animationDuration: `${durationSec}s` }}>
               {run.map((h, i) => (
-                <span key={i} className="inline-flex items-center h-full text-[13px] font-semibold px-4 whitespace-nowrap">
+                <span key={i} className="inline-flex items-center h-full text-sm font-semibold px-4 whitespace-nowrap">
                   <span className="opacity-60 mx-2">•</span>
                   {h}
                 </span>

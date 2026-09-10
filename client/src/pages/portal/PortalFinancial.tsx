@@ -51,6 +51,7 @@ import {
 } from "@/lib/portalMoney";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
+import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 
 // Deep-link a ledger transaction to the section it was raised for, so tapping a
 // row jumps straight to the relevant package/order/prohibited item.
@@ -108,7 +109,7 @@ const { t, language } = useLanguage();
   // Deriving them from `transactions` meant deriving them from the fifty rows
   // above, so a customer with a busy month was shown a total that was simply
   // short — beside a balance that was right.
-  const { data: monthlyMoney } = trpc.customerPortal.getMyMonthlyMoney.useQuery({ months: 6 });
+  const { data: monthlyMoney, isLoading: monthlyLoading } = trpc.customerPortal.getMyMonthlyMoney.useQuery({ months: 6 });
   // Company info for the invoice/receipt header — via the PUBLIC
   // settings.getCompanyInfo endpoint. The old trpc.settings.list is a
   // staffProcedure: a portal customer hitting it threw FORBIDDEN, which the
@@ -156,30 +157,29 @@ const { t, language } = useLanguage();
   // name is decided here, because only here do we know the customer's language.
   const chartData = useMemo(() => {
     if (!monthlyMoney) return [];
-    const fmt = new Intl.DateTimeFormat(
-      language === "zh" ? "zh-CN" : language === "ar" ? "ar" : "en-GB",
-      { month: "short" },
-    );
     return monthlyMoney.map(m => {
       const [year, month] = m.ym.split("-").map(Number);
       return {
-        // Day 1 of the month, so naming it can never roll into the next one.
-        month: fmt.format(new Date(year, month - 1, 1)),
+        // mm/yy — the portal writes every date in digits, day first, so a
+        // month is written the same way. Six bars leave no room for a name.
+        month: `${String(month).padStart(2, "0")}/${String(year).slice(-2)}`,
         payments: m.payments,
         charges: m.charges,
       };
     });
-  }, [monthlyMoney, language]);
+  }, [monthlyMoney]);
 
   const maxChartValue = useMemo(() => {
     return Math.max(...chartData.map(d => Math.max(d.payments, d.charges)), 1);
   }, [chartData]);
 
+  // One money shape for the whole portal — see lib/portalFormat. Dinars
+  // are whole: Intl's decimal default let a balance print as 17,500,000.5 IQD.
   const formatCurrency = (amount: number, currency: string = "USD") => {
     if (currency === "IQD") {
-      return new Intl.NumberFormat("en-US", { style: "decimal" }).format(amount) + " IQD";
+      return new Intl.NumberFormat("en-US", { style: "decimal", maximumFractionDigits: 0 }).format(amount) + " IQD";
     }
-    return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(amount);
+    return fmtUsd(amount);
   };
 
   const getTransactionIcon = (type: string) => {
@@ -216,7 +216,7 @@ const { t, language } = useLanguage();
     if (!receiptData) return;
     const { transaction, customer, companyName, generatedAt } = receiptData;
     
-    const receiptHTML = `<!DOCTYPE html><html lang="${language}" dir="${language === "ku" || language === "ar" ? "rtl" : "ltr"}"><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header">${reportLogoHtml(company.logoUrl)}<div class="logo">${companyName}</div><div class="receipt-title">${pickLang(language, { ku: "پسووڵەی پارەدان", en: "Payment Receipt", ar: "إيصال دفع", zh: "付款收据" })}</div></div><div class="info-row"><span class="label">${pickLang(language, { ku: "ژمارەی پسووڵە", en: "Receipt #", ar: "رقم الإيصال", zh: "收据编号" })}</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span><span class="value">${formatPortalDate(transaction.createdAt, language)}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer Code", ar: "رمز العميل", zh: "客户编号" })}</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${txSign(transaction.transactionType)}${Number(transaction.amountUsd).toFixed(2)}</div><div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>${pickLang(language, { ku: "سوپاس بۆ متمانەت", en: "Thank you for your business!", ar: "شكرًا لثقتك بنا!", zh: "感谢您的惠顾！" })}</p><p>${pickLang(language, { ku: "دروستکرا", en: "Generated", ar: "أُنشئ", zh: "生成" })}: ${formatPortalDate(generatedAt, language)}</p></div></body></html>`;
+    const receiptHTML = `<!DOCTYPE html><html lang="${language}" dir="${language === "ku" || language === "ar" ? "rtl" : "ltr"}"><head><meta charset="UTF-8"><title>Receipt - ${transaction.transactionNumber}</title><style>body{font-family:Arial,sans-serif;max-width:400px;margin:0 auto;padding:20px}.header{text-align:center;border-bottom:2px solid #333;padding-bottom:15px;margin-bottom:20px}.logo{font-size:24px;font-weight:bold;color:#1e3a5f}.receipt-title{font-size:18px;margin-top:10px}.info-row{display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px dashed #ccc}.label{color:#666}.value{font-weight:500}.amount{font-size:24px;font-weight:bold;text-align:center;padding:20px 0}.amount.credit{color:#16a34a}.amount.debit{color:#dc2626}.footer{text-align:center;margin-top:30px;font-size:12px;color:#666}.barcode{text-align:center;font-family:monospace;font-size:14px;letter-spacing:2px;margin:20px 0}</style></head><body><div class="header">${reportLogoHtml(company.logoUrl)}<div class="logo">${companyName}</div><div class="receipt-title">${pickLang(language, { ku: "پسووڵەی پارەدان", en: "Payment Receipt", ar: "إيصال دفع", zh: "付款收据" })}</div></div><div class="info-row"><span class="label">${pickLang(language, { ku: "ژمارەی پسووڵە", en: "Receipt #", ar: "رقم الإيصال", zh: "收据编号" })}</span><span class="value">${transaction.transactionNumber}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span><span class="value">${formatPortalDate(transaction.createdAt, language)}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</span><span class="value">${customer.fullName}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer Code", ar: "رمز العميل", zh: "客户编号" })}</span><span class="value">${customer.customerCode || "-"}</span></div><div class="info-row"><span class="label">${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</span><span class="value">${getTransactionTypeName(transaction.transactionType)}</span></div><div class="amount ${isCreditTx(transaction.transactionType) ? "credit" : "debit"}">${txSign(transaction.transactionType)}${fmtUsd(transaction.amountUsd)}</div><div class="barcode">${transaction.transactionNumber}</div><div class="footer"><p>${pickLang(language, { ku: "سوپاس بۆ متمانەت", en: "Thank you for your business!", ar: "شكرًا لثقتك بنا!", zh: "感谢您的惠顾！" })}</p><p>${pickLang(language, { ku: "دروستکرا", en: "Generated", ar: "أُنشئ", zh: "生成" })}: ${formatPortalDate(generatedAt, language)}</p></div></body></html>`;
     
     const blob = new Blob([receiptHTML], { type: "text/html" });
     const url = URL.createObjectURL(blob);
@@ -248,7 +248,8 @@ const { t, language } = useLanguage();
   // The batch whose invoice is open. Null until one is picked, so the tab
   // does not fetch an invoice nobody asked for.
   const [invoiceBatchId, setInvoiceBatchId] = useState<number | null>(null);
-  const { data: myBatchesRaw } = trpc.customerPortal.getMyBatches.useQuery();
+  const myBatchesQuery = trpc.customerPortal.getMyBatches.useQuery();
+  const myBatchesRaw = myBatchesQuery.data;
   const myBatches = Array.isArray(myBatchesRaw) ? myBatchesRaw : [];
   // What this customer has been given. Absent while it loads, which reads as
   // "not granted" — a tab arriving a moment late beats one that appears and
@@ -257,7 +258,8 @@ const { t, language } = useLanguage();
   const financeDetail = hasFeature(myFeatures, "finance_detail");
 
   const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(null);
-  const { data: myBoxesRaw } = trpc.customerPortal.getMyDeliveryBoxes.useQuery();
+  const myBoxesQuery = trpc.customerPortal.getMyDeliveryBoxes.useQuery();
+  const myBoxesRaw = myBoxesQuery.data;
   const myBoxes = Array.isArray(myBoxesRaw) ? myBoxesRaw : [];
   const { data: boxInvoice } = trpc.customerPortal.getMyBoxInvoice.useQuery(
     { boxId: invoiceBoxId ?? 0 },
@@ -290,7 +292,7 @@ const { t, language } = useLanguage();
           <div className="absolute top-10 right-10 w-40 h-40 bg-white/10 rounded-full blur-3xl" />
           <div className="absolute bottom-0 left-10 w-32 h-32 bg-white/10 rounded-full blur-2xl" />
         </div>
-        <div className="relative px-5 pt-14 pb-24">
+        <div className="relative px-4 pt-12 pb-24">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-white">
@@ -413,9 +415,13 @@ const { t, language } = useLanguage();
               <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
                 {pickLang(language, { ku: "ئەم مانگە", en: "This Month", ar: "هذا الشهر", zh: "本月" })}
               </p>
-              <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                {monthlyStats.count} {pickLang(language, { ku: "مامەڵە", en: "txns", ar: "معاملة", zh: "笔" })}
-              </p>
+              {monthlyLoading ? (
+                <Skeleton className="h-6 w-16 mx-auto" />
+              ) : (
+                <p className={cn("text-lg font-bold tabular-nums", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                  {monthlyStats.count} {pickLang(language, { ku: "مامەڵە", en: "txns", ar: "معاملة", zh: "笔" })}
+                </p>
+              )}
             </div>
           </div>
         </div>
@@ -459,7 +465,7 @@ const { t, language } = useLanguage();
               <WhatsAppHelpButton
                 language={language}
                 section={language === "ku" ? "دارایی" : language === "ar" ? "المالية" : language === "zh" ? "财务" : "Financial"}
-                topic={`${language === "ku" ? "باڵانس" : language === "ar" ? "الرصيد" : language === "zh" ? "余额" : "Balance"}: $${Math.abs(balance).toFixed(2)}`}
+                topic={`${language === "ku" ? "باڵانس" : language === "ar" ? "الرصيد" : language === "zh" ? "余额" : "Balance"}: ${fmtUsd(Math.abs(balance))}`}
               />
               <StatementPdfButton language={language} />
             </div>
@@ -505,7 +511,7 @@ const { t, language } = useLanguage();
 
             {/* Chart */}
             <div className={cn(
-              "rounded-2xl p-5",
+              "rounded-2xl p-4",
               isDark ? "bg-slate-800" : "bg-white shadow-sm"
             )}>
               <div className="flex items-center justify-between mb-4">
@@ -566,7 +572,7 @@ const { t, language } = useLanguage();
                 </h3>
                 <button 
                   onClick={() => changeTab("transactions")}
-                  className="text-sm text-indigo-500 dark:text-indigo-400 font-medium flex items-center gap-1"
+                  className="text-sm text-blue-500 dark:text-blue-400 font-medium flex items-center gap-1"
                 >
                   {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                   <ChevronRight className="w-4 h-4" />
@@ -579,7 +585,15 @@ const { t, language } = useLanguage();
                       <Skeleton className="h-12 w-full" />
                     </div>
                   ))
-                ) : transactions?.slice(0, 3).map((tx) => {
+                ) : transactionsError ? (
+                  <div className="p-4">
+                    <PortalErrorState compact onRetry={() => void refetchTransactions()} isRetrying={transactionsFetching} />
+                  </div>
+                ) : !transactions?.length ? (
+                  <p className={cn("p-6 text-center text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+                    {pickLang(language, { ku: "هێشتا هیچ مامەڵەیەک نییە", en: "No transactions yet", ar: "لا توجد معاملات بعد", zh: "暂无交易记录" })}
+                  </p>
+                ) : transactions.slice(0, 3).map((tx) => {
                   const colors = getTransactionColor(tx.transactionType, isDark);
                   return (
                     <div key={tx.id} className="p-4 flex items-center gap-3">
@@ -615,6 +629,9 @@ const { t, language } = useLanguage();
             somebody worked it out by hand. */}
         {financeDetail && activeTab === "batches" && (
           <div className="px-4 pb-8 space-y-3">
+              {myBatchesQuery.isError && (
+                <PortalErrorState compact onRetry={() => void myBatchesQuery.refetch()} isRetrying={myBatchesQuery.isFetching} />
+              )}
               <AccountRowList
                 language={language}
                 rows={myBatches.map((b: any) => ({
@@ -657,6 +674,9 @@ const { t, language } = useLanguage();
             document. */}
         {financeDetail && activeTab === "boxes" && (
           <div className="px-4 pb-8">
+            {myBoxesQuery.isError && (
+              <PortalErrorState compact className="mb-3" onRetry={() => void myBoxesQuery.refetch()} isRetrying={myBoxesQuery.isFetching} />
+            )}
             <AccountRowList
               language={language}
               rows={myBoxes.map((b: any) => ({
@@ -675,7 +695,7 @@ const { t, language } = useLanguage();
                     tone: "paid" as const,
                   };
                   if (state === "partly") return {
-                    text: `${pickLang(language, { ku: "ماوە", en: "Still owing", ar: "متبقٍ", zh: "尚欠" })} $${(Number(b.totalValueUsd || 0) - Number(b.settledUsd || 0)).toFixed(2)}`,
+                    text: `${pickLang(language, { ku: "ماوە", en: "Still owing", ar: "متبقٍ", zh: "尚欠" })} ${fmtUsd(Number(b.totalValueUsd || 0) - Number(b.settledUsd || 0))}`,
                     tone: "owed" as const,
                   };
                   return null;
@@ -683,7 +703,7 @@ const { t, language } = useLanguage();
                 meta: [
                   b.deliveredAt ? formatPortalDate(b.deliveredAt, language) : null,
                   `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
-                  Number(b.totalWeightKg) > 0 ? `${Number(b.totalWeightKg)} kg` : null,
+                  Number(b.totalWeightKg) > 0 ? fmtKg(b.totalWeightKg) : null,
                   b.destinationCity || null,
                   b.settlementNumber || null,
                 ].filter(Boolean).join(" · "),
@@ -719,8 +739,8 @@ const { t, language } = useLanguage();
                     "px-4 py-2 rounded-xl text-sm font-medium transition-all",
                     dateRange === filter.value
                       ? isDark 
-                        ? "bg-indigo-600 text-white" 
-                        : "bg-indigo-500 text-white"
+                        ? "bg-blue-600 text-white" 
+                        : "bg-blue-500 text-white"
                       : isDark 
                         ? "bg-slate-800 text-slate-400" 
                         : "bg-white text-slate-600 shadow-sm"
@@ -802,12 +822,12 @@ const { t, language } = useLanguage();
                               className={cn(
                                 "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
                                 isDark 
-                                  ? "bg-indigo-900/50 hover:bg-indigo-800/50" 
-                                  : "bg-indigo-100 dark:bg-indigo-950/40 hover:bg-indigo-200"
+                                  ? "bg-blue-900/50 hover:bg-blue-800/50" 
+                                  : "bg-blue-100 dark:bg-blue-950/40 hover:bg-blue-200"
                               )}
                               title={pickLang(language, { ku: "بینینی وەسڵ", en: "View Invoice", ar: "عرض الفاتورة", zh: "查看发票" })}
                             >
-                              <FileText className={cn("w-4 h-4", isDark ? "text-indigo-400" : "text-indigo-600")} />
+                              <FileText className={cn("w-4 h-4", isDark ? "text-blue-400" : "text-blue-600")} />
                             </button>
                           )}
                           <button
@@ -1001,19 +1021,19 @@ const { t, language } = useLanguage();
         </tr>
       </thead>
       <tbody>
-        ${lineItems.length > 0 ? lineItems.map((item: any) => '<tr><td>' + item.description + '</td><td style="text-align: center;">' + item.quantity + '</td><td class="amount">$' + Number(item.unitPrice).toFixed(2) + '</td><td class="amount">$' + Number(item.total).toFixed(2) + '</td></tr>').join('') : '<tr><td>' + pickLang(language, { ku: "خزمەتگوزاری گەیاندن", en: "Shipping Services", ar: "خدمات الشحن", zh: "运输服务" }) + '</td><td style="text-align: center;">1</td><td class="amount">$' + Number(invoice.subtotalUsd).toFixed(2) + '</td><td class="amount">$' + Number(invoice.subtotalUsd).toFixed(2) + '</td></tr>'}
+        ${lineItems.length > 0 ? lineItems.map((item: any) => '<tr><td>' + item.description + '</td><td style="text-align: center;">' + item.quantity + '</td><td class="amount">' + fmtUsd(item.unitPrice) + '</td><td class="amount">' + fmtUsd(item.total) + '</td></tr>').join('') : '<tr><td>' + pickLang(language, { ku: "خزمەتگوزاری گەیاندن", en: "Shipping Services", ar: "خدمات الشحن", zh: "运输服务" }) + '</td><td style="text-align: center;">1</td><td class="amount">' + fmtUsd(invoice.subtotalUsd) + '</td><td class="amount">' + fmtUsd(invoice.subtotalUsd) + '</td></tr>'}
       </tbody>
     </table>
     
     <div class="totals">
       <div class="total-row">
         <span>${pickLang(language, { ku: "کۆی بەشەکی", en: "Subtotal", ar: "المجموع الفرعي", zh: "小计" })}</span>
-        <span>$${Number(invoice.subtotalUsd).toFixed(2)}</span>
+        <span>${fmtUsd(invoice.subtotalUsd)}</span>
       </div>
-      ${Number(invoice.taxUsd) > 0 ? '<div class="total-row"><span>' + pickLang(language, { ku: "باج", en: "Tax", ar: "الضريبة", zh: "税费" }) + '</span><span>$' + Number(invoice.taxUsd).toFixed(2) + '</span></div>' : ''}
+      ${Number(invoice.taxUsd) > 0 ? '<div class="total-row"><span>' + pickLang(language, { ku: "باج", en: "Tax", ar: "الضريبة", zh: "税费" }) + '</span><span>' + fmtUsd(invoice.taxUsd) + '</span></div>' : ''}
       <div class="total-row final">
         <span>${pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}</span>
-        <span>$${Number(invoice.totalUsd).toFixed(2)}</span>
+        <span>${fmtUsd(invoice.totalUsd)}</span>
       </div>
     </div>
     
@@ -1114,7 +1134,7 @@ const { t, language } = useLanguage();
                       {pickLang(language, { ku: "کۆی گشتی", en: "Total Amount", ar: "المبلغ الإجمالي", zh: "总金额" })}
                     </p>
                     <p className={cn("text-4xl font-bold mt-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                      ${Number(invoice.totalUsd).toFixed(2)}
+                      {fmtUsd(invoice.totalUsd)}
                     </p>
                   </div>
                   
@@ -1193,7 +1213,7 @@ const { t, language } = useLanguage();
                               "font-mono font-semibold text-sm shrink-0",
                               isDark ? "text-white" : "text-slate-900 dark:text-slate-200",
                             )}>
-                              ${Number(item.total).toFixed(2)}
+                              {fmtUsd(item.total)}
                             </span>
                           </div>
                         ))}

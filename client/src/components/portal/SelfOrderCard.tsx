@@ -2,6 +2,7 @@ import { Copy, Package as PackageIcon, Plane, Ship, Scale, Box, Calendar, CheckC
 import { toast } from "sonner";
 import { PhotoStack } from "@/components/PhotoStack";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
+import { fmtCbm, fmtKg, fmtUsd } from "@/lib/portalFormat";
 import { pickLang } from "@/lib/lang";
 import { copyText } from "@/lib/copyText";
 import { cn } from "@/lib/utils";
@@ -175,7 +176,7 @@ export function SelfOrderCard({
             {measureValue > 0 && (
               <span className={cn("inline-flex items-center gap-1 text-[11px] tabular-nums", isDark ? "text-slate-400" : "text-slate-500")} dir="ltr">
                 <measure.icon className="h-3 w-3" />
-                {measureValue} {measure.unit}
+                {isSea ? fmtCbm(measure.value) : fmtKg(measure.value)}
               </span>
             )}
 
@@ -186,7 +187,7 @@ export function SelfOrderCard({
               </span>
             )}
 
-            <span className={cn("ms-auto inline-flex items-center gap-1 text-[10px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+            <span className={cn("ms-auto inline-flex items-center gap-1 text-[11px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
               <Calendar className="h-3 w-3" />
               {fmtDate(pkg.createdAt, language)}
             </span>
@@ -203,11 +204,11 @@ export function SelfOrderCard({
           {price.kind !== "pending" && (
             <div className="mt-2">
               <div className="flex items-center gap-2">
-                <span className={cn("text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
-                  ${price.amount!.toFixed(2)}
+                <span className={cn("text-base font-bold tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
+                  {fmtUsd(price.amount)}
                 </span>
                 <span className={cn(
-                  "rounded-full px-2 py-0.5 text-[10px] font-semibold",
+                  "rounded-full px-2 py-0.5 text-[11px] font-semibold",
                   price.kind === "final"
                     ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-900/40 dark:text-emerald-300"
                     : "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300",
@@ -220,7 +221,7 @@ export function SelfOrderCard({
               {/* Named in advance, because the gap between an estimate and an
                   invoice is exactly where an argument starts. */}
               {price.kind === "estimate" && (
-                <p className={cn("mt-1 text-[10px] leading-snug", isDark ? "text-slate-400" : "text-slate-500")}>
+                <p className={cn("mt-1 text-[11px] leading-snug", isDark ? "text-slate-400" : "text-slate-500")}>
                   {pick(ESTIMATE_EXCLUDES)}
                 </p>
               )}

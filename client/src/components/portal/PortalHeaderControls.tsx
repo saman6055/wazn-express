@@ -252,7 +252,7 @@ export function PortalClock({
         <span className="text-xs font-bold tabular-nums">{formatClockTime(now, language, hour12)}</span>
         {/* Short enough now to keep on a phone too — it was the spelled-out
             month that forced it to hide on narrow screens. */}
-        <span className="text-[10px] opacity-75">{formatClockDate(now, language)}</span>
+        <span className="text-[11px] opacity-75">{formatClockDate(now, language)}</span>
       </button>
     );
   }
@@ -271,7 +271,7 @@ export function PortalClock({
       <p className="text-xl font-bold leading-none tabular-nums tracking-wide">
         {formatClockTime(now, language, hour12)}
       </p>
-      <p className="mt-1 text-[10px] leading-none opacity-75">
+      <p className="mt-1 text-[11px] leading-none opacity-75">
         {formatClockDate(now, language)}
       </p>
     </button>

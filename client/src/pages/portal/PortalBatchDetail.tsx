@@ -23,6 +23,9 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { PortalChip } from "@/components/portal/PortalStatusChip";
+import { packageStatusTone } from "@/lib/packageStatus";
+import { fmtCount, fmtDims, fmtKg } from "@/lib/portalFormat";
 import { formatPortalDate } from "@/lib/portalClock";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 
@@ -52,7 +55,8 @@ const { t, language } = useLanguage();
   const parsedId = Number.parseInt(params.id ?? "", 10);
   const batchId = Number.isFinite(parsedId) ? parsedId : 0;
   
-  const { data: batches } = trpc.customerPortal.getMyBatches.useQuery();
+  const batchesQuery = trpc.customerPortal.getMyBatches.useQuery();
+  const { data: batches } = batchesQuery;
   const { data: packages, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyPackagesInBatch.useQuery(
     { batchId },
     { enabled: batchId > 0 },
@@ -152,20 +156,6 @@ const { t, language } = useLanguage();
     return label ? pickLang(language, label) : status;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return isDark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300";
-      case "in_transit":
-      case "out_for_delivery":
-        return isDark ? "bg-blue-900/50 text-blue-400" : "bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300";
-      case "customs_processing":
-        return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300";
-      default:
-        return isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600";
-    }
-  };
-
   const openPhotoViewer = (packageId: number) => {
     setSelectedPackage(packageId);
     setCurrentPhotoIndex(0);
@@ -221,6 +211,11 @@ const { t, language } = useLanguage();
 
   return (
     <PortalLayout>
+      {batchesQuery.isError && !batch && (
+        <div className="px-4 pt-4">
+          <PortalErrorState compact onRetry={() => void batchesQuery.refetch()} isRetrying={batchesQuery.isFetching} />
+        </div>
+      )}
       {/* Header */}
       <div className="text-white px-4 pt-12 pb-8" style={portalBanner}>
         <Link href="/portal/shipments">
@@ -237,9 +232,7 @@ const { t, language } = useLanguage();
               <div className="flex items-center gap-2 mt-2">
                 <span className={cn(
                   "px-3 py-1 rounded-full text-xs font-medium",
-                  batch.status === "in_transit" ? "bg-blue-500/20 text-blue-300" :
-                  batch.status === "delivered" || batch.status === "closed" ? "bg-emerald-500/20 text-emerald-300" :
-                  "bg-slate-600 text-slate-200"
+                  "bg-white/15 text-white"
                 )}>
                   {batch.shippingType === "sea" ? "🚢" : "✈️"}{" "}
                   {batch.shippingType && SHIPPING_TYPE_LABEL[batch.shippingType]
@@ -247,7 +240,7 @@ const { t, language } = useLanguage();
                     : batch.shippingType?.replace("_", " ")}
                 </span>
                 <span className="text-slate-400 text-sm">
-                  • {packages?.length || 0} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "件包裹" })}
+                  • {isLoading ? "…" : fmtCount(packages?.length)} {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرود", zh: "件包裹" })}
                 </span>
               </div>
             )}
@@ -294,7 +287,7 @@ const { t, language } = useLanguage();
                 <WhatsAppHelpButton
                   language={language}
                   section={language === "ku" ? "وردەکاری بار" : language === "ar" ? "تفاصيل الشحنة" : language === "zh" ? "货运详情" : "Batch detail"}
-                  topic={`${batch.batchCode} — ${batch.status}`}
+                  topic={`${batch.batchCode} — ${STATUS_LABEL[batch.status as BatchStatus] ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]) : batch.status}`}
                 />
               </div>
             )}
@@ -312,7 +305,7 @@ const { t, language } = useLanguage();
       {/* Timeline Card */}
       <div className="px-4 -mt-4">
         <div className={cn(
-          "rounded-2xl shadow-lg p-5 transition-colors duration-300",
+          "rounded-2xl shadow-lg p-4 transition-colors duration-300",
           isDark ? "bg-slate-800" : "bg-white"
         )}>
           <h3 className={cn("font-semibold mb-4", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
@@ -322,13 +315,13 @@ const { t, language } = useLanguage();
           <div className="relative">
             {/* Timeline line */}
             <div className={cn(
-              "absolute top-5 start-5 end-5 h-1 rounded-full",
+              "absolute top-5 start-[8.33%] end-[8.33%] h-1 rounded-full",
               isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
             )} />
             
             {/* Progress line */}
             <div 
-              className="absolute top-5 start-5 h-1 rounded-full bg-gradient-to-r from-emerald-500 to-blue-500 transition-all duration-500"
+              className="absolute top-5 start-[8.33%] h-1 rounded-full bg-emerald-500 transition-all duration-500"
               style={{
                 // A status outside statusOrder — `cancelled` — put indexOf at
                 // -1, so nothing was completed or current and this computed
@@ -336,7 +329,7 @@ const { t, language } = useLanguage();
                 width: `${Math.max(
                   0,
                   ((timelineSteps.filter(s => s.completed || s.current).length - 1) /
-                    Math.max(1, timelineSteps.length - 1)) * 100,
+                    Math.max(1, timelineSteps.length - 1)) * 83.34,
                 )}%`
               }}
             />
@@ -344,7 +337,7 @@ const { t, language } = useLanguage();
             {/* Steps */}
             <div className="relative flex justify-between">
               {timelineSteps.map((step, index) => (
-                <div key={step.status} className="flex flex-col items-center">
+                <div key={step.status} className="flex min-w-0 flex-1 flex-col items-center">
                   <div className={cn(
                     "w-10 h-10 rounded-full flex items-center justify-center transition-all duration-300 z-10",
                     step.completed 
@@ -356,7 +349,7 @@ const { t, language } = useLanguage();
                     <step.icon className="w-5 h-5" />
                   </div>
                   <span className={cn(
-                    "text-xs font-medium mt-2 text-center max-w-[60px]",
+                    "text-[11px] leading-tight font-medium mt-2 w-full break-words text-center",
                     step.completed || step.current 
                       ? (isDark ? "text-white" : "text-slate-800 dark:text-slate-200")
                       : (isDark ? "text-slate-500" : "text-slate-400")
@@ -392,7 +385,7 @@ const { t, language } = useLanguage();
                   <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                     {eta.kind === "exact"
                       ? formatPortalDate(eta.date, language)
-                      : formatBatchEta(eta)}
+                      : formatBatchEta(eta, language)}
                   </p>
                 </div>
               </div>
@@ -414,7 +407,7 @@ const { t, language } = useLanguage();
             "px-3 py-1 rounded-full text-sm font-medium",
             isDark ? "bg-slate-800 text-slate-300" : "bg-white text-slate-600"
           )}>
-            {packages?.length || 0}
+            {isLoading ? "…" : fmtCount(packages?.length)}
           </span>
         </div>
 
@@ -459,18 +452,14 @@ const { t, language } = useLanguage();
                         size={48}
                         onClick={hasPhotos ? () => openPhotoViewer(pkg.id) : undefined}
                       />
-                      <div>
-                        <p className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                      <div className="min-w-0">
+                        <p dir="ltr" className={cn("break-all text-start font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                           {pkg.trackingNumber || pkg.packageCode}
                         </p>
                         <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <span className={cn(
-                            "text-xs px-2.5 py-1 rounded-full font-medium flex items-center gap-1",
-                            getStatusColor(pkg.status)
-                          )}>
-                            {getStatusIcon(pkg.status)}
+                          <PortalChip tone={packageStatusTone(pkg.status)} icon={getStatusIcon(pkg.status)}>
                             {getStatusText(pkg.status)}
-                          </span>
+                          </PortalChip>
                           {/* Says plainly which parcels are the customer's own
                               buying rather than an order of ours — the same
                               distinction the orders page draws, so a parcel
@@ -516,14 +505,14 @@ const { t, language } = useLanguage();
                     "mt-4 pt-3 border-t grid grid-cols-2 gap-3",
                     isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
                   )}>
-                    {pkg.weightKg && (
+                    {Number(pkg.weightKg) > 0 && (
                       <div className={cn(
                         "flex items-center gap-2 p-2 rounded-lg",
                         isDark ? "bg-slate-700/50" : "bg-slate-50 dark:bg-slate-950/40"
                       )}>
                         <Scale className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
                         <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-                          {pkg.weightKg} kg
+                          {fmtKg(pkg.weightKg)}
                         </span>
                       </div>
                     )}
@@ -534,7 +523,7 @@ const { t, language } = useLanguage();
                       )}>
                         <Ruler className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
                         <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-                          {pkg.lengthCm}×{pkg.widthCm}×{pkg.heightCm} cm
+                          {fmtDims(pkg.lengthCm, pkg.widthCm, pkg.heightCm)}
                         </span>
                       </div>
                     )}
@@ -584,7 +573,8 @@ const { t, language } = useLanguage();
                           "text-sm font-medium",
                           isDark ? "text-blue-400" : "text-blue-600"
                         )}>
-                          {pickLang(language, { ku: "بینینی وێنەکان", en: "View Photos", ar: "عرض الصور", zh: "查看照片" })} →
+                          {pickLang(language, { ku: "بینینی وێنەکان", en: "View Photos", ar: "عرض الصور", zh: "查看照片" })}
+                          <ChevronRight className={cn("ms-1 inline h-4 w-4", isRTL && "rotate-180")} />
                         </span>
                       </button>
                     </div>
@@ -703,21 +693,21 @@ const { t, language } = useLanguage();
               {/* Package info footer */}
               <div className="bg-slate-900 p-4 text-white">
                 <div className="flex items-center gap-4 text-sm">
-                  {selectedPkg.weightKg && (
+                  {Number(selectedPkg.weightKg) > 0 && (
                     <div className="flex items-center gap-1">
-                      <Scale className="w-4 h-4 text-gray-400" />
-                      <span>{selectedPkg.weightKg} kg</span>
+                      <Scale className="w-4 h-4 text-slate-400" />
+                      <span>{fmtKg(selectedPkg.weightKg)}</span>
                     </div>
                   )}
                   {selectedPkg.lengthCm && selectedPkg.widthCm && selectedPkg.heightCm && (
                     <div className="flex items-center gap-1">
-                      <Ruler className="w-4 h-4 text-gray-400" />
-                      <span>{selectedPkg.lengthCm}×{selectedPkg.widthCm}×{selectedPkg.heightCm} cm</span>
+                      <Ruler className="w-4 h-4 text-slate-400" />
+                      <span>{fmtDims(selectedPkg.lengthCm, selectedPkg.widthCm, selectedPkg.heightCm)}</span>
                     </div>
                   )}
                 </div>
                 {selectedPkg.description && (
-                  <p className="text-sm text-gray-400 mt-2">{selectedPkg.description}</p>
+                  <p className="text-sm text-slate-400 mt-2">{selectedPkg.description}</p>
                 )}
               </div>
             </div>

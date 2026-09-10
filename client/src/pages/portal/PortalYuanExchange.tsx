@@ -25,6 +25,8 @@ import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { formatPortalDate } from "@/lib/portalClock";
+import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
+import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 
 /** WhatsApp brand glyph (lucide has no brand icons). */
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -124,10 +126,10 @@ export default function PortalYuanExchange() {
   };
 
   const waMessage = pick({
-    ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${usdNum.toLocaleString("en-US")} دۆلار → ¥${cnyNum.toLocaleString("en-US")} یوان\n(نرخ: ١$ = ${rate}¥)`,
-    en: `Hello, I want to buy Chinese Yuan:\n💵 $${usdNum.toLocaleString("en-US")} → ¥${cnyNum.toLocaleString("en-US")}\n(Rate: 1$ = ${rate}¥)`,
-    ar: `مرحباً، أريد شراء اليوان الصيني:\n💵 ${usdNum.toLocaleString("en-US")}$ → ¥${cnyNum.toLocaleString("en-US")}\n(السعر: 1$ = ${rate}¥)`,
-    zh: `您好，我想购买人民币：\n💵 ${usdNum.toLocaleString("en-US")} 美元 → ¥${cnyNum.toLocaleString("en-US")}\n（汇率：1$ = ${rate}¥）`,
+    ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${fmtNumber(usdNum, 2)} دۆلار → ¥${fmtNumber(cnyNum, 2)} یوان\n(نرخ: ١$ = ${fmtNumber(rate, 2)}¥)`,
+    en: `Hello, I want to buy Chinese Yuan:\n💵 $${fmtNumber(usdNum, 2)} → ¥${fmtNumber(cnyNum, 2)}\n(Rate: 1$ = ${fmtNumber(rate, 2)}¥)`,
+    ar: `مرحباً، أريد شراء اليوان الصيني:\n💵 ${fmtNumber(usdNum, 2)}$ → ¥${fmtNumber(cnyNum, 2)}\n(السعر: 1$ = ${fmtNumber(rate, 2)}¥)`,
+    zh: `您好，我想购买人民币：\n💵 ${fmtNumber(usdNum, 2)} 美元 → ¥${fmtNumber(cnyNum, 2)}\n（汇率：1$ = ${fmtNumber(rate, 2)}¥）`,
   });
   const waHref = `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
 
@@ -143,7 +145,7 @@ export default function PortalYuanExchange() {
 
   return (
     <PortalLayout>
-      <div className="min-h-screen bg-gray-50 dark:bg-gray-950" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="min-h-screen bg-slate-50 dark:bg-slate-950" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
         <div className="relative overflow-hidden text-white px-4 pt-8 pb-12" style={portalBanner}>
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
@@ -177,7 +179,7 @@ export default function PortalYuanExchange() {
               <Skeleton className="h-6 w-24 rounded-md bg-white/25" />
             ) : (
               <span className="text-xl font-black tabular-nums" dir="ltr">
-                1$ = {rate}¥
+                1$ = {fmtNumber(rate, 2)}¥
               </span>
             )}
           </div>
@@ -196,7 +198,7 @@ export default function PortalYuanExchange() {
           ) : (
             <>
               {/* Calculator */}
-              <section className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm ring-1 ring-gray-100 dark:ring-white/5 overflow-hidden">
+              <section className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden">
                 <div className="bg-gradient-to-r from-red-500 to-orange-500 px-4 py-3.5 flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center ring-1 ring-white/20 shrink-0">
                     <ArrowDownUp className="w-5 h-5 text-white" />
@@ -223,7 +225,7 @@ export default function PortalYuanExchange() {
 
                   {/* USD */}
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                    <label className="text-sm font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                       <DollarSign className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
                       {pick({ ku: "بڕی دۆلار دەدەیت", en: "You pay (USD)", ar: "تدفع (دولار)", zh: "您支付（美元）" })}
                     </label>
@@ -247,7 +249,7 @@ export default function PortalYuanExchange() {
 
                   {/* CNY */}
                   <div className="space-y-1.5">
-                    <label className="text-sm font-semibold text-gray-600 dark:text-gray-300 flex items-center gap-1.5">
+                    <label className="text-sm font-semibold text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
                       <Banknote className="w-4 h-4 text-red-500 dark:text-red-400" />
                       {pick({ ku: "بڕی یوان وەردەگریت", en: "You receive (CNY)", ar: "تستلم (يوان)", zh: "您收到（人民币）" })}
                     </label>
@@ -274,7 +276,7 @@ export default function PortalYuanExchange() {
                   )}
 
                   {info && (info.noteKu || info.noteEn || info.noteAr || info.noteZh) && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 leading-relaxed">
+                    <p className="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">
                       {/* Fall back to any filled language so a half-filled note still shows */}
                       {pick({ ku: info.noteKu, en: info.noteEn, ar: info.noteAr, zh: info.noteZh }) ||
                         info.noteKu || info.noteEn || info.noteAr || info.noteZh}
@@ -284,8 +286,8 @@ export default function PortalYuanExchange() {
               </section>
 
               {/* Order */}
-              <section className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm ring-1 ring-gray-100 dark:ring-white/5 p-4 space-y-3">
-                <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+              <section className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 p-4 space-y-3">
+                <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
                   {pick({ ku: "تۆماری داواکاری", en: "Place an order", ar: "تسجيل طلب", zh: "提交订单" })}
                 </h3>
                 <Textarea
@@ -326,22 +328,22 @@ export default function PortalYuanExchange() {
                   </Button>
                 </div>
                 {usdNum > 0 && cnyNum > 0 && (
-                  <p className="text-center text-sm font-bold text-gray-600 dark:text-gray-300 tabular-nums" dir="ltr">
-                    ${usdNum.toLocaleString("en-US")} → ¥{cnyNum.toLocaleString("en-US")}
+                  <p className="text-center text-sm font-bold text-slate-600 dark:text-slate-300 tabular-nums" dir="ltr">
+                    {fmtUsd(usdNum)} → ¥{fmtNumber(cnyNum, 2)}
                   </p>
                 )}
               </section>
 
               {/* My orders */}
-              <section className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm ring-1 ring-gray-100 dark:ring-white/5 overflow-hidden">
-                <div className="px-4 py-3.5 flex items-center justify-between border-b border-gray-100 dark:border-gray-800/60 dark:border-white/5">
-                  <h3 className="text-sm font-bold text-gray-700 dark:text-gray-200">
+              <section className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden">
+                <div className="px-4 py-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 dark:border-white/5">
+                  <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
                     {pick({ ku: "داواکارییەکانم", en: "My orders", ar: "طلباتي", zh: "我的订单" })}
                   </h3>
                   <button
                     type="button"
                     onClick={() => ordersQuery.refetch()}
-                    className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition"
+                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
                     aria-label={pickLang(language, { ku: "نوێکردنەوە", en: "refresh", ar: "تحديث", zh: "刷新" })}
                   >
                     <RefreshCw className={`w-4 h-4 ${ordersQuery.isFetching ? "animate-spin" : ""}`} />
@@ -366,11 +368,15 @@ export default function PortalYuanExchange() {
                 ) : ordersQuery.isError ? (
                   <PortalErrorState onRetry={() => void ordersQuery.refetch()} isRetrying={ordersQuery.isFetching} />
                 ) : !ordersQuery.data?.length ? (
-                  <p className="p-6 text-center text-sm text-gray-400">
-                    {pick({ ku: "هێشتا هیچ داواکارییەکت نییە", en: "No orders yet", ar: "لا توجد طلبات بعد", zh: "暂无订单" })}
-                  </p>
+                  <div className="p-3">
+                    <PortalEmptyState
+                      compact
+                      title={pick({ ku: "هێشتا هیچ داواکارییەکت نییە", en: "No orders yet", ar: "لا توجد طلبات بعد", zh: "暂无订单" })}
+                      hint={pick({ ku: "یەکەم داواکاری یوانەکەت لە سەرەوە بنووسە.", en: "Place your first Yuan order above.", ar: "قدّم أول طلب يوان من الأعلى.", zh: "请在上方提交您的第一笔人民币订单。" })}
+                    />
+                  </div>
                 ) : (
-                  <div className="divide-y divide-gray-100 dark:divide-white/5">
+                  <div className="divide-y divide-slate-100 dark:divide-white/5">
                     {ordersQuery.data.map((o) => {
                       const style = STATUS_STYLE[o.status as OrderStatus] ?? STATUS_STYLE.pending;
                       const StatusIcon =
@@ -379,14 +385,14 @@ export default function PortalYuanExchange() {
                         <div key={o.id} className="p-4 flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full shrink-0 ${style.dot}`} />
                           <div className="flex-1 min-w-0">
-                            <p className="font-bold text-gray-800 dark:text-gray-100 tabular-nums" dir="ltr">
-                              ${Number(o.usdAmount).toLocaleString("en-US")} → ¥{Number(o.cnyAmount).toLocaleString("en-US")}
+                            <p className="font-bold text-slate-800 dark:text-slate-100 tabular-nums" dir="ltr">
+                              {fmtUsd(o.usdAmount)} → ¥{fmtNumber(o.cnyAmount, 2)}
                             </p>
-                            <p className="text-xs text-gray-400 tabular-nums" dir="ltr">
-                              1$ = {Number(o.rate)}¥ · {formatPortalDate(o.createdAt, language)}
+                            <p className="text-xs text-slate-400 tabular-nums" dir="ltr">
+                              1$ = {fmtNumber(o.rate, 2)}¥ · {formatPortalDate(o.createdAt, language)}
                             </p>
                             {o.adminNote && (
-                              <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">{o.adminNote}</p>
+                              <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{o.adminNote}</p>
                             )}
                           </div>
                           <span

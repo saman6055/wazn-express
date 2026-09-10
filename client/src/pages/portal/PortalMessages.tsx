@@ -139,7 +139,8 @@ export default function PortalMessages() {
   // Get unread count
   const unreadQuery = trpc.supportChat.getUnreadCount.useQuery();
   // The Notifications tab had no query at all behind it.
-  const { data: portalNotifications } = trpc.customerPortal.getMyNotifications.useQuery();
+  const notificationsQuery = trpc.customerPortal.getMyNotifications.useQuery();
+  const { data: portalNotifications } = notificationsQuery;
   
   // Initialize chat
   useEffect(() => {
@@ -338,7 +339,7 @@ export default function PortalMessages() {
     <PortalLayout>
       <div className={cn(
         "flex flex-col h-[calc(100vh-140px)]",
-        isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
+        isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
       )}>
         {/* Header */}
         <div className="relative overflow-hidden" style={portalBanner}>
@@ -359,7 +360,7 @@ export default function PortalMessages() {
                   <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                     <MessageCircle className="h-6 w-6 text-white" />
                   </div>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
+                  <span className="absolute -bottom-0.5 -end-0.5 w-3.5 h-3.5 bg-emerald-500 border-2 border-white rounded-full" />
                 </div>
                 <div>
                   <h1 className="font-bold text-white text-lg">
@@ -430,7 +431,7 @@ export default function PortalMessages() {
             {/* Messages Area */}
             <div className={cn(
               "flex-1 overflow-y-auto px-4 py-4 space-y-4",
-              isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
+              isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
             )}>
               {/* Loading state */}
               {(getOrCreateChat.isPending || messagesQuery.isLoading) && (
@@ -474,13 +475,13 @@ export default function PortalMessages() {
                   </motion.div>
                   <h3 className={cn(
                     "font-bold text-lg mb-2",
-                    isDark ? "text-white" : "text-gray-800 dark:text-gray-200"
+                    isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                   )}>
                     {pickLang(language, { ku: "بەخێربێیت!", en: "Welcome!", ar: "أهلاً بك!", zh: "欢迎！" })}
                   </h3>
                   <p className={cn(
                     "text-sm max-w-xs mb-6",
-                    isDark ? "text-slate-400" : "text-gray-500"
+                    isDark ? "text-slate-400" : "text-slate-500"
                   )}>
                     {pickLang(language, { ku: "گفتوگۆیەک دەستپێبکە لەگەڵ تیمی پشتگیریمان. ئێمە لێرەین بۆ یارمەتیدان!", en: "Start a conversation with our support team. We're here to help!", ar: "ابدأ محادثة مع فريق الدعم لدينا. نحن هنا لمساعدتك!", zh: "与我们的客服团队开始对话。我们随时为您提供帮助！" })}
                   </p>
@@ -520,7 +521,7 @@ export default function PortalMessages() {
                       <div className="flex items-center justify-center my-4">
                         <div className={cn(
                           "text-xs px-3 py-1 rounded-full",
-                          isDark ? "bg-slate-800 text-slate-400" : "bg-gray-200 text-gray-600"
+                          isDark ? "bg-slate-800 text-slate-400" : "bg-slate-200 text-slate-600"
                         )}>
                           {date}
                         </div>
@@ -562,7 +563,7 @@ export default function PortalMessages() {
                                   : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-br-md"
                                 : isDark
                                   ? "bg-slate-800 text-slate-100 rounded-bl-md"
-                                  : "bg-white text-gray-800 dark:text-gray-200 rounded-bl-md border border-gray-100 dark:border-gray-800/60"
+                                  : "bg-white text-slate-800 dark:text-slate-200 rounded-bl-md border border-slate-100 dark:border-slate-800/60"
                             )}
                           >
                             {/* Image attachment */}
@@ -588,7 +589,7 @@ export default function PortalMessages() {
                                     ? "bg-white/10 hover:bg-white/20"
                                     : isDark
                                       ? "bg-slate-700 hover:bg-slate-600"
-                                      : "bg-gray-100 dark:bg-gray-950/40 hover:bg-gray-200"
+                                      : "bg-slate-100 dark:bg-slate-950/40 hover:bg-slate-200"
                                 )}
                               >
                                 <FileText className="w-4 h-4 shrink-0" />
@@ -622,10 +623,10 @@ export default function PortalMessages() {
                             >
                               <span
                                 className={cn(
-                                  "text-[10px]",
+                                  "text-[11px]",
                                   message.senderType === "customer" 
                                     ? "text-white/70" 
-                                    : isDark ? "text-slate-500" : "text-gray-400"
+                                    : isDark ? "text-slate-500" : "text-slate-400"
                                 )}
                               >
                                 {formatTime(message.createdAt)}
@@ -663,11 +664,11 @@ export default function PortalMessages() {
             {attachmentFile && (
               <div className={cn(
                 "px-4 pt-3 border-t",
-                isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 dark:border-gray-800/60 bg-white"
+                isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 dark:border-slate-800/60 bg-white"
               )}>
                 <div className={cn(
                   "flex items-center gap-3 p-2 rounded-lg",
-                  isDark ? "bg-slate-800" : "bg-gray-100 dark:bg-gray-950/40"
+                  isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40"
                 )}>
                   {attachmentPreview ? (
                     <img onError={onImageError} loading="lazy" decoding="async" src={attachmentPreview} alt="" className="w-14 h-14 rounded object-cover" />
@@ -678,9 +679,9 @@ export default function PortalMessages() {
                   )}
                   <div className="flex-1 min-w-0">
                     <p className={cn("text-sm font-medium truncate", isDark ? "text-white" : "")}>{attachmentFile.name}</p>
-                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-500")}>{(attachmentFile.size / 1024).toFixed(1)} KB</p>
+                    <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>{(attachmentFile.size / 1024).toFixed(1)} KB</p>
                   </div>
-                  <button onClick={clearAttachment} className={cn("p-1 rounded hover:bg-gray-200", isDark && "hover:bg-slate-700")}>
+                  <button onClick={clearAttachment} className={cn("p-1 rounded hover:bg-slate-200", isDark && "hover:bg-slate-700")}>
                     <X className="w-4 h-4" />
                   </button>
                 </div>
@@ -715,7 +716,7 @@ export default function PortalMessages() {
             {/* Input Area */}
             <div className={cn(
               "border-t px-4 py-3",
-              isDark ? "border-slate-700 bg-slate-900" : "border-gray-200 dark:border-gray-800/60 bg-white"
+              isDark ? "border-slate-700 bg-slate-900" : "border-slate-200 dark:border-slate-800/60 bg-white"
             )}>
               <div className="flex items-center gap-2">
                 {/* Attachment buttons */}
@@ -723,7 +724,7 @@ export default function PortalMessages() {
                   onClick={() => imageInputRef.current?.click()}
                   className={cn(
                     "p-2 rounded-full transition",
-                    isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-gray-100 text-gray-400 hover:text-purple-600"
+                    isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-slate-100 text-slate-400 hover:text-purple-600"
                   )}
                   disabled={!chatId}
                 >
@@ -733,7 +734,7 @@ export default function PortalMessages() {
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
                     "p-2 rounded-full transition",
-                    isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-gray-100 text-gray-400 hover:text-purple-600"
+                    isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-slate-100 text-slate-400 hover:text-purple-600"
                   )}
                   disabled={!chatId}
                 >
@@ -751,10 +752,10 @@ export default function PortalMessages() {
                     </button>
                     <div className="flex-1 flex items-center gap-2">
                       <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
-                      <span className={cn("text-sm font-mono font-medium", isDark ? "text-white" : "text-gray-800 dark:text-gray-200")}>
+                      <span className={cn("text-sm font-mono font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                         {formattedDuration}
                       </span>
-                      <span className={cn("text-xs", isDark ? "text-slate-400" : "text-gray-500")}>
+                      <span className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
                         {pickLang(language, { ku: "تۆمارکردن...", en: "Recording...", ar: "جارٍ التسجيل...", zh: "录音中..." })}
                       </span>
                     </div>
@@ -782,7 +783,7 @@ export default function PortalMessages() {
                         "flex-1 rounded-full",
                         isDark
                           ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500"
-                          : "border-gray-200 dark:border-gray-800/60 focus:border-purple-500 focus:ring-purple-500"
+                          : "border-slate-200 dark:border-slate-800/60 focus:border-purple-500 focus:ring-purple-500"
                       )}
                       disabled={!chatId || sendMessage.isPending || isUploading}
                     />
@@ -810,7 +811,7 @@ export default function PortalMessages() {
                         disabled={!chatId}
                         className={cn(
                           "rounded-full w-10 h-10 flex items-center justify-center transition",
-                          isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-gray-100 text-gray-400 hover:text-purple-600"
+                          isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-slate-100 text-slate-400 hover:text-purple-600"
                         )}
                       >
                         <Mic className="w-5 h-5" />
@@ -826,7 +827,7 @@ export default function PortalMessages() {
 
               <p className={cn(
                 "text-xs text-center mt-2",
-                isDark ? "text-slate-500" : "text-gray-400"
+                isDark ? "text-slate-500" : "text-slate-400"
               )}>
                 {pickLang(language, { ku: "تیمی پشتگیریمان بە زووترین کات وەڵامت دەداتەوە", en: "Our team typically responds within a few hours", ar: "يرد فريقنا عادةً خلال بضع ساعات", zh: "我们的团队通常会在几小时内回复" })}
               </p>
@@ -840,17 +841,19 @@ export default function PortalMessages() {
         {activeTab === "notifications" && (
           <div className={cn(
             "flex-1 overflow-y-auto px-4 py-4 space-y-2",
-            isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
+            isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
           )}>
-            {portalNotifications === undefined ? (
+            {notificationsQuery.isLoading ? (
               <Skeleton className="h-20 w-full rounded-2xl" />
+            ) : notificationsQuery.isError || !portalNotifications ? (
+              <PortalErrorState onRetry={() => void notificationsQuery.refetch()} isRetrying={notificationsQuery.isFetching} />
             ) : portalNotifications.length === 0 ? (
               <div className="flex flex-col items-center justify-center py-16 text-center">
-                <Bell className={cn("h-12 w-12 mb-3", isDark ? "text-slate-600" : "text-gray-300")} />
-                <h3 className={cn("font-bold", isDark ? "text-white" : "text-gray-800 dark:text-gray-200")}>
+                <Bell className={cn("h-12 w-12 mb-3", isDark ? "text-slate-600" : "text-slate-300")} />
+                <h3 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                   {pickLang(language, { ku: "ئاگاداری نییە", en: "No notifications", ar: "لا توجد إشعارات", zh: "暂无通知" })}
                 </h3>
-                <p className={cn("text-sm mt-1", isDark ? "text-slate-400" : "text-gray-500")}>
+                <p className={cn("text-sm mt-1", isDark ? "text-slate-400" : "text-slate-500")}>
                   {pickLang(language, { ku: "کاتێک ئاگاداریت هەبێت، لێرە دەردەکەوێت", en: "They will appear here when you have some", ar: "ستظهر هنا عند وجودها", zh: "有通知时会显示在这里" })}
                 </p>
               </div>
@@ -860,13 +863,13 @@ export default function PortalMessages() {
                   <div key={n.id} className={cn(
                     "rounded-2xl border p-3",
                     n.isRead
-                      ? "border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-800/50"
+                      ? "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/50"
                       : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
                   )}>
-                    <p className={cn("text-sm font-bold", isDark ? "text-white" : "text-gray-800 dark:text-gray-200")}>
+                    <p className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       {notificationText(n, "title", language)}
                     </p>
-                    <p className={cn("text-xs mt-0.5", isDark ? "text-slate-400" : "text-gray-600")}>
+                    <p className={cn("text-xs mt-0.5", isDark ? "text-slate-400" : "text-slate-600")}>
                       {notificationText(n, "message", language)}
                     </p>
                   </div>
@@ -884,7 +887,7 @@ export default function PortalMessages() {
         {/* Contact Info Footer */}
         <div className={cn(
           "border-t px-4 py-3",
-          isDark ? "border-slate-700 bg-slate-800/50" : "border-gray-200 dark:border-gray-800/60 bg-gray-50 dark:bg-gray-950/40"
+          isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-950/40"
         )}>
           <div className="flex items-center justify-center gap-6">
             <a 
@@ -893,7 +896,7 @@ export default function PortalMessages() {
               href={`tel:+${TERMS_WHATSAPP_NUMBER}`}
               className={cn(
                 "flex items-center gap-2 text-sm",
-                isDark ? "text-slate-400 hover:text-white" : "text-gray-500 hover:text-gray-800"
+                isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
               )}
             >
               <Phone className="w-4 h-4" />
@@ -903,7 +906,7 @@ export default function PortalMessages() {
               href="mailto:support@waznexpress.com" 
               className={cn(
                 "flex items-center gap-2 text-sm",
-                isDark ? "text-slate-400 hover:text-white" : "text-gray-500 hover:text-gray-800"
+                isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
               )}
             >
               <Mail className="w-4 h-4" />

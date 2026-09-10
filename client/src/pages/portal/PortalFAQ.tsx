@@ -64,7 +64,7 @@ export default function PortalFAQ() {
   return (
     <PortalLayout>
       <div
-        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")}
+        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-slate-50 dark:bg-slate-950/40")}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -130,7 +130,7 @@ export default function PortalFAQ() {
                   <h2 className={cn("font-bold text-sm", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>{pick(cat.title)}</h2>
                 </div>
 
-                <div className={cn("rounded-2xl overflow-hidden divide-y", isDark ? "bg-slate-900 divide-slate-800" : "bg-white divide-gray-100 shadow-sm")}>
+                <div className={cn("rounded-2xl overflow-hidden divide-y", isDark ? "bg-slate-900 divide-slate-800" : "bg-white divide-slate-100 shadow-sm")}>
                   {cat.items.map((it, i) => {
                     const key = `${cat.id}:${i}`;
                     const open = openKey === key;

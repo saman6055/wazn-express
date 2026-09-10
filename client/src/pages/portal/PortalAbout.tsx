@@ -168,11 +168,11 @@ export default function PortalAbout() {
     },
   ];
 
-  const card = cn("rounded-3xl p-5 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-gray-100 shadow-sm");
+  const card = cn("rounded-3xl p-5 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-slate-100 shadow-sm");
 
   return (
     <PortalLayout>
-      <div className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-gray-50 dark:bg-gray-950/40")} dir={isRTL ? "rtl" : "ltr"}>
+      <div className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-slate-50 dark:bg-slate-950/40")} dir={isRTL ? "rtl" : "ltr"}>
         {/* Hero */}
         <div className="relative overflow-hidden text-white px-4 pt-6 pb-12" style={portalBanner}>
           <div className="absolute -top-16 -end-10 w-56 h-56 rounded-full bg-white/10 blur-3xl" />
@@ -251,7 +251,7 @@ export default function PortalAbout() {
             </h2>
             <div className="space-y-2.5">
               {services.map((s, i) => (
-                <div key={i} className={cn("rounded-2xl p-4 flex items-start gap-3 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-gray-100 shadow-sm")}>
+                <div key={i} className={cn("rounded-2xl p-4 flex items-start gap-3 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-slate-100 shadow-sm")}>
                   <div className={cn("w-11 h-11 rounded-xl bg-gradient-to-br flex items-center justify-center text-white shrink-0", s.grad)}>
                     <s.icon className="w-5 h-5" />
                   </div>
@@ -271,7 +271,7 @@ export default function PortalAbout() {
             </h2>
             <div className="grid grid-cols-2 gap-2.5">
               {values.map((v, i) => (
-                <div key={i} className={cn("rounded-2xl p-4 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-gray-100 shadow-sm")}>
+                <div key={i} className={cn("rounded-2xl p-4 ring-1", isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-slate-100 shadow-sm")}>
                   <div className={cn("w-9 h-9 rounded-xl flex items-center justify-center mb-2", isDark ? "bg-indigo-950/50 text-indigo-400" : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600")}>
                     <v.icon className="w-4.5 h-4.5" />
                   </div>

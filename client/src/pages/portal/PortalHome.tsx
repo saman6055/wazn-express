@@ -29,6 +29,10 @@ import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf, isInIraqNotDelivered, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { PortalChip } from "@/components/portal/PortalStatusChip";
+import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
+import { batchStatusTone } from "@/lib/shipmentFilters";
+import { fmtCount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
 
 // Animated Counter Component
 function AnimatedCounter({ value, duration = 1000 }: { value: number; duration?: number }) {
@@ -242,7 +246,7 @@ export default function PortalHome() {
   const { data: account, isLoading: accountLoading } = accountQuery;
   const { data: batches, isLoading: batchesLoading } = batchesQuery;
   const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
-  const { data: financialSummary } = summaryQuery;
+  const { data: financialSummary, isLoading: summaryLoading } = summaryQuery;
   const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery();
   const { data: prohibitedPackages } = trpc.prohibited.getMine.useQuery();
   // The admin-curated price list already carries today's exchange rates; the
@@ -314,6 +318,7 @@ export default function PortalHome() {
   // Balance info
   const balance = financialSummary?.balanceUsd || 0;
   const hasDebt = isDebt(balance);
+  const balanceText = fmtUsd(Math.abs(balance));
 
   const rmbRate = priceList?.rates?.rmb != null && Number(priceList.rates.rmb) > 0 ? Number(priceList.rates.rmb) : null;
   const iqdRate = priceList?.rates?.iqd != null && Number(priceList.rates.iqd) > 0 ? Number(priceList.rates.iqd) : null;
@@ -329,20 +334,6 @@ export default function PortalHome() {
         return <AlertCircle className="w-4 h-4" />;
       default:
         return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "delivered":
-      case "closed":
-        return isDark ? "bg-emerald-900/50 text-emerald-400" : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300";
-      case "in_transit":
-        return isDark ? "bg-sky-900/50 text-sky-400" : "bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300";
-      case "customs":
-        return isDark ? "bg-amber-900/50 text-amber-400" : "bg-amber-100 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300";
-      default:
-        return isDark ? "bg-slate-700 text-slate-300" : "bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300";
     }
   };
 
@@ -523,7 +514,7 @@ export default function PortalHome() {
             )}>
               <Coins className="h-3.5 w-3.5 shrink-0" />
               <span dir="ltr" className="tabular-nums">
-                {rmbRate ? `$1 = ¥${rmbRate}` : ""}
+                {rmbRate ? `$1 = ¥${fmtNumber(rmbRate, 2)}` : ""}
                 {rmbRate && iqdRate ? "  •  " : ""}
                 {iqdRate ? `$100 = ${(iqdRate * 100).toLocaleString("en-US")} IQD` : ""}
               </span>
@@ -553,7 +544,9 @@ export default function PortalHome() {
 
         {/* Money — amber while anything is owed, calm green when clear */}
         <div className="px-4 mt-3">
-          {hasDebt ? (
+          {summaryLoading ? (
+            <Skeleton className={cn("h-[72px] w-full rounded-2xl", isDark && "bg-slate-800")} />
+          ) : hasDebt ? (
             <Link href="/portal/financial">
               <div className={cn(
                 "rounded-2xl border p-4 transition-transform active:scale-[0.99]",
@@ -565,7 +558,7 @@ export default function PortalHome() {
                       {t("portal.outstandingBalance")}
                     </p>
                     <p dir="ltr" className={cn("text-2xl font-bold tabular-nums", isDark ? "text-amber-400" : "text-amber-600 dark:text-amber-400")}>
-                      ${Math.abs(balance).toFixed(2)}
+                      {balanceText}
                     </p>
                   </div>
                   {/* Direct WhatsApp line for paying. Stops propagation so
@@ -575,10 +568,10 @@ export default function PortalHome() {
                       e.preventDefault();
                       e.stopPropagation();
                       const msg = pickLang(language, {
-                        ku: `سڵاو، دەمەوێت باڵانسەکەم بدەم ($${Math.abs(balance).toFixed(2)}). تکایە شێوازەکانی پارەدانم بۆ بنێرن.`,
-                        en: `Hello, I'd like to pay my balance ($${Math.abs(balance).toFixed(2)}). Please send me the payment options.`,
-                        ar: `مرحبًا، أودّ دفع رصيدي ($${Math.abs(balance).toFixed(2)}). الرجاء إرسال طرق الدفع.`,
-                        zh: `您好，我想支付我的余额（$${Math.abs(balance).toFixed(2)}）。请发送付款方式。`,
+                        ku: `سڵاو، دەمەوێت باڵانسەکەم بدەم (${balanceText}). تکایە شێوازەکانی پارەدانم بۆ بنێرن.`,
+                        en: `Hello, I'd like to pay my balance (${balanceText}). Please send me the payment options.`,
+                        ar: `مرحبًا، أودّ دفع رصيدي (${balanceText}). الرجاء إرسال طرق الدفع.`,
+                        zh: `您好，我想支付我的余额（${balanceText}）。请发送付款方式。`,
                       });
                       window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
                     }}
@@ -604,7 +597,7 @@ export default function PortalHome() {
                 </div>
                 {balance !== 0 && (
                   <span dir="ltr" className={cn("shrink-0 text-sm font-bold tabular-nums", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
-                    +${Math.abs(balance).toFixed(2)}
+                    +{balanceText}
                   </span>
                 )}
               </div>
@@ -691,7 +684,7 @@ export default function PortalHome() {
                 {pickLang(language, STATUS_LABEL.in_transit)}
                 {nextEtaDays !== null && (
                   <span className="block tabular-nums">
-                    {pickLang(language, { ku: `~${nextEtaDays} ڕۆژ ماوە`, en: `~${nextEtaDays} days left`, ar: `~${nextEtaDays} يومًا متبقية`, zh: `约剩 ${nextEtaDays} 天` })}
+                    {pickLang(language, { ku: `نزیکەی ${nextEtaDays} ڕۆژ ماوە`, en: `about ${nextEtaDays} days left`, ar: `نحو ${nextEtaDays} يومًا متبقية`, zh: `约剩 ${nextEtaDays} 天` })}
                   </span>
                 )}
               </p>
@@ -740,11 +733,12 @@ export default function PortalHome() {
             chinaItems.length > 0 ? (
               <ChinaDepotList items={chinaItems} isDark={isDark} className="mt-0" />
             ) : (
-              <div className={cn("rounded-2xl border p-6 text-center", card)}>
-                <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
-                  {pickLang(language, { ku: "هیچ پاکەتێکت لە کۆگای چین نییە", en: "Nothing of yours is in the China depot", ar: "لا توجد طرود لك في مستودع الصين", zh: "您在中国仓库没有包裹" })}
-                </p>
-              </div>
+              <PortalEmptyState
+                compact
+                icon={Package}
+                title={pickLang(language, { ku: "هیچ پاکەتێکت لە کۆگای چین نییە", en: "Nothing of yours is in the China depot", ar: "لا توجد طرود لك في مستودع الصين", zh: "您在中国仓库没有包裹" })}
+                hint={pickLang(language, { ku: "کاتێک پاکەتێکت بگاتە کۆگاکەمان، لێرە دەردەکەوێت.", en: "Parcels appear here as soon as they reach our depot.", ar: "تظهر الطرود هنا فور وصولها إلى مستودعنا.", zh: "包裹一到我们的仓库就会显示在这里。" })}
+              />
             )
           ) : batchesLoading ? (
             <div className="space-y-3">
@@ -758,14 +752,13 @@ export default function PortalHome() {
             totalBatches === 0 ? (
               <PortalWelcomeCard customerCode={account?.customerCode} isDark={isDark} />
             ) : (
-              <div className={cn("rounded-2xl border p-8 text-center", card)}>
-                <Package className={cn("mx-auto mb-3 h-8 w-8", isDark ? "text-slate-500" : "text-slate-400")} />
-                <p className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-500 dark:text-slate-300")}>
-                  {pipelineFilter
-                    ? pickLang(language, { ku: "لەم قۆناغەدا هیچ نییە", en: "Nothing in this stage", ar: "لا يوجد شيء في هذه المرحلة", zh: "此阶段没有货件" })
-                    : (t("portal.noShipments") || "هیچ گواستنەوەیەک نییە")}
-                </p>
-              </div>
+              <PortalEmptyState
+                compact
+                icon={Package}
+                title={pipelineFilter
+                  ? pickLang(language, { ku: "لەم قۆناغەدا هیچ نییە", en: "Nothing in this stage", ar: "لا يوجد شيء في هذه المرحلة", zh: "此阶段没有货件" })
+                  : (t("portal.noShipments") || "هیچ گواستنەوەیەک نییە")}
+              />
             )
           ) : (
             <div className="space-y-2.5">
@@ -790,16 +783,12 @@ export default function PortalHome() {
                           <p dir="ltr" className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                             {batch.batchCode}
                           </p>
-                          <span className={cn(
-                            "flex items-center gap-1 rounded-full px-2 py-0.5 text-xs font-medium",
-                            getStatusColor(batch.status)
-                          )}>
-                            {getStatusIcon(batch.status)}
+                          <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status)}>
                             {getStatusText(batch.status)}
-                          </span>
+                          </PortalChip>
                         </div>
                         <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
-                          {batch.customerPackageCount}{" "}
+                          {fmtCount(batch.customerPackageCount)}{" "}
                           {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "件包裹" })}
                         </p>
                       </div>
@@ -911,7 +900,7 @@ export default function PortalHome() {
                       {t("portal.estimatedTotal")}
                     </p>
                     <p dir="ltr" className={cn("font-mono text-xl font-bold tabular-nums", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
-                      ${pendingOrders.totalPriceUsd.toFixed(2)}
+                      {fmtUsd(pendingOrders.totalPriceUsd)}
                     </p>
                     <div className={cn(
                       "mt-2 inline-block rounded-full px-2 py-0.5 text-xs font-semibold",

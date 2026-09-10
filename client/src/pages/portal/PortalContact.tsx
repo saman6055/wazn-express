@@ -52,7 +52,7 @@ export default function PortalContact() {
 
   return (
     <PortalLayout>
-      <div dir={isRTL ? "rtl" : "ltr"} className="px-3 py-4 space-y-5">
+      <div dir={isRTL ? "rtl" : "ltr"} className="px-4 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">

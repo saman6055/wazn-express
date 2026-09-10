@@ -43,7 +43,7 @@ export default function PortalTerms() {
   return (
     <PortalLayout>
       <div
-        className={`min-h-screen bg-gray-50 dark:bg-gray-950 ${isRTL ? "rtl" : "ltr"}`}
+        className={`min-h-screen bg-slate-50 dark:bg-slate-950 ${isRTL ? "rtl" : "ltr"}`}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -72,7 +72,7 @@ export default function PortalTerms() {
           {termsSections.map((section, index) => (
             <section
               key={section.id}
-              className="bg-white dark:bg-gray-900 rounded-3xl shadow-sm ring-1 ring-gray-100 dark:ring-white/5 overflow-hidden"
+              className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden"
             >
               {/* Section header */}
               <div className={`bg-gradient-to-r ${section.gradient} px-4 py-3.5 flex items-center gap-3`}>
@@ -87,7 +87,7 @@ export default function PortalTerms() {
 
               {/* Section items — the point is plain, selectable text; only the
                   green hint below it is the WhatsApp deep-link. */}
-              <div className="p-2 sm:p-3 divide-y divide-gray-100 dark:divide-white/5">
+              <div className="p-2 sm:p-3 divide-y divide-slate-100 dark:divide-white/5">
                 {section.items.map((item, itemIndex) => {
                   const text = pick(item.text);
                   const isYou = item.party === "you";
@@ -106,7 +106,7 @@ export default function PortalTerms() {
                         {pick(termsPartyLabel[item.party])}
                       </span>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[15px] leading-relaxed text-gray-800 dark:text-gray-100 font-medium">
+                        <p className="text-base leading-relaxed text-slate-800 dark:text-slate-100 font-medium">
                           {text}
                         </p>
                         {/* Only this pill is the link — it carries the point into
@@ -148,7 +148,7 @@ export default function PortalTerms() {
           </a>
 
           {/* Last updated */}
-          <div className="text-center text-gray-400 dark:text-gray-600 text-xs">
+          <div className="text-center text-slate-400 dark:text-slate-600 text-xs">
             {pick(termsHeader.updated)}
           </div>
         </div>

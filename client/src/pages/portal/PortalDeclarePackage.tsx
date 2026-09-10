@@ -33,6 +33,7 @@ import {
   CalendarDays,
 } from "lucide-react";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 import { PhotoStack } from "@/components/PhotoStack";
 
 // Platforms come from productAttributes — the same list the staff order forms
@@ -120,7 +121,7 @@ export default function PortalDeclarePackage() {
 
   return (
     <PortalLayout>
-      <div dir={isRTL ? "rtl" : "ltr"} className="px-3 py-4 space-y-5">
+      <div dir={isRTL ? "rtl" : "ltr"} className="px-4 py-4 space-y-4">
         {/* Header */}
         <div className="flex items-center gap-3">
           <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-emerald-500/15 text-emerald-600 dark:text-emerald-400">
@@ -244,9 +245,12 @@ export default function PortalDeclarePackage() {
           ) : isError ? (
             <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
           ) : !declared || declared.length === 0 ? (
-            <div className={cn("rounded-2xl border border-dashed py-8 text-center text-sm text-muted-foreground", isDark ? "border-slate-700" : "border-slate-300 dark:border-slate-800/60")}>
-              {label({ ku: "هێشتا هیچ تراکێکت تۆمار نەکردووە", en: "You haven't registered any tracking yet", ar: "لم تسجّل أي رقم تتبع بعد", zh: "您还没有登记任何运单号" })}
-            </div>
+            <PortalEmptyState
+              compact
+              icon={Package}
+              title={label({ ku: "هێشتا هیچ تراکێکت تۆمار نەکردووە", en: "You haven't registered any tracking yet", ar: "لم تسجّل أي رقم تتبع بعد", zh: "您还没有登记任何运单号" })}
+              hint={label({ ku: "تراکی یەکەم کڕینەکەت لە سەرەوە بنووسە — ئێمە بەدواداچوونی بۆ دەکەین.", en: "Enter the tracking of your first purchase above — we follow it from there.", ar: "أدخل رقم تتبع أول مشترياتك في الأعلى — ونحن نتابعه من هناك.", zh: "在上方输入您第一笔购买的运单号，之后由我们跟进。" })}
+            />
           ) : (
             declared.map((d: any) => {
               const st = STATUS_STYLE[d.status] || STATUS_STYLE.pending;

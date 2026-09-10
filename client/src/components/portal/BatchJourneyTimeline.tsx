@@ -209,7 +209,7 @@ export function BatchJourneyTimeline({
                 </div>
                 <span
                   className={cn(
-                    "mt-1.5 text-center text-[10px] font-semibold leading-tight",
+                    "mt-1.5 text-center text-[11px] font-semibold leading-tight",
                     state === "done" && "text-emerald-600 dark:text-emerald-400",
                     state === "active" &&
                       (shippingType === "sea"
@@ -223,7 +223,7 @@ export function BatchJourneyTimeline({
                 {stage.date && state !== "pending" && (
                   <span
                     className={cn(
-                      "mt-0.5 text-[9px] font-mono tabular-nums",
+                      "mt-0.5 text-[11px] font-mono tabular-nums",
                       isDark ? "text-slate-500" : "text-slate-400",
                     )}
                     dir="ltr"

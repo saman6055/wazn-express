@@ -102,13 +102,13 @@ const { banner: portalBanner } = usePortalPalette();
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 px-4 py-4 border-b backdrop-blur-lg",
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-gray-100 dark:border-gray-800/60"
+        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100 dark:border-slate-800/60"
       )}>
         <div className="flex items-center gap-3">
           <Link href="/portal">
             <span className={cn(
               "inline-block p-2 rounded-xl transition-colors",
-              isDark ? "hover:bg-slate-800" : "hover:bg-gray-100"
+              isDark ? "hover:bg-slate-800" : "hover:bg-slate-100"
             )}>
               <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
             </span>
@@ -169,11 +169,11 @@ const { banner: portalBanner } = usePortalPalette();
         ) : !blogPosts || blogPosts.length === 0 ? (
           <div className={cn(
             "text-center py-16 rounded-2xl",
-            isDark ? "bg-slate-800/50" : "bg-gray-50 dark:bg-gray-950/40"
+            isDark ? "bg-slate-800/50" : "bg-slate-50 dark:bg-slate-950/40"
           )}>
             <Megaphone className={cn(
               "w-16 h-16 mx-auto mb-4",
-              isDark ? "text-slate-600" : "text-gray-300"
+              isDark ? "text-slate-600" : "text-slate-300"
             )} />
             <h3 className={cn("text-lg font-semibold mb-2", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {pickLang(language, { ku: "هیچ هەواڵێک نییە", en: "No announcements yet", ar: "لا توجد إعلانات بعد", zh: "暂无公告" })}
