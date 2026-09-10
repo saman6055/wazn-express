@@ -68,7 +68,7 @@ export const STATUS_LABEL: Record<
   // in Erbil, ready to be collected.
   at_depot: { ku: "لە کۆگای هەولێر", en: "Erbil depot", ar: "في مستودع أربيل", zh: "埃尔比勒仓库" },
   delivered: { ku: "گەیشتە دەستت", en: "Delivered", ar: "تم التسليم", zh: "已交付" },
-  closed: { ku: "تەواو بوو", en: "Closed", ar: "مغلق", zh: "已完成" },
+  closed: { ku: "تەواو بوو", en: "Completed", ar: "مكتمل", zh: "已完成" },
 };
 
 /** How a shipment travels, for anywhere that shows the raw column value. */
@@ -187,7 +187,8 @@ export const BATCH_STATUS_TONE: Record<BatchStatus, string> = {
   customs: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
   at_depot: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
   delivered: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
-  closed: "bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300",
+  // Grouped with delivered, so coloured like it — not like "not started".
+  closed: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
 };
 
 /** The chip classes for a status, or the neutral chip for one nobody knows. */

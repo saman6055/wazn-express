@@ -21,6 +21,19 @@ type Label = (t: { ku: string; en: string; ar: string; zh: string }) => string;
  * are collected from the warehouse and were never photographed, and an empty
  * "Proof of delivery" heading reads like something went missing.
  */
+/**
+ * What each box status is called. The chip used to know two states —
+ * received, or "on its way" — so a box still being packed, a box waiting to
+ * leave and a cancelled box all told the customer it was out for delivery.
+ */
+const BOX_STATUS_LABEL: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
+  open: { ku: "ئامادە دەکرێت", en: "Being packed", ar: "قيد التجهيز", zh: "打包中" },
+  ready: { ku: "ئامادەیە بۆ ناردن", en: "Ready to send", ar: "جاهز للإرسال", zh: "待发出" },
+  in_transit: { ku: "لە ڕێی گەیاندنە", en: "Out for delivery", ar: "خرج للتسليم", zh: "派送中" },
+  delivered: { ku: "گەیشتە دەستت", en: "Received", ar: "تم الاستلام", zh: "已签收" },
+  cancelled: { ku: "هەڵوەشێنرایەوە", en: "Cancelled", ar: "أُلغي", zh: "已取消" },
+};
+
 function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
   const [open, setOpen] = useState(false);
   const proof = trpc.customerPortal.getMyBoxProof.useQuery(
@@ -195,12 +208,12 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
                     "shrink-0 rounded-full px-2.5 py-1 text-[11px] font-semibold",
                     isDone
                       ? "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300"
-                      : "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
+                      : box.status === "cancelled"
+                        ? "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300"
+                        : "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
                   )}
                 >
-                  {isDone
-                    ? label({ ku: "گەیشتە دەستت", en: "Received", ar: "تم الاستلام", zh: "已签收" })
-                    : label({ ku: "لە ڕێی گەیاندنە", en: "On its way", ar: "في الطريق", zh: "配送中" })}
+                  {label(BOX_STATUS_LABEL[box.status] ?? BOX_STATUS_LABEL.in_transit)}
                 </span>
               </div>
 

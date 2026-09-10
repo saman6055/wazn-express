@@ -58,10 +58,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-blue-400 to-blue-600"
   },
   tracking_added: { 
-    label: "Tracking Added",
-    labelKu: "تراکینگ زیادکرا",
-    labelAr: "تمت إضافة التتبع",
-    labelZh: "已添加物流单号",
+    label: "Tracking registered",
+    labelKu: "ژمارەی بەدواداچوون تۆمارکرا",
+    labelAr: "تم تسجيل رقم التتبع",
+    labelZh: "已登记运单号",
     color: "text-indigo-700 dark:text-indigo-300", 
     bgColor: "bg-indigo-100 dark:bg-indigo-950/40", 
     borderColor: "border-indigo-200 dark:border-indigo-800/60",
@@ -70,8 +70,8 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
   },
   in_china_warehouse: { 
     label: "In China",
-    labelKu: "لە چین",
-    labelAr: "في الصين",
+    labelKu: "لە کۆگای چین",
+    labelAr: "في مستودع الصين",
     labelZh: "在中国仓库",
     color: "text-purple-700 dark:text-purple-300", 
     bgColor: "bg-purple-100 dark:bg-purple-950/40", 
@@ -80,10 +80,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-purple-400 to-purple-600"
   },
   in_batch: { 
-    label: "In Batch",
-    labelKu: "لە باچ",
-    labelAr: "في الدفعة",
-    labelZh: "已组批",
+    label: "Packed into a shipment",
+    labelKu: "خرایە ناو بار",
+    labelAr: "أُضيف إلى شحنة",
+    labelZh: "已装入货运",
     color: "text-cyan-700 dark:text-cyan-300", 
     bgColor: "bg-cyan-100 dark:bg-cyan-950/40", 
     borderColor: "border-cyan-200 dark:border-cyan-800/60",
@@ -92,7 +92,7 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
   },
   in_transit: { 
     label: "In Transit",
-    labelKu: "لە ڕێگادایە",
+    labelKu: "لە ڕێگادا",
     labelAr: "في الطريق",
     labelZh: "运输中",
     color: "text-orange-700 dark:text-orange-300", 
@@ -103,7 +103,7 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
   },
   delivered: { 
     label: "Delivered",
-    labelKu: "گەیەندراوە",
+    labelKu: "گەیشتە دەستت",
     labelAr: "تم التسليم",
     labelZh: "已送达",
     color: "text-emerald-700 dark:text-emerald-300", 
@@ -114,7 +114,7 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
   },
   cancelled: { 
     label: "Cancelled",
-    labelKu: "هەڵوەشاوەتەوە",
+    labelKu: "هەڵوەشێنراوە",
     labelAr: "ملغى",
     labelZh: "已取消",
     color: "text-red-700 dark:text-red-300", 
@@ -135,10 +135,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-emerald-400 to-emerald-600"
   },
   arrived: { 
-    label: "Arrived",
-    labelKu: "گەیشت",
-    labelAr: "وصلت",
-    labelZh: "已到达",
+    label: "Reached Iraq",
+    labelKu: "گەیشتە عێراق",
+    labelAr: "وصلت العراق",
+    labelZh: "抵达伊拉克",
     color: "text-emerald-700 dark:text-emerald-300", 
     bgColor: "bg-emerald-100 dark:bg-emerald-950/40", 
     borderColor: "border-emerald-200 dark:border-emerald-800/60",
@@ -216,10 +216,10 @@ const statusConfig: Record<string, { label: string; labelKu: string; labelAr: st
     gradient: "from-red-400 to-red-600"
   },
   quality_check: {
-    label: "Quality check",
-    labelKu: "پشکنینی جۆرایەتی",
-    labelAr: "فحص الجودة",
-    labelZh: "质检中",
+    label: "Being checked at our China depot",
+    labelKu: "پشکنینی کاڵا لە کۆگای چین",
+    labelAr: "قيد الفحص في مستودعنا بالصين",
+    labelZh: "中国仓库验货中",
     color: "text-purple-700 dark:text-purple-300",
     bgColor: "bg-purple-100 dark:bg-purple-950/40",
     borderColor: "border-purple-200 dark:border-purple-800/60",
@@ -374,12 +374,14 @@ export default function PortalFullPackage() {
     // vanish under every filter except "all" — an order that existed a moment
     // ago seemed to disappear when the customer tapped a pill.
     if (statusFilter === "pending") return ["pending", "pending_quote", "quoted", "approved", "purchasing", "purchased", "ordered"].includes(order.status);
-    if (statusFilter === "in_transit") return ["tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "ready_for_delivery"].includes(order.status);
+    // "arrived" is Iraq, not the customer's hands — it sat under "delivered"
+    // here while the shipments page counted it as on the way.
+    if (statusFilter === "in_transit") return ["tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "arrived", "ready_for_delivery"].includes(order.status);
     // "open" is what the چاوەڕوان card at the top counts: bought or on the
     // way, not yet handed over. Tapping the card has to show exactly the
     // orders it counted, so this is the two lists above joined, not a third.
-    if (statusFilter === "open") return ["pending", "pending_quote", "quoted", "approved", "purchasing", "purchased", "ordered", "tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "ready_for_delivery"].includes(order.status);
-    if (statusFilter === "delivered") return ["delivered", "completed", "arrived"].includes(order.status);
+    if (statusFilter === "open") return ["pending", "pending_quote", "quoted", "approved", "purchasing", "purchased", "ordered", "tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "arrived", "ready_for_delivery"].includes(order.status);
+    if (statusFilter === "delivered") return ["delivered", "completed"].includes(order.status);
     if (statusFilter === "cancelled") return ["cancelled", "rejected", "refunded", "returned"].includes(order.status);
     return true;
   }).filter(order => {
@@ -456,9 +458,9 @@ export default function PortalFullPackage() {
   // every time an admin linked a parcel to a late-entered order.
   const stats = {
     total: allOrders.length + allSelfOrders.length,
-    pending: allOrders.filter(o => ["pending", "pending_quote", "quoted", "approved", "ordered", "purchasing", "purchased", "tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "ready_for_delivery"].includes(o.status)).length
+    pending: allOrders.filter(o => ["pending", "pending_quote", "quoted", "approved", "ordered", "purchasing", "purchased", "tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "arrived", "ready_for_delivery"].includes(o.status)).length
       + allSelfOrders.filter(p => SELF_STATUS_BUCKET[p.status] === "pending" || SELF_STATUS_BUCKET[p.status] === "in_transit").length,
-    delivered: allOrders.filter(o => ["delivered", "completed", "arrived"].includes(o.status)).length
+    delivered: allOrders.filter(o => ["delivered", "completed"].includes(o.status)).length
       + allSelfOrders.filter(p => p.status === "delivered").length,
   };
   
@@ -598,7 +600,7 @@ export default function PortalFullPackage() {
                 key: "delivered" as const,
                 value: stats.delivered,
                 icon: CheckCircle,
-                label: pickLang(language, { ku: "گەیەندراو", en: "Delivered", ar: "تم التسليم", zh: "已送达" }),
+                label: pickLang(language, { ku: "گەیشتە دەستت", en: "Delivered", ar: "تم التسليم", zh: "已交付" }),
                 surface: "bg-emerald-500/25 border-emerald-300/30",
                 iconBg: "bg-emerald-400/30 text-emerald-100",
                 number: "text-emerald-50",
@@ -774,9 +776,9 @@ export default function PortalFullPackage() {
                     {[
                       { key: "all", ku: "هەموو", ar: "الكل", en: "All", zh: "全部", gradient: "from-violet-500 to-purple-600" },
                       { key: "pending", ku: "چاوەڕوان", ar: "قيد الانتظار", en: "Pending", zh: "待处理", gradient: "from-amber-500 to-orange-500" },
-                      { key: "in_transit", ku: "لە ڕێگادایە", ar: "في الطريق", en: "In Transit", zh: "运输中", gradient: "from-blue-500 to-cyan-500" },
-                      { key: "delivered", ku: "گەیشت", ar: "تم التسليم", en: "Delivered", zh: "已送达", gradient: "from-emerald-500 to-teal-500" },
-                      { key: "cancelled", ku: "هەڵوەشاوە", ar: "ملغى", en: "Cancelled", zh: "已取消", gradient: "from-red-500 to-rose-500" },
+                      { key: "in_transit", ku: "لە ڕێگادا", ar: "في الطريق", en: "In Transit", zh: "运输中", gradient: "from-blue-500 to-cyan-500" },
+                      { key: "delivered", ku: "گەیشتە دەستت", ar: "تم التسليم", en: "Delivered", zh: "已送达", gradient: "from-emerald-500 to-teal-500" },
+                      { key: "cancelled", ku: "هەڵوەشێنراوە", ar: "ملغى", en: "Cancelled", zh: "已取消", gradient: "from-red-500 to-rose-500" },
                     ].map(s => (
                       <button
                         key={s.key}

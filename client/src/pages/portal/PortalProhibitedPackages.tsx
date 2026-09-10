@@ -147,9 +147,9 @@ export default function PortalProhibitedPackages() {
                       </span>
                       <span className={cn(
                         "text-[11px] font-bold px-2.5 py-1 rounded-full",
-                        it.status === "resolved" ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : it.status === "chosen" ? "bg-violet-100 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300" : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300",
+                        it.status === "resolved" ? "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300" : it.status === "chosen" ? "bg-sky-100 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300" : "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300",
                       )}>
-                        {label(it.status === "resolved" ? { ku: "چارەسەرکرا", en: "Resolved", ar: "تم الحل", zh: "已解决" } : it.status === "chosen" ? { ku: "هەڵبژێردرا", en: "Chosen", ar: "تم الاختيار", zh: "已选择" } : { ku: "پێویستی بە بڕیارە", en: "Action needed", ar: "بحاجة لقرار", zh: "需要处理" })}
+                        {label(it.status === "resolved" ? { ku: "چارەسەرکرا", en: "Resolved", ar: "تم الحل", zh: "已解决" } : it.status === "chosen" ? { ku: "هەڵبژاردەکەت وەرگیرا", en: "Choice received", ar: "تم استلام اختيارك", zh: "已收到您的选择" } : { ku: "پێویستی بە بڕیارە", en: "Action needed", ar: "بحاجة لقرار", zh: "需要处理" })}
                       </span>
                     </div>
 

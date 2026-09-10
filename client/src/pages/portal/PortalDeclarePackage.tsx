@@ -32,6 +32,7 @@ import {
   Package,
   StickyNote,
   CalendarDays,
+  XCircle,
 } from "lucide-react";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
@@ -46,6 +47,8 @@ const STATUS_STYLE: Record<string, { cls: string; icon: typeof Clock }> = {
   pending: { cls: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300", icon: Clock },
   matched: { cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300", icon: CheckCircle2 },
   received: { cls: "bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300", icon: Package },
+  // A cancelled registration fell through to the amber "awaiting" style.
+  cancelled: { cls: "bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300", icon: XCircle },
 };
 
 export default function PortalDeclarePackage() {
@@ -274,9 +277,11 @@ export default function PortalDeclarePackage() {
                       <span className={cn("inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", st.cls)}>
                         <StIcon className="h-3 w-3" />
                         {d.status === "matched"
-                          ? label({ ku: "گەیشتووە", en: "Arrived", ar: "وصل", zh: "已到货" })
+                          ? label({ ku: "گەیشتە کۆگاکەمان", en: "Reached our depot", ar: "وصل إلى مستودعنا", zh: "已到我们的仓库" })
                           : d.status === "received"
                           ? label({ ku: "وەرگیراوە", en: "Received", ar: "مستلم", zh: "已收货" })
+                          : d.status === "cancelled"
+                          ? label({ ku: "هەڵوەشێنرایەوە", en: "Cancelled", ar: "أُلغي", zh: "已取消" })
                           : label({ ku: "چاوەڕوانی گەیشتن", en: "Awaiting arrival", ar: "بانتظار الوصول", zh: "等待到货" })}
                       </span>
                       {platformLabel && <span className="text-[11px] text-muted-foreground">{platformLabel}</span>}

@@ -27,13 +27,13 @@ export const PACKAGE_STAGE_GROUPS = {
 } as const;
 
 export const PACKAGE_STATUS_LABEL: Record<string, L> = {
-  registered: { ku: "لە کۆگای چین", en: "At China depot", ar: "في مستودع الصين", zh: "在中国仓库" },
-  in_batch: { ku: "لە باچدایە", en: "In batch", ar: "في الدفعة", zh: "已入批次" },
-  in_transit: { ku: "لە ڕێگادایە", en: "In transit", ar: "في الطريق", zh: "运输中" },
+  registered: { ku: "گەیشتە کۆگاکەمان", en: "At our depot", ar: "في مستودعنا", zh: "已到我们的仓库" },
+  in_batch: { ku: "خرایە ناو بار", en: "Packed into a shipment", ar: "أُضيف إلى شحنة", zh: "已装入货运" },
+  in_transit: { ku: "لە ڕێگادا", en: "In transit", ar: "في الطريق", zh: "运输中" },
   customs_processing: { ku: "لە گومرگ", en: "At customs", ar: "في الجمارك", zh: "清关中" },
   ready_for_delivery: { ku: "ئامادەیە بۆ وەرگرتن", en: "Ready for pickup", ar: "جاهز للاستلام", zh: "可取件" },
-  out_for_delivery: { ku: "لە ڕێگای گەیاندن", en: "Out for delivery", ar: "خرج للتسليم", zh: "派送中" },
-  delivered: { ku: "گەیەندرا", en: "Delivered", ar: "تم التسليم", zh: "已送达" },
+  out_for_delivery: { ku: "لە ڕێی گەیاندنە", en: "Out for delivery", ar: "خرج للتسليم", zh: "派送中" },
+  delivered: { ku: "گەیشتە دەستت", en: "Delivered", ar: "تم التسليم", zh: "已交付" },
   returned: { ku: "گەڕێندراوەتەوە", en: "Returned", ar: "مُرتجع", zh: "已退回" },
   cancelled: { ku: "هەڵوەشێنراوە", en: "Cancelled", ar: "ملغى", zh: "已取消" },
 };

@@ -323,7 +323,7 @@ function ClassicPortalShipments() {
   const statusFilters: { value: Exclude<StatusFilter, "">; label: string; labelKu: string; labelAr: string; labelZh: string; count: number }[] = [
     { value: "in_china", label: "In China", labelKu: "لە کۆگای چین", labelAr: "في مستودع الصين", labelZh: "在中国仓库", count: stageCounts.in_china },
     { value: "in_transit", label: "On the way", labelKu: "لە ڕێگادا", labelAr: "في الطريق", labelZh: "在途中", count: stageCounts.in_transit },
-    { value: "delivered", label: "Arrived", labelKu: "گەیشتوو", labelAr: "تم التسليم", labelZh: "已到达", count: stageCounts.delivered },
+    { value: "delivered", label: "Delivered", labelKu: "گەیشتە دەستت", labelAr: "تم التسليم", labelZh: "已交付", count: stageCounts.delivered },
   ];
 
   const activeShipping = shippingTabs.find(t => t.value === shippingType);
@@ -374,7 +374,7 @@ function ClassicPortalShipments() {
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder={pickLang(language, { ku: "گەڕان بە کۆدی باچ...", en: "Search by batch code...", ar: "البحث برمز الدفعة...", zh: "按批次编号搜索..." })}
+              placeholder={pickLang(language, { ku: "گەڕان بە کۆدی بار...", en: "Search by shipment code...", ar: "البحث برمز الشحنة...", zh: "按货运编号搜索..." })}
               className={cn(
                 "w-full ps-12 pe-4 py-3.5 rounded-xl text-sm transition-all duration-300",
                 isDark 

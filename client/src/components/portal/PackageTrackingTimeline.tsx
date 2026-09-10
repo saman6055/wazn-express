@@ -19,11 +19,11 @@ type L10n = { ku: string; en: string; ar: string; zh: string };
 const STAGES: { key: string; label: L10n; icon: typeof Package; color: string }[] = [
   { key: "registered",       label: { ku: "تۆمارکرا",            en: "Registered",          ar: "تم التسجيل",        zh: "已登记" },   icon: Package,   color: "bg-slate-500" },
   { key: "received_china",   label: { ku: "گەیشتە کۆگای چین",     en: "At China warehouse",  ar: "في مستودع الصين",   zh: "到达中国仓库" }, icon: Warehouse, color: "bg-violet-500" },
-  { key: "in_batch",         label: { ku: "خرایە ناو باچ",        en: "Added to shipment",   ar: "أُضيف إلى الشحنة",  zh: "已加入批次" },  icon: Package,   color: "bg-blue-500" },
+  { key: "in_batch",         label: { ku: "خرایە ناو بار",        en: "Added to shipment",   ar: "أُضيف إلى الشحنة",  zh: "已加入批次" },  icon: Package,   color: "bg-blue-500" },
   { key: "in_transit",       label: { ku: "لە ڕێگادایە",          en: "In transit",          ar: "قيد الشحن",         zh: "运输中" },    icon: Ship,      color: "bg-amber-500" },
   { key: "received_local",   label: { ku: "گەیشتە کۆگای هەولێر",  en: "At Erbil warehouse",  ar: "في مستودع أربيل",   zh: "到达埃尔比勒仓库" }, icon: MapPin, color: "bg-cyan-500" },
   { key: "out_for_delivery", label: { ku: "لە ڕێی گەیاندنە",      en: "Out for delivery",    ar: "خرج للتسليم",       zh: "派送中" },    icon: Truck,     color: "bg-indigo-500" },
-  { key: "delivered",        label: { ku: "گەیێنرا",             en: "Delivered",           ar: "تم التسليم",        zh: "已送达" },    icon: CheckCircle, color: "bg-emerald-500" },
+  { key: "delivered",        label: { ku: "گەیشتە دەستت",             en: "Delivered",           ar: "تم التسليم",        zh: "已送达" },    icon: CheckCircle, color: "bg-emerald-500" },
 ];
 
 // Normalize the many raw status spellings stored by different flows (enum

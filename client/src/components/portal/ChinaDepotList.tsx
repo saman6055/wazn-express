@@ -240,7 +240,7 @@ export function ChinaDepotList({
 
       <p className="mt-2 px-1 text-[11px] text-muted-foreground">
         {pickLang(language, {
-          ku: "بە سەلامەتی گەیشتوونەتە کۆگاکەمان لە چین. کاتێک باچێک پڕ بوو، بەڕێ دەکەون.",
+          ku: "بە سەلامەتی گەیشتوونەتە کۆگاکەمان لە چین. کاتێک بارێک پڕ بوو، بەڕێ دەکەون.",
           en: "Safely at our China depot. They ship once a batch is full.",
           ar: "وصلت بأمان إلى مستودعنا في الصين. وستُشحن حين تكتمل الدفعة.",
           zh: "已安全抵达我们的中国仓库，凑够一批后即发运。",

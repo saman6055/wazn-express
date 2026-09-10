@@ -278,7 +278,7 @@ const { t, language } = useLanguage();
     // Portal Center; see shared/customerFeatures.ts.
     ...(financeDetail
       ? [
-    { id: "batches", label: pickLang(language, { ku: "پسووڵەی باچ", en: "Batch invoices", ar: "فواتير الدفعات", zh: "批次账单" }), icon: Package },
+    { id: "batches", label: pickLang(language, { ku: "پسووڵەی بارەکان", en: "Shipment invoices", ar: "فواتير الشحنات", zh: "货运账单" }), icon: Package },
     { id: "boxes", label: pickLang(language, { ku: "حیسابی سندوق", en: "Box accounts", ar: "حسابات الصناديق", zh: "箱子账目" }), icon: Boxes },
         ]
       : []),
@@ -645,7 +645,7 @@ const { t, language } = useLanguage();
                     { weightKg: Number(b.myWeightKg ?? 0), volumeCbm: Number(b.myVolumeCbm ?? 0) },
                     (d: Date | string) => formatPortalDate(d, language),
                     {
-                      parcels: pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" }),
+                      parcels: pickLang(language, { ku: "پاکەت", en: "parcels", ar: "طرود", zh: "件" }),
                       kg: "kg",
                       cbm: "cbm",
                     },
@@ -653,7 +653,7 @@ const { t, language } = useLanguage();
                 }))}
                 openKey={invoiceBatchId}
                 onToggle={setInvoiceBatchId}
-                emptyText={pickLang(language, { ku: "هیچ باچێکت نییە", en: "You have no batches yet", ar: "لا توجد دفعات بعد", zh: "您还没有批次" })}
+                emptyText={pickLang(language, { ku: "هیچ بارێکت نییە", en: "You have no shipments yet", ar: "لا توجد شحنات بعد", zh: "您还没有货运" })}
                 renderExpanded={() =>
                   batchInvoice ? (
                     <BatchInvoiceView
@@ -703,7 +703,7 @@ const { t, language } = useLanguage();
                 })(),
                 meta: [
                   b.deliveredAt ? formatPortalDate(b.deliveredAt, language) : null,
-                  `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
+                  `${b.totalPackages ?? 0} ${pickLang(language, { ku: "پاکەت", en: "parcels", ar: "طرود", zh: "件" })}`,
                   Number(b.totalWeightKg) > 0 ? fmtKg(b.totalWeightKg) : null,
                   b.destinationCity || null,
                   b.settlementNumber || null,
@@ -991,7 +991,7 @@ const { t, language } = useLanguage();
       <div class="invoice-title">
         <h1>${pickLang(language, { ku: "پسووڵە", en: "INVOICE", ar: "فاتورة", zh: "发票" })}</h1>
         <div class="invoice-number">${invoice.invoiceNumber}</div>
-        <span class="status ${invoiceState(invoice.status) === 'paid' ? 'status-paid' : 'status-cancelled'}">
+        <span class="status ${invoiceState(invoice.status) === 'paid' ? 'status-paid' : (invoiceState(invoice.status) === 'cancelled' || invoiceState(invoice.status) === 'refunded') ? 'status-cancelled' : 'status-pending'}">
           ${INVOICE_STATE_PRINT[invoiceState(invoice.status)]}
         </span>
       </div>
