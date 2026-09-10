@@ -704,7 +704,7 @@ const { t, language } = useLanguage();
                 // The same rule the office reads. A customer seeing "paid"
                 // while the counter says "owes" is an argument nobody wins.
                 badge: (() => {
-                  const state = boxPaidState(b.settledUsd, b.totalValueUsd);
+                  const state = boxPaidState(b.settledUsd, b.totalValueUsd, b.settlementCleared);
                   if (state === "paid") return {
                     text: pickLang(language, { ku: "پارەکەی دراوە", en: "Paid", ar: "مدفوع", zh: "已付" }),
                     tone: "paid" as const,

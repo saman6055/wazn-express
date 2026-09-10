@@ -194,3 +194,16 @@ describe("forgiven money settles a box as surely as paid money", () => {
     expect(isBoxFullySettled({ totalValueUsd: "10.00" })).toBe(false);
   });
 });
+
+describe("a box the payment screen cleared is archived", () => {
+  const now = new Date("2026-09-10T12:00:00Z");
+
+  it("BOX-20260903-001: items $24.77, charged and paid $24.75 in full", () => {
+    expect(isBoxArchived({ status: "delivered", updatedAt: now, totalValueUsd: "24.77", settledUsd: 24.75, settlementCleared: true }, now)).toBe(true);
+  });
+
+  it("without the verdict the amounts decide, as before", () => {
+    expect(isBoxArchived({ status: "delivered", updatedAt: now, totalValueUsd: "24.77", settledUsd: 24.75, settlementCleared: false }, now)).toBe(false);
+    expect(isBoxArchived({ status: "delivered", updatedAt: now, totalValueUsd: "20.00", settledUsd: 20, settlementCleared: false }, now)).toBe(true);
+  });
+});

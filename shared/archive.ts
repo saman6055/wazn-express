@@ -96,6 +96,9 @@ export interface ArchivableBox extends ArchivableRecord {
   /** Money forgiven against this box, from confirmed receipts only. A
    *  discount settles a box as surely as a payment does. */
   settledDiscountUsd?: number | null;
+  /** True when the payment screen cleared the box (see
+   *  boxSettlementClearedSql). False or absent changes nothing. */
+  settlementCleared?: boolean | null;
   /** What the box is worth. Zero or missing falls back to the age rule. */
   totalValueUsd?: string | number | null;
 }
@@ -123,6 +126,8 @@ export function isBoxFullySettled(box: ArchivableBox): boolean {
 
 export function isBoxArchived(box: ArchivableBox, now: Date = new Date()): boolean {
   if (box.status === "cancelled") return true;
+  // Paid in full by the payment screen's own figures.
+  if (box.settlementCleared === true) return true;
   if (settledAgainst(box) > 0) return isBoxFullySettled(box);
   return isArchived(box, FINISHED_BOX_STATUSES, now);
 }

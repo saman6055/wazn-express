@@ -42,3 +42,15 @@ describe("the forgotten-box flag", () => {
     expect(withGoods?.outstandingUsd).toBe(50.71);
   });
 });
+
+describe("the flash follows the payment screen", () => {
+  it("does not flash a box the payment screen cleared", () => {
+    expect(boxUnpaidAlert(box({ status: "delivered", totalValueUsd: "24.77", settledUsd: 24.75, settlementCleared: true }), NOW)).toBeNull();
+  });
+
+  it("still flashes a delivered box with money left", () => {
+    const a = boxUnpaidAlert(box({ status: "delivered", totalValueUsd: "24.77", settledUsd: 20, settlementCleared: false }), NOW);
+    expect(a?.kind).toBe("handed_unpaid");
+    expect(a?.outstandingUsd).toBeCloseTo(4.77, 2);
+  });
+});

@@ -1683,7 +1683,7 @@ export default function CustomerFinance() {
                       // seeing: "Paid $190" on a $200 box is true about the
                       // money and wrong about the box.
                       badge: (() => {
-                        const state = boxPaidState(b.settledUsd, b.totalValueUsd);
+                        const state = boxPaidState(b.settledUsd, b.totalValueUsd, b.settlementCleared);
                         const owed = Number(b.totalValueUsd || 0) - Number(b.settledUsd || 0);
                         if (state === "paid") return {
                           text: pickLang(language, { ku: "واصڵ کراوە", en: "Paid", ar: "مستلم", zh: "已收" }),

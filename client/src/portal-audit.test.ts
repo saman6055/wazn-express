@@ -307,7 +307,7 @@ describe("paid, part paid and unpaid are one rule", () => {
 
   it("both screens ask the shared rule rather than comparing to zero", () => {
     for (const [name, src] of [["office", office], ["portal", portal]] as const) {
-      expect(src, `${name} must use boxPaidState`).toContain("boxPaidState(b.settledUsd, b.totalValueUsd)");
+      expect(src, `${name} must use boxPaidState`).toContain("boxPaidState(b.settledUsd, b.totalValueUsd, b.settlementCleared)");
       expect(src, `${name} still decides for itself`).not.toContain("Number(b.settledUsd) > 0");
     }
   });

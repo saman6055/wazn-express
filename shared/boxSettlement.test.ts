@@ -317,3 +317,19 @@ describe("a box is paid, part paid, or not paid", () => {
     expect(boxPaidState(250, "200.00")).toBe("paid");
   });
 });
+
+describe("paid, by what the payment screen decided", () => {
+  it("a box the screen cleared is paid, even when its item prices add up to more", () => {
+    expect(boxPaidState(24.75, "24.77", true)).toBe("paid");
+  });
+
+  it("a box forgiven in full is paid", () => {
+    expect(boxPaidState(0, "20.00", true)).toBe("paid");
+  });
+
+  it("without the verdict the amounts decide, as before", () => {
+    expect(boxPaidState(190, "200.00", false)).toBe("partly");
+    expect(boxPaidState(200, "200.00", false)).toBe("paid");
+    expect(boxPaidState(0, "200.00", null)).toBe("unpaid");
+  });
+});

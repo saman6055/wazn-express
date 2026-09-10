@@ -6,7 +6,7 @@ import { appLogger } from "../utils/logger";
 import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
 import { markLinkedOrdersDelivered } from "./packages.db";
 import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
-import { boxSettlements } from "../../drizzle/schema/finance.schema";
+import { boxSettlements, boxSettlementLines } from "../../drizzle/schema/finance.schema";
 import { archiveCutoff, SETTLED_SLACK_USD } from "@shared/archive";
 
 // ============ BOX CODE GENERATION ============
@@ -75,6 +75,63 @@ export async function getOpenBoxes(userId?: number): Promise<DeliveryBox[]> {
   return db.select().from(deliveryBoxes).where(and(...conditions)).orderBy(desc(deliveryBoxes.createdAt));
 }
 
+/**
+ * Has the payment screen cleared this box?
+ *
+ * The payment screen charges each parcel what the customer's account says it
+ * cost, and that can differ from the price the box item was built with.
+ * BOX-20260903-001: items $24.77, charged and paid $24.75 in full. The screen
+ * said nothing was left; the list compared the money with $24.77, flashed
+ * "handed over unpaid — $0.02" and kept the box out of the archive.
+ *
+ * Cleared means: a confirmed payment exists, every item in the box is on a
+ * confirmed, not-held payment line, and the latest confirmed payment was not
+ * left short as debt. A payment recorded with no difference must also have
+ * taken what was due — rows from before the kind was recorded carry "none"
+ * by default, whatever was paid.
+ *
+ * Used only to add: a box the screen cleared counts as paid and archived. A
+ * box it did not clear falls back to the amounts exactly as before, so no box
+ * already in the archive comes back.
+ */
+export function boxSettlementClearedSql() {
+  const b = deliveryBoxes;
+  const s = boxSettlements;
+  const l = boxSettlementLines;
+  const i = deliveryBoxItems;
+  return sql`(EXISTS (SELECT 1 FROM ${s} WHERE ${s.boxId} = ${b.id} AND ${s.status} = 'confirmed')
+    AND COALESCE((
+      SELECT CASE
+        WHEN COALESCE(${s.differenceKind}, 'none') = 'debt' THEN 0
+        WHEN COALESCE(${s.differenceKind}, 'none') = 'none' THEN (${s.paidUsd} + ${SETTLED_SLACK_USD} >= ${s.dueUsd})
+        ELSE 1
+      END
+      FROM ${s} WHERE ${s.boxId} = ${b.id} AND ${s.status} = 'confirmed'
+      ORDER BY ${s.id} DESC LIMIT 1
+    ), 0) = 1
+    AND NOT EXISTS (
+      SELECT 1 FROM ${i} WHERE ${i.boxId} = ${b.id}
+        AND NOT EXISTS (
+          SELECT 1 FROM ${l} INNER JOIN ${s} ON ${s.id} = ${l.settlementId}
+          WHERE ${l.boxItemId} = ${i.id} AND ${s.status} = 'confirmed' AND ${l.isHeld} = 0
+        )
+    ))`;
+}
+
+/** For each box with a confirmed payment: did the payment screen clear it? */
+export async function getBoxesSettlementCleared(boxIds: number[]): Promise<Map<number, boolean>> {
+  const out = new Map<number, boolean>();
+  if (boxIds.length === 0) return out;
+  const db = await getDb();
+  if (!db) return out;
+  const rows = await db
+    .select({ id: deliveryBoxes.id, cleared: sql<number>`${boxSettlementClearedSql()}` })
+    .from(deliveryBoxes)
+    .where(inArray(deliveryBoxes.id, boxIds));
+  for (const r of rows) out.set(Number(r.id), Number(r.cleared) === 1);
+  return out;
+}
+
 export async function getAllDeliveryBoxes(filters?: {
   status?: string;
   customerId?: number;
@@ -87,7 +144,7 @@ export async function getAllDeliveryBoxes(filters?: {
   batchId?: number | null;
   /** "exclude" leaves archived boxes out, "only" shows just them; absent shows all. */
   archive?: "exclude" | "only";
-}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null })[]; total: number; archivedTotal?: number }> {
+}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null; settlementCleared?: boolean | null })[]; total: number; archivedTotal?: number }> {
   const db = await getDb();
   if (!db) return { boxes: [], total: 0 };
 
@@ -130,9 +187,12 @@ export async function getAllDeliveryBoxes(filters?: {
    * shrank when a box was paid and the next box never moved up into its
    * place. This is isBoxArchived (shared/archive.ts) in SQL — same statuses,
    * same slack, same ten days — with money forgiven counted beside money paid.
+   * A box the payment screen cleared is archived too, whatever its item
+   * prices add up to (boxSettlementClearedSql).
    */
   const settledSql = sql`COALESCE((SELECT SUM(COALESCE(${boxSettlements.paidUsd}, 0) + COALESCE(${boxSettlements.discountUsd}, 0)) FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id} AND ${boxSettlements.status} = 'confirmed'), 0)`;
   const archivedSql = sql`(${deliveryBoxes.status} = 'cancelled'
+    OR ${boxSettlementClearedSql()}
     OR (${settledSql} > 0 AND (COALESCE(${deliveryBoxes.totalValueUsd}, 0) <= 0 OR ${settledSql} + ${SETTLED_SLACK_USD} >= ${deliveryBoxes.totalValueUsd}))
     OR (${settledSql} <= 0 AND ${deliveryBoxes.status} IN ('delivered', 'cancelled') AND (${deliveryBoxes.updatedAt} IS NULL OR ${deliveryBoxes.updatedAt} < ${archiveCutoff()})))`;
   const baseWhere = conditions.length > 0 ? and(...conditions) : undefined;
@@ -211,9 +271,13 @@ export async function getAllDeliveryBoxes(filters?: {
   const settledByBox = new Map(settleRows.map(r => [Number(r.boxId), Number(r.paid || 0)]));
   const discountByBox = new Map(settleRows.map(r => [Number(r.boxId), Number(r.discount || 0)]));
 
+  const clearedByBox = await getBoxesSettlementCleared(boxes.filter(b => settledByBox.has(b.id)).map(b => b.id));
+
   const boxesWithType = boxes.map(b => ({
     ...b,
     settledUsd: settledByBox.get(b.id) ?? 0,
+    /** The payment screen's verdict; null when no payment is on record. */
+    settlementCleared: settledByBox.has(b.id) ? (clearedByBox.get(b.id) ?? false) : null,
     settledDiscountUsd: discountByBox.get(b.id) ?? 0,
     shippingType: resolveBoxShippingType(
       b.batchId ? (shippingTypeByBatch.get(b.batchId) ?? null) : null,
@@ -1184,12 +1248,14 @@ export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
     ))
     .groupBy(boxSettlements.boxId);
   const settled = new Map(settleRows.map(r => [Number(r.boxId), r]));
+  const clearedByBox = await getBoxesSettlementCleared(settleRows.map(r => Number(r.boxId)));
 
   return rows.map(r => {
     const paidRow = settled.get(r.id);
     const withMoney = {
       ...r,
       settledUsd: Number(paidRow?.paid ?? 0),
+      settlementCleared: paidRow ? (clearedByBox.get(r.id) ?? false) : null,
       settledDiscountUsd: Number(paidRow?.discount ?? 0),
       settlementNumber: paidRow?.lastNumber ?? null,
       settledAt: paidRow?.lastAt ?? null,

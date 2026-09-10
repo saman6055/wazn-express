@@ -302,7 +302,11 @@ export type BoxPaidState = "paid" | "partly" | "unpaid";
 export function boxPaidState(
   settledUsd: number | null | undefined,
   totalValueUsd: string | number | null | undefined,
+  /** True when the payment screen cleared the box. It knows what each
+   *  parcel was actually charged; the box's item prices can differ. */
+  settlementCleared?: boolean | null,
 ): BoxPaidState {
+  if (settlementCleared === true) return "paid";
   const paid = Number(settledUsd ?? 0);
   if (!(paid > 0)) return "unpaid";
   const worth = Number(totalValueUsd ?? 0);

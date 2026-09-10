@@ -34,6 +34,8 @@ export interface BoxAlertFacts {
   deliveryChargeUsd?: string | number | null;
   settledUsd?: string | number | null;
   settledDiscountUsd?: string | number | null;
+  /** True when the payment screen cleared the box. */
+  settlementCleared?: boolean | null;
   createdAt: string | Date;
 }
 
@@ -46,6 +48,9 @@ export interface BoxUnpaidAlert {
 
 export function boxUnpaidAlert(box: BoxAlertFacts, now: Date = new Date()): BoxUnpaidAlert | null {
   if (box.status === "cancelled") return null;
+  // The payment screen cleared it: nothing is owed, whatever the item prices
+  // add up to. BOX-20260903-001 flashed "$0.02" for exactly that difference.
+  if (box.settlementCleared === true) return null;
 
   const outstanding =
     Math.round(
