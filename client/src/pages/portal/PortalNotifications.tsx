@@ -1,4 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { trpc } from "@/lib/trpc";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
@@ -26,7 +27,7 @@ export default function PortalNotifications() {
   const { banner: portalBanner } = usePortalPalette();
   // Was entirely English, including the timestamps every customer reads.
   const { language } = useLanguage();
-const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyNotifications.useQuery();
+const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyNotifications.useQuery(undefined, PORTAL_LIVE_QUERY);
   // Tapping a notification expands it in place to show the full message.
   const [expandedId, setExpandedId] = useState<number | null>(null);
 

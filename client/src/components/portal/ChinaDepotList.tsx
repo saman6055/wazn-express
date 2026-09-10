@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -47,8 +48,8 @@ const asDate = (value: unknown): Date | null => {
  * another. Both come through here.
  */
 export function useChinaDepotItems(): ChinaDepotItem[] {
-  const { data: unbatchedPackages } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
-  const { data: myOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
+  const { data: unbatchedPackages } = trpc.customerPortal.getMyUnbatchedPackages.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const { data: myOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({}, PORTAL_LIVE_QUERY);
   const { resolve } = usePackageImages();
 
   return useMemo(() => {

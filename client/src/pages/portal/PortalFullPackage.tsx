@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -304,7 +305,7 @@ export default function PortalFullPackage() {
   // asking the server for a subset only made the three counters at the top of
   // the page mean something different depending on which tab was open — "total"
   // dropped when you tapped "Commission". They now count the same thing always.
-  const { data: fullPackageOrders, isLoading, isError: ordersError, isFetching: ordersFetching, refetch: refetchOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
+  const { data: fullPackageOrders, isLoading, isError: ordersError, isFetching: ordersFetching, refetch: refetchOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({}, PORTAL_LIVE_QUERY);
 
   /**
    * Goods the customer bought themselves — parcels we only shipped.
@@ -320,7 +321,7 @@ export default function PortalFullPackage() {
    * and the office's money report moves at exactly the same moment.
    */
   const { data: selfOrderPackages, isLoading: selfLoading } =
-    trpc.customerPortal.getMySelfOrderPackages.useQuery();
+    trpc.customerPortal.getMySelfOrderPackages.useQuery(undefined, PORTAL_LIVE_QUERY);
 
   // Full-package orders can't be self-created in the portal — staff place them
   // on the customer's behalf. So "New Order" opens WhatsApp with a pre-filled

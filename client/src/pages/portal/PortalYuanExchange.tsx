@@ -1,4 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -63,7 +64,7 @@ export default function PortalYuanExchange() {
 
   const utils = trpc.useUtils();
   const infoQuery = trpc.customerPortal.getYuanExchangeInfo.useQuery();
-  const ordersQuery = trpc.customerPortal.getMyYuanOrders.useQuery();
+  const ordersQuery = trpc.customerPortal.getMyYuanOrders.useQuery(undefined, PORTAL_LIVE_QUERY);
   const createOrder = trpc.customerPortal.createYuanOrder.useMutation({
     onSuccess: () => {
       toast.success(pick({

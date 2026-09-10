@@ -1,4 +1,5 @@
 import { ReactNode, useState, useEffect, useRef } from "react";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { useLocation, Link, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Home, Package, Wallet, Plus, Search, ShoppingBag } from "lucide-react";
@@ -16,8 +17,7 @@ import CompanyLogo from "@/components/CompanyLogo";
 import { PortalNavButtons } from "@/components/PortalNavButtons";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { NewsTicker } from "@/components/portal/NewsTicker";
-import { usePortalSSE } from "@/hooks/usePortalSSE";
-import { toast } from "sonner";
+import { usePortalRealtime } from "@/hooks/usePortalRealtime";
 
 interface CustomerPortalLayoutProps {
   children: ReactNode;
@@ -64,55 +64,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [location]);
 
-  // Real-time notifications via SSE. The backend stream is at
-  // GET /api/portal/events (see server/_core/index.ts) and pushes events
-  // whenever createCustomerNotification fires for this customer.
-  const utils = trpc.useUtils();
-  // Refresh the unread counters live so the bell starts ringing/flashing the
-  // moment something arrives, without waiting for a page refresh.
-  const refreshBadges = () => {
-    utils.customerPortal.getNotificationCount.invalidate();
-    utils.customerPortal.getUnreadMessageCount.invalidate();
-  };
-  usePortalSSE({
-    enabled: true,
-    onPackageStatus: (d) => {
-      toast.info(
-        t('portal.packageUpdatedNotif', { tracking: d.trackingNumber || d.packageId, status: d.status })
-      );
-      refreshBadges();
-    },
-    onNewInvoice: (d) => {
-      toast.info(
-        t('portal.newInvoiceNotif', { invoiceNumber: d.invoiceNumber })
-      );
-      refreshBadges();
-    },
-    onPaymentConfirmation: (d) => {
-      toast.success(
-        t('portal.paymentConfirmedNotif', { amount: d.amount.toFixed(2) })
-      );
-      refreshBadges();
-    },
-    onNotification: (d) => {
-      // Generic catch-all for any customerNotifications row inserted
-      // server-side — package status, batch updates, refunds, etc. —
-      // so the customer doesn't need to refresh to see fresh activity.
-      toast.info(d.title || d.body, d.title && d.body ? { description: d.body } : undefined);
-      refreshBadges();
-    },
-    onNews: (d) => {
-      // Company-wide Wazn News broadcast — live toast + refresh the news feeds
-      // so the carousel/ticker/news page pick up the new post without a reload.
-      const heading =
-        language === 'ku' ? 'وەزن نیوز: بابەتی نوێ' :
-        language === 'ar' ? 'وزن نيوز: منشور جديد' :
-        language === 'zh' ? 'Wazn 新闻：新帖子' : 'Wazn News: new post';
-      toast.info(heading, { description: d.title || undefined });
-      utils.blog.published.invalidate();
-      utils.blog.featured.invalidate();
-    },
-  });
+  // The live channel, the toasts and the refresh-on-return, shared by all
+  // three skins — see hooks/usePortalRealtime. It used to live here alone,
+  // so the modern and skin3 chrome had none of it, and every event here
+  // refreshed two badge counters and left the lists on screen as they were.
+  usePortalRealtime();
 
   /**
    * The owner's five slots: home, my shipments, the blue ➕ register button
@@ -374,7 +330,7 @@ function AnnouncementBanner() {
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const { data } = trpc.customerPortal.getAnnouncement.useQuery(undefined, {
-    staleTime: 120_000,
+    ...PORTAL_SETTINGS_QUERY,
     retry: false,
   });
   if (!data) return null;

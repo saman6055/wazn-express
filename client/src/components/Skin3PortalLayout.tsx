@@ -11,6 +11,7 @@ import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
+import { usePortalRealtime } from "@/hooks/usePortalRealtime";
 import { PortalTopBar } from "@/components/PortalTopBar";
 import { motion } from "framer-motion";
 
@@ -23,6 +24,8 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
   // has chosen a fixed width for themselves.
   const portalWidth = usePortalWidthClass();
   useDynamicFavicon();
+  // No live channel at all on this skin until now — see hooks/usePortalRealtime.
+  usePortalRealtime();
   const [location] = useLocation();
   const { language } = useLanguage();
   const { theme } = useTheme();

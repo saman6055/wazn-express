@@ -1,4 +1,5 @@
 ﻿import { PortalLayout } from "@/components/portal/PortalLayout";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -47,7 +48,7 @@ export default function PortalUnclaimedPackages() {
     trpc.customerPortal.getUnclaimedPackages.useQuery({ search: searchTerm || undefined });
   
   const { data: myClaimRequests, isLoading: claimsLoading, isError: claimsError, isFetching: claimsFetching, refetch: refetchClaims } = 
-    trpc.customerPortal.getMyClaimRequests.useQuery();
+    trpc.customerPortal.getMyClaimRequests.useQuery(undefined, PORTAL_LIVE_QUERY);
   
   // Mutations
   const createClaimMutation = trpc.customerPortal.createClaimRequest.useMutation({

@@ -1,4 +1,5 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { lazy, useState } from "react";
 // Lazy: only the active skin's chunk is downloaded (global admin setting).
@@ -54,13 +55,13 @@ const { t, language, setLanguage } = useLanguage();
 
   const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
   const { data: account, isLoading } = accountQuery;
-  const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
-  const summaryQuery = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const summaryQuery = trpc.customerPortal.getMyFinancialSummary.useQuery(undefined, PORTAL_LIVE_QUERY);
   const { data: summary, isLoading: summaryLoading } = summaryQuery;
   // The Message Center badge was the literal 2, so every customer carried a red
   // "2" on their profile for ever and learned to ignore the badge entirely —
   // while the real count was already an endpoint the layout uses.
-  const { data: unreadMessages } = trpc.customerPortal.getUnreadMessageCount.useQuery();
+  const { data: unreadMessages } = trpc.customerPortal.getUnreadMessageCount.useQuery(undefined, PORTAL_LIVE_QUERY);
 
   const menuItems = [
     {

@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { useSearch } from "wouter";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -29,10 +30,14 @@ export default function PortalProhibitedPackages() {
   const isRTL = language === "ku" || language === "ar";
   const label = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
-  const { data: items, isLoading, isError, isFetching, refetch } = trpc.prohibited.getMine.useQuery();
-  const markViewed = trpc.prohibited.markViewed.useMutation();
+  const { data: items, isLoading, isError, isFetching, refetch } = trpc.prohibited.getMine.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const utils = trpc.useUtils();
+  // Viewing clears the flashing alert on the home page, so it is refreshed.
+  const markViewed = trpc.prohibited.markViewed.useMutation({
+    onSuccess: () => { void utils.prohibited.getMine.invalidate(); },
+  });
   const chooseResolution = trpc.prohibited.chooseResolution.useMutation({
-    onSuccess: () => { toast.success(label({ ku: "هەڵبژاردەکەت نێردرا", en: "Your choice was sent", ar: "تم إرسال اختيارك", zh: "已发送您的选择" })); refetch(); },
+    onSuccess: () => { toast.success(label({ ku: "هەڵبژاردەکەت نێردرا", en: "Your choice was sent", ar: "تم إرسال اختيارك", zh: "已发送您的选择" })); refetch(); void utils.customerPortal.invalidate(); },
     onError: (e) => toast.error(e.message),
   });
 

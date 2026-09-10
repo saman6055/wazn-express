@@ -1,4 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { lazy } from "react";
@@ -91,15 +92,15 @@ function ClassicPortalShipments() {
     return () => window.removeEventListener("scroll", onScroll);
   }, []);
   
-  const { data: batches, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyBatches.useQuery();
-  const { data: unbatchedPackages, refetch: refetchUnbatched } = trpc.customerPortal.getMyUnbatchedPackages.useQuery();
+  const { data: batches, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyBatches.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const { data: unbatchedPackages, refetch: refetchUnbatched } = trpc.customerPortal.getMyUnbatchedPackages.useQuery(undefined, PORTAL_LIVE_QUERY);
   // Full-package and commission orders travel the same road but live in their
   // own table with their own status names. Leaving them out is why an order
   // could say "in China" on My Goods and be missing here entirely.
-  const { data: myOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({});
+  const { data: myOrders, refetch: refetchOrders } = trpc.customerPortal.getMyFullPackageOrders.useQuery({}, PORTAL_LIVE_QUERY);
 
   const handleRefresh = async () => {
-    await Promise.all([refetch(), refetchUnbatched()]);
+    await Promise.all([refetch(), refetchUnbatched(), refetchOrders()]);
   };
   const { pullToRefreshProps, pullDistance } = usePullToRefresh(handleRefresh);
 

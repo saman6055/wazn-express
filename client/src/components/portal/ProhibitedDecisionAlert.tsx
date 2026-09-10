@@ -1,4 +1,5 @@
 import { Link } from "wouter";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { AlertTriangle, ChevronLeft } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -20,7 +21,7 @@ import { cn } from "@/lib/utils";
  */
 export function ProhibitedDecisionAlert({ isDark, className }: { isDark?: boolean; className?: string }) {
   const { language } = useTranslation();
-  const { data } = trpc.prohibited.getMine.useQuery(undefined, { retry: false });
+  const { data } = trpc.prohibited.getMine.useQuery(undefined, { ...PORTAL_LIVE_QUERY, retry: false });
 
   const pending = (data ?? []).filter((p: any) => p?.status === "pending").length;
   if (pending === 0) return null;

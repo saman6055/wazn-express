@@ -11,6 +11,7 @@ import { usePWA } from "@/components/PWAInstallPrompt";
 import { LiveChatSupport, ChatFloatingButton } from "@/components/LiveChatSupport";
 import { PushNotificationPrompt } from "@/components/PushNotificationPrompt";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
+import { usePortalRealtime } from "@/hooks/usePortalRealtime";
 import { PortalTopBar } from "@/components/PortalTopBar";
 import { motion } from "framer-motion";
 
@@ -20,6 +21,8 @@ interface ModernPortalLayoutProps {
 
 export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
   useDynamicFavicon();
+  // No live channel at all on this skin until now — see hooks/usePortalRealtime.
+  usePortalRealtime();
   const [location] = useLocation();
   // How wide this portal sits: grows with the screen unless the reader
   // has chosen a fixed width for themselves.

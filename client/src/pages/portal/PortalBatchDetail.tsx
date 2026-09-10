@@ -1,4 +1,5 @@
 ﻿import { PortalLayout } from "@/components/portal/PortalLayout";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { pickLang } from "@/lib/lang";
 import { ShareParcelButton } from "@/components/portal/ShareParcelButton";
 import { copyText } from "@/lib/copyText";
@@ -55,11 +56,11 @@ const { t, language } = useLanguage();
   const parsedId = Number.parseInt(params.id ?? "", 10);
   const batchId = Number.isFinite(parsedId) ? parsedId : 0;
   
-  const batchesQuery = trpc.customerPortal.getMyBatches.useQuery();
+  const batchesQuery = trpc.customerPortal.getMyBatches.useQuery(undefined, PORTAL_LIVE_QUERY);
   const { data: batches } = batchesQuery;
   const { data: packages, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyPackagesInBatch.useQuery(
     { batchId },
-    { enabled: batchId > 0 },
+    { ...PORTAL_LIVE_QUERY, enabled: batchId > 0 },
   );
   const { resolve: resolvePackageImage } = usePackageImages();
 

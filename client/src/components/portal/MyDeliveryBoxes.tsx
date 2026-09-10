@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { soundManager } from "@/lib/soundManager";
 import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
@@ -134,7 +135,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
   const label = (v: L) => pickLang(language, v);
   const utils = trpc.useUtils();
 
-  const { data: boxes, isLoading } = trpc.customerPortal.getMyDeliveryBoxes.useQuery();
+  const { data: boxes, isLoading } = trpc.customerPortal.getMyDeliveryBoxes.useQuery(undefined, PORTAL_LIVE_QUERY);
   const [confirming, setConfirming] = useState<number | null>(null);
 
   const confirm = trpc.customerPortal.confirmBoxReceived.useMutation({
@@ -149,8 +150,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
         ar: "شكرًا — تم تسجيل الاستلام",
         zh: "谢谢——已记录您的签收",
       }));
-      utils.customerPortal.getMyDeliveryBoxes.invalidate();
-      utils.customerPortal.getMyPackages.invalidate();
+      void utils.customerPortal.invalidate();
     },
     onError: (e) => {
       soundManager.playPortalFailed();

@@ -1,4 +1,5 @@
 ﻿import { useState } from "react";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -66,7 +67,7 @@ export default function PortalDeclarePackage() {
   // Which declaration is one tap away from being cancelled.
   const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
 
-  const { data: declared, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyDeclaredPackages.useQuery();
+  const { data: declared, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyDeclaredPackages.useQuery(undefined, PORTAL_LIVE_QUERY);
 
   const resetForm = () => {
     setTrackingNumber("");

@@ -1,4 +1,5 @@
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { Link, useLocation, useSearch } from "wouter";
@@ -98,18 +99,18 @@ const { t, language } = useLanguage();
   };
   const [animatedBalance, setAnimatedBalance] = useState(0);
   
-  const { data: summary, isLoading: summaryLoading } = trpc.customerPortal.getMyFinancialSummary.useQuery();
-  const { data: transactions, isLoading: transactionsLoading, isError: transactionsError, isFetching: transactionsFetching, refetch: refetchTransactions } = trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 });
+  const { data: summary, isLoading: summaryLoading } = trpc.customerPortal.getMyFinancialSummary.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const { data: transactions, isLoading: transactionsLoading, isError: transactionsError, isFetching: transactionsFetching, refetch: refetchTransactions } = trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 }, PORTAL_LIVE_QUERY);
   const { data: receiptData, isLoading: receiptLoading } = trpc.customerPortal.getReceiptData.useQuery(
     { transactionId: selectedTransaction! },
     { enabled: !!selectedTransaction }
   );
-  const { data: invoices, isLoading: invoicesLoading } = trpc.customerPortal.getMyInvoices.useQuery();
+  const { data: invoices, isLoading: invoicesLoading } = trpc.customerPortal.getMyInvoices.useQuery(undefined, PORTAL_LIVE_QUERY);
   // The monthly figures come from the server, counted over the whole period.
   // Deriving them from `transactions` meant deriving them from the fifty rows
   // above, so a customer with a busy month was shown a total that was simply
   // short — beside a balance that was right.
-  const { data: monthlyMoney, isLoading: monthlyLoading } = trpc.customerPortal.getMyMonthlyMoney.useQuery({ months: 6 });
+  const { data: monthlyMoney, isLoading: monthlyLoading } = trpc.customerPortal.getMyMonthlyMoney.useQuery({ months: 6 }, PORTAL_LIVE_QUERY);
   // Company info for the invoice/receipt header — via the PUBLIC
   // settings.getCompanyInfo endpoint. The old trpc.settings.list is a
   // staffProcedure: a portal customer hitting it threw FORBIDDEN, which the
@@ -248,7 +249,7 @@ const { t, language } = useLanguage();
   // The batch whose invoice is open. Null until one is picked, so the tab
   // does not fetch an invoice nobody asked for.
   const [invoiceBatchId, setInvoiceBatchId] = useState<number | null>(null);
-  const myBatchesQuery = trpc.customerPortal.getMyBatches.useQuery();
+  const myBatchesQuery = trpc.customerPortal.getMyBatches.useQuery(undefined, PORTAL_LIVE_QUERY);
   const myBatchesRaw = myBatchesQuery.data;
   const myBatches = Array.isArray(myBatchesRaw) ? myBatchesRaw : [];
   // What this customer has been given. Absent while it loads, which reads as
@@ -258,7 +259,7 @@ const { t, language } = useLanguage();
   const financeDetail = hasFeature(myFeatures, "finance_detail");
 
   const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(null);
-  const myBoxesQuery = trpc.customerPortal.getMyDeliveryBoxes.useQuery();
+  const myBoxesQuery = trpc.customerPortal.getMyDeliveryBoxes.useQuery(undefined, PORTAL_LIVE_QUERY);
   const myBoxesRaw = myBoxesQuery.data;
   const myBoxes = Array.isArray(myBoxesRaw) ? myBoxesRaw : [];
   const { data: boxInvoice } = trpc.customerPortal.getMyBoxInvoice.useQuery(

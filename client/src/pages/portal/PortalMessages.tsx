@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
 import { trpc } from "@/lib/trpc";
@@ -131,7 +132,12 @@ export default function PortalMessages() {
   });
   
   // Mark as read mutation
-  const markAsRead = trpc.supportChat.markAsRead.useMutation();
+  const markAsRead = trpc.supportChat.markAsRead.useMutation({
+    onSuccess: () => {
+      void utils.supportChat.getUnreadCount.invalidate();
+      void utils.customerPortal.getUnreadMessageCount.invalidate();
+    },
+  });
 
   // Upload mutation for files/images
   const uploadMutation = trpc.storage.upload.useMutation();
@@ -139,7 +145,7 @@ export default function PortalMessages() {
   // Get unread count
   const unreadQuery = trpc.supportChat.getUnreadCount.useQuery();
   // The Notifications tab had no query at all behind it.
-  const notificationsQuery = trpc.customerPortal.getMyNotifications.useQuery();
+  const notificationsQuery = trpc.customerPortal.getMyNotifications.useQuery(undefined, PORTAL_LIVE_QUERY);
   const { data: portalNotifications } = notificationsQuery;
   
   // Initialize chat

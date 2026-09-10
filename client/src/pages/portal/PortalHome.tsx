@@ -1,4 +1,5 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
@@ -241,18 +242,18 @@ export default function PortalHome() {
   const isRTL = language === "ku" || language === "ar";
 
   const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
-  const batchesQuery = trpc.customerPortal.getMyBatches.useQuery();
-  const summaryQuery = trpc.customerPortal.getMyFinancialSummary.useQuery();
+  const batchesQuery = trpc.customerPortal.getMyBatches.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const summaryQuery = trpc.customerPortal.getMyFinancialSummary.useQuery(undefined, PORTAL_LIVE_QUERY);
 
   const { data: account, isLoading: accountLoading } = accountQuery;
   const { data: batches, isLoading: batchesLoading } = batchesQuery;
-  const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery();
+  const { data: notificationCount } = trpc.customerPortal.getNotificationCount.useQuery(undefined, PORTAL_LIVE_QUERY);
   const { data: financialSummary, isLoading: summaryLoading } = summaryQuery;
-  const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery();
-  const { data: prohibitedPackages } = trpc.prohibited.getMine.useQuery();
+  const { data: pendingOrders } = trpc.customerPortal.getMyPendingOrders.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const { data: prohibitedPackages } = trpc.prohibited.getMine.useQuery(undefined, PORTAL_LIVE_QUERY);
   // The admin-curated price list already carries today's exchange rates; the
   // ticker reads the same row rather than growing a second source of truth.
-  const { data: priceList } = trpc.customerPortal.getPriceList.useQuery();
+  const { data: priceList } = trpc.customerPortal.getPriceList.useQuery(undefined, PORTAL_SETTINGS_QUERY);
 
   // Everything the customer has sitting in the China depot — loose parcels
   // and bought orders, deduplicated by tracking (the shared hook's job).

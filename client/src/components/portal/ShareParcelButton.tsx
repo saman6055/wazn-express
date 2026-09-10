@@ -33,8 +33,10 @@ export function ShareParcelButton({
   const [done, setDone] = useState(false);
   const L = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, k);
 
+  const utils = trpc.useUtils();
   const create = trpc.customerPortal.createShareLink.useMutation({
     onSuccess: async (link) => {
+      void utils.customerPortal.myShareLinks.invalidate();
       const url = `${window.location.origin}/t/${link.token}`;
       const text = L({
         ku: "شوێنپێهەڵگرتنی پاکێتەکە",
