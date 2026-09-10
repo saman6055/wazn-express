@@ -18,9 +18,10 @@
 
 import { ourDeliveryFee } from "@shared/deliveryFee";
 
-export const BOX_UNPAID_ALERT_DAYS = 5;
+import { BOX_UNPAID_ALERT_DAYS, boxAgeDays } from "@shared/boxAging";
 
-const DAY_MS = 86_400_000;
+/** Lives in shared/boxAging.ts, so the "old and unpaid" chip names the same boxes. */
+export { BOX_UNPAID_ALERT_DAYS };
 
 const num = (v: string | number | null | undefined): number => {
   if (v === null || v === undefined) return 0;
@@ -59,7 +60,7 @@ export function boxUnpaidAlert(box: BoxAlertFacts, now: Date = new Date()): BoxU
   if (outstanding <= 0.009) return null;
 
   const created = box.createdAt instanceof Date ? box.createdAt : new Date(box.createdAt);
-  const days = Math.max(0, Math.floor((now.getTime() - created.getTime()) / DAY_MS));
+  const days = boxAgeDays(created, now);
 
   if (box.status === "delivered") {
     return { kind: "handed_unpaid", days, outstandingUsd: outstanding };

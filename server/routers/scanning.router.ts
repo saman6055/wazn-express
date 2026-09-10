@@ -1036,6 +1036,7 @@ export const deliveryBoxRouter = router({
       batchId: z.number().optional(),
       manualOnly: z.boolean().optional(),
       archive: z.enum(["exclude", "only"]).optional(),
+      segment: z.enum(["new", "old", "handed"]).optional(),
     }).optional())
     .query(async ({ input }) => {
       return db.getAllDeliveryBoxes({

@@ -18,12 +18,12 @@ describe("the list follows the money", () => {
   const page = read("pages/CustomerDeliveryScanner.tsx");
 
   it("asks the server to leave the archive out, or to show only it", () => {
-    expect(page).toContain('params.archive = showArchivedBoxes ? "only" : "exclude"');
+    expect(page).toContain('params.archive = view === "paid" ? "only" : "exclude";');
     expect(page).not.toContain("partitionBoxes(");
   });
 
   it("returns to the first page when switching between list and archive", () => {
-    expect(page).toContain("setShowArchivedBoxes((v) => !v); setCurrentPage(0);");
+    expect(page).toContain("onChange={(v) => { setView(v); setCurrentPage(0); }}");
   });
 
   for (const file of ["components/delivery/QuickSettleDialog.tsx", "components/delivery/BoxSettlementPanel.tsx"]) {

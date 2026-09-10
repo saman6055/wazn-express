@@ -9,6 +9,7 @@ import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 import { boxSettlements, boxSettlementLines } from "../../drizzle/schema/finance.schema";
 import { getBoxesPaidInFull } from "./boxSettlement.db";
 import { archiveCutoff, SETTLED_SLACK_USD } from "@shared/archive";
+import { boxOldCutoff } from "@shared/boxAging";
 
 // ============ BOX CODE GENERATION ============
 
@@ -136,6 +137,15 @@ export async function getBoxesSettlementCleared(boxIds: number[]): Promise<Map<n
   return out;
 }
 
+/** The counts on the chips above the box list. */
+export interface BoxSegmentCounts {
+  unpaid: number;
+  new: number;
+  old: number;
+  handed: number;
+  paid: number;
+}
+
 export async function getAllDeliveryBoxes(filters?: {
   status?: string;
   customerId?: number;
@@ -148,7 +158,10 @@ export async function getAllDeliveryBoxes(filters?: {
   batchId?: number | null;
   /** "exclude" leaves archived boxes out, "only" shows just them; absent shows all. */
   archive?: "exclude" | "only";
-}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null; settlementCleared?: boolean | null })[]; total: number; archivedTotal?: number }> {
+  /** A slice of the unpaid list (archive "exclude" only): opened within the
+   *  red badge's five days, opened before them, or handed over. */
+  segment?: "new" | "old" | "handed";
+}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null; settlementCleared?: boolean | null })[]; total: number; archivedTotal?: number; segmentCounts?: BoxSegmentCounts }> {
   const db = await getDb();
   if (!db) return { boxes: [], total: 0 };
 
@@ -217,17 +230,46 @@ export async function getAllDeliveryBoxes(filters?: {
   const baseWhere = conditions.length > 0 ? and(...conditions) : undefined;
   if (filters?.archive === "exclude") conditions.push(sql`NOT ${archivedSql}`);
   else if (filters?.archive === "only") conditions.push(archivedSql);
+  // The chips: a slice of what is still unpaid. "Old" is the red badge's
+  // own five days (shared/boxAging.ts), so chip and badge name the same boxes.
+  if (filters?.archive === "exclude" && filters.segment) {
+    const cutoff = boxOldCutoff();
+    if (filters.segment === "new") conditions.push(sql`${deliveryBoxes.createdAt} > ${cutoff}`);
+    else if (filters.segment === "old") conditions.push(sql`${deliveryBoxes.createdAt} <= ${cutoff}`);
+    else if (filters.segment === "handed") conditions.push(eq(deliveryBoxes.status, "delivered"));
+  }
 
   const where = conditions.length > 0 ? and(...conditions) : undefined;
   const [countResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(deliveryBoxes).where(where);
   const total = Number(countResult?.count || 0);
 
-  // How many are in the archive, for the line above the table.
+  /**
+   * The counts on the chips above the list, over the same filters (search,
+   * status, dates) and every slice of them: one pass over what is still
+   * unpaid for the first four, one over the archive for the last.
+   */
   let archivedTotal: number | undefined;
-  if (filters?.archive === "exclude") {
+  let segmentCounts: BoxSegmentCounts | undefined;
+  if (filters?.archive) {
+    const cutoff = boxOldCutoff();
+    const notArchivedSql = sql`NOT ${archivedSql}`;
+    const [open] = await db.select({
+      unpaid: sql<number>`COUNT(*)`,
+      fresh: sql<number>`COALESCE(SUM(CASE WHEN ${deliveryBoxes.createdAt} > ${cutoff} THEN 1 ELSE 0 END), 0)`,
+      old: sql<number>`COALESCE(SUM(CASE WHEN ${deliveryBoxes.createdAt} <= ${cutoff} THEN 1 ELSE 0 END), 0)`,
+      handed: sql<number>`COALESCE(SUM(CASE WHEN ${deliveryBoxes.status} = 'delivered' THEN 1 ELSE 0 END), 0)`,
+    }).from(deliveryBoxes).where(baseWhere ? and(baseWhere, notArchivedSql) : notArchivedSql);
     const [archivedCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(deliveryBoxes)
       .where(baseWhere ? and(baseWhere, archivedSql) : archivedSql);
-    archivedTotal = Number(archivedCount?.count || 0);
+    const paid = Number(archivedCount?.count || 0);
+    segmentCounts = {
+      unpaid: Number(open?.unpaid || 0),
+      new: Number(open?.fresh || 0),
+      old: Number(open?.old || 0),
+      handed: Number(open?.handed || 0),
+      paid,
+    };
+    if (filters.archive === "exclude") archivedTotal = paid;
   }
 
   const boxes = await db.select().from(deliveryBoxes)
@@ -304,7 +346,7 @@ export async function getAllDeliveryBoxes(filters?: {
     ),
   }));
 
-  return { boxes: boxesWithType, total, archivedTotal };
+  return { boxes: boxesWithType, total, archivedTotal, segmentCounts };
 }
 
 export async function updateDeliveryBox(id: number, data: Partial<InsertDeliveryBox>): Promise<DeliveryBox | null> {
