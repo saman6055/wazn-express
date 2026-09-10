@@ -1,3 +1,4 @@
+import { withoutSecrets } from "../lib/accountSecrets";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
@@ -478,7 +479,7 @@ export const dashboardRouter = router({
 
 export const usersRouter = router({
     list: adminProcedure.query(async () => {
-      return db.getAllUsers();
+      return (await db.getAllUsers()).map((u) => withoutSecrets(u));
     }),
     updateRole: adminProcedure
       .input(z.object({

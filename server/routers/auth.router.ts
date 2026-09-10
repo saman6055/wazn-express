@@ -1,3 +1,4 @@
+import { sessionAccount } from "../lib/accountSecrets";
 import { COOKIE_NAME } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -19,7 +20,8 @@ import * as bcrypt from "bcryptjs";
 import { appLogger } from "../utils/logger";
 
 export const authRouter = router({
-  me: publicProcedure.query(opts => opts.ctx.user),
+  // Who is signed in — never the account row itself (see accountSecrets).
+  me: publicProcedure.query(opts => sessionAccount(opts.ctx.user)),
   logout: publicProcedure.mutation(({ ctx }) => {
     const cookieOptions = getSessionCookieOptions(ctx.req);
     ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });

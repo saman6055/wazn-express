@@ -41,11 +41,21 @@ export function useAuth(options?: UseAuthOptions) {
     }
   }, [logoutMutation, utils]);
 
+  // The editor runtime reads who is signed in from here. It gets an id, a
+  // name and a role — never the account row, which it used to, hash and all.
+  useEffect(() => {
+    try {
+      const u = meQuery.data as { id?: number; name?: string | null; role?: string } | null | undefined;
+      localStorage.setItem(
+        "manus-runtime-user-info",
+        JSON.stringify(u ? { id: u.id, name: u.name ?? null, role: u.role } : null)
+      );
+    } catch {
+      // Storage refused (private mode): nothing depends on it.
+    }
+  }, [meQuery.data]);
+
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
     return {
       user: meQuery.data ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,

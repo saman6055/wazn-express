@@ -1,3 +1,4 @@
+import { withoutSecrets } from "../lib/accountSecrets";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
@@ -11,7 +12,7 @@ import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, ba
 
 export const customersRouter = router({
     list: staffProcedure.query(async () => {
-      return db.getAllCustomers();
+      return (await db.getAllCustomers()).map((c) => withoutSecrets(c));
     }),
     getById: staffProcedure
       .input(z.object({ id: z.number() }))
@@ -20,7 +21,7 @@ export const customersRouter = router({
         if (!customer) {
           throw new TRPCError({ code: 'NOT_FOUND', message: 'Customer not found' });
         }
-        return customer;
+        return withoutSecrets(customer);
       }),
     create: staffProcedure
       .input(z.object({
