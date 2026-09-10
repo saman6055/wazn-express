@@ -29,6 +29,7 @@ import {
   Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown, Copy, HelpCircle
 } from "lucide-react";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { fmtUsd } from "@/lib/portalFormat";
 import { formatPortalDate } from "@/lib/portalClock";
 
 // Status configuration with beautiful colors
@@ -373,6 +374,10 @@ export default function PortalFullPackage() {
     // ago seemed to disappear when the customer tapped a pill.
     if (statusFilter === "pending") return ["pending", "pending_quote", "quoted", "approved", "purchasing", "purchased", "ordered"].includes(order.status);
     if (statusFilter === "in_transit") return ["tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "ready_for_delivery"].includes(order.status);
+    // "open" is what the چاوەڕوان card at the top counts: bought or on the
+    // way, not yet handed over. Tapping the card has to show exactly the
+    // orders it counted, so this is the two lists above joined, not a third.
+    if (statusFilter === "open") return ["pending", "pending_quote", "quoted", "approved", "purchasing", "purchased", "ordered", "tracking_added", "in_china_warehouse", "quality_check", "in_batch", "in_transit", "ready_for_delivery"].includes(order.status);
     if (statusFilter === "delivered") return ["delivered", "completed", "arrived"].includes(order.status);
     if (statusFilter === "cancelled") return ["cancelled", "rejected", "refunded", "returned"].includes(order.status);
     return true;
@@ -414,6 +419,7 @@ export default function PortalFullPackage() {
 
   const filteredSelfOrders = allSelfOrders.filter(p => {
     if (statusFilter === "all") return true;
+    if (statusFilter === "open") return SELF_STATUS_BUCKET[p.status] === "pending" || SELF_STATUS_BUCKET[p.status] === "in_transit";
     return SELF_STATUS_BUCKET[p.status] === statusFilter;
   }).filter(p => {
     if (!searchQuery) return true;
@@ -455,17 +461,30 @@ export default function PortalFullPackage() {
       + allSelfOrders.filter(p => p.status === "delivered").length,
   };
   
+  /**
+   * The three cards at the top are filters, not decoration. Each shows the
+   * list it counted — across every tab, since the numbers count every tab —
+   * and tapping the active one clears it. "Total" is the way back to all.
+   */
+  const statCardFilter: "all" | "open" | "delivered" =
+    statusFilter === "open" || statusFilter === "delivered" ? statusFilter : "all";
+  const pickStatCard = (key: "all" | "open" | "delivered") => {
+    setActiveTab("all");
+    setSearchQuery("");
+    setStatusFilter(key === "all" || statCardFilter === key ? "all" : key);
+  };
+
   const getStatusInfo = (status: string) => {
     return statusConfig[status] || {
       label: status,
       labelKu: status,
       labelAr: status,
       labelZh: status,
-      color: "text-gray-600",
-      bgColor: "bg-gray-100 dark:bg-gray-950/40", 
-      borderColor: "border-gray-200 dark:border-gray-800/60",
+      color: "text-slate-600",
+      bgColor: "bg-slate-100 dark:bg-slate-950/40", 
+      borderColor: "border-slate-200 dark:border-slate-800/60",
       icon: Package,
-      gradient: "from-gray-400 to-gray-600"
+      gradient: "from-slate-400 to-slate-600"
     };
   };
   
@@ -498,11 +517,9 @@ export default function PortalFullPackage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkOrderId, fullPackageOrders]);
   
-  const formatPrice = (price: string | number | null | undefined) => {
-    if (!price) return "$0";
-    const num = typeof price === 'string' ? parseFloat(price) : price;
-    return `$${num.toFixed(2)}`;
-  };
+  // "$0" beside "$12.50" in one list, and "$NaN" for a bad string — one
+  // shape now, and a dash for a price nobody has set.
+  const formatPrice = (price: string | number | null | undefined) => fmtUsd(price);
 
   return (
     <PortalLayout>
@@ -517,9 +534,9 @@ export default function PortalFullPackage() {
         <div className="absolute top-1/2 left-1/2 w-32 h-32 bg-indigo-400/20 rounded-full -translate-x-1/2 -translate-y-1/2 blur-xl" />
         
         {/* Content */}
-        <div className="relative px-5 pt-12 pb-8">
+        <div className="relative px-4 pt-12 pb-6">
           {/* Title Row */}
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-5">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 rounded-2xl bg-white/15 backdrop-blur-sm flex items-center justify-center border border-white/20 shadow-lg">
                 <ShoppingBag className="w-7 h-7 text-white" />
@@ -552,64 +569,87 @@ export default function PortalFullPackage() {
             </Button>
           </div>
           
-          {/* Stats Cards */}
-          <div className="grid grid-cols-3 gap-3">
-            {/* Total */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-500/40 to-purple-600/40 backdrop-blur-sm border border-white/20 p-4">
-              <div className="absolute top-2 end-2">
-                <div className="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center">
-                  <Package className="w-5 h-5 text-white" />
-                </div>
-              </div>
-              <div className="pt-6">
-                <p className="text-4xl font-bold text-white">{stats.total}</p>
-                <p className="text-white/70 text-sm mt-1">{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" })}</p>
-              </div>
-            </div>
-            
-            {/* Pending */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500/40 to-orange-600/40 backdrop-blur-sm border border-amber-400/30 p-4">
-              <div className="absolute top-2 end-2">
-                <div className="w-10 h-10 rounded-xl bg-amber-400/30 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-amber-200" />
-                </div>
-              </div>
-              <div className="pt-6">
-                <p className="text-4xl font-bold text-amber-100">{stats.pending}</p>
-                <p className="text-amber-200/70 text-sm mt-1">{pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" })}</p>
-              </div>
-            </div>
-            
-            {/* Delivered */}
-            <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-500/40 to-teal-600/40 backdrop-blur-sm border border-emerald-400/30 p-4">
-              <div className="absolute top-2 end-2">
-                <div className="w-10 h-10 rounded-xl bg-emerald-400/30 flex items-center justify-center">
-                  <CheckCircle className="w-5 h-5 text-emerald-200" />
-                </div>
-              </div>
-              <div className="pt-6">
-                <p className="text-4xl font-bold text-emerald-100">{stats.delivered}</p>
-                <p className="text-emerald-200/70 text-sm mt-1">{pickLang(language, { ku: "گەیەندراو", en: "Delivered", ar: "تم التسليم", zh: "已送达" })}</p>
-              </div>
-            </div>
+          {/* Stats Cards — three filters. Smaller than they were: the number
+              is the point, the card only has to be big enough to tap. */}
+          <div className="grid grid-cols-3 gap-2">
+            {([
+              {
+                key: "all" as const,
+                value: stats.total,
+                icon: Package,
+                label: pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "总计" }),
+                surface: "bg-white/10 border-white/20",
+                iconBg: "bg-white/20 text-white",
+                number: "text-white",
+                caption: "text-white/70",
+              },
+              {
+                key: "open" as const,
+                value: stats.pending,
+                icon: Clock,
+                label: pickLang(language, { ku: "چاوەڕوان", en: "Pending", ar: "قيد الانتظار", zh: "待处理" }),
+                surface: "bg-amber-500/25 border-amber-300/30",
+                iconBg: "bg-amber-400/30 text-amber-100",
+                number: "text-amber-50",
+                caption: "text-amber-100/80",
+              },
+              {
+                key: "delivered" as const,
+                value: stats.delivered,
+                icon: CheckCircle,
+                label: pickLang(language, { ku: "گەیەندراو", en: "Delivered", ar: "تم التسليم", zh: "已送达" }),
+                surface: "bg-emerald-500/25 border-emerald-300/30",
+                iconBg: "bg-emerald-400/30 text-emerald-100",
+                number: "text-emerald-50",
+                caption: "text-emerald-100/80",
+              },
+            ]).map((card) => {
+              const active = statCardFilter === card.key && card.key !== "all";
+              return (
+                <button
+                  key={card.key}
+                  type="button"
+                  onClick={() => pickStatCard(card.key)}
+                  aria-pressed={active}
+                  className={cn(
+                    "rounded-xl border p-3 text-start backdrop-blur-sm transition-all active:scale-[0.98]",
+                    card.surface,
+                    active && "ring-2 ring-white/80 shadow-lg",
+                  )}
+                >
+                  <div className="flex items-center justify-between gap-2">
+                    <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg", card.iconBg)}>
+                      <card.icon className="h-4 w-4" />
+                    </span>
+                    <span className={cn("text-2xl font-bold tabular-nums leading-none", card.number)} dir="ltr">
+                      {isLoading || selfLoading ? "…" : card.value}
+                    </span>
+                  </div>
+                  <p className={cn("mt-2 text-xs font-medium leading-tight", card.caption)}>{card.label}</p>
+                </button>
+              );
+            })}
           </div>
         </div>
       </div>
-      
+
       {/* Content Area */}
       <div className={cn(
         "px-4 py-6 min-h-screen",
-        isDark ? "bg-slate-900" : "bg-gray-50 dark:bg-gray-950/40"
+        isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
       )}>
-        {/* Tab Filters — four now, so they scroll rather than squeeze on a phone */}
+        {/* Tab Filters — four now, so they scroll rather than squeeze on a phone.
+            Sticky under the portal's top bar (56px tall, hence top-14) so the
+            customer can switch lists without scrolling back up through a
+            long page of orders. */}
         <div className={cn(
-          "flex gap-2 p-1.5 rounded-2xl mb-5 overflow-x-auto",
-          isDark ? "bg-slate-800" : "bg-white shadow-sm"
+          "sticky top-14 z-20 flex gap-1.5 p-1 rounded-xl mb-4 overflow-x-auto no-scrollbar",
+          isDark ? "bg-slate-800 shadow-md shadow-slate-900/40" : "bg-white shadow-md shadow-slate-200/60 dark:bg-slate-800 dark:shadow-slate-900/40"
         )}>
           <button
             onClick={() => setActiveTab("all")}
             className={cn(
-              "flex-1 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
+              "flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
               activeTab === "all"
                 ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -620,7 +660,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("full_package")}
             className={cn(
-              "flex-1 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
+              "flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
               activeTab === "full_package"
                 ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -631,7 +671,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("commission")}
             className={cn(
-              "flex-1 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
+              "flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
               activeTab === "commission"
                 ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -646,7 +686,7 @@ export default function PortalFullPackage() {
             <button
               onClick={() => setActiveTab("self")}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap py-3 px-3 rounded-xl text-[13px] font-semibold transition-all",
+                "flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
                 activeTab === "self"
                   ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
                   : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -655,7 +695,7 @@ export default function PortalFullPackage() {
               {pickLang(language, { ku: "کڕینی خۆم", en: "My own", ar: "شرائي الخاص", zh: "自购" })}
               <span
                 className={cn(
-                  "rounded-full px-1.5 text-[10px] font-bold tabular-nums",
+                  "rounded-full px-1.5 text-[11px] font-bold tabular-nums",
                   activeTab === "self" ? "bg-white/25" : isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-800",
                 )}
                 dir="ltr"
@@ -699,7 +739,7 @@ export default function PortalFullPackage() {
           >
             <SlidersHorizontal className="w-5 h-5" />
             {activeFilterCount > 0 && (
-              <span className="absolute -top-1.5 -left-1.5 w-5 h-5 rounded-full bg-orange-500 text-white text-[10px] font-bold flex items-center justify-center shadow">
+              <span className="absolute -top-1.5 -start-1.5 w-5 h-5 rounded-full bg-amber-500 text-white text-[11px] font-bold flex items-center justify-center shadow">
                 {activeFilterCount}
               </span>
             )}
@@ -1067,7 +1107,7 @@ export default function PortalFullPackage() {
                             language={language}
                             section={language === "ku" ? "پاکێجی تەواو / کڕین بە تێچوو" : language === "ar" ? "الطرد الكامل / العمولة" : language === "zh" ? "全包裹/佣金" : "Full package / commission"}
                             topic={[
-                              `${order.orderCode}${order.status ? ` — ${order.status}` : ""}`,
+                              `${order.orderCode}${order.status ? ` — ${pickLang(language, { ku: getStatusInfo(order.status).labelKu, en: getStatusInfo(order.status).label, ar: getStatusInfo(order.status).labelAr, zh: getStatusInfo(order.status).labelZh })}` : ""}`,
                               order.trackingNumber
                                 ? `${language === "ku" ? "تراک" : language === "ar" ? "التتبع" : language === "zh" ? "运单号" : "Tracking"}: ${order.trackingNumber}`
                                 : null,
@@ -1103,7 +1143,7 @@ export default function PortalFullPackage() {
                       })}
                     </p>
                   </div>
-                  <p className={cn("mt-1 text-[12px] leading-relaxed", isDark ? "text-sky-300/80" : "text-sky-800/80 dark:text-sky-300/80")}>
+                  <p className={cn("mt-1 text-xs leading-relaxed", isDark ? "text-sky-300/80" : "text-sky-800/80 dark:text-sky-300/80")}>
                     {pickLang(language, {
                       ku: "ئەم کاڵایانە خۆت کڕیوتە و ئێمە تەنها گواستوومانەتەوە. ئەگەر یەکێکیان لە ڕاستیدا ئۆردەرێکی ئێمەیە، دوای ئەوەی تۆماری دەکەین خۆکار دەچێتە سەر ئۆردەرەکەی خۆی.",
                       en: "You bought these yourself and we only shipped them. If one of them is in fact an order of ours, it moves to that order automatically once we register it.",
@@ -1148,7 +1188,7 @@ export default function PortalFullPackage() {
                 )} />
                 <button
                   onClick={() => setShowDetailDialog(false)}
-                  className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                  className="absolute top-4 end-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
