@@ -5,6 +5,7 @@ import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
 import {
   AlertTriangle,
   ArrowDownRight,
@@ -171,6 +172,7 @@ export function DailyBrief({ language }: { language: string }) {
 
   return (
     <div className="wazn-brief space-y-3 rounded-2xl border border-border bg-card p-4">
+      <PrintOnlyLogo />
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div className="flex items-start gap-3">
           <div className="rounded-xl bg-amber-100 p-2 dark:bg-amber-950/50">

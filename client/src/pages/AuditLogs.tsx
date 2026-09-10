@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
 import { 
   Search, History, Eye, Filter, Calendar, User, Activity, 
   Package, Users, Settings, DollarSign, Truck, ShoppingCart,
@@ -235,7 +236,7 @@ export default function AuditLogs() {
         </style>
       </head>
       <body>
-        <div class="header">
+        <div class="header">${reportLogoHtml()}
           <h1>🔍 ${pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })}</h1>
           <p>${company.name} - ${fmtDate(new Date())}</p>
         </div>

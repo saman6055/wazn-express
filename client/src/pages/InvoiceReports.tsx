@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
 import { pickLang } from "@/lib/lang";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
@@ -427,6 +428,7 @@ export default function InvoiceReports() {
         </style>
       </head>
       <body>
+        ${reportLogoHtml()}
         <h1>${company.name}</h1>
         <p class="subtitle">${title}</p>
         

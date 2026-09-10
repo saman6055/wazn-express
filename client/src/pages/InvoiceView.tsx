@@ -7,6 +7,7 @@ import { Printer, Download, ArrowRight, ArrowLeft, FileText, Loader2 } from "luc
 import { useRef } from "react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { BRAND_LOGO_URL } from "@/lib/brand";
+import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 
 export default function InvoiceView() {
   const { t, direction, isRTL, language } = useTranslation();
@@ -143,7 +144,7 @@ export default function InvoiceView() {
               {/* HEADER */}
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingBottom:'24px',borderBottom:`3px solid ${primaryColor}`,marginBottom:'28px' }}>
                 <div>
-                  {company.logoUrl && <img src={company.logoUrl} alt={company.name} style={{ height:'50px',marginBottom:'8px',objectFit:'contain' }} onError={(e) => { if (!e.currentTarget.src.endsWith(BRAND_LOGO_URL)) e.currentTarget.src = BRAND_LOGO_URL; }} />}
+                  {company.logoUrl && <img src={absoluteLogoUrl(company.logoUrl) || company.logoUrl} alt={company.name} style={{ height:'50px',marginBottom:'8px',objectFit:'contain' }} onError={(e) => { if (!e.currentTarget.src.endsWith(BRAND_LOGO_URL)) e.currentTarget.src = BRAND_LOGO_URL; }} />}
                   <h1 style={{ fontSize:'24px',fontWeight:700,color:primaryColor,marginBottom:'2px' }}>{companyDisplayName}</h1>
                   <p style={{ fontSize:'14px',color:'#94a3b8',marginBottom:'10px' }}>{companySecondaryName}</p>
                   <div style={{ fontSize:'11px',color:'#64748b',lineHeight:'1.8' }}>

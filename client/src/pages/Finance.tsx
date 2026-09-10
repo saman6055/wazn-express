@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { readFinanceLink } from "@shared/listLinks";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -366,7 +367,7 @@ export default function Finance() {
         </style>
       </head>
       <body>
-        <div class="header">
+        <div class="header">${reportLogoHtml()}
           <div class="company">${company.name}</div>
           <h1>${pickLang(language, { ku: "\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631", en: "Credit customers report", ar: "\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0623\u0635\u062d\u0627\u0628 \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u8d37\u65b9\u5ba2\u6237\u62a5\u544a" })}</h1>
           <div class="date">${fmtDate(new Date())}</div>
@@ -634,7 +635,7 @@ export default function Finance() {
         </style>
       </head>
       <body>
-        <div class="header">
+        <div class="header">${reportLogoHtml()}
           <h1>📊 ${pickLang(language, { ku: "ڕاپۆرتی حسابەکان", en: "Accounts report", ar: "تقرير الحسابات", zh: "账户报告" })}</h1>
           <p>${company.name} - ${fmtDate(new Date())}</p>
         </div>

@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { parseCSV, convertCSVToImportFormat, detectFileFormat, generateCSVTemplate } from "@/lib/csvParser";
@@ -421,7 +422,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
           </style>
         </head>
         <body>
-          <div class="header">
+          <div class="header">${reportLogoHtml()}
             <h1>${t("dataManagement.statisticsReport")}</h1>
             <p>${company.name} - ${currentDate}</p>
           </div>

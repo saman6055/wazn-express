@@ -1,4 +1,5 @@
 import { fmtDate } from "./numericDate";
+import { reportLogoHtml } from "./brand";
 /**
  * Batch label print — یەک لەیبڵ بۆ هەر کڕیار لە باچ (کۆی پاکەت، حەجم، کیلۆ، بارکۆد/QR، نرخ، ناوی کڕیار)
  */
@@ -121,6 +122,7 @@ export function generateBatchLabelsHtml(options: {
       ">
         ${t.showLogo ? `
           <div style="display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm;">
+            ${reportLogoHtml(undefined, 22)}
             <span style="font-weight: bold; color: ${t.primaryColor};">${company.name}</span>
           </div>
         ` : ""}

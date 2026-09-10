@@ -1,5 +1,6 @@
 import { Boxes, AlertTriangle } from "lucide-react";
 import { pickLang } from "@/lib/lang";
+import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
 import type { BoxInvoice } from "@shared/boxInvoice";
 
 /**
@@ -31,6 +32,7 @@ export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, lan
 
   return (
     <div className="space-y-3">
+      <PrintOnlyLogo />
       <div className="rounded-xl border border-border bg-card p-4">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>

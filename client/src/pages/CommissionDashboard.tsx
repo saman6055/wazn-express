@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
@@ -426,7 +427,7 @@ export default function CommissionDashboard() {
         </style>
       </head>
       <body>
-        <div class="header">
+        <div class="header">${reportLogoHtml()}
           <h1>🛍 ${t("commission.reportTitle")}</h1>
           <p>${company.name} - ${t("commission.managementSubtitle")}</p>
           <p>${t("commission.dateColumn")}: ${fmtDate(new Date())}</p>

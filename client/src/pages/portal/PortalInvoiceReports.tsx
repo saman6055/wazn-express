@@ -6,6 +6,7 @@ import { pickLang } from "@/lib/lang";
 import { invoiceState, isInvoiceOutstanding } from "@/lib/portalMoney";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { reportLogoHtml } from "@/lib/brand";
 import { 
   FileText, 
   TrendingUp, 
@@ -232,6 +233,7 @@ function ClassicPortalInvoiceReports() {
         </style>
       </head>
       <body>
+        ${reportLogoHtml()}
         <h1>${pickLang(language, { ku: "ڕاپۆرتی پسووڵەکانم", en: "My Invoice Report", ar: "تقرير فواتيري", zh: "我的发票报告" })} - ${selectedYear}</h1>
         <div class="summary">
           <div class="summary-card">

@@ -4,6 +4,8 @@ import { useParams, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import type { CompanyInfo } from "@/hooks/useCompanyInfo";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
+import { printWhenReady } from "@/lib/printWindow";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -282,7 +284,7 @@ function generatePrintContent(
       </style>
     </head>
     <body>
-      <div class="header">
+      <div class="header">${reportLogoHtml()}
         <h1>${company.name}</h1>
         <div class="subtitle">${pickLang(language, { ku: "ڕاپۆرتی", en: "Report", ar: "تقرير", zh: "报告" })} ${title}</div>
         <div class="batch-code">${pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}: ${batch?.batchCode || '-'}</div>
@@ -798,7 +800,7 @@ function openPrintWindow(content: string) {
   if (printWindow) {
     printWindow.document.write(content);
     printWindow.document.close();
-    setTimeout(() => printWindow.print(), 250);
+    printWhenReady(printWindow);
   }
 }
 

@@ -3,6 +3,8 @@
  * and generates HTML for printing. Used by LabelPrinting page and BatchFinancialReport modal.
  */
 
+import { reportLogoHtml } from "./brand";
+
 export interface LabelTemplateForPrint {
   widthMm?: number | null;
   heightMm?: number | null;
@@ -158,9 +160,7 @@ export function generateLabelsHtml(options: {
       ">
         ${t.showLogo ? `
           <div style="display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm;">
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="${t.primaryColor}" stroke-width="2">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"/>
-            </svg>
+            ${reportLogoHtml(undefined, 22)}
             <span style="font-weight: bold; color: ${t.primaryColor};">${company.name}</span>
           </div>
         ` : ""}

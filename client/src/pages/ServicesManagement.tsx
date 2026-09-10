@@ -3,6 +3,8 @@ import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
+import { printWhenReady } from "@/lib/printWindow";
 import { useTranslation } from "@/contexts/LanguageContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -301,7 +303,7 @@ export default function ServicesManagement() {
         </style>
       </head>
       <body>
-        <div class="header">
+        <div class="header">${reportLogoHtml()}
           <h1>${company.name}</h1>
           <p>${t('services.servicesReport')}</p>
           <p>${t('services.date')}: ${fmtDate(new Date())}</p>
@@ -361,7 +363,7 @@ export default function ServicesManagement() {
     if (printWindow) {
       printWindow.document.write(printContent);
       printWindow.document.close();
-      printWindow.print();
+      printWhenReady(printWindow);
     }
   };
   

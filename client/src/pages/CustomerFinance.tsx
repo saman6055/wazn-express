@@ -6,6 +6,7 @@ import { BoxInvoiceView } from "@/components/BoxInvoiceView";
 import { rowMeta } from "@shared/batchInvoice";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -942,7 +943,7 @@ export default function CustomerFinance() {
       <body>
         <div class="page">
           <!-- Header -->
-          <div class="header">
+          <div class="header">${reportLogoHtml()}
             <div class="header-content">
               <div class="company-name">${company.name}</div>
               <div class="report-title">${pickLang(language, { ku: "ڕاپۆرتی دارایی کڕیار", en: "Customer Financial Report", ar: "التقرير المالي للعميل", zh: "客户财务报告" })}</div>

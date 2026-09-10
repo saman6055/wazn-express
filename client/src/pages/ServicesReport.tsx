@@ -2,6 +2,8 @@ import { fmtDate, fmtMonth, fmtTime } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { reportLogoHtml } from "@/lib/brand";
+import { printWhenReady } from "@/lib/printWindow";
 import { useTranslation } from "@/contexts/LanguageContext";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -205,7 +207,7 @@ export default function ServicesReport() {
         </style>
       </head>
       <body>
-        <div class="header">
+        <div class="header">${reportLogoHtml(company.logoUrl)}
           <h1>🔧 ${pickLang(language, { ku: "ڕاپۆرتی دارایی خزمەتگوزارییەکان", en: "Services Financial Report", ar: "التقرير المالي للخدمات", zh: "服务财务报告" })}</h1>
           <div class="company">${company.name} - ${company.nameKu}</div>
           <div class="date">${pickLang(language, { ku: "بەرواری دروستکردن", en: "Generated", ar: "تاريخ الإنشاء", zh: "生成日期" })}: ${fmtDate(new Date())} - ${fmtTime(new Date())}</div>
@@ -316,7 +318,7 @@ export default function ServicesReport() {
     if (printWindow) {
       printWindow.document.write(printContent);
       printWindow.document.close();
-      printWindow.print();
+      printWhenReady(printWindow);
     }
   };
   

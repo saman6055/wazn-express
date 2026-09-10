@@ -3,6 +3,7 @@ import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
+import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
@@ -462,7 +463,7 @@ export default function FullPackageDashboard() {
         </style>
       </head>
       <body>
-        <div class="header">
+        <div class="header">${reportLogoHtml()}
           <h1>🛍️ ${t("fullPackage.reportTitle")}</h1>
           <p>${company.name} - ${t("fullPackage.managementSubtitle")}</p>
           <p>${t("fullPackage.dateColumn")}: ${fmtDate(new Date())}</p>

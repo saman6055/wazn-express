@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
+import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -141,6 +142,7 @@ export default function ProfitReports() {
   return (
     <DashboardLayout>
       <div className="space-y-6 p-6" dir={isRTL ? "rtl" : "ltr"}>
+        <PrintOnlyLogo />
         {/* Header */}
         <div className="bg-gradient-to-l from-violet-600 via-violet-700 to-indigo-800 rounded-2xl p-6 text-white shadow-xl">
           <div className="flex flex-wrap items-center justify-between gap-4">

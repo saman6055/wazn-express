@@ -1,5 +1,6 @@
 import type { CompanyInfo } from "@/hooks/useCompanyInfo";
 import { CONTACT_WEBSITE } from "@/constants/contactChannels";
+import { absoluteLogoUrl } from "./absoluteLogoUrl";
 
 /**
  * The Wazn Express mark, shipped inside every build (client/public/brand).
@@ -11,6 +12,21 @@ import { CONTACT_WEBSITE } from "@/constants/contactChannels";
  * the deploy itself. An uploaded logo still wins wherever one exists.
  */
 export const BRAND_LOGO_URL = "/brand/wazn-logo.png";
+
+/**
+ * The mark as an <img> for a report that prints from its own window.
+ *
+ * A print window is a blank document with no base URL of ours, so the address
+ * has to be absolute. Pass useCompanyInfo().logoUrl — the server has already
+ * blanked it if its file is gone — and the built-in mark stands in otherwise.
+ * The white tile is because the mark is black ink and several report headers
+ * are coloured.
+ */
+export function reportLogoHtml(logoUrl?: string | null, heightPx = 40): string {
+  const src = absoluteLogoUrl(logoUrl || BRAND_LOGO_URL);
+  if (!src) return "";
+  return `<img src="${src.replace(/"/g, "&quot;")}" alt="" style="height:${heightPx}px;width:auto;object-fit:contain;background:#fff;border-radius:6px;padding:3px 6px;vertical-align:middle;" />`;
+}
 
 /** How to find us, in one document's language — what a receipt prints at its foot. */
 export interface CompanyContact {

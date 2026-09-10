@@ -1,5 +1,6 @@
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
 import { trpc } from "@/lib/trpc";
 import { pickLang } from "@/lib/lang";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -131,6 +132,7 @@ export default function ProfitDashboardByType() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <PrintOnlyLogo />
         {/* Header */}
         <div className="bg-gradient-to-l from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white">
           <div className="flex items-center justify-between">
