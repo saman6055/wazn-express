@@ -32,8 +32,10 @@ function slice(src: string, start: string, end: string, label: string): string {
 const create = () =>
   slice(settleDb, "export async function createBoxSettlement", "\n/**", "createBoxSettlement");
 
+// The screen's sums live in parcelsForItems, which getBoxSettlementView calls;
+// the slice runs from there through the view.
 const view = () =>
-  slice(settleDb, "export async function getBoxSettlementView", "export interface SettlementLineInput", "view");
+  slice(settleDb, "async function parcelsForItems", "export interface SettlementLineInput", "view");
 
 describe("the money is written once, or not at all", () => {
   it("does everything inside one transaction", () => {

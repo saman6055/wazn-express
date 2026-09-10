@@ -1,4 +1,5 @@
 import { eq, and, or, desc, inArray, sql, gte, lte } from "drizzle-orm";
+import { SETTLED_SLACK_USD } from "@shared/archive";
 import { generateTransactionNumber } from "./utils.db";
 import { getDb } from "./connection";
 import {
@@ -125,37 +126,23 @@ export interface BoxSettlementView {
   accountBalanceUsd: number;
 }
 
+type SettlementDb = NonNullable<Awaited<ReturnType<typeof getDb>>>;
+type BoxItemWithPackage = {
+  item: typeof deliveryBoxItems.$inferSelect;
+  pkg: typeof packages.$inferSelect | null;
+};
+
 /**
- * Everything the settlement screen needs, in one call.
+ * What each item is charged, forgiven, paid and still owes: the payment
+ * screen's own sums.
  *
- * Deliberately one call: the screen opens at a counter with a customer
- * standing at it, and four round trips to fill in one table is four chances
- * to show half a number.
+ * Moved out of getBoxSettlementView unchanged, so the box list can ask the
+ * same question of many boxes at once (getBoxesPaidInFull) and the list and
+ * the screen can never disagree. Every figure is keyed on the item or its
+ * package or order, never on the box, so any set of items works. Returns one
+ * parcel per item, in the order given.
  */
-export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
-  const empty: BoxSettlementView = {
-    box: null, customer: null, parcels: [], settlements: [],
-    lastExchangeRate: null, accountBalanceUsd: 0,
-  };
-  const db = await getDb();
-  if (!db) return empty;
-
-  const [boxRow] = await db
-    .select({ box: deliveryBoxes, batchCode: batches.batchCode, customer: customers })
-    .from(deliveryBoxes)
-    .leftJoin(batches, eq(batches.id, deliveryBoxes.batchId))
-    .leftJoin(customers, eq(customers.id, deliveryBoxes.customerId))
-    .where(eq(deliveryBoxes.id, boxId))
-    .limit(1);
-  if (!boxRow?.box) return empty;
-
-  const items = await db
-    .select({ item: deliveryBoxItems, pkg: packages })
-    .from(deliveryBoxItems)
-    .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
-    .where(eq(deliveryBoxItems.boxId, boxId))
-    .orderBy(deliveryBoxItems.scannedAt);
-
+async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): Promise<BoxParcelView[]> {
   const packageIds = Array.from(new Set(
     items.map((r) => r.item.packageId).filter((id): id is number => !!id),
   ));
@@ -292,6 +279,86 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
         notChargedYet: !seenAnyCharge.has(key),
       };
     });
+
+  return parcels;
+}
+
+/**
+ * Which of these boxes the payment screen would call paid in full.
+ *
+ * The screen's own sums (parcelsForItems) for many boxes in three queries,
+ * and finishPaidBox's own test: a box with parcels, a confirmed payment on
+ * record, and nothing outstanding on any parcel. The box list archives what
+ * this returns, so a box the screen says is paid never stays in the list.
+ */
+export async function getBoxesPaidInFull(boxIds: number[]): Promise<Set<number>> {
+  const paid = new Set<number>();
+  const ids = Array.from(new Set(boxIds.map(Number))).filter((id) => id > 0);
+  if (ids.length === 0) return paid;
+  const db = await getDb();
+  if (!db) return paid;
+
+  const withPayment = await db
+    .selectDistinct({ boxId: boxSettlements.boxId })
+    .from(boxSettlements)
+    .where(and(inArray(boxSettlements.boxId, ids), eq(boxSettlements.status, "confirmed")));
+  const payingIds = withPayment.map((r) => Number(r.boxId));
+  if (payingIds.length === 0) return paid;
+
+  const items = await db
+    .select({ item: deliveryBoxItems, pkg: packages })
+    .from(deliveryBoxItems)
+    .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
+    .where(inArray(deliveryBoxItems.boxId, payingIds));
+  const parcels = await parcelsForItems(db, items);
+
+  const byBox = new Map<number, BoxParcelView[]>();
+  items.forEach((r, i) => {
+    const boxId = Number(r.item.boxId);
+    const list = byBox.get(boxId) ?? [];
+    list.push(parcels[i]);
+    byBox.set(boxId, list);
+  });
+  byBox.forEach((lines, boxId) => {
+    // Word for word the test finishPaidBox uses (server/lib/boxLifecycle.ts).
+    const paidInFull = lines.length > 0 && lines.every((p) => Number(p.outstandingUsd) <= SETTLED_SLACK_USD);
+    if (paidInFull) paid.add(boxId);
+  });
+  return paid;
+}
+
+/**
+ * Everything the settlement screen needs, in one call.
+ *
+ * Deliberately one call: the screen opens at a counter with a customer
+ * standing at it, and four round trips to fill in one table is four chances
+ * to show half a number.
+ */
+export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
+  const empty: BoxSettlementView = {
+    box: null, customer: null, parcels: [], settlements: [],
+    lastExchangeRate: null, accountBalanceUsd: 0,
+  };
+  const db = await getDb();
+  if (!db) return empty;
+
+  const [boxRow] = await db
+    .select({ box: deliveryBoxes, batchCode: batches.batchCode, customer: customers })
+    .from(deliveryBoxes)
+    .leftJoin(batches, eq(batches.id, deliveryBoxes.batchId))
+    .leftJoin(customers, eq(customers.id, deliveryBoxes.customerId))
+    .where(eq(deliveryBoxes.id, boxId))
+    .limit(1);
+  if (!boxRow?.box) return empty;
+
+  const items = await db
+    .select({ item: deliveryBoxItems, pkg: packages })
+    .from(deliveryBoxItems)
+    .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
+    .where(eq(deliveryBoxItems.boxId, boxId))
+    .orderBy(deliveryBoxItems.scannedAt);
+
+  const parcels = await parcelsForItems(db, items);
 
   const history = await db
     .select({ s: boxSettlements, staffName: users.name })

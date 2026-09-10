@@ -7,6 +7,7 @@ import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
 import { markLinkedOrdersDelivered } from "./packages.db";
 import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 import { boxSettlements, boxSettlementLines } from "../../drizzle/schema/finance.schema";
+import { getBoxesPaidInFull } from "./boxSettlement.db";
 import { archiveCutoff, SETTLED_SLACK_USD } from "@shared/archive";
 
 // ============ BOX CODE GENERATION ============
@@ -93,6 +94,10 @@ export async function getOpenBoxes(userId?: number): Promise<DeliveryBox[]> {
  * Used only to add: a box the screen cleared counts as paid and archived. A
  * box it did not clear falls back to the amounts exactly as before, so no box
  * already in the archive comes back.
+ *
+ * Cheap enough to run on every box, but blind to a parcel left off the
+ * receipt because nothing was due on it, and to a charge changed after
+ * payment. getBoxesPaidInFull sees both; the list uses it as well.
  */
 export function boxSettlementClearedSql() {
   const b = deliveryBoxes;
@@ -113,22 +118,21 @@ export function boxSettlementClearedSql() {
       SELECT 1 FROM ${i} WHERE ${i.boxId} = ${b.id}
         AND NOT EXISTS (
           SELECT 1 FROM ${l} INNER JOIN ${s} ON ${s.id} = ${l.settlementId}
-          WHERE ${l.boxItemId} = ${i.id} AND ${s.status} = 'confirmed' AND ${l.isHeld} = 0
+          WHERE ${s.boxId} = ${b.id} AND ${l.boxItemId} = ${i.id} AND ${s.status} = 'confirmed' AND ${l.isHeld} = 0
         )
     ))`;
 }
 
-/** For each box with a confirmed payment: did the payment screen clear it? */
+/**
+ * For each box with a confirmed payment: would the payment screen call it
+ * paid in full? The screen's own sums (getBoxesPaidInFull), not an
+ * approximation — the unpaid flash and the paid label read this.
+ */
 export async function getBoxesSettlementCleared(boxIds: number[]): Promise<Map<number, boolean>> {
   const out = new Map<number, boolean>();
   if (boxIds.length === 0) return out;
-  const db = await getDb();
-  if (!db) return out;
-  const rows = await db
-    .select({ id: deliveryBoxes.id, cleared: sql<number>`${boxSettlementClearedSql()}` })
-    .from(deliveryBoxes)
-    .where(inArray(deliveryBoxes.id, boxIds));
-  for (const r of rows) out.set(Number(r.id), Number(r.cleared) === 1);
+  const paid = await getBoxesPaidInFull(boxIds);
+  for (const id of boxIds) out.set(Number(id), paid.has(Number(id)));
   return out;
 }
 
@@ -191,10 +195,25 @@ export async function getAllDeliveryBoxes(filters?: {
    * prices add up to (boxSettlementClearedSql).
    */
   const settledSql = sql`COALESCE((SELECT SUM(COALESCE(${boxSettlements.paidUsd}, 0) + COALESCE(${boxSettlements.discountUsd}, 0)) FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id} AND ${boxSettlements.status} = 'confirmed'), 0)`;
-  const archivedSql = sql`(${deliveryBoxes.status} = 'cancelled'
+  let archivedSql = sql`(${deliveryBoxes.status} = 'cancelled'
     OR ${boxSettlementClearedSql()}
     OR (${settledSql} > 0 AND (COALESCE(${deliveryBoxes.totalValueUsd}, 0) <= 0 OR ${settledSql} + ${SETTLED_SLACK_USD} >= ${deliveryBoxes.totalValueUsd}))
     OR (${settledSql} <= 0 AND ${deliveryBoxes.status} IN ('delivered', 'cancelled') AND (${deliveryBoxes.updatedAt} IS NULL OR ${deliveryBoxes.updatedAt} < ${archiveCutoff()})))`;
+  /**
+   * Paid boxes the rules above miss, checked with the payment screen's own
+   * sums (getBoxesPaidInFull). A parcel with nothing due at the moment of
+   * payment is left off the receipt, so the rule above cannot clear its box,
+   * yet the screen says nothing is owed. Only boxes with a payment on record
+   * that nothing above has archived are checked — a handful.
+   */
+  if (filters?.archive) {
+    const hasPaymentSql = sql`EXISTS (SELECT 1 FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id} AND ${boxSettlements.status} = 'confirmed')`;
+    const stillListed = await db.select({ id: deliveryBoxes.id }).from(deliveryBoxes)
+      .where(sql`${hasPaymentSql} AND NOT ${archivedSql}`);
+    const paidIds = Array.from(await getBoxesPaidInFull(stillListed.map((r) => Number(r.id))));
+    if (paidIds.length > 0) archivedSql = sql`(${archivedSql} OR ${inArray(deliveryBoxes.id, paidIds)})`;
+  }
+
   const baseWhere = conditions.length > 0 ? and(...conditions) : undefined;
   if (filters?.archive === "exclude") conditions.push(sql`NOT ${archivedSql}`);
   else if (filters?.archive === "only") conditions.push(archivedSql);
