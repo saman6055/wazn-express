@@ -16,6 +16,8 @@
  * Discounts count as settled: forgiven money is not owed money.
  */
 
+import { ourDeliveryFee } from "@shared/deliveryFee";
+
 export const BOX_UNPAID_ALERT_DAYS = 5;
 
 const DAY_MS = 86_400_000;
@@ -47,7 +49,7 @@ export function boxUnpaidAlert(box: BoxAlertFacts, now: Date = new Date()): BoxU
 
   const outstanding =
     Math.round(
-      (num(box.totalValueUsd) + num(box.deliveryChargeUsd) - num(box.settledUsd) - num(box.settledDiscountUsd) + Number.EPSILON) * 100,
+      (num(box.totalValueUsd) + ourDeliveryFee(box.deliveryChargeUsd) - num(box.settledUsd) - num(box.settledDiscountUsd) + Number.EPSILON) * 100,
     ) / 100;
   if (outstanding <= 0.009) return null;
 

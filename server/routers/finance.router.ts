@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
 import { explainFigure, explainCashOnHand } from "@shared/financeExplain";
 import { partnerAccounts, reconcile, ownershipCheck, partnershipTotals, statement } from "@shared/partnerLedger";
@@ -1241,7 +1242,7 @@ export const customerBatchInvoiceRouter = router({
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "سندوق نەدۆزرایەوە" });
 
       const items = await db.getBoxItems(box.id);
-      return { box, invoice: buildBoxInvoice(items, box.deliveryChargeUsd) };
+      return { box, invoice: buildBoxInvoice(items, ourDeliveryFee(box.deliveryChargeUsd)) };
     }),
   /** Which batches this customer has anything in, newest first. */
   batchesForCustomer: staffProcedure

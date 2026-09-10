@@ -13,6 +13,7 @@
 import * as db from "../db";
 import { appLogger } from "../utils/logger";
 import { SETTLED_SLACK_USD } from "@shared/archive";
+import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
 import type { DeliveryBox } from "../../drizzle/schema/packages.schema";
 
 /**
@@ -24,6 +25,9 @@ import type { DeliveryBox } from "../../drizzle/schema/packages.schema";
  * Throws on failure; each caller decides what a failure means for it.
  */
 export async function chargeBoxDeliveryFee(box: DeliveryBox, userId: number): Promise<void> {
+  // Owner, 2026-09-10: the local delivery fee is the courier's, not ours —
+  // it does not go on the customer's account for now. See shared/deliveryFee.ts.
+  if (!DELIVERY_FEE_IN_OUR_ACCOUNTS) return;
   const deliveryCharge = Number(box.deliveryChargeUsd || 0);
   if (!(deliveryCharge > 0) || box.isCharged) return;
 

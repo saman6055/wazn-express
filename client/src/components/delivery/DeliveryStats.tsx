@@ -1,4 +1,5 @@
 import { useTranslation } from "@/contexts/LanguageContext";
+import { ourDeliveryFee } from "@shared/deliveryFee";
 import { Card } from "@/components/ui/card";
 import { Package, DollarSign, CheckCircle, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -44,7 +45,8 @@ export function DeliveryStats({ boxes, isLoading }: DeliveryStatsProps) {
 
   const totalBoxes = boxes.length;
   const totalValue = boxes.reduce(
-    (sum, b) => sum + Number(b.totalValueUsd || 0) + Number(b.deliveryChargeUsd || 0),
+    // The courier's fee is not our money for now — see shared/deliveryFee.ts.
+    (sum, b) => sum + Number(b.totalValueUsd || 0) + ourDeliveryFee(b.deliveryChargeUsd),
     0
   );
   const deliveredCount = boxes.filter((b) => b.status === "delivered").length;

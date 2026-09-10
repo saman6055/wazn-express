@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
 import * as bcrypt from "bcryptjs";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
@@ -178,7 +179,7 @@ export const customerPortalRouter = router({
         const items = await db.getBoxItems(box.id);
         // Customer edition: full-package cartons show their agreed price and
         // no weight. The staff box invoice (finance.router) shows everything.
-        return { box, invoice: buildBoxInvoice(items, box.deliveryChargeUsd, "—", { concealFullPackageSize: true }) };
+        return { box, invoice: buildBoxInvoice(items, ourDeliveryFee(box.deliveryChargeUsd), "—", { concealFullPackageSize: true }) };
       }),
     /**
      * The photo and signature taken when a box was handed over.

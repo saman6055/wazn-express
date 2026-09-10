@@ -33,8 +33,12 @@ describe("the forgotten-box flag", () => {
     expect(boxUnpaidAlert(box({ status: "cancelled", createdAt: "2026-01-01" }), NOW)).toBeNull();
   });
 
-  it("the delivery charge is owed money too", () => {
+  it("the courier's delivery fee is not money owed to us, for now", () => {
+    // Owner, 2026-09-10 — see shared/deliveryFee.ts. The day that switch is
+    // turned back on, this expects the fee to be owed again.
     const a = boxUnpaidAlert(box({ status: "delivered", totalValueUsd: "0", deliveryChargeUsd: "5.00" }), NOW);
-    expect(a?.outstandingUsd).toBe(5);
+    expect(a).toBeNull();
+    const withGoods = boxUnpaidAlert(box({ status: "delivered", deliveryChargeUsd: "3.50" }), NOW);
+    expect(withGoods?.outstandingUsd).toBe(50.71);
   });
 });

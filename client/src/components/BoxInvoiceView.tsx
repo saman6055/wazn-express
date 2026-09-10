@@ -100,14 +100,18 @@ export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, lan
             </dt>
             <dd className="font-mono">{money(totals.goods)}</dd>
           </div>
-          <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">
-              {/* Its own line, because it is charged for the box rather than
-                  for anything in it. */}
-              {pickLang(language, { ku: "کرێی گەیاندنی سندوق", en: "Box delivery", ar: "توصيل الصندوق", zh: "箱子配送费" })}
-            </dt>
-            <dd className="font-mono">{money(totals.delivery)}</dd>
-          </div>
+          {/* Its own line, because it is charged for the box rather than for
+              anything in it — and only when it is ours to charge. While the
+              fee is the courier's (shared/deliveryFee.ts) it is zero here,
+              and a "$0.00 delivery" line would read as a free delivery. */}
+          {totals.delivery > 0 && (
+            <div className="flex items-center justify-between gap-2">
+              <dt className="text-muted-foreground">
+                {pickLang(language, { ku: "کرێی گەیاندنی سندوق", en: "Box delivery", ar: "توصيل الصندوق", zh: "箱子配送费" })}
+              </dt>
+              <dd className="font-mono">{money(totals.delivery)}</dd>
+            </div>
+          )}
           <div className="flex items-center justify-between gap-2 border-t border-border pt-2">
             <dt className="text-base font-semibold">
               {pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}

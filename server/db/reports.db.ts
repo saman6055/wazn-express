@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getTotalDebtAmount } from './finance.db';
@@ -2559,14 +2560,16 @@ export async function getComprehensiveDashboardStats(startDate: Date, endDate: D
   const fpRevenue = fpProfit?.fullPackage?.profit ?? 0;
   const commissionRevenue = fpProfit?.commission?.totalCommission ?? 0;
   const serviceRevenue = serviceProfit?.profit ?? 0;
-  const deliveryRevenue = deliveryBoxProfit?.totalProfit ?? 0;
+  // The delivery fee is the courier's for now (shared/deliveryFee.ts), so
+  // what is left of it after the courier's cost is not our revenue either.
+  const deliveryRevenue = DELIVERY_FEE_IN_OUR_ACCOUNTS ? (deliveryBoxProfit?.totalProfit ?? 0) : 0;
   const totalGrossRevenue = batchRevenue + fpRevenue + commissionRevenue + serviceRevenue + deliveryRevenue;
   const totalExpenses = expenseBreakdown?.total ?? 0;
   const netProfit = totalGrossRevenue - totalExpenses;
   const profitMargin = totalGrossRevenue > 0 ? (netProfit / totalGrossRevenue) * 100 : 0;
 
   return {
-    revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit?.fullPackage }, commission: { ...fpProfit?.commission }, service: serviceProfit, deliveryBox: deliveryBoxProfit, totalRevenue: totalGrossRevenue },
+    revenueBySource: { batchProfit: { air_regular: batchProfit.air_regular, air_irregular: batchProfit.air_irregular, sea: batchProfit.sea, total: batchRevenue }, fullPackage: { ...fpProfit?.fullPackage }, commission: { ...fpProfit?.commission }, service: serviceProfit, deliveryBox: DELIVERY_FEE_IN_OUR_ACCOUNTS ? deliveryBoxProfit : defaultDeliveryBox, totalRevenue: totalGrossRevenue },
     expenseBreakdown,
     profitLoss: { totalRevenue: totalGrossRevenue, totalExpenses, netProfit, profitMargin, isProfit: netProfit >= 0 },
     monthlyTrend,
