@@ -1,3 +1,4 @@
+import { statusChip, statusDot } from "@/lib/statusTone";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -61,15 +62,15 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 
 const statusColors: Record<string, string> = {
-  registered: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
-  in_batch: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
-  in_transit: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
-  customs_processing: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
-  ready_for_delivery: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
-  out_for_delivery: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
-  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
-  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
-  returned: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
+  registered: statusChip("registered", "package"),
+  in_batch: statusChip("in_batch", "package"),
+  in_transit: statusChip("in_transit", "package"),
+  customs_processing: statusChip("customs_processing", "package"),
+  ready_for_delivery: statusChip("ready_for_delivery", "package"),
+  out_for_delivery: statusChip("out_for_delivery", "package"),
+  delivered: statusChip("delivered", "package"),
+  cancelled: statusChip("cancelled", "package"),
+  returned: statusChip("returned", "package"),
 };
 
 /**
@@ -296,7 +297,7 @@ const PackageTableRow = memo(function PackageTableRow({
                 onClick={() => option.value !== pkg.status && onStatusChange(pkg, option.value)}
                 className={pkg.status === option.value ? "bg-accent" : ""}
               >
-                <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                <span className={`w-2 h-2 rounded-full me-2 ${statusDot(option.value, "package")}`} />
                 {option.label}
                 {pkg.status === option.value && " ✓"}
               </DropdownMenuItem>
@@ -1711,7 +1712,7 @@ const [, setLocation] = useLocation();
                 {statusOptionsFor(language).map((option) => (
                   <SelectItem key={option.value} value={option.value}>
                     <div className="flex items-center gap-2">
-                      <span className={`w-2 h-2 rounded-full ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                      <span className={`w-2 h-2 rounded-full ${statusDot(option.value, "package")}`} />
                       {option.label}
                     </div>
                   </SelectItem>

@@ -1,3 +1,4 @@
+import { statusChip, TONE_DOT } from "@/lib/statusTone";
 import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -132,24 +133,24 @@ export default function UnifiedOrdersDashboard() {
   ];
 
   const statusData = [
-    { name: pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' }), value: stats.pending, icon: Clock, color: 'bg-yellow-500' },
-    { name: pickLang(language, { ku: 'لە ڕێگا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }), value: stats.inTransit, icon: Truck, color: 'bg-blue-500' },
-    { name: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }), value: stats.delivered, icon: CheckCircle, color: 'bg-green-500' },
+    { name: pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' }), value: stats.pending, icon: Clock, color: TONE_DOT.waiting },
+    { name: pickLang(language, { ku: 'لە ڕێگا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }), value: stats.inTransit, icon: Truck, color: TONE_DOT.progress },
+    { name: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }), value: stats.delivered, icon: CheckCircle, color: TONE_DOT.success },
   ];
 
   const getStatusBadge = (status: string) => {
     const statusConfig: Record<string, { label: string; className: string }> = {
-      pending: { label: pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' }), className: 'bg-yellow-100 dark:bg-yellow-950/40 text-yellow-800 dark:text-yellow-200' },
-      quoted: { label: pickLang(language, { ku: 'نرخدانراو', en: 'Quoted', ar: 'تم التسعير', zh: '已报价' }), className: 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200' },
-      approved: { label: pickLang(language, { ku: 'پەسەندکراو', en: 'Approved', ar: 'تمت الموافقة', zh: '已批准' }), className: 'bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200' },
-      purchasing: { label: pickLang(language, { ku: 'لە کڕیندا', en: 'Purchasing', ar: 'جاري الشراء', zh: '采购中' }), className: 'bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200' },
-      purchased: { label: pickLang(language, { ku: 'کڕدرا', en: 'Purchased', ar: 'تم الشراء', zh: '已采购' }), className: 'bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200' },
-      arrived_china: { label: pickLang(language, { ku: 'گەیشتە چین', en: 'Arrived in China', ar: 'وصل إلى الصين', zh: '到达中国' }), className: 'bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200' },
-      in_transit: { label: pickLang(language, { ku: 'لە ڕێگا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }), className: 'bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200' },
-      delivered: { label: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }), className: 'bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200' },
-      cancelled: { label: pickLang(language, { ku: 'هەڵوەشێندراوە', en: 'Cancelled', ar: 'ملغى', zh: '已取消' }), className: 'bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200' },
+      pending: { label: pickLang(language, { ku: 'چاوەڕوان', en: 'Pending', ar: 'قيد الانتظار', zh: '待处理' }), className: statusChip('pending', 'order') },
+      quoted: { label: pickLang(language, { ku: 'نرخدانراو', en: 'Quoted', ar: 'تم التسعير', zh: '已报价' }), className: statusChip('quoted', 'order') },
+      approved: { label: pickLang(language, { ku: 'پەسەندکراو', en: 'Approved', ar: 'تمت الموافقة', zh: '已批准' }), className: statusChip('approved', 'order') },
+      purchasing: { label: pickLang(language, { ku: 'لە کڕیندا', en: 'Purchasing', ar: 'جاري الشراء', zh: '采购中' }), className: statusChip('purchasing', 'order') },
+      purchased: { label: pickLang(language, { ku: 'کڕدرا', en: 'Purchased', ar: 'تم الشراء', zh: '已采购' }), className: statusChip('purchased', 'order') },
+      arrived_china: { label: pickLang(language, { ku: 'گەیشتە چین', en: 'Arrived in China', ar: 'وصل إلى الصين', zh: '到达中国' }), className: statusChip('arrived_china', 'order') },
+      in_transit: { label: pickLang(language, { ku: 'لە ڕێگا', en: 'In Transit', ar: 'في الطريق', zh: '运输中' }), className: statusChip('in_transit', 'order') },
+      delivered: { label: pickLang(language, { ku: 'گەیەندرا', en: 'Delivered', ar: 'تم التسليم', zh: '已送达' }), className: statusChip('delivered', 'order') },
+      cancelled: { label: pickLang(language, { ku: 'هەڵوەشێندراوە', en: 'Cancelled', ar: 'ملغى', zh: '已取消' }), className: statusChip('cancelled', 'order') },
     };
-    const config = statusConfig[status] || { label: status, className: 'bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200' };
+    const config = statusConfig[status] || { label: status, className: statusChip(status, 'order') };
     return <Badge className={config.className}>{config.label}</Badge>;
   };
 

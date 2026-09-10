@@ -7,29 +7,22 @@ import type { DashboardFigureId } from "@shared/dashboardExplain";
 import { Sparkline } from "./Sparkline";
 import { CountUp } from "@/components/CountUp";
 
+/**
+ * A money figure at the top of a dashboard — the sibling of StatsCard, with
+ * the same calm tile and the same value size, so the two rows read as one set
+ * instead of two designs stacked on each other.
+ */
 const colorStyles = {
-  green: {
-    icon: "from-green-500 to-emerald-600",
-    iconShadow: "shadow-green-500/25",
-  },
-  blue: {
-    icon: "from-blue-500 to-indigo-600",
-    iconShadow: "shadow-blue-500/25",
-  },
-  purple: {
-    icon: "from-purple-500 to-violet-600",
-    iconShadow: "shadow-purple-500/25",
-  },
-  red: {
-    icon: "from-red-500 to-rose-600",
-    iconShadow: "shadow-red-500/25",
-  },
+  green: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  blue: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+  purple: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
+  red: "bg-red-100 text-red-700 dark:bg-red-950/40 dark:text-red-300",
 } as const;
 
 const sparkColor = {
-  green: "text-green-500",
-  blue: "text-blue-500",
-  purple: "text-purple-500",
+  green: "text-emerald-500",
+  blue: "text-sky-500",
+  purple: "text-violet-500",
   red: "text-red-500",
 } as const;
 
@@ -61,7 +54,6 @@ export const FinancialCard = memo(function FinancialCard({
   trend,
   figure,
 }: FinancialCardProps) {
-  const styles = colorStyles[color];
   const amount = (
     <>
       {prefix}
@@ -70,13 +62,13 @@ export const FinancialCard = memo(function FinancialCard({
   );
 
   return (
-    <Card className="pro-stat-card overflow-hidden transition-all duration-300 hover:shadow-md">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between mb-3">
+    <Card className="gap-0 overflow-hidden py-0 shadow-sm transition-colors hover:border-primary/30">
+      <CardContent className="p-4">
+        <div className="mb-2 flex items-start justify-between gap-3">
           <div
             className={cn(
-              "flex h-11 w-11 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg",
-              styles.icon
+              "flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:size-5",
+              colorStyles[color]
             )}
           >
             {icon}
@@ -84,7 +76,7 @@ export const FinancialCard = memo(function FinancialCard({
           {change !== undefined && !isDebt && (
             <div
               className={cn(
-                "flex items-center gap-1 text-sm font-medium",
+                "flex items-center gap-1 text-sm font-medium tabular-nums",
                 change >= 0 ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"
               )}
             >
@@ -93,10 +85,10 @@ export const FinancialCard = memo(function FinancialCard({
             </div>
           )}
         </div>
-        <p className="mb-1 text-sm font-medium text-muted-foreground">{title}</p>
+        <p className="mb-1 truncate text-sm font-medium text-muted-foreground" title={title}>{title}</p>
         <p
           className={cn(
-            "text-2xl font-bold tracking-tight",
+            "truncate text-2xl font-semibold tracking-tight tabular-nums",
             isDebt && "text-red-600 dark:text-red-400"
           )}
         >

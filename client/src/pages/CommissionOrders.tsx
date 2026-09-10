@@ -1,3 +1,4 @@
+import { statusChip, statusDot } from "@/lib/statusTone";
 import { fmtDate } from "@/lib/numericDate";
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
@@ -62,16 +63,16 @@ import { useTranslation } from "@/contexts/LanguageContext";
 
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
-  approved: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
-  ordered: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
-  tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
-  in_china_warehouse: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
-  in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200",
-  in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
-  arrived: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200",
-  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
-  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
+  pending: statusChip("pending", "order"),
+  approved: statusChip("approved", "order"),
+  ordered: statusChip("ordered", "order"),
+  tracking_added: statusChip("tracking_added", "order"),
+  in_china_warehouse: statusChip("in_china_warehouse", "order"),
+  in_batch: statusChip("in_batch", "order"),
+  in_transit: statusChip("in_transit", "order"),
+  arrived: statusChip("arrived", "order"),
+  delivered: statusChip("delivered", "order"),
+  cancelled: statusChip("cancelled", "order"),
 };
 
 /**
@@ -722,7 +723,7 @@ export default function CommissionOrders() {
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
                             <button
-                              className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusColors[order.status] || "bg-gray-100 dark:bg-gray-950/40"}`}
+                              className={`px-2 py-1 rounded-full text-xs font-medium cursor-pointer hover:ring-2 hover:ring-primary/50 transition-all flex items-center gap-1 ${statusChip(order.status, "order")}`}
                             >
                               {statusLabels[order.status] || order.status}
                               <ChevronDown className="h-3 w-3" />
@@ -742,7 +743,7 @@ export default function CommissionOrders() {
                                 }}
                                 className={order.status === option.value ? "bg-accent" : ""}
                               >
-                                <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                                <span className={`w-2 h-2 rounded-full me-2 ${statusDot(option.value, "order")}`} />
                                 {option.label}
                                 {order.status === option.value && " ✓"}
                               </DropdownMenuItem>

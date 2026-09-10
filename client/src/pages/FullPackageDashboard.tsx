@@ -1,3 +1,4 @@
+import { statusChip, statusDot } from "@/lib/statusTone";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
@@ -69,16 +70,16 @@ import { pickLang } from "@/lib/lang";
 import { PlatformChip } from "@/components/PlatformChip";
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
-  approved: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
-  ordered: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
-  tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
-  in_china_warehouse: "bg-purple-100 dark:bg-purple-950/40 text-purple-800 dark:text-purple-200",
-  in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200",
-  in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
-  arrived: "bg-teal-100 dark:bg-teal-950/40 text-teal-800 dark:text-teal-200",
-  delivered: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
-  cancelled: "bg-red-100 dark:bg-red-950/40 text-red-800 dark:text-red-200",
+  pending: statusChip("pending", "order"),
+  approved: statusChip("approved", "order"),
+  ordered: statusChip("ordered", "order"),
+  tracking_added: statusChip("tracking_added", "order"),
+  in_china_warehouse: statusChip("in_china_warehouse", "order"),
+  in_batch: statusChip("in_batch", "order"),
+  in_transit: statusChip("in_transit", "order"),
+  arrived: statusChip("arrived", "order"),
+  delivered: statusChip("delivered", "order"),
+  cancelled: statusChip("cancelled", "order"),
 };
 
 type SortField = "date" | "purchase" | "selling" | "profit" | "customer";
@@ -597,7 +598,7 @@ export default function FullPackageDashboard() {
               </DropdownMenu>
               
               <Link href="/full-package/bulk-create?type=full_package">
-                <Button variant="outline" className="bg-white/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 border-emerald-300 dark:border-emerald-800/60">
+                <Button variant="outline" className="bg-white/80 dark:bg-card/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/60">
                   <PackagePlus className="h-4 w-4 ms-2" />
                   {t("fullPackage.bulkCreate")}
                 </Button>
@@ -1165,7 +1166,7 @@ export default function FullPackageDashboard() {
                                   }}
                                   className={order.status === option.value ? "bg-accent" : ""}
                                 >
-                                  <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                                  <span className={`w-2 h-2 rounded-full me-2 ${statusDot(option.value, "order")}`} />
                                   {option.label}
                                   {order.status === option.value && " ✓"}
                                 </DropdownMenuItem>

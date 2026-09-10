@@ -6,20 +6,28 @@ import type { DashboardFigureId } from "@shared/dashboardExplain";
 import { Sparkline } from "./Sparkline";
 import { CountUp } from "@/components/CountUp";
 
+/**
+ * A figure at the top of a dashboard.
+ *
+ * Calm on purpose: staff read these all day. The icon sits on a soft tint of
+ * its colour instead of a saturated gradient with a coloured shadow that
+ * grew on hover, and the value is the same size and weight as its sibling
+ * FinancialCard, so two rows of cards read as one set.
+ */
 const colorStyles = {
-  blue: "from-blue-500 to-blue-600",
-  emerald: "from-emerald-500 to-emerald-600",
-  amber: "from-amber-500 to-amber-600",
-  green: "from-green-500 to-green-600",
-  purple: "from-purple-500 to-purple-600",
+  blue: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
+  emerald: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  amber: "bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-300",
+  green: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
+  purple: "bg-violet-100 text-violet-700 dark:bg-violet-950/40 dark:text-violet-300",
 } as const;
 
 const sparkColor = {
-  blue: "text-blue-500",
+  blue: "text-sky-500",
   emerald: "text-emerald-500",
   amber: "text-amber-500",
-  green: "text-green-500",
-  purple: "text-purple-500",
+  green: "text-emerald-500",
+  purple: "text-violet-500",
 } as const;
 
 export type StatsCardColor = keyof typeof colorStyles;
@@ -51,18 +59,16 @@ export const StatsCard = memo(function StatsCard({
   trend,
   figure,
 }: StatsCardProps) {
-  const gradient = colorStyles[color];
-
   return (
-    <Card className="pro-stat-card overflow-hidden transition-all duration-300 hover:shadow-md group">
-      <CardContent className="p-5">
-        <div className="flex items-start justify-between">
-          <div className="space-y-1 min-w-0 flex-1">
-            <p className="text-sm font-medium text-muted-foreground">{title}</p>
+    <Card className="gap-0 overflow-hidden py-0 shadow-sm transition-colors hover:border-primary/30">
+      <CardContent className="p-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0 flex-1 space-y-1">
+            <p className="truncate text-sm font-medium text-muted-foreground" title={title}>{title}</p>
             {isLoading ? (
-              <div className="h-9 w-24 animate-pulse rounded-md bg-muted" />
+              <div className="h-8 w-24 animate-pulse rounded-md bg-muted" />
             ) : (
-              <p className="text-3xl font-bold tracking-tight">
+              <p className="truncate text-2xl font-semibold tracking-tight tabular-nums">
                 {figure ? (
                   <ExplainableStat figure={figure} value={value}>
                     <CountUp value={value} />
@@ -73,13 +79,13 @@ export const StatsCard = memo(function StatsCard({
               </p>
             )}
             {description && (
-              <p className="text-xs text-muted-foreground">{description}</p>
+              <p className="truncate text-xs text-muted-foreground" title={description}>{description}</p>
             )}
           </div>
           <div
             className={cn(
-              "flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br text-white shadow-lg transition-transform duration-300 group-hover:scale-105",
-              gradient
+              "flex size-10 shrink-0 items-center justify-center rounded-lg [&_svg]:size-5",
+              colorStyles[color]
             )}
           >
             {icon}

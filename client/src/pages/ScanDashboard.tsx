@@ -141,7 +141,7 @@ export default function ScanDashboard() {
           {/* Charts Section */}
           <div className="grid lg:grid-cols-2 gap-6 mb-8">
             {/* Pie Chart - Module Distribution */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-card/80 backdrop-blur">
               <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-purple-400 to-purple-600 rounded-lg">
@@ -193,7 +193,7 @@ export default function ScanDashboard() {
             </Card>
             
             {/* Area Chart - Daily Trend */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-card/80 backdrop-blur">
               <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-cyan-400 to-cyan-600 rounded-lg">
@@ -244,7 +244,7 @@ export default function ScanDashboard() {
           {/* Stats and Quick Actions */}
           <div className="grid lg:grid-cols-3 gap-6 mb-8">
             {/* Today's Performance */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur lg:col-span-2">
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-card/80 backdrop-blur lg:col-span-2">
               <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg">
@@ -332,7 +332,7 @@ export default function ScanDashboard() {
           {/* Recent Scans and Alerts */}
           <div className="grid lg:grid-cols-2 gap-6">
             {/* Recent Scans */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-card/80 backdrop-blur">
               <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-3">
@@ -397,7 +397,7 @@ export default function ScanDashboard() {
             </Card>
             
             {/* Alerts & Missing Info */}
-            <Card className="border-0 shadow-xl bg-white/80 backdrop-blur">
+            <Card className="border-0 shadow-xl bg-white/80 dark:bg-card/80 backdrop-blur">
               <CardHeader className="border-b border-slate-100 dark:border-slate-800/60">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-gradient-to-br from-amber-400 to-orange-500 rounded-lg">

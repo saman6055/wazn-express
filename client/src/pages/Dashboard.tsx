@@ -1,3 +1,4 @@
+import { statusDot, statusTone, TONE_BG } from "@/lib/statusTone";
 import { RegistrationsSummaryCard } from "@/components/dashboard/RegistrationsSummaryCard";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -1370,14 +1371,14 @@ function QuickActionButton({
   color: string;
 }) {
   const colorStyles: Record<string, string> = {
-    blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 group-hover:bg-blue-200',
-    emerald: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 group-hover:bg-emerald-200',
-    purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 group-hover:bg-purple-200',
-    amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 group-hover:bg-amber-200',
-    green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 group-hover:bg-green-200',
-    red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 group-hover:bg-red-200',
-    indigo: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 group-hover:bg-indigo-200',
-    slate: 'bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400 group-hover:bg-slate-200',
+    blue: 'bg-blue-100 text-blue-600 dark:bg-blue-900/30 dark:text-blue-400 group-hover:bg-blue-200 dark:group-hover:bg-blue-900/50',
+    emerald: 'bg-emerald-100 text-emerald-600 dark:bg-emerald-900/30 dark:text-emerald-400 group-hover:bg-emerald-200 dark:group-hover:bg-emerald-900/50',
+    purple: 'bg-purple-100 text-purple-600 dark:bg-purple-900/30 dark:text-purple-400 group-hover:bg-purple-200 dark:group-hover:bg-purple-900/50',
+    amber: 'bg-amber-100 text-amber-600 dark:bg-amber-900/30 dark:text-amber-400 group-hover:bg-amber-200 dark:group-hover:bg-amber-900/50',
+    green: 'bg-green-100 text-green-600 dark:bg-green-900/30 dark:text-green-400 group-hover:bg-green-200 dark:group-hover:bg-green-900/50',
+    red: 'bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 group-hover:bg-red-200 dark:group-hover:bg-red-900/50',
+    indigo: 'bg-indigo-100 text-indigo-600 dark:bg-indigo-900/30 dark:text-indigo-400 group-hover:bg-indigo-200 dark:group-hover:bg-indigo-900/50',
+    slate: 'bg-slate-100 text-slate-600 dark:bg-slate-900/30 dark:text-slate-400 group-hover:bg-slate-200 dark:group-hover:bg-slate-900/50',
   };
 
   return (
@@ -1397,12 +1398,12 @@ const StatusBar = memo(function StatusBar({ status, count, total, language }: { 
   const percentage = total > 0 ? Math.round((count / total) * 100) : 0;
 
   const statusConfig: Record<string, { color: string; bg: string }> = {
-    delivered: { color: 'bg-green-500', bg: 'bg-green-100 dark:bg-green-900/30' },
-    in_transit: { color: 'bg-amber-500', bg: 'bg-amber-100 dark:bg-amber-900/30' },
-    customs_processing: { color: 'bg-purple-500', bg: 'bg-purple-100 dark:bg-purple-900/30' },
-    registered: { color: 'bg-blue-500', bg: 'bg-blue-100 dark:bg-blue-900/30' },
-    cancelled: { color: 'bg-red-500', bg: 'bg-red-100 dark:bg-red-900/30' },
-    arrived: { color: 'bg-teal-500', bg: 'bg-teal-100 dark:bg-teal-900/30' },
+    delivered: { color: statusDot('delivered', 'package'), bg: TONE_BG[statusTone('delivered', 'package')] },
+    in_transit: { color: statusDot('in_transit', 'package'), bg: TONE_BG[statusTone('in_transit', 'package')] },
+    customs_processing: { color: statusDot('customs_processing', 'package'), bg: TONE_BG[statusTone('customs_processing', 'package')] },
+    registered: { color: statusDot('registered', 'package'), bg: TONE_BG[statusTone('registered', 'package')] },
+    cancelled: { color: statusDot('cancelled', 'package'), bg: TONE_BG[statusTone('cancelled', 'package')] },
+    arrived: { color: statusDot('arrived', 'package'), bg: TONE_BG[statusTone('arrived', 'package')] },
   };
 
   const config = statusConfig[status] || statusConfig.registered;

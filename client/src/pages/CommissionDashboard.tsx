@@ -1,3 +1,4 @@
+import { statusChip, statusDot } from "@/lib/statusTone";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
@@ -67,16 +68,16 @@ import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 
 const statusColors: Record<string, string> = {
-  pending: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
-  pending_quote: "bg-amber-100 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200",
-  ordered: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
-  tracking_added: "bg-cyan-100 dark:bg-cyan-950/40 text-cyan-800 dark:text-cyan-200",
-  in_batch: "bg-violet-100 dark:bg-violet-950/40 text-violet-800 dark:text-violet-200",
-  in_transit: "bg-orange-100 dark:bg-orange-950/40 text-orange-800 dark:text-orange-200",
-  shipped: "bg-indigo-100 dark:bg-indigo-950/40 text-indigo-800 dark:text-indigo-200",
-  delivered: "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-800 dark:text-emerald-200",
-  completed: "bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200",
-  cancelled: "bg-gray-100 dark:bg-gray-950/40 text-gray-800 dark:text-gray-200",
+  pending: statusChip("pending", "order"),
+  pending_quote: statusChip("pending_quote", "order"),
+  ordered: statusChip("ordered", "order"),
+  tracking_added: statusChip("tracking_added", "order"),
+  in_batch: statusChip("in_batch", "order"),
+  in_transit: statusChip("in_transit", "order"),
+  shipped: statusChip("shipped", "order"),
+  delivered: statusChip("delivered", "order"),
+  completed: statusChip("completed", "order"),
+  cancelled: statusChip("cancelled", "order"),
 };
 
 type SortField = "date" | "itemPrice" | "commission" | "total" | "customer";
@@ -563,7 +564,7 @@ export default function CommissionDashboard() {
               <Button
                 variant="outline"
                 onClick={() => navigate("/commission/bulk-create?type=commission")}
-                className="bg-white/80 text-amber-700 dark:text-amber-300 hover:bg-amber-50 border-amber-300 dark:border-amber-800/60"
+                className="bg-white/80 dark:bg-card/80 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-300 dark:border-amber-800/60"
               >
                 <PackagePlus className="h-4 w-4 ms-2" />
                 {t("commission.bulkCreate")}
@@ -1101,7 +1102,7 @@ export default function CommissionDashboard() {
                                   }}
                                   className={order.status === option.value ? "bg-accent" : ""}
                                 >
-                                  <span className={`w-2 h-2 rounded-full me-2 ${statusColors[option.value]?.split(" ")[0] || "bg-gray-300"}`} />
+                                  <span className={`w-2 h-2 rounded-full me-2 ${statusDot(option.value, "order")}`} />
                                   {option.label}
                                   {order.status === option.value && " ✓"}
                                 </DropdownMenuItem>

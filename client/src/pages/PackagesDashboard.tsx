@@ -1,3 +1,4 @@
+import { statusBgText } from "@/lib/statusTone";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -43,15 +44,15 @@ import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
  * locale files; nothing reads them here any more.
  */
 const statusColors: Record<string, { bg: string; text: string }> = {
-  registered: { bg: "bg-blue-100 dark:bg-blue-950/40", text: "text-blue-800 dark:text-blue-200" },
-  in_batch: { bg: "bg-purple-100 dark:bg-purple-950/40", text: "text-purple-800 dark:text-purple-200" },
-  in_transit: { bg: "bg-amber-100 dark:bg-amber-950/40", text: "text-amber-800 dark:text-amber-200" },
-  customs_processing: { bg: "bg-orange-100 dark:bg-orange-950/40", text: "text-orange-800 dark:text-orange-200" },
-  ready_for_delivery: { bg: "bg-cyan-100 dark:bg-cyan-950/40", text: "text-cyan-800 dark:text-cyan-200" },
-  out_for_delivery: { bg: "bg-indigo-100 dark:bg-indigo-950/40", text: "text-indigo-800 dark:text-indigo-200" },
-  delivered: { bg: "bg-green-100 dark:bg-green-950/40", text: "text-green-800 dark:text-green-200" },
-  cancelled: { bg: "bg-red-100 dark:bg-red-950/40", text: "text-red-800 dark:text-red-200" },
-  returned: { bg: "bg-gray-100 dark:bg-gray-950/40", text: "text-gray-800 dark:text-gray-200" },
+  registered: statusBgText("registered", "package"),
+  in_batch: statusBgText("in_batch", "package"),
+  in_transit: statusBgText("in_transit", "package"),
+  customs_processing: statusBgText("customs_processing", "package"),
+  ready_for_delivery: statusBgText("ready_for_delivery", "package"),
+  out_for_delivery: statusBgText("out_for_delivery", "package"),
+  delivered: statusBgText("delivered", "package"),
+  cancelled: statusBgText("cancelled", "package"),
+  returned: statusBgText("returned", "package"),
 };
 
 const shippingTypeConfig: Record<string, { icon: typeof Plane; color: string; labelKey: string }> = {
@@ -134,7 +135,7 @@ const [, setLocation] = useLocation();
 
         {/* Stats Cards */}
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100/50 border-blue-200 dark:border-blue-800/60">
+          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100/50 dark:to-blue-950/20 border-blue-200 dark:border-blue-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -148,7 +149,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-amber-100/50 border-amber-200 dark:border-amber-800/60">
+          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-amber-100/50 dark:to-amber-950/20 border-amber-200 dark:border-amber-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -162,7 +163,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-purple-50 dark:from-purple-950/40 to-purple-100/50 border-purple-200 dark:border-purple-800/60">
+          <Card className="bg-gradient-to-br from-purple-50 dark:from-purple-950/40 to-purple-100/50 dark:to-purple-950/20 border-purple-200 dark:border-purple-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -176,7 +177,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-orange-50 dark:from-orange-950/40 to-orange-100/50 border-orange-200 dark:border-orange-800/60">
+          <Card className="bg-gradient-to-br from-orange-50 dark:from-orange-950/40 to-orange-100/50 dark:to-orange-950/20 border-orange-200 dark:border-orange-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -190,7 +191,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100/50 border-green-200 dark:border-green-800/60">
+          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100/50 dark:to-green-950/20 border-green-200 dark:border-green-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -204,7 +205,7 @@ const [, setLocation] = useLocation();
             </CardContent>
           </Card>
 
-          <Card className="bg-gradient-to-br from-cyan-50 dark:from-cyan-950/40 to-cyan-100/50 border-cyan-200 dark:border-cyan-800/60">
+          <Card className="bg-gradient-to-br from-cyan-50 dark:from-cyan-950/40 to-cyan-100/50 dark:to-cyan-950/20 border-cyan-200 dark:border-cyan-800/60">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
@@ -232,7 +233,7 @@ const [, setLocation] = useLocation();
             <CardContent>
               <div className="space-y-3">
                 {stats?.byStatus?.map((item) => {
-                  const config = statusColors[item.status] || { bg: "bg-gray-100 dark:bg-gray-950/40", text: "text-gray-800 dark:text-gray-200" };
+                  const config = statusColors[item.status] || statusBgText(item.status, "package");
                   // Guarded: an empty period made every bar read "NaN%".
                   const percentage = totalForChart > 0 ? ((item.count / totalForChart) * 100).toFixed(1) : "0.0";
                   return (
@@ -395,7 +396,7 @@ const [, setLocation] = useLocation();
           <CardContent>
             <div className="space-y-2">
               {recentPackages?.map((pkg) => {
-                const statusConfig = statusColors[pkg.status] || { bg: "bg-gray-100 dark:bg-gray-950/40", text: "text-gray-800 dark:text-gray-200", label: pkg.status };
+                const statusConfig = statusColors[pkg.status] || { ...statusBgText(pkg.status, "package"), label: pkg.status };
                 const shippingConfig = shippingTypeConfig[pkg.shippingType] || { icon: Package, color: "text-gray-600", label: pkg.shippingType };
                 const ShippingIcon = shippingConfig.icon;
                 

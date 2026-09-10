@@ -1,3 +1,4 @@
+import { statusTone, TONE_BG, TONE_TEXT } from "@/lib/statusTone";
 import { fmtDate, fmtDateTime, fmtMonth } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -76,13 +77,13 @@ const shippingTypeConfig: Record<string, { label: LangMap; icon: React.ReactNode
  * Preparing chip and read as though it were still in China.
  */
 const statusConfig: Record<string, { color: string; bgColor: string; icon: React.ReactNode }> = {
-  preparing: { color: "text-yellow-700 dark:text-yellow-300", bgColor: "bg-yellow-100 dark:bg-yellow-950/40", icon: <Clock className="h-3 w-3" /> },
-  in_transit: { color: "text-blue-700 dark:text-blue-300", bgColor: "bg-blue-100 dark:bg-blue-950/40", icon: <Truck className="h-3 w-3" /> },
-  arrived: { color: "text-green-700 dark:text-green-300", bgColor: "bg-green-100 dark:bg-green-950/40", icon: <CheckCircle className="h-3 w-3" /> },
-  customs: { color: "text-purple-700 dark:text-purple-300", bgColor: "bg-purple-100 dark:bg-purple-950/40", icon: <Building2 className="h-3 w-3" /> },
-  at_depot: { color: "text-cyan-700 dark:text-cyan-300", bgColor: "bg-cyan-100 dark:bg-cyan-950/40", icon: <Building2 className="h-3 w-3" /> },
-  delivered: { color: "text-emerald-700 dark:text-emerald-300", bgColor: "bg-emerald-100 dark:bg-emerald-950/40", icon: <CheckCircle className="h-3 w-3" /> },
-  closed: { color: "text-gray-700 dark:text-gray-300", bgColor: "bg-gray-100 dark:bg-gray-950/40", icon: <Archive className="h-3 w-3" /> }
+  preparing: { color: TONE_TEXT[statusTone("preparing", "batch")], bgColor: TONE_BG[statusTone("preparing", "batch")], icon: <Clock className="h-3 w-3" /> },
+  in_transit: { color: TONE_TEXT[statusTone("in_transit", "batch")], bgColor: TONE_BG[statusTone("in_transit", "batch")], icon: <Truck className="h-3 w-3" /> },
+  arrived: { color: TONE_TEXT[statusTone("arrived", "batch")], bgColor: TONE_BG[statusTone("arrived", "batch")], icon: <CheckCircle className="h-3 w-3" /> },
+  customs: { color: TONE_TEXT[statusTone("customs", "batch")], bgColor: TONE_BG[statusTone("customs", "batch")], icon: <Building2 className="h-3 w-3" /> },
+  at_depot: { color: TONE_TEXT[statusTone("at_depot", "batch")], bgColor: TONE_BG[statusTone("at_depot", "batch")], icon: <Building2 className="h-3 w-3" /> },
+  delivered: { color: TONE_TEXT[statusTone("delivered", "batch")], bgColor: TONE_BG[statusTone("delivered", "batch")], icon: <CheckCircle className="h-3 w-3" /> },
+  closed: { color: TONE_TEXT[statusTone("closed", "batch")], bgColor: TONE_BG[statusTone("closed", "batch")], icon: <Archive className="h-3 w-3" /> }
 };
 
 // Generate month options
