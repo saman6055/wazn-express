@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
 import { BoxSettlementPanel } from "@/components/delivery/BoxSettlementPanel";
+import { SettlementLoadError, NothingToTake } from "@/components/delivery/SettlementStates";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -54,7 +55,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
 
   const t = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, k);
 
-  const { data, isLoading } = trpc.deliveryBox.settlementView.useQuery(
+  const { data, isLoading, error, refetch } = trpc.deliveryBox.settlementView.useQuery(
     { boxId: boxId ?? 0 },
     { enabled: boxId !== null },
   );
@@ -127,7 +128,8 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   };
 
   const code = splitCustomerCode(data?.customer?.customerCode);
-  const nothingToPay = !isLoading && parcels.length === 0;
+  // A failed load is not "nothing to pay": it says so, with its report.
+  const nothingToPay = !isLoading && !error && parcels.length === 0;
 
   return (
     <Dialog open={boxId !== null} onOpenChange={onOpenChange}>
@@ -148,15 +150,10 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             <Loader2 className="h-4 w-4 animate-spin" />
             {t({ ku: "بارکردن…", en: "Loading…", ar: "جارٍ التحميل…", zh: "加载中…" })}
           </div>
+        ) : error ? (
+          <SettlementLoadError error={error} onRetry={() => void refetch()} />
         ) : nothingToPay ? (
-          <p className="py-8 text-center text-sm text-muted-foreground">
-            {t({
-              ku: "هیچ پارەیەکی ماوە نییە لەم بۆکسە",
-              en: "Nothing outstanding on this box",
-              ar: "لا يوجد مبلغ مستحق على هذا الصندوق",
-              zh: "此箱无未结款项",
-            })}
-          </p>
+          <NothingToTake view={data} />
         ) : (
           <div className="space-y-4">
             {/* Who, and how much. Nothing else above the fold. */}
@@ -261,7 +258,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
           </div>
         )}
 
-        {!isLoading && !nothingToPay && !showParcels && (
+        {!isLoading && !error && !nothingToPay && !showParcels && (
           <DialogFooter className="gap-2 sm:gap-2">
             <Button variant="outline" onClick={() => onOpenChange(false)}>
               {t({ ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}

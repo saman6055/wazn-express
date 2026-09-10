@@ -15,6 +15,7 @@ import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
+import { SettlementLoadError, NothingToTake } from "@/components/delivery/SettlementStates";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { showErrorToast } from "@/lib/errorToast";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -65,7 +66,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
   const systemAlert = useSystemAlert();
   const utils = trpc.useUtils();
 
-  const { data, isLoading, refetch } = trpc.deliveryBox.settlementView.useQuery({ boxId });
+  const { data, isLoading, error, refetch } = trpc.deliveryBox.settlementView.useQuery({ boxId });
 
   const [held, setHeld] = useState<Record<number, string>>({});
   const [corrections, setCorrections] = useState<Record<number, { amount: string; reason: string }>>({});
@@ -195,7 +196,21 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
       </CardContent></Card>
     );
   }
-  if (!data?.box) return null;
+  // A failed load is shown as a failure, never as a blank or "nothing owed".
+  if (error) {
+    return (
+      <Card><CardContent className="pt-6">
+        <SettlementLoadError error={error} onRetry={() => void refetch()} />
+      </CardContent></Card>
+    );
+  }
+  if (!data?.box) {
+    return (
+      <Card><CardContent className="pt-6">
+        <NothingToTake view={data} />
+      </CardContent></Card>
+    );
+  }
 
   const notCharged = parcels.filter((p) => p.notChargedYet && !(p.lineId in held));
   const blocked = notCharged.length > 0;
@@ -278,9 +293,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
 
         {/* ── the parcels ──────────────────────────────────────────── */}
         {parcels.length === 0 ? (
-          <p className="py-6 text-center text-sm text-muted-foreground">
-            {t({ ku: "هیچ پارەیەکی ماوە نییە لەم بۆکسە", en: "Nothing outstanding on this box", ar: "لا يوجد مبلغ مستحق على هذا الصندوق", zh: "此箱无未结款项" })}
-          </p>
+          <NothingToTake view={data} />
         ) : (
           <div className="overflow-x-auto rounded-lg border">
             <table className="w-full min-w-[640px] text-sm">
