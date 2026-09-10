@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -96,7 +97,7 @@ const sampleBatchLabel = {
   totalVolume: "0.250",
   totalPrice: "$120.00",
   batchCode: "B-2024-045",
-  date: new Date().toLocaleDateString("ku-IQ"),
+  date: fmtDate(new Date()),
 };
 
 export default function BatchLabelTemplateSettings() {

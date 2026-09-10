@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useParams, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -252,7 +253,7 @@ export default function BatchFinancialReportFull() {
                 <p className="text-white/70 text-sm">{pickLang(language, { ku: "بەرواری ڕاپۆرت", en: "Report date", ar: "تاريخ التقرير", zh: "报告日期" })}</p>
                 <p className="font-bold text-lg flex items-center gap-2 justify-end">
                   <Calendar className="h-5 w-5" />
-                  {new Date().toLocaleDateString('ku-IQ')}
+                  {fmtDate(new Date())}
                 </p>
               </div>
             </div>
@@ -658,7 +659,7 @@ export default function BatchFinancialReportFull() {
               <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "بەرواری دروستکردن", en: "Creation date", ar: "تاريخ الإنشاء", zh: "创建日期" })}</p>
               <p className="font-medium text-lg flex items-center gap-2 justify-end mt-1">
                 <Calendar className="h-5 w-5" />
-                {batch.createdAt ? new Date(batch.createdAt).toLocaleDateString('ku-IQ') : '-'}
+                {batch.createdAt ? fmtDate(new Date(batch.createdAt)) : '-'}
               </p>
             </div>
           </CardContent>

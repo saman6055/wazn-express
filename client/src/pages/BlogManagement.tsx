@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -674,7 +675,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <div className="flex items-center justify-between text-xs text-muted-foreground pt-2 border-t">
                     <div className="flex items-center gap-1">
                       <Calendar className="h-3 w-3" />
-                      {new Date(post.createdAt).toLocaleDateString("ku")}
+                      {fmtDate(new Date(post.createdAt))}
                     </div>
                     <div className="flex items-center gap-1">
                       <Eye className="h-3 w-3" />

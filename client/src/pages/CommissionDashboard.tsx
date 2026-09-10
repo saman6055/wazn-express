@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -359,7 +360,7 @@ export default function CommissionDashboard() {
       [t("commission.grandTotal") + " ($)"]: ((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2),
       [t("commission.tracking")]: order.trackingNumber || "",
       [t("commission.statusColumn")]: statusLabels[order.status] || order.status,
-      [t("commission.dateColumn")]: new Date(order.createdAt).toLocaleDateString("ku"),
+      [t("commission.dateColumn")]: fmtDate(new Date(order.createdAt)),
     }));
 
     // Add summary row
@@ -428,7 +429,7 @@ export default function CommissionDashboard() {
         <div class="header">
           <h1>🛍 ${t("commission.reportTitle")}</h1>
           <p>${company.name} - ${t("commission.managementSubtitle")}</p>
-          <p>${t("commission.dateColumn")}: ${new Date().toLocaleDateString("ku")}</p>
+          <p>${t("commission.dateColumn")}: ${fmtDate(new Date())}</p>
         </div>
         
         <div class="stats">
@@ -477,7 +478,7 @@ export default function CommissionDashboard() {
                 <td>${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
                 <td>$${((parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)) + parseFloat(order.commissionFeeUsd || "0")).toFixed(2)}</td>
                 <td>${statusLabels[order.status] || order.status}</td>
-                <td>${new Date(order.createdAt).toLocaleDateString("ku")}</td>
+                <td>${fmtDate(new Date(order.createdAt))}</td>
               </tr>
             `).join("")}
             <tr class="total-row">

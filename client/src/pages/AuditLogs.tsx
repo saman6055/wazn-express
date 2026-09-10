@@ -1,3 +1,4 @@
+import { fmtDate, fmtDateTime, fmtTime } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -180,8 +181,8 @@ export default function AuditLogs() {
       pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编码" }),
     ];
     const rows = logs.map((log: any) => [
-      new Date(log.createdAt).toLocaleDateString('ku'),
-      new Date(log.createdAt).toLocaleTimeString('ku'),
+      fmtDate(new Date(log.createdAt)),
+      fmtTime(new Date(log.createdAt), true),
       (categoryConfig[log.category] ? pickLang(language, categoryConfig[log.category].label) : null) || log.category,
       log.actionLabel || log.action,
       log.userName || getUserName(log.userId),
@@ -236,7 +237,7 @@ export default function AuditLogs() {
       <body>
         <div class="header">
           <h1>🔍 ${pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })}</h1>
-          <p>${company.name} - ${new Date().toLocaleDateString('ku')}</p>
+          <p>${company.name} - ${fmtDate(new Date())}</p>
         </div>
         <div class="filters">
           <strong>${pickLang(language, { ku: "فلتەرەکان", en: "Filters", ar: "عوامل التصفية", zh: "筛选条件" })}:</strong>
@@ -263,7 +264,7 @@ export default function AuditLogs() {
               const actionType = getActionType(log.action);
               return `
                 <tr>
-                  <td>${new Date(log.createdAt).toLocaleString('ku')}</td>
+                  <td>${fmtDateTime(new Date(log.createdAt))}</td>
                   <td>${(categoryConfig[log.category] ? pickLang(language, categoryConfig[log.category].label) : null) || log.category}</td>
                   <td><span class="badge badge-${actionType}">${log.actionLabel || log.action}</span></td>
                   <td>${log.userName || getUserName(log.userId)}</td>
@@ -275,7 +276,7 @@ export default function AuditLogs() {
           </tbody>
         </table>
         <div class="footer">
-          ${pickLang(language, { ku: "چاپکرا لە", en: "Printed at", ar: "طُبع في", zh: "打印于" })} ${new Date().toLocaleString('ku')} | ${company.name} Audit Logs
+          ${pickLang(language, { ku: "چاپکرا لە", en: "Printed at", ar: "طُبع في", zh: "打印于" })} ${fmtDateTime(new Date())} | ${company.name} Audit Logs
         </div>
       </body>
       </html>
@@ -716,7 +717,7 @@ export default function AuditLogs() {
                               </div>
                               <div className="flex items-center gap-2 text-xs text-muted-foreground mt-1">
                                 <Clock className="h-3 w-3" />
-                                {new Date(log.createdAt).toLocaleString("ku-IQ")}
+                                {fmtDateTime(new Date(log.createdAt))}
                               </div>
                             </div>
                           </div>
@@ -784,7 +785,7 @@ export default function AuditLogs() {
                   <div className="p-3 bg-muted rounded-lg">
                     <div className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کات", en: "Time", ar: "الوقت", zh: "时间" })}</div>
                     <div className="font-medium text-sm">
-                      {new Date(selectedLog.createdAt).toLocaleString("ku-IQ")}
+                      {fmtDateTime(new Date(selectedLog.createdAt))}
                     </div>
                   </div>
                   <div className="p-3 bg-muted rounded-lg">

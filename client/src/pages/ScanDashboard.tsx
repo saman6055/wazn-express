@@ -1,3 +1,4 @@
+import { fmtTime } from "@/lib/numericDate";
 import { useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -382,7 +383,7 @@ export default function ScanDashboard() {
                             {scan.trackingNumber || scan.packageCode || "N/A"}
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400">
-                            {new Date(scan.scannedAt).toLocaleTimeString('ku')}
+                            {fmtTime(new Date(scan.scannedAt))}
                           </p>
                         </div>
                         <Badge variant="secondary" className="text-xs">

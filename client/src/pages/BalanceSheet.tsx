@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -108,7 +109,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
     date.setDate(date.getDate() - i);
     dates.push({
       value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`,
-      label: date.toLocaleDateString('ku', { year: 'numeric', month: 'long', day: 'numeric' })
+      label: fmtDate(date)
     });
   }
 

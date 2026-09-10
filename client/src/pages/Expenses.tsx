@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
@@ -564,11 +565,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   };
 
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("ku-Arab", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return fmtDate(new Date(date));
   };
 
   // A failed read must say so. `data = []` above turns a broken query into an

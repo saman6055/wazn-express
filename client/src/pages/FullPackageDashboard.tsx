@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -395,7 +396,7 @@ export default function FullPackageDashboard() {
       [t("fullPackage.profit") + " ($)"]: (parseFloat(order.grossProfitUsd || "0") * (order.quantity || 1)).toFixed(2),
       [t("fullPackage.tracking")]: order.trackingNumber || "",
       [t("fullPackage.statusColumn")]: statusLabels[order.status] || order.status,
-      [t("fullPackage.dateColumn")]: new Date(order.createdAt).toLocaleDateString("ku"),
+      [t("fullPackage.dateColumn")]: fmtDate(new Date(order.createdAt)),
     }));
 
     // Add summary row
@@ -464,7 +465,7 @@ export default function FullPackageDashboard() {
         <div class="header">
           <h1>🛍️ ${t("fullPackage.reportTitle")}</h1>
           <p>${company.name} - ${t("fullPackage.managementSubtitle")}</p>
-          <p>${t("fullPackage.dateColumn")}: ${new Date().toLocaleDateString("ku")}</p>
+          <p>${t("fullPackage.dateColumn")}: ${fmtDate(new Date())}</p>
         </div>
         
         <div class="stats">
@@ -513,7 +514,7 @@ export default function FullPackageDashboard() {
                 <td>$${(parseFloat(order.sellingPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
                 <td>$${(parseFloat(order.grossProfitUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
                 <td>${statusLabels[order.status] || order.status}</td>
-                <td>${new Date(order.createdAt).toLocaleDateString("ku")}</td>
+                <td>${fmtDate(new Date(order.createdAt))}</td>
               </tr>
             `).join("")}
             <tr class="total-row">
@@ -1129,7 +1130,7 @@ export default function FullPackageDashboard() {
                               </div>
                               {order.trackingAddedDate && (
                                 <p className="text-xs text-muted-foreground">
-                                  {new Date(order.trackingAddedDate).toLocaleDateString("ku")}
+                                  {fmtDate(new Date(order.trackingAddedDate))}
                                 </p>
                               )}
                             </div>

@@ -1,3 +1,4 @@
+import { fmtDate, fmtDateTime, fmtMonth } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -90,7 +91,7 @@ const getMonthOptions = () => {
     const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
     months.push({
       value: `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`,
-      label: date.toLocaleDateString('ku', { year: 'numeric', month: 'long' })
+      label: fmtMonth(date)
     });
   }
   return months;
@@ -353,7 +354,7 @@ export default function BatchReports() {
       <body>
         <div class="header">
           <h1>${pickLang(language, { ku: "ڕاپۆرتی دارایی باچەکان", en: "Batch financial report", ar: "التقرير المالي للدفعات", zh: "批次财务报告" })}</h1>
-          <p>${company.name} - ${new Date().toLocaleDateString('ku')}</p>
+          <p>${company.name} - ${fmtDate(new Date())}</p>
         </div>
 
         <div class="summary">
@@ -420,7 +421,7 @@ export default function BatchReports() {
         </table>
 
         <div class="footer">
-          <p>${pickLang(language, { ku: "دروستکراوە لە", en: "Generated on", ar: "أُنشئ في", zh: "生成于" })} ${new Date().toLocaleString('ku')} - ${company.name}</p>
+          <p>${pickLang(language, { ku: "دروستکراوە لە", en: "Generated on", ar: "أُنشئ في", zh: "生成于" })} ${fmtDateTime(new Date())} - ${company.name}</p>
         </div>
       </body>
       </html>

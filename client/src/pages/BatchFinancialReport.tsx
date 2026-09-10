@@ -1,3 +1,4 @@
+import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -351,7 +352,7 @@ function generatePrintContent(
       
       <div class="footer">
         <span class="company">${company.name} - ${company.nameKu}</span>
-        <span>${new Date().toLocaleDateString('ku-IQ')} - ${new Date().toLocaleTimeString('ku-IQ')}</span>
+        <span>${fmtDate(new Date())} - ${fmtTime(new Date())}</span>
       </div>
     </body>
     </html>

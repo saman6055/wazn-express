@@ -1,3 +1,4 @@
+import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -437,10 +438,10 @@ export default function ExpenseAlerts() {
                           </div>
                           <div className="text-left">
                             <p className="text-xs text-muted-foreground">
-                              {new Date(log.triggeredAt).toLocaleDateString('ku', { year: 'numeric', month: 'short', day: 'numeric' })}
+                              {fmtDate(new Date(log.triggeredAt))}
                             </p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(log.triggeredAt).toLocaleTimeString('ku', { hour: '2-digit', minute: '2-digit' })}
+                              {fmtTime(new Date(log.triggeredAt))}
                             </p>
                             <Badge variant={log.notificationSent ? "default" : "destructive"} className="mt-1 text-xs">
                               {log.notificationSent ? (t("expenseAlerts.sent") || "نێردرا") : (t("expenseAlerts.failed") || "شکستخوارد")}

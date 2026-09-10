@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -113,7 +114,7 @@ const samplePackage = {
   dimensions: "30×20×15 cm",
   shippingType: "هەوایی",
   batchNumber: "B-2024-045",
-  date: new Date().toLocaleDateString("ku"),
+  date: fmtDate(new Date()),
   price: "$25.00",
 };
 

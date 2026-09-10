@@ -1,3 +1,4 @@
+import { fmtDate, fmtMonth, fmtTime } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -151,7 +152,7 @@ export default function ServicesReport() {
     for (let i = 5; i >= 0; i--) {
       const date = new Date(now.getFullYear(), now.getMonth() - i, 1);
       const monthKey = `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
-      const monthName = date.toLocaleDateString('ku', { month: 'short', year: 'numeric' });
+      const monthName = fmtMonth(date);
       
       const monthServices = (services?.services || []).filter((s: any) => {
         const sDate = s.createdAt ? new Date(s.createdAt) : null;
@@ -207,7 +208,7 @@ export default function ServicesReport() {
         <div class="header">
           <h1>🔧 ${pickLang(language, { ku: "ڕاپۆرتی دارایی خزمەتگوزارییەکان", en: "Services Financial Report", ar: "التقرير المالي للخدمات", zh: "服务财务报告" })}</h1>
           <div class="company">${company.name} - ${company.nameKu}</div>
-          <div class="date">${pickLang(language, { ku: "بەرواری دروستکردن", en: "Generated", ar: "تاريخ الإنشاء", zh: "生成日期" })}: ${new Date().toLocaleDateString('ku')} - ${new Date().toLocaleTimeString('ku')}</div>
+          <div class="date">${pickLang(language, { ku: "بەرواری دروستکردن", en: "Generated", ar: "تاريخ الإنشاء", zh: "生成日期" })}: ${fmtDate(new Date())} - ${fmtTime(new Date())}</div>
         </div>
         
         <div class="stats">

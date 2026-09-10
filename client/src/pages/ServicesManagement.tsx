@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -303,7 +304,7 @@ export default function ServicesManagement() {
         <div class="header">
           <h1>${company.name}</h1>
           <p>${t('services.servicesReport')}</p>
-          <p>${t('services.date')}: ${new Date().toLocaleDateString('ku')}</p>
+          <p>${t('services.date')}: ${fmtDate(new Date())}</p>
         </div>
         <div class="stats">
           <div class="stat">
@@ -340,7 +341,7 @@ export default function ServicesManagement() {
               const profit = Number(service.priceAmount || 0) - Number(service.costAmount || 0);
               return `
                 <tr>
-                  <td>${service.createdAt ? new Date(service.createdAt).toLocaleDateString('ku') : '-'}</td>
+                  <td>${service.createdAt ? fmtDate(new Date(service.createdAt)) : '-'}</td>
                   <td>${getCustomerName(service.customerId)}</td>
                   <td>${service.serviceType?.nameKu || service.serviceType?.nameEn || '-'}</td>
                   <td>${service.description || '-'}</td>
@@ -967,7 +968,7 @@ export default function ServicesManagement() {
                     return (
                       <TableRow key={service.id} className="hover:bg-muted/50">
                         <TableCell className="text-sm text-muted-foreground">
-                          {service.createdAt ? new Date(service.createdAt).toLocaleDateString('ku') : '-'}
+                          {service.createdAt ? fmtDate(new Date(service.createdAt)) : '-'}
                         </TableCell>
                         <TableCell>
                           <Button

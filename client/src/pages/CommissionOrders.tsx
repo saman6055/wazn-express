@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -707,7 +708,7 @@ export default function CommissionOrders() {
                             </div>
                             {order.trackingAddedDate && (
                               <p className="text-xs text-muted-foreground">
-                                {new Date(order.trackingAddedDate).toLocaleDateString("ku")}
+                                {fmtDate(new Date(order.trackingAddedDate))}
                               </p>
                             )}
                           </div>

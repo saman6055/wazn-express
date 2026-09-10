@@ -1,3 +1,4 @@
+import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -232,13 +233,11 @@ export default function CustomerMessages() {
     const days = Math.floor(diff / (1000 * 60 * 60 * 24));
 
     if (days === 0) {
-      return d.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
+      return fmtTime(d);
     } else if (days === 1) {
       return pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" });
-    } else if (days < 7) {
-      return d.toLocaleDateString("ku-IQ", { weekday: "short" });
     }
-    return d.toLocaleDateString("ku-IQ", { month: "short", day: "numeric" });
+    return fmtDate(d);
   };
 
   const renderMessageContent = (msg: any) => {

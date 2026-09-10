@@ -1,3 +1,4 @@
+import { fmtDate, fmtDateTime } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { readFinanceLink } from "@shared/listLinks";
@@ -368,7 +369,7 @@ export default function Finance() {
         <div class="header">
           <div class="company">${company.name}</div>
           <h1>${pickLang(language, { ku: "\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631", en: "Credit customers report", ar: "\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0623\u0635\u062d\u0627\u0628 \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u8d37\u65b9\u5ba2\u6237\u62a5\u544a" })}</h1>
-          <div class="date">${new Date().toLocaleDateString('ku', { year: 'numeric', month: 'long', day: 'numeric' })}</div>
+          <div class="date">${fmtDate(new Date())}</div>
         </div>
         
         <div class="summary-cards">
@@ -409,7 +410,7 @@ export default function Finance() {
         
         <div class="footer">
           <span>${company.name} - ${pickLang(language, { ku: "\u0633\u06cc\u0633\u062a\u06d5\u0645\u06cc \u0628\u06d5\u0695\u06ce\u0648\u06d5\u0628\u0631\u062f\u0646\u06cc \u062f\u0627\u0631\u0627\u06cc\u06cc", en: "Financial management system", ar: "\u0646\u0638\u0627\u0645 \u0627\u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0645\u0627\u0644\u064a\u0629", zh: "\u8d22\u52a1\u7ba1\u7406\u7cfb\u7edf" })}</span>
-          <span>${new Date().toLocaleString('ku')}</span>
+          <span>${fmtDateTime(new Date())}</span>
         </div>
         
         <div class="no-print" style="text-align: center; margin-top: 30px;">
@@ -635,7 +636,7 @@ export default function Finance() {
       <body>
         <div class="header">
           <h1>📊 ${pickLang(language, { ku: "ڕاپۆرتی حسابەکان", en: "Accounts report", ar: "تقرير الحسابات", zh: "账户报告" })}</h1>
-          <p>${company.name} - ${new Date().toLocaleDateString('ku-IQ')}</p>
+          <p>${company.name} - ${fmtDate(new Date())}</p>
         </div>
         
         <div class="stats">
@@ -670,7 +671,7 @@ export default function Finance() {
         </table>
         
         <div class="footer">
-          <p>${pickLang(language, { ku: `ئەم ڕاپۆرتە لە ${new Date().toLocaleString('ku-IQ')} دروستکراوە`, en: `This report was generated on ${new Date().toLocaleString('ku-IQ')}`, ar: `تم إنشاء هذا التقرير في ${new Date().toLocaleString('ku-IQ')}`, zh: `本报告生成于 ${new Date().toLocaleString('ku-IQ')}` })}</p>
+          <p>${pickLang(language, { ku: `ئەم ڕاپۆرتە لە ${fmtDateTime(new Date())} دروستکراوە`, en: `This report was generated on ${fmtDateTime(new Date())}`, ar: `تم إنشاء هذا التقرير في ${fmtDateTime(new Date())}`, zh: `本报告生成于 ${fmtDateTime(new Date())}` })}</p>
         </div>
       </body>
       </html>
@@ -1148,7 +1149,7 @@ export default function Finance() {
                             {isDebit ? '+' : '-'}{formatCurrency(Math.abs(Number(tx.amountUsd || 0)))}
                           </p>
                           <p className="text-xs text-muted-foreground">
-                            {new Date(tx.createdAt || '').toLocaleDateString('ku-IQ')}
+                            {fmtDate(new Date(tx.createdAt || ''))}
                           </p>
                         </div>
                       </div>
@@ -1486,7 +1487,7 @@ export default function Finance() {
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-muted-foreground" />
-                              {new Date(payment.createdAt || '').toLocaleDateString('ku-IQ')}
+                              {fmtDate(new Date(payment.createdAt || ''))}
                             </div>
                           </TableCell>
                           <TableCell>

@@ -3,7 +3,7 @@ import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { orderStageOf } from "@/lib/shipmentFilters";
-import { fmtDate } from "@/lib/numericDate";
+import { fmtDate, fmtTime } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -190,7 +190,7 @@ export default function UnifiedOrdersDashboard() {
               <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 backdrop-blur-sm">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-green-400"></div>
                 <span className="text-sm">{pickLang(language, { ku: 'زیندوو', en: 'Live', ar: 'مباشر', zh: '实时' })}</span>
-                <span className="font-mono text-lg">{currentTime.toLocaleTimeString('ku')}</span>
+                <span className="font-mono text-lg">{fmtTime(currentTime, true)}</span>
               </div>
               <Button className="bg-white dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-white/90">
                 <Plus className="me-2 h-4 w-4" />

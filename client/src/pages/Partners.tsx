@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -205,11 +206,7 @@ const [activeTab, setActiveTab] = useState("partners");
   };
 
   const formatDate = (date: Date | string) => {
-    return new Date(date).toLocaleDateString("ku-Arab", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return fmtDate(new Date(date));
   };
 
   const getTransactionTypeLabel = (type: string) => {

@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -840,7 +841,7 @@ export default function InvoiceReports() {
                         <TableRow key={inv.id}>
                           <TableCell className="font-medium font-mono">{inv.invoiceNumber}</TableCell>
                           <TableCell>
-                            {new Date(inv.createdAt).toLocaleDateString('ku-IQ')}
+                            {fmtDate(new Date(inv.createdAt))}
                           </TableCell>
                           <TableCell>{formatCurrency(parseFloat(inv.totalUsd))}</TableCell>
                           <TableCell>{getStatusBadge(inv.status)}</TableCell>

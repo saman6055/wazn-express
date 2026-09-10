@@ -1,3 +1,4 @@
+import { fmtDate } from "./numericDate";
 /**
  * Batch label print — یەک لەیبڵ بۆ هەر کڕیار لە باچ (کۆی پاکەت، حەجم، کیلۆ، بارکۆد/QR، نرخ، ناوی کڕیار)
  */
@@ -159,7 +160,7 @@ export function generateBatchLabelsHtml(options: {
           ${t.showTotalWeight && isSea ? `<div>⚖️ کیلۆ: <strong>${cust.totalWeight.toFixed(2)}</strong></div>` : ""}
           ${t.showTotalPrice ? `<div>💰 نرخ: <strong>$${cust.totalPrice.toFixed(2)}</strong></div>` : ""}
           ${t.showBatchNumber ? `<div>📋 باچ: <strong>${batchCode}</strong></div>` : ""}
-          ${t.showDate ? `<div>📅 ${new Date().toLocaleDateString("ku-IQ")}</div>` : ""}
+          ${t.showDate ? `<div>📅 ${fmtDate(new Date())}</div>` : ""}
         </div>
       </div>
     `;

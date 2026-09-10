@@ -1,3 +1,4 @@
+import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -230,11 +231,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
 
   const formatDate = (date: Date | string | null) => {
     if (!date) return "-";
-    return new Date(date).toLocaleDateString("ku-Arab", {
-      year: "numeric",
-      month: "short",
-      day: "numeric",
-    });
+    return fmtDate(new Date(date));
   };
 
   const getCreditorIcon = (type: string) => {
