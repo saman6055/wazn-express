@@ -147,7 +147,7 @@ export const extraServicesRouter = router({
             const newBalance = currentBalance + Number(input.priceAmount);
             
             // Create ledger transaction
-            const txnNumber = `TXN-${Date.now()}-${Math.random().toString(36).substr(2, 4).toUpperCase()}`;
+            const txnNumber = db.generateTransactionNumber();
             await db.createLedgerTransaction({
               accountId: account.id,
               transactionNumber: txnNumber,

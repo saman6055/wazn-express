@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { generateTransactionNumber } from "./utils.db";
 import { appLogger } from '../utils/logger';
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
 import {
@@ -1536,8 +1537,7 @@ export async function applyBatchCustomerAdjustment(args: {
     const balanceIqd = Number(account.currentBalanceIqd || 0);
     const balanceAfter = round2(balanceBefore + (isDiscount ? -preview.amountUsd : preview.amountUsd));
 
-    const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
-    const transactionNumber = `TXN-${day}-${Math.floor(Math.random() * 100000).toString().padStart(5, "0")}`;
+    const transactionNumber = generateTransactionNumber();
     const inserted = await tx.insert(ledgerTransactions).values({
       accountId: account.id,
       transactionNumber,

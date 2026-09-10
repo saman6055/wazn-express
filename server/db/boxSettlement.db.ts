@@ -1,4 +1,5 @@
 import { eq, and, or, desc, inArray, sql, gte, lte } from "drizzle-orm";
+import { generateTransactionNumber } from "./utils.db";
 import { getDb } from "./connection";
 import {
   boxSettlements,
@@ -741,10 +742,9 @@ async function postDiscountCredits(
     if (!(entry.amount > 0)) continue;
     const before = balance;
     balance = round2(balance - entry.amount);
-    const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
     await tx.insert(ledgerTransactions).values({
       accountId: account.id,
-      transactionNumber: `TXN-${day}-${Math.floor(Math.random() * 100000).toString().padStart(5, "0")}`,
+      transactionNumber: generateTransactionNumber(),
       transactionType: "CREDIT_DISCOUNT",
       amountUsd: entry.amount.toFixed(2),
       amountIqd: "0",
@@ -812,10 +812,9 @@ export async function reverseBoxSettlement(
       const before = Number(account.currentBalanceUsd || 0);
       const after = round2(before + putBack);
       const balanceIqd = Number(account.currentBalanceIqd || 0);
-      const day = new Date().toISOString().slice(0, 10).replace(/-/g, "");
       await tx.insert(ledgerTransactions).values({
         accountId: account.id,
-        transactionNumber: `TXN-${day}-${Math.floor(Math.random() * 100000).toString().padStart(5, "0")}`,
+        transactionNumber: generateTransactionNumber(),
         transactionType: "ADJUSTMENT_DEBIT",
         amountUsd: putBack.toFixed(2),
         amountIqd: "0",
