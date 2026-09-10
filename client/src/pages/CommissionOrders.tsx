@@ -294,7 +294,7 @@ export default function CommissionOrders() {
                 <p className="text-emerald-100">{pickLang(language, { ku: "کڕین بۆ کڕیار بە عمولە", en: "Purchasing for customers with commission", ar: "الشراء للعملاء مقابل عمولة", zh: "为客户代购并收取佣金" })}</p>
               </div>
             </div>
-            <Link href="/commission-orders/new">
+            <Link href="/commission/new">
               <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
                 <Plus className="h-4 w-4 ms-2" />
                 {pickLang(language, { ku: "ئۆردەری نوێ", en: "New order", ar: "طلب جديد", zh: "新订单" })}
@@ -608,7 +608,7 @@ export default function CommissionOrders() {
               <div className="text-center py-12">
                 <ShoppingBag className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                 <p className="text-muted-foreground">{pickLang(language, { ku: "هیچ ئۆردەرێک نییە", en: "No orders", ar: "لا توجد طلبات", zh: "暂无订单" })}</p>
-                <Link href="/commission-orders/new">
+                <Link href="/commission/new">
                   <Button className="mt-4" variant="outline">
                     <Plus className="h-4 w-4 ms-2" />
                     {pickLang(language, { ku: "ئۆردەری نوێ زیاد بکە", en: "Add new order", ar: "إضافة طلب جديد", zh: "添加新订单" })}

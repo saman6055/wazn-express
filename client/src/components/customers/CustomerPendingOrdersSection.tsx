@@ -278,13 +278,13 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
                       const isFP = !isCommission && order.orderType !== "purchase_request";
                       const route = isFP
                         ? `/full-package/${order.id}`
-                        : isCommission ? `/commission/${order.id}` : `/purchase-request/${order.id}`;
+                        : isCommission ? `/commission/${order.id}` : null; // a purchase request has no page of its own
 
                       return (
                         <TableRow
                           key={order.id}
-                          className="cursor-pointer hover:bg-muted/30 transition-colors"
-                          onClick={() => navigate(route)}
+                          className={route ? "cursor-pointer hover:bg-muted/30 transition-colors" : undefined}
+                          onClick={route ? () => navigate(route) : undefined}
                         >
                           <TableCell className="font-mono font-semibold text-xs">{order.orderCode}</TableCell>
                           <TableCell>
@@ -319,7 +319,8 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
                                 variant="ghost"
                                 size="icon"
                                 className="h-7 w-7"
-                                onClick={() => navigate(route)}
+                                disabled={!route}
+                                onClick={() => route && navigate(route)}
                                 title={t("common.view")}
                               >
                                 <Eye className="h-3.5 w-3.5" />

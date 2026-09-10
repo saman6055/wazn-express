@@ -3,12 +3,22 @@ import { Home, ArrowLeft, Compass } from "lucide-react";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { cn } from "@/lib/utils";
+import { goBackOr } from "@/lib/goBack";
+import { useAuth } from "@/_core/hooks/useAuth";
 import CompanyLogo from "@/components/CompanyLogo";
 
 export default function NotFound() {
   const { language, isRTL } = useTranslation();
-  const [, setLocation] = useLocation();
+  const [location, setLocation] = useLocation();
+  const { user } = useAuth();
   const L = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
+
+  // Home is the reader's own: the portal for a customer (or any /portal
+  // address), the dashboard for staff, the public site for everyone else.
+  // It sent everyone to the public landing page.
+  const isCustomer = Boolean((user as { isCustomer?: boolean } | null)?.isCustomer);
+  const home = location.startsWith("/portal") || isCustomer ? "/portal" : user ? "/dashboard" : "/";
 
   return (
     <div
@@ -28,7 +38,7 @@ export default function NotFound() {
         </p>
 
         <div className="mx-auto mt-4 mb-6 flex items-center justify-center gap-2 text-slate-500 dark:text-slate-400">
-          <Compass className="h-4 w-4" />
+          <Compass className="h-4 w-4" aria-hidden="true" />
           <span className="text-sm font-medium">{L({ ku: "پەڕەکە نەدۆزرایەوە", en: "Page not found", ar: "الصفحة غير موجودة", zh: "页面未找到" })}</span>
         </div>
 
@@ -43,14 +53,16 @@ export default function NotFound() {
 
         <div className="mt-8 flex flex-col sm:flex-row items-center justify-center gap-3">
           <Button
-            onClick={() => setLocation("/")}
+            onClick={() => setLocation(home)}
             className="gap-2 rounded-full bg-gradient-to-br from-sky-500 to-violet-600 px-6 text-white shadow-lg shadow-sky-500/25 hover:-translate-y-0.5 transition-all"
           >
-            <Home className="h-4 w-4" />
+            <Home className="h-4 w-4" aria-hidden="true" />
             {L({ ku: "پەڕەی سەرەکی", en: "Go home", ar: "الصفحة الرئيسية", zh: "返回首页" })}
           </Button>
-          <Button variant="ghost" onClick={() => window.history.back()} className="gap-2 rounded-full text-slate-600 dark:text-slate-300">
-            <ArrowLeft className={"h-4 w-4" + (isRTL ? "rotate-180" : "")} />
+          <Button variant="ghost" onClick={() => goBackOr(home, setLocation)} className="gap-2 rounded-full text-slate-600 dark:text-slate-300">
+            {/* The class used to read "h-4 w-4rotate-180": the icon lost its
+                width and never turned round for Kurdish and Arabic. */}
+            <ArrowLeft className={cn("h-4 w-4", isRTL && "rotate-180")} aria-hidden="true" />
             {L({ ku: "گەڕانەوە", en: "Go back", ar: "رجوع", zh: "返回" })}
           </Button>
         </div>

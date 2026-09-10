@@ -547,13 +547,13 @@ export default function CompanyFinanceDashboard() {
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                  <Link href="/finance/reports">
+                  <Link href="/company/reports">
                     <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:bg-blue-50 hover:border-blue-200">
                       <BarChart3 className="h-6 w-6 text-blue-500 dark:text-blue-400" />
                       <span className="text-sm">{t("reports.title") || "ڕاپۆرتەکان"}</span>
                     </Button>
                   </Link>
-                  <Link href="/finance/expenses">
+                  <Link href="/company/expenses">
                     <Button variant="outline" className="w-full h-auto py-4 flex flex-col gap-2 hover:bg-red-50 hover:border-red-200">
                       <CreditCard className="h-6 w-6 text-red-500 dark:text-red-400" />
                       <span className="text-sm">{t("companyFinance.expenses") || "خەرجییەکان"}</span>
@@ -756,7 +756,7 @@ export default function CompanyFinanceDashboard() {
                     <p className="text-red-100 text-sm">{t("companyFinance.totalExpenses") || "کۆی خەرجی"} - {getPeriodLabel(period)}</p>
                     <p className="text-4xl font-bold mt-1">{formatCurrency(stats?.expenseBreakdown?.total || 0)}</p>
                   </div>
-                  <Link href="/finance/expenses">
+                  <Link href="/company/expenses">
                     <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0">
                       <FileText className="w-4 h-4 ms-2" />
                       {t("companyFinance.viewAll") || "هەمووی ببینە"}

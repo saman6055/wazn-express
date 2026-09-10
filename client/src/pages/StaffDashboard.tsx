@@ -106,7 +106,7 @@ export default function StaffDashboard() {
               </CardContent>
             </Card>
           </Link>
-          <Link href="/packages/register">
+          <Link href="/packages/quick-register">
             <Card className="hover:bg-accent/50 transition-colors cursor-pointer h-full">
               <CardContent className="pt-6 flex items-center gap-4">
                 <div className="h-14 w-14 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">

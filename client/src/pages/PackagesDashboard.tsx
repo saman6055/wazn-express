@@ -100,7 +100,7 @@ const [, setLocation] = useLocation();
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuItem onClick={() => setLocation("/packages/register")}>
+              <DropdownMenuItem onClick={() => setLocation("/packages/quick-register")}>
                 <Plus className="h-4 w-4 me-2" />
                 <div>
                   <div className="font-medium">{t("packages.standardRegister")}</div>
@@ -346,7 +346,7 @@ const [, setLocation] = useLocation();
               <Button 
                 variant="outline" 
                 className="w-full justify-start h-auto py-3"
-                onClick={() => setLocation("/smart-scanner")}
+                onClick={() => setLocation("/quick-register")}
               >
                 <div className="h-8 w-8 rounded-full bg-blue-100 dark:bg-blue-950/40 flex items-center justify-center me-3">
                   <QrCode className="h-4 w-4 text-blue-600 dark:text-blue-300" />

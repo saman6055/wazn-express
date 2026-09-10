@@ -1,3 +1,5 @@
+import { NoAccessPanel } from "@/components/NoAccessPanel";
+import { goBackOr } from "@/lib/goBack";
 import { isAuthError, isNetworkError } from "@/components/QueryErrorBoundary";
 import { QueryErrorFallback } from "@/components/QueryErrorFallback";
 import { SectionBoundary } from "@/components/SectionBoundary";
@@ -286,7 +288,7 @@ function DashboardLayoutContent({
     { icon: DollarSign, label: pickLang(language, { ku: "کڕینی نوێ بە خستنەسەر", en: "New markup purchase", ar: "شراء جديد بهامش ربح", zh: "新增加价采购" }), path: "/commission/new" },
     { icon: Package, label: pickLang(language, { ku: "پاکێجی تەواوی نوێ", en: "New complete package", ar: "حزمة كاملة جديدة", zh: "新增完整套餐" }), path: "/full-package/new" },
   ];
-  const { canViewPath } = usePermissions();
+  const { canViewPath, isReady: permissionsReady } = usePermissions();
 
   const userRole = user?.role || "user";
 
@@ -979,7 +981,7 @@ function DashboardLayoutContent({
               className="h-8 w-8 rounded-full"
               title={t("nav.back") || "گەڕانەوە"}
               aria-label={t("nav.back") || "گەڕانەوە"}
-              onClick={() => window.history.back()}
+              onClick={() => goBackOr("/dashboard", setLocation)}
             >
               {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
             </Button>
@@ -1182,7 +1184,11 @@ function DashboardLayoutContent({
             margins either side on a wide monitor — the owner's note, sent
             with a screenshot of the packages table squeezed in the middle. */}
         <div className="p-4 md:p-6">
-          <SectionBoundary resetKey={location}>{children}</SectionBoundary>
+          {permissionsReady && !canViewPath(location) ? (
+            <NoAccessPanel />
+          ) : (
+            <SectionBoundary resetKey={location}>{children}</SectionBoundary>
+          )}
         </div>
       </main>
 

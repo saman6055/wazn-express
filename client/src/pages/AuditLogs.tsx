@@ -325,7 +325,7 @@ export default function AuditLogs() {
         return `/full-package/${entityId}`;
       case "Batch":
       case "batch":
-        return `/batches/${entityId}`;
+        return `/batches/${entityId}/financial`;
 
       default:
         return null;

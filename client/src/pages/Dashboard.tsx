@@ -994,7 +994,7 @@ export default function Dashboard() {
                 <QuickActionButton
                   title={t('dashboard.quickActionRegisterPackage') ?? 'Register Package'}
                   icon={<Package className="h-5 w-5" />}
-                  href="/packages/register"
+                  href="/packages/quick-register"
                   color="emerald"
                 />
                 <QuickActionButton

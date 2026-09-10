@@ -106,6 +106,9 @@ export function usePermissions() {
     hasPermission,
     hasSubPermission,
     isLoading,
+    // Permissions have actually arrived (or are not needed). Only then may a
+    // screen be refused: a failed or pending request must never lock staff out.
+    isReady: userRole === "super_admin" || Boolean(userPermissions),
     userRole,
   };
 }
