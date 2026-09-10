@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Package, Phone, Lock, Loader2 } from "lucide-react";
+import { Phone, Lock, Loader2 } from "lucide-react";
+import CompanyLogo from "@/components/CompanyLogo";
 import { useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
@@ -70,8 +71,13 @@ const [, setLocation] = useLocation();
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-emerald-500 rounded-2xl mb-4">
-            <Package className="h-8 w-8 text-white" />
+          <div className="inline-flex items-center justify-center mb-4">
+            <CompanyLogo
+              size={64}
+              className="bg-white dark:bg-card rounded-2xl shadow-lg p-2"
+              iconClassName="w-8 h-8 text-emerald-600"
+              fallbackBg="bg-white"
+            />
           </div>
           <h1 className="text-2xl font-bold text-white">{t("common.appName")}</h1>
           <p className="text-slate-400 mt-1">{t("home.customerPortal")}</p>

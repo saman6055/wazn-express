@@ -6,6 +6,7 @@ import { useParams, useLocation } from "wouter";
 import { Printer, Download, ArrowRight, ArrowLeft, FileText, Loader2 } from "lucide-react";
 import { useRef } from "react";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { BRAND_LOGO_URL } from "@/lib/brand";
 
 export default function InvoiceView() {
   const { t, direction, isRTL, language } = useTranslation();
@@ -38,7 +39,7 @@ export default function InvoiceView() {
     addressAr: templateAny?.companyAddressAr || "أربيل، إقليم كردستان، العراق",
     phone: template?.companyPhone || "", phone2: template?.companyPhone2 || "",
     email: template?.companyEmail || "", website: template?.companyWebsite || "",
-    logoUrl: template?.logoUrl || "",
+    logoUrl: template?.logoUrl || BRAND_LOGO_URL,
     primaryColor: template?.primaryColor || "#0f766e",
     secondaryColor: template?.secondaryColor || "#14b8a6",
     footerTextKu: template?.footerTextKu || "", footerText: template?.footerText || "", footerTextAr: templateAny?.footerTextAr || "",
@@ -142,7 +143,7 @@ export default function InvoiceView() {
               {/* HEADER */}
               <div style={{ display:'flex',justifyContent:'space-between',alignItems:'flex-start',paddingBottom:'24px',borderBottom:`3px solid ${primaryColor}`,marginBottom:'28px' }}>
                 <div>
-                  {company.logoUrl && <img src={company.logoUrl} alt={company.name} style={{ height:'50px',marginBottom:'8px',objectFit:'contain' }} />}
+                  {company.logoUrl && <img src={company.logoUrl} alt={company.name} style={{ height:'50px',marginBottom:'8px',objectFit:'contain' }} onError={(e) => { if (!e.currentTarget.src.endsWith(BRAND_LOGO_URL)) e.currentTarget.src = BRAND_LOGO_URL; }} />}
                   <h1 style={{ fontSize:'24px',fontWeight:700,color:primaryColor,marginBottom:'2px' }}>{companyDisplayName}</h1>
                   <p style={{ fontSize:'14px',color:'#94a3b8',marginBottom:'10px' }}>{companySecondaryName}</p>
                   <div style={{ fontSize:'11px',color:'#64748b',lineHeight:'1.8' }}>

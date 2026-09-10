@@ -13,6 +13,7 @@ import {
   normalizeAppearance,
   parseAppearance,
 } from "../lib/uiAppearance";
+import { localUploadIsMissing } from "../services/localUpload";
 
 export const countriesRouter = router({
     list: staffProcedure
@@ -390,7 +391,12 @@ export const settingsRouter = router({
       try {
         const raw = await db.getSetting("company_info");
         if (!raw) return null;
-        return JSON.parse(raw) as Record<string, unknown>;
+        const info = JSON.parse(raw) as Record<string, unknown>;
+        // A logo whose file a redeploy took with it is answered as no logo, so
+        // every screen shows the mark built into the deploy instead of a URL
+        // that returns the app's own HTML. The stored value is not touched.
+        if (localUploadIsMissing(info.logoUrl)) info.logoUrl = "";
+        return info;
       } catch (err) {
         appLogger.warn("getCompanyInfo failed", { error: err instanceof Error ? err.message : String(err) });
         return null;

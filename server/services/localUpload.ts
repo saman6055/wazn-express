@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
+import { localUploadFileName } from "../lib/photoUrls";
 
 const UPLOADS_DIR = "uploads";
 
@@ -39,4 +40,15 @@ export function localUpload(
   fs.writeFileSync(absolutePath, data);
   const url = `${UPLOADS_ROUTE}/${uniqueName}`;
   return { key: path.join(UPLOADS_DIR, uniqueName), url };
+}
+
+/**
+ * True only when `url` names a file in our own uploads folder and that file is
+ * not there — a logo or photo a redeploy took with it. Object storage, inline
+ * images and unknown paths are never reported missing: a file absent from
+ * this disk proves nothing about them.
+ */
+export function localUploadIsMissing(url: unknown): boolean {
+  const name = localUploadFileName(url);
+  return name !== null && !fs.existsSync(path.join(getUploadsDir(), name));
 }

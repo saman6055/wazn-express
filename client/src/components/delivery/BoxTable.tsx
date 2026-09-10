@@ -41,6 +41,7 @@ import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
+import { BRAND_LOGO_URL } from "@/lib/brand";
 import { trpc } from "@/lib/trpc";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -201,7 +202,7 @@ export function BoxTable({
           }
         : null,
       createTranslator(lang),
-      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrl) }
+      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL) }
     );
   };
 

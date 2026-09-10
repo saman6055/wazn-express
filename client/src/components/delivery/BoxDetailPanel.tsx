@@ -7,6 +7,7 @@ import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
+import { BRAND_LOGO_URL } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -515,7 +516,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     const [b, its, c] = buildReceiptPayload();
     printBoxReceipt(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
-      logoUrl: absoluteLogoUrl(logoUrl),
+      logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL),
       settlement: settlementForPrint,
     });
   };
@@ -525,7 +526,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     const [b, its, c] = buildReceiptPayload();
     downloadBoxReceiptPDF(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
-      logoUrl: absoluteLogoUrl(logoUrl),
+      logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL),
     });
   };
 

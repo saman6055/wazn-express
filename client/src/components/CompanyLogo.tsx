@@ -1,4 +1,5 @@
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { BRAND_LOGO_URL } from "@/lib/brand";
 import { Package } from "lucide-react";
 import { useState } from "react";
 
@@ -9,6 +10,14 @@ interface CompanyLogoProps {
   fallbackBg?: string;
 }
 
+/**
+ * The company mark, square, on a white tile.
+ *
+ * Source order: the logo uploaded in Settings, then the mark built into every
+ * deploy (lib/brand), and only when both fail to load, a generic box icon.
+ * The tile is always white because the mark is black ink — on the dark
+ * sidebar or the dark login pages a transparent logo would simply disappear.
+ */
 export default function CompanyLogo({
   size = 40,
   className = "",
@@ -16,16 +25,17 @@ export default function CompanyLogo({
   fallbackBg = "bg-gradient-to-br from-emerald-500 to-emerald-600",
 }: CompanyLogoProps) {
   const { logoUrl } = useCompanyInfo();
-  const [imgError, setImgError] = useState(false);
+  const [failed, setFailed] = useState<string[]>([]);
+  const src = [logoUrl, BRAND_LOGO_URL].find((url) => url && !failed.includes(url));
 
-  if (logoUrl && !imgError) {
+  if (src) {
     return (
       <img
-        src={logoUrl}
+        src={src}
         alt="Logo"
         className={`object-contain rounded-xl ${className}`}
-        style={{ width: size, height: size }}
-        onError={() => setImgError(true)}
+        style={{ width: size, height: size, padding: Math.round(size * 0.08), background: "#fff" }}
+        onError={() => setFailed((prev) => [...prev, src])}
       />
     );
   }
