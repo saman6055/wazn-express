@@ -344,6 +344,85 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
       const alignStart = rtl ? 'right' : 'left';
       const fmtDate = (d: Date) => new Date(d).toLocaleDateString('en-GB');
 
+      // pdfkit sets words left to right. A Kurdish or Arabic phrase came out
+      // with its words in reverse - «کۆی قەرزەکان» printed as «قەرزەکانکۆی» -
+      // and lost the space before its last word; a customer's name reversed
+      // with it. Right-to-left text is set here word by word instead: right to
+      // left, the gaps measured, wrapped by hand - in every statement, English
+      // ones too, where a Kurdish description used to print as mojibake in a
+      // font without the letters. Latin text goes through pdfkit as before.
+      const ARABIC_SCRIPT = /[\u0600-\u06FF]/;
+      const rtlLines = (text: string, width: number): string[][] => {
+        const space = doc.widthOfString(' ');
+        const lines: string[][] = [];
+        let line: string[] = [];
+        let lineW = 0;
+        for (const word of text.replace(/\s+/g, ' ').trim().split(' ')) {
+          const w = doc.widthOfString(word);
+          if (line.length && lineW + space + w > width) {
+            lines.push(line);
+            line = [];
+            lineW = 0;
+          }
+          lineW += (line.length ? space : 0) + w;
+          line.push(word);
+        }
+        if (line.length) lines.push(line);
+        return lines;
+      };
+      const rtlWidth = (words: string[]) =>
+        words.reduce((sum, w) => sum + doc.widthOfString(w), 0) + doc.widthOfString(' ') * Math.max(0, words.length - 1);
+      type TextOpts = PDFKit.Mixins.TextOptions & { maxLines?: number };
+      const T = (text: string, x: number, yy: number, opts: TextOpts = {}) => {
+        const { maxLines = 1, ...pdfOpts } = opts;
+        if (!hasVazir || !ARABIC_SCRIPT.test(text)) {
+          doc.text(text, x, yy, pdfOpts);
+          return;
+        }
+        const width = opts.width ?? 515;
+        const lines = rtlLines(text, width);
+        const shown = lines.slice(0, maxLines);
+        if (lines.length > maxLines) shown[shown.length - 1] = [...shown[shown.length - 1], '…'];
+        const space = doc.widthOfString(' ');
+        const lineH = doc.currentLineHeight(true);
+        shown.forEach((words, li) => {
+          const total = rtlWidth(words);
+          let right = opts.align === 'left' ? x + total : opts.align === 'center' ? x + (width + total) / 2 : x + width;
+          for (const word of words) {
+            right -= doc.widthOfString(word);
+            doc.text(word, right, yy + li * lineH, { lineBreak: false });
+            right -= space;
+          }
+        });
+      };
+      const textHeight = (text: string, width: number, maxLines: number) =>
+        hasVazir && ARABIC_SCRIPT.test(text)
+          ? Math.min(rtlLines(text, width).length, maxLines) * doc.currentLineHeight(true)
+          : doc.heightOfString(text, { width });
+      /** "label: value" in reading order, flush to one edge of a box. */
+      const pair = (label: string, value: string, boxX: number, yy: number, width: number, edge: 'start' | 'end') => {
+        const gap = 4;
+        const labelText = `${label}:`;
+        doc.font(FR);
+        const lw = rtl && ARABIC_SCRIPT.test(labelText) ? rtlWidth(labelText.split(' ')) : doc.widthOfString(labelText);
+        // The label's own font in RTL: Vazirmatn sits lower than Helvetica,
+        // and a date beside a Kurdish label floated half a line above it.
+        doc.font(rtl ? FR : 'Helvetica');
+        const vw = doc.widthOfString(value);
+        const flushRight = rtl ? edge === 'start' : edge === 'end';
+        let cx = flushRight ? boxX + width - (lw + gap + vw) : boxX;
+        const drawLabel = () => {
+          doc.font(FR);
+          T(labelText, cx, yy, { width: lw + 1, align: 'left', lineBreak: false });
+          cx += lw + gap;
+        };
+        const drawValue = () => {
+          doc.font(rtl ? FR : 'Helvetica').text(value, cx, yy, { lineBreak: false });
+          cx += vw + gap;
+        };
+        if (rtl) { drawValue(); drawLabel(); } else { drawLabel(); drawValue(); }
+      };
+
       let y = 120;
       const ensure = (needed: number, redraw?: () => void) => {
         if (y + needed > 760) {
@@ -354,91 +433,70 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
       };
 
       // ---- Header ----------------------------------------------------------
-      doc.rect(0, 0, 595, 100).fill('#1a365d');
-      // The mark on a white tile: black ink vanishes on the navy band. The
-      // old lettering stays as the fallback if the file cannot be found.
-      if (!drawBrandLogo(doc, mx(40, brandLogoWidth(28)), 18, { height: 28, tile: true })) {
-        doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
-           .text('WAZN EXPRESS', mx(40, 250), 26, { width: 250, align: alignStart });
-      }
-      doc.fontSize(13).font(FB).fillColor('#cbd5e0')
-         .text(L('title'), mx(40, 250), 54, { width: 250, align: alignStart });
-
-      doc.fontSize(9).font(FR).fillColor('#a0aec0');
+      // One slim band on white: the mark, the title and the dates on one side,
+      // whose statement it is on the other, then a single summary strip. It
+      // was a navy block, a customer card and three cards that said payments
+      // and the balance a second time - a third of the first sheet before the
+      // first row, and a sheet of ink. The owner: save the paper, keep it neat.
+      const top = 30;
+      const markW = drawBrandLogo(doc, mx(40, brandLogoWidth(30)), top, { height: 30 });
+      const titleX = markW ? 40 + markW + 12 : 40;
+      doc.fontSize(15).font(FB).fillColor('#1a365d');
+      T(L('title'), mx(titleX, 200), top - 1, { width: 200, align: alignStart, lineBreak: false });
+      doc.fontSize(8).fillColor('#718096');
+      pair(L('generated'), fmtDate(data.generatedAt), mx(titleX, 200), top + 20, 200, 'start');
       if (data.dateRange) {
-        doc.text(L('period'), mx(415, 140), 30, { width: 140, align: rtl ? 'left' : 'right' });
-        doc.font('Helvetica').text(
-          `${fmtDate(data.dateRange.start)} - ${fmtDate(data.dateRange.end)}`,
-          mx(395, 160), 43, { width: 160, align: rtl ? 'left' : 'right' },
-        );
+        pair(L('period'), `${fmtDate(data.dateRange.start)} - ${fmtDate(data.dateRange.end)}`, mx(titleX, 200), top + 31, 200, 'start');
       }
-      doc.font(FR).text(L('generated'), mx(415, 140), 60, { width: 140, align: rtl ? 'left' : 'right' });
-      doc.font('Helvetica').text(fmtDate(data.generatedAt), mx(395, 160), 73, { width: 160, align: rtl ? 'left' : 'right' });
 
-      // ---- Customer card ---------------------------------------------------
-      doc.roundedRect(40, y, 515, 84, 8).fillColor('#f7fafc').fill();
-      doc.roundedRect(40, y, 515, 84, 8).strokeColor('#e2e8f0').stroke();
+      const whoX = mx(325, 230);
+      const endAlign = rtl ? 'left' : 'right';
+      doc.fontSize(12).font(hasVazir && ARABIC_SCRIPT.test(data.customer.fullName) ? 'Vazir-Bold' : 'Helvetica-Bold').fillColor('#1a365d');
+      T(data.customer.fullName, whoX, top - 1, { width: 230, align: endAlign, lineBreak: false });
+      doc.fontSize(8.5).fillColor('#4a5568');
+      pair(L('customerCode'), data.customer.customerCode, whoX, top + 17, 230, 'end');
+      pair(L('mobile'), data.customer.mobileNumber, whoX, top + 29, 230, 'end');
 
-      doc.fontSize(14).font(rtl && /[؀-ۿ]/.test(data.customer.fullName) ? FB : 'Helvetica-Bold')
-         .fillColor('#1a365d')
-         .text(data.customer.fullName, mx(55, 270), y + 14, { width: 270, align: alignStart });
-      doc.fontSize(9).font(FR).fillColor('#4a5568')
-         .text(L('customerCode'), mx(55, 130), y + 38, { width: 130, align: alignStart });
-      doc.font('Helvetica-Bold').text(data.customer.customerCode, mx(55, 270), y + 51, { width: 270, align: alignStart });
-      doc.font(FR).text(L('mobile'), mx(55, 130), y + 66, { width: 130, align: alignStart, continued: false });
-      doc.font('Helvetica').text(data.customer.mobileNumber, mx(130, 195), y + 66, { width: 195, align: alignStart });
+      doc.moveTo(40, top + 44).lineTo(555, top + 44).lineWidth(1).strokeColor('#1a365d').stroke();
 
-      // Account summary — right half of the card (left half in RTL)
-      doc.fontSize(9.5).font(FB).fillColor('#2d3748')
-         .text(L('accountSummary'), mx(350, 190), y + 12, { width: 190, align: alignStart });
-      const sumLine = (label: string, value: string, yy: number, color = '#4a5568', boldVal = false) => {
-        doc.fontSize(8.5).font(FR).fillColor(color)
-           .text(label, mx(350, 120), yy, { width: 120, align: alignStart });
-        doc.font(boldVal ? 'Helvetica-Bold' : 'Helvetica')
-           .text(value, mx(455, 90), yy, { width: 90, align: rtl ? 'left' : 'right' });
-      };
-      sumLine(L('totalCharges'), `$${data.accountSummary.totalCharges.toFixed(2)}`, y + 28);
-      sumLine(L('totalPayments'), `$${data.accountSummary.totalPayments.toFixed(2)}`, y + 44);
-      sumLine(
-        L('currentBalance'),
-        `$${data.accountSummary.currentBalance.toFixed(2)}`,
-        y + 60,
-        data.accountSummary.currentBalance > 0 ? '#e53e3e' : '#38a169',
-        true,
-      );
+      // ---- Summary strip: each figure once --------------------------------
+      const stripY = top + 52;
+      const stripH = 34;
+      doc.roundedRect(40, stripY, 515, stripH, 6).fillColor('#f7fafc').fill();
+      doc.roundedRect(40, stripY, 515, stripH, 6).lineWidth(0.5).strokeColor('#e2e8f0').stroke();
+      const balance = data.accountSummary.currentBalance;
+      const cells: Array<[string, string, string]> = [
+        [L('totalPackages'), String(data.packages.length), '#2d3748'],
+        [L('totalCharges'), `$${data.accountSummary.totalCharges.toFixed(2)}`, '#2d3748'],
+        [L('totalPayments'), `$${data.accountSummary.totalPayments.toFixed(2)}`, '#2f855a'],
+        [L('currentBalance'), `$${balance.toFixed(2)}`, balance > 0 ? '#c53030' : '#2f855a'],
+      ];
+      const cellW = 515 / cells.length;
+      cells.forEach(([label, value, color], i) => {
+        const cx = mx(40 + i * cellW, cellW);
+        if (i > 0) {
+          doc.moveTo(40 + i * cellW, stripY + 7).lineTo(40 + i * cellW, stripY + stripH - 7)
+             .lineWidth(0.5).strokeColor('#e2e8f0').stroke();
+        }
+        doc.fontSize(7.5).font(FR).fillColor('#718096');
+        T(label, cx, stripY + 5, { width: cellW, align: 'center', lineBreak: false });
+        doc.fontSize(12).font('Helvetica-Bold').fillColor(color)
+           .text(value, cx, stripY + 16, { width: cellW, align: 'center', lineBreak: false });
+      });
+      doc.lineWidth(1);
 
-      y += 104;
-
-      // ---- Summary cards ---------------------------------------------------
-      const cardWidth = 160;
-      const cardGap = 17;
-      const card = (slot: number, label: string, value: string, color: string) => {
-        const cx = mx(40 + slot * (cardWidth + cardGap), cardWidth);
-        doc.roundedRect(cx, y, cardWidth, 58, 8).fillColor('#ffffff').fill();
-        doc.roundedRect(cx, y, cardWidth, 58, 8).strokeColor('#e2e8f0').stroke();
-        doc.rect(cx, y, 4, 58).fill(color);
-        doc.fontSize(8.5).font(FR).fillColor('#718096')
-           .text(label, cx + 10, y + 10, { width: cardWidth - 20, align: alignStart });
-        doc.fontSize(16).font('Helvetica-Bold').fillColor(color)
-           .text(value, cx + 10, y + 28, { width: cardWidth - 20, align: alignStart });
-      };
-      card(0, L('totalPackages'), String(data.packages.length), '#3182ce');
-      card(1, L('totalPayments'), `$${data.accountSummary.totalPayments.toFixed(0)}`, '#38a169');
-      card(2, L('balanceDue'), `$${data.accountSummary.currentBalance.toFixed(0)}`,
-        data.accountSummary.currentBalance > 0 ? '#e53e3e' : '#38a169');
-
-      y += 80;
+      y = stripY + stripH + 16;
 
       const sectionTitle = (label: string) => {
         ensure(34);
-        doc.fontSize(12).font(FB).fillColor('#1a365d')
-           .text(label, 40, y, { width: 515, align: alignStart });
+        doc.fontSize(12).font(FB).fillColor('#1a365d');
+        T(label, 40, y, { width: 515, align: alignStart });
         y += 20;
       };
 
       const emptyNote = () => {
-        doc.fontSize(9).font(FR).fillColor('#718096')
-           .text(L('noRecords'), 40, y + 4, { width: 515, align: alignStart });
+        doc.fontSize(9).font(FR).fillColor('#718096');
+        T(L('noRecords'), 40, y + 4, { width: 515, align: alignStart });
         y += 24;
       };
 
@@ -455,11 +513,11 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
       const ledgerHeader = () => {
         doc.rect(40, y, 515, 20).fill('#edf2f7');
         doc.fontSize(8.5).font(FB).fillColor('#4a5568');
-        doc.text(L('colDate'), mx(led.date.x, led.date.w), y + 6, { width: led.date.w, align: alignStart });
-        doc.text(L('colDescription'), mx(led.desc.x, led.desc.w), y + 6, { width: led.desc.w, align: alignStart });
-        doc.text(L('colDebit'), mx(led.debit.x, led.debit.w), y + 6, { width: led.debit.w, align: 'center' });
-        doc.text(L('colCredit'), mx(led.credit.x, led.credit.w), y + 6, { width: led.credit.w, align: 'center' });
-        doc.text(L('colBalance'), mx(led.balance.x, led.balance.w), y + 6, { width: led.balance.w, align: 'center' });
+        T(L('colDate'), mx(led.date.x, led.date.w), y + 6, { width: led.date.w, align: alignStart });
+        T(L('colDescription'), mx(led.desc.x, led.desc.w), y + 6, { width: led.desc.w, align: alignStart });
+        T(L('colDebit'), mx(led.debit.x, led.debit.w), y + 6, { width: led.debit.w, align: 'center' });
+        T(L('colCredit'), mx(led.credit.x, led.credit.w), y + 6, { width: led.credit.w, align: 'center' });
+        T(L('colBalance'), mx(led.balance.x, led.balance.w), y + 6, { width: led.balance.w, align: 'center' });
         y += 20;
       };
 
@@ -477,16 +535,16 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
           if (isCharge) totalDebit += tx.amount; else totalCredit += tx.amount;
 
           const desc = (tx.description || formatStatus(tx.type)).replace(/\s+/g, ' ').trim();
-          doc.font(rtl && /[؀-ۿ]/.test(desc) ? FR : 'Helvetica').fontSize(7.5);
-          const descH = Math.min(doc.heightOfString(desc, { width: led.desc.w }), 28);
+          doc.font(hasVazir && ARABIC_SCRIPT.test(desc) ? 'Vazir' : 'Helvetica').fontSize(7.5);
+          const descH = Math.min(textHeight(desc, led.desc.w, 2), 28);
           const rowH = Math.max(16, descH + 6);
           ensure(rowH + 2, ledgerHeader);
 
           if (rowIndex % 2 === 1) doc.rect(40, y, 515, rowH).fill('#f7fafc');
           doc.fontSize(7.5).font('Helvetica').fillColor('#2d3748')
              .text(fmtDate(tx.createdAt), mx(led.date.x, led.date.w), y + 4, { width: led.date.w, align: alignStart });
-          doc.font(rtl && /[؀-ۿ]/.test(desc) ? FR : 'Helvetica')
-             .text(desc, mx(led.desc.x, led.desc.w), y + 4, { width: led.desc.w, height: 28, ellipsis: true, align: alignStart });
+          doc.font(hasVazir && ARABIC_SCRIPT.test(desc) ? 'Vazir' : 'Helvetica');
+          T(desc, mx(led.desc.x, led.desc.w), y + 4, { width: led.desc.w, height: 28, ellipsis: true, align: alignStart, maxLines: 2 });
           doc.font('Helvetica');
           if (isCharge) {
             doc.fillColor('#e53e3e').text(`$${tx.amount.toFixed(2)}`, mx(led.debit.x, led.debit.w), y + 4, { width: led.debit.w, align: 'center' });
@@ -502,8 +560,8 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
         // Totals band for the shown rows
         ensure(24);
         doc.rect(40, y, 515, 20).fill('#e2e8f0');
-        doc.fontSize(8).font(FB).fillColor('#2d3748')
-           .text(L('periodTotals'), mx(led.date.x, led.date.w + led.desc.w), y + 6, { width: led.date.w + led.desc.w, align: alignStart });
+        doc.fontSize(8).font(FB).fillColor('#2d3748');
+        T(L('periodTotals'), mx(led.date.x, led.date.w + led.desc.w), y + 6, { width: led.date.w + led.desc.w, align: alignStart });
         doc.font('Helvetica-Bold').fillColor('#e53e3e')
            .text(`$${totalDebit.toFixed(2)}`, mx(led.debit.x, led.debit.w), y + 6, { width: led.debit.w, align: 'center' });
         doc.fillColor('#38a169')
@@ -525,12 +583,12 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
       const pkgHeader = () => {
         doc.rect(40, y, 515, 20).fill('#edf2f7');
         doc.fontSize(8.5).font(FB).fillColor('#4a5568');
-        doc.text(L('colTracking'), mx(pk.tracking.x, pk.tracking.w), y + 6, { width: pk.tracking.w, align: alignStart });
-        doc.text(L('colStatus'), mx(pk.status.x, pk.status.w), y + 6, { width: pk.status.w, align: alignStart });
-        doc.text(L('colWeight'), mx(pk.weight.x, pk.weight.w), y + 6, { width: pk.weight.w, align: 'center' });
-        doc.text(L('colCost'), mx(pk.cost.x, pk.cost.w), y + 6, { width: pk.cost.w, align: 'center' });
-        doc.text(L('colBatch'), mx(pk.batch.x, pk.batch.w), y + 6, { width: pk.batch.w, align: alignStart });
-        doc.text(L('colDate'), mx(pk.date.x, pk.date.w), y + 6, { width: pk.date.w, align: alignStart });
+        T(L('colTracking'), mx(pk.tracking.x, pk.tracking.w), y + 6, { width: pk.tracking.w, align: alignStart });
+        T(L('colStatus'), mx(pk.status.x, pk.status.w), y + 6, { width: pk.status.w, align: alignStart });
+        T(L('colWeight'), mx(pk.weight.x, pk.weight.w), y + 6, { width: pk.weight.w, align: 'center' });
+        T(L('colCost'), mx(pk.cost.x, pk.cost.w), y + 6, { width: pk.cost.w, align: 'center' });
+        T(L('colBatch'), mx(pk.batch.x, pk.batch.w), y + 6, { width: pk.batch.w, align: alignStart });
+        T(L('colDate'), mx(pk.date.x, pk.date.w), y + 6, { width: pk.date.w, align: alignStart });
         y += 20;
       };
 
@@ -544,8 +602,8 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
           if (i % 2 === 1) doc.rect(40, y, 515, 16).fill('#f7fafc');
           doc.fontSize(7.5).font('Helvetica').fillColor('#2d3748')
              .text(pkg.trackingNumber.substring(0, 24), mx(pk.tracking.x, pk.tracking.w), y + 4, { width: pk.tracking.w, align: alignStart });
-          doc.font(rtl ? FR : 'Helvetica').fillColor(getStatusColor(pkg.status))
-             .text(statusText(pkg.status), mx(pk.status.x, pk.status.w), y + 4, { width: pk.status.w, align: alignStart });
+          doc.font(rtl ? FR : 'Helvetica').fillColor(getStatusColor(pkg.status));
+          T(statusText(pkg.status), mx(pk.status.x, pk.status.w), y + 4, { width: pk.status.w, align: alignStart });
           doc.font('Helvetica').fillColor('#2d3748');
           doc.text(pkg.sizeConcealed ? '—' : `${pkg.weightKg.toFixed(1)} kg`, mx(pk.weight.x, pk.weight.w), y + 4, { width: pk.weight.w, align: 'center' });
           doc.text(pkg.sizeConcealed ? '—' : `$${pkg.costUsd.toFixed(2)}`, mx(pk.cost.x, pk.cost.w), y + 4, { width: pk.cost.w, align: 'center' });
@@ -568,10 +626,10 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
       const payHeader = () => {
         doc.rect(40, y, 515, 20).fill('#edf2f7');
         doc.fontSize(8.5).font(FB).fillColor('#4a5568');
-        doc.text(L('colDate'), mx(pay.date.x, pay.date.w), y + 6, { width: pay.date.w, align: alignStart });
-        doc.text(L('colAmount'), mx(pay.amount.x, pay.amount.w), y + 6, { width: pay.amount.w, align: 'center' });
-        doc.text(L('colMethod'), mx(pay.method.x, pay.method.w), y + 6, { width: pay.method.w, align: alignStart });
-        doc.text(L('colReference'), mx(pay.reference.x, pay.reference.w), y + 6, { width: pay.reference.w, align: alignStart });
+        T(L('colDate'), mx(pay.date.x, pay.date.w), y + 6, { width: pay.date.w, align: alignStart });
+        T(L('colAmount'), mx(pay.amount.x, pay.amount.w), y + 6, { width: pay.amount.w, align: 'center' });
+        T(L('colMethod'), mx(pay.method.x, pay.method.w), y + 6, { width: pay.method.w, align: alignStart });
+        T(L('colReference'), mx(pay.reference.x, pay.reference.w), y + 6, { width: pay.reference.w, align: alignStart });
         y += 20;
       };
 
@@ -588,7 +646,9 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
           doc.fillColor('#38a169').text(`$${payment.amount.toFixed(2)}`, mx(pay.amount.x, pay.amount.w), y + 4, { width: pay.amount.w, align: 'center' });
           doc.fillColor('#2d3748');
           doc.text(formatPaymentMethod(payment.method), mx(pay.method.x, pay.method.w), y + 4, { width: pay.method.w, align: alignStart });
-          doc.text(payment.reference || '-', mx(pay.reference.x, pay.reference.w), y + 4, { width: pay.reference.w, align: alignStart });
+          const ref = payment.reference || '-';
+          doc.font(hasVazir && ARABIC_SCRIPT.test(ref) ? 'Vazir' : 'Helvetica');
+          T(ref, mx(pay.reference.x, pay.reference.w), y + 4, { width: pay.reference.w, align: alignStart });
           y += 16;
         });
       }
