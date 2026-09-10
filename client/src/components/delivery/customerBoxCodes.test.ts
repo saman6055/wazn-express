@@ -99,7 +99,8 @@ describe("pressing a code shows that customer and nothing else", () => {
   it("refetches when the drill changes", () => {
     // The query params memo has to depend on it, or the table keeps showing
     // the previous customer's boxes.
-    expect(page).toContain("[filters, currentPage, drilledCustomerId]");
+    // The archive switch too: the server splits current from archived now.
+    expect(page).toContain("[filters, currentPage, drilledCustomerId, showArchivedBoxes]");
   });
 
   it("offers a way back that is visible while the filter is on", () => {

@@ -7,6 +7,7 @@ import {
   isBatchArchived,
   partitionArchived,
   isBoxArchived,
+  isBoxFullySettled,
   partitionBoxes,
 } from "./archive";
 
@@ -167,5 +168,29 @@ describe("a delivery box drops out once nothing is left to do with it", () => {
     const { current, archived } = partitionBoxes(boxes, now);
     expect(current.map((b) => b.id)).toEqual([2]);
     expect(archived.map((b) => b.id)).toEqual([1, 3]);
+  });
+});
+
+describe("forgiven money settles a box as surely as paid money", () => {
+  const now = new Date("2026-09-10T12:00:00Z");
+
+  it("a box paid in part and forgiven the rest is finished", () => {
+    const box = { status: "open", updatedAt: now, totalValueUsd: "49.20", settledUsd: 45, settledDiscountUsd: 4.2 };
+    expect(isBoxFullySettled(box)).toBe(true);
+    expect(isBoxArchived(box, now)).toBe(true);
+  });
+
+  it("a box forgiven entirely is finished", () => {
+    expect(isBoxFullySettled({ totalValueUsd: "19.36", settledUsd: 0, settledDiscountUsd: 19.36 })).toBe(true);
+  });
+
+  it("a box short of payment with nothing forgiven is still work", () => {
+    const box = { status: "delivered", updatedAt: now, totalValueUsd: "49.20", settledUsd: 45 };
+    expect(isBoxFullySettled(box)).toBe(false);
+    expect(isBoxArchived(box, now)).toBe(false);
+  });
+
+  it("nothing taken is not settled", () => {
+    expect(isBoxFullySettled({ totalValueUsd: "10.00" })).toBe(false);
   });
 });

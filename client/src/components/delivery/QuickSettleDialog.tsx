@@ -88,8 +88,18 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
       toast.success(
         `${t({ ku: "واصڵ کرا", en: "Settled", ar: "تم الاستلام", zh: "已结清" })} — ${res.settlementNumber}`,
       );
-      utils.deliveryBox.settlementView.invalidate();
-      utils.deliveryBox.customerSummary.invalidate();
+      if (res.boxFinished) {
+        toast.success(t({ ku: "بۆکسەکە گەیەنرا، داخرا و چووە ئەرشیف", en: "Box delivered, closed and archived", ar: "تم تسليم الصندوق وإغلاقه وأرشفته", zh: "箱子已交付、关闭并归档" }));
+      } else if (res.finishError) {
+        systemAlert({
+          kind: "error",
+          title: t({ ku: "پارەکە تۆمار کرا، بەڵام بۆکسەکە خۆکار نەگەیەنرا", en: "Payment saved, but the box was not closed automatically", ar: "تم حفظ الدفعة لكن الصندوق لم يُغلق تلقائيًا", zh: "付款已保存，但箱子未能自动关闭" }),
+          message: res.finishError,
+        });
+      }
+      // The whole box router: the list drops the paid box and pulls the
+      // next one up into its place, and the counts follow.
+      void utils.deliveryBox.invalidate();
       onOpenChange(false);
       onSettled?.();
     },

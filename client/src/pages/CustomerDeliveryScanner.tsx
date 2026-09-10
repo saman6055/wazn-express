@@ -1,6 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
-import { partitionBoxes } from "@shared/archive";
 import { toast } from "sonner";
 import { Package, Plus, Archive, Users, Percent, X } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -47,6 +46,9 @@ export default function CustomerDeliveryScanner() {
     endDate: "",
   });
 
+  /** The archive: paid-for and finished boxes, kept, just not in the way. */
+  const [showArchivedBoxes, setShowArchivedBoxes] = useState(false);
+
   // Build query params from filters
   const queryParams = useMemo(() => {
     const params: Record<string, any> = {
@@ -54,6 +56,10 @@ export default function CustomerDeliveryScanner() {
       offset: currentPage * PAGE_SIZE,
     };
     if (drilledCustomerId) params.customerId = drilledCustomerId;
+    // The server leaves the archive out, so a page is a full page: when a
+    // box is paid it leaves and the next one moves up into its place. A
+    // drilled customer sees everything of theirs, archived or not.
+    if (!drilledCustomerId) params.archive = showArchivedBoxes ? "only" : "exclude";
     if (filters.search) params.search = filters.search;
     if (filters.status !== "all") params.status = filters.status;
     if (filters.deliveryMethod !== "all") params.deliveryMethod = filters.deliveryMethod;
@@ -64,7 +70,7 @@ export default function CustomerDeliveryScanner() {
       params.endDate = new Date(filters.endDate + "T23:59:59").toISOString();
     }
     return params;
-  }, [filters, currentPage, drilledCustomerId]);
+  }, [filters, currentPage, drilledCustomerId, showArchivedBoxes]);
 
   // Queries
   const { data: customersData } = trpc.customers.list.useQuery();
@@ -79,20 +85,13 @@ export default function CustomerDeliveryScanner() {
   const customers = customersData ?? [];
   /** On the icon, so the page says how many people are waiting without a panel. */
   const waitingCodes = (customerBoxRows ?? []).filter((r) => r.openBoxes > 0).length;
-  const [showArchivedBoxes, setShowArchivedBoxes] = useState(false);
   const allBoxes = boxesData?.boxes ?? [];
   const totalBoxes = boxesData?.total ?? 0;
 
-  // A box drops out once the money for it is in — immediately, whatever its
-  // age — and stays while it is not, however old. Sealed and unpaid is the
-  // most important row on this screen, and the one carrying the button that
-  // collects it. Cancelled goes at once; there was never anything to collect.
-  // See isBoxArchived in shared/archive.ts.
-  const { current: currentBoxes, archived: archivedBoxes } = useMemo(
-    () => partitionBoxes(allBoxes as any[]),
-    [allBoxes]
-  );
-  const boxes = showArchivedBoxes ? allBoxes : currentBoxes;
+  // Current and archived are split on the server now — the same rule as
+  // isBoxArchived in shared/archive.ts — so the page is a page.
+  const boxes = allBoxes;
+  const archivedCount = boxesData?.archivedTotal ?? 0;
 
   // Handlers
   const handleFilterChange = useCallback((newFilters: FilterState) => {
@@ -114,6 +113,7 @@ export default function CustomerDeliveryScanner() {
     // Their finished boxes are part of "everything of theirs", and the
     // customer at the counter may be asking about one of them.
     if (customerId !== null) setShowArchivedBoxes(true);
+    else setShowArchivedBoxes(false);
   }, []);
 
   const handleBoxSelect = useCallback((boxId: number) => {
@@ -252,12 +252,14 @@ export default function CustomerDeliveryScanner() {
               </div>
             )}
 
-            {archivedBoxes.length > 0 && (
+            {!drilledCustomerId && (archivedCount > 0 || showArchivedBoxes) && (
               <div className="flex items-center justify-between gap-2 mb-4 text-sm">
                 <span className="text-muted-foreground">
-                  {t("delivery.archivedHidden", { count: archivedBoxes.length })}
+                  {showArchivedBoxes
+                    ? L({ ku: "ئەرشیف: بۆکسە پارەدراو و تەواوبووەکان", en: "Archive: paid and finished boxes", ar: "الأرشيف: الصناديق المدفوعة والمنتهية", zh: "归档：已付清并完成的箱子" })
+                    : t("delivery.archivedHidden", { count: archivedCount })}
                 </span>
-                <Button variant="outline" size="sm" onClick={() => setShowArchivedBoxes((v) => !v)}>
+                <Button variant="outline" size="sm" onClick={() => { setShowArchivedBoxes((v) => !v); setCurrentPage(0); }}>
                   <Archive className="h-4 w-4 me-2" />
                   {showArchivedBoxes ? t("batches.hideArchived") : t("batches.showArchived")}
                 </Button>

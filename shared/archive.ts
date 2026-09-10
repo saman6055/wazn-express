@@ -25,6 +25,15 @@ export const ARCHIVE_AFTER_DAYS = 10;
 
 const DAY_MS = 24 * 60 * 60 * 1000;
 
+/** Half a cent of slack, so a rounded dinar payment does not leave a box
+ *  looking part-paid for ever. Shared by the list's SQL and the payment door. */
+export const SETTLED_SLACK_USD = 0.005;
+
+/** The moment before which a finished record counts as old. */
+export function archiveCutoff(now: Date = new Date()): Date {
+  return new Date(now.getTime() - ARCHIVE_AFTER_DAYS * DAY_MS);
+}
+
 /** Statuses that mean a batch's work is over. */
 export const FINISHED_BATCH_STATUSES = ["delivered", "closed"] as const;
 
@@ -84,23 +93,37 @@ export function isArchived(
 export interface ArchivableBox extends ArchivableRecord {
   /** Money taken against this box, from confirmed receipts only. */
   settledUsd?: number | null;
+  /** Money forgiven against this box, from confirmed receipts only. A
+   *  discount settles a box as surely as a payment does. */
+  settledDiscountUsd?: number | null;
   /** What the box is worth. Zero or missing falls back to the age rule. */
   totalValueUsd?: string | number | null;
 }
 
+/** Money in plus money forgiven: what has been settled against a box. */
+function settledAgainst(box: ArchivableBox): number {
+  return Number(box.settledUsd ?? 0) + Number(box.settledDiscountUsd ?? 0);
+}
+
+/**
+ * Has this box been settled in full?
+ *
+ * Part-paid is still work: somebody is owed the rest. Only a box paid for in
+ * full is done. A box worth nothing on record but with money taken against it
+ * counts as done — the money is the better evidence. Forgiven money counts:
+ * a box paid $45 and forgiven the last $4.20 was kept in the list for ever,
+ * because only the $45 was looked at.
+ */
+export function isBoxFullySettled(box: ArchivableBox): boolean {
+  const settled = settledAgainst(box);
+  if (!(settled > 0)) return false;
+  const worth = Number(box.totalValueUsd ?? 0);
+  return !(worth > 0) || settled + SETTLED_SLACK_USD >= worth;
+}
+
 export function isBoxArchived(box: ArchivableBox, now: Date = new Date()): boolean {
   if (box.status === "cancelled") return true;
-
-  const settled = Number(box.settledUsd ?? 0);
-  if (settled > 0) {
-    const worth = Number(box.totalValueUsd ?? 0);
-    // Part-paid is still work: somebody is owed the rest. Only a box paid
-    // for in full is done. A box worth nothing on record but with money
-    // taken against it counts as done — the money is the better evidence.
-    if (!(worth > 0) || settled + 0.005 >= worth) return true;
-    return false;
-  }
-
+  if (settledAgainst(box) > 0) return isBoxFullySettled(box);
   return isArchived(box, FINISHED_BOX_STATUSES, now);
 }
 

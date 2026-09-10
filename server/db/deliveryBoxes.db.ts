@@ -7,6 +7,7 @@ import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
 import { markLinkedOrdersDelivered } from "./packages.db";
 import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 import { boxSettlements } from "../../drizzle/schema/finance.schema";
+import { archiveCutoff, SETTLED_SLACK_USD } from "@shared/archive";
 
 // ============ BOX CODE GENERATION ============
 
@@ -84,7 +85,9 @@ export async function getAllDeliveryBoxes(filters?: {
   limit?: number;
   offset?: number;
   batchId?: number | null;
-}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null })[]; total: number }> {
+  /** "exclude" leaves archived boxes out, "only" shows just them; absent shows all. */
+  archive?: "exclude" | "only";
+}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null })[]; total: number; archivedTotal?: number }> {
   const db = await getDb();
   if (!db) return { boxes: [], total: 0 };
 
@@ -120,9 +123,33 @@ export async function getAllDeliveryBoxes(filters?: {
   if (filters?.batchId === null) conditions.push(sql`${deliveryBoxes.batchId} IS NULL`);
   else if (typeof filters?.batchId === 'number') conditions.push(eq(deliveryBoxes.batchId, filters.batchId));
 
+  /**
+   * Which boxes are archived, decided here in SQL so a page is a full page.
+   *
+   * The screen used to fetch twenty and hide the archived ones, so a page
+   * shrank when a box was paid and the next box never moved up into its
+   * place. This is isBoxArchived (shared/archive.ts) in SQL — same statuses,
+   * same slack, same ten days — with money forgiven counted beside money paid.
+   */
+  const settledSql = sql`COALESCE((SELECT SUM(COALESCE(${boxSettlements.paidUsd}, 0) + COALESCE(${boxSettlements.discountUsd}, 0)) FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id} AND ${boxSettlements.status} = 'confirmed'), 0)`;
+  const archivedSql = sql`(${deliveryBoxes.status} = 'cancelled'
+    OR (${settledSql} > 0 AND (COALESCE(${deliveryBoxes.totalValueUsd}, 0) <= 0 OR ${settledSql} + ${SETTLED_SLACK_USD} >= ${deliveryBoxes.totalValueUsd}))
+    OR (${settledSql} <= 0 AND ${deliveryBoxes.status} IN ('delivered', 'cancelled') AND (${deliveryBoxes.updatedAt} IS NULL OR ${deliveryBoxes.updatedAt} < ${archiveCutoff()})))`;
+  const baseWhere = conditions.length > 0 ? and(...conditions) : undefined;
+  if (filters?.archive === "exclude") conditions.push(sql`NOT ${archivedSql}`);
+  else if (filters?.archive === "only") conditions.push(archivedSql);
+
   const where = conditions.length > 0 ? and(...conditions) : undefined;
   const [countResult] = await db.select({ count: sql<number>`COUNT(*)` }).from(deliveryBoxes).where(where);
   const total = Number(countResult?.count || 0);
+
+  // How many are in the archive, for the line above the table.
+  let archivedTotal: number | undefined;
+  if (filters?.archive === "exclude") {
+    const [archivedCount] = await db.select({ count: sql<number>`COUNT(*)` }).from(deliveryBoxes)
+      .where(baseWhere ? and(baseWhere, archivedSql) : archivedSql);
+    archivedTotal = Number(archivedCount?.count || 0);
+  }
 
   const boxes = await db.select().from(deliveryBoxes)
     .where(where)
@@ -194,7 +221,7 @@ export async function getAllDeliveryBoxes(filters?: {
     ),
   }));
 
-  return { boxes: boxesWithType, total };
+  return { boxes: boxesWithType, total, archivedTotal };
 }
 
 export async function updateDeliveryBox(id: number, data: Partial<InsertDeliveryBox>): Promise<DeliveryBox | null> {

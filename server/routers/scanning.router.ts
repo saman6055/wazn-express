@@ -1,4 +1,5 @@
 import { statusForScan, advanceStatus } from "../lib/scanStatus";
+import { chargeBoxDeliveryFee, markBoxContentsDelivered, finishPaidBox } from "../lib/boxLifecycle";
 import { resolveGoodsCategory } from "../lib/goodsCategory";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -1034,6 +1035,7 @@ export const deliveryBoxRouter = router({
       // batchId: number = filter to a specific batch; null (via 0) = manual boxes only
       batchId: z.number().optional(),
       manualOnly: z.boolean().optional(),
+      archive: z.enum(["exclude", "only"]).optional(),
     }).optional())
     .query(async ({ input }) => {
       return db.getAllDeliveryBoxes({
@@ -1101,7 +1103,12 @@ export const deliveryBoxRouter = router({
       replacesSettlementId: z.number().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      return db.createBoxSettlement(input, ctx.user.id);
+      const result = await db.createBoxSettlement(input, ctx.user.id);
+      // The owner's rule: a box paid for in full is finished — delivered,
+      // closed and archived — at once. Runs after the payment is committed
+      // and never throws: a failure to finish is reported, not a failed payment.
+      const finish = await finishPaidBox(input.boxId, ctx.user.id);
+      return { ...result, boxFinished: finish.finished, finishError: finish.error };
     }),
 
   /**
@@ -1419,55 +1426,13 @@ export const deliveryBoxRouter = router({
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
       if (box.status !== 'ready') throw new TRPCError({ code: "BAD_REQUEST", message: "سەرەتا بۆکسەکە داخە (seal)" });
 
-      // Charge delivery fee to customer wallet
-      const deliveryCharge = Number(box.deliveryChargeUsd || 0);
-      if (deliveryCharge > 0 && !box.isCharged) {
-        try {
-          const customer = await db.getCustomerById(box.customerId);
-          if (customer) {
-            // Create invoice for delivery charge
-            const items = await db.getBoxItems(box.id);
-            const lineItems = [{
-              description: `نرخی گەیاندنی بۆکس ${box.boxCode} (${items.length} پاکەت) - ${box.destinationCity || 'ناوخۆیی'}`,
-              quantity: 1,
-              unitPrice: deliveryCharge,
-              total: deliveryCharge,
-            }];
-            const invoiceNumber = `INV-BOX-${Date.now()}-${box.id}`;
-            const invoice = await db.createInvoice({
-              invoiceNumber,
-              customerId: box.customerId,
-              subtotalUsd: deliveryCharge.toFixed(2),
-              totalUsd: deliveryCharge.toFixed(2),
-              status: "issued",
-              issuedAt: new Date(),
-              lineItems,
-              notes: `پسووڵەی گەیاندنی بۆکس ${box.boxCode} بۆ ${box.destinationCity || 'ناوخۆیی'}`,
-              createdById: ctx.user.id,
-            });
-
-            // Charge wallet
-            await db.recordPackageChargeWithoutInvoice(
-              box.customerId,
-              customer.customerCode,
-              0, // no specific package
-              deliveryCharge,
-              `نرخی گەیاندنی بۆکس ${box.boxCode}`,
-              ctx.user.id,
-              invoice.id
-            );
-
-            await db.updateDeliveryBox(box.id, {
-              isCharged: true,
-              invoiceId: invoice.id,
-            });
-
-            appLogger.info("[DeliveryBox] Charged customer for box delivery", { boxCode: box.boxCode, charge: deliveryCharge, customerId: box.customerId });
-          }
-        } catch (err) {
-          appLogger.error("[DeliveryBox] Failed to charge delivery", { boxCode: box.boxCode, error: err instanceof Error ? err.message : String(err) });
-          throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە charge کردنی والیت" });
-        }
+      // Charge delivery fee to customer wallet — lib/boxLifecycle, shared
+      // with the payment door so the fee is posted by one piece of code.
+      try {
+        await chargeBoxDeliveryFee(box, ctx.user.id);
+      } catch (err) {
+        appLogger.error("[DeliveryBox] Failed to charge delivery", { boxCode: box.boxCode, error: err instanceof Error ? err.message : String(err) });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە charge کردنی والیت" });
       }
 
       const dispatched = await db.markBoxInTransit(box.id, ctx.user.id);
@@ -1506,34 +1471,8 @@ export const deliveryBoxRouter = router({
         throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکس لە دۆخی گونجاو نییە" });
       }
 
-      // Mark all packages in box as delivered
-      const items = await db.getBoxItems(box.id);
-      for (const item of items) {
-        if (item.packageId) {
-          try {
-            await db.updatePackage(item.packageId, {
-              status: 'delivered',
-              deliveredAt: new Date(),
-              deliveredById: ctx.user.id,
-              recipientSignature: input.signature,
-              deliveryPhoto: input.deliveryPhoto,
-            });
-          } catch (e) {
-            appLogger.error("[DeliveryBox] Failed to update package status", { packageId: item.packageId, error: e instanceof Error ? e.message : String(e) });
-          }
-        }
-        if (item.fullPackageOrderId) {
-          try {
-            await db.updateFullPackageOrder(item.fullPackageOrderId, {
-              status: 'delivered',
-              deliveredDate: new Date(),
-              actualDeliveryDate: new Date(),
-            }, ctx.user.id);
-          } catch (e) {
-            appLogger.error("[DeliveryBox] Failed to update FP order status", { fpOrderId: item.fullPackageOrderId, error: e instanceof Error ? e.message : String(e) });
-          }
-        }
-      }
+      // Mark all packages and linked orders in the box delivered.
+      await markBoxContentsDelivered(box.id, ctx.user.id, input.signature, input.deliveryPhoto);
 
       return db.markBoxDelivered(box.id, ctx.user.id, input.signature, input.deliveryPhoto);
     }),
