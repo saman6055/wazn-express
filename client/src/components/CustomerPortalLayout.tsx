@@ -1,3 +1,4 @@
+import { SectionBoundary } from "@/components/SectionBoundary";
 import { ReactNode, useState, useEffect, useRef } from "react";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { useLocation, Link, useSearch } from "wouter";
@@ -229,7 +230,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         <AnnouncementBanner />
         {/* The pre-declaration CTA that used to sit here is now the home
             page's own hero card — one register-your-tracking action, not two. */}
-        {children}
+        <SectionBoundary resetKey={location}>{children}</SectionBoundary>
         {/* Wazn News ticker — in-flow, and mt-auto pins it to the bottom of a
             short page while still sitting at the end of a long one. Never
             fixed: it should come into view, not hover over the content. */}

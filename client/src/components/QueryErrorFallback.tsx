@@ -4,6 +4,8 @@ import { useState } from "react";
 import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { buildErrorReport, getErrorBoundaryStrings } from "./ErrorBoundary";
+import { copyText } from "@/lib/copyText";
+import { errorRef, homePath, isServerMessage, showsTechnicalDetail } from "@/lib/errorSurface";
 
 interface QueryErrorFallbackProps {
   error: Error;
@@ -20,18 +22,21 @@ export function QueryErrorFallback({
   isNotFound,
   isNetwork,
 }: QueryErrorFallbackProps) {
-  const { t } = useTranslation();
+  const { t, direction } = useTranslation();
   const [copied, setCopied] = useState(false);
   // Same labels as the top-level error screen, so "copy details" reads
   // identically on every error screen regardless of which boundary caught it.
   const copyStrings = getErrorBoundaryStrings();
 
   const handleCopyDetails = () => {
-    navigator.clipboard.writeText(buildErrorReport(error)).then(() => {
+    void copyText(buildErrorReport(error), copyStrings.copyDetails).then((ok) => {
+      if (!ok) return;
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     });
   };
+  const technical = showsTechnicalDetail();
+  const ref = errorRef(error);
 
   const getTitle = () => {
     if (isAuthError) return t("errors.sessionExpiredPleaseLogin");
@@ -44,13 +49,16 @@ export function QueryErrorFallback({
     if (isAuthError) return t("errors.redirectingToLogin");
     if (isNotFound) return t("errors.resourceNotFound");
     if (isNetwork) return t("errors.checkConnectionAndRetry");
+    // A customer reads the server's own sentence — already written for them —
+    // or a plain one; never a JavaScript error.
+    if (!technical && !isServerMessage(error)) return copyStrings.description;
     return error.message || t("common.error");
   };
 
   return (
     <div
       className="flex min-h-screen items-center justify-center p-6 bg-muted/50"
-      dir="rtl"
+      dir={direction}
     >
       <div className="flex flex-col items-center w-full max-w-md text-center">
         <div className="mb-4 flex h-14 w-14 items-center justify-center rounded-full bg-destructive/10">
@@ -62,7 +70,12 @@ export function QueryErrorFallback({
         <p className="text-sm text-muted-foreground mb-6 max-w-sm">
           {getDescription()}
         </p>
-        {!isAuthError && (
+        {!isAuthError && ref && (
+          <p className="text-xs text-muted-foreground mb-4" dir="ltr">
+            Ref: <span className="font-mono">{ref}</span>
+          </p>
+        )}
+        {!isAuthError && technical && (
           <div className="w-full max-h-32 overflow-auto rounded-lg bg-muted p-3 mb-6 text-start">
             <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words font-sans">
               {error.message}
@@ -82,7 +95,7 @@ export function QueryErrorFallback({
               <RotateCcw size={16} />
               {t("common.tryAgain")}
             </button>
-            <Link href="/">
+            <Link href={homePath()}>
               <a
                 className={cn(
                   "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",

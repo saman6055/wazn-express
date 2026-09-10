@@ -1,8 +1,8 @@
-import { lazy, Suspense } from "react";
+import { lazy, Suspense, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { SystemAlertProvider } from "@/components/SystemAlert";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch } from "wouter";
+import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppearanceProvider } from "./contexts/AppearanceContext";
@@ -382,6 +382,12 @@ function Router() {
   );
 }
 
+/** The crash screen belongs to the page that crashed: a new address clears it. */
+function RouteErrorBoundary({ children }: { children: ReactNode }) {
+  const [location] = useLocation();
+  return <QueryErrorBoundary resetKey={location}>{children}</QueryErrorBoundary>;
+}
+
 function App() {
   return (
     <ErrorBoundary>
@@ -399,11 +405,11 @@ function App() {
                     alert; outside the error boundary, so one still shows
                     when a screen has fallen over. */}
                 <SystemAlertProvider>
-                <QueryErrorBoundary>
+                <RouteErrorBoundary>
                   <PortalHistoryProvider>
                     <Router />
                   </PortalHistoryProvider>
-                </QueryErrorBoundary>
+                </RouteErrorBoundary>
                 </SystemAlertProvider>
                 <Suspense fallback={null}>
                   <StaffTips />

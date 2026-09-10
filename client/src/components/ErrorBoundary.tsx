@@ -1,6 +1,8 @@
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw, Home, Copy, Check } from "lucide-react";
 import { Component, ReactNode } from "react";
+import { copyText } from "@/lib/copyText";
+import { errorRef, homePath, readerDirection, showsTechnicalDetail } from "@/lib/errorSurface";
 /**
  * The six strings this screen needs, written out here rather than read from
  * the locale files.
@@ -79,10 +81,20 @@ export function getErrorBoundaryStrings(): {
  * caught the problem.
  */
 export function buildErrorReport(error: Error): string {
+  const data = (error as { data?: { code?: unknown; httpStatus?: unknown; path?: unknown } }).data;
+  const ref = errorRef(error);
   return [
+    // First, so a report pasted into a chat leads straight to the log line.
+    ref ? `Ref: ${ref}` : null,
     error.message,
+    typeof data?.code === "string"
+      ? `Code: ${data.code}${typeof data.httpStatus === "number" ? ` (${data.httpStatus})` : ""}`
+      : null,
+    typeof data?.path === "string" ? `Call: ${data.path}` : null,
     error.stack,
-    typeof window !== "undefined" ? `Page: ${window.location.href}` : null,
+    // The path, not the query string: a search for a phone number is not
+    // support's business.
+    typeof window !== "undefined" ? `Page: ${window.location.origin}${window.location.pathname}` : null,
     `Time: ${new Date().toISOString()}`,
   ]
     .filter(Boolean)
@@ -112,7 +124,8 @@ class ErrorBoundary extends Component<Props, State> {
   handleCopyDetails = () => {
     const { error } = this.state;
     if (!error) return;
-    navigator.clipboard.writeText(buildErrorReport(error)).then(() => {
+    void copyText(buildErrorReport(error), getErrorBoundaryStrings().copyDetails).then((copied) => {
+      if (!copied) return;
       this.setState({ copied: true });
       setTimeout(() => this.setState({ copied: false }), 2000);
     });
@@ -122,11 +135,11 @@ class ErrorBoundary extends Component<Props, State> {
     if (this.state.hasError && this.state.error) {
       const err = this.state.error;
       const strings = getErrorBoundaryStrings();
-      const isRTL = typeof localStorage !== "undefined" && ["ku", "ar"].includes(localStorage.getItem(LANGUAGE_STORAGE_KEY) || "");
+      const ref = errorRef(err);
       return (
         <div
           className="flex items-center justify-center min-h-screen p-6 bg-muted/30"
-          dir={isRTL ? "rtl" : "ltr"}
+          dir={readerDirection()}
         >
           <div className="flex flex-col items-center w-full max-w-lg rounded-2xl border bg-card p-8 shadow-lg">
             <div className="mb-6 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
@@ -143,11 +156,20 @@ class ErrorBoundary extends Component<Props, State> {
               {strings.description}
             </p>
 
-            <div className="w-full max-h-32 overflow-auto rounded-lg bg-muted p-3 mb-6">
-              <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words font-sans">
-                {err.message}
-              </pre>
-            </div>
+            {ref && (
+              <p className="text-xs text-muted-foreground mb-4" dir="ltr">
+                Ref: <span className="font-mono">{ref}</span>
+              </p>
+            )}
+            {/* The raw message is for the office; a customer has the sentence
+                above, and the detail still goes into "copy details". */}
+            {showsTechnicalDetail() && (
+              <div className="w-full max-h-32 overflow-auto rounded-lg bg-muted p-3 mb-6">
+                <pre className="text-xs text-muted-foreground whitespace-pre-wrap break-words font-sans">
+                  {err.message}
+                </pre>
+              </div>
+            )}
 
             <div className="flex flex-wrap items-center justify-center gap-3 w-full">
               <button
@@ -164,7 +186,7 @@ class ErrorBoundary extends Component<Props, State> {
               </button>
               <button
                 type="button"
-                onClick={() => { window.location.href = "/"; }}
+                onClick={() => { window.location.href = homePath(); }}
                 className={cn(
                   "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium",
                   "bg-secondary text-secondary-foreground border border-border",

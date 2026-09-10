@@ -1,3 +1,4 @@
+import { SectionBoundary } from "@/components/SectionBoundary";
 import { NewsTicker } from "@/components/portal/NewsTicker";
 import { ReactNode, useState } from "react";
 import { useLocation, Link } from "wouter";
@@ -103,7 +104,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
 
       {/* Main Content */}
       <main className={cn("relative", portalWidth, "mx-auto w-full flex-1 flex flex-col")}>
-        {children}
+        <SectionBoundary resetKey={location}>{children}</SectionBoundary>
         {/* Wazn News strip — in-flow at the very end of the content, the same
             as the classic skin. It was only ever rendered there, so on this
             skin the news never appeared at all. mt-auto pins it to the bottom

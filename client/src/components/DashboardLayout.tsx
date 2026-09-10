@@ -1,3 +1,6 @@
+import { isAuthError, isNetworkError } from "@/components/QueryErrorBoundary";
+import { QueryErrorFallback } from "@/components/QueryErrorFallback";
+import { SectionBoundary } from "@/components/SectionBoundary";
 import { useAuth } from "../_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -135,7 +138,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { loading, user } = useAuth();
+  const { loading, user, error: authError, refresh } = useAuth();
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
 
@@ -148,6 +151,21 @@ export default function DashboardLayout({
 
   if (loading) {
     return <DashboardLayoutSkeleton />;
+  }
+
+  // Not being able to ask is not being told no. When the server or the
+  // connection is down, auth.me fails — and this page said "Access Required,
+  // please sign in" to someone who had been signed in all along.
+  if (!user && authError && !isAuthError(authError as unknown as Error)) {
+    return (
+      <QueryErrorFallback
+        error={authError as unknown as Error}
+        onRetry={() => { void refresh(); }}
+        isAuthError={false}
+        isNotFound={false}
+        isNetwork={isNetworkError(authError as unknown as Error)}
+      />
+    );
   }
 
   if (!user) {
@@ -1164,7 +1182,7 @@ function DashboardLayoutContent({
             margins either side on a wide monitor — the owner's note, sent
             with a screenshot of the packages table squeezed in the middle. */}
         <div className="p-4 md:p-6">
-          {children}
+          <SectionBoundary resetKey={location}>{children}</SectionBoundary>
         </div>
       </main>
 

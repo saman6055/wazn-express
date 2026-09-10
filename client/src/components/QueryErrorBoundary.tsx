@@ -7,6 +7,12 @@ import { isNetworkFault } from "@/lib/networkFault";
 
 interface Props {
   children: ReactNode;
+  /**
+   * The route. The error screen never cleared on navigation, so its own
+   * "go home" link and the Back button changed the address while the error
+   * stayed on screen. A new address now starts clean.
+   */
+  resetKey?: string;
 }
 
 interface State {
@@ -100,7 +106,11 @@ class QueryErrorBoundary extends Component<Props, State> {
     return { error };
   }
 
-  componentDidUpdate(_: Props, prevState: State) {
+  componentDidUpdate(prevProps: Props, prevState: State) {
+    if (this.state.error && prevProps.resetKey !== this.props.resetKey && this.state.error === prevState.error) {
+      this.setState({ error: null });
+      return;
+    }
     if (this.state.error && this.state.error !== prevState.error && isAuthError(this.state.error)) {
       window.location.href = getLoginUrl();
     }

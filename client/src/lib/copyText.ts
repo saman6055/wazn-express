@@ -9,8 +9,13 @@
  * unconditionally, so it claimed success while copying nothing.
  *
  * Returns whether it worked, so the caller can tell the truth.
+ *
+ * `promptLabel` is for "copy details for support" on the error screens: when
+ * both ways fail, the report is put in a prompt the reader can copy from by
+ * hand — the one button that exists so a problem can be reported must never
+ * do nothing. Everywhere else, leave it out.
  */
-export async function copyText(text: string): Promise<boolean> {
+export async function copyText(text: string, promptLabel?: string): Promise<boolean> {
   if (!text) return false;
 
   try {
@@ -34,8 +39,17 @@ export async function copyText(text: string): Promise<boolean> {
     el.select();
     const ok = document.execCommand("copy");
     document.body.removeChild(el);
-    return ok;
+    if (ok) return true;
   } catch {
-    return false;
+    // Nothing more to try here.
   }
+
+  if (promptLabel) {
+    try {
+      window.prompt(promptLabel, text);
+    } catch {
+      // No prompt either (a sandboxed frame).
+    }
+  }
+  return false;
 }
