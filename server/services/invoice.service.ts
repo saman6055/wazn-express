@@ -1,5 +1,6 @@
 import { getCompanyDetails } from "./companyDetails";
 import PDFDocument from "pdfkit";
+import { drawBrandLogo } from "../lib/brandLogo";
 import { Readable } from "stream";
 
 export interface InvoiceData {
@@ -60,14 +61,16 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
     doc.on("end", () => resolve(Buffer.concat(buffers)));
     doc.on("error", reject);
 
-    // Header
+    // Header: the mark, then the names beside it.
+    const markWidth = drawBrandLogo(doc, 50, 40, { height: 32 });
+    const nameX = markWidth ? 50 + markWidth + 10 : 50;
     doc
       .fontSize(20)
       .font("Helvetica-Bold")
-      .text(data.companyName, 50, 50);
+      .text(data.companyName, nameX, 50);
 
     if (data.companyNameKu) {
-      doc.fontSize(16).text(data.companyNameKu, 50, 75);
+      doc.fontSize(16).text(data.companyNameKu, nameX, 75);
     }
 
     doc

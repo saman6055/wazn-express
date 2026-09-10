@@ -2,6 +2,7 @@ import { getCompanyDetails } from "./companyDetails";
 import PDFDocument from "pdfkit";
 import { storagePut } from "./storage.service";
 import { nanoid } from "nanoid";
+import { drawBrandLogo, brandLogoWidth } from "../lib/brandLogo";
 
 interface CompanyInfo {
   name: string;
@@ -124,7 +125,8 @@ export async function generateBatchFinancialPDF(data: BatchFinancialData): Promi
         }
       });
 
-      // Header
+      // Header: the mark at the top right, the name from Settings at the left.
+      drawBrandLogo(doc, 545 - brandLogoWidth(44), 40, { height: 44 });
       doc.fillColor(COLORS.primary)
         .fontSize(24)
         .text(COMPANY_INFO.name, 50, 50);
@@ -289,10 +291,11 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<string> {
         }
       });
 
-      // Header with Logo area
+      // Header: the mark, then the name beside it.
+      const markWidth = drawBrandLogo(doc, 50, 38, { height: 40 });
       doc.fillColor(primaryColor)
         .fontSize(28)
-        .text(company.name, 50, 50);
+        .text(company.name, markWidth ? 50 + markWidth + 12 : 50, 50);
 
       doc.fillColor(COLORS.gray)
         .fontSize(9)
@@ -488,7 +491,8 @@ export async function generateCustomerStatementPDF(data: {
         }
       });
 
-      // Header
+      // Header: the mark at the top right, the name from Settings at the left.
+      drawBrandLogo(doc, 545 - brandLogoWidth(44), 40, { height: 44 });
       doc.fillColor(COLORS.primary)
         .fontSize(24)
         .text(COMPANY_INFO.name, 50, 50);
@@ -623,7 +627,8 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
         }
       });
 
-      // Header
+      // Header: the mark at the top right, the name from Settings at the left.
+      drawBrandLogo(doc, 545 - brandLogoWidth(44), 40, { height: 44 });
       doc.fillColor(COLORS.primary)
         .fontSize(24)
         .text(COMPANY_INFO.name, 50, 50);
@@ -785,7 +790,8 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         }
       });
 
-      // Header
+      // Header: the mark at the top right, the name from Settings at the left.
+      drawBrandLogo(doc, 545 - brandLogoWidth(44), 40, { height: 44 });
       doc.fillColor(COLORS.primary)
         .fontSize(24)
         .text(COMPANY_INFO.name, 50, 50);
@@ -964,7 +970,8 @@ export async function generatePartnerReportPDF(data: PartnerReportData): Promise
         }
       });
 
-      // Header
+      // Header: the mark at the top right, the name from Settings at the left.
+      drawBrandLogo(doc, 545 - brandLogoWidth(44), 40, { height: 44 });
       doc.fillColor(COLORS.primary)
         .fontSize(24)
         .text(COMPANY_INFO.name, 50, 50);
@@ -1105,7 +1112,8 @@ export async function generateExpenseReportPDF(data: ExpenseReportData): Promise
         }
       });
 
-      // Header
+      // Header: the mark at the top right, the name from Settings at the left.
+      drawBrandLogo(doc, 545 - brandLogoWidth(44), 40, { height: 44 });
       doc.fillColor(COLORS.primary)
         .fontSize(24)
         .text(COMPANY_INFO.name, 50, 50);
@@ -1243,7 +1251,8 @@ export async function generateDebtSchedulePDF(data: DebtScheduleData): Promise<s
         }
       });
 
-      // Header
+      // Header: the mark at the top right, the name from Settings at the left.
+      drawBrandLogo(doc, 545 - brandLogoWidth(44), 40, { height: 44 });
       doc.fillColor(COLORS.primary)
         .fontSize(24)
         .text(COMPANY_INFO.name, 50, 50);

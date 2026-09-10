@@ -5,6 +5,7 @@ import { getDb } from '../db';
 import { packages, users, customers, ledgerTransactions, customerAccounts, paymentRecords, batches, fullPackageOrders } from '../../drizzle/schema';
 import { sql, count, eq, desc, asc, gte, lte, and, sum, inArray } from 'drizzle-orm';
 import { concealsSizeAndCarriage } from '@shared/fullPackagePrivacy';
+import { drawBrandLogo, brandLogoWidth } from '../lib/brandLogo';
 
 // Ledger transaction-type buckets for the statement's "type" filter.
 // These were written out here, correctly, while the classic money page split
@@ -354,8 +355,12 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
 
       // ---- Header ----------------------------------------------------------
       doc.rect(0, 0, 595, 100).fill('#1a365d');
-      doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
-         .text('WAZN EXPRESS', mx(40, 250), 26, { width: 250, align: alignStart });
+      // The mark on a white tile: black ink vanishes on the navy band. The
+      // old lettering stays as the fallback if the file cannot be found.
+      if (!drawBrandLogo(doc, mx(40, brandLogoWidth(28)), 18, { height: 28, tile: true })) {
+        doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
+           .text('WAZN EXPRESS', mx(40, 250), 26, { width: 250, align: alignStart });
+      }
       doc.fontSize(13).font(FB).fillColor('#cbd5e0')
          .text(L('title'), mx(40, 250), 54, { width: 250, align: alignStart });
 
@@ -762,8 +767,10 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
       const headerColor = data.batch.shippingType === 'sea' ? '#0d9488' : '#3b82f6';
       doc.rect(0, 0, 595, 110).fill(headerColor);
       
-      doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
-         .text('WAZN EXPRESS', 40, 25);
+      if (!drawBrandLogo(doc, 40, 16, { height: 26, tile: true })) {
+        doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
+           .text('WAZN EXPRESS', 40, 25);
+      }
       doc.fontSize(14).font('Helvetica').fillColor('#e0e7ff')
          .text('Batch Shipment Report', 40, 50);
       
@@ -1081,8 +1088,10 @@ export async function generateDateFilteredDashboardPDF(data: DateFilteredDashboa
 
       // Header
       doc.rect(0, 0, 595, 100).fill('#1a365d');
-      doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
-         .text('WAZN EXPRESS', 40, 25);
+      if (!drawBrandLogo(doc, 40, 16, { height: 26, tile: true })) {
+        doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
+           .text('WAZN EXPRESS', 40, 25);
+      }
       doc.fontSize(14).font('Helvetica').fillColor('#a0aec0')
          .text('Dashboard Report', 40, 50);
       

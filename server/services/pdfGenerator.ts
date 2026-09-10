@@ -1,4 +1,5 @@
 import PDFDocument from 'pdfkit';
+import { drawBrandLogo, brandLogoWidth } from '../lib/brandLogo';
 import { getActiveBatches, getDb, getDefaultInvoiceTemplate } from '../db';
 import { packages, users, customers, ledgerTransactions, customerAccounts, paymentRecords } from '../../drizzle/schema';
 import { sql, count, eq, desc, gt, gte, and } from 'drizzle-orm';
@@ -40,9 +41,11 @@ export async function generateDashboardPDF(data: DashboardReportData): Promise<B
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
-      // Header
-      doc.fontSize(24).font('Helvetica-Bold').fillColor('#1a365d')
-         .text('Wazn Express', 50, 50, { align: 'center' });
+      // Header: the mark, centred; the old lettering only if the file is missing.
+      if (!drawBrandLogo(doc, (595 - brandLogoWidth(34)) / 2, 42, { height: 34 })) {
+        doc.fontSize(24).font('Helvetica-Bold').fillColor('#1a365d')
+           .text('Wazn Express', 50, 50, { align: 'center' });
+      }
       
       doc.fontSize(16).font('Helvetica').fillColor('#4a5568')
          .text('Dashboard Report', 50, 80, { align: 'center' });
