@@ -17,7 +17,10 @@ export type BatchEta =
   | { kind: "exact"; date: Date }
   | { kind: "range"; from: Date; to: Date };
 
-const ARRIVED_STATUSES = new Set(["arrived", "delivered", "closed", "completed"]);
+// customs and at_depot are in Iraq too. Without them a batch sitting in
+// the Erbil depot still showed a derived arrival date in the future, next
+// to a chip saying "Erbil depot" on the same card.
+const ARRIVED_STATUSES = new Set(["arrived", "customs", "at_depot", "delivered", "closed", "completed"]);
 
 const DAYS: Record<string, [number, number]> = {
   air_regular: [7, 14],

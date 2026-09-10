@@ -101,6 +101,17 @@ const { t, language } = useLanguage();
   
   const { data: summary, isLoading: summaryLoading } = trpc.customerPortal.getMyFinancialSummary.useQuery(undefined, PORTAL_LIVE_QUERY);
   const { data: transactions, isLoading: transactionsLoading, isError: transactionsError, isFetching: transactionsFetching, refetch: refetchTransactions } = trpc.customerPortal.getMyTransactions.useQuery({ limit: 50 }, PORTAL_LIVE_QUERY);
+  const shownTransactions = useMemo(() => {
+    if (!transactions || dateRange === "all") return transactions;
+    const now = new Date();
+    return transactions.filter((tx) => {
+      const d = new Date(tx.createdAt);
+      if (Number.isNaN(d.getTime())) return false;
+      return dateRange === "month"
+        ? d.getFullYear() === now.getFullYear() && d.getMonth() === now.getMonth()
+        : d.getFullYear() === now.getFullYear();
+    });
+  }, [transactions, dateRange]);
   const { data: receiptData, isLoading: receiptLoading } = trpc.customerPortal.getReceiptData.useQuery(
     { transactionId: selectedTransaction! },
     { enabled: !!selectedTransaction }
@@ -333,7 +344,7 @@ const { t, language } = useLanguage();
                     "text-4xl font-bold mt-1",
                     isDebt ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400"
                   )}>
-                    <span dir="ltr">{isCredit ? "-" : ""}{formatCurrency(Math.abs(animatedBalance))}</span>
+                    <span dir="ltr">{formatCurrency(Math.abs(animatedBalance))}</span>
                   </p>
                 )}
               </div>
@@ -641,8 +652,11 @@ const { t, language } = useLanguage();
                   icon: b.shippingType === "sea" ? Ship : Plane,
                   meta: rowMeta(
                     b,
-                    Number(b.myPackageCount ?? b.packageCount ?? 0),
-                    { weightKg: Number(b.myWeightKg ?? 0), volumeCbm: Number(b.myVolumeCbm ?? 0) },
+                    Number(b.customerPackageCount ?? 0),
+                    {
+                      weightKg: b.customerUnit === "kg" ? Number(b.customerChargeable ?? 0) : 0,
+                      volumeCbm: b.customerUnit === "cbm" ? Number(b.customerChargeable ?? 0) : 0,
+                    },
                     (d: Date | string) => formatPortalDate(d, language),
                     {
                       parcels: pickLang(language, { ku: "پاکەت", en: "parcels", ar: "طرود", zh: "件" }),
@@ -707,6 +721,9 @@ const { t, language } = useLanguage();
                   Number(b.totalWeightKg) > 0 ? fmtKg(b.totalWeightKg) : null,
                   b.destinationCity || null,
                   b.settlementNumber || null,
+                  Number(b.settledDiscountUsd) > 0
+                    ? `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} ${fmtUsd(b.settledDiscountUsd)}`
+                    : null,
                 ].filter(Boolean).join(" · "),
               }))}
               openKey={invoiceBoxId}
@@ -763,7 +780,7 @@ const { t, language } = useLanguage();
               /* A failed request used to render as "no transactions yet" — on
                  the money screen, of all places. */
               <PortalErrorState onRetry={() => void refetchTransactions()} isRetrying={transactionsFetching} />
-            ) : !transactions || transactions.length === 0 ? (
+            ) : !shownTransactions || shownTransactions.length === 0 ? (
               <div className={cn(
                 "rounded-2xl p-10 text-center",
                 isDark ? "bg-slate-800" : "bg-white shadow-sm"
@@ -780,7 +797,7 @@ const { t, language } = useLanguage();
               </div>
             ) : (
               <div className="space-y-3">
-                {transactions.map((tx) => {
+                {shownTransactions.map((tx) => {
                   const colors = getTransactionColor(tx.transactionType, isDark);
                   const href = txHref(tx);
                   return (

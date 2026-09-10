@@ -350,7 +350,7 @@ const { t, language, setLanguage } = useLanguage();
                 {summaryLoading ? "…" : fmtCount(summary?.totalPackages)}
               </p>
               <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                {pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" })}
+                {pickLang(language, { ku: "پاکەتی گەیشتوو", en: "Delivered", ar: "طرود مُسلّمة", zh: "已交付包裹" })}
               </p>
             </div>
             <div className={cn("text-center border-x", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>

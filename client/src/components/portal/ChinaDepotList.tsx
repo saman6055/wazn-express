@@ -81,6 +81,7 @@ export function useChinaDepotItems(): ChinaDepotItem[] {
     };
 
     for (const pkg of (unbatchedPackages as any[]) ?? []) {
+      if (["delivered", "returned", "cancelled", "out_for_delivery", "ready_for_delivery", "customs_processing"].includes(pkg.status)) continue;
       const code = pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`;
       const image = resolve(pkg);
       merge(pkg.trackingNumber ? String(pkg.trackingNumber) : `pkg-${pkg.id}`, {

@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef } from "react";
+import { orderDisplayTotal } from "@/lib/portalOrderPrice";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -1047,7 +1048,7 @@ export default function PortalFullPackage() {
                                     "text-lg font-bold",
                                     isDark ? "text-emerald-400" : "text-emerald-600"
                                   )}>
-                                    {formatPrice(order.sellingPriceUsd || order.totalPrepaidUsd)}
+                                    {formatPrice(orderDisplayTotal(order))}
                                   </span>
                                 )}
                                 {order.shippingChargedUsd && parseFloat(order.shippingChargedUsd) > 0 && (
@@ -1063,7 +1064,9 @@ export default function PortalFullPackage() {
                                     "text-sm",
                                     isDark ? "text-slate-400" : "text-slate-500"
                                   )}>
-                                    × {order.quantity}
+                                    {order.orderType === 'commission'
+                                      ? `${order.quantity} ${pickLang(language, { ku: "دانە", en: "pcs", ar: "قطعة", zh: "件" })}`
+                                      : `${formatPrice(order.sellingPriceUsd)} × ${order.quantity}`}
                                   </span>
                                 )}
                               </div>
@@ -1279,18 +1282,25 @@ export default function PortalFullPackage() {
                   )}>
                     <div className="flex items-center justify-between mb-3">
                       <span className={isDark ? "text-slate-400" : "text-slate-500"}>
-{pickLang(language, { ku: "نرخی کڕین", en: "Purchase Price", ar: "سعر الشراء", zh: "采购价格" })}
+{pickLang(language, { ku: "کۆی نرخ", en: "Total price", ar: "السعر الإجمالي", zh: "总价" })}
                       </span>
                       <span className={cn(
                         "text-xl font-bold",
                         isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                       )}>
-                        {selectedOrder.orderType === 'commission'
-                          ? formatPrice(selectedOrder.totalPrepaidUsd)
-                          : formatPrice(selectedOrder.sellingPriceUsd || selectedOrder.totalPrepaidUsd)
-                        }
+                        {formatPrice(orderDisplayTotal(selectedOrder))}
                       </span>
                     </div>
+                    {selectedOrder.orderType === 'commission' && selectedOrder.itemPriceUsd != null && (
+                      <p className={cn("mb-1 text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                        {pickLang(language, { ku: "نرخی کاڵا", en: "Goods", ar: "البضاعة", zh: "货款" })} {formatPrice(selectedOrder.itemPriceUsd)}
+                        {" + "}
+                        {pickLang(language, { ku: "کرێی کڕین", en: "purchase fee", ar: "أجرة الشراء", zh: "代购费" })} {formatPrice(selectedOrder.commissionFeeUsd)}
+                        {Number(selectedOrder.quantity) > 1
+                          ? ` · ${pickLang(language, { ku: "بۆ هەر دانەیەک", en: "per piece", ar: "لكل قطعة", zh: "每件" })}`
+                          : ""}
+                      </p>
+                    )}
                     <div className="flex items-center justify-between text-sm mt-1">
                       <span className={isDark ? "text-slate-500" : "text-slate-400"}>
 {pickLang(language, { ku: "ژمارە", en: "Quantity", ar: "الكمية", zh: "数量" })}

@@ -24,7 +24,7 @@ import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalClock, PortalLanguagePicker } from "@/components/portal/PortalHeaderControls";
 import { formatPortalDate } from "@/lib/portalClock";
 import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
-import { isDebt } from "@/lib/portalMoney";
+import { isDebt, isCredit } from "@/lib/portalMoney";
 import { onImageError } from "@/lib/imageFallback";
 import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "@/lib/brand";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
@@ -609,12 +609,14 @@ export default function PortalHome() {
                 <div className="flex min-w-0 items-center gap-2.5">
                   <CheckCircle className={cn("h-5 w-5 shrink-0", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")} />
                   <p className={cn("truncate text-sm font-semibold", isDark ? "text-emerald-200" : "text-emerald-800 dark:text-emerald-200")}>
-                    {pickLang(language, { ku: "هیچ قەرزێکت لەسەر نییە", en: "Nothing owed", ar: "لا يوجد رصيد مستحق", zh: "没有欠款" })}
+                    {isCredit(balance)
+                      ? pickLang(language, { ku: "پارەی خۆت لای ئێمەیە", en: "Your money is held with us", ar: "لديك رصيد محفوظ لدينا", zh: "您有余额存放在我们这里" })
+                      : pickLang(language, { ku: "هیچ قەرزێکت لەسەر نییە", en: "Nothing owed", ar: "لا يوجد رصيد مستحق", zh: "没有欠款" })}
                   </p>
                 </div>
                 {balance !== 0 && (
                   <span dir="ltr" className={cn("shrink-0 text-sm font-bold tabular-nums", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
-                    +{balanceText}
+                    {balanceText}
                   </span>
                 )}
               </div>
