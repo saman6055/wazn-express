@@ -110,7 +110,7 @@ export default function HomeMinimal() {
       <header className="relative z-50 border-b border-[var(--landing-border)] bg-[var(--landing-bg-header)]/90 backdrop-blur-xl sticky top-0">
         <div className="container mx-auto px-4 flex h-16 md:h-18 items-center justify-between gap-4">
           <Link href="/" className="flex items-center gap-3 flex-shrink-0">
-            <CompanyLogo
+            <CompanyLogo surface={landingTheme === "light" ? "light" : "dark"}
               size={32}
               className="opacity-95"
               iconClassName="h-6 w-6 text-[var(--landing-text)]"
@@ -448,7 +448,7 @@ export default function HomeMinimal() {
           <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-6">
             <div>
               <div className="flex items-center gap-2 mb-3">
-                <CompanyLogo size={24} iconClassName="h-5 w-5 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
+                <CompanyLogo surface={landingTheme === "light" ? "light" : "dark"} size={24} iconClassName="h-5 w-5 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
                 <span className="font-semibold text-[var(--landing-text)]">{site.name}</span>
               </div>
               <p className="text-sm text-[var(--landing-text-muted)]">{t("home.footerDescription")}</p>

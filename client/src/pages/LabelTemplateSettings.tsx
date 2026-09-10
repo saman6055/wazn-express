@@ -242,7 +242,7 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
           <div className="flex justify-between items-start mb-2">
             {template.showLogo && (
               <div className="flex items-center gap-1">
-                <CompanyLogo
+                <CompanyLogo surface="light"
                   size={24}
                   iconClassName="h-4 w-4 text-white"
                 />

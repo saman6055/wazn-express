@@ -188,7 +188,7 @@ export default function PortalAbout() {
 
           <div className="relative flex flex-col items-center text-center">
             <div className="w-20 h-20 bg-white/15 backdrop-blur rounded-3xl flex items-center justify-center ring-1 ring-white/25 mb-3 overflow-hidden">
-              <CompanyLogo size={56} />
+              <CompanyLogo size={56} surface="dark" />
             </div>
             <h1 className="text-3xl font-extrabold leading-tight">{companyName}</h1>
             <p className="text-sm text-white/85 mt-1.5 max-w-xs">

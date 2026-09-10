@@ -42,7 +42,7 @@ export default function HomeClassic() {
     return (
       <div className="landing-page min-h-screen flex items-center justify-center bg-[var(--landing-bg)]" data-theme={landingTheme}>
         <div className="animate-pulse flex flex-col items-center gap-4">
-          <CompanyLogo
+          <CompanyLogo surface={landingTheme === "light" ? "light" : "dark"}
             size={48}
             iconClassName="h-8 w-8 text-[var(--landing-text)]"
             fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500"
@@ -70,9 +70,9 @@ export default function HomeClassic() {
       <header className="relative z-50 border-b border-[var(--landing-border)] bg-[var(--landing-bg-header)] backdrop-blur-xl sticky top-0">
         <div className="container mx-auto px-4 flex h-20 items-center justify-between">
           <div className="flex items-center gap-3">
-            <CompanyLogo
+            <CompanyLogo surface={landingTheme === "light" ? "light" : "dark"}
               size={28}
-              className="shadow-lg opacity-90"
+              className="opacity-90"
               iconClassName="h-5 w-5 text-[var(--landing-text)]"
               fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500"
             />
@@ -140,7 +140,7 @@ export default function HomeClassic() {
               <div className="relative">
                 <div className="bg-[var(--landing-card)] border border-[var(--landing-border)] rounded-3xl p-8 shadow-2xl">
                   <div className="flex items-center gap-4 mb-6">
-                    <CompanyLogo size={48} iconClassName="h-8 w-8 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
+                    <CompanyLogo surface={landingTheme === "light" ? "light" : "dark"} size={48} iconClassName="h-8 w-8 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
                     <div>
                       <p className="text-[var(--landing-text)] font-semibold">{t("home.packageTracking")}</p>
                       <p className="text-[var(--landing-text-muted)] text-sm">{t("home.liveReliable")}</p>
@@ -285,7 +285,7 @@ export default function HomeClassic() {
           <div className="grid md:grid-cols-2 lg:grid-cols-4 gap-8">
             <div className="lg:col-span-2">
               <div className="flex items-center gap-3 mb-4">
-                <CompanyLogo size={48} iconClassName="h-6 w-6 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
+                <CompanyLogo surface={landingTheme === "light" ? "light" : "dark"} size={48} iconClassName="h-6 w-6 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
                 <div>
                   <span className="text-xl font-bold text-[var(--landing-text)]">{company.name}</span>
                   <p className="text-xs text-[var(--landing-text-muted)]">{t("auto.text_6fcd11")} </p>

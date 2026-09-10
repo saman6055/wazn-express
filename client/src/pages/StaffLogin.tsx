@@ -59,8 +59,8 @@ export default function StaffLogin() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center mb-4">
             <CompanyLogo
-              size={64}
-              className="bg-white dark:bg-card rounded-2xl shadow-lg p-2"
+              size={96}
+              surface="dark"
               iconClassName="w-8 h-8 text-emerald-600"
               fallbackBg="bg-white"
             />

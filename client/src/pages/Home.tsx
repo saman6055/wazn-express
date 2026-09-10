@@ -40,7 +40,7 @@ export default function Home() {
   const loadingScreen = (
     <div className="landing-page min-h-screen flex items-center justify-center bg-[var(--landing-bg)]" data-theme={landingTheme}>
       <div className="animate-pulse flex flex-col items-center gap-4">
-        <CompanyLogo size={48} iconClassName="h-8 w-8 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
+        <CompanyLogo surface={landingTheme === "light" ? "light" : "dark"} size={48} iconClassName="h-8 w-8 text-[var(--landing-text)]" fallbackBg="bg-gradient-to-br from-amber-400 to-orange-500" />
         <p className="text-[var(--landing-text-muted)]">Loading...</p>
       </div>
     </div>

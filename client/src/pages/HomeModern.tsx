@@ -120,7 +120,7 @@ export default function HomeModern() {
       <header className="sticky top-0 z-50 border-b border-slate-200/70 dark:border-slate-800/60 bg-white/80 backdrop-blur-md">
         <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
           <div className="flex items-center gap-2.5">
-            <CompanyLogo size={36} iconClassName="h-5 w-5 text-white" fallbackBg="bg-gradient-to-br from-sky-500 to-violet-600" />
+            <CompanyLogo size={36} surface="light" iconClassName="h-5 w-5 text-white" fallbackBg="bg-gradient-to-br from-sky-500 to-violet-600" />
             <span className="text-lg font-black tracking-tight">{company.name}</span>
           </div>
           <nav className="hidden items-center gap-7 lg:flex">
@@ -406,7 +406,7 @@ export default function HomeModern() {
         <div className="mx-auto max-w-7xl px-4 md:px-6">
           <div className="flex flex-col items-center justify-between gap-6 md:flex-row">
             <div className="flex items-center gap-2.5">
-              <CompanyLogo size={32} iconClassName="h-4 w-4 text-white" fallbackBg="bg-gradient-to-br from-sky-500 to-violet-600" />
+              <CompanyLogo size={32} surface="dark" iconClassName="h-4 w-4 text-white" fallbackBg="bg-gradient-to-br from-sky-500 to-violet-600" />
               <span className="text-lg font-black text-white">{company.name}</span>
             </div>
             <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-sm">

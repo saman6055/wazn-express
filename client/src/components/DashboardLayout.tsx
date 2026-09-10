@@ -718,7 +718,6 @@ function DashboardLayoutContent({
           <div className={cn("flex items-center", compact ? "" : "gap-3")}>
             <CompanyLogo
               size={40}
-              className="shadow-lg shadow-emerald-500/25"
               iconClassName="h-5 w-5 text-white"
               fallbackBg="bg-gradient-to-br from-emerald-500 to-emerald-600"
             />
