@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
@@ -304,7 +305,7 @@ export default function ServicesManagement() {
       </head>
       <body>
         <div class="header">${reportLogoHtml()}
-          <h1>${company.name}</h1>
+          <h1>${escapeHtml(company.name)}</h1>
           <p>${t('services.servicesReport')}</p>
           <p>${t('services.date')}: ${fmtDate(new Date())}</p>
         </div>
@@ -344,9 +345,9 @@ export default function ServicesManagement() {
               return `
                 <tr>
                   <td>${service.createdAt ? fmtDate(new Date(service.createdAt)) : '-'}</td>
-                  <td>${getCustomerName(service.customerId)}</td>
-                  <td>${service.serviceType?.nameKu || service.serviceType?.nameEn || '-'}</td>
-                  <td>${service.description || '-'}</td>
+                  <td>${escapeHtml(getCustomerName(service.customerId))}</td>
+                  <td>${escapeHtml(service.serviceType?.nameKu || service.serviceType?.nameEn || '-')}</td>
+                  <td>${escapeHtml(service.description || '-')}</td>
                   <td>$${Number(service.costAmount || 0).toFixed(2)}</td>
                   <td>$${Number(service.priceAmount || 0).toFixed(2)}</td>
                   <td class="${profit >= 0 ? 'profit-positive' : 'profit-negative'}">$${profit.toFixed(2)}</td>

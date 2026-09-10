@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
@@ -424,7 +425,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
         <body>
           <div class="header">${reportLogoHtml()}
             <h1>${t("dataManagement.statisticsReport")}</h1>
-            <p>${company.name} - ${currentDate}</p>
+            <p>${escapeHtml(company.name)} - ${currentDate}</p>
           </div>
           <div class="stats-grid">
             <div class="stat-card"><h3>${t("dataManagement.totalRecords")}</h3><div class="value">${totalRecords.toLocaleString()}</div></div>

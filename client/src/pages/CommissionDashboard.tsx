@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { statusChip, statusDot } from "@/lib/statusTone";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
@@ -430,7 +431,7 @@ export default function CommissionDashboard() {
       <body>
         <div class="header">${reportLogoHtml()}
           <h1>🛍 ${t("commission.reportTitle")}</h1>
-          <p>${company.name} - ${t("commission.managementSubtitle")}</p>
+          <p>${escapeHtml(company.name)} - ${t("commission.managementSubtitle")}</p>
           <p>${t("commission.dateColumn")}: ${fmtDate(new Date())}</p>
         </div>
         
@@ -471,10 +472,10 @@ export default function CommissionDashboard() {
           <tbody>
             ${filteredOrders.map(order => `
               <tr>
-                <td>${order.orderCode}</td>
+                <td>${escapeHtml(order.orderCode)}</td>
                 <td>${(order as any).orderNumber || "-"}</td>
-                <td>${(order as any).customer?.fullName || "-"}</td>
-                <td>${order.productName}</td>
+                <td>${escapeHtml((order as any).customer?.fullName || "-")}</td>
+                <td>${escapeHtml(order.productName)}</td>
                 <td>${order.quantity}</td>
                 <td>$${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
                 <td>${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
@@ -497,7 +498,7 @@ export default function CommissionDashboard() {
         
         <div class="footer">
           <p>${t("commission.reportGeneratedBy")}</p>
-          <p>© ${new Date().getFullYear()} ${company.name} - ${t("commission.copyright")}</p>
+          <p>© ${new Date().getFullYear()} ${escapeHtml(company.name)} - ${t("commission.copyright")}</p>
         </div>
       </body>
       </html>

@@ -1,3 +1,4 @@
+import { escapeHtml } from "./html";
 import { fmtDate } from "./numericDate";
 import { reportLogoHtml } from "./brand";
 /**
@@ -108,14 +109,14 @@ export function generateBatchLabelsHtml(options: {
       <div class="label" style="
         width: ${t.widthMm}mm;
         height: ${t.heightMm}mm;
-        border: 2px solid ${t.primaryColor};
+        border: 2px solid ${escapeHtml(t.primaryColor)};
         padding: 4mm;
         margin: 2mm;
         page-break-inside: avoid;
         display: inline-block;
         vertical-align: top;
         box-sizing: border-box;
-        font-family: ${t.fontFamily}, sans-serif;
+        font-family: ${escapeHtml(t.fontFamily)}, sans-serif;
         font-size: ${t.fontSize}pt;
         position: relative;
         border-radius: 8px;
@@ -123,7 +124,7 @@ export function generateBatchLabelsHtml(options: {
         ${t.showLogo ? `
           <div style="display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm;">
             ${reportLogoHtml(undefined, 22)}
-            <span style="font-weight: bold; color: ${t.primaryColor};">${company.name}</span>
+            <span style="font-weight: bold; color: ${escapeHtml(t.primaryColor)};">${escapeHtml(company.name)}</span>
           </div>
         ` : ""}
         
@@ -144,13 +145,13 @@ export function generateBatchLabelsHtml(options: {
           ${t.showCustomerName ? `
             <div style="margin-bottom: 2mm;">
               <div style="font-size: 8pt; color: #666;">ناوی کڕیار</div>
-              <div style="font-weight: bold; font-size: 11pt; color: ${t.primaryColor};">${cust.name || "N/A"}</div>
+              <div style="font-weight: bold; font-size: 11pt; color: ${escapeHtml(t.primaryColor)};">${escapeHtml(cust.name || "N/A")}</div>
             </div>
           ` : ""}
           ${t.showCustomerCode ? `
             <div style="margin-bottom: 2mm;">
               <div style="font-size: 8pt; color: #666;">کۆد</div>
-              <div style="font-weight: 600;">${cust.code ?? "N/A"}</div>
+              <div style="font-weight: 600;">${escapeHtml(cust.code ?? "N/A")}</div>
             </div>
           ` : ""}
         </div>
@@ -161,7 +162,7 @@ export function generateBatchLabelsHtml(options: {
           ${t.showTotalVolume && isSea ? `<div>📐 حەجم (CBM): <strong>${cust.totalVolume.toFixed(3)}</strong></div>` : ""}
           ${t.showTotalWeight && isSea ? `<div>⚖️ کیلۆ: <strong>${cust.totalWeight.toFixed(2)}</strong></div>` : ""}
           ${t.showTotalPrice ? `<div>💰 نرخ: <strong>$${cust.totalPrice.toFixed(2)}</strong></div>` : ""}
-          ${t.showBatchNumber ? `<div>📋 باچ: <strong>${batchCode}</strong></div>` : ""}
+          ${t.showBatchNumber ? `<div>📋 باچ: <strong>${escapeHtml(batchCode)}</strong></div>` : ""}
           ${t.showDate ? `<div>📅 ${fmtDate(new Date())}</div>` : ""}
         </div>
       </div>
@@ -174,10 +175,10 @@ export function generateBatchLabelsHtml(options: {
     <html dir="rtl">
     <head>
       <meta charset="UTF-8">
-      <title>لەیبڵی باچ - ${company.name}</title>
+      <title>لەیبڵی باچ - ${escapeHtml(company.name)}</title>
       <style>
         @page { size: A4; margin: 5mm; }
-        body { margin: 0; padding: 0; font-family: ${t.fontFamily}, sans-serif; }
+        body { margin: 0; padding: 0; font-family: ${escapeHtml(t.fontFamily)}, sans-serif; }
         .labels-container { display: flex; flex-wrap: wrap; justify-content: flex-start; }
       </style>
     </head>

@@ -1,3 +1,4 @@
+import { openExternal } from "@/lib/html";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -447,7 +448,7 @@ const [searchQuery, setSearchQuery] = useState("");
                             <DropdownMenuItem onClick={() => handleOpenEdit(supplier)}>
                               <Edit className="h-4 w-4 me-2" />{t("common.edit")}</DropdownMenuItem>
                             {(supplier as any).website && (
-                              <DropdownMenuItem onClick={() => window.open((supplier as any).website, "_blank")}>
+                              <DropdownMenuItem onClick={() => openExternal((supplier as any).website)}>
                                 <ExternalLink className="h-4 w-4 me-2" />
                                 {t("auto.text_6f00ef")}
                               </DropdownMenuItem>

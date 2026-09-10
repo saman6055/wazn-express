@@ -3,6 +3,7 @@
  * and generates HTML for printing. Used by LabelPrinting page and BatchFinancialReport modal.
  */
 
+import { escapeHtml } from "./html";
 import { reportLogoHtml } from "./brand";
 
 export interface LabelTemplateForPrint {
@@ -154,14 +155,14 @@ export function generateLabelsHtml(options: {
         display: inline-block;
         vertical-align: top;
         box-sizing: border-box;
-        font-family: ${t.fontFamily}, sans-serif;
+        font-family: ${escapeHtml(t.fontFamily)}, sans-serif;
         font-size: ${t.fontSize}pt;
         position: relative;
       ">
         ${t.showLogo ? `
           <div style="display: flex; align-items: center; gap: 2mm; margin-bottom: 2mm;">
             ${reportLogoHtml(undefined, 22)}
-            <span style="font-weight: bold; color: ${t.primaryColor};">${company.name}</span>
+            <span style="font-weight: bold; color: ${escapeHtml(t.primaryColor)};">${escapeHtml(company.name)}</span>
           </div>
         ` : ""}
         
@@ -181,7 +182,7 @@ export function generateLabelsHtml(options: {
         ${t.showTrackingNumber ? `
           <div style="text-align: center; padding: 2mm 0; border-top: 1px solid #ccc; border-bottom: 1px solid #ccc; margin: 2mm 0;">
             <div style="font-size: 8pt; color: #666;">Tracking Number</div>
-            <div style="font-weight: bold; font-size: 12pt; color: ${t.primaryColor};">${tracking}</div>
+            <div style="font-weight: bold; font-size: 12pt; color: ${escapeHtml(t.primaryColor)};">${escapeHtml(tracking)}</div>
           </div>
         ` : ""}
         
@@ -189,39 +190,39 @@ export function generateLabelsHtml(options: {
           ${t.showCustomerName ? `
             <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
               <span style="color: #666;">👤</span>
-              <span style="font-weight: 500;">${cust.name || "N/A"}</span>
+              <span style="font-weight: 500;">${escapeHtml(cust.name || "N/A")}</span>
             </div>
           ` : ""}
           
           ${t.showCustomerCode ? `
             <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
               <span style="color: #666;">#</span>
-              <span>${cust.code ?? "N/A"}</span>
+              <span>${escapeHtml(cust.code ?? "N/A")}</span>
             </div>
           ` : ""}
           
           ${t.showCustomerPhone ? `
             <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
               <span style="color: #666;">📱</span>
-              <span>${cust.phone ?? "N/A"}</span>
+              <span>${escapeHtml(cust.phone ?? "N/A")}</span>
             </div>
           ` : ""}
           
           ${t.showDestinationCity ? `
             <div style="display: flex; align-items: center; gap: 1mm; margin-bottom: 1mm;">
               <span style="color: #666;">📍</span>
-              <span style="font-weight: 500;">${cust.city ?? "N/A"}</span>
+              <span style="font-weight: 500;">${escapeHtml(cust.city ?? "N/A")}</span>
             </div>
           ` : ""}
         </div>
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 1mm; font-size: 9pt; border-top: 1px solid #eee; padding-top: 2mm; margin-top: 2mm;">
-          ${t.showWeight ? `<div>⚖️ ${weight} kg</div>` : ""}
+          ${t.showWeight ? `<div>⚖️ ${escapeHtml(weight)} kg</div>` : ""}
           ${t.showShippingType ? `<div>🚚 ${shippingTypeLabel(pkgShipType)}</div>` : ""}
-          ${t.showBatchNumber ? `<div>📦 ${batchCode}</div>` : ""}
+          ${t.showBatchNumber ? `<div>📦 ${escapeHtml(batchCode)}</div>` : ""}
           ${t.showDate ? `<div>📅 ${new Date().toLocaleDateString()}</div>` : ""}
           ${t.showPrice && pkg.calculatedCostUsd != null ? `<div>$${Number(pkg.calculatedCostUsd).toFixed(2)}</div>` : ""}
-          ${dimensions ? `<div>📐 ${dimensions}</div>` : ""}
+          ${dimensions ? `<div>📐 ${escapeHtml(dimensions)}</div>` : ""}
         </div>
       </div>
     `;
@@ -232,7 +233,7 @@ export function generateLabelsHtml(options: {
     <!DOCTYPE html>
     <html>
     <head>
-      <title>Print Labels - ${company.name}</title>
+      <title>Print Labels - ${escapeHtml(company.name)}</title>
       <style>
         @page {
           size: A4;
@@ -241,7 +242,7 @@ export function generateLabelsHtml(options: {
         body {
           margin: 0;
           padding: 0;
-          font-family: ${t.fontFamily}, sans-serif;
+          font-family: ${escapeHtml(t.fontFamily)}, sans-serif;
         }
         .labels-container {
           display: flex;

@@ -4,6 +4,7 @@
  * Supports RTL (Kurdish/Arabic) and LTR layouts.
  */
 
+import { escapeHtml } from "./html";
 import type { CompanyContact } from "./brand";
 
 export interface BoxForPrint {
@@ -289,13 +290,6 @@ function deliveryMethodIcon(method: string): string {
   return "&#x1F3ED;"; // warehouse
 }
 
-const HTML_ESCAPES: Record<string, string> = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
-
-/** Company text going into a document.write page is text, never markup. */
-function escapeHtml(value: string): string {
-  return value.replace(/[&<>"']/g, (c) => HTML_ESCAPES[c]);
-}
-
 /**
  * How to find us, at the foot of every receipt: address, mobile, the customer
  * portal and the website — the owner's list. Numbers and web addresses sit in
@@ -332,7 +326,7 @@ export function printBoxLabel(
   const itemsRows = items.map((item, idx) => `
     <tr>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${idx + 1}</td>
-      <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; font-family:monospace; direction:ltr; text-align:left;">${item.trackingNumber || "-"}</td>
+      <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; font-family:monospace; direction:ltr; text-align:left;">${escapeHtml(item.trackingNumber || "-")}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${itemTypeLabel(item.itemType, t)}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${itemMeasure(box, item)}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">$${formatNum(item.calculatedCostUsd)}</td>
@@ -457,7 +451,7 @@ export function printBoxLabel(
     <!-- Header -->
     <div class="header-bar">
       <div style="display:flex; align-items:center; gap:6px;">
-        ${options?.logoUrl ? `<img src="${options.logoUrl}" alt="" style="height:22px; width:auto; background:#fff; border-radius:4px; padding:2px 4px;" />` : ""}
+        ${options?.logoUrl ? `<img src="${escapeHtml(options.logoUrl)}" alt="" style="height:22px; width:auto; background:#fff; border-radius:4px; padding:2px 4px;" />` : ""}
         <span style="font-weight:700; font-size:14px;">${escapeHtml(options?.company?.name || "Wazn Express")}</span>
       </div>
       <div style="font-size:10px;">${deliveryMethodIcon(box.deliveryMethod)} ${deliveryMethodLabel(box.deliveryMethod, t)}</div>
@@ -465,29 +459,29 @@ export function printBoxLabel(
 
     <!-- Box Code + QR -->
     <div class="box-code-block">
-      <div class="box-code-text">${box.boxCode}</div>
+      <div class="box-code-text">${escapeHtml(box.boxCode)}</div>
       <div class="qr-placeholder">QR</div>
     </div>
 
     <!-- Customer Info -->
     <div class="info-grid">
       <span class="info-label">${t("delivery.customer")}:</span>
-      <span class="info-value">${customer?.fullName || "-"}</span>
+      <span class="info-value">${escapeHtml(customer?.fullName || "-")}</span>
 
       <span class="info-label">${t("delivery.customerCode")}:</span>
-      <span class="info-value" style="font-family:monospace; direction:ltr;">${customer?.customerCode || "-"}</span>
+      <span class="info-value" style="font-family:monospace; direction:ltr;">${escapeHtml(customer?.customerCode || "-")}</span>
 
       <span class="info-label">${t("delivery.phone")}:</span>
-      <span class="info-value" style="direction:ltr;">${box.recipientPhone || customer?.mobileNumber || "-"}</span>
+      <span class="info-value" style="direction:ltr;">${escapeHtml(box.recipientPhone || customer?.mobileNumber || "-")}</span>
 
       ${box.destinationCity ? `
       <span class="info-label">${t("delivery.city")}:</span>
-      <span class="info-value">${box.destinationCity}</span>
+      <span class="info-value">${escapeHtml(box.destinationCity)}</span>
       ` : ""}
 
       ${box.destinationAddress ? `
       <span class="info-label">${t("delivery.address")}:</span>
-      <span class="info-value">${box.destinationAddress}</span>
+      <span class="info-value">${escapeHtml(box.destinationAddress)}</span>
       ` : ""}
     </div>
 
@@ -615,9 +609,9 @@ export function printBoxReceipt(
     return `
     <tr style="${idx % 2 === 0 ? "background:#f9fafb;" : ""}">
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${idx + 1}</td>
-      <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px; font-family:monospace; direction:ltr; text-align:left;">${item.trackingNumber || "-"}</td>
+      <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px; font-family:monospace; direction:ltr; text-align:left;">${escapeHtml(item.trackingNumber || "-")}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${itemTypeLabel(item.itemType, t)}</td>
-      <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px;">${description}</td>
+      <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px;">${escapeHtml(description)}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${itemMeasure(box, item)}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">$${formatNum(item.calculatedCostUsd)}</td>
     </tr>
@@ -633,7 +627,7 @@ export function printBoxReceipt(
 <html dir="${direction}">
 <head>
   <meta charset="UTF-8">
-  <title>${documentTitle}</title>
+  <title>${escapeHtml(documentTitle)}</title>
   <style>
     ${sharedStyles}
     body { padding: 10px; max-width: 210mm; margin: 0 auto; }
@@ -829,10 +823,10 @@ export function printBoxReceipt(
         <div class="company-name">${escapeHtml(options?.company?.name || "Wazn Express")}</div>
         <div class="company-subtitle">${t("delivery.companyTagline") || "Shipping & Logistics Services"}</div>
       </div>
-      ${options?.logoUrl ? `<img class="header-logo" src="${options.logoUrl}" alt="" />` : ""}
+      ${options?.logoUrl ? `<img class="header-logo" src="${escapeHtml(options.logoUrl)}" alt="" />` : ""}
       <div class="header-receipt-meta">
         <div class="header-receipt-title">${t("delivery.receipt")}</div>
-        <div class="receipt-code">${box.boxCode}</div>
+        <div class="receipt-code">${escapeHtml(box.boxCode)}</div>
       </div>
     </div>
 
@@ -843,20 +837,20 @@ export function printBoxReceipt(
           <div class="info-block-title">${t("delivery.customerDetails")}</div>
           <div class="info-row">
             <span class="info-row-label">${t("delivery.customer")}:</span>
-            <span class="info-row-value">${customer?.fullName || "-"}</span>
+            <span class="info-row-value">${escapeHtml(customer?.fullName || "-")}</span>
           </div>
           <div class="info-row">
             <span class="info-row-label">${t("delivery.customerCode")}:</span>
-            <span class="info-row-value" style="font-family:monospace; direction:ltr;">${customer?.customerCode || "-"}</span>
+            <span class="info-row-value" style="font-family:monospace; direction:ltr;">${escapeHtml(customer?.customerCode || "-")}</span>
           </div>
           <div class="info-row">
             <span class="info-row-label">${t("delivery.phone")}:</span>
-            <span class="info-row-value" style="direction:ltr;">${box.recipientPhone || customer?.mobileNumber || "-"}</span>
+            <span class="info-row-value" style="direction:ltr;">${escapeHtml(box.recipientPhone || customer?.mobileNumber || "-")}</span>
           </div>
           ${customer?.city ? `
           <div class="info-row">
             <span class="info-row-label">${t("delivery.city")}:</span>
-            <span class="info-row-value">${customer.city}</span>
+            <span class="info-row-value">${escapeHtml(customer.city)}</span>
           </div>
           ` : ""}
         </div>
@@ -874,13 +868,13 @@ export function printBoxReceipt(
           ${box.destinationCity ? `
           <div class="info-row">
             <span class="info-row-label">${t("delivery.city")}:</span>
-            <span class="info-row-value">${box.destinationCity}</span>
+            <span class="info-row-value">${escapeHtml(box.destinationCity)}</span>
           </div>
           ` : ""}
           ${box.destinationAddress ? `
           <div class="info-row">
             <span class="info-row-label">${t("delivery.address")}:</span>
-            <span class="info-row-value">${box.destinationAddress}</span>
+            <span class="info-row-value">${escapeHtml(box.destinationAddress)}</span>
           </div>
           ` : ""}
         </div>
@@ -963,7 +957,7 @@ export function printBoxReceipt(
 
       ${box.notes ? `
       <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:10px 14px; margin-bottom:16px; font-size:12px;">
-        <span style="font-weight:600; color:#92400e;">${t("delivery.notes")}:</span> ${box.notes}
+        <span style="font-weight:600; color:#92400e;">${t("delivery.notes")}:</span> ${escapeHtml(box.notes)}
       </div>
       ` : ""}
 

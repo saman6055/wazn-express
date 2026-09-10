@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { statusChip, statusDot } from "@/lib/statusTone";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
@@ -466,7 +467,7 @@ export default function FullPackageDashboard() {
       <body>
         <div class="header">${reportLogoHtml()}
           <h1>🛍️ ${t("fullPackage.reportTitle")}</h1>
-          <p>${company.name} - ${t("fullPackage.managementSubtitle")}</p>
+          <p>${escapeHtml(company.name)} - ${t("fullPackage.managementSubtitle")}</p>
           <p>${t("fullPackage.dateColumn")}: ${fmtDate(new Date())}</p>
         </div>
         
@@ -507,10 +508,10 @@ export default function FullPackageDashboard() {
           <tbody>
             ${filteredOrders.map(order => `
               <tr>
-                <td>${order.orderCode}</td>
+                <td>${escapeHtml(order.orderCode)}</td>
                 <td>${(order as any).orderNumber || "-"}</td>
-                <td>${(order as any).customer?.fullName || "-"}</td>
-                <td>${order.productName}</td>
+                <td>${escapeHtml((order as any).customer?.fullName || "-")}</td>
+                <td>${escapeHtml(order.productName)}</td>
                 <td>${order.quantity}</td>
                 <td>$${(parseFloat(order.purchasePriceUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
                 <td>$${(parseFloat(order.sellingPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}</td>
@@ -533,7 +534,7 @@ export default function FullPackageDashboard() {
         
         <div class="footer">
           <p>${t("fullPackage.reportGeneratedBy")}</p>
-          <p>© ${new Date().getFullYear()} ${company.name} - ${t("fullPackage.copyright")}</p>
+          <p>© ${new Date().getFullYear()} ${escapeHtml(company.name)} - ${t("fullPackage.copyright")}</p>
         </div>
       </body>
       </html>

@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { fmtDate, fmtDateTime, fmtTime } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -214,7 +215,7 @@ export default function AuditLogs() {
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>${pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })} - ${company.name}</title>
+        <title>${pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })} - ${escapeHtml(company.name)}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@400;600;700&display=swap');
           * { font-family: 'Noto Sans Arabic', sans-serif; box-sizing: border-box; }
@@ -238,7 +239,7 @@ export default function AuditLogs() {
       <body>
         <div class="header">${reportLogoHtml()}
           <h1>🔍 ${pickLang(language, { ku: "تۆماری چالاکییەکان", en: "Activity Log", ar: "سجل الأنشطة", zh: "活动日志" })}</h1>
-          <p>${company.name} - ${fmtDate(new Date())}</p>
+          <p>${escapeHtml(company.name)} - ${fmtDate(new Date())}</p>
         </div>
         <div class="filters">
           <strong>${pickLang(language, { ku: "فلتەرەکان", en: "Filters", ar: "عوامل التصفية", zh: "筛选条件" })}:</strong>
@@ -266,18 +267,18 @@ export default function AuditLogs() {
               return `
                 <tr>
                   <td>${fmtDateTime(new Date(log.createdAt))}</td>
-                  <td>${(categoryConfig[log.category] ? pickLang(language, categoryConfig[log.category].label) : null) || log.category}</td>
-                  <td><span class="badge badge-${actionType}">${log.actionLabel || log.action}</span></td>
-                  <td>${log.userName || getUserName(log.userId)}</td>
-                  <td>${log.description || "-"}</td>
-                  <td>${log.entityCode || "-"}</td>
+                  <td>${escapeHtml((categoryConfig[log.category] ? pickLang(language, categoryConfig[log.category].label) : null) || log.category)}</td>
+                  <td><span class="badge badge-${escapeHtml(actionType)}">${escapeHtml(log.actionLabel || log.action)}</span></td>
+                  <td>${escapeHtml(log.userName || getUserName(log.userId))}</td>
+                  <td>${escapeHtml(log.description || "-")}</td>
+                  <td>${escapeHtml(log.entityCode || "-")}</td>
                 </tr>
               `;
             }).join("")}
           </tbody>
         </table>
         <div class="footer">
-          ${pickLang(language, { ku: "چاپکرا لە", en: "Printed at", ar: "طُبع في", zh: "打印于" })} ${fmtDateTime(new Date())} | ${company.name} Audit Logs
+          ${pickLang(language, { ku: "چاپکرا لە", en: "Printed at", ar: "طُبع في", zh: "打印于" })} ${fmtDateTime(new Date())} | ${escapeHtml(company.name)} Audit Logs
         </div>
       </body>
       </html>

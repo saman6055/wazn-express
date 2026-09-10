@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
@@ -133,7 +134,7 @@ function generatePrintContent(
     <html dir="rtl">
     <head>
       <meta charset="UTF-8">
-      <title>${title} - ${customer?.name}</title>
+      <title>${escapeHtml(title)} - ${escapeHtml(customer?.name)}</title>
       <style>
         @page { size: A4; margin: 15mm; }
         * { box-sizing: border-box; }
@@ -285,16 +286,16 @@ function generatePrintContent(
     </head>
     <body>
       <div class="header">${reportLogoHtml()}
-        <h1>${company.name}</h1>
+        <h1>${escapeHtml(company.name)}</h1>
         <div class="subtitle">${pickLang(language, { ku: "ڕاپۆرتی", en: "Report", ar: "تقرير", zh: "报告" })} ${title}</div>
-        <div class="batch-code">${pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}: ${batch?.batchCode || '-'}</div>
+        <div class="batch-code">${pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}: ${escapeHtml(batch?.batchCode || '-')}</div>
       </div>
       
       <div class="customer-info">
         <div>
-          <div class="name">${customer?.name || '-'}</div>
+          <div class="name">${escapeHtml(customer?.name || '-')}</div>
         </div>
-        <div class="code">${customer?.code || '-'}</div>
+        <div class="code">${escapeHtml(customer?.code || '-')}</div>
       </div>
       
       <div class="stats">
@@ -333,7 +334,7 @@ function generatePrintContent(
             return `
             <tr>
               <td style="text-align: center;">${idx + 1}</td>
-              <td>${pkg.trackingNumber || '-'}</td>
+              <td>${escapeHtml(pkg.trackingNumber || '-')}</td>
               <td style="text-align: center; color: #ea580c; font-weight: bold;">${batch?.shippingType === 'sea' ? (pkg.volumeCbm?.toFixed(3) || '0') : chargeableKg.toFixed(2)}</td>
               <td style="text-align: center;">$${(pkg.calculatedCostUsd || 0).toFixed(2)}</td>
               <td>
@@ -353,7 +354,7 @@ function generatePrintContent(
       </table>
       
       <div class="footer">
-        <span class="company">${company.name} - ${company.nameKu}</span>
+        <span class="company">${escapeHtml(company.name)} - ${escapeHtml(company.nameKu)}</span>
         <span>${fmtDate(new Date())} - ${fmtTime(new Date())}</span>
       </div>
     </body>
@@ -393,7 +394,7 @@ function generateLabelContent(
     <html dir="rtl">
     <head>
       <meta charset="UTF-8">
-      <title>${pickLang(language, { ku: "لەیبڵ", en: "Label", ar: "ملصق", zh: "标签" })} - ${customer?.name}</title>
+      <title>${pickLang(language, { ku: "لەیبڵ", en: "Label", ar: "ملصق", zh: "标签" })} - ${escapeHtml(customer?.name)}</title>
       <style>
         @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
         @page { 
@@ -699,18 +700,18 @@ function generateLabelContent(
     <body>
       <div class="label">
         <div class="label-header">
-          <span class="label-logo">${company.name.toUpperCase()}</span>
+          <span class="label-logo">${escapeHtml(company.name.toUpperCase())}</span>
           <div class="label-batch">
             <span class="label-batch-label">${pickLang(language, { ku: "کۆدی باچ", en: "Batch code", ar: "رمز الدفعة", zh: "批次代码" })}</span>
-            <span class="label-batch-code">${batch?.batchCode || '-'}</span>
+            <span class="label-batch-code">${escapeHtml(batch?.batchCode || '-')}</span>
           </div>
         </div>
         <div class="label-body">
           <div class="label-customer">
             <div class="customer-avatar">${customerInitial}</div>
             <div class="customer-info">
-              <div class="customer-name">${customer?.name || '-'}</div>
-              <span class="customer-code">📋 ${customer?.code || '-'}</span>
+              <div class="customer-name">${escapeHtml(customer?.name || '-')}</div>
+              <span class="customer-code">📋 ${escapeHtml(customer?.code || '-')}</span>
             </div>
           </div>
           
@@ -756,7 +757,7 @@ function generateLabelContent(
                   return `
                     <tr>
                       <td style="font-weight: 800; color: #10b981;">${idx + 1}</td>
-                      <td class="tracking-cell">${pkg.trackingNumber || '-'}</td>
+                      <td class="tracking-cell">${escapeHtml(pkg.trackingNumber || '-')}</td>
                       <td>${weight.toFixed(isSea ? 3 : 2)}</td>
                       <td style="color: #059669; font-weight: 800;">$${(pkg.calculatedCostUsd || 0).toFixed(2)}</td>
                       <td><span class="type-badge ${typeClass}">${pkgType}</span></td>

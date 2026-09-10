@@ -1,3 +1,4 @@
+import { openExternal } from "@/lib/html";
 import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
@@ -252,7 +253,7 @@ export default function CustomerMessages() {
               src={msg.attachmentUrl}
               alt={msg.attachmentName || "image"}
               className="max-w-[240px] rounded-lg cursor-pointer hover:opacity-90 transition"
-              onClick={() => window.open(msg.attachmentUrl, "_blank")}
+              onClick={() => openExternal(msg.attachmentUrl)}
             />
           </div>
         )}

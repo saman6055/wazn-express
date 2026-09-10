@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -316,8 +317,8 @@ export default function InvoiceReports() {
           <tbody>
             ${customerReport?.map(c => `
               <tr>
-                <td>${c.customerName}</td>
-                <td>${c.customerCode}</td>
+                <td>${escapeHtml(c.customerName)}</td>
+                <td>${escapeHtml(c.customerCode)}</td>
                 <td>${c.totalInvoices}</td>
                 <td>$${c.totalAmountUsd.toFixed(2)}</td>
                 <td style="color: green;">$${c.paidAmountUsd.toFixed(2)}</td>
@@ -358,7 +359,7 @@ export default function InvoiceReports() {
       <!DOCTYPE html>
       <html>
       <head>
-        <title>${title}</title>
+        <title>${escapeHtml(title)}</title>
         <style>
           body {
             font-family: Arial, sans-serif;
@@ -429,8 +430,8 @@ export default function InvoiceReports() {
       </head>
       <body>
         ${reportLogoHtml()}
-        <h1>${company.name}</h1>
-        <p class="subtitle">${title}</p>
+        <h1>${escapeHtml(company.name)}</h1>
+        <p class="subtitle">${escapeHtml(title)}</p>
         
         <div class="summary">
           <div class="summary-card">
@@ -453,7 +454,7 @@ export default function InvoiceReports() {
         
         ${tableContent}
         
-        <p class="footer">Generated on ${new Date().toLocaleDateString()} | ${company.name} Invoice Reports</p>
+        <p class="footer">Generated on ${new Date().toLocaleDateString()} | ${escapeHtml(company.name)} Invoice Reports</p>
         
         <script>
           window.onload = function() {

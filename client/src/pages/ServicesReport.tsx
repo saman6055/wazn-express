@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { fmtDate, fmtMonth, fmtTime } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { useLocation } from "wouter";
@@ -209,7 +210,7 @@ export default function ServicesReport() {
       <body>
         <div class="header">${reportLogoHtml(company.logoUrl)}
           <h1>🔧 ${pickLang(language, { ku: "ڕاپۆرتی دارایی خزمەتگوزارییەکان", en: "Services Financial Report", ar: "التقرير المالي للخدمات", zh: "服务财务报告" })}</h1>
-          <div class="company">${company.name} - ${company.nameKu}</div>
+          <div class="company">${escapeHtml(company.name)} - ${escapeHtml(company.nameKu)}</div>
           <div class="date">${pickLang(language, { ku: "بەرواری دروستکردن", en: "Generated", ar: "تاريخ الإنشاء", zh: "生成日期" })}: ${fmtDate(new Date())} - ${fmtTime(new Date())}</div>
         </div>
         
@@ -250,7 +251,7 @@ export default function ServicesReport() {
                 const margin = type.revenue > 0 ? (type.profit / type.revenue) * 100 : 0;
                 return `
                   <tr>
-                    <td>${type.name}</td>
+                    <td>${escapeHtml(type.name)}</td>
                     <td>${type.count}</td>
                     <td>$${type.cost.toFixed(2)}</td>
                     <td>$${type.revenue.toFixed(2)}</td>
@@ -277,7 +278,7 @@ export default function ServicesReport() {
             <tbody>
               ${byCustomer.map(customer => `
                 <tr>
-                  <td>${customer.name}</td>
+                  <td>${escapeHtml(customer.name)}</td>
                   <td>${customer.count}</td>
                   <td>$${customer.revenue.toFixed(2)}</td>
                   <td class="${customer.profit >= 0 ? 'profit-positive' : 'profit-negative'}">$${customer.profit.toFixed(2)}</td>

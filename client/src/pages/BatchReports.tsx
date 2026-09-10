@@ -1,3 +1,4 @@
+import { escapeHtml } from "@/lib/html";
 import { statusTone, TONE_BG, TONE_TEXT } from "@/lib/statusTone";
 import { fmtDate, fmtDateTime, fmtMonth } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -357,7 +358,7 @@ export default function BatchReports() {
       <body>
         <div class="header">${reportLogoHtml()}
           <h1>${pickLang(language, { ku: "ڕاپۆرتی دارایی باچەکان", en: "Batch financial report", ar: "التقرير المالي للدفعات", zh: "批次财务报告" })}</h1>
-          <p>${company.name} - ${fmtDate(new Date())}</p>
+          <p>${escapeHtml(company.name)} - ${fmtDate(new Date())}</p>
         </div>
 
         <div class="summary">
@@ -396,7 +397,7 @@ export default function BatchReports() {
           <tbody>
             ${filteredBatches.map(batch => `
               <tr>
-                <td>${batch.batchCode}</td>
+                <td>${escapeHtml(batch.batchCode)}</td>
                 <td>${shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType}</td>
                 <td>${STATUS_LABEL[batch.status as BatchStatus] ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]!) : batch.status}</td>
                 <td>${batch.packageCount}</td>
@@ -424,7 +425,7 @@ export default function BatchReports() {
         </table>
 
         <div class="footer">
-          <p>${pickLang(language, { ku: "دروستکراوە لە", en: "Generated on", ar: "أُنشئ في", zh: "生成于" })} ${fmtDateTime(new Date())} - ${company.name}</p>
+          <p>${pickLang(language, { ku: "دروستکراوە لە", en: "Generated on", ar: "أُنشئ في", zh: "生成于" })} ${fmtDateTime(new Date())} - ${escapeHtml(company.name)}</p>
         </div>
       </body>
       </html>
