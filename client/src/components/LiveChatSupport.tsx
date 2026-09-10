@@ -324,6 +324,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                   variant="ghost"
                   size="icon"
                   onClick={() => utils.supportChat.getMessages.invalidate({ chatId: chatId! })}
+                  aria-label={pickLang(language, { ku: "نوێکردنەوە", en: "Refresh", ar: "تحديث", zh: "刷新" })}
                   className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8"
                   disabled={!chatId}
                 >
@@ -333,6 +334,9 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                   variant="ghost"
                   size="icon"
                   onClick={() => setIsMinimized(!isMinimized)}
+                  aria-label={isMinimized
+                    ? pickLang(language, { ku: "گەورەکردنەوە", en: "Expand", ar: "تكبير", zh: "展开" })
+                    : pickLang(language, { ku: "بچووککردنەوە", en: "Minimize", ar: "تصغير", zh: "最小化" })}
                   className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8"
                 >
                   {isMinimized ? (
@@ -345,6 +349,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                   variant="ghost"
                   size="icon"
                   onClick={onClose}
+                  aria-label={pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
                   className="text-white/70 hover:text-white hover:bg-white/10 h-8 w-8"
                 >
                   <X className="w-4 h-4" />
@@ -364,7 +369,9 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
               className="flex flex-col"
             >
               {/* Messages */}
-              <div 
+              <div
+                role="log"
+                aria-live="polite"
                 className={cn(
                   "flex-1 overflow-y-auto p-4 space-y-4",
                   isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
@@ -538,6 +545,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                   />
                   <Button
                     onClick={handleSendMessage}
+                    aria-label={pickLang(language, { ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}
                     disabled={!inputValue.trim() || !chatId || sendMessage.isPending}
                     size="icon"
                     className={cn(

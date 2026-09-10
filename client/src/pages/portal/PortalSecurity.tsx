@@ -182,7 +182,7 @@ export default function PortalSecurity() {
               />
               <button
                 type="button"
-                onClick={() => setShowCurrent((v) => !v)}
+                onClick={() => setShowCurrent((v) => !v)} aria-label={pick(showCurrent ? { ku: "شاردنەوەی وشەی نهێنی", en: "Hide password", ar: "إخفاء كلمة المرور", zh: "隐藏密码" } : { ku: "پیشاندانی وشەی نهێنی", en: "Show password", ar: "إظهار كلمة المرور", zh: "显示密码" })}
                 className={cn("absolute top-1/2 -translate-y-1/2 end-3", isDark ? "text-slate-400" : "text-slate-500")}
                 tabIndex={-1}
               >
@@ -205,7 +205,7 @@ export default function PortalSecurity() {
               />
               <button
                 type="button"
-                onClick={() => setShowNew((v) => !v)}
+                onClick={() => setShowNew((v) => !v)} aria-label={pick(showNew ? { ku: "شاردنەوەی وشەی نهێنی", en: "Hide password", ar: "إخفاء كلمة المرور", zh: "隐藏密码" } : { ku: "پیشاندانی وشەی نهێنی", en: "Show password", ar: "إظهار كلمة المرور", zh: "显示密码" })}
                 className={cn("absolute top-1/2 -translate-y-1/2 end-3", isDark ? "text-slate-400" : "text-slate-500")}
                 tabIndex={-1}
               >

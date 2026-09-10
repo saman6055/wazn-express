@@ -88,7 +88,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       icon: Home,
       label: t('portal.home'),
       path: "/portal",
-      activeColor: "text-blue-500",
+      activeColor: "text-blue-700 dark:text-blue-300",
       activeBg: "bg-blue-500/10",
       activeGlow: "shadow-blue-500/20",
     },
@@ -96,7 +96,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       icon: Package,
       label: pickLang(language, { ku: "بارەکانم", en: "My shipments", ar: "شحناتي", zh: "我的货件" }),
       path: "/portal/shipments",
-      activeColor: "text-sky-500",
+      activeColor: "text-sky-700 dark:text-sky-300",
       activeBg: "bg-sky-500/10",
       activeGlow: "shadow-sky-500/20",
     },
@@ -112,7 +112,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       icon: ShoppingBag,
       label: pickLang(language, { ku: "کاڵاکانم", en: "My items", ar: "بضائعي", zh: "我的商品" }),
       path: "/portal/full-package",
-      activeColor: "text-purple-500",
+      activeColor: "text-purple-700 dark:text-purple-300",
       activeBg: "bg-purple-500/10",
       activeGlow: "shadow-purple-500/20",
     },
@@ -120,7 +120,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
       icon: Wallet,
       label: t('portal.financial'),
       path: "/portal/financial",
-      activeColor: "text-amber-500",
+      activeColor: "text-amber-700 dark:text-amber-300",
       activeBg: "bg-amber-500/10",
       activeGlow: "shadow-amber-500/20",
     },
@@ -147,8 +147,8 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         isActive 
           ? `${item.activeColor} ${item.activeBg} shadow-lg ${item.activeGlow}` 
           : isDark 
-            ? "text-slate-500 hover:text-slate-300 hover:bg-slate-700/50" 
-            : "text-slate-400 hover:text-slate-600 hover:bg-slate-100"
+            ? "text-slate-300 hover:text-white hover:bg-slate-700/50" 
+            : "text-slate-600 hover:text-slate-900 hover:bg-slate-100"
       )}>
         <div className={cn(
           "relative transition-transform duration-300",

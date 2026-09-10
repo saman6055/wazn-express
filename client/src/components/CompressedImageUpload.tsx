@@ -230,9 +230,11 @@ export default function CompressedImageUpload({
                 e.stopPropagation();
                 removeImage(i);
               }}
-              className="absolute -top-1 -right-1 w-4 h-4 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+              aria-label={t("common.delete")}
+              // Hover-only was invisible on a phone, and 16px was smaller than a fingertip.
+              className="absolute -top-1.5 -end-1.5 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-100 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
             >
-              <X className="w-2.5 h-2.5" />
+              <X className="w-3.5 h-3.5" />
             </button>
           </div>
         ))}
@@ -310,10 +312,11 @@ export default function CompressedImageUpload({
               className="w-full h-full object-cover"
               />
               {/* Overlay on hover */}
-              <div className="absolute inset-0 bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100">
+              <div className="absolute inset-0 bg-black/30 [@media(hover:hover)]:bg-black/0 group-hover:bg-black/30 transition-colors flex items-center justify-center gap-2 opacity-100 [@media(hover:hover)]:opacity-0 group-hover:opacity-100 focus-within:opacity-100">
                 <button
                   type="button"
                   onClick={() => setPreviewImage(url)}
+                  aria-label={t("common.view")}
                   className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
                 >
                   <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
@@ -321,6 +324,7 @@ export default function CompressedImageUpload({
                 <button
                   type="button"
                   onClick={() => removeImage(i)}
+                  aria-label={t("common.delete")}
                   className="w-8 h-8 bg-red-500/90 rounded-full flex items-center justify-center shadow-lg hover:bg-red-600 transition-colors"
                 >
                   <X className="w-4 h-4 text-white" />
