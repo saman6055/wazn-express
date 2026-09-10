@@ -1,5 +1,5 @@
 import { fmtDate, fmtDateTime } from "@/lib/numericDate";
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef, type KeyboardEvent } from "react";
 import { trpc } from "@/lib/trpc";
 import { readFinanceLink } from "@shared/listLinks";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
@@ -79,11 +79,12 @@ import {
   CheckCircle,
   XCircle,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { normalizePhone } from "@shared/phone";
+import { TransactionDetailDialog, type TransactionLike } from "@/components/finance/TransactionDetailDialog";
 
 type SortField = 'balance' | 'name' | 'date' | 'code';
 type SortDirection = 'asc' | 'desc';
@@ -116,6 +117,43 @@ export default function Finance() {
   const [creditMaxAmount, setCreditMaxAmount] = useState("");
   const [creditSortField, setCreditSortField] = useState<'balance' | 'name' | 'code' | 'lastTransaction'>('balance');
   const [creditSortDir, setCreditSortDir] = useState<'asc' | 'desc'>('desc');
+
+  /**
+   * Everything on this page opens its details (owner, 2026-09-10: "I want to
+   * click anything and get its details, not just see it"). A figure opens
+   * the list that adds up to it, with nothing else narrowing that list; a
+   * customer opens their account; a transaction opens itself.
+   */
+  const [, setLocation] = useLocation();
+  const [openTx, setOpenTx] = useState<(TransactionLike & { customer?: any }) | null>(null);
+  const [netOpen, setNetOpen] = useState(false);
+  const tabsRef = useRef<HTMLDivElement>(null);
+  const showTabs = () => requestAnimationFrame(() => tabsRef.current?.scrollIntoView({ behavior: "smooth", block: "start" }));
+  const openCustomer = (customerId: number | null | undefined) => {
+    if (customerId) setLocation(`/finance/customer/${customerId}`);
+  };
+  const openAccounts = (filter: AccountFilter) => {
+    setSearchQuery("");
+    setAccountFilter(filter);
+    setActiveTab("accounts");
+    showTabs();
+  };
+  const openCredit = () => {
+    setCreditSearch("");
+    setCreditMinAmount("");
+    setCreditMaxAmount("");
+    setActiveTab("credit-customers");
+    showTabs();
+  };
+  /** Click and Enter both open it: a row only a mouse can open is half a row. */
+  const clickable = (open: () => void) => ({
+    role: "button" as const,
+    tabIndex: 0,
+    onClick: open,
+    onKeyDown: (e: KeyboardEvent) => {
+      if (e.key === "Enter" || e.key === " ") { e.preventDefault(); open(); }
+    },
+  });
   
   // Queries - using unified ledger system
   const { data: summary, isLoading: summaryLoading } = trpc.ledger.getSummary.useQuery();
@@ -935,7 +973,7 @@ export default function Finance() {
         
         {/* Stats Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/20 dark:to-red-900/10">
+          <Card {...clickable(() => openAccounts('debtors'))} data-testid="finance-card-debt" className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100/50 dark:from-red-950/20 dark:to-red-900/10 cursor-pointer transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-400">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -952,15 +990,15 @@ export default function Finance() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10">
+          <Card {...clickable(openCredit)} data-testid="finance-card-credit" className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100/50 dark:from-green-950/20 dark:to-green-900/10 cursor-pointer transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-green-400">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm font-medium text-green-600 dark:text-green-400">{pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</p>
+                  <p className="text-sm font-medium text-green-600 dark:text-green-400">{pickLang(language, { ku: "کۆی کریدیت", en: "Total credit", ar: "إجمالي الرصيد الدائن", zh: "贷方总额" })}</p>
                   <p className="text-3xl font-bold text-green-700 dark:text-green-300">
                     {formatCurrency(summary?.totalCreditUsd || 0)}
                   </p>
-                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">{payments?.length || 0} {pickLang(language, { ku: "پارەدان", en: "payments", ar: "دفعة", zh: "笔付款" })}</p>
+                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">{summary?.creditorsCount || 0} {pickLang(language, { ku: "کڕیاری کریدیتدار", en: "customers holding credit", ar: "عميل لديه رصيد", zh: "有贷方余额的客户" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
                   <TrendingDown className="h-7 w-7" />
@@ -969,7 +1007,7 @@ export default function Finance() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10">
+          <Card {...clickable(() => openAccounts('all'))} data-testid="finance-card-accounts" className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100/50 dark:from-blue-950/20 dark:to-blue-900/10 cursor-pointer transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -977,7 +1015,7 @@ export default function Finance() {
                   <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
                     {accounts?.length || 0}
                   </p>
-                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">{pickLang(language, { ku: "حسابی چالاک", en: "Active accounts", ar: "حسابات نشطة", zh: "活跃账户" })}</p>
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">{accounts?.filter(a => a.accountStatus === 'active').length ?? 0} {pickLang(language, { ku: "چالاک", en: "active", ar: "نشط", zh: "活跃" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
                   <Users className="h-7 w-7" />
@@ -986,7 +1024,11 @@ export default function Finance() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10">
+          <Popover open={netOpen} onOpenChange={setNetOpen}>
+          <PopoverTrigger asChild>
+          <div role="button" tabIndex={0} data-testid="finance-card-net" className="rounded-xl cursor-pointer transition-shadow hover:shadow-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-amber-400"
+               onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); setNetOpen((o) => !o); } }}>
+          <Card className="h-full border-0 shadow-lg bg-gradient-to-br from-amber-50 to-amber-100/50 dark:from-amber-950/20 dark:to-amber-900/10">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -1002,6 +1044,25 @@ export default function Finance() {
               </div>
             </CardContent>
           </Card>
+          </div>
+          </PopoverTrigger>
+          <PopoverContent className="w-80" align="end" data-testid="finance-net-breakdown">
+            <p className="mb-2 text-sm font-medium">{pickLang(language, { ku: "باڵانسی نێت چۆن حساب دەکرێت", en: "How the net balance is worked out", ar: "كيف يُحسب الرصيد الصافي", zh: "净余额如何计算" })}</p>
+            <button type="button" className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={() => { setNetOpen(false); openAccounts('debtors'); }}>
+              <span>{pickLang(language, { ku: "قەرزی کڕیاران", en: "What customers owe", ar: "ديون العملاء", zh: "客户欠款" })}</span>
+              <span className="font-semibold text-red-600 dark:text-red-400" dir="ltr">{formatCurrency(summary?.totalDebtUsd || 0)}</span>
+            </button>
+            <button type="button" className="flex w-full items-center justify-between gap-3 rounded-md px-2 py-1.5 text-sm hover:bg-muted" onClick={() => { setNetOpen(false); openCredit(); }}>
+              <span>{pickLang(language, { ku: "کریدیتی کڕیاران لای ئێمە", en: "Credit customers hold with us", ar: "أرصدة العملاء لدينا", zh: "客户在我们这里的贷方余额" })}</span>
+              <span className="font-semibold text-emerald-600 dark:text-emerald-400" dir="ltr">− {formatCurrency(summary?.totalCreditUsd || 0)}</span>
+            </button>
+            <div className="mt-1 flex items-center justify-between border-t px-2 pt-2 text-sm font-semibold">
+              <span>{pickLang(language, { ku: "نێت", en: "Net", ar: "الصافي", zh: "净额" })}</span>
+              <span dir="ltr">{formatCurrency((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0))}</span>
+            </div>
+            <p className="mt-2 text-xs text-muted-foreground">{pickLang(language, { ku: "کلیک لە هەر دێڕێک بکە بۆ بینینی ئەو کڕیارانەی تێیدان.", en: "Click a line to see the customers in it.", ar: "انقر سطراً لرؤية العملاء فيه.", zh: "点击一行查看其中的客户。" })}</p>
+          </PopoverContent>
+          </Popover>
         </div>
         
         {/* One search, above the tabs.
@@ -1015,7 +1076,7 @@ export default function Finance() {
             Typing moves to the accounts tab, because that is the full list
             with the filters and the sorting. Searching from the summary and
             being shown five of the matches would be worse than no search. */}
-        <div className="relative max-w-md">
+        <div ref={tabsRef} className="relative max-w-md scroll-mt-24">
           <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
           <Input
             value={searchQuery}
@@ -1081,7 +1142,7 @@ export default function Finance() {
                       {accounts?.slice(0, 5).map((account) => {
                         const balanceUsd = parseFloat(account.currentBalanceUsd || '0');
                         return (
-                          <TableRow key={account.id} className="hover:bg-muted/50 transition-colors">
+                          <TableRow key={account.id} {...clickable(() => openCustomer(account.customerId))} className="hover:bg-muted/50 transition-colors cursor-pointer">
                             <TableCell>
                               <div className="flex items-center gap-3">
                                 <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold">
@@ -1125,7 +1186,7 @@ export default function Finance() {
                 <div className="flex items-center justify-between">
                   <CardTitle className="text-lg flex items-center gap-2">
                     <History className="w-5 h-5 text-purple-500 dark:text-purple-400" />
-                    {pickLang(language, { ku: "کۆی باڵانس", en: "Recent transactions", ar: "أحدث المعاملات", zh: "近期交易" })}
+                    {pickLang(language, { ku: "دوایین جوڵەکان", en: "Recent transactions", ar: "أحدث المعاملات", zh: "近期交易" })}
                   </CardTitle>
                 </div>
               </CardHeader>
@@ -1135,7 +1196,7 @@ export default function Finance() {
                     const account = accounts?.find(a => a.id === tx.accountId);
                     const isDebit = tx.transactionType?.startsWith('DEBIT');
                     return (
-                      <div key={tx.id} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors">
+                      <div key={tx.id} {...clickable(() => setOpenTx({ ...tx, customer: account?.customer ?? (tx as any).customer }))} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
                         <div className="flex items-center gap-3">
                           <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${isDebit ? 'bg-red-100 dark:bg-red-950/40 text-red-600' : 'bg-green-100 dark:bg-green-950/40 text-green-600'}`}>
                             {isDebit ? <ArrowUp className="w-5 h-5" /> : <ArrowDown className="w-5 h-5" />}
@@ -1179,7 +1240,7 @@ export default function Finance() {
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                   {debtors?.slice(0, 4).map((debtor) => (
-                    <div key={debtor.customerId} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-800/60 hover:shadow-md transition-shadow">
+                    <div key={debtor.customerId} {...clickable(() => openCustomer(debtor.customerId))} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-800/60 hover:shadow-md transition-shadow cursor-pointer">
                       <div className="flex items-center justify-between mb-2">
                         <Badge variant="outline" className="bg-white dark:bg-card">{debtor.customer?.customerCode}</Badge>
                         <span className="text-red-600 dark:text-red-300 font-bold">{formatCurrency(String(debtor.balanceUsd || 0))}</span>
@@ -1332,7 +1393,7 @@ export default function Finance() {
                         {filteredAndSortedAccounts.map((account) => {
                           const balanceUsd = parseFloat(account.currentBalanceUsd || '0');
                           return (
-                            <TableRow key={account.id} className="hover:bg-muted/50 transition-colors">
+                            <TableRow key={account.id} {...clickable(() => openCustomer(account.customerId))} className="hover:bg-muted/50 transition-colors cursor-pointer">
                               <TableCell>
                                 <div className="flex items-center gap-3">
                                   <div className="h-10 w-10 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white font-bold shadow">
@@ -1484,7 +1545,7 @@ export default function Finance() {
                       const account = accounts?.find(a => a.id === payment.accountId);
                       const customer = account?.customer;
                       return (
-                        <TableRow key={payment.id} className="hover:bg-muted/50 transition-colors">
+                        <TableRow key={payment.id} {...clickable(() => setOpenTx({ ...payment, customer }))} className="hover:bg-muted/50 transition-colors cursor-pointer">
                           <TableCell>
                             <div className="flex items-center gap-2">
                               <Calendar className="h-4 w-4 text-muted-foreground" />
@@ -1676,7 +1737,7 @@ export default function Finance() {
                         creditCustomers.map((account, index) => {
                           const balance = Math.abs(parseFloat(account.currentBalanceUsd || '0'));
                           return (
-                            <TableRow key={account.id} className="hover:bg-emerald-50/50 dark:hover:bg-emerald-950/10 transition-colors">
+                            <TableRow key={account.id} {...clickable(() => openCustomer(account.customerId))} className="hover:bg-emerald-50/50 dark:hover:bg-emerald-950/10 transition-colors cursor-pointer">
                               <TableCell className="font-mono text-muted-foreground">{index + 1}</TableCell>
                               <TableCell>
                                 <div className="flex items-center gap-3">
@@ -1703,7 +1764,7 @@ export default function Finance() {
                                 </Badge>
                               </TableCell>
                               <TableCell>
-                                <Link href={`/customers/${account.customer?.id}`}>
+                                <Link href={`/finance/customer/${account.customerId}`}>
                                   <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
                                     <ArrowUpRight className="w-4 h-4" />
                                   </Button>
@@ -1736,6 +1797,12 @@ export default function Finance() {
           </TabsContent>
         </Tabs>
       </div>
+      <TransactionDetailDialog
+        tx={openTx}
+        customer={openTx?.customer ?? null}
+        typeLabel={getTransactionTypeLabel(openTx?.transactionType || "")}
+        onClose={() => setOpenTx(null)}
+      />
     </DashboardLayout>
   );
 }
