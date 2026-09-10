@@ -234,7 +234,7 @@ export default function UnifiedProfitDashboard() {
       .slice(0, 12)
       .map(([month, data]) => ({
         month,
-        monthLabel: new Date(month + '-01').toLocaleDateString(isKurdish ? 'ku-IQ' : 'en-US', { year: 'numeric', month: 'short' }),
+        monthLabel: new Date(month + '-01').toLocaleDateString(isKurdish ? 'ckb-IQ-u-nu-latn' : 'en-US', { year: 'numeric', month: 'short' }),
         ...data,
       }));
   }, [fpOrders, isKurdish]);

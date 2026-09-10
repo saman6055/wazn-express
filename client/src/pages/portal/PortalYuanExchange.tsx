@@ -127,7 +127,7 @@ export default function PortalYuanExchange() {
   };
 
   const waMessage = pick({
-    ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${fmtNumber(usdNum, 2)} دۆلار → ¥${fmtNumber(cnyNum, 2)} یوان\n(نرخ: ١$ = ${fmtNumber(rate, 2)}¥)`,
+    ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${fmtNumber(usdNum, 2)} دۆلار → ¥${fmtNumber(cnyNum, 2)} یوان\n(نرخ: 1$ = ${fmtNumber(rate, 2)}¥)`,
     en: `Hello, I want to buy Chinese Yuan:\n💵 $${fmtNumber(usdNum, 2)} → ¥${fmtNumber(cnyNum, 2)}\n(Rate: 1$ = ${fmtNumber(rate, 2)}¥)`,
     ar: `مرحباً، أريد شراء اليوان الصيني:\n💵 ${fmtNumber(usdNum, 2)}$ → ¥${fmtNumber(cnyNum, 2)}\n(السعر: 1$ = ${fmtNumber(rate, 2)}¥)`,
     zh: `您好，我想购买人民币：\n💵 ${fmtNumber(usdNum, 2)} 美元 → ¥${fmtNumber(cnyNum, 2)}\n（汇率：1$ = ${fmtNumber(rate, 2)}¥）`,

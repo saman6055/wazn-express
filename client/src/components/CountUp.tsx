@@ -49,6 +49,6 @@ export function CountUp({ value, format, durationMs = 900, className }: CountUpP
     };
   }, [value, durationMs]);
 
-  const text = format ? format(display) : Math.round(display).toLocaleString();
+  const text = format ? format(display) : Math.round(display).toLocaleString("en-GB");
   return <span className={className}>{text}</span>;
 }

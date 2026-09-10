@@ -234,7 +234,7 @@ function OverviewCards({ p }: { p: (v: L) => string }) {
     { label: { ku: "چالاک ئەم هەفتەیە", en: "Active this week", ar: "نشط هذا الأسبوع", zh: "本周活跃" }, value: data?.activeWeek ?? 0, icon: TrendingUp, color: "text-sky-600 bg-sky-100 dark:bg-sky-900/40" },
     { label: { ku: "تراکینگی چاوەڕوان", en: "Pending declares", ar: "تصاريح معلقة", zh: "待处理申报" }, value: data?.pendingDeclares ?? 0, icon: PackageCheck, color: "text-violet-600 bg-violet-100 dark:bg-violet-900/40" },
     { label: { ku: "خاوەنداری چاوەڕوان", en: "Pending claims", ar: "مطالبات معلقة", zh: "待处理认领" }, value: data?.pendingClaims ?? 0, icon: FileText, color: "text-amber-600 bg-amber-100 dark:bg-amber-900/40" },
-    { label: { ku: "پەیام (٧ ڕۆژ)", en: "Messages (7d)", ar: "رسائل (7 أيام)", zh: "消息 (7天)" }, value: data?.messagesWeek ?? 0, icon: MessageCircle, color: "text-pink-600 bg-pink-100 dark:bg-pink-900/40" },
+    { label: { ku: "پەیام (7 ڕۆژ)", en: "Messages (7d)", ar: "رسائل (7 أيام)", zh: "消息 (7天)" }, value: data?.messagesWeek ?? 0, icon: MessageCircle, color: "text-pink-600 bg-pink-100 dark:bg-pink-900/40" },
   ];
 
   if (isLoading) {
@@ -1421,7 +1421,7 @@ function CalcSettingsCard({ p }: { p: (v: L) => string }) {
     { key: "volumetricDivisor", label: { ku: "دابەشکەری قەبارەیی (ئاسمانی)", en: "Volumetric divisor (air)", ar: "قاسم الوزن الحجمي (جوي)", zh: "体积重除数（空运）" }, hint: { ku: "درێژی×پانی×بەرزی ÷ ئەم ژمارە = کیلۆی قەبارەیی", en: "L×W×H ÷ this = volumetric kg", ar: "الطول×العرض×الارتفاع ÷ هذا = كغ حجمي", zh: "长×宽×高 ÷ 此值 = 体积重" } },
     { key: "airMinKg", label: { ku: "کەمترین کیلۆ (ئاسمانی)", en: "Minimum kg (air)", ar: "الحد الأدنى كغ (جوي)", zh: "最低公斤（空运）" }, hint: { ku: "کەمتر لەمە وەک ئەمە حیساب دەکرێت", en: "Anything below is charged as this", ar: "ما دون ذلك يُحتسب بهذا", zh: "低于此值按此值计费" } },
     { key: "seaMinCbm", label: { ku: "سنووری m³ (دەریایی)", en: "CBM threshold (sea)", ar: "حد m³ (بحري)", zh: "立方米阈值（海运）" }, hint: { ku: "کەمتر لەمە ڕێژەی زیادە دەگرێت", en: "Below this the surcharge applies", ar: "دون هذا تُطبَّق الزيادة", zh: "低于此值加收附加费" } },
-    { key: "seaSurchargePct", label: { ku: "ڕێژەی زیادە ٪ (دەریایی)", en: "Surcharge % (sea)", ar: "نسبة الزيادة ٪ (بحري)", zh: "附加费 %（海运）" }, hint: { ku: "٠ = ناچالاک", en: "0 = disabled", ar: "0 = معطّل", zh: "0 = 关闭" } },
+    { key: "seaSurchargePct", label: { ku: "ڕێژەی زیادە ٪ (دەریایی)", en: "Surcharge % (sea)", ar: "نسبة الزيادة ٪ (بحري)", zh: "附加费 %（海运）" }, hint: { ku: "0 = ناچالاک", en: "0 = disabled", ar: "0 = معطّل", zh: "0 = 关闭" } },
   ];
 
   return (
@@ -2017,7 +2017,7 @@ function YuanSettingsCard({ p }: { p: (v: L) => string }) {
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">{p({ ku: "نرخی فرۆشتن (١ دۆلار = چەند یوان)", en: "Sell rate (CNY per 1 USD)", ar: "سعر البيع (يوان لكل دولار)", zh: "出售价（1美元兑人民币）" })}</Label>
+            <Label className="text-xs">{p({ ku: "نرخی فرۆشتن (1 دۆلار = چەند یوان)", en: "Sell rate (CNY per 1 USD)", ar: "سعر البيع (يوان لكل دولار)", zh: "出售价（1美元兑人民币）" })}</Label>
             <Input type="number" min="0" step="0.01" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} className="font-mono font-bold" dir="ltr" />
           </div>
           <div className="space-y-1">
@@ -2133,7 +2133,7 @@ function YuanOrderRow({ row, p }: { row: any; p: (v: L) => string }) {
 
       <div className="flex items-center gap-3 flex-wrap">
         <span className="font-black tabular-nums text-base" dir="ltr">
-          ${Number(o.usdAmount).toLocaleString()} → ¥{Number(o.cnyAmount).toLocaleString()}
+          ${Number(o.usdAmount).toLocaleString("en-GB")} → ¥{Number(o.cnyAmount).toLocaleString("en-GB")}
         </span>
         <span className="text-xs text-muted-foreground tabular-nums" dir="ltr">1$ = {Number(o.rate)}¥</span>
       </div>

@@ -529,7 +529,7 @@ const { t, language } = useLanguage();
             )}>
               <div className="flex items-center justify-between mb-4">
                 <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                  {pickLang(language, { ku: "چارتی ٦ مانگی ڕابردوو", en: "Last 6 Months", ar: "آخر ٦ أشهر", zh: "近 6 个月" })}
+                  {pickLang(language, { ku: "چارتی 6 مانگی ڕابردوو", en: "Last 6 Months", ar: "آخر 6 أشهر", zh: "近 6 个月" })}
                 </h3>
                 <BarChart3 className={cn("w-5 h-5", isDark ? "text-slate-500" : "text-slate-400")} />
               </div>

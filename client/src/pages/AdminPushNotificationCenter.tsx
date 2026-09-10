@@ -667,7 +667,7 @@ function StatCard({ icon, label, value, color }: { icon: React.ReactNode; label:
           <span className="text-sm text-muted-foreground">{label}</span>
           <span className={color}>{icon}</span>
         </div>
-        <div className="mt-2 text-2xl font-bold">{value.toLocaleString()}</div>
+        <div className="mt-2 text-2xl font-bold">{value.toLocaleString("en-GB")}</div>
       </CardContent>
     </Card>
   );

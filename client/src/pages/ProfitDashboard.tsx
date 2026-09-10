@@ -412,7 +412,7 @@ const [timeRange, setTimeRange] = useState("all");
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">Total Packages</p>
-                <p className="text-xl font-bold">{data.totalPackages.toLocaleString()}</p>
+                <p className="text-xl font-bold">{data.totalPackages.toLocaleString("en-GB")}</p>
               </div>
             </div>
           </CardContent>

@@ -95,10 +95,10 @@ export async function generateInvoicePDF(data: InvoiceData): Promise<Buffer> {
       .fontSize(10)
       .font("Helvetica")
       .text(`Invoice #: ${data.invoiceNumber}`, 400, 110, { align: "right" })
-      .text(`Date: ${data.invoiceDate.toLocaleDateString()}`, 400, 125, { align: "right" });
+      .text(`Date: ${data.invoiceDate.toLocaleDateString("en-GB")}`, 400, 125, { align: "right" });
 
     if (data.dueDate) {
-      doc.text(`Due Date: ${data.dueDate.toLocaleDateString()}`, 400, 140, { align: "right" });
+      doc.text(`Due Date: ${data.dueDate.toLocaleDateString("en-GB")}`, 400, 140, { align: "right" });
     }
 
     // Customer info

@@ -451,7 +451,7 @@ export default function Dashboard() {
             },
             {
               icon: <Users />,
-              label: t("dashboard.newCustomers7Days") || pickLang(language, { ku: "کڕیاری نوێ (٧ ڕۆژ)", en: "New customers (7 days)", ar: "عملاء جدد (٧ أيام)", zh: "新客户（7天）" }),
+              label: t("dashboard.newCustomers7Days") || pickLang(language, { ku: "کڕیاری نوێ (7 ڕۆژ)", en: "New customers (7 days)", ar: "عملاء جدد (7 أيام)", zh: "新客户（7天）" }),
               value: (
                 <ExplainableStat figure="newCustomers" value={newCustomersCount ?? 0}>
                   {newCustomersCount ?? 0}
@@ -781,7 +781,7 @@ export default function Dashboard() {
           <DashboardSection
             className="pro-section"
             title={t("nav.selfOrders") || "سێلف ئۆردەر"}
-            description={pickLang(language, { ku: "پاکێجی خۆکڕاو (تەنها گواستنەوە) — ٣٠ ڕۆژی ڕابردوو", en: "Self-bought packages (shipping only) — last 30 days", ar: "طرود اشتراها العميل (شحن فقط) — آخر ٣٠ يوماً", zh: "客户自购包裹（仅运输）— 最近 30 天" })}
+            description={pickLang(language, { ku: "پاکێجی خۆکڕاو (تەنها گواستنەوە) — 30 ڕۆژی ڕابردوو", en: "Self-bought packages (shipping only) — last 30 days", ar: "طرود اشتراها العميل (شحن فقط) — آخر 30 يوماً", zh: "客户自购包裹（仅运输）— 最近 30 天" })}
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">

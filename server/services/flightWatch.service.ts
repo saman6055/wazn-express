@@ -151,7 +151,7 @@ async function reportOverdueBatches(batches: WatchableRow[], now: Date): Promise
     action: "batches_overdue",
     category: "batches",
     severity: "warning",
-    title: `⏳ ${overdue.length} باچ زیاتر لە ٣٠ ڕۆژە کراوەن`,
+    title: `⏳ ${overdue.length} باچ زیاتر لە 30 ڕۆژە کراوەن`,
     content: [BAND_MEANING.red.ku, "", ...lines].join("\n"),
   }).catch(() => undefined);
 }

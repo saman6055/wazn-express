@@ -375,9 +375,9 @@ export default function FullPackageDetail() {
     if (moneyChangeDetected && editReason.trim().length < 3) {
       toast.error(
         pickLang(language, {
-          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
+          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم 3 پیت)",
           en: "Reason is required when prices change (min 3 chars)",
-          ar: "السبب مطلوب عند تغيير الأسعار (٣ أحرف على الأقل)",
+          ar: "السبب مطلوب عند تغيير الأسعار (3 أحرف على الأقل)",
           zh: "更改价格时需填写原因（至少3个字符）",
         })
       );
@@ -866,9 +866,9 @@ export default function FullPackageDetail() {
                     value={editReason}
                     onChange={(e) => setEditReason(e.target.value)}
                     placeholder={pickLang(language, {
-                      ku: "بۆ نموونە: کڕیار داوای دابەزاندنی ٥٪ی کرد",
+                      ku: "بۆ نموونە: کڕیار داوای دابەزاندنی 5٪ی کرد",
                       en: "e.g. Customer requested a 5% discount",
-                      ar: "مثال: طلب العميل خصمًا بنسبة ٥٪",
+                      ar: "مثال: طلب العميل خصمًا بنسبة 5٪",
                       zh: "例如：客户要求打95折",
                     })}
                     rows={2}
@@ -877,9 +877,9 @@ export default function FullPackageDetail() {
                   <div className="text-xs text-amber-800 dark:text-amber-200 mt-2 text-right">
                     {editReason.trim().length < 3
                       ? pickLang(language, {
-                          ku: `بەلایەنی کەم ٣ پیت (${editReason.trim().length}/3)`,
+                          ku: `بەلایەنی کەم 3 پیت (${editReason.trim().length}/3)`,
                           en: `Min 3 chars (${editReason.trim().length}/3)`,
-                          ar: `٣ أحرف على الأقل (${editReason.trim().length}/3)`,
+                          ar: `3 أحرف على الأقل (${editReason.trim().length}/3)`,
                           zh: `至少3个字符 (${editReason.trim().length}/3)`,
                         })
                       : pickLang(language, {

@@ -147,18 +147,18 @@ export default function HomeClassic() {
                     </div>
                   </div>
                   <div className="space-y-4">
-                    <TrackingStep icon={<CheckCircle className="w-4 h-4" />} title={t("home.receivedChina")} date="٢٠٢٤/١٢/١٥" active completed />
-                    <TrackingStep icon={<Plane className="w-4 h-4" />} title={t("home.onTheWay")} date="٢٠٢٤/١٢/١٧" active completed />
-                    <TrackingStep icon={<Truck className="w-4 h-4" />} title={t("home.arrivedIraq")} date="٢٠٢٤/١٢/١٩" active />
+                    <TrackingStep icon={<CheckCircle className="w-4 h-4" />} title={t("home.receivedChina")} date="2024/12/15" active completed />
+                    <TrackingStep icon={<Plane className="w-4 h-4" />} title={t("home.onTheWay")} date="2024/12/17" active completed />
+                    <TrackingStep icon={<Truck className="w-4 h-4" />} title={t("home.arrivedIraq")} date="2024/12/19" active />
                     <TrackingStep icon={<MapPin className="w-4 h-4" />} title={t("home.delivery")} date={t("home.expected")} />
                   </div>
                 </div>
                 <div className="absolute -top-6 -right-6 bg-gradient-to-br from-green-500 to-emerald-600 rounded-2xl p-4 shadow-xl shadow-green-500/30 animate-bounce" style={{ animationDuration: '3s' }}>
-                  <p className="text-3xl font-bold text-white">٩٨%</p>
+                  <p className="text-3xl font-bold text-white">98%</p>
                   <p className="text-green-100 text-sm">{t("home.deliveryRate")}</p>
                 </div>
                 <div className="absolute -bottom-4 -left-4 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl p-4 shadow-xl shadow-blue-500/30 animate-bounce" style={{ animationDuration: '4s' }}>
-                  <p className="text-3xl font-bold text-white">٢٤/٧</p>
+                  <p className="text-3xl font-bold text-white">24/7</p>
                   <p className="text-blue-100 text-sm">{t("home.support")}</p>
                 </div>
               </div>
@@ -170,10 +170,10 @@ export default function HomeClassic() {
       <section className="relative py-16 border-y border-[var(--landing-border)] bg-[var(--landing-stats-bg)]">
         <div className="container mx-auto px-4">
           <div className="grid grid-cols-2 md:grid-cols-4 gap-8">
-            <StatCard number="١٠,٠٠٠+" label={t("home.packagesDelivered")} icon={<Package className="w-6 h-6" />} />
-            <StatCard number="٥+" label={t("home.countries")} icon={<Globe className="w-6 h-6" />} />
-            <StatCard number="٢,٠٠٠+" label={t("home.happyCustomers")} icon={<Users className="w-6 h-6" />} />
-            <StatCard number="٩٨%" label={t("home.satisfaction")} icon={<Star className="w-6 h-6" />} />
+            <StatCard number="10,000+" label={t("home.packagesDelivered")} icon={<Package className="w-6 h-6" />} />
+            <StatCard number="5+" label={t("home.countries")} icon={<Globe className="w-6 h-6" />} />
+            <StatCard number="2,000+" label={t("home.happyCustomers")} icon={<Users className="w-6 h-6" />} />
+            <StatCard number="98%" label={t("home.satisfaction")} icon={<Star className="w-6 h-6" />} />
           </div>
         </div>
       </section>

@@ -727,7 +727,7 @@ export default function BulkOrderForm() {
                         <div className="flex items-center justify-between mb-2">
                           <Label className="text-xs font-semibold text-orange-700 dark:text-orange-400">{pickLang(language, { ku: "نرخی کاڵا بە یوانی چینی (¥)", en: "Item price in Chinese Yuan (¥)", ar: "سعر المنتج باليوان الصيني (¥)", zh: "商品价格（人民币 ¥）" })}</Label>
                           {rmbRate > 0 ? (
-                            <span className="text-[11px] font-mono text-orange-600 dark:text-orange-300">١ $ = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥</span>
+                            <span className="text-[11px] font-mono text-orange-600 dark:text-orange-300">1 $ = {rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} ¥</span>
                           ) : (
                             <span className="text-[11px] text-red-600 dark:text-red-300">{pickLang(language, { ku: "نرخی گۆڕین لە سیتینگ دانەنراوە", en: "Exchange rate not set in settings", ar: "لم يتم تعيين سعر الصرف في الإعدادات", zh: "设置中未设定汇率" })}</span>
                           )}
@@ -740,7 +740,7 @@ export default function BulkOrderForm() {
                               min="0"
                               step="0.01"
                               dir="ltr"
-                              placeholder={pickLang(language, { ku: "نرخی ١ دانە بە یوان", en: "Price per unit in Yuan", ar: "سعر الوحدة باليوان", zh: "单件人民币价格" })}
+                              placeholder={pickLang(language, { ku: "نرخی 1 دانە بە یوان", en: "Price per unit in Yuan", ar: "سعر الوحدة باليوان", zh: "单件人民币价格" })}
                               value={item.itemPriceCny}
                               onChange={e => setItemCny(item.id, e.target.value)}
                               className="h-9 text-sm pl-8"

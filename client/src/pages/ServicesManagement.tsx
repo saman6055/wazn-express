@@ -374,7 +374,7 @@ export default function ServicesManagement() {
     const rows = filteredServices.map((service: any) => {
       const profit = Number(service.priceAmount || 0) - Number(service.costAmount || 0);
       return [
-        service.createdAt ? new Date(service.createdAt).toLocaleDateString() : '',
+        service.createdAt ? new Date(service.createdAt).toLocaleDateString("en-GB") : '',
         getCustomerName(service.customerId),
         service.serviceType?.nameKu || service.serviceType?.nameEn || '',
         service.description || '',

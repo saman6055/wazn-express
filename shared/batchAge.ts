@@ -84,7 +84,7 @@ export const BAND_MEANING: Record<Exclude<AgeBand, "settled">, { ku: string; en:
   },
 };
 
-/** How the badge reads: "٢٤ ڕۆژ". */
+/** How the badge reads: "24 ڕۆژ". */
 export function ageLabel(days: number): { ku: string; en: string; ar: string; zh: string } {
   return {
     ku: `${days} ڕۆژ`,

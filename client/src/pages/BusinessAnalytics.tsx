@@ -368,7 +368,7 @@ export default function BusinessAnalytics() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Crown className="h-5 w-5 text-amber-500 dark:text-amber-400" />
-                {pickLang(language, { ku: 'باشترین ١٠ کڕیار', en: 'Top 10 Customers', ar: 'أفضل 10 عملاء', zh: '前10名客户' })}
+                {pickLang(language, { ku: 'باشترین 10 کڕیار', en: 'Top 10 Customers', ar: 'أفضل 10 عملاء', zh: '前10名客户' })}
               </CardTitle>
               <CardDescription>{pickLang(language, { ku: 'بە پێی داهات', en: 'By revenue', ar: 'حسب الإيراد', zh: '按收入' })}</CardDescription>
             </CardHeader>
@@ -423,7 +423,7 @@ export default function BusinessAnalytics() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
-                {pickLang(language, { ku: 'قەرزدارترین ١٠ کڕیار', en: 'Top 10 Debtors', ar: 'أكبر 10 مدينين', zh: '前10名欠款客户' })}
+                {pickLang(language, { ku: 'قەرزدارترین 10 کڕیار', en: 'Top 10 Debtors', ar: 'أكبر 10 مدينين', zh: '前10名欠款客户' })}
               </CardTitle>
               <CardDescription>{pickLang(language, { ku: 'کڕیارانی زۆرترین قەرز', en: 'Customers with the most debt', ar: 'العملاء الأكثر مديونية', zh: '欠款最多的客户' })}</CardDescription>
             </CardHeader>
@@ -484,9 +484,9 @@ export default function BusinessAnalytics() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="2024">٢٠٢٤</SelectItem>
-                  <SelectItem value="2025">٢٠٢٥</SelectItem>
-                  <SelectItem value="2026">٢٠٢٦</SelectItem>
+                  <SelectItem value="2024">2024</SelectItem>
+                  <SelectItem value="2025">2025</SelectItem>
+                  <SelectItem value="2026">2026</SelectItem>
                 </SelectContent>
               </Select>
             </div>

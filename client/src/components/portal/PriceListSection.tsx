@@ -1011,7 +1011,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
     calculator: {
       title: pickLang(language, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" }),
       desc: pickLang(language, { ku: "کێش یان قەبارەی کاڵاکەت بنووسە، نرخی گواستنەوە پێش‌بینی بکە پێش ناردن.", en: "Enter your item's weight or size to estimate the shipping cost.", ar: "أدخل وزن أو حجم بضاعتك لتقدير تكلفة الشحن.", zh: "输入货物的重量或尺寸以估算运费。" }),
-      example: pickLang(language, { ku: "نموونە: ٢ کگ بە ئاسمانی ≈ $24", en: "e.g. 2 kg by air ≈ $24", ar: "مثال: 2 كغ جواً ≈ 24$", zh: "例如：2 公斤空运 ≈ $24" }),
+      example: pickLang(language, { ku: "نموونە: 2 کگ بە ئاسمانی ≈ $24", en: "e.g. 2 kg by air ≈ $24", ar: "مثال: 2 كغ جواً ≈ 24$", zh: "例如：2 公斤空运 ≈ $24" }),
     },
     guide: {
       title: pickLang(language, { ku: "ڕێگاکانی گواستنەوە", en: "Shipping methods", ar: "طرق الشحن", zh: "运输方式" }),

@@ -2,9 +2,9 @@ import { useTranslation, type Language } from "@/contexts/LanguageContext";
 
 // Map the app language codes to BCP-47 locales for Intl.
 const LOCALE_MAP: Record<Language, string> = {
-  ku: "ckb",
+  ku: "ckb-u-nu-latn",
   en: "en",
-  ar: "ar",
+  ar: "ar-u-nu-latn",
   zh: "zh",
 };
 
@@ -57,7 +57,7 @@ export function RelativeTime({ date, className }: RelativeTimeProps) {
       timeStyle: "short",
     }).format(d);
   } catch {
-    title = d.toLocaleString();
+    title = d.toLocaleString("en-GB");
   }
 
   return (

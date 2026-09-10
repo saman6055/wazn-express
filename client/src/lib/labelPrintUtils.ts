@@ -221,7 +221,7 @@ export function generateLabelsHtml(options: {
           ${t.showWeight ? `<div>⚖️ ${escapeHtml(weight)} kg</div>` : ""}
           ${t.showShippingType ? `<div>🚚 ${shippingTypeLabel(pkgShipType)}</div>` : ""}
           ${t.showBatchNumber ? `<div>📦 ${escapeHtml(batchCode)}</div>` : ""}
-          ${t.showDate ? `<div>📅 ${new Date().toLocaleDateString()}</div>` : ""}
+          ${t.showDate ? `<div>📅 ${new Date().toLocaleDateString("en-GB")}</div>` : ""}
           ${t.showPrice && pkg.calculatedCostUsd != null ? `<div>$${Number(pkg.calculatedCostUsd).toFixed(2)}</div>` : ""}
           ${dimensions ? `<div>📐 ${escapeHtml(dimensions)}</div>` : ""}
         </div>

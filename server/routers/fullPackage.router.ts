@@ -748,7 +748,7 @@ export const fullPackageRouter = router({
         if (!isUncharged && (chargeChanged || advanceChanged) && (!reason || reason.trim().length < 3)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "هۆکار پێویستە (بەلایەنی کەم ٣ پیت) بۆ هەر گۆڕانکاریەک لە پارە. | Reason (min 3 chars) is required when amounts change.",
+            message: "هۆکار پێویستە (بەلایەنی کەم 3 پیت) بۆ هەر گۆڕانکاریەک لە پارە. | Reason (min 3 chars) is required when amounts change.",
           });
         }
 
@@ -1141,7 +1141,7 @@ export const fullPackageRouter = router({
         id: z.number(),
         // Plan v3 — require the admin to explain why. Stored on the order
         // (deletionReason) and in the audit log.
-        reason: z.string().min(3, "هۆکار پێویستە (بەلایەنی کەم ٣ پیت)"),
+        reason: z.string().min(3, "هۆکار پێویستە (بەلایەنی کەم 3 پیت)"),
         refundAdvance: z.boolean().default(true),
         expectedVersion: z.number().optional(), // OCC from the delete dialog
       }))

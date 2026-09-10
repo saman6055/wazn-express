@@ -54,7 +54,7 @@ export default function AccountantDashboard() {
   const chartData = useMemo(
     () =>
       revenueChart?.map((d) => ({
-        date: new Date(d.date).toLocaleDateString(language === "ku" ? "ar-IQ" : "en-US", { month: "short", day: "numeric" }),
+        date: new Date(d.date).toLocaleDateString(language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US", { month: "short", day: "numeric" }),
         revenue: d.revenue,
       })) ?? [],
     [revenueChart, language]
@@ -304,7 +304,7 @@ export default function AccountantDashboard() {
                       <p className="font-semibold text-red-600 dark:text-red-400">${d.debtUsd.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground">
                         {d.lastPaymentDate
-                          ? new Date(d.lastPaymentDate).toLocaleDateString(language === "ku" ? "ar-IQ" : "en-US", { month: "short", day: "numeric" })
+                          ? new Date(d.lastPaymentDate).toLocaleDateString(language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US", { month: "short", day: "numeric" })
                           : t("dashboard.noPayment")}
                       </p>
                     </div>
@@ -346,7 +346,7 @@ export default function AccountantDashboard() {
                         ${Number(p.amountUsd).toFixed(2)}
                       </p>
                       <p className="text-xs text-muted-foreground">
-                        {new Date(p.createdAt).toLocaleString(language === "ku" ? "ar-IQ" : "en-US", {
+                        {new Date(p.createdAt).toLocaleString(language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US", {
                           month: "short",
                           day: "numeric",
                           hour: "2-digit",

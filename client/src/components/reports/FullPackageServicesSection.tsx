@@ -60,7 +60,7 @@ export function FullPackageServicesSection() {
                 <DollarSign className="h-4 w-4" />
                 <span className="text-sm font-medium">{t("reports.netProfit")}</span>
               </div>
-              <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-300">${fpStats.profit.toLocaleString()}</p>
+              <p className="mt-1 text-2xl font-bold text-green-600 dark:text-green-300">${fpStats.profit.toLocaleString("en-GB")}</p>
             </div>
             <div className="rounded-xl bg-emerald-50 p-4 dark:bg-emerald-950/30">
               <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
@@ -116,7 +116,7 @@ export function FullPackageServicesSection() {
                     </div>
                   </div>
                   <Badge variant="outline" className="border-emerald-200 dark:border-emerald-800/60 bg-emerald-50 text-emerald-700 dark:text-emerald-300 dark:bg-emerald-950/30">
-                    ${Number(service.defaultPrice || 0).toLocaleString()}
+                    ${Number(service.defaultPrice || 0).toLocaleString("en-GB")}
                   </Badge>
                 </div>
               ))}

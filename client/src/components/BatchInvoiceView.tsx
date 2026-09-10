@@ -159,7 +159,7 @@ export function BatchInvoiceView({
               {" · "}
               {lines.length}{" "}
               {pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}
-              {arrivedAt ? ` · ${new Date(arrivedAt).toLocaleDateString()}` : ""}
+              {arrivedAt ? ` · ${new Date(arrivedAt).toLocaleDateString("en-GB")}` : ""}
               {customerLabel ? ` · ${customerLabel}` : ""}
             </p>
           </div>

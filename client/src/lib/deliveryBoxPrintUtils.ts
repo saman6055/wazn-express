@@ -936,7 +936,7 @@ export function printBoxReceipt(
         ${settlement?.amountIqd && settlement.exchangeRate ? `
         <div class="financial-row">
           <span>${t("delivery.paidInIqd")}:</span>
-          <span style="font-weight:600;" dir="ltr">${Number(settlement.amountIqd).toLocaleString()} @ ${Number(settlement.exchangeRate).toLocaleString()}</span>
+          <span style="font-weight:600;" dir="ltr">${Number(settlement.amountIqd).toLocaleString("en-GB")} @ ${Number(settlement.exchangeRate).toLocaleString("en-GB")}</span>
         </div>` : ""}
         ${settlement?.debtUsd && settlement.debtUsd > 0 ? `
         <div class="financial-row">

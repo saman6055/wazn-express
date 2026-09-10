@@ -206,7 +206,7 @@ export default function PortalDeclarePackage() {
               maxLength={2000}
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
-              placeholder={label({ ku: "بۆ نموونە: ٢ دانە، ڕەنگی ڕەش", en: "e.g. 2 pcs, black", ar: "مثال: قطعتان، أسود", zh: "例如：2件，黑色" })}
+              placeholder={label({ ku: "بۆ نموونە: 2 دانە، ڕەنگی ڕەش", en: "e.g. 2 pcs, black", ar: "مثال: قطعتان، أسود", zh: "例如：2件，黑色" })}
             />
           </div>
 

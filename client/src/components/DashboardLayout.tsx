@@ -1220,7 +1220,7 @@ function DashboardLayoutContent({
             type="button"
             onClick={() => setZoom(1)}
             className="min-w-[3.25rem] rounded-full px-2 py-1 text-[13px] font-semibold tabular-nums text-foreground hover:bg-muted"
-            title={pickLang(language, { ku: "گەڕاندنەوە بۆ ١٠٠٪", en: "Reset to 100%", ar: "إعادة إلى ١٠٠٪", zh: "重置为 100%" })}
+            title={pickLang(language, { ku: "گەڕاندنەوە بۆ 100٪", en: "Reset to 100%", ar: "إعادة إلى 100٪", zh: "重置为 100%" })}
           >
             {Math.round(zoom * 100)}%
           </button>

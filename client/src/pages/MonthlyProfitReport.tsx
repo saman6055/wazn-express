@@ -250,7 +250,7 @@ export default function MonthlyProfitReport() {
                   {isLoading ? (
                     <Skeleton className="h-8 w-24 bg-blue-400" />
                   ) : (
-                    <p className="text-3xl font-bold">${yearlyTotals.total.profit.toLocaleString()}</p>
+                    <p className="text-3xl font-bold">${yearlyTotals.total.profit.toLocaleString("en-GB")}</p>
                   )}
                   <p className="text-blue-200 text-xs mt-1">
                     {yearlyTotals.total.count} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلب", zh: "订单" })}
@@ -277,7 +277,7 @@ export default function MonthlyProfitReport() {
                     <>
                       <p className="text-lg font-bold text-green-600 dark:text-green-300">{bestMonth.monthName}</p>
                       <p className="text-sm text-muted-foreground">
-                        ${bestMonth.total.profit.toLocaleString()}
+                        ${bestMonth.total.profit.toLocaleString("en-GB")}
                       </p>
                     </>
                   )}
@@ -303,7 +303,7 @@ export default function MonthlyProfitReport() {
                     <>
                       <p className="text-lg font-bold text-red-600 dark:text-red-300">{worstMonth.monthName}</p>
                       <p className="text-sm text-muted-foreground">
-                        ${worstMonth.total.profit.toLocaleString()}
+                        ${worstMonth.total.profit.toLocaleString("en-GB")}
                       </p>
                     </>
                   )}
@@ -328,7 +328,7 @@ export default function MonthlyProfitReport() {
                   ) : (
                     <>
                       <p className="text-lg font-bold text-purple-600 dark:text-purple-300">
-                        ${(yearlyTotals.total.profit / 12).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        ${(yearlyTotals.total.profit / 12).toLocaleString("en-US", { maximumFractionDigits: 0 })}
                       </p>
                       <p className="text-sm text-muted-foreground">
                         {(yearlyTotals.total.count / 12).toFixed(1)} {pickLang(language, { ku: "ئۆردەر/مانگ", en: "orders/mo", ar: "طلب/شهر", zh: "订单/月" })}
@@ -366,15 +366,15 @@ export default function MonthlyProfitReport() {
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</span>
-                      <span className="font-medium">${data.revenue.toLocaleString()}</span>
+                      <span className="font-medium">${data.revenue.toLocaleString("en-GB")}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" })}</span>
-                      <span className="font-medium">${data.cost.toLocaleString()}</span>
+                      <span className="font-medium">${data.cost.toLocaleString("en-GB")}</span>
                     </div>
                     <div className="border-t pt-2 flex justify-between text-sm">
                       <span className="font-medium">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</span>
-                      <span className={cn("font-bold", config.textColor)}>${data.profit.toLocaleString()}</span>
+                      <span className={cn("font-bold", config.textColor)}>${data.profit.toLocaleString("en-GB")}</span>
                     </div>
                   </div>
                 </CardContent>
@@ -423,20 +423,20 @@ export default function MonthlyProfitReport() {
                           <Badge variant="secondary">{row.total.count}</Badge>
                         </TableCell>
                         <TableCell className="text-right">
-                          <span className="text-emerald-600 dark:text-emerald-300">${row.full_package.profit.toLocaleString()}</span>
+                          <span className="text-emerald-600 dark:text-emerald-300">${row.full_package.profit.toLocaleString("en-GB")}</span>
                           {row.full_package.count > 0 && (
                             <span className="text-xs text-muted-foreground ms-1">({row.full_package.count})</span>
                           )}
                         </TableCell>
 
                         <TableCell className="text-right">
-                          <span className="text-amber-600 dark:text-amber-300">${row.commission.profit.toLocaleString()}</span>
+                          <span className="text-amber-600 dark:text-amber-300">${row.commission.profit.toLocaleString("en-GB")}</span>
                           {row.commission.count > 0 && (
                             <span className="text-xs text-muted-foreground ms-1">({row.commission.count})</span>
                           )}
                         </TableCell>
                         <TableCell className="text-right font-bold">
-                          ${row.total.profit.toLocaleString()}
+                          ${row.total.profit.toLocaleString("en-GB")}
                         </TableCell>
                         <TableCell>
                           <MiniBarChart 
@@ -454,14 +454,14 @@ export default function MonthlyProfitReport() {
                         <Badge>{yearlyTotals.total.count}</Badge>
                       </TableCell>
                       <TableCell className="text-right text-emerald-600 dark:text-emerald-300">
-                        ${yearlyTotals.full_package.profit.toLocaleString()}
+                        ${yearlyTotals.full_package.profit.toLocaleString("en-GB")}
                       </TableCell>
 
                       <TableCell className="text-right text-amber-600 dark:text-amber-300">
-                        ${yearlyTotals.commission.profit.toLocaleString()}
+                        ${yearlyTotals.commission.profit.toLocaleString("en-GB")}
                       </TableCell>
                       <TableCell className="text-right text-blue-600 dark:text-blue-300">
-                        ${yearlyTotals.total.profit.toLocaleString()}
+                        ${yearlyTotals.total.profit.toLocaleString("en-GB")}
                       </TableCell>
                       <TableCell>
                         <MiniBarChart 

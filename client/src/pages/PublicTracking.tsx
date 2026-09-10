@@ -50,7 +50,7 @@ export default function PublicTracking() {
 
   const L = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(lang, k);
   const fmt = (d: Date | string | null) =>
-    d ? new Intl.DateTimeFormat("ar", { day: "numeric", month: "long", year: "numeric" }).format(new Date(d)) : null;
+    d ? new Intl.DateTimeFormat(["ckb-IQ-u-nu-latn", "ar-u-nu-latn"], { day: "numeric", month: "long", year: "numeric" }).format(new Date(d)) : null;
 
   return (
     <div dir="rtl" className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-10">

@@ -949,7 +949,7 @@ export async function getDashboardAlerts(): Promise<{
           type: aging > 0 ? 'error' : 'warning',
           title: 'ئۆردەری بێ تراکینگ',
           description: aging > 0
-            ? `${total} ئۆردەر بێ تراکینگن — ${aging}ـیان زیاتر لە ٧ ڕۆژە`
+            ? `${total} ئۆردەر بێ تراکینگن — ${aging}ـیان زیاتر لە 7 ڕۆژە`
             : `${total} ئۆردەر هێشتا بێ تراکینگن`,
           count: total,
           link: '/unified-orders',

@@ -316,7 +316,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                         const isCredit = txn.transactionType.startsWith('CREDIT');
                         return (
                           <TableRow key={txn.id} className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
-                            <TableCell>{new Date(txn.createdAt).toLocaleDateString()}</TableCell>
+                            <TableCell>{new Date(txn.createdAt).toLocaleDateString("en-GB")}</TableCell>
                             <TableCell>
                               <Badge 
                                 variant={isCredit ? "default" : isDebit ? "destructive" : "secondary"}

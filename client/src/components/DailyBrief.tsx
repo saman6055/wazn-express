@@ -181,7 +181,7 @@ export function DailyBrief({ language }: { language: string }) {
           <div>
             <p className="text-lg font-bold">{pickLang(language, data.headline)}</p>
             <p className="text-xs text-muted-foreground">
-              {new Date(data.ranAt).toLocaleString()}
+              {new Date(data.ranAt).toLocaleString("en-GB")}
               {data.summary.risks > 0 && ` · ${data.summary.risks} ${pickLang(language, { ku: "مەترسی", en: "risks", ar: "مخاطر", zh: "风险" })}`}
               {data.summary.wins > 0 && ` · ${data.summary.wins} ${pickLang(language, { ku: "دەستکەوت", en: "wins", ar: "مكاسب", zh: "进展" })}`}
             </p>

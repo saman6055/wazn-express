@@ -1126,7 +1126,7 @@ export default function BatchReports() {
             <div className="space-y-4">
               {comparisonBatches.length < 2 ? (
                 <p className="text-center text-muted-foreground py-8">
-                  {pickLang(language, { ku: "تکایە لانیکەم ٢ باچ هەڵبژێرە بۆ بەراوردکردن", en: "Please select at least 2 batches to compare", ar: "يرجى تحديد دفعتين على الأقل للمقارنة", zh: "请至少选择 2 个批次进行对比" })}
+                  {pickLang(language, { ku: "تکایە لانیکەم 2 باچ هەڵبژێرە بۆ بەراوردکردن", en: "Please select at least 2 batches to compare", ar: "يرجى تحديد دفعتين على الأقل للمقارنة", zh: "请至少选择 2 个批次进行对比" })}
                 </p>
               ) : (
                 <>

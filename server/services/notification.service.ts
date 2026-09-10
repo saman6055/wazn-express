@@ -473,8 +473,8 @@ export async function notifyPackageStatusChange(
     weight: pkg.weightKg?.toString() || "0",
     shippingType: pkg.shippingType,
     batchCode: batchInfo?.batchCode || "",
-    departureDate: batchInfo?.departureDate ? new Date(batchInfo.departureDate).toLocaleDateString() : "",
-    estimatedArrival: batchInfo?.estimatedArrival ? new Date(batchInfo.estimatedArrival).toLocaleDateString() : "",
+    departureDate: batchInfo?.departureDate ? new Date(batchInfo.departureDate).toLocaleDateString("en-GB") : "",
+    estimatedArrival: batchInfo?.estimatedArrival ? new Date(batchInfo.estimatedArrival).toLocaleDateString("en-GB") : "",
     destination: "Iraq", // Default destination
     ...additionalVars,
   };
@@ -519,7 +519,7 @@ export async function notifyBatchStatusChange(
 
   const variables: Record<string, string> = {
     batchCode: batch.batchCode,
-    estimatedArrival: batch.estimatedArrival ? new Date(batch.estimatedArrival).toLocaleDateString() : "",
+    estimatedArrival: batch.estimatedArrival ? new Date(batch.estimatedArrival).toLocaleDateString("en-GB") : "",
   };
 
   // Send notification to each customer

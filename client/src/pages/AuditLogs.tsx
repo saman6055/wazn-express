@@ -107,8 +107,8 @@ export default function AuditLogs() {
     { value: "all", label: pickLang(language, { ku: "هەموو کات", en: "All time", ar: "كل الأوقات", zh: "全部时间" }) },
     { value: "today", label: pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" }) },
     { value: "yesterday", label: pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" }) },
-    { value: "week", label: pickLang(language, { ku: "٧ ڕۆژی ڕابردوو", en: "Last 7 days", ar: "آخر ٧ أيام", zh: "近7天" }) },
-    { value: "month", label: pickLang(language, { ku: "٣٠ ڕۆژی ڕابردوو", en: "Last 30 days", ar: "آخر ٣٠ يوماً", zh: "近30天" }) },
+    { value: "week", label: pickLang(language, { ku: "7 ڕۆژی ڕابردوو", en: "Last 7 days", ar: "آخر 7 أيام", zh: "近7天" }) },
+    { value: "month", label: pickLang(language, { ku: "30 ڕۆژی ڕابردوو", en: "Last 30 days", ar: "آخر 30 يوماً", zh: "近30天" }) },
     { value: "thisMonth", label: pickLang(language, { ku: "ئەم مانگە", en: "This month", ar: "هذا الشهر", zh: "本月" }) },
   ];
 
@@ -340,7 +340,7 @@ export default function AuditLogs() {
   const formatFieldValue = (value: any): string => {
     if (value === null || value === undefined) return "-";
     if (typeof value === "boolean") return value ? pickLang(language, { ku: "بەڵێ", en: "Yes", ar: "نعم", zh: "是" }) : pickLang(language, { ku: "نەخێر", en: "No", ar: "لا", zh: "否" });
-    if (typeof value === "number") return value.toLocaleString();
+    if (typeof value === "number") return value.toLocaleString("en-GB");
     if (typeof value === "object") return JSON.stringify(value);
     return String(value);
   };
@@ -416,7 +416,7 @@ export default function AuditLogs() {
                   <History className="h-5 w-5 text-slate-700 dark:text-slate-300" />
                 </div>
                 <div>
-                  <div className="text-2xl font-bold">{stats?.total?.toLocaleString() || 0}</div>
+                  <div className="text-2xl font-bold">{stats?.total?.toLocaleString("en-GB") || 0}</div>
                   <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی تۆمارەکان", en: "Total records", ar: "إجمالي السجلات", zh: "记录总数" })}</div>
                 </div>
               </div>
@@ -434,7 +434,7 @@ export default function AuditLogs() {
                     {Object.entries(stats?.byAction || {})
                       .filter(([k]) => k.includes('create'))
                       .reduce((sum, [, v]) => sum + (v as number), 0)
-                      .toLocaleString()}
+                      .toLocaleString("en-GB")}
                   </div>
                   <div className="text-sm text-green-600 dark:text-green-300">{pickLang(language, { ku: "دروستکردن", en: "Created", ar: "إنشاء", zh: "创建" })}</div>
                 </div>
@@ -453,7 +453,7 @@ export default function AuditLogs() {
                     {Object.entries(stats?.byAction || {})
                       .filter(([k]) => k.includes('update'))
                       .reduce((sum, [, v]) => sum + (v as number), 0)
-                      .toLocaleString()}
+                      .toLocaleString("en-GB")}
                   </div>
                   <div className="text-sm text-blue-600 dark:text-blue-300">{pickLang(language, { ku: "نوێکردنەوە", en: "Updated", ar: "تحديث", zh: "更新" })}</div>
                 </div>
@@ -472,7 +472,7 @@ export default function AuditLogs() {
                     {Object.entries(stats?.byAction || {})
                       .filter(([k]) => k.includes('delete'))
                       .reduce((sum, [, v]) => sum + (v as number), 0)
-                      .toLocaleString()}
+                      .toLocaleString("en-GB")}
                   </div>
                   <div className="text-sm text-red-600 dark:text-red-300">{pickLang(language, { ku: "سڕینەوە", en: "Deleted", ar: "حذف", zh: "删除" })}</div>
                 </div>
@@ -623,7 +623,7 @@ export default function AuditLogs() {
               </div>
               
               <div className="text-sm text-muted-foreground">
-                {total.toLocaleString()} {pickLang(language, { ku: "تۆمار", en: "records", ar: "سجل", zh: "条记录" })}
+                {total.toLocaleString("en-GB")} {pickLang(language, { ku: "تۆمار", en: "records", ar: "سجل", zh: "条记录" })}
               </div>
             </div>
           </CardHeader>

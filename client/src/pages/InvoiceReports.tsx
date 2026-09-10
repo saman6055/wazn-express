@@ -455,7 +455,7 @@ export default function InvoiceReports() {
         
         ${tableContent}
         
-        <p class="footer">Generated on ${new Date().toLocaleDateString()} | ${escapeHtml(company.name)} Invoice Reports</p>
+        <p class="footer">Generated on ${new Date().toLocaleDateString("en-GB")} | ${escapeHtml(company.name)} Invoice Reports</p>
         
       </body>
       </html>
@@ -817,7 +817,7 @@ export default function InvoiceReports() {
             <Card>
               <CardHeader>
                 <CardTitle>{pickLang(language, {ku:"دوایین پسوڵەکان", en:"Recent invoices", ar:"أحدث الفواتير", zh:"最近的发票"})}</CardTitle>
-                <CardDescription>{pickLang(language, {ku:"١٠ پسوڵەی دوایین", en:"Last 10 invoices", ar:"آخر 10 فواتير", zh:"最近10张发票"})}</CardDescription>
+                <CardDescription>{pickLang(language, {ku:"10 پسوڵەی دوایین", en:"Last 10 invoices", ar:"آخر 10 فواتير", zh:"最近10张发票"})}</CardDescription>
               </CardHeader>
               <CardContent>
                 {recentLoading ? (

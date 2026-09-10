@@ -47,7 +47,7 @@ function styleFor(result: CheckResult): CheckSeverity | "failed" | "clean" {
 function buildReport(data: NonNullable<ReturnType<typeof useSweep>["data"]>, language: string): string {
   const lines: string[] = [];
   lines.push(`Wazn Express — audit sweep`);
-  lines.push(new Date(data.ranAt).toLocaleString());
+  lines.push(new Date(data.ranAt).toLocaleString("en-GB"));
   lines.push(pickLang(language, data.headline));
   lines.push("");
   lines.push(
@@ -161,7 +161,7 @@ export default function AuditSweep() {
             >
               <p className="text-lg font-bold">{pickLang(language, data.headline)}</p>
               <p className="mt-1 font-mono text-xs opacity-80">
-                {new Date(data.ranAt).toLocaleString()}
+                {new Date(data.ranAt).toLocaleString("en-GB")}
               </p>
             </div>
 

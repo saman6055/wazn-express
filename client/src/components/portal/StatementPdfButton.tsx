@@ -153,9 +153,9 @@ export function StatementPdfButton({
   const PERIODS: { value: Period; label: { ku: string; en: string; ar: string; zh: string } }[] = [
     { value: "all", label: { ku: "هەموو کات", en: "All time", ar: "كل الفترات", zh: "全部时间" } },
     { value: "today", label: { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" } },
-    { value: "last_7", label: { ku: "ئەم هەفتەیە (٧ ڕۆژ)", en: "Last 7 days", ar: "آخر ٧ أيام", zh: "最近7天" } },
-    { value: "last_14", label: { ku: "دوو هەفتە (١٤ ڕۆژ)", en: "Last 14 days", ar: "آخر ١٤ يوماً", zh: "最近14天" } },
-    { value: "last_21", label: { ku: "سێ هەفتە (٢١ ڕۆژ)", en: "Last 21 days", ar: "آخر ٢١ يوماً", zh: "最近21天" } },
+    { value: "last_7", label: { ku: "ئەم هەفتەیە (7 ڕۆژ)", en: "Last 7 days", ar: "آخر 7 أيام", zh: "最近7天" } },
+    { value: "last_14", label: { ku: "دوو هەفتە (14 ڕۆژ)", en: "Last 14 days", ar: "آخر 14 يوماً", zh: "最近14天" } },
+    { value: "last_21", label: { ku: "سێ هەفتە (21 ڕۆژ)", en: "Last 21 days", ar: "آخر 21 يوماً", zh: "最近21天" } },
     { value: "this_month", label: { ku: "ئەم مانگە", en: "This month", ar: "هذا الشهر", zh: "本月" } },
     { value: "last_month", label: { ku: "مانگی ڕابردوو", en: "Last month", ar: "الشهر الماضي", zh: "上个月" } },
     { value: "this_year", label: { ku: "ئەم ساڵە", en: "This year", ar: "هذه السنة", zh: "今年" } },

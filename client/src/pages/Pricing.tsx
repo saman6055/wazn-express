@@ -220,9 +220,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </TableCell>
                     <TableCell>
                       <div className="text-sm">
-                        <p>{new Date(rule.effectiveFrom).toLocaleDateString()}</p>
+                        <p>{new Date(rule.effectiveFrom).toLocaleDateString("en-GB")}</p>
                         {rule.effectiveTo && (
-                          <p className="text-muted-foreground">to {new Date(rule.effectiveTo).toLocaleDateString()}</p>
+                          <p className="text-muted-foreground">to {new Date(rule.effectiveTo).toLocaleDateString("en-GB")}</p>
                         )}
                       </div>
                     </TableCell>

@@ -19,8 +19,8 @@ const STORAGE_KEY = "topbar.clockFormat";
 // Preferred Intl locales per app language, each with fallbacks so the date
 // still renders on browsers that don't ship the primary tag (e.g. Sorani).
 const LOCALES: Record<string, string[]> = {
-  ku: ["ckb-IQ", "ku", "en-GB"],
-  ar: ["ar-IQ", "ar"],
+  ku: ["ckb-IQ-u-nu-latn", "ckb-u-nu-latn", "en-GB"],
+  ar: ["ar-IQ-u-nu-latn", "ar-u-nu-latn"],
   en: ["en-GB"],
   zh: ["zh-CN"],
 };
@@ -74,7 +74,7 @@ export function TopBarClock({ className }: { className?: string }) {
         <button
           type="button"
           title={pickLang(language, {
-            ku: "کات و بەروار — کلیک بۆ گۆڕینی ١٢/٢٤ سەعات",
+            ku: "کات و بەروار — کلیک بۆ گۆڕینی 12/24 سەعات",
             en: "Time & date — click to switch 12/24-hour",
             ar: "الوقت والتاريخ — انقر للتبديل بين 12/24 ساعة",
             zh: "时间和日期 — 点击切换 12/24 小时制",
@@ -117,7 +117,7 @@ export function TopBarClock({ className }: { className?: string }) {
         >
           <DropdownMenuRadioItem value="12">
             {pickLang(language, {
-              ku: "١٢ سەعاتی (AM/PM)",
+              ku: "12 سەعاتی (AM/PM)",
               en: "12-hour (AM/PM)",
               ar: "12 ساعة (ص/م)",
               zh: "12 小时制 (AM/PM)",
@@ -125,7 +125,7 @@ export function TopBarClock({ className }: { className?: string }) {
           </DropdownMenuRadioItem>
           <DropdownMenuRadioItem value="24">
             {pickLang(language, {
-              ku: "٢٤ سەعاتی",
+              ku: "24 سەعاتی",
               en: "24-hour",
               ar: "24 ساعة",
               zh: "24 小时制",

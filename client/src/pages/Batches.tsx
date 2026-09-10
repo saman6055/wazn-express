@@ -1491,7 +1491,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </TableCell>
                     <TableCell className="text-center font-mono tabular-nums" dir="ltr">{batch.packageCount ?? 0}</TableCell>
                     <TableCell className="text-center font-mono tabular-nums whitespace-nowrap" dir="ltr">
-                      {batch.departureDate ? new Date(batch.departureDate).toLocaleDateString() : "-"}
+                      {batch.departureDate ? new Date(batch.departureDate).toLocaleDateString("en-GB") : "-"}
                     </TableCell>
                     {/* Status and its alert in one column — the two badges
                         are one piece of news and were always read together. */}
@@ -2659,7 +2659,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       📦 {pickLang(language, { ku: "ئۆردەری چەند-کارتۆن کە کارتۆنی چاوەڕیی ماوە", en: "Multi-carton orders with cartons still pending", ar: "طلبات متعددة الكراتين لا تزال بعض كراتينها معلّقة", zh: "仍有纸箱待处理的多箱订单" })} ({auditData.findings.multiCartonIncomplete.length})
                     </div>
                     <div className="text-[11px] text-blue-800/80 dark:text-blue-300/80 mb-2">
-                      {pickLang(language, { ku: "ئەم ئۆردەرانە ٢ کارتۆن یان زیاتر هەن، بەڵام هەموویان هێشتا تۆمار نەکراون. ڕەنگە کارتۆن لە ڕێگە بێت.", en: "These orders have 2 or more cartons, but not all of them have been registered yet. A carton may still be in transit.", ar: "تحتوي هذه الطلبات على كرتونين أو أكثر، لكن لم يتم تسجيلها جميعاً بعد. قد يكون أحد الكراتين لا يزال في الطريق.", zh: "这些订单有 2 个或更多纸箱，但尚未全部登记。可能仍有纸箱在途中。" })}
+                      {pickLang(language, { ku: "ئەم ئۆردەرانە 2 کارتۆن یان زیاتر هەن، بەڵام هەموویان هێشتا تۆمار نەکراون. ڕەنگە کارتۆن لە ڕێگە بێت.", en: "These orders have 2 or more cartons, but not all of them have been registered yet. A carton may still be in transit.", ar: "تحتوي هذه الطلبات على كرتونين أو أكثر، لكن لم يتم تسجيلها جميعاً بعد. قد يكون أحد الكراتين لا يزال في الطريق.", zh: "这些订单有 2 个或更多纸箱，但尚未全部登记。可能仍有纸箱在途中。" })}
                     </div>
                     <div className="space-y-1.5">
                       {auditData.findings.multiCartonIncomplete.map((f: any) => (

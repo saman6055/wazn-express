@@ -436,9 +436,9 @@ export default function FullPackageForm() {
       }
       if (moneyChangeDetected && editReason.trim().length < 3) {
         toast.error(pickLang(language, {
-          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
+          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم 3 پیت)",
           en: "Reason is required when prices change (min 3 chars)",
-          ar: "السبب مطلوب عند تغيير الأسعار (٣ أحرف على الأقل)",
+          ar: "السبب مطلوب عند تغيير الأسعار (3 أحرف على الأقل)",
           zh: "更改价格时需填写原因（至少3个字符）",
         }));
         return;
@@ -962,7 +962,7 @@ export default function FullPackageForm() {
                       <p className="font-bold text-orange-900 dark:text-orange-200 text-sm">{pickLang(language, { ku: "نرخی کڕین بە یوانی چینی", en: "Purchase price in Chinese yuan", ar: "سعر الشراء باليوان الصيني", zh: "采购价（人民币）" })}</p>
                       {rmbRate > 0 ? (
                         <p className="text-xs text-orange-700 dark:text-orange-300 truncate">
-                          {pickLang(language, { ku: `نرخی بەراورد: ١ دۆلار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی`, en: `Exchange rate: 1 USD = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} CNY`, ar: `سعر الصرف: 1 دولار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} يوان صيني`, zh: `汇率：1 美元 = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} 人民币` })}
+                          {pickLang(language, { ku: `نرخی بەراورد: 1 دۆلار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی`, en: `Exchange rate: 1 USD = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} CNY`, ar: `سعر الصرف: 1 دولار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} يوان صيني`, zh: `汇率：1 美元 = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} 人民币` })}
                         </p>
                       ) : (
                         <p className="text-xs text-red-600 dark:text-red-300">{pickLang(language, { ku: "تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە", en: "Please enter the exchange rate in system settings", ar: "يرجى إدخال سعر الصرف في إعدادات النظام", zh: "请在系统设置中输入汇率" })}</p>
@@ -972,7 +972,7 @@ export default function FullPackageForm() {
                   {rmbRate > 0 && (
                     <div className="flex items-center gap-1 bg-orange-100 dark:bg-orange-950/40 border border-orange-300 dark:border-orange-800/60 rounded-lg px-2 py-1 text-xs font-mono text-orange-800 dark:text-orange-200 shrink-0">
                       <ArrowLeftRight className="h-3 w-3" />
-                      ${(1 / rmbRate).toFixed(5)} = ١ ¥
+                      ${(1 / rmbRate).toFixed(5)} = 1 ¥
                     </div>
                   )}
                 </div>
@@ -1016,7 +1016,7 @@ export default function FullPackageForm() {
 
                     {/* 2. Per-unit ¥ */}
                     <div className="space-y-1.5">
-                      <Label className="text-xs font-semibold text-amber-700 dark:text-amber-300">{pickLang(language, { ku: "نرخی ١ دانە بە یوانی چینی", en: "Price per unit in CNY", ar: "سعر الوحدة باليوان الصيني", zh: "单件价格（人民币）" })}</Label>
+                      <Label className="text-xs font-semibold text-amber-700 dark:text-amber-300">{pickLang(language, { ku: "نرخی 1 دانە بە یوانی چینی", en: "Price per unit in CNY", ar: "سعر الوحدة باليوان الصيني", zh: "单件价格（人民币）" })}</Label>
                       <div className="relative" dir="ltr">
                         <span className="absolute start-3 top-1/2 -translate-y-1/2 text-orange-500 dark:text-orange-400 font-bold select-none">¥</span>
                         <Input
@@ -1025,7 +1025,7 @@ export default function FullPackageForm() {
                           step="0.01"
                           value={rmbPerUnit}
                           onChange={(e) => syncFromPerUnit(e.target.value)}
-                          placeholder="٠"
+                          placeholder="0"
                           className={cn("ps-9 h-10 text-base font-bold border-amber-200 dark:border-amber-800/60 focus:border-orange-400 bg-amber-50/40 dark:bg-amber-950/40", filledCls(rmbPerUnit))}
                           dir="ltr"
                         />
@@ -1043,7 +1043,7 @@ export default function FullPackageForm() {
                           step="0.01"
                           value={rmbTotal}
                           onChange={(e) => syncFromTotal(e.target.value)}
-                          placeholder="٠"
+                          placeholder="0"
                           className={cn("ps-9 h-10 text-base font-bold border-orange-200 dark:border-orange-800/60 focus:border-orange-400 bg-orange-50/40 dark:bg-orange-950/40", filledCls(rmbTotal))}
                           dir="ltr"
                         />
@@ -1055,7 +1055,7 @@ export default function FullPackageForm() {
                   {(parseFloat(rmbPerUnit) > 0 || parseFloat(rmbTotal) > 0) && (
                     <div className="grid grid-cols-3 gap-2">
                       <div className="bg-amber-50 dark:bg-amber-950/40 rounded-lg p-2 text-center border border-amber-100 dark:border-amber-800/60">
-                        <p className="text-[10px] text-amber-500 dark:text-amber-400 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "١ دانە یوانی چینی", en: "Per unit CNY", ar: "وحدة واحدة باليوان", zh: "单件人民币" })}</p>
+                        <p className="text-[10px] text-amber-500 dark:text-amber-400 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "1 دانە یوانی چینی", en: "Per unit CNY", ar: "وحدة واحدة باليوان", zh: "单件人民币" })}</p>
                         <p className="font-bold text-amber-700 dark:text-amber-300 font-mono text-sm">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>
                       </div>
                       <div className="bg-orange-50 dark:bg-orange-950/40 rounded-lg p-2 text-center border border-orange-100 dark:border-orange-800/60">
@@ -1090,7 +1090,7 @@ export default function FullPackageForm() {
                   </div>
                   {rmbPerUnit && rmbRate > 0 ? (
                     <div className="flex items-center justify-between bg-orange-50 dark:bg-orange-950/40 rounded-lg px-3 py-1 border border-orange-200 dark:border-orange-800/60">
-                      <span className="text-[11px] text-orange-600 dark:text-orange-300">{pickLang(language, { ku: "١ دانە بە یوانی چینی", en: "Per unit in CNY", ar: "وحدة واحدة باليوان الصيني", zh: "单件人民币" })}</span>
+                      <span className="text-[11px] text-orange-600 dark:text-orange-300">{pickLang(language, { ku: "1 دانە بە یوانی چینی", en: "Per unit in CNY", ar: "وحدة واحدة باليوان الصيني", zh: "单件人民币" })}</span>
                       <span className="text-sm font-bold text-orange-700 dark:text-orange-300 font-mono">{Number(rmbPerUnit).toLocaleString("en-US")} ¥</span>
                     </div>
                   ) : (
@@ -1130,7 +1130,7 @@ export default function FullPackageForm() {
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                     <div className="bg-white dark:bg-card rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "نرخی کڕین (١ عەدەد)", en: "Purchase price (1 unit)", ar: "سعر الشراء (وحدة واحدة)", zh: "采购价（1 件）" })}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "نرخی کڕین (1 عەدەد)", en: "Purchase price (1 unit)", ar: "سعر الشراء (وحدة واحدة)", zh: "采购价（1 件）" })}</p>
                       <p className="text-base font-bold text-amber-600 dark:text-amber-300">${purchasePrice.toFixed(2)}</p>
                     </div>
                     <div className="bg-amber-100 dark:bg-amber-950/40 rounded-lg p-2 text-center shadow-sm">
@@ -1138,7 +1138,7 @@ export default function FullPackageForm() {
                       <p className="text-base font-bold text-amber-700 dark:text-amber-300">${(purchasePrice * quantity).toFixed(2)}</p>
                     </div>
                     <div className="bg-white dark:bg-card rounded-lg p-2 text-center shadow-sm">
-                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "نرخی فرۆشتن (١ عەدەد)", en: "Selling price (1 unit)", ar: "سعر البيع (وحدة واحدة)", zh: "销售价（1 件）" })}</p>
+                      <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "نرخی فرۆشتن (1 عەدەد)", en: "Selling price (1 unit)", ar: "سعر البيع (وحدة واحدة)", zh: "销售价（1 件）" })}</p>
                       <p className="text-base font-bold text-emerald-600 dark:text-emerald-300">${sellingPrice.toFixed(2)}</p>
                     </div>
                     <div className="bg-emerald-200 dark:bg-emerald-900/50 rounded-lg p-2 text-center shadow-sm">
@@ -1319,7 +1319,7 @@ export default function FullPackageForm() {
                     <div className="px-4 py-2 flex items-center gap-2 bg-teal-50 dark:bg-teal-950/40 border-b border-teal-100 dark:border-teal-800/60">
                       <Calculator className="h-4 w-4 text-teal-600 dark:text-teal-300" />
                       <span className="text-sm font-semibold text-teal-800 dark:text-teal-200">{pickLang(language, { ku: "قەبارەی CBM", en: "CBM volume", ar: "حجم CBM", zh: "CBM 体积" })}</span>
-                      <span className="text-xs text-muted-foreground ms-auto">١ CBM = ١٠٠cm × ١٠٠cm × ١٠٠cm</span>
+                      <span className="text-xs text-muted-foreground ms-auto">1 CBM = 100cm × 100cm × 100cm</span>
                     </div>
                     <div className="p-3 space-y-3 bg-white dark:bg-card">
                       <div className="grid grid-cols-2 gap-3">

@@ -265,7 +265,7 @@ export default function ServicesReport() {
         </div>
         
         <div class="section">
-          <div class="section-title">👥 ${pickLang(language, { ku: "باشترین ١٠ کڕیار بەپێی داهات", en: "Top 10 customers by revenue", ar: "أفضل 10 عملاء حسب الإيرادات", zh: "收入前十客户" })}</div>
+          <div class="section-title">👥 ${pickLang(language, { ku: "باشترین 10 کڕیار بەپێی داهات", en: "Top 10 customers by revenue", ar: "أفضل 10 عملاء حسب الإيرادات", zh: "收入前十客户" })}</div>
           <table>
             <thead>
               <tr>
@@ -289,7 +289,7 @@ export default function ServicesReport() {
         </div>
         
         <div class="section">
-          <div class="section-title">📈 ${pickLang(language, { ku: "ترێندی مانگانە (٦ مانگی کۆتایی)", en: "Monthly trend (last 6 months)", ar: "الاتجاه الشهري (آخر 6 أشهر)", zh: "月度趋势（最近6个月）" })}</div>
+          <div class="section-title">📈 ${pickLang(language, { ku: "ترێندی مانگانە (6 مانگی کۆتایی)", en: "Monthly trend (last 6 months)", ar: "الاتجاه الشهري (آخر 6 أشهر)", zh: "月度趋势（最近6个月）" })}</div>
           <table>
             <thead>
               <tr>
@@ -339,7 +339,7 @@ export default function ServicesReport() {
       const customer = customers?.find((c: any) => c.id === service.customerId);
       const profit = Number(service.priceAmount || 0) - Number(service.costAmount || 0);
       return [
-        service.createdAt ? new Date(service.createdAt).toLocaleDateString() : '',
+        service.createdAt ? new Date(service.createdAt).toLocaleDateString("en-GB") : '',
         customer?.fullName || '',
         service.serviceType?.nameKu || service.serviceType?.nameEn || '',
         service.description || '',
@@ -665,7 +665,7 @@ export default function ServicesReport() {
               <Calendar className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
               <CardTitle className="text-lg">{pickLang(language, { ku: "ترێندی مانگانە", en: "Monthly trend", ar: "الاتجاه الشهري", zh: "月度趋势" })}</CardTitle>
             </div>
-            <CardDescription>{pickLang(language, { ku: "داهات و قازانجی ٦ مانگی کۆتایی", en: "Revenue and profit for the last 6 months", ar: "الإيرادات والأرباح لآخر 6 أشهر", zh: "最近6个月的收入与利润" })}</CardDescription>
+            <CardDescription>{pickLang(language, { ku: "داهات و قازانجی 6 مانگی کۆتایی", en: "Revenue and profit for the last 6 months", ar: "الإيرادات والأرباح لآخر 6 أشهر", zh: "最近6个月的收入与利润" })}</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
@@ -757,7 +757,7 @@ export default function ServicesReport() {
             <CardHeader>
               <div className="flex items-center gap-2">
                 <Users className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
-                <CardTitle className="text-lg">{pickLang(language, { ku: "باشترین ١٠ کڕیار", en: "Top 10 customers", ar: "أفضل 10 عملاء", zh: "前十客户" })}</CardTitle>
+                <CardTitle className="text-lg">{pickLang(language, { ku: "باشترین 10 کڕیار", en: "Top 10 customers", ar: "أفضل 10 عملاء", zh: "前十客户" })}</CardTitle>
               </div>
               <CardDescription>{pickLang(language, { ku: "بەپێی داهات لە خزمەتگوزارییەکان", en: "By revenue from services", ar: "حسب الإيرادات من الخدمات", zh: "按服务收入" })}</CardDescription>
             </CardHeader>

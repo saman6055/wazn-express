@@ -35,7 +35,7 @@ export function MiniProgress({
             <span />
           )}
           <span className="shrink-0 ms-2 tabular-nums text-muted-foreground">
-            {value.toLocaleString()}/{max.toLocaleString()}
+            {value.toLocaleString("en-GB")}/{max.toLocaleString("en-GB")}
           </span>
         </div>
       )}

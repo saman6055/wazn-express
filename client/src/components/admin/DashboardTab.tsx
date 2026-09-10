@@ -165,7 +165,7 @@ export function DashboardTab({
                 <Database className="h-5 w-5 text-blue-600 dark:text-blue-300" />
               </div>
               <div>
-                <div className="text-2xl font-bold">{totalRecords.toLocaleString()}</div>
+                <div className="text-2xl font-bold">{totalRecords.toLocaleString("en-GB")}</div>
                 <div className="text-xs text-muted-foreground">{t("dataManagement.totalRecords")}</div>
               </div>
             </div>
@@ -326,7 +326,7 @@ export function DashboardTab({
               <div className="flex justify-between">
                 <span className="text-muted-foreground">{t("dataManagement.totalAmount")}</span>
                 <span className="font-medium text-green-600 dark:text-green-300">
-                  ${(detailedCounts?.payments?.totalAmount ?? 0).toLocaleString()}
+                  ${(detailedCounts?.payments?.totalAmount ?? 0).toLocaleString("en-GB")}
                 </span>
               </div>
             </div>
@@ -400,7 +400,7 @@ export function DashboardTab({
                         ))}
                       </Pie>
                       <Tooltip
-                        formatter={(value: number) => [value.toLocaleString(), ""]}
+                        formatter={(value: number) => [value.toLocaleString("en-GB"), ""]}
                         contentStyle={{ borderRadius: "8px", fontSize: "12px" }}
                       />
                     </PieChart>
@@ -416,7 +416,7 @@ export function DashboardTab({
                         />
                         <span>{entry.name}</span>
                       </div>
-                      <span className="font-medium">{entry.value.toLocaleString()}</span>
+                      <span className="font-medium">{entry.value.toLocaleString("en-GB")}</span>
                     </div>
                   ))}
                 </div>

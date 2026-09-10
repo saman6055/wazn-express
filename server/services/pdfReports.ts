@@ -846,7 +846,7 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
       
       // Generated date
       doc.fontSize(9).fillColor('#e0e7ff')
-         .text(`Generated: ${data.generatedAt.toLocaleString()}`, 400, 92);
+         .text(`Generated: ${data.generatedAt.toLocaleString("en-GB")}`, 400, 92);
 
       let y = 130;
 
@@ -859,10 +859,10 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
       doc.text(`Carrier: ${data.batch.carrierInfo || 'Not specified'}`, 55, y + 32);
       
       if (data.batch.departureDate) {
-        doc.text(`Departure: ${data.batch.departureDate.toLocaleDateString()}`, 250, y + 15);
+        doc.text(`Departure: ${data.batch.departureDate.toLocaleDateString("en-GB")}`, 250, y + 15);
       }
       if (data.batch.arrivalDate) {
-        doc.text(`Arrival: ${data.batch.arrivalDate.toLocaleDateString()}`, 250, y + 32);
+        doc.text(`Arrival: ${data.batch.arrivalDate.toLocaleDateString("en-GB")}`, 250, y + 32);
       }
       
       doc.text(`Total Weight: ${data.batch.totalWeight.toFixed(1)} kg`, 420, y + 15);
@@ -1024,7 +1024,7 @@ export async function getDateFilteredDashboardData(
     case 'custom':
       startDate = customStart || new Date(now.setDate(now.getDate() - 30));
       endDate = customEnd || new Date();
-      periodLabel = `${startDate.toLocaleDateString()} - ${endDate.toLocaleDateString()}`;
+      periodLabel = `${startDate.toLocaleDateString("en-GB")} - ${endDate.toLocaleDateString("en-GB")}`;
       break;
     default:
       startDate = new Date(now);
@@ -1161,7 +1161,7 @@ export async function generateDateFilteredDashboardPDF(data: DateFilteredDashboa
          .text(data.periodLabel, 50, 74);
       
       doc.fontSize(9).fillColor('#a0aec0')
-         .text(`Generated: ${data.generatedAt.toLocaleString()}`, 400, 78, { align: 'right' });
+         .text(`Generated: ${data.generatedAt.toLocaleString("en-GB")}`, 400, 78, { align: 'right' });
 
       let y = 120;
 

@@ -97,7 +97,7 @@ function Delta({ now, before, invert = false }: { now: number; before: number; i
       )}
     >
       <Icon className="h-3 w-3" />
-      {rounded.toLocaleString()}%
+      {rounded.toLocaleString("en-GB")}%
     </span>
   );
 }

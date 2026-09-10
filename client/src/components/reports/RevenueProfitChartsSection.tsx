@@ -128,7 +128,7 @@ export function RevenueProfitChartsSection({ startDate, endDate }: Props) {
                   </Pie>
                   <Tooltip
                     contentStyle={tooltipStyle}
-                    formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                    formatter={(value: number) => [`$${value.toLocaleString("en-GB")}`, ""]}
                   />
                   <Legend />
                 </PieChart>

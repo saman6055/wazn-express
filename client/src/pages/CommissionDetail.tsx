@@ -293,9 +293,9 @@ export default function CommissionDetail() {
     if (moneyChangeDetected && editReason.trim().length < 3) {
       toast.error(
         pickLang(language, {
-          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم ٣ پیت)",
+          ku: "هۆکار پێویستە بۆ گۆڕینی نرخ (بەلایەنی کەم 3 پیت)",
           en: "Reason is required when prices change (min 3 chars)",
-          ar: "السبب مطلوب عند تغيير الأسعار (٣ أحرف على الأقل)",
+          ar: "السبب مطلوب عند تغيير الأسعار (3 أحرف على الأقل)",
           zh: "更改价格时需填写原因（至少3个字符）",
         })
       );
@@ -800,7 +800,7 @@ export default function CommissionDetail() {
                   />
                   <div className="text-xs text-amber-800 dark:text-amber-200 mt-2 text-right">
                     {editReason.trim().length < 3
-                      ? `${pickLang(language, { ku: "بەلایەنی کەم ٣ پیت", en: "Min 3 chars", ar: "٣ أحرف على الأقل", zh: "至少3个字符" })} (${editReason.trim().length}/3)`
+                      ? `${pickLang(language, { ku: "بەلایەنی کەم 3 پیت", en: "Min 3 chars", ar: "3 أحرف على الأقل", zh: "至少3个字符" })} (${editReason.trim().length}/3)`
                       : `${editReason.trim().length} ${pickLang(language, { ku: "پیت", en: "chars", ar: "أحرف", zh: "字符" })}`}
                   </div>
                 </CardContent>

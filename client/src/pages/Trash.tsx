@@ -146,7 +146,7 @@ export default function Trash() {
                       <p className="text-xs text-muted-foreground mt-1">
                         {t("trash.deletedBy", {
                           who: item.deletedByName || t("common.unknown"),
-                          when: new Date(item.deletedAt).toLocaleString(),
+                          when: new Date(item.deletedAt).toLocaleString("en-GB"),
                         })}
                       </p>
                       {item.deletionReason && (

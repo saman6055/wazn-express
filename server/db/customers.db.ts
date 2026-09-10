@@ -135,7 +135,7 @@ export async function getCustomerByMobile(mobileNumber: string): Promise<Custome
  *
  * Matching a list of predicted shapes only ever finds the shapes that were
  * predicted. A row holding `0774 042 7884`, or `07740427884 ` with a trailing
- * space out of an import, or `٠٧٧٤٠٤٢٧٨٨٤` from an Arabic source, is the same
+ * space out of an import, or `07740427884` from an Arabic source, is the same
  * number — and in the admin list all four look identical, which is why this
  * kept being read as a broken password rather than a lookup that missed.
  *

@@ -867,7 +867,7 @@ const [activeTab, setActiveTab] = useState("company");
                     </div>
                     <div className="text-right">
                       <div className="font-semibold">Date</div>
-                      <div>{new Date().toLocaleDateString()}</div>
+                      <div>{new Date().toLocaleDateString("en-GB")}</div>
                     </div>
                   </div>
                   

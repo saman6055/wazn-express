@@ -521,7 +521,7 @@ export default function CustomerDetail() {
                           return (
                             <TableRow key={service.id}>
                               <TableCell className="text-sm text-muted-foreground">
-                                {new Date(service.createdAt).toLocaleDateString()}
+                                {new Date(service.createdAt).toLocaleDateString("en-GB")}
                               </TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
@@ -978,7 +978,7 @@ export default function CustomerDetail() {
                     {t("invoices.invoice") ?? "Invoice"} #{(cd.selectedInvoice as { invoiceNumber?: string }).invoiceNumber}
                   </h3>
                   <p className="text-sm text-muted-foreground">
-                    {t("common.date")}: {new Date((cd.selectedInvoice as { createdAt?: string }).createdAt ?? "").toLocaleDateString()}
+                    {t("common.date")}: {new Date((cd.selectedInvoice as { createdAt?: string }).createdAt ?? "").toLocaleDateString("en-GB")}
                   </p>
                 </div>
                 <Badge variant="outline" className="capitalize">

@@ -93,9 +93,9 @@ export default function SelfOrders() {
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="7">{pickLang(language, { ku: "٧ ڕۆژی ڕابردوو", en: "Last 7 days", ar: "آخر ٧ أيام", zh: "近 7 天" })}</SelectItem>
-              <SelectItem value="30">{pickLang(language, { ku: "٣٠ ڕۆژی ڕابردوو", en: "Last 30 days", ar: "آخر ٣٠ يومًا", zh: "近 30 天" })}</SelectItem>
-              <SelectItem value="90">{pickLang(language, { ku: "٩٠ ڕۆژی ڕابردوو", en: "Last 90 days", ar: "آخر ٩٠ يومًا", zh: "近 90 天" })}</SelectItem>
+              <SelectItem value="7">{pickLang(language, { ku: "7 ڕۆژی ڕابردوو", en: "Last 7 days", ar: "آخر 7 أيام", zh: "近 7 天" })}</SelectItem>
+              <SelectItem value="30">{pickLang(language, { ku: "30 ڕۆژی ڕابردوو", en: "Last 30 days", ar: "آخر 30 يومًا", zh: "近 30 天" })}</SelectItem>
+              <SelectItem value="90">{pickLang(language, { ku: "90 ڕۆژی ڕابردوو", en: "Last 90 days", ar: "آخر 90 يومًا", zh: "近 90 天" })}</SelectItem>
               <SelectItem value="all">{pickLang(language, { ku: "هەمووی", en: "All", ar: "الكل", zh: "全部" })}</SelectItem>
             </SelectContent>
           </Select>

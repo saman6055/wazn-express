@@ -115,7 +115,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                       <strong>{selectedCustomers.length}</strong> {t("auto.text_77fddc")}
                     </p>
                     <p className="text-lg font-bold text-amber-900 dark:text-amber-200 mt-1">
-                      {t("auto.text_96973f")}: ${selectedDebt.toLocaleString()}
+                      {t("auto.text_96973f")}: ${selectedDebt.toLocaleString("en-GB")}
                     </p>
                   </div>
 
@@ -196,7 +196,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("finance.totalDebt")}</p>
-                <p className="text-2xl font-bold">${totalDebt.toLocaleString()}</p>
+                <p className="text-2xl font-bold">${totalDebt.toLocaleString("en-GB")}</p>
               </div>
             </div>
           </CardContent>
@@ -224,7 +224,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_9d2075")} </p>
-                <p className="text-2xl font-bold">${selectedDebt.toLocaleString()}</p>
+                <p className="text-2xl font-bold">${selectedDebt.toLocaleString("en-GB")}</p>
               </div>
             </div>
           </CardContent>
@@ -289,10 +289,10 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                   </div>
                   <div className="flex items-center gap-4">
                     <div className="text-left">
-                      <p className="font-bold text-red-600 dark:text-red-300">${(debtor.balanceUsd || 0).toLocaleString()}</p>
+                      <p className="font-bold text-red-600 dark:text-red-300">${(debtor.balanceUsd || 0).toLocaleString("en-GB")}</p>
                       {debtor.balanceIqd > 0 && (
                         <p className="text-xs text-muted-foreground">
-                          {debtor.balanceIqd.toLocaleString()} IQD
+                          {debtor.balanceIqd.toLocaleString("en-GB")} IQD
                         </p>
                       )}
                     </div>

@@ -48,7 +48,7 @@ export default function DataManagement() {
           <HardDrive className="h-3 w-3" />
           {t("dataManagement.totalRecords")}
         </div>
-        <div className="text-2xl font-bold">{totalRecords.toLocaleString()}</div>
+        <div className="text-2xl font-bold">{totalRecords.toLocaleString("en-GB")}</div>
       </div>
       <div className="bg-white/10 backdrop-blur-sm rounded-xl p-3">
         <div className="flex items-center gap-2 text-white/70 text-xs mb-1">

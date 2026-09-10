@@ -384,7 +384,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
   const handleExportStatisticsPDF = () => {
     try {
       const company = getCompanyInfoFromSettings(settings || []);
-      const currentDate = new Date().toLocaleDateString(language === "ku" ? "ckb-IQ" : "en-US");
+      const currentDate = new Date().toLocaleDateString(language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US");
       const categories = dataCategories.slice(0, 8).map((cat) => ({
         name: t(cat.titleKey),
         count: getCount(cat.id),
@@ -393,7 +393,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
       const totalBackupSize = (backupsList?.reduce((acc, b) => acc + (b.fileSize ?? 0), 0 as number) ?? 0) as number;
       const completedBackups = backupsList?.filter((b: { status?: string }) => b.status === "completed").length || 0;
       const lastBackupDate = backupsList?.[0]?.createdAt
-        ? new Date(backupsList[0].createdAt).toLocaleDateString(language === "ku" ? "ckb-IQ" : "en-US")
+        ? new Date(backupsList[0].createdAt).toLocaleDateString(language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US")
         : "-";
       const printContent = `
         <!DOCTYPE html>
@@ -428,7 +428,7 @@ export function useDataManagement(dataCategories: DataCategory[]) {
             <p>${escapeHtml(company.name)} - ${currentDate}</p>
           </div>
           <div class="stats-grid">
-            <div class="stat-card"><h3>${t("dataManagement.totalRecords")}</h3><div class="value">${totalRecords.toLocaleString()}</div></div>
+            <div class="stat-card"><h3>${t("dataManagement.totalRecords")}</h3><div class="value">${totalRecords.toLocaleString("en-GB")}</div></div>
             <div class="stat-card"><h3>${t("dataManagement.completedBackups")}</h3><div class="value">${completedBackups}</div></div>
             <div class="stat-card"><h3>${t("dataManagement.totalBackupSize")}</h3><div class="value">${formatFileSize(totalBackupSize)}</div></div>
             <div class="stat-card"><h3>${t("dataManagement.lastBackup")}</h3><div class="value">${lastBackupDate}</div></div>
@@ -439,14 +439,14 @@ export function useDataManagement(dataCategories: DataCategory[]) {
               <div class="category-row">
                 <span class="category-name">${cat.name}</span>
                 <div class="category-stats">
-                  <span class="category-count">${cat.count.toLocaleString()}</span>
+                  <span class="category-count">${cat.count.toLocaleString("en-GB")}</span>
                   <span class="category-percent">${cat.percentage}%</span>
                 </div>
               </div>
             `).join("")}
           </div>
           <div class="footer">
-            <p>${t("dataManagement.generatedAt")}: ${new Date().toLocaleString(language === "ku" ? "ckb-IQ" : "en-US")}</p>
+            <p>${t("dataManagement.generatedAt")}: ${new Date().toLocaleString(language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US")}</p>
           </div>
         </body>
         </html>

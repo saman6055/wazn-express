@@ -295,7 +295,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Calendar className="h-4 w-4 text-muted-foreground" />
-                          {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString() : '-'}
+                          {payment.createdAt ? new Date(payment.createdAt).toLocaleDateString("en-GB") : '-'}
                         </div>
                       </TableCell>
                       <TableCell>

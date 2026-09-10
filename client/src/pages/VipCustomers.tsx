@@ -244,21 +244,21 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="discountPercent">{pickLang(language, { ku: "داشکاندن ٪", en: "Discount %", ar: "نسبة الخصم ٪", zh: "折扣 %" })}</Label>
-                        <Input id="discountPercent" name="discountPercent" type="number" step="0.01" min="0" max="100" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ١٠", en: "e.g. 10", ar: "مثال: ١٠", zh: "例如 10" })} />
+                        <Input id="discountPercent" name="discountPercent" type="number" step="0.01" min="0" max="100" className="h-11" placeholder={pickLang(language, { ku: "نموونە: 10", en: "e.g. 10", ar: "مثال: 10", zh: "例如 10" })} />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="creditLimitUsd">{pickLang(language, { ku: "سنووری قەرز ($)", en: "Credit Limit ($)", ar: "حد الائتمان ($)", zh: "信用额度 ($)" })}</Label>
-                        <Input id="creditLimitUsd" name="creditLimitUsd" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ١٠٠٠", en: "e.g. 1000", ar: "مثال: ١٠٠٠", zh: "例如 1000" })} />
+                        <Input id="creditLimitUsd" name="creditLimitUsd" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: 1000", en: "e.g. 1000", ar: "مثال: 1000", zh: "例如 1000" })} />
                       </div>
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
                         <Label htmlFor="fixedPricePerKgAir">{pickLang(language, { ku: "نرخی جێگیر/کگ (ئاسمانی)", en: "Fixed Price/KG (Air)", ar: "سعر ثابت/كغ (جوي)", zh: "固定单价/公斤（空运）" })}</Label>
-                        <Input id="fixedPricePerKgAir" name="fixedPricePerKgAir" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ٥٫٠٠", en: "e.g. 5.00", ar: "مثال: ٥٫٠٠", zh: "例如 5.00" })} />
+                        <Input id="fixedPricePerKgAir" name="fixedPricePerKgAir" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: 5.00", en: "e.g. 5.00", ar: "مثال: 5.00", zh: "例如 5.00" })} />
                       </div>
                       <div className="grid gap-2">
                         <Label htmlFor="fixedPricePerKgSea">{pickLang(language, { ku: "نرخی جێگیر/کگ (دەریایی)", en: "Fixed Price/KG (Sea)", ar: "سعر ثابت/كغ (بحري)", zh: "固定单价/公斤（海运）" })}</Label>
-                        <Input id="fixedPricePerKgSea" name="fixedPricePerKgSea" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: ٢٫٠٠", en: "e.g. 2.00", ar: "مثال: ٢٫٠٠", zh: "例如 2.00" })} />
+                        <Input id="fixedPricePerKgSea" name="fixedPricePerKgSea" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: 2.00", en: "e.g. 2.00", ar: "مثال: 2.00", zh: "例如 2.00" })} />
                       </div>
                     </div>
                     <div className="grid gap-2">

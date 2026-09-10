@@ -15,7 +15,7 @@ function formatDate(value?: string): string | undefined {
   if (!value) return undefined;
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return undefined;
-  return d.toLocaleDateString();
+  return d.toLocaleDateString("en-GB");
 }
 
 interface Chip {

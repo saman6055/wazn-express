@@ -262,7 +262,7 @@ export default function StaffDashboard() {
                       <span className="text-xs text-muted-foreground capitalize shrink-0">{scan.scanType?.replace(/_/g, " ")}</span>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">
-                      {new Date(scan.scannedAt).toLocaleString(language === "ku" ? "ar-IQ" : "en-US", {
+                      {new Date(scan.scannedAt).toLocaleString(language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US", {
                         month: "short",
                         day: "numeric",
                         hour: "2-digit",

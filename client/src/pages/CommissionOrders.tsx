@@ -752,7 +752,7 @@ export default function CommissionOrders() {
                         </DropdownMenu>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(order.createdAt).toLocaleDateString()}
+                        {new Date(order.createdAt).toLocaleDateString("en-GB")}
                       </TableCell>
                       <TableCell>
                         {/* Two actions, both named. There was a third here:

@@ -357,9 +357,9 @@ export default function SafeDeleteOrderDialog({
             <div className="text-xs text-muted-foreground text-right">
               {reason.trim().length < 3
                 ? `${pickLang(language, {
-                    ku: "بەلایەنی کەم ٣ پیت",
+                    ku: "بەلایەنی کەم 3 پیت",
                     en: "At least 3 characters",
-                    ar: "٣ أحرف على الأقل",
+                    ar: "3 أحرف على الأقل",
                     zh: "至少 3 个字符",
                   })} (${reason.trim().length}/3)`
                 : `${reason.trim().length} ${pickLang(language, {

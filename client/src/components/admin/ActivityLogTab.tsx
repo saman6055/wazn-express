@@ -44,7 +44,7 @@ export function ActivityLogTab({
   t,
 }: ActivityLogTabProps) {
   const locale =
-    language === "ku" ? "ckb-IQ" : language === "ar" ? "ar-IQ" : language === "zh" ? "zh-CN" : "en-US";
+    language === "ku" ? "ckb-IQ-u-nu-latn" : language === "ar" ? "ar-IQ-u-nu-latn" : language === "zh" ? "zh-CN" : "en-US";
 
   return (
     <>

@@ -286,7 +286,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
             {template.showDate && (
               <div className="flex items-center gap-1">
                 <Calendar className="h-3 w-3 text-gray-400" />
-                <span>{new Date().toLocaleDateString()}</span>
+                <span>{new Date().toLocaleDateString("en-GB")}</span>
               </div>
             )}
           </div>

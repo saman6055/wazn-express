@@ -27,7 +27,7 @@ function formatTime(value: unknown): string {
   try {
     const d = new Date(value as any);
     if (isNaN(d.getTime())) return String(value);
-    return d.toLocaleString();
+    return d.toLocaleString("en-GB");
   } catch {
     return String(value);
   }

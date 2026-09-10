@@ -18,7 +18,7 @@ const pName = (p: any, language: string) =>
 const pDesc = (p: any, language: string) =>
   pickLang(language, { ku: p?.descriptionKu || p?.descriptionEn, en: p?.descriptionEn, ar: p?.descriptionAr || p?.descriptionEn, zh: p?.descriptionEn }) || "";
 
-const money = (v: any, currency: string) => `${Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
+const money = (v: any, currency: string) => `${Number(v).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
 
 export default function StoreProduct() {
   const { slug } = useParams<{ slug: string }>();

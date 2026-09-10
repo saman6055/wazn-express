@@ -334,7 +334,7 @@ export default function Registrations() {
   const rangeButtons: { key: RangeKey; text: L }[] = [
     { key: "today", text: { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" } },
     { key: "yesterday", text: { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" } },
-    { key: "week", text: { ku: "٧ ڕۆژ", en: "7 days", ar: "٧ أيام", zh: "7 天" } },
+    { key: "week", text: { ku: "7 ڕۆژ", en: "7 days", ar: "7 أيام", zh: "7 天" } },
     { key: "month", text: { ku: "ئەم مانگە", en: "This month", ar: "هذا الشهر", zh: "本月" } },
     { key: "custom", text: { ku: "دیاریکراو", en: "Custom", ar: "مخصّص", zh: "自定义" } },
   ];

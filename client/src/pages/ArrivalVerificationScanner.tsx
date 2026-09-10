@@ -875,7 +875,7 @@ export default function ArrivalVerificationScanner() {
                                     </div>
                                   </div>
                                   <div className="shrink-0 text-xs text-muted-foreground">
-                                    {pkg.verifiedAt.toLocaleTimeString()}
+                                    {pkg.verifiedAt.toLocaleTimeString("en-GB")}
                                   </div>
                                 </div>
                                 </div>

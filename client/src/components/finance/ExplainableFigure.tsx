@@ -86,7 +86,7 @@ function ExplainPanel({
   );
 
   const money = (n: number) =>
-    `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   /** The whole explanation as text, for pasting into a message. */
   const asText = () => {

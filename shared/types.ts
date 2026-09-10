@@ -112,7 +112,7 @@ export function generateCustomerCode(sequenceNumber: number, name: string, prefi
 export function formatCurrency(amount: number, currency: Currency = "USD"): string {
   const formatters: Record<Currency, Intl.NumberFormat> = {
     USD: new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }),
-    IQD: new Intl.NumberFormat("ar-IQ", { style: "currency", currency: "IQD", maximumFractionDigits: 0 }),
+    IQD: new Intl.NumberFormat("en-US", { style: "currency", currency: "IQD", maximumFractionDigits: 0 }),
     RMB: new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" }),
     CNY: new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" }),
   };

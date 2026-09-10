@@ -490,7 +490,7 @@ function BlogCard({ post, t }: { post: BlogPostRow; t: (k: string) => string }) 
   const title = post.titleKu || post.titleEn || post.titleAr || "";
   const excerpt = post.summaryKu || post.summaryEn || post.summaryAr || "";
   const href = `/portal/blog/${post.id}`;
-  const dateStr = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString() : "";
+  const dateStr = post.publishedAt ? new Date(post.publishedAt).toLocaleDateString("en-GB") : "";
   const categoryLabel = post.category ? t(`blog.${post.category}`) : "";
   return (
     <Link href={href}>
@@ -579,7 +579,7 @@ function AnimatedCounter({ value, suffix = "", durationMs = 1600 }: { value: num
     return () => cancelAnimationFrame(id);
   }, [started, value, durationMs, count]);
 
-  const display = value >= 1000 ? count.toLocaleString() : String(count);
+  const display = value >= 1000 ? count.toLocaleString("en-GB") : String(count);
   return <span ref={ref}>{display}{suffix}</span>;
 }
 

@@ -109,7 +109,7 @@ export default function PortalSecurity() {
   );
 
   const tips: L[] = [
-    { ku: "بەلایەنی کەمەوە ٦ پیت", en: "At least 6 characters", ar: "٦ أحرف على الأقل", zh: "至少 6 个字符" },
+    { ku: "بەلایەنی کەمەوە 6 پیت", en: "At least 6 characters", ar: "6 أحرف على الأقل", zh: "至少 6 个字符" },
     { ku: "تێکەڵەی پیت و ژمارە بەکاربهێنە", en: "Mix letters and numbers", ar: "امزج الأحرف والأرقام", zh: "混合字母和数字" },
     { ku: "وشەی نهێنیت لەگەڵ کەس هاوبەش مەکە", en: "Never share your password", ar: "لا تشارك كلمة مرورك", zh: "切勿分享密码" },
   ];
@@ -240,7 +240,7 @@ export default function PortalSecurity() {
                 </div>
                 {tooShort && (
                   <p className="text-xs text-red-500 dark:text-red-400 mt-1.5">
-                    {pick({ ku: "دەبێت بەلایەنی کەمەوە ٦ پیت بێت", en: "Must be at least 6 characters", ar: "يجب ألا تقل عن ٦ أحرف", zh: "至少需 6 个字符" })}
+                    {pick({ ku: "دەبێت بەلایەنی کەمەوە 6 پیت بێت", en: "Must be at least 6 characters", ar: "يجب ألا تقل عن 6 أحرف", zh: "至少需 6 个字符" })}
                   </p>
                 )}
               </div>

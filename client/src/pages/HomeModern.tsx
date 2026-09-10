@@ -76,7 +76,7 @@ export default function HomeModern() {
     { icon: Boxes, t: { ku: "کۆکردنەوەی بار", en: "Consolidation", ar: "تجميع الشحنات", zh: "拼箱集运" }, d: { ku: "کۆکردنەوەی چەند پاکەت لە یەک بار", en: "Combine many parcels into one shipment", ar: "دمج عدة طرود في شحنة واحدة", zh: "多个包裹合并为一票" } },
     { icon: ShieldCheck, t: { ku: "بیمەی بار", en: "Cargo insurance", ar: "تأمين البضائع", zh: "货物保险" }, d: { ku: "پاراستنی بارەکەت لە هەموو ڕێگادا", en: "Protect your cargo the whole way", ar: "حماية بضاعتك طوال الطريق", zh: "全程保障您的货物" } },
     { icon: Wallet, t: { ku: "ژمێریاری خۆکار", en: "Auto accounting", ar: "محاسبة تلقائية", zh: "自动记账" }, d: { ku: "پسوڵە و باڵانسی ڕوون بۆ هەر کڕیارێک", en: "Clear invoices & balance per customer", ar: "فواتير ورصيد واضح لكل عميل", zh: "每位客户清晰的账单与余额" } },
-    { icon: Headphones, t: { ku: "پشتگیری ٢٤/٧", en: "24/7 support", ar: "دعم ٢٤/٧", zh: "24/7 支持" }, d: { ku: "هەمیشە لەگەڵتاین بە زمانی خۆت", en: "Always here, in your language", ar: "دائماً معك وبلغتك", zh: "全天候，用您的语言" } },
+    { icon: Headphones, t: { ku: "پشتگیری 24/7", en: "24/7 support", ar: "دعم 24/7", zh: "24/7 支持" }, d: { ku: "هەمیشە لەگەڵتاین بە زمانی خۆت", en: "Always here, in your language", ar: "دائماً معك وبلغتك", zh: "全天候，用您的语言" } },
   ];
 
   const stats = [

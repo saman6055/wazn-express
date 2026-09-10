@@ -229,7 +229,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
       // Auto-reply will be handled by backend in production
       // For now, add a placeholder response
       const autoReply = pickLang(language, {
-        ku: "سوپاس بۆ نامەکەت! یەکێک لە تیمی پشتگیریمان بەم زووانە وەڵامت دەداتەوە. کاتی کارکردن: ٩ بەیانی - ٩ ئێوارە",
+        ku: "سوپاس بۆ نامەکەت! یەکێک لە تیمی پشتگیریمان بەم زووانە وەڵامت دەداتەوە. کاتی کارکردن: 9 بەیانی - 9 ئێوارە",
         en: "Thank you for your message! One of our support team members will respond shortly. Working hours: 9 AM - 9 PM",
         ar: "شكراً لرسالتك! سيرد عليك أحد أعضاء فريق الدعم لدينا قريباً. ساعات العمل: 9 صباحاً - 9 مساءً",
         zh: "感谢您的留言！我们的支持团队成员将很快回复您。工作时间：上午9点 - 晚上9点"
@@ -246,7 +246,7 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
   };
   
   const formatTime = (date: Date) => {
-    return date.toLocaleTimeString(isKurdish ? 'ku' : 'en-US', {
+    return date.toLocaleTimeString(isKurdish ? 'ckb-IQ-u-nu-latn' : 'en-US', {
       hour: '2-digit',
       minute: '2-digit'
     });

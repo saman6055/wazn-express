@@ -112,7 +112,7 @@ export default function StoreManagement() {
 
   const products = productsQ.data || [];
   const orders = ordersQ.data || [];
-  const money = (v: any, c: string) => `${Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${c}`;
+  const money = (v: any, c: string) => `${Number(v).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${c}`;
 
   return (
     <DashboardLayout>

@@ -119,7 +119,7 @@ const [activeTab, setActiveTab] = useState("pnl");
 
   const formatCurrency = (amount: number | string | undefined) => {
     const num = typeof amount === "string" ? parseFloat(amount) : (amount || 0);
-    return `$${num.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatPercent = (value: number) => {

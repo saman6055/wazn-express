@@ -222,16 +222,16 @@ export default function QuickRegister() {
               message: pickLang(language, {
                 ku: `ئەم پاکێجە پێشتر تۆمار کراوە${
                   result.customer?.customerCode ? ` بۆ ${result.customer.customerCode}` : ""
-                }${when ? ` لە ${when.toLocaleString()}` : ""}. دووبارە تۆمارکردنی واتە دوو جار حیسابکردنی.`,
+                }${when ? ` لە ${when.toLocaleString("en-GB")}` : ""}. دووبارە تۆمارکردنی واتە دوو جار حیسابکردنی.`,
                 en: `This parcel is already registered${
                   result.customer?.customerCode ? ` to ${result.customer.customerCode}` : ""
-                }${when ? ` on ${when.toLocaleString()}` : ""}. Registering it again means charging for it twice.`,
+                }${when ? ` on ${when.toLocaleString("en-GB")}` : ""}. Registering it again means charging for it twice.`,
                 ar: `هذا الطرد مسجل مسبقاً${
                   result.customer?.customerCode ? ` باسم ${result.customer.customerCode}` : ""
-                }${when ? ` بتاريخ ${when.toLocaleString()}` : ""}. إعادة تسجيله تعني احتسابه مرتين.`,
+                }${when ? ` بتاريخ ${when.toLocaleString("en-GB")}` : ""}. إعادة تسجيله تعني احتسابه مرتين.`,
                 zh: `该包裹已登记${
                   result.customer?.customerCode ? `（${result.customer.customerCode}）` : ""
-                }${when ? `，时间 ${when.toLocaleString()}` : ""}。再次登记会重复计费。`,
+                }${when ? `，时间 ${when.toLocaleString("en-GB")}` : ""}。再次登记会重复计费。`,
               }),
               // The parcel's own code, not the tracking: it is what finds the
               // existing row, and the tracking is already on screen.
@@ -945,13 +945,13 @@ export default function QuickRegister() {
                   )}
                   <span className="inline-flex items-center gap-1 text-muted-foreground">
                     <Calendar className="h-3.5 w-3.5 shrink-0" />
-                    {lastRegistered.time.toLocaleString()}
+                    {lastRegistered.time.toLocaleString("en-GB")}
                   </span>
                   {lastRegistered.orderDate && (
                     <>
                       <span className="inline-flex items-center gap-1 text-muted-foreground">
                         <Calendar className="h-3.5 w-3.5 shrink-0" />
-                        {pickLang(language, { ku: "بەرواری ئۆردەر", en: "Order date", ar: "تاريخ الطلب", zh: "订单日期" })}: {lastRegistered.orderDate.toLocaleDateString()}
+                        {pickLang(language, { ku: "بەرواری ئۆردەر", en: "Order date", ar: "تاريخ الطلب", zh: "订单日期" })}: {lastRegistered.orderDate.toLocaleDateString("en-GB")}
                       </span>
                       <span className="inline-flex items-center gap-1 rounded-full bg-emerald-100 px-2 py-0.5 text-xs font-medium text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300">
                         <TrendingUp className="h-3.5 w-3.5 shrink-0" />

@@ -559,7 +559,7 @@ const [activeTab, setActiveTab] = useState("expenses");
   const formatCurrency = (amount: string | number, currency = "USD") => {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
     if (currency === "IQD") {
-      return `${num.toLocaleString()} IQD`;
+      return `${num.toLocaleString("en-GB")} IQD`;
     }
     return `$${num.toFixed(2)}`;
   };
@@ -951,7 +951,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                     </div>
                     <p className="text-xs text-muted-foreground" dir="ltr">
                       {Number(converterIqd) > 0
-                        ? `${Number(converterIqd).toLocaleString()} IQD ÷ ${activeIqdRate.toLocaleString()} = $${(expenseForm.currency === "IQD" ? amountInUsd : converterUsd).toFixed(2)}`
+                        ? `${Number(converterIqd).toLocaleString("en-GB")} IQD ÷ ${activeIqdRate.toLocaleString("en-GB")} = $${(expenseForm.currency === "IQD" ? amountInUsd : converterUsd).toFixed(2)}`
                         : t(
                             expenseForm.currency === "IQD"
                               ? "expenses.dollarRateHint"
@@ -1008,7 +1008,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                             {account.accountNameKu || account.accountName}
                             {account.currency === "USD"
                               ? ` — $${Number(account.currentBalance).toFixed(2)}`
-                              : ` — ${Number(account.currentBalance).toLocaleString()} IQD`}
+                              : ` — ${Number(account.currentBalance).toLocaleString("en-GB")} IQD`}
                           </SelectItem>
                         ))}
                       </SelectContent>

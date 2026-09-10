@@ -148,7 +148,7 @@ export function BackupSection({
   language,
   t,
 }: BackupSectionProps) {
-  const locale = language === "ku" ? "ckb-IQ" : "en-US";
+  const locale = language === "ku" ? "ckb-IQ-u-nu-latn" : "en-US";
 
   return (
     <>

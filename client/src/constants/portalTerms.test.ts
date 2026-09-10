@@ -118,14 +118,14 @@ describe("tone", () => {
     // appear in one place only so they cannot drift apart again.
     const responsibility = termsSections.find((s) => s.id === "our-responsibility")!;
     const kurdish = responsibility.items.map((i) => i.text.ku);
-    expect(kurdish.filter((t) => t.includes("٢٥ دۆلار")).length).toBe(1);
-    expect(kurdish.filter((t) => t.includes("٧ ڕۆژ")).length).toBe(1);
+    expect(kurdish.filter((t) => t.includes("25 دۆلار")).length).toBe(1);
+    expect(kurdish.filter((t) => t.includes("7 ڕۆژ")).length).toBe(1);
   });
 
   it("uses one uncollected-goods deadline everywhere", () => {
     const all = termsSections.flatMap((s) => s.items.map((i) => i.text.ku)).join("\n");
-    expect(all).toContain("٣٠ ڕۆژ");
+    expect(all).toContain("30 ڕۆژ");
     // The old delivery section said 7 days while payment said 30.
-    expect(all).not.toContain("٧ ڕۆژ ئاگادارکردنەوە");
+    expect(all).not.toContain("7 ڕۆژ ئاگادارکردنەوە");
   });
 });

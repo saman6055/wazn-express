@@ -222,7 +222,7 @@ export function CustomerInfoCard({ customer, t }: CustomerInfoCardProps) {
                 <Calendar className="h-4 w-4 text-slate-600 dark:text-slate-400" />
               </div>
               <div>
-                <p className="text-sm font-medium">{new Date(customer.createdAt).toLocaleDateString()}</p>
+                <p className="text-sm font-medium">{new Date(customer.createdAt).toLocaleDateString("en-GB")}</p>
                 <p className="text-xs text-muted-foreground">Member Since</p>
               </div>
             </div>

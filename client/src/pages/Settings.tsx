@@ -114,7 +114,7 @@ const [companyData, setCompanyData] = useState({
       return;
     }
     if (file.size > 2 * 1024 * 1024) {
-      toast.error(t("settings.logoSizeLimit") || pickLang(language, { ku: "قەبارەی فایل نابێت لە ٢ مێگابایت زیاتر بێت", en: "File size must not exceed 2 MB", ar: "يجب ألا يتجاوز حجم الملف 2 ميغابايت", zh: "文件大小不得超过 2 MB" }));
+      toast.error(t("settings.logoSizeLimit") || pickLang(language, { ku: "قەبارەی فایل نابێت لە 2 مێگابایت زیاتر بێت", en: "File size must not exceed 2 MB", ar: "يجب ألا يتجاوز حجم الملف 2 ميغابايت", zh: "文件大小不得超过 2 MB" }));
       return;
     }
     setLogoUploading(true);
@@ -289,7 +289,7 @@ const [companyData, setCompanyData] = useState({
                   </h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label>{pickLang(language, { ku: "ژمارەی مۆبایل ١", en: "Mobile number 1", ar: "رقم الجوال ١", zh: "手机号码 1" })}</Label>
+                      <Label>{pickLang(language, { ku: "ژمارەی مۆبایل 1", en: "Mobile number 1", ar: "رقم الجوال 1", zh: "手机号码 1" })}</Label>
                       <Input
                         value={companyData.phone}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, phone: e.target.value }))}
@@ -298,7 +298,7 @@ const [companyData, setCompanyData] = useState({
                       />
                     </div>
                     <div className="grid gap-2">
-                      <Label>{pickLang(language, { ku: "ژمارەی مۆبایل ٢", en: "Mobile number 2", ar: "رقم الجوال ٢", zh: "手机号码 2" })}</Label>
+                      <Label>{pickLang(language, { ku: "ژمارەی مۆبایل 2", en: "Mobile number 2", ar: "رقم الجوال 2", zh: "手机号码 2" })}</Label>
                       <Input
                         value={companyData.phone2}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, phone2: e.target.value }))}
@@ -355,7 +355,7 @@ const [companyData, setCompanyData] = useState({
                         )}
                         {logoUploading ? pickLang(language, { ku: "چاوەڕوان بە...", en: "Please wait...", ar: "يرجى الانتظار...", zh: "请稍候..." }) : pickLang(language, { ku: "هەڵبژێرە و ئەپلۆد بکە", en: "Select and upload", ar: "اختر وارفع", zh: "选择并上传" })}
                       </Label>
-                      <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "PNG, JPG تا ٢MB", en: "PNG, JPG up to 2MB", ar: "PNG, JPG حتى 2MB", zh: "PNG、JPG 最大 2MB" })}</span>
+                      <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "PNG, JPG تا 2MB", en: "PNG, JPG up to 2MB", ar: "PNG, JPG حتى 2MB", zh: "PNG、JPG 最大 2MB" })}</span>
                     </div>
                     {companyData.logoUrl && (
                       <div className="mt-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center gap-4">
@@ -817,11 +817,11 @@ const [companyData, setCompanyData] = useState({
                         {t("settings.currentRate") || "Current Rate"}
                       </Label>
                       <p className="text-2xl font-bold text-green-700 dark:text-green-300">
-                        {currentIqdRate ? `1 USD = ${Number(currentIqdRate.rate).toLocaleString()} IQD` : "Not set"}
+                        {currentIqdRate ? `1 USD = ${Number(currentIqdRate.rate).toLocaleString("en-GB")} IQD` : "Not set"}
                       </p>
                       {currentIqdRate && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t("settings.lastUpdated") || "Last updated"}: {new Date(currentIqdRate.createdAt).toLocaleDateString()}
+                          {t("settings.lastUpdated") || "Last updated"}: {new Date(currentIqdRate.createdAt).toLocaleDateString("en-GB")}
                         </p>
                       )}
                     </div>
@@ -875,7 +875,7 @@ const [companyData, setCompanyData] = useState({
                       </p>
                       {currentRmbRate && (
                         <p className="text-xs text-muted-foreground mt-1">
-                          {t("settings.lastUpdated") || "Last updated"}: {new Date(currentRmbRate.createdAt).toLocaleDateString()}
+                          {t("settings.lastUpdated") || "Last updated"}: {new Date(currentRmbRate.createdAt).toLocaleDateString("en-GB")}
                         </p>
                       )}
                     </div>
@@ -929,12 +929,12 @@ const [companyData, setCompanyData] = useState({
                           <div>
                             <p className="font-medium">USD → {rate.targetCurrency}</p>
                             <p className="text-xs text-muted-foreground">
-                              {new Date(rate.createdAt).toLocaleString()}
+                              {new Date(rate.createdAt).toLocaleString("en-GB")}
                             </p>
                           </div>
                         </div>
                         <div className="text-right">
-                          <p className="font-bold">{Number(rate.rate).toLocaleString()}</p>
+                          <p className="font-bold">{Number(rate.rate).toLocaleString("en-GB")}</p>
                           <p className="text-xs text-muted-foreground">
                             {rate.source === "manual" ? t("settings.manual") || "Manual" : t("settings.api") || "API"}
                           </p>

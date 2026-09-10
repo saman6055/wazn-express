@@ -146,7 +146,7 @@ const [search, setSearch] = useState("");
                       </span>
                     </TableCell>
                     <TableCell className="text-sm text-muted-foreground">
-                      {new Date(user.lastSignedIn).toLocaleDateString()}
+                      {new Date(user.lastSignedIn).toLocaleDateString("en-GB")}
                     </TableCell>
                     <TableCell className="text-right">
                       <Select

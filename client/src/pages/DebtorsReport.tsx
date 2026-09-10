@@ -264,19 +264,19 @@ const [searchTerm, setSearchTerm] = useState("");
               );
               const buckets = [
                 {
-                  label: t("finance.aging0_30") || "٠–٣٠ ڕۆژ",
+                  label: t("finance.aging0_30") || "0–30 ڕۆژ",
                   total: stats.aging0_30,
                   count: stats.count0_30,
                   color: "bg-emerald-500",
                 },
                 {
-                  label: t("finance.aging30_60") || "٣٠–٦٠ ڕۆژ",
+                  label: t("finance.aging30_60") || "30–60 ڕۆژ",
                   total: stats.aging30_60,
                   count: stats.count30_60,
                   color: "bg-amber-500",
                 },
                 {
-                  label: t("finance.aging60Plus") || "٦٠+ ڕۆژ",
+                  label: t("finance.aging60Plus") || "60+ ڕۆژ",
                   total: sixtyPlusTotal,
                   count: sixtyPlusCount,
                   color: "bg-red-600",
@@ -373,7 +373,7 @@ const [searchTerm, setSearchTerm] = useState("");
                       <TableCell>{debtor.daysSinceActivity} {t("auto.text_05f45d")}</TableCell>
                       <TableCell>
                         {debtor.lastTransactionDate 
-                          ? new Date(debtor.lastTransactionDate).toLocaleDateString()
+                          ? new Date(debtor.lastTransactionDate).toLocaleDateString("en-GB")
                           : '-'}
                       </TableCell>
                       <TableCell>

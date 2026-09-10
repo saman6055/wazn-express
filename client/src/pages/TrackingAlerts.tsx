@@ -69,10 +69,10 @@ const ORDER_TYPES = [
 // Days filter options
 const DAYS_FILTERS = [
   { value: "all", labelKu: "هەموو ڕۆژەکان", labelEn: "All Days", labelAr: "كل الأيام", labelZh: "全部天数", min: 0, max: 999 },
-  { value: "1-2", labelKu: "١-٢ ڕۆژ", labelEn: "1-2 Days", labelAr: "١-٢ يوم", labelZh: "1-2 天", min: 1, max: 2 },
-  { value: "3-4", labelKu: "٣-٤ ڕۆژ", labelEn: "3-4 Days", labelAr: "٣-٤ يوم", labelZh: "3-4 天", min: 3, max: 4 },
-  { value: "5-6", labelKu: "٥-٦ ڕۆژ", labelEn: "5-6 Days", labelAr: "٥-٦ يوم", labelZh: "5-6 天", min: 5, max: 6 },
-  { value: "7+", labelKu: "٧+ ڕۆژ (فریاکەوتن)", labelEn: "7+ Days (Critical)", labelAr: "٧+ يوم (حرج)", labelZh: "7+ 天（紧急）", min: 7, max: 999 },
+  { value: "1-2", labelKu: "1-2 ڕۆژ", labelEn: "1-2 Days", labelAr: "1-2 يوم", labelZh: "1-2 天", min: 1, max: 2 },
+  { value: "3-4", labelKu: "3-4 ڕۆژ", labelEn: "3-4 Days", labelAr: "3-4 يوم", labelZh: "3-4 天", min: 3, max: 4 },
+  { value: "5-6", labelKu: "5-6 ڕۆژ", labelEn: "5-6 Days", labelAr: "5-6 يوم", labelZh: "5-6 天", min: 5, max: 6 },
+  { value: "7+", labelKu: "7+ ڕۆژ (فریاکەوتن)", labelEn: "7+ Days (Critical)", labelAr: "7+ يوم (حرج)", labelZh: "7+ 天（紧急）", min: 7, max: 999 },
 ];
 
 export default function TrackingAlerts() {
@@ -831,7 +831,7 @@ export default function TrackingAlerts() {
                             </TableCell>
                             <TableCell className="text-sm text-slate-600 dark:text-slate-300">
                               {order.orderDate 
-                                ? new Date(order.orderDate).toLocaleDateString(pickLang(language, { ku: "ku", en: "en-US", ar: "ar", zh: "zh-CN" }))
+                                ? new Date(order.orderDate).toLocaleDateString(pickLang(language, { ku: "ckb-IQ-u-nu-latn", en: "en-US", ar: "ar-u-nu-latn", zh: "zh-CN" }))
                                 : "-"
                               }
                             </TableCell>

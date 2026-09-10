@@ -286,7 +286,7 @@ export default function ProfitReports() {
                       <BarChart data={chartData} margin={{ top: 12, right: 12, left: 12, bottom: 12 }}>
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                         <XAxis dataKey="name" tick={{ fontSize: 12 }} />
-                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${Number(v).toLocaleString()}`} />
+                        <YAxis tick={{ fontSize: 12 }} tickFormatter={(v) => `$${Number(v).toLocaleString("en-GB")}`} />
                         <Tooltip formatter={(v: number) => [formatCurrency(v), t("profitReport.profit")]} />
                         <Bar dataKey="profit" fill="hsl(var(--chart-1))" radius={[4, 4, 0, 0]} name={t("profitReport.profit")} />
                       </BarChart>

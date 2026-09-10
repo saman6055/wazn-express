@@ -22,7 +22,7 @@ import { SCANNER_MODULES, getModuleByType } from "@/constants/scannerModules";
 
 // Locale code for date/number formatting based on active UI language
 function localeCode(lang: string | undefined) {
-  return pickLang(lang, { ku: 'ku', en: 'en-US', ar: 'ar', zh: 'zh-CN' });
+  return pickLang(lang, { ku: 'ckb-IQ-u-nu-latn', en: 'en-US', ar: 'ar-u-nu-latn', zh: 'zh-CN' });
 }
 
 // Format date for display
@@ -124,11 +124,11 @@ export default function ScanReports() {
     };
 
     const data = filteredScans.map((scan: any) => ({
-      [pickLang(language, { ku: 'بەروار', en: 'Date', ar: 'التاريخ', zh: '日期' })]: new Date(scan.scannedAt).toLocaleDateString(),
+      [pickLang(language, { ku: 'بەروار', en: 'Date', ar: 'التاريخ', zh: '日期' })]: new Date(scan.scannedAt).toLocaleDateString("en-GB"),
       [pickLang(language, { ku: 'تراکینگ', en: 'Tracking', ar: 'رقم التتبع', zh: '运单号' })]: scan.trackingNumber || scan.packageCode,
       [pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' })]: moduleLabels[scan.scanType] || scan.scanType,
       [pickLang(language, { ku: 'بەکارهێنەر', en: 'User', ar: 'المستخدم', zh: '用户' })]: scan.scannedBy || 'N/A',
-      [pickLang(language, { ku: 'کات', en: 'Time', ar: 'الوقت', zh: '时间' })]: new Date(scan.scannedAt).toLocaleTimeString(),
+      [pickLang(language, { ku: 'کات', en: 'Time', ar: 'الوقت', zh: '时间' })]: new Date(scan.scannedAt).toLocaleTimeString("en-GB"),
     }));
 
     // Loaded on demand so the heavy xlsx bundle stays out of the page chunk.

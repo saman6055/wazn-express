@@ -221,8 +221,8 @@ export const invoicesRouter = router({
 
         const pdfUrl = await generateInvoicePDF({
           invoiceNumber: invoice.invoiceNumber,
-          date: new Date(invoice.createdAt).toLocaleDateString(),
-          dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString() : undefined,
+          date: new Date(invoice.createdAt).toLocaleDateString("en-GB"),
+          dueDate: invoice.dueDate ? new Date(invoice.dueDate).toLocaleDateString("en-GB") : undefined,
           customer: {
             name: customer.fullName,
             nameKu: customer.fullNameKurdish || customer.fullName,

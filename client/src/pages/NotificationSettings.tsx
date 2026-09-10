@@ -121,7 +121,7 @@ type NotificationSetting = {
  */
 const WHATSAPP_TEST_REASONS: Record<string, string> = {
   unconfigured: "تۆکن یان ژمارە دانەنراوە — سەرەتا خەزنی بکە",
-  bad_number: "ژمارەکە دروست نییە — بە شێوەی ٠٧٥٠… بینووسە",
+  bad_number: "ژمارەکە دروست نییە — بە شێوەی 0750… بینووسە",
   rejected: "مێتا ڕەتی کردەوە — تێمپلەیت پەسەند نەکراوە، یان تۆکن بەسەرچووە",
   unreachable: "نەگەیشتە مێتا — ئینتەرنێتی سێرڤەر بپشکنە",
   disabled: "کوژاوەیە",

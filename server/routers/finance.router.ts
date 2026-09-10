@@ -833,7 +833,7 @@ export const expensesRouter = router({
               const currencySymbol = triggered.alert.currency === 'USD' ? '$' : 'د.ع';
               await notifyOwner({
                 title: `⚠️ ئاگادارکردنەوەی خەرجی - سنوور تێپەڕا!`,
-                content: `خەرجییەکان لە سنوورەکە تێپەڕیوە:\n\nماوە: ${triggered.periodLabel}\nکۆی خەرجی: ${currencySymbol}${triggered.totalExpenses.toLocaleString()}\nسنوور: ${currencySymbol}${triggered.thresholdAmount.toLocaleString()}\n${triggered.alert.description ? `تێبینی: ${triggered.alert.description}` : ''}`,
+                content: `خەرجییەکان لە سنوورەکە تێپەڕیوە:\n\nماوە: ${triggered.periodLabel}\nکۆی خەرجی: ${currencySymbol}${triggered.totalExpenses.toLocaleString("en-GB")}\nسنوور: ${currencySymbol}${triggered.thresholdAmount.toLocaleString("en-GB")}\n${triggered.alert.description ? `تێبینی: ${triggered.alert.description}` : ''}`,
               });
             }
           }
@@ -1501,7 +1501,7 @@ export const financialReportsRouter = router({
         const totalReceivables = 0; // Would need to query customer accounts separately
 
         const pdfUrl = await generateBalanceSheetPDF({
-          date: new Date().toLocaleDateString(),
+          date: new Date().toLocaleDateString("en-GB"),
           assets: {
             cash: overview.totalCash,
             bank: 0, // Bank is included in totalCash
@@ -1561,7 +1561,7 @@ export const financialReportsRouter = router({
           const amount = t.transactionType === 'withdrawal' ? -parseFloat(t.amount) : parseFloat(t.amount);
           balance += amount;
           return {
-            date: new Date(t.transactionDate).toLocaleDateString(),
+            date: new Date(t.transactionDate).toLocaleDateString("en-GB"),
             type: t.transactionType,
             description: t.description || '',
             amount,
@@ -1574,8 +1574,8 @@ export const financialReportsRouter = router({
             name: partner.name,
             ownershipPercentage: parseFloat(partner.ownershipPercentage),
           },
-          startDate: input.startDate.toLocaleDateString(),
-          endDate: input.endDate.toLocaleDateString(),
+          startDate: input.startDate.toLocaleDateString("en-GB"),
+          endDate: input.endDate.toLocaleDateString("en-GB"),
           openingBalance: parseFloat(partner.initialCapital),
           transactions: txnsWithBalance,
           closingBalance: parseFloat(partner.currentBalance),
@@ -1619,7 +1619,7 @@ export const financialReportsRouter = router({
           totalExpenses: total,
           byCategory,
           expenses: expenses.map((exp: ExpenseType) => ({
-            date: new Date(exp.expenseDate).toLocaleDateString(),
+            date: new Date(exp.expenseDate).toLocaleDateString("en-GB"),
             category: categories.find((c: CategoryType) => c.id === exp.categoryId)?.nameEn || 'Other',
             description: exp.description || '',
             vendor: exp.vendor || '',
@@ -1641,7 +1641,7 @@ export const financialReportsRouter = router({
             originalAmount: parseFloat(d.principalAmountUsd),
             remainingAmount: parseFloat(d.remainingAmount),
             interestRate: parseFloat(d.interestRate || '0'),
-            dueDate: d.dueDate ? new Date(d.dueDate).toLocaleDateString() : 'N/A',
+            dueDate: d.dueDate ? new Date(d.dueDate).toLocaleDateString("en-GB") : 'N/A',
             monthlyPayment: parseFloat(d.installmentAmount || '0'),
           })),
         });

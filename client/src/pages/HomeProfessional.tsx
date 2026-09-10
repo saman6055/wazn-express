@@ -122,10 +122,10 @@ export default function HomeProfessional() {
       <section className="container mx-auto px-6 py-16">
         <div className="grid grid-cols-2 md:grid-cols-4">
           {[
-            { n: "١٠ﻙ+", l: t("home.packagesDelivered") },
-            { n: "٩٨٪", l: t("home.deliveryRate") },
-            { n: "٢٤/٧", l: t("home.support") },
-            { n: "٥+", l: t("home.countries") },
+            { n: "10ﻙ+", l: t("home.packagesDelivered") },
+            { n: "98٪", l: t("home.deliveryRate") },
+            { n: "24/7", l: t("home.support") },
+            { n: "5+", l: t("home.countries") },
           ].map((s, i) => (
             <div key={i} className="py-6 md:py-0 md:px-8">
               <p className="font-black" style={{ color: INK, fontSize: "clamp(2.6rem,5vw,4rem)", lineHeight: 1 }}>{s.n}</p>
@@ -143,7 +143,7 @@ export default function HomeProfessional() {
         </div>
         {services.map((s, i) => (
           <div key={i} className="wx-row group flex items-center gap-6 md:gap-12 py-7 cursor-default" style={{ borderBottom: `1px solid ${LINE}` }}>
-            <span className="wx-num font-black w-12 md:w-20 flex-shrink-0 transition-colors" style={{ color: FAINT, fontSize: "clamp(1.5rem,3vw,2.4rem)" }}>{`۰${i + 1}`}</span>
+            <span className="wx-num font-black w-12 md:w-20 flex-shrink-0 transition-colors" style={{ color: FAINT, fontSize: "clamp(1.5rem,3vw,2.4rem)" }}>{`0${i + 1}`}</span>
             <h3 className="font-black flex-shrink-0 w-40 md:w-72" style={{ color: INK, fontSize: "clamp(1.1rem,2.2vw,1.7rem)" }}>{s.t}</h3>
             <p className="hidden md:block flex-1 text-base" style={{ color: MUTED }}>{s.d}</p>
             <ArrowUpLeft className="wx-arrow h-6 w-6 md:h-8 md:w-8 flex-shrink-0 transition-transform ms-auto" style={{ color: ACCENT }} />
@@ -159,7 +159,7 @@ export default function HomeProfessional() {
           <div className="grid md:grid-cols-4 gap-10">
             {steps.map((s, i) => (
               <div key={i} className="relative">
-                <p className="font-black mb-4" style={{ color: ACCENT, fontSize: "clamp(3rem,6vw,5rem)", lineHeight: 1 }}>{`۰${i + 1}`}</p>
+                <p className="font-black mb-4" style={{ color: ACCENT, fontSize: "clamp(3rem,6vw,5rem)", lineHeight: 1 }}>{`0${i + 1}`}</p>
                 <h3 className="font-black text-xl mb-2" style={{ color: BONE }}>{s.t}</h3>
                 <p className="text-sm leading-relaxed" style={{ color: "rgba(244,241,234,0.6)" }}>{s.d}</p>
               </div>
@@ -182,7 +182,7 @@ export default function HomeProfessional() {
                 { t: t("home.portalF3T"), d: t("home.portalF3D") },
               ].map((f, i) => (
                 <div key={i} className="flex items-baseline gap-5 py-5" style={{ borderTop: `1px solid ${LINE}` }}>
-                  <span className="font-black text-sm" style={{ color: ACCENT }}>{`۰${i + 1}`}</span>
+                  <span className="font-black text-sm" style={{ color: ACCENT }}>{`0${i + 1}`}</span>
                   <div>
                     <h3 className="font-black text-lg" style={{ color: INK }}>{f.t}</h3>
                     <p className="text-sm mt-0.5" style={{ color: MUTED }}>{f.d}</p>

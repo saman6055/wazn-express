@@ -87,7 +87,7 @@ export function CustomerAnalyticsSection() {
                     </TableCell>
                     <TableCell className="text-end font-semibold">{customer.packageCount}</TableCell>
                     <TableCell className="text-end font-semibold text-green-600 dark:text-green-300">
-                      ${Number(customer.totalCharges || 0).toLocaleString()}
+                      ${Number(customer.totalCharges || 0).toLocaleString("en-GB")}
                     </TableCell>
                   </TableRow>
                 );
@@ -143,7 +143,7 @@ export function CustomerAnalyticsSection() {
                       </div>
                     </TableCell>
                     <TableCell className="text-end font-semibold text-red-600 dark:text-red-300">
-                      -${Math.abs(balance).toLocaleString()}
+                      -${Math.abs(balance).toLocaleString("en-GB")}
                     </TableCell>
                     <TableCell className="text-end">
                       <Badge variant="outline" className="border-red-200 bg-red-50 text-red-700 dark:text-red-300 dark:bg-red-950/30 dark:border-red-800">

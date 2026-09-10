@@ -178,17 +178,17 @@ const [selectedDate, setSelectedDate] = useState(() => {
           <div className="flex items-center justify-center gap-4 text-center">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_ca725c")} </p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">${totalAssets.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">${totalAssets.toLocaleString("en-GB")}</p>
             </div>
             <div className="text-2xl text-muted-foreground">=</div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_439568")} </p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-300">${totalLiabilities.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-300">${totalLiabilities.toLocaleString("en-GB")}</p>
             </div>
             <div className="text-2xl text-muted-foreground">+</div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_e4735e")} </p>
-              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-300">${equity.toLocaleString()}</p>
+              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-300">${equity.toLocaleString("en-GB")}</p>
             </div>
           </div>
         </CardContent>
@@ -247,7 +247,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                       })}
                     </p>
                     <p className="mt-1 text-amber-800 dark:text-amber-300" dir="ltr">
-                      {totalIqd.toLocaleString()} IQD
+                      {totalIqd.toLocaleString("en-GB")} IQD
                     </p>
                     <p className="mt-1 text-amber-700 dark:text-amber-400">
                       {pickLang(language, {
@@ -285,7 +285,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 bg-blue-50 dark:bg-blue-950/40">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-blue-700 dark:text-blue-300">{t("auto.text_6ca2b0")} </span>
-                <span className="text-xl font-bold text-blue-700 dark:text-blue-300">${totalAssets.toLocaleString()}</span>
+                <span className="text-xl font-bold text-blue-700 dark:text-blue-300">${totalAssets.toLocaleString("en-GB")}</span>
               </div>
             </div>
           </CardContent>
@@ -354,7 +354,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 bg-red-50 dark:bg-red-950/40">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-red-700 dark:text-red-300">{t("finance.totalDebt")}</span>
-                <span className="text-xl font-bold text-red-700 dark:text-red-300">${totalLiabilities.toLocaleString()}</span>
+                <span className="text-xl font-bold text-red-700 dark:text-red-300">${totalLiabilities.toLocaleString("en-GB")}</span>
               </div>
             </div>
           </CardContent>
@@ -386,7 +386,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                     ar: "الأصول − الالتزامات",
                     zh: "资产 − 负债",
                   })}
-                  note={`$${totalAssets.toLocaleString()} − $${totalLiabilities.toLocaleString()}`}
+                  note={`$${totalAssets.toLocaleString("en-GB")} − $${totalLiabilities.toLocaleString("en-GB")}`}
                   amount={equity}
                 />
               </div>
@@ -396,7 +396,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-emerald-700 dark:text-emerald-300">{t("auto.text_66dedb")} </span>
-                <span className="text-xl font-bold text-emerald-700 dark:text-emerald-300">${equity.toLocaleString()}</span>
+                <span className="text-xl font-bold text-emerald-700 dark:text-emerald-300">${equity.toLocaleString("en-GB")}</span>
               </div>
             </div>
           </CardContent>
@@ -438,7 +438,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_14042d")} </p>
               <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">
-                ${(totalAssets - totalLiabilities).toLocaleString()}
+                ${(totalAssets - totalLiabilities).toLocaleString("en-GB")}
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_a2f5bf")} </p>
             </div>
@@ -499,7 +499,7 @@ function SheetRow({
         </div>
       </div>
       <span className="font-semibold shrink-0" dir="ltr">
-        ${amount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+        ${amount.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
       </span>
     </div>
   );

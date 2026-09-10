@@ -338,7 +338,7 @@ export default function ExpenseAlerts() {
                             {t("expenseAlerts.threshold") || "سنوور"}
                           </span>
                           <span className="font-bold text-lg">
-                            {alert.currency === 'USD' ? '$' : 'د.ع'}{parseFloat(alert.thresholdAmount).toLocaleString()}
+                            {alert.currency === 'USD' ? '$' : 'د.ع'}{parseFloat(alert.thresholdAmount).toLocaleString("en-GB")}
                           </span>
                         </div>
 
@@ -423,12 +423,12 @@ export default function ExpenseAlerts() {
                                 <span className="flex items-center gap-1">
                                   <DollarSign className="h-3 w-3" />
                                   {t("expenseAlerts.totalExpenses") || "کۆی خەرجی"}: 
-                                  <strong className="text-red-600 dark:text-red-300">${parseFloat(log.totalExpenses).toLocaleString()}</strong>
+                                  <strong className="text-red-600 dark:text-red-300">${parseFloat(log.totalExpenses).toLocaleString("en-GB")}</strong>
                                 </span>
                                 <span>|</span>
                                 <span>
                                   {t("expenseAlerts.threshold") || "سنوور"}: 
-                                  <strong>${parseFloat(log.thresholdAmount).toLocaleString()}</strong>
+                                  <strong>${parseFloat(log.thresholdAmount).toLocaleString("en-GB")}</strong>
                                 </span>
                               </div>
                               <p className="text-xs text-muted-foreground mt-1">

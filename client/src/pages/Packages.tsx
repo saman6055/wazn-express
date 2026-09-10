@@ -1009,7 +1009,7 @@ const [, setLocation] = useLocation();
       pkg.weightKg || "0",
       pkg.calculatedCostUsd || "0",
       pkg.status.replace(/_/g, " "),
-      new Date(pkg.createdAt).toLocaleDateString(),
+      new Date(pkg.createdAt).toLocaleDateString("en-GB"),
       pkg.description || ""
     ]);
 

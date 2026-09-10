@@ -152,9 +152,9 @@ export const CHECKS: readonly CheckDefinition[] = [
     severity: "warning",
     path: "/company/partners",
     title: {
-      ku: "ڕێژەی خاوەندارێتی ١٠٠٪ نییە",
+      ku: "ڕێژەی خاوەندارێتی 100٪ نییە",
       en: "Ownership shares do not total 100%",
-      ar: "حصص الملكية لا تساوي ١٠٠٪",
+      ar: "حصص الملكية لا تساوي 100٪",
       zh: "所有权比例合计不足 100%",
     },
     meaning: {
@@ -271,9 +271,9 @@ export const CHECKS: readonly CheckDefinition[] = [
     severity: "warning",
     path: "/batches",
     title: {
-      ku: "باچی زیاتر لە ٣٠ ڕۆژ کراوە",
+      ku: "باچی زیاتر لە 30 ڕۆژ کراوە",
       en: "Batches open more than 30 days",
-      ar: "دفعات مفتوحة أكثر من ٣٠ يوماً",
+      ar: "دفعات مفتوحة أكثر من 30 يوماً",
       zh: "开启超过 30 天的批次",
     },
     meaning: {

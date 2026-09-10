@@ -143,7 +143,7 @@ export async function generateBatchFinancialPDF(data: BatchFinancialData): Promi
 
       doc.fillColor(COLORS.gray)
         .fontSize(10)
-        .text(`Generated: ${new Date().toLocaleDateString()}`, 50, 165);
+        .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 50, 165);
 
       // Batch Info Box
       const boxY = 200;
@@ -579,7 +579,7 @@ export async function generateCustomerStatementPDF(data: {
       // Footer
       doc.fillColor(COLORS.gray)
         .fontSize(8)
-        .text(`Generated: ${new Date().toLocaleDateString()}`, 50, 750)
+        .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 50, 750)
         .text(`${COMPANY_INFO.name} - ${COMPANY_INFO.website}`, 50, 750, { align: "right" });
 
       doc.end();
@@ -648,7 +648,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
         .text(`${data.month} ${data.year}`, 50, 168);
 
       doc.fontSize(10)
-        .text(`Generated: ${new Date().toLocaleDateString()}`, 50, 185);
+        .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 50, 185);
 
       // Revenue Section
       let yPos = 220;
@@ -664,7 +664,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
       doc.fillColor(COLORS.dark)
         .fontSize(10)
         .text("Package Payments (داهاتی پاکەتەکان)", 60, yPos + 8)
-        .text(`$${data.revenue.packagePayments.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.revenue.packagePayments.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 25;
       doc.rect(50, yPos, 495, 25)
@@ -673,7 +673,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
 
       doc.fillColor(COLORS.dark)
         .text("Full Package Profit (قازانجی Full Package)", 60, yPos + 8)
-        .text(`$${data.revenue.fullPackageProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.revenue.fullPackageProfit.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 25;
       doc.rect(50, yPos, 495, 25)
@@ -682,7 +682,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
 
       doc.fillColor(COLORS.dark)
         .text("Other Revenue (داهاتی تر)", 60, yPos + 8)
-        .text(`$${data.revenue.otherRevenue.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.revenue.otherRevenue.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 30;
       doc.rect(50, yPos, 495, 30)
@@ -693,7 +693,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
         .fontSize(12)
         .text("Total Revenue (کۆی داهات)", 60, yPos + 9)
         .fontSize(14)
-        .text(`$${data.revenue.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
+        .text(`$${data.revenue.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
 
       // Expenses Section
       yPos += 50;
@@ -711,7 +711,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
         doc.fillColor(COLORS.dark)
           .fontSize(10)
           .text(expense.category, 60, yPos + 8)
-          .text(`-$${expense.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+          .text(`-$${expense.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
         yPos += 25;
       });
@@ -724,7 +724,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
         .fontSize(12)
         .text("Total Expenses (کۆی مەسروفات)", 60, yPos + 9)
         .fontSize(14)
-        .text(`-$${data.expenses.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
+        .text(`-$${data.expenses.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
 
       // Net Profit
       yPos += 50;
@@ -739,7 +739,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
         .fontSize(16)
         .text("Net Profit (قازانجی نێت)", 60, yPos + 10)
         .fontSize(24)
-        .text(`$${data.netProfit.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 400, yPos + 12, { align: "right", width: 135 });
+        .text(`$${data.netProfit.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 400, yPos + 12, { align: "right", width: 135 });
 
       // Footer
       doc.fillColor(COLORS.gray)
@@ -822,7 +822,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
       doc.fillColor(COLORS.dark)
         .fontSize(10)
         .text("Cash (نەقد)", 60, yPos + 8)
-        .text(`$${data.assets.cash.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.assets.cash.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 25;
       doc.rect(50, yPos, 495, 25)
@@ -830,7 +830,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         .fill();
       doc.fillColor(COLORS.dark)
         .text("Bank Accounts (بانک)", 60, yPos + 8)
-        .text(`$${data.assets.bank.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.assets.bank.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 25;
       doc.rect(50, yPos, 495, 25)
@@ -838,7 +838,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         .fill();
       doc.fillColor(COLORS.dark)
         .text("Accounts Receivable (قەرزی کڕیاران)", 60, yPos + 8)
-        .text(`$${data.assets.receivables.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.assets.receivables.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 30;
       doc.rect(50, yPos, 495, 30)
@@ -848,7 +848,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         .fontSize(12)
         .text("Total Assets (کۆی دراوە)", 60, yPos + 9)
         .fontSize(14)
-        .text(`$${data.assets.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
+        .text(`$${data.assets.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
 
       // Liabilities Section
       yPos += 50;
@@ -865,7 +865,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         doc.fillColor(COLORS.dark)
           .fontSize(10)
           .text(debt.name, 60, yPos + 8)
-          .text(`$${debt.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+          .text(`$${debt.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
         yPos += 25;
       });
 
@@ -886,7 +886,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         .fontSize(12)
         .text("Total Liabilities (کۆی قەرز)", 60, yPos + 9)
         .fontSize(14)
-        .text(`$${data.liabilities.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
+        .text(`$${data.liabilities.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
 
       // Equity Section
       yPos += 50;
@@ -901,7 +901,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
       doc.fillColor(COLORS.dark)
         .fontSize(10)
         .text("Partner Capital (سەرمایەی شەریکان)", 60, yPos + 8)
-        .text(`$${data.equity.partnerCapital.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.equity.partnerCapital.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 25;
       doc.rect(50, yPos, 495, 25)
@@ -909,7 +909,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         .fill();
       doc.fillColor(COLORS.dark)
         .text("Retained Earnings (قازانجی کۆگاکراو)", 60, yPos + 8)
-        .text(`$${data.equity.retainedEarnings.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+        .text(`$${data.equity.retainedEarnings.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
       yPos += 30;
       doc.rect(50, yPos, 495, 30)
@@ -919,7 +919,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         .fontSize(12)
         .text("Total Equity (کۆی سەرمایە)", 60, yPos + 9)
         .fontSize(14)
-        .text(`$${data.equity.total.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
+        .text(`$${data.equity.total.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
 
       // Footer
       doc.fillColor(COLORS.gray)
@@ -1003,7 +1003,7 @@ export async function generatePartnerReportPDF(data: PartnerReportData): Promise
       doc.fillColor(COLORS.primary)
         .fontSize(11)
         .text("Opening Balance (باڵانسی سەرەتا)", 60, yPos + 9)
-        .text(`$${data.openingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
+        .text(`$${data.openingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 430, yPos + 9, { align: "right", width: 105 });
 
       // Transactions Table
       yPos += 50;
@@ -1039,10 +1039,10 @@ export async function generatePartnerReportPDF(data: PartnerReportData): Promise
 
         const amountColor = txn.amount >= 0 ? COLORS.success : COLORS.danger;
         doc.fillColor(amountColor)
-          .text(`${txn.amount >= 0 ? '+' : ''}$${txn.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 370, yPos + 7, { align: "right", width: 60 });
+          .text(`${txn.amount >= 0 ? '+' : ''}$${txn.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 370, yPos + 7, { align: "right", width: 60 });
 
         doc.fillColor(COLORS.dark)
-          .text(`$${txn.balance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 7, { align: "right", width: 85 });
+          .text(`$${txn.balance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 7, { align: "right", width: 85 });
 
         yPos += 22;
       });
@@ -1060,12 +1060,12 @@ export async function generatePartnerReportPDF(data: PartnerReportData): Promise
         .fontSize(12)
         .text("Closing Balance (باڵانسی کۆتایی)", 60, yPos + 10)
         .fontSize(16)
-        .text(`$${data.closingBalance.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 420, yPos + 10, { align: "right", width: 115 });
+        .text(`$${data.closingBalance.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 420, yPos + 10, { align: "right", width: 115 });
 
       // Footer
       doc.fillColor(COLORS.gray)
         .fontSize(8)
-        .text(`Generated: ${new Date().toLocaleDateString()}`, 50, 750)
+        .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 50, 750)
         .text(`${COMPANY_INFO.name} - ${COMPANY_INFO.website}`, 50, 750, { align: "right" });
 
       doc.end();
@@ -1136,7 +1136,7 @@ export async function generateExpenseReportPDF(data: ExpenseReportData): Promise
         .fontSize(12)
         .text("Total Expenses (کۆی مەسروفات)", 60, 175)
         .fontSize(24)
-        .text(`$${data.totalExpenses.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 350, 170, { align: "right", width: 185 });
+        .text(`$${data.totalExpenses.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 350, 170, { align: "right", width: 185 });
 
       // Category Breakdown
       let yPos = 230;
@@ -1155,7 +1155,7 @@ export async function generateExpenseReportPDF(data: ExpenseReportData): Promise
           .fontSize(10)
           .text(cat.category, 60, yPos + 8)
           .text(`${cat.percentage.toFixed(1)}%`, 350, yPos + 8)
-          .text(`$${cat.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
+          .text(`$${cat.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 8, { align: "right", width: 85 });
 
         yPos += 25;
       });
@@ -1196,7 +1196,7 @@ export async function generateExpenseReportPDF(data: ExpenseReportData): Promise
           .text(expense.vendor.substring(0, 15), 350, yPos + 6);
 
         doc.fillColor(COLORS.danger)
-          .text(`$${expense.amount.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 450, yPos + 6, { align: "right", width: 85 });
+          .text(`$${expense.amount.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 450, yPos + 6, { align: "right", width: 85 });
 
         yPos += 20;
       }
@@ -1210,7 +1210,7 @@ export async function generateExpenseReportPDF(data: ExpenseReportData): Promise
       // Footer
       doc.fillColor(COLORS.gray)
         .fontSize(8)
-        .text(`Generated: ${new Date().toLocaleDateString()}`, 50, 750)
+        .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 50, 750)
         .text(`${COMPANY_INFO.name} - ${COMPANY_INFO.website}`, 50, 750, { align: "right" });
 
       doc.end();
@@ -1264,7 +1264,7 @@ export async function generateDebtSchedulePDF(data: DebtScheduleData): Promise<s
 
       doc.fillColor(COLORS.gray)
         .fontSize(10)
-        .text(`As of ${new Date().toLocaleDateString()}`, 50, 128);
+        .text(`As of ${new Date().toLocaleDateString("en-GB")}`, 50, 128);
 
       // Total Debt Box
       doc.rect(50, 160, 495, 50)
@@ -1275,7 +1275,7 @@ export async function generateDebtSchedulePDF(data: DebtScheduleData): Promise<s
         .fontSize(12)
         .text("Total Outstanding Debt (کۆی قەرزی ماوە)", 60, 175)
         .fontSize(24)
-        .text(`$${data.totalDebt.toLocaleString(undefined, { minimumFractionDigits: 2 })}`, 350, 170, { align: "right", width: 185 });
+        .text(`$${data.totalDebt.toLocaleString("en-US", { minimumFractionDigits: 2 })}`, 350, 170, { align: "right", width: 185 });
 
       // Debts Table
       let yPos = 230;
@@ -1304,11 +1304,11 @@ export async function generateDebtSchedulePDF(data: DebtScheduleData): Promise<s
           .fontSize(8)
           .text(debt.creditor.substring(0, 15), 55, yPos + 8)
           .text(debt.type, 130, yPos + 8)
-          .text(`$${debt.originalAmount.toLocaleString()}`, 180, yPos + 8)
-          .text(`$${debt.remainingAmount.toLocaleString()}`, 250, yPos + 8)
+          .text(`$${debt.originalAmount.toLocaleString("en-GB")}`, 180, yPos + 8)
+          .text(`$${debt.remainingAmount.toLocaleString("en-GB")}`, 250, yPos + 8)
           .text(`${debt.interestRate}%`, 330, yPos + 8)
           .text(debt.dueDate, 390, yPos + 8)
-          .text(`$${debt.monthlyPayment.toLocaleString()}`, 470, yPos + 8);
+          .text(`$${debt.monthlyPayment.toLocaleString("en-GB")}`, 470, yPos + 8);
 
         yPos += 25;
       });
@@ -1322,7 +1322,7 @@ export async function generateDebtSchedulePDF(data: DebtScheduleData): Promise<s
       // Footer
       doc.fillColor(COLORS.gray)
         .fontSize(8)
-        .text(`Generated: ${new Date().toLocaleDateString()}`, 50, 750)
+        .text(`Generated: ${new Date().toLocaleDateString("en-GB")}`, 50, 750)
         .text(`${COMPANY_INFO.name} - ${COMPANY_INFO.website}`, 50, 750, { align: "right" });
 
       doc.end();

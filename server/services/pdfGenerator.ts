@@ -51,7 +51,7 @@ export async function generateDashboardPDF(data: DashboardReportData): Promise<B
          .text('Dashboard Report', 50, 80, { align: 'center' });
       
       doc.fontSize(10).fillColor('#718096')
-         .text(`Generated: ${data.generatedAt.toLocaleString()}`, 50, 105, { align: 'center' });
+         .text(`Generated: ${data.generatedAt.toLocaleString("en-GB")}`, 50, 105, { align: 'center' });
 
       // Divider line
       doc.moveTo(50, 130).lineTo(545, 130).strokeColor('#e2e8f0').stroke();
@@ -64,16 +64,16 @@ export async function generateDashboardPDF(data: DashboardReportData): Promise<B
       const colWidth = 120;
       
       // Today's Revenue
-      drawStatBox(doc, 50, statsY, "Today's Revenue", `$${data.financialStats.todayRevenue.toLocaleString()}`, '#48bb78');
+      drawStatBox(doc, 50, statsY, "Today's Revenue", `$${data.financialStats.todayRevenue.toLocaleString("en-GB")}`, '#48bb78');
       
       // Week's Revenue
-      drawStatBox(doc, 50 + colWidth + 15, statsY, "Week's Revenue", `$${data.financialStats.weekRevenue.toLocaleString()}`, '#4299e1');
+      drawStatBox(doc, 50 + colWidth + 15, statsY, "Week's Revenue", `$${data.financialStats.weekRevenue.toLocaleString("en-GB")}`, '#4299e1');
       
       // Month's Revenue
-      drawStatBox(doc, 50 + (colWidth + 15) * 2, statsY, "Month's Revenue", `$${data.financialStats.monthRevenue.toLocaleString()}`, '#9f7aea');
+      drawStatBox(doc, 50 + (colWidth + 15) * 2, statsY, "Month's Revenue", `$${data.financialStats.monthRevenue.toLocaleString("en-GB")}`, '#9f7aea');
       
       // Total Debt
-      drawStatBox(doc, 50 + (colWidth + 15) * 3, statsY, 'Total Debt', `$${data.financialStats.totalDebt.toLocaleString()}`, '#f56565');
+      drawStatBox(doc, 50 + (colWidth + 15) * 3, statsY, 'Total Debt', `$${data.financialStats.totalDebt.toLocaleString("en-GB")}`, '#f56565');
 
       // Package Stats Section
       doc.fontSize(14).font('Helvetica-Bold').fillColor('#2d3748')
@@ -191,7 +191,7 @@ export async function generateDashboardPDF(data: DashboardReportData): Promise<B
         doc.switchToPage(i);
         doc.fontSize(8).fillColor('#a0aec0')
            .text(
-             `Page ${i + 1} of ${pageCount} | Wazn Express Dashboard Report | ${data.generatedAt.toLocaleDateString()}`,
+             `Page ${i + 1} of ${pageCount} | Wazn Express Dashboard Report | ${data.generatedAt.toLocaleDateString("en-GB")}`,
              50, 780, { align: 'center' }
            );
       }
@@ -528,7 +528,7 @@ export function applyTemplateFooter(
   
   // Page number and date
   doc.text(
-    `Page ${pageNum} of ${totalPages} | ${settings.companyName} | ${date.toLocaleDateString()}`,
+    `Page ${pageNum} of ${totalPages} | ${settings.companyName} | ${date.toLocaleDateString("en-GB")}`,
     50, 775, { align: 'center' }
   );
   

@@ -8,7 +8,7 @@ import { ImageIcon, Store as StoreIcon, Tag } from "lucide-react";
 
 const pName = (p: any, language: string) =>
   pickLang(language, { ku: p?.nameKu || p?.nameEn, en: p?.nameEn, ar: p?.nameAr || p?.nameEn, zh: p?.nameEn }) || "";
-const money = (v: any, currency: string) => `${Number(v).toLocaleString(undefined, { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
+const money = (v: any, currency: string) => `${Number(v).toLocaleString("en-US", { minimumFractionDigits: 0, maximumFractionDigits: 2 })} ${currency}`;
 
 export default function StoreHome() {
   const { language } = useLanguage();

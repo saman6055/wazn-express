@@ -139,7 +139,7 @@ export default function AwaitingArrival() {
           <Stat value={String(totals.total)} caption={label({ ku: "چاوەڕوانی", en: "waiting", ar: "بالانتظار", zh: "等待中" })} icon={Hourglass} />
           <Stat value={String(totals.customers)} caption={label({ ku: "کڕیار", en: "customers", ar: "عميل", zh: "客户" })} icon={Users} />
           <Stat value={String(totals.fromCustomer)} caption={label({ ku: "لە پۆرتالەوە", en: "from portal", ar: "من البوابة", zh: "来自门户" })} icon={UserCircle} />
-          <Stat value={String(totals.late)} caption={label({ ku: "زیاتر لە ٧ ڕۆژ", en: "over 7 days", ar: "أكثر من ٧ أيام", zh: "超过 7 天" })} icon={AlertTriangle} warn={totals.late > 0} />
+          <Stat value={String(totals.late)} caption={label({ ku: "زیاتر لە 7 ڕۆژ", en: "over 7 days", ar: "أكثر من 7 أيام", zh: "超过 7 天" })} icon={AlertTriangle} warn={totals.late > 0} />
         </div>
       </div>
 

@@ -206,7 +206,7 @@ export default function UnifiedOrdersDashboard() {
               { label: pickLang(language, { ku: 'کۆی گشتی', en: 'Total', ar: 'الإجمالي', zh: '总计' }), value: stats.total, icon: Package, color: 'from-white/20 to-white/10' },
               { label: pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全包' }), value: stats.fullPackage, icon: Package, color: 'from-emerald-400/30 to-emerald-500/20' },
               { label: pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Commission', ar: 'بالعمولة', zh: '代购' }), value: stats.commission, icon: Gem, color: 'from-amber-400/30 to-amber-500/20' },
-              { label: pickLang(language, { ku: 'کۆی داهات', en: 'Total Revenue', ar: 'إجمالي الإيرادات', zh: '总收入' }), value: `$${stats.totalRevenue.toLocaleString()}`, icon: DollarSign, color: 'from-green-400/30 to-green-500/20' },
+              { label: pickLang(language, { ku: 'کۆی داهات', en: 'Total Revenue', ar: 'إجمالي الإيرادات', zh: '总收入' }), value: `$${stats.totalRevenue.toLocaleString("en-GB")}`, icon: DollarSign, color: 'from-green-400/30 to-green-500/20' },
             ].map((stat, i) => (
               <div key={i} className={`rounded-xl bg-gradient-to-br ${stat.color} p-4 backdrop-blur-sm`}>
                 <div className="flex items-center justify-between">

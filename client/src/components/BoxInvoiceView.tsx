@@ -45,7 +45,7 @@ export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, lan
               {lines.length} {pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}
               {totals.weightKg > 0 ? ` · ${totals.weightKg} kg` : ""}
               {destination ? ` · ${destination}` : ""}
-              {deliveredAt ? ` · ${new Date(deliveredAt).toLocaleDateString()}` : ""}
+              {deliveredAt ? ` · ${new Date(deliveredAt).toLocaleDateString("en-GB")}` : ""}
             </p>
           </div>
           {onPrint && (

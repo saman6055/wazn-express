@@ -151,7 +151,7 @@ export default function ProfitLossReport() {
     ? ["کانوونی دووەم", "شوبات", "ئادار", "نیسان", "ئایار", "حوزەیران", "تەممووز", "ئاب", "ئەیلوول", "تشرینی یەکەم", "تشرینی دووەم", "کانوونی یەکەم"]
     : ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
 
-  const fmt = (v: number) => `$${v.toLocaleString()}`;
+  const fmt = (v: number) => `$${v.toLocaleString("en-GB")}`;
   const pct = (v: number, total: number) => total > 0 ? `${((v / total) * 100).toFixed(1)}%` : "0%";
 
   return (
@@ -256,7 +256,7 @@ export default function ProfitLossReport() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={revenueChartData} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v.toLocaleString("en-GB")}`} />
                         <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} />
                         <Tooltip
                           contentStyle={{
@@ -264,7 +264,7 @@ export default function ProfitLossReport() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                           }}
-                          formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                          formatter={(value: number) => [`$${value.toLocaleString("en-GB")}`, ""]}
                         />
                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                           {revenueChartData.map((entry, index) => (
@@ -312,7 +312,7 @@ export default function ProfitLossReport() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                           }}
-                          formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                          formatter={(value: number) => [`$${value.toLocaleString("en-GB")}`, ""]}
                         />
                         <Legend />
                       </PieChart>
@@ -469,7 +469,7 @@ export default function ProfitLossReport() {
                     <ResponsiveContainer width="100%" height="100%">
                       <BarChart data={expenseChartData} layout="vertical">
                         <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
-                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                        <XAxis type="number" tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v.toLocaleString("en-GB")}`} />
                         <YAxis dataKey="name" type="category" width={120} tick={{ fontSize: 10 }} />
                         <Tooltip
                           contentStyle={{
@@ -477,7 +477,7 @@ export default function ProfitLossReport() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                           }}
-                          formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                          formatter={(value: number) => [`$${value.toLocaleString("en-GB")}`, ""]}
                         />
                         <Bar dataKey="value" radius={[0, 4, 4, 0]}>
                           {expenseChartData.map((entry, index) => (
@@ -525,7 +525,7 @@ export default function ProfitLossReport() {
                             border: "1px solid hsl(var(--border))",
                             borderRadius: "8px",
                           }}
-                          formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                          formatter={(value: number) => [`$${value.toLocaleString("en-GB")}`, ""]}
                         />
                         <Legend />
                       </PieChart>
@@ -549,14 +549,14 @@ export default function ProfitLossReport() {
                     <ComposedChart data={trendData}>
                       <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                       <XAxis dataKey="name" tick={{ fontSize: 10 }} />
-                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v.toLocaleString()}`} />
+                      <YAxis tick={{ fontSize: 11 }} tickFormatter={(v) => `$${v.toLocaleString("en-GB")}`} />
                       <Tooltip
                         contentStyle={{
                           backgroundColor: "hsl(var(--card))",
                           border: "1px solid hsl(var(--border))",
                           borderRadius: "8px",
                         }}
-                        formatter={(value: number) => [`$${value.toLocaleString()}`, ""]}
+                        formatter={(value: number) => [`$${value.toLocaleString("en-GB")}`, ""]}
                       />
                       <Legend />
                       <Bar dataKey="revenue" name={t("profitLoss.revenue")} fill="#22c55e" radius={[4, 4, 0, 0]} />

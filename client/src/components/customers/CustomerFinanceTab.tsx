@@ -79,7 +79,7 @@ export function CustomerFinanceTab({
                         <div className="bg-popover text-popover-foreground text-xs px-2 py-1 rounded shadow-lg whitespace-nowrap border">
                           <div className="font-medium">${balance}</div>
                           <div className="text-muted-foreground">
-                            {new Date(entry.createdAt).toLocaleDateString()}
+                            {new Date(entry.createdAt).toLocaleDateString("en-GB")}
                           </div>
                         </div>
                       </div>
@@ -91,7 +91,7 @@ export function CustomerFinanceTab({
             <div className="flex justify-between mt-2 text-xs text-muted-foreground">
               <span>
                 {ledger.length > 0
-                  ? new Date(ledger[ledger.length - 1].createdAt).toLocaleDateString()
+                  ? new Date(ledger[ledger.length - 1].createdAt).toLocaleDateString("en-GB")
                   : ""}
               </span>
               <span>{t("time.justNow")}</span>
@@ -142,7 +142,7 @@ export function CustomerFinanceTab({
                 return (
                   <TableRow key={entry.id} className="hover:bg-muted/50">
                     <TableCell className="text-sm">
-                      {new Date(entry.createdAt).toLocaleDateString()}
+                      {new Date(entry.createdAt).toLocaleDateString("en-GB")}
                     </TableCell>
                     <TableCell>
                       <Badge
@@ -213,7 +213,7 @@ export function CustomerFinanceTab({
                 <TableRow key={invoice.id} className="hover:bg-muted/50">
                   <TableCell className="font-mono text-sm">{invoice.invoiceNumber}</TableCell>
                   <TableCell className="text-sm">
-                    {new Date(invoice.createdAt).toLocaleDateString()}
+                    {new Date(invoice.createdAt).toLocaleDateString("en-GB")}
                   </TableCell>
                   <TableCell className="font-mono text-sm">${invoice.totalUsd}</TableCell>
                   <TableCell>

@@ -352,7 +352,7 @@ const [startDate, setStartDate] = useState<string>("");
                         </Badge>
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
-                        {new Date(service.createdAt).toLocaleDateString()}
+                        {new Date(service.createdAt).toLocaleDateString("en-GB")}
                       </TableCell>
                     </TableRow>
                   );

@@ -344,7 +344,7 @@ export default function ScanDashboard() {
                         {pickLang(language, { ku: "دوایین سکانەکان", en: "Recent Scans", ar: "عمليات المسح الأخيرة", zh: "最近扫描" })}
                       </CardTitle>
                       <CardDescription>
-                        {pickLang(language, { ku: "٥ سکانی کۆتایی", en: "Last 5 scans", ar: "آخر 5 عمليات مسح", zh: "最近 5 次扫描" })}
+                        {pickLang(language, { ku: "5 سکانی کۆتایی", en: "Last 5 scans", ar: "آخر 5 عمليات مسح", zh: "最近 5 次扫描" })}
                       </CardDescription>
                     </div>
                   </div>

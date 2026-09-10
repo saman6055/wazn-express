@@ -90,7 +90,7 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
                   {L({ ku: "بەسەردەچێت", en: "Expires", ar: "ينتهي", zh: "到期" })}{" "}
                   {/* Was hardcoded to the Arabic locale with a spelled-out
                       month, so an English or Chinese reader was told their
-                      link expires "٢٤ تموز". The portal has one formatter. */}
+                      link expires "24 تموز". The portal has one formatter. */}
                   {formatPortalDate(link.expiresAt, language)}
                 </p>
               </div>
