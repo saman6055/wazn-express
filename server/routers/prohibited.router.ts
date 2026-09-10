@@ -46,6 +46,16 @@ async function reverseProhibitedFee(record: any, staffId: number): Promise<numbe
   return amount;
 }
 
+/**
+ * A prohibited-package row as its customer may see it. The staff member who
+ * registered it and the internal ledger row id stay with us; the reason note
+ * is written for the customer's decision screen and is kept.
+ */
+function forCustomer<T extends { createdById?: unknown; ledgerTransactionId?: unknown }>(row: T) {
+  const { createdById: _createdById, ledgerTransactionId: _ledgerTransactionId, ...visible } = row;
+  return visible;
+}
+
 export const prohibitedRouter = router({
   // ---- Staff: quick register ---------------------------------------------
   register: staffProcedure
@@ -177,7 +187,7 @@ export const prohibitedRouter = router({
   getMine: protectedProcedure.query(async ({ ctx }) => {
     const customerId = await currentCustomerId(ctx);
     if (!customerId) return [];
-    return db.getProhibitedPackagesByCustomer(customerId);
+    return (await db.getProhibitedPackagesByCustomer(customerId)).map(forCustomer);
   }),
 
   markViewed: protectedProcedure
@@ -185,7 +195,8 @@ export const prohibitedRouter = router({
     .mutation(async ({ input, ctx }) => {
       const customerId = await currentCustomerId(ctx);
       if (!customerId) throw new TRPCError({ code: "UNAUTHORIZED", message: "No customer" });
-      return db.markProhibitedViewed(input.id, customerId);
+      const row = await db.markProhibitedViewed(input.id, customerId);
+      return row ? forCustomer(row) : row;
     }),
 
   chooseResolution: protectedProcedure
@@ -202,6 +213,6 @@ export const prohibitedRouter = router({
       }
       const updated = await db.chooseProhibitedResolution(input.id, customerId, input.choice, input.reshipAddress?.trim() || null);
       if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
-      return updated;
+      return forCustomer(updated);
     }),
 });

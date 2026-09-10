@@ -1,7 +1,8 @@
 import { randomBytes } from "crypto";
 import { eq, and, desc, isNull, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { packageShareLinks, packages, batches } from "../../drizzle/schema";
+import { packageShareLinks, packages, batches, fullPackageOrders } from "../../drizzle/schema";
+import { concealsSizeAndCarriage } from "@shared/fullPackagePrivacy";
 import type { PackageShareLink } from "../../drizzle/schema/packages.schema";
 import { appLogger } from "../utils/logger";
 import { toShareableParcel, shareLinkUsable, SHARE_LINK_DAYS, type ShareableParcel } from "@shared/shareLink";
@@ -128,9 +129,12 @@ export async function resolveShareLink(token: string): Promise<ShareableParcel |
         photos: packages.photos,
         batchStatus: batches.status,
         estimatedArrival: batches.estimatedArrival,
+        // Needed only to decide whether the weight may be shown at all.
+        orderType: fullPackageOrders.orderType,
       })
       .from(packages)
       .leftJoin(batches, eq(batches.id, packages.batchId))
+      .leftJoin(fullPackageOrders, eq(fullPackageOrders.id, packages.fullPackageOrderId))
       .where(eq(packages.id, link!.packageId))
       .limit(1);
     if (!row) return null;
@@ -142,8 +146,12 @@ export async function resolveShareLink(token: string): Promise<ShareableParcel |
       .set({ viewCount: sql`${packageShareLinks.viewCount} + 1`, lastViewedAt: new Date() })
       .where(eq(packageShareLinks.id, link!.id));
 
+    // A full-package parcel's weight is concealed everywhere else in the
+    // portal; a public link the same customer made must not be the way round.
+    const { orderType, ...parcel } = row;
     return toShareableParcel({
-      ...row,
+      ...parcel,
+      weightKg: concealsSizeAndCarriage(orderType) ? null : parcel.weightKg,
       photoUrl: Array.isArray(row.photos) && row.photos.length > 0 ? row.photos[0]! : null,
     });
   } catch (err) {

@@ -86,7 +86,11 @@ function visibleFields(o: AnyRow) {
     quantity: o.quantity ?? null,
     color: o.color ?? null,
     size: o.size ?? null,
-    notes: o.notes ?? null,
+    // The customer's own words. `notes` is the office's free text from the
+    // admin order form — a packing instruction, a remark about the
+    // customer — and it was travelling to five portal screens that render
+    // none of it. internalNotes never did.
+    notes: o.customerNotes ?? null,
 
     // What the customer pays, and what they have already paid. Never what we
     // paid, and never the margin.
@@ -134,4 +138,5 @@ export const FORBIDDEN_ORDER_FIELDS = [
   "passwordHash",
   "passportUrl",
   "nationalIdUrl",
+  "internalNotes",
 ] as const;

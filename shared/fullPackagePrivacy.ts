@@ -60,6 +60,12 @@ export function concealParcelSize<T extends Record<string, unknown>>(row: T): T 
  * The same refusal for an order row (the fields carry different names there).
  * `shippingChargedUsd` survives on purpose: it is a charge the customer pays
  * and can be asked about; `shippingCostUsd` is what the freight cost us.
+ *
+ * `itemPriceUsd` and `commissionFeeUsd` go too. On an agreed-price order
+ * the customer pays `sellingPriceUsd` and nothing else; if the office filled
+ * in what the goods cost, printing it beside the agreed price is the same
+ * subtraction this file exists to prevent. Commission orders never pass
+ * through here, so their customers still see both halves of their bill.
  */
 export function concealOrderSize<T extends Record<string, unknown>>(order: T): T & { sizeConcealed: true } {
   return {
@@ -70,6 +76,8 @@ export function concealOrderSize<T extends Record<string, unknown>>(order: T): T
     dimensionWidth: null,
     dimensionHeight: null,
     shippingCostUsd: null,
+    itemPriceUsd: null,
+    commissionFeeUsd: null,
     sizeConcealed: true,
   };
 }

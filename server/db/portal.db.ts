@@ -1,3 +1,4 @@
+import { toCustomerVisibleBatch } from "../lib/customerVisibleBatch";
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
@@ -229,31 +230,11 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
       // The cost columns are our side of the trade — what the carrier and
       // supplier charge US per kg/cbm — and next to the selling rate they
       // spell out the margin, so they never leave the building.
-      const {
-        costPerKg: _costPerKg,
-        costPerCbm: _costPerCbm,
-        shippingCost: _shippingCost,
-        shipmentTrackings: _internalTrackings,
-        /**
-         * Free text written by staff about the whole container — a customer
-         * who has not paid, a parcel held back, whatever needed saying that
-         * day. It was travelling to every customer in the batch and being
-         * rendered by none of them.
-         */
-        notes: _notes,
-        /**
-         * The rest of the container's own measurements, and who made it.
-         * Everybody's goods added together, and an internal user id. The
-         * customer's own share is `customerChargeable`, computed above.
-         */
-        totalWeight: _totalWeight,
-        actualWeightKg: _actualWeightKg,
-        actualCbm: _actualCbm,
-        chargedWeightKg: _chargedWeightKg,
-        chargedCbm: _chargedCbm,
-        createdById: _createdById,
-        ...customerVisible
-      } = batch;
+      // An allow-list, not a strip-list — see server/lib/customerVisibleBatch.
+      // The cost columns, staff notes, the container's own totals and our
+      // internal trackings never leave the building; nor does anything added
+      // to the table later until somebody decides a customer should see it.
+      const customerVisible = toCustomerVisibleBatch(batch);
       return {
         ...customerVisible,
         /**
@@ -282,7 +263,10 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
   const db = await getDb();
   if (!db) return [];
 
-  const customerPackages = await db.select().from(packages)
+  // The allow-list, like every other parcel query here. This one was
+  // select(): the signed QR payload, the delivery signature and photo, the
+  // office's notes and four staff user ids went to the batch detail page.
+  const customerPackages = await db.select(CUSTOMER_PACKAGE_FIELDS).from(packages)
     .where(and(
       eq(packages.customerId, customerId),
       eq(packages.batchId, batchId)
@@ -852,11 +836,26 @@ export async function getAllClaimRequests(options?: {
 }
 
 // Get claim requests by customer
-export async function getClaimRequestsByCustomer(customerId: number): Promise<PackageClaimRequest[]> {
+export async function getClaimRequestsByCustomer(customerId: number) {
   const db = await getDb();
   if (!db) return [];
-  
-  return db.select()
+
+  // Named columns: reviewedById is a staff user id. adminNote stays — the
+  // portal shows it as the office's answer to the claim.
+  return db.select({
+    id: packageClaimRequests.id,
+    requestNumber: packageClaimRequests.requestNumber,
+    packageId: packageClaimRequests.packageId,
+    trackingNumber: packageClaimRequests.trackingNumber,
+    customerId: packageClaimRequests.customerId,
+    status: packageClaimRequests.status,
+    customerNote: packageClaimRequests.customerNote,
+    proofImages: packageClaimRequests.proofImages,
+    adminNote: packageClaimRequests.adminNote,
+    reviewedAt: packageClaimRequests.reviewedAt,
+    createdAt: packageClaimRequests.createdAt,
+    updatedAt: packageClaimRequests.updatedAt,
+  })
     .from(packageClaimRequests)
     .where(eq(packageClaimRequests.customerId, customerId))
     .orderBy(desc(packageClaimRequests.createdAt));

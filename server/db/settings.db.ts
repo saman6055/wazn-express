@@ -999,7 +999,22 @@ export async function getPortalShippingRates() {
   if (!db) return [];
   const now = new Date();
   try {
-    return await db.select().from(pricingRules).where(
+    // Public endpoint, no login. select() published the office's notes on
+    // each rate and the staff id that made it. Named columns only.
+    return await db.select({
+      id: pricingRules.id,
+      shippingType: pricingRules.shippingType,
+      pricePerUnit: pricingRules.pricePerUnit,
+      unit: pricingRules.unit,
+      portalLabelKu: pricingRules.portalLabelKu,
+      portalLabelEn: pricingRules.portalLabelEn,
+      portalLabelAr: pricingRules.portalLabelAr,
+      portalLabelZh: pricingRules.portalLabelZh,
+      portalIcon: pricingRules.portalIcon,
+      portalColor: pricingRules.portalColor,
+      portalBadge: pricingRules.portalBadge,
+      portalSortOrder: pricingRules.portalSortOrder,
+    }).from(pricingRules).where(
       and(
         eq(pricingRules.showOnPortal, true),
         eq(pricingRules.isActive, true),

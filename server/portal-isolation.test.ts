@@ -191,33 +191,28 @@ describe("the batch card carries nothing internal", () => {
     .readFileSync(path.join(ROOT, "db/portal.db.ts"), "utf8")
     .replace(/\r\n/g, "\n");
 
-  const stripped = () => {
-    const at = portalDb.indexOf("        shipmentTrackings: _internalTrackings,");
-    expect(at, "the strip block has moved or gone").toBeGreaterThan(-1);
-    return portalDb.slice(portalDb.lastIndexOf("const {", at), portalDb.indexOf("} = batch;", at));
-  };
-
-  it("drops staff notes about the container", () => {
-    expect(stripped()).toContain("notes: _notes,");
+  // This used to pin a strip-list — the columns somebody had remembered to
+  // remove. It is an allow-list now (server/lib/customerVisibleBatch.ts), so
+  // the check is the other way round: the card is built from it, and every
+  // column the strip-list removed is still absent.
+  it("builds the card from the batch allow-list", () => {
+    const at = portalDb.indexOf("export async function getCustomerBatches(");
+    expect(at, "getCustomerBatches has moved or gone").toBeGreaterThan(-1);
+    const fn = portalDb.slice(at, portalDb.indexOf("\nexport async function", at + 10));
+    expect(fn).toContain("toCustomerVisibleBatch(batch)");
   });
 
-  it("drops the container's own measurements", () => {
-    // Everybody's goods added together. The customer's own share is
-    // `customerChargeable`, computed from their parcels alone.
-    const body = stripped();
-    for (const field of ["totalWeight", "actualWeightKg", "actualCbm", "chargedWeightKg", "chargedCbm"]) {
-      expect(body, `${field} still travels`).toContain(`${field}: _`);
+  it("keeps every column the strip-list removed out of the allow-list", () => {
+    const lib = fs
+      .readFileSync(path.join(ROOT, "lib/customerVisibleBatch.ts"), "utf8")
+      .replace(/\r\n/g, "\n");
+    const keys = lib.slice(lib.indexOf("VISIBLE_BATCH_KEYS = ["), lib.indexOf("] as const;"));
+    expect(keys.length, "the allow-list has moved or gone").toBeGreaterThan(20);
+    for (const field of [
+      "notes", "totalWeight", "actualWeightKg", "actualCbm", "chargedWeightKg", "chargedCbm",
+      "createdById", "costPerKg", "costPerCbm", "shippingCost", "shipmentTrackings",
+    ]) {
+      expect(keys, `${field} is published again`).not.toContain(`"${field}"`);
     }
-  });
-
-  it("drops the internal user id", () => {
-    expect(stripped()).toContain("createdById: _createdById,");
-  });
-
-  it("keeps stripping what it already stripped", () => {
-    const body = stripped();
-    expect(body).toContain("costPerKg: _costPerKg,");
-    expect(body).toContain("costPerCbm: _costPerCbm,");
-    expect(body).toContain("shippingCost: _shippingCost,");
   });
 });

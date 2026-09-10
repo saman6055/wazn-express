@@ -6,6 +6,25 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
+
+/**
+ * May this blog post be read through the public by-id / by-slug readers?
+ *
+ * Staff (signed in, not a customer) preview anything. Everyone else sees
+ * exactly what the published lists show: published, and not expired. The two
+ * readers used to filter nothing, so walking the ids read drafts and archived
+ * posts — and moved their view counters.
+ */
+function blogPostReadable(
+  post: { status?: string | null; expiresAt?: Date | string | null },
+  user: { isCustomer?: boolean | null } | null | undefined,
+): boolean {
+  if (user && !user.isCustomer) return true;
+  if (post.status !== "published") return false;
+  if (post.expiresAt && new Date(post.expiresAt).getTime() <= Date.now()) return false;
+  return true;
+}
+
 export const extraServicesRouter = router({
     // Get all service types
     getServiceTypes: staffProcedure.query(async () => {
@@ -540,8 +559,11 @@ export const blogRouter = router({
     // Get by ID
     getById: publicProcedure
       .input(z.object({ id: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
         const post = await db.getBlogPostById(input.id);
+        // Public, so only what the lists show: published and not expired.
+        // Walking the ids used to read drafts and archived posts too.
+        if (!post || !blogPostReadable(post, ctx.user)) return null;
         if (post) {
           // Increment view count
           await db.incrementBlogViewCount(input.id);
@@ -552,8 +574,9 @@ export const blogRouter = router({
     // Get by slug
     getBySlug: publicProcedure
       .input(z.object({ slug: z.string() }))
-      .query(async ({ input }) => {
+      .query(async ({ ctx, input }) => {
         const post = await db.getBlogPostBySlug(input.slug);
+        if (!post || !blogPostReadable(post, ctx.user)) return null;
         if (post) {
           await db.incrementBlogViewCount(post.id);
         }

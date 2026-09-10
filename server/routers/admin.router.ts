@@ -1204,6 +1204,24 @@ export const permissionsRouter = router({
       }),
 });
 
+/**
+ * A support chat as its customer may see it: who in the office it is
+ * assigned to, the urgency the office gave it and the office's own unread
+ * counter are triage, not conversation. Staff callers get the whole row.
+ */
+function chatForCaller<T extends Record<string, unknown>>(isCustomer: boolean, chat: T) {
+  if (!isCustomer) return chat;
+  const { assignedToId: _a, assignedToName: _n, priority: _p, unreadByStaff: _u, ...visible } = chat;
+  return visible as T;
+}
+
+/** A chat message as a customer may see it: the agent's name, not their user id. */
+function messageForCaller<T extends Record<string, unknown>>(isCustomer: boolean, message: T) {
+  if (!isCustomer) return message;
+  const { senderId: _s, metadata: _m, ...visible } = message;
+  return visible as T;
+}
+
 export const supportChatRouter = router({
     // Get or create a chat for the current customer
     getOrCreateChat: protectedProcedure
@@ -1221,8 +1239,8 @@ export const supportChatRouter = router({
         if (!chat) {
           throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Failed to create chat' });
         }
-        
-        return chat;
+
+        return chatForCaller(true, chat);
       }),
 
     // Get customer's chats
@@ -1237,12 +1255,13 @@ export const supportChatRouter = router({
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Customer access required' });
         }
         
-        return db.getSupportChats({
+        const result = await db.getSupportChats({
           customerId: ctx.user.id,
           status: input?.status,
           limit: input?.limit,
           offset: input?.offset,
         });
+        return { ...result, chats: result.chats.map((c) => chatForCaller(true, c)) };
       }),
 
     // Get all chats (staff only)
@@ -1276,8 +1295,8 @@ export const supportChatRouter = router({
         if (ctx.user.isCustomer && chat.customerId !== ctx.user.id) {
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
         }
-        
-        return chat;
+
+        return chatForCaller(!!ctx.user.isCustomer, chat);
       }),
 
     // Send a message
@@ -1339,11 +1358,12 @@ export const supportChatRouter = router({
           throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
         }
         
-        return db.getChatMessages(input.chatId, {
+        const messages = await db.getChatMessages(input.chatId, {
           limit: input.limit,
           offset: input.offset,
           beforeId: input.beforeId,
         });
+        return messages.map((m) => messageForCaller(!!ctx.user.isCustomer, m));
       }),
 
     // Mark messages as read

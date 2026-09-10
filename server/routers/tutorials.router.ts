@@ -49,8 +49,11 @@ export const tutorialsRouter = router({
       // fallback when nothing exists in theirs yet.
       language: languageSchema.exclude(["all"]).optional(),
     }).optional())
-    .query(async ({ input }) => {
-      return db.getPublishedTutorials(input?.category, input?.language);
+    .query(async ({ ctx, input }) => {
+      const rows = await db.getPublishedTutorials(input?.category, input?.language);
+      if (!ctx.user.isCustomer) return rows;
+      // Who made it and how well it is doing are the office's numbers.
+      return rows.map(({ createdById: _c, viewCount: _v, completedCount: _d, helpfulCount: _h, notHelpfulCount: _n, ...row }) => row);
     }),
 
   /** Section names that actually have published videos. */

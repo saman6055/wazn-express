@@ -486,7 +486,24 @@ export const customerPortalRouter = router({
       .query(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
         const pkg = await db.getPackageByTrackingNumber(input.trackingNumber);
-        const unclaimed = pkg && pkg.isUnclaimed ? pkg : null;
+        // The same columns the unclaimed pool shows — never the whole row,
+        // which carries the signed QR payload and the office's notes.
+        const unclaimed = pkg && pkg.isUnclaimed
+          ? {
+              id: pkg.id,
+              packageCode: pkg.packageCode,
+              trackingNumber: pkg.trackingNumber,
+              description: pkg.description,
+              photos: pkg.photos,
+              status: pkg.status,
+              shippingType: pkg.shippingType,
+              weightKg: pkg.weightKg,
+              volumeCbm: pkg.volumeCbm,
+              isUnclaimed: pkg.isUnclaimed,
+              createdAt: pkg.createdAt,
+              registeredAt: pkg.registeredAt,
+            }
+          : null;
         const declared = await db.findCustomerDeclaredByTracking(customerId, input.trackingNumber);
         return { unclaimed, declared };
       }),
@@ -601,7 +618,8 @@ export const customerPortalRouter = router({
 
     getMyYuanOrders: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
-      return db.getYuanOrdersByCustomer(customerId);
+      const orders = await db.getYuanOrdersByCustomer(customerId);
+      return orders.map(({ handledById: _handledById, ...order }) => order);
     }),
 
     createYuanOrder: customerProcedure
@@ -639,7 +657,8 @@ export const customerPortalRouter = router({
           entityType: "yuan_exchange_order",
           entityId: order.id,
         });
-        return order;
+        const { handledById: _handledById, ...visible } = order;
+        return visible;
       }),
 
     // Get notification count
@@ -752,7 +771,19 @@ export const customerPortalRouter = router({
         
         const ctxCustomer = ctx.user as any;
         return {
-          transaction,
+          // Named fields: the raw ledger row carries the staff member who
+          // posted it and the one who approved it.
+          transaction: {
+            id: transaction.id,
+            transactionNumber: transaction.transactionNumber,
+            transactionType: transaction.transactionType,
+            amountUsd: transaction.amountUsd,
+            description: transaction.description,
+            referenceType: transaction.referenceType,
+            referenceId: transaction.referenceId,
+            invoiceId: transaction.invoiceId,
+            createdAt: transaction.createdAt,
+          },
           customer: {
             fullName: customer?.fullName || ctxCustomer.fullName || ctxCustomer.name,
             customerCode: customer?.customerCode || ctxCustomer.customerCode,
@@ -1019,7 +1050,8 @@ export const customerPortalRouter = router({
     // ============ MESSAGES ============
     getMyMessages: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
-      return db.getConversationMessages(`CONV-${customerId}`);
+      const rows = await db.getConversationMessages(`CONV-${customerId}`);
+      return rows.map(({ senderId: _senderId, ...message }) => message);
     }),
     
     sendMessage: customerProcedure
@@ -1035,7 +1067,9 @@ export const customerPortalRouter = router({
           senderId: ctx.user.id,
         });
         logPortal(ctx, customerId, "send_message", "message", { detail: input.message });
-        return created;
+        if (!created) return created;
+        const { senderId: _senderId, ...message } = created;
+        return message;
       }),
     
     markMessagesAsRead: customerProcedure.mutation(async ({ ctx }) => {

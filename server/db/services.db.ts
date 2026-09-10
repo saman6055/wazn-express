@@ -1166,11 +1166,31 @@ export async function getBlogPostsByCategory(category: string): Promise<BlogPost
 // portal price list. Active-only. Sorted by the existing sortOrder so the
 // admin's manual arrangement in ServiceTypesManagement is respected.
 
-export async function getPortalServiceTypes(): Promise<ServiceType[]> {
+export async function getPortalServiceTypes() {
   const db = await getDb();
   if (!db) return [];
   try {
-    return await db.select().from(serviceTypes)
+    // Public endpoint, no login. select() published `defaultCost` — what the
+    // service costs US — beside the price we charge. Named columns only.
+    return await db.select({
+      id: serviceTypes.id,
+      nameEn: serviceTypes.nameEn,
+      nameKu: serviceTypes.nameKu,
+      nameAr: serviceTypes.nameAr,
+      icon: serviceTypes.icon,
+      color: serviceTypes.color,
+      defaultPrice: serviceTypes.defaultPrice,
+      sortOrder: serviceTypes.sortOrder,
+      portalDescriptionKu: serviceTypes.portalDescriptionKu,
+      portalDescriptionEn: serviceTypes.portalDescriptionEn,
+      portalDescriptionAr: serviceTypes.portalDescriptionAr,
+      portalDescriptionZh: serviceTypes.portalDescriptionZh,
+      portalBadge: serviceTypes.portalBadge,
+      portalPriceLabelKu: serviceTypes.portalPriceLabelKu,
+      portalPriceLabelEn: serviceTypes.portalPriceLabelEn,
+      portalPriceLabelAr: serviceTypes.portalPriceLabelAr,
+      portalPriceLabelZh: serviceTypes.portalPriceLabelZh,
+    }).from(serviceTypes)
       .where(and(
         eq(serviceTypes.isActive, true),
         eq(serviceTypes.showOnPortal, true),
