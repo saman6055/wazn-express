@@ -25,6 +25,7 @@ import { formatPortalDate } from "@/lib/portalClock";
 import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
 import { isDebt } from "@/lib/portalMoney";
 import { onImageError } from "@/lib/imageFallback";
+import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "@/lib/brand";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf, isInIraqNotDelivered, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
@@ -446,11 +447,26 @@ export default function PortalHome() {
           </div>
         </div>
 
-        {/* Full header — language + clock, then identity and the two icons */}
+        {/* Full header — language, the mark, the clock; then identity and the
+            two icons. The owner wanted the mark in the middle of this row:
+            three columns, the outer two equal, so it sits on the screen's
+            centre line — and a wide clock pushes it aside rather than covering
+            it. White ink on the dark theme, where the black mark vanishes. */}
         <div className="px-4 pt-3">
-          <div className="flex items-center justify-between gap-2">
-            <PortalLanguagePicker glass={glassPill} />
-            <PortalClock onLight={!isDark} compact />
+          <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
+            <div className="justify-self-start">
+              <PortalLanguagePicker glass={glassPill} />
+            </div>
+            <img
+              src={isDark ? BRAND_LOGO_ON_DARK_URL : BRAND_LOGO_URL}
+              alt="Wazn Express"
+              className="h-7 w-auto select-none"
+              draggable={false}
+              onError={onImageError}
+            />
+            <div className="justify-self-end">
+              <PortalClock onLight={!isDark} compact />
+            </div>
           </div>
 
           <div className="mt-3 flex items-center justify-between gap-3">

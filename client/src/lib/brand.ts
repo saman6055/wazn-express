@@ -14,6 +14,13 @@ import { absoluteLogoUrl } from "./absoluteLogoUrl";
 export const BRAND_LOGO_URL = "/brand/wazn-logo.png";
 
 /**
+ * The same mark in white ink, the cyan dot kept, for dark surfaces — the
+ * black-ink original disappears on the portal's dark theme. Made from
+ * docs/brand/wazn-logo-master.png.
+ */
+export const BRAND_LOGO_ON_DARK_URL = "/brand/wazn-logo-on-dark.png";
+
+/**
  * The mark as an <img> for a report that prints from its own window.
  *
  * A print window is a blank document with no base URL of ours, so the address
