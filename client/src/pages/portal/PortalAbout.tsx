@@ -375,7 +375,7 @@ export default function PortalAbout() {
               {pick({
                 ku: "سوپاس بۆ متمانەت بە وەزن ئێکسپرێس 💜",
                 en: "Thank you for trusting Wazn Express 💜",
-                ar: "شكرًا لثقتك بوزن اكسبرس 💜",
+                ar: "شكرًا لثقتك بوزن اكسبريس 💜",
                 zh: "感谢你信赖 Wazn Express 💜",
               })}
             </p>

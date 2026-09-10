@@ -85,7 +85,7 @@ export const termsHeader = {
   subtitle: {
     ku: "بەڵێنی نێوان تۆ و وەزن ئێکسپرێس",
     en: "What you and Wazn Express promise each other",
-    ar: "ما نتعهّد به أنت ووزن إكسبريس لبعضنا",
+    ar: "ما نتعهّد به أنت ووزن اكسبريس لبعضنا",
     zh: "您与 Wazn Express 之间的相互承诺",
   } as L10n,
   tapTip: {
@@ -139,7 +139,7 @@ export const termsSections: TermsSection[] = [
         text: {
           ku: "بەخێربێیت بۆ وەزن ئێکسپرێس. ئێمە کۆمپانیایەکی گواستنەوەی بار و بریکاری لۆجستیکین، ناوەندمان لە هەولێری هەرێمی کوردستانی عێراقە، و دڵخۆشین کە متمانەت پێماندا.",
           en: "Welcome to Wazn Express. We are a freight forwarder and logistics agent based in Erbil, Kurdistan Region of Iraq, and we are glad you have placed your trust in us.",
-          ar: "أهلًا بك في وزن إكسبريس. نحن شركة شحن ووكيل لوجستي مقرّها أربيل في إقليم كوردستان العراق، ويسعدنا أنك منحتنا ثقتك.",
+          ar: "أهلًا بك في وزن اكسبريس. نحن شركة شحن ووكيل لوجستي مقرّها أربيل في إقليم كوردستان العراق، ويسعدنا أنك منحتنا ثقتك.",
           zh: "欢迎来到 Wazn Express。我们是一家货运代理与物流代理公司，总部位于伊拉克库尔德斯坦地区埃尔比勒，很高兴获得您的信任。",
         },
       },

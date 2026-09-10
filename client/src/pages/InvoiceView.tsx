@@ -32,7 +32,7 @@ export default function InvoiceView() {
   const company = {
     name: template?.companyName || "Wazn Express",
     nameKu: template?.companyNameKu || "وەزن ئێکسپرێس",
-    nameAr: templateAny?.companyNameAr || "وزن اكسبرس",
+    nameAr: templateAny?.companyNameAr || "وزن اكسبريس",
     address: template?.companyAddress || "Erbil, Kurdistan Region, Iraq",
     addressKu: template?.companyAddressKu || "هەولێر، هەرێمی کوردستان، عێراق",
     addressAr: templateAny?.companyAddressAr || "أربيل، إقليم كردستان، العراق",

@@ -19,8 +19,8 @@ export default function Settings() {
     const { t, language } = useTranslation();
 const [companyData, setCompanyData] = useState({
     name: "Wazn Express",
-    nameKu: "وازن ئێکسپرێس",
-    nameAr: "وزن اكسبرس",
+    nameKu: "وەزن ئێکسپرێس",
+    nameAr: "وزن اكسبريس",
     address: "",
     addressKu: "",
     addressAr: "",
@@ -231,7 +231,7 @@ const [companyData, setCompanyData] = useState({
                       <Input
                         value={companyData.nameKu}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, nameKu: e.target.value }))}
-                        placeholder="وازن ئێکسپرێس"
+                        placeholder="وەزن ئێکسپرێس"
                         dir="rtl"
                       />
                     </div>
@@ -240,7 +240,7 @@ const [companyData, setCompanyData] = useState({
                       <Input
                         value={companyData.nameAr}
                         onChange={(e) => setCompanyData(prev => ({ ...prev, nameAr: e.target.value }))}
-                        placeholder="وزن اكسبرس"
+                        placeholder="وزن اكسبريس"
                         dir="rtl"
                       />
                     </div>
@@ -1289,7 +1289,7 @@ function LandingWebsiteContentSettings() {
           <Label>{t("settings.heroTitle") || pickLang(language, { ku: "سەردێری هێڵۆ", en: "Hero Title", ar: "العنوان الرئيسي", zh: "主标题" })}</Label>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <Input value={form.website_hero_title} onChange={(e) => setForm(f => ({ ...f, website_hero_title: e.target.value }))} placeholder="Wazn Express (EN)" />
-            <Input value={form.website_hero_title_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_title_ku: e.target.value }))} placeholder={pickLang(language, { ku: "وازن ئێکسپرێس (کوردی)", en: "Wazn Express (Kurdish)", ar: "وزن اكسبرس (الكردية)", zh: "Wazn Express（库尔德语）" })} dir="rtl" />
+            <Input value={form.website_hero_title_ku} onChange={(e) => setForm(f => ({ ...f, website_hero_title_ku: e.target.value }))} placeholder={pickLang(language, { ku: "وەزن ئێکسپرێس (کوردی)", en: "Wazn Express (Kurdish)", ar: "وزن اكسبريس (الكردية)", zh: "Wazn Express（库尔德语）" })} dir="rtl" />
           </div>
         </div>
         <div className="grid gap-4">

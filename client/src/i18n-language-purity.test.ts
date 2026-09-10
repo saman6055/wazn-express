@@ -26,8 +26,10 @@ const KURDISH_ONLY = /[ێۆڵڕ]/; // ێ ۆ ڵ ڕ
 const LATIN_WORD = /[A-Za-z]{4,}/;
 
 /**
- * Words that are the same in every language: our own name, other companies',
- * a file format, and a phone-number shape.
+ * Words another language may share with English: our own name (Chinese
+ * writes it "Wazn Express" as English does — Kurdish and Arabic have their
+ * own spelling, pinned by brand-name.test.ts), other companies', a file
+ * format, and a phone-number shape.
  *
  * Short and reasoned on purpose. Anything added here without a reason is a
  * translation that was skipped and then excused.

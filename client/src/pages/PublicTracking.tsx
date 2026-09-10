@@ -166,7 +166,7 @@ export default function PublicTracking() {
               {L({
                 ku: "گەیاندن لەلایەن وەزن ئێکسپرێس",
                 en: "Delivered by Wazn Express",
-                ar: "الشحن بواسطة وزن إكسبريس",
+                ar: "الشحن بواسطة وزن اكسبريس",
                 zh: "由 Wazn Express 承运",
               })}
               {" · "}

@@ -355,8 +355,8 @@ export async function getTemplateSettings() {
     // Return default settings if no template exists
     return {
       companyName: "Wazn Express",
-      companyNameKu: "وازن ئێکسپرێس",
-      companyNameAr: "وزن اكسبرس",
+      companyNameKu: "وەزن ئێکسپرێس",
+      companyNameAr: "وزن اكسبريس",
       companyAddress: "",
       companyPhone: "",
       companyPhone2: "",
@@ -395,8 +395,8 @@ export async function getTemplateSettings() {
   
   return {
     companyName: template.companyName || "Wazn Express",
-    companyNameKu: template.companyNameKu || "وازن ئێکسپرێس",
-    companyNameAr: template.companyNameAr || "وزن اكسبرس",
+    companyNameKu: template.companyNameKu || "وەزن ئێکسپرێس",
+    companyNameAr: template.companyNameAr || "وزن اكسبريس",
     companyAddress: template.companyAddress || "",
     companyPhone: template.companyPhone || "",
     companyPhone2: template.companyPhone2 || "",

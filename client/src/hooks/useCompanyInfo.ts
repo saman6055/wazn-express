@@ -17,8 +17,8 @@ export interface CompanyInfo {
 
 const DEFAULT_COMPANY: CompanyInfo = {
   name: "Wazn Express",
-  nameKu: "وازن ئێکسپرێس",
-  nameAr: "وزن اكسبرس",
+  nameKu: "وەزن ئێکسپرێس",
+  nameAr: "وزن اكسبريس",
   address: "",
   addressKu: "",
   addressAr: "",

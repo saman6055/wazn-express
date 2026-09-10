@@ -41,7 +41,7 @@ Map: https://maps.app.goo.gl/2AXdNzfZnxtv4rX3A
 💬 07709183535
 📧 waznexpress@gmail.com
 
-وزن اكسبریس
+وزن اكسبريس
 وەزن ئێکسپرێس
 🌐 www.waznexpress.com
 TikTok: wazn.express
