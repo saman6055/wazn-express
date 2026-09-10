@@ -31,6 +31,7 @@ import {
   Image as ImageIcon, ExternalLink, Hash, SlidersHorizontal, ArrowUpDown, Copy, HelpCircle
 } from "lucide-react";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
+import { usePortalWidthSwitchShown } from "@/components/portal/PortalWidthSwitch";
 import { fmtUsd } from "@/lib/portalFormat";
 import { formatPortalDate } from "@/lib/portalClock";
 
@@ -301,6 +302,9 @@ export default function PortalFullPackage() {
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price_high" | "price_low">("newest");
   const [showFilters, setShowFilters] = useState(false);
+  // The width switch floats at the same start corner and height as the
+  // new-order button below; when it is on screen the button moves above it.
+  const widthSwitchShown = usePortalWidthSwitchShown();
   
   // Every order, every tab. The tab filter is applied on the client below, so
   // asking the server for a subset only made the three counters at the top of
@@ -1167,14 +1171,21 @@ export default function PortalFullPackage() {
           </div>
         )}
 
-        {/* Floating Action Button — request a new order via WhatsApp */}
+        {/* Floating Action Button — request a new order via WhatsApp.
+            A plus in the action blue, like the header button it repeats: the
+            chat bubble it wore read as the support chat. Lifted above the
+            width switch whenever that is showing, which is where it sat. */}
         <button
           type="button"
           onClick={requestNewOrder}
           aria-label={pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
-          className="fixed bottom-24 start-6 w-14 h-14 bg-gradient-to-r from-violet-500 to-purple-600 rounded-full shadow-lg flex items-center justify-center text-white hover:shadow-xl transition-all hover:scale-110 z-50"
+          className={cn(
+            "fixed start-6 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white transition-all hover:scale-110",
+            "bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] shadow-[0_8px_20px_-4px_rgba(37,99,235,0.5)]",
+            widthSwitchShown ? "bottom-40" : "bottom-24",
+          )}
         >
-          <MessageCircle className="w-6 h-6" />
+          <Plus className="h-7 w-7" strokeWidth={2.5} />
         </button>
       </div>
       

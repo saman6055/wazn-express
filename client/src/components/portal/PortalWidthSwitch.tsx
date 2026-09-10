@@ -33,10 +33,13 @@ const OPTIONS: { value: PortalWidth; icon: typeof Monitor; label: { ku: string; 
   { value: "desktop", icon: Monitor, label: { ku: "کۆمپیوتەر", en: "Desktop", ar: "مكتبي", zh: "电脑" } },
 ];
 
-export function PortalWidthSwitch() {
-  const { language } = useLanguage();
+/**
+ * Is the width switch on screen? The same rule it renders by, for anything
+ * else floating at the start corner — the orders page's new-order button sat
+ * exactly on top of it.
+ */
+export function usePortalWidthSwitchShown(): boolean {
   const { user } = useAuth();
-  const [width, setWidth] = usePortalWidth();
   const [onDesktop, setOnDesktop] = useState(
     () => typeof window !== "undefined" && window.innerWidth >= DESKTOP_MIN_PX,
   );
@@ -54,7 +57,14 @@ export function PortalWidthSwitch() {
 
   // A customer session carries isCustomer; staff sessions do not.
   const isStaff = Boolean(user) && !(user as { isCustomer?: boolean })?.isCustomer;
-  if (!isStaff && !onDesktop) return null;
+  return isStaff || onDesktop;
+}
+
+export function PortalWidthSwitch() {
+  const { language } = useLanguage();
+  const [width, setWidth] = usePortalWidth();
+  const shown = usePortalWidthSwitchShown();
+  if (!shown) return null;
 
   return (
     <div
