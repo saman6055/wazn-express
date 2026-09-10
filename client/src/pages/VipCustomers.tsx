@@ -188,7 +188,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
-                        <PopoverContent variant="panel" className="w-[--radix-popover-trigger-width] p-0" align="start">
+                        <PopoverContent variant="panel" className="w-(--radix-popover-trigger-width) p-0" align="start">
                           {/* shouldFilter={false} — we filter above so a code
                               search matches the code field, not the label. */}
                           <Command shouldFilter={false}>

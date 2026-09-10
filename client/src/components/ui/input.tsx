@@ -157,6 +157,9 @@ function Input({
         "file:text-foreground placeholder:text-muted-foreground selection:bg-primary selection:text-primary-foreground dark:bg-input/30 border-input h-9 w-full min-w-0 rounded-md border bg-transparent px-3 py-1 text-base shadow-xs transition-[color,box-shadow] outline-none file:inline-flex file:h-7 file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:pointer-events-none disabled:cursor-not-allowed disabled:opacity-50 md:text-sm",
         "focus-visible:border-ring focus-visible:ring-ring/50 focus-visible:ring-[3px]",
         "aria-invalid:ring-destructive/20 dark:aria-invalid:ring-destructive/40 aria-invalid:border-destructive",
+        // A required or out-of-range field turns red once the user has left
+        // it that way — before, only a toast said so and never which field.
+        "user-invalid:border-destructive user-invalid:ring-destructive/20",
         hasStepper ? split?.input : className,
         // Reserve room on the right for the single stepper pill.
         hasStepper && "pr-14"

@@ -1109,7 +1109,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   <ChevronsUpDown className="h-4 w-4 opacity-50" />
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent variant="panel" className="w-[--radix-popover-trigger-width] p-0" align="start">
+                              <PopoverContent variant="panel" className="w-(--radix-popover-trigger-width) p-0" align="start">
                                 <Command>
                                   <CommandInput placeholder={t("auto.text_229840")} />
                                   <CommandList>

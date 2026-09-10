@@ -177,7 +177,9 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxD
 
         <div className="space-y-4 py-2">
           {/* Customer Search */}
-          <div className="space-y-2" ref={dropdownRef}>
+          {/* relative: the customer list below is absolute, and without this it
+              took the whole dialog as its box and ran past its padding. */}
+          <div className="relative space-y-2" ref={dropdownRef}>
             <Label className="flex items-center gap-1.5">
               <User className="h-3.5 w-3.5" />
               {t("delivery.customer")}

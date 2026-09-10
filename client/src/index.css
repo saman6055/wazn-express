@@ -545,7 +545,7 @@
   input[type="datetime-local"],
   input[type="month"],
   input[type="week"] {
-    color: hsl(var(--foreground));
+    color: var(--foreground);
   }
 
   .dark input[type="date"]::-webkit-calendar-picker-indicator,
@@ -564,7 +564,7 @@
      looked filled-in-but-unreadable rather than empty. */
   .dark input[type="date"]:not(:focus):invalid::-webkit-datetime-edit,
   .dark input[type="time"]:not(:focus):invalid::-webkit-datetime-edit {
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
   }
 
   /* Number spinners have the same problem as the calendar button. */
@@ -577,14 +577,14 @@
      of it; this covers the closed control and its options in engines that
      still paint them from the page's own colours. */
   select option {
-    background-color: hsl(var(--popover));
-    color: hsl(var(--popover-foreground));
+    background-color: var(--popover);
+    color: var(--popover-foreground);
   }
 
   /* ::placeholder inherits the input's colour in some engines, which made a
      placeholder as loud as a real value. */
   ::placeholder {
-    color: hsl(var(--muted-foreground));
+    color: var(--muted-foreground);
     opacity: 1;
   }
   button:not(:disabled),
@@ -625,8 +625,10 @@
    Anything genuinely Arabic-script that needs one of these classes can opt out
    with dir="rtl" on the element itself, which wins over this rule.
 --------------------------------------------------------------------------- */
-[dir="rtl"] .font-mono:not([dir]),
-[dir="rtl"] .tabular-nums:not([dir]) {
+/* Not on a table cell or a table header, though. A cell turned
+   left-to-right makes its text-end point the other way from the header
+   above it, and the figures inside read correctly without it. */
+[dir="rtl"] :is(.font-mono, .tabular-nums):not([dir]):not(td, th) {
   direction: ltr;
   unicode-bidi: isolate;
 }

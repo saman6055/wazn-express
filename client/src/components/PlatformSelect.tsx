@@ -151,7 +151,7 @@ export default function PlatformSelect({ value, onChange, className }: PlatformS
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent variant="panel" className="w-[--radix-popover-trigger-width] min-w-[240px]" align="start">
+      <PopoverContent variant="panel" className="w-(--radix-popover-trigger-width) min-w-[240px]" align="start">
         {/* shouldFilter={false} — filtering happens above so a search matches
             the platform name itself, not the rendered row. */}
         <Command shouldFilter={false}>

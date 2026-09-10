@@ -150,7 +150,7 @@ function TableHeader({ className, ...props }: React.ComponentProps<"thead">) {
         // pins to the top of the table's own scroll box); pageSticky tables set
         // it to the top-bar height so the header pins to the page instead. The
         // opaque background hides rows passing underneath.
-        "sticky top-[var(--tbl-sticky-top,0px)] z-20 bg-background",
+        "sticky top-[var(--tbl-sticky-top,0px)] z-20 bg-card shadow-[inset_0_-1px_0_var(--border)]",
         className,
       )}
       {...props}
@@ -199,7 +199,7 @@ function TableHead({ className, ...props }: React.ComponentProps<"th">) {
     <th
       data-slot="table-head"
       className={cn(
-        "text-foreground h-10 px-2 text-left align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "text-foreground h-10 px-2 text-start align-middle font-medium whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
@@ -212,7 +212,7 @@ function TableCell({ className, ...props }: React.ComponentProps<"td">) {
     <td
       data-slot="table-cell"
       className={cn(
-        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+        "p-2 align-middle whitespace-nowrap [&:has([role=checkbox])]:pe-0 [&>[role=checkbox]]:translate-y-[2px]",
         className
       )}
       {...props}
