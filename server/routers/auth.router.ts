@@ -19,6 +19,29 @@ import { phoneSchema, emailSchema, idSchema } from "./schemas";
 import * as bcrypt from "bcryptjs";
 import { appLogger } from "../utils/logger";
 
+/**
+ * One answer, at one pace, for every way a sign-in can miss.
+ *
+ * An unknown number, an account with no password yet and a wrong password
+ * used to get three different sentences — and an unknown one came back at
+ * once, while a real account spent a quarter-second in bcrypt. Either told
+ * anyone with a list of phone numbers which of them are our customers. Now
+ * all three read the same, and all three take the time a real check takes.
+ * The sentence says what to do if you have no password yet, so a real
+ * customer is not left guessing. The lockout message is unchanged.
+ */
+const CUSTOMER_LOGIN_MISS =
+  "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە. ئەگەر هێشتا وشەی نهێنیت نییە، پەیوەندیمان پێوە بکە.";
+const STAFF_LOGIN_MISS =
+  "ئیمەیڵ/ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە. ئەگەر وشەی نهێنیت نییە، پەیوەندی بە بەڕێوەبەرەوە بکە.";
+
+let timingHash: Promise<string> | null = null;
+/** Spend what a real password check spends, so a miss cannot be timed. */
+async function spendComparisonTime(password: string): Promise<void> {
+  timingHash ??= bcrypt.hash("wazn-timing-equaliser", 12);
+  await bcrypt.compare(password, await timingHash);
+}
+
 export const authRouter = router({
   // Who is signed in — never the account row itself (see accountSecrets).
   me: publicProcedure.query(opts => sessionAccount(opts.ctx.user)),
@@ -47,14 +70,9 @@ export const authRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const customer = await db.getCustomerByMobile(input.mobileNumber);
-      if (!customer) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
-      }
-      if (!customer.isActive) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
-      }
-      if (!customer.passwordHash) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "وشەی نهێنی دانەنراوە" });
+      if (!customer || !customer.passwordHash) {
+        await spendComparisonTime(input.password);
+        throw new TRPCError({ code: "UNAUTHORIZED", message: CUSTOMER_LOGIN_MISS });
       }
 
       /**
@@ -105,8 +123,13 @@ export const authRouter = router({
         });
         throw new TRPCError({
           code: "UNAUTHORIZED",
-          message: after.justLocked ? LOCKED_MESSAGE.ku : "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە",
+          message: after.justLocked ? LOCKED_MESSAGE.ku : CUSTOMER_LOGIN_MISS,
         });
+      }
+
+      // Only someone who already knows the password learns the account is off.
+      if (!customer.isActive) {
+        throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
       }
 
       // A good password ends the run. Otherwise four old mistakes would sit
@@ -158,18 +181,17 @@ export const authRouter = router({
         const isMobile = /^[0-9+\-\s]+$/.test(input.identifier) && input.identifier.length >= 10;
         let user = await db.getUserByUsername(input.identifier);
         if (!user && isMobile) user = await db.getUserByMobile(input.identifier);
-        if (!user) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "ئیمەیڵ/ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
-        }
-        if (!user.isActive) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
-        }
-        if (!user.passwordHash) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "وشەی نهێنی دانەنراوە. تکایە پەیوەندی بکە بە ئەدمین" });
+        if (!user || !user.passwordHash) {
+          await spendComparisonTime(input.password);
+          throw new TRPCError({ code: "UNAUTHORIZED", message: STAFF_LOGIN_MISS });
         }
         const isValid = await bcrypt.compare(input.password, user.passwordHash);
         if (!isValid) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە" });
+          throw new TRPCError({ code: "UNAUTHORIZED", message: STAFF_LOGIN_MISS });
+        }
+        // Only someone who already knows the password learns the account is off.
+        if (!user.isActive) {
+          throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
         }
         const { SignJWT } = await import("jose");
         const secret = new TextEncoder().encode(getConfig().jwtSecret);
