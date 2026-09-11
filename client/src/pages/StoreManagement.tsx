@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -168,7 +169,7 @@ export default function StoreManagement() {
                       </div>
                       <div className="flex gap-2 mt-3">
                         <Button variant="outline" size="sm" className="flex-1 gap-1" onClick={() => openEdit(p)}><Pencil className="w-3.5 h-3.5" />{label({ ku: "دەستکاری", en: "Edit", ar: "تعديل", zh: "编辑" })}</Button>
-                        <Button variant="outline" size="sm" className="text-red-600 dark:text-red-300 hover:text-red-700" onClick={() => { if (confirm(label({ ku: "دڵنیایت؟", en: "Delete this product?", ar: "حذف؟", zh: "删除？" }))) deleteMutation.mutate({ id: p.id }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
+                        <Button variant="outline" size="sm" className="text-red-600 dark:text-red-300 hover:text-red-700" onClick={async () => { if (await confirmDanger(label({ ku: "دڵنیایت؟", en: "Delete this product?", ar: "حذف؟", zh: "删除？" }))) deleteMutation.mutate({ id: p.id }); }}><Trash2 className="w-3.5 h-3.5" /></Button>
                       </div>
                     </CardContent>
                   </Card>

@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -82,8 +83,8 @@ export default function IpWhitelistManagement() {
     addMutation.mutate(formData);
   };
 
-  const handleRemove = (id: number) => {
-    if (confirm(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم IP لە لیستی سپی؟", en: "Are you sure you want to remove this IP from the whitelist?", ar: "هل أنت متأكد من إزالة عنوان IP هذا من القائمة البيضاء؟", zh: "确定要将此 IP 从白名单中移除吗？" }))) {
+  const handleRemove = async (id: number) => {
+    if (await confirmDanger(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم IP لە لیستی سپی؟", en: "Are you sure you want to remove this IP from the whitelist?", ar: "هل أنت متأكد من إزالة عنوان IP هذا من القائمة البيضاء؟", zh: "确定要将此 IP 从白名单中移除吗？" }))) {
       removeMutation.mutate({ id });
     }
   };

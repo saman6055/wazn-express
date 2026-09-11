@@ -1,5 +1,6 @@
 import { lazy, Suspense, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
+import { ConfirmHost } from "@/components/ConfirmDialog";
 import { SystemAlertProvider } from "@/components/SystemAlert";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation } from "wouter";
@@ -399,6 +400,7 @@ function App() {
               <LandingThemeProvider>
                 <TooltipProvider>
                 <Toaster />
+                <ConfirmHost />
                 <MutationToastHandler />
                 <OfflineIndicator />
                 {/* Inside the router, so any screen can raise a blocking

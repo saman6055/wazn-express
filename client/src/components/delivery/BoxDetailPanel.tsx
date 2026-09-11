@@ -1,3 +1,4 @@
+import { confirmAction } from "@/components/ConfirmDialog";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { loadLocale } from "@/lib/i18nRegistry";
@@ -841,8 +842,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           {isReady && (
             <Button
               variant="outline"
-              onClick={() => {
-                if (window.confirm(t("delivery.confirmReopen"))) {
+              onClick={async () => {
+                if (await confirmAction(t("delivery.confirmReopen"))) {
                   reopenBox.mutate({ id: boxId });
                 }
               }}
@@ -961,8 +962,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             <Button
               variant="outline"
               size="sm"
-              onClick={() => {
-                if (window.confirm(t("delivery.confirmRefresh"))) {
+              onClick={async () => {
+                if (await confirmAction(t("delivery.confirmRefresh"))) {
                   recomputeItems.mutate({ id: boxId });
                 }
               }}

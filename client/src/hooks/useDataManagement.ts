@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { escapeHtml } from "@/lib/html";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -375,8 +376,8 @@ export function useDataManagement(dataCategories: DataCategory[]) {
     restoreBackupMutation.mutate({ id: selectedBackupId });
   };
 
-  const handleDeleteBackup = (id: number) => {
-    if (window.confirm(t("dataManagement.confirmDeleteBackup"))) {
+  const handleDeleteBackup = async (id: number) => {
+    if (await confirmDanger(t("dataManagement.confirmDeleteBackup"))) {
       deleteBackupMutation.mutate({ id });
     }
   };

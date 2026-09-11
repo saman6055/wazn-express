@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -627,8 +628,8 @@ const [activeTab, setActiveTab] = useState("accounts");
                   <Button
                     variant="ghost"
                     size="sm"
-                    onClick={() => {
-                      if (confirm(t("treasury.confirmDelete"))) {
+                    onClick={async () => {
+                      if (await confirmDanger(t("treasury.confirmDelete"))) {
                         deleteAccount.mutate({ id: account.id });
                       }
                     }}

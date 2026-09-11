@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -289,8 +290,8 @@ export default function BatchLabelTemplateSettings() {
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => {
-                            if (confirm(pickLang(language, { ku: "دڵنیایت لە سڕینەوە؟", en: "Are you sure you want to delete?", ar: "هل أنت متأكد من الحذف؟", zh: "确定要删除吗？" }))) deleteMutation.mutate({ id: template.id });
+                          onClick={async () => {
+                            if (await confirmDanger(pickLang(language, { ku: "دڵنیایت لە سڕینەوە؟", en: "Are you sure you want to delete?", ar: "هل أنت متأكد من الحذف؟", zh: "确定要删除吗？" }))) deleteMutation.mutate({ id: template.id });
                           }}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />

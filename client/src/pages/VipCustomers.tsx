@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -373,8 +374,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-red-500 dark:text-red-400 hover:text-red-600 hover:bg-red-50"
-                        onClick={() => {
-                          if (confirm(pickLang(language, { ku: "دۆخی VIP لەم کڕیارە بسڕیتەوە؟", en: "Remove VIP status from this customer?", ar: "إزالة حالة VIP من هذا العميل؟", zh: "移除此客户的 VIP 身份？" }))) {
+                        onClick={async () => {
+                          if (await confirmDanger(pickLang(language, { ku: "دۆخی VIP لەم کڕیارە بسڕیتەوە؟", en: "Remove VIP status from this customer?", ar: "إزالة حالة VIP من هذا العميل؟", zh: "移除此客户的 VIP 身份？" }))) {
                             deleteMutation.mutate({ id: vip.id });
                           }
                         }}

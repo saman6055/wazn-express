@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
@@ -457,8 +458,8 @@ const [editingTemplate, setEditingTemplate] = useState<any>(null);
                       <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => {
-                          if (confirm("دڵنیایت لە سڕینەوە؟")) {
+                        onClick={async () => {
+                          if (await confirmDanger("دڵنیایت لە سڕینەوە؟")) {
                             deleteMutation.mutate({ id: template.id });
                           }
                         }}

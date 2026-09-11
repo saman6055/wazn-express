@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -762,8 +763,8 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => {
-                        if (confirm(t("debts.confirmDelete"))) {
+                      onClick={async () => {
+                        if (await confirmDanger(t("debts.confirmDelete"))) {
                           deleteDebt.mutate({ id: debt.id });
                         }
                       }}

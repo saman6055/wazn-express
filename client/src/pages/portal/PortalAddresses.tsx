@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -337,8 +338,8 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                       variant="ghost"
                       size="sm"
                       className="text-red-600 dark:text-red-300 hover:text-red-700 hover:bg-red-50"
-                      onClick={() => {
-                        if (confirm(pickLang(language, { ku: "دڵنیایت لە سڕینەوەی ئەم ناونیشانە؟", en: "Delete this address?", ar: "هل تريد حذف هذا العنوان؟", zh: "确定删除此地址吗？" }))) {
+                      onClick={async () => {
+                        if (await confirmDanger(pickLang(language, { ku: "دڵنیایت لە سڕینەوەی ئەم ناونیشانە؟", en: "Delete this address?", ar: "هل تريد حذف هذا العنوان؟", zh: "确定删除此地址吗？" }))) {
                           deleteMutation.mutate({ addressId: address.id });
                         }
                       }}

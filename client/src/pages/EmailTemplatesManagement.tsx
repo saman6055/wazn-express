@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -130,8 +131,8 @@ export default function EmailTemplatesManagement() {
     });
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم قاڵبە؟", en: "Are you sure you want to delete this template?", ar: "هل أنت متأكد من حذف هذا القالب؟", zh: "确定要删除此模板吗？" }))) {
+  const handleDelete = async (id: number) => {
+    if (await confirmDanger(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم قاڵبە؟", en: "Are you sure you want to delete this template?", ar: "هل أنت متأكد من حذف هذا القالب؟", zh: "确定要删除此模板吗？" }))) {
       deleteMutation.mutate({ id });
     }
   };

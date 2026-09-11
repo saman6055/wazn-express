@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { useState, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -187,8 +188,8 @@ export function useCustomerDetail(customerId: number) {
     e.target.value = "";
   };
 
-  const handleDocumentDelete = (docType: "passport" | "nationalId" | "contract") => {
-    if (window.confirm(t("customers.confirmDeleteDocument"))) {
+  const handleDocumentDelete = async (docType: "passport" | "nationalId" | "contract") => {
+    if (await confirmDanger(t("customers.confirmDeleteDocument"))) {
       deleteDocumentMutation.mutate({ customerId, documentType: docType });
     }
   };

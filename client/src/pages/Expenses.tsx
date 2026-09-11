@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -1266,8 +1267,8 @@ const [activeTab, setActiveTab] = useState("expenses");
                                 variant="ghost"
                                 size="icon"
                                 aria-label={t("forms.delete")}
-                                onClick={() => {
-                                  if (confirm(t("expenses.confirmDeleteExpense"))) {
+                                onClick={async () => {
+                                  if (await confirmDanger(t("expenses.confirmDeleteExpense"))) {
                                     deleteExpense.mutate({ id: expense.id });
                                   }
                                 }}
@@ -1322,8 +1323,8 @@ const [activeTab, setActiveTab] = useState("expenses");
                         variant="ghost"
                         size="icon"
                         aria-label={t("forms.delete")}
-                        onClick={() => {
-                          if (confirm(t("expenses.confirmDeleteCategory"))) {
+                        onClick={async () => {
+                          if (await confirmDanger(t("expenses.confirmDeleteCategory"))) {
                             deleteCategory.mutate({ id: category.id });
                           }
                         }}

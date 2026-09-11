@@ -1,3 +1,4 @@
+import { confirmAction, confirmDanger } from "@/components/ConfirmDialog";
 import { useState, useEffect } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -551,7 +552,7 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
                           <div className="flex items-center gap-1.5">
                             <span className="text-xs font-semibold text-amber-600 dark:text-amber-300">${Number(d.feeUsd).toFixed(2)}</span>
                             <Button size="sm" variant="outline" className="h-7 gap-1 border-red-200 bg-red-50 px-2 text-[11px] font-medium text-red-600 dark:text-red-300 hover:bg-red-100 hover:text-red-700 dark:border-red-900 dark:bg-red-950/40" disabled={reverseFeeMut.isPending}
-                              onClick={() => { if (confirm(p({ ku: "کولفە بگەڕێندرێتەوە و لەسەر باڵانس لابردرێت؟", en: "Reverse the fee and remove it from the balance?", ar: "إلغاء الرسوم وإزالتها من الرصيد؟", zh: "撤销费用并从余额中移除？" }))) reverseFeeMut.mutate({ id: d.id }); }}>
+                              onClick={async () => { if (await confirmDanger(p({ ku: "کولفە بگەڕێندرێتەوە و لەسەر باڵانس لابردرێت؟", en: "Reverse the fee and remove it from the balance?", ar: "إلغاء الرسوم وإزالتها من الرصيد؟", zh: "撤销费用并从余额中移除？" }))) reverseFeeMut.mutate({ id: d.id }); }}>
                               {reverseFeeMut.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Undo2 className="h-3.5 w-3.5" />}
                               {p({ ku: "گەڕاندنەوەی کولفە", en: "Reverse fee", ar: "إلغاء الرسوم", zh: "撤销费用" })}
                             </Button>
@@ -1081,8 +1082,8 @@ function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
                       size="sm" variant="outline"
                       className="h-8 text-xs text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40"
                       disabled={remove.isPending}
-                      onClick={() => {
-                        if (window.confirm(p({ ku: "دڵنیایت لە سڕینەوە؟", en: "Delete this announcement?", ar: "هل تريد الحذف؟", zh: "确定删除吗？" }))) {
+                      onClick={async () => {
+                        if (await confirmDanger(p({ ku: "دڵنیایت لە سڕینەوە؟", en: "Delete this announcement?", ar: "هل تريد الحذف؟", zh: "确定删除吗？" }))) {
                           remove.mutate({ id: post.id });
                         }
                       }}
@@ -1225,9 +1226,9 @@ function BroadcastCard({ p }: { p: (v: L) => string }) {
             <Label className="text-xs text-muted-foreground">{p({ ku: "پوشیش بنێرە", en: "Also send push", ar: "أرسل push أيضًا", zh: "同时发送推送" })}</Label>
           </div>
           <Button
-            onClick={() => {
+            onClick={async () => {
               if (!title.trim() || !message.trim()) return;
-              if (window.confirm(p({ ku: "دڵنیایت؟ بۆ هەموو موشتەرە چالاکەکان دەنێردرێت.", en: "Sure? This goes to ALL active customers.", ar: "متأكد؟ سيُرسل لجميع العملاء النشطين.", zh: "确定吗？将发送给所有活跃客户。" }))) {
+              if (await confirmAction(p({ ku: "دڵنیایت؟ بۆ هەموو موشتەرە چالاکەکان دەنێردرێت.", en: "Sure? This goes to ALL active customers.", ar: "متأكد؟ سيُرسل لجميع العملاء النشطين.", zh: "确定吗？将发送给所有活跃客户。" }))) {
                 send.mutate({ title: title.trim(), message: message.trim(), withPush });
               }
             }}

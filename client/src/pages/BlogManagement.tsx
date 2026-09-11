@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -203,8 +204,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     setIsEditOpen(true);
   };
   
-  const handleDelete = (id: number) => {
-    if (confirm(t('blog.confirmDelete'))) {
+  const handleDelete = async (id: number) => {
+    if (await confirmDanger(t('blog.confirmDelete'))) {
       deleteMutation.mutate({ id });
     }
   };

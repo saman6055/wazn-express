@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
@@ -814,8 +815,8 @@ const [activeTab, setActiveTab] = useState("partners");
                       <Button
                         variant="ghost"
                         size="sm"
-                        onClick={() => {
-                          if (confirm(t("partners.confirmDelete"))) {
+                        onClick={async () => {
+                          if (await confirmDanger(t("partners.confirmDelete"))) {
                             deletePartner.mutate({ id: partner.id });
                           }
                         }}

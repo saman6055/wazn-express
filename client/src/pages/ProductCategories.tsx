@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -118,8 +119,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     });
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm("Are you sure you want to delete this category?")) {
+  const handleDelete = async (id: number) => {
+    if (await confirmDanger("Are you sure you want to delete this category?")) {
       deleteMutation.mutate({ id });
     }
   };

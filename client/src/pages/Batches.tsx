@@ -1,3 +1,4 @@
+import { confirmAction } from "@/components/ConfirmDialog";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -1625,8 +1626,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             {(batch.status === "delivered" || batch.status === "closed") && (
                               <DropdownMenuItem
                                 disabled={reprocessMutation.isPending}
-                                onClick={() => {
-                                  if (window.confirm(pickLang(language, { ku: "دووبارە چارجکردنی ئۆردەرە چارج نەکراوەکانی ئەم باچە؟ (Idempotent)", en: "Re-charge the uncharged orders of this batch? (Idempotent)", ar: "إعادة محاسبة الطلبات غير المحاسَبة في هذه الدفعة؟ (عملية متكررة آمنة)", zh: "重新对该批次未计费的订单计费？（幂等）" }))) {
+                                onClick={async () => {
+                                  if (await confirmAction(pickLang(language, { ku: "دووبارە چارجکردنی ئۆردەرە چارج نەکراوەکانی ئەم باچە؟ (Idempotent)", en: "Re-charge the uncharged orders of this batch? (Idempotent)", ar: "إعادة محاسبة الطلبات غير المحاسَبة في هذه الدفعة؟ (عملية متكررة آمنة)", zh: "重新对该批次未计费的订单计费？（幂等）" }))) {
                                     reprocessMutation.mutate({ batchId: batch.id });
                                   }
                                 }}

@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -66,8 +67,8 @@ export default function CustomerCodePrefixSettings() {
     });
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm(t("settings.confirmDeletePrefix") || "Are you sure you want to delete this prefix?")) {
+  const handleDelete = async (id: number) => {
+    if (await confirmDanger(t("settings.confirmDeletePrefix") || "Are you sure you want to delete this prefix?")) {
       deleteMutation.mutate({ id });
     }
   };

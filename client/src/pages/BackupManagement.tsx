@@ -1,3 +1,4 @@
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -64,13 +65,13 @@ export default function BackupManagement() {
     window.open(fileUrl, "_blank");
   };
 
-  const handleDelete = (id: number) => {
-    if (confirm(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم بەکاپە؟", en: "Are you sure you want to delete this backup?", ar: "هل أنت متأكد من حذف هذه النسخة الاحتياطية؟", zh: "确定要删除此备份吗？" }))) {
+  const handleDelete = async (id: number) => {
+    if (await confirmDanger(pickLang(language, { ku: "ئایا دڵنیایت لە سڕینەوەی ئەم بەکاپە؟", en: "Are you sure you want to delete this backup?", ar: "هل أنت متأكد من حذف هذه النسخة الاحتياطية؟", zh: "确定要删除此备份吗？" }))) {
       deleteBackup.mutate({ id });
     }
   };
 
-  const handleRestore = (id: number) => {
+  const handleRestore = async (id: number) => {
     // Find the backup to check if it's a full backup
     const backup = backups?.find(b => b.id === id);
     const isFull = backup?.backupContent === "full";
@@ -81,9 +82,9 @@ export default function BackupManagement() {
       + pickLang(language, { ku: "پێش لە گەڕاندنەوە، دڵنیا بە لە دروستکردنی بەکاپی نوێ.", en: "Before restoring, make sure to create a new backup.", ar: "قبل الاستعادة، تأكد من إنشاء نسخة احتياطية جديدة.", zh: "恢复前，请务必创建新备份。" }) + "\n\n"
       + pickLang(language, { ku: "ئایا دڵنیایت لە بەردەوامبوون؟", en: "Are you sure you want to continue?", ar: "هل أنت متأكد من المتابعة؟", zh: "确定要继续吗？" });
 
-    if (confirm(warning)) {
+    if (await confirmDanger(warning)) {
       // Second confirmation
-      if (confirm(pickLang(language, { ku: "دووبارە دڵنیاکردنەوە: بچۆ بۆ گەڕاندنەوە؟", en: "Confirm again: proceed with restore?", ar: "تأكيد مرة أخرى: المتابعة بالاستعادة؟", zh: "再次确认：继续恢复？" }))) {
+      if (await confirmDanger(pickLang(language, { ku: "دووبارە دڵنیاکردنەوە: بچۆ بۆ گەڕاندنەوە؟", en: "Confirm again: proceed with restore?", ar: "تأكيد مرة أخرى: المتابعة بالاستعادة؟", zh: "再次确认：继续恢复？" }))) {
         restoreBackup.mutate({ id });
       }
     }

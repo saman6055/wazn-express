@@ -1,3 +1,4 @@
+import { confirmAction } from "@/components/ConfirmDialog";
 import { reportClientError } from "./lib/reportClientError";
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
@@ -35,12 +36,12 @@ if ('serviceWorker' in navigator) {
         registration.addEventListener('updatefound', () => {
           const newWorker = registration.installing;
           if (newWorker) {
-            newWorker.addEventListener('statechange', () => {
+            newWorker.addEventListener('statechange', async () => {
               if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
                 // New content available
                 console.log('[PWA] New content available, refresh to update');
                 // Optionally show update notification
-                if (window.confirm('نوێکردنەوەی نوێ بەردەستە. ئایا دەتەوێت نوێ بکەیتەوە؟')) {
+                if (await confirmAction({ message: 'نوێکردنەوەی نوێ بەردەستە. ئایا دەتەوێت نوێ بکەیتەوە؟', confirmLabel: 'نوێ بکەرەوە' })) {
                   window.location.reload();
                 }
               }
