@@ -42,7 +42,10 @@ describe("staff sign-in", () => {
 
   it("unknown, no password and wrong password are one answer", () => {
     expect(src).toMatch(/if \(!user \|\| !user\.passwordHash\) \{\s*await spendComparisonTime\(input\.password\);/);
-    expect(src.match(/message: STAFF_LOGIN_MISS/g)?.length).toBe(2);
+    // Both misses give the same sentence — or, on the fifth, the same lock
+    // message: unknown names are counted too (server/lib/staffLoginLocks.ts).
+    expect(src.match(/message: after\.justLocked \? STAFF_LOCKED_MESSAGE : STAFF_LOGIN_MISS/g)?.length).toBe(2);
+    expect(src.indexOf("staffLockState(")).toBeLessThan(src.indexOf("bcrypt.compare("));
     expect(src).not.toContain("وشەی نهێنی دانەنراوە");
   });
 

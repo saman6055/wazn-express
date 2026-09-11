@@ -4,7 +4,8 @@ import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
 import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
-import { staffProcedure, adminProcedure, accountantProcedure, auditorProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, auditorProcedure, superAdminProcedure } from "../middleware/auth";
+import { lockedStaff, unlockStaff } from "../lib/staffLoginLocks";
 import * as db from "../db";
 import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -512,6 +513,30 @@ export const usersRouter = router({
           newValues: { role: input.role },
         });
         return { success: true };
+      }),
+
+    /**
+     * Staff accounts shut by five wrong passwords, and the minutes each has
+     * left. For the super admin, who is the one who may open one early.
+     */
+    loginLocks: superAdminProcedure.query(() => {
+      return lockedStaff(new Date());
+    }),
+
+    /** Open a locked staff account before its fifteen minutes are up. */
+    unlockLogin: superAdminProcedure
+      .input(z.object({ userId: idSchema }))
+      .mutation(async ({ input, ctx }) => {
+        const wasLocked = unlockStaff(input.userId);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "unlock_staff_login",
+          entityType: "user",
+          entityId: input.userId,
+          newValues: { wasLocked },
+        });
+        return { success: true, wasLocked };
       }),
 });
 

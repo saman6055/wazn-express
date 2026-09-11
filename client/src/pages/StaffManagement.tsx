@@ -10,18 +10,40 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
   Users, UserPlus, Key, Shield, Eye, EyeOff, Loader2, 
-  CheckCircle, XCircle, MoreVertical, RefreshCw, Trash2, AlertTriangle
+  CheckCircle, XCircle, MoreVertical, RefreshCw, Trash2, AlertTriangle, Lock, LockOpen
 } from "lucide-react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import DashboardLayout from "@/components/DashboardLayout";
 
 export default function StaffManagement() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const { user: currentUser } = useAuth();
   const utils = trpc.useUtils();
+
+  // Accounts shut by five wrong passwords. Only the super admin sees them:
+  // they are the one who may open one early (owner's decision, 2026-09-11).
+  const isSuperAdmin = currentUser?.role === "super_admin";
+  const { data: loginLocks } = trpc.users.loginLocks.useQuery(undefined, {
+    enabled: isSuperAdmin,
+    refetchInterval: 60_000,
+  });
+  const lockFor = (userId: number) => loginLocks?.find((lock) => lock.userId === userId);
+  const unlockMutation = trpc.users.unlockLogin.useMutation({
+    onSuccess: () => {
+      toast.success(pickLang(language, {
+        ku: "قفڵەکە کرایەوە؛ ئێستا دەتوانێت بچێتە ژوورەوە.",
+        en: "Unlocked. They can sign in now.",
+        ar: "تم فتح القفل، ويمكنه تسجيل الدخول الآن.",
+        zh: "已解除锁定，现在可以登录。",
+      }));
+      utils.users.loginLocks.invalidate();
+    },
+    onError: (error) => toast.error(error.message),
+  });
   
   // State for dialogs
   const [addDialogOpen, setAddDialogOpen] = useState(false);
@@ -338,6 +360,17 @@ export default function StaffManagement() {
                           {t('status.inactive')}
                         </Badge>
                       )}
+                      {lockFor(staff.id) && (
+                        <Badge variant="outline" className="text-amber-700 dark:text-amber-300 border-amber-300 dark:border-amber-800/60">
+                          <Lock className="w-3 h-3 me-1" aria-hidden="true" />
+                          {pickLang(language, {
+                            ku: `قفڵە · ${lockFor(staff.id)!.remainingMinutes} خولەک`,
+                            en: `Locked · ${lockFor(staff.id)!.remainingMinutes} min`,
+                            ar: `مقفل · ${lockFor(staff.id)!.remainingMinutes} دقيقة`,
+                            zh: `已锁定 · ${lockFor(staff.id)!.remainingMinutes} 分钟`,
+                          })}
+                        </Badge>
+                      )}
                       <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                           <Button variant="ghost" size="icon">
@@ -354,6 +387,15 @@ export default function StaffManagement() {
                             <Key className="w-4 h-4 me-2" />
                             {t('staff.resetPassword')}
                           </DropdownMenuItem>
+                          {isSuperAdmin && lockFor(staff.id) && (
+                            <DropdownMenuItem
+                              disabled={unlockMutation.isPending}
+                              onClick={() => unlockMutation.mutate({ userId: staff.id })}
+                            >
+                              <LockOpen className="w-4 h-4 me-2" />
+                              {pickLang(language, { ku: "کردنەوەی قفڵ", en: "Unlock sign-in", ar: "فتح القفل", zh: "解除登录锁定" })}
+                            </DropdownMenuItem>
+                          )}
                           <DropdownMenuItem
                             onClick={() => {
                               toggleStatusMutation.mutate({

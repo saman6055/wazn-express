@@ -18,6 +18,13 @@ import { getConfig } from "../config";
 import { phoneSchema, emailSchema, idSchema } from "./schemas";
 import * as bcrypt from "bcryptjs";
 import { appLogger } from "../utils/logger";
+import {
+  clearStaffFailures,
+  recordStaffFailure,
+  staffLockKey,
+  staffLockState,
+  unknownLockKey,
+} from "../lib/staffLoginLocks";
 
 /**
  * One answer, at one pace, for every way a sign-in can miss.
@@ -34,6 +41,14 @@ const CUSTOMER_LOGIN_MISS =
   "ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە. ئەگەر هێشتا وشەی نهێنیت نییە، پەیوەندیمان پێوە بکە.";
 const STAFF_LOGIN_MISS =
   "ئیمەیڵ/ژمارەی مۆبایل یان وشەی نهێنی هەڵەیە. ئەگەر وشەی نهێنیت نییە، پەیوەندی بە بەڕێوەبەرەوە بکە.";
+
+/**
+ * What staff are told once five wrong passwords have shut the account. A name
+ * that matches no account is counted and shut the same way
+ * (server/lib/staffLoginLocks.ts), so this confirms nothing to a stranger.
+ */
+const STAFF_LOCKED_MESSAGE =
+  `ناتوانرێت ئێستا بچیتە ژوورەوە. دوای ${LOCK_MINUTES} خولەک هەوڵ بدەرەوە، یان داوا لە بەڕێوەبەری سەرەکی بکە هەژمارەکەت بکاتەوە.`;
 
 let timingHash: Promise<string> | null = null;
 /** Spend what a real password check spends, so a miss cannot be timed. */
@@ -181,14 +196,47 @@ export const authRouter = router({
         const isMobile = /^[0-9+\-\s]+$/.test(input.identifier) && input.identifier.length >= 10;
         let user = await db.getUserByUsername(input.identifier);
         if (!user && isMobile) user = await db.getUserByMobile(input.identifier);
+
+        // Five wrong passwords shut the account for fifteen minutes, counted
+        // per account rather than per connection, like the portal's customers
+        // (shared/loginLockout.ts; owner's decision, 2026-09-11). Checked
+        // before the password, so a locked account answers the same whatever
+        // is typed — the right password included — until the time is up or
+        // the super admin opens it early.
+        const now = new Date();
+        const lockKey = user ? staffLockKey(user.id) : unknownLockKey(input.identifier);
+        if (staffLockState(lockKey, now).locked) {
+          await spendComparisonTime(input.password);
+          throw new TRPCError({ code: "UNAUTHORIZED", message: STAFF_LOCKED_MESSAGE });
+        }
         if (!user || !user.passwordHash) {
           await spendComparisonTime(input.password);
-          throw new TRPCError({ code: "UNAUTHORIZED", message: STAFF_LOGIN_MISS });
+          const after = recordStaffFailure(lockKey, now);
+          throw new TRPCError({ code: "UNAUTHORIZED", message: after.justLocked ? STAFF_LOCKED_MESSAGE : STAFF_LOGIN_MISS });
         }
         const isValid = await bcrypt.compare(input.password, user.passwordHash);
         if (!isValid) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: STAFF_LOGIN_MISS });
+          const after = recordStaffFailure(lockKey, now);
+          if (after.justLocked) {
+            appLogger.warn("Staff sign-in locked after repeated wrong passwords", {
+              userId: user.id,
+              attempts: after.failedAttempts,
+              minutes: LOCK_MINUTES,
+            });
+            // In the audit log too, so the owner can see an account being tried.
+            void db.createAuditLog({
+              userId: user.id,
+              userRole: user.role,
+              action: "staff_login_locked",
+              entityType: "user",
+              entityId: user.id,
+              newValues: { attempts: after.failedAttempts, minutes: LOCK_MINUTES },
+            }).catch(() => undefined);
+          }
+          throw new TRPCError({ code: "UNAUTHORIZED", message: after.justLocked ? STAFF_LOCKED_MESSAGE : STAFF_LOGIN_MISS });
         }
+        // A good password ends the run.
+        clearStaffFailures(lockKey);
         // Only someone who already knows the password learns the account is off.
         if (!user.isActive) {
           throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
