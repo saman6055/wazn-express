@@ -1,4 +1,4 @@
-import { lazy, Suspense, type ReactNode } from "react";
+import { lazy, Suspense, type ComponentType, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { ConfirmHost } from "@/components/ConfirmDialog";
 import { SystemAlertProvider } from "@/components/SystemAlert";
@@ -20,6 +20,27 @@ import { FastEntry } from "./components/FastEntry";
 
 // Lazy: StaffTips drags a large tips-content module; keep it out of the entry chunk.
 const StaffTips = lazy(() => import("./components/StaffTips").then((m) => ({ default: m.StaffTips })));
+
+const DashboardLayout = lazy(() => import("./components/DashboardLayout"));
+
+/**
+ * A staff screen that does not draw the staff frame itself.
+ *
+ * Ten screens rendered bare: no sidebar, no way back to the rest of the app,
+ * and none of the frame's sign-in check — a signed-out visitor got the page's
+ * shell and a row of failed requests instead of the sign-in prompt. The frame
+ * is added here, around the page, so each page stays exactly as it was.
+ */
+function staffPage(load: () => Promise<{ default: ComponentType }>) {
+  const Page = lazy(load);
+  return function StaffFramedPage() {
+    return (
+      <DashboardLayout>
+        <Page />
+      </DashboardLayout>
+    );
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Core & Home
@@ -66,7 +87,7 @@ const CompanyFinanceDashboard = lazy(() => import("./pages/CompanyFinanceDashboa
 const CustomerFinance = lazy(() => import("./pages/CustomerFinance"));
 const DebtorsReport = lazy(() => import("./pages/DebtorsReport"));
 const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
-const BankAccounts = lazy(() => import("./pages/BankAccounts"));
+const BankAccounts = staffPage(() => import("./pages/BankAccounts"));
 const DebtReminders = lazy(() => import("./pages/DebtReminders"));
 
 // ---------------------------------------------------------------------------
@@ -127,15 +148,15 @@ const InvoiceTemplateSettings = lazy(() => import("./pages/InvoiceTemplateSettin
 const LabelTemplateSettings = lazy(() => import("./pages/LabelTemplateSettings"));
 const BatchLabelTemplateSettings = lazy(() => import("./pages/BatchLabelTemplateSettings"));
 const DataManagement = lazy(() => import("./pages/admin/DataManagement"));
-const BackupManagement = lazy(() => import("./pages/BackupManagement"));
-const ScheduledBackups = lazy(() => import("./pages/ScheduledBackups"));
-const SystemMonitorDashboard = lazy(() => import("./pages/SystemMonitorDashboard"));
+const BackupManagement = staffPage(() => import("./pages/BackupManagement"));
+const ScheduledBackups = staffPage(() => import("./pages/ScheduledBackups"));
+const SystemMonitorDashboard = staffPage(() => import("./pages/SystemMonitorDashboard"));
 const CustomerOptions = lazy(() => import("./pages/CustomerOptions"));
-const CurrencyManagement = lazy(() => import("./pages/CurrencyManagement"));
-const TaxRatesManagement = lazy(() => import("./pages/TaxRatesManagement"));
-const EmailTemplatesManagement = lazy(() => import("./pages/EmailTemplatesManagement"));
-const IpWhitelistManagement = lazy(() => import("./pages/IpWhitelistManagement"));
-const AdvancedSettings = lazy(() => import("./pages/AdvancedSettings"));
+const CurrencyManagement = staffPage(() => import("./pages/CurrencyManagement"));
+const TaxRatesManagement = staffPage(() => import("./pages/TaxRatesManagement"));
+const EmailTemplatesManagement = staffPage(() => import("./pages/EmailTemplatesManagement"));
+const IpWhitelistManagement = staffPage(() => import("./pages/IpWhitelistManagement"));
+const AdvancedSettings = staffPage(() => import("./pages/AdvancedSettings"));
 const CustomerCodePrefixSettings = lazy(() => import("./pages/CustomerCodePrefixSettings"));
 const PortalPriceListSettings = lazy(() => import("./pages/PortalPriceListSettings"));
 const PortalCenter = lazy(() => import("./pages/PortalCenter"));
@@ -160,7 +181,7 @@ const UnifiedOrdersDashboard = lazy(() => import("./pages/UnifiedOrdersDashboard
 const FullPackageDashboard = lazy(() => import("./pages/FullPackageDashboard"));
 const FullPackageForm = lazy(() => import("./pages/FullPackageForm"));
 const FullPackageDetail = lazy(() => import("./pages/FullPackageDetail"));
-const BulkOrderForm = lazy(() => import("./pages/BulkOrderForm"));
+const BulkOrderForm = staffPage(() => import("./pages/BulkOrderForm"));
 
 // ---------------------------------------------------------------------------
 // Commission
