@@ -9,7 +9,7 @@ import {
 
 export type L10n = { ku: string; en: string; ar: string; zh: string };
 
-import { TERMS_WHATSAPP_NUMBER } from "./portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "./whatsapp";
 
 /** Same support line as everywhere else — alias kept for existing imports. */
 export const FAQ_WHATSAPP_NUMBER = TERMS_WHATSAPP_NUMBER;

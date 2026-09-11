@@ -1,4 +1,4 @@
-import { TERMS_WHATSAPP_NUMBER, type L10n } from "./portalTerms";
+import { TERMS_WHATSAPP_NUMBER, type L10n } from "./whatsapp";
 
 /**
  * Every way a customer can reach Wazn Express, in one place.

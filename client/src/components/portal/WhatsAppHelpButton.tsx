@@ -1,4 +1,4 @@
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { pickLang } from "@/lib/lang";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";

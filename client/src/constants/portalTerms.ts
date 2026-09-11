@@ -7,6 +7,7 @@
 // the party it binds. Points come in pairs: something asked of the customer,
 // then the matching commitment from the company. A customer reading the page
 // should be able to see the balance, not just be told about it.
+import { TERMS_WHATSAPP_NUMBER, type L10n } from "./whatsapp";
 import {
   Building2,
   Handshake,
@@ -22,7 +23,10 @@ import {
   type LucideIcon,
 } from "lucide-react";
 
-export type L10n = { ku: string; en: string; ar: string; zh: string };
+// The number and the L10n shape live in ./whatsapp (see there); re-exported
+// so every existing import from this file keeps working.
+export { TERMS_WHATSAPP_NUMBER };
+export type { L10n };
 
 /** Who a point binds — the customer, or Wazn Express. */
 export type TermsParty = "you" | "us";
@@ -40,17 +44,6 @@ export interface TermsSection {
   title: L10n;
   items: TermsItem[];
 }
-
-/**
- * WhatsApp support number in international (wa.me) format: +964 770 918 3535.
- *
- * The one copy. It had been re-declared in four files and inlined raw in a
- * fifth, which meant changing the company's number would have updated some
- * screens and silently left the rest messaging the old one — the kind of
- * split nobody notices until a customer does. portal-audit.test.ts fails on
- * any new hardcoded wa.me number outside this file.
- */
-export const TERMS_WHATSAPP_NUMBER = "9647709183535";
 
 /** Badge text beside each point. */
 export const termsPartyLabel: Record<TermsParty, L10n> = {

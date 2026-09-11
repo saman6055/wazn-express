@@ -2,7 +2,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { PackageX } from "lucide-react";
-import { TERMS_WHATSAPP_NUMBER, type L10n } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER, type L10n } from "@/constants/whatsapp";
 import {
   prohibitedHeader,
   prohibitedSections,

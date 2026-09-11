@@ -9,7 +9,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { onEnter } from "@/lib/onEnter";
 import { trpc } from "@/lib/trpc";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { TutorialHint } from "@/components/TutorialHint";
 import {
   ArrowDownUp,

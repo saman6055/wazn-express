@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, lazy, Suspense } from "react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -12,9 +12,12 @@ import {
   VolumeX,
   Zap,
 } from "lucide-react";
-import BarcodeScanner from "@/components/BarcodeScanner";
 import { soundManager } from "@/lib/soundManager";
 import { cn } from "@/lib/utils";
+
+// html5-qrcode is ~350 KB. Most scans come from a handheld scanner acting as
+// a keyboard; the camera library now loads only when the camera is picked.
+const BarcodeScanner = lazy(() => import("@/components/BarcodeScanner"));
 
 interface ScanInputProps {
   /** Called when a tracking number is submitted (Enter key or camera scan) */
@@ -271,10 +274,12 @@ export function ScanInput({
           </Button>
         </div>
       ) : (
-        <BarcodeScanner
-          onScan={handleCameraScan}
-          isActive={scanMode === "camera"}
-        />
+        <Suspense fallback={<div className="h-64 animate-pulse rounded-lg bg-muted" />}>
+          <BarcodeScanner
+            onScan={handleCameraScan}
+            isActive={scanMode === "camera"}
+          />
+        </Suspense>
       )}
     </div>
   );

@@ -1,5 +1,5 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";

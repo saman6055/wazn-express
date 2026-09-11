@@ -1,10 +1,11 @@
+import { LiveClock } from "@/components/LiveClock";
 import { statusChip, TONE_DOT } from "@/lib/statusTone";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { orderStageOf } from "@/lib/shipmentFilters";
-import { fmtDate, fmtTime } from "@/lib/numericDate";
+import { fmtDate } from "@/lib/numericDate";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -40,22 +41,17 @@ export default function UnifiedOrdersDashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
-  const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Real-time clock
-  useEffect(() => {
-    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
-    return () => clearInterval(timer);
-  }, []);
 
   // Fetch data
   const { data: fullPackageOrders } = trpc.fullPackage.list.useQuery();
 
   // Combine all orders (purchase requests removed)
-  const allOrders: any[] = [
+  // Built once per fetch, not once per render: the charts below memoize on it.
+  const allOrders: any[] = useMemo(() => [
     ...(fullPackageOrders?.filter((o: any) => o.orderType === 'full_package').map((o: any) => ({ ...o, type: 'full_package' })) || []),
     ...(fullPackageOrders?.filter((o: any) => o.orderType === 'commission').map((o: any) => ({ ...o, type: 'commission' })) || []),
-  ];
+  ], [fullPackageOrders]);
 
   // Filter orders
   const filteredOrders = allOrders.filter(order => {
@@ -191,7 +187,7 @@ export default function UnifiedOrdersDashboard() {
               <div className="flex items-center gap-2 rounded-xl bg-white/10 px-4 py-2 backdrop-blur-sm">
                 <div className="h-2 w-2 animate-pulse rounded-full bg-green-400"></div>
                 <span className="text-sm">{pickLang(language, { ku: 'زیندوو', en: 'Live', ar: 'مباشر', zh: '实时' })}</span>
-                <span className="font-mono text-lg">{fmtTime(currentTime, true)}</span>
+                <LiveClock className="font-mono text-lg" />
               </div>
               <Button className="bg-white dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-white/90">
                 <Plus className="me-2 h-4 w-4" />

@@ -23,7 +23,7 @@ import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { fmtKg } from "@/lib/portalFormat";
 
 // Company WhatsApp for extra proof / questions when claiming a package.
-import { TERMS_WHATSAPP_NUMBER as SUPPORT_WHATSAPP } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER as SUPPORT_WHATSAPP } from "@/constants/whatsapp";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPortalDate } from "@/lib/portalClock";

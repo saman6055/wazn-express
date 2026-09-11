@@ -24,7 +24,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalProfilePhoto } from "@/components/portal/PortalProfilePhoto";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { toast } from "sonner";
 import { copyText } from "@/lib/copyText";
 import { isDebt } from "@/lib/portalMoney";

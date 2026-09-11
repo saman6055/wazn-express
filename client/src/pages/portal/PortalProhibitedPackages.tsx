@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { pickLang } from "@/lib/lang";
 import { getProhibitedItemLabel } from "@/constants/prohibitedItems";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";

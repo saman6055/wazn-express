@@ -9,7 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";

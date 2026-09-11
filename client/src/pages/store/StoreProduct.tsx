@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {

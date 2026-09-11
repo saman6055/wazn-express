@@ -29,7 +29,7 @@ import { onImageError } from "@/lib/imageFallback";
 import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "@/lib/brand";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf, isInIraqNotDelivered, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalChip } from "@/components/portal/PortalStatusChip";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";

@@ -3,7 +3,7 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 
 import { 
   Plane, 

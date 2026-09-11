@@ -8,7 +8,7 @@ import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformBadge } from "@/components/PlatformSelect";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { LANGUAGE_NAME } from "@/constants/tutorialLanguages";
 import { tutorialTitle, tutorialSummary } from "@/lib/tutorialText";
 import { GraduationCap, Play, X, ThumbsUp, ThumbsDown, MessageCircle, Star, Languages } from "lucide-react";

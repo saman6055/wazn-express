@@ -1,7 +1,7 @@
 ﻿import { useState, useEffect, useRef } from "react";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { PortalLayout } from "@/components/portal/PortalLayout";

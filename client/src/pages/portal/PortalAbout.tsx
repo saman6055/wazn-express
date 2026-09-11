@@ -25,7 +25,7 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-import { TERMS_WHATSAPP_NUMBER as WHATSAPP_NUMBER } from "@/constants/portalTerms";
+import { TERMS_WHATSAPP_NUMBER as WHATSAPP_NUMBER } from "@/constants/whatsapp";
 
 export default function PortalAbout() {
   const { language } = useLanguage();

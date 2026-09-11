@@ -1,6 +1,10 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
+/* The legacy static pages in client/public/site are not the app: every class
+   they use was compiled into the stylesheet every visitor downloads. */
+@source not "../public/site";
+
 @custom-variant dark (&:is(.dark *));
 
 /* Rudaw — primary UI typeface (Kurdish-first). Only a regular weight is
