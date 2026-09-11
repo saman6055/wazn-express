@@ -135,7 +135,8 @@
     "deleteFailed": "Delete failed",
     "saveFailed": "Save failed",
     "loadFailed": "Load failed",
-    "offlineBanner": "You are offline — your work is saved",
+    "offlineBanner": "You are offline — keep this page open; your changes will send when the connection returns",
+    "offlinePendingActions": "You are offline — {{count}} changes are waiting for the connection; keep this page open",
     "backOnline": "Back online"
   },
   "errorBoundary": {

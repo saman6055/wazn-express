@@ -53,6 +53,13 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// A page restored from the back-forward cache is a snapshot from before any
+// sign-out that happened since: reload it, so Back after signing out never
+// shows the account again.
+window.addEventListener("pageshow", (event) => {
+  if ((event as PageTransitionEvent).persisted) window.location.reload();
+});
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -63,6 +70,10 @@ const queryClient = new QueryClient({
         // Don't retry auth errors (redirect will happen)
         const msg = error instanceof Error ? error.message : "";
         if (msg.includes("Invalid session") || msg.includes("Please login") || msg.includes("session cookie")) return false;
+        // "Not found", "not allowed", "check your input": asking twice more only
+        // kept the answer off the screen for three seconds.
+        const status = (error as { data?: { httpStatus?: number } } | null)?.data?.httpStatus;
+        if (typeof status === "number" && status >= 400 && status < 500) return false;
         return failureCount < 2;
       },
     },

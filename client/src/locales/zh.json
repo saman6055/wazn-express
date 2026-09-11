@@ -135,7 +135,8 @@
     "deleteFailed": "删除失败",
     "saveFailed": "保存失败",
     "loadFailed": "加载失败",
-    "offlineBanner": "已离线——您的操作已保存",
+    "offlineBanner": "网络已断开——请保持此页面打开，恢复连接后将自动发送更改",
+    "offlinePendingActions": "网络已断开——{{count}} 项更改正在等待连接，请保持此页面打开",
     "backOnline": "已恢复连接"
   },
   "errorBoundary": {

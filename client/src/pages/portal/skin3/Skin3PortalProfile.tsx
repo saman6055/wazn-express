@@ -56,7 +56,7 @@ export default function Skin3PortalProfile() {
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = getLoginUrl();
+    window.location.replace(getLoginUrl());
   };
 
   const getInitials = (name?: string | null) => {

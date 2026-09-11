@@ -1157,7 +1157,7 @@ function DashboardLayoutContent({
                 </div>
                 <DropdownMenuSeparator />
                 <div className="p-1">
-                  <DropdownMenuItem onClick={logout} className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 rounded-lg">
+                  <DropdownMenuItem onClick={async () => { await logout(); window.location.replace(getLoginUrl()); }} className="cursor-pointer text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400 rounded-lg">
                     <LogOut className="me-2 h-4 w-4" />
                     <span>{t("signOut") || "چوونەدەرەوە"}</span>
                   </DropdownMenuItem>

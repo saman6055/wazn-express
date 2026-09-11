@@ -135,7 +135,8 @@
     "deleteFailed": "فشل الحذف",
     "saveFailed": "فشل الحفظ",
     "loadFailed": "فشل التحميل",
-    "offlineBanner": "أنت غير متصل — يتم حفظ عملك",
+    "offlineBanner": "لا يوجد اتصال — أبقِ هذه الصفحة مفتوحة؛ ستُرسل تغييراتك عند عودة الاتصال",
+    "offlinePendingActions": "لا يوجد اتصال — {{count}} تغييرات بانتظار عودة الاتصال؛ أبقِ هذه الصفحة مفتوحة",
     "backOnline": "عاد الاتصال"
   },
   "errorBoundary": {

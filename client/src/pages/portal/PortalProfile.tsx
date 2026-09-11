@@ -200,7 +200,7 @@ const { t, language, setLanguage } = useLanguage();
 
   const handleLogout = async () => {
     await logout();
-    window.location.href = "/";
+    window.location.replace("/");
   };
 
   // Feedback → WhatsApp with a pre-filled message that says who is writing.

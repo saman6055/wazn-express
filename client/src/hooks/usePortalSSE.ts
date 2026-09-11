@@ -103,8 +103,19 @@ export function usePortalSSE(options: {
       }
     };
 
+    // Back online: reconnect now, not after whatever the backoff had grown to
+    // (up to thirty seconds of missed notices).
+    const onOnline = () => {
+      if (eventSourceRef.current) return;
+      if (reopenTimer) clearTimeout(reopenTimer);
+      consecutiveErrorsRef.current = 0;
+      open();
+    };
+    window.addEventListener("online", onOnline);
+
     open();
     return () => {
+      window.removeEventListener("online", onOnline);
       if (reopenTimer) clearTimeout(reopenTimer);
       eventSourceRef.current?.close();
       eventSourceRef.current = null;
