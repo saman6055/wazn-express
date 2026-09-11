@@ -25,6 +25,16 @@ const toNumber = (value: Numeric): number | null => {
 export const NO_VALUE = "—";
 
 /**
+ * "-$0.00" and "-0" are not debts. A value that rounds to zero is written as
+ * zero: a customer who sees a minus sign on nothing asks what they owe.
+ * Intl keeps the sign of a tiny negative (-0.001 → "-$0.00"); this drops it
+ * only when every digit shown is a zero.
+ */
+export function unsignedZero(text: string): string {
+  return /^-[^1-9]*$/.test(text) ? text.slice(1) : text;
+}
+
+/**
  * US dollars: `$1,234.50`. Always two decimals, always thousands separators,
  * so a column of amounts lines up and $1,000 cannot be misread as $100.
  * Latin digits in every language — the money page already settled that.
@@ -32,12 +42,14 @@ export const NO_VALUE = "—";
 export function fmtUsd(value: Numeric): string {
   const n = toNumber(value);
   if (n === null) return NO_VALUE;
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(n);
+  return unsignedZero(
+    new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n),
+  );
 }
 
 /**
@@ -47,10 +59,12 @@ export function fmtUsd(value: Numeric): string {
 export function fmtNumber(value: Numeric, maxDecimals = 2): string {
   const n = toNumber(value);
   if (n === null) return NO_VALUE;
-  return new Intl.NumberFormat("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: maxDecimals,
-  }).format(n);
+  return unsignedZero(
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 0,
+      maximumFractionDigits: maxDecimals,
+    }).format(n),
+  );
 }
 
 /** Weight: `12.5 kg`. Two decimals at most; the scale is not more precise. */

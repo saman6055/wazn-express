@@ -49,6 +49,11 @@ export function CountUp({ value, format, durationMs = 900, className }: CountUpP
     };
   }, [value, durationMs]);
 
-  const text = format ? format(display) : Math.round(display).toLocaleString("en-GB");
+  // A figure that never arrived is a dash, not "NaN" on a dashboard card.
+  const text = !Number.isFinite(display)
+    ? "—"
+    : format
+      ? format(display)
+      : Math.round(display).toLocaleString("en-GB");
   return <span className={className}>{text}</span>;
 }

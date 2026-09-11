@@ -1,4 +1,5 @@
 import { cn } from "@/lib/utils";
+import { NO_VALUE, unsignedZero } from "@/lib/portalFormat";
 
 interface MoneyProps {
   value: number | null | undefined;
@@ -13,6 +14,39 @@ interface MoneyProps {
   className?: string;
 }
 
+/**
+ * The text of an amount.
+ *
+ * - A missing or broken value is a dash. It printed "$0", which reads as a
+ *   real, settled zero.
+ * - A negative amount is "-$500", the way the currency style writes it; the
+ *   prefix form printed "$-500".
+ * - Nothing that rounds to zero carries a minus sign ("$-0").
+ */
+export function formatMoney(
+  value: number | null | undefined,
+  { currency, prefix = "$", decimals = 0 }: { currency?: string; prefix?: string; decimals?: number } = {},
+): string {
+  if (typeof value !== "number" || !Number.isFinite(value)) return NO_VALUE;
+  if (currency) {
+    return unsignedZero(
+      new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency,
+        minimumFractionDigits: decimals,
+        maximumFractionDigits: decimals,
+      }).format(value),
+    );
+  }
+  const digits = unsignedZero(
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: decimals,
+      maximumFractionDigits: decimals,
+    }).format(value),
+  );
+  return digits.startsWith("-") ? `-${prefix}${digits.slice(1)}` : `${prefix}${digits}`;
+}
+
 export function Money({
   value,
   currency,
@@ -21,25 +55,8 @@ export function Money({
   debt = false,
   className,
 }: MoneyProps) {
-  const num = typeof value === "number" && isFinite(value) ? value : 0;
-
-  let formatted: string;
-  if (currency) {
-    formatted = new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency,
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(num);
-  } else {
-    const n = new Intl.NumberFormat("en-US", {
-      minimumFractionDigits: decimals,
-      maximumFractionDigits: decimals,
-    }).format(num);
-    formatted = `${prefix}${n}`;
-  }
-
-  const isNegative = num < 0;
+  const formatted = formatMoney(value, { currency, prefix, decimals });
+  const isNegative = formatted.startsWith("-");
 
   return (
     // dir="ltr" keeps the currency symbol glued to the digits and stops the
