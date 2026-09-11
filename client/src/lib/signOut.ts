@@ -19,6 +19,8 @@ export const USER_DATA_KEYS = [
   "wazn_portal_recent_searches",
   "wazn.orderFormSwitchDraft",
   "manus-runtime-user-info",
+  // Every search box's recent searches (lib/entry/searchHistory.ts).
+  "wazn.searchHistory",
 ] as const;
 
 export function clearSignedInData(queryClient?: QueryClient): void {

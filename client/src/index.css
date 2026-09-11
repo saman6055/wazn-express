@@ -1465,3 +1465,25 @@ html.dark[data-textfix="on"] :is([class~="text-rose-700"], [class~="text-rose-80
 body {
   color: var(--wazn-fg);
 }
+
+/* Privacy mode (hooks/entry/usePrivacyMode.ts): while a customer can see the
+   screen, figures marked data-private are blurred; hovering or focusing one
+   shows it. A printout is never blurred. */
+:root[data-privacy] [data-private] {
+  filter: blur(0.45em);
+  transition: filter 0.15s ease;
+}
+:root[data-privacy] [data-private]:hover,
+:root[data-privacy] [data-private]:focus-visible {
+  filter: none;
+}
+@media print {
+  :root[data-privacy] [data-private] {
+    filter: none;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  :root[data-privacy] [data-private] {
+    transition: none;
+  }
+}

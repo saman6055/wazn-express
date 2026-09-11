@@ -70,6 +70,7 @@ live ─ /api/portal/events (SSE) ─ usePortalSSE / usePortalRealtime ─ refre
 | Routes and links | `client/src/App.tsx` | `routes-and-access.test.ts` |
 | Support WhatsApp number | `constants/whatsapp.ts` | `portal-audit.test.ts` |
 | Business rules both sides use | `shared/*.ts` | their own tests |
+| Data-entry helpers: search history, paste cleaning, date shortcuts, sums, grid keys, guards | `lib/entry`, `hooks/entry`, `components/entry` (opt-in per screen) | `entry-accelerators.test.ts` |
 
 ## Production posture
 - **Security policy:** helmet defaults, plus `frame-src` YouTube and `img-src`
