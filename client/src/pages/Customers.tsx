@@ -13,6 +13,9 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { trpc } from "@/lib/trpc";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import { useCustomers, useFilteredCustomers } from "@/hooks/useCustomers";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { ListPager } from "@/components/ListPager";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import {
   Plus, Search, Eye, RotateCcw, Users, UserPlus, Crown, TrendingUp,
@@ -267,11 +270,14 @@ const [, setLocation] = useLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  // The box shows every keystroke; the list is filtered after a 250 ms pause.
+  // Filtering thousands of customers on each key made the typing itself lag.
+  const debouncedSearch = useDebouncedValue(search, 250);
   const filteredCustomers = useFilteredCustomers(
     customers as any,
     vipCustomers?.map((v: any) => v.customerId),
     {
-      search,
+      search: debouncedSearch,
       statusFilter,
       cityFilter,
       governorateFilter,
@@ -282,6 +288,12 @@ const [, setLocation] = useLocation();
       // "new customers" figure can open exactly the rows it counted.
       createdWithinDays: linkFilters.createdWithin,
     }
+  );
+  // Fifty rows at a time; the counts and the filters still see every customer.
+  const customerPage = useClientPagination(
+    filteredCustomers,
+    50,
+    [debouncedSearch, statusFilter, cityFilter, governorateFilter, balanceFilter, vipFilter, serviceTypeFilter, linkFilters.createdWithin ?? ""].join("|"),
   );
 
   /** What the banner says arrived with the link. */
@@ -1251,7 +1263,7 @@ const [, setLocation] = useLocation();
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredCustomers.map((customer) => (
+                {customerPage.pageRows.map((customer) => (
                   <TableRow key={customer.id} className="hover:bg-muted/50">
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -1369,6 +1381,9 @@ const [, setLocation] = useLocation();
                 )}
               </TableBody>
             </Table>
+            <div className="px-4 pb-3">
+              <ListPager {...customerPage} />
+            </div>
           </CardContent>
         </Card>
 

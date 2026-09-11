@@ -6,6 +6,8 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { orderStageOf } from "@/lib/shipmentFilters";
 import { fmtDate } from "@/lib/numericDate";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { ListPager } from "@/components/ListPager";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -62,6 +64,8 @@ export default function UnifiedOrdersDashboard() {
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesTab && matchesSearch && matchesStatus;
   });
+  // Fifty orders at a time, in either view; the counts above see every order.
+  const orderPage = useClientPagination(filteredOrders, 50, [activeTab, searchQuery, statusFilter].join("|"));
 
   // Calculate stats
   const stats = {
@@ -457,7 +461,7 @@ export default function UnifiedOrdersDashboard() {
                     </tr>
                   </thead>
                   <tbody className="divide-y">
-                    {filteredOrders.length > 0 ? filteredOrders.map((order, i) => (
+                    {filteredOrders.length > 0 ? orderPage.pageRows.map((order, i) => (
                       <tr key={i} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
@@ -503,7 +507,7 @@ export default function UnifiedOrdersDashboard() {
             {/* Card View */}
             {viewMode === "card" && (
               <div className="grid grid-cols-3 gap-4">
-                {filteredOrders.length > 0 ? filteredOrders.map((order, i) => (
+                {filteredOrders.length > 0 ? orderPage.pageRows.map((order, i) => (
                   <Card key={i} className="overflow-hidden hover:shadow-lg transition-shadow cursor-pointer" onClick={() => setSelectedOrder(order)}>
                     <div className="h-2 bg-gradient-to-r from-purple-500 to-indigo-600"></div>
                     <CardContent className="p-4">
@@ -527,6 +531,7 @@ export default function UnifiedOrdersDashboard() {
                 )}
               </div>
             )}
+            <ListPager {...orderPage} />
           </CardContent>
         </Card>
 

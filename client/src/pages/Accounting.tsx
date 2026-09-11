@@ -13,6 +13,10 @@ import { Plus, DollarSign, TrendingUp, TrendingDown, RefreshCw, Search } from "l
 import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { ListPager } from "@/components/ListPager";
+import { fmtUsd } from "@/lib/portalFormat";
 
 export default function Accounting() {
     const { t } = useTranslation();
@@ -83,9 +87,18 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
     });
   };
 
+  // The list is filtered after a pause in typing, not on every keystroke.
+  const searchTerm = useDebouncedValue(search, 250).toLowerCase();
   const filteredCustomers = customers?.filter(c =>
-    (c.fullName || '').toLowerCase().includes(search.toLowerCase()) ||
-    (c.customerCode || '').toLowerCase().includes(search.toLowerCase())
+    (c.fullName || '').toLowerCase().includes(searchTerm) ||
+    (c.customerCode || '').toLowerCase().includes(searchTerm)
+  );
+  // Fifty rows at a time, and the balances for just those rows in one
+  // request — every row used to ask for its own.
+  const balancePage = useClientPagination(filteredCustomers, 50, searchTerm);
+  const { data: pageBalances } = trpc.customers.getBalances.useQuery(
+    { customerIds: balancePage.pageRows.map((c) => c.id) },
+    { enabled: balancePage.pageRows.length > 0 },
   );
 
   const selectedCustomer = customers?.find(c => c.id === parseInt(selectedCustomerId));
@@ -384,8 +397,8 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {filteredCustomers?.map((customer) => (
-                      <CustomerBalanceRow key={customer.id} customer={customer} />
+                    {balancePage.pageRows.map((customer) => (
+                      <CustomerBalanceRow key={customer.id} customer={customer} balance={pageBalances?.[customer.id]} />
                     ))}
                     {(!filteredCustomers || filteredCustomers.length === 0) && (
                       <TableRow>
@@ -396,6 +409,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                     )}
                   </TableBody>
                 </Table>
+                <ListPager {...balancePage} />
               </CardContent>
             </Card>
           </TabsContent>
@@ -405,8 +419,7 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   );
 }
 
-function CustomerBalanceRow({ customer }: { customer: any }) {
-  const { data: balance } = trpc.customers.getBalance.useQuery({ customerId: customer.id });
+function CustomerBalanceRow({ customer, balance }: { customer: any; balance: number | undefined }) {
   
   return (
     <TableRow className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
@@ -415,7 +428,7 @@ function CustomerBalanceRow({ customer }: { customer: any }) {
       <TableCell>{customer.mobileNumber}</TableCell>
       <TableCell className="text-right">
         <span className={`font-mono font-medium ${(balance || 0) > 0 ? "text-red-600 dark:text-red-300" : (balance || 0) < 0 ? "text-green-600 dark:text-green-300" : ""}`}>
-          ${Math.abs(balance || 0).toFixed(2)}
+          {balance === undefined ? "—" : fmtUsd(Math.abs(balance))}
         </span>
       </TableCell>
       <TableCell className="text-right">

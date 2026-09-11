@@ -9,6 +9,8 @@ import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { ListPager } from "@/components/ListPager";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -240,6 +242,8 @@ export default function CommissionDashboard() {
     counts: routeCounts,
     filtered: routedOrders,
   } = useShippingRouteFilter(filteredOrders, (o: any) => o.shippingType);
+  // Fifty rows at a time; the totals above still count every order.
+  const orderPage = useClientPagination(routedOrders, 50, [searchQuery, customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, imageFilter, sortField, sortDirection, routeFilter].join("|"));
 
   const totalOrders = filteredOrders.length;
   const pendingOrders = filteredOrders.filter(o => o.status === "pending" || o.status === "pending_quote").length;
@@ -971,7 +975,7 @@ export default function CommissionDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {routedOrders.map((order) => (
+                    {orderPage.pageRows.map((order) => (
                       <TableRow
                         key={order.id}
                         // Cells centre with their headings, and one padding
@@ -1138,6 +1142,7 @@ export default function CommissionDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+                <ListPager {...orderPage} />
               </div>
             )}
           </CardContent>

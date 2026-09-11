@@ -9,6 +9,8 @@ import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { ListPager } from "@/components/ListPager";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -250,6 +252,8 @@ export default function FullPackageDashboard() {
     counts: routeCounts,
     filtered: routedOrders,
   } = useShippingRouteFilter(filteredOrders, (o: any) => o.shippingType);
+  // Fifty rows at a time; the totals above still count every order.
+  const orderPage = useClientPagination(routedOrders, 50, [customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, shippingFilter, trackingFilter, imageFilter, sortField, sortDirection, routeFilter].join("|"));
 
   const totalOrders = filteredOrders.length;
   const pendingOrders = filteredOrders.filter(o => ["pending", "ordered", "tracking_added"].includes(o.status)).length;
@@ -1035,7 +1039,7 @@ export default function FullPackageDashboard() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
-                    {routedOrders.map((order) => (
+                    {orderPage.pageRows.map((order) => (
                       <TableRow
                         key={order.id}
                         className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50 [&>td]:px-3 [&>td]:py-2.5 [&>td]:align-middle [&>td:not(:nth-child(2)):not(:nth-child(3))]:text-center [&>td>div]:justify-center [&>td:nth-child(2)>div]:justify-start [&>td:nth-child(3)>div]:justify-start"
@@ -1202,6 +1206,7 @@ export default function FullPackageDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+                <ListPager {...orderPage} />
               </div>
             )}
           </CardContent>

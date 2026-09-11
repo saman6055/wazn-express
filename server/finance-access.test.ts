@@ -60,6 +60,7 @@ const BOOKS_ONLY: Array<[string, () => Promise<unknown>]> = [
     accountId: 1, reminderType: "call", scheduledAt: new Date(),
   })],
   ["ledger.getPendingReminders", () => employee.ledger.getPendingReminders()],
+  ["customers.getBalances", () => employee.customers.getBalances({ customerIds: [1, 2] })],
   ["dashboard.financialStats", () => employee.dashboard.financialStats()],
   ["dashboard.figureParts", () => employee.dashboard.figureParts({ figure: DASHBOARD_FIGURE_IDS[0] })],
   ["dashboard.revenueChart", () => employee.dashboard.revenueChart({ days: 7 })],

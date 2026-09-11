@@ -241,6 +241,13 @@ export const customersRouter = router({
       .query(async ({ input }) => {
         return db.getCustomerBalance(input.customerId);
       }),
+    // A page of balances in one request: the Accounting list asked once per
+    // row. Every customer's balance at once is the books, so the accountant's.
+    getBalances: accountantProcedure
+      .input(z.object({ customerIds: z.array(idSchema).max(200) }))
+      .query(async ({ input }) => {
+        return db.getCustomerBalances(input.customerIds);
+      }),
     getLedger: staffProcedure
       .input(z.object({ customerId: z.number() }))
       .query(async ({ input }) => {

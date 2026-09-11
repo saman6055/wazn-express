@@ -131,8 +131,38 @@ export async function getCustomerBalance(customerId: number): Promise<number> {
   if (accountResult[0]) {
     return parseFloat(accountResult[0].currentBalanceUsd || '0');
   }
-  
+
   return 0;
+}
+
+/**
+ * Balances for a page of customers in one read — the Accounting list used to
+ * ask once per row. The same figure getCustomerBalance returns: the account's
+ * currentBalanceUsd. A customer with no account yet goes through
+ * getCustomerBalance itself, which opens one, exactly as a single read would.
+ */
+export async function getCustomerBalances(customerIds: readonly number[]): Promise<Record<number, number>> {
+  const ids = Array.from(new Set(customerIds.filter((id) => Number.isInteger(id) && id > 0)));
+  const balances: Record<number, number> = {};
+  if (ids.length === 0) return balances;
+  const db = await getDb();
+  if (!db) {
+    for (const id of ids) balances[id] = 0;
+    return balances;
+  }
+  const rows = await db
+    .select({ customerId: customerAccounts.customerId, currentBalanceUsd: customerAccounts.currentBalanceUsd })
+    .from(customerAccounts)
+    .where(inArray(customerAccounts.customerId, ids));
+  for (const row of rows) {
+    if (row.customerId != null && balances[row.customerId] === undefined) {
+      balances[row.customerId] = parseFloat(row.currentBalanceUsd || '0');
+    }
+  }
+  for (const id of ids) {
+    if (balances[id] === undefined) balances[id] = await getCustomerBalance(id);
+  }
+  return balances;
 }
 
 // DEPRECATED: Use getAllLedgerTransactions instead
