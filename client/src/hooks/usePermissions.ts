@@ -2,6 +2,7 @@ import { useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "../_core/hooks/useAuth";
 import { PATH_TO_MODULE } from "../../../shared/permissions";
+import { canSeeAllAccounts, isAllAccountsPath } from "../../../shared/financeAccess";
 
 /**
  * Hook to check if the current user has permission to view a specific module.
@@ -69,6 +70,11 @@ export function usePermissions() {
    */
   const canViewPath = (path: string): boolean => {
     if (userRole === "super_admin") return true;
+
+    // Every account's figures are for admins and the accountant, whatever
+    // module an employee has been granted: the server refuses those reads
+    // (shared/financeAccess.ts), so the page would be nothing but errors.
+    if (userRole && isAllAccountsPath(path) && !canSeeAllAccounts(userRole)) return false;
 
     const moduleName = PATH_TO_MODULE[path];
     if (!moduleName) return true; // If no mapping, show by default

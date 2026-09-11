@@ -29,10 +29,11 @@ export default function StaffDashboard() {
   const { data: todayStats } = trpc.scanning.todayStats.useQuery();
   const { data: recentScans, isLoading: scansLoading } = trpc.scanning.myRecentScans.useQuery({ limit: 20 });
   const { data: activeBatches } = trpc.dashboard.activeBatches.useQuery();
-  const { data: financialStats } = trpc.dashboard.financialStats.useQuery();
+  // Today's parcel count only: the day's money is not an employee's screen.
+  const { data: todayFigures } = trpc.dashboard.todayPackages.useQuery();
 
   const scansToday = todayStats?.reduce((sum: number, s: { count: number }) => sum + (s.count ?? 0), 0) ?? 0;
-  const packagesRegisteredToday = financialStats?.todayPackages ?? 0;
+  const packagesRegisteredToday = todayFigures?.todayPackages ?? 0;
 
   const [customerSearch, setCustomerSearch] = useState("");
   const handleCustomerLookup = (e: React.FormEvent) => {

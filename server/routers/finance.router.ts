@@ -46,15 +46,26 @@ export const exchangeRatesRouter = router({
       }),
 });
 
+/**
+ * Customer accounts, for two audiences (owner's decision, 2026-09-11).
+ *
+ * Everyone on the staff takes a payment and reads the one account in front of
+ * them: that is the counter at delivery (recordPayment and the per-account
+ * reads stay staffProcedure). Every account at once — the list, the debtors,
+ * the totals, the latest movements — a manual charge and a debt reminder are
+ * for the people who answer for the books: admins and the accountant, plus
+ * the auditor, who reads them and can change nothing. The screens use the same
+ * list (shared/financeAccess.ts), so an employee is never offered one of these.
+ */
 export const ledgerRouter = router({
     // Get financial summary
-    getSummary: staffProcedure
+    getSummary: accountantProcedure
       .query(async () => {
         return db.getFinancialSummary();
       }),
     
     // Get all customer accounts with info
-    getAllAccounts: staffProcedure
+    getAllAccounts: accountantProcedure
       .query(async () => {
         return db.getAllCustomerAccountsWithInfo();
       }),
@@ -88,20 +99,20 @@ export const ledgerRouter = router({
       }),
     
     // Get debtors list
-    getDebtors: staffProcedure
+    getDebtors: accountantProcedure
       .input(z.object({ minBalanceUsd: z.number().default(0) }))
       .query(async ({ input }) => {
         return db.getDebtors(input.minBalanceUsd);
       }),
     
     // Get total debt
-    getTotalDebt: staffProcedure
+    getTotalDebt: accountantProcedure
       .query(async () => {
         return db.getTotalDebtAmount();
       }),
     
     // Get recent transactions
-    getRecentTransactions: staffProcedure
+    getRecentTransactions: accountantProcedure
       .input(z.object({ limit: z.number().default(20) }))
       .query(async ({ input }) => {
         return db.getRecentTransactions(input.limit);
@@ -379,7 +390,7 @@ export const ledgerRouter = router({
       }),
 
     // Record package charge (manual)
-    recordCharge: staffProcedure
+    recordCharge: accountantProcedure
       .input(z.object({
         customerId: idSchema,
         customerCode: z.string().max(50),
@@ -399,7 +410,7 @@ export const ledgerRouter = router({
       }),
     
     // Create payment reminder
-    createReminder: staffProcedure
+    createReminder: accountantProcedure
       .input(z.object({
         accountId: idSchema,
         reminderType: z.enum(['sms', 'whatsapp', 'email', 'call']),
@@ -417,7 +428,7 @@ export const ledgerRouter = router({
       }),
     
     // Get pending reminders
-    getPendingReminders: staffProcedure
+    getPendingReminders: accountantProcedure
       .query(async () => {
         return db.getPendingReminders();
       }),

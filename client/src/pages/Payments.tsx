@@ -16,6 +16,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { canSeeAllAccounts } from "@shared/financeAccess";
 
 export default function Payments() {
     const { t, language } = useTranslation();
@@ -25,7 +27,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [methodFilter, setMethodFilter] = useState<string>("all");
   
   // Use ledger system for payments
-  const { data: recentTransactions, refetch } = trpc.ledger.getRecentTransactions.useQuery({ limit: 100 });
+  // Every customer's payments are the books: an employee records one here and
+  // the history stays with admins and the accountant (owner's decision,
+  // 2026-09-11 — shared/financeAccess.ts).
+  const { user } = useAuth();
+  const seesHistory = canSeeAllAccounts(user?.role);
+  const { data: recentTransactions, refetch } = trpc.ledger.getRecentTransactions.useQuery(
+    { limit: 100 },
+    { enabled: seesHistory },
+  );
   const { data: customers } = trpc.customers.list.useQuery();
   
   // Filter to get only payment transactions (CREDIT_PAYMENT type)
@@ -36,7 +46,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       toast.success(pickLang(language, { ku: "پارەدان بە سەرکەوتوویی تۆمارکرا", en: "Payment recorded successfully", ar: "تم تسجيل الدفعة بنجاح", zh: "付款已成功记录" }));
       setIsCreateOpen(false);
       setSelectedCustomerId("");
-      refetch();
+      if (seesHistory) refetch();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -195,6 +205,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </div>
         </div>
 
+        {seesHistory ? (<>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-0 shadow-md bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
@@ -323,6 +334,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </Table>
           </CardContent>
         </Card>
+        </>) : (
+          <Card className="border-0 shadow-md">
+            <CardContent className="p-6 text-sm text-muted-foreground">
+              {pickLang(language, {
+                ku: "پارەدان لێرە تۆمار دەکرێت. مێژووی پارەدانی هەموو کڕیاران تەنها بۆ بەڕێوەبەر و ژمێریارە.",
+                en: "Record a payment here. The payment history of all customers is for admins and accountants.",
+                ar: "سجّل الدفعة هنا. سجل مدفوعات جميع العملاء للمدير والمحاسب فقط.",
+                zh: "在此记录付款。所有客户的付款记录仅供管理员和会计查看。",
+              })}
+            </CardContent>
+          </Card>
+        )}
       </div>
     </DashboardLayout>
   );

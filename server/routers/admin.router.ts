@@ -341,10 +341,25 @@ export const dataManagementRouter = router({
       }),
 });
 
+/**
+ * The dashboards.
+ *
+ * The company's money — revenue, debt, profit, the biggest debtors, a figure's
+ * breakdown and the PDFs made from them — is for the people who answer for the
+ * books (owner's decision, 2026-09-11; shared/financeAccess.ts). An employee's
+ * dashboard shows the open batches and today's parcel count.
+ */
 export const dashboardRouter = router({
     // Financial statistics (cached 30s)
-    financialStats: staffProcedure.query(async () => {
+    financialStats: accountantProcedure.query(async () => {
       return cacheGetOrSet("dashboard:financialStats", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardFinancialStats());
+    }),
+
+    // Today's parcel count: the one figure the staff dashboard takes from the
+    // day's numbers. Same cached figures; nothing else is handed over.
+    todayPackages: staffProcedure.query(async () => {
+      const stats = await cacheGetOrSet("dashboard:financialStats", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardFinancialStats());
+      return { todayPackages: stats.todayPackages };
     }),
 
     /**
@@ -355,7 +370,7 @@ export const dashboardRouter = router({
      * page load. Cached like the figures themselves so opening the same one
      * twice costs nothing.
      */
-    figureParts: staffProcedure
+    figureParts: accountantProcedure
       .input(z.object({ figure: z.enum(DASHBOARD_FIGURE_IDS as [DashboardFigureId, ...DashboardFigureId[]]) }))
       .query(async ({ input }) => {
         return cacheGetOrSet(
@@ -366,7 +381,7 @@ export const dashboardRouter = router({
       }),
     
     // Revenue chart data (30 days) (cached 30s)
-    revenueChart: staffProcedure
+    revenueChart: accountantProcedure
       .input(z.object({ days: z.number().optional() }).optional())
       .query(async ({ input }) => {
         const days = input?.days || 30;
@@ -374,7 +389,7 @@ export const dashboardRouter = router({
       }),
 
     // Profit/Loss chart: daily revenue, expenses, profit (داهات، خەرجی، قازانج) (cached 30s)
-    profitLossChart: staffProcedure
+    profitLossChart: accountantProcedure
       .input(z.object({ days: z.number().optional() }).optional())
       .query(async ({ input }) => {
         const days = input?.days || 30;
@@ -387,7 +402,7 @@ export const dashboardRouter = router({
     }),
     
     // Top debtors (cached 30s)
-    topDebtors: staffProcedure
+    topDebtors: accountantProcedure
       .input(z.object({ limit: z.number().optional() }).optional())
       .query(async ({ input }) => {
         const limit = input?.limit || 5;
@@ -416,12 +431,12 @@ export const dashboardRouter = router({
       }),
 
     // Weekly wins / records to celebrate (cached 30s)
-    weeklyHighlights: staffProcedure.query(async () => {
+    weeklyHighlights: accountantProcedure.query(async () => {
       return cacheGetOrSet("dashboard:weeklyHighlights", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getWeeklyHighlights());
     }),
     
     // Export dashboard as PDF
-    exportPDF: staffProcedure.mutation(async () => {
+    exportPDF: accountantProcedure.mutation(async () => {
       const data = await getDashboardReportData();
       const pdfBuffer = await generateDashboardPDF(data);
       return {
@@ -431,7 +446,7 @@ export const dashboardRouter = router({
     }),
     
     // Export dashboard with date filter as PDF
-    exportFilteredPDF: staffProcedure
+    exportFilteredPDF: accountantProcedure
       .input(z.object({
         period: z.enum(['week', 'month', 'year', 'custom']),
         customStart: z.date().optional(),
