@@ -21,6 +21,8 @@ import { showErrorToast } from "@/lib/errorToast";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { fmtAmount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
+import { fmtDateTime } from "@/lib/numericDate";
 import {
   settlementTotals, differenceOf, boxDiscountUsd, allocateBoxDiscount,
   iqdToUsd, usdToIqd,
@@ -53,7 +55,7 @@ const REASON_LABELS: Record<DiscountReason, { ku: string; en: string; ar: string
   other: { ku: "هۆکارێکی تر", en: "Other", ar: "سبب آخر", zh: "其他" },
 };
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => fmtUsd(n);
 
 interface Props {
   boxId: number;
@@ -327,23 +329,23 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                           </span>
                         )}
                       </td>
-                      <td className="p-2 text-end font-mono tabular-nums">{line.chargedUsd.toFixed(2)}</td>
+                      <td className="p-2 text-end font-mono tabular-nums">{fmtAmount(line.chargedUsd)}</td>
                       <td className="p-2 text-end font-mono tabular-nums">
                         {line.correctionUsd !== 0
                           ? <span className={line.correctionUsd < 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}>
-                              {line.correctionUsd > 0 ? "+" : ""}{line.correctionUsd.toFixed(2)}
+                              {line.correctionUsd > 0 ? "+" : ""}{fmtAmount(line.correctionUsd)}
                             </span>
                           : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="p-2 text-end font-mono tabular-nums">
                         {line.discountUsd > 0
-                          ? <span className="text-amber-600 dark:text-amber-400">−{line.discountUsd.toFixed(2)}</span>
+                          ? <span className="text-amber-600 dark:text-amber-400">−{fmtAmount(line.discountUsd)}</span>
                           : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="p-2 text-end font-mono tabular-nums font-semibold">
                         {isHeld
                           ? <span className="text-red-600 dark:text-red-400">0.00</span>
-                          : <span className="text-emerald-600 dark:text-emerald-400">{line.paidUsd.toFixed(2)}</span>}
+                          : <span className="text-emerald-600 dark:text-emerald-400">{fmtAmount(line.paidUsd)}</span>}
                       </td>
                       <td className="p-2">
                         <div className="flex items-center justify-center gap-1">
@@ -434,18 +436,18 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
             <p className="text-xs uppercase tracking-wide text-muted-foreground">
               {t({ ku: "حیسابی پارسێلەکان", en: "The parcels", ar: "حساب الطرود", zh: "包裹合计" })}
             </p>
-            <Row label={t({ ku: "کۆی بارکراو", en: "Charged", ar: "المحمّل", zh: "已计费" })} value={totals.chargedUsd.toFixed(2)} />
+            <Row label={t({ ku: "کۆی بارکراو", en: "Charged", ar: "المحمّل", zh: "已计费" })} value={fmtAmount(totals.chargedUsd)} />
             {totals.correctionUsd !== 0 && (
               <Row label={t({ ku: "ڕاستکردنەوە", en: "Corrections", ar: "التصحيحات", zh: "更正" })}
-                   value={`${totals.correctionUsd > 0 ? "+" : ""}${totals.correctionUsd.toFixed(2)}`} tone="blue" />
+                   value={`${totals.correctionUsd > 0 ? "+" : ""}${fmtAmount(totals.correctionUsd)}`} tone="blue" />
             )}
             {totals.discountUsd > 0 && (
               <Row label={t({ ku: "داشکاندن", en: "Discount", ar: "الخصم", zh: "折扣" })}
-                   value={`−${totals.discountUsd.toFixed(2)}`} tone="amber" />
+                   value={`−${fmtAmount(totals.discountUsd)}`} tone="amber" />
             )}
             {totals.heldUsd > 0 && (
               <Row label={t({ ku: "تەحدید کراو", en: "Set aside", ar: "مستبعد", zh: "已搁置" })}
-                   value={`−${totals.heldUsd.toFixed(2)}`} tone="red" />
+                   value={`−${fmtAmount(totals.heldUsd)}`} tone="red" />
             )}
             <div className="flex items-baseline justify-between border-t pt-1.5 font-semibold">
               <span>{t({ ku: "پێویستە بدرێت", en: "Due", ar: "المطلوب", zh: "应付" })}</span>
@@ -565,11 +567,11 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                 )}
                 {Number(s.amountIqd) > 0 && (
                   <span className="text-xs text-muted-foreground" dir="ltr">
-                    {Number(s.amountIqd).toLocaleString()} IQD @ {Number(s.exchangeRate ?? 0).toLocaleString()}
+                    {fmtNumber(s.amountIqd)} IQD @ {fmtNumber(s.exchangeRate ?? 0)}
                   </span>
                 )}
                 <span className="text-xs text-muted-foreground">
-                  {new Date(s.createdAt).toLocaleString()}{s.staffName ? ` · ${s.staffName}` : ""}
+                  {fmtDateTime(new Date(s.createdAt))}{s.staffName ? ` · ${s.staffName}` : ""}
                 </span>
                 {s.status === "reversed" ? (
                   <Badge variant="destructive" className="ms-auto">

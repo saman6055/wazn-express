@@ -10,6 +10,7 @@ import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { fmtKg, fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -672,10 +673,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                         ) : null;
                       })()}
                       {item.itemType === 'commission' && item.calculatedCostUsd && (
-                        <p className="text-muted-foreground">{t("delivery.totalWithCommission")}: <span className="font-mono font-semibold text-amber-600 dark:text-amber-300">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
+                        <p className="text-muted-foreground">{t("delivery.totalWithCommission")}: <span className="font-mono font-semibold text-amber-600 dark:text-amber-300">{fmtUsd(Number(item.calculatedCostUsd || 0))}</span></p>
                       )}
                       {item.itemType === 'full_package' && item.calculatedCostUsd && (
-                        <p className="text-muted-foreground">{t("delivery.sellingPrice")}: <span className="font-mono font-semibold text-purple-600 dark:text-purple-300">${Number(item.calculatedCostUsd || 0).toFixed(2)}</span></p>
+                        <p className="text-muted-foreground">{t("delivery.sellingPrice")}: <span className="font-mono font-semibold text-purple-600 dark:text-purple-300">{fmtUsd(Number(item.calculatedCostUsd || 0))}</span></p>
                       )}
                       {/* Whatever was written on the order when it was taken.
                           The person packing the box is the one who needs it. */}
@@ -709,12 +710,12 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                     {/* Weight (kg) or volume (CBM) for sea batches */}
                     <TableCell className="text-end font-mono text-xs">
                       {isSea
-                        ? `${Number(item.volumeCbm || 0).toFixed(3)} CBM`
-                        : `${Number(item.weightKg || 0).toFixed(2)} kg`}
+                        ? `${fmtNumber(Number(item.volumeCbm || 0), 3)} CBM`
+                        : fmtKg(Number(item.weightKg || 0))}
                     </TableCell>
                     {/* Price */}
                     <TableCell className="text-end font-mono text-sm font-semibold">
-                      ${Number(item.calculatedCostUsd || 0).toFixed(2)}
+                      {fmtUsd(Number(item.calculatedCostUsd || 0))}
                     </TableCell>
                     {isOpen && (
                       <TableCell>
@@ -755,25 +756,25 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               <Weight className="h-3 w-3" />
               {isSea ? t("delivery.totalVolume") : t("delivery.totalWeight")}
             </p>
-            <p className="text-lg font-bold">{isSea ? `${totalCbm.toFixed(3)} CBM` : `${totalWeight.toFixed(2)} kg`}</p>
+            <p className="text-lg font-bold">{isSea ? `${fmtNumber(totalCbm, 3)} CBM` : fmtKg(totalWeight)}</p>
           </div>
           <div className="rounded-lg bg-muted/50 p-3 text-center">
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <DollarSign className="h-3 w-3" />
               {t("delivery.packageValue")}
             </p>
-            <p className="text-lg font-bold">${totalItemValue.toFixed(2)}</p>
+            <p className="text-lg font-bold">{fmtUsd(totalItemValue)}</p>
           </div>
           <div className="rounded-lg bg-muted/50 p-3 text-center">
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
               <Truck className="h-3 w-3" />
               {t("delivery.deliveryCharge")}
             </p>
-            <p className="text-lg font-bold text-primary">${deliveryCharge.toFixed(2)}</p>
+            <p className="text-lg font-bold text-primary">{fmtUsd(deliveryCharge)}</p>
           </div>
           <div className="rounded-lg bg-primary/5 border border-primary/20 p-3 text-center col-span-2 sm:col-span-1">
             <p className="text-xs text-primary font-medium">{t("delivery.grandTotal")}</p>
-            <p className="text-xl font-extrabold text-primary">${grandTotal.toFixed(2)}</p>
+            <p className="text-xl font-extrabold text-primary">{fmtUsd(grandTotal)}</p>
           </div>
         </div>
 
@@ -784,11 +785,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-lg bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 p-3 text-center">
               <p className="text-xs text-emerald-700 dark:text-emerald-300 font-medium">💰 {pickLang(language, { ku: "پارەی پێشەکی دراو", en: "Advance paid", ar: "الدفعة المقدمة المدفوعة", zh: "已付预付款" })}</p>
-              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">−${advanceTotal.toFixed(2)}</p>
+              <p className="text-lg font-bold text-emerald-700 dark:text-emerald-300">−{fmtUsd(advanceTotal)}</p>
             </div>
             <div className="rounded-lg bg-amber-50 dark:bg-amber-950/40 border-2 border-amber-300 dark:border-amber-800/60 p-3 text-center">
               <p className="text-xs text-amber-800 dark:text-amber-200 font-medium">{pickLang(language, { ku: "ماوە بۆ دان", en: "Remaining due", ar: "المبلغ المتبقي", zh: "应付余额" })}</p>
-              <p className="text-xl font-extrabold text-amber-700 dark:text-amber-300">${remainingDue.toFixed(2)}</p>
+              <p className="text-xl font-extrabold text-amber-700 dark:text-amber-300">{fmtUsd(remainingDue)}</p>
             </div>
           </div>
         )}
@@ -807,7 +808,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             <Wallet className="h-4 w-4 me-1" />
             {t("delivery.takePayment")}
             {settlementDueUsd > 0
-              ? ` — $${settlementDueUsd.toFixed(2)}`
+              ? ` — ${fmtUsd(settlementDueUsd)}`
               : ` · ${pickLang(language, {
                   ku: "واصڵ کراوە", en: "settled", ar: "تم الاستلام", zh: "已结清",
                 })}`}

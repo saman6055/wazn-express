@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { fmtAmount, fmtUsd } from "@/lib/portalFormat";
 import { cn } from "@/lib/utils";
 import type { DiscountReason } from "@shared/boxSettlement";
 
@@ -32,7 +33,7 @@ const REASON_LABELS: Record<DiscountReason, { ku: string; en: string; ar: string
   other: { ku: "هۆکارێکی تر", en: "Other", ar: "سبب آخر", zh: "其他" },
 };
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => fmtUsd(n);
 
 /** The first of the month, so the default view is "this month so far". */
 function monthStart(): string {
@@ -161,7 +162,7 @@ export function DiscountReport({ alwaysOpen = false }: { alwaysOpen?: boolean } 
                               style={{ width: `${Math.round((row.totalUsd / max) * 100)}%` }} />
                       </span>
                       <span className="text-end font-mono tabular-nums text-muted-foreground">
-                        {row.totalUsd.toFixed(2)}
+                        {fmtAmount(row.totalUsd)}
                       </span>
                     </div>
                   ))}
@@ -213,7 +214,7 @@ function Line({ label, value, count, ltr }: { label: string; value: number; coun
         {label}
       </span>
       <span className="shrink-0 font-mono tabular-nums">
-        {value.toFixed(2)}
+        {fmtAmount(value)}
         <span className="ms-1 text-xs text-muted-foreground">({count})</span>
       </span>
     </div>

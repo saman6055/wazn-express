@@ -81,6 +81,8 @@ describe("print windows print text, never markup", () => {
     ["pages/ServicesReport.tsx", RAW_IN_HTML("company\\.(name|nameKu)|type\\.name|customer\\.name")],
     ["pages/BatchReports.tsx", RAW_IN_HTML("company\\.name|batch\\.batchCode")],
     ["hooks/useDataManagement.ts", RAW_IN_HTML("company\\.name")],
+    ["pages/Finance.tsx", RAW_IN_HTML("account\\.customer\\?\\.(customerCode|fullName|mobileNumber)|account\\.accountNumber|company\\.name")],
+    ["pages/CustomerFinance.tsx", RAW_IN_HTML("customer\\?\\.(customerCode|fullName|mobileNumber)|company\\.name|txn\\.(transactionNumber|description)")],
   ];
 
   for (const [file, raw] of cases) {

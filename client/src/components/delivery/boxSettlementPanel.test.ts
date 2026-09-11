@@ -274,7 +274,7 @@ describe("the open box can be paid for without leaving it", () => {
   });
 
   it("puts the figure on the button, so it is known before it is pressed", () => {
-    expect(detail).toContain("$${settlementDueUsd.toFixed(2)}");
+    expect(detail).toContain("${fmtUsd(settlementDueUsd)}");
   });
 
   it("works that figure out with the shared rule the dialog uses", () => {

@@ -3,6 +3,7 @@ import { AlertTriangle, Copy, Check, RotateCcw, PackageX, CheckCircle2 } from "l
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { fmtUsd } from "@/lib/portalFormat";
 import { buildErrorReport, getErrorBoundaryStrings } from "@/components/ErrorBoundary";
 import { nothingToTakeReason, confirmedPaymentCount, type SettlementViewLike } from "@/lib/settlementState";
 
@@ -13,7 +14,7 @@ import { nothingToTakeReason, confirmedPaymentCount, type SettlementViewLike } f
  */
 
 type Words = { ku: string; en: string; ar: string; zh: string };
-const money = (n: number) => `$${Number(n || 0).toFixed(2)}`;
+const money = (n: number) => fmtUsd(Number(n || 0));
 
 function useWords() {
   const { language } = useTranslation();

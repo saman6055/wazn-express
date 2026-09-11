@@ -1,3 +1,5 @@
+import { unsignedZero } from "./portalFormat";
+
 /**
  * One way to write a CSV cell — safe in a spreadsheet.
  *
@@ -29,6 +31,15 @@ export function csvRow(cells: readonly unknown[]): string {
 
 export function toCsv(rows: readonly (readonly unknown[])[]): string {
   return rows.map(csvRow).join("\n");
+}
+
+/**
+ * An amount for a spreadsheet: two decimals, no separators and no currency
+ * sign, so it stays a number a sum can add up — never "-0.00", never "NaN".
+ */
+export function csvAmount(value: unknown): string {
+  const n = typeof value === "number" ? value : Number(value);
+  return Number.isFinite(n) ? unsignedZero(n.toFixed(2)) : "";
 }
 
 /**

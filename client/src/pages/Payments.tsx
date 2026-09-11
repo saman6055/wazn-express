@@ -16,6 +16,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { fmtUsd } from "@/lib/portalFormat";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { canSeeAllAccounts } from "@shared/financeAccess";
 
@@ -213,7 +214,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی پارەدانەکان", en: "Total Payments", ar: "إجمالي المدفوعات", zh: "付款总额" })}</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-300">${totalPayments.toFixed(2)}</p>
+                  <p className="text-2xl font-bold text-green-600 dark:text-green-300">{fmtUsd(totalPayments)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-300" />
@@ -226,7 +227,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کاش", en: "Cash", ar: "نقدي", zh: "现金" })}</p>
-                  <p className="text-2xl font-bold">${cashPayments.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{fmtUsd(cashPayments)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <Banknote className="h-6 w-6 text-green-600 dark:text-green-300" />
@@ -239,7 +240,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "گواستنەوەی بانکی", en: "Bank Transfer", ar: "تحويل بنكي", zh: "银行转账" })}</p>
-                  <p className="text-2xl font-bold">${bankPayments.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{fmtUsd(bankPayments)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <Building className="h-6 w-6 text-blue-600 dark:text-blue-300" />
@@ -252,7 +253,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">Card</p>
-                  <p className="text-2xl font-bold">${cardPayments.toFixed(2)}</p>
+                  <p className="text-2xl font-bold">{fmtUsd(cardPayments)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                   <CreditCard className="h-6 w-6 text-purple-600 dark:text-purple-300" />
@@ -324,7 +325,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="font-semibold text-green-600 dark:text-green-300">
-                          ${Math.abs(Number(payment.amountUsd || 0)).toFixed(2)}
+                          {fmtUsd(Math.abs(Number(payment.amountUsd || 0)))}
                         </span>
                       </TableCell>
                     </TableRow>

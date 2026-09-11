@@ -9,6 +9,7 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { pickLang } from "@/lib/lang";
+import { fmtUsd } from "@/lib/portalFormat";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { Button } from "@/components/ui/button";
 import { exportToExcel } from "@/components/ExportUtils";
@@ -159,8 +160,8 @@ export default function CustomerDeliveryScanner() {
         t(`delivery.method${box.deliveryMethod === "warehouse_pickup" ? "Pickup" : box.deliveryMethod === "home_delivery" ? "HomeDelivery" : "CityTransfer"}`),
         t(`delivery.status${box.status.charAt(0).toUpperCase() + box.status.slice(1).replace("_", "")}`),
         box.totalPackages || 0,
-        `$${Number(box.totalValueUsd || 0).toFixed(2)}`,
-        `$${Number(box.deliveryChargeUsd || 0).toFixed(2)}`,
+        fmtUsd(Number(box.totalValueUsd || 0)),
+        fmtUsd(Number(box.deliveryChargeUsd || 0)),
         new Date(box.createdAt).toLocaleDateString("en-GB"),
       ];
     });

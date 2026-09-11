@@ -4,6 +4,10 @@ import { trpc } from "@/lib/trpc";
 import { readFinanceLink } from "@shared/listLinks";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
+import { escapeHtml } from "@/lib/html";
+import { printWhenReady } from "@/lib/printWindow";
+import { csvAmount, downloadText, toCsv } from "@/lib/csv";
+import { fmtUsd } from "@/lib/portalFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -326,10 +330,10 @@ export default function Finance() {
       html += `
         <tr>
           <td>${index + 1}</td>
-          <td>${account.customer?.customerCode || ''}</td>
-          <td>${account.customer?.fullName || ''}</td>
-          <td>${account.customer?.mobileNumber || '-'}</td>
-          <td style="color: #059669; font-weight: bold;">$${balance.toFixed(2)}</td>
+          <td>${escapeHtml(account.customer?.customerCode)}</td>
+          <td>${escapeHtml(account.customer?.fullName)}</td>
+          <td>${escapeHtml(account.customer?.mobileNumber || '-')}</td>
+          <td style="color: #059669; font-weight: bold;">${fmtUsd(balance)}</td>
           <td>${account.accountStatus === 'active' ? pickLang(language, { ku: "\u0686\u0627\u0644\u0627\u06a9", en: "Active", ar: "\u0646\u0634\u0637", zh: "\u6d3b\u8dc3" }) : pickLang(language, { ku: "\u0646\u0627\u0686\u0627\u0644\u0627\u06a9", en: "Inactive", ar: "\u063a\u064a\u0631 \u0646\u0634\u0637", zh: "\u505c\u7528" })}</td>
         </tr>
       `;
@@ -338,16 +342,12 @@ export default function Finance() {
     html += `
       <tr style="background: #f0fdf4; font-weight: bold;">
         <td colspan="4">${pickLang(language, { ku: "\u06a9\u06c6\u06cc \u06af\u0634\u062a\u06cc", en: "Grand total", ar: "\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0639\u0627\u0645", zh: "\u603b\u8ba1" })}</td>
-        <td style="color: #059669;">$${totalCreditAmount.toFixed(2)}</td>
+        <td style="color: #059669;">${fmtUsd(totalCreditAmount)}</td>
         <td>${creditCustomers.length} ${pickLang(language, { ku: "\u06a9\u0695\u06cc\u0627\u0631", en: "customers", ar: "\u0639\u0645\u064a\u0644", zh: "\u5ba2\u6237" })}</td>
       </tr>
     </table></body></html>`;
     
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `credit-customers-${new Date().toISOString().split('T')[0]}.xls`;
-    link.click();
+    downloadText(html, `credit-customers-${new Date().toISOString().split('T')[0]}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
     toast.success(pickLang(language, { ku: "Excel \u062f\u0627\u0648\u0646\u0644\u06c6\u062f \u06a9\u0631\u0627", en: "Excel downloaded", ar: "\u062a\u0645 \u062a\u0646\u0632\u064a\u0644 Excel", zh: "Excel \u5df2\u4e0b\u8f7d" }));
   };
   
@@ -362,10 +362,10 @@ export default function Finance() {
       tableRows += `
         <tr>
           <td>${index + 1}</td>
-          <td><strong>${account.customer?.customerCode || ''}</strong></td>
-          <td>${account.customer?.fullName || ''}</td>
-          <td>${account.customer?.mobileNumber || '-'}</td>
-          <td class="credit">$${balance.toFixed(2)}</td>
+          <td><strong>${escapeHtml(account.customer?.customerCode)}</strong></td>
+          <td>${escapeHtml(account.customer?.fullName)}</td>
+          <td>${escapeHtml(account.customer?.mobileNumber || '-')}</td>
+          <td class="credit">${fmtUsd(balance)}</td>
           <td><span class="badge ${account.accountStatus === 'active' ? 'active' : 'inactive'}">${account.accountStatus === 'active' ? pickLang(language, { ku: "\u0686\u0627\u0644\u0627\u06a9", en: "Active", ar: "\u0646\u0634\u0637", zh: "\u6d3b\u8dc3" }) : pickLang(language, { ku: "\u0646\u0627\u0686\u0627\u0644\u0627\u06a9", en: "Inactive", ar: "\u063a\u064a\u0631 \u0646\u0634\u0637", zh: "\u505c\u7528" })}</span></td>
         </tr>
       `;
@@ -406,7 +406,7 @@ export default function Finance() {
       </head>
       <body>
         <div class="header">${reportLogoHtml()}
-          <div class="company">${company.name}</div>
+          <div class="company">${escapeHtml(company.name)}</div>
           <h1>${pickLang(language, { ku: "\u0695\u0627\u067e\u06c6\u0631\u062a\u06cc \u06a9\u0695\u06cc\u0627\u0631\u0627\u0646\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a\u062f\u0627\u0631", en: "Credit customers report", ar: "\u062a\u0642\u0631\u064a\u0631 \u0627\u0644\u0639\u0645\u0644\u0627\u0621 \u0623\u0635\u062d\u0627\u0628 \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u8d37\u65b9\u5ba2\u6237\u62a5\u544a" })}</h1>
           <div class="date">${fmtDate(new Date())}</div>
         </div>
@@ -414,7 +414,7 @@ export default function Finance() {
         <div class="summary-cards">
           <div class="summary-card">
             <div class="label">${pickLang(language, { ku: "\u06a9\u06c6\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a", en: "Total credit", ar: "\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u8d37\u65b9\u603b\u989d" })}</div>
-            <div class="value">$${totalCreditAmount.toFixed(2)}</div>
+            <div class="value">${fmtUsd(totalCreditAmount)}</div>
           </div>
           <div class="summary-card">
             <div class="label">${pickLang(language, { ku: "\u0698\u0645\u0627\u0631\u06d5\u06cc \u06a9\u0695\u06cc\u0627\u0631", en: "Number of customers", ar: "\u0639\u062f\u062f \u0627\u0644\u0639\u0645\u0644\u0627\u0621", zh: "\u5ba2\u6237\u6570\u91cf" })}</div>
@@ -422,7 +422,7 @@ export default function Finance() {
           </div>
           <div class="summary-card">
             <div class="label">${pickLang(language, { ku: "\u0646\u0627\u0648\u06d5\u0646\u062f\u06cc \u06a9\u0631\u06cc\u062f\u06cc\u062a", en: "Average credit", ar: "\u0645\u062a\u0648\u0633\u0637 \u0627\u0644\u0631\u0635\u064a\u062f", zh: "\u5e73\u5747\u8d37\u65b9" })}</div>
-            <div class="value">$${creditCustomers.length > 0 ? (totalCreditAmount / creditCustomers.length).toFixed(2) : '0.00'}</div>
+            <div class="value">${fmtUsd(creditCustomers.length > 0 ? totalCreditAmount / creditCustomers.length : 0)}</div>
           </div>
         </div>
         
@@ -441,24 +441,22 @@ export default function Finance() {
             ${tableRows}
             <tr class="total-row">
               <td colspan="4">${pickLang(language, { ku: "\u06a9\u06c6\u06cc \u06af\u0634\u062a\u06cc", en: "Grand total", ar: "\u0627\u0644\u0625\u062c\u0645\u0627\u0644\u064a \u0627\u0644\u0639\u0627\u0645", zh: "\u603b\u8ba1" })}</td>
-              <td class="credit">$${totalCreditAmount.toFixed(2)}</td>
+              <td class="credit">${fmtUsd(totalCreditAmount)}</td>
               <td>${creditCustomers.length} ${pickLang(language, { ku: "\u06a9\u0695\u06cc\u0627\u0631", en: "customers", ar: "\u0639\u0645\u064a\u0644", zh: "\u5ba2\u6237" })}</td>
             </tr>
           </tbody>
         </table>
         
         <div class="footer">
-          <span>${company.name} - ${pickLang(language, { ku: "\u0633\u06cc\u0633\u062a\u06d5\u0645\u06cc \u0628\u06d5\u0695\u06ce\u0648\u06d5\u0628\u0631\u062f\u0646\u06cc \u062f\u0627\u0631\u0627\u06cc\u06cc", en: "Financial management system", ar: "\u0646\u0638\u0627\u0645 \u0627\u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0645\u0627\u0644\u064a\u0629", zh: "\u8d22\u52a1\u7ba1\u7406\u7cfb\u7edf" })}</span>
+          <span>${escapeHtml(company.name)} - ${pickLang(language, { ku: "\u0633\u06cc\u0633\u062a\u06d5\u0645\u06cc \u0628\u06d5\u0695\u06ce\u0648\u06d5\u0628\u0631\u062f\u0646\u06cc \u062f\u0627\u0631\u0627\u06cc\u06cc", en: "Financial management system", ar: "\u0646\u0638\u0627\u0645 \u0627\u0644\u0625\u062f\u0627\u0631\u0629 \u0627\u0644\u0645\u0627\u0644\u064a\u0629", zh: "\u8d22\u52a1\u7ba1\u7406\u7cfb\u7edf" })}</span>
           <span>${fmtDateTime(new Date())}</span>
         </div>
         
-        <div class="no-print" style="text-align: center; margin-top: 30px;">
-          <button onclick="window.print()" style="background: #059669; color: white; border: none; padding: 12px 40px; border-radius: 8px; font-size: 16px; cursor: pointer; font-family: inherit;">${pickLang(language, { ku: "\u0686\u0627\u067e\u06a9\u0631\u062f\u0646 / \u062f\u0627\u0648\u0646\u0644\u06c6\u062f PDF", en: "Print / Download PDF", ar: "\u0637\u0628\u0627\u0639\u0629 / \u062a\u0646\u0632\u064a\u0644 PDF", zh: "\u6253\u5370 / \u4e0b\u8f7d PDF" })}</button>
-        </div>
       </body>
       </html>
     `);
     printWindow.document.close();
+    printWhenReady(printWindow);
     toast.success(pickLang(language, { ku: "PDF \u0626\u0627\u0645\u0627\u062f\u06d5\u06cc\u06d5 \u0628\u06c6 \u0686\u0627\u067e\u06a9\u0631\u062f\u0646", en: "PDF ready to print", ar: "\u0645\u0644\u0641 PDF \u062c\u0627\u0647\u0632 \u0644\u0644\u0637\u0628\u0627\u0639\u0629", zh: "PDF \u5df2\u51c6\u5907\u597d\u6253\u5370" }));
   };
 
@@ -476,10 +474,8 @@ export default function Finance() {
   const bankPayments = payments?.filter(p => (p.description || '').toLowerCase().includes('bank')).reduce((sum, p) => sum + Math.abs(Number(p.amountUsd || 0)), 0) || 0;
   
   // Helpers
-  const formatCurrency = (amount: string | number) => {
-    const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(num);
-  };
+  // One way to write dollars: $1,250.00 — never "-$0.00", never "NaN" (lib/portalFormat).
+  const formatCurrency = (amount: string | number) => fmtUsd(amount);
   
   const getTransactionTypeColor = (type: string) => {
     if (type.startsWith('DEBIT')) return 'text-red-600';
@@ -549,26 +545,26 @@ export default function Finance() {
   
   // Export functions
   const exportToCSV = () => {
-    const data = filteredAndSortedAccounts.map(account => ({
-      [pickLang(language, { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" })]: account.customer?.customerCode || '',
-      [pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" })]: account.customer?.fullName || '',
-      [pickLang(language, { ku: "ژمارەی حساب", en: "Account number", ar: "رقم الحساب", zh: "账户号" })]: account.accountNumber || '',
-      [pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })]: parseFloat(account.currentBalanceUsd || '0').toFixed(2),
-      [pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })]: account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" }),
-    }));
-    
-    const headers = Object.keys(data[0] || {}).join(',');
-    const rows = data.map(row => Object.values(row).join(',')).join('\n');
-    const csv = '\uFEFF' + headers + '\n' + rows;
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `accounts-${new Date().toISOString().split('T')[0]}.csv`;
-    link.click();
+    const header = [
+      pickLang(language, { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" }),
+      pickLang(language, { ku: "ناو", en: "Name", ar: "الاسم", zh: "姓名" }),
+      pickLang(language, { ku: "ژمارەی حساب", en: "Account number", ar: "رقم الحساب", zh: "账户号" }),
+      pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" }),
+      pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" }),
+    ];
+    const rows = filteredAndSortedAccounts.map(account => [
+      account.customer?.customerCode || '',
+      account.customer?.fullName || '',
+      account.accountNumber || '',
+      csvAmount(account.currentBalanceUsd),
+      account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" }),
+    ]);
+    // Quoted and formula-safe through lib/csv; the byte-order mark tells Excel
+    // the file is UTF-8, so Kurdish reads as Kurdish.
+    downloadText('\uFEFF' + toCsv([header, ...rows]), `accounts-${new Date().toISOString().split('T')[0]}.csv`);
     toast.success(pickLang(language, { ku: "CSV داونلۆد کرا", en: "CSV downloaded", ar: "تم تنزيل CSV", zh: "CSV 已下载" }));
   };
-  
+
   const exportToExcel = () => {
     // Create HTML table for Excel
     let html = `
@@ -590,10 +586,10 @@ export default function Finance() {
       const balanceColor = balance > 0 ? '#dc2626' : balance < 0 ? '#16a34a' : '#000';
       html += `
         <tr>
-          <td>${account.customer?.customerCode || ''}</td>
-          <td>${account.customer?.fullName || ''}</td>
-          <td>${account.accountNumber || ''}</td>
-          <td style="color: ${balanceColor}; font-weight: bold;">$${balance.toFixed(2)}</td>
+          <td>${escapeHtml(account.customer?.customerCode)}</td>
+          <td>${escapeHtml(account.customer?.fullName)}</td>
+          <td>${escapeHtml(account.accountNumber)}</td>
+          <td style="color: ${balanceColor}; font-weight: bold;">${fmtUsd(balance)}</td>
           <td>${account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}</td>
         </tr>
       `;
@@ -601,11 +597,7 @@ export default function Finance() {
 
     html += '</table></body></html>';
     
-    const blob = new Blob([html], { type: 'application/vnd.ms-excel;charset=utf-8;' });
-    const link = document.createElement('a');
-    link.href = URL.createObjectURL(blob);
-    link.download = `accounts-${new Date().toISOString().split('T')[0]}.xls`;
-    link.click();
+    downloadText(html, `accounts-${new Date().toISOString().split('T')[0]}.xls`, 'application/vnd.ms-excel;charset=utf-8;');
     toast.success(pickLang(language, { ku: "Excel داونلۆد کرا", en: "Excel downloaded", ar: "تم تنزيل Excel", zh: "Excel 已下载" }));
   };
   
@@ -631,10 +623,10 @@ export default function Finance() {
       tableRows += `
         <tr>
           <td>${index + 1}</td>
-          <td><strong>${account.customer?.customerCode || ''}</strong></td>
-          <td>${account.customer?.fullName || ''}</td>
-          <td class="mono">${account.accountNumber || ''}</td>
-          <td class="${balanceClass}">$${balance.toFixed(2)}</td>
+          <td><strong>${escapeHtml(account.customer?.customerCode)}</strong></td>
+          <td>${escapeHtml(account.customer?.fullName)}</td>
+          <td class="mono">${escapeHtml(account.accountNumber)}</td>
+          <td class="${balanceClass}">${fmtUsd(balance)}</td>
           <td><span class="badge ${account.accountStatus === 'active' ? 'active' : 'inactive'}">${account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}</span></td>
         </tr>
       `;
@@ -645,7 +637,7 @@ export default function Finance() {
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>${pickLang(language, { ku: "ڕاپۆرتی حسابەکان", en: "Accounts report", ar: "تقرير الحسابات", zh: "账户报告" })} - ${company.name}</title>
+        <title>${pickLang(language, { ku: "ڕاپۆرتی حسابەکان", en: "Accounts report", ar: "تقرير الحسابات", zh: "账户报告" })} - ${escapeHtml(company.name)}</title>
         <style>
           * { box-sizing: border-box; margin: 0; padding: 0; }
           body { font-family: 'Segoe UI', Tahoma, sans-serif; padding: 40px; background: #f8fafc; }
@@ -675,7 +667,7 @@ export default function Finance() {
       <body>
         <div class="header">${reportLogoHtml()}
           <h1>📊 ${pickLang(language, { ku: "ڕاپۆرتی حسابەکان", en: "Accounts report", ar: "تقرير الحسابات", zh: "账户报告" })}</h1>
-          <p>${company.name} - ${fmtDate(new Date())}</p>
+          <p>${escapeHtml(company.name)} - ${fmtDate(new Date())}</p>
         </div>
         
         <div class="stats">
@@ -685,11 +677,11 @@ export default function Finance() {
           </div>
           <div class="stat-card">
             <h3>${pickLang(language, { ku: "کۆی قەرز", en: "Total debt", ar: "إجمالي الدين", zh: "欠款总额" })}</h3>
-            <div class="value debt">$${totalDebt.toFixed(2)}</div>
+            <div class="value debt">${fmtUsd(totalDebt)}</div>
           </div>
           <div class="stat-card">
             <h3>${pickLang(language, { ku: "کۆی کریدیت", en: "Total credit", ar: "إجمالي الرصيد", zh: "贷方总额" })}</h3>
-            <div class="value credit">$${totalCredit.toFixed(2)}</div>
+            <div class="value credit">${fmtUsd(totalCredit)}</div>
           </div>
         </div>
         
@@ -717,9 +709,7 @@ export default function Finance() {
     `);
     
     printWindow.document.close();
-    setTimeout(() => {
-      printWindow.print();
-    }, 500);
+    printWhenReady(printWindow);
     toast.success(pickLang(language, { ku: "PDF ئامادەیە بۆ چاپکردن", en: "PDF ready to print", ar: "ملف PDF جاهز للطباعة", zh: "PDF 已准备好打印" }));
   };
 
@@ -899,7 +889,7 @@ export default function Finance() {
                               {selectedCashAccountId && selectedCashAccountId !== 'none'
                                 ? (() => {
                                     const acc = activeCashAccounts?.find(a => a.id.toString() === selectedCashAccountId);
-                                    return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : t("bankAccounts.selectAccountOptional") || pickLang(language, { ku: "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" });
+                                    return acc ? `${acc.accountNameKu || acc.accountName} (${fmtUsd(acc.currentBalance)})` : t("bankAccounts.selectAccountOptional") || pickLang(language, { ku: "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" });
                                   })()
                                 : t("bankAccounts.selectAccountOptional") || pickLang(language, { ku: "هەژمارێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" })}
                               <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
@@ -926,7 +916,7 @@ export default function Finance() {
                                       <div className="flex items-center gap-2">
                                         <Landmark className="h-4 w-4 text-muted-foreground" />
                                         <span>{acc.accountNameKu || acc.accountName}</span>
-                                        <Badge variant="secondary" className="text-xs">${Number(acc.currentBalance).toLocaleString()}</Badge>
+                                        <Badge variant="secondary" className="text-xs">{fmtUsd(acc.currentBalance)}</Badge>
                                       </div>
                                     </CommandItem>
                                   ))}
@@ -1443,7 +1433,7 @@ export default function Finance() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{t("finance.totalReceived")}</p>
-                      <p className="text-3xl font-bold text-green-600 dark:text-green-300">${totalPayments.toFixed(2)}</p>
+                      <p className="text-3xl font-bold text-green-600 dark:text-green-300">{fmtUsd(totalPayments)}</p>
                     </div>
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
                       <TrendingUp className="h-6 w-6" />
@@ -1456,7 +1446,7 @@ export default function Finance() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{t("finance.cash")}</p>
-                      <p className="text-3xl font-bold">${cashPayments.toFixed(2)}</p>
+                      <p className="text-3xl font-bold">{fmtUsd(cashPayments)}</p>
                     </div>
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-green-400 to-green-500 flex items-center justify-center text-white shadow-lg">
                       <Banknote className="h-6 w-6" />
@@ -1469,7 +1459,7 @@ export default function Finance() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">{t("finance.bankTransfer")}</p>
-                      <p className="text-3xl font-bold">${bankPayments.toFixed(2)}</p>
+                      <p className="text-3xl font-bold">{fmtUsd(bankPayments)}</p>
                     </div>
                     <div className="h-12 w-12 rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white shadow-lg">
                       <Building className="h-6 w-6" />

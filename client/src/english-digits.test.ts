@@ -18,18 +18,6 @@ const EASTERN = /[٠-٩۰-۹]/;
 
 // They accept Eastern digits on purpose: a customer typing ٠٧٥٠ becomes 0750.
 const CONVERTERS = new Set(["shared/phone.ts", "server/routers/schemas.ts", "client/src/pages/CustomerLogin.tsx"]);
-// Being worked on by another session; named so the rule does not skip them silently.
-const OTHER_SESSION = new Set([
-  "client/src/pages/Finance.tsx",
-  "client/src/pages/CustomerFinance.tsx",
-  "client/src/components/delivery/BoxSettlementPanel.tsx",
-  "client/src/components/delivery/BoxDetailPanel.tsx",
-  "client/src/components/delivery/BoxTable.tsx",
-  "client/src/components/delivery/QuickSettleDialog.tsx",
-  "client/src/components/delivery/SettlementStates.tsx",
-  "client/src/components/delivery/BoxSegmentBar.tsx",
-  "client/src/components/delivery/CustomerDeliveryScanner.tsx",
-]);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -45,8 +33,7 @@ function walk(dir: string, out: string[] = []): string[] {
 
 const FILES = ["client/src", "server", "shared"]
   .flatMap((root) => walk(path.join(ROOT, root)))
-  .map((file) => ({ rel: path.relative(ROOT, file).replace(/\\/g, "/"), file }))
-  .filter(({ rel }) => !OTHER_SESSION.has(rel));
+  .map((file) => ({ rel: path.relative(ROOT, file).replace(/\\/g, "/"), file }));
 
 function offending(test: (line: string) => boolean, files = FILES, skipComments = false): string[] {
   const out: string[] = [];

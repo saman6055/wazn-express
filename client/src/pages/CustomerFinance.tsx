@@ -7,6 +7,10 @@ import { rowMeta } from "@shared/batchInvoice";
 import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
+import { escapeHtml } from "@/lib/html";
+import { printWhenReady } from "@/lib/printWindow";
+import { csvAmount, downloadText, toCsv } from "@/lib/csv";
+import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -329,7 +333,7 @@ export default function CustomerFinance() {
   const handleSubmitAdjust = () => {
     if (!customer) return;
     if (!adjustReason || adjustReason.trim().length < 5) {
-      toast.error(pickLang(language, { ku: "هۆکار پێویستە لانیکەم ٥ پیت بێت", en: "Reason must be at least 5 characters", ar: "يجب أن يكون السبب 5 أحرف على الأقل", zh: "原因至少需要5个字符" }));
+      toast.error(pickLang(language, { ku: "هۆکار پێویستە لانیکەم 5 پیت بێت", en: "Reason must be at least 5 characters", ar: "يجب أن يكون السبب 5 أحرف على الأقل", zh: "原因至少需要5个字符" }));
       return;
     }
     const amount = parseFloat(adjustAmount) || 0;
@@ -354,7 +358,7 @@ export default function CustomerFinance() {
   const handleSubmitReverse = () => {
     if (!reverseTargetPayment) return;
     if (!reverseReason || reverseReason.trim().length < 5) {
-      toast.error(pickLang(language, { ku: "هۆکار پێویستە لانیکەم ٥ پیت بێت", en: "Reason must be at least 5 characters", ar: "يجب أن يكون السبب 5 أحرف على الأقل", zh: "原因至少需要5个字符" }));
+      toast.error(pickLang(language, { ku: "هۆکار پێویستە لانیکەم 5 پیت بێت", en: "Reason must be at least 5 characters", ar: "يجب أن يكون السبب 5 أحرف على الأقل", zh: "原因至少需要5个字符" }));
       return;
     }
     const amount = parseFloat(reverseAmount) || 0;
@@ -363,7 +367,7 @@ export default function CustomerFinance() {
       return;
     }
     if (amount > reverseRemainingUsd + 0.005) {
-      toast.error(pickLang(language, { ku: `بڕی داواکراو ($${amount.toFixed(2)}) لە ماوە ($${reverseRemainingUsd.toFixed(2)}) زیاترە`, en: `Requested amount ($${amount.toFixed(2)}) exceeds the remaining ($${reverseRemainingUsd.toFixed(2)})`, ar: `المبلغ المطلوب ($${amount.toFixed(2)}) يتجاوز المتبقي ($${reverseRemainingUsd.toFixed(2)})`, zh: `请求金额 ($${amount.toFixed(2)}) 超过剩余金额 ($${reverseRemainingUsd.toFixed(2)})` }));
+      toast.error(pickLang(language, { ku: `بڕی داواکراو (${fmtUsd(amount)}) لە ماوە (${fmtUsd(reverseRemainingUsd)}) زیاترە`, en: `Requested amount (${fmtUsd(amount)}) exceeds the remaining (${fmtUsd(reverseRemainingUsd)})`, ar: `المبلغ المطلوب (${fmtUsd(amount)}) يتجاوز المتبقي (${fmtUsd(reverseRemainingUsd)})`, zh: `请求金额 (${fmtUsd(amount)}) 超过剩余金额 (${fmtUsd(reverseRemainingUsd)})` }));
       return;
     }
     if (reverseMode === 'mistake') {
@@ -391,7 +395,8 @@ export default function CustomerFinance() {
     if (currency === "IQD") {
       return new Intl.NumberFormat('en-US', { style: 'decimal' }).format(num) + " IQD";
     }
-    return "$" + num.toFixed(2);
+    // $1,250.00: separators, and never "-$0.00" (lib/portalFormat).
+    return fmtUsd(num);
   };
   
   const getTransactionTypeColor = (type: string) => {
@@ -585,7 +590,7 @@ export default function CustomerFinance() {
       <html dir="rtl" lang="ku">
       <head>
         <meta charset="UTF-8">
-        <title>${pickLang(language, { ku: "ڕاپۆرتی دارایی", en: "Financial Report", ar: "التقرير المالي", zh: "财务报告" })} - ${customer?.customerCode}</title>
+        <title>${pickLang(language, { ku: "ڕاپۆرتی دارایی", en: "Financial Report", ar: "التقرير المالي", zh: "财务报告" })} - ${escapeHtml(customer?.customerCode)}</title>
         <style>
           @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+Arabic:wght@300;400;500;600;700&display=swap');
           
@@ -945,7 +950,7 @@ export default function CustomerFinance() {
           <!-- Header -->
           <div class="header">${reportLogoHtml()}
             <div class="header-content">
-              <div class="company-name">${company.name}</div>
+              <div class="company-name">${escapeHtml(company.name)}</div>
               <div class="report-title">${pickLang(language, { ku: "ڕاپۆرتی دارایی کڕیار", en: "Customer Financial Report", ar: "التقرير المالي للعميل", zh: "客户财务报告" })}</div>
             </div>
             <div class="header-date">
@@ -959,15 +964,15 @@ export default function CustomerFinance() {
             <div class="customer-grid">
               <div class="customer-item">
                 <div class="customer-label">${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" })}</div>
-                <div class="customer-value">${customer?.customerCode || '-'}</div>
+                <div class="customer-value">${escapeHtml(customer?.customerCode || '-')}</div>
               </div>
               <div class="customer-item">
                 <div class="customer-label">${pickLang(language, { ku: "ناوی کڕیار", en: "Customer name", ar: "اسم العميل", zh: "客户姓名" })}</div>
-                <div class="customer-value">${customer?.fullName || '-'}</div>
+                <div class="customer-value">${escapeHtml(customer?.fullName || '-')}</div>
               </div>
               <div class="customer-item">
                 <div class="customer-label">${pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile number", ar: "رقم الهاتف", zh: "手机号码" })}</div>
-                <div class="customer-value">${customer?.mobileNumber || '-'}</div>
+                <div class="customer-value">${escapeHtml(customer?.mobileNumber || '-')}</div>
               </div>
               <div class="customer-item">
                 <div class="customer-label">${pickLang(language, { ku: "بەرواری تۆمارکردن", en: "Registration date", ar: "تاريخ التسجيل", zh: "注册日期" })}</div>
@@ -982,7 +987,7 @@ export default function CustomerFinance() {
             <div class="balance-grid">
               <div class="balance-card usd">
                 <div class="balance-label">${pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</div>
-                <div class="balance-value">$${parseFloat(account?.currentBalanceUsd || '0').toFixed(2)}</div>
+                <div class="balance-value">${fmtUsd(parseFloat(account?.currentBalanceUsd || '0'))}</div>
               </div>
 
               <div class="balance-card status">
@@ -999,37 +1004,37 @@ export default function CustomerFinance() {
             <div class="breakdown-grid">
               <div class="breakdown-card package">
                 <div class="breakdown-label">${pickLang(language, { ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" })}</div>
-                <div class="breakdown-value">$${breakdown.packageDebt.toFixed(2)}</div>
+                <div class="breakdown-value">${fmtUsd(breakdown.packageDebt)}</div>
               </div>
               <div class="breakdown-card fullpackage">
                 <div class="breakdown-label">${pickLang(language, { ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" })}</div>
-                <div class="breakdown-value">$${breakdown.fullPackageDebt.toFixed(2)}</div>
+                <div class="breakdown-value">${fmtUsd(breakdown.fullPackageDebt)}</div>
               </div>
               <div class="breakdown-card commission">
                 <div class="breakdown-label">${pickLang(language, { ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" })}</div>
-                <div class="breakdown-value">$${breakdown.commissionDebt.toFixed(2)}</div>
+                <div class="breakdown-value">${fmtUsd(breakdown.commissionDebt)}</div>
               </div>
               <div class="breakdown-card service">
                 <div class="breakdown-label">${pickLang(language, { ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" })}</div>
-                <div class="breakdown-value">$${breakdown.serviceDebt.toFixed(2)}</div>
+                <div class="breakdown-value">${fmtUsd(breakdown.serviceDebt)}</div>
               </div>
               <div class="breakdown-card credit">
                 <div class="breakdown-label">${pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</div>
-                <div class="breakdown-value">$${breakdown.creditBalance.toFixed(2)}</div>
+                <div class="breakdown-value">${fmtUsd(breakdown.creditBalance)}</div>
               </div>
               <div class="breakdown-card total">
                 <div class="breakdown-label">${pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</div>
-                <div class="breakdown-value">$${breakdown.totalDebt.toFixed(2)}</div>
+                <div class="breakdown-value">${fmtUsd(breakdown.totalDebt)}</div>
               </div>
             </div>
             <div class="summary-row">
               <div class="summary-item">
                 <div class="summary-label">${pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</div>
-                <div class="summary-value debit">$${totalDebit.toFixed(2)}</div>
+                <div class="summary-value debit">${fmtUsd(totalDebit)}</div>
               </div>
               <div class="summary-item">
                 <div class="summary-label">${pickLang(language, { ku: "کۆی پارەدانەکان", en: "Total payments", ar: "إجمالي المدفوعات", zh: "付款总额" })}</div>
-                <div class="summary-value credit">$${totalCredit.toFixed(2)}</div>
+                <div class="summary-value credit">${fmtUsd(totalCredit)}</div>
               </div>
 
             </div>
@@ -1055,17 +1060,17 @@ export default function CustomerFinance() {
                 ${filteredTransactions.map((txn, index) => `
                   <tr>
                     <td>${index + 1}</td>
-                    <td class="txn-number">${txn.transactionNumber}</td>
+                    <td class="txn-number">${escapeHtml(txn.transactionNumber)}</td>
                     <td>
                       <span class="type-badge ${txn.transactionType.startsWith('DEBIT') ? 'debit' : 'credit'}">
                         ${getTransactionTypeLabel(txn.transactionType)}
                       </span>
                     </td>
                     <td class="${txn.transactionType.startsWith('DEBIT') ? 'amount-debit' : 'amount-credit'}">
-                      ${txn.transactionType.startsWith('DEBIT') ? '+' : '-'}$${parseFloat(txn.amountUsd || '0').toFixed(2)}
+                      ${txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                     </td>
-                    <td>$${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}</td>
-                    <td class="description" title="${txn.description || ''}">${txn.description || '-'}</td>
+                    <td>${fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}</td>
+                    <td class="description" title="${escapeHtml(txn.description)}">${escapeHtml(txn.description || '-')}</td>
                     <td>${fmtDate(new Date(txn.createdAt))}</td>
                   </tr>
                 `).join('')}
@@ -1076,24 +1081,20 @@ export default function CustomerFinance() {
           <!-- Footer -->
           <div class="footer">
             <p class="footer-text">
-              ${pickLang(language, { ku: "ئەم ڕاپۆرتە لەلایەن", en: "This report was generated by", ar: "تم إنشاء هذا التقرير بواسطة", zh: "本报告由" })} <span class="footer-brand">${company.name}</span> ${pickLang(language, { ku: "دروستکراوە", en: "", ar: "", zh: "生成" })}
+              ${pickLang(language, { ku: "ئەم ڕاپۆرتە لەلایەن", en: "This report was generated by", ar: "تم إنشاء هذا التقرير بواسطة", zh: "本报告由" })} <span class="footer-brand">${escapeHtml(company.name)}</span> ${pickLang(language, { ku: "دروستکراوە", en: "", ar: "", zh: "生成" })}
               <br>
               ${fmtDateTime(new Date())}
             </p>
           </div>
         </div>
         
-        <script>
-          window.onload = function() {
-            window.print();
-          }
-        </script>
       </body>
       </html>
     `;
 
     printWindow.document.write(htmlContent);
     printWindow.document.close();
+    printWhenReady(printWindow);
     toast.success(t('toast.pdfReady'));
   };
 
@@ -1112,98 +1113,75 @@ export default function CustomerFinance() {
       .filter(t => t.transactionType.startsWith('CREDIT'))
       .reduce((sum, t) => sum + parseFloat(t.amountUsd || '0'), 0);
 
-    // Create CSV with BOM for Kurdish support
-    const BOM = '\uFEFF';
-    
-    // Header info
-    const headerInfo = [
-      [`${pickLang(language, { ku: "ڕاپۆرتی دارایی کڕیار", en: "Customer Financial Report", ar: "التقرير المالي للعميل", zh: "客户财务报告" })} - ${getCompanyInfoFromSettings(settings || []).name}`],
-      [''],
-      [pickLang(language, { ku: 'زانیاری کڕیار', en: 'Customer information', ar: 'معلومات العميل', zh: '客户信息' })],
-      [`${pickLang(language, { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" })}:,${customer?.customerCode || '-'}`],
-      [`${pickLang(language, { ku: "ناوی کڕیار", en: "Customer name", ar: "اسم العميل", zh: "客户姓名" })}:,${customer?.fullName || '-'}`],
-      [`${pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile number", ar: "رقم الهاتف", zh: "手机号码" })}:,${customer?.mobileNumber || '-'}`],
-      [`${pickLang(language, { ku: "بەرواری تۆمارکردن", en: "Registration date", ar: "تاريخ التسجيل", zh: "注册日期" })}:,${customer?.createdAt ? fmtDate(new Date(customer.createdAt)) : '-'}`],
-      [''],
-      [pickLang(language, { ku: 'باڵانسی حساب', en: 'Account balance', ar: 'رصيد الحساب', zh: '账户余额' })],
-      [`${pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}:,$${parseFloat(account?.currentBalanceUsd || '0').toFixed(2)}`],
-      [`${pickLang(language, { ku: "دۆخی حساب", en: "Account status", ar: "حالة الحساب", zh: "账户状态" })}:,${account?.accountStatus === 'active' ? pickLang(language, { ku: 'چالاک', en: 'Active', ar: 'نشط', zh: '活跃' }) : pickLang(language, { ku: 'ناچالاک', en: 'Inactive', ar: 'غير نشط', zh: '停用' })}`],
-      [''],
+    // One cell per value, quoted and formula-safe through lib/csv; amounts stay
+    // numbers a sum can add up. The byte-order mark tells Excel the file is
+    // UTF-8, so Kurdish reads as Kurdish.
+    const say = (text: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, text);
+    const statusText = account?.accountStatus === 'active'
+      ? say({ ku: 'چالاک', en: 'Active', ar: 'نشط', zh: '活跃' })
+      : say({ ku: 'ناچالاک', en: 'Inactive', ar: 'غير نشط', zh: '停用' });
+    const rows: unknown[][] = [
+      [`${say({ ku: "ڕاپۆرتی دارایی کڕیار", en: "Customer Financial Report", ar: "التقرير المالي للعميل", zh: "客户财务报告" })} - ${getCompanyInfoFromSettings(settings || []).name}`],
+      [],
+      [say({ ku: 'زانیاری کڕیار', en: 'Customer information', ar: 'معلومات العميل', zh: '客户信息' })],
+      [say({ ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户编号" }), customer?.customerCode || '-'],
+      [say({ ku: "ناوی کڕیار", en: "Customer name", ar: "اسم العميل", zh: "客户姓名" }), customer?.fullName || '-'],
+      [say({ ku: "ژمارەی مۆبایل", en: "Mobile number", ar: "رقم الهاتف", zh: "手机号码" }), customer?.mobileNumber || '-'],
+      [say({ ku: "بەرواری تۆمارکردن", en: "Registration date", ar: "تاريخ التسجيل", zh: "注册日期" }), customer?.createdAt ? fmtDate(new Date(customer.createdAt)) : '-'],
+      [],
+      [say({ ku: 'باڵانسی حساب', en: 'Account balance', ar: 'رصيد الحساب', zh: '账户余额' })],
+      [say({ ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" }), csvAmount(account?.currentBalanceUsd ?? 0)],
+      [say({ ku: "دۆخی حساب", en: "Account status", ar: "حالة الحساب", zh: "账户状态" }), statusText],
+      [],
     ];
+    if (breakdown) {
+      rows.push(
+        [say({ ku: 'شیکاری فرۆشتن', en: 'Sales breakdown', ar: 'تفصيل المبيعات', zh: '销售明细' })],
+        [say({ ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" }), csvAmount(breakdown.packageDebt)],
+        [say({ ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" }), csvAmount(breakdown.fullPackageDebt)],
+        [say({ ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" }), csvAmount(breakdown.commissionDebt)],
+        [say({ ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" }), csvAmount(breakdown.serviceDebt)],
+        [say({ ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" }), csvAmount(breakdown.creditBalance)],
+        [say({ ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" }), csvAmount(breakdown.totalDebt)],
+        [],
+      );
+    }
+    rows.push(
+      [say({ ku: 'کورتەی جوڵەکان', en: 'Transactions summary', ar: 'ملخص الحركات', zh: '交易摘要' })],
+      [say({ ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" }), csvAmount(totalDebit)],
+      [say({ ku: "کۆی پارەدانەکان", en: "Total payments", ar: "إجمالي المدفوعات", zh: "付款总额" }), csvAmount(totalCredit)],
+      [say({ ku: "ژمارەی جوڵەکان", en: "Number of transactions", ar: "عدد الحركات", zh: "交易数量" }), filteredTransactions.length],
+      [],
+      [say({ ku: 'لیستی جوڵەکان', en: 'Transactions list', ar: 'قائمة الحركات', zh: '交易列表' })],
+      [
+        '#',
+        say({ ku: 'ژمارەی جوڵە', en: 'Transaction no.', ar: 'رقم الحركة', zh: '交易编号' }),
+        say({ ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' }),
+        say({ ku: 'بڕی USD', en: 'Amount USD', ar: 'المبلغ USD', zh: '金额 USD' }),
+        say({ ku: 'باڵانس دوای', en: 'Balance after', ar: 'الرصيد بعد', zh: '之后余额' }),
+        say({ ku: 'وەسف', en: 'Description', ar: 'الوصف', zh: '描述' }),
+        say({ ku: 'بەروار', en: 'Date', ar: 'التاريخ', zh: '日期' }),
+      ],
+      // A debit adds to what the customer owes and a credit takes from it; the
+      // amount carries that sign, as the printed report does.
+      ...filteredTransactions.map((txn, index) => [
+        index + 1,
+        txn.transactionNumber,
+        getTransactionTypeLabel(txn.transactionType),
+        (txn.transactionType.startsWith('DEBIT') ? '' : '-') + csvAmount(Math.abs(parseFloat(txn.amountUsd || '0'))),
+        csvAmount(txn.balanceAfterUsd),
+        txn.description || '-',
+        fmtDate(new Date(txn.createdAt)),
+      ]),
+      [],
+      [say({ ku: `ئەم ڕاپۆرتە لە ${fmtDateTime(new Date())} دروستکراوە`, en: `This report was generated on ${fmtDateTime(new Date())}`, ar: `تم إنشاء هذا التقرير في ${fmtDateTime(new Date())}`, zh: `本报告生成于 ${fmtDateTime(new Date())}` })],
+    );
 
-    // Breakdown info
-    const breakdownInfo = breakdown ? [
-      [pickLang(language, { ku: 'شیکاری فرۆشتن', en: 'Sales breakdown', ar: 'تفصيل المبيعات', zh: '销售明细' })],
-      [`${pickLang(language, { ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" })}:,$${breakdown.packageDebt.toFixed(2)}`],
-      [`${pickLang(language, { ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" })}:,$${breakdown.fullPackageDebt.toFixed(2)}`],
-      [`${pickLang(language, { ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" })}:,$${breakdown.commissionDebt.toFixed(2)}`],
-      [`${pickLang(language, { ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" })}:,$${breakdown.serviceDebt.toFixed(2)}`],
-      [`${pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}:,$${breakdown.creditBalance.toFixed(2)}`],
-      [`${pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}:,$${breakdown.totalDebt.toFixed(2)}`],
-      [''],
-    ] : [];
+    downloadText(
+      '\uFEFF' + toCsv(rows),
+      `${customer?.customerCode || 'customer'}-financial-report-${new Date().toISOString().split('T')[0]}.csv`,
+    );
 
-    // Summary
-    const summaryInfo = [
-      [pickLang(language, { ku: 'کورتەی جوڵەکان', en: 'Transactions summary', ar: 'ملخص الحركات', zh: '交易摘要' })],
-      [`${pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}:,$${totalDebit.toFixed(2)}`],
-      [`${pickLang(language, { ku: "کۆی پارەدانەکان", en: "Total payments", ar: "إجمالي المدفوعات", zh: "付款总额" })}:,$${totalCredit.toFixed(2)}`],
-      [`${pickLang(language, { ku: "ژمارەی جوڵەکان", en: "Number of transactions", ar: "عدد الحركات", zh: "交易数量" })}:,${filteredTransactions.length}`],
-      [''],
-    ];
-
-    // Transaction headers
-    const transactionHeaders = [
-      pickLang(language, { ku: 'لیستی جوڵەکان', en: 'Transactions list', ar: 'قائمة الحركات', zh: '交易列表' })
-    ];
-
-    const tableHeaders = [
-      '#',
-      pickLang(language, { ku: 'ژمارەی جوڵە', en: 'Transaction no.', ar: 'رقم الحركة', zh: '交易编号' }),
-      pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' }),
-      pickLang(language, { ku: 'بڕی USD', en: 'Amount USD', ar: 'المبلغ USD', zh: '金额 USD' }),
-      pickLang(language, { ku: 'باڵانس دوای', en: 'Balance after', ar: 'الرصيد بعد', zh: '之后余额' }),
-      pickLang(language, { ku: 'وەسف', en: 'Description', ar: 'الوصف', zh: '描述' }),
-      pickLang(language, { ku: 'بەروار', en: 'Date', ar: 'التاريخ', zh: '日期' })
-    ];
-
-    // Transaction rows
-    const transactionRows = filteredTransactions.map((txn, index) => [
-      index + 1,
-      txn.transactionNumber,
-      getTransactionTypeLabel(txn.transactionType),
-      (txn.transactionType.startsWith('DEBIT') ? '+' : '-') + '$' + parseFloat(txn.amountUsd || '0').toFixed(2),
-      '$' + parseFloat(txn.balanceAfterUsd || '0').toFixed(2),
-      txn.description || '-',
-      fmtDate(new Date(txn.createdAt))
-    ]);
-
-    // Combine all sections
-    const allRows = [
-      ...headerInfo,
-      ...breakdownInfo,
-      ...summaryInfo,
-      [transactionHeaders],
-      tableHeaders,
-      ...transactionRows,
-      [''],
-      [pickLang(language, { ku: `ئەم ڕاپۆرتە لە ${fmtDateTime(new Date())} دروستکراوە`, en: `This report was generated on ${fmtDateTime(new Date())}`, ar: `تم إنشاء هذا التقرير في ${fmtDateTime(new Date())}`, zh: `本报告生成于 ${fmtDateTime(new Date())}` })]
-    ];
-
-    const csvContent = BOM + allRows.map(row => 
-      Array.isArray(row) ? row.map(cell => `"${cell}"`).join(',') : `"${row}"`
-    ).join('\n');
-    
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.download = `${customer?.customerCode || 'customer'}-financial-report-${new Date().toISOString().split('T')[0]}.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-    
     toast.success(t('toast.excelReady'));
   };
 
@@ -1370,7 +1348,7 @@ export default function CustomerFinance() {
                               {paymentCashAccountId && paymentCashAccountId !== 'none'
                                 ? (() => {
                                     const acc = activeCashAccounts?.find(a => a.id.toString() === paymentCashAccountId);
-                                    return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : pickLang(language, { ku: "حسابێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" });
+                                    return acc ? `${acc.accountNameKu || acc.accountName} (${fmtUsd(acc.currentBalance)})` : pickLang(language, { ku: "حسابێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" });
                                   })()
                                 : pickLang(language, { ku: "حسابێک هەڵبژێرە (ئارەزوومەندانە)", en: "Select an account (optional)", ar: "اختر حسابًا (اختياري)", zh: "选择账户（可选）" })}
                               <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
@@ -1397,7 +1375,7 @@ export default function CustomerFinance() {
                                       <div className="flex items-center gap-2">
                                         <Landmark className="h-4 w-4 text-muted-foreground" />
                                         <span>{acc.accountNameKu || acc.accountName}</span>
-                                        <Badge variant="secondary" className="text-xs">${Number(acc.currentBalance).toLocaleString()}</Badge>
+                                        <Badge variant="secondary" className="text-xs">{fmtUsd(acc.currentBalance)}</Badge>
                                       </div>
                                     </CommandItem>
                                   ))}
@@ -1535,7 +1513,7 @@ export default function CustomerFinance() {
                         "text-3xl font-bold",
                         parseFloat(account.currentBalanceUsd || '0') > 0 ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                       )}>
-                        ${parseFloat(account.currentBalanceUsd || '0').toFixed(2)}
+                        {fmtUsd(parseFloat(account.currentBalanceUsd || '0'))}
                       </p>
                     </div>
                     <div className={cn(
@@ -1599,32 +1577,32 @@ export default function CustomerFinance() {
                       <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-800/60">
                         <Package className="w-6 h-6 text-blue-600 dark:text-blue-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" })}</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">${breakdown.packageDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">{fmtUsd(breakdown.packageDebt)}</p>
                       </div>
                       <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
                         <ShoppingCart className="w-6 h-6 text-emerald-600 dark:text-emerald-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" })}</p>
-                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-300">${breakdown.fullPackageDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-300">{fmtUsd(breakdown.fullPackageDebt)}</p>
                       </div>
                       <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-800/60">
                         <Percent className="w-6 h-6 text-amber-600 dark:text-amber-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" })}</p>
-                        <p className="text-lg font-bold text-amber-600 dark:text-amber-300">${breakdown.commissionDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-amber-600 dark:text-amber-300">{fmtUsd(breakdown.commissionDebt)}</p>
                       </div>
                       <div className="text-center p-4 bg-pink-50 dark:bg-pink-950/40 rounded-xl border border-pink-100 dark:border-pink-800/60">
                         <Sparkles className="w-6 h-6 text-pink-600 dark:text-pink-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" })}</p>
-                        <p className="text-lg font-bold text-pink-600 dark:text-pink-300">${breakdown.serviceDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-pink-600 dark:text-pink-300">{fmtUsd(breakdown.serviceDebt)}</p>
                       </div>
                       <div className="text-center p-4 bg-green-50 dark:bg-green-950/40 rounded-xl border border-green-100 dark:border-green-800/60">
                         <Wallet className="w-6 h-6 text-green-600 dark:text-green-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</p>
-                        <p className="text-lg font-bold text-green-600 dark:text-green-300">${breakdown.creditBalance.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-green-600 dark:text-green-300">{fmtUsd(breakdown.creditBalance)}</p>
                       </div>
                       <div className="text-center p-4 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-100 dark:border-red-800/60">
                         <TrendingUp className="w-6 h-6 text-red-600 dark:text-red-300 mx-auto mb-2" />
                         <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</p>
-                        <p className="text-lg font-bold text-red-600 dark:text-red-300">${breakdown.totalDebt.toFixed(2)}</p>
+                        <p className="text-lg font-bold text-red-600 dark:text-red-300">{fmtUsd(breakdown.totalDebt)}</p>
                       </div>
                     </div>
                   </CardContent>
@@ -1690,7 +1668,7 @@ export default function CustomerFinance() {
                           tone: "paid" as const,
                         };
                         if (state === "partly") return {
-                          text: `${pickLang(language, { ku: "ماوە", en: "Owing", ar: "متبقٍ", zh: "尚欠" })} $${owed.toFixed(2)}`,
+                          text: `${pickLang(language, { ku: "ماوە", en: "Owing", ar: "متبقٍ", zh: "尚欠" })} ${fmtUsd(owed)}`,
                           tone: "owed" as const,
                         };
                         return {
@@ -1699,15 +1677,15 @@ export default function CustomerFinance() {
                         };
                       })(),
                       meta: [
-                        b.deliveredAt ? new Date(b.deliveredAt).toLocaleDateString() : null,
+                        b.deliveredAt ? fmtDate(new Date(b.deliveredAt)) : null,
                         `${b.totalPackages ?? 0} ${pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}`,
-                        Number(b.totalWeightKg) > 0 ? `${Number(b.totalWeightKg)} kg` : null,
+                        Number(b.totalWeightKg) > 0 ? fmtKg(b.totalWeightKg) : null,
                         b.destinationCity || null,
                         // The receipt handed over, so a customer holding a
                         // printed slip can be matched to a row here.
                         b.settlementNumber || null,
                         Number(b.settledDiscountUsd) > 0
-                          ? `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} $${Number(b.settledDiscountUsd).toFixed(2)}`
+                          ? `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} ${fmtUsd(Number(b.settledDiscountUsd))}`
                           : null,
                       ].filter(Boolean).join(" · "),
                     }))}
@@ -1748,7 +1726,7 @@ export default function CustomerFinance() {
                             b,
                             Number(b.myPackageCount ?? b.packageCount ?? 0),
                             { weightKg: Number(b.myWeightKg ?? 0), volumeCbm: Number(b.myVolumeCbm ?? 0) },
-                            (d: Date | string) => new Date(d).toLocaleDateString(),
+                            (d: Date | string) => fmtDate(new Date(d)),
                             {
                               parcels: pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" }),
                               kg: "kg",
@@ -1894,10 +1872,10 @@ export default function CustomerFinance() {
                                         "font-semibold",
                                         txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
-                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
+                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                                       </TableCell>
                                       <TableCell className="font-semibold">
-                                        ${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}
+                                        {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
                                       </TableCell>
                                       <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
                                         {txn.description || '-'}
@@ -1954,10 +1932,10 @@ export default function CustomerFinance() {
                                         "font-semibold",
                                         txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
-                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
+                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                                       </TableCell>
                                       <TableCell className="font-semibold">
-                                        ${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}
+                                        {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
                                       </TableCell>
                                       <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
                                         {txn.description || '-'}
@@ -2041,10 +2019,10 @@ export default function CustomerFinance() {
                                         "font-bold text-base",
                                         isNetDebit ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
-                                        {isNetDebit ? '+' : '-'}${absNet.toFixed(2)}
+                                        {isNetDebit ? '+' : '-'}{fmtUsd(absNet)}
                                       </TableCell>
                                       <TableCell className="font-semibold">
-                                        ${group.balanceAfterUsd.toFixed(2)}
+                                        {fmtUsd(group.balanceAfterUsd)}
                                       </TableCell>
                                       <TableCell className="max-w-[240px] truncate text-muted-foreground text-sm">
                                         {pickLang(language, { ku: "پسووڵەی کۆکراوە", en: "Grouped invoice", ar: "فاتورة مجمّعة", zh: "合并发票" })} — {group.rows.length} {pickLang(language, { ku: "مامەڵە", en: "transactions", ar: "معاملة", zh: "笔交易" })}
@@ -2098,10 +2076,10 @@ export default function CustomerFinance() {
                                           "font-semibold text-sm",
                                           txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                         )}>
-                                          {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(txn.amountUsd || '0').toFixed(2)}
+                                          {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                                         </TableCell>
                                         <TableCell className="font-medium text-sm">
-                                          ${parseFloat(txn.balanceAfterUsd || '0').toFixed(2)}
+                                          {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
                                         </TableCell>
                                         <TableCell className="max-w-[240px] truncate text-muted-foreground text-xs">
                                           {txn.description || '-'}
@@ -2198,10 +2176,10 @@ export default function CustomerFinance() {
                                       "font-semibold",
                                       isFullyReversed ? "text-muted-foreground line-through" : "text-emerald-600 dark:text-emerald-300"
                                     )}>
-                                      ${original.toFixed(2)}
+                                      {fmtUsd(original)}
                                       {isPartiallyReversed && (
                                         <span className="block text-xs text-amber-700 dark:text-amber-300 font-normal">
-                                          ({pickLang(language, { ku: "ماوە", en: "remaining", ar: "المتبقي", zh: "剩余" })}: ${remaining.toFixed(2)})
+                                          ({pickLang(language, { ku: "ماوە", en: "remaining", ar: "المتبقي", zh: "剩余" })}: {fmtUsd(remaining)})
                                         </span>
                                       )}
                                     </TableCell>
@@ -2300,7 +2278,7 @@ export default function CustomerFinance() {
                     : parseFloat(account?.currentBalanceUsd || '0') < 0 ? "text-emerald-600 dark:text-emerald-300"
                     : "text-muted-foreground"
                 )}>
-                  ${parseFloat(account?.currentBalanceUsd || '0').toFixed(2)}
+                  {fmtUsd(parseFloat(account?.currentBalanceUsd || '0'))}
                 </div>
               </div>
               <div className="p-3 rounded-lg bg-purple-50 dark:bg-purple-950/40 border-2 border-purple-200 dark:border-purple-800/60 text-center">
@@ -2311,7 +2289,7 @@ export default function CustomerFinance() {
                     : adjustPreviewBalance < 0 ? "text-emerald-600"
                     : "text-purple-700 dark:text-purple-300"
                 )}>
-                  ${adjustPreviewBalance.toFixed(2)}
+                  {fmtUsd(adjustPreviewBalance)}
                 </div>
               </div>
             </div>
@@ -2386,7 +2364,7 @@ export default function CustomerFinance() {
                 className="mt-1"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {pickLang(language, { ku: "لانیکەم ٥ پیت. لە audit log و سەر ledger دەنوسرێت.", en: "At least 5 characters. Recorded in the audit log and on the ledger.", ar: "5 أحرف على الأقل. يُسجَّل في سجل التدقيق وعلى دفتر الأستاذ.", zh: "至少5个字符。将记录在审计日志和账目中。" })}
+                {pickLang(language, { ku: "لانیکەم 5 پیت. لە audit log و سەر ledger دەنوسرێت.", en: "At least 5 characters. Recorded in the audit log and on the ledger.", ar: "5 أحرف على الأقل. يُسجَّل في سجل التدقيق وعلى دفتر الأستاذ.", zh: "至少5个字符。将记录在审计日志和账目中。" })}
               </p>
             </div>
 
@@ -2500,11 +2478,11 @@ export default function CustomerFinance() {
                           </div>
                           <div className="text-end shrink-0">
                             <div className="font-mono font-bold text-emerald-700 dark:text-emerald-300">
-                              ${remaining.toFixed(2)}
+                              {fmtUsd(remaining)}
                             </div>
                             {isPartial && (
                               <div className="text-[10px] text-muted-foreground">
-                                {pickLang(language, { ku: "لە کۆی", en: "of", ar: "من إجمالي", zh: "共" })} ${orig.toFixed(2)}
+                                {pickLang(language, { ku: "لە کۆی", en: "of", ar: "من إجمالي", zh: "共" })} {fmtUsd(orig)}
                               </div>
                             )}
                           </div>
@@ -2534,17 +2512,17 @@ export default function CustomerFinance() {
                 </div>
                 <div className="flex justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "بڕی پارەدان:", en: "Payment amount:", ar: "مبلغ الدفعة:", zh: "付款金额：" })}</span>
-                  <span className="font-bold">${parseFloat(reverseTargetPayment.amountUsd || '0').toFixed(2)}</span>
+                  <span className="font-bold">{fmtUsd(parseFloat(reverseTargetPayment.amountUsd || '0'))}</span>
                 </div>
                 {parseFloat(reverseTargetPayment.reversedAmountUsd || '0') > 0 && (
                   <div className="flex justify-between text-amber-700 dark:text-amber-300">
                     <span>{pickLang(language, { ku: "پێشتر گەڕێنراوەتەوە:", en: "Already reversed:", ar: "تم عكسه مسبقًا:", zh: "已撤销：" })}</span>
-                    <span className="font-bold">${parseFloat(reverseTargetPayment.reversedAmountUsd || '0').toFixed(2)}</span>
+                    <span className="font-bold">{fmtUsd(parseFloat(reverseTargetPayment.reversedAmountUsd || '0'))}</span>
                   </div>
                 )}
                 <div className="flex justify-between border-t pt-1 mt-1">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "ماوە بۆ گەڕاندنەوە:", en: "Remaining to reverse:", ar: "المتبقي للعكس:", zh: "可撤销余额：" })}</span>
-                  <span className="font-bold text-emerald-700 dark:text-emerald-300">${reverseRemainingUsd.toFixed(2)}</span>
+                  <span className="font-bold text-emerald-700 dark:text-emerald-300">{fmtUsd(reverseRemainingUsd)}</span>
                 </div>
               </div>
 
@@ -2605,7 +2583,7 @@ export default function CustomerFinance() {
                   className="mt-1 font-mono"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {pickLang(language, { ku: "هەرە زۆر", en: "Maximum", ar: "الحد الأقصى", zh: "最多" })}: ${reverseRemainingUsd.toFixed(2)}
+                  {pickLang(language, { ku: "هەرە زۆر", en: "Maximum", ar: "الحد الأقصى", zh: "最多" })}: {fmtUsd(reverseRemainingUsd)}
                 </p>
               </div>
 
@@ -2619,7 +2597,7 @@ export default function CustomerFinance() {
                         {reverseCashAccountId && reverseCashAccountId !== 'none'
                           ? (() => {
                               const acc = activeCashAccounts?.find(a => a.id.toString() === reverseCashAccountId);
-                              return acc ? `${acc.accountNameKu || acc.accountName} ($${Number(acc.currentBalance).toLocaleString()})` : pickLang(language, { ku: "حسابێک هەڵبژێرە", en: "Select an account", ar: "اختر حسابًا", zh: "选择账户" });
+                              return acc ? `${acc.accountNameKu || acc.accountName} (${fmtUsd(acc.currentBalance)})` : pickLang(language, { ku: "حسابێک هەڵبژێرە", en: "Select an account", ar: "اختر حسابًا", zh: "选择账户" });
                             })()
                           : pickLang(language, { ku: "حسابێک هەڵبژێرە", en: "Select an account", ar: "اختر حسابًا", zh: "选择账户" })}
                         <ChevronsUpDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
@@ -2639,7 +2617,7 @@ export default function CustomerFinance() {
                                 <div className="flex items-center gap-2">
                                   <Landmark className="h-4 w-4 text-muted-foreground" />
                                   <span>{acc.accountNameKu || acc.accountName}</span>
-                                  <Badge variant="secondary" className="text-xs">${Number(acc.currentBalance).toLocaleString()}</Badge>
+                                  <Badge variant="secondary" className="text-xs">{fmtUsd(acc.currentBalance)}</Badge>
                                 </div>
                               </CommandItem>
                             ))}
@@ -2664,7 +2642,7 @@ export default function CustomerFinance() {
                   className="mt-1"
                 />
                 <p className="text-xs text-muted-foreground mt-1">
-                  {pickLang(language, { ku: "لانیکەم ٥ پیت. ئەم هۆکارە لە audit log و بەسەر invoice دەنوسرێت.", en: "At least 5 characters. This reason is recorded in the audit log and on the invoice.", ar: "5 أحرف على الأقل. يُسجَّل هذا السبب في سجل التدقيق وعلى الفاتورة.", zh: "至少5个字符。此原因将记录在审计日志和发票上。" })}
+                  {pickLang(language, { ku: "لانیکەم 5 پیت. ئەم هۆکارە لە audit log و بەسەر invoice دەنوسرێت.", en: "At least 5 characters. This reason is recorded in the audit log and on the invoice.", ar: "5 أحرف على الأقل. يُسجَّل هذا السبب في سجل التدقيق وعلى الفاتورة.", zh: "至少5个字符。此原因将记录在审计日志和发票上。" })}
                 </p>
               </div>
 
@@ -2734,7 +2712,7 @@ export default function CustomerFinance() {
                     "text-4xl font-bold",
                     selectedTransaction.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                   )}>
-                    {selectedTransaction.transactionType.startsWith('DEBIT') ? '+' : '-'}${parseFloat(selectedTransaction.amountUsd || '0').toFixed(2)}
+                    {selectedTransaction.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(selectedTransaction.amountUsd || '0')))}
                   </p>
 
                 </div>
@@ -2743,11 +2721,11 @@ export default function CustomerFinance() {
               <div className="space-y-3">
                 <div className="flex justify-between items-center py-2 border-b">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "باڵانس پێش", en: "Balance before", ar: "الرصيد قبل", zh: "之前余额" })}</span>
-                  <span className="font-semibold">${parseFloat(selectedTransaction.balanceBeforeUsd || '0').toFixed(2)}</span>
+                  <span className="font-semibold">{fmtUsd(parseFloat(selectedTransaction.balanceBeforeUsd || '0'))}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "باڵانس دوای", en: "Balance after", ar: "الرصيد بعد", zh: "之后余额" })}</span>
-                  <span className="font-semibold">${parseFloat(selectedTransaction.balanceAfterUsd || '0').toFixed(2)}</span>
+                  <span className="font-semibold">{fmtUsd(parseFloat(selectedTransaction.balanceAfterUsd || '0'))}</span>
                 </div>
                 <div className="flex justify-between items-center py-2 border-b">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span>

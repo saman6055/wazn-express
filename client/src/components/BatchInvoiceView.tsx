@@ -1,5 +1,6 @@
 import { Receipt, Image as ImageIcon, AlertTriangle } from "lucide-react";
 import { pickLang } from "@/lib/lang";
+import { fmtKg, fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
 import { cn } from "@/lib/utils";
 import type { BatchInvoice, InvoiceLine } from "@shared/batchInvoice";
@@ -32,7 +33,7 @@ interface Props {
   onPrint?: () => void;
 }
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => fmtUsd(n);
 
 function shippingLabel(type: string | null | undefined) {
   if (type === "sea") return { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" };
@@ -104,7 +105,7 @@ function Line({ line, language }: { line: InvoiceLine; language: string }) {
                   charge is a number the customer simply has to accept. */}
               {line.weightKg > 0 && (
                 <span className="ms-1 font-mono text-xs opacity-70">
-                  · {line.weightKg} kg ({line.weightShare}%)
+                  · {fmtKg(line.weightKg)} ({fmtNumber(line.weightShare, 1)}%)
                 </span>
               )}
             </dt>
@@ -193,7 +194,7 @@ export function BatchInvoiceView({
               <p className="text-xs text-muted-foreground">
                 {pickLang(language, { ku: "کێشی گشتی", en: "Total weight", ar: "الوزن الكلي", zh: "总重量" })}
               </p>
-              <p className="mt-0.5 font-mono text-lg font-bold">{totals.weightKg} kg</p>
+              <p className="mt-0.5 font-mono text-lg font-bold">{fmtKg(totals.weightKg)}</p>
             </div>
           )}
           <div className="bg-emerald-50 p-3 dark:bg-emerald-950/40">

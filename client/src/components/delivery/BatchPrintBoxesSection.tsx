@@ -27,6 +27,7 @@ import { BoxTable } from "@/components/delivery/BoxTable";
 import { BoxDetailPanel } from "@/components/delivery/BoxDetailPanel";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { printBoxLabel } from "@/lib/deliveryBoxPrintUtils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
@@ -150,8 +151,8 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
         customer?.customerCode || "-",
         box.status,
         box.totalPackages || 0,
-        Number(box.totalWeightKg || 0).toFixed(3),
-        `$${Number(box.totalValueUsd || 0).toFixed(2)}`,
+        fmtNumber(box.totalWeightKg || 0, 3),
+        fmtUsd(Number(box.totalValueUsd || 0)),
         new Date(box.createdAt).toLocaleDateString("en-GB"),
       ];
     });

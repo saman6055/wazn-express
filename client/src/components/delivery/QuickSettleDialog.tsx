@@ -16,6 +16,7 @@ import { SettlementLoadError, NothingToTake } from "@/components/delivery/Settle
 import { useSystemAlert } from "@/components/SystemAlert";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
 import { settlementTotals, differenceOf, iqdToUsd, usdToIqd } from "@shared/boxSettlement";
 import { cn } from "@/lib/utils";
@@ -163,11 +164,11 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                 {code.name ? ` · ${code.name}` : ""}
               </p>
               <p className="mt-1 font-mono text-4xl font-semibold tabular-nums" data-testid="quick-due">
-                ${totals.dueUsd.toFixed(2)}
+                {fmtUsd(totals.dueUsd)}
               </p>
               {rateNum > 0 && (
                 <p className="mt-1 font-mono text-sm text-muted-foreground" dir="ltr">
-                  {usdToIqd(totals.dueUsd, rateNum).toLocaleString()} IQD
+                  {fmtNumber(usdToIqd(totals.dueUsd, rateNum), 0)} IQD
                 </p>
               )}
             </div>
@@ -211,14 +212,14 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             ) : difference.kind === "credit" ? (
               <p className="text-sm text-blue-600 dark:text-blue-400">
                 {t({ ku: "زیادە", en: "Over", ar: "زائد", zh: "多付" })}
-                {" "}${difference.amountUsd.toFixed(2)} —{" "}
+                {" "}{fmtUsd(difference.amountUsd)} —{" "}
                 {t({ ku: "دەبێتە کریدیت لەسەر کڕیار", en: "becomes credit on the customer", ar: "يصبح رصيداً للعميل", zh: "转为客户余额" })}
               </p>
             ) : (
               <div className="space-y-2 rounded-lg border border-red-300 p-3 dark:border-red-800">
                 <p className="text-sm font-medium text-red-600 dark:text-red-400">
               {t({ ku: "کەمە بە", en: "Short by", ar: "ناقص", zh: "少付" })}
-              {" "}${difference.amountUsd.toFixed(2)}
+              {" "}{fmtUsd(difference.amountUsd)}
                 </p>
                 <Select value={treatShortAs} onValueChange={(v) => setTreatShortAs(v as "debt" | "discount")}>
               <SelectTrigger className="h-9" data-testid="quick-short-as"><SelectValue /></SelectTrigger>
@@ -270,7 +271,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             >
               {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
               {t({ ku: "واصڵکردن", en: "Take payment", ar: "استلام", zh: "收款" })}
-              {" — $"}{paid.toFixed(2)}
+              {" — "}{fmtUsd(paid)}
             </Button>
           </DialogFooter>
         )}

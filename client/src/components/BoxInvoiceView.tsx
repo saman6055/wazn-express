@@ -1,5 +1,6 @@
 import { Boxes, AlertTriangle } from "lucide-react";
 import { pickLang } from "@/lib/lang";
+import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
 import type { BoxInvoice } from "@shared/boxInvoice";
 
@@ -25,7 +26,7 @@ interface Props {
   onPrint?: () => void;
 }
 
-const money = (n: number) => `$${n.toFixed(2)}`;
+const money = (n: number) => fmtUsd(n);
 
 export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, language, onPrint }: Props) {
   const { lines, totals, unpriced } = invoice;
@@ -43,7 +44,7 @@ export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, lan
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               {lines.length} {pickLang(language, { ku: "بەرید", en: "parcels", ar: "طرود", zh: "件" })}
-              {totals.weightKg > 0 ? ` · ${totals.weightKg} kg` : ""}
+              {totals.weightKg > 0 ? ` · ${fmtKg(totals.weightKg)}` : ""}
               {destination ? ` · ${destination}` : ""}
               {deliveredAt ? ` · ${new Date(deliveredAt).toLocaleDateString("en-GB")}` : ""}
             </p>
@@ -84,7 +85,7 @@ export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, lan
               <div className="shrink-0 text-end">
                 <p className="font-mono font-semibold">{money(line.cost)}</p>
                 {line.weightKg > 0 && (
-                  <p className="font-mono text-xs text-muted-foreground">{line.weightKg} kg</p>
+                  <p className="font-mono text-xs text-muted-foreground">{fmtKg(line.weightKg)}</p>
                 )}
               </div>
             </div>

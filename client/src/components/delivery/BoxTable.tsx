@@ -39,6 +39,7 @@ import {
 import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
+import { fmtUsd } from "@/lib/portalFormat";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
@@ -311,26 +312,26 @@ export function BoxTable({
                     <span className="mt-1 block w-fit rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-900/40 dark:text-red-300">
                       {alert.kind === "handed_unpaid"
                         ? pickLang(language, {
-                            ku: `ڕادەستکراوە بێ پارەدان — $${alert.outstandingUsd.toFixed(2)}`,
-                            en: `Handed over unpaid — $${alert.outstandingUsd.toFixed(2)}`,
-                            ar: `سُلّم دون دفع — $${alert.outstandingUsd.toFixed(2)}`,
-                            zh: `已交付未付款 — $${alert.outstandingUsd.toFixed(2)}`,
+                            ku: `ڕادەستکراوە بێ پارەدان — ${fmtUsd(alert.outstandingUsd)}`,
+                            en: `Handed over unpaid — ${fmtUsd(alert.outstandingUsd)}`,
+                            ar: `سُلّم دون دفع — ${fmtUsd(alert.outstandingUsd)}`,
+                            zh: `已交付未付款 — ${fmtUsd(alert.outstandingUsd)}`,
                           })
                         : pickLang(language, {
-                            ku: `${alert.days} ڕۆژە بێ پارەدان — $${alert.outstandingUsd.toFixed(2)}`,
-                            en: `${alert.days} days unpaid — $${alert.outstandingUsd.toFixed(2)}`,
-                            ar: `${alert.days} يومًا دون دفع — $${alert.outstandingUsd.toFixed(2)}`,
-                            zh: `${alert.days} 天未付款 — $${alert.outstandingUsd.toFixed(2)}`,
+                            ku: `${alert.days} ڕۆژە بێ پارەدان — ${fmtUsd(alert.outstandingUsd)}`,
+                            en: `${alert.days} days unpaid — ${fmtUsd(alert.outstandingUsd)}`,
+                            ar: `${alert.days} يومًا دون دفع — ${fmtUsd(alert.outstandingUsd)}`,
+                            zh: `${alert.days} 天未付款 — ${fmtUsd(alert.outstandingUsd)}`,
                           })}
                     </span>
                   )}
                 </TableCell>
                 <TableCell className="text-center font-medium">{box.totalPackages}</TableCell>
                 <TableCell className="text-end font-mono text-sm">
-                  ${Number(box.totalValueUsd || 0).toFixed(2)}
+                  {fmtUsd(Number(box.totalValueUsd || 0))}
                 </TableCell>
                 <TableCell className="text-end font-mono text-sm">
-                  ${Number(box.deliveryChargeUsd || 0).toFixed(2)}
+                  {fmtUsd(Number(box.deliveryChargeUsd || 0))}
                 </TableCell>
                 <TableCell className="text-xs text-muted-foreground">
                   {new Date(box.createdAt).toLocaleDateString("en-GB")}

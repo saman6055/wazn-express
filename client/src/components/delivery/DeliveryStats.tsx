@@ -3,6 +3,7 @@ import { ourDeliveryFee } from "@shared/deliveryFee";
 import { Card } from "@/components/ui/card";
 import { Package, DollarSign, CheckCircle, Truck } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { fmtUsd } from "@/lib/portalFormat";
 
 interface DeliveryBox {
   id: number;
@@ -80,7 +81,7 @@ export function DeliveryStats({ boxes, isLoading }: DeliveryStatsProps) {
       <StatCard
         icon={<DollarSign className="h-6 w-6" />}
         label={t("delivery.totalValue")}
-        value={`$${totalValue.toFixed(2)}`}
+        value={fmtUsd(totalValue)}
         iconBg="bg-emerald-100 dark:bg-emerald-900/30"
         iconColor="text-emerald-600 dark:text-emerald-400"
       />

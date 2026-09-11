@@ -64,6 +64,8 @@ describe("every export goes through it", () => {
     "pages/BusinessAnalytics.tsx",
     "pages/BatchFinancialReport.tsx",
     "pages/portal/PortalInvoiceReports.tsx",
+    "pages/Finance.tsx",
+    "pages/CustomerFinance.tsx",
   ];
 
   for (const file of EXPORTS) {

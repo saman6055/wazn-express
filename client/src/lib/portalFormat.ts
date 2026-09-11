@@ -53,6 +53,22 @@ export function fmtUsd(value: Numeric): string {
 }
 
 /**
+ * An amount without its currency sign, for a column or a row whose label
+ * already says USD: `1,234.50`. Two decimals and separators, like fmtUsd —
+ * never "-0.00", never "NaN".
+ */
+export function fmtAmount(value: Numeric): string {
+  const n = toNumber(value);
+  if (n === null) return NO_VALUE;
+  return unsignedZero(
+    new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n),
+  );
+}
+
+/**
  * A plain number with separators and at most `maxDecimals` places, trailing
  * zeros dropped: 12 → "12", 12.5 → "12.5", 12.345 → "12.35".
  */

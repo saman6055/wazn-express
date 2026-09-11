@@ -17,6 +17,8 @@ describe("no inline script where the policy forbids it", () => {
     "lib/batchLabelPrintUtils.ts",
     "pages/InvoiceReports.tsx",
     "pages/portal/PortalInvoiceReports.tsx",
+    "pages/Finance.tsx",
+    "pages/CustomerFinance.tsx",
   ];
 
   for (const file of PRINT) {
