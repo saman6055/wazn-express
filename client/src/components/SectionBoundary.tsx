@@ -1,3 +1,4 @@
+import { reportClientError } from "@/lib/reportClientError";
 import { Component, type ReactNode } from "react";
 import { AlertTriangle, Check, Copy, RotateCcw } from "lucide-react";
 import { buildErrorReport, getErrorBoundaryStrings } from "./ErrorBoundary";
@@ -30,6 +31,10 @@ export class SectionBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { error };
+  }
+
+  componentDidCatch(error: Error) {
+    reportClientError("section", error);
   }
 
   componentDidUpdate(prev: Props) {

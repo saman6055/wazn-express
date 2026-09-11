@@ -12,6 +12,7 @@ import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
 import { registerBackupFileRoute } from "./backupFileRoute";
+import { registerClientErrorsRoute } from "./clientErrorsRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
@@ -116,6 +117,7 @@ async function startServer() {
   registerBackupFileRoute(app);
 
   registerPortalEventsRoute(app);
+  registerClientErrorsRoute(app);
 
   // tRPC API (auth limiter applies strict limit to login procedures only)
   app.use(

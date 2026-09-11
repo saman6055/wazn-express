@@ -1,3 +1,4 @@
+import { reportClientError } from "@/lib/reportClientError";
 import { cn } from "@/lib/utils";
 import { AlertTriangle, RotateCcw, Home, Copy, Check } from "lucide-react";
 import { Component, ReactNode } from "react";
@@ -119,6 +120,10 @@ class ErrorBoundary extends Component<Props, State> {
 
   static getDerivedStateFromError(error: Error): Partial<State> {
     return { hasError: true, error };
+  }
+
+  componentDidCatch(error: Error) {
+    reportClientError("render", error);
   }
 
   handleCopyDetails = () => {

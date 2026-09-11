@@ -55,7 +55,9 @@ export function requestLoggingMiddleware(
       const level = res.statusCode >= 500 ? "error" : res.statusCode >= 400 ? "warn" : "info";
       (logInstance as AppLogger)[level]("request", {
         method: req.method,
-        url: req.originalUrl ?? req.url,
+        // The path only: a tRPC query carries its input in the query string —
+        // a search, a phone number, a share token — and this line is kept.
+        url: req.path,
         status: res.statusCode,
         durationMs: duration,
       });

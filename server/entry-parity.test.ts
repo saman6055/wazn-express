@@ -47,6 +47,7 @@ const MUST_BE_IN_BOTH: { name: string; token: string; why: string }[] = [
   { name: 'request logging', token: 'requestLoggingMiddleware', why: 'nothing is diagnosable without it' },
   { name: 'portal live updates', token: 'registerPortalEventsRoute(app)', why: 'no live notice reaches a customer without it' },
   { name: 'backup download', token: 'registerBackupFileRoute(app)', why: 'the Backups screen links every file here' },
+  { name: 'client error reports', token: 'registerClientErrorsRoute(app)', why: 'browsers report their crashes here' },
   { name: 'real client addresses', token: 'app.set("trust proxy"', why: 'without it every rate limit counts all users as one' },
 ];
 

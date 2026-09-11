@@ -1,3 +1,4 @@
+import { reportClientError } from "./lib/reportClientError";
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 
@@ -59,6 +60,27 @@ if ('serviceWorker' in navigator) {
 window.addEventListener("pageshow", (event) => {
   if ((event as PageTransitionEvent).persisted) window.location.reload();
 });
+
+// After a deploy, a tab left open asks for the previous build's files, which
+// are gone (the server now answers 404 for them instead of the page). Reload
+// once onto the new build rather than show an error — at most once a minute,
+// so a build that is genuinely broken still reaches the report screen.
+window.addEventListener("vite:preloadError", (event) => {
+  try {
+    const last = Number(sessionStorage.getItem("wazn-chunk-reload") || 0);
+    if (Date.now() - last < 60_000) return;
+    sessionStorage.setItem("wazn-chunk-reload", String(Date.now()));
+  } catch {
+    // Storage refused: reload once anyway.
+  }
+  reportClientError("chunk", (event as Event & { payload?: unknown }).payload);
+  event.preventDefault();
+  window.location.reload();
+});
+
+// Errors nothing caught still reach the team (see reportClientError).
+window.addEventListener("error", (event) => reportClientError("unhandled", event.error ?? event.message));
+window.addEventListener("unhandledrejection", (event) => reportClientError("rejection", event.reason));
 
 const queryClient = new QueryClient({
   defaultOptions: {
