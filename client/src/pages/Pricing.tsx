@@ -112,8 +112,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <Select name="shippingType" required>
                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="air_regular">Air Regular (per KG)</SelectItem>
-                          <SelectItem value="air_irregular">Air Irregular (per KG)</SelectItem>
+                          <SelectItem value="air_regular">Air Regular (per kg)</SelectItem>
+                          <SelectItem value="air_irregular">Air Irregular (per kg)</SelectItem>
                           <SelectItem value="sea">Sea (per CBM)</SelectItem>
                         </SelectContent>
                       </Select>

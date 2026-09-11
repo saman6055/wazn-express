@@ -60,7 +60,7 @@ export function BatchPerformanceSection() {
         <StatsCard
           title={t("reports.totalWeight")}
           value={stats.totalWeight}
-          description="KG"
+          description="kg"
           icon={<Scale className="h-6 w-6" />}
           color="amber"
           isLoading={isLoading}

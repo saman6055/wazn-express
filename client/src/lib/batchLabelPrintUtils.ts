@@ -3,7 +3,7 @@ import { escapeHtml } from "./html";
 import { fmtDate } from "./numericDate";
 import { reportLogoHtml } from "./brand";
 /**
- * Batch label print — یەک لەیبڵ بۆ هەر کڕیار لە باچ (کۆی پاکەت، حەجم، کیلۆ، بارکۆد/QR، نرخ، ناوی کڕیار)
+ * Batch label print — یەک لەیبڵ بۆ هەر کڕیار لە باچ (کۆی پاکەت، حەجم، کێش (kg)، بارکۆد/QR، نرخ، ناوی کڕیار)
  */
 
 export interface BatchLabelTemplateForPrint {
@@ -32,7 +32,7 @@ export interface CustomerSummaryForBatchLabel {
   name: string;
   code?: string | null;
   totalPackages: number;
-  totalWeight: number;  // KG (chargeable or actual)
+  totalWeight: number;  // kg (chargeable or actual)
   totalVolume: number;  // CBM for sea
   totalPrice: number;
 }
@@ -159,9 +159,9 @@ export function generateBatchLabelsHtml(options: {
         
         <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 2mm; font-size: 9pt; border-top: 1px solid #eee; padding-top: 2mm; margin-top: 2mm;">
           ${t.showTotalPackages ? `<div>📦 کۆی پاکەت: <strong>${cust.totalPackages}</strong></div>` : ""}
-          ${t.showTotalWeight && !isSea ? `<div>⚖️ کیلۆ: <strong>${cust.totalWeight.toFixed(2)}</strong></div>` : ""}
+          ${t.showTotalWeight && !isSea ? `<div>⚖️ کێش (kg): <strong>${cust.totalWeight.toFixed(2)}</strong></div>` : ""}
           ${t.showTotalVolume && isSea ? `<div>📐 حەجم (CBM): <strong>${cust.totalVolume.toFixed(3)}</strong></div>` : ""}
-          ${t.showTotalWeight && isSea ? `<div>⚖️ کیلۆ: <strong>${cust.totalWeight.toFixed(2)}</strong></div>` : ""}
+          ${t.showTotalWeight && isSea ? `<div>⚖️ کێش (kg): <strong>${cust.totalWeight.toFixed(2)}</strong></div>` : ""}
           ${t.showTotalPrice ? `<div>💰 نرخ: <strong>$${cust.totalPrice.toFixed(2)}</strong></div>` : ""}
           ${t.showBatchNumber ? `<div>📋 باچ: <strong>${escapeHtml(batchCode)}</strong></div>` : ""}
           ${t.showDate ? `<div>📅 ${fmtDate(new Date())}</div>` : ""}

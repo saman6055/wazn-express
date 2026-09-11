@@ -254,11 +254,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </div>
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
-                        <Label htmlFor="fixedPricePerKgAir">{pickLang(language, { ku: "نرخی جێگیر/کگ (ئاسمانی)", en: "Fixed Price/KG (Air)", ar: "سعر ثابت/كغ (جوي)", zh: "固定单价/公斤（空运）" })}</Label>
+                        <Label htmlFor="fixedPricePerKgAir">{pickLang(language, { ku: "نرخی جێگیر/kg (ئاسمانی)", en: "Fixed Price/kg (Air)", ar: "سعر ثابت/kg (جوي)", zh: "固定单价/kg（空运）" })}</Label>
                         <Input id="fixedPricePerKgAir" name="fixedPricePerKgAir" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: 5.00", en: "e.g. 5.00", ar: "مثال: 5.00", zh: "例如 5.00" })} />
                       </div>
                       <div className="grid gap-2">
-                        <Label htmlFor="fixedPricePerKgSea">{pickLang(language, { ku: "نرخی جێگیر/کگ (دەریایی)", en: "Fixed Price/KG (Sea)", ar: "سعر ثابت/كغ (بحري)", zh: "固定单价/公斤（海运）" })}</Label>
+                        <Label htmlFor="fixedPricePerKgSea">{pickLang(language, { ku: "نرخی جێگیر/kg (دەریایی)", en: "Fixed Price/kg (Sea)", ar: "سعر ثابت/kg (بحري)", zh: "固定单价/kg（海运）" })}</Label>
                         <Input id="fixedPricePerKgSea" name="fixedPricePerKgSea" type="number" step="0.01" min="0" className="h-11" placeholder={pickLang(language, { ku: "نموونە: 2.00", en: "e.g. 2.00", ar: "مثال: 2.00", zh: "例如 2.00" })} />
                       </div>
                     </div>
@@ -404,7 +404,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <div className="p-3 rounded-xl bg-amber-50 dark:bg-amber-950/30">
                         <div className="flex items-center gap-2 text-amber-600 dark:text-amber-400 mb-1">
                           <DollarSign className="h-4 w-4" />
-                          <span className="text-xs font-medium">{pickLang(language, { ku: "ئاسمانی/کگ", en: "Air/KG", ar: "جوي/كغ", zh: "空运/公斤" })}</span>
+                          <span className="text-xs font-medium">{pickLang(language, { ku: "ئاسمانی/kg", en: "Air/kg", ar: "جوي/kg", zh: "空运/kg" })}</span>
                         </div>
                         <p className="font-bold text-lg">${vip.fixedPricePerKgAir}</p>
                       </div>
@@ -413,7 +413,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <div className="p-3 rounded-xl bg-purple-50 dark:bg-purple-950/30">
                         <div className="flex items-center gap-2 text-purple-600 dark:text-purple-400 mb-1">
                           <DollarSign className="h-4 w-4" />
-                          <span className="text-xs font-medium">{pickLang(language, { ku: "دەریایی/کگ", en: "Sea/KG", ar: "بحري/كغ", zh: "海运/公斤" })}</span>
+                          <span className="text-xs font-medium">{pickLang(language, { ku: "دەریایی/kg", en: "Sea/kg", ar: "بحري/kg", zh: "海运/kg" })}</span>
                         </div>
                         <p className="font-bold text-lg">${vip.fixedPricePerKgSea}</p>
                       </div>
@@ -487,11 +487,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div className="grid gap-2">
-                      <Label htmlFor="edit-fixedPricePerKgAir">{pickLang(language, { ku: "نرخی جێگیر/کگ (ئاسمانی)", en: "Fixed Price/KG (Air)", ar: "سعر ثابت/كغ (جوي)", zh: "固定单价/公斤（空运）" })}</Label>
+                      <Label htmlFor="edit-fixedPricePerKgAir">{pickLang(language, { ku: "نرخی جێگیر/kg (ئاسمانی)", en: "Fixed Price/kg (Air)", ar: "سعر ثابت/kg (جوي)", zh: "固定单价/kg（空运）" })}</Label>
                       <Input id="edit-fixedPricePerKgAir" name="fixedPricePerKgAir" type="number" step="0.01" min="0" defaultValue={selectedVip.fixedPricePerKgAir || ""} className="h-11" />
                     </div>
                     <div className="grid gap-2">
-                      <Label htmlFor="edit-fixedPricePerKgSea">{pickLang(language, { ku: "نرخی جێگیر/کگ (دەریایی)", en: "Fixed Price/KG (Sea)", ar: "سعر ثابت/كغ (بحري)", zh: "固定单价/公斤（海运）" })}</Label>
+                      <Label htmlFor="edit-fixedPricePerKgSea">{pickLang(language, { ku: "نرخی جێگیر/kg (دەریایی)", en: "Fixed Price/kg (Sea)", ar: "سعر ثابت/kg (بحري)", zh: "固定单价/kg（海运）" })}</Label>
                       <Input id="edit-fixedPricePerKgSea" name="fixedPricePerKgSea" type="number" step="0.01" min="0" defaultValue={selectedVip.fixedPricePerKgSea || ""} className="h-11" />
                     </div>
                   </div>

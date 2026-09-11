@@ -397,7 +397,7 @@ export default function Registrations() {
         <div className="relative mt-5 grid grid-cols-3 gap-2 sm:grid-cols-4 lg:grid-cols-7">
           <Stat value={String(totals.pieces)} caption={label({ ku: "پارچە", en: "pieces", ar: "قطعة", zh: "件" })} icon={PackageIcon} />
           <Stat value={String(totals.customers)} caption={label({ ku: "کڕیار", en: "customers", ar: "عميل", zh: "客户" })} icon={Users} />
-          <Stat value={totals.airKg.toFixed(1)} caption={label({ ku: "کیلۆ · ئاسمانی", en: "kg · air", ar: "كغ · جوي", zh: "公斤 · 空运" })} icon={Plane} />
+          <Stat value={totals.airKg.toFixed(1)} caption={label({ ku: "kg · ئاسمانی", en: "kg · air", ar: "kg · جوي", zh: "kg · 空运" })} icon={Plane} />
           <Stat value={totals.seaCbm.toFixed(2)} caption={label({ ku: "CBM · دەریایی", en: "CBM · sea", ar: "م³ · بحري", zh: "立方米 · 海运" })} icon={Ship} />
           <Stat value={`$${Math.round(totals.value)}`} caption={label({ ku: "بڕی گشتی", en: "total value", ar: "القيمة", zh: "总额" })} icon={DollarSign} />
           <Stat value={String(incomplete)} caption={label({ ku: "کەموکوڕی", en: "incomplete", ar: "ناقص", zh: "不完整" })} icon={AlertTriangle} warn={incomplete > 0} />
@@ -942,10 +942,10 @@ function VolumetricBanner({
         <Scale className={cn("h-4 w-4 shrink-0", acknowledged ? "text-emerald-700 dark:text-emerald-300" : "text-red-700 dark:text-red-300")} />
         <p className={cn("text-[12px] font-medium", acknowledged ? "text-emerald-800 dark:text-emerald-200" : "text-red-800 dark:text-red-200")}>
           {label({
-            ku: `کێشی قەبارەیی — حساب لەسەر ${kg(v.chargeableKg)} کیلۆ دەکرێت نەک ${kg(v.actualKg)}`,
+            ku: `کێشی قەبارەیی — حساب لەسەر ${kg(v.chargeableKg)} kg دەکرێت نەک ${kg(v.actualKg)}`,
             en: `Volumetric weight — billed at ${kg(v.chargeableKg)} kg, not ${kg(v.actualKg)}`,
-            ar: `الوزن الحجمي — يُحتسب ${kg(v.chargeableKg)} كغ بدل ${kg(v.actualKg)}`,
-            zh: `体积重 — 按 ${kg(v.chargeableKg)} 公斤计费，而非 ${kg(v.actualKg)}`,
+            ar: `الوزن الحجمي — يُحتسب ${kg(v.chargeableKg)} kg بدل ${kg(v.actualKg)}`,
+            zh: `体积重 — 按 ${kg(v.chargeableKg)} kg 计费，而非 ${kg(v.actualKg)}`,
           })}
         </p>
       </div>

@@ -89,7 +89,7 @@ export function SelfOrderCard({
   const isSea = pkg.shippingType === "sea";
   const measure = isSea
     ? { value: pkg.volumeCbm, unit: "CBM", icon: Box }
-    : { value: pkg.weightKg, unit: "KG", icon: Scale };
+    : { value: pkg.weightKg, unit: "kg", icon: Scale };
   const measureValue = parseFloat(String(measure.value ?? "0"));
 
   /**

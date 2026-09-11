@@ -102,10 +102,10 @@ export function VolumetricWatchCard({ className }: { className?: string }) {
 
         <p className="mb-3 text-xs text-muted-foreground">
           {label({
-            ku: `${rows.length} بار لەسەر قەبارە حساب دەکرێن — بە کۆی ${kg(totalExtra)} کیلۆ زیادە. هێشتا لەگەڵ کڕیار چێک نەکراونەتەوە.`,
+            ku: `${rows.length} بار لەسەر قەبارە حساب دەکرێن — بە کۆی ${kg(totalExtra)} kg زیادە. هێشتا لەگەڵ کڕیار چێک نەکراونەتەوە.`,
             en: `${rows.length} parcel(s) billed on volume — ${kg(totalExtra)} kg extra in total. Not yet checked with the customer.`,
-            ar: `${rows.length} طرد يُحتسب على الحجم — بزيادة ${kg(totalExtra)} كغ إجمالاً. لم تُراجَع مع العميل بعد.`,
-            zh: `${rows.length} 个包裹按体积计费 — 合计多出 ${kg(totalExtra)} 公斤。尚未与客户核实。`,
+            ar: `${rows.length} طرد يُحتسب على الحجم — بزيادة ${kg(totalExtra)} kg إجمالاً. لم تُراجَع مع العميل بعد.`,
+            zh: `${rows.length} 个包裹按体积计费 — 合计多出 ${kg(totalExtra)} kg。尚未与客户核实。`,
           })}
         </p>
 

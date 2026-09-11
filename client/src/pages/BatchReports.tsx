@@ -293,7 +293,7 @@ export default function BatchReports() {
       shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType,
       STATUS_LABEL[batch.status as BatchStatus] ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]!) : batch.status,
       batch.packageCount,
-      batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} KG`,
+      batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} kg`,
       formatNumber(batch.totalCost),
       formatNumber(batch.totalRevenue),
       formatNumber(batch.profit),
@@ -306,7 +306,7 @@ export default function BatchReports() {
       "",
       "",
       totals.totalPackages,
-      `${formatNumber(totals.totalWeight)} KG`,
+      `${formatNumber(totals.totalWeight)} kg`,
       formatNumber(totals.totalCost),
       formatNumber(totals.totalRevenue),
       formatNumber(totals.totalProfit),
@@ -396,7 +396,7 @@ export default function BatchReports() {
                 <td>${shippingTypeConfig[batch.shippingType] ? pickLang(language, shippingTypeConfig[batch.shippingType].label) : batch.shippingType}</td>
                 <td>${STATUS_LABEL[batch.status as BatchStatus] ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]!) : batch.status}</td>
                 <td>${batch.packageCount}</td>
-                <td>${batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} KG`}</td>
+                <td>${batch.shippingType === 'sea' ? `${formatNumber(batch.totalCbm)} CBM` : `${formatNumber(batch.totalChargeableWeight)} kg`}</td>
                 <td style="color: #dc2626;">${formatCurrency(batch.totalCost)}</td>
                 <td style="color: #16a34a;">${formatCurrency(batch.totalRevenue)}</td>
                 <td class="${batch.profit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(batch.profit)}</td>
@@ -410,7 +410,7 @@ export default function BatchReports() {
               <td></td>
               <td></td>
               <td>${totals.totalPackages}</td>
-              <td>${formatNumber(totals.totalWeight)} KG</td>
+              <td>${formatNumber(totals.totalWeight)} kg</td>
               <td style="color: #dc2626;">${formatCurrency(totals.totalCost)}</td>
               <td style="color: #16a34a;">${formatCurrency(totals.totalRevenue)}</td>
               <td class="${totals.totalProfit >= 0 ? 'profit-positive' : 'profit-negative'}">${formatCurrency(totals.totalProfit)}</td>
@@ -534,7 +534,7 @@ export default function BatchReports() {
               <div className="text-3xl font-bold text-red-600 dark:text-red-300">{formatCurrency(totals.totalCost)}</div>
               <p className="text-sm text-red-600/70 dark:text-red-300 mt-1 flex items-center gap-1">
                 <Scale className="h-3 w-3" />
-                {formatNumber(totals.totalWeight)} KG
+                {formatNumber(totals.totalWeight)} kg
               </p>
             </CardContent>
           </Card>
@@ -965,7 +965,7 @@ export default function BatchReports() {
                             <span className="font-medium">
                               {batch.shippingType === 'sea' 
                                 ? `${formatNumber(batch.totalCbm)} CBM`
-                                : `${formatNumber(batch.totalChargeableWeight)} KG`
+                                : `${formatNumber(batch.totalChargeableWeight)} kg`
                               }
                             </span>
                           </TableCell>
@@ -1162,7 +1162,7 @@ export default function BatchReports() {
                             <TableCell key={batch.id} className="text-center font-bold">
                               {batch.shippingType === 'sea' 
                                 ? `${formatNumber(batch.totalCbm)} CBM`
-                                : `${formatNumber(batch.totalChargeableWeight)} KG`
+                                : `${formatNumber(batch.totalChargeableWeight)} kg`
                               }
                             </TableCell>
                           ))}

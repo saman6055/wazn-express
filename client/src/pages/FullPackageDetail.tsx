@@ -1377,8 +1377,8 @@ export default function FullPackageDetail() {
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="air_regular">{t("fullPackage.airRegular")} (KG)</SelectItem>
-                  <SelectItem value="air_irregular">{t("fullPackage.airIrregular")} (KG)</SelectItem>
+                  <SelectItem value="air_regular">{t("fullPackage.airRegular")} (kg)</SelectItem>
+                  <SelectItem value="air_irregular">{t("fullPackage.airIrregular")} (kg)</SelectItem>
                   <SelectItem value="sea">{t("fullPackage.sea")} (CBM)</SelectItem>
                 </SelectContent>
               </Select>
@@ -1408,7 +1408,7 @@ export default function FullPackageDetail() {
                         <th className="p-2 text-start text-xs text-muted-foreground">{t("fullPackage.orderCode")}</th>
                         <th className="p-2 text-center text-xs text-muted-foreground">
                           <Weight className="h-3 w-3 inline me-1" />
-                          {splitShippingType === "sea" ? "CBM" : "KG"}
+                          {splitShippingType === "sea" ? "CBM" : "kg"}
                         </th>
                         <th className="p-2 text-center text-xs text-muted-foreground">%</th>
                         <th className="p-2 text-end text-xs text-muted-foreground">$</th>

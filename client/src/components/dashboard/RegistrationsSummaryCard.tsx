@@ -85,7 +85,7 @@ export function RegistrationsSummaryCard({ className }: { className?: string }) 
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
           {stat(String(totals.pieces), label({ ku: "پارچە", en: "pieces", ar: "قطعة", zh: "件" }))}
           {stat(String(totals.customers), label({ ku: "کڕیار", en: "customers", ar: "عميل", zh: "客户" }))}
-          {stat(totals.airWeightKg.toFixed(1), label({ ku: "کیلۆ · ئاسمانی", en: "kg · air", ar: "كغ · جوي", zh: "公斤 · 空运" }))}
+          {stat(totals.airWeightKg.toFixed(1), label({ ku: "kg · ئاسمانی", en: "kg · air", ar: "kg · جوي", zh: "kg · 空运" }))}
           {stat(totals.seaCbm.toFixed(2), label({ ku: "CBM · دەریایی", en: "CBM · sea", ar: "م³ · بحري", zh: "立方米 · 海运" }))}
           {/* Estimated, not billed: derived from the active pricing rules, the
               same ones the scanner uses. */}

@@ -152,7 +152,7 @@ export default function Warehouses() {
                       <Select value={createPricingModel} onValueChange={(v) => setCreatePricingModel(v as "per_kg" | "per_cbm")}>
                         <SelectTrigger><SelectValue placeholder="Select model" /></SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="per_kg">Per KG (Air)</SelectItem>
+                          <SelectItem value="per_kg">Per kg (Air)</SelectItem>
                           <SelectItem value="per_cbm">Per CBM (Sea)</SelectItem>
                         </SelectContent>
                       </Select>

@@ -209,7 +209,7 @@ export default function BatchLabelTemplateSettings() {
           </div>
           <div className="grid grid-cols-2 gap-1 text-[10px] border-t border-gray-200 dark:border-gray-800/60 pt-2 mt-2">
             {template.showTotalPackages && <div>📦 {pickLang(language, { ku: "پاکەت", en: "Packages", ar: "طرود", zh: "包裹" })}: <strong>{sampleBatchLabel.totalPackages}</strong></div>}
-            {template.showTotalWeight && <div>⚖️ {pickLang(language, { ku: "کیلۆ", en: "Weight", ar: "الوزن", zh: "重量" })}: <strong>{sampleBatchLabel.totalWeight}</strong></div>}
+            {template.showTotalWeight && <div>⚖️ {pickLang(language, { ku: "کێش (kg)", en: "Weight", ar: "الوزن", zh: "重量" })}: <strong>{sampleBatchLabel.totalWeight}</strong></div>}
             {template.showTotalVolume && <div>📐 CBM: <strong>{sampleBatchLabel.totalVolume}</strong></div>}
             {template.showTotalPrice && <div>💰 {pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}: <strong>{sampleBatchLabel.totalPrice}</strong></div>}
             {template.showBatchNumber && <div>📋 {pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}: <strong>{sampleBatchLabel.batchCode}</strong></div>}
@@ -230,7 +230,7 @@ export default function BatchLabelTemplateSettings() {
               {pickLang(language, { ku: "داڕشتەی تێمپلەیتی لەیبڵی باچ", en: "Batch label template designer", ar: "مصمم قالب ملصق الدفعة", zh: "批次标签模板设计器" })}
             </h1>
             <p className="text-muted-foreground">
-              {pickLang(language, { ku: "یەک لەیبڵ بۆ هەر کڕیار — کۆی پاکەت، حەجم، کیلۆ، بارکۆد/QR، نرخ و ناوی کڕیار", en: "One label per customer — total packages, volume, weight, barcode/QR, price and customer name", ar: "ملصق واحد لكل عميل — إجمالي الطرود والحجم والوزن والباركود/QR والسعر واسم العميل", zh: "每位客户一个标签 — 总包裹数、体积、重量、条码/二维码、价格和客户名称" })}
+              {pickLang(language, { ku: "یەک لەیبڵ بۆ هەر کڕیار — کۆی پاکەت، حەجم، کێش (kg)، بارکۆد/QR، نرخ و ناوی کڕیار", en: "One label per customer — total packages, volume, weight, barcode/QR, price and customer name", ar: "ملصق واحد لكل عميل — إجمالي الطرود والحجم والوزن والباركود/QR والسعر واسم العميل", zh: "每位客户一个标签 — 总包裹数、体积、重量、条码/二维码、价格和客户名称" })}
             </p>
           </div>
           <div className="flex gap-2">
@@ -312,7 +312,7 @@ export default function BatchLabelTemplateSettings() {
                 <Layers className="h-5 w-5" />
                 {isCreating ? pickLang(language, { ku: "تێمپلەیتی نوێ", en: "New template", ar: "قالب جديد", zh: "新模板" }) : pickLang(language, { ku: "دەسکاری تێمپلەیت", en: "Edit template", ar: "تعديل القالب", zh: "编辑模板" })}
               </DialogTitle>
-              <DialogDescription>{pickLang(language, { ku: "ڕێکخستنەکانی لەیبڵی باچ — ناوی کڕیار، کۆی پاکەت، حەجم، کیلۆ، بارکۆد، نرخ", en: "Batch label settings — customer name, total packages, volume, weight, barcode, price", ar: "إعدادات ملصق الدفعة — اسم العميل، إجمالي الطرود، الحجم، الوزن، الباركود، السعر", zh: "批次标签设置 — 客户名称、总包裹数、体积、重量、条码、价格" })}</DialogDescription>
+              <DialogDescription>{pickLang(language, { ku: "ڕێکخستنەکانی لەیبڵی باچ — ناوی کڕیار، کۆی پاکەت، حەجم، کێش (kg)، بارکۆد، نرخ", en: "Batch label settings — customer name, total packages, volume, weight, barcode, price", ar: "إعدادات ملصق الدفعة — اسم العميل، إجمالي الطرود، الحجم، الوزن، الباركود، السعر", zh: "批次标签设置 — 客户名称、总包裹数、体积、重量、条码、价格" })}</DialogDescription>
             </DialogHeader>
 
             {editingTemplate && (
@@ -390,7 +390,7 @@ export default function BatchLabelTemplateSettings() {
                         { key: "showCustomerName", label: { ku: "ناوی کڕیار", en: "Customer name", ar: "اسم العميل", zh: "客户名称" }, Icon: User },
                         { key: "showCustomerCode", label: { ku: "کۆدی کڕیار", en: "Customer code", ar: "رمز العميل", zh: "客户代码" }, Icon: Hash },
                         { key: "showTotalPackages", label: { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "总包裹数" }, Icon: Package },
-                        { key: "showTotalWeight", label: { ku: "کۆی کیلۆ", en: "Total weight", ar: "إجمالي الوزن", zh: "总重量" }, Icon: Scale },
+                        { key: "showTotalWeight", label: { ku: "کۆی کێش (kg)", en: "Total weight", ar: "إجمالي الوزن", zh: "总重量" }, Icon: Scale },
                         { key: "showTotalVolume", label: { ku: "کۆی حەجم (CBM)", en: "Total volume (CBM)", ar: "إجمالي الحجم (CBM)", zh: "总体积 (CBM)" }, Icon: Package },
                         { key: "showTotalPrice", label: { ku: "کۆی نرخ", en: "Total price", ar: "إجمالي السعر", zh: "总价格" }, Icon: DollarSign },
                         { key: "showBatchNumber", label: { ku: "کۆدی باچ", en: "Batch code", ar: "رمز الدفعة", zh: "批次代码" }, Icon: Package },

@@ -564,10 +564,10 @@ function PriceCalculator({
           <div className={cn("rounded-xl p-3", panelCls)}>
             <p className={cn("text-[11px] font-semibold mb-2", strong)}>
               {pickLang(lang, {
-                ku: "کێشی بارەکەت بە کیلۆ",
+                ku: "کێشی بارەکەت بە kg",
                 en: "The weight of your goods, in kilograms",
-                ar: "وزن بضاعتك بالكيلوغرام",
-                zh: "货物重量（公斤）",
+                ar: "وزن بضاعتك (kg)",
+                zh: "货物重量（kg）",
               })}
             </p>
             <div className="relative">
@@ -1000,8 +1000,8 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
   const tabInfo: Record<TabKey, { title: string; desc: string; example: string }> = {
     shipping: {
       title: pickLang(language, { ku: "تێچووەکان", en: "Costs", ar: "التكاليف", zh: "费用" }),
-      desc: pickLang(language, { ku: "نرخی گواستنەوە بۆ هەر ڕێگایەک، بەپێی کیلۆ یان قەبارە.", en: "Shipping price for each method, per kg or volume.", ar: "سعر الشحن لكل طريقة، حسب الكيلو أو الحجم.", zh: "每种运输方式的价格（按公斤或体积）。" }),
-      example: pickLang(language, { ku: "نموونە: ئاسمانی ئاسایی = $12 بۆ هەر کیلۆ", en: "e.g. Air regular = $12/kg", ar: "مثال: جوي عادي = 12$/كغ", zh: "例如：普通空运 = $12/公斤" }),
+      desc: pickLang(language, { ku: "نرخی گواستنەوە بۆ هەر ڕێگایەک، بەپێی kg یان قەبارە.", en: "Shipping price for each method, per kg or volume.", ar: "سعر الشحن لكل طريقة، حسب kg أو الحجم.", zh: "每种运输方式的价格（按 kg 或体积）。" }),
+      example: pickLang(language, { ku: "نموونە: ئاسمانی ئاسایی = $12 بۆ هەر kg", en: "e.g. Air regular = $12/kg", ar: "مثال: جوي عادي = 12$/kg", zh: "例如：普通空运 = $12/kg" }),
     },
     services: {
       title: pickLang(language, { ku: "خزمەتگوزاری", en: "Services", ar: "الخدمات", zh: "服务" }),
@@ -1011,7 +1011,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
     calculator: {
       title: pickLang(language, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" }),
       desc: pickLang(language, { ku: "کێش یان قەبارەی کاڵاکەت بنووسە، نرخی گواستنەوە پێش‌بینی بکە پێش ناردن.", en: "Enter your item's weight or size to estimate the shipping cost.", ar: "أدخل وزن أو حجم بضاعتك لتقدير تكلفة الشحن.", zh: "输入货物的重量或尺寸以估算运费。" }),
-      example: pickLang(language, { ku: "نموونە: 2 کگ بە ئاسمانی ≈ $24", en: "e.g. 2 kg by air ≈ $24", ar: "مثال: 2 كغ جواً ≈ 24$", zh: "例如：2 公斤空运 ≈ $24" }),
+      example: pickLang(language, { ku: "نموونە: 2 kg بە ئاسمانی ≈ $24", en: "e.g. 2 kg by air ≈ $24", ar: "مثال: 2 kg جواً ≈ 24$", zh: "例如：2 kg 空运 ≈ $24" }),
     },
     guide: {
       title: pickLang(language, { ku: "ڕێگاکانی گواستنەوە", en: "Shipping methods", ar: "طرق الشحن", zh: "运输方式" }),

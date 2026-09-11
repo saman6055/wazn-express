@@ -111,7 +111,7 @@ function generatePrintContent(
    *  customer report could state a weight the invoice never billed. */
   divisor: number = DEFAULT_VOLUMETRIC_DIVISOR
 ) {
-  const unit = batch?.shippingType === 'sea' ? 'CBM' : 'KG';
+  const unit = batch?.shippingType === 'sea' ? 'CBM' : 'kg';
   const totalActualWeight = batch?.shippingType === 'sea'
     ? packages.reduce((s, p) => s + (p.volumeCbm || 0), 0)
     : packages.reduce((s, p) => s + (p.weightKg || 0), 0);
@@ -305,7 +305,7 @@ function generatePrintContent(
           <div class="value">${packages.length}</div>
         </div>
         <div class="stat-card" style="background: #fff7ed; border-color: #fdba74;">
-          <div class="label" style="color: #c2410c;">${batch?.shippingType === 'sea' ? 'CBM' : 'KG'} ${pickLang(language, { ku: "حسابکراو", en: "chargeable", ar: "المحتسب", zh: "计费" })}</div>
+          <div class="label" style="color: #c2410c;">${batch?.shippingType === 'sea' ? 'CBM' : 'kg'} ${pickLang(language, { ku: "حسابکراو", en: "chargeable", ar: "المحتسب", zh: "计费" })}</div>
           <div class="value" style="color: #ea580c;">${batch?.shippingType === 'sea' ? totalActualWeight.toFixed(3) : totalChargeableWeight.toFixed(2)}</div>
         </div>
         <div class="stat-card highlight">
@@ -319,7 +319,7 @@ function generatePrintContent(
           <tr>
             <th style="width: 40px;">#</th>
             <th>${pickLang(language, { ku: "تراک نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "追踪号" })}</th>
-            <th style="width: 80px;">${batch?.shippingType === 'sea' ? 'CBM' : 'KG'} ${pickLang(language, { ku: "حسابکراو", en: "chargeable", ar: "المحتسب", zh: "计费" })}</th>
+            <th style="width: 80px;">${batch?.shippingType === 'sea' ? 'CBM' : 'kg'} ${pickLang(language, { ku: "حسابکراو", en: "chargeable", ar: "المحتسب", zh: "计费" })}</th>
             <th style="width: 80px;">${pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })} ($)</th>
             <th style="width: 100px;">${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</th>
           </tr>
@@ -380,7 +380,7 @@ function generateLabelContent(
   language: string
 ) {
   const isSea = batch?.shippingType === 'sea';
-  const unit = isSea ? 'CBM' : 'KG';
+  const unit = isSea ? 'CBM' : 'kg';
   const pricePerUnit = isSea 
     ? (Number(batch?.pricePerCbm) || 0) 
     : (Number(batch?.pricePerKg) || 0);
@@ -741,7 +741,7 @@ function generateLabelContent(
                 <tr>
                   <th>#</th>
                   <th>${pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "追踪号" })}</th>
-                  <th>${isSea ? pickLang(language, { ku: "قەبارە (CBM)", en: "Volume (CBM)", ar: "الحجم (CBM)", zh: "体积 (CBM)" }) : pickLang(language, { ku: "کێش (KG)", en: "Weight (KG)", ar: "الوزن (KG)", zh: "重量 (KG)" })}</th>
+                  <th>${isSea ? pickLang(language, { ku: "قەبارە (CBM)", en: "Volume (CBM)", ar: "الحجم (CBM)", zh: "体积 (CBM)" }) : pickLang(language, { ku: "کێش (kg)", en: "Weight (kg)", ar: "الوزن (kg)", zh: "重量 (kg)" })}</th>
                   <th>${pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</th>
                   <th>${pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</th>
                 </tr>
@@ -931,7 +931,7 @@ export default function BatchFinancialReport() {
   }
   
   const isProfitable = financial.profit >= 0;
-  const unit = batch.shippingType === 'sea' ? 'CBM' : 'KG';
+  const unit = batch.shippingType === 'sea' ? 'CBM' : 'kg';
   const shippingTypeLabel = batch.shippingType === 'sea'
     ? pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" })
     : batch.shippingType === 'air_regular'
@@ -1002,7 +1002,7 @@ export default function BatchFinancialReport() {
               <p className="text-2xl font-bold">
                 {batch.shippingType === 'sea' 
                   ? `${financial.actualCbm?.toFixed(2) || 0}`
-                  : `${financial.customerBreakdown?.reduce((sum, c) => sum + (c.chargeableWeight || 0), 0).toFixed(2) || 0} KG`
+                  : `${financial.customerBreakdown?.reduce((sum, c) => sum + (c.chargeableWeight || 0), 0).toFixed(2) || 0} kg`
                 }
               </p>
             </div>
@@ -1247,7 +1247,7 @@ export default function BatchFinancialReport() {
               {pickLang(language, { ku: "پرینتی لەیبڵی باچ", en: "Print batch labels", ar: "طباعة ملصقات الدفعة", zh: "打印批次标签" })}
             </CardTitle>
             <CardDescription className="text-slate-500 dark:text-slate-400">
-              {pickLang(language, { ku: "یەک لەیبڵ بۆ هەر کڕیار — کۆی پاکەت، حەجم، کیلۆ، بارکۆد/QR، نرخ و ناوی کڕیار", en: "One label per customer — total packages, volume, weight, barcode/QR, price and customer name", ar: "ملصق واحد لكل عميل — إجمالي الطرود والحجم والوزن والباركود/QR والسعر واسم العميل", zh: "每位客户一张标签 — 包裹总数、体积、重量、条码/QR、价格及客户名" })}
+              {pickLang(language, { ku: "یەک لەیبڵ بۆ هەر کڕیار — کۆی پاکەت، حەجم، کێش (kg)، بارکۆد/QR، نرخ و ناوی کڕیار", en: "One label per customer — total packages, volume, weight, barcode/QR, price and customer name", ar: "ملصق واحد لكل عميل — إجمالي الطرود والحجم والوزن والباركود/QR والسعر واسم العميل", zh: "每位客户一张标签 — 包裹总数、体积、重量、条码/QR、价格及客户名" })}
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-5 flex flex-wrap items-center gap-4">
@@ -1396,7 +1396,7 @@ export default function BatchFinancialReport() {
                       <th className="text-right py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">#</th>
                       <th className="text-right py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "تراک نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "追踪号" })}</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">
-                        {batch?.shippingType === 'sea' ? 'CBM' : pickLang(language, { ku: "کێش (KG)", en: "Weight (KG)", ar: "الوزن (KG)", zh: "重量 (KG)" })}
+                        {batch?.shippingType === 'sea' ? 'CBM' : pickLang(language, { ku: "کێش (kg)", en: "Weight (kg)", ar: "الوزن (kg)", zh: "重量 (kg)" })}
                       </th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</th>
                       <th className="text-center py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</th>
@@ -1708,7 +1708,7 @@ export default function BatchFinancialReport() {
                     size="sm"
                     className="gap-2 border-slate-300 dark:border-slate-800/60 hover:bg-slate-100"
                     onClick={() => {
-                      const headers = ['#', pickLang(language, { ku: "تراک نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "追踪号" }), batch?.shippingType === 'sea' ? 'CBM' : pickLang(language, { ku: "کێش (KG)", en: "Weight (KG)", ar: "الوزن (KG)", zh: "重量 (KG)" }), `${pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })} ($)`, pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })];
+                      const headers = ['#', pickLang(language, { ku: "تراک نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "追踪号" }), batch?.shippingType === 'sea' ? 'CBM' : pickLang(language, { ku: "کێش (kg)", en: "Weight (kg)", ar: "الوزن (kg)", zh: "重量 (kg)" }), `${pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })} ($)`, pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })];
                       const rows = customerPackages?.map((pkg, idx) => [
                         idx + 1,
                         pkg.trackingNumber || '-',

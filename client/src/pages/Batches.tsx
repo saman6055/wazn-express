@@ -482,10 +482,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     { enabled: isEditOpen && !!editingBatch?.id },
   );
   const PRICE_FIELD_LABELS: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
-    costPerKg: { ku: "تێچووی کگم", en: "Cost/kg", ar: "التكلفة/كغم", zh: "成本/公斤" },
+    costPerKg: { ku: "تێچووی kg", en: "Cost/kg", ar: "التكلفة/kg", zh: "成本/kg" },
     costPerCbm: { ku: "تێچووی CBM", en: "Cost/CBM", ar: "التكلفة/م³", zh: "成本/立方" },
     shippingCost: { ku: "کۆی کرێی گەیاندن", en: "Total shipping cost", ar: "إجمالي كلفة الشحن", zh: "运费总额" },
-    pricePerKg: { ku: "نرخی فرۆشتنی کگم", en: "Selling price/kg", ar: "سعر البيع/كغم", zh: "售价/公斤" },
+    pricePerKg: { ku: "نرخی فرۆشتنی kg", en: "Selling price/kg", ar: "سعر البيع/kg", zh: "售价/kg" },
     pricePerCbm: { ku: "نرخی فرۆشتنی CBM", en: "Selling price/CBM", ar: "سعر البيع/م³", zh: "售价/立方" },
   };
   const priceFieldLabel = (field: string) =>
@@ -602,7 +602,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       : batch.shippingType === "sea" && batch.pricePerCbm
         ? `$${batch.pricePerCbm}/CBM`
         : batch.pricePerKg
-          ? `$${batch.pricePerKg}/KG`
+          ? `$${batch.pricePerKg}/kg`
           : "-";
     
     return (
@@ -617,7 +617,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     );
   };
 
-  const getUnit = (type: string) => type === "sea" ? "CBM" : "KG";
+  const getUnit = (type: string) => type === "sea" ? "CBM" : "kg";
 
   // Split rather than filter: the summary counts above the table are taken
   // from the whole set, so hiding a delivered batch must not make the
@@ -1868,10 +1868,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         {financialSummary.costSource === "none"
                           ? pickLang(language, { ku: "تێچوو تۆمار نەکراوە", en: "No cost recorded", ar: "لم تُسجَّل التكلفة", zh: "未记录成本" })
                           : financialSummary.costSource === "total"
-                            ? `${pickLang(language, { ku: "کۆی تۆمارکراو", en: "Recorded total", ar: "الإجمالي المسجَّل", zh: "记录的总额" })} ≈ $${financialSummary.effectiveCostRate.toFixed(2)}/${financialSummary.shippingType === 'sea' ? 'CBM' : 'KG'}`
+                            ? `${pickLang(language, { ku: "کۆی تۆمارکراو", en: "Recorded total", ar: "الإجمالي المسجَّل", zh: "记录的总额" })} ≈ $${financialSummary.effectiveCostRate.toFixed(2)}/${financialSummary.shippingType === 'sea' ? 'CBM' : 'kg'}`
                             : financialSummary.shippingType === 'sea'
                               ? `${financialSummary.chargedCbm} CBM × $${financialSummary.costPerCbm}`
-                              : `${financialSummary.chargedWeight} KG × $${financialSummary.costPerKg}`
+                              : `${financialSummary.chargedWeight} kg × $${financialSummary.costPerKg}`
                         }
                       </p>
                     </CardContent>
@@ -1915,7 +1915,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">
                         {financialSummary.shippingType === 'sea' 
                           ? `${financialSummary.chargedCbm}`
-                          : `${financialSummary.chargedWeight} KG`
+                          : `${financialSummary.chargedWeight} kg`
                         }
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
@@ -1960,14 +1960,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <TableCell>
                                 {financialSummary.shippingType === 'sea'
                                   ? `${cb.cbm.toFixed(4)} CBM`
-                                  : `${cb.weight.toFixed(2)} KG`
+                                  : `${cb.weight.toFixed(2)} kg`
                                 }
                               </TableCell>
                               <TableCell className="font-medium text-green-600 dark:text-green-300">
                                 ${cb.revenue.toFixed(2)}
                               </TableCell>
                               <TableCell className="text-right text-muted-foreground">
-                                ${avgPricePerUnit.toFixed(2)}/{financialSummary.shippingType === 'sea' ? 'CBM' : 'KG'}
+                                ${avgPricePerUnit.toFixed(2)}/{financialSummary.shippingType === 'sea' ? 'CBM' : 'kg'}
                               </TableCell>
                               {/* داشکاندن دوای گەیشتن — the price talk often
                                   happens at the counter, after the invoices
@@ -2026,7 +2026,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="rounded-lg border bg-muted/40 p-3 text-sm space-y-1">
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "نرخی ئێستا", en: "Current rate", ar: "السعر الحالي", zh: "当前价格" })}</span>
-                  <span className="font-mono" dir="ltr">${adjustPreview.data.currentRate.toFixed(2)}/{adjustPreview.data.unit === "cbm" ? "CBM" : "KG"}</span>
+                  <span className="font-mono" dir="ltr">${adjustPreview.data.currentRate.toFixed(2)}/{adjustPreview.data.unit === "cbm" ? "CBM" : "kg"}</span>
                 </div>
                 <div className="flex items-center justify-between">
                   <span className="text-muted-foreground">{adjustPreview.data.unit === "cbm" ? t("batches.cbm") : t("batches.weight")}</span>

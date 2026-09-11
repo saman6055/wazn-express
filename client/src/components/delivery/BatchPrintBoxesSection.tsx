@@ -139,7 +139,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
       pickLang(language, { ku: "کۆدی کڕیار", en: "Customer Code", ar: "رمز العميل", zh: "客户编号" }),
       pickLang(language, { ku: "ستاتوس", en: "Status", ar: "الحالة", zh: "状态" }),
       pickLang(language, { ku: "ژمارەی پاکەت", en: "Packages", ar: "عدد الطرود", zh: "包裹数" }),
-      pickLang(language, { ku: "کێشی گشتی (KG)", en: "Total Weight (KG)", ar: "الوزن الإجمالي (كغ)", zh: "总重量 (KG)" }),
+      pickLang(language, { ku: "کێشی گشتی (kg)", en: "Total Weight (kg)", ar: "الوزن الإجمالي (kg)", zh: "总重量 (kg)" }),
       pickLang(language, { ku: "نرخی گشتی ($)", en: "Total Value ($)", ar: "القيمة الإجمالية ($)", zh: "总价值 ($)" }),
       pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" }),
     ];

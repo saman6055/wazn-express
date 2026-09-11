@@ -994,7 +994,7 @@ const [, setLocation] = useLocation();
       "Customer Code",
       "Tracking Number",
       "Shipping Type",
-      "Weight (KG)",
+      "Weight (kg)",
       "Cost (USD)",
       "Status",
       "Date",

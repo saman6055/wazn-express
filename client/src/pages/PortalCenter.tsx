@@ -1419,8 +1419,8 @@ function CalcSettingsCard({ p }: { p: (v: L) => string }) {
   };
 
   const fields: { key: keyof typeof form; label: L; hint: L }[] = [
-    { key: "volumetricDivisor", label: { ku: "دابەشکەری قەبارەیی (ئاسمانی)", en: "Volumetric divisor (air)", ar: "قاسم الوزن الحجمي (جوي)", zh: "体积重除数（空运）" }, hint: { ku: "درێژی×پانی×بەرزی ÷ ئەم ژمارە = کیلۆی قەبارەیی", en: "L×W×H ÷ this = volumetric kg", ar: "الطول×العرض×الارتفاع ÷ هذا = كغ حجمي", zh: "长×宽×高 ÷ 此值 = 体积重" } },
-    { key: "airMinKg", label: { ku: "کەمترین کیلۆ (ئاسمانی)", en: "Minimum kg (air)", ar: "الحد الأدنى كغ (جوي)", zh: "最低公斤（空运）" }, hint: { ku: "کەمتر لەمە وەک ئەمە حیساب دەکرێت", en: "Anything below is charged as this", ar: "ما دون ذلك يُحتسب بهذا", zh: "低于此值按此值计费" } },
+    { key: "volumetricDivisor", label: { ku: "دابەشکەری قەبارەیی (ئاسمانی)", en: "Volumetric divisor (air)", ar: "قاسم الوزن الحجمي (جوي)", zh: "体积重除数（空运）" }, hint: { ku: "درێژی×پانی×بەرزی ÷ ئەم ژمارە = کێشی قەبارەیی (kg)", en: "L×W×H ÷ this = volumetric kg", ar: "الطول×العرض×الارتفاع ÷ هذا = kg حجمي", zh: "长×宽×高 ÷ 此值 = 体积重" } },
+    { key: "airMinKg", label: { ku: "کەمترین kg (ئاسمانی)", en: "Minimum kg (air)", ar: "الحد الأدنى kg (جوي)", zh: "最低 kg（空运）" }, hint: { ku: "کەمتر لەمە وەک ئەمە حیساب دەکرێت", en: "Anything below is charged as this", ar: "ما دون ذلك يُحتسب بهذا", zh: "低于此值按此值计费" } },
     { key: "seaMinCbm", label: { ku: "سنووری m³ (دەریایی)", en: "CBM threshold (sea)", ar: "حد m³ (بحري)", zh: "立方米阈值（海运）" }, hint: { ku: "کەمتر لەمە ڕێژەی زیادە دەگرێت", en: "Below this the surcharge applies", ar: "دون هذا تُطبَّق الزيادة", zh: "低于此值加收附加费" } },
     { key: "seaSurchargePct", label: { ku: "ڕێژەی زیادە ٪ (دەریایی)", en: "Surcharge % (sea)", ar: "نسبة الزيادة ٪ (بحري)", zh: "附加费 %（海运）" }, hint: { ku: "0 = ناچالاک", en: "0 = disabled", ar: "0 = معطّل", zh: "0 = 关闭" } },
   ];

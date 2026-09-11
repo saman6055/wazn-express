@@ -343,7 +343,7 @@ export default function BusinessAnalytics() {
                       <span className={`font-medium ${config.text}`}>{config.label}</span>
                       <div className="flex items-center gap-4">
                         <span className={`font-bold ${config.text}`}>{stat.count} {pickLang(language, { ku: 'پاکەت', en: 'packages', ar: 'طرد', zh: '包裹' })}</span>
-                        <span className="text-sm text-muted-foreground">{stat.totalWeight?.toFixed(1)} {pickLang(language, { ku: 'کگ', en: 'kg', ar: 'كغ', zh: '公斤' })}</span>
+                        <span className="text-sm text-muted-foreground">{stat.totalWeight?.toFixed(1)} {pickLang(language, { ku: 'kg', en: 'kg', ar: 'kg', zh: 'kg' })}</span>
                       </div>
                     </div>
                   );

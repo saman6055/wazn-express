@@ -156,7 +156,7 @@ export default function BatchFinancialReportFull() {
   const shippingTypeLabel = batch?.shippingType === 'sea'
     ? pickLang(language, { ku: 'دەریایی', en: 'Sea', ar: 'بحري', zh: '海运' })
     : pickLang(language, { ku: 'ئاسمانی', en: 'Air', ar: 'جوي', zh: '空运' });
-  const unit = batch?.shippingType === 'sea' ? 'CBM' : 'KG';
+  const unit = batch?.shippingType === 'sea' ? 'CBM' : 'kg';
 
   // Loading state
   if (batchLoading || financialLoading) {
@@ -276,7 +276,7 @@ export default function BatchFinancialReportFull() {
                 <Calculator className="h-4 w-4" />
                 {batch.shippingType === 'sea' 
                   ? `${financial.chargedCbm || 0} CBM × $${financial.costPerCbm || 0}`
-                  : `${(financial.totalChargeableWeight || totalChargeableWeight).toFixed(2)} KG × $${financial.costPerKg || 0}`
+                  : `${(financial.totalChargeableWeight || totalChargeableWeight).toFixed(2)} kg × $${financial.costPerKg || 0}`
                 }
               </p>
             </CardContent>

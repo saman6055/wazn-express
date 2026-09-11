@@ -1379,7 +1379,7 @@ export default function CommissionForm() {
                       {/* Weight */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
-                          <Label className="text-sm font-medium">{pickLang(language, { ku: "کێشی ڕاستەقینە (کیلۆگرام)", en: "Actual weight (kilograms)", ar: "الوزن الفعلي (كيلوغرام)", zh: "实际重量（千克）" })}</Label>
+                          <Label className="text-sm font-medium">{pickLang(language, { ku: "کێشی ڕاستەقینە (kg)", en: "Actual weight (kg)", ar: "الوزن الفعلي (kg)", zh: "实际重量（kg）" })}</Label>
                           <div className="relative" dir="ltr">
                             <span className="absolute start-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">kg</span>
                             <Input type="number" step="0.01" min="0" value={formData.weightKg}

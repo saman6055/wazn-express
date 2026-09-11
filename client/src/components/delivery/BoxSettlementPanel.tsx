@@ -382,7 +382,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                 <SelectItem value="none">{t({ ku: "بێ داشکاندن", en: "No discount", ar: "بدون خصم", zh: "无折扣" })}</SelectItem>
                 <SelectItem value="newTotal">{t({ ku: "کۆی نوێ", en: "New total", ar: "الإجمالي الجديد", zh: "新总额" })}</SelectItem>
                 <SelectItem value="amount">{t({ ku: "بڕی داشکاندن", en: "Amount off", ar: "مبلغ الخصم", zh: "折扣金额" })}</SelectItem>
-                <SelectItem value="perKg">{t({ ku: "نرخی کیلۆ", en: "Rate per kg", ar: "سعر الكيلو", zh: "每公斤单价" })}</SelectItem>
+                <SelectItem value="perKg">{t({ ku: "نرخ بۆ هەر kg", en: "Rate per kg", ar: "السعر لكل kg", zh: "每 kg 单价" })}</SelectItem>
               </SelectContent>
             </Select>
           </div>

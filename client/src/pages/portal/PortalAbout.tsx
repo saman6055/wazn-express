@@ -50,10 +50,10 @@ export default function PortalAbout() {
       icon: Plane, grad: "from-sky-500 to-blue-600",
       title: { ku: "گواستنەوەی ئاسمانی", en: "Air Freight", ar: "الشحن الجوي", zh: "空运" },
       desc: {
-        ku: "خێراترین ڕێگا بۆ گەیاندنی بارە سووک و پەلەدارەکان، بەپێی کیلۆ.",
+        ku: "خێراترین ڕێگا بۆ گەیاندنی بارە سووک و پەلەدارەکان، بەپێی kg.",
         en: "The fastest route for light, urgent cargo — priced per kilogram.",
-        ar: "أسرع طريق للبضائع الخفيفة والعاجلة — بسعر الكيلوغرام.",
-        zh: "轻便、紧急货物的最快方式——按公斤计价。",
+        ar: "أسرع طريق للبضائع الخفيفة والعاجلة — بالسعر لكل kg.",
+        zh: "轻便、紧急货物的最快方式——按 kg 计价。",
       },
     },
     {

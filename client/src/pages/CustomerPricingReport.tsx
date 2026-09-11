@@ -210,7 +210,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
                   const batch = getBatchInfo(cp.batchId);
                   const customer = getCustomerInfo(cp.customerId);
                   const isSea = batch?.shippingType === 'sea';
-                  const unit = isSea ? 'CBM' : 'KG';
+                  const unit = isSea ? 'CBM' : 'kg';
                   const defaultPrice = isSea ? Number(batch?.pricePerCbm) : Number(batch?.pricePerKg);
                   const customPrice = isSea ? Number(cp.pricePerCbm) : Number(cp.pricePerKg);
                   const difference = defaultPrice - customPrice;
