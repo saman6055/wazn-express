@@ -13,6 +13,7 @@ import helmet from "helmet";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
+import { registerDocumentGuard } from "./documentGuard";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
@@ -90,11 +91,14 @@ function serveStatic(app: express.Express) {
   // nothing, which looked exactly like the photo had never been attached.
   const uploadsDir = getUploadsDir();
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  // Passports, ID cards and contracts answer only to a staff session.
+  registerDocumentGuard(app);
   app.use(UPLOADS_ROUTE, express.static(uploadsDir, {
-    // Private: photos, ID scans among them, are one person's business — a
-    // shared proxy or CDN must not keep a copy for the next visitor.
+    // Private: photos are one person's business — a shared proxy or CDN must
+    // not keep a copy for the next visitor. A customer's document is not kept
+    // at all, not even by the browser (the guard marks it).
     setHeaders(res) {
-      res.setHeader("Cache-Control", "private, max-age=604800");
+      res.setHeader("Cache-Control", res.locals?.customerDocument ? "private, no-store" : "private, max-age=604800");
     },
   }));
   appLogger.info("Serving uploads", { uploadsDir, route: UPLOADS_ROUTE });

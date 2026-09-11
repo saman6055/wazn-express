@@ -27,7 +27,9 @@ describe("production caching", () => {
   });
 
   it("uploads are private to the browser that asked", () => {
-    at('res.setHeader("Cache-Control", "private, max-age=604800")');
+    // A customer's passport or ID card (marked by the document guard) is not
+    // kept at all; every other upload is kept a week by that browser alone.
+    at('res.setHeader("Cache-Control", res.locals?.customerDocument ? "private, no-store" : "private, max-age=604800")');
     expect(PROD).not.toContain('express.static(uploadsDir, { maxAge: "7d" })');
   });
 });

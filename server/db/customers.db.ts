@@ -258,6 +258,27 @@ export async function recordFailedCustomerLogin(
     .where(eq(customers.id, id));
 }
 
+/**
+ * Every stored passport, national ID and contract link, for the uploads guard
+ * (server/_core/documentGuard.ts). Read-only; customers in the trash included,
+ * because their documents are still theirs.
+ */
+export async function getCustomerDocumentUrls(): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({
+      passportUrl: customers.passportUrl,
+      nationalIdUrl: customers.nationalIdUrl,
+      contractUrl: customers.contractUrl,
+    })
+    .from(customers)
+    .where(or(isNotNull(customers.passportUrl), isNotNull(customers.nationalIdUrl), isNotNull(customers.contractUrl)));
+  return rows
+    .flatMap((row) => [row.passportUrl, row.nationalIdUrl, row.contractUrl])
+    .filter((url): url is string => typeof url === "string" && url.length > 0);
+}
+
 /** A good password ends the run. */
 export async function clearFailedCustomerLogins(id: number) {
   const db = await getDb();

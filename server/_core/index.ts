@@ -8,6 +8,7 @@ import helmet from "helmet";
 import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
+import { registerDocumentGuard } from "./documentGuard";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
@@ -143,6 +144,8 @@ async function startServer() {
   // and every photo saved through it came back as index.html.
   const uploadsDir = getUploadsDir();
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
+  // Passports, ID cards and contracts answer only to a staff session.
+  registerDocumentGuard(app);
   app.use(UPLOADS_ROUTE, express.static(uploadsDir));
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {

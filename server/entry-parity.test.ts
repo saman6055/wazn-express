@@ -37,6 +37,7 @@ const MUST_BE_IN_BOTH: { name: string; token: string; why: string }[] = [
   { name: 'OAuth callback', token: 'registerOAuthRoutes', why: 'sign-in returns here' },
   { name: 'app icons / manifest', token: 'registerAppIconRoutes', why: 'the installable app reads it' },
   { name: 'uploads route', token: 'UPLOADS_ROUTE', why: 'stored photos are served from it' },
+  { name: 'customer documents guard', token: 'registerDocumentGuard(app)', why: 'passports and ID cards are staff-only' },
   { name: 'tracking alerts', token: 'scheduleTrackingAlertNotifications', why: 'orders waiting on a tracking' },
   { name: 'open box reminders', token: 'scheduleOpenBoxAlerts', why: 'boxes left open past their window' },
   { name: 'push campaigns', token: 'startScheduledCampaignsPoller', why: 'scheduled campaigns never send without it' },
@@ -73,5 +74,17 @@ describe('the dev and production servers do the same job', () => {
     expect(uploadsAt).toBeGreaterThan(-1);
     expect(catchAllAt).toBeGreaterThan(-1);
     expect(uploadsAt, 'the uploads route must be registered before the SPA fallback').toBeLessThan(catchAllAt);
+  });
+
+  it('checks for a customer document before serving the uploads folder, in both entries', () => {
+    // Registered after the static route, the guard would never see a request
+    // for a file that exists: the folder would already have answered.
+    for (const [entry, source] of [['_core/index.ts', DEV], ['prod-entry.ts', PROD]] as const) {
+      const guardAt = source.indexOf('registerDocumentGuard(app)');
+      const staticAt = source.indexOf('UPLOADS_ROUTE, express.static');
+      expect(guardAt, `${entry} has no document guard`).toBeGreaterThan(-1);
+      expect(staticAt, `${entry} does not serve uploads`).toBeGreaterThan(-1);
+      expect(guardAt, `${entry} serves uploads before checking for documents`).toBeLessThan(staticAt);
+    }
   });
 });

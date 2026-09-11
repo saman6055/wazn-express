@@ -8,6 +8,7 @@ import * as db from "../db";
 import { generateCustomerCode } from "@shared/types";
 import * as bcrypt from "bcryptjs";
 import { sendNotification } from "../services/notification.service";
+import { forgetDocumentNames } from "../_core/documentGuard";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const customersRouter = router({
@@ -134,11 +135,13 @@ export const customersRouter = router({
         }
         
         if (!customer) {
-          throw new TRPCError({ 
-            code: "INTERNAL_SERVER_ERROR", 
-            message: lastError?.message || "Failed to create customer after multiple retries" 
+          throw new TRPCError({
+            code: "INTERNAL_SERVER_ERROR",
+            message: lastError?.message || "Failed to create customer after multiple retries"
           });
         }
+        // Documents attached at registration are staff-only from now on.
+        if (input.passportUrl || input.nationalIdUrl || input.contractUrl) forgetDocumentNames();
 
         await db.createAuditLog({
           userId: ctx.user.id,
@@ -203,6 +206,9 @@ export const customersRouter = router({
         }
         
         await db.updateCustomer(id, data);
+        if (data.passportUrl !== undefined || data.nationalIdUrl !== undefined || data.contractUrl !== undefined) {
+          forgetDocumentNames();
+        }
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -268,8 +274,9 @@ export const customersRouter = router({
           if (input.documentType === "passport") updateData.passportUrl = url;
           if (input.documentType === "nationalId") updateData.nationalIdUrl = url;
           if (input.documentType === "contract") updateData.contractUrl = url;
-          
+
           await db.updateCustomer(input.customerId, updateData);
+          forgetDocumentNames();
         }
         
         // Only create audit log if updating existing customer
@@ -296,8 +303,9 @@ export const customersRouter = router({
         if (input.documentType === "passport") updateData.passportUrl = null;
         if (input.documentType === "nationalId") updateData.nationalIdUrl = null;
         if (input.documentType === "contract") updateData.contractUrl = null;
-        
+
         await db.updateCustomer(input.customerId, updateData);
+        forgetDocumentNames();
         
         await db.createAuditLog({
           userId: ctx.user.id,
