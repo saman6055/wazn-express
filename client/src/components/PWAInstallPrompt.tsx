@@ -4,6 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { X, Download, Smartphone } from 'lucide-react';
 import { useOffline } from '@/contexts/OfflineContext';
+import { installApp, useInstallOffer } from '@/lib/installPrompt';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { pickLang } from '@/lib/lang';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
@@ -49,17 +50,33 @@ const isPortalSessionDismissed = () => {
   }
 };
 
-interface BeforeInstallPromptEvent extends Event {
-  prompt: () => Promise<void>;
-  userChoice: Promise<{ outcome: 'accepted' | 'dismissed' }>;
-}
+/**
+ * Dismissal is temporary (3 days), not forever: the ask returns on a later
+ * visit, so every customer keeps being nudged to install the app. The legacy
+ * value 'true' (an old forever-dismiss) reads as NaN, so those phones are
+ * asked again too.
+ */
+const DISMISS_TTL_MS = 3 * 24 * 60 * 60 * 1000;
+
+const isDismissedRecently = () => {
+  try {
+    const raw = localStorage.getItem('pwa-install-dismissed');
+    if (!raw) return false;
+    const ts = Number(raw);
+    return Number.isFinite(ts) && Date.now() - ts < DISMISS_TTL_MS;
+  } catch {
+    return false;
+  }
+};
 
 export function PWAInstallPrompt() {
   const company = useCompanyInfo();
   const { language } = useTranslation();
   const [locationPath] = useLocation();
   const onPortal = locationPath.startsWith('/portal');
-  const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
+  // The browser's offer, caught in main.tsx before the first paint: by the
+  // time this component could listen for it, it had already come and gone.
+  const deferredPrompt = useInstallOffer();
   const [showPrompt, setShowPrompt] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
   const [isStandalone, setIsStandalone] = useState(false);
@@ -106,35 +123,6 @@ export function PWAInstallPrompt() {
     const iOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
     setIsIOS(iOS);
 
-    // Dismissal is temporary (3 days), not forever: we re-ask on a later
-    // visit so every customer keeps getting nudged to install the app.
-    // Legacy value 'true' (old forever-dismiss) parses as NaN → re-ask.
-    const DISMISS_TTL_MS = 3 * 24 * 60 * 60 * 1000;
-    const isDismissedRecently = () => {
-      const raw = localStorage.getItem('pwa-install-dismissed');
-      if (!raw) return false;
-      const ts = Number(raw);
-      return Number.isFinite(ts) && Date.now() - ts < DISMISS_TTL_MS;
-    };
-
-    // Listen for install prompt. Chrome only fires this when the app is NOT
-    // currently installed — so if it fires while an install is remembered,
-    // the app was deleted since. Forget the memory and ask again.
-    // In the portal the timing is handled by the navigation effect below —
-    // this handler only covers the quiet staff-side card.
-    const handleBeforeInstall = (e: Event) => {
-      e.preventDefault();
-      setDeferredPrompt(e as BeforeInstallPromptEvent);
-      localStorage.removeItem(INSTALLED_KEY);
-      setAlreadyInstalled(false);
-
-      if (!onPortalRef.current && !isDismissedRecently()) {
-        setTimeout(() => setShowPrompt(true), 3000); // Show after 3 seconds
-      }
-    };
-
-    window.addEventListener('beforeinstallprompt', handleBeforeInstall);
-
     // Is the remembered install still believable? On Android the browser
     // corrects a stale memory itself (above). On iOS the memory expires when
     // the app has not been opened for two weeks. Legacy non-numeric values
@@ -154,10 +142,24 @@ export function PWAInstallPrompt() {
     }
 
     return () => {
-      window.removeEventListener('beforeinstallprompt', handleBeforeInstall);
       window.removeEventListener('appinstalled', onInstalled);
     };
   }, []);
+
+  /**
+   * An offer arriving proves the app is not installed — the browser only
+   * makes it for an app that is missing. So a remembered install is forgotten
+   * and the quiet staff-side card comes back a moment later. (The portal's
+   * own timing is the effect below.)
+   */
+  useEffect(() => {
+    if (!deferredPrompt) return;
+    localStorage.removeItem(INSTALLED_KEY);
+    setAlreadyInstalled(false);
+    if (onPortalRef.current || isDismissedRecently()) return;
+    const timer = setTimeout(() => setShowPrompt(true), 3000);
+    return () => clearTimeout(timer);
+  }, [deferredPrompt]);
 
   /**
    * Entering the portal asks straight away — including the customer who
@@ -180,15 +182,26 @@ export function PWAInstallPrompt() {
   }, [onPortal, isStandalone, alreadyInstalled, showPrompt]);
 
   const handleInstall = async () => {
-    if (!deferredPrompt) return;
+    // The browser's own install box: one tap, no instructions.
+    if ((await installApp()) === 'accepted') setShowPrompt(false);
+  };
 
-    deferredPrompt.prompt();
-    const { outcome } = await deferredPrompt.userChoice;
-    
-    if (outcome === 'accepted') {
-      setShowPrompt(false);
-    }
-    setDeferredPrompt(null);
+  /**
+   * The WhatsApp, Instagram and Messenger browsers never make the offer, and
+   * that is where most customers arrive from. Instead of a list of steps,
+   * one button hands the same page to Chrome, which does make it.
+   */
+  const inAppAndroid =
+    /Android/i.test(navigator.userAgent) &&
+    /(wv\)|FBAN|FBAV|FB_IAB|Instagram|Messenger|Line\/)/i.test(navigator.userAgent);
+
+  const openInChrome = () => {
+    const url = window.location.href;
+    // Android's own way of handing a page to another browser. If Chrome is
+    // not installed, the fallback keeps the customer on this same page.
+    window.location.href =
+      `intent://${url.replace(/^https?:\/\//, '')}#Intent;scheme=https;package=com.android.chrome;` +
+      `S.browser_fallback_url=${encodeURIComponent(url)};end`;
   };
 
   const handleDismiss = () => {
@@ -264,18 +277,16 @@ export function PWAInstallPrompt() {
             </Button>
           ) : (
             <>
-              {/* Chrome held back its install event — the WhatsApp/Instagram
-                  in-app browsers always do. The path still exists; it is just
-                  behind the browser's own menu, so say the steps. */}
-              {/(wv\)|FBAN|FBAV|FB_IAB|Instagram|Messenger)/i.test(navigator.userAgent) && (
-                <p className="rounded-lg bg-amber-50 dark:bg-amber-950/40 px-3 py-2 text-sm text-amber-700 dark:text-amber-300">
+              {inAppAndroid && (
+                <Button onClick={openInChrome} size="lg" className="w-full bg-orange-500 text-white hover:bg-orange-600">
+                  <Download className="h-5 w-5 me-2" aria-hidden="true" />
                   {pickLang(language, {
-                    ku: "ئەم براوزەرەی ناو ئەپەکە ناتوانێت دایبمەزرێنێت — یەکەم لە میستەری ⋮ «Open in Chrome» هەڵبژێرە.",
-                    en: "This in-app browser can't install it — first choose “Open in Chrome” from the ⋮ menu.",
-                    ar: "متصفح التطبيق هذا لا يستطيع التثبيت — اختر أولاً «Open in Chrome» من قائمة ⋮.",
-                    zh: "应用内浏览器无法安装——请先从 ⋮ 菜单选择“在 Chrome 中打开”。",
+                    ku: "کردنەوە لە Chrome بۆ دامەزراندن",
+                    en: "Open in Chrome to install",
+                    ar: "افتحه في Chrome للتثبيت",
+                    zh: "在 Chrome 中打开以安装",
                   })}
-                </p>
+                </Button>
               )}
               <ol className="list-decimal space-y-2 ps-5 text-sm">
                 <li className="leading-6">

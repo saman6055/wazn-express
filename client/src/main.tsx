@@ -1,5 +1,6 @@
 import { confirmAction } from "@/components/ConfirmDialog";
 import { reportClientError } from "./lib/reportClientError";
+import { captureInstallOffer } from "./lib/installPrompt";
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 
@@ -24,6 +25,11 @@ import { buildErrorReport, getErrorBoundaryStrings } from "./components/ErrorBou
 import { getLoginUrl } from "./const";
 import { loadLocale } from "@/lib/i18nRegistry";
 import "./index.css";
+
+// The browser offers to install the app once, early — before React draws
+// anything. Catch it here, or the offer is lost and the customer is left with
+// a list of menu steps instead of a button (lib/installPrompt.ts).
+captureInstallOffer();
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {
