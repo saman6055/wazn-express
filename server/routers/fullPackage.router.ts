@@ -653,42 +653,80 @@ export const fullPackageRouter = router({
           });
         }
 
-        // 2a. Customer reassignment guard.
-        //     Changing the customer on an order that already has financial
-        //     entries (ledger charge, advance payment) or physical linkage
-        //     (package / delivery box) would desync money & logistics: the
-        //     charge/advance stays on the OLD customer while the order moves
-        //     to the NEW one. We only permit reassignment on a fully-clean
-        //     order; otherwise the operator must reverse the charge/advance
-        //     and unlink the package/box first.
+        // 2a. Customer reassignment.
+        //
+        //     The wrong name gets picked — it is a dropdown of hundreds — and
+        //     the correction is usually made within the minute. What must not
+        //     happen is the order moving to the new customer while the money
+        //     stays on the old one, so this refuses what it cannot move and
+        //     MOVES what it can.
+        //
+        //     Until charging-at-entry (75b3838) a fresh order carried no
+        //     charge, so "refuse anything charged" cost nothing. Now every
+        //     order is charged the moment it is entered, and that rule would
+        //     have made a typo uncorrectable for the rest of the order's life.
+        //     A goods charge is reversible and re-postable — the same two
+        //     steps delete already performs — so it is moved here rather than
+        //     being a wall.
+        //
+        //     What is still refused, because neither is a typo:
+        //       • an advance — real money taken from the old customer; giving
+        //         it back is a refund somebody has to decide on;
+        //       • a delivery box — the goods have been allocated, and usually
+        //         billed, to the old customer at a counter;
+        //       • a parcel already charged at batch delivery — its freight is
+        //         on the old customer's ledger by a path this does not own.
         const customerChanged =
           customerId !== undefined && customerId !== existing.customerId;
+        /** Set when the move has to take the ledger with it (see step 5b). */
+        let chargeToMove: { fromCustomerId: number; transactionId: number | null } | null = null;
+        let packagesToMove: number[] = [];
         if (customerChanged) {
-          // Financial-cleanliness flags (mirror the handler's own
-          // isUncharged definition, plus advance + shipping charge).
-          const financiallyClean =
-            !existing.isCharged &&
-            !existing.chargeTransactionId &&
-            !(existing as any).isChargedToCustomer &&
-            !(existing as any).isShippingCharged &&
-            Number((existing as any).advancePaidUsd || 0) === 0 &&
-            !(existing as any).advancePaidAt &&
-            !(existing as any).advancePaymentTransactionId;
-
-          // Physical linkage. The box check must catch DELIVERED boxes too —
-          // those already billed the delivery charge to the OLD customer — so
-          // we use isFPOrderBoxedNonCancelled (any box except cancelled), not
-          // the active-only isFPOrderInAnyBox.
-          const linkedPackages = await db.getPackagesByOrderId(id);
-          const boxed = await db.isFPOrderBoxedNonCancelled(id);
-          const unlinked = linkedPackages.length === 0 && !boxed;
-
-          if (!financiallyClean || !unlinked) {
+          const advanceUsd = Number((existing as any).advancePaidUsd || 0);
+          const hasAdvance =
+            advanceUsd !== 0 ||
+            Boolean((existing as any).advancePaidAt) ||
+            Boolean((existing as any).advancePaymentTransactionId);
+          if (hasAdvance) {
             throw new TRPCError({
               code: "BAD_REQUEST",
               message:
-                "ناتوانرێت کڕیار بگۆڕدرێت — ئەم ئۆردەرە چارج کراوە/پێشەکی یان پاکەت/باچی پێوە بەستراوە. سەرەتا چارج/پێشەکی بگەڕێنەوە یان پەیوەندییەکان لاببە. | Can't change the customer: this order is charged/has an advance/is linked to packages or a box. Reverse the charge/advance or unlink first.",
+                "ناتوانرێت کڕیار بگۆڕدرێت — پارەی پێشەکی لەم ئۆردەرەدا وەرگیراوە لە کڕیارە کۆنەکە. سەرەتا پارەکە بگەڕێنەوە. | Can't change the customer: an advance was taken from the old customer. Refund it first.",
             });
+          }
+
+          // The box check must catch DELIVERED boxes too — those already
+          // billed the delivery charge to the OLD customer — so it uses
+          // isFPOrderBoxedNonCancelled, not the active-only variant.
+          if (await db.isFPOrderBoxedNonCancelled(id)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                "ناتوانرێت کڕیار بگۆڕدرێت — ئەم ئۆردەرە لە بۆکسی گەیاندندایە. سەرەتا لە بۆکسەکە دەریبهێنە. | Can't change the customer: this order is in a delivery box. Take it out of the box first.",
+            });
+          }
+
+          // A parcel moves with its order — same goods, same owner. One that
+          // has already been charged at batch delivery does not: its freight
+          // sits on the old customer's ledger by a path this does not own.
+          const linkedPackages = await db.getPackagesByOrderId(id);
+          const chargedParcel = linkedPackages.find(
+            (p: any) => p.isCharged || p.isShippingCharged,
+          );
+          if (chargedParcel) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message:
+                `ناتوانرێت کڕیار بگۆڕدرێت — پاکەتی ${chargedParcel.packageCode} پێشتر چارج کراوە بۆ کڕیارە کۆنەکە. | Can't change the customer: parcel ${chargedParcel.packageCode} has already been charged to the old customer.`,
+            });
+          }
+          packagesToMove = linkedPackages.map((p: any) => p.id);
+
+          if (existing.isCharged || (existing as any).chargeTransactionId) {
+            chargeToMove = {
+              fromCustomerId: existing.customerId!,
+              transactionId: (existing as any).chargeTransactionId ?? null,
+            };
           }
 
           // Confirm the target customer exists.
@@ -791,6 +829,52 @@ export const fullPackageRouter = router({
           }
         }
 
+        // 5b. Move the money with the order.
+        //
+        //     Two steps, in this order: take the charge off the old customer,
+        //     then put it on the new one. If the reversal fails nothing has
+        //     moved yet and the edit stops; if the re-charge fails the order
+        //     is left uncharged and loudly logged, which is a state the
+        //     Repairs tab can see and fix — far better than a debt sitting on
+        //     a customer who never ordered anything.
+        if (customerChanged && chargeToMove) {
+          if (chargeToMove.transactionId) {
+            try {
+              await db.reverseCharge(
+                chargeToMove.transactionId,
+                `گواستنەوەی ئۆردەری ${existing.orderCode} بۆ کڕیارێکی تر | ${reason ?? "customer corrected"}`,
+                ctx.user.id,
+              );
+            } catch (err) {
+              appLogger.error("[Order Edit] Failed to reverse charge for customer move", {
+                orderId: id, orderCode: existing.orderCode,
+                error: err instanceof Error ? err.message : String(err),
+              });
+              throw new TRPCError({
+                code: "INTERNAL_SERVER_ERROR",
+                message: "هەڵە لە گەڕاندنەوەی چارجی کڕیارە کۆنەکە | Failed to reverse the old customer's charge",
+              });
+            }
+          } else {
+            // Legacy: marked charged with no transaction to reverse. Say so
+            // rather than silently billing the new customer as well.
+            appLogger.warn("[Order Edit] Order marked charged with no chargeTransactionId — nothing reversed on the old customer", {
+              orderId: id, orderCode: existing.orderCode, fromCustomerId: chargeToMove.fromCustomerId,
+            });
+          }
+
+          // Clear the stamps so the re-charge below is not refused as
+          // already-charged, and so a failure leaves an honestly uncharged
+          // order rather than one that claims to have been billed.
+          await db.updateFullPackageOrder(id, {
+            isCharged: false,
+            isChargedToCustomer: false,
+            chargedAt: null,
+            chargedToAccountAt: null,
+            chargeTransactionId: null,
+          } as any);
+        }
+
         // 6. Handle advance payment delta (same logic as before, preserved).
         const data: any = { ...rest };
         // Persist the validated customer reassignment (guard passed in 2a).
@@ -883,6 +967,39 @@ export const fullPackageRouter = router({
           });
         }
 
+        // 7b. Finish the move: the parcels follow their order, and the
+        //     charge lands on the customer who actually ordered the goods.
+        //     After the write, so a failed save never leaves a parcel or a
+        //     debt pointing at the new customer for an order that did not move.
+        if (customerChanged) {
+          for (const packageId of packagesToMove) {
+            try {
+              await db.updatePackage(packageId, { customerId: customerId! });
+            } catch (err) {
+              // The order has moved; a parcel that did not follow is visible
+              // on both screens and fixable by hand. Losing the whole edit
+              // over it would be worse.
+              appLogger.error("[Order Edit] Parcel did not follow its order to the new customer", {
+                orderId: id, packageId, toCustomerId: customerId,
+                error: err instanceof Error ? err.message : String(err),
+              });
+            }
+          }
+
+          if (chargeToMove) {
+            const moved = await db.getFullPackageOrderById(id);
+            if (moved) {
+              const result = await db.chargeOrderAtCreation(moved, ctx.user.id);
+              if (!result.charged) {
+                appLogger.error("[Order Edit] Order moved but the new customer was not charged", {
+                  orderId: id, orderCode: existing.orderCode,
+                  toCustomerId: customerId, reason: result.reason,
+                });
+              }
+            }
+          }
+        }
+
         // `existing` is the getById row, which spreads the joined customer,
         // supplier and batch into it — including customers.passwordHash. Log
         // the order's own fields only; the joins add nothing to an audit trail
@@ -940,9 +1057,15 @@ export const fullPackageRouter = router({
           (data as Record<string, unknown>).trackingNumbers !== undefined;
         const backlink = trackingsTouched ? await safeBacklink(id) : null;
 
+        // The version the row ACTUALLY carries, not a guess at it. A
+        // customer move writes twice (clearing the old charge stamps, then
+        // the edit itself), and a client that kept version + 1 would be
+        // refused with a conflict on its very next save.
+        const saved = await db.getFullPackageOrderById(id);
+
         return {
           success: true,
-          newVersion: (existing.version ?? 1) + 1,
+          newVersion: saved?.version ?? (existing.version ?? 1) + 1,
           chargeDeltaUsd: chargeChanged ? chargeDelta : 0,
           newChargeAmountUsd: newChargeAmount,
           backlink,
