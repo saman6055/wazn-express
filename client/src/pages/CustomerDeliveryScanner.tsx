@@ -1,7 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Package, Plus, Archive, Users, Percent, X } from "lucide-react";
+import { Package, Plus, Archive, Users, Percent, X, Search } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -89,6 +89,9 @@ export default function CustomerDeliveryScanner() {
     isLoading: boxesLoading,
     refetch: refetchBoxes,
   } = trpc.deliveryBox.list.useQuery(queryParams);
+
+  /** A search spans every box, so the screen says so — see the note below. */
+  const isSearching = Boolean(filters.search && filters.search.trim());
 
   const customers = customersData ?? [];
   /** On the icon, so the page says how many people are waiting without a panel. */
@@ -267,6 +270,23 @@ export default function CustomerDeliveryScanner() {
                 counts={segmentCounts}
                 onChange={(v) => { setView(v); setCurrentPage(0); }}
               />
+            )}
+
+            {/* A search ignores the chip above it and looks everywhere — the
+                archive included. Said out loud, because otherwise a paid box
+                appearing under the "unpaid" chip reads as a bug. */}
+            {isSearching && (
+              <div className="mt-2 flex items-center gap-2 rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-300">
+                <Search className="h-4 w-4 shrink-0" />
+                <span>
+                  {L({
+                    ku: "گەڕان لە هەموو بۆکسەکاندا دەگەڕێت — پارەدراو، ئەرشیفکراو و هەڵوەشێنراویش.",
+                    en: "The search looks in every box — paid, archived and cancelled ones too.",
+                    ar: "يبحث البحث في كل الصناديق — بما فيها المدفوعة والمؤرشفة والملغاة.",
+                    zh: "搜索会查找所有箱子——包括已付款、已归档和已取消的。",
+                  })}
+                </span>
+              </div>
             )}
 
             {/* Table */}

@@ -228,11 +228,29 @@ export async function getAllDeliveryBoxes(filters?: {
   }
 
   const baseWhere = conditions.length > 0 ? and(...conditions) : undefined;
-  if (filters?.archive === "exclude") conditions.push(sql`NOT ${archivedSql}`);
-  else if (filters?.archive === "only") conditions.push(archivedSql);
+
+  /**
+   * A search looks everywhere — the owner's rule (Sep 2026).
+   *
+   * The chips narrow the list to a slice: unpaid, old, handed over, or the
+   * archive. Typing a tracking number searched inside whichever slice
+   * happened to be showing, so a parcel in a box that had been paid for and
+   * archived simply could not be found from the list somebody was standing
+   * on. A person searching a tracking number is asking "where is this?", not
+   * "is this in the slice I am looking at", and the honest answer is the box
+   * that holds it, paid or not, archived or not, cancelled or not.
+   *
+   * The counts on the chips are still computed (below, from `baseWhere`),
+   * so a search also says how its matches are spread across the slices.
+   */
+  const isSearching = Boolean(filters?.search && filters.search.trim());
+  if (!isSearching) {
+    if (filters?.archive === "exclude") conditions.push(sql`NOT ${archivedSql}`);
+    else if (filters?.archive === "only") conditions.push(archivedSql);
+  }
   // The chips: a slice of what is still unpaid. "Old" is the red badge's
   // own five days (shared/boxAging.ts), so chip and badge name the same boxes.
-  if (filters?.archive === "exclude" && filters.segment) {
+  if (!isSearching && filters?.archive === "exclude" && filters.segment) {
     const cutoff = boxOldCutoff();
     if (filters.segment === "new") conditions.push(sql`${deliveryBoxes.createdAt} > ${cutoff}`);
     else if (filters.segment === "old") conditions.push(sql`${deliveryBoxes.createdAt} <= ${cutoff}`);
