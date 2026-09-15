@@ -1,8 +1,9 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { rankOptions, readOptionUsage, recordOptionUse } from "@/lib/optionUsage";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -116,6 +117,21 @@ export default function PlatformSelect({ value, onChange, className }: PlatformS
     ? list.filter((p: any) => p.value.toLowerCase().includes(search.trim().toLowerCase()))
     : list;
 
+  /**
+   * The same rule every picker in the app follows: what gets chosen most
+   * rises, and among equals the one chosen last. Only while browsing — once
+   * somebody is typing a search, the order they asked for is the match, and
+   * rearranging under a half-typed word helps nobody.
+   */
+  const [usageVersion, setUsageVersion] = useState(0);
+  const usage = useMemo(() => readOptionUsage("platform"), [usageVersion, open]);
+  const { top, rest } = useMemo(
+    () => (search.trim()
+      ? { top: [] as any[], rest: filtered }
+      : rankOptions(filtered, usage, (p: any) => p.value)),
+    [filtered, usage, search],
+  );
+
   const submitNew = () => {
     const name = newName.trim();
     if (!name) return;
@@ -130,6 +146,26 @@ export default function PlatformSelect({ value, onChange, className }: PlatformS
     }
     createMutation.mutate({ type: "platform", value: name, sortOrder: list.length });
   };
+
+  const platformRow = (p: any) => (
+    <CommandItem
+      key={p.id}
+      value={p.value}
+      onSelect={() => {
+        onChange(p.value);
+        recordOptionUse("platform", p.value);
+        setUsageVersion((n) => n + 1);
+        setOpen(false);
+        setSearch("");
+      }}
+    >
+      <Check className={cn("me-2 h-4 w-4", value === p.value ? "opacity-100" : "opacity-0")} />
+      <span className="flex items-center gap-2">
+        <PlatformBadge name={p.value} />
+        <span>{p.value}</span>
+      </span>
+    </CommandItem>
+  );
 
   return (
     <Popover
@@ -174,20 +210,15 @@ export default function PlatformSelect({ value, onChange, className }: PlatformS
             <CommandEmpty>
               {pickLang(language, { ku: "هیچ پلاتفۆرمێک نەدۆزرایەوە", en: "No platform found", ar: "لم يتم العثور على منصة", zh: "未找到平台" })}
             </CommandEmpty>
+            {top.length > 0 && (
+              <CommandGroup heading={pickLang(language, {
+                ku: "زۆرترین بەکارهاتوو", en: "Used most", ar: "الأكثر استخداماً", zh: "最常用",
+              })}>
+                {top.map(platformRow)}
+              </CommandGroup>
+            )}
             <CommandGroup>
-              {filtered.map((p: any) => (
-                <CommandItem
-                  key={p.id}
-                  value={p.value}
-                  onSelect={() => { onChange(p.value); setOpen(false); setSearch(""); }}
-                >
-                  <Check className={cn("me-2 h-4 w-4", value === p.value ? "opacity-100" : "opacity-0")} />
-                  <span className="flex items-center gap-2">
-                    <PlatformBadge name={p.value} />
-                    <span>{p.value}</span>
-                  </span>
-                </CommandItem>
-              ))}
+              {rest.map(platformRow)}
             </CommandGroup>
           </CommandList>
         </Command>

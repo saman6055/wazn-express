@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { AttributeSelect } from "@/components/AttributeSelect";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import {
   Package,
@@ -625,20 +626,15 @@ export default function BulkOrderForm() {
                   {/* Inline quick fields */}
                   <div className="flex-1 grid grid-cols-12 gap-2 items-center" onClick={e => e.stopPropagation()}>
                     <div className="col-span-4">
-                      <Select
+                      <AttributeSelect
+                        usageKey="productType"
+                        options={typeAttrs}
                         value={item.productType}
-                        onValueChange={(v) => updateItem(item.id, "productType", v === "__none__" ? "" : v)}
-                      >
-                        <SelectTrigger className="h-9 text-sm">
-                          <SelectValue placeholder={pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })} />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="__none__">{pickLang(language, { ku: "— بێ جۆر —", en: "— None —", ar: "— بدون —", zh: "— 无 —" })}</SelectItem>
-                          {typeAttrs?.map(a => (
-                            <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
+                        onChange={(v) => updateItem(item.id, "productType", v)}
+                        className="h-9 text-sm"
+                        placeholder={pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })}
+                        emptyLabel={pickLang(language, { ku: "— بێ جۆر —", en: "— None —", ar: "— بدون —", zh: "— 无 —" })}
+                      />
                     </div>
                     <div className="col-span-1">
                       <Input
@@ -756,37 +752,27 @@ export default function BulkOrderForm() {
                     <div className="grid grid-cols-2 md:grid-cols-3 gap-3 mt-3">
                       <div>
                         <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}</Label>
-                        <Select
+                        <AttributeSelect
+                          usageKey="color"
+                          options={colorAttrs}
                           value={item.color}
-                          onValueChange={(v) => updateItem(item.id, "color", v === "__none__" ? "" : v)}
-                        >
-                          <SelectTrigger className="h-9 text-sm mt-1">
-                            <SelectValue placeholder={pickLang(language, { ku: "ڕەنگ هەڵبژێرە", en: "Select color", ar: "اختر اللون", zh: "选择颜色" })} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">{pickLang(language, { ku: "— بێ ڕەنگ —", en: "— No color —", ar: "— بدون لون —", zh: "— 无颜色 —" })}</SelectItem>
-                            {colorAttrs?.map(a => (
-                              <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={(v) => updateItem(item.id, "color", v)}
+                          className="h-9 text-sm mt-1"
+                          placeholder={pickLang(language, { ku: "ڕەنگ هەڵبژێرە", en: "Select color", ar: "اختر اللون", zh: "选择颜色" })}
+                          emptyLabel={pickLang(language, { ku: "— بێ ڕەنگ —", en: "— No color —", ar: "— بدون لون —", zh: "— 无颜色 —" })}
+                        />
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺寸" })}</Label>
-                        <Select
+                        <AttributeSelect
+                          usageKey="size"
+                          options={sizeAttrs}
                           value={item.size}
-                          onValueChange={(v) => updateItem(item.id, "size", v === "__none__" ? "" : v)}
-                        >
-                          <SelectTrigger className="h-9 text-sm mt-1">
-                            <SelectValue placeholder={pickLang(language, { ku: "قەبارە هەڵبژێرە", en: "Select size", ar: "اختر المقاس", zh: "选择尺寸" })} />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="__none__">{pickLang(language, { ku: "— بێ قەبارە —", en: "— No size —", ar: "— بدون مقاس —", zh: "— 无尺寸 —" })}</SelectItem>
-                            {sizeAttrs?.map(a => (
-                              <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
+                          onChange={(v) => updateItem(item.id, "size", v)}
+                          className="h-9 text-sm mt-1"
+                          placeholder={pickLang(language, { ku: "قەبارە هەڵبژێرە", en: "Select size", ar: "اختر المقاس", zh: "选择尺寸" })}
+                          emptyLabel={pickLang(language, { ku: "— بێ قەبارە —", en: "— No size —", ar: "— بدون مقاس —", zh: "— 无尺寸 —" })}
+                        />
                       </div>
                       <div>
                         <Label className="text-xs text-muted-foreground">{pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}</Label>

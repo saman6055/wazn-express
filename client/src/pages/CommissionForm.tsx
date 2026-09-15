@@ -17,6 +17,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { AttributeSelect } from "@/components/AttributeSelect";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { customerCodeOnly } from "@shared/customerCode";
@@ -933,22 +934,17 @@ export default function CommissionForm() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                 <div className="space-y-1.5" ref={productTypeRef}>
                   <Label className="text-xs">{pickLang(language, { ku: "جۆری کاڵا *", en: "Product type *", ar: "نوع المنتج *", zh: "商品类型 *" })}</Label>
-                  <Select
+                  <AttributeSelect
+                    usageKey="productType"
+                    options={typeAttrs}
                     value={formData.productType}
-                    onValueChange={(v) => setFormData({ ...formData, productType: v === "__none__" ? "" : v })}
+                    onChange={(v) => setFormData({ ...formData, productType: v })}
                     open={productTypeOpen}
                     onOpenChange={setProductTypeOpen}
-                  >
-                    <SelectTrigger className={cn("h-10", filledCls(formData.productType))}>
-                      <SelectValue placeholder={pickLang(language, { ku: "جۆر هەڵبژێرە", en: "Select type", ar: "اختر النوع", zh: "选择类型" })} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ جۆر —", en: "— No type —", ar: "— بدون نوع —", zh: "— 无类型 —" })}</SelectItem>
-                      {typeAttrs?.map(a => (
-                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    className={cn("h-10", filledCls(formData.productType))}
+                    placeholder={pickLang(language, { ku: "جۆر هەڵبژێرە", en: "Select type", ar: "اختر النوع", zh: "选择类型" })}
+                    emptyLabel={pickLang(language, { ku: "— بێ جۆر —", en: "— No type —", ar: "— بدون نوع —", zh: "— 无类型 —" })}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">{pickLang(language, { ku: "پلاتفۆرم *", en: "Platform *", ar: "المنصة *", zh: "平台 *" })}</Label>
@@ -1000,37 +996,27 @@ export default function CommissionForm() {
               <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
                 <div className="space-y-1.5">
                   <Label className="text-xs">{pickLang(language, { ku: "ڕەنگ", en: "Color", ar: "اللون", zh: "颜色" })}</Label>
-                  <Select
+                  <AttributeSelect
+                    usageKey="color"
+                    options={colorAttrs}
                     value={formData.color}
-                    onValueChange={(v) => setFormData({ ...formData, color: v === "__none__" ? "" : v })}
-                  >
-                    <SelectTrigger className={cn("h-10", filledCls(formData.color))}>
-                      <SelectValue placeholder={pickLang(language, { ku: "ڕەنگ هەڵبژێرە", en: "Select color", ar: "اختر اللون", zh: "选择颜色" })} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ ڕەنگ —", en: "— No color —", ar: "— بدون لون —", zh: "— 无颜色 —" })}</SelectItem>
-                      {colorAttrs?.map(a => (
-                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => setFormData({ ...formData, color: v })}
+                    className={cn("h-10", filledCls(formData.color))}
+                    placeholder={pickLang(language, { ku: "ڕەنگ هەڵبژێرە", en: "Select color", ar: "اختر اللون", zh: "选择颜色" })}
+                    emptyLabel={pickLang(language, { ku: "— بێ ڕەنگ —", en: "— No color —", ar: "— بدون لون —", zh: "— 无颜色 —" })}
+                  />
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">{pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺寸" })}</Label>
-                  <Select
+                  <AttributeSelect
+                    usageKey="size"
+                    options={sizeAttrs}
                     value={formData.size}
-                    onValueChange={(v) => setFormData({ ...formData, size: v === "__none__" ? "" : v })}
-                  >
-                    <SelectTrigger className={cn("h-10", filledCls(formData.size))}>
-                      <SelectValue placeholder={pickLang(language, { ku: "قەبارە هەڵبژێرە", en: "Select size", ar: "اختر المقاس", zh: "选择尺寸" })} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="__none__">{pickLang(language, { ku: "— بێ قەبارە —", en: "— No size —", ar: "— بدون مقاس —", zh: "— 无尺寸 —" })}</SelectItem>
-                      {sizeAttrs?.map(a => (
-                        <SelectItem key={a.id} value={a.value}>{a.value}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                    onChange={(v) => setFormData({ ...formData, size: v })}
+                    className={cn("h-10", filledCls(formData.size))}
+                    placeholder={pickLang(language, { ku: "قەبارە هەڵبژێرە", en: "Select size", ar: "اختر المقاس", zh: "选择尺寸" })}
+                    emptyLabel={pickLang(language, { ku: "— بێ قەبارە —", en: "— No size —", ar: "— بدون مقاس —", zh: "— 无尺寸 —" })}
+                  />
                 </div>
                 <div className="space-y-1.5" ref={productImageRef}>
                   <Label className="text-xs flex items-center gap-1.5">
