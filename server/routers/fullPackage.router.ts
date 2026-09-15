@@ -197,6 +197,37 @@ export const fullPackageRouter = router({
         return db.getFullPackageOrderById(input.id);
       }),
     
+    /**
+     * Is this order number already on another order?
+     *
+     * Asked while the number is being typed, not at save. The owner's note
+     * (Sep 2026): the refusal used to arrive after the customer, the photo,
+     * the prices and the shipping method had all been filled in — every one
+     * of them retyped for nothing, because the very first field was wrong.
+     *
+     * Returns the order that holds it, or null. Cheap: one indexed lookup,
+     * and the two fields the warning needs rather than the whole row — an
+     * order row carries prices and a customer, and this answers to anyone on
+     * staff who is typing into a box.
+     */
+    checkOrderNumber: staffProcedure
+      .input(z.object({
+        orderNumber: z.string().max(200),
+        /** The order being edited, so it does not flag itself. */
+        excludeId: z.number().optional(),
+      }))
+      .query(async ({ input }) => {
+        const number = input.orderNumber.trim();
+        if (!number) return { taken: false as const };
+        const dup = await db.getFullPackageOrderByOrderNumber(number, input.excludeId);
+        if (!dup) return { taken: false as const };
+        return {
+          taken: true as const,
+          orderCode: dup.orderCode,
+          orderId: dup.id,
+        };
+      }),
+
     create: staffProcedure
       .input(z.object({
         customerId: z.number(),

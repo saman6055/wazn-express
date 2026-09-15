@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef } from "react";
+﻿import { useState, useEffect, useRef, useMemo } from "react";
 import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orderTrackingSanity";
 import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
 import { useLocation, useParams } from "wouter";
@@ -15,6 +15,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { AttributeSelect } from "@/components/AttributeSelect";
 import { useProductTypeSuggestion } from "@/hooks/useProductTypeSuggestion";
+import { useOrderNumberCheck } from "@/hooks/useOrderNumberCheck";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import {
@@ -379,6 +380,17 @@ export default function FullPackageForm() {
   // A photo usually says what the goods are; the field fills itself
   // from it when it is empty, and says that it did.
   const typeGuess = useProductTypeSuggestion();
+  // The duplicate is found while the number is being typed rather
+  // than after the whole form has been filled in around it.
+  const orderNumberCheck = useOrderNumberCheck(formData.orderNumber, {
+    excludeId: isEditMode ? (orderId as number) : undefined,
+  });
+  // Swapped or oddly short numbers are said under the field they are
+  // about, the moment both are on screen — not held back for the save.
+  const idWarnings = useMemo(
+    () => orderTrackingWarnings(formData.orderNumber, formData.trackingNumber),
+    [formData.orderNumber, formData.trackingNumber],
+  );
   // Armed by the first save with no picture; cleared once one is
   // added, and after a save, so the next order asks again.
   const askedForImage = useRef(false);
@@ -413,21 +425,29 @@ export default function FullPackageForm() {
       return;
     }
 
+    // The duplicate is already named under the field. Refuse the save here
+    // too rather than letting somebody press a button that cannot work —
+    // the server refuses it as well, and this only saves the round trip.
+    if (orderNumberCheck.taken) {
+      toast.error(pickLang(language, {
+        ku: `ئەم ژمارەی ئۆردەرە پێشتر بەکارهاتووە لە ${orderNumberCheck.orderCode}`,
+        en: `This order number is already used by ${orderNumberCheck.orderCode}`,
+        ar: `رقم الطلب هذا مستخدم مسبقاً في ${orderNumberCheck.orderCode}`,
+        zh: `此订单编号已用于 ${orderNumberCheck.orderCode}`,
+      }));
+      return;
+    }
+
     // Every real order has a number from the shop it was bought on.
     if (!formData.orderNumber.trim()) {
       toast.error(pickLang(language, { ku: "تکایە ئۆردەر نەمبەر داخڵ بکە", en: "Please enter the order number", ar: "يرجى إدخال رقم الطلب", zh: "请输入订单编号" }));
       return;
     }
 
-    // The owner's observation: an order number is longer than a tracking
-    // number. A swapped or oddly short pair still saves — never silently.
-    const idWarnings = orderTrackingWarnings(formData.orderNumber, formData.trackingNumber);
-    if (idWarnings.length > 0) {
-      toast.warning(
-        idWarnings.map((w) => pickLang(language, ORDER_TRACKING_WARNING_TEXT[w])).join("\n"),
-        { duration: 9000 },
-      );
-    }
+    // The order/tracking warnings are not repeated here: they have sat
+    // under their own fields since the moment both were typed, and a
+    // toast at save is exactly the late notice the owner asked to be
+    // rid of.
 
     // A picture is how goods are identified at the warehouse and on the
     // receipt, so the first save without one stops and asks — the owner's
@@ -897,9 +917,32 @@ export default function FullPackageForm() {
                     value={formData.orderNumber}
                     onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
                     placeholder={pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}
-                    className={cn("h-10", filledCls(formData.orderNumber))}
+                    className={cn("h-10", orderNumberCheck.taken ? "border-red-400 ring-1 ring-red-300" : filledCls(formData.orderNumber))}
                     dir="ltr"
                   />
+                  {/* Said here, while the number is being typed — not at save,
+                      after the customer, the photo and the prices have all
+                      been filled in for nothing. */}
+                  {orderNumberCheck.checking && (
+                    <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {pickLang(language, { ku: "دەپشکنرێت…", en: "Checking…", ar: "جارٍ التحقق…", zh: "检查中…" })}
+                    </p>
+                  )}
+                  {orderNumberCheck.taken && (
+                    <p className="flex items-start gap-1 text-[11px] font-medium text-red-600 dark:text-red-300">
+                      <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                      <span>
+                        {pickLang(language, {
+                          ku: "ئەم ژمارەیە پێشتر بەکارهاتووە لە ئۆردەری",
+                          en: "Already used by order",
+                          ar: "مستخدم مسبقاً في الطلب",
+                          zh: "此编号已用于订单",
+                        })}{" "}
+                        <b dir="ltr">{orderNumberCheck.orderCode}</b>
+                      </span>
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs flex items-center gap-1.5">
@@ -926,6 +969,19 @@ export default function FullPackageForm() {
                     className={cn("h-10", filledCls(formData.trackingNumber))}
                     dir="ltr"
                   />
+                  {/* The order/tracking sanity warnings used to wait for the
+                      save button. They belong under the fields they are about,
+                      while both are on screen and easy to swap back. */}
+                  {idWarnings.length > 0 && (
+                    <div className="space-y-0.5">
+                      {idWarnings.map((w) => (
+                        <p key={w} className="flex items-start gap-1 text-[11px] text-amber-600 dark:text-amber-300">
+                          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+                          <span>{pickLang(language, ORDER_TRACKING_WARNING_TEXT[w])}</span>
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
