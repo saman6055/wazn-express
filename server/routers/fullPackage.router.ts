@@ -327,11 +327,14 @@ export const fullPackageRouter = router({
           totalPrepaidUsd: totalPrepaid,
           orderDate: input.orderDate || (input.orderNumber ? new Date() : undefined),
           createdById: ctx.user.id,
-          // NOTE: Commission orders are NO LONGER charged at creation.
-          // Both commission and full_package are charged at batch delivery
-          // (see batches.router.ts). This allows safe edit/delete of pending
-          // orders without polluting the customer's ledger.
         });
+
+        // The owner's rule (Sep 2026): an order entered is a debt owed. The
+        // goods were bought with the company's money, so the account says so
+        // from this moment rather than weeks later when the batch lands.
+        // Charged BEFORE the advance below, so the account reads in the order
+        // the money actually moved: the debt, then what was paid against it.
+        await db.chargeOrderAtCreation(order, ctx.user.id);
 
         // Advance payment — record as CREDIT_PAYMENT on customer account if provided
         const advance = parseFloat(input.advancePaidUsd || '0');
@@ -486,9 +489,10 @@ export const fullPackageRouter = router({
               totalPrepaidUsd: totalPrepaid,
               orderDate: item.orderDate || (item.orderNumber ? new Date() : undefined),
               createdById: ctx.user.id,
-              // NOTE: Commission orders are NO LONGER charged at creation.
-              // Both commission and full_package are charged at batch delivery.
             });
+
+            // Same rule as the single create above: entered is owed.
+            await db.chargeOrderAtCreation(order, ctx.user.id);
             // itemPrice/commissionFee used above for grossProfitUsd calculation
             void itemPrice;
             void commissionFee;
@@ -1788,10 +1792,15 @@ export const fullPackageRouter = router({
           ]
         );
 
-        // Persist chargeTransactionId on the order (Plan v3).
+        // Persist chargeTransactionId on the order (Plan v3), and mark it
+        // charged — without the flag, delivery would read an uncharged order
+        // and bill the same goods a second time on arrival.
         await db.updateFullPackageOrder(order.id, {
           chargeTransactionId: commissionChargeResult.transaction.id,
-        });
+          isCharged: true,
+          isChargedToCustomer: true,
+          chargedToAccountAt: new Date(),
+        } as any);
         
         await db.createAuditLog({
           userId: ctx.user.id,

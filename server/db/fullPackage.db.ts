@@ -935,6 +935,105 @@ export function computeOrderChargeAmount(order: {
   return 0;
 }
 
+/**
+ * Put what an order costs onto the customer's account the moment it is
+ * entered — the owner's rule, September 2026.
+ *
+ * Until now the goods were billed when the batch reached Erbil and the order
+ * was marked delivered. A customer could have a dozen commission orders
+ * bought and paid for by the company and still read "هیچ قەرزێکت لەسەر نییە"
+ * on their account, for weeks. The company's money left when the goods were
+ * bought; the debt exists from that moment, and the account should say so.
+ *
+ * What this does NOT change:
+ *  • the amount — `computeOrderChargeAmount`, the same rule delivery used;
+ *  • the freight, which is still charged where it always was (it is not
+ *    known until the parcel is weighed);
+ *  • a purchase request, which is a quote until the customer approves it —
+ *    `approveQuote` charges that one, and billing a quote would be billing
+ *    for something nobody has agreed to yet.
+ *
+ * Both flags are stamped, because the delivery path reads `isCharged` and
+ * would otherwise bill the same goods a second time on arrival, and the
+ * transaction id is kept so an edit can adjust this exact charge and a
+ * deletion reverse it — the machinery that made charging this early safe.
+ *
+ * Never throws. An order that fails to charge is an order the office can
+ * still see and fix; an order refused at save is a customer standing at a
+ * counter while somebody retypes it.
+ */
+export async function chargeOrderAtCreation(
+  order: FullPackageOrder,
+  userId: number,
+): Promise<{ charged: boolean; amount: number; reason?: string }> {
+  if (order.orderType === 'purchase_request') {
+    return { charged: false, amount: 0, reason: 'quote' };
+  }
+  if (!order.customerId) return { charged: false, amount: 0, reason: 'no_customer' };
+  if (order.isCharged || order.chargeTransactionId) {
+    return { charged: false, amount: 0, reason: 'already_charged' };
+  }
+
+  const amount = computeOrderChargeAmount(order);
+  if (!(amount > 0)) return { charged: false, amount: 0, reason: 'no_price' };
+
+  try {
+    const customer = await getCustomerById(order.customerId);
+    if (!customer) return { charged: false, amount, reason: 'no_customer' };
+
+    const qty = order.quantity ?? 1;
+    const chargeType = order.orderType === 'commission' ? 'COMMISSION' : 'FULL_PACKAGE';
+    const result = await applyCharge(
+      order.customerId,
+      customer.customerCode,
+      chargeType as any,
+      order.id,
+      amount,
+      `${order.orderType === 'commission' ? 'کڕین بە تێچوو' : 'پاکێجی تەواو'} - ${order.orderCode}${order.productName ? ` (${order.productName})` : ''}`,
+      userId,
+      [{
+        description: `${order.productName || 'Product'} (${order.orderCode})`,
+        quantity: qty,
+        unitPrice: qty > 0 ? amount / qty : amount,
+        total: amount,
+      }],
+    );
+
+    await db_updateOrderChargeStamp(order.id, result.transaction.id);
+    appLogger.info('[OrderCharge] charged at creation', {
+      orderId: order.id, orderCode: order.orderCode, amount, chargeType,
+    });
+    return { charged: true, amount };
+  } catch (e) {
+    appLogger.error('[OrderCharge] failed to charge at creation', {
+      orderId: order.id, orderCode: order.orderCode, amount,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return { charged: false, amount, reason: 'error' };
+  }
+}
+
+/**
+ * Stamp the charge onto the order by a direct write.
+ *
+ * Deliberately not `updateFullPackageOrder`: that one re-derives prices,
+ * bumps the version and can charge on its own, and none of that belongs in
+ * the two-line write that records a charge just made.
+ */
+async function db_updateOrderChargeStamp(orderId: number, transactionId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(fullPackageOrders)
+    .set({
+      isCharged: true,
+      isChargedToCustomer: true,
+      chargedAt: new Date(),
+      chargedToAccountAt: new Date(),
+      chargeTransactionId: transactionId,
+    } as any)
+    .where(eq(fullPackageOrders.id, orderId));
+}
+
 const num = (v: string | number | null | undefined): number =>
   parseFloat(String(v ?? '0')) || 0;
 
