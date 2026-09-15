@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
+import { StickyDashboardHeader } from "@/components/layout/StickyDashboardHeader";
 import { Button } from "@/components/ui/button";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { useClientPagination } from "@/hooks/useClientPagination";
@@ -29,9 +30,6 @@ import {
   Eye,
   Pencil,
   Percent,
-  Clock,
-  CheckCircle,
-  Truck,
   Layers,
   ChevronDown,
   Download,
@@ -40,7 +38,6 @@ import {
   Calendar,
   X,
   ArrowUpDown,
-  ShoppingCart,
   Users,
   PackagePlus,
   ImageIcon,
@@ -533,25 +530,28 @@ export default function CommissionDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-to-l from-amber-500 to-yellow-600 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl">
-                <Percent className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{t("commission.title")}</h1>
-                <p className="text-amber-100">{t("commission.subtitle")}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Export Dropdown */}
+        {/* One slim sticky bar: what the page is, how it stands, and what
+            you came to do. The tall banner and the six stat cards below it
+            took the first two hundred pixels of a screen whose job is a
+            table of 1,786 rows — and scrolled away exactly when the list
+            got long enough to want them. */}
+        <StickyDashboardHeader
+          icon={Percent}
+          title={t("commission.title")}
+          stats={[
+            { label: t("commission.totalOrdersLabel"), value: totalOrders },
+            { label: t("commission.pendingLabel"), value: pendingOrders, tone: "text-orange-600 dark:text-orange-300" },
+            { label: t("commission.orderedLabel"), value: orderedOrders, tone: "text-blue-600 dark:text-blue-300" },
+            { label: t("commission.deliveredLabel"), value: deliveredOrders, tone: "text-green-600 dark:text-green-300" },
+            { label: t("commission.totalCostLabel"), value: `$${totalItemValue.toFixed(2)}`, tone: "text-red-600 dark:text-red-300", ltr: true },
+            { label: t("commission.totalCommissionLabel"), value: `$${totalCommission.toFixed(2)}`, tone: "text-amber-700 dark:text-amber-300", ltr: true },
+          ]}
+          actions={
+            <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
-                    <Download className="h-4 w-4 ms-2" />
-                    {t("common.export")}
+                  <Button variant="outline" size="icon" className="h-8 w-8" title={t("common.export")}>
+                    <Download className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -565,119 +565,24 @@ export default function CommissionDashboard() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               <Button
                 variant="outline"
+                size="icon"
+                className="h-8 w-8"
+                title={t("commission.bulkCreate")}
                 onClick={() => navigate("/commission/bulk-create?type=commission")}
-                className="bg-white/80 dark:bg-card/80 text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/40 border-amber-300 dark:border-amber-800/60"
               >
-                <PackagePlus className="h-4 w-4 ms-2" />
-                {t("commission.bulkCreate")}
+                <PackagePlus className="h-4 w-4" />
               </Button>
-              <Button
-                onClick={() => navigate("/commission/new")}
-                className="bg-white dark:bg-card text-amber-700 dark:text-amber-300 hover:bg-amber-50"
-              >
-                <Plus className="h-4 w-4 ms-2" />
+
+              <Button size="sm" className="h-8" onClick={() => navigate("/commission/new")}>
+                <Plus className="h-4 w-4 ms-1.5" />
                 {t("commission.newOrder")}
               </Button>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-yellow-50 dark:to-yellow-950/40 border-amber-200 dark:border-amber-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-amber-600 dark:text-amber-300 font-medium">{t("commission.totalOrdersLabel")}</p>
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{totalOrders}</p>
-                </div>
-                <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
-                  <Package className="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-orange-50 dark:from-orange-950/40 to-amber-50 dark:to-amber-950/40 border-orange-200 dark:border-orange-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-orange-600 dark:text-orange-300 font-medium">{t("commission.pendingLabel")}</p>
-                  <p className="text-2xl font-bold text-orange-700 dark:text-orange-300">{pendingOrders}</p>
-                </div>
-                <div className="p-2 bg-orange-100 dark:bg-orange-950/40 rounded-xl">
-                  <Clock className="h-5 w-5 text-orange-600 dark:text-orange-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-sky-50 dark:to-sky-950/40 border-blue-200 dark:border-blue-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">{t("commission.orderedLabel")}</p>
-                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{orderedOrders}</p>
-                </div>
-                <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                  <Truck className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 border-green-200 dark:border-green-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-green-600 dark:text-green-300 font-medium">{t("commission.deliveredLabel")}</p>
-                  <p className="text-2xl font-bold text-green-700 dark:text-green-300">{deliveredOrders}</p>
-                </div>
-                <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-xl">
-                  <CheckCircle className="h-5 w-5 text-green-600 dark:text-green-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-red-600 dark:text-red-300 font-medium">{t("commission.totalCostLabel")}</p>
-                  {/* "کۆی کڕین" must show the goods-only purchase total,
-                      NOT goods + commission. Commission has its own card
-                      below; lumping them together here was confusing
-                      because every other commission-flow document
-                      (box receipt, invoice, ledger description) lists
-                      the two separately. The grand total is still
-                      available in the Excel and PDF exports. */}
-                  <p className="text-xl font-bold text-red-700 dark:text-red-300">${totalItemValue.toFixed(2)}</p>
-                </div>
-                <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-xl">
-                  <ShoppingCart className="h-5 w-5 text-red-600 dark:text-red-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-yellow-50 dark:from-yellow-950/40 to-amber-50 dark:to-amber-950/40 border-yellow-200 dark:border-yellow-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-yellow-700 dark:text-yellow-300 font-medium">{t("commission.totalCommissionLabel")}</p>
-                  <p className="text-xl font-bold text-yellow-800 dark:text-yellow-200">${totalCommission.toFixed(2)}</p>
-                </div>
-                <div className="p-2 bg-yellow-100 dark:bg-yellow-950/40 rounded-xl">
-                  <Percent className="h-5 w-5 text-yellow-700 dark:text-yellow-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </>
+          }
+        />
 
         {/* Table Card */}
         <Card>

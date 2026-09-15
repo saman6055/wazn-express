@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
+import { StickyDashboardHeader } from "@/components/layout/StickyDashboardHeader";
 import { Button } from "@/components/ui/button";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { useClientPagination } from "@/hooks/useClientPagination";
@@ -569,25 +570,26 @@ export default function FullPackageDashboard() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Header */}
-        <div className="bg-gradient-to-l from-emerald-600 to-emerald-700 rounded-2xl p-6 text-white">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-4">
-              <div className="p-3 bg-white/20 rounded-xl">
-                <ShoppingBag className="h-8 w-8" />
-              </div>
-              <div>
-                <h1 className="text-2xl font-bold">{t("fullPackage.title")}</h1>
-                <p className="text-emerald-100">{t("fullPackage.managementSubtitle")}</p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              {/* Export Dropdown */}
+        {/* The same slim sticky bar the commission dashboard uses — one
+            line for what the page is, how it stands and what you came to
+            do, and it stays there while the table scrolls. */}
+        <StickyDashboardHeader
+          icon={ShoppingBag}
+          title={t("fullPackage.title")}
+          stats={[
+            { label: t("fullPackage.ordersCountLabel"), value: totalOrders },
+            { label: t("fullPackage.pendingLabel"), value: pendingOrders, tone: "text-amber-600 dark:text-amber-300" },
+            { label: t("fullPackage.inTransitLabel"), value: inTransitOrders, tone: "text-blue-600 dark:text-blue-300" },
+            { label: t("fullPackage.totalPurchaseCost"), value: `$${totalPurchaseCost.toFixed(2)}`, tone: "text-red-600 dark:text-red-300", ltr: true },
+            { label: t("fullPackage.grossProfitLabel"), value: `$${totalGrossProfit.toFixed(2)}`, tone: "text-green-600 dark:text-green-300", ltr: true },
+            { label: t("fullPackage.netProfitLabel"), value: `$${totalNetProfit.toFixed(2)}`, tone: "text-purple-600 dark:text-purple-300", ltr: true },
+          ]}
+          actions={
+            <>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="secondary" className="bg-white/20 text-white hover:bg-white/30 border-0">
-                    <Download className="h-4 w-4 ms-2" />
-                    {t("common.export")}
+                  <Button variant="outline" size="icon" className="h-8 w-8" title={t("common.export")}>
+                    <Download className="h-4 w-4" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -601,109 +603,21 @@ export default function FullPackageDashboard() {
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-              
+
               <Link href="/full-package/bulk-create?type=full_package">
-                <Button variant="outline" className="bg-white/80 dark:bg-card/80 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/40 border-emerald-300 dark:border-emerald-800/60">
-                  <PackagePlus className="h-4 w-4 ms-2" />
-                  {t("fullPackage.bulkCreate")}
+                <Button variant="outline" size="icon" className="h-8 w-8" title={t("fullPackage.bulkCreate")}>
+                  <PackagePlus className="h-4 w-4" />
                 </Button>
               </Link>
               <Link href="/full-package/new">
-                <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
-                  <Plus className="h-4 w-4 ms-2" />
+                <Button size="sm" className="h-8">
+                  <Plus className="h-4 w-4 ms-1.5" />
                   {t("fullPackage.newOrder")}
                 </Button>
               </Link>
-            </div>
-          </div>
-        </div>
-
-        {/* Stats Cards */}
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
-          <Card className="bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-emerald-600 dark:text-emerald-300 font-medium">{t("fullPackage.ordersCountLabel")}</p>
-                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300">{totalOrders}</p>
-                </div>
-                <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl">
-                  <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-amber-600 dark:text-amber-300 font-medium">{t("fullPackage.pendingLabel")}</p>
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-300">{pendingOrders}</p>
-                </div>
-                <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-xl">
-                  <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">{t("fullPackage.inTransitLabel")}</p>
-                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300">{inTransitOrders}</p>
-                </div>
-                <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
-                  <Clock className="h-5 w-5 text-blue-600 dark:text-blue-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-red-50 dark:bg-red-950/40 border-red-200 dark:border-red-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-red-600 dark:text-red-300 font-medium">{t("fullPackage.totalPurchaseCost")}</p>
-                  <p className="text-xl font-bold text-red-700 dark:text-red-300">${totalPurchaseCost.toFixed(2)}</p>
-                </div>
-                <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-xl">
-                  <ShoppingCart className="h-5 w-5 text-red-600 dark:text-red-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-green-50 dark:bg-green-950/40 border-green-200 dark:border-green-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-green-600 dark:text-green-300 font-medium">{t("fullPackage.grossProfitLabel")}</p>
-                  <p className="text-xl font-bold text-green-700 dark:text-green-300">${totalGrossProfit.toFixed(2)}</p>
-                </div>
-                <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-xl">
-                  <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-purple-50 dark:bg-purple-950/40 border-purple-200 dark:border-purple-800/60">
-            <CardContent className="p-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-xs text-purple-600 dark:text-purple-300 font-medium">{t("fullPackage.netProfitLabel")}</p>
-                  <p className="text-xl font-bold text-purple-700 dark:text-purple-300">${totalNetProfit.toFixed(2)}</p>
-                </div>
-                <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-xl">
-                  <TrendingUp className="h-5 w-5 text-purple-600 dark:text-purple-300" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
+            </>
+          }
+        />
 
         {/* Table Card */}
         <Card>
