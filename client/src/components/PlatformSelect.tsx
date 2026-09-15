@@ -25,6 +25,16 @@ import { Check, ChevronsUpDown, Plus, Loader2, X } from "lucide-react";
  *  need it re-picked each time. Shared by the commission and full-package forms. */
 export const LAST_PLATFORM_KEY = "wazn-last-order-platform";
 
+/**
+ * The shipping method of the last order saved.
+ *
+ * A run of orders is almost always shipped the same way — the owner's word
+ * (Sep 2026): after one order is entered, the next should arrive with the
+ * method already chosen, the way the customer and the platform do. Cleared
+ * only by choosing a different one.
+ */
+export const LAST_SHIPPING_TYPE_KEY = "wazn-last-order-shipping-type";
+
 // Brand-ish colours for the platforms shipped by default. Anything else falls
 // back to a stable colour picked from its name, so a custom platform keeps the
 // same badge every time it renders.

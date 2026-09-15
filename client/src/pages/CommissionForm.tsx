@@ -17,10 +17,11 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { confirmAction } from "@/components/ConfirmDialog";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { customerCodeOnly } from "@shared/customerCode";
 import { readableError, editableSnapshot, advancePayload, numericPayload } from "@/lib/commissionEditUtils";
-import PlatformSelect, { LAST_PLATFORM_KEY } from "@/components/PlatformSelect";
+import PlatformSelect, { LAST_PLATFORM_KEY, LAST_SHIPPING_TYPE_KEY } from "@/components/PlatformSelect";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
@@ -159,6 +160,12 @@ export default function CommissionForm() {
     }
     const lastPlatform = localStorage.getItem(LAST_PLATFORM_KEY);
     if (lastPlatform) setFormData((prev) => (prev.platform ? prev : { ...prev, platform: lastPlatform }));
+    // A run of orders ships the same way — the method carries over like the
+    // platform does, until somebody picks a different one.
+    const lastShipping = localStorage.getItem(LAST_SHIPPING_TYPE_KEY);
+    if (lastShipping && ["air_regular", "air_irregular", "sea"].includes(lastShipping)) {
+      setFormData((prev) => (prev.shippingType ? prev : { ...prev, shippingType: lastShipping as typeof prev.shippingType }));
+    }
     const lastId = localStorage.getItem("wazn-last-commission-customer");
     if (!lastId) return;
     const match = customers.find((c) => c.id.toString() === lastId);
@@ -293,6 +300,10 @@ export default function CommissionForm() {
       if (keepPlatform) {
         localStorage.setItem(LAST_PLATFORM_KEY, keepPlatform);
       }
+      const keepShipping = formData.shippingType;
+      if (keepShipping) {
+        localStorage.setItem(LAST_SHIPPING_TYPE_KEY, keepShipping);
+      }
       // Keep the form open for rapid multi-order entry: reset every field for
       // the next order but KEEP the selected customer and platform, so staff can
       // enter all of one customer's orders back-to-back without re-picking them.
@@ -315,7 +326,9 @@ export default function CommissionForm() {
         advancePaidUsd: "",
         advancePaymentMethod: "CASH",
         notes: "",
-        shippingType: "",
+        // Kept, not cleared: the next order almost always ships the
+        // same way, and re-picking it every time is the owner's complaint.
+        shippingType: keepShipping,
         weightKg: "",
         dimensionLength: "",
         dimensionWidth: "",
@@ -323,6 +336,7 @@ export default function CommissionForm() {
         volumeCbm: "",
       });
       setProductImages([]);
+      askedForImage.current = false;
       setIqdPerUnit("");
       setIqdTotal("");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -480,6 +494,10 @@ export default function CommissionForm() {
   // says WHAT is missing, but the form must also take you TO it — scroll
   // to the field, and if it's a dropdown, open it by itself.
   const shippingMethodRef = useRef<HTMLDivElement>(null);
+  const productImageRef = useRef<HTMLDivElement>(null);
+  // Armed by the first save with no picture; cleared once one is
+  // added, and after a save, so the next order asks again.
+  const askedForImage = useRef(false);
   const productTypeRef = useRef<HTMLDivElement>(null);
   const [productTypeOpen, setProductTypeOpen] = useState(false);
   const goToMissingProductType = () => {
@@ -491,7 +509,7 @@ export default function CommissionForm() {
     shippingMethodRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!formData.customerId) {
@@ -521,10 +539,33 @@ export default function CommissionForm() {
       );
     }
 
-    // Saving without a picture is allowed, but never silent — the order is
-    // harder to identify at the warehouse and on the receipt without one.
+    // A picture is how goods are identified at the warehouse and on the
+    // receipt, so the first save without one stops and asks — the owner's
+    // rule (Sep 2026). It is not a hard requirement: the photo often is not
+    // to hand at entry time, and refusing outright would only produce junk
+    // uploads. So a second press asks plainly, and a yes saves without it.
     if (productImages.length === 0) {
-      toast.warning(pickLang(language, { ku: "ئاگاداری: وێنەی کاڵا دانەنراوە — دواتر زیادی بکە", en: "Note: no product image — remember to add one later", ar: "ملاحظة: لا توجد صورة للمنتج — أضفها لاحقاً", zh: "注意：没有商品图片 — 请稍后补充" }));
+      if (!askedForImage.current) {
+        askedForImage.current = true;
+        toast.error(pickLang(language, {
+          ku: "وێنەی کاڵا دانەنراوە — تکایە وێنە دابنێ. ئەگەر وێنە نییە، دووبارە پاشەکەوت دابگرە.",
+          en: "No product image — please add one. If you have no picture, press save again.",
+          ar: "لا توجد صورة للمنتج — يرجى إضافة صورة. إن لم تكن لديك صورة، اضغط حفظ مرة أخرى.",
+          zh: "没有商品图片——请添加。若确实没有图片，请再次点击保存。",
+        }), { duration: 8000 });
+        productImageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
+      const saveAnyway = await confirmAction(pickLang(language, {
+        ku: "بەبێ وێنەی کاڵا پاشەکەوتی بکەم؟",
+        en: "Save this order without a product image?",
+        ar: "هل أحفظ الطلب بدون صورة للمنتج؟",
+        zh: "在没有商品图片的情况下保存此订单？",
+      }));
+      if (!saveAnyway) {
+        productImageRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+        return;
+      }
     }
 
     if (!formData.platform.trim()) {
@@ -991,26 +1032,32 @@ export default function CommissionForm() {
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="space-y-1.5">
+                <div className="space-y-1.5" ref={productImageRef}>
                   <Label className="text-xs flex items-center gap-1.5">
                     <ImageIcon className="h-3.5 w-3.5" />
                     {pickLang(language, { ku: "وێنەی کاڵا", en: "Product image", ar: "صورة المنتج", zh: "商品图片" })}
                   </Label>
                   <CompressedImageUpload
                     images={productImages}
-                    onChange={setProductImages}
+                    onChange={(next) => {
+                      setProductImages(next);
+                      // A picture arrived, so the next empty save starts the
+                      // asking over rather than jumping to the confirmation.
+                      if (next.length > 0) askedForImage.current = false;
+                    }}
                     maxImages={5}
                     accentColor="amber"
                     compact
                   />
                   {/* A picture is how goods are identified at the warehouse
-                      and on the receipt, so its absence is called out — but it
-                      never blocks the save: the image often is not to hand at
-                      entry time, and forcing it would only produce junk uploads. */}
+                      and on the receipt. The first save without one stops and
+                      asks; a second press offers to save anyway, because the
+                      photo often is not to hand at entry time and refusing
+                      outright would only produce junk uploads. */}
                   {productImages.length === 0 && (
                     <p className="text-[11px] text-amber-600 dark:text-amber-300 flex items-center gap-1">
                       <AlertTriangle className="h-3 w-3" />
-                      {pickLang(language, { ku: "وێنە دانەنراوە — دواتر زیادی بکە", en: "No image yet — you can add it later", ar: "لا توجد صورة بعد — يمكن إضافتها لاحقاً", zh: "尚无图片 — 可稍后添加" })}
+                      {pickLang(language, { ku: "وێنە دانەنراوە — پێویستە", en: "No image yet — one is expected", ar: "لا توجد صورة بعد — مطلوبة", zh: "尚无图片 — 需要提供" })}
                     </p>
                   )}
                 </div>
