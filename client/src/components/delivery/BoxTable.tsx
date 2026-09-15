@@ -42,7 +42,7 @@ import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
-import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
+import { companyContact, logoUrlOnDark } from "@/lib/brand";
 import { trpc } from "@/lib/trpc";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -166,7 +166,7 @@ export function BoxTable({
           }
         : null,
       t,
-      { logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL), company: companyContact(company, language) }
+      { logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, language) }
     );
   };
 
@@ -205,7 +205,7 @@ export function BoxTable({
           }
         : null,
       createTranslator(lang),
-      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL), company: companyContact(company, lang) }
+      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, lang) }
     );
   };
 

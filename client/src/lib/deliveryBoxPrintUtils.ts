@@ -190,19 +190,93 @@ function advanceAndDue(
   };
 }
 
-function totalMeasure(box: BoxForPrint, items: BoxItemForPrint[]): string {
-  // Summed over the rows that print a measurement — a true box total beside
-  // dashed full-package rows hands the hidden weight back as one subtraction.
-  const visible = items.filter((i) => i.itemType !== "full_package");
-  if (isSeaBox(box)) {
-    const totalCbm = visible.reduce((s, i) => s + Number(i.volumeCbm || 0), 0);
-    return `${totalCbm.toFixed(3)} CBM`;
+/**
+ * The box's measurements, each row counted in the unit it is actually sold
+ * in — and never added to the other one.
+ *
+ * A box can hold both: an air carton billed per kilo and a sea carton billed
+ * per cubic metre. The rows already printed each in its own unit, but the
+ * total below them did not: it picked ONE unit from the box and added every
+ * row into it, so a sea carton's 0.028 CBM was added to the kilos and the
+ * sheet reported a weight nobody could weigh. Two quantities in different
+ * units have no sum; they have two totals.
+ *
+ * Each side carries its own money as well, because on a mixed sheet "8.34 kg
+ * — $50.71" invites the customer to divide one by the other and ask why the
+ * rate is wrong. Full-package cartons are left out of the measurements (the
+ * customer bought them at one agreed figure — shared/fullPackagePrivacy.ts)
+ * but their value still belongs to the box total, which is counted elsewhere.
+ */
+interface MeasureTotals {
+  kg: number;
+  kgValue: number;
+  hasKg: boolean;
+  cbm: number;
+  cbmValue: number;
+  hasCbm: boolean;
+  /** Both units present — only then is the split worth the extra line. */
+  mixed: boolean;
+}
+
+function measureTotals(box: BoxForPrint, items: BoxItemForPrint[]): MeasureTotals {
+  let kg = 0, kgValue = 0, kgCount = 0;
+  let cbm = 0, cbmValue = 0, cbmCount = 0;
+
+  for (const item of items) {
+    if (item.itemType === "full_package") continue;
+    const value = Number(item.calculatedCostUsd || 0) || 0;
+    const sea = item.shippingType ? item.shippingType === "sea" : isSeaBox(box);
+    if (sea) {
+      cbm += Number(item.volumeCbm || 0) || 0;
+      cbmValue += value;
+      cbmCount += 1;
+    } else {
+      kg += Number(item.weightKg || 0) || 0;
+      kgValue += value;
+      kgCount += 1;
+    }
   }
-  if (visible.length !== items.length) {
-    const totalKg = visible.reduce((s, i) => s + Number(i.weightKg || 0), 0);
-    return `${totalKg.toFixed(2)} kg`;
+
+  return {
+    kg, kgValue, hasKg: kgCount > 0,
+    cbm, cbmValue, hasCbm: cbmCount > 0,
+    mixed: kgCount > 0 && cbmCount > 0,
+  };
+}
+
+/**
+ * The measurement lines to print, as label/value pairs.
+ *
+ * One line for a box sold in one unit — and no money on it, because the
+ * package-value line directly below is that same figure and a receipt should
+ * not print one number twice. Two lines for a mixed box, each with its own
+ * amount, because there the split is the whole point.
+ */
+function measureLines(box: BoxForPrint, items: BoxItemForPrint[], t: TFunc): { label: string; value: string }[] {
+  const m = measureTotals(box, items);
+
+  if (!m.mixed) {
+    // Nothing measurable at all (an all-full-package box) still prints the
+    // box's own recorded weight, exactly as it always did.
+    if (!m.hasKg && !m.hasCbm) {
+      return [{ label: t("delivery.totalWeight"), value: `${formatNum(box.totalWeightKg)} kg` }];
+    }
+    return m.hasCbm
+      ? [{ label: t("delivery.totalVolume"), value: `${m.cbm.toFixed(3)} CBM` }]
+      : [{ label: t("delivery.totalWeight"), value: `${m.kg.toFixed(2)} kg` }];
   }
-  return `${formatNum(box.totalWeightKg)} kg`;
+
+  return [
+    { label: t("delivery.totalWeight"), value: `${m.kg.toFixed(2)} kg — $${m.kgValue.toFixed(2)}` },
+    { label: t("delivery.totalVolume"), value: `${m.cbm.toFixed(3)} CBM — $${m.cbmValue.toFixed(2)}` },
+  ];
+}
+
+/** The measurement column's heading: both units named when the box holds both. */
+function measureHeading(box: BoxForPrint, items: BoxItemForPrint[], t: TFunc): string {
+  const m = measureTotals(box, items);
+  if (m.mixed) return `${t("delivery.weight")} / CBM`;
+  return m.hasCbm || isSeaBox(box) ? "CBM" : t("delivery.weight");
 }
 
 function deliveryMethodLabel(method: string, t: TFunc): string {
@@ -329,7 +403,7 @@ export function printBoxLabel(
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${idx + 1}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; font-family:monospace; direction:ltr; text-align:left;">${escapeHtml(item.trackingNumber || "-")}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${itemTypeLabel(item.itemType, t)}</td>
-      <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">${itemMeasure(box, item)}</td>
+      <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;" dir="ltr">${itemMeasure(box, item)}</td>
       <td style="border:1px solid #d1d5db; padding:4px 8px; font-size:11px; text-align:center;">$${formatNum(item.calculatedCostUsd)}</td>
     </tr>
   `).join("");
@@ -452,7 +526,7 @@ export function printBoxLabel(
     <!-- Header -->
     <div class="header-bar">
       <div style="display:flex; align-items:center; gap:6px;">
-        ${options?.logoUrl ? `<img src="${escapeHtml(options.logoUrl)}" alt="" style="height:22px; width:auto; background:#fff; border-radius:4px; padding:2px 4px;" />` : ""}
+        ${options?.logoUrl ? `<img src="${escapeHtml(options.logoUrl)}" alt="" style="height:22px; width:auto; object-fit:contain;" />` : ""}
         <span style="font-weight:700; font-size:14px;">${escapeHtml(options?.company?.name || "Wazn Express")}</span>
       </div>
       <div style="font-size:10px;">${deliveryMethodIcon(box.deliveryMethod)} ${deliveryMethodLabel(box.deliveryMethod, t)}</div>
@@ -494,7 +568,7 @@ export function printBoxLabel(
           <th>#</th>
           <th>${t("delivery.tracking")}</th>
           <th>${t("delivery.type")}</th>
-          <th>${isSeaBox(box) ? "CBM" : t("delivery.weight")}</th>
+          <th>${measureHeading(box, items, t)}</th>
           <th>${t("delivery.price")}</th>
         </tr>
       </thead>
@@ -510,10 +584,10 @@ export function printBoxLabel(
         <div style="font-size:9px; color:#6b7280;">${t("delivery.packageCount")}</div>
         <div style="font-weight:700;">${box.totalPackages || 0}</div>
       </div>
-      <div class="total-cell">
-        <div style="font-size:9px; color:#6b7280;">${isSeaBox(box) ? t("delivery.totalVolume") : t("delivery.totalWeight")}</div>
-        <div style="font-weight:700;">${totalMeasure(box, items)}</div>
-      </div>
+      ${measureLines(box, items, t).map((line) => `<div class="total-cell">
+        <div style="font-size:9px; color:#6b7280;">${line.label}</div>
+        <div style="font-weight:700;" dir="ltr">${line.value}</div>
+      </div>`).join("")}
       <div class="total-cell">
         <div style="font-size:9px; color:#6b7280;">${t("delivery.packageValue")}</div>
         <div style="font-weight:700;">$${totalValue}</div>
@@ -611,7 +685,7 @@ export function printBoxReceipt(
       <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px; font-family:monospace; direction:ltr; text-align:left;">${escapeHtml(item.trackingNumber || "-")}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${itemTypeLabel(item.itemType, t)}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; font-size:12px;">${escapeHtml(description)}</td>
-      <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">${itemMeasure(box, item)}</td>
+      <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;" dir="ltr">${itemMeasure(box, item)}</td>
       <td style="border:1px solid #e5e7eb; padding:8px 12px; text-align:center; font-size:12px;">$${formatNum(item.calculatedCostUsd)}</td>
     </tr>
   `;
@@ -655,9 +729,11 @@ export function printBoxReceipt(
       padding: 10px 18px;
       display: flex;
       align-items: center;
-      justify-content: space-between;
       gap: 12px;
     }
+    /* Equal side blocks so the mark between them lands on the true centre of
+       the sheet, not wherever two unequal columns happen to leave it. */
+    .company-header > .header-side { flex: 1 1 0; min-width: 0; }
     .company-name {
       font-size: 18px;
       font-weight: 800;
@@ -754,10 +830,13 @@ export function printBoxReceipt(
       max-width: 140px;
       object-fit: contain;
       flex-shrink: 0;
-      /* The mark is black ink and this band is green: it sits on a white tile. */
-      background: #fff;
-      border-radius: 6px;
-      padding: 3px 6px;
+      /* No tile — the owner's September 2026 rule, which the screens got and
+         the receipts did not: the mark sits straight on the band, keeping its
+         own transparency. What makes it readable on a solid green is the ink,
+         not a white box: callers pass the white-ink twin through
+         logoUrlOnDark() (lib/brand.ts). A white tile around a transparent
+         logo is the thing that looks pasted on. */
+      background: none;
     }
     /*
      * The closing block, kept whole.
@@ -818,12 +897,12 @@ export function printBoxReceipt(
     <!-- Slim company + receipt header (company on one side, receipt label
          and box code on the other) -->
     <div class="company-header">
-      <div>
+      <div class="header-side">
         <div class="company-name">${escapeHtml(options?.company?.name || "Wazn Express")}</div>
         <div class="company-subtitle">${t("delivery.companyTagline") || "Shipping & Logistics Services"}</div>
       </div>
       ${options?.logoUrl ? `<img class="header-logo" src="${escapeHtml(options.logoUrl)}" alt="" />` : ""}
-      <div class="header-receipt-meta">
+      <div class="header-side header-receipt-meta">
         <div class="header-receipt-title">${t("delivery.receipt")}</div>
         <div class="receipt-code">${escapeHtml(box.boxCode)}</div>
       </div>
@@ -888,7 +967,7 @@ export function printBoxReceipt(
             <th>${t("delivery.tracking")}</th>
             <th>${t("delivery.type")}</th>
             <th>${t("delivery.description")}</th>
-            <th>${isSeaBox(box) ? "CBM" : t("delivery.weight")}</th>
+            <th>${measureHeading(box, items, t)}</th>
             <th>${t("delivery.price")}</th>
           </tr>
         </thead>
@@ -908,10 +987,10 @@ export function printBoxReceipt(
           <span>${t("delivery.packageCount")}:</span>
           <span style="font-weight:600;">${box.totalPackages || 0}</span>
         </div>
-        <div class="financial-row">
-          <span>${isSeaBox(box) ? t("delivery.totalVolume") : t("delivery.totalWeight")}:</span>
-          <span style="font-weight:600;">${totalMeasure(box, items)}</span>
-        </div>
+        ${measureLines(box, items, t).map((line) => `<div class="financial-row">
+          <span>${line.label}:</span>
+          <span style="font-weight:600;" dir="ltr">${line.value}</span>
+        </div>`).join("")}
         <div class="financial-row">
           <span>${t("delivery.packageValue")}:</span>
           <span style="font-weight:600;">$${totalValue}</span>

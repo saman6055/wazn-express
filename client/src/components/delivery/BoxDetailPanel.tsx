@@ -8,7 +8,7 @@ import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
-import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
+import { companyContact, logoUrlOnDark } from "@/lib/brand";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { fmtKg, fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -429,7 +429,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           }
         : null,
       t,
-      { logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL), company: companyContact(company, language) }
+      { logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, language) }
     );
   };
 
@@ -520,7 +520,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     const [b, its, c] = buildReceiptPayload();
     printBoxReceipt(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
-      logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL),
+      logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
       settlement: settlementForPrint,
     });
@@ -531,7 +531,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     const [b, its, c] = buildReceiptPayload();
     downloadBoxReceiptPDF(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
-      logoUrl: absoluteLogoUrl(logoUrl || BRAND_LOGO_URL),
+      logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
     });
   };

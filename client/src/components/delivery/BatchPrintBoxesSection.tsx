@@ -31,7 +31,7 @@ import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { printBoxLabel } from "@/lib/deliveryBoxPrintUtils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
-import { BRAND_LOGO_URL, companyContact } from "@/lib/brand";
+import { companyContact, logoUrlOnDark } from "@/lib/brand";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
 
 const PAGE_SIZE = 20;
@@ -205,7 +205,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
             items,
             customer ? { fullName: customer.fullName, customerCode: customer.customerCode, mobileNumber: customer.mobileNumber } : null,
             t,
-            { logoUrl: absoluteLogoUrl(company.logoUrl || BRAND_LOGO_URL), company: companyContact(company, language) }
+            { logoUrl: absoluteLogoUrl(logoUrlOnDark(company.logoUrl)), company: companyContact(company, language) }
           );
         } else {
           // Per-package: batch-generate labels for all items in this box

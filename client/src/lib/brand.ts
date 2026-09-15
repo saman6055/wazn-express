@@ -21,6 +21,22 @@ export const BRAND_LOGO_URL = "/brand/wazn-logo.png";
 export const BRAND_LOGO_ON_DARK_URL = "/brand/wazn-logo-on-dark.png";
 
 /**
+ * Which mark a coloured band should print — a receipt's green header, say.
+ *
+ * The owner's rule from September 2026 is that the mark sits straight on the
+ * surface with no white tile behind it, and that only works if each place
+ * says which ink it needs. The app's screens were taught this; the printed
+ * receipts were not, and kept a white tile around a transparent logo.
+ *
+ * A company that uploaded its own mark gets that mark: we cannot know its
+ * ink, and it is theirs to look at. Otherwise the white-ink twin, which is
+ * what a dark band needs.
+ */
+export function logoUrlOnDark(uploadedLogoUrl?: string | null): string {
+  return uploadedLogoUrl || BRAND_LOGO_ON_DARK_URL;
+}
+
+/**
  * The mark as an <img> for a report that prints from its own window.
  *
  * A print window is a blank document with no base URL of ours, so the address
