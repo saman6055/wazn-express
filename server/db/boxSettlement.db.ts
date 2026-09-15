@@ -328,6 +328,56 @@ export async function getBoxesPaidInFull(boxIds: number[]): Promise<Set<number>>
 }
 
 /**
+ * Has this parcel already been paid for, in some other box?
+ *
+ * The owner's rule (Sep 2026): once a box's money is in, nothing inside it
+ * may be charged again somewhere else. The scanner's existing guard only
+ * looks at boxes that are still open, ready or in transit — and a paid box
+ * is neither: `finishPaidBox` seals it and marks it delivered. So the one
+ * carton a customer has already paid for was the one the scanner would
+ * happily put in a second box and bill a second time.
+ *
+ * Matched three ways because one carton can be reached by three names: the
+ * parcel row, a full-package/commission order, and the tracking number
+ * itself — which is what a shared carton's sibling orders have in common.
+ *
+ * Returns the box to name in the refusal, or null when nothing is paid.
+ * Cancelled boxes are ignored; so is the box being scanned into.
+ */
+export async function findPaidBoxHolding(opts: {
+  packageId?: number | null;
+  fullPackageOrderId?: number | null;
+  trackingNumber?: string | null;
+  exceptBoxId?: number | null;
+}): Promise<{ boxId: number; boxCode: string } | null> {
+  const db = await getDb();
+  if (!db) return null;
+
+  const identities = [
+    opts.packageId ? eq(deliveryBoxItems.packageId, opts.packageId) : null,
+    opts.fullPackageOrderId ? eq(deliveryBoxItems.fullPackageOrderId, opts.fullPackageOrderId) : null,
+    opts.trackingNumber ? eq(deliveryBoxItems.trackingNumber, opts.trackingNumber) : null,
+  ].filter(Boolean);
+  if (identities.length === 0) return null;
+
+  const rows = await db
+    .select({ boxId: deliveryBoxItems.boxId, boxCode: deliveryBoxes.boxCode })
+    .from(deliveryBoxItems)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
+    .where(and(
+      or(...(identities as any[])),
+      sql`${deliveryBoxes.status} <> 'cancelled'`,
+    ));
+
+  const candidates = rows.filter((r) => Number(r.boxId) !== Number(opts.exceptBoxId ?? 0));
+  if (candidates.length === 0) return null;
+
+  const paid = await getBoxesPaidInFull(candidates.map((r) => Number(r.boxId)));
+  const hit = candidates.find((r) => paid.has(Number(r.boxId)));
+  return hit ? { boxId: Number(hit.boxId), boxCode: hit.boxCode } : null;
+}
+
+/**
  * Everything the settlement screen needs, in one call.
  *
  * Deliberately one call: the screen opens at a counter with a customer

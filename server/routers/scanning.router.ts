@@ -1205,6 +1205,25 @@ export const deliveryBoxRouter = router({
         if (check.inBox) throw new TRPCError({ code: "CONFLICT", message: `ئەم ئۆردەرە لە بۆکسی ${check.boxCode} دایە` });
       }
 
+      // ...and the box the checks above cannot see. They look at open, ready
+      // and in-transit boxes only, but a box whose money is in has been
+      // sealed and marked delivered — so the one carton the customer has
+      // already paid for was the one carton the scanner would let into a
+      // second box, and charge for a second time. The owner's rule: once
+      // paid, never billed again. Name the box, so the counter can check it.
+      const paidElsewhere = await db.findPaidBoxHolding({
+        packageId: pkg?.id ?? null,
+        fullPackageOrderId: fpOrder?.id ?? null,
+        trackingNumber: input.trackingNumber,
+        exceptBoxId: input.boxId,
+      });
+      if (paidElsewhere) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: `ئەم تراکە پێشتر لە بۆکسی ${paidElsewhere.boxCode} حیساب کراوە و پارەکەی دراوە — دووبارە حیساب ناکرێتەوە`,
+        });
+      }
+
       // Labels for description breakdown. Per spec, commission orders roll
       // item price + commission into a single `t_itemPrice` total — no
       // separate commission line on box receipts.
