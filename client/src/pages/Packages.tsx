@@ -55,6 +55,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { fmtDate } from "@/lib/numericDate";
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { billingUnit } from "@shared/batchRate";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { readPackagesLink } from "@shared/listLinks";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
@@ -149,6 +150,8 @@ type PackageRowProps = {
   getCustomerName: (id: number | null) => string;
   getCustomerCode: (id: number | null) => string;
   getBatchCode: (id: number) => string;
+  /** The batch's own shipping type — it decides the billed unit, kg or CBM. */
+  getBatchShippingType: (id: number | null) => string | null;
   onStatusChange: (pkg: Package, newStatus: string) => void;
   onView: (pkg: Package) => void;
   onEdit: (pkg: Package) => void;
@@ -163,6 +166,7 @@ const PackageTableRow = memo(function PackageTableRow({
   getCustomerName,
   getCustomerCode,
   getBatchCode,
+  getBatchShippingType,
   onStatusChange,
   onView,
   onEdit,
@@ -260,6 +264,18 @@ const PackageTableRow = memo(function PackageTableRow({
       </TableCell>
       <TableCell>
         {(() => {
+          // Sea is sold by the volume it occupies, air by weight. A sea
+          // parcel records no weight, so running it through the weight
+          // comparison printed "-" in every sea row — a column that said
+          // nothing on exactly the shipments it was asked about. The batch
+          // decides the unit when the parcel is in one; otherwise the
+          // parcel's own type does, the same order the box receipt uses.
+          const billedType = getBatchShippingType(pkg.batchId) || pkg.shippingType;
+          if (billingUnit(billedType) === "cbm") {
+            const cbm = Number(pkg.volumeCbm || 0);
+            if (cbm <= 0) return "-";
+            return <span dir="ltr" className="tabular-nums">{cbm.toFixed(3)} CBM</span>;
+          }
           // The shared rule with the configured divisor — a hardcoded 6000
           // here showed a different weight than the invoice whenever the
           // setting was changed.
@@ -605,6 +621,13 @@ const [, setLocation] = useLocation();
   const getBatchCode = (batchId: number | null) => {
     if (!batchId) return "-";
     return batches?.find((b: any) => b.id === batchId)?.batchCode || "-";
+  };
+
+  // Null when the parcel has no batch, or the batches haven't loaded — the
+  // row then falls back to the parcel's own shipping type.
+  const getBatchShippingType = (batchId: number | null): string | null => {
+    if (!batchId) return null;
+    return batches?.find((b: any) => b.id === batchId)?.shippingType ?? null;
   };
 
   const getCategoryName = (categoryId: number | null) => {
@@ -994,7 +1017,11 @@ const [, setLocation] = useLocation();
       "Customer Code",
       "Tracking Number",
       "Shipping Type",
+      // Two columns, not one: a spreadsheet has to be able to add a column
+      // up. Sea rows leave the kg cell empty rather than exporting a 0 that
+      // reads as a real weight.
       "Weight (kg)",
+      "Volume (CBM)",
       "Cost (USD)",
       "Status",
       "Date",
@@ -1007,7 +1034,8 @@ const [, setLocation] = useLocation();
       getCustomerCode(pkg.customerId),
       pkg.trackingNumber || "",
       pkg.shippingType.replace(/_/g, " "),
-      pkg.weightKg || "0",
+      billingUnit(getBatchShippingType(pkg.batchId) || pkg.shippingType) === "cbm" ? "" : (pkg.weightKg || "0"),
+      billingUnit(getBatchShippingType(pkg.batchId) || pkg.shippingType) === "cbm" ? (pkg.volumeCbm || "0") : "",
       pkg.calculatedCostUsd || "0",
       pkg.status.replace(/_/g, " "),
       new Date(pkg.createdAt).toLocaleDateString("en-GB"),
@@ -1541,7 +1569,7 @@ const [, setLocation] = useLocation();
                   <TableHead>{t("packages.trackingNumber")}</TableHead>
                   <TableHead>{t("common.type")}</TableHead>
                   <TableHead>{t("batches.title")}</TableHead>
-                  <TableHead>{t("packages.weight")}</TableHead>
+                  <TableHead>{t("packages.weight")} / CBM</TableHead>
                   <TableHead>{t("packages.cost")}</TableHead>
                   <TableHead>{t("common.status")}</TableHead>
                   <TableHead>{t("common.alert")}</TableHead>
@@ -1564,6 +1592,7 @@ const [, setLocation] = useLocation();
                       getCustomerName={getCustomerName}
                       getCustomerCode={getCustomerCode}
                       getBatchCode={getBatchCode}
+                      getBatchShippingType={getBatchShippingType}
                       onStatusChange={onStatusChange}
                       onView={handleViewClick}
                       onEdit={handleEditClick}
