@@ -1014,6 +1014,124 @@ export async function chargeOrderAtCreation(
 }
 
 /**
+ * The orders entered before the rule changed, that still owe nothing.
+ *
+ * Charging at entry (see `chargeOrderAtCreation`) only applies from the
+ * moment it shipped; every order typed in before that is still waiting for
+ * its batch to be delivered before the customer's account hears about it.
+ * The owner asked (2026-09-15) to bring the orders entered since 1 September
+ * into line.
+ *
+ * This is the SAME rule, applied backwards, and it is deliberately split in
+ * two: this function only looks. Nothing on a customer's account may change
+ * because somebody opened a screen — the office reads the list first, sees
+ * whose account moves and by how much, and then decides.
+ *
+ * Left out, each for its own reason:
+ *  • already charged (`isCharged` or a charge transaction) — the whole point;
+ *  • a purchase request — a quote nobody has agreed to;
+ *  • cancelled, rejected, refunded, returned — no goods, no debt;
+ *  • soft-deleted rows — the office removed them on purpose;
+ *  • anything priced at zero — there is nothing to bill, and a $0 debit is
+ *    noise on a statement somebody has to read.
+ */
+export interface PendingOrderCharge {
+  orderId: number;
+  orderCode: string;
+  orderType: string;
+  productName: string | null;
+  status: string;
+  createdAt: Date | null;
+  customerId: number;
+  customerCode: string;
+  customerName: string | null;
+  amountUsd: number;
+}
+
+/** No goods in the customer's hands means no debt on their account. */
+const BACKFILL_EXCLUDED_STATUSES: FullPackageOrder["status"][] =
+  ["cancelled", "rejected", "refunded", "returned"];
+
+export async function findOrdersAwaitingEntryCharge(since: Date): Promise<PendingOrderCharge[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select({ order: fullPackageOrders, customer: customers })
+    .from(fullPackageOrders)
+    .innerJoin(customers, eq(customers.id, fullPackageOrders.customerId))
+    .where(and(
+      gte(fullPackageOrders.createdAt, since),
+      isNull(fullPackageOrders.deletedAt),
+      ne(fullPackageOrders.orderType, "purchase_request"),
+      notInArray(fullPackageOrders.status, BACKFILL_EXCLUDED_STATUSES),
+      eq(fullPackageOrders.isCharged, false),
+      isNull(fullPackageOrders.chargeTransactionId),
+    ))
+    .orderBy(asc(fullPackageOrders.createdAt));
+
+  const pending: PendingOrderCharge[] = [];
+  for (const r of rows) {
+    const amountUsd = computeOrderChargeAmount(r.order);
+    if (!(amountUsd > 0)) continue;
+    pending.push({
+      orderId: r.order.id,
+      orderCode: r.order.orderCode,
+      orderType: r.order.orderType,
+      productName: r.order.productName ?? null,
+      status: r.order.status,
+      createdAt: r.order.createdAt ?? null,
+      customerId: r.order.customerId!,
+      customerCode: r.customer.customerCode,
+      customerName: r.customer.fullName ?? null,
+      amountUsd,
+    });
+  }
+  return pending;
+}
+
+/**
+ * Post the charges the preview listed.
+ *
+ * Each order goes through `chargeOrderAtCreation`, the same path a new order
+ * takes — not a copy of it — so a backfilled account and a fresh one cannot
+ * come out looking different. That function refuses an order already charged,
+ * which makes running this twice harmless: the second run finds nothing.
+ *
+ * One order per step, and a failure is recorded rather than thrown: half the
+ * customers billed and an exception on the screen is worse than a list saying
+ * exactly which three did not go through.
+ */
+export async function applyEntryChargeBackfill(
+  since: Date,
+  userId: number,
+): Promise<{ charged: number; skipped: number; failed: number; totalUsd: number; failures: { orderCode: string; reason: string }[] }> {
+  const pending = await findOrdersAwaitingEntryCharge(since);
+  let charged = 0, skipped = 0, failed = 0, totalUsd = 0;
+  const failures: { orderCode: string; reason: string }[] = [];
+
+  for (const row of pending) {
+    const order = await getFullPackageOrderById(row.orderId);
+    if (!order) { failed++; failures.push({ orderCode: row.orderCode, reason: "not_found" }); continue; }
+    const result = await chargeOrderAtCreation(order, userId);
+    if (result.charged) {
+      charged++;
+      totalUsd += result.amount;
+    } else if (result.reason === "error") {
+      failed++;
+      failures.push({ orderCode: row.orderCode, reason: "charge_failed" });
+    } else {
+      skipped++;
+    }
+  }
+
+  appLogger.info("[OrderCharge] backfill finished", {
+    since: since.toISOString(), charged, skipped, failed, totalUsd,
+  });
+  return { charged, skipped, failed, totalUsd: Math.round(totalUsd * 100) / 100, failures };
+}
+
+/**
  * Stamp the charge onto the order by a direct write.
  *
  * Deliberately not `updateFullPackageOrder`: that one re-derives prices,

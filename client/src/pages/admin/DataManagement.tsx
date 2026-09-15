@@ -9,6 +9,7 @@ import {
   HardDrive,
   Users,
   Package,
+  Receipt,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
@@ -19,6 +20,8 @@ import { DeleteDataSection } from "@/components/admin/DeleteDataSection";
 import { ImportExportSection } from "@/components/admin/ImportExportSection";
 import { BackupSection } from "@/components/admin/BackupSection";
 import { ActivityLogTab } from "@/components/admin/ActivityLogTab";
+import { EntryChargeBackfillSection } from "@/components/admin/EntryChargeBackfillSection";
+import { pickLang } from "@/lib/lang";
 
 export default function DataManagement() {
   const dm = useDataManagement(dataCategories);
@@ -89,7 +92,7 @@ export default function DataManagement() {
         {/* 5 Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           <div className="overflow-x-auto -mx-4 px-4 md:mx-0 md:px-0">
-            <TabsList className="inline-flex w-auto min-w-full md:min-w-0 md:grid md:grid-cols-5 md:w-full">
+            <TabsList className="inline-flex w-auto min-w-full md:min-w-0 md:grid md:grid-cols-6 md:w-full">
               <TabsTrigger value="dashboard" className="gap-2 whitespace-nowrap">
                 <LayoutDashboard className="h-4 w-4" />
                 <span className="hidden sm:inline">{t("dataManagement.dashboard")}</span>
@@ -105,6 +108,12 @@ export default function DataManagement() {
               <TabsTrigger value="importExport" className="gap-2 whitespace-nowrap">
                 <ArrowLeftRight className="h-4 w-4" />
                 <span className="hidden sm:inline">{t("dataManagement.importExport")}</span>
+              </TabsTrigger>
+              <TabsTrigger value="repairs" className="gap-2 whitespace-nowrap">
+                <Receipt className="h-4 w-4" />
+                <span className="hidden sm:inline">
+                  {pickLang(language, { ku: "چاککردنەوە", en: "Repairs", ar: "الإصلاحات", zh: "修复" })}
+                </span>
               </TabsTrigger>
               <TabsTrigger value="activity" className="gap-2 whitespace-nowrap">
                 <History className="h-4 w-4" />
@@ -178,6 +187,10 @@ export default function DataManagement() {
               handleDownloadTemplate={dm.handleDownloadTemplate}
               t={t}
             />
+          </TabsContent>
+
+          <TabsContent value="repairs" className="space-y-6">
+            <EntryChargeBackfillSection language={language} />
           </TabsContent>
 
           <TabsContent value="activity" className="space-y-6">

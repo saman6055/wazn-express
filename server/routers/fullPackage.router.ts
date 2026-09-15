@@ -1488,6 +1488,57 @@ export const fullPackageRouter = router({
      *
      * Bounded, and reports what it could not resolve rather than guessing.
      */
+    /**
+     * The orders entered before charging-at-entry shipped, and what they
+     * would put on each customer's account.
+     *
+     * Read-only on purpose, and separate from the apply below: nobody's
+     * balance may move because a screen was opened. The office reads the
+     * list, sees whose account moves and by how much, and then decides.
+     */
+    previewEntryChargeBackfill: adminProcedure
+      .input(z.object({ since: z.date() }))
+      .query(async ({ input }) => {
+        const rows = await db.findOrdersAwaitingEntryCharge(input.since);
+        const byCustomer = new Map<number, { customerCode: string; customerName: string | null; orders: number; totalUsd: number }>();
+        for (const r of rows) {
+          const entry = byCustomer.get(r.customerId) ?? {
+            customerCode: r.customerCode, customerName: r.customerName, orders: 0, totalUsd: 0,
+          };
+          entry.orders += 1;
+          entry.totalUsd = Math.round((entry.totalUsd + r.amountUsd) * 100) / 100;
+          byCustomer.set(r.customerId, entry);
+        }
+        return {
+          orders: rows,
+          customers: Array.from(byCustomer.entries())
+            .map(([customerId, v]) => ({ customerId, ...v }))
+            .sort((a, b) => b.totalUsd - a.totalUsd),
+          totalOrders: rows.length,
+          totalUsd: Math.round(rows.reduce((s, r) => s + r.amountUsd, 0) * 100) / 100,
+        };
+      }),
+
+    /**
+     * Post the charges the preview listed. Safe to run twice — the second run
+     * finds nothing, because each order is charged through the same path a
+     * new order takes, and that path refuses an order already charged.
+     */
+    applyEntryChargeBackfill: adminProcedure
+      .input(z.object({ since: z.date() }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.applyEntryChargeBackfill(input.since, ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "backfill_order_entry_charges",
+          entityType: "full_package_order",
+          entityId: 0,
+          newValues: { since: input.since, ...result },
+        });
+        return result;
+      }),
+
     relinkAllOrderPackages: adminProcedure
       .input(z.object({ limit: z.number().int().min(1).max(2000).default(500) }).optional())
       .mutation(async ({ input }) => db.relinkAllOrphanedPackages(input?.limit ?? 500)),
