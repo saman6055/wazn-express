@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -9,8 +9,10 @@ import {
   ZoomIn,
   Upload,
   Camera,
+  ClipboardPaste,
 } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 interface CompressedImageUploadProps {
   /** Current images array */
@@ -31,6 +33,18 @@ interface CompressedImageUploadProps {
   accentColor?: "emerald" | "amber";
   /** Class name for container */
   className?: string;
+  /**
+   * Listen for Ctrl+V anywhere on the page, not only on this box.
+   *
+   * A picture is normally copied from a shop page or a chat and then pasted
+   * while the operator is looking at the form — not while their cursor is
+   * inside a 40-pixel square. Only ever acts on a clipboard that actually
+   * carries an image, so pasting text into a field is never taken.
+   *
+   * Off by default: two uploaders on one page would both answer the same
+   * paste. Turn it on for a screen that has exactly one.
+   */
+  pasteAnywhere?: boolean;
 }
 
 export default function CompressedImageUpload({
@@ -43,11 +57,14 @@ export default function CompressedImageUpload({
   compact = false,
   accentColor = "emerald",
   className,
+  pasteAnywhere = false,
 }: CompressedImageUploadProps) {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [previewImage, setPreviewImage] = useState<string | null>(null);
+  /** True while a file is being dragged over the box, so it can say so. */
+  const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Compress image client-side and return data URL (no server upload needed)
@@ -105,7 +122,7 @@ export default function CompressedImageUpload({
   );
 
   const handleFileSelect = useCallback(
-    async (files: FileList | null) => {
+    async (files: FileList | File[] | null) => {
       if (!files || files.length === 0) return;
 
       const remainingSlots = maxImages - images.length;
@@ -175,6 +192,7 @@ export default function CompressedImageUpload({
     (e: React.DragEvent) => {
       e.preventDefault();
       e.stopPropagation();
+      setDragOver(false);
       if (!disabled) {
         handleFileSelect(e.dataTransfer.files);
       }
@@ -185,7 +203,67 @@ export default function CompressedImageUpload({
   const handleDragOver = useCallback((e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
+    setDragOver(true);
   }, []);
+
+  const handleDragLeave = useCallback((e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setDragOver(false);
+  }, []);
+
+  /**
+   * The images on a clipboard, if any.
+   *
+   * A screenshot arrives as a file with no name; a picture copied from a web
+   * page arrives the same way. Anything that is not an image is left alone,
+   * so a paste carrying only text passes straight through to whatever field
+   * the cursor is in.
+   */
+  const imagesFromClipboard = useCallback((data: DataTransfer | null): File[] => {
+    if (!data) return [];
+    const files: File[] = [];
+    for (const item of Array.from(data.items ?? [])) {
+      if (item.kind !== "file" || !item.type.startsWith("image/")) continue;
+      const file = item.getAsFile();
+      if (file) files.push(file);
+    }
+    return files;
+  }, []);
+
+  const takePastedImages = useCallback(
+    (data: DataTransfer | null): boolean => {
+      if (disabled || uploading || images.length >= maxImages) return false;
+      const files = imagesFromClipboard(data);
+      if (files.length === 0) return false;
+      handleFileSelect(files);
+      return true;
+    },
+    [disabled, uploading, images.length, maxImages, imagesFromClipboard, handleFileSelect]
+  );
+
+  const handlePaste = useCallback(
+    (e: React.ClipboardEvent) => {
+      if (takePastedImages(e.clipboardData)) e.preventDefault();
+    },
+    [takePastedImages]
+  );
+
+  /**
+   * Ctrl+V while looking at the form, not only at the little square.
+   *
+   * The picture is copied from a shop page or a chat and pasted a moment
+   * later, with the cursor wherever it happened to be. A paste that carries
+   * no image is never touched, so typing and pasting text are unaffected.
+   */
+  useEffect(() => {
+    if (!pasteAnywhere) return;
+    const onPaste = (e: ClipboardEvent) => {
+      if (takePastedImages(e.clipboardData)) e.preventDefault();
+    };
+    document.addEventListener("paste", onPaste);
+    return () => document.removeEventListener("paste", onPaste);
+  }, [pasteAnywhere, takePastedImages]);
 
   const accentClasses = {
     emerald: {
@@ -211,7 +289,20 @@ export default function CompressedImageUpload({
   // ========== COMPACT MODE (for bulk form) ==========
   if (compact) {
     return (
-      <div className={cn("flex items-center gap-2", className)}>
+      <div
+        onDrop={handleDrop}
+        onDragOver={handleDragOver}
+        onDragLeave={handleDragLeave}
+        onPaste={handlePaste}
+        className={cn(
+          "flex items-center gap-2 rounded-lg transition-colors",
+          // The small layout used to be the only one you could not drop a
+          // file on — it is the one on the two order forms, where the
+          // picture is dragged in from a shop page all day.
+          dragOver && cn("ring-2 ring-offset-2", colors.ring),
+          className,
+        )}
+      >
         {/* Thumbnail previews */}
         {images.map((url, i) => (
           <div
@@ -260,10 +351,26 @@ export default function CompressedImageUpload({
             />
             {uploading ? (
               <Loader2 className="w-4 h-4 animate-spin text-muted-foreground" />
+            ) : dragOver ? (
+              <Upload className={cn("w-4 h-4", colors.icon)} />
             ) : (
               <Camera className={cn("w-4 h-4", colors.icon)} />
             )}
           </label>
+        )}
+
+        {/* Said once, quietly: the two ways in that a camera icon does not
+            suggest on its own. */}
+        {images.length === 0 && !uploading && (
+          <span className="hidden sm:inline-flex items-center gap-1 text-[10px] leading-tight text-muted-foreground">
+            <ClipboardPaste className="h-3 w-3" />
+            {pickLang(language, {
+              ku: "ڕایبکێشە یان Ctrl+V",
+              en: "Drag or Ctrl+V",
+              ar: "اسحب أو Ctrl+V",
+              zh: "拖入或 Ctrl+V",
+            })}
+          </span>
         )}
 
         {/* Preview modal */}
@@ -349,11 +456,16 @@ export default function CompressedImageUpload({
         <div
           onDrop={handleDrop}
           onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onPaste={handlePaste}
           className={cn(
             "relative rounded-xl border-2 border-dashed transition-all cursor-pointer",
             disabled || uploading
               ? "opacity-50 cursor-not-allowed bg-muted"
               : cn(colors.border, colors.bg, "hover:shadow-md"),
+            // Dropping worked here already, but silently — nothing on the
+            // screen said the file had been caught.
+            dragOver && !disabled && !uploading && cn("ring-2 ring-offset-2 shadow-md", colors.ring),
             images.length === 0 ? "py-10" : "py-6"
           )}
           onClick={() => !disabled && !uploading && fileInputRef.current?.click()}

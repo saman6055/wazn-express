@@ -962,6 +962,10 @@ export default function FullPackageForm() {
                       if (next.length > 0) askedForImage.current = false;
                     }}
                     maxImages={5}
+                    // One uploader on this screen, so Ctrl+V anywhere on the
+                    // form drops the picture here — the way it is actually
+                    // done: copy from the shop page, come back, paste.
+                    pasteAnywhere
                     accentColor="emerald"
                     compact
                   />
