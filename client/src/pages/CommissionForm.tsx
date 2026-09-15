@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode, AlertTriangle } from "lucide-react";
+import { ArrowRight, DollarSign, Package, User, Percent, ImageIcon, Check, ChevronsUpDown, Banknote, ArrowLeftRight, Save, Loader2, Link as LinkIcon, TrendingUp, Plane, Ship, Zap, Ruler, Scale, Calculator, Wallet, ScanBarcode, AlertTriangle, Sparkles } from "lucide-react";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -18,6 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { AttributeSelect } from "@/components/AttributeSelect";
+import { useProductTypeSuggestion } from "@/hooks/useProductTypeSuggestion";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { customerCodeOnly } from "@shared/customerCode";
@@ -338,6 +339,7 @@ export default function CommissionForm() {
       });
       setProductImages([]);
       askedForImage.current = false;
+      typeGuess.forgetAskedPhoto();
       setIqdPerUnit("");
       setIqdTotal("");
       window.scrollTo({ top: 0, behavior: "smooth" });
@@ -496,6 +498,9 @@ export default function CommissionForm() {
   // to the field, and if it's a dropdown, open it by itself.
   const shippingMethodRef = useRef<HTMLDivElement>(null);
   const productImageRef = useRef<HTMLDivElement>(null);
+  // A photo usually says what the goods are; the field fills itself
+  // from it when it is empty, and says that it did.
+  const typeGuess = useProductTypeSuggestion();
   // Armed by the first save with no picture; cleared once one is
   // added, and after a save, so the next order asks again.
   const askedForImage = useRef(false);
@@ -938,13 +943,29 @@ export default function CommissionForm() {
                     usageKey="productType"
                     options={typeAttrs}
                     value={formData.productType}
-                    onChange={(v) => setFormData({ ...formData, productType: v })}
+                    onChange={(v) => {
+                      setFormData({ ...formData, productType: v });
+                      // A person chose — the "picked by AI" mark goes.
+                      typeGuess.clearSuggestionMark();
+                    }}
                     open={productTypeOpen}
                     onOpenChange={setProductTypeOpen}
                     className={cn("h-10", filledCls(formData.productType))}
                     placeholder={pickLang(language, { ku: "جۆر هەڵبژێرە", en: "Select type", ar: "اختر النوع", zh: "选择类型" })}
                     emptyLabel={pickLang(language, { ku: "— بێ جۆر —", en: "— No type —", ar: "— بدون نوع —", zh: "— 无类型 —" })}
                   />
+                  {typeGuess.suggesting && (
+                    <p className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Loader2 className="h-3 w-3 animate-spin" />
+                      {pickLang(language, { ku: "وێنەکە دەپشکنرێت…", en: "Reading the photo…", ar: "يتم فحص الصورة…", zh: "正在识别图片…" })}
+                    </p>
+                  )}
+                  {!typeGuess.suggesting && typeGuess.wasSuggested && (
+                    <p className="flex items-center gap-1 text-[11px] text-sky-600 dark:text-sky-300">
+                      <Sparkles className="h-3 w-3" />
+                      {pickLang(language, { ku: "لە وێنەکەوە هەڵبژێردرا — دڵنیابەرەوە", en: "Chosen from the photo — check it", ar: "اختير من الصورة — تحقق منه", zh: "根据图片选择 — 请核对" })}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">{pickLang(language, { ku: "پلاتفۆرم *", en: "Platform *", ar: "المنصة *", zh: "平台 *" })}</Label>
@@ -1030,6 +1051,17 @@ export default function CommissionForm() {
                       // A picture arrived, so the next empty save starts the
                       // asking over rather than jumping to the confirmation.
                       if (next.length > 0) askedForImage.current = false;
+                      // ...and it is asked what it shows, but only while the
+                      // type is still empty. Fire-and-forget: the form is
+                      // usable the whole time this is in flight.
+                      if (next.length > 0) {
+                        void typeGuess.suggest(
+                          next[0],
+                          formData.productType,
+                          (value) => setFormData((prev) => (prev.productType ? prev : { ...prev, productType: value })),
+                          formData.productDescription,
+                        );
+                      }
                     }}
                     maxImages={5}
                     // One uploader on this screen, so Ctrl+V anywhere on the
