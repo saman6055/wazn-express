@@ -328,6 +328,18 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                             {t({ ku: "هێشتا بار نەکراوە", en: "Not charged yet", ar: "لم يُحمّل بعد", zh: "尚未计费" })}
                           </span>
                         )}
+                        {/* Why an order carton asks for less than its price:
+                            the advance on the order is already paid. */}
+                        {parcel.advanceUsd > 0 && (
+                          <span className="mt-0.5 block text-xs text-emerald-700 dark:text-emerald-400">
+                            {t({
+                              ku: `پێشەکی دراو ${fmtAmount(parcel.advanceUsd)}`,
+                              en: `Advance paid ${fmtAmount(parcel.advanceUsd)}`,
+                              ar: `دفعة مقدمة ${fmtAmount(parcel.advanceUsd)}`,
+                              zh: `已付预付款 ${fmtAmount(parcel.advanceUsd)}`,
+                            })}
+                          </span>
+                        )}
                       </td>
                       <td className="p-2 text-end font-mono tabular-nums">{fmtAmount(line.chargedUsd)}</td>
                       <td className="p-2 text-end font-mono tabular-nums">

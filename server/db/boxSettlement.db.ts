@@ -9,7 +9,8 @@ import {
   customerAccounts,
   paymentRecords,
 } from "../../drizzle/schema/finance.schema";
-import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders } from "../../drizzle/schema";
+import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings } from "../../drizzle/schema";
+import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 import { customers, users } from "../../drizzle/schema/users.schema";
 import { batches } from "../../drizzle/schema/batches.schema";
 import type { BoxSettlement } from "../../drizzle/schema/finance.schema";
@@ -107,6 +108,13 @@ export interface BoxParcelView {
    * The screen must say so rather than showing a confident zero.
    */
   notChargedYet: boolean;
+  /**
+   * A commission or full-package order rather than an ordinary parcel. Its
+   * money lives on the order: a box receipt never charges it as a parcel.
+   */
+  fromOrder: boolean;
+  /** The advance paid on the order(s), already counted in settledUsd. */
+  advanceUsd: number;
 }
 
 export interface BoxSettlementView {
@@ -177,12 +185,13 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
   const boxIds = Array.from(new Set(items.map((r) => Number(r.item.boxId))));
   const owners = boxIds.length
     ? await db
-        .select({ boxId: deliveryBoxes.id, accountId: customerAccounts.id })
+        .select({ boxId: deliveryBoxes.id, accountId: customerAccounts.id, customerId: deliveryBoxes.customerId })
         .from(deliveryBoxes)
         .innerJoin(customerAccounts, eq(customerAccounts.customerId, deliveryBoxes.customerId))
         .where(inArray(deliveryBoxes.id, boxIds))
     : [];
   const accountOfBox = new Map(owners.map((o) => [Number(o.boxId), Number(o.accountId)]));
+  const customerOfBox = new Map(owners.map((o) => [Number(o.boxId), Number(o.customerId)]));
   const accountIds = Array.from(new Set(owners.map((o) => Number(o.accountId))));
 
   const ledgerRows = (accountIds.length && (packageIds.length || orderIds.length))
@@ -263,6 +272,96 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
     : [];
   const settledByItem = new Map(settledRows.map((r) => [Number(r.boxItemId), Number(r.paid || 0)]));
 
+  /**
+   * Order cartons: a commission or full-package order in the box.
+   *
+   * Their money lives on the order, not on the parcel they travelled in. A
+   * box built from a batch holds the order as that parcel (packageId set,
+   * itemType commission / full_package), and keyed on the parcel the screen
+   * found no charge — the goods are charged on the order, at entry since
+   * 75b3838, and commission freight under the order's id. So it called the
+   * carton "not charged yet", priced it from the box, and the receipt charged
+   * the goods again (box-money defect 1): a $100 order in two cartons asked
+   * for $200 and posted $200 more. Nor did it take off the advance paid on
+   * the order, which the printed receipt does (defect 2).
+   *
+   * So a carton reads its orders — the one named on the item, or this
+   * customer's orders on its tracking number, the receipt's own rule — and
+   * each order counts once per box, however many cartons it arrived in.
+   */
+  const orderItems = items.filter((r) => r.item.itemType !== "regular" || !!r.item.fullPackageOrderId);
+  const cartonTrackings = Array.from(new Set(
+    orderItems
+      .filter((r) => !r.item.fullPackageOrderId)
+      .map((r) => r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null)
+      .filter((t): t is string => !!t),
+  ));
+  const onTracking: Array<{ orderId: number; trackingNumber: string | null }> = cartonTrackings.length
+    ? [
+        ...(await db
+          .select({ orderId: fullPackageOrderTrackings.fullPackageOrderId, trackingNumber: fullPackageOrderTrackings.trackingNumber })
+          .from(fullPackageOrderTrackings)
+          .where(inArray(fullPackageOrderTrackings.trackingNumber, cartonTrackings))),
+        ...(await db
+          .select({ orderId: fullPackageOrders.id, trackingNumber: fullPackageOrders.trackingNumber })
+          .from(fullPackageOrders)
+          .where(inArray(fullPackageOrders.trackingNumber, cartonTrackings))),
+      ]
+    : [];
+  const cartonOrderIds = Array.from(new Set([...orderIds, ...onTracking.map((r) => Number(r.orderId))]));
+  const cartonOrders = cartonOrderIds.length
+    ? await db
+        .select({
+          id: fullPackageOrders.id,
+          orderCode: fullPackageOrders.orderCode,
+          customerId: fullPackageOrders.customerId,
+          orderType: fullPackageOrders.orderType,
+          advancePaidUsd: fullPackageOrders.advancePaidUsd,
+          paidFromBalanceUsd: fullPackageOrders.paidFromBalanceUsd,
+          isPrepaid: fullPackageOrders.isPrepaid,
+          deletedAt: fullPackageOrders.deletedAt,
+        })
+        .from(fullPackageOrders)
+        .where(inArray(fullPackageOrders.id, cartonOrderIds))
+    : [];
+  const orderById = new Map(cartonOrders.map((o) => [Number(o.id), o]));
+  const orderRows = cartonOrderIds.length && accountIds.length
+    ? await db
+        .select({
+          accountId: ledgerTransactions.accountId,
+          referenceType: ledgerTransactions.referenceType,
+          referenceId: ledgerTransactions.referenceId,
+          transactionType: ledgerTransactions.transactionType,
+          amountUsd: ledgerTransactions.amountUsd,
+          description: ledgerTransactions.description,
+        })
+        .from(ledgerTransactions)
+        .where(and(
+          inArray(ledgerTransactions.accountId, accountIds),
+          inArray(ledgerTransactions.referenceId, cartonOrderIds),
+          inArray(ledgerTransactions.referenceType, ["full_package", "commission", "purchase_request", "package"]),
+        ))
+    : [];
+  // Per account and order: the goods, the freight, and their corrections.
+  const orderCharged = new Map<string, number>();
+  const orderSeen = new Set<string>();
+  for (const row of orderRows) {
+    const order = orderById.get(Number(row.referenceId));
+    if (!order) continue;
+    // Freight sits under the order's id as a package charge; only a row that
+    // names the order is its freight — a parcel with the same number is not.
+    if (row.referenceType === "package" && !String(row.description ?? "").includes(order.orderCode)) continue;
+    const type = String(row.transactionType);
+    const sign = (CHARGE_TYPES as readonly string[]).includes(type) || type === "ADJUSTMENT_DEBIT"
+      ? 1
+      : type === "ADJUSTMENT_CREDIT" ? -1 : 0;
+    if (sign === 0) continue;
+    const id = `${row.accountId}|${order.id}`;
+    orderCharged.set(id, round2((orderCharged.get(id) ?? 0) + sign * Number(row.amountUsd || 0)));
+    orderSeen.add(id);
+  }
+  const claimedInBox = new Set<string>();
+
   const parcels: BoxParcelView[] = items
     .map((r) => {
       const packageId = r.item.packageId ? Number(r.item.packageId) : null;
@@ -274,6 +373,36 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
           ? [`${account}|full_package:${orderId}`, `${account}|commission:${orderId}`].find((k) => charged.has(k)) ?? `${account}|full_package:${orderId}`
           : "";
       const fromLedger = charged.get(key);
+
+      const boxId = Number(r.item.boxId);
+      const fromOrder = r.item.itemType !== "regular" || orderId !== null;
+      let orderMoney: { chargedUsd: number; advanceUsd: number; onAccount: boolean } | null = null;
+      if (fromOrder) {
+        const tracking = r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null;
+        const candidates = orderId !== null
+          ? [orderId]
+          : Array.from(new Set(onTracking.filter((t) => tracking && t.trackingNumber === tracking).map((t) => Number(t.orderId))));
+        const mine = candidates
+          .map((id) => orderById.get(id))
+          .filter((o): o is NonNullable<typeof o> =>
+            !!o && Number(o.customerId) === customerOfBox.get(boxId) && (orderId !== null || !o.deletedAt));
+        if (mine.length > 0) {
+          let chargedCents = 0;
+          let advanceCents = 0;
+          let onAccount = false;
+          for (const o of mine) {
+            const id = `${account}|${o.id}`;
+            if (orderSeen.has(id)) onAccount = true;
+            // Once per box: the second carton of an order owes nothing more.
+            const claim = `${boxId}|${o.id}`;
+            if (claimedInBox.has(claim)) continue;
+            claimedInBox.add(claim);
+            chargedCents += Math.round((orderCharged.get(id) ?? 0) * 100);
+            advanceCents += Math.round(orderAdvancePaidUsd(o as unknown as AdvanceSource) * 100);
+          }
+          orderMoney = { chargedUsd: chargedCents / 100, advanceUsd: advanceCents / 100, onAccount };
+        }
+      }
       /**
        * The parcel's own price, when the ledger has not been told about it.
        *
@@ -285,10 +414,14 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
        * the box being free.
        */
       const chargedUsd = round2(
-        fromLedger !== undefined ? fromLedger : Number(r.item.calculatedCostUsd || 0),
+        orderMoney
+          ? (orderMoney.onAccount ? orderMoney.chargedUsd : Number(r.item.calculatedCostUsd || 0))
+          : fromLedger !== undefined ? fromLedger : Number(r.item.calculatedCostUsd || 0),
       );
       const discountedUsd = round2(discounted.get(key) ?? 0);
-      const settledUsd = round2(settledByItem.get(Number(r.item.id)) ?? 0);
+      const advanceUsd = round2(orderMoney?.advanceUsd ?? 0);
+      // An advance is money already paid for these goods, so it counts as paid.
+      const settledUsd = round2((settledByItem.get(Number(r.item.id)) ?? 0) + advanceUsd);
       return {
         lineId: Number(r.item.id),
         packageId,
@@ -306,7 +439,9 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
          * this parcel yet. Not a refusal — settling posts the charge and the
          * payment together, which is what actually happened.
          */
-        notChargedYet: !seenAnyCharge.has(key),
+        notChargedYet: orderMoney ? !orderMoney.onAccount : !seenAnyCharge.has(key),
+        fromOrder,
+        advanceUsd,
       };
     });
 
@@ -579,7 +714,7 @@ export async function createBoxSettlement(
   const settling = (p: BoxParcelView) =>
     !input.lines.find((l) => l.lineId === p.lineId)?.held && p.chargedUsd > 0;
 
-  const toCharge = parcels.filter((p) => p.packageId !== null && p.notChargedYet && settling(p));
+  const toCharge = parcels.filter((p) => p.packageId !== null && !p.fromOrder && p.notChargedYet && settling(p));
 
   /** Parcels deliberately left off this receipt; nothing is forgiven on them. */
   const held = input.lines.filter((l) => l.held).map((l) => l.lineId);
@@ -665,8 +800,15 @@ export async function createBoxSettlement(
       const delta = Number(line.correctionUsd ?? 0);
       if (delta === 0) continue;
       const parcel = parcels.find((p) => p.lineId === line.lineId);
+      if (!parcel) continue;
+      // An order's price is corrected on the order, where its charge lives.
+      // Skipping it quietly would print a corrected receipt over an
+      // uncorrected account.
+      if (parcel.fromOrder) {
+        throw new Error(`نرخی ${parcel.trackingNumber ?? parcel.packageCode ?? parcel.lineId} لەسەر ئۆردەرەکەیەتی — لە ئۆردەرەکەوە ڕاستی بکەرەوە، نەک لە وەسڵی بۆکس`);
+      }
       // Only an ordinary parcel has a ledger charge to adjust.
-      if (!parcel || parcel.packageId === null) continue;
+      if (parcel.packageId === null) continue;
       const [chargeTxn] = await tx
         .select({ id: ledgerTransactions.id })
         .from(ledgerTransactions)

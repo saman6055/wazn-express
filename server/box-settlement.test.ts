@@ -157,7 +157,7 @@ describe("settling a parcel that was never charged writes both sides", () => {
   });
 
   it("still says which parcels were in that state", () => {
-    expect(view()).toContain("notChargedYet: !seenAnyCharge.has(key)");
+    expect(view()).toContain("notChargedYet: orderMoney ? !orderMoney.onAccount : !seenAnyCharge.has(key)");
   });
 });
 
