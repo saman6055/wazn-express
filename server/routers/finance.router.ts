@@ -465,6 +465,13 @@ export const ledgerRouter = router({
       .query(async ({ input }) => {
         return db.getAccountStatementForCustomer(input.customerId);
       }),
+
+    // Every customer at once: which accounts are wrong, why, and by how much.
+    // Read only — nothing moves because the report was opened; each finding
+    // is for the owner to decide on (server/db/ledgerReconciliation.db.ts).
+    reconciliationReport: adminProcedure.query(async () => {
+      return db.getLedgerReconciliation();
+    }),
     
     // ============ INVOICES ============
     
