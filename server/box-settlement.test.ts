@@ -195,8 +195,11 @@ describe("a settlement is never edited, only replaced", () => {
 
   it("puts back the discount as well as the payment", () => {
     // Both left the customer owing less. Undoing one and not the other
-    // leaves the account quietly wrong.
-    expect(reverse()).toContain("Number(settlement.paidUsd || 0) + Number(settlement.discountUsd || 0)");
+    // leaves the account quietly wrong. Only the part of the payment not
+    // already undone from the payments list goes back (a payment is reversed
+    // once — server/__tests__/box-reversal-payment-record.test.ts).
+    expect(reverse()).toContain("const paid = Number(settlement.paidUsd || 0);");
+    expect(reverse()).toContain("paid - alreadyReversed + Number(settlement.discountUsd || 0)");
   });
 
   it("carries a link from the replacement back to what it corrected", () => {

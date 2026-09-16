@@ -7,6 +7,7 @@ import {
   boxSettlementLines,
   ledgerTransactions,
   customerAccounts,
+  paymentRecords,
 } from "../../drizzle/schema/finance.schema";
 import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders } from "../../drizzle/schema";
 import { customers, users } from "../../drizzle/schema/users.schema";
@@ -921,15 +922,39 @@ export async function reverseBoxSettlement(
       .limit(1);
     if (!account) throw new Error("حیسابی کڕیار نەدۆزرایەوە");
 
+    /**
+     * The payment record this settlement wrote.
+     *
+     * Undoing the receipt used to leave it untouched, so everything that
+     * reads payment records — the portal's "total paid", the revenue and
+     * payment reports — went on counting money that had been handed back.
+     * And an accountant could undo the same payment a second time from the
+     * payments list, raising the customer's balance twice for one mistake.
+     *
+     * If part of it was already undone from that list, only the rest is put
+     * back here: a payment is reversed once, whichever screen does it.
+     */
+    const [record] = settlement.paymentRecordId
+      ? await tx
+          .select()
+          .from(paymentRecords)
+          .where(eq(paymentRecords.id, settlement.paymentRecordId))
+          .for("update")
+          .limit(1)
+      : [];
+    const paid = Number(settlement.paidUsd || 0);
+    const alreadyReversed = record ? Math.min(paid, Number(record.reversedAmountUsd || 0)) : 0;
+
     // Put back everything this settlement took off the balance — the payment
     // and any discount alike. Both left the customer owing less; undoing one
     // and not the other would leave the account quietly wrong.
-    const putBack = round2(Number(settlement.paidUsd || 0) + Number(settlement.discountUsd || 0));
+    const putBack = round2(paid - alreadyReversed + Number(settlement.discountUsd || 0));
+    let reversalTransactionId: number | null = null;
     if (putBack > 0) {
       const before = Number(account.currentBalanceUsd || 0);
       const after = round2(before + putBack);
       const balanceIqd = Number(account.currentBalanceIqd || 0);
-      await tx.insert(ledgerTransactions).values({
+      const insertedReversal = await tx.insert(ledgerTransactions).values({
         accountId: account.id,
         transactionNumber: generateTransactionNumber(),
         transactionType: "ADJUSTMENT_DEBIT",
@@ -943,10 +968,29 @@ export async function reverseBoxSettlement(
         description: `هەڵوەشاندنەوەی واصڵی ${settlement.settlementNumber} — ${reason.trim()}`,
         createdById: userId,
       });
+      reversalTransactionId = Number(insertedReversal[0].insertId);
       await tx
         .update(customerAccounts)
         .set({ currentBalanceUsd: after.toFixed(2), lastTransactionAt: new Date() })
         .where(eq(customerAccounts.id, account.id));
+    }
+
+    if (record && paid > alreadyReversed) {
+      const original = Number(record.amountUsd || 0);
+      const reversedNow = round2(Math.min(original, Number(record.reversedAmountUsd || 0) + (paid - alreadyReversed)));
+      const whole = reversedNow >= original - 0.005;
+      await tx
+        .update(paymentRecords)
+        .set({
+          reversedAmountUsd: reversedNow.toFixed(2),
+          reversedAt: new Date(),
+          reversalTransactionId: reversalTransactionId ?? record.reversalTransactionId,
+          paymentStatus: whole ? "refunded" : record.paymentStatus,
+          cancelledAt: whole ? new Date() : record.cancelledAt,
+          cancelledById: whole ? userId : record.cancelledById,
+          cancelReason: whole ? `هەڵوەشاندنەوەی واصڵی ${settlement.settlementNumber} — ${reason.trim()}` : record.cancelReason,
+        })
+        .where(eq(paymentRecords.id, record.id));
     }
 
     await tx
