@@ -25,8 +25,10 @@ describe("PACKAGE_STATUS_TONE", () => {
   });
 
   it("is what the screens use — no private colour switch on a package status", () => {
-    for (const file of ["PortalBatchDetail.tsx", "PortalSearch.tsx"]) {
-      const src = fs.readFileSync(path.resolve(__dirname, "../pages/portal", file), "utf8");
+    // The search's cards moved out of the page into the component the bottom
+    // bar's search and the page share.
+    for (const file of ["pages/portal/PortalBatchDetail.tsx", "components/portal/PortalUniversalSearch.tsx"]) {
+      const src = fs.readFileSync(path.resolve(__dirname, "..", file), "utf8");
       expect(src, `${file} should use the shared tone`).toMatch(/packageStatusTone|PackageStatusChip/);
       expect(src, `${file} still colours a package status by hand`)
         .not.toMatch(/case "customs_processing":\s*\n\s*return ["'(]?(isDark|"bg-)/);

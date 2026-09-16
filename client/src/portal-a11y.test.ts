@@ -53,12 +53,13 @@ describe("one control, announced once", () => {
    * the only thing that said "you are here" before.
    */
   it("the bottom navigation marks the current page", () => {
-    // The raised centre button is now the ➕ register action rather than
-    // Home; it still has to announce itself when the customer is on it.
+    // The raised centre button is now the search. It still announces itself
+    // on the search page, and says whether the search it opens is open.
     const layout = fs.readFileSync(
       path.resolve(__dirname, "components/CustomerPortalLayout.tsx"), "utf8");
     expect(layout).toMatch(/aria-current=\{isActive \? "page" : undefined\}/);
-    expect(layout).toMatch(/aria-current=\{isDeclareActive \? "page" : undefined\}/);
+    expect(layout).toMatch(/aria-current=\{isSearchActive \? "page" : undefined\}/);
+    expect(layout).toMatch(/aria-expanded=\{searchOpen\}/);
   });
 });
 

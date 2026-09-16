@@ -3,7 +3,7 @@ import { ReactNode, useState, useEffect, useRef } from "react";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { useLocation, Link, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { Home, Package, Wallet, Plus, Search, ShoppingBag } from "lucide-react";
+import { Home, Package, Wallet, Search, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { useTheme } from "@/contexts/ThemeContext";
@@ -19,6 +19,7 @@ import { PortalNavButtons } from "@/components/PortalNavButtons";
 import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { NewsTicker } from "@/components/portal/NewsTicker";
 import { usePortalRealtime } from "@/hooks/usePortalRealtime";
+import { usePortalSearchSheet } from "@/components/portal/PortalSearchSheet";
 
 interface CustomerPortalLayoutProps {
   children: ReactNode;
@@ -78,10 +79,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
   usePortalRealtime();
 
   /**
-   * The owner's five slots: home, my shipments, the blue ➕ register button
-   * in the centre, finance, account. The orders page lost its tab to the ➕
-   * and keeps a permanent door in the Me menu until the merged My-shipments
-   * tab absorbs it.
+   * The owner's five slots: home, my shipments, the blue search button in
+   * the centre, my items, finance. The centre was a ➕ that registered a
+   * tracking number; by the owner's word it now finds anything — and a
+   * number it cannot find offers to register it, so that road is still one
+   * tap from the result.
    */
   const leftItems = [
     {
@@ -104,7 +106,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
 
   // Right side items. The account tab is gone from here — the avatar at the
   // top of the home header is the account button now, by the owner's word —
-  // which lets the bar sit balanced, two tabs a side around the plus.
+  // which lets the bar sit balanced, two tabs a side around the search.
   const rightItems = [
     {
       // The owner's word: my-items keeps its own tab — for the merchants
@@ -126,14 +128,11 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
     },
   ];
 
-  // Centre ➕ — quick tracking registration, reachable from every page.
-  const declareItem = {
-    icon: Plus,
-    label: pickLang(language, { ku: "تۆماری تراک", en: "Register tracking", ar: "تسجيل التتبع", zh: "登记运单" }),
-    path: "/portal/declare",
-  };
-
-  const isDeclareActive = location.startsWith("/portal/declare");
+  // Centre — the search, reachable from every page. It opens over the page
+  // rather than leaving it, with the keyboard already up.
+  const { searchOpen, openSearch, searchSheet } = usePortalSearchSheet();
+  const searchLabel = pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" });
+  const isSearchActive = isSearchPage;
 
   const renderNavItem = (item: typeof leftItems[0], isActive: boolean) => (
     <Link
@@ -278,27 +277,31 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
               })}
             </div>
 
-            {/* Center — the ➕ register-tracking button, in the same electric
-                blue as the home hero so the two read as one action. Raised
-                above the flat items; no visible label (the hero card names
-                the action), an aria-label carries it for screen readers. */}
+            {/* Center — the search button, in the same electric blue as the
+                home hero. Raised above the flat items; no visible label, an
+                aria-label carries it for screen readers. A button, not a
+                link: it opens the search over the page, and the tap itself
+                has to focus the box or an iPhone keeps its keyboard down. */}
             <div className="relative -top-5 shrink-0 px-1">
-              <Link
-                href={declareItem.path}
-                aria-current={isDeclareActive ? "page" : undefined}
-                aria-label={declareItem.label}
-                className="relative group block"
+              <button
+                type="button"
+                onClick={openSearch}
+                aria-current={isSearchActive ? "page" : undefined}
+                aria-label={searchLabel}
+                aria-haspopup="dialog"
+                aria-expanded={searchOpen}
+                className="relative group block rounded-full"
               >
                   <div className={cn(
                     "relative w-14 h-14 rounded-full flex items-center justify-center transition-all duration-300",
                     "bg-gradient-to-br from-[#2563EB] to-[#1D4ED8]",
                     "shadow-[0_8px_20px_-4px_rgba(37,99,235,0.5)]",
-                    isDeclareActive && "ring-4 ring-blue-500/30 scale-105",
+                    (isSearchActive || searchOpen) && "ring-4 ring-blue-500/30 scale-105",
                     "group-hover:scale-105 group-active:scale-95"
                   )}>
-                    <declareItem.icon className="w-7 h-7 text-white relative z-10" strokeWidth={2.5} />
+                    <Search className="w-7 h-7 text-white relative z-10" strokeWidth={2.5} />
                   </div>
-              </Link>
+              </button>
             </div>
 
             {/* Right Side - Financial & Me */}
@@ -324,6 +327,9 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
 
       {/* Web Push enable prompt — only renders when supported, server-enabled, and not dismissed */}
       <PushNotificationPrompt enabled={true} />
+
+      {/* The search the centre button opens — over everything, until closed. */}
+      {searchSheet}
     </div>
   );
 }

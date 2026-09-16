@@ -29,6 +29,20 @@ export function cleanTrackingPaste(text: string): string {
 }
 
 /**
+ * A paste into a search box that takes words as well as numbers.
+ *
+ * When the paste reads as a number — six characters or more once cleaned,
+ * four of them digits — only the number goes in. Anything else, a product's
+ * name in Kurdish included, is left as it was: cleaning it would delete it.
+ * Null means "paste it as it is".
+ */
+export function cleanSearchPaste(text: string): string | null {
+  const cleaned = cleanTrackingPaste(text);
+  const digits = cleaned.match(/\d/g)?.length ?? 0;
+  return cleaned.length >= 6 && digits >= 4 ? cleaned : null;
+}
+
+/**
  * Several numbers pasted at once — one per line, or split by commas or
  * semicolons (Latin, Arabic or Chinese). Spaces do not split: a number copied
  * as "SF 1234 5678" is still one number.

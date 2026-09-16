@@ -1294,13 +1294,25 @@ export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
   // customer: most boxes hold one order, so the box total IS the concealed
   // weight. One batched lookup; staff box queries never pass through here.
   // See shared/fullPackagePrivacy.ts.
-  const fpRows = await db.select({ boxId: deliveryBoxItems.boxId })
+  //
+  // The same lookup says which of the customer's parcels each box holds, so
+  // the portal's search can open a parcel's box. Ids only — the parcels
+  // themselves the portal already has, from its own allow-listed list.
+  const itemRows = await db.select({
+    boxId: deliveryBoxItems.boxId,
+    packageId: deliveryBoxItems.packageId,
+    itemType: deliveryBoxItems.itemType,
+  })
     .from(deliveryBoxItems)
-    .where(and(
-      inArray(deliveryBoxItems.boxId, rows.map(r => r.id)),
-      eq(deliveryBoxItems.itemType, 'full_package'),
-    ));
-  const fpBoxes = new Set(fpRows.map(r => r.boxId));
+    .where(inArray(deliveryBoxItems.boxId, rows.map(r => r.id)));
+  const fpBoxes = new Set(itemRows.filter(r => r.itemType === 'full_package').map(r => r.boxId));
+  const packageIdsByBox = new Map<number, number[]>();
+  for (const item of itemRows) {
+    if (item.packageId == null) continue;
+    const ids = packageIdsByBox.get(item.boxId) ?? [];
+    ids.push(item.packageId);
+    packageIdsByBox.set(item.boxId, ids);
+  }
 
   /**
    * Whether the money for each box has been taken, and on which receipt.
@@ -1338,6 +1350,7 @@ export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
       settledDiscountUsd: Number(paidRow?.discount ?? 0),
       settlementNumber: paidRow?.lastNumber ?? null,
       settledAt: paidRow?.lastAt ?? null,
+      packageIds: packageIdsByBox.get(r.id) ?? [],
     };
     return fpBoxes.has(r.id)
       ? { ...withMoney, totalWeightKg: null, sizeConcealed: true as const }

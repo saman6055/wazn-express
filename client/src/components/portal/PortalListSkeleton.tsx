@@ -72,6 +72,31 @@ export function PortalFinancialSkeleton() {
 }
 
 /** Skeleton for search / tracking page */
+/** Skeleton for the search's answers: the three tabs, then a few cards. */
+export function PortalSearchResultsSkeleton({ rows = 4, tabs = true }: { rows?: number; tabs?: boolean }) {
+  return (
+    <div className="space-y-3 px-4 pt-3">
+      {tabs && (
+        <div className="grid grid-cols-3 gap-1.5">
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+          <Skeleton className="h-14 rounded-xl" />
+        </div>
+      )}
+      {Array.from({ length: rows }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 rounded-2xl border border-border/50 p-3">
+          <Skeleton className="h-14 w-14 shrink-0 rounded-xl" />
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-4 w-[60%]" />
+            <Skeleton className="h-3 w-[40%]" />
+            <Skeleton className="h-5 w-24 rounded-full" />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 export function PortalSearchSkeleton() {
   return (
     <div className="p-4 space-y-4">

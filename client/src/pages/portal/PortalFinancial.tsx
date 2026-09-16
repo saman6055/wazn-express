@@ -27,7 +27,7 @@ import { hasFeature } from "@shared/customerFeatures";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { StatementPdfButton } from "@/components/portal/StatementPdfButton";
@@ -54,6 +54,12 @@ import {
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { formatPortalDate } from "@/lib/portalClock";
 import { fmtKg, fmtUsd } from "@/lib/portalFormat";
+
+/** `?box=<id>` — a link straight to one box's receipt. */
+function boxFromUrl(search: string): number | null {
+  const id = Number(new URLSearchParams(search).get("box"));
+  return Number.isInteger(id) && id > 0 ? id : null;
+}
 
 // Deep-link a ledger transaction to the section it was raised for, so tapping a
 // row jumps straight to the relevant package/order/prohibited item.
@@ -86,13 +92,15 @@ const { t, language } = useLanguage();
     // no such tab, only an invoice dialog opened from a transaction row.
     // The union and the URL check are deliberately in step — a value accepted
     // by one and not the other is exactly how that blank body happened.
-    urlTab === "transactions" ? urlTab : "overview"
+    urlTab === "transactions" || urlTab === "batches" || urlTab === "boxes" ? urlTab : "overview"
   );
   // Keep the active tab in the URL so navigating to an order and pressing Back
   // returns the customer to the same tab (e.g. "transactions") they came from.
   const changeTab = (tab: "overview" | "transactions") => {
     setActiveTab(tab);
     const params = new URLSearchParams(searchString);
+    // The box a link opened belongs to the tab it opened on.
+    params.delete("box");
     if (tab === "overview") params.delete("tab");
     else params.set("tab", tab);
     const qs = params.toString();
@@ -267,13 +275,47 @@ const { t, language } = useLanguage();
   // What this customer has been given. Absent while it loads, which reads as
   // "not granted" — a tab arriving a moment late beats one that appears and
   // then has nothing behind it.
-  const { data: myFeatures } = trpc.customerPortal.getMyFeatures.useQuery();
+  const featuresQuery = trpc.customerPortal.getMyFeatures.useQuery();
+  const myFeatures = featuresQuery.data;
   const financeDetail = hasFeature(myFeatures, "finance_detail");
 
-  const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(null);
+  // A link to the receipts tabs can reach a customer who was not given them
+  // — an old bookmark, a shared address. The overview, not a blank page.
+  useEffect(() => {
+    if (featuresQuery.isLoading || financeDetail) return;
+    if (activeTab === "batches" || activeTab === "boxes") setActiveTab("overview");
+  }, [featuresQuery.isLoading, financeDetail, activeTab]);
+
+  // `?box=<id>`: the search sends a parcel packed in a box straight to that
+  // box's receipt, opened.
+  const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(() => boxFromUrl(searchString));
+  const scrollToBox = useRef<number | null>(boxFromUrl(searchString));
+
+  // Arriving by another link while already on this page — the search opens
+  // over it — changes the address and not the page. Follow the address.
+  useEffect(() => {
+    const tab = new URLSearchParams(searchString).get("tab");
+    if (tab === "transactions" || tab === "batches" || tab === "boxes") setActiveTab(tab);
+    const box = boxFromUrl(searchString);
+    if (box != null) {
+      setInvoiceBoxId(box);
+      scrollToBox.current = box;
+    }
+  }, [searchString]);
   const myBoxesQuery = trpc.customerPortal.getMyDeliveryBoxes.useQuery(undefined, PORTAL_LIVE_QUERY);
   const myBoxesRaw = myBoxesQuery.data;
   const myBoxes = Array.isArray(myBoxesRaw) ? myBoxesRaw : [];
+
+  // The linked box brought into view once its row is drawn — once, so a box
+  // the customer opens by hand stays where they tapped it.
+  useEffect(() => {
+    const id = scrollToBox.current;
+    if (id == null || activeTab !== "boxes" || !myBoxes.some((b: any) => b.id === id)) return;
+    scrollToBox.current = null;
+    window.requestAnimationFrame(() => {
+      document.querySelector(`[data-row-key="${id}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
+    });
+  }, [activeTab, myBoxes]);
   const { data: boxInvoice } = trpc.customerPortal.getMyBoxInvoice.useQuery(
     { boxId: invoiceBoxId ?? 0 },
     { enabled: invoiceBoxId != null },

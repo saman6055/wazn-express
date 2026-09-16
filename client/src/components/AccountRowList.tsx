@@ -78,7 +78,10 @@ export function AccountRowList({
   // Searching means the reader has a specific one in mind, so the ceiling is
   // lifted — hiding matches behind "show more" would be answering a question
   // with half an answer.
-  const visible = showAll || query.trim() ? filtered : filtered.slice(0, initialVisible);
+  // A row opened from outside — a link straight to one box — is drawn even
+  // when it sits below the first few, or the link opens something unseen.
+  const openIndex = openKey == null ? -1 : filtered.findIndex((r) => r.key === openKey);
+  const visible = showAll || query.trim() ? filtered : filtered.slice(0, Math.max(initialVisible, openIndex + 1));
   const hidden = filtered.length - visible.length;
 
   if (rows.length === 0) {
@@ -116,6 +119,7 @@ export function AccountRowList({
         return (
           <div
             key={row.key}
+            data-row-key={row.key}
             className={cn(
               "overflow-hidden rounded-xl border bg-card transition-colors",
               open ? "border-emerald-400 dark:border-emerald-700" : "border-border",

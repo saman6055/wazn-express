@@ -1,4 +1,6 @@
-﻿import { useState } from "react";
+﻿import { useEffect, useState } from "react";
+import { useSearch } from "wouter";
+import { cleanTrackingPaste } from "@/lib/entry/cleanPaste";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -58,7 +60,14 @@ export default function PortalDeclarePackage() {
   const isRTL = language === "ku" || language === "ar";
   const utils = trpc.useUtils();
 
-  const [trackingNumber, setTrackingNumber] = useState("");
+  // `?tracking=` — a number the search could not find, sent here to be
+  // registered, so it is not typed twice.
+  const searchString = useSearch();
+  const trackingFromLink = cleanTrackingPaste(new URLSearchParams(searchString).get("tracking") ?? "");
+  const [trackingNumber, setTrackingNumber] = useState(trackingFromLink);
+  useEffect(() => {
+    if (trackingFromLink) setTrackingNumber(trackingFromLink);
+  }, [trackingFromLink]);
   const [platform, setPlatform] = useState<string>("");
   // One list for the whole system — see FALLBACK_PLATFORMS above.
   const { data: platformAttrs } = trpc.productAttributes.list.useQuery({ type: "platform" });

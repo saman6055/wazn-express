@@ -1,8 +1,8 @@
 import { SectionBoundary } from "@/components/SectionBoundary";
 import { NewsTicker } from "@/components/portal/NewsTicker";
-import { ReactNode, useState } from "react";
+import { Fragment, ReactNode, useState } from "react";
 import { useLocation, Link } from "wouter";
-import { Home, Package, Wallet, Plus, ShoppingBag } from "lucide-react";
+import { Home, Package, Wallet, Search, ShoppingBag } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
@@ -15,6 +15,7 @@ import { useDynamicFavicon } from "@/hooks/useDynamicFavicon";
 import { usePortalRealtime } from "@/hooks/usePortalRealtime";
 import { PortalTopBar } from "@/components/PortalTopBar";
 import { motion } from "framer-motion";
+import { usePortalSearchSheet } from "@/components/portal/PortalSearchSheet";
 
 interface ModernPortalLayoutProps {
   children: ReactNode;
@@ -42,7 +43,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
    * chrome — so a customer on this skin saw a ➕ bar on the home screen and a
    * Profile-tab bar everywhere else, with "بارەکان" here against "بارەکانم"
    * there. Same tabs, same labels; the account still opens from the avatar
-   * at the top of the home, and the centre ➕ registers a tracking number.
+   * at the top of the home, and the centre button opens the search.
    */
   const navItems = [
     {
@@ -56,9 +57,12 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
       path: "/portal/shipments",
     },
     {
-      icon: Plus,
-      label: language === "ku" ? "تۆماری تراک" : language === "ar" ? "تسجيل التتبع" : "Register tracking",
-      path: "/portal/declare",
+      // The centre opens the search over the page — the same as the classic
+      // bar, where the owner turned the ➕ into search.
+      icon: Search,
+      label: language === "ku" ? "گەڕان" : language === "ar" ? "بحث" : "Search",
+      path: "/portal/search",
+      opensSearch: true,
     },
     {
       icon: ShoppingBag,
@@ -71,6 +75,8 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
       path: "/portal/financial",
     },
   ];
+
+  const { searchOpen, openSearch, searchSheet } = usePortalSearchSheet();
 
   const isActive = (path: string) => {
     if (path === "/portal") return location === "/portal";
@@ -143,13 +149,16 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         <div className={cn("relative", "max-w-lg", "mx-auto px-4", "pb-2")}>
           <div className="flex items-center justify-around h-[72px]">
             {navItems.map((item) => {
-              const active = isActive(item.path);
+              const active = isActive(item.path) || (!!item.opensSearch && searchOpen);
               const Icon = item.icon;
-
-              return (
-                <Link key={item.path} href={item.path}>
+              const button = (
                   <motion.button
+                    type="button"
                     whileTap={{ scale: 0.92 }}
+                    onClick={item.opensSearch ? openSearch : undefined}
+                    aria-label={item.opensSearch ? item.label : undefined}
+                    aria-haspopup={item.opensSearch ? "dialog" : undefined}
+                    aria-expanded={item.opensSearch ? searchOpen : undefined}
                     className="relative flex flex-col items-center justify-center gap-1 px-3 py-2"
                   >
                     {/* Icon */}
@@ -195,6 +204,15 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
                       />
                     )}
                   </motion.button>
+              );
+
+              // The search opens over the page, so it is a button on its
+              // own; every other item is a link to its screen.
+              return item.opensSearch ? (
+                <Fragment key={item.path}>{button}</Fragment>
+              ) : (
+                <Link key={item.path} href={item.path}>
+                  {button}
                 </Link>
               );
             })}
@@ -211,6 +229,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         onClose={() => setIsChatOpen(false)}
       />
       <PushNotificationPrompt enabled={true} />
+      {searchSheet}
     </div>
   );
 }
