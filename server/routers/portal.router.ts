@@ -7,7 +7,7 @@ import { staffProcedure, adminProcedure, accountantProcedure, customerProcedure 
 import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { buildBatchInvoice } from "@shared/batchInvoice";
-import { buildBoxInvoice } from "@shared/boxInvoice";
+import { boxMoneyIn, buildBoxInvoice } from "@shared/boxInvoice";
 import { getVapidPublicKey, isPushEnabled, sendPushToCustomer } from "../services/push.service";
 import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
 import { isSafeAvatar, isSafeCustomerImage, MAX_CUSTOMER_IMAGES } from "@shared/customerImages";
@@ -179,7 +179,13 @@ export const customerPortalRouter = router({
         const items = await db.getBoxItems(box.id);
         // Customer edition: full-package cartons show their agreed price and
         // no weight. The staff box invoice (finance.router) shows everything.
-        return { box, invoice: buildBoxInvoice(items, ourDeliveryFee(box.deliveryChargeUsd), "—", { concealFullPackageSize: true }) };
+        return {
+          box,
+          invoice: buildBoxInvoice(items, ourDeliveryFee(box.deliveryChargeUsd), "—", { concealFullPackageSize: true }),
+          // The advance, the discount and the payment, so the document shows
+          // the customer what was taken off and what they paid.
+          money: boxMoneyIn(items, box),
+        };
       }),
     /**
      * The photo and signature taken when a box was handed over.

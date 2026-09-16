@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { buildBoxInvoice, type BoxItem } from "./boxInvoice";
+import { boxMoneyIn, buildBoxInvoice, type BoxItem } from "./boxInvoice";
 
 const item = (over: Partial<BoxItem> = {}): BoxItem => ({
   id: 1,
@@ -64,6 +64,24 @@ describe("the box, line by line", () => {
     expect(invoice.lines).toEqual([]);
     expect(invoice.totals.goods).toBe(0);
     expect(invoice.totals.grand).toBe(4);
+  });
+});
+
+describe("the money already in against a box", () => {
+  it("adds the advances on its cartons and reads the receipts' paid and discount", () => {
+    const items = [
+      { id: 1, calculatedCostUsd: "87.50", advanceAppliedUsd: "30.00", itemType: "commission" },
+      { id: 2, calculatedCostUsd: "12.00", advanceAppliedUsd: "0", itemType: "regular" },
+    ];
+    expect(boxMoneyIn(items, { settledUsd: "64.50", settledDiscountUsd: "5.00" })).toEqual({
+      advanceUsd: 30,
+      discountUsd: 5,
+      paidUsd: 64.5,
+    });
+  });
+
+  it("says nothing was taken when nothing was", () => {
+    expect(boxMoneyIn([{ id: 1, calculatedCostUsd: 10 }], {})).toEqual({ advanceUsd: 0, discountUsd: 0, paidUsd: 0 });
   });
 });
 

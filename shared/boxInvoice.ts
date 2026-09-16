@@ -24,6 +24,8 @@ export interface BoxItem {
   calculatedCostUsd?: string | number | null;
   /** regular | full_package | commission — decides what the customer may see. */
   itemType?: string | null;
+  /** The advance paid on the order this carton belongs to (getBoxItems). */
+  advanceAppliedUsd?: string | number | null;
 }
 
 export interface BoxLine {
@@ -121,5 +123,36 @@ export function buildBoxInvoice(
       grand: money(goods + delivery),
     },
     unpriced,
+  };
+}
+
+/**
+ * The money already in against a box: the advance paid on its orders, and
+ * what its receipts took and forgave.
+ *
+ * A customer given a discount at the counter used to have no way to see it:
+ * the box document stopped at the total, and the row said "Discount $…" at
+ * the end of a line the phone cut short (owner, 2026-09-16). These are
+ * facts from the records — the receipts' own paid and discount, the orders'
+ * own advance — so no "still owing" figure is worked out here; the row's
+ * paid / owing chip is the payment screen's verdict and says that.
+ */
+export interface BoxMoneyIn {
+  advanceUsd: number;
+  discountUsd: number;
+  paidUsd: number;
+}
+
+export function boxMoneyIn(
+  items: readonly BoxItem[],
+  // Any box row: the customer box query's type is a union with its empty-list
+  // branch, which carries no money fields at all — they then read as zero.
+  box: { settledUsd?: string | number | null; settledDiscountUsd?: string | number | null; [field: string]: unknown },
+): BoxMoneyIn {
+  const advance = items.reduce((sum, item) => sum + Math.max(0, cents(item.advanceAppliedUsd)), 0);
+  return {
+    advanceUsd: money(advance),
+    discountUsd: money(Math.max(0, cents(box.settledDiscountUsd))),
+    paidUsd: money(Math.max(0, cents(box.settledUsd))),
   };
 }

@@ -722,10 +722,11 @@ const { t, language } = useLanguage();
                   Number(b.totalWeightKg) > 0 ? fmtKg(b.totalWeightKg) : null,
                   b.destinationCity || null,
                   b.settlementNumber || null,
-                  Number(b.settledDiscountUsd) > 0
-                    ? `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} ${fmtUsd(b.settledDiscountUsd)}`
-                    : null,
                 ].filter(Boolean).join(" · "),
+                // Its own chip, not the end of a line a phone cuts short.
+                highlight: Number(b.settledDiscountUsd) > 0
+                  ? { text: `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} ${fmtUsd(b.settledDiscountUsd)}` }
+                  : null,
               }))}
               openKey={invoiceBoxId}
               onToggle={setInvoiceBoxId}
@@ -738,6 +739,7 @@ const { t, language } = useLanguage();
                     destination={boxInvoice.box.destinationCity}
                     deliveredAt={boxInvoice.box.deliveredAt}
                     language={language}
+                    money={boxInvoice.money}
                   />
                 ) : (
                   <Skeleton className="h-40 w-full" />

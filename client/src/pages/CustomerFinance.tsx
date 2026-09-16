@@ -1669,10 +1669,10 @@ export default function CustomerFinance() {
                         // The receipt handed over, so a customer holding a
                         // printed slip can be matched to a row here.
                         b.settlementNumber || null,
-                        Number(b.settledDiscountUsd) > 0
-                          ? `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} ${fmtUsd(Number(b.settledDiscountUsd))}`
-                          : null,
                       ].filter(Boolean).join(" · "),
+                      highlight: Number(b.settledDiscountUsd) > 0
+                        ? { text: `${pickLang(language, { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })} ${fmtUsd(Number(b.settledDiscountUsd))}` }
+                        : null,
                     }))}
                     openKey={invoiceBoxId}
                     onToggle={setInvoiceBoxId}
@@ -1685,6 +1685,7 @@ export default function CustomerFinance() {
                           destination={officeBoxInvoice.box.destinationCity}
                           deliveredAt={officeBoxInvoice.box.deliveredAt}
                           language={language}
+                          money={officeBoxInvoice.money}
                           onPrint={() => window.print()}
                         />
                       ) : (

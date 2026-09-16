@@ -1,5 +1,5 @@
 import { useMemo, useState, type ReactNode } from "react";
-import { ChevronDown, Search, type LucideIcon } from "lucide-react";
+import { BadgePercent, ChevronDown, Search, type LucideIcon } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
@@ -36,6 +36,12 @@ export interface AccountRow {
    * question.
    */
   badge?: { text: string; tone: "paid" | "owed" | "neutral" } | null;
+  /**
+   * Good news worth its own chip — a discount given. It used to sit at the
+   * end of `meta`, which is cut to one line, so on a phone the amount was
+   * the part that disappeared.
+   */
+  highlight?: { text: string } | null;
 }
 
 interface Props {
@@ -143,6 +149,12 @@ export function AccountRowList({
                       )}
                     >
                       {row.badge.text}
+                    </span>
+                  )}
+                  {row.highlight && (
+                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full border border-sky-300 bg-sky-50 px-2 py-0.5 text-[11px] font-semibold text-sky-700 dark:border-sky-800 dark:bg-sky-950/50 dark:text-sky-300">
+                      <BadgePercent className="h-3 w-3" />
+                      <span className="whitespace-nowrap">{row.highlight.text}</span>
                     </span>
                   )}
                 </div>

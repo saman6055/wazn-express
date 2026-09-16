@@ -2,7 +2,7 @@ import { Boxes, AlertTriangle } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
-import type { BoxInvoice } from "@shared/boxInvoice";
+import type { BoxInvoice, BoxMoneyIn } from "@shared/boxInvoice";
 
 /**
  * One delivery box, itemised — deliberately the same document as a batch
@@ -24,11 +24,13 @@ interface Props {
   deliveredAt?: Date | string | null;
   language: string;
   onPrint?: () => void;
+  /** Advance, discount and payment already in against the box; lines appear only for what is there. */
+  money?: BoxMoneyIn | null;
 }
 
 const money = (n: number) => fmtUsd(n);
 
-export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, language, onPrint }: Props) {
+export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, language, onPrint, money: moneyIn }: Props) {
   const { lines, totals, unpriced } = invoice;
 
   return (
@@ -121,6 +123,34 @@ export function BoxInvoiceView({ invoice, boxCode, destination, deliveredAt, lan
               {money(totals.grand)}
             </dd>
           </div>
+          {/* What is already in against the box, each on its own line and
+              only when there is one: the advance paid on the order, what
+              the counter forgave, and what the customer paid. A discount a
+              customer cannot see is a discount they do not know they got. */}
+          {moneyIn && moneyIn.advanceUsd > 0 && (
+            <div className="flex items-center justify-between gap-2" data-testid="box-advance">
+              <dt className="text-muted-foreground">
+                {pickLang(language, { ku: "پارەی پێشەکی", en: "Advance paid", ar: "الدفعة المقدمة", zh: "预付款" })}
+              </dt>
+              <dd className="font-mono" dir="ltr">−{money(moneyIn.advanceUsd)}</dd>
+            </div>
+          )}
+          {moneyIn && moneyIn.discountUsd > 0 && (
+            <div className="flex items-center justify-between gap-2 rounded-lg bg-sky-50 px-2 py-1 dark:bg-sky-950/40" data-testid="box-discount">
+              <dt className="font-semibold text-sky-700 dark:text-sky-300">
+                {pickLang(language, { ku: "داشکاندنت بۆ کرا", en: "Discount given", ar: "خصم لك", zh: "已给予折扣" })}
+              </dt>
+              <dd className="font-mono font-semibold text-sky-700 dark:text-sky-300" dir="ltr">−{money(moneyIn.discountUsd)}</dd>
+            </div>
+          )}
+          {moneyIn && moneyIn.paidUsd > 0 && (
+            <div className="flex items-center justify-between gap-2" data-testid="box-paid">
+              <dt className="text-muted-foreground">
+                {pickLang(language, { ku: "پارەی دراو", en: "Paid", ar: "المدفوع", zh: "已付" })}
+              </dt>
+              <dd className="font-mono" dir="ltr">{money(moneyIn.paidUsd)}</dd>
+            </div>
+          )}
         </dl>
       </div>
     </div>
