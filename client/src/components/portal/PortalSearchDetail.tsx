@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from "react";
+import type { ReactNode } from "react";
 import { Boxes, Calendar, Copy, Hash, MapPin, Receipt, Ruler, Scale, ShoppingBag, Truck, type LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
@@ -37,22 +37,31 @@ interface Fact {
  */
 export default function PortalSearchDetail({
   item,
+  open,
   chip,
   boxReceipts,
-  onClose,
+  onRequestClose,
+  onClosed,
   onNavigate,
 }: {
   item: SearchItem;
+  /**
+   * Whether the details are the current step. Opening and closing belong to
+   * the phone's history, so Back closes this sheet and nothing more.
+   */
+  open: boolean;
   /** The card's own chip, so the sheet says the same thing the card did. */
   chip: { tone: string; words: Words | null };
   boxReceipts: boolean;
-  onClose: () => void;
+  /** A swipe down, a tap outside, Escape: take the step back. */
+  onRequestClose: () => void;
+  /** The slide away has finished. */
+  onClosed: () => void;
   onNavigate: (href: string) => void;
 }) {
   const { language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
   const L = (words: Words) => pickLang(language, words);
-  const [open, setOpen] = useState(true);
 
   const parcel = item.kind === "parcel" ? item.parcel : undefined;
   const lookup = String(parcel?.trackingNumber || parcel?.packageCode || "");
@@ -183,9 +192,11 @@ export default function PortalSearchDetail({
   return (
     <Drawer
       open={open}
-      onOpenChange={setOpen}
+      onOpenChange={(isOpen) => {
+        if (!isOpen) onRequestClose();
+      }}
       onAnimationEnd={(isOpen) => {
-        if (!isOpen) onClose();
+        if (!isOpen) onClosed();
       }}
     >
       <DrawerContent className="max-h-[90dvh]">

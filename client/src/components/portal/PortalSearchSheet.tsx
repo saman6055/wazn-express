@@ -11,12 +11,13 @@ import {
   type RefObject,
 } from "react";
 import { createPortal, flushSync } from "react-dom";
-import { useLocation } from "wouter";
 import { ArrowLeft, ArrowRight, Search, X } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { cleanSearchPaste } from "@/lib/entry/cleanPaste";
+import { isSearchSheetEntry, withSearchSheet } from "@/lib/portalSearchHistory";
+import { usePortalSearchView } from "@/hooks/usePortalSearchView";
 import { PortalSearchResultsSkeleton } from "@/components/portal/PortalListSkeleton";
 
 /**
@@ -33,13 +34,8 @@ const PortalUniversalSearch = lazy(() => import("@/components/portal/PortalUnive
 /** The search page's own box, so the centre button can focus it instead of stacking a sheet over it. */
 export const PORTAL_SEARCH_INPUT_ID = "portal-search-input";
 
-/** Marks the history entry the open sheet added, so Back closes it rather than leaving the page. */
-const SHEET_MARK = "portalSearchSheet";
-
-const isMarked = () => {
-  const state = window.history.state as Record<string, unknown> | null;
-  return !!state && state[SHEET_MARK] === true;
-};
+/** Whether the current history entry is one with the search open over its page. */
+const isMarked = () => typeof window !== "undefined" && isSearchSheetEntry(window.history.state);
 
 export const PortalSearchField = forwardRef<
   HTMLInputElement,
@@ -151,49 +147,31 @@ function PortalSearchSheet({
 }) {
   const { language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
-  const [, navigate] = useLocation();
-  const [query, setQuery] = useState("");
-  // Bumped on Enter; the answers remember the search when it moves.
-  const [submitted, setSubmitted] = useState(0);
+  const scrollRef = useRef<HTMLDivElement | null>(null);
+  // The words, the tab and the open details, each step of them in the
+  // phone's history — see hooks/usePortalSearchView. Leaving for an answer's
+  // page closes the sheet; Back from that page opens it again as it was.
+  const view = usePortalSearchView({ scrollRef, onLeave: onClosed });
 
   useEffect(() => {
-    // Back — the phone's button or the browser's — closes the sheet and
-    // leaves the customer on the page they opened it from.
-    if (!isMarked()) {
-      const state = (window.history.state as Record<string, unknown> | null) ?? {};
-      window.history.pushState({ ...state, [SHEET_MARK]: true }, "");
-    }
-    const onPop = () => onClosed();
-    window.addEventListener("popstate", onPop);
+    // Opening the search is one step in the phone's history, so Back closes
+    // it and leaves the customer on the page they opened it from. A sheet
+    // brought back by Back is already that step.
+    if (!isMarked()) window.history.pushState(withSearchSheet(window.history.state), "");
 
     // The page under the sheet stays where it was.
     const overflow = document.body.style.overflow;
     document.body.style.overflow = "hidden";
     return () => {
-      window.removeEventListener("popstate", onPop);
       document.body.style.overflow = overflow;
     };
-  }, [onClosed]);
+  }, []);
 
+  // Closing is the same step taken back; the bar's hook sees it and closes.
   const close = useCallback(() => {
-    const marked = isMarked();
-    onClosed();
-    if (marked) window.history.back();
+    if (isMarked()) window.history.back();
+    else onClosed();
   }, [onClosed]);
-
-  /**
-   * Leave for another screen. The sheet's own history entry becomes that
-   * screen, so Back from it returns to the page the search was opened on,
-   * not to a sheet that is no longer there.
-   */
-  const go = useCallback(
-    (href: string) => {
-      const marked = isMarked();
-      onClosed();
-      navigate(href, { replace: marked });
-    },
-    [navigate, onClosed],
-  );
 
   const BackIcon = isRTL ? ArrowRight : ArrowLeft;
   const title = pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" });
@@ -223,18 +201,13 @@ function PortalSearchSheet({
           >
             <BackIcon className="h-5 w-5" />
           </button>
-          <PortalSearchField
-            ref={inputRef}
-            value={query}
-            onChange={setQuery}
-            onSubmit={() => setSubmitted((n) => n + 1)}
-          />
+          <PortalSearchField ref={inputRef} value={view.query} onChange={view.setQuery} onSubmit={view.submit} />
         </div>
       </div>
-      <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
+      <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
         <div className="mx-auto w-full max-w-2xl pb-[calc(env(safe-area-inset-bottom)+1.5rem)]">
           <Suspense fallback={<PortalSearchResultsSkeleton />}>
-            <PortalUniversalSearch query={query} onQueryChange={setQuery} onNavigate={go} submitted={submitted} />
+            <PortalUniversalSearch view={view} />
           </Suspense>
         </div>
       </div>
@@ -251,8 +224,17 @@ function PortalSearchSheet({
  * a frame later leaves an iPhone's keyboard down.
  */
 export function usePortalSearchSheet() {
-  const [open, setOpen] = useState(false);
+  // Open from the very first frame when Back lands on an entry that had the
+  // search open — coming back from an order the search opened, say.
+  const [open, setOpen] = useState(isMarked);
   const inputRef = useRef<HTMLInputElement | null>(null);
+
+  // Back and Forward decide: the entry either has the search open or not.
+  useEffect(() => {
+    const onPop = () => setOpen(isMarked());
+    window.addEventListener("popstate", onPop);
+    return () => window.removeEventListener("popstate", onPop);
+  }, []);
 
   const openSearch = useCallback(() => {
     // On the search page itself the box is already there.

@@ -31,6 +31,7 @@ import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalSearchResultsSkeleton } from "@/components/portal/PortalListSkeleton";
 import { BOX_STATUS_LABEL } from "@/components/portal/MyDeliveryBoxes";
 import PortalSearchDetail from "@/components/portal/PortalSearchDetail";
+import type { PortalSearchView } from "@/hooks/usePortalSearchView";
 import {
   buildSearchIndex,
   clearRecentSearches,
@@ -49,7 +50,6 @@ import {
   SEARCH_TAB_LABEL,
   SEARCH_TAB_TONE,
   type SearchItem,
-  type SearchTab,
 } from "@/lib/portalSearch";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
@@ -97,22 +97,21 @@ export function searchStatusTone(item: SearchItem): string {
 }
 
 export interface PortalUniversalSearchProps {
-  query: string;
-  onQueryChange: (query: string) => void;
-  /** Leave for another screen. The sheet closes itself first. */
-  onNavigate: (href: string) => void;
-  /** Bumped when the customer presses Enter: the search is remembered. */
-  submitted?: number;
+  /**
+   * The words, the tab and the open details, kept in the phone's history so
+   * Back takes one step — see hooks/usePortalSearchView. Owned by the sheet
+   * or the page around this.
+   */
+  view: PortalSearchView;
 }
 
-export default function PortalUniversalSearch({ query, onQueryChange, onNavigate, submitted = 0 }: PortalUniversalSearchProps) {
+export default function PortalUniversalSearch({ view }: PortalUniversalSearchProps) {
   const { language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
   const L = (words: Words) => pickLang(language, words);
+  const { query, tab, setTab, submitted } = view;
 
-  const [tab, setTab] = useState<SearchTab | null>(null);
   const [limit, setLimit] = useState(PAGE_SIZE);
-  const [detail, setDetail] = useState<SearchItem | null>(null);
   const [recents, setRecents] = useState<string[]>(loadRecentSearches);
 
   // The lists the portal already keeps. Each is shared with the screen that
@@ -189,9 +188,26 @@ export default function PortalUniversalSearch({ query, onQueryChange, onNavigate
   const open = (item: SearchItem) => {
     if (parsed.active) setRecents((current) => rememberSearch(query, current));
     const href = searchTarget(item, { boxReceipts });
-    if (href) onNavigate(href);
-    else setDetail(item);
+    // Either way a step the phone's Back undoes: a page of its own, or the
+    // details rising over the answers.
+    if (href) view.leave(href);
+    else view.openDetail(item.key);
   };
+
+  // The open details, found by key — which is all a history entry remembers.
+  // Kept a moment after closing so the sheet can slide away.
+  const detailItem = useMemo(
+    () =>
+      view.detail
+        ? index.find((i) => i.key === view.detail) ?? serverItems.find((i) => i.key === view.detail) ?? null
+        : null,
+    [view.detail, index, serverItems],
+  );
+  const [closingItem, setClosingItem] = useState<SearchItem | null>(null);
+  useEffect(() => {
+    if (detailItem) setClosingItem(detailItem);
+  }, [detailItem]);
+  const drawerItem = detailItem ?? closingItem;
 
   const registerHref = parsed.key.length >= 5 ? `/portal/declare?tracking=${encodeURIComponent(cleanTrackingPaste(query))}` : "/portal/declare";
 
@@ -325,7 +341,7 @@ export default function PortalUniversalSearch({ query, onQueryChange, onNavigate
           action={
             <button
               type="button"
-              onClick={() => onNavigate("/portal/declare")}
+              onClick={() => view.leave("/portal/declare")}
               className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
             >
               {L({ ku: "تۆمارکردنی تراک", en: "Register a tracking", ar: "تسجيل رقم تتبع", zh: "登记运单号" })}
@@ -372,7 +388,7 @@ export default function PortalUniversalSearch({ query, onQueryChange, onNavigate
           </p>
           <button
             type="button"
-            onClick={() => onNavigate("/portal/no-mark")}
+            onClick={() => view.leave("/portal/no-mark")}
             className="mt-3 w-full rounded-xl bg-amber-600 py-3 text-sm font-semibold text-white hover:bg-amber-700"
           >
             {L({ ku: "داواکاری خاوەنداری", en: "Claim ownership", ar: "المطالبة بالملكية", zh: "认领所有权" })}
@@ -394,7 +410,7 @@ export default function PortalUniversalSearch({ query, onQueryChange, onNavigate
         action={
           <button
             type="button"
-            onClick={() => onNavigate(registerHref)}
+            onClick={() => view.leave(registerHref)}
             className="rounded-xl bg-blue-600 px-4 py-2.5 text-sm font-semibold text-white hover:bg-blue-700"
           >
             {L({ ku: "تۆمارکردنی ئەم تراکە", en: "Register this tracking", ar: "تسجيل رقم التتبع هذا", zh: "登记此运单号" })}
@@ -467,7 +483,7 @@ export default function PortalUniversalSearch({ query, onQueryChange, onNavigate
               <button
                 key={q}
                 type="button"
-                onClick={() => onQueryChange(q)}
+                onClick={() => view.setQuery(q)}
                 className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
                 <Clock className="h-3 w-3 opacity-60" />
@@ -483,7 +499,7 @@ export default function PortalUniversalSearch({ query, onQueryChange, onNavigate
       {!parsed.active && index.length > 0 && (
         <button
           type="button"
-          onClick={() => onNavigate("/portal/declare")}
+          onClick={() => view.leave("/portal/declare")}
           className="flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-slate-300 py-3 text-sm font-semibold text-blue-700 dark:border-slate-600 dark:text-blue-300"
         >
           <PackagePlus className="h-4 w-4" />
@@ -491,16 +507,15 @@ export default function PortalUniversalSearch({ query, onQueryChange, onNavigate
         </button>
       )}
 
-      {detail && (
+      {drawerItem && (
         <PortalSearchDetail
-          item={detail}
-          chip={{ tone: searchStatusTone(detail), words: searchStatusWords(detail) }}
+          item={drawerItem}
+          open={!!detailItem}
+          chip={{ tone: searchStatusTone(drawerItem), words: searchStatusWords(drawerItem) }}
           boxReceipts={boxReceipts}
-          onClose={() => setDetail(null)}
-          onNavigate={(href) => {
-            setDetail(null);
-            onNavigate(href);
-          }}
+          onRequestClose={view.closeDetail}
+          onClosed={() => setClosingItem(null)}
+          onNavigate={view.leave}
         />
       )}
     </div>

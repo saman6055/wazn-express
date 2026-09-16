@@ -72,12 +72,12 @@ describe("the sheet opens ready to type", () => {
   });
 
   it("Back closes the sheet instead of leaving the page", () => {
-    expect(sheet).toContain("window.history.pushState(");
-    expect(sheet).toContain('window.addEventListener("popstate", onPop)');
+    expect(sheet).toContain("window.history.pushState(withSearchSheet(window.history.state)");
+    // The bar's hook follows the history both ways: Back closes the sheet,
+    // and Back onto an entry that had it open opens it again.
+    expect(sheet).toContain("const onPop = () => setOpen(isMarked())");
+    expect(sheet).toContain("useState(isMarked)");
     expect(sheet).toContain('window.removeEventListener("popstate", onPop)');
-    // Leaving for an answer replaces the sheet's entry, so Back from the
-    // answer returns to the page the search was opened on.
-    expect(sheet).toContain("navigate(href, { replace: marked })");
   });
 
   it("the answers load behind the box, not before it", () => {
@@ -92,6 +92,62 @@ describe("the sheet opens ready to type", () => {
 
   it("a pasted number is cleaned on its way in", () => {
     expect(sheet).toContain("cleanSearchPaste(e.clipboardData.getData(");
+  });
+});
+
+/**
+ * The owner, 2026-09-16: a tracking's details open beautifully, but the
+ * phone's Back button went to the home page. Back must take one step — from
+ * the details to the search, from a page the search opened back to the
+ * search, and only then out of it.
+ */
+describe("the phone's Back button takes one step at a time", () => {
+  const hook = read("hooks/usePortalSearchView.ts");
+  const search = read("components/portal/PortalUniversalSearch.tsx");
+  const detail = read("components/portal/PortalSearchDetail.tsx");
+
+  it("opening an answer's details is a step of its own", () => {
+    const open = hook.slice(hook.indexOf("const openDetail = useCallback"), hook.indexOf("const closeDetail"));
+    expect(open).toContain("remember({ detail: null })");
+    expect(open).toContain("window.history.pushState(");
+    expect(open.indexOf("remember(")).toBeLessThan(open.indexOf("pushState("));
+    expect(search).toContain("view.openDetail(item.key)");
+  });
+
+  it("closing the details takes that step back, and nothing more", () => {
+    const close = hook.slice(hook.indexOf("const closeDetail = useCallback"), hook.indexOf("const leave = useCallback"));
+    expect(close).toContain("window.history.back()");
+    expect(search).toContain("onRequestClose={view.closeDetail}");
+    expect(search).toContain("open={!!detailItem}");
+    // The drawer never closes itself behind the history's back.
+    expect(detail).not.toMatch(/useState\(true\)/);
+    expect(detail).toContain("if (!isOpen) onRequestClose()");
+  });
+
+  it("leaving for an answer's page adds a step — it never replaces the search's", () => {
+    const leave = hook.slice(hook.indexOf("const leave = useCallback"), hook.indexOf("const submit = useCallback"));
+    expect(leave).toContain("remember();");
+    expect(leave).toContain("navigate(href);");
+    expect(leave.indexOf("remember();")).toBeLessThan(leave.indexOf("navigate(href);"));
+    expect(hook).not.toMatch(/replace:\s*true|replace:\s*marked/);
+    expect(read("components/portal/PortalSearchSheet.tsx")).not.toContain("replace: marked");
+    for (const target of ['view.leave("/portal/declare")', 'view.leave("/portal/no-mark")', "view.leave(registerHref)", "view.leave(href)"]) {
+      expect(search, target).toContain(target);
+    }
+    expect(search).not.toContain("onNavigate(");
+  });
+
+  it("coming back shows the search as it was left — words, tab, details and scroll", () => {
+    expect(hook).toContain("readSearchView(window.history.state)");
+    expect(hook).toContain("useState(restored?.q ?? options.initialQuery");
+    expect(hook).toContain("useState<SearchTab | null>(restored?.tab ?? null)");
+    expect(hook).toContain("useState<string | null>(restored?.detail ?? null)");
+    expect(hook).toContain("const target = restored?.scroll ?? 0");
+  });
+
+  it("the page and the sheet keep the same steps", () => {
+    expect(read("pages/portal/PortalSearch.tsx")).toContain("usePortalSearchView({");
+    expect(read("components/portal/PortalSearchSheet.tsx")).toContain("usePortalSearchView({ scrollRef, onLeave: onClosed })");
   });
 });
 

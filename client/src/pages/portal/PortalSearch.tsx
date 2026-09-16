@@ -1,10 +1,9 @@
-import { useEffect, useState } from "react";
-import { useLocation } from "wouter";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { TutorialHint } from "@/components/TutorialHint";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { PortalSearchField, PORTAL_SEARCH_INPUT_ID } from "@/components/portal/PortalSearchSheet";
 import PortalUniversalSearch from "@/components/portal/PortalUniversalSearch";
+import { usePortalSearchView } from "@/hooks/usePortalSearchView";
 
 function getInitialSearchQuery(): string {
   if (typeof window === "undefined") return "";
@@ -22,22 +21,9 @@ function getInitialSearchQuery(): string {
  */
 export default function PortalSearch() {
   const { t } = useLanguage();
-  const [, navigate] = useLocation();
-  const [query, setQuery] = useState(getInitialSearchQuery);
-  const [submitted, setSubmitted] = useState(0);
-
-  // The address keeps the search, so Back from an answer returns to the same
-  // answers rather than to an empty box.
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const q = query.trim();
-      const next = q ? `/portal/search?q=${encodeURIComponent(q)}` : "/portal/search";
-      if (next !== `${window.location.pathname}${window.location.search}`) {
-        window.history.replaceState(window.history.state, "", next);
-      }
-    }, 400);
-    return () => window.clearTimeout(timer);
-  }, [query]);
+  // The same history-kept view as the sheet: Back from an answer's page or
+  // details returns to exactly these answers. The address keeps ?q= too.
+  const view = usePortalSearchView({ initialQuery: getInitialSearchQuery(), urlPath: "/portal/search" });
 
   return (
     <PortalLayout>
@@ -46,15 +32,15 @@ export default function PortalSearch() {
         <TutorialHint section="شوێنکەوتن" className="mb-3" />
         <PortalSearchField
           id={PORTAL_SEARCH_INPUT_ID}
-          value={query}
-          onChange={setQuery}
-          onSubmit={() => setSubmitted((n) => n + 1)}
-          autoFocus={!query}
+          value={view.query}
+          onChange={view.setQuery}
+          onSubmit={view.submit}
+          autoFocus={!view.query && !view.detail}
           onDark
         />
       </div>
       <div className="pb-6">
-        <PortalUniversalSearch query={query} onQueryChange={setQuery} onNavigate={navigate} submitted={submitted} />
+        <PortalUniversalSearch view={view} />
       </div>
     </PortalLayout>
   );
