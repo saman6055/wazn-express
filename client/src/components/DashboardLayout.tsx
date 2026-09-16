@@ -1244,7 +1244,7 @@ function DashboardLayoutContent({
         </div>
       )}
 
-      <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} />
+      <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} destinations={menuGroups} />
       <ShortcutsOverlay />
       <ScrollButtons />
     </div>

@@ -26,7 +26,7 @@ import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { BAND_CLASS, BAND_MEANING, ageLabel, batchAge } from "@shared/batchAge";
 import { watchDecision, watchExplain } from "@shared/flightWatch";
@@ -564,6 +564,19 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     setCartonCount(batch.cartonCount != null ? String(batch.cartonCount) : "");
     setIsEditOpen(true);
   };
+
+  /**
+   * /batches?new=1 — "new batch" from the quick action hub (Ctrl+K) opens the
+   * same dialog the page's own button does, then takes itself out of the URL
+   * so a refresh does not open it again. Keyed on the query string, because
+   * the hub can be used while this page is already open.
+   */
+  const search = useSearch();
+  useEffect(() => {
+    if (new URLSearchParams(search).get("new") !== "1") return;
+    setIsCreateOpen(true);
+    window.history.replaceState({}, "", window.location.pathname);
+  }, [search]);
 
   /**
    * Arriving from the dashboard's reminder as /batches?edit=<id>.
