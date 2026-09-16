@@ -6,6 +6,9 @@ import { getTotalDebtAmount } from './finance.db';
 import { getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
 import { selfOrderConditions } from './selfOrder.filter';
 import { ACTIVE_BATCH_STATUSES } from '@shared/listLinks';
+import { ORDER_NO_TRACKING_DAYS } from '@shared/riskRules';
+import { buildRiskItems, type RiskItem } from '@shared/riskBell';
+import { getStaleDepotPackages, getVolumetricParcels } from './packages.db';
 import type { DashboardFigureId } from '@shared/dashboardExplain';
 import {
   InsertUser, users,
@@ -897,6 +900,78 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
   }
 }
 
+/**
+ * The counts behind the dashboard's alerts and the bell, written once so the
+ * two can never show different numbers for the same problem.
+ */
+
+/** Customers whose debt has passed their own credit limit. */
+export async function countDebtorsOverLimit(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const rows = await db.select({ count: count() })
+    .from(customerAccounts)
+    .where(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0 AND CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > CAST(COALESCE(${customerAccounts.creditLimitUsd}, '0') AS DECIMAL(12,2))`);
+  return Number(rows[0]?.count ?? 0);
+}
+
+/** Active orders still missing a tracking number: all of them, and those older than the owner's 7 days. */
+export async function countOrdersWithoutTracking(): Promise<{ total: number; aging: number }> {
+  const db = await getDb();
+  if (!db) return { total: 0, aging: 0 };
+  const cutoff = new Date();
+  cutoff.setDate(cutoff.getDate() - ORDER_NO_TRACKING_DAYS);
+  const noTrackWhere = and(
+    isNull(fullPackageOrders.deletedAt),
+    inArray(fullPackageOrders.status, ['pending', 'approved', 'ordered'] as any),
+    or(isNull(fullPackageOrders.trackingNumber), eq(fullPackageOrders.trackingNumber, '')),
+  );
+  const total = Number((await db.select({ count: count() }).from(fullPackageOrders).where(noTrackWhere))[0]?.count ?? 0);
+  if (total === 0) return { total: 0, aging: 0 };
+  const aging = Number((await db.select({ count: count() }).from(fullPackageOrders)
+    .where(and(noTrackWhere, lt(fullPackageOrders.createdAt, cutoff))))[0]?.count ?? 0);
+  return { total, aging };
+}
+
+/** Parcels nobody has claimed. */
+export async function countUnclaimedPackages(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  return Number((await db.select({ count: count() }).from(packages).where(eq(packages.isUnclaimed, true)))[0]?.count ?? 0);
+}
+
+/**
+ * Today's risks for the bell, by the owner's levels (shared/riskBell).
+ *
+ * Read-only. Each source is counted by the query its own card or alert uses,
+ * and one that fails is left out rather than failing the bell: a bell that
+ * shows nothing because debts could not be counted would hide the parcels too.
+ */
+export async function getRiskItems(): Promise<RiskItem[]> {
+  const settle = async <T>(label: string, work: () => Promise<T>, fallback: T): Promise<T> => {
+    try {
+      return await work();
+    } catch (err) {
+      appLogger.error(`getRiskItems: ${label} failed`, { error: err instanceof Error ? err.message : String(err) });
+      return fallback;
+    }
+  };
+  const [stale, volumetric, debtOverLimit, noTracking, unclaimed] = await Promise.all([
+    settle('stale depot', () => getStaleDepotPackages(), []),
+    settle('volumetric', () => getVolumetricParcels({ pendingOnly: true }), []),
+    settle('debt over limit', countDebtorsOverLimit, 0),
+    settle('orders without tracking', countOrdersWithoutTracking, { total: 0, aging: 0 }),
+    settle('unclaimed', countUnclaimedPackages, 0),
+  ]);
+  return buildRiskItems({
+    staleDepotDays: stale.map((p) => p.daysInDepot),
+    volumetric: volumetric.map((p) => ({ ratio: p.ratio, extraKg: p.extraKg })),
+    debtOverLimit,
+    ordersWithoutTracking: noTracking.aging,
+    unclaimed,
+  });
+}
+
 export async function getDashboardAlerts(): Promise<{
   id: string;
   type: 'warning' | 'info' | 'error' | 'success';
@@ -920,30 +995,17 @@ export async function getDashboardAlerts(): Promise<{
     // High debt customers — those whose debt has passed THEIR OWN credit
     // limit (currentBalanceUsd > 0 means they owe; compare against creditLimit).
     try {
-      const highDebtors = await db.select({ count: count() })
-        .from(customerAccounts)
-        .where(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0 AND CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > CAST(COALESCE(${customerAccounts.creditLimitUsd}, '0') AS DECIMAL(12,2))`);
-      if (highDebtors[0]?.count > 0) {
-        alerts.push({ id: 'high-debt', type: 'warning', title: 'کڕیارە قەرزدارەکان', description: `${highDebtors[0].count} کڕیار قەرزیان لە سنووری قەرز تێپەڕیوە`, count: highDebtors[0].count, link: '/finance/debtors' });
+      const highDebtors = await countDebtorsOverLimit();
+      if (highDebtors > 0) {
+        alerts.push({ id: 'high-debt', type: 'warning', title: 'کڕیارە قەرزدارەکان', description: `${highDebtors} کڕیار قەرزیان لە سنووری قەرز تێپەڕیوە`, count: highDebtors, link: '/finance/debtors' });
       }
     } catch { /* ignore */ }
 
     // Orders still missing a tracking number (active, pre-tracking states).
     // Highlight ones older than 7 days as critical.
     try {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      const noTrackWhere = and(
-        isNull(fullPackageOrders.deletedAt),
-        inArray(fullPackageOrders.status, ['pending', 'approved', 'ordered'] as any),
-        or(isNull(fullPackageOrders.trackingNumber), eq(fullPackageOrders.trackingNumber, '')),
-      );
-      const noTrack = await db.select({ count: count() }).from(fullPackageOrders).where(noTrackWhere);
-      const total = noTrack[0]?.count || 0;
+      const { total, aging } = await countOrdersWithoutTracking();
       if (total > 0) {
-        const agingRes = await db.select({ count: count() }).from(fullPackageOrders)
-          .where(and(noTrackWhere, lt(fullPackageOrders.createdAt, sevenDaysAgo)));
-        const aging = agingRes[0]?.count || 0;
         alerts.push({
           id: 'orders-no-tracking',
           type: aging > 0 ? 'error' : 'warning',
@@ -987,9 +1049,9 @@ export async function getDashboardAlerts(): Promise<{
 
     // Unclaimed packages
     try {
-      const unclaimedPkgs = await db.select({ count: count() }).from(packages).where(eq(packages.isUnclaimed, true));
-      if (unclaimedPkgs[0]?.count > 0) {
-        alerts.push({ id: 'unclaimed', type: 'warning', title: 'پاکەتی بێ خاوەن', description: `${unclaimedPkgs[0].count} پاکەت بێ خاوەنە`, count: unclaimedPkgs[0].count, link: '/packages/unclaimed' });
+      const unclaimedPkgs = await countUnclaimedPackages();
+      if (unclaimedPkgs > 0) {
+        alerts.push({ id: 'unclaimed', type: 'warning', title: 'پاکەتی بێ خاوەن', description: `${unclaimedPkgs} پاکەت بێ خاوەنە`, count: unclaimedPkgs, link: '/packages/unclaimed' });
       }
     } catch { /* ignore */ }
 

@@ -2,6 +2,7 @@ import { withoutSecrets } from "../lib/accountSecrets";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
+import { pathVisibleTo, RISK_GATE } from "@shared/riskBell";
 import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, auditorProcedure, superAdminProcedure } from "../middleware/auth";
@@ -421,6 +422,22 @@ export const dashboardRouter = router({
     // Alerts (cached 30s)
     alerts: staffProcedure.query(async () => {
       return cacheGetOrSet("dashboard:alerts", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardAlerts());
+    }),
+
+    /**
+     * Today's risks for the bell in the header, worst first (shared/riskBell).
+     *
+     * Everybody is told only about the pages they may open: the warehouse its
+     * parcels, the accountant the debts, the owner everything. Filtered here,
+     * not only in the bell, so a count nobody may see never leaves the server.
+     * Read-only; the risks themselves are cached for a minute.
+     */
+    risks: staffProcedure.query(async ({ ctx }) => {
+      const items = await cacheGetOrSet("dashboard:risks", 60_000, () => db.getRiskItems());
+      if (ctx.user.role === "super_admin") return items;
+      const granted = await db.getUserPermissions(ctx.user.id);
+      const viewable = new Set(granted.filter((p) => p.canView).map((p) => p.module));
+      return items.filter((item) => pathVisibleTo(ctx.user.role, viewable, RISK_GATE[item.id]));
     }),
     
     // New customers count (cached 30s)

@@ -93,6 +93,7 @@ import { Button } from "./ui/button";
 import { CommandPalette } from "./CommandPalette";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { RecentlyViewed } from "./RecentlyViewed";
+import { RiskBell } from "./RiskBell";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ScrollButtons } from "./ScrollButtons";
 import { ThemePicker } from "./ThemePicker";
@@ -699,7 +700,8 @@ function DashboardLayoutContent({
           />
           <span className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white">{company.name}</span>
         </div>
-        <div className="w-9" />
+        {/* Today's risks, on the phone too. */}
+        <RiskBell className="h-9 w-9" />
       </header>
 
       {/* Mobile Sidebar Overlay */}
@@ -1033,6 +1035,10 @@ function DashboardLayoutContent({
 
           {/* Controls group (RTL: top-left): search + language + user profile */}
           <div className="flex items-center gap-1.5">
+            {/* The system's bell: today's risks, worst first, flashing until
+                they have been looked at (owner, 2026-09-16). */}
+            <RiskBell />
+
             {/* Function search — compact icon that opens the command palette */}
             <Button
               variant="ghost"
