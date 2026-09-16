@@ -26,6 +26,7 @@ import {
 } from '@shared/volumetricAlert';
 import { getSetting } from './settings.db';
 import { concealsSizeAndCarriage } from '@shared/fullPackagePrivacy';
+import { STALE_IN_DEPOT_AFTER_DAYS } from '@shared/riskRules';
 import { createActivityAlert } from './admin.db';
 import { getUploadsDir } from '../services/localUpload';
 import { createCustomerNotification } from './portal.db';
@@ -1885,8 +1886,8 @@ export async function getAwaitingArrival(options: { lateOnly?: boolean } = {}): 
   return filtered.sort((a, b) => b.daysWaiting - a.daysWaiting);
 }
 
-/** A parcel is expected to join a batch within this many days of arriving. */
-export const STALE_IN_DEPOT_AFTER_DAYS = 15;
+/** A parcel is expected to join a batch within this many days of arriving — see shared/riskRules. */
+export { STALE_IN_DEPOT_AFTER_DAYS };
 
 export type StaleDepotParcel = {
   id: number;
@@ -1895,6 +1896,8 @@ export type StaleDepotParcel = {
   customerId: number | null;
   customerName: string | null;
   customerCode: string | null;
+  /** For the message to the customer from the alert's details. */
+  customerMobile: string | null;
   shippingType: string;
   weightKg: string | null;
   volumeCbm: string | null;
@@ -1923,6 +1926,7 @@ export async function getStaleDepotPackages(options: { olderThanDays?: number } 
     customerId: packages.customerId,
     customerName: customers.fullName,
     customerCode: customers.customerCode,
+    customerMobile: customers.mobileNumber,
     shippingType: packages.shippingType,
     weightKg: packages.weightKg,
     volumeCbm: packages.volumeCbm,

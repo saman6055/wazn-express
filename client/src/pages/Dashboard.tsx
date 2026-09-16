@@ -49,6 +49,9 @@ import { Link } from "wouter";
 import { Badge } from "@/components/ui/badge";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { DailyBrief } from "@/components/DailyBrief";
+import { StaleDepotCard } from "@/components/registrations/StaleDepotCard";
+import { VolumetricWatchCard } from "@/components/registrations/VolumetricWatchCard";
+import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, memo, useEffect } from "react";
 import { useLocation } from "wouter";
@@ -77,6 +80,7 @@ import {
 export default function Dashboard() {
   const { t, language } = useLanguage();
   const { user } = useAuth();
+  const { canViewPath } = usePermissions();
 
   // Time-of-day greeting for the dashboard header.
   const greetingHour = new Date().getHours();
@@ -385,6 +389,17 @@ export default function Dashboard() {
             look — which is the whole difference between a dashboard and a
             briefing. */}
         <DailyBrief language={language} />
+        {/* The warehouse's standing risks, where they are seen first thing.
+            They lived only on the registrations page, which nobody opens to
+            look for problems (owner, 2026-09-16). Each row leads to its
+            customer and its parcel, the title to the whole list. Silent — and
+            the grid gone — when there is nothing waiting. */}
+        {canViewPath("/packages/registrations") && (
+          <div className="mb-6 grid gap-3 empty:hidden xl:grid-cols-2">
+            <StaleDepotCard variant="dashboard" />
+            <VolumetricWatchCard variant="dashboard" />
+          </div>
+        )}
         {/* Batches travelling without their waybill or container number.
             The Batches page already chases these; on the dashboard it is the
             first thing seen in the morning, which is when there is still time

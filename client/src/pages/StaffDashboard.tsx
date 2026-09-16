@@ -1,4 +1,7 @@
 import { RegistrationsSummaryCard } from "@/components/dashboard/RegistrationsSummaryCard";
+import { StaleDepotCard } from "@/components/registrations/StaleDepotCard";
+import { VolumetricWatchCard } from "@/components/registrations/VolumetricWatchCard";
+import { usePermissions } from "@/hooks/usePermissions";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +27,7 @@ import {
 
 export default function StaffDashboard() {
   const { t, language } = useLanguage();
+  const { canViewPath } = usePermissions();
   const [, setLocation] = useLocation();
 
   const { data: todayStats } = trpc.scanning.todayStats.useQuery();
@@ -62,6 +66,15 @@ export default function StaffDashboard() {
             </p>
           </div>
         </div>
+
+        {/* The warehouse's standing risks — the same cards as the owner's
+            dashboard, for whoever may open the registrations page. */}
+        {canViewPath("/packages/registrations") && (
+          <div className="grid gap-3 empty:hidden xl:grid-cols-2">
+            <StaleDepotCard variant="dashboard" />
+            <VolumetricWatchCard variant="dashboard" />
+          </div>
+        )}
 
         {/* Customer lookup */}
         <Card>
