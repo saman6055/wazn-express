@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { pickLang } from "@/lib/lang";
+import { waznChatMessage, waznChatUrl, WAZN_CHAT_WEBSITE, WAZN_CHAT_WEBSITE_SECTION } from "@/lib/waznChat";
 import { CountUp } from "@/components/CountUp";
 import CompanyLogo from "@/components/CompanyLogo";
 import {
@@ -37,8 +38,12 @@ export default function HomeLogistick() {
     if (!loading && user) setLocation(user.role === "customer" ? "/portal" : "/dashboard");
   }, [user, loading, setLocation]);
 
-  const waPhone = (company.phone || "").replace(/[^\d]/g, "");
-  const waLink = waPhone ? `https://wa.me/${waPhone}` : "/customer-login";
+  // Every WhatsApp button here opens Wazn's own chat, 07709183535, with the
+  // question already written. It used the company's phone line from settings,
+  // which is not the WhatsApp number, and went to the sign-in page without one.
+  const waLink = waznChatUrl(
+    waznChatMessage({ language, intent: WAZN_CHAT_WEBSITE, section: WAZN_CHAT_WEBSITE_SECTION }),
+  );
   const track = () => { if (tracking.trim()) setLocation(`/customer-login?track=${encodeURIComponent(tracking.trim())}`); };
 
   if (loading) {

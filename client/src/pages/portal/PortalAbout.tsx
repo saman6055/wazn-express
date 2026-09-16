@@ -25,10 +25,13 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
-import { TERMS_WHATSAPP_NUMBER as WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { waznChatMessage, waznChatUrl, WAZN_CHAT_HELLO } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 
 export default function PortalAbout() {
   const { language } = useLanguage();
+  // Who is asking, for the WhatsApp message to Wazn.
+  const chatCustomer = useChatCustomer();
 
   // Banner colour follows the mode the customer picked, like every other page.
 
@@ -353,7 +356,14 @@ export default function PortalAbout() {
             </div>
 
             <a
-              href={`https://wa.me/${WHATSAPP_NUMBER}`}
+              href={waznChatUrl(
+                waznChatMessage({
+                  language,
+                  intent: WAZN_CHAT_HELLO,
+                  customer: chatCustomer,
+                  section: { ku: "دەربارەی ئێمە", en: "About us", ar: "من نحن", zh: "关于我们" },
+                }),
+              )}
               target="_blank"
               rel="noopener noreferrer"
               className="mt-4 w-full h-12 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-[0.98] transition flex items-center justify-center gap-2"

@@ -15,6 +15,8 @@ import {
 } from "@/constants/contactChannels";
 import { PhoneCall, Copy, Check, ExternalLink } from "lucide-react";
 import { copyText } from "@/lib/copyText";
+import { waznChatMessage, waznChatUrl, WAZN_CHAT_HELLO } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 
 /**
  * Contact — every way to reach the company, on one page.
@@ -25,6 +27,8 @@ import { copyText } from "@/lib/copyText";
  */
 export default function PortalContact() {
   const { language } = useLanguage();
+  // Who is asking, for the WhatsApp message to Wazn.
+  const chatCustomer = useChatCustomer();
   const { theme } = useTheme();
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
@@ -44,6 +48,15 @@ export default function PortalContact() {
   };
 
   const open = (href: string) => window.open(href, "_blank", "noopener,noreferrer");
+
+  // The WhatsApp tile opens Wazn's chat with a greeting that says who is
+  // writing, not an empty chat — see lib/waznChat.
+  const hrefOf = (c: ContactChannel) =>
+    c.id === "whatsapp"
+      ? waznChatUrl(
+          waznChatMessage({ language, intent: WAZN_CHAT_HELLO, customer: chatCustomer, section: CONTACT_PAGE_TITLE }),
+        )
+      : c.href;
 
   const card = isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-white";
 
@@ -69,7 +82,7 @@ export default function PortalContact() {
           {DIRECT_CHANNELS.map((c) => (
             <button
               key={c.id}
-              onClick={() => open(c.href)}
+              onClick={() => open(hrefOf(c))}
               className="flex flex-col items-center gap-1.5 rounded-2xl px-2 py-3 text-white transition active:scale-95"
               style={{ backgroundColor: c.color }}
             >

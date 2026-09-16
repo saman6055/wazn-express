@@ -1,5 +1,6 @@
 import { useLanguage } from "@/contexts/LanguageContext";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { waznChatMessage, waznChatUrl, WAZN_CHAT_HELLO } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
@@ -43,6 +44,8 @@ const spring = { type: "spring" as const, stiffness: 300, damping: 24 };
 
 export default function Skin3PortalProfile() {
   const { t, language } = useLanguage();
+  // Who is asking, for the WhatsApp message to Wazn.
+  const chatCustomer = useChatCustomer();
   const { theme } = useTheme();
   const { user, logout } = useAuth();
   const isDark = theme === "dark";
@@ -213,9 +216,15 @@ export default function Skin3PortalProfile() {
     {
       icon: Headphones,
       label: t("portal.support"),
-      // The company WhatsApp — was a placeholder number, so "Support" opened
-      // a chat with nobody. Use the shared constant so it can never drift.
-      href: `https://wa.me/${TERMS_WHATSAPP_NUMBER}`,
+      // Straight into Wazn's chat, saying who is asking — see lib/waznChat.
+      href: waznChatUrl(
+        waznChatMessage({
+          language,
+          intent: WAZN_CHAT_HELLO,
+          customer: chatCustomer,
+          section: { ku: "پشتگیری", en: "Support", ar: "الدعم", zh: "客服" },
+        }),
+      ),
       external: true,
     },
     {

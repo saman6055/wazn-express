@@ -10,8 +10,10 @@ import {
   HelpCircle, ArrowLeft, ArrowRight, Search, ChevronDown, X,
 } from "lucide-react";
 import {
-  faqCategories, faqHeader, faqAskPrefix, FAQ_WHATSAPP_NUMBER, type L10n,
+  faqCategories, faqHeader, faqAskPrefix, type L10n,
 } from "@/constants/portalFaq";
+import { waznChatMessage, waznChatUrl, WAZN_CHAT_HELLO } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 
 /** WhatsApp brand glyph (lucide has no brand icons). */
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -58,8 +60,18 @@ export default function PortalFAQ() {
   const hasResults = filtered.some((c) => c.items.length > 0);
   const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
-  const waHref = (question: string) =>
-    `https://wa.me/${FAQ_WHATSAPP_NUMBER}?text=${encodeURIComponent(`${pick(faqAskPrefix)}\n\n«${question}»`)}`;
+  // Straight into Wazn's chat with the question already written — see lib/waznChat.
+  const customer = useChatCustomer();
+  const waHref = (question?: string) =>
+    waznChatUrl(
+      waznChatMessage({
+        language,
+        // "I have a question about:" reads with the question right after it.
+        intent: question ? `${pick(faqAskPrefix)} «${question}»` : WAZN_CHAT_HELLO,
+        customer,
+        section: { ku: "پرسیارە باوەکان", en: "FAQ", ar: "الأسئلة الشائعة", zh: "常见问题" },
+      }),
+    );
 
   return (
     <PortalLayout>
@@ -187,7 +199,7 @@ export default function PortalFAQ() {
               {pick(faqHeader.stillStuck)}
             </p>
             <a
-              href={`https://wa.me/${FAQ_WHATSAPP_NUMBER}?text=${encodeURIComponent(pick(faqAskPrefix))}`}
+              href={waHref()}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-xl font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:scale-95 transition"

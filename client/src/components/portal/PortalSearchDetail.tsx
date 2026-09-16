@@ -297,7 +297,12 @@ export default function PortalSearchDetail({
             <WhatsAppHelpButton
               language={language}
               section={L({ ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}
-              topic={`${item.title} — ${statusWords}`}
+              details={[
+                [{ ku: "تراکینگ", en: "Tracking", ar: "رقم التتبع", zh: "运单号" }, item.title],
+                [{ ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" }, statusWords],
+                [{ ku: "بار", en: "Shipment", ar: "الشحنة", zh: "货运" }, item.batch?.batchCode],
+                [{ ku: "کاڵا", en: "Product", ar: "المنتج", zh: "商品" }, item.kind === "box" ? null : productName],
+              ]}
             />
           </div>
         </div>

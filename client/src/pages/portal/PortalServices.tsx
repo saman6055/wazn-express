@@ -4,6 +4,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
 import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { waznChatMessage, waznChatUrl } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 
 import { 
   Plane, 
@@ -27,6 +29,8 @@ import {
 
 export default function PortalServices() {
 const { language } = useLanguage();
+  // Who is asking, for the WhatsApp message to Wazn.
+  const chatCustomer = useChatCustomer();
 
 // Banner colour follows the mode the customer picked, like every other page.
 
@@ -173,6 +177,20 @@ const { banner: portalBanner } = usePortalPalette();
       icon: MessageCircle,
       label: pickLang(language, { ku: "واتسئەپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" }),
       value: supportNumber,
+      // A tap goes straight into Wazn's chat, asking about the services.
+      href: waznChatUrl(
+        waznChatMessage({
+          language,
+          intent: {
+            ku: "سڵاو، دەمەوێت زانیاری زیاتر لەسەر خزمەتگوزارییەکانتان وەربگرم",
+            en: "Hello, I'd like to know more about your services",
+            ar: "مرحباً، أودّ معرفة المزيد عن خدماتكم",
+            zh: "您好，我想进一步了解你们的服务",
+          },
+          customer: chatCustomer,
+          section: { ku: "خزمەتگوزارییەکان", en: "Services", ar: "الخدمات", zh: "服务" },
+        }),
+      ),
     },
   ];
 
@@ -267,17 +285,34 @@ const { banner: portalBanner } = usePortalPalette();
               {pickLang(language, { ku: "بۆ زانیاری زیاتر یان داواکاری", en: "For more information or requests", ar: "للمزيد من المعلومات أو الطلبات", zh: "如需更多信息或下单" })}
             </p>
             <div className="space-y-3">
-              {contactInfo.map((info, index) => (
-                <div key={index} className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
-                  <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
-                    <info.icon className="w-5 h-5" />
+              {contactInfo.map((info, index) => {
+                const inner = (
+                  <>
+                    <div className="w-10 h-10 bg-white/10 rounded-lg flex items-center justify-center">
+                      <info.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <p className="text-xs text-slate-400">{info.label}</p>
+                      <p className="font-semibold" dir="ltr">{info.value}</p>
+                    </div>
+                  </>
+                );
+                return "href" in info && info.href ? (
+                  <a
+                    key={index}
+                    href={info.href}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-3 bg-white/10 rounded-xl p-3 transition hover:bg-white/15 active:scale-[0.99]"
+                  >
+                    {inner}
+                  </a>
+                ) : (
+                  <div key={index} className="flex items-center gap-3 bg-white/10 rounded-xl p-3">
+                    {inner}
                   </div>
-                  <div>
-                    <p className="text-xs text-slate-400">{info.label}</p>
-                    <p className="font-semibold">{info.value}</p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         </div>

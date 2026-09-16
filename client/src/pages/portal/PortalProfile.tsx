@@ -24,7 +24,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalProfilePhoto } from "@/components/portal/PortalProfilePhoto";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { openWaznChat, waznChatMessage, WAZN_CHAT_HELLO } from "@/lib/waznChat";
 import { toast } from "sonner";
 import { copyText } from "@/lib/copyText";
 import { isDebt } from "@/lib/portalMoney";
@@ -138,7 +138,15 @@ const { t, language, setLanguage } = useLanguage();
       iconBg: "bg-emerald-500",
       // The company WhatsApp — was a placeholder number, so "Support" opened
       // a chat with nobody. Use the shared constant so it can never drift.
-      action: () => window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}`, "_blank", "noopener,noreferrer"),
+      action: () =>
+        openWaznChat(
+          waznChatMessage({
+            language,
+            intent: WAZN_CHAT_HELLO,
+            customer: account,
+            section: { ku: "پشتگیری", en: "Support", ar: "الدعم", zh: "客服" },
+          }),
+        ),
     },
     {
       icon: HelpCircle,
@@ -205,22 +213,18 @@ const { t, language, setLanguage } = useLanguage();
 
   // Feedback → WhatsApp with a pre-filled message that says who is writing.
   const handleFeedback = () => {
-    const who = account?.fullName || account?.customerCode
-      ? `${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}: ${account?.fullName ?? ""}${account?.customerCode ? ` (${account.customerCode})` : ""}`.trim()
-      : null;
-    const message = [
-      pickLang(language, {
-        ku: "سڵاو، ڕەخنە/پێشنیارێکم هەیە دەربارەی ئەپەکە",
-        en: "Hello, I have some feedback about the app",
-        ar: "مرحباً، لديّ ملاحظات حول التطبيق",
-        zh: "您好，我对应用有一些反馈",
+    openWaznChat(
+      waznChatMessage({
+        language,
+        intent: {
+          ku: "سڵاو، ڕەخنە/پێشنیارێکم هەیە دەربارەی ئەپەکە",
+          en: "Hello, I have some feedback about the app",
+          ar: "مرحباً، لديّ ملاحظات حول التطبيق",
+          zh: "您好，我对应用有一些反馈",
+        },
+        customer: account,
+        section: { ku: "پرۆفایل", en: "Profile", ar: "الملف الشخصي", zh: "个人资料" },
       }),
-      who,
-    ].filter(Boolean).join("\n");
-    window.open(
-      `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer",
     );
   };
 

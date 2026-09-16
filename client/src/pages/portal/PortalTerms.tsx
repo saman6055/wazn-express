@@ -10,9 +10,10 @@ import {
   termsHeader,
   termsGeneralOpener,
   termsPartyLabel,
-  TERMS_WHATSAPP_NUMBER,
   type L10n,
 } from "@/constants/portalTerms";
+import { waznChatMessage, waznChatUrl } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 
 /** WhatsApp brand glyph (lucide has no brand icons). */
 function WhatsAppIcon({ className }: { className?: string }) {
@@ -34,11 +35,20 @@ export default function PortalTerms() {
 
   // Build a wa.me link that drops the tapped point into the chat, followed by
   // the polite closing line — both in the customer's current language.
-  const waHref = (message: string) =>
-    `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
+  const customer = useChatCustomer();
+  const termsSection = { ku: "مەرج و ڕێساکان", en: "Terms & Conditions", ar: "الشروط والأحكام", zh: "条款和条件" };
+  const waHref = (intent: L10n, point?: string) =>
+    waznChatUrl(
+      waznChatMessage({
+        language,
+        intent,
+        customer,
+        section: termsSection,
+        details: [point ? `«${point}»` : null],
+      }),
+    );
 
-  const pointHref = (point: string) =>
-    waHref(`«${point}»\n\n${pick(termsClosing)}`);
+  const pointHref = (point: string) => waHref(termsClosing, point);
 
   return (
     <PortalLayout>
@@ -138,7 +148,7 @@ export default function PortalTerms() {
 
           {/* Contact CTA */}
           <a
-            href={waHref(pick(termsGeneralOpener))}
+            href={waHref(termsGeneralOpener)}
             target="_blank"
             rel="noopener noreferrer"
             className="flex items-center justify-center gap-2.5 rounded-2xl bg-gradient-to-r from-green-500 to-emerald-600 px-4 py-3.5 text-white font-bold shadow-lg shadow-emerald-500/25 transition-transform active:scale-[0.98]"

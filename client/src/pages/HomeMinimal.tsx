@@ -14,6 +14,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useLandingTheme } from "@/contexts/LandingThemeContext";
 import { trpc } from "@/lib/trpc";
+import { waznChatMessage, waznChatUrl, WAZN_CHAT_WEBSITE, WAZN_CHAT_WEBSITE_SECTION } from "@/lib/waznChat";
 import { CompactLanguageSwitcher } from "@/components/LanguageSwitcher";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
@@ -52,7 +53,7 @@ function useSiteInfo() {
 }
 
 export default function HomeMinimal() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const company = useCompanyInfo();
   const site = useSiteInfo();
   const { landingTheme } = useLandingTheme();
@@ -428,11 +429,16 @@ export default function HomeMinimal() {
               </span>
             )}
           </div>
-          {site.social.whatsapp && (
-            <a href={site.social.whatsapp.startsWith("http") ? site.social.whatsapp : `https://wa.me/${site.social.whatsapp.replace(/\D/g, "")}`} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30 transition-colors">
-              {t("home.sendWhatsApp")}
-            </a>
-          )}
+          {/* Wazn's own chat, 07709183535, with the question written — not a
+              number typed into settings, which could be any line at all. */}
+          <a
+            href={waznChatUrl(waznChatMessage({ language, intent: WAZN_CHAT_WEBSITE, section: WAZN_CHAT_WEBSITE_SECTION }))}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-green-600/20 text-green-400 border border-green-500/30 hover:bg-green-600/30 transition-colors"
+          >
+            {t("home.sendWhatsApp")}
+          </a>
           <div className="flex flex-wrap justify-center gap-4 mt-6">
             {site.social.facebook && <a href={site.social.facebook} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-[var(--landing-card)] border border-[var(--landing-border)] hover:border-[var(--landing-accent)] text-[var(--landing-text-muted)] hover:text-[var(--landing-accent)]" aria-label="Facebook">f</a>}
             {site.social.instagram && <a href={site.social.instagram} target="_blank" rel="noopener noreferrer" className="p-2 rounded-lg bg-[var(--landing-card)] border border-[var(--landing-border)] hover:border-[var(--landing-accent)] text-[var(--landing-text-muted)] hover:text-[var(--landing-accent)]" aria-label="Instagram">📷</a>}

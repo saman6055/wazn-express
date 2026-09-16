@@ -2,7 +2,9 @@ import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { PackageX } from "lucide-react";
-import { TERMS_WHATSAPP_NUMBER, type L10n } from "@/constants/whatsapp";
+import { type L10n } from "@/constants/whatsapp";
+import { waznChatMessage, waznChatUrl } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 import {
   prohibitedHeader,
   prohibitedSections,
@@ -24,10 +26,18 @@ export default function PortalProhibitedItems() {
   const isRTL = language === "ku" || language === "ar";
   const pick = (v: L10n) => pickLang(language, v);
 
-  const waHref = (message: string) =>
-    `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-
-  const itemHref = (item: string) => waHref(`${pick(prohibitedAsk)}\n\n«${item}»`);
+  // Straight into Wazn's chat with the item already named — see lib/waznChat.
+  const customer = useChatCustomer();
+  const itemHref = (item: string) =>
+    waznChatUrl(
+      waznChatMessage({
+        language,
+        intent: prohibitedAsk,
+        customer,
+        section: { ku: "کاڵا قەدەغەکراوەکان", en: "Prohibited items", ar: "المواد الممنوعة", zh: "违禁物品" },
+        details: [`«${item}»`],
+      }),
+    );
 
   return (
     <PortalLayout>

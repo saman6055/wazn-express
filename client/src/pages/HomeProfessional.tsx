@@ -5,6 +5,7 @@ import { Link, useLocation } from "wouter";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
+import { openWaznChat, waznChatMessage, WAZN_CHAT_WEBSITE, WAZN_CHAT_WEBSITE_SECTION } from "@/lib/waznChat";
 
 /**
  * "Professional" landing variant — a kinetic editorial design. Deliberately
@@ -22,7 +23,7 @@ const ACCENT = "#ea580c";
 const LINE = "#ddd8cd";
 
 export default function HomeProfessional() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const company = useCompanyInfo();
   const { user, loading } = useAuth();
   const [, setLocation] = useLocation();
@@ -37,14 +38,21 @@ export default function HomeProfessional() {
 
   const handleContact = (e: React.FormEvent) => {
     e.preventDefault();
-    const lines = [
-      `${t("home.contactName") || "ناو"}: ${form.name}`,
-      `${t("home.contactPhone") || "مۆبایل"}: ${form.phone}`,
-      form.business ? `${t("home.contactBusiness") || "بازرگانی"}: ${form.business}` : "",
-    ].filter(Boolean).join("\n");
-    const phone = (company.phone || "").replace(/[^\d]/g, "");
-    if (phone) window.open(`https://wa.me/${phone}?text=${encodeURIComponent(lines)}`, "_blank");
-    else if (company.email) window.location.href = `mailto:${company.email}?body=${encodeURIComponent(lines)}`;
+    // Straight into Wazn's WhatsApp, 07709183535, with the form already
+    // written in — it went to the company's phone line from settings, which
+    // is not the WhatsApp number.
+    openWaznChat(
+      waznChatMessage({
+        language,
+        intent: WAZN_CHAT_WEBSITE,
+        section: WAZN_CHAT_WEBSITE_SECTION,
+        details: [
+          [t("home.contactName") || "ناو", form.name],
+          [t("home.contactPhone") || "مۆبایل", form.phone],
+          [t("home.contactBusiness") || "بازرگانی", form.business],
+        ],
+      }),
+    );
   };
 
   if (loading) {

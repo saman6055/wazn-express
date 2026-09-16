@@ -8,7 +8,8 @@ import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformBadge } from "@/components/PlatformSelect";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { openWaznChat, waznChatMessage } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 import { LANGUAGE_NAME } from "@/constants/tutorialLanguages";
 import { tutorialTitle, tutorialSummary } from "@/lib/tutorialText";
 import { GraduationCap, Play, X, ThumbsUp, ThumbsDown, MessageCircle, Star, Languages } from "lucide-react";
@@ -80,14 +81,21 @@ export default function PortalTutorials() {
     recordEvent.mutate({ id: t.id, event });
   };
 
+  const chatCustomer = useChatCustomer();
   const askOnWhatsApp = (t: any) => {
-    const msg = label({
-      ku: `سڵاو، پرسیارم هەیە دەربارەی ئەم فێرکارییە: «${title(t)}»`,
-      en: `Hello, I have a question about this tutorial: "${title(t)}"`,
-      ar: `مرحباً، لديّ سؤال حول هذا الشرح: «${title(t)}»`,
-      zh: `您好，我想咨询这个教程：「${title(t)}」`,
-    });
-    window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+    openWaznChat(
+      waznChatMessage({
+        language,
+        intent: {
+          ku: `سڵاو، پرسیارم هەیە دەربارەی ئەم فێرکارییە: «${title(t)}»`,
+          en: `Hello, I have a question about this tutorial: "${title(t)}"`,
+          ar: `مرحباً، لديّ سؤال حول هذا الشرح: «${title(t)}»`,
+          zh: `您好，我想咨询这个教程：「${title(t)}」`,
+        },
+        customer: chatCustomer,
+        section: { ku: "فێرکارییەکان", en: "Tutorials", ar: "الشروحات", zh: "教程" },
+      }),
+    );
   };
 
   return (

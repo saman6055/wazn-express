@@ -9,7 +9,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { onEnter } from "@/lib/onEnter";
 import { trpc } from "@/lib/trpc";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { waznChatMessage, waznChatUrl } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 import { TutorialHint } from "@/components/TutorialHint";
 import {
   ArrowDownUp,
@@ -126,13 +127,22 @@ export default function PortalYuanExchange() {
     createOrder.mutate({ usdAmount: usdNum, note: note.trim() || undefined });
   };
 
-  const waMessage = pick({
-    ku: `سڵاو، دەمەوێت یوانی چینی بکڕم:\n💵 ${fmtNumber(usdNum, 2)} دۆلار → ¥${fmtNumber(cnyNum, 2)} یوان\n(نرخ: 1$ = ${fmtNumber(rate, 2)}¥)`,
-    en: `Hello, I want to buy Chinese Yuan:\n💵 $${fmtNumber(usdNum, 2)} → ¥${fmtNumber(cnyNum, 2)}\n(Rate: 1$ = ${fmtNumber(rate, 2)}¥)`,
-    ar: `مرحباً، أريد شراء اليوان الصيني:\n💵 ${fmtNumber(usdNum, 2)}$ → ¥${fmtNumber(cnyNum, 2)}\n(السعر: 1$ = ${fmtNumber(rate, 2)}¥)`,
-    zh: `您好，我想购买人民币：\n💵 ${fmtNumber(usdNum, 2)} 美元 → ¥${fmtNumber(cnyNum, 2)}\n（汇率：1$ = ${fmtNumber(rate, 2)}¥）`,
-  });
-  const waHref = `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(waMessage)}`;
+  // Straight into Wazn's chat with the amounts already written — see lib/waznChat.
+  // Plain text: the money emoji arrived as an empty box on the office's phones.
+  const chatCustomer = useChatCustomer();
+  const waHref = waznChatUrl(
+    waznChatMessage({
+      language,
+      intent: { ku: "سڵاو، دەمەوێت یوانی چینی بکڕم", en: "Hello, I want to buy Chinese Yuan", ar: "مرحباً، أريد شراء اليوان الصيني", zh: "您好，我想购买人民币" },
+      customer: chatCustomer,
+      section: { ku: "گۆڕینەوەی یوان", en: "Yuan exchange", ar: "صرف اليوان", zh: "人民币兑换" },
+      details: [
+        [{ ku: "بڕی دۆلار", en: "Dollars", ar: "المبلغ بالدولار", zh: "美元金额" }, usdNum > 0 ? `$${fmtNumber(usdNum, 2)}` : null],
+        [{ ku: "بڕی یوان", en: "Yuan", ar: "المبلغ باليوان", zh: "人民币金额" }, cnyNum > 0 ? `¥${fmtNumber(cnyNum, 2)}` : null],
+        [{ ku: "نرخ", en: "Rate", ar: "السعر", zh: "汇率" }, rate > 0 ? `1$ = ${fmtNumber(rate, 2)}¥` : null],
+      ],
+    }),
+  );
 
   const statusLabel = (s: OrderStatus) =>
     pick(

@@ -9,7 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { openWaznChat, waznChatMessage } from "@/lib/waznChat";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -336,22 +336,18 @@ export default function PortalFullPackage() {
     retry: false,
   });
   const requestNewOrder = () => {
-    const who = account?.fullName || account?.customerCode
-      ? `${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}: ${account?.fullName ?? ""}${account?.customerCode ? ` (${account.customerCode})` : ""}`.trim()
-      : null;
-    const message = [
-      pickLang(language, {
-        ku: "سڵاو، دەمەوێت داواکاری نوێی پاکێجی تەواو تۆمار بکەم",
-        en: "Hello, I'd like to place a new full-package order",
-        ar: "مرحباً، أود تقديم طلب طرد كامل جديد",
-        zh: "您好，我想下一个新的全包裹订单",
+    openWaznChat(
+      waznChatMessage({
+        language,
+        intent: {
+          ku: "سڵاو، دەمەوێت داواکاری نوێی پاکێجی تەواو تۆمار بکەم",
+          en: "Hello, I'd like to place a new full-package order",
+          ar: "مرحباً، أود تقديم طلب طرد كامل جديد",
+          zh: "您好，我想下一个新的全包裹订单",
+        },
+        customer: account,
+        section: { ku: "کاڵاکانم", en: "My items", ar: "بضائعي", zh: "我的商品" },
       }),
-      who,
-    ].filter(Boolean).join("\n");
-    window.open(
-      `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`,
-      "_blank",
-      "noopener,noreferrer",
     );
   };
   

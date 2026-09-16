@@ -23,12 +23,15 @@ import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { fmtKg } from "@/lib/portalFormat";
 
 // Company WhatsApp for extra proof / questions when claiming a package.
-import { TERMS_WHATSAPP_NUMBER as SUPPORT_WHATSAPP } from "@/constants/whatsapp";
+import { waznChatMessage, waznChatUrl } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { formatPortalDate } from "@/lib/portalClock";
 export default function PortalUnclaimedPackages() {
   const { t, language } = useLanguage();
+  // Who is asking, for the WhatsApp message to Wazn.
+  const chatCustomer = useChatCustomer();
 
   // Banner colour follows the mode the customer picked, like every other page.
 
@@ -462,14 +465,20 @@ export default function PortalUnclaimedPackages() {
 
               {/* WhatsApp — extra proof / questions */}
               <a
-                href={`https://wa.me/${SUPPORT_WHATSAPP}?text=${encodeURIComponent(
-                  pickLang(language, {
-                    ku: `سڵاو، دەربارەی داواکاری خاوەنداری پاکەتی تراکینگ ${selectedPackage.trackingNumber || selectedPackage.packageCode}`,
-                    en: `Hello, regarding my claim for package tracking ${selectedPackage.trackingNumber || selectedPackage.packageCode}`,
-                    ar: `مرحباً، بخصوص مطالبتي بالطرد رقم التتبع ${selectedPackage.trackingNumber || selectedPackage.packageCode}`,
-                    zh: `您好，关于我认领运单号 ${selectedPackage.trackingNumber || selectedPackage.packageCode} 的包裹`,
-                  })
-                )}`}
+                href={waznChatUrl(
+                  waznChatMessage({
+                    language,
+                    intent: {
+                      ku: "سڵاو، دەربارەی داواکاری خاوەنداری پاکەتێکی بێخاوەن — بەڵگەی زیاترم هەیە",
+                      en: "Hello, about my claim for an unclaimed package — I have more proof",
+                      ar: "مرحباً، بخصوص مطالبتي بطرد بلا صاحب — لديّ إثبات إضافي",
+                      zh: "您好，关于我认领的无主包裹——我有更多凭证",
+                    },
+                    customer: chatCustomer,
+                    section: { ku: "بارە بێخاوەنەکان", en: "Unclaimed packages", ar: "الطرود بلا صاحب", zh: "无主包裹" },
+                    details: [[{ ku: "تراکینگ", en: "Tracking", ar: "رقم التتبع", zh: "运单号" }, selectedPackage.trackingNumber || selectedPackage.packageCode]],
+                  }),
+                )}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center justify-center gap-2 rounded-xl border border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 px-4 py-2.5 text-sm font-semibold text-emerald-700 dark:text-emerald-300 transition-colors hover:bg-emerald-100"

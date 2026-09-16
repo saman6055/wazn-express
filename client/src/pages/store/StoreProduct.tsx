@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { openWaznChat } from "@/lib/waznChat";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import {
@@ -48,7 +48,7 @@ export default function StoreProduct() {
         form.customerAddress ? `${pickLang(language, { ku: "ناونیشان", en: "Address", ar: "العنوان", zh: "地址" })}: ${form.customerAddress}` : "",
         form.note ? `${pickLang(language, { ku: "تێبینی", en: "Note", ar: "ملاحظة", zh: "备注" })}: ${form.note}` : "",
       ].filter(Boolean).join("\n");
-      window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(lines)}`, "_blank", "noopener,noreferrer");
+      openWaznChat(lines);
       setPlaced({ orderCode: res.orderCode });
     },
     onError: (e) => toast.error(e.message),

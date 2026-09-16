@@ -1,7 +1,7 @@
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
 import { pickLang } from "@/lib/lang";
-import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
+import { openWaznChat, waznChatMessage, type WaznChatDetail } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 
 // ---------------------------------------------------------------------------
 // WhatsAppHelpButton — one small, uniform "ask us" pill for every portal
@@ -20,20 +20,11 @@ export function WhatsAppGlyph({ className }: { className?: string }) {
   );
 }
 
-/** Can this browser share files (mobile share sheet)? */
-function canShareFiles(): boolean {
-  try {
-    const probe = new File([""], "probe.png", { type: "image/png" });
-    return !!navigator.canShare && navigator.canShare({ files: [probe] });
-  } catch {
-    return false;
-  }
-}
-
 export function WhatsAppHelpButton({
   language,
   section,
   topic,
+  details,
   className,
 }: {
   language: string;
@@ -41,88 +32,31 @@ export function WhatsAppHelpButton({
   section: string;
   /** Localized context line: batch code + status, invoice number, order total... */
   topic?: string;
+  /** More of the summary, a line each: tracking, product, amount. */
+  details?: readonly WaznChatDetail[];
   className?: string;
 }) {
   const pick = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
-
   // Cached across every button instance on the page (react-query dedupes).
-  const { data: account } = trpc.customerPortal.getMyAccount.useQuery(undefined, {
-    staleTime: 5 * 60_000,
-    retry: false,
-  });
+  const customer = useChatCustomer();
 
-  // Plain text labels only — emoji render as "?" boxes on some staff devices.
-  const message = [
-    pick({
-      ku: "سڵاو، پێویستم بە یارمەتییە",
-      en: "Hello, I need some help",
-      ar: "مرحباً، أحتاج إلى مساعدة",
-      zh: "您好，我需要帮助",
-    }),
-    account?.fullName || account?.customerCode
-      ? `${pick({ ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}: ${account?.fullName ?? ""}${account?.customerCode ? ` (${account.customerCode})` : ""}`.trim()
-      : null,
-    `${pick({ ku: "بەش", en: "Section", ar: "القسم", zh: "版块" })}: ${section}`,
-    topic ? `${pick({ ku: "بابەت", en: "Subject", ar: "الموضوع", zh: "主题" })}: ${topic}` : null,
-  ]
-    .filter(Boolean)
-    .join("\n");
-
-  const waHref = `https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(message)}`;
-
-  // On mobile (share sheet supports files): snapshot the surrounding card and
-  // share image + message together — the customer picks WhatsApp and staff see
-  // exactly what the customer sees. Anywhere else: plain wa.me text link.
+  // Straight into Wazn's chat, the summary already written — see lib/waznChat.
+  // It used to photograph the card and offer the phone's share sheet, which
+  // made the customer pick WhatsApp and then find Wazn among their chats.
   // Rendered as a <button> (not <a>) because the pill often lives inside a
   // card that is itself a link — nested anchors are invalid HTML.
-  const handleClick = async (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     e.preventDefault();
-    if (!canShareFiles()) {
-      window.open(waHref, "_blank", "noopener,noreferrer");
-      return;
-    }
-
-    const el = e.currentTarget as HTMLElement;
-    try {
-      // The nearest rounded card is what the customer is looking at.
-      const card =
-        (el.closest("[data-wa-capture]") as HTMLElement | null) ??
-        (el.closest(".rounded-2xl, .rounded-3xl, .rounded-xl") as HTMLElement | null);
-      if (!card) throw new Error("no capture target");
-
-      const { toBlob } = await import("html-to-image");
-      const isDark = document.documentElement.classList.contains("dark");
-      // Race the capture against a hard 4s budget: a snapshot that isn't
-      // near-instant must never block the customer from reaching support —
-      // on timeout we throw and the catch opens the plain text link.
-      const blob = await Promise.race([
-        toBlob(card, {
-          pixelRatio: 2,
-          backgroundColor: isDark ? "#0f172a" : "#ffffff",
-          // Web-font embedding needs cross-origin CSS access it doesn't have;
-          // system fonts are fine for a support snapshot and skipping keeps
-          // capture fast.
-          skipFonts: true,
-          // Skip the help pill itself in the snapshot.
-          filter: (node) =>
-            !(node instanceof HTMLElement && node.getAttribute?.("data-wa-help") === "true"),
-        }),
-        new Promise<never>((_, reject) =>
-          window.setTimeout(() => reject(new Error("capture timeout")), 4000),
-        ),
-      ]);
-      if (!blob) throw new Error("capture failed");
-
-      const file = new File([blob], "wazn-help.png", { type: "image/png" });
-      await navigator.share({ files: [file], text: message });
-    } catch (err) {
-      // User cancelled the share sheet → do nothing. Anything else → fall
-      // back to the plain text link so help is never blocked.
-      if ((err as Error)?.name !== "AbortError") {
-        window.open(waHref, "_blank", "noopener,noreferrer");
-      }
-    }
+    openWaznChat(
+      waznChatMessage({
+        language,
+        intent: { ku: "سڵاو، پێویستم بە یارمەتییە", en: "Hello, I need some help", ar: "مرحباً، أحتاج إلى مساعدة", zh: "您好，我需要帮助" },
+        customer,
+        section,
+        details: [topic ? [{ ku: "بابەت", en: "Subject", ar: "الموضوع", zh: "主题" }, topic] : null, ...(details ?? [])],
+      }),
+    );
   };
 
   return (

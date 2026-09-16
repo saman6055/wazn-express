@@ -29,7 +29,7 @@ import { onImageError } from "@/lib/imageFallback";
 import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "@/lib/brand";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
 import { stageOf, isInIraqNotDelivered, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { openWaznChat, waznChatMessage } from "@/lib/waznChat";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalChip } from "@/components/portal/PortalStatusChip";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
@@ -584,13 +584,20 @@ export default function PortalHome() {
                     onClick={(e) => {
                       e.preventDefault();
                       e.stopPropagation();
-                      const msg = pickLang(language, {
-                        ku: `سڵاو، دەمەوێت باڵانسەکەم بدەم (${balanceText}). تکایە شێوازەکانی پارەدانم بۆ بنێرن.`,
-                        en: `Hello, I'd like to pay my balance (${balanceText}). Please send me the payment options.`,
-                        ar: `مرحبًا، أودّ دفع رصيدي (${balanceText}). الرجاء إرسال طرق الدفع.`,
-                        zh: `您好，我想支付我的余额（${balanceText}）。请发送付款方式。`,
-                      });
-                      window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(msg)}`, "_blank", "noopener,noreferrer");
+                      openWaznChat(
+                        waznChatMessage({
+                          language,
+                          intent: {
+                            ku: "سڵاو، دەمەوێت باڵانسەکەم بدەم. تکایە شێوازەکانی پارەدانم بۆ بنێرن.",
+                            en: "Hello, I'd like to pay my balance. Please send me the payment options.",
+                            ar: "مرحبًا، أودّ دفع رصيدي. الرجاء إرسال طرق الدفع.",
+                            zh: "您好，我想支付我的余额。请发送付款方式。",
+                          },
+                          customer: account,
+                          section: { ku: "سەرەکی", en: "Home", ar: "الرئيسية", zh: "首页" },
+                          details: [[{ ku: "باڵانس", en: "Balance", ar: "الرصيد", zh: "余额" }, balanceText]],
+                        }),
+                      );
                     }}
                     className="flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-950 transition active:scale-95"
                   >

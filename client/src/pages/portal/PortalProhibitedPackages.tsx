@@ -8,7 +8,8 @@ import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { pickLang } from "@/lib/lang";
 import { getProhibitedItemLabel } from "@/constants/prohibitedItems";
-import { TERMS_WHATSAPP_NUMBER } from "@/constants/whatsapp";
+import { openWaznChat, waznChatMessage } from "@/lib/waznChat";
+import { useChatCustomer } from "@/hooks/useChatCustomer";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
@@ -71,15 +72,21 @@ export default function PortalProhibitedPackages() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [items]);
 
+  const customer = useChatCustomer();
   const waFollowUp = (it: any) => {
     const chosen = RESOLUTIONS.find((r) => r.key === it.resolutionChoice);
-    const lines = [
-      pickLang(language, { ku: "سڵاو، دەربارەی پاکێجی قەدەغەکراو", en: "Hello, about my prohibited package", ar: "مرحباً، بخصوص طردي الممنوع", zh: "您好，关于我的违禁包裹" }),
-      `${pickLang(language, { ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" })}: ${it.trackingNumber}`,
-      chosen ? `${pickLang(language, { ku: "هەڵبژاردەم", en: "My choice", ar: "اختياري", zh: "我的选择" })}: ${label(chosen.label)}` : "",
-      it.reshipAddress ? `${pickLang(language, { ku: "ئەدرێسی نوێ", en: "New address", ar: "العنوان الجديد", zh: "新地址" })}: ${it.reshipAddress}` : "",
-    ].filter(Boolean).join("\n");
-    window.open(`https://wa.me/${TERMS_WHATSAPP_NUMBER}?text=${encodeURIComponent(lines)}`, "_blank", "noopener,noreferrer");
+    openWaznChat(
+      waznChatMessage({
+        language,
+        intent: { ku: "سڵاو، دەربارەی پاکێجی قەدەغەکراو", en: "Hello, about my prohibited package", ar: "مرحباً، بخصوص طردي الممنوع", zh: "您好，关于我的违禁包裹" },
+        customer,
+        details: [
+          [{ ku: "تراک", en: "Tracking", ar: "التتبع", zh: "运单号" }, it.trackingNumber],
+          chosen ? [{ ku: "هەڵبژاردەم", en: "My choice", ar: "اختياري", zh: "我的选择" }, label(chosen.label)] : null,
+          [{ ku: "ئەدرێسی نوێ", en: "New address", ar: "العنوان الجديد", zh: "新地址" }, it.reshipAddress],
+        ],
+      }),
+    );
   };
 
   const choose = (it: any, choice: Choice) => {
