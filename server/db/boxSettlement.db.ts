@@ -162,28 +162,55 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
   const orderIds = Array.from(new Set(
     items.map((r) => r.item.fullPackageOrderId).filter((id): id is number => !!id),
   ));
-  const ledgerRows = (packageIds.length || orderIds.length)
+
+  /**
+   * Whose account each item is read from: its box's customer, and nobody
+   * else's.
+   *
+   * A reference is not unique across customers. Commission freight is
+   * recorded as a package charge under the ORDER's id, and that number can
+   * be another customer's parcel — reading by reference alone, a box showed
+   * someone else's freight as its own parcel's charge, called it charged,
+   * and a payment of that amount "settled" a parcel whose owner had never
+   * been billed for it (box-money defect 3, reproduced on a scratch MySQL).
+   */
+  const boxIds = Array.from(new Set(items.map((r) => Number(r.item.boxId))));
+  const owners = boxIds.length
+    ? await db
+        .select({ boxId: deliveryBoxes.id, accountId: customerAccounts.id })
+        .from(deliveryBoxes)
+        .innerJoin(customerAccounts, eq(customerAccounts.customerId, deliveryBoxes.customerId))
+        .where(inArray(deliveryBoxes.id, boxIds))
+    : [];
+  const accountOfBox = new Map(owners.map((o) => [Number(o.boxId), Number(o.accountId)]));
+  const accountIds = Array.from(new Set(owners.map((o) => Number(o.accountId))));
+
+  const ledgerRows = (accountIds.length && (packageIds.length || orderIds.length))
     ? await db
         .select({
+          accountId: ledgerTransactions.accountId,
           referenceType: ledgerTransactions.referenceType,
           referenceId: ledgerTransactions.referenceId,
           transactionType: ledgerTransactions.transactionType,
           amountUsd: ledgerTransactions.amountUsd,
         })
         .from(ledgerTransactions)
-        .where(or(
-          packageIds.length
-            ? and(
-                eq(ledgerTransactions.referenceType, "package"),
-                inArray(ledgerTransactions.referenceId, packageIds),
-              )
-            : undefined,
-          orderIds.length
-            ? and(
-                inArray(ledgerTransactions.referenceType, ["full_package", "commission"]),
-                inArray(ledgerTransactions.referenceId, orderIds),
-              )
-            : undefined,
+        .where(and(
+          inArray(ledgerTransactions.accountId, accountIds),
+          or(
+            packageIds.length
+              ? and(
+                  eq(ledgerTransactions.referenceType, "package"),
+                  inArray(ledgerTransactions.referenceId, packageIds),
+                )
+              : undefined,
+            orderIds.length
+              ? and(
+                  inArray(ledgerTransactions.referenceType, ["full_package", "commission"]),
+                  inArray(ledgerTransactions.referenceId, orderIds),
+                )
+              : undefined,
+          ),
         ))
     : [];
 
@@ -191,8 +218,9 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
   const discounted = new Map<string, number>();
   const seenAnyCharge = new Set<string>();
   for (const row of ledgerRows) {
-    // Keyed by both halves: package 9 and order 9 are different debts.
-    const id = `${row.referenceType}:${row.referenceId}`;
+    // Keyed by the account and both halves of the reference: package 9 and
+    // order 9 are different debts, and one customer's 9 is not another's.
+    const id = `${row.accountId}|${row.referenceType}:${row.referenceId}`;
     const amount = Number(row.amountUsd || 0);
     const type = String(row.transactionType);
     if ((CHARGE_TYPES as readonly string[]).includes(type) || type === "ADJUSTMENT_DEBIT") {
@@ -239,10 +267,11 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
     .map((r) => {
       const packageId = r.item.packageId ? Number(r.item.packageId) : null;
       const orderId = r.item.fullPackageOrderId ? Number(r.item.fullPackageOrderId) : null;
+      const account = accountOfBox.get(Number(r.item.boxId)) ?? "none";
       const key = packageId !== null
-        ? `package:${packageId}`
+        ? `${account}|package:${packageId}`
         : orderId !== null
-          ? [`full_package:${orderId}`, `commission:${orderId}`].find((k) => charged.has(k)) ?? `full_package:${orderId}`
+          ? [`${account}|full_package:${orderId}`, `${account}|commission:${orderId}`].find((k) => charged.has(k)) ?? `${account}|full_package:${orderId}`
           : "";
       const fromLedger = charged.get(key);
       /**
