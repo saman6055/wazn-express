@@ -14,6 +14,7 @@ import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
 import { AccountStatementSummary } from "@/components/finance/AccountStatementSummary";
+import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
 import {
   CHARGE_KIND_LABELS,
   STATEMENT_TERM_LABELS,
@@ -416,14 +417,14 @@ export default function CustomerFinance() {
   };
   
   const getTransactionTypeColor = (type: string) => {
-    if (type.startsWith('DEBIT')) return 'text-red-600';
-    if (type.startsWith('CREDIT')) return 'text-emerald-600';
+    if (isChargeTx(type)) return 'text-red-600';
+    if (isPaymentTx(type)) return 'text-emerald-600';
     return 'text-gray-600';
   };
   
   const getTransactionTypeBgColor = (type: string) => {
-    if (type.startsWith('DEBIT')) return 'bg-red-50 dark:bg-red-950/40 border-red-100 dark:border-red-800/60';
-    if (type.startsWith('CREDIT')) return 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60';
+    if (isChargeTx(type)) return 'bg-red-50 dark:bg-red-950/40 border-red-100 dark:border-red-800/60';
+    if (isPaymentTx(type)) return 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60';
     return 'bg-gray-50 dark:bg-gray-950/40 border-gray-100 dark:border-gray-800/60';
   };
   
@@ -543,7 +544,7 @@ export default function CustomerFinance() {
       const head = rows[0]; // newest first per API ordering
       const netAmountUsd = rows.reduce((sum, t) => {
         const amt = parseFloat(t.amountUsd || '0') || 0;
-        return sum + (t.transactionType.startsWith('DEBIT') ? amt : -amt);
+        return sum + (isChargeTx(t.transactionType) ? amt : -amt);
       }, 0);
       const meta = invoiceMap.get(slot.invoiceId);
       return {
@@ -575,7 +576,7 @@ export default function CustomerFinance() {
     if (type === 'DEBIT_FULL_PACKAGE') return <ShoppingCart className="w-4 h-4" />;
     if (type === 'DEBIT_PURCHASE_REQUEST') return <ShoppingCart className="w-4 h-4" />;
     if (type === 'DEBIT_COMMISSION') return <Percent className="w-4 h-4" />;
-    if (type.startsWith('DEBIT')) return <ArrowUpRight className="w-4 h-4" />;
+    if (isChargeTx(type)) return <ArrowUpRight className="w-4 h-4" />;
     return <ArrowDownRight className="w-4 h-4" />;
   };
 
@@ -1077,12 +1078,12 @@ export default function CustomerFinance() {
                     <td>${index + 1}</td>
                     <td class="txn-number">${escapeHtml(txn.transactionNumber)}</td>
                     <td>
-                      <span class="type-badge ${txn.transactionType.startsWith('DEBIT') ? 'debit' : 'credit'}">
+                      <span class="type-badge ${isChargeTx(txn.transactionType) ? 'debit' : 'credit'}">
                         ${getTransactionTypeLabel(txn.transactionType)}
                       </span>
                     </td>
-                    <td class="${txn.transactionType.startsWith('DEBIT') ? 'amount-debit' : 'amount-credit'}">
-                      ${txn.transactionType.startsWith('DEBIT') ? '+' : '-'}${fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
+                    <td class="${isChargeTx(txn.transactionType) ? 'amount-debit' : 'amount-credit'}">
+                      ${isChargeTx(txn.transactionType) ? '+' : '-'}${fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                     </td>
                     <td>${fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}</td>
                     <td class="description" title="${escapeHtml(txn.description)}">${escapeHtml(txn.description || '-')}</td>
@@ -1120,13 +1121,16 @@ export default function CustomerFinance() {
       return;
     }
 
-    const totalDebit = filteredTransactions
-      .filter(t => t.transactionType.startsWith('DEBIT'))
-      .reduce((sum, t) => sum + parseFloat(t.amountUsd || '0'), 0);
-    
-    const totalCredit = filteredTransactions
-      .filter(t => t.transactionType.startsWith('CREDIT'))
-      .reduce((sum, t) => sum + parseFloat(t.amountUsd || '0'), 0);
+    // Totals of the rows in this file only — the latest hundred, of the type
+    // picked — so they say so, and they count each row on the side it moved
+    // the balance: an undone payment raises it, a lowered price lowers it.
+    // The account's own sales and payments are the breakdown above.
+    const listedCents = (side: (type: string) => boolean) =>
+      filteredTransactions
+        .filter((t) => side(t.transactionType))
+        .reduce((sum, t) => sum + Math.round((parseFloat(t.amountUsd || '0') || 0) * 100), 0);
+    const listedUp = listedCents(isChargeTx) / 100;
+    const listedDown = listedCents(isPaymentTx) / 100;
 
     // One cell per value, quoted and formula-safe through lib/csv; amounts stay
     // numbers a sum can add up. The byte-order mark tells Excel the file is
@@ -1160,8 +1164,8 @@ export default function CustomerFinance() {
     }
     rows.push(
       [say({ ku: 'کورتەی جوڵەکان', en: 'Transactions summary', ar: 'ملخص الحركات', zh: '交易摘要' })],
-      [say({ ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" }), csvAmount(totalDebit)],
-      [say({ ku: "کۆی پارەدانەکان", en: "Total payments", ar: "إجمالي المدفوعات", zh: "付款总额" }), csvAmount(totalCredit)],
+      [say({ ku: "خرایە سەر باڵانس — ئەم لیستە", en: "Added to the balance — listed rows", ar: "أُضيف إلى الرصيد — الحركات المعروضة", zh: "计入余额 — 所列交易" }), csvAmount(listedUp)],
+      [say({ ku: "لە باڵانس کەمکرایەوە — ئەم لیستە", en: "Taken off the balance — listed rows", ar: "خُصم من الرصيد — الحركات المعروضة", zh: "从余额扣除 — 所列交易" }), csvAmount(listedDown)],
       [say({ ku: "ژمارەی جوڵەکان", en: "Number of transactions", ar: "عدد الحركات", zh: "交易数量" }), filteredTransactions.length],
       [],
       [say({ ku: 'لیستی جوڵەکان', en: 'Transactions list', ar: 'قائمة الحركات', zh: '交易列表' })],
@@ -1180,7 +1184,7 @@ export default function CustomerFinance() {
         index + 1,
         txn.transactionNumber,
         getTransactionTypeLabel(txn.transactionType),
-        (txn.transactionType.startsWith('DEBIT') ? '' : '-') + csvAmount(Math.abs(parseFloat(txn.amountUsd || '0'))),
+        (isChargeTx(txn.transactionType) ? '' : '-') + csvAmount(Math.abs(parseFloat(txn.amountUsd || '0'))),
         csvAmount(txn.balanceAfterUsd),
         txn.description || '-',
         fmtDate(new Date(txn.createdAt)),
@@ -1840,7 +1844,7 @@ export default function CustomerFinance() {
                                           variant="outline"
                                           className={cn(
                                             "gap-1 font-normal",
-                                            txn.transactionType.startsWith('DEBIT')
+                                            isChargeTx(txn.transactionType)
                                               ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
                                               : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                           )}
@@ -1851,9 +1855,9 @@ export default function CustomerFinance() {
                                       </TableCell>
                                       <TableCell className={cn(
                                         "font-semibold",
-                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
+                                        isChargeTx(txn.transactionType) ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
-                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
+                                        {isChargeTx(txn.transactionType) ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                                       </TableCell>
                                       <TableCell className="font-semibold">
                                         {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
@@ -1900,7 +1904,7 @@ export default function CustomerFinance() {
                                           variant="outline"
                                           className={cn(
                                             "gap-1 font-normal",
-                                            txn.transactionType.startsWith('DEBIT')
+                                            isChargeTx(txn.transactionType)
                                               ? "bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
                                               : "bg-emerald-50 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                           )}
@@ -1911,9 +1915,9 @@ export default function CustomerFinance() {
                                       </TableCell>
                                       <TableCell className={cn(
                                         "font-semibold",
-                                        txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
+                                        isChargeTx(txn.transactionType) ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
-                                        {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
+                                        {isChargeTx(txn.transactionType) ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                                       </TableCell>
                                       <TableCell className="font-semibold">
                                         {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
@@ -2044,7 +2048,7 @@ export default function CustomerFinance() {
                                             variant="outline"
                                             className={cn(
                                               "gap-1 font-normal text-xs",
-                                              txn.transactionType.startsWith('DEBIT')
+                                              isChargeTx(txn.transactionType)
                                                 ? "bg-red-50/70 dark:bg-red-950/70 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60"
                                                 : "bg-emerald-50/70 dark:bg-emerald-950/70 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                                             )}
@@ -2055,9 +2059,9 @@ export default function CustomerFinance() {
                                         </TableCell>
                                         <TableCell className={cn(
                                           "font-semibold text-sm",
-                                          txn.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
+                                          isChargeTx(txn.transactionType) ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                         )}>
-                                          {txn.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
+                                          {isChargeTx(txn.transactionType) ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
                                         </TableCell>
                                         <TableCell className="font-medium text-sm">
                                           {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
@@ -2676,7 +2680,7 @@ export default function CustomerFinance() {
                     variant="outline" 
                     className={cn(
                       "gap-1",
-                      selectedTransaction.transactionType.startsWith('DEBIT') 
+                      isChargeTx(selectedTransaction.transactionType) 
                         ? "bg-red-100 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60" 
                         : "bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/60"
                     )}
@@ -2691,9 +2695,9 @@ export default function CustomerFinance() {
                 <div className="text-center">
                   <p className={cn(
                     "text-4xl font-bold",
-                    selectedTransaction.transactionType.startsWith('DEBIT') ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
+                    isChargeTx(selectedTransaction.transactionType) ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                   )}>
-                    {selectedTransaction.transactionType.startsWith('DEBIT') ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(selectedTransaction.amountUsd || '0')))}
+                    {isChargeTx(selectedTransaction.transactionType) ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(selectedTransaction.amountUsd || '0')))}
                   </p>
 
                 </div>

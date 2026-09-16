@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -325,8 +326,10 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                     </TableHeader>
                     <TableBody>
                       {transactions?.map((txn) => {
-                        const isDebit = txn.transactionType.startsWith('DEBIT');
-                        const isCredit = txn.transactionType.startsWith('CREDIT');
+                        // By the side the row moved the balance, so an
+                        // adjustment lands in its column instead of neither.
+                        const isDebit = isChargeTx(txn.transactionType);
+                        const isCredit = isPaymentTx(txn.transactionType);
                         return (
                           <TableRow key={txn.id} className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
                             <TableCell>{new Date(txn.createdAt).toLocaleDateString("en-GB")}</TableCell>

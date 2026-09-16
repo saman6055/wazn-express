@@ -8,6 +8,7 @@ import { PhotoStack } from "@/components/PhotoStack";
 import { formatPortalDate } from "@/lib/portalClock";
 import { describeLedgerRef, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { fmtUsd } from "@/lib/portalFormat";
+import { chargeEffect } from "@shared/accountStatement";
 
 // ---------------------------------------------------------------------------
 // OrderBillingGroups — presentation-only fix for "one item, three receipts".
@@ -102,13 +103,18 @@ export function OrderBillingGroups({
       // normal transactions list untouched.
       if (!tx.referenceType || tx.referenceId == null) continue;
       if (!GROUPABLE[tx.referenceType]) continue;
-      if (!String(tx.transactionType || "").startsWith("DEBIT")) continue;
+      // A charge, or a correction to it. A lowered price or a deleted order is
+      // posted against the same reference, and a card that skipped it showed
+      // the customer the price from before it was corrected. Discounts and
+      // payments stay in the ordinary list. Same rule as the statement.
+      const effect = chargeEffect(tx);
+      if (effect === 0) continue;
       const key = `${tx.referenceType}:${tx.referenceId}`;
-      const amount = Number(tx.amountUsd) || 0;
+      const amount = effect * (Number(tx.amountUsd) || 0);
       const at = new Date(tx.createdAt);
       const existing = map.get(key);
       if (existing) {
-        existing.total += amount;
+        existing.total = Math.round((existing.total + amount) * 100) / 100;
         existing.lines.push(tx);
         if (at < existing.firstAt) existing.firstAt = at;
       } else {
@@ -122,7 +128,10 @@ export function OrderBillingGroups({
         });
       }
     }
-    return Array.from(map.values()).sort((a, b) => b.firstAt.getTime() - a.firstAt.getTime());
+    // An order whose charge was taken back in full owes nothing; it has no card.
+    return Array.from(map.values())
+      .filter((g) => Math.round(g.total * 100) !== 0)
+      .sort((a, b) => b.firstAt.getTime() - a.firstAt.getTime());
   }, [transactions]);
 
   if (!groups.length) return null;
@@ -308,7 +317,7 @@ export function OrderBillingGroups({
                         </p>
                       </div>
                       <span className={cn("shrink-0 text-xs font-bold tabular-nums", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")} dir="ltr">
-                        {fmtUsd(Number(line.amountUsd) || 0)}
+                        {fmtUsd(chargeEffect(line) * (Number(line.amountUsd) || 0))}
                       </span>
                     </div>
                   ))}

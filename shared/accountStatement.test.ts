@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import {
   balanceDriftUsd,
   buildAccountStatement,
+  chargeEffect,
   chargeKindsShown,
   statementTerms,
   type LedgerAmount,
@@ -65,6 +66,26 @@ describe("an account explains its own balance", () => {
   it("holds the identity for every line", () => {
     const { charges, paymentsUsd, discountsUsd, otherAdjustmentsUsd, balanceUsd } = statement;
     expect(Math.round((charges.total - paymentsUsd - discountsUsd + otherAdjustmentsUsd) * 100)).toBe(Math.round(balanceUsd * 100));
+  });
+});
+
+describe("one rule for what counts as a charge", () => {
+  it("adds up to the statement's sales, row by row", () => {
+    const statement = buildAccountStatement(LIFE_OF_AN_ACCOUNT, {
+      recordedPaymentReversalsUsd: 30,
+      reversedBoxReceipts: [{ paidUsd: 45, discountUsd: 5, paymentRecordReversedUsd: 0 }],
+    });
+    const cents = LIFE_OF_AN_ACCOUNT.reduce((sum, r) => sum + chargeEffect(r) * Math.round(Number(r.amountUsd) * 100), 0);
+    expect(cents / 100).toBe(statement.charges.total);
+  });
+
+  it("a correction counts against its charge; money and hand adjustments do not", () => {
+    expect(chargeEffect(row("DEBIT_COMMISSION", "commission", 1))).toBe(1);
+    expect(chargeEffect(row("ADJUSTMENT_CREDIT", "full_package", 1))).toBe(-1);
+    expect(chargeEffect(row("ADJUSTMENT_DEBIT", "package", 1))).toBe(1);
+    expect(chargeEffect(row("ADJUSTMENT_DEBIT", "adjustment", 1))).toBe(0);
+    expect(chargeEffect(row("CREDIT_DISCOUNT", "package", 1))).toBe(0);
+    expect(chargeEffect(row("CREDIT_PAYMENT", "payment", 1))).toBe(0);
   });
 });
 

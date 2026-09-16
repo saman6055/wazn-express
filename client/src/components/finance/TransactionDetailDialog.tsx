@@ -1,5 +1,6 @@
 import type { ReactNode } from "react";
 import { Link } from "wouter";
+import { isChargeTx } from "@shared/ledgerTypes";
 import { Receipt, ArrowUp, ArrowDown, ArrowUpRight } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
@@ -62,7 +63,9 @@ export function TransactionDetailDialog({ tx, customer, typeLabel, onClose }: {
 }) {
   const { language } = useTranslation();
   const t = (k: Words) => pickLang(language, k);
-  const isDebit = (tx?.transactionType ?? "").startsWith("DEBIT");
+  // ADJUSTMENT_DEBIT raises the balance too — an undone payment, a box
+  // receipt reversed — and used to be shown as money taken off.
+  const isDebit = isChargeTx(tx?.transactionType);
   const amount = Math.abs(Number(tx?.amountUsd || 0)).toFixed(2);
   const ref = tx?.referenceType ? (REFERENCE[tx.referenceType] ? t(REFERENCE[tx.referenceType]) : tx.referenceType) : null;
 

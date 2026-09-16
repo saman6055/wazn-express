@@ -1,6 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
+import { isPaymentTx } from "@shared/ledgerTypes";
 import { Button } from "@/components/ui/button";
 import { DollarSign, FileText, Eye, Download, Loader2 } from "lucide-react";
 
@@ -138,7 +139,7 @@ export function CustomerFinanceTab({
             </TableHeader>
             <TableBody>
               {ledger?.slice(0, 10).map((entry) => {
-                const isCredit = entry.transactionType?.startsWith("CREDIT_");
+                const isCredit = isPaymentTx(entry.transactionType);
                 return (
                   <TableRow key={entry.id} className="hover:bg-muted/50">
                     <TableCell className="text-sm">

@@ -59,6 +59,24 @@ const REFERENCE_KIND: Readonly<Record<string, ChargeKind>> = {
   service: "service",
 };
 
+/**
+ * How a row moves the charges it belongs to: 1 for a charge, 1 or -1 for a
+ * correction posted against a charge's reference (a price raised or lowered,
+ * an order deleted), 0 for anything else — payments, discounts, reversals of
+ * money, hand adjustments.
+ *
+ * The statement's sales are every row's amount times this, and the portal's
+ * per-order cards use the same rule, so a card cannot show a price the
+ * statement has already corrected.
+ */
+export function chargeEffect(row: { transactionType: string | null; referenceType: string | null }): -1 | 0 | 1 {
+  const type = String(row.transactionType ?? "").toUpperCase();
+  if (DEBIT_KIND[type]) return 1;
+  if (type !== "ADJUSTMENT_DEBIT" && type !== "ADJUSTMENT_CREDIT") return 0;
+  if (!row.referenceType || !REFERENCE_KIND[String(row.referenceType)]) return 0;
+  return type === "ADJUSTMENT_DEBIT" ? 1 : -1;
+}
+
 /** One ledger row, or the sum of rows sharing a type and a reference type. */
 export interface LedgerAmount {
   transactionType: string;

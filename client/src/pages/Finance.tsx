@@ -2,6 +2,7 @@ import { fmtDate, fmtDateTime } from "@/lib/numericDate";
 import { useState, useMemo, useRef, type KeyboardEvent } from "react";
 import { trpc } from "@/lib/trpc";
 import { readFinanceLink } from "@shared/listLinks";
+import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import { escapeHtml } from "@/lib/html";
@@ -478,8 +479,8 @@ export default function Finance() {
   const formatCurrency = (amount: string | number) => fmtUsd(amount);
   
   const getTransactionTypeColor = (type: string) => {
-    if (type.startsWith('DEBIT')) return 'text-red-600';
-    if (type.startsWith('CREDIT')) return 'text-green-600';
+    if (isChargeTx(type)) return 'text-red-600';
+    if (isPaymentTx(type)) return 'text-green-600';
     return 'text-gray-600';
   };
   
@@ -1184,7 +1185,7 @@ export default function Finance() {
                 <div className="space-y-3">
                   {recentTransactions?.slice(0, 8).map((tx) => {
                     const account = accounts?.find(a => a.id === tx.accountId);
-                    const isDebit = tx.transactionType?.startsWith('DEBIT');
+                    const isDebit = isChargeTx(tx.transactionType);
                     return (
                       <div key={tx.id} {...clickable(() => setOpenTx({ ...tx, customer: account?.customer ?? (tx as any).customer }))} className="flex items-center justify-between p-3 rounded-xl bg-muted/30 hover:bg-muted/50 transition-colors cursor-pointer">
                         <div className="flex items-center gap-3">
