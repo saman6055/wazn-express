@@ -75,6 +75,9 @@ import {
   expenseAlerts, InsertExpenseAlert, ExpenseAlert,
   expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog
 } from "../../drizzle/schema";
+import { boxSettlements } from "../../drizzle/schema";
+import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from "@shared/ledgerTypes";
+import { buildAccountStatement, balanceDriftUsd, type AccountStatement } from "@shared/accountStatement";
 
 // ============ LEDGER OPERATIONS ============
 
@@ -3660,8 +3663,13 @@ export async function validateAccountBalance(accountId: number): Promise<{
   const storedBalance = Number(account.currentBalanceUsd ?? 0);
 
   const [sums] = await db.select({
-    totalDebits: sql<string>`COALESCE(SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
-    totalCredits: sql<string>`COALESCE(SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'CREDIT%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    // Every row that moves the balance, ADJUSTMENT_DEBIT and ADJUSTMENT_CREDIT
+    // included. Matching on the DEBIT/CREDIT prefix left them out, so any
+    // account with a price correction, a deleted order or an undone payment
+    // looked broken — and repairAccountBalance would then have written that
+    // wrong figure onto it.
+    totalDebits: sql<string>`COALESCE(SUM(CASE WHEN ${inArray(ledgerTransactions.transactionType, [...CHARGE_TX_TYPES])} THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+    totalCredits: sql<string>`COALESCE(SUM(CASE WHEN ${inArray(ledgerTransactions.transactionType, [...PAYMENT_TX_TYPES])} THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
   }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
 
   const totalDebits = Number(sums?.totalDebits ?? 0);
@@ -3828,66 +3836,89 @@ export async function calculateAccountBreakdown(accountId: number): Promise<{
   totalDebt: number;
   netBalance: number;
 }> {
+  // The old shape, read from the statement so a caller still using it gets
+  // figures that add up: charges net of their corrections, and money received
+  // net of reversals. It used to count every DEBIT_* as sales and every
+  // CREDIT_* — discounts included — as paid, and skip ADJUSTMENT_* altogether.
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-
-  const results = await db.select({
-    transactionType: ledgerTransactions.transactionType,
-    total: sql<string>`COALESCE(SUM(CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2))), 0)`,
-  })
-    .from(ledgerTransactions)
-    .where(eq(ledgerTransactions.accountId, accountId))
-    .groupBy(ledgerTransactions.transactionType);
-
-  let packageDebt = 0;
-  let fullPackageDebt = 0;
-  let purchaseRequestDebt = 0;
-  let commissionDebt = 0;
-  let serviceDebt = 0;
-  let creditBalance = 0;
-
-  for (const r of results) {
-    const amount = Number(r.total);
-    switch (r.transactionType) {
-      case "DEBIT_PACKAGE":
-        packageDebt = amount;
-        break;
-      case "DEBIT_FULL_PACKAGE":
-        fullPackageDebt = amount;
-        break;
-      case "DEBIT_PURCHASE_REQUEST":
-        purchaseRequestDebt = amount;
-        break;
-      case "DEBIT_COMMISSION":
-        commissionDebt = amount;
-        break;
-      case "DEBIT_SERVICE":
-      case "DEBIT_PENALTY":
-      case "DEBIT_OTHER":
-        serviceDebt += amount;
-        break;
-      case "CREDIT_DEPOSIT":
-      case "CREDIT_PAYMENT":
-      case "CREDIT_REFUND":
-      case "CREDIT_DISCOUNT":
-      case "CREDIT_OTHER":
-        creditBalance += amount;
-        break;
-    }
-  }
-
-  const totalDebt = packageDebt + fullPackageDebt + purchaseRequestDebt + commissionDebt + serviceDebt;
-  const netBalance = totalDebt - creditBalance;
-
+  const [account] = await db
+    .select({ customerId: customerAccounts.customerId })
+    .from(customerAccounts)
+    .where(eq(customerAccounts.id, accountId))
+    .limit(1);
+  if (!account) throw new Error("Account not found");
+  const { statement } = await getAccountStatementForCustomer(account.customerId);
   return {
-    packageDebt,
-    fullPackageDebt,
-    purchaseRequestDebt,
-    commissionDebt,
-    serviceDebt,
-    creditBalance,
-    totalDebt,
-    netBalance,
+    packageDebt: statement.charges.package,
+    fullPackageDebt: statement.charges.fullPackage,
+    purchaseRequestDebt: statement.charges.purchaseRequest,
+    commissionDebt: statement.charges.commission,
+    serviceDebt: statement.charges.service,
+    creditBalance: statement.paymentsUsd,
+    totalDebt: statement.charges.total,
+    netBalance: statement.balanceUsd,
+  };
+}
+
+/**
+ * The account explained so that its parts add up to its balance
+ * (shared/accountStatement.ts). The staff profile, the portal and the
+ * statement PDF all read this one function, so they cannot disagree.
+ */
+export async function getAccountStatementForCustomer(customerId: number): Promise<{
+  accountId: number | null;
+  storedBalanceUsd: number;
+  /** The account's running figure minus what its ledger adds up to; 0 when they agree. */
+  driftUsd: number;
+  statement: AccountStatement;
+}> {
+  const nothing = buildAccountStatement([], { recordedPaymentReversalsUsd: 0, reversedBoxReceipts: [] });
+  const db = await getDb();
+  if (!db) return { accountId: null, storedBalanceUsd: 0, driftUsd: 0, statement: nothing };
+  const [account] = await db
+    .select({ id: customerAccounts.id, balance: customerAccounts.currentBalanceUsd })
+    .from(customerAccounts)
+    .where(eq(customerAccounts.customerId, customerId))
+    .limit(1);
+  if (!account) return { accountId: null, storedBalanceUsd: 0, driftUsd: 0, statement: nothing };
+
+  const rows = await db
+    .select({
+      transactionType: ledgerTransactions.transactionType,
+      referenceType: ledgerTransactions.referenceType,
+      amountUsd: sql<string>`COALESCE(SUM(CAST(${ledgerTransactions.amountUsd} AS DECIMAL(14,2))), 0)`,
+    })
+    .from(ledgerTransactions)
+    .where(eq(ledgerTransactions.accountId, account.id))
+    .groupBy(ledgerTransactions.transactionType, ledgerTransactions.referenceType);
+
+  const [reversed] = await db
+    .select({ total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(14,2))), 0)` })
+    .from(paymentRecords)
+    .where(eq(paymentRecords.accountId, account.id));
+
+  // Box receipts that were undone: the ledger put their payment and discount
+  // back in one row, and older ones never marked their payment record.
+  const undoneReceipts = await db
+    .select({
+      paidUsd: boxSettlements.paidUsd,
+      discountUsd: boxSettlements.discountUsd,
+      paymentRecordReversedUsd: paymentRecords.reversedAmountUsd,
+    })
+    .from(boxSettlements)
+    .leftJoin(paymentRecords, eq(paymentRecords.id, boxSettlements.paymentRecordId))
+    .where(and(eq(boxSettlements.customerId, customerId), eq(boxSettlements.status, "reversed")));
+
+  const statement = buildAccountStatement(rows, {
+    recordedPaymentReversalsUsd: reversed?.total ?? 0,
+    reversedBoxReceipts: undoneReceipts,
+  });
+  return {
+    accountId: account.id,
+    storedBalanceUsd: Number(account.balance ?? 0),
+    driftUsd: balanceDriftUsd(account.balance, statement),
+    statement,
   };
 }
 

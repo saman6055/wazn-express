@@ -456,6 +456,15 @@ export const ledgerRouter = router({
       .query(async ({ input }) => {
         return db.calculateAccountBreakdown(input.accountId);
       }),
+
+    // One customer's account explained so its parts add up to its balance —
+    // the figures the portal and the statement PDF show too. One account, so
+    // the counter may read it.
+    getAccountStatement: staffProcedure
+      .input(z.object({ customerId: idSchema }))
+      .query(async ({ input }) => {
+        return db.getAccountStatementForCustomer(input.customerId);
+      }),
     
     // ============ INVOICES ============
     

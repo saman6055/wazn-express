@@ -6,7 +6,7 @@ import { customerBatchStatus } from '@shared/customerBatchStage';
 import { concealsSizeAndCarriage, concealParcelSize } from '@shared/fullPackagePrivacy';
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from '@shared/ledgerTypes';
 import { getVolumetricDivisor } from './settings.db';
-import { getCustomerAccountByCustomerId } from './finance.db';
+import { getAccountStatementForCustomer, getCustomerAccountByCustomerId } from './finance.db';
 import { selfOrderWhere } from './selfOrder.filter';
 import { getBatchStatusTimestamps, getBatchRateForCustomer } from './batches.db';
 import {
@@ -552,15 +552,17 @@ export async function getCustomerFinancialSummary(customerId: number) {
       creditLimitUsd: 0,
       totalPackages: 0,
       totalPaid: 0,
+      discountsUsd: 0,
+      chargesUsd: 0,
+      otherAdjustmentsUsd: 0,
       status: 'active' as const
     };
   }
   
-  // Get total paid
-  const totalPaidData = await db.select({
-    total: sql<number>`SUM(${paymentRecords.amountUsd} - ${paymentRecords.reversedAmountUsd})`
-  }).from(paymentRecords)
-    .where(eq(paymentRecords.accountId, account.id));
+  // Money received, net of what was reversed — the same figure the office's
+  // profile and the statement PDF show, from the one statement all three read
+  // (shared/accountStatement.ts). A discount is not money received.
+  const { statement } = await getAccountStatementForCustomer(customerId);
   
   // Get total packages delivered
   const packageCount = await db.select({
@@ -576,7 +578,10 @@ export async function getCustomerFinancialSummary(customerId: number) {
     balanceIqd: Number(account.currentBalanceIqd) || 0,
     creditLimitUsd: Number(account.creditLimitUsd) || 0,
     totalPackages: packageCount[0]?.count || 0,
-    totalPaid: totalPaidData[0]?.total || 0,
+    totalPaid: statement.paymentsUsd,
+    discountsUsd: statement.discountsUsd,
+    chargesUsd: statement.charges.total,
+    otherAdjustmentsUsd: statement.otherAdjustmentsUsd,
     status: account.accountStatus
   };
 }

@@ -1,7 +1,7 @@
 ﻿import PDFDocument from 'pdfkit';
 import fs from 'fs';
 import path from 'path';
-import { getDb } from '../db';
+import { getDb, getAccountStatementForCustomer } from '../db';
 import { packages, users, customers, ledgerTransactions, customerAccounts, paymentRecords, batches, fullPackageOrders } from '../../drizzle/schema';
 import { sql, count, eq, desc, asc, gte, lte, and, sum, inArray } from 'drizzle-orm';
 import { concealsSizeAndCarriage } from '@shared/fullPackagePrivacy';
@@ -29,6 +29,8 @@ interface CustomerReportData {
   accountSummary: {
     totalCharges: number;
     totalPayments: number;
+    totalDiscounts: number;
+    otherAdjustments: number;
     currentBalance: number;
     creditLimit: number;
   };
@@ -90,15 +92,11 @@ export async function getCustomerReportData(
   }).from(customerAccounts).where(eq(customerAccounts.customerId, customerId));
   const accountId = account?.id ?? -1;
 
-  // Get total charges
-  const [chargesResult] = await db.select({
-    total: sql<string>`COALESCE(SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END), 0)`
-  }).from(ledgerTransactions).where(eq(ledgerTransactions.accountId, accountId));
-
-  // Get total payments
-  const [paymentsTotal] = await db.select({
-    total: sql<string>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2))), 0)`
-  }).from(paymentRecords).where(eq(paymentRecords.accountId, accountId));
+  // The summary strip reads the same statement as the office's profile and the
+  // portal (shared/accountStatement.ts): charges net of their corrections,
+  // money received net of reversals, and discounts and hand adjustments on
+  // their own lines — so the strip adds up to the balance printed beside it.
+  const { statement } = await getAccountStatementForCustomer(customerId);
 
   // Get packages with optional date filter
   let packagesQuery = db.select({
@@ -221,8 +219,10 @@ export async function getCustomerReportData(
       createdAt: customer.createdAt
     },
     accountSummary: {
-      totalCharges: parseFloat(chargesResult?.total || '0'),
-      totalPayments: parseFloat(paymentsTotal?.total || '0'),
+      totalCharges: statement.charges.total,
+      totalPayments: statement.paymentsUsd,
+      totalDiscounts: statement.discountsUsd,
+      otherAdjustments: statement.otherAdjustmentsUsd,
       currentBalance: parseFloat(account?.currentBalance || '0'),
       creditLimit: parseFloat(account?.creditLimit || '0')
     },
@@ -261,6 +261,8 @@ const STMT: Record<string, { en: string; ku: string; ar: string }> = {
   accountSummary: { en: 'Account Summary', ku: 'پوختەی حساب', ar: 'ملخص الحساب' },
   totalCharges: { en: 'Total Charges', ku: 'کۆی قەرزەکان', ar: 'إجمالي المصاريف' },
   totalPayments: { en: 'Total Payments', ku: 'کۆی پارەدانەکان', ar: 'إجمالي المدفوعات' },
+  discounts: { en: 'Discounts', ku: 'داشکاندن', ar: 'الخصومات' },
+  adjustments: { en: 'Adjustments', ku: 'ڕێکخستن', ar: 'تسويات' },
   currentBalance: { en: 'Current Balance', ku: 'باڵانسی ئێستا', ar: 'الرصيد الحالي' },
   totalPackages: { en: 'Total Packages', ku: 'کۆی پاکێجەکان', ar: 'إجمالي الطرود' },
   balanceDue: { en: 'Balance Due', ku: 'قەرزی ماوە', ar: 'الرصيد المستحق' },
@@ -465,10 +467,19 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
       doc.roundedRect(40, stripY, 515, stripH, 6).fillColor('#f7fafc').fill();
       doc.roundedRect(40, stripY, 515, stripH, 6).lineWidth(0.5).strokeColor('#e2e8f0').stroke();
       const balance = data.accountSummary.currentBalance;
+      const discounts = Number(data.accountSummary.totalDiscounts ?? 0);
+      const adjustments = Number(data.accountSummary.otherAdjustments ?? 0);
       const cells: Array<[string, string, string]> = [
         [L('totalPackages'), String(data.packages.length), '#2d3748'],
         [L('totalCharges'), `$${data.accountSummary.totalCharges.toFixed(2)}`, '#2d3748'],
         [L('totalPayments'), `$${data.accountSummary.totalPayments.toFixed(2)}`, '#2f855a'],
+        // Only when there are any — then the strip still adds up to the balance.
+        ...(discounts !== 0
+          ? [[L('discounts'), `$${discounts.toFixed(2)}`, '#2f855a'] as [string, string, string]]
+          : []),
+        ...(adjustments !== 0
+          ? [[L('adjustments'), `${adjustments < 0 ? '-' : '+'}$${Math.abs(adjustments).toFixed(2)}`, '#2d3748'] as [string, string, string]]
+          : []),
         [L('currentBalance'), `$${balance.toFixed(2)}`, balance > 0 ? '#c53030' : '#2f855a'],
       ];
       const cellW = 515 / cells.length;

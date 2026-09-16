@@ -13,6 +13,15 @@ import { csvAmount, downloadText, toCsv } from "@/lib/csv";
 import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
+import { AccountStatementSummary } from "@/components/finance/AccountStatementSummary";
+import {
+  CHARGE_KIND_LABELS,
+  STATEMENT_TERM_LABELS,
+  chargeKindsShown,
+  statementTerms,
+  type ChargeKind,
+  type StatementTermKey,
+} from "@shared/accountStatement";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -176,10 +185,17 @@ export default function CustomerFinance() {
     { accountId: account?.id || 0, limit: 50 },
     { enabled: !!account?.id }
   );
-  const { data: breakdown } = trpc.ledger.getAccountBreakdown.useQuery(
-    { accountId: account?.id || 0 },
+  // The account explained so its parts add up to its balance
+  // (shared/accountStatement.ts) — the figures the portal and the statement
+  // PDF show too. "Paid" is money received net of reversals; discounts and
+  // hand adjustments have their own lines instead of hiding inside it.
+  const { data: statementData } = trpc.ledger.getAccountStatement.useQuery(
+    { customerId },
     { enabled: !!account?.id }
   );
+  const breakdown = statementData
+    ? { statement: statementData.statement, driftUsd: statementData.driftUsd }
+    : null;
   const { data: settings } = trpc.settings.list.useQuery();
   // Used only to resolve invoiceId → invoiceNumber for grouped row headers.
   // Same page size as transactions so a 1:1 lookup map is realistic for the
@@ -201,7 +217,7 @@ export default function CustomerFinance() {
     utils.ledger.getAccountByCustomer.invalidate({ customerId });
     utils.ledger.getTransactions.invalidate();
     utils.ledger.getPayments.invalidate();
-    utils.ledger.getAccountBreakdown.invalidate();
+    utils.ledger.getAccountStatement.invalidate();
     utils.invoices.getByCustomer.invalidate();
     setReverseDialogOpen(false);
     setReverseTargetPayment(null);
@@ -238,7 +254,7 @@ export default function CustomerFinance() {
       setAdjustReason("");
       utils.ledger.getAccountByCustomer.invalidate({ customerId });
       utils.ledger.getTransactions.invalidate();
-      utils.ledger.getAccountBreakdown.invalidate();
+      utils.ledger.getAccountStatement.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -258,7 +274,7 @@ export default function CustomerFinance() {
       utils.ledger.getAccountByCustomer.invalidate({ customerId });
       utils.ledger.getTransactions.invalidate();
       utils.ledger.getPayments.invalidate();
-      utils.ledger.getAccountBreakdown.invalidate();
+      utils.ledger.getAccountStatement.invalidate();
     },
     onError: (error) => {
       toast.error(error.message);
@@ -576,13 +592,22 @@ export default function CustomerFinance() {
       return;
     }
 
-    const totalDebit = filteredTransactions
-      .filter(t => t.transactionType.startsWith('DEBIT'))
-      .reduce((sum, t) => sum + parseFloat(t.amountUsd || '0'), 0);
-    
-    const totalCredit = filteredTransactions
-      .filter(t => t.transactionType.startsWith('CREDIT'))
-      .reduce((sum, t) => sum + parseFloat(t.amountUsd || '0'), 0);
+    // The breakdown prints the same statement the screen shows: a card per
+    // kind of charge, then the line that adds up to the balance.
+    const PRINT_KIND_CLASS: Record<ChargeKind, string> = {
+      package: 'package',
+      fullPackage: 'fullpackage',
+      purchaseRequest: 'purchaserequest',
+      commission: 'commission',
+      service: 'service',
+    };
+    const PRINT_TERM_CLASS: Record<StatementTermKey, string> = {
+      sales: 'debit',
+      payments: 'credit',
+      discounts: 'credit',
+      otherAdjustments: 'net',
+      balance: 'net balance',
+    };
 
     const company = getCompanyInfoFromSettings(settings || []);
     const htmlContent = `
@@ -801,6 +826,10 @@ export default function CustomerFinance() {
           .breakdown-card.service .breakdown-value { color: #a21caf; }
           .breakdown-card.credit .breakdown-value { color: #047857; }
           .breakdown-card.total .breakdown-value { color: #dc2626; }
+          .breakdown-grid.kinds-4 { grid-template-columns: repeat(4, 1fr); }
+          .breakdown-grid.kinds-5 { grid-template-columns: repeat(5, 1fr); }
+          .breakdown-card.purchaserequest { background: #f5f3ff; border-color: #ddd6fe; }
+          .breakdown-card.purchaserequest .breakdown-value { color: #6d28d9; }
           
           /* Summary Row */
           .summary-row {
@@ -823,9 +852,17 @@ export default function CustomerFinance() {
           }
           
           .summary-value {
-            font-size: 24px;
+            font-size: 18px;
             font-weight: 700;
           }
+
+          .summary-op {
+            font-size: 20px;
+            font-weight: 600;
+            color: #94a3b8;
+          }
+
+          .summary-value.balance { font-size: 22px; }
           
           .summary-value.debit { color: #dc2626; }
           .summary-value.credit { color: #059669; }
@@ -1001,42 +1038,20 @@ export default function CustomerFinance() {
           ${breakdown ? `
           <div class="breakdown-section">
             <div class="section-title">${pickLang(language, { ku: "شیکاری فرۆشتن", en: "Sales breakdown", ar: "تفصيل المبيعات", zh: "销售明细" })}</div>
-            <div class="breakdown-grid">
-              <div class="breakdown-card package">
-                <div class="breakdown-label">${pickLang(language, { ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" })}</div>
-                <div class="breakdown-value">${fmtUsd(breakdown.packageDebt)}</div>
-              </div>
-              <div class="breakdown-card fullpackage">
-                <div class="breakdown-label">${pickLang(language, { ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" })}</div>
-                <div class="breakdown-value">${fmtUsd(breakdown.fullPackageDebt)}</div>
-              </div>
-              <div class="breakdown-card commission">
-                <div class="breakdown-label">${pickLang(language, { ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" })}</div>
-                <div class="breakdown-value">${fmtUsd(breakdown.commissionDebt)}</div>
-              </div>
-              <div class="breakdown-card service">
-                <div class="breakdown-label">${pickLang(language, { ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" })}</div>
-                <div class="breakdown-value">${fmtUsd(breakdown.serviceDebt)}</div>
-              </div>
-              <div class="breakdown-card credit">
-                <div class="breakdown-label">${pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</div>
-                <div class="breakdown-value">${fmtUsd(breakdown.creditBalance)}</div>
-              </div>
-              <div class="breakdown-card total">
-                <div class="breakdown-label">${pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</div>
-                <div class="breakdown-value">${fmtUsd(breakdown.totalDebt)}</div>
-              </div>
+            <div class="breakdown-grid kinds-${chargeKindsShown(breakdown.statement).length}">
+              ${chargeKindsShown(breakdown.statement).map((kind) => `
+              <div class="breakdown-card ${PRINT_KIND_CLASS[kind]}">
+                <div class="breakdown-label">${pickLang(language, CHARGE_KIND_LABELS[kind])}</div>
+                <div class="breakdown-value">${fmtUsd(breakdown.statement.charges[kind])}</div>
+              </div>`).join('')}
             </div>
             <div class="summary-row">
+              ${statementTerms(breakdown.statement).map((term) => `
+              ${term.operator ? `<div class="summary-op">${term.operator === '-' ? '−' : term.operator}</div>` : ''}
               <div class="summary-item">
-                <div class="summary-label">${pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</div>
-                <div class="summary-value debit">${fmtUsd(totalDebit)}</div>
-              </div>
-              <div class="summary-item">
-                <div class="summary-label">${pickLang(language, { ku: "کۆی پارەدانەکان", en: "Total payments", ar: "إجمالي المدفوعات", zh: "付款总额" })}</div>
-                <div class="summary-value credit">${fmtUsd(totalCredit)}</div>
-              </div>
-
+                <div class="summary-label">${pickLang(language, STATEMENT_TERM_LABELS[term.key])}</div>
+                <div class="summary-value ${PRINT_TERM_CLASS[term.key]}">${fmtUsd(term.amountUsd)}</div>
+              </div>`).join('')}
             </div>
           </div>
           ` : ''}
@@ -1137,12 +1152,9 @@ export default function CustomerFinance() {
     if (breakdown) {
       rows.push(
         [say({ ku: 'شیکاری فرۆشتن', en: 'Sales breakdown', ar: 'تفصيل المبيعات', zh: '销售明细' })],
-        [say({ ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" }), csvAmount(breakdown.packageDebt)],
-        [say({ ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" }), csvAmount(breakdown.fullPackageDebt)],
-        [say({ ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" }), csvAmount(breakdown.commissionDebt)],
-        [say({ ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" }), csvAmount(breakdown.serviceDebt)],
-        [say({ ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" }), csvAmount(breakdown.creditBalance)],
-        [say({ ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" }), csvAmount(breakdown.totalDebt)],
+        ...chargeKindsShown(breakdown.statement).map((kind) => [say(CHARGE_KIND_LABELS[kind]), csvAmount(breakdown.statement.charges[kind])]),
+        // Other adjustments keep their sign in the cell, so the column still adds up.
+        ...statementTerms(breakdown.statement).map((term) => [say(STATEMENT_TERM_LABELS[term.key]), csvAmount(term.signedUsd)]),
         [],
       );
     }
@@ -1573,38 +1585,7 @@ export default function CustomerFinance() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
-                      <div className="text-center p-4 bg-blue-50 dark:bg-blue-950/40 rounded-xl border border-blue-100 dark:border-blue-800/60">
-                        <Package className="w-6 h-6 text-blue-600 dark:text-blue-300 mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکەتەکان", en: "Package charges", ar: "رسوم الطرود", zh: "包裹费用" })}</p>
-                        <p className="text-lg font-bold text-blue-600 dark:text-blue-300">{fmtUsd(breakdown.packageDebt)}</p>
-                      </div>
-                      <div className="text-center p-4 bg-emerald-50 dark:bg-emerald-950/40 rounded-xl border border-emerald-100 dark:border-emerald-800/60">
-                        <ShoppingCart className="w-6 h-6 text-emerald-600 dark:text-emerald-300 mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی پاکێجی تەواو", en: "Full package charges", ar: "رسوم الحزمة الكاملة", zh: "完整套餐费用" })}</p>
-                        <p className="text-lg font-bold text-emerald-600 dark:text-emerald-300">{fmtUsd(breakdown.fullPackageDebt)}</p>
-                      </div>
-                      <div className="text-center p-4 bg-amber-50 dark:bg-amber-950/40 rounded-xl border border-amber-100 dark:border-amber-800/60">
-                        <Percent className="w-6 h-6 text-amber-600 dark:text-amber-300 mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی عموڵە", en: "Commission charges", ar: "رسوم العمولة", zh: "佣金费用" })}</p>
-                        <p className="text-lg font-bold text-amber-600 dark:text-amber-300">{fmtUsd(breakdown.commissionDebt)}</p>
-                      </div>
-                      <div className="text-center p-4 bg-pink-50 dark:bg-pink-950/40 rounded-xl border border-pink-100 dark:border-pink-800/60">
-                        <Sparkles className="w-6 h-6 text-pink-600 dark:text-pink-300 mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "نرخی خزمەتگوزاری", en: "Service charges", ar: "رسوم الخدمة", zh: "服务费用" })}</p>
-                        <p className="text-lg font-bold text-pink-600 dark:text-pink-300">{fmtUsd(breakdown.serviceDebt)}</p>
-                      </div>
-                      <div className="text-center p-4 bg-green-50 dark:bg-green-950/40 rounded-xl border border-green-100 dark:border-green-800/60">
-                        <Wallet className="w-6 h-6 text-green-600 dark:text-green-300 mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی پارەدان", en: "Total paid", ar: "إجمالي المدفوع", zh: "已付总额" })}</p>
-                        <p className="text-lg font-bold text-green-600 dark:text-green-300">{fmtUsd(breakdown.creditBalance)}</p>
-                      </div>
-                      <div className="text-center p-4 bg-red-50 dark:bg-red-950/40 rounded-xl border border-red-100 dark:border-red-800/60">
-                        <TrendingUp className="w-6 h-6 text-red-600 dark:text-red-300 mx-auto mb-2" />
-                        <p className="text-xs text-muted-foreground mb-1">{pickLang(language, { ku: "کۆی فرۆشتن", en: "Total sales", ar: "إجمالي المبيعات", zh: "销售总额" })}</p>
-                        <p className="text-lg font-bold text-red-600 dark:text-red-300">{fmtUsd(breakdown.totalDebt)}</p>
-                      </div>
-                    </div>
+                    <AccountStatementSummary statement={breakdown.statement} driftUsd={breakdown.driftUsd} />
                   </CardContent>
                 </Card>
               </motion.div>

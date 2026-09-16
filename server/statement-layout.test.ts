@@ -24,7 +24,7 @@ const BODY = SRC.slice(START, END);
 const day = (d: number) => new Date(2026, 8, d);
 const sample = (fullName: string) => ({
   customer: { id: 1, fullName, customerCode: "AZ000", mobileNumber: "0750 000 0000", email: null, createdAt: day(1) },
-  accountSummary: { totalCharges: 120, totalPayments: 100, currentBalance: 20, creditLimit: 0 },
+  accountSummary: { totalCharges: 120, totalPayments: 100, totalDiscounts: 0, otherAdjustments: 0, currentBalance: 20, creditLimit: 0 },
   packages: [{ trackingNumber: "YT7524601234567", status: "in_transit", weightKg: 2.5, costUsd: 17.5, createdAt: day(2), batchCode: "AIR-012" }],
   payments: [{ amount: 100, method: "cash", reference: "حەواڵەی هەولێر", createdAt: day(5) }],
   transactions: [
@@ -67,5 +67,23 @@ describe("the statement's first page", () => {
       expect(pdf, lang).toContain("/Subtype /Image");
       expect(pdf.match(/\/Type \/Page\b/g)?.length, lang).toBe(1);
     }
+  });
+
+  it("still fits when the strip carries a discount and an adjustment too", async () => {
+    // The strip adds up to the balance: 120 − 80 − 25.20 − 7 = 7.80.
+    const withBoth = sample("Aram Karim");
+    withBoth.accountSummary = {
+      ...withBoth.accountSummary,
+      totalPayments: 80,
+      totalDiscounts: 25.2,
+      otherAdjustments: -7,
+      currentBalance: 7.8,
+    };
+    for (const lang of ["ku", "en"] as const) {
+      const pdf = (await generateCustomerPDF(withBoth as never, lang)).toString("latin1");
+      expect(pdf.match(/\/Type \/Page\b/g)?.length, lang).toBe(1);
+    }
+    expect(BODY.split("L('discounts')").length - 1).toBe(1);
+    expect(BODY.split("L('adjustments')").length - 1).toBe(1);
   });
 });
