@@ -20,6 +20,8 @@ import { OrderNote } from "@/components/scanner/OrderNote";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { PhotoStack } from "@/components/PhotoStack";
+import { OrderNumbers } from "@/components/OrderNumbers";
+import { CopyButton } from "@/components/CopyButton";
 
 export default function QuickRegister() {
   const systemAlert = useSystemAlert();
@@ -42,7 +44,7 @@ export default function QuickRegister() {
   const [expandedLookup, setExpandedLookup] = useState<{
     case: 'single' | 'shared' | 'multi' | 'duplicate' | 'regular';
     orders: Array<{
-      order: { id: number; orderCode: string; orderType: string; platform: string | null; productName: string; quantity: number; status: string; customerId: number | null; batchId: number | null; trackingNumber: string | null };
+      order: { id: number; orderCode: string; orderType: string; orderNumber: string | null; platform: string | null; productName: string; quantity: number; status: string; customerId: number | null; batchId: number | null; trackingNumber: string | null };
       customer: { id: number; customerCode: string | null; fullName: string | null } | null;
       batch: { id: number; batchCode: string | null; status: string } | null;
       trackings: Array<{ id: number; trackingNumber: string; cartonIndex: number }>;
@@ -610,7 +612,7 @@ export default function QuickRegister() {
   };
   
   // State for last registered package
-  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null } | null>(null);
+  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null; orderNumber?: string | null } | null>(null);
   
   const registerMutation = trpc.packages.register.useMutation({
     meta: { skipGlobalToast: true },
@@ -629,6 +631,7 @@ export default function QuickRegister() {
         time: new Date(),
         enteredBy: ((user?.name as string) || "").trim() || undefined,
         orderDate: orderCreatedAt ? new Date(orderCreatedAt) : null,
+        orderNumber: (foundOrder as { order?: { orderNumber?: string | null } } | null)?.order?.orderNumber ?? null,
       });
 
       toast.success(
@@ -933,6 +936,7 @@ export default function QuickRegister() {
                       <span className="font-mono truncate max-w-[14rem]" title={lastRegistered.trackingNumber}>{lastRegistered.trackingNumber}</span>
                     </span>
                   )}
+                  <OrderNumbers numbers={lastRegistered.orderNumber} className="text-xs" />
                   <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
                     <User className="h-3.5 w-3.5 shrink-0" />
                     <span className="truncate max-w-[12rem]">{lastRegistered.customerName}</span>
@@ -1081,6 +1085,7 @@ export default function QuickRegister() {
                           {expandedLookup.orders.map((od) => (
                             <div key={od.order.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-orange-200/60 dark:border-orange-800/40">
                               <span className="font-mono font-medium">{od.order.orderCode}</span>
+                              <OrderNumbers numbers={od.order.orderNumber} />
                               {/* Which shop it was bought from — context only,
                                   and absent for orders that never recorded one. */}
                               <PlatformChip platform={od.order.platform} size="xs" />
@@ -1554,7 +1559,10 @@ export default function QuickRegister() {
                       {foundOrder.order.orderNumber && (
                         <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
                           <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order #", ar: "رقم الطلب", zh: "订单号" })}</p>
-                          <p className="text-xs font-mono font-semibold truncate" dir="ltr" title={String(foundOrder.order.orderNumber)}>{foundOrder.order.orderNumber}</p>
+                          <p className="flex items-center justify-center gap-1 min-w-0">
+                            <span className="text-xs font-mono font-semibold truncate" dir="ltr" title={String(foundOrder.order.orderNumber)}>{foundOrder.order.orderNumber}</span>
+                            <CopyButton value={String(foundOrder.order.orderNumber)} label={pickLang(language, { ku: "کۆپی ئۆردەر نەمبەر", en: "Copy order number", ar: "نسخ رقم الطلب", zh: "复制订单号" })} />
+                          </p>
                         </div>
                       )}
                       {foundOrder.order.createdAt && (

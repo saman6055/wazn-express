@@ -131,7 +131,7 @@ export const scanningRouter = router({
         if (!result) {
           // Check if any scans exist for this tracking
           const scans = await db.getScansByTracking(input.trackingNumber);
-          return { found: false, scans, package: null, customer: null };
+          return { found: false, scans, package: null, customer: null, orderNumbers: [] as string[] };
         }
         
         // Get scan history
@@ -140,8 +140,9 @@ export const scanningRouter = router({
         
         return { 
           found: true, 
-          package: result.package, 
+          package: result.package,
           customer: result.customer,
+          orderNumbers: result.orderNumbers,
           scans,
           statusHistory
         };

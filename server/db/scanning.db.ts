@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { orderNumbersForPackages } from './orderNumbers.db';
 import { advanceStatus, type PackageStatus } from '../lib/scanStatus';
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
@@ -136,7 +137,9 @@ export async function getPackageWithCustomerByTracking(trackingNumber: string) {
   if (!pkg) return null;
   
   const customer = pkg.customerId ? await getCustomerById(pkg.customerId) : null;
-  return { package: pkg, customer };
+  // The platform order numbers, for whoever is holding it (owner, 2026-09-17).
+  const numbers = await orderNumbersForPackages([pkg.id]);
+  return { package: pkg, customer, orderNumbers: numbers.get(pkg.id) ?? [] };
 }
 
 // Create package scan

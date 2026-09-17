@@ -2,6 +2,7 @@ import { eq, and, or, desc, inArray, sql, gte, lte } from "drizzle-orm";
 import { SETTLED_SLACK_USD } from "@shared/archive";
 import { generateTransactionNumber } from "./utils.db";
 import { getDb } from "./connection";
+import { withParcelOrderNumbers } from "./orderNumbers.db";
 import {
   boxSettlements,
   boxSettlementLines,
@@ -90,6 +91,8 @@ export interface BoxParcelView {
   /** Set when it is a full-package or commission order instead. */
   fullPackageOrderId: number | null;
   trackingNumber: string | null;
+  /** The platform order numbers, for the eye only (owner, 2026-09-17). */
+  orderNumbers?: string[];
   packageCode: string | null;
   description: string | null;
   /** Number, not the raw decimal string: a per-kilo discount does sums on it. */
@@ -623,7 +626,7 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
           fullName: boxRow.customer.fullName,
         }
       : null,
-    parcels,
+    parcels: await withParcelOrderNumbers(parcels),
     settlements: history.map((h) => ({ ...h.s, staffName: h.staffName ?? null })),
     lastExchangeRate: lastRate?.rate ?? null,
     accountBalanceUsd: Number(account?.balance ?? 0),

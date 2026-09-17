@@ -37,6 +37,25 @@ export async function orderNumbersForOrders(orderIds: readonly (number | null | 
   return out;
 }
 
+/**
+ * Each line of a box, with its order numbers — for the eye only; nothing here
+ * is money. A line is a parcel, an order, or both.
+ */
+export async function withParcelOrderNumbers<T extends { packageId: number | null; fullPackageOrderId: number | null }>(
+  lines: readonly T[],
+): Promise<Array<T & { orderNumbers: string[] }>> {
+  const [byPackage, byOrder] = await Promise.all([
+    orderNumbersForPackages(lines.map((line) => line.packageId)),
+    orderNumbersForOrders(lines.map((line) => line.fullPackageOrderId)),
+  ]);
+  return lines.map((line) => {
+    const found: string[] = [];
+    const candidates = [...(line.packageId ? byPackage.get(line.packageId) ?? [] : []), line.fullPackageOrderId ? byOrder.get(line.fullPackageOrderId) : undefined];
+    for (const number of candidates) if (number && !found.includes(number)) found.push(number);
+    return { ...line, orderNumbers: found };
+  });
+}
+
 /** Parcel ids → the order numbers of every order in them, the main order first. */
 export async function orderNumbersForPackages(packageIds: readonly (number | null | undefined)[]): Promise<Map<number, string[]>> {
   const out = new Map<number, string[]>();

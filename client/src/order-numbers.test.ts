@@ -67,6 +67,41 @@ describe("the screens that show it", () => {
   it("a parcel's own window on the all-parcels page", () => {
     expect(read("pages/Packages.tsx")).toContain("numbers={(viewPackage as any).platformOrderNumber || (viewPackage as any).supplierOrderNumber}");
   });
+
+  it("a box's parcels, and the box payment in both its states", () => {
+    expect(read("components/delivery/BoxDetailPanel.tsx")).toContain('<OrderNumbers numbers={item.orderNumbers} className="flex font-sans" />');
+    expect(read("components/delivery/BoxSettlementPanel.tsx")).toContain('<OrderNumbers numbers={parcel.orderNumbers} className="flex" />');
+    expect(read("components/delivery/SettlementStates.tsx")).toContain('<OrderNumbers numbers={p.orderNumbers} className="flex font-sans" />');
+  });
+
+  it("a batch's parcels", () => {
+    expect(read("pages/Batches.tsx")).toContain('<OrderNumbers numbers={pkg.orderNumbers} className="flex" />');
+  });
+
+  it("the arrival scanner, in the waiting and the checked lists", () => {
+    const page = read("pages/ArrivalVerificationScanner.tsx");
+    expect(page.split("<OrderNumbers numbers={pkg.orderNumbers} />").length - 1).toBe(2);
+    // A parcel from outside the chosen batches has no manifest row: the scan brings its numbers.
+    expect(page).toContain("package: { ...pkg, orderNumbers: result.orderNumbers },");
+  });
+
+  it("the batch scanner's list", () => {
+    expect(read("components/scanner/ScannedList.tsx")).toContain('<OrderNumbers numbers={item.orderNumbers} className="flex" />');
+    const page = read("pages/BatchAssignmentScanner.tsx");
+    expect(page.split("orderNumbers: result.orderNumbers,").length - 1).toBe(2);
+    expect(page).toContain("orderNumbers: p.orderNumbers,");
+  });
+
+  it("quick register: the found order copies it, the last registered and the sharing orders show it", () => {
+    const page = read("pages/QuickRegister.tsx");
+    expect(page).toContain("<CopyButton value={String(foundOrder.order.orderNumber)}");
+    expect(page).toContain('<OrderNumbers numbers={lastRegistered.orderNumber} className="text-xs" />');
+    expect(page).toContain("<OrderNumbers numbers={od.order.orderNumber} />");
+  });
+
+  it("bulk register's sharing orders", () => {
+    expect(read("pages/BulkRegister.tsx")).toContain('<OrderNumbers numbers={od.order.orderNumber} className="text-[10px]" />');
+  });
 });
 
 describe("the server sends it", () => {
@@ -98,5 +133,37 @@ describe("the server sends it", () => {
     const list = slice("export async function getAllPackages", "if (status && status !== 'all')");
     expect(list).toContain("spo.orderNumber LIKE ${searchTerm}");
     expect(list).toContain("FROM ${packageOrderLinks} spl WHERE spl.packageId = ${packages.id}");
+  });
+
+  it("with the arrival manifest, by both routes to an order", () => {
+    const manifest = slice("export async function getBatchManifest", "\n}\n");
+    expect(manifest.split("orderNumber: fullPackageOrders.orderNumber,").length - 1).toBe(2);
+    expect(manifest).toContain("const numbersByPackage = await orderNumbersForPackages(packageIds);");
+    expect(manifest).toContain("      orderNumbers,\n");
+  });
+
+  it("with a box's items, by both routes to an order", () => {
+    const boxes = readRoot("server/db/deliveryBoxes.db.ts");
+    expect(boxes).toContain("fpById.get(item.fullPackageOrderId)?.orderNumber");
+    expect(boxes).toContain("(fpsByTracking.get(item.trackingNumber) || []).map((fp) => fp.orderNumber)");
+    expect(boxes.split("orderNumbers, orderNote };").length - 1).toBe(3);
+  });
+
+  it("with the box payment view only — the paid verdict's lines stay as they are", () => {
+    const settlement = readRoot("server/db/boxSettlement.db.ts");
+    expect(settlement).toContain("parcels: await withParcelOrderNumbers(parcels),");
+    const a = settlement.indexOf("async function parcelsForItems");
+    expect(a).toBeGreaterThan(-1);
+    const b = settlement.indexOf("\n}\n", a);
+    expect(b).toBeGreaterThan(a);
+    expect(settlement.slice(a, b)).not.toContain("orderNumbers");
+  });
+
+  it("with a batch's parcels and a scanned parcel", () => {
+    expect(readRoot("server/routers/batches.router.ts")).toContain("return pkgs.map((p) => ({ ...p, orderNumbers: numbers.get(p.id) ?? [] }));");
+    expect(readRoot("server/db/scanning.db.ts")).toContain("return { package: pkg, customer, orderNumbers: numbers.get(pkg.id) ?? [] };");
+    const router = readRoot("server/routers/scanning.router.ts");
+    expect(router).toContain("orderNumbers: result.orderNumbers,");
+    expect(router).toContain("package: null, customer: null, orderNumbers: [] as string[] };");
   });
 });

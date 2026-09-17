@@ -7,6 +7,7 @@ import {
   Clock,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OrderNumbers } from "@/components/OrderNumbers";
 
 export interface ScannedItem {
   id: number;
@@ -19,6 +20,8 @@ export interface ScannedItem {
   scannedAt: Date;
   status?: "success" | "warning" | "moved";
   statusText?: string;
+  /** The platform order numbers staff check with the customer by. */
+  orderNumbers?: string[];
 }
 
 interface ScannedListProps {
@@ -93,6 +96,7 @@ export function ScannedList({
                     </Badge>
                   )}
                 </div>
+                <OrderNumbers numbers={item.orderNumbers} className="flex" />
                 <div className="flex items-center gap-3 text-xs text-muted-foreground mt-0.5">
                   <span>{item.customerCode}</span>
                   {item.weight != null && <span>{item.weight.toFixed(1)} kg</span>}

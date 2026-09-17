@@ -34,6 +34,7 @@ interface ScannedPackage {
   previousBatchId: number | null;
   previousBatchNumber: string | null;
   scannedAt: Date;
+  orderNumbers?: string[];
 }
 
 interface BatchChangeDialog {
@@ -257,6 +258,7 @@ export default function BatchAssignmentScanner() {
               previousBatchId: pkg.batchId,
               previousBatchNumber: previousBatch?.batchCode || `#${pkg.batchId}`,
               scannedAt: new Date(),
+              orderNumbers: result.orderNumbers,
             },
             currentBatchNumber: previousBatch?.batchCode || `#${pkg.batchId}`,
             newBatchId: parseInt(selectedBatchId),
@@ -290,6 +292,7 @@ export default function BatchAssignmentScanner() {
           previousBatchId: null,
           previousBatchNumber: null,
           scannedAt: new Date(),
+          orderNumbers: result.orderNumbers,
         };
         setScannedPackages((prev) => [scannedPkg, ...prev]);
         soundManager.playSuccess();
@@ -392,6 +395,7 @@ export default function BatchAssignmentScanner() {
         cbm: p.cbm,
         hasCompleteData: p.hasCompleteData,
         scannedAt: p.scannedAt,
+        orderNumbers: p.orderNumbers,
       })),
     [scannedPackages]
   );

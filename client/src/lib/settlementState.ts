@@ -15,6 +15,8 @@ export interface ParcelLike {
   lineId: number;
   packageCode: string | null;
   trackingNumber: string | null;
+  /** The platform order numbers, for the eye only. */
+  orderNumbers?: readonly string[];
   chargedUsd: number;
   discountedUsd: number;
   settledUsd: number;

@@ -63,6 +63,7 @@ import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderNumbers } from "@/components/OrderNumbers";
 
 // Languages offered for the printable box receipt / PDF. Staff can print
 // any one regardless of the active UI language. Chinese is intentionally
@@ -693,6 +694,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                       ) : (
                         "-"
                       )}
+                      <OrderNumbers numbers={item.orderNumbers} className="flex font-sans" />
                     </TableCell>
                     {/* Details — varies by item type. Commission descriptions
                         are normalized so legacy 3-part breakdowns show in

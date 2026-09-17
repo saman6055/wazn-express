@@ -536,6 +536,8 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
    * order — so the only person who ever saw it was the one who wrote it.
    */
   orderNote: string | null;
+  /** The platform order numbers staff check with the customer by (owner, 2026-09-17). */
+  orderNumbers: string[];
   // Product photo resolved from the linked commission/full-package order
   // (productImage / first of productImages) or, for regular packages, the
   // first package photo. null when the source order/package has no image.
@@ -720,6 +722,15 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     const productImage = imageFor(item);
     const { volumeCbm, shippingType } = measureFor(item);
 
+    // The platform order numbers beside the tracking (owner, 2026-09-17), by
+    // both routes to an order, as the note below is.
+    const orderNumbers = Array.from(new Set(
+      [
+        item.fullPackageOrderId ? fpById.get(item.fullPackageOrderId)?.orderNumber : null,
+        ...(item.trackingNumber ? (fpsByTracking.get(item.trackingNumber) || []).map((fp) => fp.orderNumber) : []),
+      ].map((n) => (n ?? "").trim()).filter(Boolean),
+    ));
+
     /**
      * The note somebody wrote when the order was taken.
      *
@@ -738,7 +749,7 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     // Direct FP-order scan path — single order owns the item, no sibling sum.
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, orderNote };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, orderNumbers, orderNote };
     }
 
     // Tracking-based path — sum every linked order's advance, but skip
@@ -746,10 +757,10 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
       const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
-      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, orderNote };
+      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, orderNumbers, orderNote };
     }
 
-    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, orderNote };
+    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, orderNumbers, orderNote };
   });
 }
 

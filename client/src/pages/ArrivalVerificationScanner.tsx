@@ -21,6 +21,7 @@ import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
 
@@ -32,6 +33,8 @@ interface VerifiedPackage {
   customerName: string;
   /** What identifies the box to the person holding it. */
   orderCode: string | null;
+  /** The platform order numbers staff check with the customer by. */
+  orderNumbers?: string[];
   photo: string | null;
   weight: number | null;
   cbm: number | null;
@@ -48,6 +51,7 @@ interface BatchPackage {
   customerCode: string;
   customerName: string;
   orderCode: string | null;
+  orderNumbers?: string[];
   photo: string | null;
   weight: number | null;
   cbm: number | null;
@@ -296,6 +300,7 @@ export default function ArrivalVerificationScanner() {
             customerCode: pkg.customerCode || "نەناسراو",
             customerName: pkg.customerName || "",
             orderCode: pkg.orderCode,
+            orderNumbers: pkg.orderNumbers,
             // Carried through the session so the verified list can show it too.
             note: (pkg as any).note ?? null,
             photo: pkg.photo,
@@ -419,7 +424,7 @@ export default function ArrivalVerificationScanner() {
           soundManager.playWarning();
           setExtraPackageDialog({
             open: true,
-            package: pkg,
+            package: { ...pkg, orderNumbers: result.orderNumbers },
             trackingNumber: scannedValue,
           });
           return;
@@ -435,6 +440,7 @@ export default function ArrivalVerificationScanner() {
           // batch; a lookup on the scanned parcel would ask the same question
           // a second time, once per box.
           orderCode: manifestRowFor(pkg.id)?.orderCode ?? null,
+          orderNumbers: manifestRowFor(pkg.id)?.orderNumbers ?? result.orderNumbers,
           photo: manifestRowFor(pkg.id)?.photo ?? null,
           weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
           cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
@@ -520,6 +526,7 @@ export default function ArrivalVerificationScanner() {
       customerName: pkg.customer?.fullName || "",
       // A parcel from outside the chosen batches, so no manifest to ask.
       orderCode: manifestRowFor(pkg.id)?.orderCode ?? null,
+      orderNumbers: manifestRowFor(pkg.id)?.orderNumbers ?? pkg.orderNumbers,
       photo: manifestRowFor(pkg.id)?.photo ?? null,
       weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
       cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
@@ -762,6 +769,7 @@ export default function ArrivalVerificationScanner() {
                                         </Badge>
                                       )}
                                       {pkg.orderCode && <CopyButton value={pkg.orderCode} />}
+                                      <OrderNumbers numbers={pkg.orderNumbers} />
                                     </div>
                                     <div className="text-xs text-muted-foreground mt-1 truncate">
                                       <span className="font-medium">{pkg.customerCode}</span>
@@ -854,6 +862,7 @@ export default function ArrivalVerificationScanner() {
                                         </Badge>
                                       )}
                                       {pkg.orderCode && <CopyButton value={pkg.orderCode} />}
+                                      <OrderNumbers numbers={pkg.orderNumbers} />
                                       {pkg.isExtra && (
                                         <Badge className="text-xs bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
                                           {t("scan.extra")}

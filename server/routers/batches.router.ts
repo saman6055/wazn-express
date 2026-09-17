@@ -642,7 +642,10 @@ export const batchesRouter = router({
     getPackages: staffProcedure
       .input(z.object({ batchId: idSchema }))
       .query(async ({ input }) => {
-        return db.getPackagesByBatch(input.batchId);
+        const pkgs = await db.getPackagesByBatch(input.batchId);
+        // The platform order number beside each tracking (owner, 2026-09-17).
+        const numbers = await db.orderNumbersForPackages(pkgs.map((p) => p.id));
+        return pkgs.map((p) => ({ ...p, orderNumbers: numbers.get(p.id) ?? [] }));
       }),
 
     /**

@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertTriangle, Copy, Check, RotateCcw, PackageX, CheckCircle2 } from "lucide-react";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { Button } from "@/components/ui/button";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -123,7 +124,10 @@ export function NothingToTake({ view }: { view: SettlementViewLike | null | unde
           <tbody>
             {parcels.map((p) => (
               <tr key={p.lineId} className="border-b last:border-0">
-                <td className="p-2 font-mono" dir="ltr">{p.packageCode || p.trackingNumber || `#${p.lineId}`}</td>
+                <td className="p-2 font-mono" dir="ltr">
+                  {p.packageCode || p.trackingNumber || `#${p.lineId}`}
+                  <OrderNumbers numbers={p.orderNumbers} className="flex font-sans" />
+                </td>
                 <td className="p-2 text-end font-mono tabular-nums" dir="ltr">{money(p.chargedUsd)}</td>
                 <td className="p-2 text-end font-mono tabular-nums" dir="ltr">{money(p.discountedUsd)}</td>
                 <td className="p-2 text-end font-mono tabular-nums" dir="ltr">{money(p.settledUsd)}</td>

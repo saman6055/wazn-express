@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
@@ -1782,6 +1783,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         ) : (
                           "-"
                         )}
+                        <OrderNumbers numbers={pkg.orderNumbers} className="flex" />
                       </TableCell>
                       <TableCell>{pkg.customerId ? getCustomerName(pkg.customerId) : t("packages.unclaimed")}</TableCell>
                       <TableCell>

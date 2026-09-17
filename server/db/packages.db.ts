@@ -1633,6 +1633,8 @@ export type BatchManifestRow = {
   orderCode: string | null;
   orderType: string | null;
   productName: string | null;
+  /** The platform order numbers staff check with the customer by. */
+  orderNumbers: string[];
   /** Order picture first, parcel photograph second, nothing third. */
   photo: string | null;
 };
@@ -1675,6 +1677,7 @@ export async function getBatchManifest(batchId: number): Promise<BatchManifestRo
           // Both routes to an order must carry it, or which route a parcel
           // happens to be linked by decides whether the note is seen.
           notes: fullPackageOrders.notes,
+          orderNumber: fullPackageOrders.orderNumber,
         })
         .from(packageOrderLinks)
         .innerJoin(fullPackageOrders, eq(packageOrderLinks.fullPackageOrderId, fullPackageOrders.id))
@@ -1692,6 +1695,7 @@ export async function getBatchManifest(batchId: number): Promise<BatchManifestRo
           // Written by whoever took the order, needed by whoever has the
           // parcel in their hands. It was reaching nobody.
           notes: fullPackageOrders.notes,
+          orderNumber: fullPackageOrders.orderNumber,
         })
         .from(fullPackageOrders)
         .where(inArray(fullPackageOrders.trackingNumber, trackingNumbers))
@@ -1707,11 +1711,16 @@ export async function getBatchManifest(batchId: number): Promise<BatchManifestRo
     }
   }
 
+  const numbersByPackage = await orderNumbersForPackages(packageIds);
+
   return rows.map((row) => {
     const order =
       orderByPackageId.get(row.id) ??
       (row.trackingNumber ? orderByTracking.get(row.trackingNumber) : undefined) ??
       null;
+    const orderNumbers = Array.from(new Set(
+      [...(numbersByPackage.get(row.id) ?? []), (order?.orderNumber ?? "").trim()].filter(Boolean),
+    ));
     const ownPhoto = Array.isArray(row.photos) ? (row.photos[0] ?? null) : null;
 
     return {
@@ -1734,6 +1743,7 @@ export async function getBatchManifest(batchId: number): Promise<BatchManifestRo
       orderCode: order?.orderCode ?? null,
       orderType: order?.orderType ?? null,
       productName: order?.productName ?? null,
+      orderNumbers,
       photo: order?.productImage ?? ownPhoto,
     };
   });

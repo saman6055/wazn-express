@@ -21,6 +21,7 @@ import { showErrorToast } from "@/lib/errorToast";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { fmtAmount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { fmtDateTime } from "@/lib/numericDate";
 import {
@@ -323,6 +324,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                         <span className="font-mono text-xs" dir="ltr">
                           {parcel.trackingNumber || parcel.packageCode}
                         </span>
+                        <OrderNumbers numbers={parcel.orderNumbers} className="flex" />
                         {parcel.notChargedYet && (
                           <span className="mt-0.5 block text-xs text-amber-600 dark:text-amber-400">
                             {t({ ku: "هێشتا بار نەکراوە", en: "Not charged yet", ar: "لم يُحمّل بعد", zh: "尚未计费" })}

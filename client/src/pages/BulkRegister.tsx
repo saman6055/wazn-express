@@ -16,6 +16,7 @@ import {
   Scale, Ruler, Box, Settings2, ArrowRightLeft, Info, Zap, ShoppingBag, Warehouse
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 
@@ -1081,6 +1082,7 @@ export default function BulkRegister() {
                                           return (
                                             <div key={od.order.id} className="flex items-center gap-2 p-1.5 rounded bg-white/60 dark:bg-black/20 border border-orange-200/60 dark:border-orange-800/40">
                                               <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">{od.order.orderCode}</Badge>
+                                              <OrderNumbers numbers={od.order.orderNumber} className="text-[10px]" />
                                               <span className="text-[11px]">{od.order.productName}</span>
                                               {od.order.quantity > 1 && <span className="text-[10px] text-muted-foreground">×{od.order.quantity}</span>}
                                               <span className="text-[10px] text-muted-foreground">•</span>
