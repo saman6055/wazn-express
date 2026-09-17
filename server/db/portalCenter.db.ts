@@ -7,6 +7,8 @@ import {
   customerMessages,
   customerActivityLog,
   customerAdminNotes,
+  deliveryBoxes,
+  deliveryBoxItems,
   deliveryRatings,
   packages,
 } from "../../drizzle/schema";
@@ -57,35 +59,110 @@ export async function listCustomerAdminNotes(customerId: number) {
 }
 
 // ---- Delivery ratings -------------------------------------------------------
+//
+// One question per delivered box, not per tracking (owner, 2026-09-17): six
+// parcels handed over in one box were one delivery, and the customer was being
+// asked about it six times.
+//
+// The table keys a rating by parcel (packageId, unique) and is left as it is.
+// A box is rated once, so its rating is held against the box's first parcel,
+// and a box counts as rated when any of its parcels carries a rating — which
+// also covers the parcels rated one by one before this change.
 
-/** The customer's most recent delivered package (last 14 days) with no rating yet. */
-export async function getRatablePackage(customerId: number) {
+const RATING_WINDOW_DAYS = 14;
+
+/** The customer's most recent delivered box (last 14 days) that has not been rated. */
+export async function getRatableBox(customerId: number) {
   const db = await getDb();
   if (!db) return null;
-  const cutoff = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000);
-  const rows = await safe(db
+  const cutoff = new Date(Date.now() - RATING_WINDOW_DAYS * 24 * 60 * 60 * 1000);
+  // Handed over by staff, or confirmed by the customer from the portal.
+  const deliveredOn = sql`COALESCE(${deliveryBoxes.deliveredAt}, ${deliveryBoxes.customerConfirmedAt})`;
+  const boxes = await safe(db
     .select({
-      id: packages.id,
-      trackingNumber: packages.trackingNumber,
-      packageCode: packages.packageCode,
-      deliveredAt: packages.deliveredAt,
-      description: packages.description,
-      photos: packages.photos,
+      id: deliveryBoxes.id,
+      boxCode: deliveryBoxes.boxCode,
+      deliveredAt: deliveryBoxes.deliveredAt,
+      customerConfirmedAt: deliveryBoxes.customerConfirmedAt,
     })
-    .from(packages)
-    .leftJoin(deliveryRatings, eq(deliveryRatings.packageId, packages.id))
+    .from(deliveryBoxes)
     .where(
       and(
-        eq(packages.customerId, customerId),
-        // Scanners store "Delivered", updatePackage stores "delivered".
-        sql`LOWER(${packages.status}) = 'delivered'`,
-        sql`${packages.deliveredAt} >= ${cutoff}`,
-        sql`${deliveryRatings.id} IS NULL`,
+        eq(deliveryBoxes.customerId, customerId),
+        eq(deliveryBoxes.status, "delivered"),
+        sql`${deliveredOn} >= ${cutoff}`,
       ),
     )
-    .orderBy(desc(packages.deliveredAt))
+    .orderBy(desc(deliveredOn))
+    .limit(10), []);
+  if (boxes.length === 0) return null;
+
+  const items = await safe(db
+    .select({ boxId: deliveryBoxItems.boxId, packageId: deliveryBoxItems.packageId })
+    .from(deliveryBoxItems)
+    .where(inArray(deliveryBoxItems.boxId, boxes.map((b) => b.id))), []);
+  const parcelIds = Array.from(new Set(items.map((i) => i.packageId).filter((id): id is number => id != null)));
+  if (parcelIds.length === 0) return null;
+
+  const [rated, parcels] = await Promise.all([
+    safe(db.select({ packageId: deliveryRatings.packageId }).from(deliveryRatings).where(inArray(deliveryRatings.packageId, parcelIds)), []),
+    safe(db
+      .select({ id: packages.id, photos: packages.photos })
+      .from(packages)
+      .where(and(inArray(packages.id, parcelIds), eq(packages.customerId, customerId))), []),
+  ]);
+  const ratedIds = new Set(rated.map((r) => r.packageId));
+  const firstPhoto = new Map(
+    parcels.map((p) => [p.id, Array.isArray(p.photos) ? p.photos.find((url) => typeof url === "string" && url.length > 0) ?? null : null]),
+  );
+
+  for (const box of boxes) {
+    const inBox = items.filter((i) => i.boxId === box.id);
+    const ids = inBox.map((i) => i.packageId).filter((id): id is number => id != null);
+    // A box with no parcel has nowhere to keep a rating; one already rated is done.
+    if (ids.length === 0 || ids.some((id) => ratedIds.has(id))) continue;
+    return {
+      id: box.id,
+      boxCode: box.boxCode,
+      deliveredAt: box.deliveredAt ?? box.customerConfirmedAt,
+      parcelCount: inBox.length,
+      photos: ids.map((id) => firstPhoto.get(id)).filter((url): url is string => !!url).slice(0, 4),
+    };
+  }
+  return null;
+}
+
+/**
+ * Save one rating for a whole box; the caller verifies the box is the
+ * customer's and delivered. Held against the box's first parcel. False when the
+ * box holds no parcel or is already rated — so a second tap never adds a second.
+ */
+export async function createBoxDeliveryRating(data: {
+  customerId: number;
+  boxId: number;
+  rating: number;
+  comment?: string | null;
+}): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const items = await safe(db
+    .select({ packageId: deliveryBoxItems.packageId })
+    .from(deliveryBoxItems)
+    .where(eq(deliveryBoxItems.boxId, data.boxId)), []);
+  const ids = items.map((i) => i.packageId).filter((id): id is number => id != null);
+  if (ids.length === 0) return false;
+  const rated = await safe(db
+    .select({ id: deliveryRatings.id })
+    .from(deliveryRatings)
+    .where(inArray(deliveryRatings.packageId, ids))
     .limit(1), []);
-  return rows[0] ?? null;
+  if (rated.length > 0) return false;
+  return createDeliveryRating({
+    customerId: data.customerId,
+    packageId: Math.min(...ids),
+    rating: data.rating,
+    comment: data.comment,
+  });
 }
 
 /** Save a rating; ownership must be verified by the caller. Idempotent per package. */
@@ -133,6 +210,15 @@ export async function listDeliveryRatings(opts: { page: number; pageSize: number
       customerCode: customers.customerCode,
       customerName: customers.fullName,
       trackingNumber: packages.trackingNumber,
+      // The box the parcel was handed over in — ratings are asked per box, and
+      // a box's rating is held against its first parcel.
+      boxCode: sql<string | null>`(
+        SELECT b.boxCode FROM deliveryBoxItems i
+        JOIN deliveryBoxes b ON b.id = i.boxId
+        WHERE i.packageId = ${deliveryRatings.packageId} AND b.status = 'delivered'
+        ORDER BY b.deliveredAt DESC
+        LIMIT 1
+      )`,
     })
       .from(deliveryRatings)
       .leftJoin(customers, eq(deliveryRatings.customerId, customers.id))

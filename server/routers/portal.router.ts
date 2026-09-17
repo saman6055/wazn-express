@@ -516,34 +516,36 @@ export const customerPortalRouter = router({
       }),
 
     // ============ DELIVERY RATING ============
-    // The most recent delivered package (14 days) the customer hasn't rated.
-    getRatablePackage: customerProcedure.query(async ({ ctx }) => {
+    // One question per delivered box, not per tracking (owner, 2026-09-17):
+    // the most recent delivered box (14 days) the customer hasn't rated.
+    getRatableBox: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
-      return db.getRatablePackage(customerId);
+      return db.getRatableBox(customerId);
     }),
 
     submitDeliveryRating: customerProcedure
       .input(z.object({
-        packageId: z.number(),
+        boxId: z.number().int().positive(),
         rating: z.number().int().min(1).max(5),
         comment: z.string().max(1000).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
-        const pkg = await db.getPackageById(input.packageId);
-        if (!pkg || pkg.customerId !== customerId) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
+        const box = await db.getDeliveryBoxById(input.boxId);
+        // Someone else's box, or one not handed over yet, is not there to rate.
+        if (!box || box.customerId !== customerId || box.status !== "delivered") {
+          throw new TRPCError({ code: "NOT_FOUND", message: "Box not found" });
         }
-        const ok = await db.createDeliveryRating({
+        const ok = await db.createBoxDeliveryRating({
           customerId,
-          packageId: input.packageId,
+          boxId: input.boxId,
           rating: input.rating,
           comment: input.comment,
         });
         logPortal(ctx, customerId, "rate_delivery", "other", {
-          detail: `${input.rating}/5${input.comment ? ` — ${input.comment.slice(0, 100)}` : ""}`,
-          entityType: "package",
-          entityId: input.packageId,
+          detail: `${box.boxCode} · ${input.rating}/5${input.comment ? ` — ${input.comment.slice(0, 100)}` : ""}`,
+          entityType: "deliveryBox",
+          entityId: input.boxId,
         });
         return { success: ok };
       }),

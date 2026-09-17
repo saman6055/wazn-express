@@ -1908,9 +1908,12 @@ function RatingsTab({ p }: { p: (v: L) => string }) {
                     </div>
                     <span className="text-sm font-semibold">{r.customerName || "—"}</span>
                     <span className="text-[11px] text-muted-foreground font-mono">{r.customerCode}</span>
-                    {r.trackingNumber && (
+                    {/* Rated per box; a rating from before that names its parcel. */}
+                    {r.boxCode ? (
+                      <span className="text-[11px] text-muted-foreground font-mono">· {r.boxCode}</span>
+                    ) : r.trackingNumber ? (
                       <span className="text-[11px] text-muted-foreground font-mono">· {r.trackingNumber}</span>
-                    )}
+                    ) : null}
                     <span className="ms-auto text-[11px] text-muted-foreground">{fmtDateTime(r.createdAt)}</span>
                   </div>
                   {r.comment && (

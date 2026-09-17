@@ -70,7 +70,7 @@ describe("portal procedures strip staff identity", () => {
   const router = read("routers/portal.router.ts");
 
   it("an unclaimed search result is the pool's columns, not the row", () => {
-    const body = between(router, "searchTrackingExtra:", "getRatablePackage:");
+    const body = between(router, "searchTrackingExtra:", "getRatableBox:");
     expect(body).not.toContain("? pkg : null");
     expect(body).toContain("trackingNumber: pkg.trackingNumber");
   });

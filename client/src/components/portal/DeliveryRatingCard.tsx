@@ -13,52 +13,51 @@ import { PhotoStack } from "@/components/PhotoStack";
 // stars + optional comment) as a plain inline card near the bottom of the
 // home feed. Deliberately NOT a modal/bottom-sheet: it must never block the
 // screen or feel forced — it just sits in the flow and can be dismissed.
-// Shows the package thumbnail + description so it's clear which delivery is
-// being rated. Renders only when there is a recent delivered, unrated package
-// (single existing query — no extra requests). Dismissal is per-package via
-// localStorage so we don't nag.
+// One question per delivered box, not per tracking (owner, 2026-09-17): six
+// parcels handed over in one box are one delivery. Shows the box's parcel
+// photos, how many there were and the box code, so it's clear which delivery
+// is being rated. Renders only when there is a recent delivered, unrated box
+// (one query). Dismissal is per box via localStorage so we don't nag.
 // ---------------------------------------------------------------------------
 
 export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; language: string }) {
   const utils = trpc.useUtils();
-  const { data: pkg } = trpc.customerPortal.getRatablePackage.useQuery();
+  const { data: box } = trpc.customerPortal.getRatableBox.useQuery();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comment, setComment] = useState("");
-  // Keyed by package, not a bare boolean. `closed` used to latch for the whole
+  // Keyed by box, not a bare boolean. `closed` used to latch for the whole
   // session, so a second delivery worth rating in the same visit was never
-  // offered — and the stars and comment kept the previous parcel's values.
+  // offered — and the stars and comment kept the previous delivery's values.
   const [closedFor, setClosedFor] = useState<number | null>(null);
   const isRTL = language === "ku" || language === "ar";
 
   const submit = trpc.customerPortal.submitDeliveryRating.useMutation({
     onSuccess: () => {
       toast.success(pickLang(language, { ku: "سوپاس بۆ هەڵسەنگاندنەکەت!", en: "Thanks for your rating!", ar: "شكرًا لتقييمك!", zh: "感谢您的评价！" }));
-      setClosedFor(pkg?.id ?? null);
-      // The stars and comment kept the previous parcel's values, so the next
-      // delivery arrived pre-rated with someone else's words in the box.
+      setClosedFor(box?.id ?? null);
+      // The stars and comment kept the previous delivery's values, so the next
+      // one arrived pre-rated with someone else's words in the box.
       setRating(0);
       setHover(0);
       setComment("");
-      utils.customerPortal.getRatablePackage.invalidate();
+      utils.customerPortal.getRatableBox.invalidate();
     },
     onError: () => {
       toast.error(pickLang(language, { ku: "هەڵەیەک ڕوویدا", en: "Something went wrong", ar: "حدث خطأ", zh: "出错了" }));
     },
   });
 
-  if (!pkg || closedFor === pkg.id) return null;
-  const dismissKey = `rating-dismissed-${pkg.id}`;
+  if (!box || closedFor === box.id) return null;
+  const dismissKey = `rating-dismissed-box-${box.id}`;
   if (typeof window !== "undefined" && localStorage.getItem(dismissKey)) return null;
 
   const dismiss = () => {
     if (typeof window !== "undefined") localStorage.setItem(dismissKey, "1");
-    setClosedFor(pkg.id);
+    setClosedFor(box.id);
   };
 
-  const code = pkg.trackingNumber || pkg.packageCode || `#${pkg.id}`;
-  const photos: string[] = Array.isArray((pkg as any).photos) ? (pkg as any).photos : [];
-  const name = (pkg as any).description as string | null;
+  const count = box.parcelCount;
 
   return (
     <div className="px-4 mt-4" dir={isRTL ? "rtl" : "ltr"}>
@@ -77,10 +76,10 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
           <X className="w-4 h-4" />
         </button>
 
-        {/* Package identity: thumbnail + name + tracking */}
+        {/* The box: its parcels' photos, how many, and its code */}
         <div className="flex items-center gap-3">
           <PhotoStack
-            photos={photos}
+            photos={box.photos}
             className="w-14 h-14 rounded-xl"
             fallback={
               <div className={cn(
@@ -95,8 +94,17 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
             <h3 className={cn("text-base font-bold leading-tight", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
               {pickLang(language, { ku: "گەیاندنەکەمان چۆن بوو؟", en: "How was your delivery?", ar: "كيف كان التسليم؟", zh: "配送体验如何？" })}
             </h3>
-            {name && <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-slate-300" : "text-slate-600")}>{name}</p>}
-            <p className={cn("text-[11px] font-mono", isDark ? "text-slate-500" : "text-slate-400")}>{code}</p>
+            <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-slate-300" : "text-slate-600")}>
+              {pickLang(language, {
+                ku: `${count} پاکەت لە یەک بۆکسدا`,
+                en: `${count} parcel(s) in one box`,
+                ar: `${count} طرد في صندوق واحد`,
+                zh: `一个箱子，共 ${count} 件`,
+              })}
+            </p>
+            <p className={cn("text-[11px]", isDark ? "text-slate-500" : "text-slate-400")}>
+              <bdi dir="ltr" className="font-mono">{box.boxCode}</bdi>
+            </p>
           </div>
         </div>
 
@@ -134,7 +142,7 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
               className={cn("mt-3", isDark && "bg-slate-900 border-slate-600")}
             />
             <Button
-              onClick={() => submit.mutate({ packageId: pkg.id, rating, comment: comment.trim() || undefined })}
+              onClick={() => submit.mutate({ boxId: box.id, rating, comment: comment.trim() || undefined })}
               disabled={submit.isPending}
               className="mt-3 w-full bg-amber-500 hover:bg-amber-600 text-white font-bold"
             >
