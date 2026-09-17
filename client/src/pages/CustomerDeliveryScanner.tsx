@@ -21,6 +21,8 @@ import { CreateBoxDialog } from "@/components/delivery/CreateBoxDialog";
 import { CustomerBoxCodes } from "@/components/delivery/CustomerBoxCodes";
 import { DiscountReport } from "@/components/delivery/DiscountReport";
 import { BoxSegmentBar, type BoxView } from "@/components/delivery/BoxSegmentBar";
+import { DeleteEmptyBoxDialog, EmptyBoxesAlert, type EmptyBoxRef } from "@/components/delivery/EmptyBoxes";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 const PAGE_SIZE = 20;
 
@@ -28,6 +30,10 @@ export default function CustomerDeliveryScanner() {
   const { t, language } = useTranslation();
   /** For the few labels added here; the page's own `t` takes keys, not objects. */
   const L = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, k);
+  const { user } = useAuth();
+  // Deleting a box has always been an admin's (deliveryBox.delete).
+  const canDeleteBoxes = user?.role === "admin" || user?.role === "super_admin";
+  const [deletingBox, setDeletingBox] = useState<EmptyBoxRef | null>(null);
   const isRtl = language === "ku" || language === "ar";
 
   // State
@@ -289,6 +295,9 @@ export default function CustomerDeliveryScanner() {
               </div>
             )}
 
+            {/* Empty boxes, flagged — and deletable where they are seen. */}
+            <EmptyBoxesAlert canDelete={canDeleteBoxes} />
+
             {/* Table */}
             <BoxTable
               boxes={boxes}
@@ -298,9 +307,11 @@ export default function CustomerDeliveryScanner() {
               onPageChange={handlePageChange}
               onBoxSelect={handleBoxSelect}
               onTakePayment={setPayingBoxId}
+              onDeleteEmpty={canDeleteBoxes ? setDeletingBox : undefined}
               customers={customers as any}
               isLoading={boxesLoading}
             />
+            <DeleteEmptyBoxDialog box={deletingBox} onClose={() => setDeletingBox(null)} />
           </CardContent>
         </Card>
 

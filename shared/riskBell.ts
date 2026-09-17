@@ -22,7 +22,7 @@ import { debtorsHref, trackingAlertsHref } from "./listLinks";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
-export type RiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed";
+export type RiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes";
 
 export interface RiskItem {
   id: RiskId;
@@ -44,6 +44,8 @@ export interface RiskFacts {
   /** Orders without a tracking number for longer than ORDER_NO_TRACKING_DAYS. */
   ordersWithoutTracking: number;
   unclaimed: number;
+  /** Delivery boxes nothing was ever put in (shared/emptyBox). */
+  emptyBoxes: number;
 }
 
 /**
@@ -57,6 +59,7 @@ export const RISK_PATH: Record<RiskId, string> = {
   "debt-over-limit": debtorsHref({ over: "limit" }),
   "orders-no-tracking": trackingAlertsHref({ days: "7+" }),
   unclaimed: "/packages/unclaimed",
+  "empty-boxes": "/customer-delivery-scanner?empty=1",
 };
 
 /** The page whose permission decides who is told. */
@@ -66,6 +69,7 @@ export const RISK_GATE: Record<RiskId, string> = {
   "debt-over-limit": "/finance/debtors",
   "orders-no-tracking": "/tracking-alerts",
   unclaimed: "/packages/unclaimed",
+  "empty-boxes": "/customer-delivery-scanner",
 };
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
@@ -104,6 +108,11 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   }
   if (facts.unclaimed > 0) {
     items.push({ id: "unclaimed", level: "notice", count: facts.unclaimed });
+  }
+  // Owner, 2026-09-17: an empty box should be flagged so it can be deleted. A
+  // notice — it costs nothing while it waits, so it never flashes.
+  if (facts.emptyBoxes > 0) {
+    items.push({ id: "empty-boxes", level: "notice", count: facts.emptyBoxes });
   }
 
   return items.sort((a, b) => levelRank(a.level) - levelRank(b.level) || b.count - a.count);
@@ -184,6 +193,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
       return {
         title: { ku: `${n} پاکەتی بێخاوەن`, en: `${n} unclaimed parcel(s)`, ar: `${n} طرد بلا صاحب`, zh: `${n} 个无主包裹` },
         detail: null,
+      };
+    case "empty-boxes":
+      return {
+        title: { ku: `${n} بۆکسی بەتاڵ`, en: `${n} empty box(es)`, ar: `${n} صندوق فارغ`, zh: `${n} 个空箱子` },
+        detail: {
+          ku: "هیچیان تێدا نییە — دەکرێت بسڕدرێنەوە",
+          en: "nothing in them — they can be deleted",
+          ar: "لا شيء فيها — يمكن حذفها",
+          zh: "里面没有物品 — 可以删除",
+        },
       };
   }
 }

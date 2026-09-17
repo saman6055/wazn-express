@@ -21,6 +21,7 @@ const FACTS: RiskFacts = {
   debtOverLimit: 3,
   ordersWithoutTracking: 4,
   unclaimed: 6,
+  emptyBoxes: 2,
 };
 
 describe("today's risks", () => {
@@ -33,6 +34,7 @@ describe("today's risks", () => {
       "volumetric:critical",
       "orders-no-tracking:high",
       "unclaimed:notice",
+      "empty-boxes:notice",
     ]);
   });
 
@@ -53,7 +55,7 @@ describe("today's risks", () => {
   });
 
   it("leave out whatever has nothing in it", () => {
-    expect(buildRiskItems({ staleDepotDays: [], volumetric: [], debtOverLimit: 0, ordersWithoutTracking: 0, unclaimed: 0 })).toEqual([]);
+    expect(buildRiskItems({ staleDepotDays: [], volumetric: [], debtOverLimit: 0, ordersWithoutTracking: 0, unclaimed: 0, emptyBoxes: 0 })).toEqual([]);
   });
 
   it("every risk leads to its list and is guarded by a page", () => {
@@ -111,7 +113,7 @@ describe("when the bell flashes", () => {
   });
 
   it("a notice alone never flashes", () => {
-    const notices = buildRiskItems({ staleDepotDays: [], volumetric: [], debtOverLimit: 0, ordersWithoutTracking: 0, unclaimed: 6 });
+    const notices = buildRiskItems({ staleDepotDays: [], volumetric: [], debtOverLimit: 0, ordersWithoutTracking: 0, unclaimed: 6, emptyBoxes: 3 });
     expect(shouldFlash(notices, null, today)).toBe(false);
   });
 

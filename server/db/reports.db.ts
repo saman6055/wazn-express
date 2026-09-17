@@ -3,7 +3,7 @@ import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { getTotalDebtAmount } from './finance.db';
-import { getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
+import { countEmptyBoxes, getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
 import { selfOrderConditions } from './selfOrder.filter';
 import { ACTIVE_BATCH_STATUSES, debtorsHref, trackingAlertsHref } from '@shared/listLinks';
 import { daysWaitingForTracking, isOverCreditLimit, isTrackingOverdue } from '@shared/riskRules';
@@ -953,12 +953,13 @@ export async function getRiskItems(): Promise<RiskItem[]> {
       return fallback;
     }
   };
-  const [stale, volumetric, debtOverLimit, noTracking, unclaimed] = await Promise.all([
+  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes] = await Promise.all([
     settle('stale depot', () => getStaleDepotPackages(), []),
     settle('volumetric', () => getVolumetricParcels({ pendingOnly: true }), []),
     settle('debt over limit', countDebtorsOverLimit, 0),
     settle('orders without tracking', countOrdersWithoutTracking, { total: 0, aging: 0 }),
     settle('unclaimed', countUnclaimedPackages, 0),
+    settle('empty boxes', countEmptyBoxes, 0),
   ]);
   return buildRiskItems({
     staleDepotDays: stale.map((p) => p.daysInDepot),
@@ -966,6 +967,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     debtOverLimit,
     ordersWithoutTracking: noTracking.aging,
     unclaimed,
+    emptyBoxes,
   });
 }
 

@@ -35,7 +35,9 @@ import {
   ChevronLeft,
   ChevronRight,
   Package,
+  Trash2,
 } from "lucide-react";
+import { isEmptyBox } from "@shared/emptyBox";
 import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
@@ -107,6 +109,8 @@ interface BoxTableProps {
   onBoxSelect: (boxId: number) => void;
   /** Take the money for this box, without opening it. */
   onTakePayment?: (boxId: number) => void;
+  /** Delete an empty box (shared/emptyBox). Passed only to someone who may delete. */
+  onDeleteEmpty?: (box: { id: number; boxCode: string }) => void;
   customers: Customer[];
   isLoading: boolean;
 }
@@ -119,6 +123,7 @@ export function BoxTable({
   onPageChange,
   onBoxSelect,
   onTakePayment,
+  onDeleteEmpty,
   customers,
   isLoading,
 }: BoxTableProps) {
@@ -340,7 +345,25 @@ export function BoxTable({
                   {/* The commonest thing anybody does to a box once it has
                       gone out: take the money for it. It was three clicks
                       and a window deep; now it is here. */}
-                  {onTakePayment && (
+                  {/* An empty box has nothing to pay for; what it needs is
+                      clearing away (owner, 2026-09-17). The server checks
+                      again that it is still empty before deleting it. */}
+                  {onDeleteEmpty && isEmptyBox({
+                    status: box.status,
+                    itemCount: Array.isArray(box.items) ? box.items.length : Number(box.totalPackages) || 0,
+                    isCharged: box.isCharged,
+                  }) ? (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="me-1 h-8 border-red-300 text-red-700 hover:bg-red-50 dark:border-red-800 dark:text-red-300 dark:hover:bg-red-950/40"
+                      onClick={() => onDeleteEmpty({ id: box.id, boxCode: box.boxCode })}
+                      data-testid={`delete-empty-${box.id}`}
+                    >
+                      <Trash2 className="h-4 w-4 me-1" />
+                      {pickLang(language, { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" })}
+                    </Button>
+                  ) : onTakePayment && (
                     <Button
                       variant="outline"
                       size="sm"

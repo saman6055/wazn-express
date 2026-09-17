@@ -53,6 +53,58 @@ export async function createDeliveryBox(data: Omit<InsertDeliveryBox, 'boxCode'>
   return box;
 }
 
+/**
+ * A box nothing was ever put in — shared/emptyBox in SQL: still open or
+ * sealed, no delivery fee charged, no item and no payment on record.
+ */
+function emptyBoxSql() {
+  return sql`${deliveryBoxes.status} IN ('open', 'ready')
+    AND ${deliveryBoxes.isCharged} = 0
+    AND NOT EXISTS (SELECT 1 FROM ${deliveryBoxItems} WHERE ${deliveryBoxItems.boxId} = ${deliveryBoxes.id})
+    AND NOT EXISTS (SELECT 1 FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id})`;
+}
+
+/** Every empty box, oldest first, with its customer — the alert's list. Read-only. */
+export async function getEmptyBoxes(limit = 200) {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: deliveryBoxes.id,
+      boxCode: deliveryBoxes.boxCode,
+      status: deliveryBoxes.status,
+      createdAt: deliveryBoxes.createdAt,
+      customerId: deliveryBoxes.customerId,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+    })
+    .from(deliveryBoxes)
+    .leftJoin(customers, eq(customers.id, deliveryBoxes.customerId))
+    .where(emptyBoxSql())
+    .orderBy(deliveryBoxes.createdAt)
+    .limit(limit);
+}
+
+/** How many boxes are empty — the bell's count, by the same rule as the list. */
+export async function countEmptyBoxes(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db.select({ count: sql<number>`COUNT(*)` }).from(deliveryBoxes).where(emptyBoxSql());
+  return Number(row?.count ?? 0);
+}
+
+/** Is this box still empty, at this moment? Asked again just before an empty box is deleted. */
+export async function isBoxStillEmpty(id: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const rows = await db
+    .select({ id: deliveryBoxes.id })
+    .from(deliveryBoxes)
+    .where(and(eq(deliveryBoxes.id, id), emptyBoxSql()))
+    .limit(1);
+  return rows.length > 0;
+}
+
 export async function getDeliveryBoxById(id: number): Promise<DeliveryBox | null> {
   const db = await getDb();
   if (!db) return null;

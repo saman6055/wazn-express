@@ -1047,6 +1047,12 @@ export const deliveryBoxRouter = router({
       });
     }),
 
+  // Boxes nothing was ever put in (shared/emptyBox) — flagged above the list
+  // and in the bell, so they can be cleared away (owner, 2026-09-17).
+  emptyBoxes: staffProcedure.query(async () => {
+    return db.getEmptyBoxes();
+  }),
+
   /* ── money coming back through the box ──────────────────────────── */
 
   /**
@@ -1542,10 +1548,23 @@ export const deliveryBoxRouter = router({
    * and its items go to the bin together and can be put back as one.
    */
   delete: adminProcedure
-    .input(z.object({ id: z.number(), reason: z.string().trim().max(500).optional() }))
+    .input(z.object({
+      id: z.number(),
+      reason: z.string().trim().max(500).optional(),
+      // From an empty box's own button: delete only if it is still empty.
+      onlyIfEmpty: z.boolean().optional(),
+    }))
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND" });
+      // Checked again now, not trusted from the list: a parcel scanned in, or a
+      // payment taken, since the list was drawn saves the box.
+      if (input.onlyIfEmpty && !(await db.isBoxStillEmpty(box.id))) {
+        throw new TRPCError({
+          code: "CONFLICT",
+          message: "ئەم بۆکسە ئیتر بەتاڵ نییە — شتێکی تێکراوە یان پارەی لەسەر تۆمارکراوە، بۆیە نەسڕایەوە",
+        });
+      }
       if (box.status === 'delivered') {
         throw new TRPCError({
           code: "CONFLICT",
