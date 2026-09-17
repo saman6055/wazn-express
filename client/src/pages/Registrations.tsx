@@ -21,6 +21,7 @@ import {
 import { buildVolumetricMessage, buildWhatsAppLink } from "@shared/volumetricAlert";
 import { VolumetricWatchCard } from "@/components/registrations/VolumetricWatchCard";
 import { StaleDepotCard } from "@/components/registrations/StaleDepotCard";
+import { OrderNumbers } from "@/components/OrderNumbers";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -55,6 +56,7 @@ type Registration = {
     orderType: "full_package" | "commission" | "purchase_request";
     productName: string | null;
     status: string;
+    orderNumber?: string | null;
   } | null;
   declaredByCustomer: boolean;
   needsReview: boolean;
@@ -791,6 +793,8 @@ function RegistrationCard({
               <span className="font-mono text-[12px] text-muted-foreground">{row.packageCode}</span>
             )}
           </div>
+          {/* The platform order number staff check with the customer by (owner, 2026-09-17). */}
+          <OrderNumbers numbers={row.order?.orderNumber} className="mt-1 flex text-[12px]" />
 
           {row.needsReview && (
             <div className="mt-2 flex flex-wrap items-center gap-2 rounded-xl border border-rose-300 bg-rose-100/70 px-2.5 py-1.5 dark:border-rose-800 dark:bg-rose-950/40">
@@ -1165,6 +1169,7 @@ function RegistrationTable({
                   <button type="button" onClick={() => r.trackingNumber && onCopy(r.trackingNumber)} className="font-mono text-[13px] text-foreground hover:text-blue-700 dark:hover:text-blue-300" dir="ltr">
                     {r.trackingNumber || "—"}
                   </button>
+                  <OrderNumbers numbers={r.order?.orderNumber} className="flex" />
                 </td>
                 <td className="px-3 py-2.5 text-[12.5px]">
                   {r.order && orderType ? (

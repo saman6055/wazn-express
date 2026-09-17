@@ -31,6 +31,7 @@ import { createActivityAlert } from './admin.db';
 import { getUploadsDir } from '../services/localUpload';
 import { createCustomerNotification } from './portal.db';
 import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPackages.db';
+import { orderNumbersForPackages } from './orderNumbers.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -342,6 +343,15 @@ export async function getAllPackages(options: {
       like(packages.trackingNumber, searchTerm),
       like(packages.packageCode, searchTerm),
       like(packages.description, searchTerm),
+      // The platform order number — staff check a parcel with the customer by
+      // it (owner, 2026-09-17) — through the parcel's own order or any order
+      // in its carton.
+      sql`EXISTS (
+        SELECT 1 FROM ${fullPackageOrders} spo
+        WHERE spo.orderNumber LIKE ${searchTerm} AND spo.deletedAt IS NULL
+          AND (spo.id = ${packages.fullPackageOrderId}
+            OR spo.id IN (SELECT spl.fullPackageOrderId FROM ${packageOrderLinks} spl WHERE spl.packageId = ${packages.id}))
+      )`,
     ];
     if (matchingCustomerIds.length > 0) {
       orConditions.push(inArray(packages.customerId, matchingCustomerIds));
@@ -1462,6 +1472,8 @@ export type VolumetricParcel = {
   divisor: number;
   alert: boolean;
   acknowledgedAt: Date | string | null;
+  /** The platform order numbers of the orders in it, if any. */
+  orderNumbers: string[];
 };
 
 /**
@@ -1549,8 +1561,12 @@ export async function getVolumetricParcels(options: {
       divisor: a.divisor,
       alert: a.alert,
       acknowledgedAt: r.volumetricAckAt ?? null,
+      orderNumbers: [],
     });
   }
+
+  const numbers = await orderNumbersForPackages(out.map((p) => p.id));
+  for (const parcel of out) parcel.orderNumbers = numbers.get(parcel.id) ?? [];
 
   // Biggest gap first: that is the order the conversations get difficult in.
   return out.sort((x, y) => y.extraKg - x.extraKg);
@@ -1903,6 +1919,8 @@ export type StaleDepotParcel = {
   volumeCbm: string | null;
   registeredAt: Date | string | null;
   daysInDepot: number;
+  /** The platform order numbers of the orders in it, if any. */
+  orderNumbers: string[];
 };
 
 /**
@@ -1942,12 +1960,14 @@ export async function getStaleDepotPackages(options: { olderThanDays?: number } 
     .orderBy(asc(packages.registeredAt));
 
   const now = Date.now();
+  const numbers = await orderNumbersForPackages(rows.map((r) => r.id));
   return rows.map((r) => ({
     ...r,
     shippingType: String(r.shippingType),
     daysInDepot: r.registeredAt
       ? Math.max(0, Math.floor((now - new Date(r.registeredAt).getTime()) / 86_400_000))
       : 0,
+    orderNumbers: numbers.get(r.id) ?? [],
   }));
 }
 
@@ -1991,6 +2011,8 @@ export type RegistrationRow = {
     orderType: 'full_package' | 'commission' | 'purchase_request';
     productName: string | null;
     status: string;
+    /** On the shop's platform — what staff check with the customer by. */
+    orderNumber: string | null;
   } | null;
   /** The customer told us this tracking was coming, before it arrived. */
   declaredByCustomer: boolean;
@@ -2106,6 +2128,7 @@ export async function getRegistrations(options: {
   type OrderInfo = {
     id: number; orderCode: string; orderType: string; productName: string | null;
     status: string; productImage: string | null; productImages: string[] | null;
+    orderNumber: string | null;
   };
   const orderByTracking = new Map<string, OrderInfo>();
   const orderById = new Map<number, OrderInfo>();
@@ -2120,6 +2143,7 @@ export async function getRegistrations(options: {
       status: fullPackageOrders.status,
       productImage: fullPackageOrders.productImage,
       productImages: fullPackageOrders.productImages,
+      orderNumber: fullPackageOrders.orderNumber,
     })
       .from(fullPackageOrderTrackings)
       .innerJoin(fullPackageOrders, eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrders.id))
@@ -2134,6 +2158,7 @@ export async function getRegistrations(options: {
       status: fullPackageOrders.status,
       productImage: fullPackageOrders.productImage,
       productImages: fullPackageOrders.productImages,
+      orderNumber: fullPackageOrders.orderNumber,
     })
       .from(fullPackageOrders)
       .where(inArray(fullPackageOrders.trackingNumber, trackings));
@@ -2144,6 +2169,7 @@ export async function getRegistrations(options: {
         productName: o.productName ?? null, status: String(o.status),
         productImage: o.productImage ?? null,
         productImages: (o.productImages as string[] | null) ?? null,
+        orderNumber: o.orderNumber ?? null,
       };
       orderById.set(o.id, info);
       const tn = o.trackingNumber?.trim();
@@ -2166,6 +2192,7 @@ export async function getRegistrations(options: {
       status: fullPackageOrders.status,
       productImage: fullPackageOrders.productImage,
       productImages: fullPackageOrders.productImages,
+      orderNumber: fullPackageOrders.orderNumber,
     }).from(fullPackageOrders).where(inArray(fullPackageOrders.id, missingFkIds));
     for (const o of extra) {
       orderById.set(o.id, {
@@ -2173,6 +2200,7 @@ export async function getRegistrations(options: {
         productName: o.productName ?? null, status: String(o.status),
         productImage: o.productImage ?? null,
         productImages: (o.productImages as string[] | null) ?? null,
+        orderNumber: o.orderNumber ?? null,
       });
     }
   }
@@ -2291,6 +2319,7 @@ export async function getRegistrations(options: {
             orderType: order.orderType as 'full_package' | 'commission' | 'purchase_request',
             productName: order.productName,
             status: order.status,
+            orderNumber: order.orderNumber?.trim() || null,
           }
         : null,
       declaredByCustomer: Boolean(declaredImgs && declaredImgs.length > 0),
@@ -2328,7 +2357,7 @@ export async function getRegistrations(options: {
     if (term) {
       const hay = [
         row.trackingNumber, row.packageCode, row.customerName, row.customerCode,
-        row.description, row.categoryName, row.order?.orderCode, row.order?.productName,
+        row.description, row.categoryName, row.order?.orderCode, row.order?.productName, row.order?.orderNumber,
       ].filter(Boolean).join(" ").toLowerCase();
       if (!hay.includes(term)) continue;
     }

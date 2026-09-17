@@ -14,6 +14,7 @@ import { RISK_BORDER, RISK_CHIP, RISK_ICON, RISK_STRIPE } from "@/lib/riskStyle"
 import { volumetricLevel, worstLevel, VOLUMETRIC_CRITICAL_RATIO, RISK_LEVEL_LABEL } from "@shared/riskRules";
 import { customerCodeOnly } from "@shared/customerCode";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { AlertParcelSheet, type AlertParcel } from "@/components/registrations/AlertParcelSheet";
 
 type L = { ku: string; en: string; ar: string; zh: string };
@@ -43,6 +44,7 @@ type Parcel = {
   ratio: number;
   divisor: number;
   acknowledgedAt: string | Date | null;
+  orderNumbers?: string[];
 };
 
 /** Where the whole list lives: this card on the registrations page, opened out. */
@@ -166,6 +168,7 @@ export function VolumetricWatchCard({ className, variant = "page" }: { className
         chargeableKg: open.chargeableKg,
         extraKg: open.extraKg,
         ratio: open.ratio,
+        orderNumbers: open.orderNumbers,
       }
     : null;
 
@@ -245,6 +248,10 @@ export function VolumetricWatchCard({ className, variant = "page" }: { className
                   </bdi>
                   <CopyButton value={r.trackingNumber ?? r.packageCode} label={label(COPY_TRACKING)} className="relative z-10" />
                 </div>
+
+                {/* The platform order number staff check with the customer by
+                    (owner, 2026-09-17). */}
+                <OrderNumbers numbers={r.orderNumbers} className="mt-1 flex" copyClassName="relative z-10" />
 
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px]" dir="ltr">
                   <span className="flex items-center gap-3">

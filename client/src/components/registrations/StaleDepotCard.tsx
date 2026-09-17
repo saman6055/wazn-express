@@ -14,6 +14,7 @@ import { customerCodeOnly } from "@shared/customerCode";
 import { buildWhatsAppLink } from "@shared/volumetricAlert";
 import { AlertParcelSheet, type AlertParcel } from "@/components/registrations/AlertParcelSheet";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderNumbers } from "@/components/OrderNumbers";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -34,6 +35,7 @@ type Stale = {
   volumeCbm: string | null;
   registeredAt: Date | string | null;
   daysInDepot: number;
+  orderNumbers?: string[];
 };
 
 /** Where the whole list lives: this card on the registrations page, opened out. */
@@ -112,6 +114,7 @@ export function StaleDepotCard({ className, variant = "page" }: { className?: st
         registeredAt: open.registeredAt,
         weightKg: open.weightKg,
         daysInDepot: open.daysInDepot,
+        orderNumbers: open.orderNumbers,
       }
     : null;
 
@@ -181,10 +184,17 @@ export function StaleDepotCard({ className, variant = "page" }: { className?: st
                 </span>
                 <CopyButton value={rawCode} label={label(COPY_CODE)} className="relative z-10" />
                 <span className="min-w-0 flex-1 truncate text-xs">{r.customerName ?? "—"}</span>
-                <bdi dir="ltr" className="shrink-0 font-mono text-[11px] text-sky-700 dark:text-sky-300">
-                  {reference}
-                </bdi>
-                <CopyButton value={r.trackingNumber ?? r.packageCode} label={label(COPY_TRACKING)} className="relative z-10" />
+                {/* The tracking, and under it the platform order number staff
+                    check with the customer by (owner, 2026-09-17). */}
+                <span className="flex shrink-0 flex-col items-end gap-0.5">
+                  <span className="flex items-center gap-1">
+                    <bdi dir="ltr" className="font-mono text-[11px] text-sky-700 dark:text-sky-300">
+                      {reference}
+                    </bdi>
+                    <CopyButton value={r.trackingNumber ?? r.packageCode} label={label(COPY_TRACKING)} className="relative z-10" />
+                  </span>
+                  <OrderNumbers numbers={r.orderNumbers} copyClassName="relative z-10" />
+                </span>
                 <span
                   title={label(RISK_LEVEL_LABEL[level])}
                   className={cn("inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium", RISK_CHIP[level])}

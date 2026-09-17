@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { ZoomImage } from "@/components/ZoomImage";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
@@ -2263,6 +2264,10 @@ const [, setLocation] = useLocation();
                     <div>
                       <p className="text-sm text-muted-foreground">{t("packages.trackingNumber")}</p>
                       <p className="font-medium font-mono">{viewPackage.trackingNumber || "-"}</p>
+                      <OrderNumbers
+                        numbers={(viewPackage as any).platformOrderNumber || (viewPackage as any).supplierOrderNumber}
+                        className="mt-1 flex"
+                      />
                     </div>
                     <div>
                       <p className="text-sm text-muted-foreground">{t("packages.shippingType")}</p>

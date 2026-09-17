@@ -7,6 +7,7 @@ import {
   CheckCircle2,
   Clock,
   Copy,
+  Hash,
   History,
   ListFilter,
   MessageCircle,
@@ -32,6 +33,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CopyButton } from "@/components/CopyButton";
+import { OrderNumbers } from "@/components/OrderNumbers";
 import { packagesHref } from "@shared/listLinks";
 import { customerCodeOnly } from "@shared/customerCode";
 import { RISK_LEVEL_LABEL, type RiskLevel } from "@shared/riskRules";
@@ -61,6 +63,8 @@ export interface AlertParcel {
   chargeableKg?: number;
   extraKg?: number;
   ratio?: number;
+  /** The platform order numbers of the orders in it. */
+  orderNumbers?: string[] | null;
 }
 
 const kg = (n: number | string | null | undefined) => {
@@ -148,6 +152,16 @@ export function AlertParcelSheet({
         </span>
       ),
     });
+    // The platform order number: what staff check with the customer by
+    // (owner, 2026-09-17). Shown first among the references.
+    if (parcel.orderNumbers && parcel.orderNumbers.length > 0) {
+      facts.push({
+        key: "orderNumbers",
+        icon: Hash,
+        label: { ku: "ئۆردەر نەمبەر", en: "Order no.", ar: "رقم الطلب", zh: "订单号" },
+        value: <OrderNumbers numbers={parcel.orderNumbers} bare className="text-sm" />,
+      });
+    }
     // The title already carries the tracking; the office's own code is the
     // other reference people search by.
     if (parcel.trackingNumber && parcel.packageCode && parcel.packageCode !== parcel.trackingNumber) {
