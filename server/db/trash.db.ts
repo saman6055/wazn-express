@@ -1,8 +1,35 @@
 import { getDb } from "./connection";
-import { and, desc, eq, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, isNotNull, isNull, sql } from "drizzle-orm";
+import type { MySqlTable } from "drizzle-orm/mysql-core";
 import { batches, deletedRecords, deliveryBoxItems, deliveryBoxes, fullPackageOrders, users } from "../../drizzle/schema";
 import type { InsertDeletedRecord } from "../../drizzle/schema";
 import type { TrashItem } from "@shared/trash";
+
+/**
+ * A row as the bin keeps it, made fit to insert again.
+ *
+ * The bin stores JSON, so every date comes back as text. Restoring used to
+ * turn a hand-written list of names back into dates, and a date missing from
+ * the list reached the driver as text: the insert threw ("value.toISOString is
+ * not a function"). A parcel's scannedAt was never on it, so since 2026-08-13
+ * a box with parcels came back without them — the box row went in, its
+ * parcels failed, and the box stood with a record counting parcels it did not
+ * have (BOX-20260719-003, owner, 2026-09-17). A sealed box's sealedAt and a
+ * batch's flightArrivedAt were missing too.
+ *
+ * Now every date column is revived, read from the table itself, and only the
+ * table's own columns go in: a box item in the bin also carries what the
+ * screen added to it (the advance, the order note, the order numbers).
+ */
+export function snapshotRowForInsert(table: MySqlTable, row: Record<string, unknown>): Record<string, unknown> {
+  const out: Record<string, unknown> = {};
+  for (const [key, column] of Object.entries(getTableColumns(table))) {
+    if (!(key in row)) continue;
+    const value = row[key];
+    out[key] = column.dataType === "date" && value != null && !(value instanceof Date) ? new Date(value as string) : value;
+  }
+  return out;
+}
 
 /** Put a complete copy of a row into the bin, before it is deleted. */
 export async function recordDeletion(entry: InsertDeletedRecord): Promise<void> {
@@ -121,11 +148,7 @@ export async function batchExists(id: number): Promise<boolean> {
 export async function restoreBatchFromSnapshot(snapshot: Record<string, unknown>): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  const row: Record<string, unknown> = { ...snapshot };
-  for (const key of ["createdAt", "updatedAt", "departureDate", "estimatedArrival", "actualArrival"]) {
-    if (row[key]) row[key] = new Date(row[key] as string);
-  }
-  await db.insert(batches).values(row as any);
+  await db.insert(batches).values(snapshotRowForInsert(batches, snapshot) as any);
 }
 
 /** Clear the deletedAt marker on a full-package order. */
@@ -195,7 +218,11 @@ export async function isBoxCodeFree(boxCode: string): Promise<boolean> {
   return !row;
 }
 
-/** Put a box and its items back, with the ids they had. */
+/**
+ * Put a box and its items back, with the ids they had — together or not at
+ * all. A box back without its parcels is worse than a box still in the bin:
+ * it looks whole, its record counts parcels, and nothing in it is real.
+ */
 export async function restoreDeliveryBoxFromSnapshot(
   box: Record<string, unknown>,
   items: Record<string, unknown>[]
@@ -203,15 +230,10 @@ export async function restoreDeliveryBoxFromSnapshot(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
-  const dates = ["createdAt", "updatedAt", "deliveredAt", "cancelledAt", "readyAt", "customerConfirmedAt"];
-  const revive = (row: Record<string, unknown>) => {
-    const out = { ...row };
-    for (const key of dates) if (out[key]) out[key] = new Date(out[key] as string);
-    return out;
-  };
-
-  await db.insert(deliveryBoxes).values(revive(box) as any);
-  if (items.length > 0) {
-    await db.insert(deliveryBoxItems).values(items.map(revive) as any);
-  }
+  await db.transaction(async (tx) => {
+    await tx.insert(deliveryBoxes).values(snapshotRowForInsert(deliveryBoxes, box) as any);
+    if (items.length > 0) {
+      await tx.insert(deliveryBoxItems).values(items.map((item) => snapshotRowForInsert(deliveryBoxItems, item)) as any);
+    }
+  });
 }
