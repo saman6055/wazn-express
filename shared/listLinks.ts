@@ -207,6 +207,38 @@ export function readFinanceLink(search: string): FinanceLink {
   };
 }
 
+/* ─── debts and orders waiting for tracking ─────────────────────────────── */
+
+export interface DebtorsLink {
+  /** Only the customers whose debt has passed their own credit limit (shared/riskRules). */
+  over?: "limit";
+}
+
+export function debtorsHref(link: DebtorsLink = {}): string {
+  return `/finance/debtors${query({ over: link.over })}`;
+}
+
+export function readDebtorsLink(search: string): DebtorsLink {
+  return { over: oneOf(params(search).get("over"), ["limit"] as const) };
+}
+
+/** The tracking-alerts page's own day buckets. */
+export type TrackingDays = "1-2" | "3-4" | "5-6" | "7+";
+
+export interface TrackingAlertsLink {
+  days?: TrackingDays;
+}
+
+export function trackingAlertsHref(link: TrackingAlertsLink = {}): string {
+  return `/tracking-alerts${query({ days: link.days })}`;
+}
+
+export function readTrackingAlertsLink(search: string): TrackingAlertsLink {
+  // A "+" typed into an address by hand arrives as a space.
+  const days = params(search).get("days")?.replace(/ $/, "+") ?? null;
+  return { days: oneOf(days, ["1-2", "3-4", "5-6", "7+"] as const) };
+}
+
 /* ─── saying what is filtered ───────────────────────────────────────────── */
 
 export interface Localised {
@@ -256,6 +288,7 @@ export const FILTER_LABEL: Record<string, Localised> = {
   full_package: { ku: "پاکێجی تەواو", en: "Full package", ar: "الطرد الكامل", zh: "整包代购" },
   commission: { ku: "عمولە", en: "Commission", ar: "عمولة", zh: "代购佣金" },
   self_order: { ku: "تۆماری خۆی", en: "Self order", ar: "طلب ذاتي", zh: "自购订单" },
+  over_limit: { ku: "قەرزیان لە سنوور تێپەڕیوە", en: "Debt past their credit limit", ar: "تجاوز الدين حدّ الائتمان", zh: "欠款超出信用额度" },
 };
 
 /** "Registered in the last 7 days", in each language. */

@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Link, useLocation } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -224,6 +224,11 @@ export default function Registrations() {
   const [customFrom, setCustomFrom] = useState(toInputDate(startOfDay(new Date())));
   const [customTo, setCustomTo] = useState(toInputDate(startOfDay(new Date())));
   const [search, setSearch] = useState("");
+  // Arriving from the bell or a dashboard card (?alert=stale|volumetric): that
+  // problem goes first, straight under the title, so the page opens on it
+  // rather than on today's intake with the problem somewhere below.
+  const urlSearch = useSearch();
+  const alertFocus = new URLSearchParams(urlSearch).get("alert");
   const [gallery, setGallery] = useState<{ photos: Photo[]; index: number } | null>(null);
   const [flag, setFlag] = useState<Flag | null>(null);
 
@@ -405,6 +410,9 @@ export default function Registrations() {
         </div>
       </div>
 
+      {alertFocus === "stale" && <StaleDepotCard />}
+      {alertFocus === "volumetric" && <VolumetricWatchCard />}
+
       {/* Everything that still needs work, in one row. These used to be spread
           between the dashboard and the individual cards, so there was nowhere
           to ask "what is outstanding today" and get an answer. */}
@@ -500,9 +508,9 @@ export default function Registrations() {
           fifteen days without a batch, is outstanding whatever day it arrived.
           Under "today" they would simply vanish. They lived on the dashboard,
           which meant leaving this page to see them and coming back to act. */}
-      <div className="grid gap-2.5 2xl:grid-cols-2">
-        <VolumetricWatchCard />
-        <StaleDepotCard />
+      <div className="grid gap-2.5 empty:hidden 2xl:grid-cols-2">
+        {alertFocus !== "volumetric" && <VolumetricWatchCard />}
+        {alertFocus !== "stale" && <StaleDepotCard />}
       </div>
 
       {isLoading ? (

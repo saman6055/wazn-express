@@ -12,6 +12,7 @@ import path from "path";
 const SRC = __dirname;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readServer = (p: string) => fs.readFileSync(path.resolve(SRC, "../../server", p), "utf8").replace(/\r\n/g, "\n");
+const readShared = (p: string) => fs.readFileSync(path.resolve(SRC, "../../shared", p), "utf8").replace(/\r\n/g, "\n");
 
 const bell = read("components/RiskBell.tsx");
 const layout = read("components/DashboardLayout.tsx");
@@ -65,6 +66,50 @@ describe("the flashing", () => {
     expect(bell).toContain("animate-ping");
     expect(bell).toContain("motion-reduce:animate-none");
     expect(bell).toContain('data-flashing={flashing ? "true" : undefined}');
+  });
+});
+
+describe("each item opens exactly what it counted", () => {
+  // Owner, 2026-09-17: a click goes to the problem itself. A whole list that
+  // merely contains the problem looks like an answer and is not one.
+  const riskBell = readShared("riskBell.ts");
+  const reports = readServer("db/reports.db.ts");
+
+  it("debts: the debtors past their own limit, by the rule that counted them", () => {
+    expect(riskBell).toContain('"debt-over-limit": debtorsHref({ over: "limit" })');
+    const page = read("pages/DebtorsReport.tsx");
+    expect(page).toContain("readDebtorsLink(urlSearch).over === \"limit\"");
+    expect(page).toContain("isOverCreditLimit(acc.currentBalanceUsd, acc.creditLimitUsd)");
+    expect(page).toContain("filters={overLimitOnly ? [FILTER_LABEL.over_limit] : []}");
+    const start = reports.indexOf("export async function countDebtorsOverLimit");
+    const end = reports.indexOf("export async function countOrdersWithoutTracking");
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    expect(reports.slice(start, end)).toContain("isOverCreditLimit(r.balance, r.limit)");
+  });
+
+  it("orders: the tracking-alerts page at 7+ days, where the tracking is added", () => {
+    expect(riskBell).toContain('"orders-no-tracking": trackingAlertsHref({ days: "7+" })');
+    expect(riskBell).toContain('"orders-no-tracking": "/tracking-alerts"');
+    const page = read("pages/TrackingAlerts.tsx");
+    expect(page).toContain("readTrackingAlertsLink(urlSearch).days");
+    expect(page).toContain("useState<string>(linkDays ?? \"all\")");
+    expect(page).toMatch(/value: "7\+",[^\n]*min: 7,/);
+    const start = reports.indexOf("export async function countOrdersWithoutTracking");
+    const end = reports.indexOf("export async function countUnclaimedPackages");
+    expect(start).toBeGreaterThan(-1);
+    expect(end).toBeGreaterThan(start);
+    const fn = reports.slice(start, end);
+    expect(fn).toContain("await getOrdersPendingTracking()");
+    expect(fn).toContain("isTrackingOverdue(daysWaitingForTracking(o.orderDate, now))");
+    expect(readServer("routers/fullPackage.router.ts")).toContain("daysWaitingForTracking(order.orderDate, now)");
+  });
+
+  it("the dashboard's own alerts open the same lists", () => {
+    const alerts = reports.slice(reports.indexOf("export async function getDashboardAlerts"));
+    expect(alerts).toContain("link: debtorsHref({ over: 'limit' })");
+    expect(alerts).toContain("link: trackingAlertsHref(),");
+    expect(alerts).not.toContain("link: '/finance/debtors'");
   });
 });
 

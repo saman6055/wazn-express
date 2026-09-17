@@ -1,4 +1,5 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
+import { useLocation, useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -11,6 +12,8 @@ import { Tabs, TabsContent } from "@/components/ui/tabs";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
+import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
+import { readTrackingAlertsLink, trackingAlertsHref } from "@shared/listLinks";
 import { ZoomImage } from "@/components/ZoomImage";
 import { 
   AlertTriangle, AlertCircle, XCircle, Clock, RefreshCw, Package, 
@@ -88,7 +91,16 @@ export default function TrackingAlerts() {
   
   // Filter states
   const [typeFilter, setTypeFilter] = useState("all");
-  const [daysFilter, setDaysFilter] = useState("all");
+  // Opened from the bell (?days=7+): the orders it counted, by the same day
+  // count (shared/riskRules), already filtered. It follows the address, so a
+  // second click while already on this page still applies it.
+  const [, navigate] = useLocation();
+  const urlSearch = useSearch();
+  const linkDays = readTrackingAlertsLink(urlSearch).days;
+  const [daysFilter, setDaysFilter] = useState<string>(linkDays ?? "all");
+  useEffect(() => {
+    if (linkDays) setDaysFilter(linkDays);
+  }, [linkDays]);
   const [searchTerm, setSearchTerm] = useState("");
   
   // Data fetching
@@ -538,6 +550,16 @@ export default function TrackingAlerts() {
                   </CardContent>
                 </Card>
               </div>
+
+              {linkDays && daysFilter === linkDays && (
+                <FilteredByLinkBanner
+                  filters={DAYS_FILTERS.filter((d) => d.value === linkDays).map((d) => ({ ku: d.labelKu, en: d.labelEn, ar: d.labelAr, zh: d.labelZh }))}
+                  onClear={() => {
+                    setDaysFilter("all");
+                    navigate(trackingAlertsHref(), { replace: true });
+                  }}
+                />
+              )}
 
               {/* Filters & Search */}
               <Card className="border-0 shadow-lg">

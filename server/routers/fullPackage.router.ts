@@ -4,6 +4,7 @@ import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { daysWaitingForTracking } from "@shared/riskRules";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 /**
@@ -1556,8 +1557,8 @@ export const fullPackageRouter = router({
       
       // Calculate days waiting and alert level for each order
       return orders.map(order => {
-        const orderDate = order.orderDate ? new Date(order.orderDate) : null;
-        const daysWaiting = orderDate ? Math.floor((now.getTime() - orderDate.getTime()) / (24 * 60 * 60 * 1000)) : 0;
+        // The bell counts with the same rule (shared/riskRules).
+        const daysWaiting = daysWaitingForTracking(order.orderDate, now);
         
         let alertLevel: "none" | "warning" | "urgent" | "critical" = "none";
         if (daysWaiting >= 7) alertLevel = "critical";

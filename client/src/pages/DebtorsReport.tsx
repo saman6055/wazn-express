@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -32,15 +32,33 @@ import {
   Phone,
   Eye,
 } from "lucide-react";
-import { Link } from "wouter";
+import { Link, useLocation, useSearch } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Money } from "@/components/ui/money";
 import { MiniProgress } from "@/components/dashboard/MiniProgress";
+import { CopyButton } from "@/components/CopyButton";
+import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
+import { pickLang } from "@/lib/lang";
+import { FILTER_LABEL, debtorsHref, readDebtorsLink } from "@shared/listLinks";
+import { isOverCreditLimit } from "@shared/riskRules";
 
 type AgingCategory = 'all' | '0-30' | '30-60' | '60-90' | '90+';
 
+const COPY_WORDS = { ku: "کۆپی کردن", en: "Copy", ar: "نسخ", zh: "复制" };
+const LIMIT_WORDS = { ku: "سنوور:", en: "Limit:", ar: "الحد:", zh: "额度：" };
+
 export default function DebtorsReport() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
+  const [, navigate] = useLocation();
+  // Opened from the bell or the dashboard's debt alert: only the customers
+  // past their own credit limit, by the rule that counted them
+  // (shared/riskRules). It follows the address, so a second click while
+  // already on this page still applies it.
+  const urlSearch = useSearch();
+  const [overLimitOnly, setOverLimitOnly] = useState(() => readDebtorsLink(urlSearch).over === "limit");
+  useEffect(() => {
+    setOverLimitOnly(readDebtorsLink(urlSearch).over === "limit");
+  }, [urlSearch]);
 const [searchTerm, setSearchTerm] = useState("");
   const [agingFilter, setAgingFilter] = useState<AgingCategory>("all");
   const [sortBy, setSortBy] = useState<'balance' | 'days'>('balance');
@@ -74,6 +92,10 @@ const [searchTerm, setSearchTerm] = useState("");
   // Filter and sort
   const filteredDebtors = useMemo(() => {
     let result = debtorAccounts;
+
+    if (overLimitOnly) {
+      result = result.filter((acc: any) => isOverCreditLimit(acc.currentBalanceUsd, acc.creditLimitUsd));
+    }
     
     // Search filter
     if (searchTerm) {
@@ -97,7 +119,7 @@ const [searchTerm, setSearchTerm] = useState("");
     }
     
     return result;
-  }, [debtorAccounts, searchTerm, agingFilter, sortBy]);
+  }, [debtorAccounts, overLimitOnly, searchTerm, agingFilter, sortBy]);
   
   // Calculate summary stats
   const stats = useMemo(() => {
@@ -162,6 +184,11 @@ const [searchTerm, setSearchTerm] = useState("");
           </div>
         </div>
         
+        <FilteredByLinkBanner
+          filters={overLimitOnly ? [FILTER_LABEL.over_limit] : []}
+          onClear={() => navigate(debtorsHref(), { replace: true })}
+        />
+
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
           <Card className="border-l-4 border-l-red-500">
@@ -364,10 +391,25 @@ const [searchTerm, setSearchTerm] = useState("");
                 <TableBody>
                   {filteredDebtors.map((debtor: any) => (
                     <TableRow key={debtor.id}>
-                      <TableCell className="font-medium">{debtor.customerCode}</TableCell>
-                      <TableCell className="font-mono text-sm">{debtor.accountNumber}</TableCell>
+                      <TableCell className="font-medium">
+                        <span className="inline-flex items-center gap-1">
+                          {debtor.customerCode}
+                          <CopyButton value={debtor.customerCode} label={pickLang(language, COPY_WORDS)} />
+                        </span>
+                      </TableCell>
+                      <TableCell className="font-mono text-sm">
+                        <span className="inline-flex items-center gap-1">
+                          {debtor.accountNumber}
+                          <CopyButton value={debtor.accountNumber} label={pickLang(language, COPY_WORDS)} />
+                        </span>
+                      </TableCell>
                       <TableCell className="text-right font-bold text-red-600 dark:text-red-300">
                         {formatCurrency(parseFloat(debtor.currentBalanceUsd || '0'))}
+                        {overLimitOnly && (
+                          <div className="text-[11px] font-normal text-muted-foreground">
+                            {pickLang(language, LIMIT_WORDS)} {formatCurrency(parseFloat(debtor.creditLimitUsd || '0'))}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell>{getAgingBadge(debtor.agingCategory)}</TableCell>
                       <TableCell>{debtor.daysSinceActivity} {t("auto.text_05f45d")}</TableCell>

@@ -18,6 +18,7 @@
 import { levelRank, staleDepotLevel, volumetricLevel, type RiskLevel } from "./riskRules";
 import { PATH_TO_MODULE } from "./permissions";
 import { canSeeAllAccounts, isAllAccountsPath } from "./financeAccess";
+import { debtorsHref, trackingAlertsHref } from "./listLinks";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -45,12 +46,16 @@ export interface RiskFacts {
   unclaimed: number;
 }
 
-/** Where each risk's list is. */
+/**
+ * Where each risk's list is — exactly the records it counted, already
+ * filtered, on the page where they are dealt with (owner, 2026-09-17: a click
+ * goes to the problem itself). Never a whole list that merely contains them.
+ */
 export const RISK_PATH: Record<RiskId, string> = {
   "stale-depot": "/packages/registrations?alert=stale",
   volumetric: "/packages/registrations?alert=volumetric",
-  "debt-over-limit": "/finance/debtors",
-  "orders-no-tracking": "/unified-orders",
+  "debt-over-limit": debtorsHref({ over: "limit" }),
+  "orders-no-tracking": trackingAlertsHref({ days: "7+" }),
   unclaimed: "/packages/unclaimed",
 };
 
@@ -59,7 +64,7 @@ export const RISK_GATE: Record<RiskId, string> = {
   "stale-depot": "/packages/registrations",
   volumetric: "/packages/registrations",
   "debt-over-limit": "/finance/debtors",
-  "orders-no-tracking": "/unified-orders",
+  "orders-no-tracking": "/tracking-alerts",
   unclaimed: "/packages/unclaimed",
 };
 

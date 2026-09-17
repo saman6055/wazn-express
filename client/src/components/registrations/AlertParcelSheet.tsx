@@ -31,6 +31,7 @@ import { RISK_CHIP } from "@/lib/riskStyle";
 import { usePermissions } from "@/hooks/usePermissions";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Skeleton } from "@/components/ui/skeleton";
+import { CopyButton } from "@/components/CopyButton";
 import { packagesHref } from "@shared/listLinks";
 import { customerCodeOnly } from "@shared/customerCode";
 import { RISK_LEVEL_LABEL, type RiskLevel } from "@shared/riskRules";
@@ -132,16 +133,36 @@ export function AlertParcelSheet({
       key: "customer",
       icon: User,
       label: { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" },
-      value: canCustomers ? (
-        <Link href={`/customers/${parcel.customerId}`} className="text-sky-700 underline-offset-2 hover:underline dark:text-sky-300">
-          {parcel.customerName ?? "—"} <bdi dir="ltr" className="font-mono text-xs">{code}</bdi>
-        </Link>
-      ) : (
-        <span>
-          {parcel.customerName ?? "—"} <bdi dir="ltr" className="font-mono text-xs">{code}</bdi>
+      value: (
+        <span className="inline-flex flex-wrap items-center gap-1">
+          {canCustomers ? (
+            <Link href={`/customers/${parcel.customerId}`} className="text-sky-700 underline-offset-2 hover:underline dark:text-sky-300">
+              {parcel.customerName ?? "—"} <bdi dir="ltr" className="font-mono text-xs">{code}</bdi>
+            </Link>
+          ) : (
+            <span>
+              {parcel.customerName ?? "—"} <bdi dir="ltr" className="font-mono text-xs">{code}</bdi>
+            </span>
+          )}
+          <CopyButton value={code} label={L({ ku: "کۆپی کۆدی کڕیار", en: "Copy customer code", ar: "نسخ رمز العميل", zh: "复制客户编号" })} />
         </span>
       ),
     });
+    // The title already carries the tracking; the office's own code is the
+    // other reference people search by.
+    if (parcel.trackingNumber && parcel.packageCode && parcel.packageCode !== parcel.trackingNumber) {
+      facts.push({
+        key: "code",
+        icon: Package,
+        label: { ku: "کۆدی پاکەت", en: "Parcel code", ar: "رمز الطرد", zh: "包裹编号" },
+        value: (
+          <span className="inline-flex items-center gap-1">
+            <bdi dir="ltr" className="font-mono text-xs">{parcel.packageCode}</bdi>
+            <CopyButton value={parcel.packageCode} label={L({ ku: "کۆپی کۆدی پاکەت", en: "Copy parcel code", ar: "نسخ رمز الطرد", zh: "复制包裹编号" })} />
+          </span>
+        ),
+      });
+    }
     if (parcel.customerMobile) {
       facts.push({
         key: "mobile",

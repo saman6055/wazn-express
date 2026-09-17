@@ -13,9 +13,14 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { RISK_BORDER, RISK_CHIP, RISK_ICON, RISK_STRIPE } from "@/lib/riskStyle";
 import { volumetricLevel, worstLevel, VOLUMETRIC_CRITICAL_RATIO, RISK_LEVEL_LABEL } from "@shared/riskRules";
 import { customerCodeOnly } from "@shared/customerCode";
+import { CopyButton } from "@/components/CopyButton";
 import { AlertParcelSheet, type AlertParcel } from "@/components/registrations/AlertParcelSheet";
 
 type L = { ku: string; en: string; ar: string; zh: string };
+
+const COPY_CODE: L = { ku: "کۆپی کۆدی کڕیار", en: "Copy customer code", ar: "نسخ رمز العميل", zh: "复制客户编号" };
+const COPY_TRACKING: L = { ku: "کۆپی تراکینگ", en: "Copy tracking number", ar: "نسخ رقم التتبع", zh: "复制运单号" };
+const OPEN_PARCEL: L = { ku: "کردنەوەی پاکەت", en: "Open parcel", ar: "فتح الطرد", zh: "打开包裹" };
 
 type Parcel = {
   id: number;
@@ -122,7 +127,8 @@ export function VolumetricWatchCard({ className, variant = "page" }: { className
   useEffect(() => {
     if (!focused || rows.length === 0) return;
     setShowAll(true);
-    // Again once the cards above have finished loading and pushed it down.
+    // The page puts this card first when it is the one asked for, so nothing
+    // above it loads late; the later passes only cover a slow first paint.
     const timers = [0, 300, 900].map((ms) =>
       window.setTimeout(() => cardRef.current?.scrollIntoView({ block: "start" }), ms),
     );
@@ -138,7 +144,6 @@ export function VolumetricWatchCard({ className, variant = "page" }: { className
   const worst = worstLevel(rows.map((r) => volumetricLevel(r.ratio))) ?? "high";
   const critical = rows.filter((r) => volumetricLevel(r.ratio) === "critical").length;
   const canList = canViewPath("/packages/registrations");
-  const canCustomers = canViewPath("/customers");
   const Arrow = isRTL ? ChevronLeft : ChevronRight;
 
   const open = rows.find((r) => r.id === openId) ?? null;
@@ -216,47 +221,42 @@ export function VolumetricWatchCard({ className, variant = "page" }: { className
           {shown.map((r) => {
             const level = volumetricLevel(r.ratio);
             const waLink = waLinkFor(r);
-            const code = customerCodeOnly(r.customerCode) || "—";
-            const customer = (
-              <>
-                <span className="shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[11px] text-blue-900 dark:bg-blue-950/50 dark:text-blue-100">
-                  {code}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-xs">{r.customerName ?? "—"}</span>
-              </>
-            );
+            const rawCode = customerCodeOnly(r.customerCode);
+            const reference = r.trackingNumber ?? r.packageCode;
 
             return (
-              <div key={r.id} className="rounded-xl border border-red-200 bg-red-50/40 px-3 py-2 dark:border-red-900/60 dark:bg-red-950/20">
+              <div key={r.id} className="relative rounded-xl border border-red-200 bg-red-50/40 px-3 py-2 transition-colors hover:bg-red-50/80 dark:border-red-900/60 dark:bg-red-950/20 dark:hover:bg-red-950/40">
+                {/* The whole row opens the parcel itself (owner, 2026-09-17);
+                    only the copy, message and "checked" controls sit above it. */}
+                <button
+                  type="button"
+                  onClick={() => setOpenId(r.id)}
+                  aria-label={`${label(OPEN_PARCEL)} ${reference}`}
+                  className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                />
                 <div className="flex flex-wrap items-center gap-2">
-                  {canCustomers && r.customerId ? (
-                    <Link href={`/customers/${r.customerId}`} className="flex min-w-0 flex-1 items-center gap-2 hover:underline">
-                      {customer}
-                    </Link>
-                  ) : (
-                    <span className="flex min-w-0 flex-1 items-center gap-2">{customer}</span>
-                  )}
-                  <button
-                    type="button"
-                    onClick={() => setOpenId(r.id)}
-                    className="shrink-0 font-mono text-[11px] text-sky-700 hover:underline dark:text-sky-300"
-                    dir="ltr"
-                  >
-                    {r.trackingNumber ?? r.packageCode}
-                  </button>
+                  <span className="shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[11px] text-blue-900 dark:bg-blue-950/50 dark:text-blue-100">
+                    {rawCode || "—"}
+                  </span>
+                  <CopyButton value={rawCode} label={label(COPY_CODE)} className="relative z-10" />
+                  <span className="min-w-0 flex-1 truncate text-xs">{r.customerName ?? "—"}</span>
+                  <bdi dir="ltr" className="shrink-0 font-mono text-[11px] text-sky-700 dark:text-sky-300">
+                    {reference}
+                  </bdi>
+                  <CopyButton value={r.trackingNumber ?? r.packageCode} label={label(COPY_TRACKING)} className="relative z-10" />
                 </div>
 
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px]" dir="ltr">
-                  <button type="button" onClick={() => setOpenId(r.id)} className="flex items-center gap-3 hover:underline">
+                  <span className="flex items-center gap-3">
                     <span><span className="text-muted-foreground">actual</span> {kg(r.actualKg)}</span>
                     <span className="font-medium"><span className="text-muted-foreground">charged</span> {kg(r.chargeableKg)}</span>
                     <span className={cn("inline-flex items-center gap-1 rounded-md px-1.5", RISK_CHIP[level])}>
                       <AlertTriangle className="h-3 w-3" />
                       +{kg(r.extraKg)} kg · ×{r.ratio.toFixed(2)}
                     </span>
-                  </button>
+                  </span>
 
-                  <span className="ms-auto flex items-center gap-1.5">
+                  <span className="relative z-10 ms-auto flex items-center gap-1.5">
                     {waLink && (
                       <a
                         href={waLink}

@@ -13,8 +13,13 @@ import { staleDepotLevel, worstLevel, STALE_IN_DEPOT_CRITICAL_DAYS, RISK_LEVEL_L
 import { customerCodeOnly } from "@shared/customerCode";
 import { buildWhatsAppLink } from "@shared/volumetricAlert";
 import { AlertParcelSheet, type AlertParcel } from "@/components/registrations/AlertParcelSheet";
+import { CopyButton } from "@/components/CopyButton";
 
 type L = { ku: string; en: string; ar: string; zh: string };
+
+const COPY_CODE: L = { ku: "کۆپی کۆدی کڕیار", en: "Copy customer code", ar: "نسخ رمز العميل", zh: "复制客户编号" };
+const COPY_TRACKING: L = { ku: "کۆپی تراکینگ", en: "Copy tracking number", ar: "نسخ رقم التتبع", zh: "复制运单号" };
+const OPEN_PARCEL: L = { ku: "کردنەوەی پاکەت", en: "Open parcel", ar: "فتح الطرد", zh: "打开包裹" };
 
 type Stale = {
   id: number;
@@ -74,7 +79,8 @@ export function StaleDepotCard({ className, variant = "page" }: { className?: st
   useEffect(() => {
     if (!focused || rows.length === 0) return;
     setShowAll(true);
-    // Again once the cards above have finished loading and pushed it down.
+    // The page puts this card first when it is the one asked for, so nothing
+    // above it loads late; the later passes only cover a slow first paint.
     const timers = [0, 300, 900].map((ms) =>
       window.setTimeout(() => cardRef.current?.scrollIntoView({ block: "start" }), ms),
     );
@@ -90,7 +96,6 @@ export function StaleDepotCard({ className, variant = "page" }: { className?: st
   const limit = variant === "dashboard" ? 3 : 4;
   const shown = showAll && variant === "page" ? rows : rows.slice(0, limit);
   const canList = canViewPath("/packages/registrations");
-  const canCustomers = canViewPath("/customers");
   const Arrow = isRTL ? ChevronLeft : ChevronRight;
 
   const open = rows.find((r) => r.id === openId) ?? null;
@@ -157,41 +162,36 @@ export function StaleDepotCard({ className, variant = "page" }: { className?: st
         <div className="space-y-1.5">
           {shown.map((r) => {
             const level = staleDepotLevel(r.daysInDepot);
-            const code = customerCodeOnly(r.customerCode) || "—";
-            const customer = (
-              <>
-                <span className="shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[11px] text-blue-900 dark:bg-blue-950/50 dark:text-blue-100">
-                  {code}
-                </span>
-                <span className="min-w-0 flex-1 truncate text-xs">{r.customerName ?? "—"}</span>
-              </>
-            );
+            const rawCode = customerCodeOnly(r.customerCode);
+            const reference = r.trackingNumber ?? r.packageCode;
             return (
-              <div key={r.id} className="flex items-center gap-2 rounded-xl border px-3 py-2">
-                {canCustomers && r.customerId ? (
-                  <Link href={`/customers/${r.customerId}`} className="flex min-w-0 flex-1 items-center gap-2 hover:underline">
-                    {customer}
-                  </Link>
-                ) : (
-                  <span className="flex min-w-0 flex-1 items-center gap-2">{customer}</span>
-                )}
+              <div key={r.id} className="relative flex items-center gap-2 rounded-xl border px-3 py-2 transition-colors hover:bg-muted/50">
+                {/* The whole row opens the parcel itself — its details, its
+                    history and the way to fix it. Owner, 2026-09-17: a click
+                    goes to the problem; the customer's page is one step on,
+                    inside the details. */}
                 <button
                   type="button"
                   onClick={() => setOpenId(r.id)}
-                  className="shrink-0 font-mono text-[11px] text-sky-700 hover:underline dark:text-sky-300"
-                  dir="ltr"
-                >
-                  {r.trackingNumber ?? r.packageCode}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setOpenId(r.id)}
+                  aria-label={`${label(OPEN_PARCEL)} ${reference}`}
+                  className="absolute inset-0 rounded-xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-500"
+                />
+                <span className="shrink-0 rounded-md bg-blue-100 px-1.5 py-0.5 font-mono text-[11px] text-blue-900 dark:bg-blue-950/50 dark:text-blue-100">
+                  {rawCode || "—"}
+                </span>
+                <CopyButton value={rawCode} label={label(COPY_CODE)} className="relative z-10" />
+                <span className="min-w-0 flex-1 truncate text-xs">{r.customerName ?? "—"}</span>
+                <bdi dir="ltr" className="shrink-0 font-mono text-[11px] text-sky-700 dark:text-sky-300">
+                  {reference}
+                </bdi>
+                <CopyButton value={r.trackingNumber ?? r.packageCode} label={label(COPY_TRACKING)} className="relative z-10" />
+                <span
                   title={label(RISK_LEVEL_LABEL[level])}
                   className={cn("inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 text-[11px] font-medium", RISK_CHIP[level])}
                 >
                   <Clock className="h-3 w-3" />
                   <span dir="ltr">{r.daysInDepot}</span>
-                </button>
+                </span>
               </div>
             );
           })}

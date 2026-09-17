@@ -46,6 +46,21 @@ describe("the risks are on the dashboards", () => {
     expect(src).toContain("<VolumetricWatchCard />");
     expect(src).toContain("<StaleDepotCard />");
   });
+
+  it("arriving from the bell, the registrations page opens on that problem, first under the title", () => {
+    // Owner, 2026-09-17: a click goes to the problem itself — not to a page
+    // that has it somewhere below today's intake.
+    const src = read("pages/Registrations.tsx");
+    const focused = src.indexOf('{alertFocus === "stale" && <StaleDepotCard />}');
+    const intake = src.indexOf("{/* Everything that still needs work, in one row.");
+    expect(focused).toBeGreaterThan(-1);
+    expect(intake).toBeGreaterThan(-1);
+    expect(focused).toBeLessThan(intake);
+    expect(src).toContain('{alertFocus === "volumetric" && <VolumetricWatchCard />}');
+    // Not twice: the usual place stands aside for the one brought forward.
+    expect(src).toContain('{alertFocus !== "stale" && <StaleDepotCard />}');
+    expect(src).toContain('{alertFocus !== "volumetric" && <VolumetricWatchCard />}');
+  });
 });
 
 describe("every part of a card leads somewhere", () => {
@@ -53,14 +68,18 @@ describe("every part of a card leads somewhere", () => {
     ["StaleDepotCard", stale, "stale"],
     ["VolumetricWatchCard", volumetric, "volumetric"],
   ] as const) {
-    it(`${name}: the customer opens their page, when the reader may`, () => {
-      expect(src).toContain("canCustomers && r.customerId ? (");
-      expect(src).toContain("<Link href={`/customers/${r.customerId}`}");
+    it(`${name}: the whole row opens the parcel itself, not the customer's page`, () => {
+      // Owner, 2026-09-17: a click goes to the problem. The customer's page is
+      // one step on, inside the parcel's details.
+      expect(src).toMatch(/<button\s+type="button"\s+onClick=\{\(\) => setOpenId\(r\.id\)\}[\s\S]{0,160}className="absolute inset-0 rounded-xl/);
+      expect(src).not.toContain("<Link href={`/customers/${r.customerId}`}");
+      expect(src).toContain("<AlertParcelSheet");
     });
 
-    it(`${name}: the tracking opens the parcel's details`, () => {
-      expect(src).toMatch(/onClick=\{\(\) => setOpenId\(r\.id\)\}[\s\S]{0,200}\{r\.trackingNumber \?\? r\.packageCode\}/);
-      expect(src).toContain("<AlertParcelSheet");
+    it(`${name}: the customer code and the tracking copy without opening anything`, () => {
+      expect(src).toContain('import { CopyButton } from "@/components/CopyButton";');
+      expect(src).toContain('<CopyButton value={rawCode} label={label(COPY_CODE)} className="relative z-10" />');
+      expect(src).toContain('<CopyButton value={r.trackingNumber ?? r.packageCode} label={label(COPY_TRACKING)} className="relative z-10" />');
     });
 
     it(`${name}: the title and the count lead to the whole list`, () => {
@@ -95,6 +114,12 @@ describe("the parcel's details", () => {
     expect(sheet).toContain("packagesHref({ search: code })");
     expect(sheet).toContain("packagesHref({ search: tracking })");
     expect(sheet).toContain("`/batches?edit=${parcel.batchId}`");
+  });
+
+  it("let every reference be copied", () => {
+    expect(sheet).toContain("copyText(tracking)");
+    expect(sheet).toContain("<CopyButton value={code}");
+    expect(sheet).toContain("<CopyButton value={parcel.packageCode}");
   });
 
   it("offer a link only where the reader may go", () => {

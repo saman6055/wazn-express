@@ -8,12 +8,16 @@ import {
   batchMatchesStatus,
   batchesHref,
   customersHref,
+  debtorsHref,
   financeHref,
   packagesHref,
   readBatchesLink,
   readCustomersLink,
   readFinanceLink,
   readPackagesLink,
+  readDebtorsLink,
+  readTrackingAlertsLink,
+  trackingAlertsHref,
   withinDaysLabel,
 } from "./listLinks";
 
@@ -147,6 +151,26 @@ describe("money", () => {
   });
 });
 
+describe("debts and orders waiting for tracking", () => {
+  it("debtors past their limit survive the round trip", () => {
+    expect(debtorsHref({ over: "limit" })).toBe("/finance/debtors?over=limit");
+    expect(readDebtorsLink(debtorsHref({ over: "limit" })).over).toBe("limit");
+    expect(debtorsHref()).toBe("/finance/debtors");
+    // A value it does not know is no filter, not one that hides everyone.
+    expect(readDebtorsLink("?over=everyone").over).toBeUndefined();
+  });
+
+  it("the 7+ bucket survives its plus sign, encoded or typed", () => {
+    const href = trackingAlertsHref({ days: "7+" });
+    expect(href).toBe("/tracking-alerts?days=7%2B");
+    expect(readTrackingAlertsLink(href).days).toBe("7+");
+    expect(readTrackingAlertsLink("?days=7+").days).toBe("7+");
+    expect(readTrackingAlertsLink("?days=3-4").days).toBe("3-4");
+    expect(readTrackingAlertsLink("?days=99").days).toBeUndefined();
+    expect(trackingAlertsHref()).toBe("/tracking-alerts");
+  });
+});
+
 describe("reading a link however it arrives", () => {
   it("accepts a full path, a query string, or neither", () => {
     expect(readBatchesLink("/batches?status=active").status).toBe("active");
@@ -165,6 +189,7 @@ describe("what the page tells the reader", () => {
       "air_regular", "air_irregular", "sea",
       "full_package", "commission", "self_order",
       "active", "inactive",
+      "over_limit",
     ];
     for (const value of named) {
       const label = FILTER_LABEL[value];

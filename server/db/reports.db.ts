@@ -5,8 +5,9 @@ import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotN
 import { getTotalDebtAmount } from './finance.db';
 import { getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
 import { selfOrderConditions } from './selfOrder.filter';
-import { ACTIVE_BATCH_STATUSES } from '@shared/listLinks';
-import { ORDER_NO_TRACKING_DAYS } from '@shared/riskRules';
+import { ACTIVE_BATCH_STATUSES, debtorsHref, trackingAlertsHref } from '@shared/listLinks';
+import { daysWaitingForTracking, isOverCreditLimit, isTrackingOverdue } from '@shared/riskRules';
+import { getOrdersPendingTracking } from './fullPackage.db';
 import { buildRiskItems, type RiskItem } from '@shared/riskBell';
 import { getStaleDepotPackages, getVolumetricParcels } from './packages.db';
 import type { DashboardFigureId } from '@shared/dashboardExplain';
@@ -909,28 +910,24 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
 export async function countDebtorsOverLimit(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
-  const rows = await db.select({ count: count() })
+  // Only the accounts in debt come back; which of them are past their limit
+  // is the shared rule's to say — the one the debtors list filters with.
+  const rows = await db.select({ balance: customerAccounts.currentBalanceUsd, limit: customerAccounts.creditLimitUsd })
     .from(customerAccounts)
-    .where(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0 AND CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > CAST(COALESCE(${customerAccounts.creditLimitUsd}, '0') AS DECIMAL(12,2))`);
-  return Number(rows[0]?.count ?? 0);
+    .where(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0`);
+  return rows.filter((r) => isOverCreditLimit(r.balance, r.limit)).length;
 }
 
-/** Active orders still missing a tracking number: all of them, and those older than the owner's 7 days. */
+/**
+ * Orders still waiting for a tracking number: all of them, and those past the
+ * owner's 7 days. Counted from the tracking-alerts page's own list and its own
+ * day count, so each figure is the list it opens.
+ */
 export async function countOrdersWithoutTracking(): Promise<{ total: number; aging: number }> {
-  const db = await getDb();
-  if (!db) return { total: 0, aging: 0 };
-  const cutoff = new Date();
-  cutoff.setDate(cutoff.getDate() - ORDER_NO_TRACKING_DAYS);
-  const noTrackWhere = and(
-    isNull(fullPackageOrders.deletedAt),
-    inArray(fullPackageOrders.status, ['pending', 'approved', 'ordered'] as any),
-    or(isNull(fullPackageOrders.trackingNumber), eq(fullPackageOrders.trackingNumber, '')),
-  );
-  const total = Number((await db.select({ count: count() }).from(fullPackageOrders).where(noTrackWhere))[0]?.count ?? 0);
-  if (total === 0) return { total: 0, aging: 0 };
-  const aging = Number((await db.select({ count: count() }).from(fullPackageOrders)
-    .where(and(noTrackWhere, lt(fullPackageOrders.createdAt, cutoff))))[0]?.count ?? 0);
-  return { total, aging };
+  const orders = await getOrdersPendingTracking();
+  const now = new Date();
+  const aging = orders.filter((o) => isTrackingOverdue(daysWaitingForTracking(o.orderDate, now))).length;
+  return { total: orders.length, aging };
 }
 
 /** Parcels nobody has claimed. */
@@ -997,7 +994,7 @@ export async function getDashboardAlerts(): Promise<{
     try {
       const highDebtors = await countDebtorsOverLimit();
       if (highDebtors > 0) {
-        alerts.push({ id: 'high-debt', type: 'warning', title: 'کڕیارە قەرزدارەکان', description: `${highDebtors} کڕیار قەرزیان لە سنووری قەرز تێپەڕیوە`, count: highDebtors, link: '/finance/debtors' });
+        alerts.push({ id: 'high-debt', type: 'warning', title: 'کڕیارە قەرزدارەکان', description: `${highDebtors} کڕیار قەرزیان لە سنووری قەرز تێپەڕیوە`, count: highDebtors, link: debtorsHref({ over: 'limit' }) });
       }
     } catch { /* ignore */ }
 
@@ -1014,7 +1011,7 @@ export async function getDashboardAlerts(): Promise<{
             ? `${total} ئۆردەر بێ تراکینگن — ${aging}ـیان زیاتر لە 7 ڕۆژە`
             : `${total} ئۆردەر هێشتا بێ تراکینگن`,
           count: total,
-          link: '/unified-orders',
+          link: trackingAlertsHref(),
         });
       }
     } catch { /* ignore */ }

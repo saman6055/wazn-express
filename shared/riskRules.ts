@@ -39,6 +39,31 @@ export const VOLUMETRIC_CRITICAL_RATIO = 3;
 /** An order still without a tracking number after this many days is a risk. */
 export const ORDER_NO_TRACKING_DAYS = 7;
 
+/**
+ * A customer whose debt has passed their own credit limit; no limit set counts
+ * as zero. The bell, the dashboard's alert and the debtors list's filter all
+ * ask this one question, so a number and the list it opens cannot disagree.
+ */
+export function isOverCreditLimit(balanceUsd: unknown, creditLimitUsd: unknown): boolean {
+  const balance = Number(balanceUsd);
+  if (!Number.isFinite(balance) || balance <= 0) return false;
+  const limit = Number(creditLimitUsd);
+  return balance > (Number.isFinite(limit) ? limit : 0);
+}
+
+/** Whole days an order has waited for its tracking number, from its order date. No date counts as none. */
+export function daysWaitingForTracking(orderDate: Date | string | null | undefined, now: Date = new Date()): number {
+  if (!orderDate) return 0;
+  const at = new Date(orderDate).getTime();
+  if (!Number.isFinite(at)) return 0;
+  return Math.floor((now.getTime() - at) / 86_400_000);
+}
+
+/** The owner's 7 days — the tracking-alerts page's own "7+" bucket, which the bell counts and opens. */
+export function isTrackingOverdue(daysWaiting: number): boolean {
+  return daysWaiting >= ORDER_NO_TRACKING_DAYS;
+}
+
 /** How serious a parcel's wait in the China warehouse is. */
 export function staleDepotLevel(daysInDepot: number): RiskLevel {
   return daysInDepot > STALE_IN_DEPOT_CRITICAL_DAYS ? "critical" : "high";
