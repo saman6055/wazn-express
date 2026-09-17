@@ -61,12 +61,23 @@ const LIGHT_TONES = [
 const ACCEPT = ".ttf,.otf,.woff,.woff2";
 const MAX_MB = 5;
 
-export function AppearanceDialog() {
+export function AppearanceDialog({
+  open: openProp,
+  onOpenChange,
+  hideTrigger = false,
+}: {
+  /** Opened from elsewhere — the top bar's quick settings. */
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+  hideTrigger?: boolean;
+} = {}) {
   const { language } = useTranslation();
   const { theme } = useTheme();
   const { user } = useAuth();
   const { prefs, fonts, overridden, update, reset, refetchFonts } = useAppearance();
-  const [open, setOpen] = useState(false);
+  const [innerOpen, setInnerOpen] = useState(false);
+  const open = openProp ?? innerOpen;
+  const setOpen = onOpenChange ?? setInnerOpen;
   const [uploading, setUploading] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
@@ -156,11 +167,13 @@ export function AppearanceDialog() {
 
   return (
     <Dialog open={open} onOpenChange={setOpen}>
-      <DialogTrigger asChild>
-        <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title={title} aria-label={title}>
-          <Type className="h-4 w-4 text-muted-foreground" />
-        </Button>
-      </DialogTrigger>
+      {!hideTrigger && (
+        <DialogTrigger asChild>
+          <Button variant="ghost" size="icon" className="h-8 w-8 rounded-full" title={title} aria-label={title}>
+            <Type className="h-4 w-4 text-muted-foreground" />
+          </Button>
+        </DialogTrigger>
+      )}
 
       <DialogContent className="max-w-lg max-h-[85vh] overflow-y-auto">
         <DialogHeader>

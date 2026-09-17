@@ -1243,16 +1243,36 @@ body.pwa-mode {
 }
 
 /* ---------------------------------------------------------------------------
-   Compact table density — toggled via <html data-density="compact">. Pure CSS
-   targeting the shared Table slots, so every table tightens at once with no
-   per-table changes and no runtime cost.
+   Compact mode — <html data-density="compact">, switched in Quick settings.
+   The owner (2026-09-17): the old version took 4px off a table cell and
+   nobody could see a difference — "remove it or make it really work". Every
+   table row in the app now gives back most of its padding and a size of text,
+   the buttons and badges inside rows shrink with it, and the page returns its
+   own margin, so a long list shows far more rows. Plain rules outside the
+   Tailwind layers, so they win over a table's own padding classes.
 --------------------------------------------------------------------------- */
-html[data-density="compact"] [data-slot="table-cell"] {
-  padding-top: 0.25rem;
-  padding-bottom: 0.25rem;
+html[data-density="compact"] main :is(td, th) {
+  padding-top: 0.125rem;
+  padding-bottom: 0.125rem;
 }
-html[data-density="compact"] [data-slot="table-head"] {
-  height: 2rem;
+html[data-density="compact"] main td {
+  font-size: 0.8125rem;
+  line-height: 1.25rem;
+}
+html[data-density="compact"] main th {
+  height: 1.875rem;
+  font-size: 0.75rem;
+}
+html[data-density="compact"] main td [data-slot="button"] {
+  height: 1.75rem;
+}
+html[data-density="compact"] main td [data-slot="badge"] {
+  padding-top: 0;
+  padding-bottom: 0;
+  font-size: 0.6875rem;
+}
+html[data-density="compact"] main > div.p-4 {
+  padding: 0.75rem;
 }
 
 /* Faster numeric data entry: drop the fiddly spin buttons on number inputs so

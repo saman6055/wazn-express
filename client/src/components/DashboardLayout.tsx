@@ -11,6 +11,9 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuSeparator,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import CompanyLogo from "@/components/CompanyLogo";
@@ -92,24 +95,16 @@ import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
 import { CommandPalette } from "./CommandPalette";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
-import { RecentlyViewed } from "./RecentlyViewed";
 import { RiskBell } from "./RiskBell";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { ScrollButtons } from "./ScrollButtons";
-import { ThemePicker } from "./ThemePicker";
 import { QuickCreate } from "./QuickCreate";
-import { DensityToggle } from "./DensityToggle";
-import { AppearanceDialog } from "./AppearanceDialog";
+import { PinnedPages } from "./topbar/PinnedPages";
+import { QuickSettings } from "./topbar/QuickSettings";
+import { TopBarSearch } from "./topbar/TopBarSearch";
 import { TopBarClock } from "./TopBarClock";
 import { useLanguage, Language } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { usePermissions } from "@/hooks/usePermissions";
@@ -282,13 +277,6 @@ function DashboardLayoutContent({
   const hoverLeaveTimer = useRef<number | null>(null);
   const [cmdOpen, setCmdOpen] = useState(false);
 
-  // Most-repeated daily functions, pinned to the top bar for one-click access.
-  const PINNED: { icon: LucideIcon; label: string; path: string }[] = [
-    { icon: Truck, label: t("nav.quickRegister") || "تۆماری خێرا", path: "/packages/quick-register" },
-    { icon: CreditCard, label: t("nav.customerDelivery") || "گەیاندن بە کڕیار", path: "/customer-delivery-scanner" },
-    { icon: DollarSign, label: pickLang(language, { ku: "کڕینی نوێ بە خستنەسەر", en: "New markup purchase", ar: "شراء جديد بهامش ربح", zh: "新增加价采购" }), path: "/commission/new" },
-    { icon: Package, label: pickLang(language, { ku: "پاکێجی تەواوی نوێ", en: "New complete package", ar: "حزمة كاملة جديدة", zh: "新增完整套餐" }), path: "/full-package/new" },
-  ];
   const { canViewPath, isReady: permissionsReady } = usePermissions();
 
   const userRole = user?.role || "user";
@@ -615,7 +603,7 @@ function DashboardLayoutContent({
   // Record visited locations for the "recently viewed" dropdown — client-only
   // UI state. Prefer a known menu-item label; otherwise derive a best-effort
   // label from the last path segment.
-  const { record } = useRecentlyViewed();
+  const { record, items: recentItems } = useRecentlyViewed();
   useEffect(() => {
     if (!location || location === "/") return;
     const matched = menuGroups
@@ -1009,124 +997,41 @@ function DashboardLayoutContent({
             </Button>
           </div>
 
-          {/* Pinned daily shortcuts (hidden on small screens) — own pill group */}
-          <div className="hidden sm:flex items-center gap-0.5 rounded-full bg-muted/50 p-0.5 ms-1.5">
-            {PINNED.map((p) => (
-              <Button
-                key={p.path}
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                title={p.label}
-                aria-label={p.label}
-                onClick={() => setLocation(p.path)}
-              >
-                <p.icon className="h-4 w-4" />
-              </Button>
-            ))}
-          </div>
+          {/* With the spacer after quick create, this centres the search and
+              the pages in the bar on a wide screen, as Windows 11 centres its
+              apps; on a narrow one both spacers fold away. */}
+          <div className="min-w-0 flex-1" />
 
-          {/* Centered live clock + date. The flex-1 spacer absorbs the gap
-              and centers the clock while pushing the controls group to the
-              far edge (replacing the group's old ms-auto). */}
-          <div className="flex-1 flex items-center justify-center min-w-0">
-            <TopBarClock className="hidden md:flex" />
-          </div>
+          {/* Search: the Start of this bar, as on Windows 11 — every page and
+              every number (Ctrl+K opens the same hub). */}
+          <TopBarSearch onOpen={() => setCmdOpen(true)} className="ms-1.5" />
 
-          {/* Controls group (RTL: top-left): search + language + user profile */}
-          <div className="flex items-center gap-1.5">
-            {/* The system's bell: today's risks, worst first, flashing until
-                they have been looked at (owner, 2026-09-16). */}
-            <RiskBell />
+          {/* The owner's five daily pages, each with its name (owner,
+              2026-09-17: bare icons told nobody anything). */}
+          <PinnedPages className="ms-1" />
 
-            {/* Function search — compact icon that opens the command palette */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={() => setCmdOpen(true)}
-              title={pickLang(language, { ku: "گەڕان بۆ فەنکشن (Ctrl+K)", en: "Search for a function (Ctrl+K)", ar: "البحث عن وظيفة (Ctrl+K)", zh: "搜索功能 (Ctrl+K)" })}
-              aria-label={pickLang(language, { ku: "گەڕان بۆ فەنکشن", en: "Search for a function", ar: "البحث عن وظيفة", zh: "搜索功能" })}
-            >
-              <Search className="h-4 w-4" />
-            </Button>
-
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              onClick={() => setFullScreen((v) => !v)}
-              title={pickLang(language, {
-                ku: fullScreen ? "دەرچوون لە پڕ بە شاشە (Esc)" : "پڕ بە شاشە",
-                en: fullScreen ? "Exit full screen (Esc)" : "Full screen",
-                ar: fullScreen ? "إنهاء ملء الشاشة (Esc)" : "ملء الشاشة",
-                zh: fullScreen ? "退出全屏 (Esc)" : "全屏",
-              })}
-              aria-label={pickLang(language, { ku: "پڕ بە شاشە", en: "Full screen", ar: "ملء الشاشة", zh: "全屏" })}
-              aria-pressed={fullScreen}
-            >
-              {fullScreen ? <Minimize2 className="h-4 w-4" /> : <Maximize2 className="h-4 w-4" />}
-            </Button>
-
-            {/* Recently viewed pages dropdown */}
-            <RecentlyViewed className="h-8 w-8" />
-
-            {/* The recycle bin. Up here rather than only in the sidebar
-                because you reach for it right after a mistake, and hunting
-                through a menu is the last thing wanted at that moment. */}
-            {canViewPath("/trash") && (
-              <Button
-                asChild
-                variant="ghost"
-                size="icon"
-                className="h-8 w-8 rounded-full"
-                title={t("nav.trash") || "سەبەتەی سڕاوەکان"}
-                aria-label={t("nav.trash") || "سەبەتەی سڕاوەکان"}
-              >
-                <Link href="/trash">
-                  <Trash2 className="h-4 w-4" />
-                </Link>
-              </Button>
-            )}
-
-            {/* Quick create ("+ New") */}
+          {/* Quick create ("+ New") */}
+          <div className="ms-1 shrink-0">
             <QuickCreate />
+          </div>
 
-            {/* Compact / comfortable table density */}
-            <DensityToggle />
+          <div className="min-w-0 flex-1" />
 
-            {/* Accent theme (skin) picker */}
-            <ThemePicker />
+          {/* Tray (RTL: the far left): the bell, quick settings, the clock and
+              the person — Windows 11's system tray. The seven bare icons that
+              sat here are behind "Settings" now; recent pages and the recycle
+              bin moved into the person's own menu. */}
+          <div className="flex shrink-0 items-center gap-1">
+            {/* The system's bell: today's risks, worst first, flashing until
+                they have been looked at (owner, 2026-09-16). On the phone it
+                is in the header above. */}
+            <div className="hidden md:block">
+              <RiskBell />
+            </div>
 
-            {/* Text size, text colour and typeface */}
-            <AppearanceDialog />
+            <QuickSettings fullScreen={fullScreen} onToggleFullScreen={() => setFullScreen((v) => !v)} />
 
-            {/* Dark / light mode — one-click toggle */}
-            <Button
-              variant="ghost"
-              size="icon"
-              className="h-8 w-8 rounded-full"
-              title={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
-              aria-label={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
-              onClick={toggleTheme}
-            >
-              {theme === "dark" ? <Sun className="h-4 w-4 text-amber-500 dark:text-amber-400" /> : <Moon className="h-4 w-4 text-indigo-500 dark:text-indigo-400" />}
-            </Button>
-
-            {/* Language */}
-            <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
-              <SelectTrigger className="h-8 w-auto gap-1 px-2 text-xs">
-                <Languages className="h-4 w-4 text-muted-foreground" />
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent align="end">
-                {languages.map((lang) => (
-                  <SelectItem key={lang.value} value={lang.value}>
-                    <span className="flex items-center gap-2"><span>{lang.flag}</span><span>{lang.label}</span></span>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <TopBarClock className="hidden xl:flex" />
 
             {/* User profile */}
             <DropdownMenu>
@@ -1137,21 +1042,56 @@ function DashboardLayoutContent({
                       {user?.name?.charAt(0).toUpperCase() || "U"}
                     </AvatarFallback>
                   </Avatar>
-                  <div className="hidden lg:block text-start leading-tight">
+                  <div className="hidden 2xl:block text-start leading-tight">
                     <p className="text-xs font-semibold truncate max-w-[120px]">{user?.name || "User"}</p>
                     <p className="text-[10px] text-muted-foreground">
                       {userRole === "admin" ? t("roles.admin") : userRole === "employee" ? t("roles.employee") : userRole === "accountant" ? t("roles.accountant") : userRole === "auditor" ? t("roles.auditor") : userRole === "super_admin" ? t("roles.superAdmin") || "Super Admin" : userRole}
                     </p>
                   </div>
-                  <ChevronDown className="hidden lg:block h-3 w-3 opacity-50" />
+                  <ChevronDown className="hidden 2xl:block h-3 w-3 opacity-50" />
                 </button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-56">
+              <DropdownMenuContent align={isRTL ? "start" : "end"} className="w-60">
                 <div className="px-3 py-2 border-b border-gray-100 dark:border-gray-700">
                   <p className="text-sm font-semibold text-gray-900 dark:text-gray-200 dark:text-white">{user?.name}</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400">{user?.email}</p>
                 </div>
                 <div className="p-1">
+                  {/* Recent pages and the recycle bin: here since the bar lost
+                      its bare icons (owner, 2026-09-17). */}
+                  <DropdownMenuSub>
+                    <DropdownMenuSubTrigger className="cursor-pointer rounded-lg">
+                      <Clock className="me-2 h-4 w-4" />
+                      <span>{t("recentlyViewed.title") || "دواترین بینراوەکان"}</span>
+                    </DropdownMenuSubTrigger>
+                    <DropdownMenuSubContent className="w-64">
+                      {recentItems.length === 0 ? (
+                        <div className="px-2 py-3 text-center text-sm text-muted-foreground">
+                          {t("recentlyViewed.empty") || "هیچ تۆمارێک نییە"}
+                        </div>
+                      ) : (
+                        recentItems.slice(0, 10).map((item) => (
+                          <DropdownMenuItem
+                            key={item.path}
+                            asChild
+                            className={cn("cursor-pointer rounded-lg", item.path === location && "bg-accent text-accent-foreground")}
+                          >
+                            <Link href={item.path} className="w-full truncate">
+                              {item.label}
+                            </Link>
+                          </DropdownMenuItem>
+                        ))
+                      )}
+                    </DropdownMenuSubContent>
+                  </DropdownMenuSub>
+                  {canViewPath("/trash") && (
+                    <DropdownMenuItem asChild className="cursor-pointer rounded-lg">
+                      <Link href="/trash">
+                        <Trash2 className="me-2 h-4 w-4" />
+                        <span>{t("nav.trash") || "سەبەتەی سڕاوەکان"}</span>
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuItem onClick={toggleTheme} className="cursor-pointer rounded-lg">
                     {theme === "dark" ? (
                       <Sun className="me-2 h-4 w-4 text-amber-500 dark:text-amber-400" />

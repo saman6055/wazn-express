@@ -18,12 +18,18 @@ const bell = read("components/RiskBell.tsx");
 const layout = read("components/DashboardLayout.tsx");
 
 describe("the bell is on every staff page", () => {
-  it("in the desktop header and in the phone's", () => {
+  it("in the desktop bar's tray and in the phone's header", () => {
     expect(layout).toContain('import { RiskBell } from "./RiskBell";');
-    const mobile = layout.slice(layout.indexOf("{/* Mobile Header */}"), layout.indexOf("{/* Mobile Sidebar Overlay */}"));
-    expect(mobile).toContain("<RiskBell");
-    const controls = layout.slice(layout.indexOf("{/* Controls group"), layout.indexOf("{/* Function search"));
-    expect(controls).toContain("<RiskBell />");
+    const mobileStart = layout.indexOf("{/* Mobile Header */}");
+    const mobileEnd = layout.indexOf("{/* Mobile Sidebar Overlay */}");
+    expect(mobileStart).toBeGreaterThan(-1);
+    expect(mobileEnd).toBeGreaterThan(mobileStart);
+    expect(layout.slice(mobileStart, mobileEnd)).toContain("<RiskBell");
+    const trayStart = layout.indexOf("{/* Tray (RTL: the far left)");
+    const trayEnd = layout.indexOf("{/* User profile */}", trayStart);
+    expect(trayStart).toBeGreaterThan(-1);
+    expect(trayEnd).toBeGreaterThan(trayStart);
+    expect(layout.slice(trayStart, trayEnd)).toContain("<RiskBell />");
   });
 });
 
