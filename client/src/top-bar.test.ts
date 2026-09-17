@@ -76,6 +76,13 @@ describe("the bar", () => {
     }
   });
 
+  it("keeps dark mode on the bar itself, beside quick settings (owner, 2026-09-17)", () => {
+    const tray = between(layout, "{/* Tray (RTL: the far left)", "{/* User profile */}");
+    expect(tray).toContain('data-testid="topbar-theme"');
+    expect(tray).toContain("onClick={toggleTheme}");
+    expect(tray.indexOf('data-testid="topbar-theme"')).toBeLessThan(tray.indexOf("<QuickSettings"));
+  });
+
   it("no longer carries the bare settings icons one by one", () => {
     for (const gone of ["<ThemePicker", "<DensityToggle", "<AppearanceDialog", "<RecentlyViewed", "const PINNED", '<Select value={language}']) {
       expect(layout, gone).not.toContain(gone);

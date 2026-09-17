@@ -1029,6 +1029,20 @@ function DashboardLayoutContent({
               <RiskBell />
             </div>
 
+            {/* Dark mode stays on the bar itself, one click away — the owner
+                asked for it there as well as in quick settings (2026-09-17). */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-9 w-9 rounded-full"
+              title={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
+              aria-label={theme === "dark" ? (t("lightMode") || "دۆخی ڕووناک") : (t("darkMode") || "دۆخی تاریک")}
+              onClick={toggleTheme}
+              data-testid="topbar-theme"
+            >
+              {theme === "dark" ? <Sun className="h-5 w-5 text-amber-500 dark:text-amber-400" /> : <Moon className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />}
+            </Button>
+
             <QuickSettings fullScreen={fullScreen} onToggleFullScreen={() => setFullScreen((v) => !v)} />
 
             <TopBarClock className="hidden xl:flex" />
