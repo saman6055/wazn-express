@@ -39,6 +39,13 @@ describe("the window", () => {
     expect(dialog).toContain('setAdvance("");');
   });
 
+  it("says when to round and when not: cash to 250, an electronic payment exact", () => {
+    // Owner: FIB, Qi, ZainCash, AsiaPay… can pay any amount — one general name.
+    expect(dialog).toContain('exact: { ku: "وەک خۆی — پارەدانی ئەلیکترۆنی"');
+    expect(dialog).toContain("<p className=\"text-xs text-muted-foreground\">{L(TXT.roundingHint)}</p>");
+    expect(dialog).toContain('<SelectItem value="1">{L(TXT.exact)}</SelectItem>');
+  });
+
   it("saves nothing: no mutation, and the advance is never remembered", () => {
     expect(dialog).not.toMatch(/useMutation|\.mutate\(/);
     const remembered = dialog.slice(dialog.indexOf("interface Remembered"), dialog.indexOf("function recall"));

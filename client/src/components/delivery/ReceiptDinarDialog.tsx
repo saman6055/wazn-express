@@ -112,7 +112,15 @@ const TXT = {
     zh: "没有就留空。仅用于本收据 — 不改变箱子价格和账目。",
   },
   rounding: { ku: "خڕکردنەوەی دینار", en: "Round the dinars", ar: "تقريب الدينار", zh: "第纳尔取整" },
-  exact: { ku: "وەک خۆی", en: "Exact", ar: "كما هو", zh: "不取整" },
+  // Owner, 2026-09-17: an electronic payment (FIB, Qi, ZainCash, AsiaPay and
+  // the rest) can pay any exact amount; cash cannot. One general name for all.
+  exact: { ku: "وەک خۆی — پارەدانی ئەلیکترۆنی", en: "Exact — electronic payment", ar: "كما هو — دفع إلكتروني", zh: "不取整 — 电子支付" },
+  roundingHint: {
+    ku: "پارەی کاش: نزیکترین 250 · پارەدانی ئەلیکترۆنی (ئەپ یان کارت): وەک خۆی",
+    en: "Cash: nearest 250 · Electronic payment (app or card): exact",
+    ar: "نقداً: أقرب 250 · الدفع الإلكتروني (تطبيق أو بطاقة): كما هو",
+    zh: "现金：最接近 250 · 电子支付（应用或卡）：不取整",
+  },
   nearest250: { ku: "نزیکترین 250", en: "Nearest 250", ar: "أقرب 250", zh: "最接近 250" },
   nearest1000: { ku: "نزیکترین 1,000", en: "Nearest 1,000", ar: "أقرب 1,000", zh: "最接近 1,000" },
   print: { ku: "چاپ", en: "Print", ar: "طباعة", zh: "打印" },
@@ -275,6 +283,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                 <SelectItem value="1000">{L(TXT.nearest1000)}</SelectItem>
               </SelectContent>
             </Select>
+            <p className="text-xs text-muted-foreground">{L(TXT.roundingHint)}</p>
           </div>
 
           {/* The receipt's own lines, in its order (dinarRowsHtml). */}
