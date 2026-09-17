@@ -1275,6 +1275,24 @@ html[data-density="compact"] main > div.p-4 {
   padding: 0.75rem;
 }
 
+/* The bell rings while it flashes (owner, 2026-09-17: a stronger bell). A
+   short swing, then stillness, repeating — noticed without being a strobe. */
+@keyframes wazn-bell-ring {
+  0%, 55%, 100% { transform: rotate(0deg); }
+  8% { transform: rotate(16deg); }
+  18% { transform: rotate(-14deg); }
+  28% { transform: rotate(10deg); }
+  38% { transform: rotate(-6deg); }
+  48% { transform: rotate(2deg); }
+}
+.wazn-bell-ring {
+  transform-origin: 50% 8%;
+  animation: wazn-bell-ring 2.6s ease-in-out infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .wazn-bell-ring { animation: none; }
+}
+
 /* Faster numeric data entry: drop the fiddly spin buttons on number inputs so
    staff can just type (paired with select-on-focus in FastEntry). */
 input[type="number"]::-webkit-outer-spin-button,

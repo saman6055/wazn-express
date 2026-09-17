@@ -94,6 +94,13 @@ class ScanSoundManager {
     });
   }
 
+  /**
+   * The bell's chime for a new critical risk: two soft rising notes, far
+   * quieter than the scanner's alert (owner, 2026-09-17: a soft sound to draw
+   * the eye, never annoying). Silent when sounds are switched off.
+   */
+  playRiskChime() { this.playSequence([784, 1047], 0.2, 0.55, 'sine', 0.12); }
+
   /** Short beep — scan acknowledged */
   playBeep() { this.playTone(1800, 0.1); }
 

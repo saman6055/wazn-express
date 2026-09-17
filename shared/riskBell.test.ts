@@ -1,14 +1,22 @@
 import { describe, expect, it } from "vitest";
+import fs from "fs";
+import path from "path";
 import {
+  auditRiskItems,
   buildRiskItems,
   describeRisk,
   localDay,
   markSeen,
   parseSeen,
   pathVisibleTo,
+  riskGate,
+  riskGroup,
+  riskPath,
+  riskVisibleTo,
+  shouldChime,
   shouldFlash,
-  RISK_GATE,
-  RISK_PATH,
+  sortRiskItems,
+  AUDIT_ROLES,
   type RiskFacts,
 } from "./riskBell";
 
@@ -60,7 +68,7 @@ describe("today's risks", () => {
 
   it("every risk leads to its list and is guarded by a page", () => {
     for (const item of items) {
-      expect(RISK_PATH[item.id].startsWith(RISK_GATE[item.id])).toBe(true);
+      expect(riskPath(item.id).startsWith(riskGate(item.id))).toBe(true);
     }
   });
 });
@@ -125,5 +133,111 @@ describe("when the bell flashes", () => {
 
   it("a day is the person's own calendar day", () => {
     expect(localDay(new Date(2026, 8, 6, 23, 59))).toBe("2026-09-06");
+  });
+});
+
+/**
+ * The bell as the system's sensor (owner, 2026-09-17): anything incomplete,
+ * any error, any risk — and a soft chime for the very big ones.
+ */
+describe("the auditor's findings in the bell", () => {
+  const results = [
+    { id: "account_balance_drift", status: "found", count: 2 },
+    { id: "duplicate_tracking_number", status: "found", count: 10 },
+    { id: "unclaimed_no_request", status: "found", count: 6 },
+    { id: "negative_weight", status: "clean", count: 0 },
+    { id: "batch_unwatched", status: "failed", count: 0, error: "boom" },
+  ] as const;
+  const findings = auditRiskItems(results as never);
+
+  it("says what was found, at the auditor's own severity, and nothing that was clean", () => {
+    expect(findings.map((i) => `${i.id}:${i.level}:${i.count}`)).toEqual([
+      "audit:account_balance_drift:critical:2",
+      "audit:duplicate_tracking_number:high:10",
+      "audit:unclaimed_no_request:notice:6",
+      "audit:batch_unwatched:notice:0",
+    ]);
+  });
+
+  it("says a check that could not run, quietly", () => {
+    const failed = findings.find((i) => i.id === "audit:batch_unwatched")!;
+    expect(failed.failed).toBe(true);
+    expect(describeRisk(failed).detail?.ku).toBe("ئەم پشکنینە نەتوانرا بکرێت");
+  });
+
+  it("names each finding by the auditor's title, and caps the count where the sweep does", () => {
+    const drift = findings.find((i) => i.id === "audit:account_balance_drift")!;
+    expect(describeRisk(drift).title.ku).toBe("باڵانسی کڕیار لەگەڵ مێژووی خۆی ناگونجێت");
+    expect(describeRisk(drift).detail?.ku).toBe("2 دۆزرایەوە");
+    const dupes = findings.find((i) => i.id === "audit:duplicate_tracking_number")!;
+    expect(describeRisk(dupes).detail?.en).toBe("10+ found");
+  });
+
+  it("each leads to the auditor's page, opened at that check", () => {
+    expect(riskPath("audit:account_balance_drift")).toBe("/audit-sweep?check=account_balance_drift");
+    expect(riskGate("audit:account_balance_drift")).toBe("/audit-sweep");
+  });
+
+  it("sit with the empty boxes under errors and gaps; the standing risks under risks", () => {
+    expect(riskGroup("audit:negative_weight")).toBe("incomplete");
+    expect(riskGroup("empty-boxes")).toBe("incomplete");
+    expect(riskGroup("stale-depot")).toBe("risks");
+    expect(riskGroup("debt-over-limit")).toBe("risks");
+  });
+
+  it("join the standing risks worst first", () => {
+    const all = sortRiskItems([...buildRiskItems(FACTS), ...findings]);
+    expect(all[0].level).toBe("critical");
+    expect(all.at(-1)!.level).toBe("notice");
+  });
+});
+
+describe("who is told about a finding", () => {
+  it("only the auditor's roles, and only with the auditor's page", () => {
+    expect(riskVisibleTo("super_admin", new Set(), "audit:account_balance_drift")).toBe(true);
+    expect(riskVisibleTo("admin", new Set(["audit_sweep"]), "audit:account_balance_drift")).toBe(true);
+    expect(riskVisibleTo("employee", new Set(["audit_sweep"]), "audit:account_balance_drift")).toBe(false);
+    expect(riskVisibleTo("admin", new Set(), "audit:account_balance_drift")).toBe(false);
+  });
+
+  it("the standing risks by their own pages, as before", () => {
+    expect(riskVisibleTo("employee", new Set(["registrations"]), "stale-depot")).toBe(true);
+    expect(riskVisibleTo("employee", new Set(["registrations"]), "debt-over-limit")).toBe(false);
+  });
+
+  it("the roles are the auditor page's own", () => {
+    const auth = fs.readFileSync(path.resolve(__dirname, "../server/middleware/auth.ts"), "utf8");
+    const start = auth.indexOf("export const auditorProcedure");
+    expect(start).toBeGreaterThan(-1);
+    expect(auth.slice(start, start + 300)).toContain(JSON.stringify([...AUDIT_ROLES]).replace(/,/g, ", "));
+  });
+});
+
+describe("when the bell chimes", () => {
+  const today = "2026-09-17";
+  const items = buildRiskItems(FACTS);
+
+  it("for a critical risk nobody has looked at or been chimed about today", () => {
+    expect(shouldChime(items, null, null, today)).toBe(true);
+  });
+
+  it("never twice for the same thing", () => {
+    expect(shouldChime(items, null, markSeen(items, today), today)).toBe(false);
+  });
+
+  it("not at all for what the person has already opened the bell on", () => {
+    expect(shouldChime(items, markSeen(items, today), null, today)).toBe(false);
+  });
+
+  it("again when a critical risk grows", () => {
+    const chimed = markSeen(items, today);
+    const grown = buildRiskItems({ ...FACTS, debtOverLimit: FACTS.debtOverLimit + 1 });
+    expect(shouldChime(grown, null, chimed, today)).toBe(true);
+  });
+
+  it("never for anything below critical", () => {
+    const calm = buildRiskItems({ staleDepotDays: [20], volumetric: [], debtOverLimit: 0, ordersWithoutTracking: 4, unclaimed: 6, emptyBoxes: 2 });
+    expect(calm.some((i) => i.level === "critical")).toBe(false);
+    expect(shouldChime(calm, null, null, today)).toBe(false);
   });
 });

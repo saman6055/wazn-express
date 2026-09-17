@@ -1,4 +1,5 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { useSearch } from "wouter";
 import DashboardLayout from "@/components/DashboardLayout";
 import { trpc } from "@/lib/trpc";
 import { pickLang } from "@/lib/lang";
@@ -96,6 +97,18 @@ export default function AuditSweep() {
   const [open, setOpen] = useState<string | null>(null);
   const { data, isLoading, isFetching, refetch } = useSweep();
 
+  // Arriving from the bell (?check=…): that finding opened and brought into
+  // view — the click goes to the problem itself, not to the top of a list.
+  const focusCheck = new URLSearchParams(useSearch()).get("check");
+  useEffect(() => {
+    if (!focusCheck || !data?.results.some((r) => r.id === focusCheck)) return;
+    setOpen(focusCheck);
+    const timer = window.setTimeout(() => {
+      document.querySelector(`[data-check="${CSS.escape(focusCheck)}"]`)?.scrollIntoView({ block: "center" });
+    }, 50);
+    return () => window.clearTimeout(timer);
+  }, [focusCheck, data]);
+
   const copy = async () => {
     if (!data) return;
     try {
@@ -172,7 +185,11 @@ export default function AuditSweep() {
                 const expanded = open === result.id;
 
                 return (
-                  <div key={result.id} className={cn("overflow-hidden rounded-xl border", SEVERITY_STYLE[style])}>
+                  <div
+                    key={result.id}
+                    data-check={result.id}
+                    className={cn("overflow-hidden rounded-xl border scroll-mt-24", SEVERITY_STYLE[style], focusCheck === result.id && "ring-2 ring-primary")}
+                  >
                     <button
                       onClick={() => setOpen(expanded ? null : result.id)}
                       className="flex w-full items-center gap-3 p-3 text-start"

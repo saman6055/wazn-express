@@ -41,11 +41,11 @@ describe("what the bell shows", () => {
   });
 
   it("only the risks of pages this person may open", () => {
-    expect(bell).toContain("canViewPath(RISK_GATE[item.id])");
+    expect(bell).toContain("canViewPath(riskGate(item.id)) && (!isAuditRisk(item.id) || AUDIT_ROLES.includes(role))");
   });
 
   it("each one leads to its list", () => {
-    expect(bell).toContain("navigate(RISK_PATH[item.id])");
+    expect(bell).toContain("navigate(riskPath(item.id))");
     expect(bell).toContain("describeRisk(item)");
     expect(bell).toContain("RISK_LEVEL_LABEL[item.level]");
   });
@@ -119,6 +119,50 @@ describe("each item opens exactly what it counted", () => {
   });
 });
 
+describe("the system's sensor (owner, 2026-09-17)", () => {
+  it("holds the auditor's findings beside the standing risks, under their own headings", () => {
+    expect(bell).toContain('incomplete: { ku: "هەڵە و ناتەواوییەکان"');
+    expect(bell).toContain('risks: { ku: "مەترسییەکان"');
+    expect(bell).toContain("riskGroup(item.id) === group");
+    const router = readServer("routers/admin.router.ts");
+    const risks = router.slice(router.indexOf("risks: staffProcedure"), router.indexOf("risks: staffProcedure") + 900);
+    expect(risks).toContain("auditRisks(),");
+    expect(risks).toContain("sortRiskItems([...operational, ...audit])");
+  });
+
+  it("never makes a bell wait on the sweep, and runs it at most every fifteen minutes", () => {
+    const lib = readServer("lib/auditRisks.ts");
+    expect(lib).toContain("export const AUDIT_RISKS_TTL_MS = 15 * 60_000;");
+    expect(lib).toContain("Promise.race([running,");
+    expect(lib).not.toMatch(/\.(insert|update|delete)\(/);
+  });
+
+  it("chimes softly, through the one sound manager, once and in one tab", () => {
+    expect(bell).toContain("shouldChime(items, seen, readMark(chimedKey(userId)), today)");
+    expect(bell).toContain("soundManager.playRiskChime();");
+    expect(bell).toContain("localStorage.setItem(CHIME_LOCK, String(now));");
+    expect(read("lib/soundManager.ts")).toContain("playRiskChime() { this.playSequence([784, 1047], 0.2, 0.55, 'sine', 0.12); }");
+  });
+
+  it("can be kept quiet by the person", () => {
+    expect(bell).toContain("const mutedKey = (userId: number) => `wazn-risk-bell-muted:${userId}`;");
+    expect(bell).toContain("if (!userId || muted || items.length === 0) return;");
+  });
+
+  it("rings while it flashes, unless the reader asked for less motion", () => {
+    expect(bell).toContain('flashing && "wazn-bell-ring');
+    const css = read("index.css");
+    expect(css).toContain("@keyframes wazn-bell-ring");
+    expect(css).toContain(".wazn-bell-ring { animation: none; }");
+  });
+
+  it("a finding opens the auditor's page at that check", () => {
+    const page = read("pages/AuditSweep.tsx");
+    expect(page).toContain('new URLSearchParams(useSearch()).get("check")');
+    expect(page).toContain("data-check={result.id}");
+  });
+});
+
 describe("the server's side", () => {
   const router = readServer("routers/admin.router.ts");
   const reports = readServer("db/reports.db.ts");
@@ -127,7 +171,7 @@ describe("the server's side", () => {
     const risks = router.slice(router.indexOf("risks: staffProcedure"), router.indexOf("risks: staffProcedure") + 900);
     expect(risks).toContain('if (ctx.user.role === "super_admin") return items;');
     expect(risks).toContain("db.getUserPermissions(ctx.user.id)");
-    expect(risks).toContain("pathVisibleTo(ctx.user.role, viewable, RISK_GATE[item.id])");
+    expect(risks).toContain("riskVisibleTo(ctx.user.role, viewable, item.id)");
   });
 
   it("counts debts, orders and unclaimed parcels exactly as the dashboard's alerts do", () => {

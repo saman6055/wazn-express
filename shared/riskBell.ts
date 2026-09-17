@@ -19,10 +19,21 @@ import { levelRank, staleDepotLevel, volumetricLevel, type RiskLevel } from "./r
 import { PATH_TO_MODULE } from "./permissions";
 import { canSeeAllAccounts, isAllAccountsPath } from "./financeAccess";
 import { debtorsHref, trackingAlertsHref } from "./listLinks";
+import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } from "./auditSweep";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
-export type RiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes";
+/** The warehouse's, the orders' and the accounts' own standing risks. */
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes";
+
+/**
+ * One of the auditor's checks that found something, or could not run — the
+ * owner (2026-09-17): the bell is the system's sensor, "anything incomplete,
+ * any error, any risk" shows there.
+ */
+export type AuditRiskId = `audit:${CheckId}`;
+
+export type RiskId = OperationalRiskId | AuditRiskId;
 
 export interface RiskItem {
   id: RiskId;
@@ -34,6 +45,8 @@ export interface RiskItem {
   extraKg?: number;
   /** How many of them are critical on their own. */
   criticalCount?: number;
+  /** An auditor's check that could not run — itself something to know. */
+  failed?: boolean;
 }
 
 /** The facts the server gathers — counted with the same queries as the cards and the dashboard. */
@@ -53,7 +66,7 @@ export interface RiskFacts {
  * filtered, on the page where they are dealt with (owner, 2026-09-17: a click
  * goes to the problem itself). Never a whole list that merely contains them.
  */
-export const RISK_PATH: Record<RiskId, string> = {
+export const RISK_PATH: Record<OperationalRiskId, string> = {
   "stale-depot": "/packages/registrations?alert=stale",
   volumetric: "/packages/registrations?alert=volumetric",
   "debt-over-limit": debtorsHref({ over: "limit" }),
@@ -63,7 +76,7 @@ export const RISK_PATH: Record<RiskId, string> = {
 };
 
 /** The page whose permission decides who is told. */
-export const RISK_GATE: Record<RiskId, string> = {
+export const RISK_GATE: Record<OperationalRiskId, string> = {
   "stale-depot": "/packages/registrations",
   volumetric: "/packages/registrations",
   "debt-over-limit": "/finance/debtors",
@@ -71,6 +84,66 @@ export const RISK_GATE: Record<RiskId, string> = {
   unclaimed: "/packages/unclaimed",
   "empty-boxes": "/customer-delivery-scanner",
 };
+
+export const AUDIT_RISK_PREFIX = "audit:";
+
+/** The roles the auditor's page serves — auditorProcedure in server/middleware/auth.ts. */
+export const AUDIT_ROLES: readonly string[] = ["super_admin", "admin", "auditor"];
+
+/** The auditor's page: the samples behind every finding, opened at that check. */
+export const AUDIT_PAGE = "/audit-sweep";
+
+/** The most rows the auditor keeps per check (SAMPLE_LIMIT in the sweep). */
+export const AUDIT_SAMPLE_CAP = 10;
+
+export function isAuditRisk(id: RiskId): id is AuditRiskId {
+  return id.startsWith(AUDIT_RISK_PREFIX);
+}
+
+const auditCheckOf = (id: AuditRiskId) => id.slice(AUDIT_RISK_PREFIX.length) as CheckId;
+
+/** Where a risk's own records are; for a finding, the auditor's page opened at that check. */
+export function riskPath(id: RiskId): string {
+  return isAuditRisk(id) ? `${AUDIT_PAGE}?check=${auditCheckOf(id)}` : RISK_PATH[id];
+}
+
+/** The page whose permission decides who is told. */
+export function riskGate(id: RiskId): string {
+  return isAuditRisk(id) ? AUDIT_PAGE : RISK_GATE[id];
+}
+
+/** Which half of the bell a risk sits in. */
+export type RiskGroup = "risks" | "incomplete";
+
+export function riskGroup(id: RiskId): RiskGroup {
+  return isAuditRisk(id) || id === "empty-boxes" ? "incomplete" : "risks";
+}
+
+const SEVERITY_LEVEL: Record<CheckSeverity, RiskLevel> = { critical: "critical", warning: "high", info: "notice" };
+
+/**
+ * The auditor's findings as the bell's items. A clean check says nothing. A
+ * check that could not run is said too, quietly: nobody should believe the
+ * books balance on the strength of a query that failed.
+ */
+export function auditRiskItems(results: readonly CheckResult[]): RiskItem[] {
+  const items: RiskItem[] = [];
+  for (const result of results) {
+    const definition = checkDefinition(result.id);
+    if (!definition) continue;
+    if (result.status === "found" && result.count > 0) {
+      items.push({ id: `audit:${result.id}`, level: SEVERITY_LEVEL[definition.severity], count: result.count });
+    } else if (result.status === "failed") {
+      items.push({ id: `audit:${result.id}`, level: "notice", count: 0, failed: true });
+    }
+  }
+  return items;
+}
+
+/** Worst first, the bigger of equals first. */
+export function sortRiskItems(items: readonly RiskItem[]): RiskItem[] {
+  return [...items].sort((a, b) => levelRank(a.level) - levelRank(b.level) || b.count - a.count);
+}
 
 const round2 = (n: number) => Math.round(n * 100) / 100;
 
@@ -115,7 +188,7 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
     items.push({ id: "empty-boxes", level: "notice", count: facts.emptyBoxes });
   }
 
-  return items.sort((a, b) => levelRank(a.level) - levelRank(b.level) || b.count - a.count);
+  return sortRiskItems(items);
 }
 
 /**
@@ -130,10 +203,29 @@ export function pathVisibleTo(role: string | null | undefined, viewableModules: 
   return viewableModules.has(module);
 }
 
+/** May this person be told about this risk? Its page, and for a finding the auditor's roles too. */
+export function riskVisibleTo(role: string | null | undefined, viewableModules: ReadonlySet<string>, id: RiskId): boolean {
+  if (isAuditRisk(id) && !AUDIT_ROLES.includes(String(role))) return false;
+  return pathVisibleTo(role, viewableModules, riskGate(id));
+}
+
 /** What the bell says about one risk, in the reader's language. Digits stay 0-9. */
 export function describeRisk(item: RiskItem): { title: Words; detail: Words | null } {
   const n = item.count;
-  switch (item.id) {
+  if (isAuditRisk(item.id)) {
+    const check = auditCheckOf(item.id);
+    const title = checkDefinition(check)?.title ?? { ku: check, en: check, ar: check, zh: check };
+    if (item.failed) {
+      return {
+        title,
+        detail: { ku: "ئەم پشکنینە نەتوانرا بکرێت", en: "This check could not run", ar: "تعذّر تشغيل هذا الفحص", zh: "此项检查无法运行" },
+      };
+    }
+    const shown = n >= AUDIT_SAMPLE_CAP ? `${AUDIT_SAMPLE_CAP}+` : String(n);
+    return { title, detail: { ku: `${shown} دۆزرایەوە`, en: `${shown} found`, ar: `وُجد ${shown}`, zh: `发现 ${shown} 项` } };
+  }
+  const id: OperationalRiskId = item.id;
+  switch (id) {
     case "stale-depot":
       return {
         title: {
@@ -205,6 +297,7 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
         },
       };
   }
+  return { title: { ku: id, en: id, ar: id, zh: id }, detail: null };
 }
 
 // ---------------------------------------------------------------------------
@@ -239,15 +332,29 @@ export function markSeen(items: readonly RiskItem[], today: string): RiskSeen {
  * A notice alone never flashes — it is there to be read, not to interrupt.
  */
 export function shouldFlash(items: readonly RiskItem[], seen: RiskSeen | null, today: string): boolean {
-  const urgent = items.filter((i) => i.level === "critical" || i.level === "high");
-  if (urgent.length === 0) return false;
-  if (!seen || seen.day !== today) return true;
-  return urgent.some((item) => {
-    const before = seen.marks[item.id];
-    if (!before) return true;
-    if (levelRank(item.level) < levelRank(before.level)) return true;
-    return item.count > before.count;
-  });
+  return items.some((item) => (item.level === "critical" || item.level === "high") && isNewSince(item, seen, today));
+}
+
+/** Not in the mark: nothing marked today, a risk that was not there, more serious, or grown. */
+function isNewSince(item: RiskItem, mark: RiskSeen | null, today: string): boolean {
+  if (!mark || mark.day !== today) return true;
+  const before = mark.marks[item.id];
+  if (!before) return true;
+  if (levelRank(item.level) < levelRank(before.level)) return true;
+  return item.count > before.count;
+}
+
+/**
+ * Chime: a critical risk the person has neither opened the bell on nor been
+ * chimed about today — new, grown, or newly critical.
+ *
+ * Owner (2026-09-17): a soft sound for the very big risks, only to draw the
+ * eye, never annoying, never repeated for the same thing. So nothing below
+ * critical chimes, the same risk chimes at most once a day, and one the person
+ * has already looked at does not chime at all.
+ */
+export function shouldChime(items: readonly RiskItem[], seen: RiskSeen | null, chimed: RiskSeen | null, today: string): boolean {
+  return items.some((item) => item.level === "critical" && isNewSince(item, seen, today) && isNewSince(item, chimed, today));
 }
 
 /** Read a stored seen-state back; anything unreadable is "never seen". */

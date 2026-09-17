@@ -2,7 +2,8 @@ import { withoutSecrets } from "../lib/accountSecrets";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
-import { pathVisibleTo, RISK_GATE } from "@shared/riskBell";
+import { riskVisibleTo, sortRiskItems } from "@shared/riskBell";
+import { auditRisks } from "../lib/auditRisks";
 import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, auditorProcedure, superAdminProcedure } from "../middleware/auth";
@@ -433,11 +434,17 @@ export const dashboardRouter = router({
      * Read-only; the risks themselves are cached for a minute.
      */
     risks: staffProcedure.query(async ({ ctx }) => {
-      const items = await cacheGetOrSet("dashboard:risks", 60_000, () => db.getRiskItems());
+      // The standing risks, and the auditor's findings beside them — the bell
+      // as the system's sensor (owner, 2026-09-17).
+      const [operational, audit] = await Promise.all([
+        cacheGetOrSet("dashboard:risks", 60_000, () => db.getRiskItems()),
+        auditRisks(),
+      ]);
+      const items = sortRiskItems([...operational, ...audit]);
       if (ctx.user.role === "super_admin") return items;
       const granted = await db.getUserPermissions(ctx.user.id);
       const viewable = new Set(granted.filter((p) => p.canView).map((p) => p.module));
-      return items.filter((item) => pathVisibleTo(ctx.user.role, viewable, RISK_GATE[item.id]));
+      return items.filter((item) => riskVisibleTo(ctx.user.role, viewable, item.id));
     }),
     
     // New customers count (cached 30s)
