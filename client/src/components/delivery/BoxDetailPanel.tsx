@@ -355,6 +355,12 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // Cancel any pending auto-submit if the panel unmounts mid-scan.
   useEffect(() => () => clearScanDebounce(), []);
 
+  // The receipt window's request (see askBeforePrinting). Every hook sits above
+  // the early return below: under it, the render that waits for the box and the
+  // render that has it call a different number of hooks, React throws, and a
+  // box that is not already loaded cannot be opened.
+  const [receiptRequest, setReceiptRequest] = useState<ReceiptDinarRequest | null>(null);
+
   if (!box) {
     return (
       <Card className="animate-pulse">
@@ -545,7 +551,6 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
    * hand (owner, 2026-09-17). A box already paid for skips it — its receipt
    * already says what was paid, in dinars and at what rate.
    */
-  const [receiptRequest, setReceiptRequest] = useState<ReceiptDinarRequest | null>(null);
   const askBeforePrinting = (lang: Language, output: (lang: Language, dinar: ReceiptDinarInput | null) => Promise<void>) => {
     if (settlementForPrint) {
       void output(lang, null);
