@@ -6090,6 +6090,9 @@
     "afterDiscount": "折后金额",
     "paidInIqd": "第纳尔付款",
     "remainingDebt": "剩余欠款",
+    "dollarRate": "美元汇率",
+    "totalInIqd": "第纳尔合计",
+    "amountDueInIqd": "应付第纳尔金额",
     "takePayment": "收款"
   },
   "pushAdmin": {

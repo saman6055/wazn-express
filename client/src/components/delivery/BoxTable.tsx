@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { loadLocale } from "@/lib/i18nRegistry";
 import { cn } from "@/lib/utils";
@@ -38,7 +39,9 @@ import {
   Trash2,
 } from "lucide-react";
 import { isEmptyBox } from "@shared/emptyBox";
-import { printBoxLabel, printBoxReceipt } from "@/lib/deliveryBoxPrintUtils";
+import type { ReceiptDinarInput } from "@shared/receiptDinar";
+import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
+import { printBoxLabel, printBoxReceipt, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
@@ -178,7 +181,31 @@ export function BoxTable({
   const company = useCompanyInfo();
   const { logoUrl } = company;
 
-  const handlePrintReceipt = async (box: DeliveryBox, lang: Language) => {
+  /**
+   * The window before printing: the day's rate and any advance received by
+   * hand (owner, 2026-09-17). A box the payment screen has cleared skips it —
+   * there is nothing left to convert.
+   */
+  const [receiptRequest, setReceiptRequest] = useState<ReceiptDinarRequest | null>(null);
+  const handlePrintReceipt = (box: DeliveryBox, lang: Language) => {
+    if (box.settlementCleared === true) {
+      void printReceiptNow(box, lang, null);
+      return;
+    }
+    // Ready before the print button is pressed, so the window opens at once.
+    void loadLocale(lang);
+    const customer = getCustomer(box.customerId);
+    setReceiptRequest({
+      boxCode: box.boxCode,
+      customerName: customer?.fullName,
+      customerCode: customer?.customerCode,
+      parcelCount: box.totalPackages,
+      totalUsd: receiptAmountUsd(box),
+      onConfirm: (dinar) => void printReceiptNow(box, lang, dinar),
+    });
+  };
+
+  const printReceiptNow = async (box: DeliveryBox, lang: Language, dinar: ReceiptDinarInput | null) => {
     // Locales load on demand now; fetch the chosen one before translating.
     await loadLocale(lang);
     const customer = getCustomer(box.customerId);
@@ -210,7 +237,7 @@ export function BoxTable({
           }
         : null,
       createTranslator(lang),
-      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, lang) }
+      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, lang), dinar }
     );
   };
 
@@ -417,6 +444,8 @@ export function BoxTable({
           })}
         </TableBody>
       </Table>
+
+      <ReceiptDinarDialog request={receiptRequest} onClose={() => setReceiptRequest(null)} />
 
       {/* Pagination */}
       {totalPages > 1 && (

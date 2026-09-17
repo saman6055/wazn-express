@@ -6101,6 +6101,9 @@
     "afterDiscount": "After discount",
     "paidInIqd": "Paid in dinars",
     "remainingDebt": "Remaining debt",
+    "dollarRate": "Dollar rate",
+    "totalInIqd": "Total in dinars",
+    "amountDueInIqd": "Amount due in dinars",
     "takePayment": "Take payment"
   },
   "pushAdmin": {

@@ -6101,6 +6101,9 @@
     "afterDiscount": "دوای داشکاندن",
     "paidInIqd": "دراوە بە دینار",
     "remainingDebt": "قەرزی ماوە",
+    "dollarRate": "نرخی دۆلار",
+    "totalInIqd": "کۆی گشتی بە دینار",
+    "amountDueInIqd": "بڕی ماوە بە دینار",
     "takePayment": "پارەدان"
   },
   "pushAdmin": {

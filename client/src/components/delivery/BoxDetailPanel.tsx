@@ -76,7 +76,9 @@ const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 // slower, so it never auto-fires — Enter still submits it explicitly.
 const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
-import { printBoxLabel, printBoxReceipt, downloadBoxReceiptPDF, normalizeCommissionDescription } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
+import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
+import type { ReceiptDinarInput } from "@shared/receiptDinar";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 
@@ -513,7 +515,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     };
   })();
 
-  const handlePrintReceipt = async (lang: Language) => {
+  const printReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null) => {
     // Locales load on demand now; fetch the chosen one before translating a
     // document that is about to be printed.
     await loadLocale(lang);
@@ -523,18 +525,45 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
       settlement: settlementForPrint,
+      dinar,
     });
   };
 
-  const handleDownloadReceiptPDF = async (lang: Language) => {
+  const downloadReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null) => {
     await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
     downloadBoxReceiptPDF(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
+      dinar,
     });
   };
+
+  /**
+   * The window before printing: the day's rate and any advance received by
+   * hand (owner, 2026-09-17). A box already paid for skips it — its receipt
+   * already says what was paid, in dinars and at what rate.
+   */
+  const [receiptRequest, setReceiptRequest] = useState<ReceiptDinarRequest | null>(null);
+  const askBeforePrinting = (lang: Language, output: (lang: Language, dinar: ReceiptDinarInput | null) => Promise<void>) => {
+    if (settlementForPrint) {
+      void output(lang, null);
+      return;
+    }
+    // Ready before the print button is pressed, so the window opens at once.
+    void loadLocale(lang);
+    setReceiptRequest({
+      boxCode: box.boxCode,
+      customerName: customer?.fullName,
+      customerCode: customer?.customerCode,
+      parcelCount: box.totalPackages ?? items.length,
+      totalUsd: receiptAmountUsd(box, settlementForPrint),
+      onConfirm: (dinar) => void output(lang, dinar),
+    });
+  };
+  const handlePrintReceipt = (lang: Language) => askBeforePrinting(lang, printReceiptNow);
+  const handleDownloadReceiptPDF = (lang: Language) => askBeforePrinting(lang, downloadReceiptNow);
 
   return (
     <Card dir={isRtl ? "rtl" : "ltr"} className="border-primary/20 shadow-md">
@@ -1050,6 +1079,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         box={box}
         onSaved={() => refetchBox()}
       />
+      <ReceiptDinarDialog request={receiptRequest} onClose={() => setReceiptRequest(null)} />
     </Card>
   );
 }

@@ -7,6 +7,7 @@
 import { printWhenReady } from "./printWindow";
 import { escapeHtml } from "./html";
 import type { CompanyContact } from "./brand";
+import { formatIqd, formatRate, receiptDinar, type ReceiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
 
 export interface BoxForPrint {
   boxCode: string;
@@ -142,18 +143,6 @@ function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
 }
 
 /**
- * What the customer has already paid against this box, and what is left.
- *
- * The server has always enriched each item with `advanceAppliedUsd` — its
- * own doc comment says the receipt subtracts the sum "so the customer sees
- * only the balance still owed at delivery". The receipt did not. Money is
- * collected against this sheet at the counter, so an advance missing from it
- * is an advance collected twice.
- *
- * Only shown when there is one. A receipt with no prepayment on it should
- * look exactly as it always has.
- */
-/**
  * What the counter settled, for the sheet the customer takes home.
  *
  * A discount is nearly always agreed before the receipt is printed — the box
@@ -176,18 +165,51 @@ export interface SettlementForPrint {
   debtUsd?: number;
 }
 
-function advanceAndDue(
-  items: BoxItemForPrint[],
-  grandTotal: number,
-): { advance: number; due: number; hasAdvance: boolean } {
-  const advance = items.reduce((sum, i) => sum + (Number(i.advanceAppliedUsd || 0) || 0), 0);
-  return {
-    advance,
-    // Never negative: an advance larger than the box is a credit to settle on
-    // the account, not a refund to hand over at the door.
-    due: Math.max(0, grandTotal - advance),
-    hasAdvance: advance > 0,
-  };
+/**
+ * The dollar figure a receipt asks for: the box's goods and delivery, less
+ * any discount agreed when the money was taken. The window before printing
+ * counts its dinars from this, and the receipt from the same sum.
+ */
+export function receiptAmountUsd(
+  box: Pick<BoxForPrint, "totalValueUsd" | "deliveryChargeUsd">,
+  settlement?: Pick<SettlementForPrint, "discountUsd"> | null,
+): number {
+  const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
+  const discountNum = Number(settlement?.discountUsd || 0);
+  return Math.max(0, grandTotalNum - discountNum);
+}
+
+/**
+ * The receipt's lines in dinars (shared/receiptDinar), in the order the owner
+ * approved (2026-09-17, example 4).
+ *
+ * The system keeps no advance of its own on a receipt — a customer's credit is
+ * the account's business. The only advance here is one received by hand and
+ * typed in just before printing, and it changes this paper only. In dinars it
+ * comes off the dinar total exactly as received; in dollars it comes off the
+ * dollars, and what remains is converted.
+ */
+function dinarRowsHtml(d: ReceiptDinar, t: TFunc): string {
+  const row = (label: string, value: string, total = false) => `
+          <div class="financial-row${total ? " total" : ""}">
+            <span>${label}:</span>
+            <span${total ? "" : ' style="font-weight:600;"'} dir="ltr">${value}</span>
+          </div>`;
+  const rate = row(t("delivery.dollarRate"), `1 $ = ${formatRate(d.rate)} IQD`);
+
+  if (d.advance?.currency === "USD") {
+    return `${row(t("delivery.advancePaid"), `\u2212 $${d.advance.amount.toFixed(2)}`)}${row(t("delivery.amountDue"), `$${(d.dueUsd ?? 0).toFixed(2)}`, true)}
+        <div class="iqd-box">${rate}${row(t("delivery.amountDueInIqd"), formatIqd(d.dueIqd), true)}
+        </div>`;
+  }
+  if (d.advance) {
+    return `
+        <div class="iqd-box">${rate}${row(t("delivery.totalInIqd"), formatIqd(d.totalIqd))}${row(t("delivery.advancePaid"), `\u2212 ${formatIqd(d.advance.amount)}`)}${row(t("delivery.amountDueInIqd"), formatIqd(d.dueIqd), true)}
+        </div>`;
+  }
+  return `
+        <div class="iqd-box">${rate}${row(t("delivery.totalInIqd"), formatIqd(d.totalIqd), true)}
+        </div>`;
 }
 
 /**
@@ -396,7 +418,6 @@ export function printBoxLabel(
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
   const grandTotalNumber = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
   const grandTotal = grandTotalNumber.toFixed(2);
-  const labelAdvance = advanceAndDue(items, grandTotalNumber);
 
   const itemsRows = items.map((item, idx) => `
     <tr>
@@ -600,15 +621,6 @@ export function printBoxLabel(
         <div style="font-size:9px; color:${PRIMARY_COLOR};">${t("delivery.grandTotal")}</div>
         <div style="font-size:16px; font-weight:800; color:${PRIMARY_COLOR};">$${grandTotal}</div>
       </div>
-      ${labelAdvance.hasAdvance ? `
-      <div class="total-cell">
-        <div style="font-size:9px; color:#6b7280;">${t("delivery.advancePaid")}</div>
-        <div style="font-weight:700;">− $${labelAdvance.advance.toFixed(2)}</div>
-      </div>
-      <div class="grand-total-cell">
-        <div style="font-size:9px; color:${PRIMARY_COLOR};">${t("delivery.amountDue")}</div>
-        <div style="font-size:16px; font-weight:800; color:${PRIMARY_COLOR};">$${labelAdvance.due.toFixed(2)}</div>
-      </div>` : ""}
     </div>
 
     <!-- Footer -->
@@ -652,6 +664,9 @@ export function printBoxReceipt(
     company?: CompanyContact;
     /** Present once money has been taken; absent before that. */
     settlement?: SettlementForPrint;
+    /** The day's rate and any advance received by hand, given just before
+     *  printing. Absent, the receipt prints without dinars. */
+    dinar?: ReceiptDinarInput | null;
   },
 ): void {
   // Direction follows the chosen receipt language (rtl for ku/ar, ltr for
@@ -661,7 +676,6 @@ export function printBoxReceipt(
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
   const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
   const grandTotal = grandTotalNum.toFixed(2);
-  const a4Advance = advanceAndDue(items, grandTotalNum);
   // The discount comes off the grand total, so the figure the customer is
   // asked for is the one they agreed to — and the line above it says why it
   // is not the number they can add up from the rows.
@@ -669,11 +683,10 @@ export function printBoxReceipt(
   const discountNum = Number(settlement?.discountUsd || 0);
   const afterDiscountNum = Math.max(0, grandTotalNum - discountNum);
   const afterDiscount = afterDiscountNum.toFixed(2);
-  // The customer receipt deliberately stays a plain goods document:
-  // packages / measure / value / delivery / grand total. Advance payments
-  // are NOT credited here — they live on the customer's account, and showing
-  // them on the delivery slip is not wanted. (`advanceAppliedUsd` is still
-  // supplied per item and is shown to staff inside the app.)
+  // Dinars, counted from the very figure this sheet asks for in dollars.
+  // No system advance comes off: a customer's credit is the account's
+  // business (owner, 2026-09-17).
+  const dinar = receiptDinar(afterDiscountNum, options?.dinar);
 
   const itemsRows = items.map((item, idx) => {
     const description = item.itemType === "commission"
@@ -821,6 +834,19 @@ export function printBoxReceipt(
       font-size: 15px;
       font-weight: 800;
       color: ${PRIMARY_COLOR};
+    }
+    /* The dinars, boxed apart from the dollar lines above them. */
+    .iqd-box {
+      margin-top: 8px;
+      border: 1.5px dashed ${PRIMARY_COLOR};
+      border-radius: 6px;
+      padding: 4px 12px;
+      background: #ffffff;
+    }
+    .iqd-box .financial-row.total {
+      margin-top: 4px;
+      padding-top: 6px;
+      font-size: 17px;
     }
     /* The mark, centred in the header row rather than above it: a banner of
        its own costs a strip of every sheet and says nothing the row does
@@ -1022,15 +1048,7 @@ export function printBoxReceipt(
           <span>${t("delivery.remainingDebt")}:</span>
           <span style="font-weight:600; color:#b91c1c;">$${Number(settlement.debtUsd).toFixed(2)}</span>
         </div>` : ""}
-        ${a4Advance.hasAdvance ? `
-        <div class="financial-row">
-          <span>${t("delivery.advancePaid")}:</span>
-          <span style="font-weight:600;">− $${a4Advance.advance.toFixed(2)}</span>
-        </div>
-        <div class="financial-row total">
-          <span>${t("delivery.amountDue")}:</span>
-          <span>$${a4Advance.due.toFixed(2)}</span>
-        </div>` : ""}
+        ${dinar ? dinarRowsHtml(dinar, t) : ""}
       </div>
 
       ${box.notes ? `
@@ -1089,12 +1107,13 @@ export function downloadBoxReceiptPDF(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
-  options?: { direction?: 'ltr' | 'rtl'; logoUrl?: string; company?: CompanyContact },
+  options?: { direction?: 'ltr' | 'rtl'; logoUrl?: string; company?: CompanyContact; dinar?: ReceiptDinarInput | null },
 ): void {
   printBoxReceipt(box, items, customer, t, {
     documentTitle: `${box.boxCode}.pdf`,
     direction: options?.direction,
     logoUrl: options?.logoUrl,
     company: options?.company,
+    dinar: options?.dinar,
   });
 }

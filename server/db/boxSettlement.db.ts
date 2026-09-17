@@ -549,6 +549,22 @@ export async function findPaidBoxHolding(opts: {
  * standing at it, and four round trips to fill in one table is four chances
  * to show half a number.
  */
+/**
+ * The rate the most recent payment used, and when. Offered on the payment
+ * screen and on the window before a receipt is printed. Read-only.
+ */
+export async function getLastSettlementRate(): Promise<{ rate: number; at: Date } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({ rate: boxSettlements.exchangeRate, at: boxSettlements.createdAt })
+    .from(boxSettlements)
+    .where(sql`${boxSettlements.exchangeRate} IS NOT NULL AND ${boxSettlements.exchangeRate} > 0`)
+    .orderBy(desc(boxSettlements.createdAt))
+    .limit(1);
+  return row?.rate ? { rate: Number(row.rate), at: row.at } : null;
+}
+
 export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
   const empty: BoxSettlementView = {
     box: null, customer: null, parcels: [], settlements: [],
@@ -590,12 +606,7 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
 
   // The rate the last settlement used, so the ordinary day needs no typing.
   // The dollar sits still for a week at a time here.
-  const [rateRow] = await db
-    .select({ rate: boxSettlements.exchangeRate })
-    .from(boxSettlements)
-    .where(sql`${boxSettlements.exchangeRate} IS NOT NULL AND ${boxSettlements.exchangeRate} > 0`)
-    .orderBy(desc(boxSettlements.createdAt))
-    .limit(1);
+  const lastRate = await getLastSettlementRate();
 
   return {
     box: {
@@ -614,7 +625,7 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
       : null,
     parcels,
     settlements: history.map((h) => ({ ...h.s, staffName: h.staffName ?? null })),
-    lastExchangeRate: rateRow?.rate ? Number(rateRow.rate) : null,
+    lastExchangeRate: lastRate?.rate ?? null,
     accountBalanceUsd: Number(account?.balance ?? 0),
   };
 }

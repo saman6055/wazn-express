@@ -6101,6 +6101,9 @@
     "afterDiscount": "بعد الخصم",
     "paidInIqd": "المدفوع بالدينار",
     "remainingDebt": "المتبقي",
+    "dollarRate": "سعر الدولار",
+    "totalInIqd": "المجموع بالدينار",
+    "amountDueInIqd": "المبلغ المستحق بالدينار",
     "takePayment": "استلام"
   },
   "pushAdmin": {

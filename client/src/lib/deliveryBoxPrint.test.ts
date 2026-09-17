@@ -69,47 +69,85 @@ describe("the logo resolves from a print window", () => {
 });
 
 /**
- * The receipt is what money is collected against at the counter.
+ * The system keeps no advance on a receipt — owner, 2026-09-17.
  *
- * The server has always enriched each item with `advanceAppliedUsd`, and its
- * own doc comment says the receipt subtracts the sum "so the customer sees
- * only the balance still owed at delivery". The receipt did not — it printed
- * the full total, and a customer who had already paid an advance was asked
- * for it a second time. The staff panel showed the balance; the sheet handed
- * over did not, and the sheet is what gets read.
+ * Both receipts used to subtract each item's `advanceAppliedUsd` and print
+ * the rest as the amount due. The owner: there is no advance in the system,
+ * only account credit — a balance the account uses, or else a debt. The only
+ * advance a receipt shows now is one received by hand and typed in just
+ * before printing (shared/receiptDinar), and it changes that paper only.
  */
-describe("a prepayment is on the receipt", () => {
-  const helper = src.slice(src.indexOf("function advanceAndDue"), src.indexOf("function totalMeasure"));
+describe("no system advance on either receipt", () => {
+  it("neither the full receipt nor the compact one takes off a recorded advance", () => {
+    expect(src).not.toContain("advanceAndDue");
+    // The field stays on the item type (callers pass it through, the staff
+    // panel shows it); nothing on paper reads it.
+    expect(src).not.toMatch(/\.advanceAppliedUsd/);
+    const a = src.indexOf("export function printBoxLabel");
+    const b = src.indexOf("export function printBoxReceipt");
+    expect(a).toBeGreaterThan(-1);
+    expect(b).toBeGreaterThan(a);
+    const label = src.slice(a, b);
+    expect(label).not.toContain("delivery.advancePaid");
+    expect(label).not.toContain("delivery.amountDue");
+  });
+});
 
-  it("sums what has been paid across the items", () => {
-    expect(helper).toContain("advanceAppliedUsd");
-    expect(helper).toContain("reduce");
+/**
+ * The receipt in dinars — owner, 2026-09-17 (example 4 of the mockups).
+ *
+ * The counter used to convert the total to dinars by hand, take off the
+ * advance and write the result with a pen. The rules are unit-tested in
+ * shared/receiptDinar.test.ts; this pins them to the paper.
+ */
+describe("the receipt in dinars", () => {
+  const between = (start: string, end: string) => {
+    const a = src.indexOf(start);
+    expect(a, `marker not found: ${start}`).toBeGreaterThan(-1);
+    const b = src.indexOf(end, a + start.length);
+    expect(b, `end marker not found after ${start}`).toBeGreaterThan(a);
+    return src.slice(a, b);
+  };
+
+  it("counts its dinars from the very dollar figure it prints", () => {
+    const receipt = between("export function printBoxReceipt", "export function downloadBoxReceiptPDF");
+    expect(receipt).toContain("const dinar = receiptDinar(afterDiscountNum, options?.dinar);");
+    expect(receipt).toContain('${dinar ? dinarRowsHtml(dinar, t) : ""}');
   });
 
-  it("never shows a negative amount due", () => {
-    // An advance larger than the box is a credit to settle on the account,
-    // not cash to hand back at the door.
-    expect(helper).toContain("Math.max(0, grandTotal - advance)");
+  it("the window before printing counts from the same sum", () => {
+    // receiptAmountUsd is what the window previews; the receipt's own line
+    // is the same expression, so the two cannot drift apart.
+    expect(between("export function receiptAmountUsd", "function dinarRowsHtml")).toContain("Math.max(0, grandTotalNum - discountNum)");
+    expect(between("export function printBoxReceipt", "export function downloadBoxReceiptPDF")).toContain("Math.max(0, grandTotalNum - discountNum)");
   });
 
-  it("shows the paid line and the balance on both receipts", () => {
-    // The A4 sheet and the compact one are both handed over.
-    expect(src.split("delivery.advancePaid").length - 1, "one of the two receipts is missing it").toBe(2);
-    expect(src.split("delivery.amountDue").length - 1).toBe(2);
+  it("prints the lines in the order the owner approved", () => {
+    const rows = between("function dinarRowsHtml", "\n}\n");
+    // An advance in dollars: off the dollars, then the rest in dinars.
+    const usd = rows.slice(rows.indexOf('if (d.advance?.currency === "USD")'), rows.indexOf("if (d.advance) {"));
+    expect(usd.indexOf('t("delivery.advancePaid")')).toBeLessThan(usd.indexOf('t("delivery.amountDue")'));
+    expect(usd.indexOf('t("delivery.amountDue")')).toBeLessThan(usd.indexOf('t("delivery.amountDueInIqd")'));
+    // An advance in dinars: the total in dinars, the advance, what remains.
+    const iqd = rows.slice(rows.indexOf("if (d.advance) {"));
+    expect(iqd.indexOf('t("delivery.totalInIqd")')).toBeLessThan(iqd.indexOf('t("delivery.advancePaid")'));
+    expect(iqd.indexOf('t("delivery.advancePaid")')).toBeLessThan(iqd.indexOf('t("delivery.amountDueInIqd")'));
+    // The rate is always on the paper beside the dinars.
+    expect(rows).toContain('t("delivery.dollarRate")');
   });
 
-  it("leaves a receipt with no prepayment exactly as it was", () => {
-    // Two extra rows on every receipt would be two rows of nothing on most
-    // of them.
-    expect(src).toContain("a4Advance.hasAdvance ?");
-    expect(src).toContain("labelAdvance.hasAdvance ?");
+  it("a PDF carries the same dinars as the printout", () => {
+    expect(between("export function downloadBoxReceiptPDF", "\n}\n")).toContain("dinar: options?.dinar,");
   });
 
-  it("subtracts from the same grand total it prints", () => {
-    // Computing the balance from a separately derived total is how the two
-    // figures come to disagree on the same sheet.
-    expect(src).toContain("advanceAndDue(items, grandTotalNum)");
-    expect(src).toContain("advanceAndDue(items, grandTotalNumber)");
+  it("has all four languages for every dinar line", () => {
+    for (const lang of ["ku", "en", "ar", "zh"] as const) {
+      const raw = fs.readFileSync(path.join(__dirname, "..", "locales", `${lang}.json`), "utf8").replace(/^\uFEFF/, "");
+      const delivery = JSON.parse(raw).delivery ?? {};
+      for (const key of ["dollarRate", "totalInIqd", "amountDueInIqd", "advancePaid", "amountDue"]) {
+        expect(delivery[key], `${lang}.delivery.${key} is missing`).toBeTruthy();
+      }
+    }
   });
 });
 

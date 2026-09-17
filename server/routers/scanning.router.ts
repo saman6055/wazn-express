@@ -1067,6 +1067,12 @@ export const deliveryBoxRouter = router({
       return db.getBoxSettlementView(input.boxId);
     }),
 
+  // The rate the last payment used — offered on the window before a receipt
+  // is printed, beside the one last printed on that device.
+  lastExchangeRate: staffProcedure.query(async () => {
+    return db.getLastSettlementRate();
+  }),
+
   /**
    * Take the money.
    *
