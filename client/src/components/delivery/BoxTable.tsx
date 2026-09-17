@@ -378,6 +378,7 @@ export function BoxTable({
                   {onDeleteEmpty && isEmptyBox({
                     status: box.status,
                     itemCount: Array.isArray(box.items) ? box.items.length : Number(box.totalPackages) || 0,
+                    recordedPackages: Number(box.totalPackages) || 0,
                     isCharged: box.isCharged,
                   }) ? (
                     <Button

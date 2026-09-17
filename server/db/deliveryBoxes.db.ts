@@ -55,11 +55,15 @@ export async function createDeliveryBox(data: Omit<InsertDeliveryBox, 'boxCode'>
 
 /**
  * A box nothing was ever put in — shared/emptyBox in SQL: still open or
- * sealed, no delivery fee charged, no item and no payment on record.
+ * sealed, no delivery fee charged, no item and no payment on record, and a
+ * record that counts no parcels either. A box whose record counts parcels
+ * that are not there lost them; it is damaged, not empty, and never offered
+ * for deletion.
  */
 function emptyBoxSql() {
   return sql`${deliveryBoxes.status} IN ('open', 'ready')
     AND ${deliveryBoxes.isCharged} = 0
+    AND ${deliveryBoxes.totalPackages} = 0
     AND NOT EXISTS (SELECT 1 FROM ${deliveryBoxItems} WHERE ${deliveryBoxItems.boxId} = ${deliveryBoxes.id})
     AND NOT EXISTS (SELECT 1 FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id})`;
 }

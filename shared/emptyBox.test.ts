@@ -13,6 +13,12 @@ describe("an empty box", () => {
     expect(isEmptyBox({ status: "open", itemCount: 1 })).toBe(false);
   });
 
+  it("is never one whose own record counts parcels — that box lost them, it is not empty", () => {
+    // BOX-20260719-003: the list said 4 parcels, the alert said empty.
+    expect(isEmptyBox({ status: "open", itemCount: 0, recordedPackages: 4 })).toBe(false);
+    expect(isEmptyBox({ status: "open", itemCount: 0, recordedPackages: 0 })).toBe(true);
+  });
+
   it("is never one that was sent, handed over or cancelled", () => {
     for (const status of ["in_transit", "delivered", "cancelled"]) {
       expect(isEmptyBox({ status, itemCount: 0 }), status).toBe(false);
@@ -32,6 +38,7 @@ describe("an empty box", () => {
     const fn = server.slice(start, server.indexOf("\n}\n", start));
     expect(fn).toContain("${deliveryBoxes.status} IN ('open', 'ready')");
     expect(fn).toContain("${deliveryBoxes.isCharged} = 0");
+    expect(fn).toContain("${deliveryBoxes.totalPackages} = 0");
     expect(fn).toContain("NOT EXISTS (SELECT 1 FROM ${deliveryBoxItems} WHERE ${deliveryBoxItems.boxId} = ${deliveryBoxes.id})");
     expect(fn).toContain("NOT EXISTS (SELECT 1 FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id})");
   });

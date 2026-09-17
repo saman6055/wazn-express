@@ -46,7 +46,9 @@ describe("the boxes page flags empty boxes", () => {
 describe("the delete button", () => {
   it("replaces the payment button on an empty box only, by the shared rule", () => {
     expect(table).toContain('import { isEmptyBox } from "@shared/emptyBox";');
-    expect(table).toMatch(/\{onDeleteEmpty && isEmptyBox\(\{[\s\S]{0,220}\}\) \? \(/);
+    expect(table).toMatch(/\{onDeleteEmpty && isEmptyBox\(\{[\s\S]{0,400}\}\) \? \(/);
+    // A box whose record counts parcels is never offered for deletion.
+    expect(table).toContain("recordedPackages: Number(box.totalPackages) || 0,");
     expect(table).toContain("onClick={() => onDeleteEmpty({ id: box.id, boxCode: box.boxCode })}");
   });
 
