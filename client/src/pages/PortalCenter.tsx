@@ -13,6 +13,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TutorialsTab } from "@/components/portal-center/TutorialsTab";
+import { customerCodeOnly } from "@shared/customerCode";
 import { BoxCodeLink, CustomerCodeLink, ParcelSheetProvider, TrackingButton } from "@/components/portal-center/PortalLinks";
 import {
   ACTIVITY_WINDOWS,
@@ -46,6 +47,7 @@ import {
   StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper, Pin, Eye,
   EyeOff, KeyRound, ShieldCheck, Copy, Check, RefreshCw, Phone, Power, Undo2,
   GraduationCap, AlertTriangle, Lock,
+  Link2,
 } from "lucide-react";
 
 // ---------------------------------------------------------------------------
@@ -488,9 +490,40 @@ function DeclaredTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?
   const [status, setStatus] = useState<string>(initialStatus ?? "all");
   const [page, setPage] = useState(1);
   const pageSize = 25;
+  const utils = trpc.useUtils();
   const { data, isLoading } = trpc.portalCenter.listDeclaredPackages.useQuery({
     search: search || undefined, status: status === "all" ? undefined : (status as any), page, pageSize,
   });
+
+  // Give a declared tracking its parcel when the parcel is here and nobody's
+  // (owner, 2026-09-18, phase 2) — what approving an ownership claim does.
+  const link = trpc.portalCenter.linkDeclaredPackage.useMutation({
+    onSuccess: (r) => {
+      toast.success(p({
+        ku: `پاکەتی ${r.packageCode} درایە کڕیار`,
+        en: `Parcel ${r.packageCode} given to the customer`,
+        ar: `تم منح الطرد ${r.packageCode} للعميل`,
+        zh: `包裹 ${r.packageCode} 已归属客户`,
+      }));
+      void utils.portalCenter.listDeclaredPackages.invalidate();
+      void utils.portalCenter.getOverview.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const askToLink = async (d: { id: number; trackingNumber: string; customerName: string | null; customerCode: string | null; linkablePackageCode: string | null }) => {
+    const who = `${d.customerName ?? ""} (${customerCodeOnly(d.customerCode ?? "")})`;
+    const ok = await confirmAction({
+      title: p({ ku: "بەستنەوەی پاکەت بە کڕیار", en: "Give the parcel to the customer", ar: "منح الطرد للعميل", zh: "将包裹归属客户" }),
+      message: p({
+        ku: `پاکەتی ${d.linkablePackageCode} (تراک ${d.trackingNumber}) دەدرێتە ${who}. وەک پەسەندکردنی داواکاری خاوەنداری: خاوەنەکەی دیاری دەکرێت و نرخەکەی حساب دەکرێت.`,
+        en: `Parcel ${d.linkablePackageCode} (tracking ${d.trackingNumber}) goes to ${who}. As when an ownership claim is approved: it gets its owner and its price.`,
+        ar: `سيُمنح الطرد ${d.linkablePackageCode} (رقم التتبع ${d.trackingNumber}) إلى ${who}. كما عند الموافقة على طلب ملكية: يُحدَّد مالكه ويُحتسب سعره.`,
+        zh: `包裹 ${d.linkablePackageCode}（运单号 ${d.trackingNumber}）将归属 ${who}。与批准认领相同：确定所有者并计算价格。`,
+      }),
+      confirmLabel: p({ ku: "بیبەستەوە", en: "Link", ar: "اربط", zh: "关联" }),
+    });
+    if (ok) link.mutate({ declarationId: d.id });
+  };
 
   return (
     <Card className="rounded-2xl">
@@ -536,7 +569,24 @@ function DeclaredTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?
                     </TableCell>
                     <TableCell className="text-xs"><div className="font-medium">{d.customerName}</div><CustomerCodeLink id={d.customerId} code={d.customerCode} className="text-muted-foreground" /></TableCell>
                     <TableCell className="text-xs text-muted-foreground">{d.platform || "—"}</TableCell>
-                    <TableCell><Badge className={cn("text-[10px] border-0", STATUS_COLORS[d.status] ?? STATUS_COLORS.pending)}>{STATUS_LABEL[d.status] ? p(STATUS_LABEL[d.status]) : d.status}</Badge></TableCell>
+                    <TableCell>
+                      <div className="flex flex-wrap items-center gap-1.5">
+                        <Badge className={cn("text-[10px] border-0", STATUS_COLORS[d.status] ?? STATUS_COLORS.pending)}>{STATUS_LABEL[d.status] ? p(STATUS_LABEL[d.status]) : d.status}</Badge>
+                        {d.linkablePackageId && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="h-7 gap-1 border-indigo-300 text-indigo-700 hover:bg-indigo-50 dark:border-indigo-800 dark:text-indigo-300 dark:hover:bg-indigo-950/40"
+                            disabled={link.isPending}
+                            onClick={() => askToLink(d)}
+                            data-link-declared={d.id}
+                          >
+                            <Link2 className="h-3.5 w-3.5" />
+                            {p({ ku: "بیبەستەوە بە", en: "Link to", ar: "اربط بـ", zh: "关联到" })} <bdi dir="ltr" className="font-mono">{customerCodeOnly(d.customerCode ?? "")}</bdi>
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(d.createdAt)}</TableCell>
                   </TableRow>
                 ))}

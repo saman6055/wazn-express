@@ -1,4 +1,5 @@
-import { and, desc, eq, inArray, like, or, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, like, or, sql, type SQL } from "drizzle-orm";
+import { declaredLinkRefusal, OPEN_DECLARATION_STATUSES } from "@shared/declaredLink";
 import { getDb } from "./connection";
 import {
   customers,
@@ -605,7 +606,34 @@ export async function listDeclaredPackagesWithCustomer(opts: {
     .limit(opts.pageSize)
     .offset((opts.page - 1) * opts.pageSize);
 
-  return { data, total: num(total) };
+  // An open declaration whose parcel is in the warehouse and still nobody's
+  // can be linked from here (owner, 2026-09-18) — its own matched parcel if
+  // registration found one, else a parcel with its tracking. Read-only.
+  const open = data.filter((r) => (OPEN_DECLARATION_STATUSES as readonly string[]).includes(r.status));
+  const trackings = Array.from(new Set(open.map((r) => r.trackingNumber.trim()).filter(Boolean)));
+  const matchedIds = Array.from(new Set(open.map((r) => r.matchedPackageId).filter((id): id is number => !!id)));
+  const lookups: SQL[] = [];
+  if (trackings.length > 0) lookups.push(inArray(packages.trackingNumber, trackings));
+  if (matchedIds.length > 0) lookups.push(inArray(packages.id, matchedIds));
+  const parcels = lookups.length > 0
+    ? await safe(
+        db.select({ id: packages.id, packageCode: packages.packageCode, trackingNumber: packages.trackingNumber, customerId: packages.customerId, status: packages.status })
+          .from(packages)
+          .where(or(...lookups)),
+        [],
+      )
+    : [];
+  const byId = new Map(parcels.map((p) => [p.id, p]));
+  const byTracking = new Map(parcels.filter((p) => p.trackingNumber).map((p) => [String(p.trackingNumber).trim().toLowerCase(), p]));
+
+  return {
+    data: data.map((r) => {
+      const parcel = (r.matchedPackageId ? byId.get(r.matchedPackageId) : undefined) ?? byTracking.get(r.trackingNumber.trim().toLowerCase());
+      const linkable = !!parcel && declaredLinkRefusal(r, parcel) === null;
+      return { ...r, linkablePackageId: linkable ? parcel!.id : null, linkablePackageCode: linkable ? parcel!.packageCode : null };
+    }),
+    total: num(total),
+  };
 }
 
 /** All customer claim requests, with claimant identity. */

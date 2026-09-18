@@ -1,6 +1,6 @@
-import { and, desc, eq, ne } from "drizzle-orm";
+import { and, desc, eq, isNull, ne } from "drizzle-orm";
 import { getDb } from "./connection";
-import { customerDeclaredPackages, customers } from "../../drizzle/schema";
+import { customerDeclaredPackages, customers, packages } from "../../drizzle/schema";
 import type {
   CustomerDeclaredPackage,
   InsertCustomerDeclaredPackage,
@@ -188,6 +188,46 @@ export async function findCustomerDeclaredByTracking(
     .orderBy(desc(customerDeclaredPackages.createdAt))
     .limit(1);
   return rows[0] ?? null;
+}
+
+/** One declaration, by its id. */
+export async function getDeclaredPackageById(id: number): Promise<CustomerDeclaredPackage | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(customerDeclaredPackages).where(eq(customerDeclaredPackages.id, id)).limit(1);
+  return row ?? null;
+}
+
+/**
+ * Give a parcel that is nobody's to the customer who declared its tracking
+ * (owner, 2026-09-18). The same fields approving an ownership claim writes
+ * (approveClaimRequest in portal.db.ts) — and only while the parcel is still
+ * nobody's, checked in the same statement, so two people linking at once
+ * cannot give it twice. True when it was given.
+ */
+export async function linkUnownedPackageToCustomer(packageId: number, customerId: number, staffId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const result = await db
+    .update(packages)
+    .set({
+      customerId,
+      isUnclaimed: false,
+      claimedAt: new Date(),
+      claimedById: staffId,
+    })
+    .where(and(eq(packages.id, packageId), isNull(packages.customerId)));
+  return ((result[0] as { affectedRows?: number }).affectedRows ?? 0) > 0;
+}
+
+/** This declaration, fulfilled by this parcel. */
+export async function markDeclarationLinked(declarationId: number, packageId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db
+    .update(customerDeclaredPackages)
+    .set({ status: "matched", matchedPackageId: packageId, matchedAt: new Date() })
+    .where(eq(customerDeclaredPackages.id, declarationId));
 }
 
 /**

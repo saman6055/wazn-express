@@ -8,6 +8,8 @@ import { phoneSchema, idSchema } from "./schemas";
 import { FEATURES, isKnownFeature } from "@shared/customerFeatures";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import * as db from "../db";
+import { linkDeclaredParcel } from "../lib/linkDeclaredParcel";
+import { DECLARED_LINK_REFUSAL_MESSAGE } from "@shared/declaredLink";
 
 const ANNOUNCEMENT_KEY = "portal_announcement";
 
@@ -68,6 +70,33 @@ export const portalCenterRouter = router({
     .input(z.object({ ...pagination }))
     .query(async ({ input }) => {
       return db.listDeliveryRatings(input);
+    }),
+
+  /**
+   * Give a declared tracking its parcel (owner, 2026-09-18, phase 2): what
+   * approving an ownership claim does — the owner, then the price — for a
+   * parcel in the warehouse that is still nobody's. Asked again here, at the
+   * moment of linking, whatever the list said.
+   */
+  linkDeclaredPackage: adminProcedure
+    .input(z.object({ declarationId: idSchema }))
+    .mutation(async ({ input, ctx }) => {
+      const result = await linkDeclaredParcel(input.declarationId, ctx.user.id);
+      if (!result.ok) {
+        throw new TRPCError({
+          code: result.reason === "not_found" ? "NOT_FOUND" : "CONFLICT",
+          message: result.reason === "not_found" ? "تراکینگەکە نەدۆزرایەوە" : DECLARED_LINK_REFUSAL_MESSAGE[result.reason].ku,
+        });
+      }
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "link_declared_package",
+        entityType: "package",
+        entityId: result.packageId,
+        newValues: { customerId: result.customerId, declarationId: input.declarationId },
+      });
+      return result;
     }),
 
   listDeclaredPackages: adminProcedure
