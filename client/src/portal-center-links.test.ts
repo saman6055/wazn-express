@@ -37,6 +37,15 @@ describe("the figures at the top", () => {
   });
 });
 
+describe("the tabs", () => {
+  it("sit in one row, held under the top bar while the page scrolls", () => {
+    expect(page).toContain('<TabsList className="sticky top-[100px] md:top-11 z-20 flex w-full flex-nowrap');
+    expect(page).toContain("overflow-x-auto");
+    expect(page).not.toContain("lg:grid-cols-11");
+    expect(page).toContain('"shrink-0 gap-1.5 rounded-xl');
+  });
+});
+
 describe("the red number on each tab with work waiting", () => {
   it("messages, tracking, ownership, prohibited, ratings and yuan", () => {
     for (const tab of ["messages", "declared", "claims", "prohibited", "ratings", "yuan"]) {
