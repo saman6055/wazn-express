@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { TRASH_ENTITIES, canSeeTrashItem, trashEntity } from "./trash";
+import { TRASH_ENTITIES, boxLostItsParcels, canSeeTrashItem, deliveryBoxSnapshotFacts, trashEntity } from "./trash";
 
 /**
  * Who sees what in the recycle bin.

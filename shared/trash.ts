@@ -70,6 +70,49 @@ export interface TrashItem {
   deletedById?: number | null;
   deletedByName?: string | null;
   deletionReason?: string | null;
+  /**
+   * Whose it was: a box and an order belong to a customer. Owner, 2026-09-17,
+   * looking at a bin of bare box codes: "I don't know which is whose".
+   */
+  customerCode?: string | null;
+  customerName?: string | null;
+  /** A deleted box only: the parcels it held when it was deleted. */
+  parcelCount?: number | null;
+  /** A deleted box only: how many parcels its own record counted. */
+  recordedParcels?: number | null;
+}
+
+/** What a deleted box's snapshot says: whose it was, what it held, what its record counted. */
+export function deliveryBoxSnapshotFacts(snapshot: unknown): {
+  customerId: number | null;
+  parcelCount: number;
+  recordedParcels: number;
+} {
+  let row: unknown = snapshot;
+  if (typeof row === "string") {
+    try {
+      row = JSON.parse(row);
+    } catch {
+      row = null;
+    }
+  }
+  const s = (row && typeof row === "object" ? row : {}) as Record<string, unknown>;
+  const customerId = Number(s.customerId);
+  return {
+    customerId: Number.isInteger(customerId) && customerId > 0 ? customerId : null,
+    parcelCount: Array.isArray(s.items) ? s.items.length : 0,
+    recordedParcels: Math.max(0, Math.trunc(Number(s.totalPackages) || 0)),
+  };
+}
+
+/**
+ * A box that went into the bin already missing its parcels: its record counted
+ * some, and it held none. Restoring a box from the bin used to bring it back
+ * without its parcels (fixed 2026-09-17), and a box like that, deleted again,
+ * lands here empty — its parcels, if anywhere, are in its older entry.
+ */
+export function boxLostItsParcels(item: Pick<TrashItem, "parcelCount" | "recordedParcels">): boolean {
+  return (item.recordedParcels ?? 0) > 0 && (item.parcelCount ?? 0) === 0;
 }
 
 /**

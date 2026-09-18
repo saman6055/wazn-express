@@ -13,7 +13,7 @@ import { Trash2, RotateCcw, AlertTriangle, Search } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation, useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
-import { TRASH_ENTITIES, trashEntity, type TrashItem } from "@shared/trash";
+import { TRASH_ENTITIES, boxLostItsParcels, trashEntity, type TrashItem } from "@shared/trash";
 import { useAuth } from "@/_core/hooks/useAuth";
 
 /**
@@ -54,7 +54,9 @@ export default function Trash() {
       return (
         item.label.toLowerCase().includes(q) ||
         typeLabel(item.entityType).toLowerCase().includes(q) ||
-        (item.deletedByName ?? "").toLowerCase().includes(q)
+        (item.deletedByName ?? "").toLowerCase().includes(q) ||
+        (item.customerCode ?? "").toLowerCase().includes(q) ||
+        (item.customerName ?? "").toLowerCase().includes(q)
       );
     });
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -143,6 +145,40 @@ export default function Trash() {
                         <Badge variant="outline">{typeLabel(item.entityType)}</Badge>
                         <span className="font-mono font-medium">{item.label}</span>
                       </div>
+                      {/* Whose it was, and what a box held (owner, 2026-09-17). */}
+                      {(item.customerCode || item.customerName || item.parcelCount != null) && (
+                        <p className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-0.5 text-sm" data-testid={`trash-owner-${item.key}`}>
+                          {item.customerCode && (
+                            <bdi dir="ltr" className="font-mono font-semibold">{item.customerCode}</bdi>
+                          )}
+                          {item.customerName && <span className="font-medium">{item.customerName}</span>}
+                          {item.parcelCount != null && (
+                            <span className="text-muted-foreground">
+                              {item.parcelCount === 0
+                                ? pickLang(language, { ku: "هیچ پارچەیەکی تێدا نەبوو", en: "No parcels in it", ar: "لم يكن فيه أي طرد", zh: "箱内没有包裹" })
+                                : pickLang(language, {
+                                    ku: `${item.parcelCount} پارچەی تێدا بوو`,
+                                    en: `${item.parcelCount} parcel(s) in it`,
+                                    ar: `كان فيه ${item.parcelCount} طرد`,
+                                    zh: `箱内有 ${item.parcelCount} 件包裹`,
+                                  })}
+                            </span>
+                          )}
+                        </p>
+                      )}
+                      {boxLostItsParcels(item) && (
+                        <p className="mt-1 flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+                          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                          <span>
+                            {pickLang(language, {
+                              ku: `تۆماری ئەم بۆکسە ${item.recordedParcels} پارچەی دەژمارد، بەڵام کاتی سڕینەوە هیچی تێدا نەبوو — پێشتر پارچەکانی لەدەستدابوو.`,
+                              en: `This box's record counted ${item.recordedParcels} parcel(s), but none were in it when it was deleted — it had already lost its parcels.`,
+                              ar: `كان سجل هذا الصندوق يعد ${item.recordedParcels} طرد، لكن لم يكن فيه أي طرد عند حذفه — كان قد فقد طروده من قبل.`,
+                              zh: `此箱记录为 ${item.recordedParcels} 件包裹，但删除时箱内没有任何包裹——它之前已丢失了包裹。`,
+                            })}
+                          </span>
+                        </p>
+                      )}
                       <p className="text-xs text-muted-foreground mt-1">
                         {t("trash.deletedBy", {
                           who: item.deletedByName || t("common.unknown"),

@@ -1,9 +1,9 @@
 import { getDb } from "./connection";
-import { and, desc, eq, getTableColumns, isNotNull, isNull, sql } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { MySqlTable } from "drizzle-orm/mysql-core";
-import { batches, deletedRecords, deliveryBoxItems, deliveryBoxes, fullPackageOrders, users } from "../../drizzle/schema";
+import { batches, customers, deletedRecords, deliveryBoxItems, deliveryBoxes, fullPackageOrders, users } from "../../drizzle/schema";
 import type { InsertDeletedRecord } from "../../drizzle/schema";
-import type { TrashItem } from "@shared/trash";
+import { deliveryBoxSnapshotFacts, type TrashItem } from "@shared/trash";
 
 /**
  * A row as the bin keeps it, made fit to insert again.
@@ -59,6 +59,7 @@ export async function listTrash(): Promise<TrashItem[]> {
     .select({
       id: fullPackageOrders.id,
       orderCode: fullPackageOrders.orderCode,
+      customerId: fullPackageOrders.customerId,
       deletedAt: fullPackageOrders.deletedAt,
       deletionReason: fullPackageOrders.deletionReason,
       deletedById: fullPackageOrders.deletedById,
@@ -69,17 +70,46 @@ export async function listTrash(): Promise<TrashItem[]> {
     .where(isNotNull(fullPackageOrders.deletedAt))
     .orderBy(desc(fullPackageOrders.deletedAt));
 
+  // Whose each box and order was, and what a box held (owner, 2026-09-17: a
+  // bin of bare box codes does not say which is whose). Read-only.
+  const boxFacts = new Map<number, ReturnType<typeof deliveryBoxSnapshotFacts>>();
+  for (const r of snapshots) {
+    if (r.entityType === "delivery_box") boxFacts.set(r.id, deliveryBoxSnapshotFacts(r.snapshot));
+  }
+  const customerIds = Array.from(new Set(
+    [...Array.from(boxFacts.values()).map((f) => f.customerId), ...orders.map((o) => o.customerId)]
+      .filter((id): id is number => typeof id === "number" && id > 0),
+  ));
+  const owners = new Map<number, { customerCode: string | null; fullName: string | null }>();
+  if (customerIds.length > 0) {
+    const rows = await db
+      .select({ id: customers.id, customerCode: customers.customerCode, fullName: customers.fullName })
+      .from(customers)
+      .where(inArray(customers.id, customerIds));
+    for (const row of rows) owners.set(row.id, row);
+  }
+  const ownerOf = (customerId: number | null | undefined) => {
+    const owner = customerId ? owners.get(customerId) : undefined;
+    return { customerCode: owner?.customerCode ?? null, customerName: owner?.fullName ?? null };
+  };
+
   const items: TrashItem[] = [
-    ...snapshots.map((r) => ({
-      key: `${r.entityType}:${r.entityId}`,
-      entityType: r.entityType as TrashItem["entityType"],
-      entityId: r.entityId,
-      label: r.label,
-      deletedAt: r.deletedAt,
-      deletedById: r.deletedById,
-      deletedByName: r.deletedByName,
-      deletionReason: r.deletionReason,
-    })),
+    ...snapshots.map((r) => {
+      const facts = boxFacts.get(r.id);
+      return {
+        key: `${r.entityType}:${r.entityId}`,
+        entityType: r.entityType as TrashItem["entityType"],
+        entityId: r.entityId,
+        label: r.label,
+        deletedAt: r.deletedAt,
+        deletedById: r.deletedById,
+        deletedByName: r.deletedByName,
+        deletionReason: r.deletionReason,
+        ...(facts
+          ? { ...ownerOf(facts.customerId), parcelCount: facts.parcelCount, recordedParcels: facts.recordedParcels }
+          : {}),
+      };
+    }),
     ...orders.map((o) => ({
       key: `full_package_order:${o.id}`,
       entityType: "full_package_order" as const,
@@ -89,6 +119,7 @@ export async function listTrash(): Promise<TrashItem[]> {
       deletedById: o.deletedById,
       deletedByName: o.deletedByName,
       deletionReason: o.deletionReason,
+      ...ownerOf(o.customerId),
     })),
   ];
 
