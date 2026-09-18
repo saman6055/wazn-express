@@ -22,6 +22,18 @@ export const REMIND_AFTER_DAYS = 5;
 /** Overdue by this much and it is no longer a reminder. */
 export const URGENT_AFTER_DAYS = 14;
 
+/**
+ * A sea batch keeps its own clock. Owner, 2026-09-18: a sea batch staying
+ * open for up to three months is normal — the sea route from China to Iraq
+ * takes two months — and five months is not. Asking for a container number
+ * after five days flagged every sea batch as overdue from its first week,
+ * which is how a reminder list stops being read.
+ */
+export const SEA_REMIND_AFTER_DAYS = 90;
+
+/** Five months at sea is no longer normal. */
+export const SEA_URGENT_AFTER_DAYS = 150;
+
 const DAY_MS = 24 * 60 * 60 * 1000;
 
 /** Statuses where chasing the number is pointless — it is over. */
@@ -118,8 +130,9 @@ export function reminderSeverity(
   if (missingPieces(batch).length === 0) return "none";
 
   const days = daysSinceCreated(batch, now);
-  if (days >= URGENT_AFTER_DAYS) return "urgent";
-  if (days >= REMIND_AFTER_DAYS) return "due";
+  const sea = isSeaBatch(batch.shippingType);
+  if (days >= (sea ? SEA_URGENT_AFTER_DAYS : URGENT_AFTER_DAYS)) return "urgent";
+  if (days >= (sea ? SEA_REMIND_AFTER_DAYS : REMIND_AFTER_DAYS)) return "due";
   return "none";
 }
 

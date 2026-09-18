@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import {
   REMIND_AFTER_DAYS,
+  SEA_REMIND_AFTER_DAYS,
+  SEA_URGENT_AFTER_DAYS,
   URGENT_AFTER_DAYS,
   batchesAwaitingShippingNumber,
   daysSinceCreated,
@@ -105,20 +107,42 @@ describe("how overdue a batch is", () => {
   });
 });
 
+describe("a sea batch keeps its own clock", () => {
+  // Owner, 2026-09-18: up to three months at sea is normal — the route from
+  // China to Iraq takes two — and five months is not.
+  it("stays quiet for three months", () => {
+    expect(reminderSeverity(sea({ createdAt: daysAgo(35) }), NOW)).toBe("none");
+    expect(reminderSeverity(sea({ createdAt: daysAgo(SEA_REMIND_AFTER_DAYS - 1) }), NOW)).toBe("none");
+  });
+
+  it("asks after three months, and loudly after five", () => {
+    expect(SEA_REMIND_AFTER_DAYS).toBe(90);
+    expect(SEA_URGENT_AFTER_DAYS).toBe(150);
+    expect(reminderSeverity(sea({ createdAt: daysAgo(SEA_REMIND_AFTER_DAYS) }), NOW)).toBe("due");
+    expect(reminderSeverity(sea({ createdAt: daysAgo(SEA_URGENT_AFTER_DAYS - 1) }), NOW)).toBe("due");
+    expect(reminderSeverity(sea({ createdAt: daysAgo(SEA_URGENT_AFTER_DAYS) }), NOW)).toBe("urgent");
+  });
+
+  it("leaves the air clock as it was", () => {
+    expect(reminderSeverity(air({ createdAt: daysAgo(35) }), NOW)).toBe("urgent");
+  });
+});
+
 describe("the list of batches to chase", () => {
   it("returns only the overdue ones, most overdue first", () => {
     const batches = [
       { id: 1, ...air({ createdAt: daysAgo(6) }) },
       { id: 2, ...air({ createdAt: daysAgo(30) }) },
       { id: 3, ...air({ createdAt: daysAgo(1) }) },
-      { id: 4, ...sea({ createdAt: daysAgo(20) }) },
+      { id: 4, ...sea({ createdAt: daysAgo(100) }) },
       { id: 5, ...air({ createdAt: daysAgo(40), awbNumber: "176-48293011", flightNumber: "TK6894" }) },
       { id: 6, ...air({ createdAt: daysAgo(40), status: "delivered" }) },
+      { id: 7, ...sea({ createdAt: daysAgo(35) }) },
     ];
     const result = batchesAwaitingShippingNumber(batches, NOW);
-    expect(result.map((r) => r.id)).toEqual([2, 4, 1]);
-    expect(result.map((r) => r.severity)).toEqual(["urgent", "urgent", "due"]);
-    expect(result[0].daysWaiting).toBe(30);
+    expect(result.map((r) => r.id)).toEqual([4, 2, 1]);
+    expect(result.map((r) => r.severity)).toEqual(["due", "urgent", "due"]);
+    expect(result[1].daysWaiting).toBe(30);
   });
 
   it("is empty when there is nothing to chase", () => {
