@@ -37,6 +37,13 @@ describe("the figures at the top", () => {
   });
 });
 
+describe("the page", () => {
+  it("uses the whole width, as the other pages do — no narrow column with empty sides", () => {
+    expect(page).toContain('<div className="space-y-5" dir={isRTL ? "rtl" : "ltr"} data-portal-center>');
+    expect(page).not.toContain("max-w-7xl mx-auto");
+  });
+});
+
 describe("the tabs", () => {
   it("sit in one row, held under the top bar while the page scrolls", () => {
     expect(page).toContain('<TabsList className="sticky top-[100px] md:top-11 z-20 flex w-full flex-nowrap');

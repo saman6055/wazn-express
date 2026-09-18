@@ -216,7 +216,9 @@ export default function PortalCenter() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-5 p-4 md:p-6 max-w-7xl mx-auto" dir={isRTL ? "rtl" : "ltr"}>
+      {/* The whole width, as the other pages use it (owner, 2026-09-19: the
+          sides were empty) — the layout already pads it, so no second padding. */}
+      <div className="space-y-5" dir={isRTL ? "rtl" : "ltr"} data-portal-center>
         {/* Header */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-indigo-600 via-purple-600 to-fuchsia-700 p-6 shadow-lg">
           <div className="absolute -top-14 -end-14 w-44 h-44 rounded-full bg-white/10" />
@@ -318,7 +320,7 @@ function OverviewCards({
   if (isLoading) {
     return (
       <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-24 rounded-2xl" />)}
+        {Array.from({ length: 6 }).map((_, i) => <Skeleton key={i} className="h-[74px] rounded-2xl" />)}
       </div>
     );
   }
@@ -333,13 +335,17 @@ function OverviewCards({
           className="text-start rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
           data-overview-figure={c.figure}
         >
-          <Card className="rounded-2xl h-full transition-colors hover:border-indigo-300 dark:hover:border-indigo-700">
-            <CardContent className="p-4">
-              <div className={cn("inline-flex p-2 rounded-xl mb-2", c.color)}>
+          {/* Compact at the full width (owner, 2026-09-19): the icon beside
+              the figure, and none of the card's own padding on top of it. */}
+          <Card className="rounded-2xl h-full gap-0 py-0 transition-colors hover:border-indigo-300 dark:hover:border-indigo-700">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className={cn("inline-flex p-2 rounded-xl shrink-0", c.color)}>
                 <c.icon className="h-5 w-5" />
               </div>
-              <div className="text-2xl font-black tabular-nums">{c.value.toLocaleString("en-US")}</div>
-              <div className="text-xs text-muted-foreground mt-0.5 leading-tight">{p(c.label)}</div>
+              <div className="min-w-0">
+                <div className="text-2xl font-black tabular-nums leading-none">{c.value.toLocaleString("en-US")}</div>
+                <div className="text-xs text-muted-foreground mt-1 leading-tight">{p(c.label)}</div>
+              </div>
             </CardContent>
           </Card>
         </button>
