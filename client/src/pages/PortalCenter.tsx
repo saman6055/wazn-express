@@ -16,6 +16,7 @@ import { TutorialsTab } from "@/components/portal-center/TutorialsTab";
 import { customerCodeOnly } from "@shared/customerCode";
 import { OPEN_YUAN_STATUSES, yuanOrdersProfit, yuanProfitPerUsd } from "@shared/yuanProfit";
 import { BoxCodeLink, CustomerCodeLink, ParcelSheetProvider, TrackingButton } from "@/components/portal-center/PortalLinks";
+import { PriceSandbox } from "@/components/portal-center/PriceSandbox";
 import {
   ACTIVITY_WINDOWS,
   OVERVIEW_TARGET,
@@ -1502,7 +1503,7 @@ function PricesTab({ p }: { p: (v: L) => string }) {
         )}
       </CardContent>
     </Card>
-    <CalcSettingsCard p={p} />
+    <CalcSettingsCard p={p} prices={form} />
     </div>
   );
 }
@@ -1510,7 +1511,7 @@ function PricesTab({ p }: { p: (v: L) => string }) {
 // Calculator ratios card — the tunables behind the portal price calculator:
 // volumetric divisor, air minimum kg, sea CBM threshold, and the surcharge %
 // applied below that threshold.
-function CalcSettingsCard({ p }: { p: (v: L) => string }) {
+function CalcSettingsCard({ p, prices }: { p: (v: L) => string; prices: { air_regular: string; air_irregular: string; sea: string } }) {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.portalPriceList.getCalcSettings.useQuery();
   const [form, setForm] = useState({ volumetricDivisor: "", airMinKg: "", seaMinCbm: "", seaSurchargePct: "" });
@@ -1587,6 +1588,9 @@ function CalcSettingsCard({ p }: { p: (v: L) => string }) {
                 </div>
               ))}
             </div>
+            {/* Try a carton against the divisor and prices as typed, before
+                saving them (owner, 2026-09-18, phase 5). */}
+            <PriceSandbox divisor={parseFloat(form.volumetricDivisor) || 0} prices={prices} />
             <div className="flex justify-end">
               <Button onClick={handleSave} disabled={save.isPending || !touched} className="bg-purple-600 hover:bg-purple-700 text-white">
                 {save.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : null}
