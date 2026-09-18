@@ -3,6 +3,9 @@ import { z } from "zod";
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { isBatchEditLocked } from "@shared/batchPriceHistory";
+import { batchMissingSellingPrice } from "@shared/batchPricing";
+import { missingPieces } from "@shared/batchReminders";
+import { closeCheckWarns, type CloseCheckMoney } from "@shared/batchCloseCheck";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -799,14 +802,40 @@ export const batchesRouter = router({
           }
         }
 
+        // ---- What else to know before the batch closes (owner, 2026-09-18) ----
+        // Cartons with no box, cartons never checked in on arrival, cartons with
+        // nothing to bill by or nobody's, boxes still owing, a missing waybill
+        // or container number, and the money: no selling price, no cost
+        // recorded, a loss. Warnings only — the owner's answer — so none of
+        // them touches `blocking`.
+        const close = await db.getBatchCloseFacts(input.batchId);
+        const financial = await db.getBatchFinancialSummary(input.batchId);
+        const customerPricing = (await db.getBatchCustomerPricingForBatches([input.batchId])).get(input.batchId) ?? [];
+        const round2 = (n: number) => Math.round(n * 100) / 100;
+        const money: CloseCheckMoney = {
+          priceMissing: batchMissingSellingPrice(batch, {
+            hasTiers: !!batch.useTieredPricing,
+            hasCustomerPricing: customerPricing.length > 0,
+          }),
+          costMissing: financial?.costSource === "none",
+          revenueUsd: round2(financial?.totalRevenue ?? 0),
+          costUsd: round2(financial?.totalCost ?? 0),
+          profitUsd: financial ? round2(financial.profit) : null,
+        };
+        const missingNumber = missingPieces(batch);
+
         const blocking = customerMismatch.length > 0;
-        const warning = sharedSiblingNotInBatch.length > 0 || multiCartonIncomplete.length > 0;
+        const warning =
+          sharedSiblingNotInBatch.length > 0 ||
+          multiCartonIncomplete.length > 0 ||
+          closeCheckWarns({ ...close, missingNumber, money });
 
         return {
           batchId: input.batchId,
           batchCode: batch.batchCode,
           packageCount: pkgs.length,
           orderCount: orderIdsInBatchSet.size,
+          money,
           summary: {
             blocking,
             warning,
@@ -818,6 +847,13 @@ export const batchesRouter = router({
             sharedSiblingNotInBatch,
             multiCartonIncomplete,
             customerMismatch,
+            unboxed: close.unboxed,
+            notArrivalChecked: close.notArrivalChecked,
+            unmeasured: close.unmeasured,
+            ownerless: close.ownerless,
+            unpaidBoxes: close.unpaidBoxes,
+            unpaidBoxesCapped: close.unpaidBoxesCapped,
+            missingNumber,
           },
         };
       }),

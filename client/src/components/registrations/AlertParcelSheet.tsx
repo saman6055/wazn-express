@@ -89,14 +89,18 @@ export function AlertParcelSheet({
   parcel,
   kind,
   level,
+  reason,
   whatsappHref,
   onClose,
   onAcknowledge,
   acknowledging,
 }: {
   parcel: AlertParcel | null;
-  kind: "stale" | "volumetric";
+  /** "check": a carton the batch's close check names, with its reason. */
+  kind: "stale" | "volumetric" | "check";
   level: RiskLevel;
+  /** Why the close check names it — shown under the tracking. */
+  reason?: Words;
   /** The message to the customer, already written by the card. */
   whatsappHref?: string | null;
   onClose: () => void;
@@ -306,9 +310,15 @@ export function AlertParcelSheet({
                 </button>
               </SheetTitle>
               <SheetDescription className="flex flex-wrap items-center gap-2">
-                <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", RISK_CHIP[level])}>{L(RISK_LEVEL_LABEL[level])}</span>
+                {kind !== "check" && (
+                  <span className={cn("rounded-full px-2 py-0.5 text-xs font-semibold", RISK_CHIP[level])}>{L(RISK_LEVEL_LABEL[level])}</span>
+                )}
                 <span>
-                  {kind === "stale"
+                  {kind === "check"
+                    ? reason
+                      ? L(reason)
+                      : null
+                    : kind === "stale"
                     ? L({ ku: "تۆمار کراوە بەڵام نەخراوەتە ناو هیچ بارێک", en: "Registered but in no batch", ar: "مسجّل دون إدراجه في أي دفعة", zh: "已登记但未入任何批次" })
                     : L({ ku: "لەسەر قەبارە حساب دەکرێت و هێشتا لەگەڵ کڕیار چێک نەکراوە", en: "Billed on volume, not yet checked with the customer", ar: "يُحتسب على الحجم ولم يُراجَع مع العميل", zh: "按体积计费，尚未与客户核实" })}
                 </span>

@@ -27,3 +27,4 @@ export * from './boxSettlement.db';
 export * from './ledgerReconciliation.db';
 export * from './shareLinks.db';
 export * from './batchCharging.db';
+export * from './batchCloseCheck.db';

@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
+import { BatchCloseCheckSections, CloseCheckTiles } from "@/components/batches/BatchCloseCheck";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
@@ -2643,8 +2644,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               </div>
             ) : (
               <div className="space-y-4 text-sm">
-                {/* Summary tile */}
-                <div className="grid grid-cols-2 gap-2">
+                {/* Summary tiles — the owner's three beside the first two (2026-09-18) */}
+                <div className="grid grid-cols-2 gap-2 sm:grid-cols-5">
                   <div className="p-2 rounded border bg-muted/30">
                     <div className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "پاکەت لە کۆمەڵە", en: "Packages in batch", ar: "الطرود في الدفعة", zh: "批次中的包裹" })}</div>
                     <div className="font-bold text-lg">{auditData.packageCount}</div>
@@ -2653,6 +2654,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <div className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "ئۆردەری گرێدراو", en: "Linked orders", ar: "الطلبات المرتبطة", zh: "已关联订单" })}</div>
                     <div className="font-bold text-lg">{auditData.orderCount}</div>
                   </div>
+                  <CloseCheckTiles audit={auditData} />
                 </div>
 
                 {/* No findings — green light */}
@@ -2688,6 +2690,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </div>
                   </div>
                 )}
+
+                {/* The owner's checks before a batch closes: money, cartons with
+                    no box, never checked in, unmeasured, ownerless, boxes still
+                    owing, a missing number. Warnings only (2026-09-18). */}
+                <BatchCloseCheckSections audit={auditData} />
 
                 {/* Warning: shared-tracking siblings outside batch */}
                 {auditData.findings.sharedSiblingNotInBatch?.length > 0 && (
