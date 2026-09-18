@@ -88,6 +88,8 @@ describe("the office sees which box was rated", () => {
     expect(fn).toContain("boxCode: sql<string | null>`(");
     expect(fn).toContain("WHERE i.packageId = ${deliveryRatings.packageId} AND b.status = 'delivered'");
     expect(center).toContain("{r.boxCode ? (");
-    expect(center).toContain("· {r.trackingNumber}");
+    // Both lead somewhere now (owner, 2026-09-18): the box opens, the parcel opens.
+    expect(center).toContain("<BoxCodeLink id={r.boxId} code={r.boxCode}");
+    expect(center).toContain("<TrackingButton tracking={r.trackingNumber}");
   });
 });

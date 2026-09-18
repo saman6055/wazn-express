@@ -1,4 +1,5 @@
-import { useState, useCallback, useMemo } from "react";
+import { useState, useCallback, useMemo, useEffect } from "react";
+import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Package, Plus, Archive, Users, Percent, X, Search } from "lucide-react";
@@ -59,6 +60,22 @@ export default function CustomerDeliveryScanner() {
    * is the archive — paid-for and finished boxes, kept, just not in the way.
    */
   const [view, setView] = useState<BoxView>("unpaid");
+
+  /**
+   * /customer-delivery-scanner?box=<id> opens that box (owner, 2026-09-18: a
+   * box code in the Portal Center's ratings opens the box itself). The id
+   * leaves the address once used, so a refresh does not open it again.
+   */
+  const search = useSearch();
+  useEffect(() => {
+    const asked = Number(new URLSearchParams(search).get("box"));
+    if (!Number.isInteger(asked) || asked <= 0) return;
+    setActiveBoxId(asked);
+    const rest = new URLSearchParams(search);
+    rest.delete("box");
+    const query = rest.toString();
+    window.history.replaceState({}, "", window.location.pathname + (query ? `?${query}` : ""));
+  }, [search]);
 
   // Build query params from filters
   const queryParams = useMemo(() => {

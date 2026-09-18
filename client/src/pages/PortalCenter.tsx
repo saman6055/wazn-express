@@ -13,6 +13,18 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TutorialsTab } from "@/components/portal-center/TutorialsTab";
+import { BoxCodeLink, CustomerCodeLink, ParcelSheetProvider, TrackingButton } from "@/components/portal-center/PortalLinks";
+import {
+  ACTIVITY_WINDOWS,
+  OVERVIEW_TARGET,
+  isLowRating,
+  portalCenterHref,
+  readPortalCenterLink,
+  tabBadges,
+  type OverviewFigure,
+  type PortalCenterLink,
+  type PortalCenterTab,
+} from "@shared/portalCenterNav";
 import {
   Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
 } from "@/components/ui/table";
@@ -116,6 +128,17 @@ function WhatsAppIcon({ className }: { className?: string }) {
   );
 }
 
+// The tracking and ownership statuses in words, as their filters name them —
+// the badge used to print the database word ("pending") in every language.
+const STATUS_LABEL: Record<string, L> = {
+  pending: { ku: "چاوەڕوان", en: "Pending", ar: "معلق", zh: "待处理" },
+  matched: { ku: "هاوتاکراو", en: "Matched", ar: "مطابق", zh: "已匹配" },
+  received: { ku: "وەرگیراو", en: "Received", ar: "مستلم", zh: "已收到" },
+  cancelled: { ku: "هەڵوەشاوە", en: "Cancelled", ar: "ملغى", zh: "已取消" },
+  approved: { ku: "پەسەندکراو", en: "Approved", ar: "موافق", zh: "已批准" },
+  rejected: { ku: "ڕەتکراوە", en: "Rejected", ar: "مرفوض", zh: "已拒绝" },
+};
+
 const STATUS_COLORS: Record<string, string> = {
   pending: "bg-amber-100 text-amber-700 dark:bg-amber-900/40 dark:text-amber-300",
   matched: "bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300",
@@ -148,6 +171,28 @@ export default function PortalCenter() {
     retry: false,
   });
 
+  // One tab, and the filter it opened with (owner, 2026-09-18): a figure at the
+  // top opens its tab filtered, and /portal-center?tab=…&status=… opens the
+  // page there from anywhere. The nonce re-opens a tab with a fresh filter
+  // when the same figure is clicked again.
+  const [link, setLink] = useState<PortalCenterLink>(() =>
+    typeof window === "undefined" ? { tab: "customers" } : readPortalCenterLink(window.location.search),
+  );
+  const [linkNonce, setLinkNonce] = useState(0);
+  const go = (next: PortalCenterLink) => {
+    setLink(next);
+    setLinkNonce((n) => n + 1);
+    if (typeof window !== "undefined") window.history.replaceState({}, "", portalCenterHref(next));
+  };
+  const overview = trpc.portalCenter.getOverview.useQuery();
+  const badges = tabBadges(overview.data, pendingYuan.data);
+  const badge = (tab: PortalCenterTab) =>
+    badges[tab] ? (
+      <span className="ms-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white" data-tab-badge={tab}>
+        {badges[tab]}
+      </span>
+    ) : null;
+
   return (
     <DashboardLayout>
       <div className="space-y-5 p-4 md:p-6 max-w-7xl mx-auto" dir={isRTL ? "rtl" : "ltr"}>
@@ -169,30 +214,27 @@ export default function PortalCenter() {
           </div>
         </div>
 
-        <OverviewCards p={p} />
+        <OverviewCards p={p} data={overview.data} isLoading={overview.isLoading} onOpen={(figure) => go(OVERVIEW_TARGET[figure])} />
 
-        <Tabs defaultValue="customers" className="space-y-4">
+        <ParcelSheetProvider>
+        <Tabs value={link.tab} onValueChange={(value) => go({ tab: value as PortalCenterTab })} className="space-y-4">
           <TabsList className="grid grid-cols-4 sm:grid-cols-5 lg:grid-cols-11 w-full max-w-6xl h-auto gap-1 rounded-2xl p-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800/80 border border-slate-200/70 dark:border-slate-700/60 shadow-sm">
             <TabsTrigger value="customers" className={TAB_TRIGGER_CLS}><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
-            <TabsTrigger value="messages" className={TAB_TRIGGER_CLS}><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}</TabsTrigger>
+            <TabsTrigger value="messages" className={TAB_TRIGGER_CLS}><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}{badge("messages")}</TabsTrigger>
             <TabsTrigger value="send" className={TAB_TRIGGER_CLS}><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
             <TabsTrigger value="prices" className={TAB_TRIGGER_CLS}><DollarSign className="h-4 w-4" />{p({ ku: "نرخەکان", en: "Prices", ar: "الأسعار", zh: "价格" })}</TabsTrigger>
             <TabsTrigger value="tutorials" className={TAB_TRIGGER_CLS}><GraduationCap className="h-4 w-4" />{p({ ku: "فێرکاری", en: "Tutorials", ar: "الشروحات", zh: "教程" })}</TabsTrigger>
             <TabsTrigger value="activity" className={TAB_TRIGGER_CLS}><Activity className="h-4 w-4" />{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TabsTrigger>
-            <TabsTrigger value="declared" className={TAB_TRIGGER_CLS}><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}</TabsTrigger>
-            <TabsTrigger value="claims" className={TAB_TRIGGER_CLS}><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}</TabsTrigger>
-            <TabsTrigger value="prohibited" className={TAB_TRIGGER_CLS}><Ban className="h-4 w-4" />{p({ ku: "قەدەغە", en: "Prohibited", ar: "ممنوعة", zh: "违禁" })}</TabsTrigger>
-            <TabsTrigger value="ratings" className={TAB_TRIGGER_CLS}><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}</TabsTrigger>
+            <TabsTrigger value="declared" className={TAB_TRIGGER_CLS}><Package className="h-4 w-4" />{p({ ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪" })}{badge("declared")}</TabsTrigger>
+            <TabsTrigger value="claims" className={TAB_TRIGGER_CLS}><FileText className="h-4 w-4" />{p({ ku: "خاوەنداری", en: "Claims", ar: "المطالبات", zh: "认领" })}{badge("claims")}</TabsTrigger>
+            <TabsTrigger value="prohibited" className={TAB_TRIGGER_CLS}><Ban className="h-4 w-4" />{p({ ku: "قەدەغە", en: "Prohibited", ar: "ممنوعة", zh: "违禁" })}{badge("prohibited")}</TabsTrigger>
+            <TabsTrigger value="ratings" className={TAB_TRIGGER_CLS}><Star className="h-4 w-4" />{p({ ku: "هەڵسەنگاندن", en: "Ratings", ar: "التقييمات", zh: "评价" })}{badge("ratings")}</TabsTrigger>
             <TabsTrigger value="announcements" className={TAB_TRIGGER_CLS}><Megaphone className="h-4 w-4" />{p({ ku: "ڕاگەیاندن", en: "Announce", ar: "إعلانات", zh: "公告" })}</TabsTrigger>
             <TabsTrigger value="features" className={TAB_TRIGGER_CLS}><Sparkles className="h-4 w-4" />{p({ ku: "تایبەتمەندییەکان", en: "Features", ar: "المميزات", zh: "功能" })}</TabsTrigger>
             <TabsTrigger value="yuan" className={TAB_TRIGGER_CLS}>
               <span className="font-black text-sm leading-none">¥</span>
               {p({ ku: "یوان", en: "Yuan", ar: "اليوان", zh: "人民币" })}
-              {(pendingYuan.data ?? 0) > 0 && (
-                <span className="ms-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
-                  {pendingYuan.data}
-                </span>
-              )}
+              {badge("yuan")}
             </TabsTrigger>
           </TabsList>
 
@@ -201,15 +243,16 @@ export default function PortalCenter() {
           <TabsContent value="send"><SendTab p={p} /></TabsContent>
           <TabsContent value="prices"><PricesTab p={p} /></TabsContent>
           <TabsContent value="tutorials"><TutorialsTab p={p} /></TabsContent>
-          <TabsContent value="activity"><ActivityTab p={p} /></TabsContent>
-          <TabsContent value="declared"><DeclaredTab p={p} /></TabsContent>
-          <TabsContent value="claims"><ClaimsTab p={p} /></TabsContent>
+          <TabsContent value="activity"><ActivityTab key={`activity-${linkNonce}`} p={p} initialSinceDays={link.tab === "activity" ? link.sinceDays : undefined} /></TabsContent>
+          <TabsContent value="declared"><DeclaredTab key={`declared-${linkNonce}`} p={p} initialStatus={link.tab === "declared" ? link.status : undefined} /></TabsContent>
+          <TabsContent value="claims"><ClaimsTab key={`claims-${linkNonce}`} p={p} initialStatus={link.tab === "claims" ? link.status : undefined} /></TabsContent>
           <TabsContent value="features"><FeaturesTab p={p} /></TabsContent>
           <TabsContent value="prohibited"><ProhibitedTab p={p} /></TabsContent>
           <TabsContent value="ratings"><RatingsTab p={p} /></TabsContent>
           <TabsContent value="yuan"><YuanTab p={p} /></TabsContent>
           <TabsContent value="announcements"><AnnouncementsTab p={p} /></TabsContent>
         </Tabs>
+        </ParcelSheetProvider>
       </div>
 
       {openCustomer && (
@@ -226,16 +269,25 @@ export default function PortalCenter() {
 // ---------------------------------------------------------------------------
 // Overview KPI cards
 // ---------------------------------------------------------------------------
-function OverviewCards({ p }: { p: (v: L) => string }) {
-  const { data, isLoading } = trpc.portalCenter.getOverview.useQuery();
-
-  const cards: { label: L; value: number; icon: React.ComponentType<{ className?: string }>; color: string }[] = [
-    { label: { ku: "کۆی موشتەرەکان", en: "Total customers", ar: "إجمالي العملاء", zh: "客户总数" }, value: data?.totalCustomers ?? 0, icon: Users, color: "text-indigo-600 bg-indigo-100 dark:bg-indigo-900/40" },
-    { label: { ku: "چالاک ئەمڕۆ", en: "Active today", ar: "نشط اليوم", zh: "今日活跃" }, value: data?.activeToday ?? 0, icon: Activity, color: "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40" },
-    { label: { ku: "چالاک ئەم هەفتەیە", en: "Active this week", ar: "نشط هذا الأسبوع", zh: "本周活跃" }, value: data?.activeWeek ?? 0, icon: TrendingUp, color: "text-sky-600 bg-sky-100 dark:bg-sky-900/40" },
-    { label: { ku: "تراکینگی چاوەڕوان", en: "Pending declares", ar: "تصاريح معلقة", zh: "待处理申报" }, value: data?.pendingDeclares ?? 0, icon: PackageCheck, color: "text-violet-600 bg-violet-100 dark:bg-violet-900/40" },
-    { label: { ku: "خاوەنداری چاوەڕوان", en: "Pending claims", ar: "مطالبات معلقة", zh: "待处理认领" }, value: data?.pendingClaims ?? 0, icon: FileText, color: "text-amber-600 bg-amber-100 dark:bg-amber-900/40" },
-    { label: { ku: "پەیام (7 ڕۆژ)", en: "Messages (7d)", ar: "رسائل (7 أيام)", zh: "消息 (7天)" }, value: data?.messagesWeek ?? 0, icon: MessageCircle, color: "text-pink-600 bg-pink-100 dark:bg-pink-900/40" },
+function OverviewCards({
+  p,
+  data,
+  isLoading,
+  onOpen,
+}: {
+  p: (v: L) => string;
+  data: Partial<Record<OverviewFigure, number>> | undefined;
+  isLoading: boolean;
+  /** Each figure opens its own tab, filtered to what it counted (owner, 2026-09-18). */
+  onOpen: (figure: OverviewFigure) => void;
+}) {
+  const cards: { figure: OverviewFigure; label: L; value: number; icon: React.ComponentType<{ className?: string }>; color: string }[] = [
+    { figure: "totalCustomers", label: { ku: "کۆی موشتەرەکان", en: "Total customers", ar: "إجمالي العملاء", zh: "客户总数" }, value: data?.totalCustomers ?? 0, icon: Users, color: "text-indigo-600 bg-indigo-100 dark:bg-indigo-900/40" },
+    { figure: "activeToday", label: { ku: "چالاک ئەمڕۆ", en: "Active today", ar: "نشط اليوم", zh: "今日活跃" }, value: data?.activeToday ?? 0, icon: Activity, color: "text-emerald-600 bg-emerald-100 dark:bg-emerald-900/40" },
+    { figure: "activeWeek", label: { ku: "چالاک ئەم هەفتەیە", en: "Active this week", ar: "نشط هذا الأسبوع", zh: "本周活跃" }, value: data?.activeWeek ?? 0, icon: TrendingUp, color: "text-sky-600 bg-sky-100 dark:bg-sky-900/40" },
+    { figure: "pendingDeclares", label: { ku: "تراکینگی چاوەڕوان", en: "Pending declares", ar: "تصاريح معلقة", zh: "待处理申报" }, value: data?.pendingDeclares ?? 0, icon: PackageCheck, color: "text-violet-600 bg-violet-100 dark:bg-violet-900/40" },
+    { figure: "pendingClaims", label: { ku: "خاوەنداری چاوەڕوان", en: "Pending claims", ar: "مطالبات معلقة", zh: "待处理认领" }, value: data?.pendingClaims ?? 0, icon: FileText, color: "text-amber-600 bg-amber-100 dark:bg-amber-900/40" },
+    { figure: "messagesWeek", label: { ku: "پەیام (7 ڕۆژ)", en: "Messages (7d)", ar: "رسائل (7 أيام)", zh: "消息 (7天)" }, value: data?.messagesWeek ?? 0, icon: MessageCircle, color: "text-pink-600 bg-pink-100 dark:bg-pink-900/40" },
   ];
 
   if (isLoading) {
@@ -248,16 +300,24 @@ function OverviewCards({ p }: { p: (v: L) => string }) {
 
   return (
     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-3">
-      {cards.map((c, i) => (
-        <Card key={i} className="rounded-2xl">
-          <CardContent className="p-4">
-            <div className={cn("inline-flex p-2 rounded-xl mb-2", c.color)}>
-              <c.icon className="h-5 w-5" />
-            </div>
-            <div className="text-2xl font-black tabular-nums">{c.value.toLocaleString("en-US")}</div>
-            <div className="text-xs text-muted-foreground mt-0.5 leading-tight">{p(c.label)}</div>
-          </CardContent>
-        </Card>
+      {cards.map((c) => (
+        <button
+          key={c.figure}
+          type="button"
+          onClick={() => onOpen(c.figure)}
+          className="text-start rounded-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500"
+          data-overview-figure={c.figure}
+        >
+          <Card className="rounded-2xl h-full transition-colors hover:border-indigo-300 dark:hover:border-indigo-700">
+            <CardContent className="p-4">
+              <div className={cn("inline-flex p-2 rounded-xl mb-2", c.color)}>
+                <c.icon className="h-5 w-5" />
+              </div>
+              <div className="text-2xl font-black tabular-nums">{c.value.toLocaleString("en-US")}</div>
+              <div className="text-xs text-muted-foreground mt-0.5 leading-tight">{p(c.label)}</div>
+            </CardContent>
+          </Card>
+        </button>
       ))}
     </div>
   );
@@ -324,7 +384,7 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
                   <TableRow key={c.id} className="cursor-pointer" onClick={() => onOpen({ id: c.id, name: c.fullName, code: c.customerCode })}>
                     <TableCell>
                       <div className="font-semibold text-sm">{c.fullName}</div>
-                      <div className="text-xs text-muted-foreground font-mono">{c.customerCode} · {c.mobileNumber}</div>
+                      <div className="text-xs text-muted-foreground font-mono"><CustomerCodeLink id={c.id} code={c.customerCode} /> · {c.mobileNumber}</div>
                     </TableCell>
                     <TableCell className="text-center tabular-nums">{c.declaredCount || "—"}</TableCell>
                     <TableCell className="text-center tabular-nums">{c.claimCount || "—"}</TableCell>
@@ -345,18 +405,36 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
 // ---------------------------------------------------------------------------
 // Activity feed tab
 // ---------------------------------------------------------------------------
-function ActivityTab({ p }: { p: (v: L) => string }) {
+function ActivityTab({ p, initialSinceDays }: { p: (v: L) => string; initialSinceDays?: number }) {
   const [page, setPage] = useState(1);
   const [category, setCategory] = useState<string>("all");
+  const [since, setSince] = useState<string>(initialSinceDays ? String(initialSinceDays) : "all");
   const pageSize = 40;
   const { data, isLoading } = trpc.portalCenter.getActivityFeed.useQuery({
     page, pageSize, category: category === "all" ? undefined : (category as any),
+    sinceDays: since === "all" ? undefined : Number(since),
   });
 
   return (
     <Card className="rounded-2xl">
       <CardContent className="p-4">
-        <div className="mb-3 max-w-[200px]">
+        <div className="mb-3 flex flex-wrap gap-2">
+          <div className="w-[200px]">
+          <Select value={since} onValueChange={(v) => { setSince(v); setPage(1); }}>
+            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">{p({ ku: "هەموو کاتێک", en: "Any time", ar: "كل الأوقات", zh: "全部时间" })}</SelectItem>
+              {ACTIVITY_WINDOWS.map((days) => (
+                <SelectItem key={days} value={String(days)}>
+                  {days === 1
+                    ? p({ ku: "ئەمڕۆ (24 کاتژمێر)", en: "Today (24 hours)", ar: "اليوم (24 ساعة)", zh: "今天（24小时）" })
+                    : p({ ku: "ئەم هەفتەیە (7 ڕۆژ)", en: "This week (7 days)", ar: "هذا الأسبوع (7 أيام)", zh: "本周（7天）" })}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          </div>
+          <div className="w-[200px]">
           <Select value={category} onValueChange={(v) => { setCategory(v); setPage(1); }}>
             <SelectTrigger><SelectValue /></SelectTrigger>
             <SelectContent>
@@ -366,6 +444,7 @@ function ActivityTab({ p }: { p: (v: L) => string }) {
               ))}
             </SelectContent>
           </Select>
+          </div>
         </div>
 
         {isLoading ? <TableSkeleton /> : !data || data.data.length === 0 ? (
@@ -381,7 +460,7 @@ function ActivityTab({ p }: { p: (v: L) => string }) {
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <span className="text-sm font-semibold">{a.customerName || "—"}</span>
-                        <span className="text-[11px] text-muted-foreground font-mono">{a.customerCode}</span>
+                        <CustomerCodeLink id={a.customerId} code={a.customerCode} className="text-[11px]" />
                         <Badge variant="secondary" className="text-[10px]">{p(meta.label)}</Badge>
                       </div>
                       {(a.detail || a.path) && (
@@ -404,9 +483,9 @@ function ActivityTab({ p }: { p: (v: L) => string }) {
 // ---------------------------------------------------------------------------
 // Declared tracking tab
 // ---------------------------------------------------------------------------
-function DeclaredTab({ p }: { p: (v: L) => string }) {
+function DeclaredTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?: string }) {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("all");
+  const [status, setStatus] = useState<string>(initialStatus ?? "all");
   const [page, setPage] = useState(1);
   const pageSize = 25;
   const { data, isLoading } = trpc.portalCenter.listDeclaredPackages.useQuery({
@@ -452,12 +531,12 @@ function DeclaredTab({ p }: { p: (v: L) => string }) {
                 {data.data.map((d) => (
                   <TableRow key={d.id}>
                     <TableCell>
-                      <div className="font-mono text-sm font-semibold">{d.trackingNumber}</div>
+                      <TrackingButton tracking={d.trackingNumber} className="text-sm" />
                       {d.productName && <div className="text-xs text-muted-foreground truncate max-w-[220px]">{d.productName}</div>}
                     </TableCell>
-                    <TableCell className="text-xs"><div className="font-medium">{d.customerName}</div><div className="text-muted-foreground font-mono">{d.customerCode}</div></TableCell>
+                    <TableCell className="text-xs"><div className="font-medium">{d.customerName}</div><CustomerCodeLink id={d.customerId} code={d.customerCode} className="text-muted-foreground" /></TableCell>
                     <TableCell className="text-xs text-muted-foreground">{d.platform || "—"}</TableCell>
-                    <TableCell><Badge className={cn("text-[10px] border-0", STATUS_COLORS[d.status] ?? STATUS_COLORS.pending)}>{d.status}</Badge></TableCell>
+                    <TableCell><Badge className={cn("text-[10px] border-0", STATUS_COLORS[d.status] ?? STATUS_COLORS.pending)}>{STATUS_LABEL[d.status] ? p(STATUS_LABEL[d.status]) : d.status}</Badge></TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(d.createdAt)}</TableCell>
                   </TableRow>
                 ))}
@@ -540,8 +619,8 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
                   const reason = getProhibitedItemLabel(d.reasonId);
                   return (
                     <TableRow key={d.id}>
-                      <TableCell className="font-mono text-sm font-semibold">{d.trackingNumber}</TableCell>
-                      <TableCell className="text-xs"><div className="font-medium">{d.customerName}</div><div className="text-muted-foreground font-mono">{d.customerCode}</div></TableCell>
+                      <TableCell><TrackingButton tracking={d.trackingNumber} className="text-sm" /></TableCell>
+                      <TableCell className="text-xs"><div className="font-medium">{d.customerName}</div><CustomerCodeLink id={d.customerId} code={d.customerCode} className="text-muted-foreground" /></TableCell>
                       <TableCell className="text-xs max-w-[200px] truncate">{reason ? p(reason) : (d.reasonNote || "—")}</TableCell>
                       <TableCell>{d.viewedByCustomerAt
                         ? <Badge className="text-[10px] border-0 bg-emerald-100 dark:bg-emerald-950/40 text-emerald-700 dark:text-emerald-300">{p({ ku: "بینیویەتی", en: "Seen", ar: "شوهد", zh: "已看" })}</Badge>
@@ -594,9 +673,9 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
 // ---------------------------------------------------------------------------
 // Claims tab
 // ---------------------------------------------------------------------------
-function ClaimsTab({ p }: { p: (v: L) => string }) {
+function ClaimsTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?: string }) {
   const [search, setSearch] = useState("");
-  const [status, setStatus] = useState<string>("all");
+  const [status, setStatus] = useState<string>(initialStatus ?? "all");
   const [page, setPage] = useState(1);
   const pageSize = 25;
   const { data, isLoading } = trpc.portalCenter.listClaimRequests.useQuery({
@@ -641,9 +720,9 @@ function ClaimsTab({ p }: { p: (v: L) => string }) {
                 {data.data.map((c) => (
                   <TableRow key={c.id}>
                     <TableCell className="font-mono text-xs">{c.requestNumber}</TableCell>
-                    <TableCell className="font-mono text-sm font-semibold">{c.trackingNumber}</TableCell>
-                    <TableCell className="text-xs"><div className="font-medium">{c.customerName}</div><div className="text-muted-foreground font-mono">{c.customerCode}</div></TableCell>
-                    <TableCell><Badge className={cn("text-[10px] border-0", STATUS_COLORS[c.status] ?? STATUS_COLORS.pending)}>{c.status}</Badge></TableCell>
+                    <TableCell><TrackingButton tracking={c.trackingNumber} className="text-sm" /></TableCell>
+                    <TableCell className="text-xs"><div className="font-medium">{c.customerName}</div><CustomerCodeLink id={c.customerId} code={c.customerCode} className="text-muted-foreground" /></TableCell>
+                    <TableCell><Badge className={cn("text-[10px] border-0", STATUS_COLORS[c.status] ?? STATUS_COLORS.pending)}>{STATUS_LABEL[c.status] ? p(STATUS_LABEL[c.status]) : c.status}</Badge></TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(c.createdAt)}</TableCell>
                   </TableRow>
                 ))}
@@ -725,7 +804,7 @@ function MessagesTab({ p }: { p: (v: L) => string }) {
                 <div className="flex items-center justify-between gap-2 pb-2 border-b mb-2">
                   <div>
                     <div className="text-sm font-bold">{selected.name}</div>
-                    <div className="text-[11px] text-muted-foreground font-mono">{selected.code} · {selected.mobile}</div>
+                    <div className="text-[11px] text-muted-foreground font-mono"><CustomerCodeLink id={selected.customerId} code={selected.code} /> · {selected.mobile}</div>
                   </div>
                   <a
                     href={waLink(selected.mobile)}
@@ -1907,14 +1986,35 @@ function RatingsTab({ p }: { p: (v: L) => string }) {
                       ))}
                     </div>
                     <span className="text-sm font-semibold">{r.customerName || "—"}</span>
-                    <span className="text-[11px] text-muted-foreground font-mono">{r.customerCode}</span>
+                    <CustomerCodeLink id={r.customerId} code={r.customerCode} className="text-[11px]" />
                     {/* Rated per box; a rating from before that names its parcel. */}
                     {r.boxCode ? (
-                      <span className="text-[11px] text-muted-foreground font-mono">· {r.boxCode}</span>
+                      <BoxCodeLink id={r.boxId} code={r.boxCode} className="text-[11px]" />
                     ) : r.trackingNumber ? (
-                      <span className="text-[11px] text-muted-foreground font-mono">· {r.trackingNumber}</span>
+                      <TrackingButton tracking={r.trackingNumber} className="text-[11px]" />
                     ) : null}
                     <span className="ms-auto text-[11px] text-muted-foreground">{fmtDateTime(r.createdAt)}</span>
+                    {/* One to three stars: somebody should call (owner, 2026-09-18). */}
+                    {isLowRating(r.rating) && r.customerMobile && (
+                      <a
+                        href={waLink(
+                          r.customerMobile,
+                          p({
+                            ku: `سڵاو ${r.customerName ?? ""}، سوپاس بۆ هەڵسەنگاندنەکەت${r.boxCode ? ` بۆ بۆکسی ${r.boxCode}` : ""}. دەمانەوێت بزانین چی باشتر بکەین.`,
+                            en: `Hello ${r.customerName ?? ""}, thank you for your rating${r.boxCode ? ` of box ${r.boxCode}` : ""}. We would like to know what we can do better.`,
+                            ar: `مرحباً ${r.customerName ?? ""}، شكراً لتقييمك${r.boxCode ? ` للصندوق ${r.boxCode}` : ""}. نود أن نعرف ما يمكننا تحسينه.`,
+                            zh: `您好 ${r.customerName ?? ""}，感谢您的评价${r.boxCode ? `（箱号 ${r.boxCode}）` : ""}。我们想了解可以改进的地方。`,
+                          }),
+                        )}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center gap-1 rounded-md border border-emerald-300 px-2 py-0.5 text-[11px] font-semibold text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300 dark:hover:bg-emerald-950/40"
+                        data-low-rating-whatsapp={r.id}
+                      >
+                        <WhatsAppIcon className="h-3.5 w-3.5" />
+                        {p({ ku: "وەتسئاپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
+                      </a>
+                    )}
                   </div>
                   {r.comment && (
                     <p className="mt-1.5 text-sm text-muted-foreground">{r.comment}</p>
@@ -2117,7 +2217,7 @@ function YuanOrderRow({ row, p }: { row: any; p: (v: L) => string }) {
     <div className="rounded-xl border p-3 dark:border-white/10 space-y-2">
       <div className="flex items-center gap-2 flex-wrap">
         <span className="text-sm font-semibold">{row.customerName || "—"}</span>
-        <span className="text-[11px] text-muted-foreground font-mono">{row.customerCode}</span>
+        <CustomerCodeLink id={row.order?.customerId} code={row.customerCode} className="text-[11px]" />
         {row.customerMobile && (
           <a
             href={waLink(row.customerMobile)}
@@ -2261,7 +2361,7 @@ function FeaturesTab({ p }: { p: (v: L) => string }) {
                   <div key={c.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-medium">{c.fullName}</p>
-                      <p className="truncate font-mono text-xs text-muted-foreground">{c.customerCode}</p>
+                      <p className="truncate text-xs text-muted-foreground"><CustomerCodeLink id={c.id} code={c.customerCode} /></p>
                     </div>
                     <Button
                       size="sm"
@@ -2302,8 +2402,8 @@ function FeaturesTab({ p }: { p: (v: L) => string }) {
                 <div key={g.id} className="flex items-center justify-between gap-3 rounded-lg border border-border p-2">
                   <div className="min-w-0">
                     <p className="truncate text-sm font-medium">{g.fullName}</p>
-                    <p className="truncate font-mono text-xs text-muted-foreground">
-                      {g.customerCode}
+                    <p className="truncate text-xs text-muted-foreground">
+                      <CustomerCodeLink id={g.customerId} code={g.customerCode} />
                       {g.note ? ` · ${g.note}` : ""}
                     </p>
                   </div>

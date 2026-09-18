@@ -57,6 +57,7 @@ export const portalCenterRouter = router({
     .input(z.object({
       customerId: z.number().int().optional(),
       category: z.enum(["auth", "navigation", "declaration", "claim", "message", "search", "profile", "other"]).optional(),
+      sinceDays: z.number().int().min(1).max(31).optional(),
       ...pagination,
     }))
     .query(async ({ input }) => {

@@ -11,6 +11,7 @@ import {
   deliveryBoxItems,
   deliveryRatings,
   packages,
+  prohibitedPackages,
 } from "../../drizzle/schema";
 import type {
   InsertCustomerActivityLog,
@@ -209,11 +210,21 @@ export async function listDeliveryRatings(opts: { page: number; pageSize: number
       customerId: deliveryRatings.customerId,
       customerCode: customers.customerCode,
       customerName: customers.fullName,
+      // For the WhatsApp call about a low rating (owner, 2026-09-18).
+      customerMobile: customers.mobileNumber,
       trackingNumber: packages.trackingNumber,
       // The box the parcel was handed over in — ratings are asked per box, and
       // a box's rating is held against its first parcel.
       boxCode: sql<string | null>`(
         SELECT b.boxCode FROM deliveryBoxItems i
+        JOIN deliveryBoxes b ON b.id = i.boxId
+        WHERE i.packageId = ${deliveryRatings.packageId} AND b.status = 'delivered'
+        ORDER BY b.deliveredAt DESC
+        LIMIT 1
+      )`,
+      // The same box, by id, so its code can open it.
+      boxId: sql<number | null>`(
+        SELECT b.id FROM deliveryBoxItems i
         JOIN deliveryBoxes b ON b.id = i.boxId
         WHERE i.packageId = ${deliveryRatings.packageId} AND b.status = 'delivered'
         ORDER BY b.deliveredAt DESC
@@ -268,6 +279,7 @@ export async function getPortalCenterOverview() {
       totalCustomers: 0, activeToday: 0, activeWeek: 0,
       pendingDeclares: 0, pendingClaims: 0,
       declaresWeek: 0, claimsWeek: 0, messagesWeek: 0,
+      unreadMessages: 0, prohibitedAwaiting: 0, lowRatingsWeek: 0,
     };
   }
   const dayAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
@@ -285,6 +297,9 @@ export async function getPortalCenterOverview() {
     [declaresWeek],
     [claimsWeek],
     [messagesWeek],
+    [unreadMessages],
+    [prohibitedAwaiting],
+    [lowRatingsWeek],
   ] = await Promise.all([
     safe(db.select({ c }).from(customers).where(eq(customers.isActive, true)), [{ c: 0 }]),
     safe(db.select({ c: distinctCust }).from(customerActivityLog).where(sql`${customerActivityLog.createdAt} >= ${dayAgo}`), [{ c: 0 }]),
@@ -294,6 +309,12 @@ export async function getPortalCenterOverview() {
     safe(db.select({ c }).from(customerDeclaredPackages).where(sql`${customerDeclaredPackages.createdAt} >= ${weekAgo}`), [{ c: 0 }]),
     safe(db.select({ c }).from(packageClaimRequests).where(sql`${packageClaimRequests.createdAt} >= ${weekAgo}`), [{ c: 0 }]),
     safe(db.select({ c }).from(customerMessages).where(and(eq(customerMessages.senderType, "customer"), sql`${customerMessages.createdAt} >= ${weekAgo}`)), [{ c: 0 }]),
+    // What waits on each tab (owner, 2026-09-18): messages nobody has read,
+    // prohibited parcels whose customer has chosen and staff must act, and
+    // this week's low ratings (1 to 3 stars) — someone should call.
+    safe(db.select({ c }).from(customerMessages).where(and(eq(customerMessages.senderType, "customer"), eq(customerMessages.isRead, false))), [{ c: 0 }]),
+    safe(db.select({ c }).from(prohibitedPackages).where(eq(prohibitedPackages.status, "chosen")), [{ c: 0 }]),
+    safe(db.select({ c }).from(deliveryRatings).where(and(sql`${deliveryRatings.rating} <= 3`, sql`${deliveryRatings.createdAt} >= ${weekAgo}`)), [{ c: 0 }]),
   ]);
 
   return {
@@ -305,6 +326,9 @@ export async function getPortalCenterOverview() {
     declaresWeek: num(declaresWeek?.c),
     claimsWeek: num(claimsWeek?.c),
     messagesWeek: num(messagesWeek?.c),
+    unreadMessages: num(unreadMessages?.c),
+    prohibitedAwaiting: num(prohibitedAwaiting?.c),
+    lowRatingsWeek: num(lowRatingsWeek?.c),
   };
 }
 
@@ -489,6 +513,8 @@ export async function getActivityFeed(opts: {
   pageSize: number;
   customerId?: number;
   category?: string;
+  /** Only the last N days — "active today" is the last 1, "this week" the last 7, as the figures count them. */
+  sinceDays?: number;
 }) {
   const db = await getDb();
   if (!db) return { data: [], total: 0 };
@@ -496,6 +522,10 @@ export async function getActivityFeed(opts: {
   const conds = [];
   if (opts.customerId) conds.push(eq(customerActivityLog.customerId, opts.customerId));
   if (opts.category) conds.push(eq(customerActivityLog.category, opts.category as any));
+  if (opts.sinceDays) {
+    const since = new Date(Date.now() - opts.sinceDays * 24 * 60 * 60 * 1000);
+    conds.push(sql`${customerActivityLog.createdAt} >= ${since}`);
+  }
   const where = conds.length ? and(...conds) : undefined;
 
   const [{ total }] = await safe(
