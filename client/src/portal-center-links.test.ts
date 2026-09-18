@@ -42,7 +42,13 @@ describe("the tabs", () => {
     expect(page).toContain('<TabsList className="sticky top-[100px] md:top-11 z-20 flex w-full flex-nowrap');
     expect(page).toContain("overflow-x-auto");
     expect(page).not.toContain("lg:grid-cols-11");
-    expect(page).toContain('"shrink-0 gap-1.5 rounded-xl');
+    expect(page).toContain('"shrink-0 gap-1.5 rounded-xl px-2 py-2');
+  });
+
+  it("the tab in use is brought into the row, sideways only", () => {
+    expect(page).toContain('list?.querySelector<HTMLElement>(\'[role="tab"][data-state="active"]\')');
+    expect(page).toContain("list.scrollLeft -= listBox.left - tabBox.left + 12;");
+    expect(page).not.toMatch(/active\.scrollIntoView/);
   });
 });
 

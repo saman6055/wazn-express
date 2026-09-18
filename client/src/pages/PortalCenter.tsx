@@ -156,7 +156,7 @@ const STATUS_COLORS: Record<string, string> = {
 // indigo hover, and a bold indigo→purple gradient pill (with a lifted icon)
 // when active — matching the page header for a cohesive, professional look.
 const TAB_TRIGGER_CLS =
-  "shrink-0 gap-1.5 rounded-xl px-2.5 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 " +
+  "shrink-0 gap-1.5 rounded-xl px-2 py-2 text-xs font-semibold text-slate-500 dark:text-slate-400 " +
   "transition-all duration-200 hover:text-indigo-600 dark:hover:text-indigo-300 hover:bg-white/70 dark:hover:bg-slate-800/70 " +
   "data-[state=active]:bg-gradient-to-br data-[state=active]:from-indigo-600 data-[state=active]:to-purple-600 " +
   "data-[state=active]:text-white data-[state=active]:shadow-lg data-[state=active]:shadow-indigo-500/30 " +
@@ -190,6 +190,23 @@ export default function PortalCenter() {
   };
   const overview = trpc.portalCenter.getOverview.useQuery();
   const badges = tabBadges(overview.data, pendingYuan.data);
+
+  // On a screen too narrow for all thirteen, the row scrolls sideways; keep
+  // the tab in use inside it — sideways only, the page itself does not move.
+  // Asked again once the red numbers arrive — they widen the row after it
+  // first draws — and just after the render, once the row has been laid out.
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      const list = document.querySelector<HTMLElement>("[data-portal-tabs]");
+      const active = list?.querySelector<HTMLElement>('[role="tab"][data-state="active"]');
+      if (!list || !active) return;
+      const listBox = list.getBoundingClientRect();
+      const tabBox = active.getBoundingClientRect();
+      if (tabBox.left < listBox.left) list.scrollLeft -= listBox.left - tabBox.left + 12;
+      else if (tabBox.right > listBox.right) list.scrollLeft += tabBox.right - listBox.right + 12;
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [link.tab, overview.data, pendingYuan.data]);
   const badge = (tab: PortalCenterTab) =>
     badges[tab] ? (
       <span className="ms-0.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white" data-tab-badge={tab}>
@@ -226,7 +243,7 @@ export default function PortalCenter() {
               2026-09-19). The bar is 44px on a wide screen; on a phone it sits
               under the 56px header, so 100px. A narrow screen scrolls the row
               sideways rather than wrapping it. */}
-          <TabsList className="sticky top-[100px] md:top-11 z-20 flex w-full flex-nowrap items-center justify-start overflow-x-auto h-auto gap-1 rounded-2xl p-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-200/70 dark:border-slate-700/60 shadow-sm" data-portal-tabs>
+          <TabsList className="sticky top-[100px] md:top-11 z-20 flex w-full flex-nowrap items-center justify-start overflow-x-auto h-auto gap-0.5 rounded-2xl p-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-200/70 dark:border-slate-700/60 shadow-sm" data-portal-tabs>
             <TabsTrigger value="customers" className={TAB_TRIGGER_CLS}><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
             <TabsTrigger value="messages" className={TAB_TRIGGER_CLS}><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}{badge("messages")}</TabsTrigger>
             <TabsTrigger value="send" className={TAB_TRIGGER_CLS}><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>
