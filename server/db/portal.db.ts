@@ -1724,10 +1724,13 @@ export async function getCustomersWithFeature(feature: string) {
     fullName: customers.fullName,
     note: customerFeatures.note,
     grantedById: customerFeatures.grantedById,
+    // Who gave it, by name (owner, 2026-09-18) — the id alone told nobody.
+    grantedByName: users.name,
     createdAt: customerFeatures.createdAt,
   })
     .from(customerFeatures)
     .innerJoin(customers, eq(customers.id, customerFeatures.customerId))
+    .leftJoin(users, eq(users.id, customerFeatures.grantedById))
     .where(eq(customerFeatures.feature, feature))
     .orderBy(desc(customerFeatures.createdAt));
 }

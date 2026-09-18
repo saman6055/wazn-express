@@ -2460,6 +2460,27 @@ function FeaturesTab({ p }: { p: (v: L) => string }) {
                       <CustomerCodeLink id={g.customerId} code={g.customerCode} />
                       {g.note ? ` · ${g.note}` : ""}
                     </p>
+                    {/* When it was given, by whom, and whether the customer is
+                        using it (owner, 2026-09-18). */}
+                    <p className="mt-0.5 text-[11px] text-muted-foreground" data-grant-given={g.id}>
+                      {p({ ku: "درا:", en: "Given:", ar: "مُنحت:", zh: "授予于：" })}{" "}
+                      <bdi dir="ltr" className="font-mono">{fmtDateTime(g.createdAt)}</bdi>
+                      {g.grantedByName ? (
+                        <> · {p({ ku: "لەلایەن", en: "by", ar: "بواسطة", zh: "授予人" })} {g.grantedByName}</>
+                      ) : null}
+                    </p>
+                    <p className="text-[11px]" data-grant-seen={g.id}>
+                      {g.lastReceiptViewAt ? (
+                        <span className="text-emerald-700 dark:text-emerald-300">
+                          {p({ ku: "دوایین جار پسوولەکانی بینیوە:", en: "Last opened their invoices:", ar: "آخر مرة فتح فواتيره:", zh: "最近查看账单：" })}{" "}
+                          <bdi dir="ltr" className="font-mono">{fmtDateTime(g.lastReceiptViewAt)}</bdi>
+                        </span>
+                      ) : (
+                        <span className="text-amber-700 dark:text-amber-300">
+                          {p({ ku: "هێشتا پسوولەکانی نەبینیوە", en: "Has not opened their invoices yet", ar: "لم يفتح فواتيره بعد", zh: "尚未查看账单" })}
+                        </span>
+                      )}
+                    </p>
                   </div>
                   <Button
                     size="sm"

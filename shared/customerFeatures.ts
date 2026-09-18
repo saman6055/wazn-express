@@ -50,6 +50,18 @@ export const FEATURES: readonly FeatureDefinition[] = [
 
 const BY_ID = new Map<FeatureId, FeatureDefinition>(FEATURES.map((f) => [f.id, f]));
 
+/**
+ * The portal pages where a customer sees what finance_detail shows: their
+ * finance section and their invoice reports. The Portal Center says when a
+ * customer holding the feature last opened one (owner, 2026-09-18) — the
+ * portal records every page it opens (trackActivity).
+ */
+export const RECEIPT_PAGE_PREFIXES = ["/portal/financial", "/portal/invoice"] as const;
+
+export function isReceiptPage(path: string | null | undefined): boolean {
+  return !!path && RECEIPT_PAGE_PREFIXES.some((prefix) => path.startsWith(prefix));
+}
+
 export function featureDefinition(id: string): FeatureDefinition | undefined {
   return BY_ID.get(id as FeatureId);
 }

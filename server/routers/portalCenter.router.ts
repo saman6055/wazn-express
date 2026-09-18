@@ -201,7 +201,10 @@ export const portalCenterRouter = router({
       if (!isKnownFeature(input.feature)) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "تایبەتمەندی نەناسراو" });
       }
-      return db.getCustomersWithFeature(input.feature);
+      const grants = await db.getCustomersWithFeature(input.feature);
+      // When each last opened their receipts (owner, 2026-09-18).
+      const seen = await db.lastReceiptViewsFor(grants.map((g) => g.customerId));
+      return grants.map((g) => ({ ...g, lastReceiptViewAt: seen.get(g.customerId) ?? null }));
     }),
 
   /**

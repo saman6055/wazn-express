@@ -1,5 +1,6 @@
 import { and, desc, eq, inArray, like, or, sql, type SQL } from "drizzle-orm";
 import { declaredLinkRefusal, OPEN_DECLARATION_STATUSES } from "@shared/declaredLink";
+import { RECEIPT_PAGE_PREFIXES } from "@shared/customerFeatures";
 import { getDb } from "./connection";
 import {
   customers,
@@ -242,6 +243,33 @@ export async function listDeliveryRatings(opts: { page: number; pageSize: number
   );
 
   return { data, total: num(total), average: average != null ? Number(average) : null };
+}
+
+/**
+ * When each of these customers last opened their receipts in the portal —
+ * the finance section or the invoice reports (owner, 2026-09-18). From the
+ * page views the portal records. Read-only.
+ */
+export async function lastReceiptViewsFor(customerIds: readonly number[]): Promise<Map<number, Date>> {
+  const out = new Map<number, Date>();
+  const ids = Array.from(new Set(customerIds.filter((id) => Number.isInteger(id) && id > 0)));
+  if (ids.length === 0) return out;
+  const db = await getDb();
+  if (!db) return out;
+  const rows = await safe(
+    db.select({ customerId: customerActivityLog.customerId, last: sql<string>`max(${customerActivityLog.createdAt})` })
+      .from(customerActivityLog)
+      .where(and(
+        inArray(customerActivityLog.customerId, ids),
+        or(...RECEIPT_PAGE_PREFIXES.map((prefix) => like(customerActivityLog.path, `${prefix}%`))),
+      ))
+      .groupBy(customerActivityLog.customerId),
+    [],
+  );
+  for (const row of rows) {
+    if (row.last) out.set(Number(row.customerId), new Date(row.last));
+  }
+  return out;
 }
 
 /** Stamp a customer's last portal login. Best-effort. */
