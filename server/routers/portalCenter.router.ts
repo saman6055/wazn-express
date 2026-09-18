@@ -547,6 +547,11 @@ export const portalCenterRouter = router({
       return db.listYuanExchangeOrders(input);
     }),
 
+  /** Yuan orders counted and summed by status, for the tab's figures. */
+  yuanTotals: adminProcedure.query(async () => {
+    return db.yuanOrderTotals();
+  }),
+
   countPendingYuanOrders: adminProcedure.query(async () => {
     return db.countPendingYuanOrders();
   }),

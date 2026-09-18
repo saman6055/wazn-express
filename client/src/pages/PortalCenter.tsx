@@ -14,6 +14,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { TutorialsTab } from "@/components/portal-center/TutorialsTab";
 import { customerCodeOnly } from "@shared/customerCode";
+import { OPEN_YUAN_STATUSES, yuanOrdersProfit, yuanProfitPerUsd } from "@shared/yuanProfit";
 import { BoxCodeLink, CustomerCodeLink, ParcelSheetProvider, TrackingButton } from "@/components/portal-center/PortalLinks";
 import {
   ACTIVITY_WINDOWS,
@@ -2101,16 +2102,96 @@ const YUAN_STATUS_LABEL: Record<string, L> = {
   cancelled: { ku: "هەڵوەشایەوە", en: "Cancelled", ar: "ملغى", zh: "已取消" },
 };
 
+/**
+ * Today's market rate for yuan (yuan per 1 dollar), for the profit figures
+ * only. The system keeps no such rate, so this one stays on this computer
+ * (owner, 2026-09-18) — nothing is stored or charged from it.
+ */
+const YUAN_MARKET_RATE_KEY = "wazn-yuan-market-rate";
+function useYuanMarketRate(): [string, (value: string) => void] {
+  const [value, setValue] = useState<string>(() => {
+    try {
+      return localStorage.getItem(YUAN_MARKET_RATE_KEY) ?? "";
+    } catch {
+      return "";
+    }
+  });
+  const update = (next: string) => {
+    setValue(next);
+    try {
+      localStorage.setItem(YUAN_MARKET_RATE_KEY, next);
+    } catch {
+      /* the figure still works for this visit */
+    }
+  };
+  return [value, update];
+}
+
+const usd2 = (n: number) => `${n < 0 ? "-" : ""}$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const cny0 = (n: number) => `¥${n.toLocaleString("en-US", { maximumFractionDigits: 0 })}`;
+
 function YuanTab({ p }: { p: (v: L) => string }) {
+  const [marketRate, setMarketRate] = useYuanMarketRate();
   return (
     <div className="space-y-4">
-      <YuanSettingsCard p={p} />
+      <YuanTotalsCard p={p} marketRate={marketRate} />
+      <YuanSettingsCard p={p} marketRate={marketRate} onMarketRate={setMarketRate} />
       <YuanOrdersCard p={p} />
     </div>
   );
 }
 
-function YuanSettingsCard({ p }: { p: (v: L) => string }) {
+/** How much yuan customers have asked for — open and handed over (owner, 2026-09-18). */
+function YuanTotalsCard({ p, marketRate }: { p: (v: L) => string; marketRate: string }) {
+  const { data = [] } = trpc.portalCenter.yuanTotals.useQuery();
+  const sum = (statuses: readonly string[]) =>
+    data
+      .filter((r) => statuses.includes(r.status))
+      .reduce((acc, r) => ({ count: acc.count + r.count, usd: acc.usd + r.usd, cny: acc.cny + r.cny }), { count: 0, usd: 0, cny: 0 });
+  const open = sum(OPEN_YUAN_STATUSES);
+  const done = sum(["completed"]);
+  const openProfit = yuanOrdersProfit(open, parseFloat(marketRate));
+
+  const Block = ({ label, t, tone }: { label: string; t: { count: number; usd: number; cny: number }; tone: string }) => (
+    <div className={cn("rounded-xl border p-3", tone)}>
+      <div className="text-xs text-muted-foreground">{label} · <bdi dir="ltr" className="font-mono">{t.count}</bdi></div>
+      <div className="mt-1 flex flex-wrap items-baseline gap-x-3">
+        <bdi dir="ltr" className="font-mono text-xl font-black">{cny0(t.cny)}</bdi>
+        <bdi dir="ltr" className="font-mono text-sm text-muted-foreground">{usd2(t.usd)}</bdi>
+      </div>
+    </div>
+  );
+
+  return (
+    <Card className="rounded-2xl" data-yuan-totals>
+      <CardContent className="p-4 space-y-3">
+        <h3 className="font-bold">{p({ ku: "یوانی داواکراو", en: "Yuan asked for", ar: "اليوان المطلوب", zh: "客户申请的人民币" })}</h3>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <Block
+            label={p({ ku: "کراوە (چاوەڕوان و لە جێبەجێکردندا)", en: "Open (pending and in progress)", ar: "مفتوحة (معلقة وقيد التنفيذ)", zh: "未完成（待处理与处理中）" })}
+            t={open}
+            tone="border-amber-200 dark:border-amber-900/60"
+          />
+          <Block
+            label={p({ ku: "تەواوبوو", en: "Completed", ar: "مكتملة", zh: "已完成" })}
+            t={done}
+            tone="border-emerald-200 dark:border-emerald-900/60"
+          />
+        </div>
+        {openProfit != null && open.count > 0 && (
+          <p className={cn("text-sm", openProfit < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-300")} data-yuan-open-profit>
+            {openProfit < 0
+              ? p({ ku: "داواکارییە کراوەکان بە نرخی کڕینی ئەمڕۆ زیانیان هەیە:", en: "At today's buying rate the open orders lose:", ar: "بسعر الشراء اليوم تخسر الطلبات المفتوحة:", zh: "按今日买入价，未完成订单亏损：" })
+              : p({ ku: "قازانجی داواکارییە کراوەکان بە نرخی کڕینی ئەمڕۆ:", en: "At today's buying rate the open orders earn:", ar: "بسعر الشراء اليوم تربح الطلبات المفتوحة:", zh: "按今日买入价，未完成订单盈利：" })}{" "}
+            <bdi dir="ltr" className="font-mono font-bold">{usd2(openProfit)}</bdi>
+          </p>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
+function YuanSettingsCard({ p, marketRate, onMarketRate }: { p: (v: L) => string; marketRate: string; onMarketRate: (value: string) => void }) {
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.portalCenter.getYuanSettings.useQuery();
   const [form, setForm] = useState({
@@ -2186,6 +2267,40 @@ function YuanSettingsCard({ p }: { p: (v: L) => string }) {
             <Label className="text-xs">{p({ ku: "زۆرترین بڕ ($) — بەتاڵ = بێ سنوور", en: "Max amount ($) — empty = none", ar: "الحد الأقصى ($) — فارغ = بلا حد", zh: "最高金额（$）——留空为不限" })}</Label>
             <Input type="number" min="0" step="1" value={form.maxUsd} onChange={(e) => setForm({ ...form, maxUsd: e.target.value })} className="font-mono" dir="ltr" />
           </div>
+        </div>
+
+        {/* What the rate typed above earns, before it is saved (owner,
+            2026-09-18). The buying rate is not stored by the system; it is
+            remembered on this computer only. */}
+        <div className="rounded-xl border border-dashed p-3 space-y-2" data-yuan-profit-calculator>
+          <div className="flex flex-wrap items-end gap-3">
+            <div className="space-y-1 w-full sm:w-56">
+              <Label className="text-xs">{p({ ku: "نرخی کڕینی ئەمڕۆ (1 دۆلار = چەند یوان)", en: "Today's buying rate (CNY per 1 USD)", ar: "سعر الشراء اليوم (يوان لكل دولار)", zh: "今日买入价（1美元兑人民币）" })}</Label>
+              <Input type="number" min="0" step="0.01" value={marketRate} onChange={(e) => onMarketRate(e.target.value)} className="font-mono" dir="ltr" placeholder="7.10" />
+            </div>
+            {(() => {
+              const perUsd = yuanProfitPerUsd(parseFloat(form.rate), parseFloat(marketRate));
+              if (perUsd == null) {
+                return (
+                  <p className="text-xs text-muted-foreground pb-2">
+                    {p({ ku: "نرخی کڕین بنووسە بۆ بینینی قازانج", en: "Type the buying rate to see the profit", ar: "اكتب سعر الشراء لرؤية الربح", zh: "输入买入价以查看利润" })}
+                  </p>
+                );
+              }
+              return (
+                <p className={cn("text-sm pb-2", perUsd < 0 ? "text-red-600 dark:text-red-400" : "text-emerald-700 dark:text-emerald-300")} data-yuan-profit-per-100>
+                  {perUsd < 0
+                    ? p({ ku: "زیان لە هەر $100:", en: "Loss on every $100:", ar: "الخسارة على كل $100:", zh: "每 $100 亏损：" })
+                    : p({ ku: "قازانج لە هەر $100:", en: "Profit on every $100:", ar: "الربح على كل $100:", zh: "每 $100 利润：" })}{" "}
+                  <bdi dir="ltr" className="font-mono font-bold">{usd2(perUsd * 100)}</bdi>{" "}
+                  <bdi dir="ltr" className="font-mono">({(perUsd * 100).toFixed(1)}%)</bdi>
+                </p>
+              );
+            })()}
+          </div>
+          <p className="text-[11px] text-muted-foreground">
+            {p({ ku: "ئەم نرخە پاشەکەوت ناکرێت و هیچ پارەیەک پێی ناگۆڕێت — تەنها بۆ ژماردنە لەسەر ئەم کۆمپیوتەرە.", en: "This rate is not saved and moves no money — it is only for the figures, on this computer.", ar: "لا يُحفظ هذا السعر ولا يغيّر أي مبلغ — هو للحساب فقط على هذا الجهاز.", zh: "此汇率不会保存，也不影响任何金额——仅用于在本机计算。" })}
+          </p>
         </div>
 
         <div className="space-y-1">

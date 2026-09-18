@@ -81,6 +81,33 @@ export async function updateYuanExchangeOrder(
   return order ?? null;
 }
 
+/**
+ * Every yuan order counted and summed by status — the figures on the Portal
+ * Center's yuan tab (owner, 2026-09-18). Read-only.
+ */
+export async function yuanOrderTotals(): Promise<Array<{ status: string; count: number; usd: number; cny: number }>> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await safe(
+    db
+      .select({
+        status: yuanExchangeOrders.status,
+        count: sql<number>`COUNT(*)`,
+        usd: sql<string>`COALESCE(SUM(${yuanExchangeOrders.usdAmount}), 0)`,
+        cny: sql<string>`COALESCE(SUM(${yuanExchangeOrders.cnyAmount}), 0)`,
+      })
+      .from(yuanExchangeOrders)
+      .groupBy(yuanExchangeOrders.status),
+    [],
+  );
+  return rows.map((r) => ({
+    status: String(r.status),
+    count: Number(r.count) || 0,
+    usd: Number(r.usd) || 0,
+    cny: Number(r.cny) || 0,
+  }));
+}
+
 export async function countPendingYuanOrders(): Promise<number> {
   const db = await getDb();
   if (!db) return 0;
