@@ -46,7 +46,7 @@ import { isBatchEditLocked } from "@shared/batchPriceHistory";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -677,6 +677,39 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     return () => clearTimeout(handle);
   }, [searchText]);
   const searchActive = debouncedSearch.length >= MIN_BATCH_SEARCH_LENGTH;
+
+  /**
+   * Show one batch in the list, wherever it is (owner, 2026-09-18: a batch in
+   * the reminder above should take you to it in the list). Through the search
+   * box, because the list holds one page of the newest batches and the one
+   * asked for may be on another page or in the archive; the search finds it,
+   * the row is scrolled to and marked. Also reached as /batches?find=<code>.
+   */
+  const [focusCode, setFocusCode] = useState<string | null>(null);
+  const listTopRef = useRef<HTMLDivElement>(null);
+  const scrolledToRef = useRef<string | null>(null);
+  // Up and down only: scrollIntoView also slides a page wider than the screen
+  // sideways, and the list's table is.
+  const scrollPageTo = (el: Element, where: "start" | "center") => {
+    const rect = el.getBoundingClientRect();
+    const top = where === "center"
+      ? window.scrollY + rect.top - (window.innerHeight - rect.height) / 2
+      : window.scrollY + rect.top - 72;
+    window.scrollTo({ top: Math.max(0, top), behavior: "smooth" });
+  };
+  const showInList = (code: string) => {
+    setSearchText(code);
+    setFocusCode(code);
+    scrolledToRef.current = null;
+    if (listTopRef.current) scrollPageTo(listTopRef.current, "start");
+  };
+  useEffect(() => {
+    const asked = new URLSearchParams(search).get("find");
+    if (!asked) return;
+    showInList(asked);
+    window.history.replaceState({}, "", window.location.pathname);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search]);
   const searchQuery = trpc.batches.search.useQuery(
     { query: debouncedSearch },
     { enabled: searchActive, placeholderData: keepPreviousData }
@@ -685,6 +718,19 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   // filter and the archive split describe the unsearched list, so they stand
   // aside rather than silently hiding a hit the search just found.
   const rowsToRender: any[] = searchActive ? (searchQuery.data ?? []) : visibleBatches;
+
+  // Once the search has answered and the row asked for is on screen, bring it
+  // to the middle — once.
+  useEffect(() => {
+    if (!focusCode || scrolledToRef.current === focusCode) return;
+    if (!searchActive || debouncedSearch !== focusCode) return;
+    if (!rowsToRender.some((b: any) => b.batchCode === focusCode)) return;
+    const row = document.querySelector(`[data-batch-code="${CSS.escape(focusCode)}"]`);
+    if (!row) return;
+    scrollPageTo(row, "center");
+    scrolledToRef.current = focusCode;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [focusCode, rowsToRender, searchActive, debouncedSearch]);
 
   const linkFilterLabels: Localised[] = [
     linkFilters.status && linkFilters.status !== "all"
@@ -1277,19 +1323,24 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     {t("batches.awaitingNumberDesc")}
                   </p>
                   <div className="flex flex-wrap gap-2">
+                    {/* Each one copies its code, and a click shows it in the
+                        list below (owner, 2026-09-18). */}
                     {awaitingNumber.slice(0, 8).map((batch: any) => (
-                      <Button
-                        key={batch.id}
-                        size="sm"
-                        variant={batch.severity === "urgent" ? "default" : "outline"}
-                        className={batch.severity === "urgent" ? "bg-amber-600 hover:bg-amber-700" : ""}
-                        onClick={() => openEditDialog(batch)}
-                      >
-                        <span className="font-mono">{batch.batchCode}</span>
-                        <Badge variant="secondary" className="ms-2">
-                          {t("batches.daysWaiting", { count: batch.daysWaiting })}
-                        </Badge>
-                      </Button>
+                      <div key={batch.id} className="inline-flex items-center gap-0.5" data-awaiting-batch={batch.batchCode}>
+                        <Button
+                          size="sm"
+                          variant={batch.severity === "urgent" ? "default" : "outline"}
+                          className={batch.severity === "urgent" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                          onClick={() => showInList(batch.batchCode)}
+                          title={pickLang(language, { ku: "لە لیستەکەدا نیشانی بدە", en: "Show it in the list", ar: "اعرضها في القائمة", zh: "在列表中显示" })}
+                        >
+                          <span className="font-mono">{batch.batchCode}</span>
+                          <Badge variant="secondary" className="ms-2">
+                            {t("batches.daysWaiting", { count: batch.daysWaiting })}
+                          </Badge>
+                        </Button>
+                        <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
+                      </div>
                     ))}
                     {awaitingNumber.length > 8 && (
                       <span className="self-center text-sm text-muted-foreground">
@@ -1309,7 +1360,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 code, container, AWB, flight, vessel, the batch's own courier
                 trackings, a parcel's tracking, an order's tracking, or a
                 customer code. */}
-            <div className="mb-4 space-y-2">
+            <div ref={listTopRef} className="mb-4 scroll-mt-20 space-y-2">
               <div className="relative max-w-xl">
                 <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
@@ -1391,7 +1442,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 {rowsToRender.map((batch) => (
                   <TableRow
                     key={batch.id}
-                    className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50"
+                    data-batch-code={batch.batchCode}
+                    className={cn(
+                      "transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50",
+                      focusCode === batch.batchCode && "bg-amber-50 ring-2 ring-inset ring-amber-500 dark:bg-amber-950/30",
+                    )}
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">

@@ -42,6 +42,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { CopyButton } from "@/components/CopyButton";
 import { PACKAGE_STATUS_LABEL, PACKAGE_STAGE_GROUPS } from "@/lib/packageStatus";
 import { SHIPPING_TYPE_LABEL } from "@/lib/shipmentFilters";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -418,12 +419,12 @@ export default function Dashboard() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {awaitingNumber.slice(0, 6).map((batch: any) => (
+                      <div key={batch.id} className="inline-flex items-center gap-0.5" data-awaiting-batch={batch.batchCode}>
                       <Button
-                        key={batch.id}
                         size="sm"
                         variant={batch.severity === "urgent" ? "default" : "outline"}
                         className={batch.severity === "urgent" ? "bg-amber-600 hover:bg-amber-700" : ""}
-                        onClick={() => setLocation(`/batches?edit=${batch.id}`)}
+                        onClick={() => setLocation(`/batches?find=${encodeURIComponent(batch.batchCode)}`)}
                       >
                         <span className="font-mono">{batch.batchCode}</span>
                         {/* Which piece, not just that something is missing.
@@ -439,6 +440,8 @@ export default function Dashboard() {
                           {t("batches.daysWaiting", { count: batch.daysWaiting })}
                         </Badge>
                       </Button>
+                      <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
+                      </div>
                     ))}
                     {awaitingNumber.length > 6 && (
                       <Button size="sm" variant="ghost" onClick={() => setLocation("/batches")}>
