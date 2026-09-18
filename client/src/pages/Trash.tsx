@@ -64,7 +64,7 @@ export default function Trash() {
 
   const handleRestore = async (item: TrashItem) => {
     try {
-      await restore.mutateAsync({ entityType: item.entityType, entityId: item.entityId });
+      await restore.mutateAsync({ entityType: item.entityType, entityId: item.entityId, recordId: item.recordId ?? undefined });
       toast.success(t("trash.restored", { label: item.label }));
       listQuery.refetch();
     } catch (error: any) {
@@ -77,7 +77,7 @@ export default function Trash() {
   const handlePurge = async () => {
     if (!purging) return;
     try {
-      await purge.mutateAsync({ entityType: purging.entityType, entityId: purging.entityId });
+      await purge.mutateAsync({ entityType: purging.entityType, entityId: purging.entityId, recordId: purging.recordId ?? undefined });
       toast.success(t("trash.purged", { label: purging.label }));
       setPurging(null);
       listQuery.refetch();

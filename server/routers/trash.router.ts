@@ -8,6 +8,22 @@ import { RESTORE_BLOCKED_MESSAGE, canSeeTrashItem, type RestoreBlockedReason } f
 const idSchema = z.number().int().positive();
 const entityTypeSchema = z.enum(["batch", "full_package_order", "delivery_box"]);
 
+/**
+ * The one entry being acted on.
+ *
+ * A box deleted, brought back and deleted again has two entries in the bin,
+ * and before 2026-09-17 a box came back from the bin without its parcels — so
+ * the older entry is the only place those parcels still exist. The reader
+ * points at one card; that card's entry is the one restored or purged, and
+ * the other is left alone. Without an id, the newest entry is meant.
+ */
+async function entryFor(entityType: string, entityId: number, recordId?: number) {
+  const entry = recordId ? await db.getDeletedRecordById(recordId) : await db.getDeletedRecord(entityType, entityId);
+  if (!entry) return null;
+  if (entry.entityType !== entityType || entry.entityId !== entityId) return null;
+  return entry;
+}
+
 /** Refuse a restore with the reason spelled out, in the reader's language. */
 function blocked(reason: RestoreBlockedReason): never {
   throw new TRPCError({
@@ -37,17 +53,20 @@ export const trashRouter = router({
 
 
     restore: staffProcedure
-      .input(z.object({ entityType: entityTypeSchema, entityId: idSchema }))
+      .input(z.object({ entityType: entityTypeSchema, entityId: idSchema, recordId: idSchema.optional() }))
       .mutation(async ({ input, ctx }) => {
         // Not visible, not restorable. Otherwise knowing an id would be
         // enough to reach into somebody else's deletions.
         const visible = (await db.listTrash()).find(
-          (item) => item.entityType === input.entityType && item.entityId === input.entityId
+          (item) =>
+            item.entityType === input.entityType &&
+            item.entityId === input.entityId &&
+            (input.recordId == null || item.recordId === input.recordId)
         );
         if (!visible || !canSeeTrashItem(visible, ctx.user)) blocked("already_present");
 
         if (input.entityType === "delivery_box") {
-          const entry = await db.getDeletedRecord("delivery_box", input.entityId);
+          const entry = await entryFor(input.entityType, input.entityId, input.recordId ?? visible!.recordId ?? undefined);
           if (!entry) blocked("already_present");
           if (await db.deliveryBoxExists(input.entityId)) blocked("already_present");
 
@@ -57,7 +76,7 @@ export const trashRouter = router({
           if (code && !(await db.isBoxCodeFree(code))) blocked("label_taken");
 
           await db.restoreDeliveryBoxFromSnapshot(boxRow, Array.isArray(items) ? items : []);
-          await db.removeDeletedRecord("delivery_box", input.entityId);
+          await db.removeDeletedRecordById(entry!.id);
 
           await db.createAuditLog({
             userId: ctx.user.id,
@@ -71,7 +90,7 @@ export const trashRouter = router({
         }
 
         if (input.entityType === "batch") {
-          const entry = await db.getDeletedRecord("batch", input.entityId);
+          const entry = await entryFor("batch", input.entityId, input.recordId ?? visible!.recordId ?? undefined);
           if (!entry) blocked("already_present");
           if (await db.batchExists(input.entityId)) blocked("already_present");
 
@@ -98,7 +117,7 @@ export const trashRouter = router({
             Array.isArray(releasedPackageIds) ? releasedPackageIds : []
           );
 
-          await db.removeDeletedRecord("batch", input.entityId);
+          await db.removeDeletedRecordById(entry!.id);
 
           await db.createAuditLog({
             userId: ctx.user.id,
@@ -137,10 +156,13 @@ export const trashRouter = router({
      * what it deleted.
      */
     purge: adminProcedure
-      .input(z.object({ entityType: entityTypeSchema, entityId: idSchema }))
+      .input(z.object({ entityType: entityTypeSchema, entityId: idSchema, recordId: idSchema.optional() }))
       .mutation(async ({ input, ctx }) => {
         const visible = (await db.listTrash()).find(
-          (item) => item.entityType === input.entityType && item.entityId === input.entityId
+          (item) =>
+            item.entityType === input.entityType &&
+            item.entityId === input.entityId &&
+            (input.recordId == null || item.recordId === input.recordId)
         );
         if (!visible || !canSeeTrashItem(visible, ctx.user)) {
           throw new TRPCError({ code: "NOT_FOUND", message: "لە سەبەتەکەدا نییە" });
@@ -155,9 +177,9 @@ export const trashRouter = router({
         });
 
         if (input.entityType === "batch" || input.entityType === "delivery_box") {
-          const entry = await db.getDeletedRecord(input.entityType, input.entityId);
+          const entry = await entryFor(input.entityType, input.entityId, input.recordId ?? visible.recordId ?? undefined);
           if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "لە سەبەتەکەدا نییە" });
-          await db.removeDeletedRecord(input.entityType, input.entityId);
+          await db.removeDeletedRecordById(entry.id);
           return { success: true };
         }
 

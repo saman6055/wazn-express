@@ -97,7 +97,8 @@ export async function listTrash(): Promise<TrashItem[]> {
     ...snapshots.map((r) => {
       const facts = boxFacts.get(r.id);
       return {
-        key: `${r.entityType}:${r.entityId}`,
+        // The entry's own id, because one box can have two entries.
+        key: `${r.entityType}:${r.entityId}:${r.id}`,
         entityType: r.entityType as TrashItem["entityType"],
         entityId: r.entityId,
         label: r.label,
@@ -105,6 +106,7 @@ export async function listTrash(): Promise<TrashItem[]> {
         deletedById: r.deletedById,
         deletedByName: r.deletedByName,
         deletionReason: r.deletionReason,
+        recordId: r.id,
         ...(facts
           ? { ...ownerOf(facts.customerId), parcelCount: facts.parcelCount, recordedParcels: facts.recordedParcels }
           : {}),
@@ -119,6 +121,7 @@ export async function listTrash(): Promise<TrashItem[]> {
       deletedById: o.deletedById,
       deletedByName: o.deletedByName,
       deletionReason: o.deletionReason,
+      recordId: null,
       ...ownerOf(o.customerId),
     })),
   ];
@@ -132,21 +135,36 @@ export async function listTrash(): Promise<TrashItem[]> {
 export async function getDeletedRecord(entityType: string, entityId: number) {
   const db = await getDb();
   if (!db) return null;
+  // Newest first: a thing deleted, restored and deleted again has more than
+  // one entry, and "the entry" without an id can only mean the last one.
   const [row] = await db
     .select()
     .from(deletedRecords)
     .where(and(eq(deletedRecords.entityType, entityType), eq(deletedRecords.entityId, entityId)))
+    .orderBy(desc(deletedRecords.deletedAt), desc(deletedRecords.id))
     .limit(1);
   return row ?? null;
 }
 
-/** Drop a bin entry — used after a successful restore, and by purge. */
-export async function removeDeletedRecord(entityType: string, entityId: number): Promise<void> {
+/** One entry of the bin, by its own id — the one the reader is looking at. */
+export async function getDeletedRecordById(id: number) {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(deletedRecords).where(eq(deletedRecords.id, id)).limit(1);
+  return row ?? null;
+}
+
+/**
+ * Drop one entry of the bin — after it has been restored, or purged.
+ *
+ * By its own id, never by what it is an entry of: a box that lost its parcels
+ * has an older entry that still holds them, and removing every entry of that
+ * box would take the parcels with it.
+ */
+export async function removeDeletedRecordById(id: number): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db
-    .delete(deletedRecords)
-    .where(and(eq(deletedRecords.entityType, entityType), eq(deletedRecords.entityId, entityId)));
+  await db.delete(deletedRecords).where(eq(deletedRecords.id, id));
 }
 
 /** Is a batch code free? Checked before restoring — it may have been reused. */

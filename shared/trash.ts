@@ -80,6 +80,13 @@ export interface TrashItem {
   parcelCount?: number | null;
   /** A deleted box only: how many parcels its own record counted. */
   recordedParcels?: number | null;
+  /**
+   * Which entry of the bin this is. One box can have more than one: an older
+   * entry still holding its parcels, and a newer one from being deleted
+   * again. Restoring and purging act on the entry in front of the reader,
+   * never on every entry the box has.
+   */
+  recordId?: number | null;
 }
 
 /** What a deleted box's snapshot says: whose it was, what it held, what its record counted. */
