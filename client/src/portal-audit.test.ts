@@ -157,12 +157,15 @@ describe("one support number", () => {
 // ---------------------------------------------------------------------------
 
 describe("the home tiles and the shipments filter agree", () => {
-  it("home counts by stageOf, not a private grouping", () => {
+  it("home counts by a shared rule, not a private grouping", () => {
     // The tile's number must equal the length of the list its tap opens.
     // A private grouping here once counted customs as "pending" while the
-    // shipments page filed it under "in transit".
+    // shipments page filed it under "in transit". Since 2026-09-19 the three
+    // tiles open the search, so they count by the search's own rule; the
+    // shipments they still speak of go through stageOf.
     const home = read(path.join(SRC, "pages/portal/PortalHome.tsx"));
-    expect(home).toContain('stageOf(b.status) === "in_china"');
+    expect(home).toContain("countByTab(");
+    expect(home).toContain('parseSearch("")');
     expect(home).toContain('stageOf(b.status) === "in_transit"');
     expect(home).toContain('stageOf(b.status) === "delivered"');
   });

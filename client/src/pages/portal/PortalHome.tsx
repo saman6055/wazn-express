@@ -14,7 +14,7 @@ import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { WaznNewsCarousel } from "@/components/portal/WaznNewsCarousel";
 import { DeliveryRatingCard } from "@/components/portal/DeliveryRatingCard";
 import { GreetingCard } from "@/components/portal/GreetingCard";
@@ -23,7 +23,7 @@ import { ReferralCard } from "@/components/portal/ReferralCard";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalClock, PortalLanguagePicker } from "@/components/portal/PortalHeaderControls";
 import { formatPortalDate } from "@/lib/portalClock";
-import { ChinaDepotList, useChinaDepotItems } from "@/components/portal/ChinaDepotList";
+import { buildSearchIndex, countByTab, parseSearch, searchItems, SEARCH_TAB_LABEL } from "@/lib/portalSearch";
 import { isDebt, isCredit } from "@/lib/portalMoney";
 import { onImageError } from "@/lib/imageFallback";
 import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "@/lib/brand";
@@ -255,9 +255,23 @@ export default function PortalHome() {
   // ticker reads the same row rather than growing a second source of truth.
   const { data: priceList } = trpc.customerPortal.getPriceList.useQuery(undefined, PORTAL_SETTINGS_QUERY);
 
-  // Everything the customer has sitting in the China depot — loose parcels
-  // and bought orders, deduplicated by tracking (the shared hook's job).
-  const chinaItems = useChinaDepotItems();
+  // The three cards count what the search shows under each of its tabs — by
+  // the search's own rule, over the same lists — so the number tapped is the
+  // number the search opens with (owner's brief, 2026-09-19). Parcels, not
+  // shipments: the search lists parcels.
+  const parcelsQuery = trpc.customerPortal.getMyPackages.useQuery(undefined, PORTAL_LIVE_QUERY);
+  const ordersQuery = trpc.customerPortal.getMyFullPackageOrders.useQuery({}, PORTAL_LIVE_QUERY);
+  const stageCounts = useMemo(
+    () =>
+      countByTab(
+        searchItems(
+          buildSearchIndex({ parcels: parcelsQuery.data as any, orders: ordersQuery.data as any, batches: batches as any }),
+          parseSearch(""),
+        ),
+      ),
+    [parcelsQuery.data, ordersQuery.data, batches],
+  );
+  const stagesLoading = parcelsQuery.isLoading;
 
   /**
    * One banner rather than several: a dropped connection must say so once at
@@ -279,16 +293,8 @@ export default function PortalHome() {
   // so no number on this screen can disagree with the list a tap opens.
   const totalBatches = batches?.length || 0;
   const deliveredCount = batches?.filter(b => stageOf(b.status) === "delivered").length || 0;
-  // Parcels already boxed into a still-in-China batch are still in China:
-  // the depot card counts loose items plus those batches' parcels.
-  const chinaBatchParcels = (batches ?? [])
-    .filter(b => stageOf(b.status) === "in_china")
-    .reduce((sum, b) => sum + (Number((b as any).customerPackageCount) || 0), 0);
-  const chinaCount = chinaItems.length + chinaBatchParcels;
-  // The middle card is the road itself; the third is Iraq-side but not yet
-  // handed over. Same predicates the tap-filter below uses — one rule.
+  // Shipments on the road — for the days-left line under the blue card.
   const onTheWay = (batches ?? []).filter(b => stageOf(b.status) === "in_transit" && !isInIraqNotDelivered(b.status));
-  const inIraq = (batches ?? []).filter(b => isInIraqNotDelivered(b.status));
 
   // The soonest recorded arrival among what is moving. Never invented: no
   // date recorded means no countdown shown.
@@ -301,11 +307,6 @@ export default function PortalHome() {
     return days.length ? Math.min(...days) : null;
   })();
 
-  // Tapping a pipeline card filters the list below in place; tapping it
-  // again clears. The screen behaves as one board, not three doors.
-  const [pipelineFilter, setPipelineFilter] = useState<null | "in_china" | "on_the_way" | "in_iraq">(null);
-  const togglePipeline = (key: "in_china" | "on_the_way" | "in_iraq") =>
-    setPipelineFilter(prev => (prev === key ? null : key));
 
   // The slim fixed bar appears once the full header has scrolled away, so
   // search and the bell stay reachable without the header eating the screen.
@@ -388,10 +389,7 @@ export default function PortalHome() {
     ? "bg-white/10 border-white/20 text-white"
     : "bg-slate-900/[0.06] border-slate-900/10 text-slate-800 dark:text-slate-200";
 
-  const recentSource =
-    pipelineFilter === "on_the_way" ? onTheWay
-    : pipelineFilter === "in_iraq" ? inIraq
-    : (batches?.slice(0, 3) || []);
+  const recentSource = batches?.slice(0, 3) || [];
 
   return (
     <CustomerPortalLayout>
@@ -669,71 +667,60 @@ export default function PortalHome() {
         )}
 
         {/* Stats Cards */}
-        {/* The three-stage pipeline: China → the road → Iraq. Tapping a card
-            filters the list below in place; tapping again clears it. */}
+        {/* The three places a customer's goods can be: China → the road →
+            Erbil. Each card opens the search on its own tab, and counts what
+            that tab lists (owner's brief, 2026-09-19). */}
         <div className="px-4 mt-4">
           <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => togglePipeline("in_china")}
-              aria-pressed={pipelineFilter === "in_china"}
-              className={cn(
-                "rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
-                card,
-                pipelineFilter === "in_china" && "ring-2 ring-blue-500",
-              )}
+            <Link
+              href="/portal/search?tab=registered"
+              className={cn("block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]", card)}
             >
               <Package className={cn("mx-auto h-5 w-5", isDark ? "text-blue-300" : "text-blue-600 dark:text-blue-300")} />
               <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
-                {batchesLoading ? "…" : <AnimatedCounter value={chinaCount} />}
+                {stagesLoading ? "…" : <AnimatedCounter value={stageCounts.registered} />}
               </p>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
-                {pickLang(language, STATUS_LABEL.preparing)}
+                {pickLang(language, SEARCH_TAB_LABEL.registered)}
               </p>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => togglePipeline("on_the_way")}
-              aria-pressed={pipelineFilter === "on_the_way"}
+            <Link
+              href="/portal/search?tab=onTheWay"
               className={cn(
-                "rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
+                "block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
                 isDark ? "border-sky-500/35 bg-[#152238]" : "border-sky-300 dark:border-sky-500/35 bg-white dark:bg-[#152238]",
-                pipelineFilter === "on_the_way" && "ring-2 ring-sky-500",
               )}
             >
               <Plane className={cn("mx-auto h-5 w-5", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")} />
               <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")}>
-                {batchesLoading ? "…" : <AnimatedCounter value={onTheWay.length} />}
+                {stagesLoading ? "…" : <AnimatedCounter value={stageCounts.onTheWay} />}
               </p>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-sky-300" : "text-sky-700 dark:text-sky-300")}>
-                {pickLang(language, STATUS_LABEL.in_transit)}
+                {pickLang(language, SEARCH_TAB_LABEL.onTheWay)}
                 {nextEtaDays !== null && (
                   <span className="block tabular-nums">
                     {pickLang(language, { ku: `نزیکەی ${nextEtaDays} ڕۆژ ماوە`, en: `about ${nextEtaDays} days left`, ar: `نحو ${nextEtaDays} يومًا متبقية`, zh: `约剩 ${nextEtaDays} 天` })}
                   </span>
                 )}
               </p>
-            </button>
+            </Link>
 
-            <button
-              type="button"
-              onClick={() => togglePipeline("in_iraq")}
-              aria-pressed={pipelineFilter === "in_iraq"}
+            <Link
+              href="/portal/search?tab=arrived"
               className={cn(
-                "rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
+                "block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
                 isDark ? "border-emerald-500/50 bg-emerald-950/40" : "border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40",
-                pipelineFilter === "in_iraq" && "ring-2 ring-emerald-500",
               )}
             >
               <CheckCircle className={cn("mx-auto h-5 w-5", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")} />
               <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")}>
-                {batchesLoading ? "…" : <AnimatedCounter value={inIraq.length} />}
+                {stagesLoading ? "…" : <AnimatedCounter value={stageCounts.arrived} />}
               </p>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
-                {pickLang(language, STATUS_LABEL.arrived)}
+                {pickLang(language, SEARCH_TAB_LABEL.arrived)}
               </p>
-            </button>
+            </Link>
           </div>
         </div>
 
@@ -741,7 +728,7 @@ export default function PortalHome() {
             shipment is waiting in the Erbil depot */}
         <NextStepCard batches={batches ?? []} isDark={isDark} language={language} loading={batchesLoading} />
 
-        {/* Recent shipments — or, with the China card tapped, the depot list */}
+        {/* Recent shipments */}
         <div className="px-4 mt-5">
           <div className="mb-3 flex items-center justify-between">
             <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
@@ -755,18 +742,7 @@ export default function PortalHome() {
             </Link>
           </div>
 
-          {pipelineFilter === "in_china" ? (
-            chinaItems.length > 0 ? (
-              <ChinaDepotList items={chinaItems} isDark={isDark} className="mt-0" />
-            ) : (
-              <PortalEmptyState
-                compact
-                icon={Package}
-                title={pickLang(language, { ku: "هیچ پاکەتێکت لە کۆگای چین نییە", en: "Nothing of yours is in the China depot", ar: "لا توجد طرود لك في مستودع الصين", zh: "您在中国仓库没有包裹" })}
-                hint={pickLang(language, { ku: "کاتێک پاکەتێکت بگاتە کۆگاکەمان، لێرە دەردەکەوێت.", en: "Parcels appear here as soon as they reach our depot.", ar: "تظهر الطرود هنا فور وصولها إلى مستودعنا.", zh: "包裹一到我们的仓库就会显示在这里。" })}
-              />
-            )
-          ) : batchesLoading ? (
+          {batchesLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map(i => (
                 <Skeleton key={i} className={cn("h-24 w-full rounded-2xl", isDark && "bg-slate-800")} />
@@ -781,9 +757,7 @@ export default function PortalHome() {
               <PortalEmptyState
                 compact
                 icon={Package}
-                title={pipelineFilter
-                  ? pickLang(language, { ku: "لەم قۆناغەدا هیچ نییە", en: "Nothing in this stage", ar: "لا يوجد شيء في هذه المرحلة", zh: "此阶段没有货件" })
-                  : (t("portal.noShipments") || "هیچ گواستنەوەیەک نییە")}
+                title={t("portal.noShipments") || "هیچ گواستنەوەیەک نییە"}
               />
             )
           ) : (
@@ -833,7 +807,7 @@ export default function PortalHome() {
 
           {/* The delivered history, one tap away — the pipeline shows the
               live stages, this line keeps the past reachable. */}
-          {pipelineFilter === null && deliveredCount > 0 && (
+          {deliveredCount > 0 && (
             <Link href="/portal/shipments?status=delivered">
               <span className={cn("relative tap-44 mt-2.5 flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-medium", card, isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
                 <CheckCircle className="h-3.5 w-3.5" />

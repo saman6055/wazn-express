@@ -140,7 +140,8 @@ describe("the phone's Back button takes one step at a time", () => {
   it("coming back shows the search as it was left — words, tab, details and scroll", () => {
     expect(hook).toContain("readSearchView(window.history.state)");
     expect(hook).toContain("useState(restored?.q ?? options.initialQuery");
-    expect(hook).toContain("useState<SearchTab | null>(restored?.tab ?? null)");
+    // The remembered tab first, then the one a home card asked for (2026-09-19).
+    expect(hook).toContain("useState<SearchTab | null>(restored?.tab ?? options.initialTab ?? null)");
     expect(hook).toContain("useState<string | null>(restored?.detail ?? null)");
     expect(hook).toContain("const target = restored?.scroll ?? 0");
   });

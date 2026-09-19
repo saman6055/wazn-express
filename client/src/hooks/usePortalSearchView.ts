@@ -37,6 +37,8 @@ export function usePortalSearchView(options: {
   scrollRef?: RefObject<HTMLElement | null>;
   /** The words to start with when the entry remembers none — the page's ?q=. */
   initialQuery?: string;
+  /** The tab to start on when the entry remembers none — the page's ?tab=, which the home's cards send. */
+  initialTab?: SearchTab | null;
   /** Keep ?q= in this address while typing — the search page. */
   urlPath?: string;
   /** Before leaving for another screen — the sheet closes itself. */
@@ -48,7 +50,7 @@ export function usePortalSearchView(options: {
     typeof window === "undefined" ? null : readSearchView(window.history.state),
   );
   const [query, setQuery] = useState(restored?.q ?? options.initialQuery ?? "");
-  const [tab, setTab] = useState<SearchTab | null>(restored?.tab ?? null);
+  const [tab, setTab] = useState<SearchTab | null>(restored?.tab ?? options.initialTab ?? null);
   const [detail, setDetail] = useState<string | null>(restored?.detail ?? null);
   const [submitted, setSubmitted] = useState(0);
 
@@ -76,7 +78,7 @@ export function usePortalSearchView(options: {
       window.history.replaceState(
         withSearchView(window.history.state, view),
         "",
-        path ? searchAddress(path, view.q) : undefined,
+        path ? searchAddress(path, view.q, view.tab) : undefined,
       );
     },
     [scrolled],
@@ -160,24 +162,28 @@ export function usePortalSearchView(options: {
 
   const submit = useCallback(() => setSubmitted((n) => n + 1), []);
 
-  // The search page keeps ?q= in its address while typing, so a reload or a
-  // shared link shows the same answers.
+  // The search page keeps ?q= and ?tab= in its address while typing and
+  // choosing, so a reload or a shared link shows the same answers.
   const urlPath = options.urlPath;
   useEffect(() => {
     if (!urlPath) return;
     const timer = window.setTimeout(() => {
-      const next = searchAddress(urlPath, query);
+      const next = searchAddress(urlPath, query, tab);
       if (next !== `${window.location.pathname}${window.location.search}`) {
         window.history.replaceState(window.history.state, "", next);
       }
     }, 400);
     return () => window.clearTimeout(timer);
-  }, [query, urlPath]);
+  }, [query, tab, urlPath]);
 
   return { query, setQuery, tab, setTab, detail, openDetail, closeDetail, leave, submitted, submit };
 }
 
-function searchAddress(path: string, query: string): string {
+function searchAddress(path: string, query: string, tab: SearchTab | null = null): string {
+  const params = new URLSearchParams();
   const q = query.trim();
-  return q ? `${path}?q=${encodeURIComponent(q)}` : path;
+  if (q) params.set("q", q);
+  if (tab) params.set("tab", tab);
+  const qs = params.toString();
+  return qs ? `${path}?${qs}` : path;
 }

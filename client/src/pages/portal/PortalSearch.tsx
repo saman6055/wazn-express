@@ -4,10 +4,18 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { PortalSearchField, PORTAL_SEARCH_INPUT_ID } from "@/components/portal/PortalSearchSheet";
 import PortalUniversalSearch from "@/components/portal/PortalUniversalSearch";
 import { usePortalSearchView } from "@/hooks/usePortalSearchView";
+import { SEARCH_TABS, type SearchTab } from "@/lib/portalSearch";
 
 function getInitialSearchQuery(): string {
   if (typeof window === "undefined") return "";
   return new URLSearchParams(window.location.search).get("q") ?? "";
+}
+
+/** ?tab= — the home's three cards open the search on their own place. */
+function getInitialSearchTab(): SearchTab | null {
+  if (typeof window === "undefined") return null;
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  return SEARCH_TABS.find((t) => t === tab) ?? null;
 }
 
 /**
@@ -23,7 +31,11 @@ export default function PortalSearch() {
   const { t } = useLanguage();
   // The same history-kept view as the sheet: Back from an answer's page or
   // details returns to exactly these answers. The address keeps ?q= too.
-  const view = usePortalSearchView({ initialQuery: getInitialSearchQuery(), urlPath: "/portal/search" });
+  const view = usePortalSearchView({
+    initialQuery: getInitialSearchQuery(),
+    initialTab: getInitialSearchTab(),
+    urlPath: "/portal/search",
+  });
 
   return (
     <PortalLayout>
