@@ -59,3 +59,77 @@ export const PACKAGE_STATUS_TONE: Record<string, string> = {
 export function packageStatusTone(status: string | null | undefined): string {
   return PACKAGE_STATUS_TONE[status ?? ""] ?? PACKAGE_STATUS_TONE.registered;
 }
+
+/**
+ * Where a parcel is, in the customer's three phrases — the owner's brief
+ * (2026-09-19): green in Erbil, blue on the way, grey in China.
+ *
+ * The per-status names above stay as they are: the office's screens read
+ * them too, and there "registered" and "packed into a shipment" must stay
+ * apart. A customer needs only to know where the goods are.
+ */
+export const PARCEL_WHERE_WORDS: Record<"erbil" | "onTheWay" | "china", L> = {
+  erbil: { ku: "گەیشتە هەولێر — ئامادەیە بۆ وەرگرتن", en: "In Erbil — ready to collect", ar: "وصل إلى أربيل — جاهز للاستلام", zh: "已到埃尔比勒——可以取件" },
+  onTheWay: { ku: "لە ڕێگادایە (لە فڕۆکە یان کەشتیدایە)", en: "On the way (on a plane or ship)", ar: "في الطريق (على متن طائرة أو سفينة)", zh: "运输中（在飞机或船上）" },
+  china: { ku: "تۆمارکراوە لە کۆگای چین", en: "Registered at our China warehouse", ar: "مسجّل في مستودعنا في الصين", zh: "已在我们的中国仓库登记" },
+};
+
+interface ParcelWhere {
+  status?: string | null;
+  batchId?: number | null;
+  registeredInCountryId?: number | null;
+}
+
+/**
+ * The countries a customer's shipped parcels were registered in.
+ *
+ * Shipments leave from China, so every one of these is a China depot's
+ * country. The portal is not told which countries are origins (that list is
+ * the office's); this is how it learns it from what it is told.
+ */
+export function originCountriesOf(parcels: readonly ParcelWhere[] | null | undefined): Set<number> {
+  const ids = new Set<number>();
+  for (const p of parcels ?? []) {
+    if (p.batchId != null && p.registeredInCountryId != null) ids.add(p.registeredInCountryId);
+  }
+  return ids;
+}
+
+/**
+ * Whether a parcel waiting at a depot can be said to be in China.
+ *
+ * Not when it is known to be elsewhere — a parcel registered at the Erbil
+ * depot never went to China, and telling its owner otherwise is the mistake
+ * the neutral name above exists to avoid. It is in China when it is packed
+ * into a shipment (they leave from China), when it carries no location
+ * stamp (everything registered before the stamp came through the China
+ * depot), or when its stamp is a country the customer's shipped parcels came
+ * from. A stamp from any other country, from a customer who has shipped,
+ * is the Erbil depot. A customer who has shipped nothing yet is not told
+ * otherwise: nearly every first parcel is registered in China.
+ */
+export function registeredInChina(parcel: ParcelWhere, originCountries: ReadonlySet<number>): boolean {
+  if (parcel.batchId != null || parcel.status === "in_batch") return true;
+  if (parcel.registeredInCountryId == null) return true;
+  return originCountries.size === 0 || originCountries.has(parcel.registeredInCountryId);
+}
+
+/**
+ * The words a customer's chip says for a parcel: one of the three places
+ * where one fits, the exact name otherwise — «لە گومرگ» for customs (the
+ * owner kept it), out for delivery, delivered, returned, cancelled.
+ */
+export function parcelStatusWords(parcel: ParcelWhere, originCountries: ReadonlySet<number>): L | null {
+  const status = String(parcel.status ?? "");
+  switch (status) {
+    case "ready_for_delivery":
+      return PARCEL_WHERE_WORDS.erbil;
+    case "in_transit":
+      return PARCEL_WHERE_WORDS.onTheWay;
+    case "registered":
+    case "in_batch":
+      return registeredInChina(parcel, originCountries) ? PARCEL_WHERE_WORDS.china : PACKAGE_STATUS_LABEL.registered;
+    default:
+      return PACKAGE_STATUS_LABEL[status] ?? null;
+  }
+}

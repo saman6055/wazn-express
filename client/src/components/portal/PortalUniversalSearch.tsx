@@ -1,15 +1,10 @@
 import { useDeferredValue, useEffect, useMemo, useState } from "react";
 import {
   AlertTriangle,
-  Boxes,
-  ChevronLeft,
-  ChevronRight,
   Clock,
   Package,
   PackagePlus,
   SearchX,
-  ShoppingBag,
-  type LucideIcon,
 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -19,17 +14,14 @@ import { cn } from "@/lib/utils";
 import { PORTAL_LIVE_QUERY } from "@/lib/portalQuery";
 import { hasFeature } from "@shared/customerFeatures";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { onImageError } from "@/lib/imageFallback";
-import { formatPortalDate } from "@/lib/portalClock";
-import { PACKAGE_STATUS_LABEL, packageStatusTone } from "@/lib/packageStatus";
-import { orderStatusLabel } from "@/lib/shipmentFilters";
+import { originCountriesOf } from "@/lib/packageStatus";
+import { searchStatusTone, searchStatusWords } from "@/components/portal/portalSearchChip";
+import { PortalSearchCard } from "@/components/portal/PortalSearchCard";
 import { cleanTrackingPaste } from "@/lib/entry/cleanPaste";
 import { usePackageImages } from "@/components/portal/PackageThumb";
-import { PortalChip } from "@/components/portal/PortalStatusChip";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalSearchResultsSkeleton } from "@/components/portal/PortalListSkeleton";
-import { BOX_STATUS_LABEL } from "@/components/portal/MyDeliveryBoxes";
 import PortalSearchDetail from "@/components/portal/PortalSearchDetail";
 import type { PortalSearchView } from "@/hooks/usePortalSearchView";
 import {
@@ -42,13 +34,9 @@ import {
   searchItems,
   searchTarget,
   shouldAskServer,
-  DECLARED_PENDING_LABEL,
-  ORDER_NOT_SHIPPED_LABEL,
-  SEARCH_DATE_LABEL,
   SEARCH_TABS,
   SEARCH_TAB_DOT,
   SEARCH_TAB_LABEL,
-  SEARCH_TAB_TONE,
   type SearchItem,
 } from "@/lib/portalSearch";
 
@@ -56,45 +44,6 @@ type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** Cards drawn at once; the rest one tap away. A long account has hundreds. */
 const PAGE_SIZE = 30;
-
-const KIND_ICON: Record<SearchItem["kind"], LucideIcon> = {
-  parcel: Package,
-  order: ShoppingBag,
-  box: Boxes,
-  declared: PackagePlus,
-};
-
-/** A parcel's status in the shared words — never a copy of them. */
-function parcelStatusWords(status: string): Words | null {
-  return PACKAGE_STATUS_LABEL[status] ?? null;
-}
-
-/** What the chip on a card says. */
-export function searchStatusWords(item: SearchItem): Words | null {
-  switch (item.kind) {
-    case "parcel":
-      return parcelStatusWords(item.status);
-    case "order":
-      if (item.status === "returned") return parcelStatusWords("returned");
-      return orderStatusLabel(item.status) ?? ORDER_NOT_SHIPPED_LABEL;
-    case "box":
-      return BOX_STATUS_LABEL[item.status] ?? null;
-    case "declared":
-      return DECLARED_PENDING_LABEL;
-  }
-}
-
-/**
- * The chip's colour: the tab's own — green arrived, blue on the way, grey
- * registered. Something under no tab keeps the shared parcel colour, which is
- * red for returned and cancelled.
- */
-export function searchStatusTone(item: SearchItem): string {
-  if (item.tab) return SEARCH_TAB_TONE[item.tab];
-  if (item.kind === "box") return item.status === "delivered" ? SEARCH_TAB_TONE.arrived : SEARCH_TAB_TONE.onTheWay;
-  if (item.kind === "parcel" || item.status === "returned") return packageStatusTone(item.status);
-  return SEARCH_TAB_TONE.registered;
-}
 
 export interface PortalUniversalSearchProps {
   /**
@@ -107,7 +56,6 @@ export interface PortalUniversalSearchProps {
 
 export default function PortalUniversalSearch({ view }: PortalUniversalSearchProps) {
   const { language } = useLanguage();
-  const isRTL = language === "ku" || language === "ar";
   const L = (words: Words) => pickLang(language, words);
   const { query, tab, setTab, submitted } = view;
 
@@ -140,6 +88,9 @@ export default function PortalUniversalSearch({ view }: PortalUniversalSearchPro
       }),
     [parcelsQ.data, ordersQ.data, batchesQ.data, boxesQ.data, declaredQ.data],
   );
+  // The countries this customer's shipped parcels came from: what lets a
+  // chip say "China" only when that is known (lib/packageStatus).
+  const origins = useMemo(() => originCountriesOf(parcelsQ.data as any), [parcelsQ.data]);
 
   // Typing stays instant; the list follows a moment behind on a slow phone.
   const deferredQuery = useDeferredValue(query);
@@ -211,62 +162,20 @@ export default function PortalUniversalSearch({ view }: PortalUniversalSearchPro
 
   const registerHref = parsed.key.length >= 5 ? `/portal/declare?tracking=${encodeURIComponent(cleanTrackingPaste(query))}` : "/portal/declare";
 
-  const Chevron = isRTL ? ChevronLeft : ChevronRight;
 
   const renderCards = (items: SearchItem[]) => (
     <ul className="space-y-2">
-      {items.map((item) => {
-        const Icon = KIND_ICON[item.kind];
-        const thumb = item.parcel ? images.resolve(item.parcel).url ?? item.image : item.image;
-        const words = searchStatusWords(item);
-        return (
-          <li key={item.key}>
-            <button
-              type="button"
-              onClick={() => open(item)}
-              className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-start shadow-sm transition active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800"
-            >
-              <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-700">
-                <Icon className="h-6 w-6 text-slate-400 dark:text-slate-500" />
-                {thumb && (
-                  <img
-                    src={thumb}
-                    alt=""
-                    loading="lazy"
-                    decoding="async"
-                    onError={onImageError}
-                    className="absolute inset-0 h-full w-full object-cover"
-                  />
-                )}
-              </span>
-              <span className="min-w-0 flex-1">
-                {/* The number reads left to right; the line it sits on keeps the
-                    page's direction, so it lines up with the words below it. */}
-                <span className="block truncate text-[15px] font-semibold text-slate-900 dark:text-slate-50">
-                  <bdi dir="ltr" className="font-mono tracking-wide">{item.title}</bdi>
-                </span>
-                {item.subtitle && (
-                  <span className="mt-0.5 block truncate text-xs text-slate-500 dark:text-slate-400">{item.subtitle}</span>
-                )}
-                <span className="mt-1.5 flex flex-wrap items-center gap-x-2 gap-y-1">
-                  <PortalChip tone={searchStatusTone(item)} className="px-2 py-0.5 text-[11px]">
-                    {words ? L(words) : "—"}
-                  </PortalChip>
-                  {item.date && (
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400">
-                      {L(SEARCH_DATE_LABEL[item.dateKind])}{" "}
-                      <bdi dir="ltr" className="tabular-nums">
-                        {formatPortalDate(item.date, language)}
-                      </bdi>
-                    </span>
-                  )}
-                </span>
-              </span>
-              <Chevron className="h-4 w-4 shrink-0 text-slate-300 dark:text-slate-600" />
-            </button>
-          </li>
-        );
-      })}
+      {items.map((item) => (
+        <li key={item.key}>
+          <PortalSearchCard
+            item={item}
+            thumb={item.parcel ? images.resolve(item.parcel).url ?? item.image : item.image}
+            words={searchStatusWords(item, origins)}
+            tone={searchStatusTone(item)}
+            onOpen={() => open(item)}
+          />
+        </li>
+      ))}
     </ul>
   );
 
@@ -511,7 +420,7 @@ export default function PortalUniversalSearch({ view }: PortalUniversalSearchPro
         <PortalSearchDetail
           item={drawerItem}
           open={!!detailItem}
-          chip={{ tone: searchStatusTone(drawerItem), words: searchStatusWords(drawerItem) }}
+          chip={{ tone: searchStatusTone(drawerItem), words: searchStatusWords(drawerItem, origins) }}
           boxReceipts={boxReceipts}
           onRequestClose={view.closeDetail}
           onClosed={() => setClosingItem(null)}

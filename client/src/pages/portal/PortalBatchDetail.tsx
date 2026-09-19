@@ -3,16 +3,15 @@ import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { pickLang } from "@/lib/lang";
 import { ShareParcelButton } from "@/components/portal/ShareParcelButton";
 import { copyText } from "@/lib/copyText";
-import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { STATUS_LABEL, SHIPPING_TYPE_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
-import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
+import { usePackageImages } from "@/components/portal/PackageThumb";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { 
-  Package, ChevronLeft, Truck, CheckCircle, Clock, AlertCircle, 
+  Package, ChevronLeft, CheckCircle, 
   Scale, Ruler, Box, Camera, X, ChevronRight, Plane, Ship,
   MapPin, Calendar, Download, Share2, FileText, Warehouse
 } from "lucide-react";
@@ -26,8 +25,9 @@ import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
-import { PortalChip } from "@/components/portal/PortalStatusChip";
-import { packageStatusTone } from "@/lib/packageStatus";
+import { PortalSearchCard } from "@/components/portal/PortalSearchCard";
+import { usePortalParcelSheet } from "@/components/portal/PortalParcelSheet";
+import { searchStatusTone, searchStatusWords } from "@/components/portal/portalSearchChip";
 import { fmtCount, fmtDims, fmtKg } from "@/lib/portalFormat";
 import { formatPortalDate } from "@/lib/portalClock";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
@@ -49,7 +49,6 @@ export default function PortalBatchDetail() {
 const { t, language } = useLanguage();
   const { theme } = useTheme();
   const isDark = theme === "dark";
-  const isRTL = language === "ku" || language === "ar";
   const params = useParams<{ id: string }>();
   // A non-numeric id in the URL produced NaN, which the query happily sent
   // and which matched nothing — and the empty branch below tested
@@ -65,6 +64,8 @@ const { t, language } = useLanguage();
     { ...PORTAL_LIVE_QUERY, enabled: batchId > 0 },
   );
   const { resolve: resolvePackageImage } = usePackageImages();
+  // A parcel's sheet — the one the search opens — from this list's cards.
+  const parcelSheet = usePortalParcelSheet();
 
   // Which of these parcels are the customer's own buying. Derived server-side
   // from the one self-order rule, so this badge and the orders page can never
@@ -135,28 +136,6 @@ const { t, language } = useLanguage();
         current: currentIndex === 5 || batch?.status === "closed"
       },
     ];
-  };
-
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "delivered":
-        return <CheckCircle className="w-4 h-4" />;
-      case "in_transit":
-      case "out_for_delivery":
-        return <Truck className="w-4 h-4" />;
-      case "customs_processing":
-        return <AlertCircle className="w-4 h-4" />;
-      default:
-        return <Clock className="w-4 h-4" />;
-    }
-  };
-
-  // Shared map, all nine statuses, all four languages. The private copy here
-  // knew seven of them in two languages — an Arabic reader got English, and a
-  // returned or cancelled parcel showed the raw column value.
-  const getStatusText = (status: string) => {
-    const label = PACKAGE_STATUS_LABEL[status];
-    return label ? pickLang(language, label) : status;
   };
 
   const openPhotoViewer = (packageId: number) => {
@@ -432,169 +411,60 @@ const { t, language } = useLanguage();
             </p>
           </div>
         ) : (
-          <div className="space-y-3">
+          <ul className="space-y-2">
             {packages?.map((pkg) => {
-              const pkgPhotos = pkg.photos as string[] | undefined;
-              const hasPhotos = pkgPhotos && pkgPhotos.length > 0;
-              const thumb = resolvePackageImage(pkg);
-
+              // The compact card the search draws (owner's brief, 2026-09-19):
+              // photo, number, where it is, a date. Weight, size, the journey,
+              // the photos and the share link are in the sheet a tap opens.
+              const item = parcelSheet.itemFor(pkg as any);
+              if (!item) return null;
+              const pkgPhotos = (pkg.photos as string[] | undefined) ?? [];
               return (
-                <div key={pkg.id} className={cn(
-                  "rounded-2xl p-4 shadow-sm transition-all duration-300 border",
-                  isDark
-                    ? "bg-slate-800 border-slate-700"
-                    : "bg-white border-slate-100 dark:border-slate-800/60"
-                )}>
-                  <div className="flex items-start justify-between">
-                    <div className="flex items-start gap-3">
-                      <PackageThumb
-                        resolved={thumb}
-                        language={language}
-                        isDark={isDark}
-                        size={48}
-                        onClick={hasPhotos ? () => openPhotoViewer(pkg.id) : undefined}
-                      />
-                      <div className="min-w-0">
-                        <p dir="ltr" className={cn("break-all text-start font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                          {pkg.trackingNumber || pkg.packageCode}
-                        </p>
-                        <div className="flex flex-wrap items-center gap-2 mt-1">
-                          <PortalChip tone={packageStatusTone(pkg.status)} icon={getStatusIcon(pkg.status)}>
-                            {getStatusText(pkg.status)}
-                          </PortalChip>
-                          {/* Says plainly which parcels are the customer's own
-                              buying rather than an order of ours — the same
-                              distinction the orders page draws, so a parcel
-                              cannot look like two different things on two
-                              screens. The badge disappears by itself once an
-                              admin links the parcel to its purchase order. */}
-                          {selfOrderIds.has(pkg.id) && (
-                            <span className={cn(
-                              "text-xs px-2.5 py-1 rounded-full font-medium",
-                              isDark ? "bg-sky-900/50 text-sky-300" : "bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
-                            )}>
-                              {pickLang(language, { ku: "کڕینی خۆت", en: "Your own purchase", ar: "شراؤك الخاص", zh: "自购" })}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
-                    
-                    {/* Send this one parcel to whoever is receiving it. They
-                        need no account: the link shows that parcel and
-                        nothing else. */}
-                    <ShareParcelButton packageId={pkg.id} compact className="shrink-0" />
-
-                    {/* Photo indicator button */}
-                    {hasPhotos && (
-                      <button
-                        onClick={() => openPhotoViewer(pkg.id)}
-                        className={cn(
-                          "flex items-center gap-1 px-3 py-1.5 rounded-lg text-xs font-medium transition-colors",
-                          isDark 
-                            ? "bg-blue-900/50 text-blue-400 hover:bg-blue-900/70" 
-                            : "bg-blue-50 dark:bg-blue-950/40 text-blue-600 hover:bg-blue-100"
-                        )}
-                      >
-                        <Camera className="w-4 h-4" />
-                        <span>{pkgPhotos.length}</span>
-                      </button>
-                    )}
-                  </div>
-
-                  {/* Package Details */}
-                  <div className={cn(
-                    "mt-4 pt-3 border-t grid grid-cols-2 gap-3",
-                    isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
-                  )}>
-                    {Number(pkg.weightKg) > 0 && (
-                      <div className={cn(
-                        "flex items-center gap-2 p-2 rounded-lg",
-                        isDark ? "bg-slate-700/50" : "bg-slate-50 dark:bg-slate-950/40"
-                      )}>
-                        <Scale className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
-                        <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-                          <bdi dir="ltr">{fmtKg(pkg.weightKg)}</bdi>
+                <li key={pkg.id}>
+                  <PortalSearchCard
+                    item={item}
+                    thumb={resolvePackageImage(pkg).url ?? null}
+                    words={searchStatusWords(item, parcelSheet.origins)}
+                    tone={searchStatusTone(item)}
+                    badge={
+                      // Says plainly which parcels are the customer's own
+                      // buying rather than an order of ours — the same
+                      // distinction the orders page draws. It disappears by
+                      // itself once an admin links the parcel to its order.
+                      selfOrderIds.has(pkg.id) ? (
+                        <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[11px] font-medium text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
+                          {pickLang(language, { ku: "کڕینی خۆت", en: "Your own purchase", ar: "شراؤك الخاص", zh: "自购" })}
                         </span>
-                      </div>
-                    )}
-                    {pkg.lengthCm && pkg.widthCm && pkg.heightCm && (
-                      <div className={cn(
-                        "flex items-center gap-2 p-2 rounded-lg",
-                        isDark ? "bg-slate-700/50" : "bg-slate-50 dark:bg-slate-950/40"
-                      )}>
-                        <Ruler className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
-                        <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-                          <bdi dir="ltr">{fmtDims(pkg.lengthCm, pkg.widthCm, pkg.heightCm)}</bdi>
-                        </span>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Photo thumbnails preview */}
-                  {hasPhotos && (
-                    <div className={cn(
-                      "mt-3 pt-3 border-t",
-                      isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
-                    )}>
-                      <button 
-                        onClick={() => openPhotoViewer(pkg.id)}
-                        className="flex items-center gap-3 w-full"
-                      >
-                        <div className="flex -space-x-2">
-                          {pkgPhotos.slice(0, 3).map((photo, idx) => (
-                            <div 
-                              key={idx}
-                              className={cn(
-                                "w-12 h-12 rounded-xl border-2 shadow-sm overflow-hidden",
-                                isDark ? "border-slate-700 bg-slate-700" : "border-white bg-slate-100 dark:bg-slate-950/40"
-                              )}
-                            >
-                              <img loading="lazy" decoding="async" 
-                                src={photo} 
-                                alt={`Package photo ${idx + 1}`}
-                                className="w-full h-full object-cover"
-                                onError={(e) => {
-                                  (e.target as HTMLImageElement).src = "data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='40' height='40' viewBox='0 0 24 24' fill='none' stroke='%239ca3af' stroke-width='2'%3E%3Crect x='3' y='3' width='18' height='18' rx='2' ry='2'%3E%3C/rect%3E%3Ccircle cx='8.5' cy='8.5' r='1.5'%3E%3C/circle%3E%3Cpolyline points='21 15 16 10 5 21'%3E%3C/polyline%3E%3C/svg%3E";
-                                }}
-                              />
-                            </div>
-                          ))}
-                          {pkgPhotos.length > 3 && (
-                            <div className={cn(
-                              "w-12 h-12 rounded-xl border-2 shadow-sm flex items-center justify-center",
-                              isDark ? "border-slate-700 bg-slate-700" : "border-white bg-slate-100 dark:bg-slate-950/40"
-                            )}>
-                              <span className={cn("text-xs font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
-                                +{pkgPhotos.length - 3}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                        <span className={cn(
-                          "text-sm font-medium",
-                          isDark ? "text-blue-400" : "text-blue-600"
-                        )}>
-                          {pickLang(language, { ku: "بینینی وێنەکان", en: "View Photos", ar: "عرض الصور", zh: "查看照片" })}
-                          <ChevronRight className={cn("ms-1 inline h-4 w-4", isRTL && "rotate-180")} />
-                        </span>
-                      </button>
-                    </div>
-                  )}
-
-                  {/* Description */}
-                  {pkg.description && (
-                    <p className={cn(
-                      "text-sm mt-3 line-clamp-2",
-                      isDark ? "text-slate-400" : "text-slate-500"
-                    )}>
-                      {pkg.description}
-                    </p>
-                  )}
-                </div>
+                      ) : undefined
+                    }
+                    onOpen={() =>
+                      parcelSheet.openParcel(pkg as any, {
+                        actions:
+                          pkgPhotos.length > 0
+                            ? [
+                                {
+                                  key: "photos",
+                                  icon: Camera,
+                                  label: {
+                                    ku: `وێنەکان (${pkgPhotos.length})`,
+                                    en: `Photos (${pkgPhotos.length})`,
+                                    ar: `الصور (${pkgPhotos.length})`,
+                                    zh: `照片（${pkgPhotos.length}）`,
+                                  },
+                                  onClick: () => openPhotoViewer(pkg.id),
+                                },
+                              ]
+                            : undefined,
+                        // Send this one parcel to whoever is receiving it. They
+                        // need no account: the link shows that parcel alone.
+                        content: <ShareParcelButton packageId={pkg.id} className="w-full" />,
+                      })
+                    }
+                  />
+                </li>
               );
             })}
-          </div>
+          </ul>
         )}
       </div>
 
@@ -716,6 +586,7 @@ const { t, language } = useLanguage();
           )}
         </DialogContent>
       </Dialog>
+      {parcelSheet.sheet}
     </PortalLayout>
   );
 }

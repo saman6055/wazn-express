@@ -1,16 +1,18 @@
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
-import { PackageThumb, usePackageImages } from "@/components/portal/PackageThumb";
+import { usePackageImages } from "@/components/portal/PackageThumb";
+import { onImageError } from "@/lib/imageFallback";
 import { STATUS_LABEL, orderStageOf } from "@/lib/shipmentFilters";
 import { filterChinaDepot } from "@/lib/chinaDepotFilter";
 import { formatPortalDate } from "@/lib/portalClock";
-import { fmtKg } from "@/lib/portalFormat";
-import { Package, Warehouse, Copy, CheckCircle } from "lucide-react";
-import { copyText } from "@/lib/copyText";
+import { ChevronLeft, ChevronRight, Package, Warehouse } from "lucide-react";
+import { useLocation } from "wouter";
+import type { ParcelRow } from "@/lib/portalSearch";
+import { usePortalParcelSheet } from "@/components/portal/PortalParcelSheet";
 
 /**
  * What a customer has sitting in the China depot — the first rung of the
@@ -30,6 +32,10 @@ export interface ChinaDepotItem {
   weightKg: number | null;
   image: { url: string | null; source: string | null } | null;
   shippingType: string | null;
+  /** The parcel itself, for its sheet — absent for an order not yet scanned in. */
+  parcel?: ParcelRow | null;
+  /** The order it was bought through, opened when there is no parcel yet. */
+  orderId?: number | null;
 }
 
 const asDate = (value: unknown): Date | null => {
@@ -77,6 +83,8 @@ export function useChinaDepotItems(): ChinaDepotItem[] {
         image: existing.image ?? next.image,
         shippingType: existing.shippingType ?? next.shippingType,
         date: existing.date ?? next.date,
+        parcel: existing.parcel ?? next.parcel,
+        orderId: existing.orderId ?? next.orderId,
       });
     };
 
@@ -92,6 +100,7 @@ export function useChinaDepotItems(): ChinaDepotItem[] {
         weightKg: pkg.weightKg != null ? Number(pkg.weightKg) : null,
         image: image.url ? image : null,
         shippingType: pkg.shippingType ?? null,
+        parcel: pkg as ParcelRow,
       });
     }
 
@@ -107,6 +116,7 @@ export function useChinaDepotItems(): ChinaDepotItem[] {
         weightKg: order.weightKg != null ? Number(order.weightKg) : null,
         image: image.url ? image : null,
         shippingType: order.shippingType ?? null,
+        orderId: order.id,
       });
     }
 
@@ -133,22 +143,17 @@ export function ChinaDepotList({
   className?: string;
 }) {
   const { language } = useLanguage();
-  const [copied, setCopied] = useState<string | null>(null);
+  const [, navigate] = useLocation();
+  const isRTL = language === "ku" || language === "ar";
+  const Chevron = isRTL ? ChevronLeft : ChevronRight;
+  // The sheet the search opens: weight, where it is, the journey, a copy
+  // button — the row stays short (owner's brief, 2026-09-19).
+  const parcelSheet = usePortalParcelSheet();
 
   const visible = useMemo(
     () => filterChinaDepot(items, { stage, shippingType, search }),
     [items, stage, shippingType, search],
   );
-
-  const copy = async (code: string) => {
-    try {
-      await copyText(code);
-      setCopied(code);
-      setTimeout(() => setCopied(null), 1600);
-    } catch {
-      // Blocked on insecure origins; the number is still on screen to read.
-    }
-  };
 
   if (visible.length === 0) return null;
 
@@ -172,18 +177,33 @@ export function ChinaDepotList({
         isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 dark:border-slate-800/60 bg-white",
       )}>
         {visible.map((item) => (
-          <div key={item.key} className="flex items-center gap-3 p-3">
+          <button
+            key={item.key}
+            type="button"
+            onClick={() => {
+              if (item.parcel) parcelSheet.openParcel(item.parcel);
+              else if (item.orderId != null) navigate(`/portal/full-package?order=${item.orderId}`);
+            }}
+            className={cn(
+              "flex w-full items-center gap-3 p-3 text-start transition active:scale-[0.99]",
+              isDark ? "hover:bg-white/5" : "hover:bg-black/5",
+            )}
+          >
             {/* The photo taken when the parcel was checked in. Seeing their own
-                goods on our shelf is the reassurance this list exists to give. */}
-            {item.image ? (
-              <PackageThumb
-                resolved={item.image as any}
-                language={language}
-                size={44}
-                isDark={isDark}
-                showBadge={false}
-                className="shrink-0"
-              />
+                goods on our shelf is the reassurance this list exists to give.
+                A picture, not the thumbnail's own button: the row is the button
+                (its sheet shows the photo large). */}
+            {item.image?.url ? (
+              <span className={cn("relative h-11 w-11 shrink-0 overflow-hidden rounded-xl", isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40")}>
+                <img
+                  src={item.image.url}
+                  alt=""
+                  loading="lazy"
+                  decoding="async"
+                  onError={onImageError}
+                  className="h-full w-full object-cover"
+                />
+              </span>
             ) : (
               <div className={cn(
                 "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
@@ -194,33 +214,12 @@ export function ChinaDepotList({
             )}
 
             <div className="min-w-0 flex-1">
-              {/* Tap to copy: a tracking number exists to be pasted into a
-                  courier's site, and typing one off a screen transposes digits. */}
-              <button
-                type="button"
-                onClick={() => copy(item.code)}
-                className={cn(
-                  "relative tap-44 -mx-1 flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 transition active:scale-[0.98]",
-                  isDark ? "hover:bg-white/5" : "hover:bg-black/5",
-                )}
-              >
-                <span
-                  // Needs a colour of its own, or it inherits the page's body
-                  // text and disappears in dark mode.
-                  className={cn(
-                    "truncate font-mono text-sm font-semibold",
-                    isDark ? "text-slate-100" : "text-slate-800 dark:text-slate-200",
-                  )}
-                  dir="ltr"
-                >
-                  {item.code}
-                </span>
-                {copied === item.code
-                  ? <CheckCircle className="h-3.5 w-3.5 shrink-0 text-emerald-500 dark:text-emerald-400" />
-                  : <Copy className={cn("h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />}
-              </button>
-
-              <div className="flex items-center gap-2 px-1">
+              <p className={cn("truncate text-sm font-semibold", isDark ? "text-slate-100" : "text-slate-800 dark:text-slate-200")}>
+                {/* Needs a colour of its own, or it inherits the page's body
+                    text and disappears in dark mode. */}
+                <bdi dir="ltr" className="font-mono">{item.code}</bdi>
+              </p>
+              <div className="flex items-center gap-2">
                 {item.date && (
                   <p className="text-[11px] text-muted-foreground">
                     <bdi dir="ltr">{formatPortalDate(item.date, language)}</bdi>
@@ -230,12 +229,8 @@ export function ChinaDepotList({
               </div>
             </div>
 
-            {Number.isFinite(Number(item.weightKg)) && Number(item.weightKg) > 0 && (
-              <span className="shrink-0 text-xs text-muted-foreground tabular-nums" dir="ltr">
-                {fmtKg(item.weightKg)}
-              </span>
-            )}
-          </div>
+            <Chevron className={cn("h-4 w-4 shrink-0", isDark ? "text-slate-600" : "text-slate-300 dark:text-slate-600")} />
+          </button>
         ))}
       </div>
 
@@ -247,6 +242,7 @@ export function ChinaDepotList({
           zh: "已安全抵达我们的中国仓库，凑够一批后即发运。",
         })}
       </p>
+      {parcelSheet.sheet}
     </div>
   );
 }

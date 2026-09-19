@@ -43,6 +43,8 @@ export default function PortalSearchDetail({
   onRequestClose,
   onClosed,
   onNavigate,
+  extraActions = [],
+  extraContent,
 }: {
   item: SearchItem;
   /**
@@ -58,6 +60,13 @@ export default function PortalSearchDetail({
   /** The slide away has finished. */
   onClosed: () => void;
   onNavigate: (href: string) => void;
+  /**
+   * More buttons beside "open shipment" — a shipment's parcel list adds its
+   * photos and its share link, which the search has no place for.
+   */
+  extraActions?: Array<{ key: string; icon: LucideIcon; label: Words; onClick: () => void }>;
+  /** Below those buttons: a control with a life of its own, like the share button. */
+  extraContent?: ReactNode;
 }) {
   const { language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
@@ -248,8 +257,14 @@ export default function PortalSearchDetail({
               </p>
             )}
 
-            {(item.batchId != null || (boxReceipts && item.boxId != null)) && (
+            {(item.batchId != null || (boxReceipts && item.boxId != null) || extraActions.length > 0) && (
               <div className="grid grid-cols-2 gap-2">
+                {extraActions.map((action) => (
+                  <button key={action.key} type="button" onClick={action.onClick} className={actionClass}>
+                    <action.icon className="h-4 w-4" />
+                    {L(action.label)}
+                  </button>
+                ))}
                 {item.batchId != null && (
                   <button type="button" onClick={() => onNavigate(`/portal/shipments/${item.batchId}`)} className={actionClass}>
                     <Truck className="h-4 w-4" />
@@ -268,6 +283,8 @@ export default function PortalSearchDetail({
                 )}
               </div>
             )}
+
+            {extraContent}
 
             {parcel && (
               <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">

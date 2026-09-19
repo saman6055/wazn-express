@@ -128,9 +128,12 @@ describe("numbers read left to right", () => {
   });
 
   it("the weight on a shipment's parcels reads 2.4 kg, not kg 2.4", () => {
+    // In the parcel's sheet since the compact cards (2026-09-19), and beside
+    // its photos.
+    expect(read("components/portal/PortalSearchDetail.tsx")).toContain('<bdi dir="ltr">{fmtKg(parcel.weightKg)}</bdi>');
     const src = read("pages/portal/PortalBatchDetail.tsx");
-    expect(src).toContain('<bdi dir="ltr">{fmtKg(pkg.weightKg)}</bdi>');
-    expect(src).toContain('<bdi dir="ltr">{fmtDims(pkg.lengthCm, pkg.widthCm, pkg.heightCm)}</bdi>');
+    expect(src).toContain('<bdi dir="ltr">{fmtKg(selectedPkg.weightKg)}</bdi>');
+    expect(src).toContain('<bdi dir="ltr">{fmtDims(selectedPkg.lengthCm, selectedPkg.widthCm, selectedPkg.heightCm)}</bdi>');
     expect(read("pages/portal/PortalUnclaimedPackages.tsx")).toContain('<bdi dir="ltr">{fmtKg(pkg.weightKg)}</bdi>');
   });
 

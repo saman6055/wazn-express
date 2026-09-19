@@ -599,7 +599,7 @@ export default function PortalHome() {
                         }),
                       );
                     }}
-                    className="flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-950 transition active:scale-95"
+                    className="relative tap-44 flex shrink-0 items-center gap-1.5 rounded-xl bg-emerald-500 px-3 py-2 text-xs font-semibold text-emerald-950 transition active:scale-95"
                   >
                     <MessageCircle className="h-4 w-4" />
                     {pickLang(language, { ku: "پارەدان لە واتساپ", en: "Pay via WhatsApp", ar: "الدفع عبر واتساب", zh: "通过 WhatsApp 付款" })}

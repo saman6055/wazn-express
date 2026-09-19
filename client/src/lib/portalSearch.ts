@@ -22,10 +22,11 @@ type When = Date | string | null | undefined;
 export type SearchTab = "arrived" | "onTheWay" | "registered";
 export const SEARCH_TABS: readonly SearchTab[] = ["arrived", "onTheWay", "registered"];
 
+/** The owner's three places (2026-09-19), short enough for a tab and a home card. */
 export const SEARCH_TAB_LABEL: Record<SearchTab, L> = {
-  arrived: { ku: "گەیشتووە", en: "Arrived", ar: "وصلت", zh: "已到达" },
-  onTheWay: { ku: "لە ڕێگادا", en: "On the way", ar: "في الطريق", zh: "运输中" },
-  registered: { ku: "تۆمارکراو", en: "Registered", ar: "مسجّلة", zh: "已登记" },
+  arrived: { ku: "گەیشتە هەولێر", en: "In Erbil", ar: "في أربيل", zh: "已到埃尔比勒" },
+  onTheWay: { ku: "لە ڕێگادایە", en: "On the way", ar: "في الطريق", zh: "运输中" },
+  registered: { ku: "لە کۆگای چین", en: "In China", ar: "في الصين", zh: "在中国仓库" },
 };
 
 /** Green for arrived, blue for on the way, grey for registered — the owner's three colours. */
@@ -43,51 +44,54 @@ export const SEARCH_TAB_DOT: Record<SearchTab, string> = {
 };
 
 /**
- * Which tab a parcel belongs under.
+ * Which tab a parcel belongs under — where the goods are now. The owner's
+ * decisions of 2026-09-19:
  *
- *  - arrived: in the Erbil depot or beyond it — ready to collect, with the
- *    courier, or in the customer's hands.
- *  - onTheWay: inside a shipment, air or sea, up to and including customs.
- *    A parcel still marked registered but already placed in a shipment is in
- *    a shipment.
- *  - registered: taken in at our depot, not yet in any shipment.
+ *  - arrived: in Erbil and not yet collected — ready, or out with the
+ *    courier. A delivered parcel has left the tab: the green words say
+ *    "ready to collect", and it was collected. It is found by searching, and
+ *    in the shipments' history.
+ *  - onTheWay: on the plane or the ship, and through customs, which the
+ *    owner kept on the way.
+ *  - registered: at the China depot — including packed into a shipment that
+ *    has not left yet. It is grey until the plane or ship leaves: the server
+ *    moves every parcel of a shipment to in_transit at departure.
  *
- * Returned and cancelled parcels belong under none of them: they are found by
- * searching for them, and say what happened in red.
+ * Returned and cancelled parcels belong under none of them either: they are
+ * found by searching for them, and say what happened in red.
  */
 export function parcelTab(parcel: { status?: string | null; batchId?: number | null }): SearchTab | null {
   switch (String(parcel.status ?? "")) {
     case "ready_for_delivery":
     case "out_for_delivery":
-    case "delivered":
       return "arrived";
-    case "in_batch":
     case "in_transit":
     case "customs_processing":
       return "onTheWay";
     case "registered":
-      return parcel.batchId != null ? "onTheWay" : "registered";
+    case "in_batch":
+      return "registered";
     default:
       return null;
   }
 }
 
 /**
- * The same three stages for an order that has no parcel of its own yet.
- * An order that reached Iraq is on the way, never arrived — it is not in the
- * depot until it says ready. Orders not yet bought or shipped have no tab.
+ * The same three places for an order that has no parcel of its own yet, by
+ * the same decisions: packed into a shipment still in China is grey, one that
+ * reached Iraq is on the way until it says ready, and a delivered one has
+ * left the tabs. Orders not yet bought or shipped have no tab.
  */
 export function orderTab(status: string | null | undefined): SearchTab | null {
   switch (String(status ?? "")) {
     case "in_china_warehouse":
     case "quality_check":
-      return "registered";
     case "in_batch":
+      return "registered";
     case "in_transit":
     case "arrived":
       return "onTheWay";
     case "ready_for_delivery":
-    case "delivered":
       return "arrived";
     default:
       return null;
@@ -118,6 +122,8 @@ export interface ParcelRow {
   deliveredAt?: When;
   createdAt?: When;
   sizeConcealed?: boolean;
+  /** Where it was registered — see registeredInChina in lib/packageStatus. */
+  registeredInCountryId?: number | null;
 }
 
 export interface OrderRow {

@@ -197,9 +197,12 @@ describe("the answers", () => {
   });
 
   it("a card writes the tracking left to right, its date the portal's way, and survives a dead picture", () => {
-    expect(search).toContain('<bdi dir="ltr" className="font-mono tracking-wide">{item.title}</bdi>');
-    expect(search).toContain("formatPortalDate(item.date, language)");
-    expect(search).toMatch(/<img[\s\S]{0,300}onError=\{onImageError\}/);
+    // The card is shared with a shipment's parcel list since 2026-09-19.
+    expect(search).toContain("<PortalSearchCard");
+    const card = read("components/portal/PortalSearchCard.tsx");
+    expect(card).toContain('<bdi dir="ltr" className="font-mono tracking-wide">{item.title}</bdi>');
+    expect(card).toContain("formatPortalDate(item.date, language)");
+    expect(card).toMatch(/<img[\s\S]{0,300}onError=\{onImageError\}/);
   });
 
   it("a failed list says so, with a retry", () => {

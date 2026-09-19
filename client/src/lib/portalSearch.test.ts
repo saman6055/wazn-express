@@ -64,18 +64,25 @@ const find = (q: string) => searchItems(index, parseSearch(q));
 const byKey = (key: string) => index.find((i) => i.key === key)!;
 
 describe("the three tabs", () => {
-  it("puts a parcel where the owner said: Erbil or delivered, in a shipment, registered", () => {
+  it("puts a parcel where the owner said: in Erbil, on the way, in China", () => {
     expect(parcelTab({ status: "ready_for_delivery" })).toBe("arrived");
     expect(parcelTab({ status: "out_for_delivery" })).toBe("arrived");
-    expect(parcelTab({ status: "delivered" })).toBe("arrived");
-    expect(parcelTab({ status: "in_batch" })).toBe("onTheWay");
     expect(parcelTab({ status: "in_transit" })).toBe("onTheWay");
+    // Customs stays on the way (owner, 2026-09-19).
     expect(parcelTab({ status: "customs_processing" })).toBe("onTheWay");
     expect(parcelTab({ status: "registered", batchId: null })).toBe("registered");
   });
 
-  it("a parcel already placed in a shipment is on the way, whatever its status says", () => {
-    expect(parcelTab({ status: "registered", batchId: 11 })).toBe("onTheWay");
+  it("a parcel packed into a shipment that has not left is still in China — grey until the plane or ship leaves", () => {
+    expect(parcelTab({ status: "in_batch" })).toBe("registered");
+    expect(parcelTab({ status: "in_batch", batchId: 11 })).toBe("registered");
+    expect(parcelTab({ status: "registered", batchId: 11 })).toBe("registered");
+  });
+
+  it("a delivered parcel has left the green tab — it was collected, not waiting — and is still found by its number", () => {
+    expect(parcelTab({ status: "delivered" })).toBeNull();
+    expect(find("").map((i) => i.key)).not.toContain("parcel:5");
+    expect(find("YD5550001111").map((i) => i.key)).toContain("parcel:5");
   });
 
   it("returned and cancelled parcels sit under no tab", () => {
@@ -87,11 +94,13 @@ describe("the three tabs", () => {
     expect(orderTab("arrived")).toBe("onTheWay");
     expect(orderTab("ready_for_delivery")).toBe("arrived");
     expect(orderTab("in_china_warehouse")).toBe("registered");
+    expect(orderTab("in_batch")).toBe("registered");
+    expect(orderTab("delivered")).toBeNull();
     expect(orderTab("ordered")).toBeNull();
   });
 
   it("counts live over what the search found", () => {
-    expect(countByTab(find(""))).toEqual({ arrived: 2, onTheWay: 3, registered: 2 });
+    expect(countByTab(find(""))).toEqual({ arrived: 1, onTheWay: 2, registered: 3 });
     expect(countByTab(find("SF14"))).toEqual({ arrived: 0, onTheWay: 1, registered: 0 });
   });
 
@@ -171,7 +180,8 @@ describe("what one box finds", () => {
     expect(keys).not.toContain("box:50");
     expect(keys).not.toContain("declared:90");
     expect(keys).not.toContain("order:71");
-    expect(keys[0]).toBe("parcel:5");
+    const at = find("").map((i) => i.sortAt);
+    expect(at).toEqual([...at].sort((a, b) => b - a));
   });
 
   it("one character is not a search", () => {

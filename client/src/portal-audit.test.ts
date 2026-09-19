@@ -274,11 +274,14 @@ describe("status wording has one home", () => {
 
   it("the two screens that had drifted now read the shared maps", () => {
     const home = fs.readFileSync(path.join(SRC, "pages", "portal", "PortalHome.tsx"), "utf8");
-    // The search's wording lives in the component the page and the bottom
-    // bar's search share.
-    const search = fs.readFileSync(path.join(SRC, "components", "portal", "PortalUniversalSearch.tsx"), "utf8");
+    // The search's wording lives in the chip module the search, its sheet and
+    // a shipment's parcel list share (2026-09-19); the words themselves in
+    // the shared map, through parcelStatusWords.
+    const chip = fs.readFileSync(path.join(SRC, "components", "portal", "portalSearchChip.ts"), "utf8");
+    const words = fs.readFileSync(path.join(SRC, "lib", "packageStatus.ts"), "utf8");
     expect(home).toContain("STATUS_LABEL[status as BatchStatus]");
-    expect(search).toContain("PACKAGE_STATUS_LABEL[status]");
+    expect(chip).toContain("parcelStatusWords(");
+    expect(words).toContain("PACKAGE_STATUS_LABEL[status]");
   });
 
   it("the shared batch map still covers every stage a customer can be shown", () => {
