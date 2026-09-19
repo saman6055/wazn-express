@@ -649,18 +649,21 @@ export default function PortalFullPackage() {
         "px-4 py-6 min-h-screen",
         isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
       )}>
-        {/* Tab Filters — four now, so they scroll rather than squeeze on a phone.
+        {/* Tab Filters — all of them in the width of the phone, never a row to
+            swipe (owner, 2026-09-19): equal cells, and a long name takes two
+            lines. Four scrolled off the side before, the fourth half-cut.
             Sticky under the portal's top bar (56px tall, hence top-14) so the
             customer can switch lists without scrolling back up through a
             long page of orders. */}
         <div className={cn(
-          "sticky top-14 z-20 flex gap-1.5 p-1 rounded-xl mb-4 overflow-x-auto no-scrollbar",
+          "sticky top-14 z-20 grid gap-1 p-1 rounded-xl mb-4",
+          allSelfOrders.length > 0 ? "grid-cols-4" : "grid-cols-3",
           isDark ? "bg-slate-800 shadow-md shadow-slate-900/40" : "bg-white shadow-md shadow-slate-200/60 dark:bg-slate-800 dark:shadow-slate-900/40"
         )}>
           <button
             onClick={() => setActiveTab("all")}
             className={cn(
-              "pointer-coarse:min-h-11 flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
+              "pointer-coarse:min-h-11 min-w-0 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
               activeTab === "all"
                 ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -671,7 +674,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("full_package")}
             className={cn(
-              "pointer-coarse:min-h-11 flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
+              "pointer-coarse:min-h-11 min-w-0 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
               activeTab === "full_package"
                 ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -682,7 +685,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("commission")}
             className={cn(
-              "pointer-coarse:min-h-11 flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
+              "pointer-coarse:min-h-11 min-w-0 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
               activeTab === "commission"
                 ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -697,7 +700,7 @@ export default function PortalFullPackage() {
             <button
               onClick={() => setActiveTab("self")}
               className={cn(
-                "flex-1 inline-flex items-center justify-center gap-1.5 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
+                "pointer-coarse:min-h-11 min-w-0 flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
                 activeTab === "self"
                   ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
                   : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -780,7 +783,7 @@ export default function PortalFullPackage() {
                     <Filter className="w-3.5 h-3.5" />
                     {pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}
                   </p>
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  <div className="flex flex-wrap gap-2 pb-1">
                     {[
                       { key: "all", ku: "هەموو", ar: "الكل", en: "All", zh: "全部", gradient: "from-violet-500 to-purple-600" },
                       { key: "pending", ku: "چاوەڕوان", ar: "قيد الانتظار", en: "Pending", zh: "待处理", gradient: "from-amber-500 to-orange-500" },
@@ -792,7 +795,7 @@ export default function PortalFullPackage() {
                         key={s.key}
                         onClick={() => setStatusFilter(s.key)}
                         className={cn(
-                          "shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                          "relative tap-44 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                           statusFilter === s.key
                             ? `bg-gradient-to-r ${s.gradient} text-white shadow-md`
                             : isDark
@@ -815,7 +818,7 @@ export default function PortalFullPackage() {
                     <ArrowUpDown className="w-3.5 h-3.5" />
                     {pickLang(language, { ku: "ڕیزکردن", en: "Sort", ar: "الترتيب", zh: "排序" })}
                   </p>
-                  <div className="flex gap-2 overflow-x-auto pb-1 no-scrollbar">
+                  <div className="flex flex-wrap gap-2 pb-1">
                     {[
                       { key: "newest" as const, ku: "نوێترین", ar: "الأحدث", en: "Newest", zh: "最新" },
                       { key: "oldest" as const, ku: "کۆنترین", ar: "الأقدم", en: "Oldest", zh: "最早" },
@@ -826,7 +829,7 @@ export default function PortalFullPackage() {
                         key={s.key}
                         onClick={() => setSortBy(s.key)}
                         className={cn(
-                          "shrink-0 px-4 py-2 rounded-xl text-sm font-medium transition-all",
+                          "relative tap-44 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                           sortBy === s.key
                             ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md"
                             : isDark

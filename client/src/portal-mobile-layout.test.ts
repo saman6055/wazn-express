@@ -97,11 +97,13 @@ describe("a thumb can hit it", () => {
     expect(read("components/TutorialHint.tsx")).toContain("relative tap-44");
   });
 
-  it("grows the chips inside a sideways-scrolling row instead, and keeps them whole so the row scrolls", () => {
+  it("the stage and order-type cells are 44px tall on a touch screen", () => {
+    // Since 2026-09-19 they sit in grids that fit the screen (portal-no-swipe);
+    // they grow rather than take tap-44, which a sticky bar's neighbours share.
     expect(read("pages/portal/PortalShipments.tsx")).toContain(
-      '"flex shrink-0 items-center gap-2 px-4 py-2 pointer-coarse:min-h-11 rounded-full text-sm font-semibold whitespace-nowrap",',
+      '"flex min-w-0 items-center justify-center text-center font-semibold leading-tight pointer-coarse:min-h-11",',
     );
-    expect((read("pages/portal/PortalFullPackage.tsx").match(/pointer-coarse:min-h-11 flex-1 whitespace-nowrap/g) ?? []).length).toBe(3);
+    expect((read("pages/portal/PortalFullPackage.tsx").match(/"pointer-coarse:min-h-11 min-w-0 /g) ?? []).length).toBe(4);
   });
 });
 

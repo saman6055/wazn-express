@@ -130,7 +130,7 @@ const { banner: portalBanner } = usePortalPalette();
 
       {/* Category filter chips */}
       {!isLoading && availablePosts.length > 0 && (
-        <div className="px-4 pt-3 -mb-2 flex gap-1.5 overflow-x-auto">
+        <div className="px-4 pt-3 -mb-2 flex flex-wrap gap-1.5">
           {(["all", "news", "promotion", "announcement", "update", "guide"] as const).map((cat) => {
             const active = categoryFilter === cat;
             return (
@@ -138,7 +138,7 @@ const { banner: portalBanner } = usePortalPalette();
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
                 className={cn(
-                  "shrink-0 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors",
+                  "relative tap-44 rounded-full px-3.5 py-1.5 text-xs font-bold transition-colors",
                   active
                     ? "bg-orange-600 text-white shadow-sm"
                     : isDark ? "bg-slate-800 text-slate-300 hover:bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200",

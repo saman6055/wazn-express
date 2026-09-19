@@ -162,9 +162,9 @@ export default function PortalProhibitedPackages() {
 
                     {/* Photos */}
                     {photos.length > 0 && (
-                      <div className="flex gap-2 mb-3 overflow-x-auto pb-1">
+                      <div className="grid grid-cols-3 gap-2 mb-3">
                         {photos.map((src, i) => (
-                          <img onError={onImageError} key={i} src={src} alt="" loading="lazy" className="w-24 h-24 rounded-xl object-cover flex-shrink-0 border border-black/5" />
+                          <img onError={onImageError} key={i} src={src} alt="" loading="lazy" className="aspect-square w-full rounded-xl object-cover border border-black/5" />
                         ))}
                       </div>
                     )}

@@ -466,9 +466,13 @@ function ClassicPortalShipments() {
           </div>
         )}
 
+        {/* The three stages in the width of the phone — never a row to swipe
+            (owner, 2026-09-19). Three equal cells like the type row above,
+            each with its name and how many are in it; a long name takes two
+            lines rather than pushing the last stage off the screen. */}
         <div className={cn(
-          "flex gap-2 overflow-x-auto scrollbar-hide pb-0.5 pt-0.5 transition-all duration-300",
-          compactFilters ? "mt-1.5" : "mt-2.5"
+          "grid grid-cols-3 transition-all duration-300",
+          compactFilters ? "mt-1.5 gap-1.5" : "mt-2.5 gap-2"
         )}>
           {statusFilters.map((filter) => {
             const isActive = statusFilter === filter.value;
@@ -495,8 +499,11 @@ function ClassicPortalShipments() {
                   isEmpty && "opacity-45 cursor-default",
                   // Raised: a highlight along the top edge and a shadow beneath
                   // give the pill some depth, and it presses down when tapped.
-                  "flex shrink-0 items-center gap-2 px-4 py-2 pointer-coarse:min-h-11 rounded-full text-sm font-semibold whitespace-nowrap",
+                  "flex min-w-0 items-center justify-center text-center font-semibold leading-tight pointer-coarse:min-h-11",
                   "transition-all duration-200 -translate-y-px active:translate-y-0",
+                  compactFilters
+                    ? "flex-row flex-wrap gap-1 rounded-xl px-1.5 py-1.5 text-[11px]"
+                    : "flex-col gap-1 rounded-xl px-1.5 py-2 text-xs",
                   isActive
                     ? "text-white"
                     : (isDark
@@ -514,7 +521,9 @@ function ClassicPortalShipments() {
                     : "0 2px 5px -2px rgba(15,23,42,0.14), inset 0 1px 0 rgba(255,255,255,0.9)",
                 }}
               >
-                {pickLang(language, { ku: filter.labelKu, en: filter.label, ar: filter.labelAr, zh: filter.labelZh })}
+                <span className="min-w-0">
+                  {pickLang(language, { ku: filter.labelKu, en: filter.label, ar: filter.labelAr, zh: filter.labelZh })}
+                </span>
                 <span
                   className={cn(
                     "px-1.5 py-0.5 rounded-full text-xs font-bold tabular-nums",

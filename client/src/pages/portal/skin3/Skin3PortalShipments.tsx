@@ -663,7 +663,7 @@ export default function Skin3PortalShipments() {
                                       >
                                         {/* Warehouse photos taken at registration */}
                                         {Array.isArray(pkg.photos) && pkg.photos.length > 0 && (
-                                          <div className="flex gap-1.5 mb-2 overflow-x-auto">
+                                          <div className="flex flex-wrap gap-1.5 mb-2">
                                             {pkg.photos.slice(0, 4).map((photo: string, pi: number) => (
                                               <a key={pi} href={photo} target="_blank" rel="noopener noreferrer" className="shrink-0">
                                                 <img onError={onImageError}
