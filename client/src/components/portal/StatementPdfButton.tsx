@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { pickLang } from "@/lib/lang";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { CalendarRange, FileDown, Loader2, Share2, SlidersHorizontal } from "lucide-react";
 import { useRef, useState } from "react";
 import { toast } from "sonner";
@@ -63,6 +64,7 @@ export function StatementPdfButton({
   const isRTL = language === "ku" || language === "ar";
 
   const [open, setOpen] = useState(false);
+  useBackCloses(open, () => setOpen(false));
   const [period, setPeriod] = useState<Period>("all");
   const [txType, setTxType] = useState<TxType>("all");
   const [customFrom, setCustomFrom] = useState("");

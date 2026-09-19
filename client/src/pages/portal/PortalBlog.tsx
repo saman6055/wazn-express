@@ -6,11 +6,12 @@ import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { 
   Megaphone, ChevronRight, Calendar, Eye, Star,
-  Newspaper, Gift, RefreshCw, BookOpen, ArrowLeft, PlayCircle, Pin
+  Newspaper, Gift, RefreshCw, BookOpen, PlayCircle, Pin
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { Link } from "wouter";
+import { PortalBackButton } from "@/components/portal/PortalBackButton";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -105,14 +106,10 @@ const { banner: portalBanner } = usePortalPalette();
         isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100 dark:border-slate-800/60"
       )}>
         <div className="flex items-center gap-3">
-          <Link href="/portal">
-            <span className={cn(
-              "inline-block p-2 rounded-xl transition-colors",
-              isDark ? "hover:bg-slate-800" : "hover:bg-slate-100"
-            )}>
-              <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
-            </span>
-          </Link>
+          <PortalBackButton
+            className={cn("p-2 rounded-xl transition-colors", isDark ? "hover:bg-slate-800" : "hover:bg-slate-100")}
+            iconClassName={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}
+          />
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="p-2 rounded-xl text-white shadow-sm shrink-0" style={portalBanner}>
               <Newspaper className="w-5 h-5" />

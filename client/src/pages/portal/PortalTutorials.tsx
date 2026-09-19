@@ -6,6 +6,7 @@ import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PlatformBadge } from "@/components/PlatformSelect";
 import { openWaznChat, waznChatMessage } from "@/lib/waznChat";
@@ -38,6 +39,8 @@ export default function PortalTutorials() {
     () => new URLSearchParams(window.location.search).get("s") ?? "",
   );
   const [playing, setPlaying] = useState<any | null>(null);
+  // The player covers the page: the phone's Back stops it, not the page.
+  useBackCloses(playing != null, () => setPlaying(null));
   const [voted, setVoted] = useState<Record<number, "helpful" | "notHelpful">>({});
 
   // Videos are filtered by the language they are spoken in, not by the

@@ -8,6 +8,7 @@ import { installApp, useInstallOffer } from '@/lib/installPrompt';
 import { useTranslation } from '@/contexts/LanguageContext';
 import { pickLang } from '@/lib/lang';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
+import { useBackCloses } from '@/hooks/useBackCloses';
 
 /**
  * Remembered once the app has been installed, so the prompt does not come
@@ -219,6 +220,10 @@ export function PWAInstallPrompt() {
     // Timestamp, not a flag — the prompt comes back after the TTL passes.
     localStorage.setItem('pwa-install-dismissed', String(Date.now()));
   };
+
+  // The portal's ask covers the page as a dialog: the phone's Back puts it
+  // away for this visit, like "later", instead of leaving the page under it.
+  useBackCloses(onPortal && showPrompt && !isStandalone && !alreadyInstalled, handleDismiss);
 
   // Never ask somebody to install what they have already installed.
   if (isStandalone || alreadyInstalled || !showPrompt) return null;

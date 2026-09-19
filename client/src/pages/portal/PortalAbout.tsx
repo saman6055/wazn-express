@@ -5,11 +5,11 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
-import { useLocation } from "wouter";
+import { PortalBackButton, BACK_WORDS } from "@/components/portal/PortalBackButton";
 import CompanyLogo from "@/components/CompanyLogo";
 import { SocialChannels } from "@/components/portal/SocialChannels";
 import {
-  ArrowLeft, ArrowRight, Plane, Ship, ShoppingBag, Coins, Warehouse,
+  Plane, Ship, ShoppingBag, Coins, Warehouse,
   ShieldCheck, Zap, Eye, Headset, Globe, MapPin, Phone, Mail, Link as LinkIcon,
   Target, Sparkles, CheckCircle2,
 } from "lucide-react";
@@ -41,8 +41,6 @@ export default function PortalAbout() {
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
   const pick = (v: L) => pickLang(language, v);
-  const [, navigate] = useLocation();
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   const companyName =
     language === "ku" ? (company.nameKu || company.name) :
@@ -181,13 +179,9 @@ export default function PortalAbout() {
           <div className="absolute -top-16 -end-10 w-56 h-56 rounded-full bg-white/10 blur-3xl" />
           <div className="absolute -bottom-16 -start-10 w-56 h-56 rounded-full bg-white/10 blur-3xl" />
 
-          <button
-            onClick={() => navigate("/portal/profile")}
-            className="relative flex items-center gap-1.5 text-white/90 text-sm font-medium mb-6 active:scale-95 transition"
-          >
-            <BackArrow className="w-5 h-5" />
-            {pick({ ku: "پرۆفایل", en: "Profile", ar: "الملف الشخصي", zh: "个人资料" })}
-          </button>
+          <PortalBackButton className="relative gap-1.5 text-white/90 text-sm font-medium mb-6 active:scale-95 transition">
+            {pick(BACK_WORDS)}
+          </PortalBackButton>
 
           <div className="relative flex flex-col items-center text-center">
             <div className="w-20 h-20 bg-white/15 backdrop-blur rounded-3xl flex items-center justify-center ring-1 ring-white/25 mb-3 overflow-hidden">

@@ -4,13 +4,14 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import {
-  ArrowLeft, Calendar, Eye, Star, Share2, Clock,
+  Calendar, Eye, Star, Share2, Clock,
   Megaphone, Newspaper, Gift, RefreshCw, BookOpen, Link as LinkIcon
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { WhatsAppGlyph } from "@/components/portal/WhatsAppHelpButton";
-import { Link, useParams } from "wouter";
+import { useParams } from "wouter";
+import { PortalBackButton, BACK_WORDS } from "@/components/portal/PortalBackButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
@@ -145,11 +146,9 @@ const { id } = useParams<{ id: string }>();
           <h2 className="text-xl font-bold mb-2">
             {pickLang(language, { ku: "بابەت نەدۆزرایەوە", en: "Post not found", ar: "لم يُعثر على المقال", zh: "未找到文章" })}
           </h2>
-          <Link href="/portal/blog">
-            <span className="block mt-4 px-6 py-2 bg-blue-600 text-white rounded-xl font-medium">
-              {pickLang(language, { ku: "گەڕانەوە", en: "Go Back", ar: "رجوع", zh: "返回" })}
-            </span>
-          </Link>
+          <PortalBackButton className="mt-4 gap-2 px-6 py-2 bg-blue-600 text-white rounded-xl font-medium">
+            {pickLang(language, BACK_WORDS)}
+          </PortalBackButton>
         </div>
       </PortalLayout>
     );
@@ -163,14 +162,10 @@ const { id } = useParams<{ id: string }>();
         isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100 dark:border-slate-800/60"
       )}>
         <div className="flex items-center justify-between">
-          <Link href="/portal/blog">
-            <span className={cn(
-              "inline-block p-2 rounded-xl transition-colors",
-              isDark ? "hover:bg-slate-800" : "hover:bg-slate-100"
-            )}>
-              <ArrowLeft className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
-            </span>
-          </Link>
+          <PortalBackButton
+            className={cn("p-2 rounded-xl transition-colors", isDark ? "hover:bg-slate-800" : "hover:bg-slate-100")}
+            iconClassName={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}
+          />
           
           <button 
             onClick={handleShare}
@@ -357,15 +352,16 @@ const { id } = useParams<{ id: string }>();
           </div>
           
           {/* Back to Blog */}
-          <Link href="/portal/blog">
-            <span className={cn(
-              "w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl font-medium transition-colors",
+          {/* Names its page: back to the list when the list is behind, the list opened otherwise. */}
+          <PortalBackButton
+            to="/portal/blog"
+            className={cn(
+              "w-full mt-4 justify-center gap-2 py-3 rounded-xl font-medium transition-colors",
               "bg-gradient-to-r from-blue-600 to-indigo-600 text-white hover:opacity-90"
-            )}>
-              <ArrowLeft className="w-5 h-5" />
-              {pickLang(language, { ku: "گەڕانەوە بۆ هەواڵەکان", en: "Back to all posts", ar: "العودة إلى المقالات", zh: "返回全部文章" })}
-            </span>
-          </Link>
+            )}
+          >
+            {pickLang(language, { ku: "گەڕانەوە بۆ هەواڵەکان", en: "Back to all posts", ar: "العودة إلى المقالات", zh: "返回全部文章" })}
+          </PortalBackButton>
         </div>
       </div>
     </PortalLayout>

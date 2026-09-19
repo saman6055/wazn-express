@@ -26,6 +26,7 @@ import { rowMeta } from "@shared/batchInvoice";
 import { hasFeature } from "@shared/customerFeatures";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useState, useEffect, useMemo, useRef } from "react";
 import { Button } from "@/components/ui/button";
@@ -289,6 +290,9 @@ const { t, language } = useLanguage();
   // `?box=<id>`: the search sends a parcel packed in a box straight to that
   // box's receipt, opened.
   const [invoiceBoxId, setInvoiceBoxId] = useState<number | null>(() => boxFromUrl(searchString));
+  // The receipt the address opened. Arriving was the step: Back from it
+  // leaves the page the way it came — to the search that sent it, say.
+  const [boxFromAddress, setBoxFromAddress] = useState<number | null>(() => boxFromUrl(searchString));
   const scrollToBox = useRef<number | null>(boxFromUrl(searchString));
 
   // Arriving by another link while already on this page — the search opens
@@ -299,6 +303,7 @@ const { t, language } = useLanguage();
     const box = boxFromUrl(searchString);
     if (box != null) {
       setInvoiceBoxId(box);
+      setBoxFromAddress(box);
       scrollToBox.current = box;
     }
   }, [searchString]);
@@ -316,6 +321,14 @@ const { t, language } = useLanguage();
       document.querySelector(`[data-row-key="${id}"]`)?.scrollIntoView({ block: "center", behavior: "smooth" });
     });
   }, [activeTab, myBoxes]);
+
+  // A receipt opened in its row, a transaction or an invoice over the list:
+  // each is one step, and the phone's Back closes it — the tab, and the place
+  // in it, stay as they were.
+  useBackCloses(invoiceBoxId != null, () => setInvoiceBoxId(null), invoiceBoxId != null && invoiceBoxId === boxFromAddress);
+  useBackCloses(invoiceBatchId != null, () => setInvoiceBatchId(null));
+  useBackCloses(!!selectedTransaction, () => setSelectedTransaction(null));
+  useBackCloses(!!selectedInvoice, () => setSelectedInvoice(null));
   const { data: boxInvoice } = trpc.customerPortal.getMyBoxInvoice.useQuery(
     { boxId: invoiceBoxId ?? 0 },
     { enabled: invoiceBoxId != null },
@@ -771,7 +784,11 @@ const { t, language } = useLanguage();
                   : null,
               }))}
               openKey={invoiceBoxId}
-              onToggle={setInvoiceBoxId}
+              onToggle={(key) => {
+                // Opened or closed by hand: no longer the one the address opened.
+                setBoxFromAddress(null);
+                setInvoiceBoxId(key);
+              }}
               emptyText={pickLang(language, { ku: "هیچ سندوقێکت نییە", en: "You have no boxes yet", ar: "لا توجد صناديق بعد", zh: "您还没有箱子" })}
               renderExpanded={() =>
                 boxInvoice ? (

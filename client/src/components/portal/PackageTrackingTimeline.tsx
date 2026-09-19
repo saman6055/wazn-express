@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { CheckCircle, Truck, Package, MapPin, Clock, Warehouse, Ship, AlertCircle, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { pickLang } from "@/lib/lang";
 import { onImageError } from "@/lib/imageFallback";
 import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
@@ -86,6 +87,7 @@ export function PackageTrackingTimeline({
   // the China warehouse, so that step is not merely un-reached — it is not
   // coming, and showing it pending promises something that will not happen.
   const [openPhoto, setOpenPhoto] = useState<string | null>(null);
+  useBackCloses(openPhoto != null, () => setOpenPhoto(null));
 
   const journey = { registeredAtOrigin };
   const stages = STAGES.filter((s) => stagesFor(journey).includes(s.key as JourneyStage));

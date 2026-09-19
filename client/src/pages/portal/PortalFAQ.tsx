@@ -5,9 +5,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
-import { useLocation } from "wouter";
+import { PortalBackButton, BACK_WORDS } from "@/components/portal/PortalBackButton";
 import {
-  HelpCircle, ArrowLeft, ArrowRight, Search, ChevronDown, X,
+  HelpCircle, Search, ChevronDown, X,
 } from "lucide-react";
 import {
   faqCategories, faqHeader, faqAskPrefix, type L10n,
@@ -34,7 +34,6 @@ export default function PortalFAQ() {
   const isDark = theme === "dark";
   const isRTL = language === "ku" || language === "ar";
   const pick = (v: L10n) => pickLang(language, v);
-  const [, navigate] = useLocation();
 
   const [query, setQuery] = useState("");
   // key = `${categoryId}:${index}` of the open item (single-open accordion).
@@ -58,7 +57,6 @@ export default function PortalFAQ() {
   }, [q, language]);
 
   const hasResults = filtered.some((c) => c.items.length > 0);
-  const BackArrow = isRTL ? ArrowRight : ArrowLeft;
 
   // Straight into Wazn's chat with the question already written — see lib/waznChat.
   const customer = useChatCustomer();
@@ -84,13 +82,9 @@ export default function PortalFAQ() {
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
           <div className="absolute -bottom-12 -start-6 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
 
-          <button
-            onClick={() => navigate("/portal/profile")}
-            className="relative flex items-center gap-1.5 text-white/90 text-sm font-medium mb-4 active:scale-95 transition"
-          >
-            <BackArrow className="w-5 h-5" />
-            {pick({ ku: "پرۆفایل", en: "Profile", ar: "الملف الشخصي", zh: "个人资料" })}
-          </button>
+          <PortalBackButton className="relative gap-1.5 text-white/90 text-sm font-medium mb-4 active:scale-95 transition">
+            {pick(BACK_WORDS)}
+          </PortalBackButton>
 
           <div className="relative flex items-center gap-3 mb-4">
             <div className="w-14 h-14 bg-white/15 backdrop-blur rounded-2xl flex items-center justify-center ring-1 ring-white/25">

@@ -1,5 +1,7 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 import { useLocation } from "wouter";
+import { useSmartBack } from "@/hooks/useSmartBack";
+import { backStep, currentStepFrom, pathOf } from "@/lib/historySteps";
 
 /**
  * Tracks in-app navigation as a back/forward stack so the portal can show
@@ -48,10 +50,17 @@ export function PortalHistoryProvider({ children }: { children: ReactNode }) {
     });
   }, [location]);
 
+  // Back is the arrows' rule (hooks/useSmartBack): the page behind when it
+  // is the portal's, the home otherwise. The stack above guessed from
+  // addresses alone: after signing in it stepped back onto the sign-in page,
+  // and on a page opened from a link it sat greyed out with nowhere to go.
+  const smartBack = useSmartBack();
+  const canBack = backStep(currentStepFrom()) === "back" || pathOf(location) !== "/portal";
+
   const value: PortalHistoryValue = {
-    canBack: state.pos > 0,
+    canBack,
     canForward: state.pos < state.stack.length - 1,
-    back: () => window.history.back(),
+    back: () => smartBack(),
     forward: () => window.history.forward(),
   };
 

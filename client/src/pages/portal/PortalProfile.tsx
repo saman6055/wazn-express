@@ -19,6 +19,7 @@ import { Link } from "wouter";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
@@ -52,6 +53,7 @@ const { t, language, setLanguage } = useLanguage();
   const isDark = theme === "dark";
   
   const [showLangPicker, setShowLangPicker] = useState(false);
+  useBackCloses(showLangPicker, () => setShowLangPicker(false));
 
   const accountQuery = trpc.customerPortal.getMyAccount.useQuery();
   const { data: account, isLoading } = accountQuery;

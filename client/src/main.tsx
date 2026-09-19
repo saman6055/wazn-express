@@ -1,6 +1,7 @@
 import { confirmAction } from "@/components/ConfirmDialog";
 import { reportClientError } from "./lib/reportClientError";
 import { captureInstallOffer } from "./lib/installPrompt";
+import { installHistorySteps } from "./lib/historySteps";
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 
@@ -30,6 +31,12 @@ import "./index.css";
 // anything. Catch it here, or the offer is lost and the customer is left with
 // a list of menu steps instead of a button (lib/installPrompt.ts).
 captureInstallOffer();
+
+// Every step of the phone's history remembers the page it was taken from, so
+// the portal's back arrows can take one step back — and know when the step
+// behind is not the portal's (lib/historySteps.ts). Before the first
+// navigation, or the first step goes unstamped.
+installHistorySteps();
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {

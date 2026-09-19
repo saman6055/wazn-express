@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -44,6 +45,7 @@ export default function PortalUnclaimedPackages() {
   const [claimNote, setClaimNote] = useState("");
   const [proofImages, setProofImages] = useState<string[]>([]);
   const [isClaimDialogOpen, setIsClaimDialogOpen] = useState(false);
+  useBackCloses(isClaimDialogOpen, () => setIsClaimDialogOpen(false));
   const [activeTab, setActiveTab] = useState("unclaimed");
   
   // Queries

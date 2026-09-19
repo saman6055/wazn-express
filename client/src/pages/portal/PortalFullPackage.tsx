@@ -15,6 +15,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { TutorialHint } from "@/components/TutorialHint";
 import { pickLang } from "@/lib/lang";
 import { SelfOrderCard, type SelfOrderPackage } from "@/components/portal/SelfOrderCard";
@@ -299,6 +300,11 @@ export default function PortalFullPackage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
   const [showDetailDialog, setShowDetailDialog] = useState(false);
+  // Opened by a link to one order (?order=, from the search or a payment):
+  // arriving was the step, and Back leaves the way it came. Opened by a tap
+  // in the list: Back closes it.
+  const [detailFromAddress, setDetailFromAddress] = useState(false);
+  useBackCloses(showDetailDialog, () => setShowDetailDialog(false), detailFromAddress);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [sortBy, setSortBy] = useState<"newest" | "oldest" | "price_high" | "price_low">("newest");
   const [showFilters, setShowFilters] = useState(false);
@@ -496,8 +502,9 @@ export default function PortalFullPackage() {
     return orderTypeConfig[orderType] || orderTypeConfig.full_package;
   };
   
-  const openOrderDetail = (order: any) => {
+  const openOrderDetail = (order: any, fromAddress = false) => {
     setSelectedOrder(order);
+    setDetailFromAddress(fromAddress);
     setShowDetailDialog(true);
   };
 
@@ -516,7 +523,7 @@ export default function PortalFullPackage() {
     const match = fullPackageOrders.find((o: any) => String(o.id) === deepLinkOrderId);
     if (match) {
       openedDeepLink.current = deepLinkOrderId;
-      openOrderDetail(match);
+      openOrderDetail(match, true);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [deepLinkOrderId, fullPackageOrders]);

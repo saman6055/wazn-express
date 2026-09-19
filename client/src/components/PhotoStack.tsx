@@ -5,6 +5,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { dedupePhotos } from "@/lib/photoList";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 
 /**
  * One thumbnail that admits how many photos there really are.
@@ -54,6 +55,10 @@ export function PhotoLightbox({
     window.addEventListener("keydown", onKey);
     return () => window.removeEventListener("keydown", onKey);
   }, [step]);
+
+  // Open for as long as it is on screen: the phone's Back closes the photos,
+  // not the page under them.
+  useBackCloses(true, onClose);
 
   const current = photos[index];
   if (!current) return null;

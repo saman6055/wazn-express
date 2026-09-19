@@ -4,11 +4,12 @@ import { trpc } from "@/lib/trpc";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { Button } from "@/components/ui/button";
 import { 
-  Bell, ArrowLeft, Package, CreditCard, Megaphone, 
+  Bell, Package, CreditCard, Megaphone, 
   AlertCircle, CheckCircle, Info, Gift, ChevronRight,
   CheckCheck
 } from "lucide-react";
 import { Link } from "wouter";
+import { PortalBackButton } from "@/components/portal/PortalBackButton";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
@@ -127,11 +128,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
         <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Link href="/portal/profile">
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
+              <PortalBackButton className="size-9 pointer-coarse:size-11 shrink-0 justify-center rounded-md text-white transition-all hover:bg-white/10" />
               <div className="flex items-center gap-3">
                 <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-500 flex items-center justify-center">
                   <Bell className="h-5 w-5 text-white" />

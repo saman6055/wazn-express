@@ -20,7 +20,6 @@ import { motion, AnimatePresence } from "framer-motion";
 import {
   MessageCircle,
   Send,
-  ArrowLeft,
   CheckCheck,
   Check,
   Clock,
@@ -52,6 +51,7 @@ import {
 } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
 import { Link } from "wouter";
+import { PortalBackButton } from "@/components/portal/PortalBackButton";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { notificationText } from "@/lib/portalNotificationText";
@@ -356,11 +356,7 @@ export default function PortalMessages() {
           
           <div className="relative px-4 py-4">
             <div className="flex items-center gap-3">
-              <Link href="/portal">
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/10">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
-              </Link>
+              <PortalBackButton className="size-9 pointer-coarse:size-11 shrink-0 justify-center rounded-md text-white transition-all hover:bg-white/10" />
               <div className="flex items-center gap-3 flex-1">
                 <div className="relative">
                   <div className="w-12 h-12 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">

@@ -16,9 +16,11 @@ import {
   Scale, Ruler, Box, Camera, X, ChevronRight, Plane, Ship,
   MapPin, Calendar, Download, Share2, FileText, Warehouse
 } from "lucide-react";
-import { Link, useParams } from "wouter";
+import { useParams } from "wouter";
+import { PortalBackButton, BACK_WORDS } from "@/components/portal/PortalBackButton";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import { useState } from "react";
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
@@ -166,6 +168,8 @@ const { t, language } = useLanguage();
     setSelectedPackage(null);
     setCurrentPhotoIndex(0);
   };
+  // The photos cover the page: the phone's Back closes them, not the shipment.
+  useBackCloses(!!selectedPackage, closePhotoViewer);
 
   const nextPhoto = () => {
     if (photos && currentPhotoIndex < photos.length - 1) {
@@ -219,12 +223,9 @@ const { t, language } = useLanguage();
       )}
       {/* Header */}
       <div className="text-white px-4 pt-12 pb-8" style={portalBanner}>
-        <Link href="/portal/shipments">
-          <span className="flex items-center gap-1 text-slate-300 mb-3 hover:text-white transition-colors">
-            <ChevronLeft className={cn("w-5 h-5", isRTL && "rotate-180")} />
-            <span className="text-sm">{pickLang(language, { ku: "گەڕانەوە", en: "Back", ar: "رجوع", zh: "返回" })}</span>
-          </span>
-        </Link>
+        <PortalBackButton icon="chevron" className="gap-1 text-slate-300 mb-3 hover:text-white transition-colors">
+          <span className="text-sm">{pickLang(language, BACK_WORDS)}</span>
+        </PortalBackButton>
         
         <div className="flex items-start justify-between">
           <div>
