@@ -88,7 +88,8 @@ export default function Skin3PortalLayout({ children }: Skin3PortalLayoutProps) 
         "portal-theme min-h-screen supports-[height:100dvh]:min-h-dvh flex flex-col transition-colors duration-300",
         isDark ? "bg-zinc-950" : "bg-amber-50/50",
         isRTL && "rtl",
-        isInstalled ? "pb-32" : "pb-28"
+        // The floating pill, its margin, and the home-indicator strip under it.
+        "pb-[calc(7rem+env(safe-area-inset-bottom))]"
       )}
     >
       {/* PWA Status Bar Spacer for iOS */}

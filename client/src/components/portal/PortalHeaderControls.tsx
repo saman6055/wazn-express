@@ -109,7 +109,7 @@ export function PortalHeaderControls({
             aria-pressed={mode === m.id}
             aria-label={pickLang(language, m.label)}
             title={pickLang(language, m.label)}
-            className="flex h-9 w-9 items-center justify-center -m-2"
+            className="relative tap-44 flex h-9 w-9 items-center justify-center -m-2"
           >
             <span
               className={cn(
@@ -151,7 +151,7 @@ export function PortalLanguagePicker({ glass, className }: { glass: string; clas
         type="button"
         onClick={() => setLangOpen((o) => !o)}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition active:scale-95",
+          "relative tap-44 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition active:scale-95",
           glass,
         )}
       >
@@ -244,7 +244,7 @@ export function PortalClock({
         onClick={toggleHour12}
         title={`${formatClockDate(now, language)} — ${hint}`}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 backdrop-blur-sm transition active:scale-95",
+          "relative tap-44 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 backdrop-blur-sm transition active:scale-95",
           surface,
           className,
         )}

@@ -181,8 +181,10 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40",
         isRTL && "rtl",
         // Bottom room so content (incl. the in-flow news ticker) clears the
-        // fixed bottom nav when scrolled to the end.
-        isInstalled ? "pb-28" : "pb-24"
+        // fixed bottom nav when scrolled to the end: the bar's 92px, a little
+        // air, and the iPhone's home-indicator strip the bar is lifted over.
+        // A fixed pb-24 left up to 30px of the list under the bar there.
+        "pb-[calc(6rem+env(safe-area-inset-bottom))]"
       )}
     >
       {/* PWA Status Bar Spacer for iOS */}

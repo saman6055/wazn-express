@@ -111,7 +111,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
                    glance. */
                 title={pickLang(language, { ku: "کۆپیکردنی پەیامی تەواو", en: "Copy the full message", ar: "نسخ الرسالة كاملة", zh: "复制完整消息" })}
                 className={cn(
-                  "inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-mono text-sm font-bold transition active:scale-95",
+                  "relative tap-44 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-mono text-sm font-bold transition active:scale-95",
                   isDark ? "bg-blue-950/60 text-blue-200 hover:bg-blue-950" : "bg-white text-blue-900 dark:text-blue-200 hover:bg-blue-100 shadow-sm"
                 )}
               >
@@ -120,7 +120,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
               </button>
               <button
                 onClick={handleShare}
-                className="inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition px-3.5 py-2 text-sm font-bold text-white shadow-sm"
+                className="relative tap-44 inline-flex items-center gap-1.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-95 transition px-3.5 py-2 text-sm font-bold text-white shadow-sm"
               >
                 <Share2 className="w-4 h-4" />
                 {pickLang(language, { ku: "هاوبەشکردن", en: "Share", ar: "مشاركة", zh: "分享" })}

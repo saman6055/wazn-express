@@ -219,7 +219,7 @@ export function PortalProfilePhoto({
         disabled={busy}
         onClick={() => (photoUrl ? setMenuOpen((open) => !open) : fileRef.current?.click())}
         className={cn(
-          "absolute -bottom-1 -end-1 w-8 h-8 rounded-full flex items-center justify-center",
+          "tap-44 absolute -bottom-1 -end-1 w-8 h-8 rounded-full flex items-center justify-center",
           "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-md",
           "text-slate-600 dark:text-slate-300 transition-transform active:scale-95",
           busy && "opacity-60",

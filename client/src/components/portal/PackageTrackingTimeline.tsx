@@ -253,7 +253,7 @@ export function PackageTrackingTimeline({
                 <p className="text-xs text-muted-foreground mt-0.5 flex items-center gap-1">
                   <Clock className="w-3 h-3" />
                   {pickLang(language, { ku: "چاوەڕوانی گەیشتن: ", en: "Est. arrival: ", ar: "الوصول المتوقع: ", zh: "预计到达：" })}
-                  {formatPortalDate(estimatedDelivery, language)}
+                  <bdi dir="ltr">{formatPortalDate(estimatedDelivery, language)}</bdi>
                 </p>
               )}
             </div>
@@ -276,7 +276,7 @@ export function PackageTrackingTimeline({
           <button
             type="button"
             onClick={() => setOpenPhoto(null)}
-            className="absolute end-4 top-4 rounded-full bg-white/10 p-2 text-white"
+            className="tap-44 absolute end-4 top-4 rounded-full bg-white/10 p-2 text-white"
             aria-label={pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
           >
             <X className="h-5 w-5" />

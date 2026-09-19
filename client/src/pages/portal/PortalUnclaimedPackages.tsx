@@ -267,7 +267,7 @@ export default function PortalUnclaimedPackages() {
                             {Number(pkg.weightKg) > 0 && (
                               <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                                 <Scale className="w-3 h-3" />
-                                <span>{fmtKg(pkg.weightKg)}</span>
+                                <bdi dir="ltr">{fmtKg(pkg.weightKg)}</bdi>
                               </div>
                             )}
                             <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
@@ -351,7 +351,7 @@ export default function PortalUnclaimedPackages() {
                         </div>
                         <div>
                           <p className="font-semibold text-slate-800 dark:text-slate-200 text-sm">
-                            {request.trackingNumber}
+                            <bdi dir="ltr">{request.trackingNumber}</bdi>
                           </p>
                           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                             {request.requestNumber}
@@ -427,7 +427,7 @@ export default function PortalUnclaimedPackages() {
                   />
                   <div>
                     <p className="font-semibold text-slate-800 dark:text-slate-200">
-                      {selectedPackage.trackingNumber || selectedPackage.packageCode}
+                      <bdi dir="ltr">{selectedPackage.trackingNumber || selectedPackage.packageCode}</bdi>
                     </p>
                     <p className="text-sm text-slate-500 dark:text-slate-400">
                       {[

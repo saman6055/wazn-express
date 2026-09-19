@@ -562,7 +562,7 @@ export default function PortalFullPackage() {
                     {pickLang(language, { ku: "بەڕێوەبردنی ئۆردەرەکانت", en: "Manage your orders", ar: "إدارة طلباتك", zh: "管理您的订单" })}
                   </p>
                   <Link href="/portal/guide#orders">
-                    <span className="inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium text-white/90 hover:bg-white/25 transition cursor-pointer">
+                    <span className="relative tap-44 inline-flex items-center gap-1 rounded-full bg-white/15 px-2 py-0.5 text-[11px] font-medium text-white/90 hover:bg-white/25 transition cursor-pointer">
                       <HelpCircle className="w-3 h-3" />
                       {pickLang(language, { ku: "ئەمە چییە؟", en: "What's this?", ar: "ما هذا؟", zh: "这是什么？" })}
                     </span>
@@ -573,7 +573,7 @@ export default function PortalFullPackage() {
             <Button
               size="sm"
               onClick={requestNewOrder}
-              className="bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm rounded-xl shadow-lg transition-all hover:scale-105"
+              className="relative tap-44 bg-white/20 hover:bg-white/30 text-white border border-white/30 backdrop-blur-sm rounded-xl shadow-lg transition-all hover:scale-105"
             >
               <Plus className="w-4 h-4 ms-1" />
 {pickLang(language, { ku: "داواکاری نوێ", en: "New Order", ar: "طلب جديد", zh: "新订单" })}
@@ -660,7 +660,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("all")}
             className={cn(
-              "flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
+              "pointer-coarse:min-h-11 flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
               activeTab === "all"
                 ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -671,7 +671,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("full_package")}
             className={cn(
-              "flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
+              "pointer-coarse:min-h-11 flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
               activeTab === "full_package"
                 ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -682,7 +682,7 @@ export default function PortalFullPackage() {
           <button
             onClick={() => setActiveTab("commission")}
             className={cn(
-              "flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
+              "pointer-coarse:min-h-11 flex-1 whitespace-nowrap py-2 px-2.5 rounded-lg text-xs font-semibold transition-all",
               activeTab === "commission"
                 ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg"
                 : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
@@ -1028,7 +1028,7 @@ export default function PortalFullPackage() {
                                 );
                               }}
                               className={cn(
-                                "mb-2 inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-mono font-bold transition active:scale-95",
+                                "relative tap-44 mb-2 inline-flex items-center gap-1.5 rounded-lg border px-2 py-1 text-sm font-mono font-bold transition active:scale-95",
                                 isDark
                                   ? "border-violet-800 bg-violet-950/40 text-violet-300 hover:bg-violet-900/40"
                                   : "border-violet-200 dark:border-violet-800/60 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 hover:bg-violet-100"
@@ -1099,7 +1099,7 @@ export default function PortalFullPackage() {
                               "text-sm",
                               isDark ? "text-slate-400" : "text-slate-500"
                             )}>
-                              {formatPortalDate(order.createdAt, language)}
+                              <bdi dir="ltr">{formatPortalDate(order.createdAt, language)}</bdi>
                             </span>
                           </div>
                           {order.trackingNumber && (
@@ -1185,7 +1185,7 @@ export default function PortalFullPackage() {
           className={cn(
             "fixed start-6 z-50 flex h-14 w-14 items-center justify-center rounded-full text-white transition-all hover:scale-110",
             "bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] shadow-[0_8px_20px_-4px_rgba(37,99,235,0.5)]",
-            widthSwitchShown ? "bottom-40" : "bottom-24",
+            widthSwitchShown ? "bottom-[calc(10rem+env(safe-area-inset-bottom))]" : "bottom-[calc(6rem+env(safe-area-inset-bottom))]",
           )}
         >
           <Plus className="h-7 w-7" strokeWidth={2.5} />
@@ -1208,7 +1208,7 @@ export default function PortalFullPackage() {
                 )} />
                 <button
                   onClick={() => setShowDetailDialog(false)}
-                  className="absolute top-4 end-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
+                  className="tap-44 absolute top-4 end-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
                 >
                   <X className="w-5 h-5" />
                 </button>
@@ -1420,10 +1420,10 @@ export default function PortalFullPackage() {
                         </span>
                       </div>
                       <p className={cn(
-                        "font-mono text-sm",
+                        "text-sm",
                         isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                       )}>
-                        {selectedOrder.trackingNumber}
+                        <bdi dir="ltr" className="font-mono">{selectedOrder.trackingNumber}</bdi>
                       </p>
                     </div>
                   )}
@@ -1475,7 +1475,7 @@ export default function PortalFullPackage() {
                       "text-sm",
                       isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
                     )}>
-                      {formatPortalDate(selectedOrder.createdAt, language).replace(/\//g, '/')}
+                      <bdi dir="ltr">{formatPortalDate(selectedOrder.createdAt, language).replace(/\//g, '/')}</bdi>
                     </p>
                   </div>
                   

@@ -399,7 +399,7 @@ export default function PortalMessages() {
                   <TabsTrigger 
                     value="chat" 
                     className={cn(
-                      "flex-1 rounded-lg text-white/70 data-[state=active]:bg-white data-[state=active]:text-purple-600",
+                      "relative tap-44 flex-1 rounded-lg text-white/70 data-[state=active]:bg-white data-[state=active]:text-purple-600",
                       "transition-all duration-200"
                     )}
                   >
@@ -414,7 +414,7 @@ export default function PortalMessages() {
                   <TabsTrigger 
                     value="notifications" 
                     className={cn(
-                      "flex-1 rounded-lg text-white/70 data-[state=active]:bg-white data-[state=active]:text-purple-600",
+                      "relative tap-44 flex-1 rounded-lg text-white/70 data-[state=active]:bg-white data-[state=active]:text-purple-600",
                       "transition-all duration-200"
                     )}
                   >
@@ -500,7 +500,7 @@ export default function PortalMessages() {
                           inputRef.current?.focus();
                         }}
                         className={cn(
-                          "rounded-full text-xs",
+                          "relative tap-44 rounded-full text-xs",
                           isDark 
                             ? "border-slate-700 hover:bg-slate-800 text-slate-300" 
                             : "border-slate-200 dark:border-slate-800/60 hover:bg-slate-50"
@@ -725,7 +725,7 @@ export default function PortalMessages() {
                 <button
                   onClick={() => imageInputRef.current?.click()}
                   className={cn(
-                    "p-2 rounded-full transition",
+                    "relative tap-44 p-2 rounded-full transition",
                     isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-slate-100 text-slate-400 hover:text-purple-600"
                   )}
                   disabled={!chatId}
@@ -735,7 +735,7 @@ export default function PortalMessages() {
                 <button
                   onClick={() => fileInputRef.current?.click()}
                   className={cn(
-                    "p-2 rounded-full transition",
+                    "relative tap-44 p-2 rounded-full transition",
                     isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-slate-100 text-slate-400 hover:text-purple-600"
                   )}
                   disabled={!chatId}
@@ -812,7 +812,7 @@ export default function PortalMessages() {
                         }}
                         disabled={!chatId}
                         className={cn(
-                          "rounded-full w-10 h-10 flex items-center justify-center transition",
+                          "relative tap-44 rounded-full w-10 h-10 flex items-center justify-center transition",
                           isDark ? "hover:bg-slate-800 text-slate-400 hover:text-purple-400" : "hover:bg-slate-100 text-slate-400 hover:text-purple-600"
                         )}
                       >
@@ -897,7 +897,7 @@ export default function PortalMessages() {
                  nobody. Shares the constant with every WhatsApp link. */
               href={`tel:+${TERMS_WHATSAPP_NUMBER}`}
               className={cn(
-                "flex items-center gap-2 text-sm",
+                "relative tap-44 flex items-center gap-2 text-sm",
                 isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
               )}
             >
@@ -907,7 +907,7 @@ export default function PortalMessages() {
             <a 
               href="mailto:support@waznexpress.com" 
               className={cn(
-                "flex items-center gap-2 text-sm",
+                "relative tap-44 flex items-center gap-2 text-sm",
                 isDark ? "text-slate-400 hover:text-white" : "text-slate-500 hover:text-slate-800"
               )}
             >

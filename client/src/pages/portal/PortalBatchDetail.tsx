@@ -229,7 +229,7 @@ const { t, language } = useLanguage();
         
         <div className="flex items-start justify-between">
           <div>
-            <h1 className="text-2xl font-bold">{batch?.batchCode || "..."}</h1>
+            <h1 className="text-2xl font-bold"><bdi dir="ltr">{batch?.batchCode || "..."}</bdi></h1>
             {batch && (
               <div className="flex items-center gap-2 mt-2">
                 <span className={cn(
@@ -514,7 +514,7 @@ const { t, language } = useLanguage();
                       )}>
                         <Scale className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
                         <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-                          {fmtKg(pkg.weightKg)}
+                          <bdi dir="ltr">{fmtKg(pkg.weightKg)}</bdi>
                         </span>
                       </div>
                     )}
@@ -525,7 +525,7 @@ const { t, language } = useLanguage();
                       )}>
                         <Ruler className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
                         <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
-                          {fmtDims(pkg.lengthCm, pkg.widthCm, pkg.heightCm)}
+                          <bdi dir="ltr">{fmtDims(pkg.lengthCm, pkg.widthCm, pkg.heightCm)}</bdi>
                         </span>
                       </div>
                     )}
@@ -611,7 +611,7 @@ const { t, language } = useLanguage();
               <div className="absolute top-0 inset-x-0 z-10 bg-gradient-to-b from-black/60 to-transparent p-4">
                 <div className="flex items-center justify-between text-white">
                   <div>
-                    <p className="font-medium">{selectedPkg.trackingNumber || selectedPkg.packageCode}</p>
+                    <p className="font-medium"><bdi dir="ltr">{selectedPkg.trackingNumber || selectedPkg.packageCode}</bdi></p>
                     <p className="text-sm text-white/70">
                       {currentPhotoIndex + 1} / {photos.length}
                     </p>
@@ -643,7 +643,7 @@ const { t, language } = useLanguage();
                       onClick={prevPhoto}
                       disabled={currentPhotoIndex === 0}
                       className={cn(
-                        "absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white transition-all",
+                        "tap-44 absolute left-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white transition-all",
                         currentPhotoIndex === 0 ? "opacity-30 cursor-not-allowed" : "hover:bg-black/70"
                       )}
                     >
@@ -653,7 +653,7 @@ const { t, language } = useLanguage();
                       onClick={nextPhoto}
                       disabled={currentPhotoIndex === photos.length - 1}
                       className={cn(
-                        "absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white transition-all",
+                        "tap-44 absolute right-2 top-1/2 -translate-y-1/2 p-2 rounded-full bg-black/50 text-white transition-all",
                         currentPhotoIndex === photos.length - 1 ? "opacity-30 cursor-not-allowed" : "hover:bg-black/70"
                       )}
                     >
@@ -698,13 +698,13 @@ const { t, language } = useLanguage();
                   {Number(selectedPkg.weightKg) > 0 && (
                     <div className="flex items-center gap-1">
                       <Scale className="w-4 h-4 text-slate-400" />
-                      <span>{fmtKg(selectedPkg.weightKg)}</span>
+                      <bdi dir="ltr">{fmtKg(selectedPkg.weightKg)}</bdi>
                     </div>
                   )}
                   {selectedPkg.lengthCm && selectedPkg.widthCm && selectedPkg.heightCm && (
                     <div className="flex items-center gap-1">
                       <Ruler className="w-4 h-4 text-slate-400" />
-                      <span>{fmtDims(selectedPkg.lengthCm, selectedPkg.widthCm, selectedPkg.heightCm)}</span>
+                      <bdi dir="ltr">{fmtDims(selectedPkg.lengthCm, selectedPkg.widthCm, selectedPkg.heightCm)}</bdi>
                     </div>
                   )}
                 </div>

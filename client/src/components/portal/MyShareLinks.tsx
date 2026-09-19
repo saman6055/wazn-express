@@ -91,7 +91,7 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
                   {/* Was hardcoded to the Arabic locale with a spelled-out
                       month, so an English or Chinese reader was told their
                       link expires "24 تموز". The portal has one formatter. */}
-                  {formatPortalDate(link.expiresAt, language)}
+                  <bdi dir="ltr">{formatPortalDate(link.expiresAt, language)}</bdi>
                 </p>
               </div>
 

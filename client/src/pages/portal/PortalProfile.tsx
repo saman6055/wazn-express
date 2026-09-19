@@ -328,7 +328,7 @@ const { t, language, setLanguage } = useLanguage();
                   <h2 className="text-xl font-bold text-white">{account?.fullName || pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</h2>
                   <div className="flex items-center gap-2 mt-1">
                     <span className="px-3 py-1 bg-amber-500/20 text-amber-400 text-sm font-medium rounded-full border border-amber-500/30">
-                      {account?.customerCode}
+                      <bdi dir="ltr">{account?.customerCode}</bdi>
                     </span>
                   </div>
                 </>
@@ -417,7 +417,7 @@ const { t, language, setLanguage } = useLanguage();
                     {pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile", ar: "رقم الهاتف", zh: "手机号" })}
                   </p>
                   <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                    {account.mobileNumber}
+                    <bdi dir="ltr">{account.mobileNumber}</bdi>
                   </p>
                 </div>
               </div>
@@ -615,12 +615,12 @@ const { t, language, setLanguage } = useLanguage();
         {/* App Info */}
         <div className="mt-8 mb-24 text-center">
           <div className="flex items-center justify-center gap-4 mb-3">
-            <button type="button" onClick={handleFeedback} className={cn("text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
+            <button type="button" onClick={handleFeedback} className={cn("relative tap-44 text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
               <Heart className="w-3 h-3" />
               {pickLang(language, { ku: "ڕەخنە و پێشنیار", en: "Feedback", ar: "ملاحظات", zh: "反馈" })}
             </button>
             <span className={isDark ? "text-slate-700 dark:text-slate-300" : "text-slate-300"}>•</span>
-            <button type="button" onClick={handleShareApp} className={cn("text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
+            <button type="button" onClick={handleShareApp} className={cn("relative tap-44 text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
               <Share2 className="w-3 h-3" />
               {pickLang(language, { ku: "هاوبەشکردن", en: "Share App", ar: "مشاركة التطبيق", zh: "分享应用" })}
             </button>

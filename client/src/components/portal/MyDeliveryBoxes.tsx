@@ -47,7 +47,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
     return (
       <button
         onClick={() => setOpen(true)}
-        className="mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-600 hover:underline dark:text-sky-400"
+        className="relative tap-44 mt-1.5 inline-flex items-center gap-1.5 text-[11px] font-semibold text-sky-600 hover:underline dark:text-sky-400"
       >
         <Camera className="h-3.5 w-3.5" />
         {label({
@@ -196,7 +196,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
             <div key={box.id} className={cn("rounded-2xl border p-3.5", card)}>
               <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0 flex-1">
-                  <p className="font-mono text-sm font-semibold">{box.boxCode}</p>
+                  <p className="text-sm font-semibold"><bdi dir="ltr" className="font-mono">{box.boxCode}</bdi></p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
                     {box.totalPackages}{" "}
                     {label({ ku: "پاکەت", en: "packages", ar: "طرد", zh: "件" })}

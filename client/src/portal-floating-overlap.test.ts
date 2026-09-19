@@ -5,8 +5,9 @@ import path from "path";
 /**
  * Two floating controls, one corner.
  *
- * The width switch floats at `bottom-24 start-3`. The orders page's new-order
- * button floated at `bottom-24 start-6`, on top of it — in Kurdish and Arabic
+ * The width switch floats at `bottom-24 start-3` (since 2026-09-19 plus the
+ * iPhone's home-indicator strip, like the bottom bar). The orders page's
+ * new-order button floated at `bottom-24 start-6`, on top of it — in Kurdish and Arabic
  * at the bottom right, in English at the bottom left — and wore a chat bubble,
  * so it read as the support chat covering the switch. The button now asks the
  * switch's own visibility rule and moves above it while it shows.
@@ -23,12 +24,14 @@ describe("the new-order button never covers the width switch", () => {
     expect(sw).toContain("export function usePortalWidthSwitchShown()");
     expect(sw).toContain("const shown = usePortalWidthSwitchShown();");
     // Where the switch sits; if this moves, the lift below must be rechecked.
-    expect(sw).toContain('"fixed bottom-24 start-3');
+    expect(sw).toContain('"fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] start-3');
   });
 
   it("the orders button asks that rule and lifts above the switch", () => {
     expect(page).toContain("const widthSwitchShown = usePortalWidthSwitchShown();");
-    expect(page).toContain('widthSwitchShown ? "bottom-40" : "bottom-24"');
+    expect(page).toContain(
+      'widthSwitchShown ? "bottom-[calc(10rem+env(safe-area-inset-bottom))]" : "bottom-[calc(6rem+env(safe-area-inset-bottom))]"',
+    );
     expect(page, "the button must not be pinned to the switch's spot unconditionally")
       .not.toContain('"fixed bottom-24 start-6');
   });

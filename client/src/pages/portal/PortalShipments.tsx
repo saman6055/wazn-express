@@ -347,7 +347,7 @@ function ClassicPortalShipments() {
                   {pickLang(language, { ku: "شوێنکەوتنی پاکەتەکانت", en: "Track your packages", ar: "تتبع شحناتك", zh: "追踪您的包裹" })}
                 </p>
                 <Link href="/portal/guide#shipments">
-                  <span className="inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/80 hover:bg-white/20 transition cursor-pointer">
+                  <span className="relative tap-44 inline-flex items-center gap-1 rounded-full bg-white/10 px-2 py-0.5 text-[11px] font-medium text-white/80 hover:bg-white/20 transition cursor-pointer">
                     <HelpCircle className="w-3 h-3" />
                     {language === "ku" ? "ئەمە چییە؟" : language === "ar" ? "ما هذا؟" : language === "zh" ? "这是什么？" : "What's this?"}
                   </span>
@@ -495,7 +495,7 @@ function ClassicPortalShipments() {
                   isEmpty && "opacity-45 cursor-default",
                   // Raised: a highlight along the top edge and a shadow beneath
                   // give the pill some depth, and it presses down when tapped.
-                  "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-semibold whitespace-nowrap",
+                  "flex shrink-0 items-center gap-2 px-4 py-2 pointer-coarse:min-h-11 rounded-full text-sm font-semibold whitespace-nowrap",
                   "transition-all duration-200 -translate-y-px active:translate-y-0",
                   isActive
                     ? "text-white"
@@ -704,7 +704,7 @@ function ClassicPortalShipments() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <p className={cn("font-bold text-lg", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                            {batch.batchCode}
+                            <bdi dir="ltr">{batch.batchCode}</bdi>
                           </p>
                           <ChevronRight className={cn(
                             "w-5 h-5 shrink-0",
@@ -834,7 +834,7 @@ function ClassicPortalShipments() {
                         }
                         return batch.createdAt ? (
                           <div className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
-                            {formatPortalDate(batch.createdAt, language)}
+                            <bdi dir="ltr">{formatPortalDate(batch.createdAt, language)}</bdi>
                           </div>
                         ) : null;
                       })()}

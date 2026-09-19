@@ -113,7 +113,7 @@ export default function PortalContact() {
                 {c.id === "address" && (
                   <button
                     onClick={() => open(c.href)}
-                    className="mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-sky-600 dark:text-sky-400"
+                    className="relative tap-44 mt-1.5 inline-flex items-center gap-1 text-[11px] font-medium text-sky-600 dark:text-sky-400"
                   >
                     <ExternalLink className="h-3 w-3" />
                     {label({ ku: "کردنەوە لە گوگڵ ماپ", en: "Open in Google Maps", ar: "افتح في خرائط جوجل", zh: "在 Google 地图中打开" })}
@@ -125,7 +125,7 @@ export default function PortalContact() {
                 <button
                   onClick={() => copy(c)}
                   aria-label={pickLang(language, { ku: "کۆپی کردن", en: "copy", ar: "نسخ", zh: "复制" })}
-                  className="shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-black/5 active:scale-90 dark:hover:bg-white/10"
+                  className="relative tap-44 shrink-0 rounded-lg p-1.5 text-muted-foreground transition hover:bg-black/5 active:scale-90 dark:hover:bg-white/10"
                 >
                   {copied === c.id
                     ? <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />

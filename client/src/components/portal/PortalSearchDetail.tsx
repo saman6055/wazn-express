@@ -216,7 +216,7 @@ export default function PortalSearchDetail({
               type="button"
               onClick={() => void copy()}
               aria-label={L({ ku: "کۆپیکردنی ژمارە", en: "Copy number", ar: "نسخ الرقم", zh: "复制号码" })}
-              className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+              className="relative tap-44 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition active:scale-95 dark:bg-slate-800 dark:text-slate-300"
             >
               <Copy className="h-4 w-4" />
             </button>

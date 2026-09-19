@@ -438,7 +438,7 @@ export default function Skin3PortalProfile() {
                     : "bg-indigo-50 dark:bg-indigo-950/40 text-indigo-700 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800/60 shadow-[2px_2px_0px_rgba(0,0,0,0.06)]"
                 )}
               >
-                {account.customerCode}
+                <bdi dir="ltr">{account.customerCode}</bdi>
               </motion.span>
             )}
           </motion.div>

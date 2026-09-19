@@ -81,7 +81,7 @@ export function SocialChannels({ className }: { className?: string }) {
             target="_blank"
             rel="noopener noreferrer"
             aria-label={c.label}
-            className={cn("inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition active:scale-95", c.color)}
+            className={cn("relative tap-44 inline-flex h-10 w-10 items-center justify-center rounded-full text-white shadow-sm transition active:scale-95", c.color)}
           >
             <Glyph className="h-5 w-5" />
           </a>

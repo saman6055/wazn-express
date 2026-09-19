@@ -63,7 +63,7 @@ export function PortalWidthPicker({ className }: { className?: string }) {
           aria-label={label}
           aria-pressed={width === value}
           className={cn(
-            "flex h-7 w-7 items-center justify-center rounded-full transition-colors",
+            "relative tap-44 flex h-7 w-7 items-center justify-center rounded-full transition-colors",
             width === value
               ? "bg-white dark:bg-slate-600 text-slate-900 dark:text-slate-50 shadow-sm"
               : "text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200",

@@ -318,7 +318,7 @@ export default function ModernPortalShipments() {
                           isDark ? "text-white" : "text-gray-900 dark:text-gray-200"
                         )}
                       >
-                        {(searchResult as any).trackingNumber || (searchResult as any).packageCode}
+                        <bdi dir="ltr">{(searchResult as any).trackingNumber || (searchResult as any).packageCode}</bdi>
                       </p>
                       <p className="text-xs text-emerald-600 dark:text-emerald-400">
                         {pickLang(language, { ku: "دۆزرایەوە!", en: "Found!", ar: "تم العثور عليه!", zh: "已找到！" })}
@@ -487,7 +487,7 @@ export default function ModernPortalShipments() {
                                 )}
                               >
                                 <Calendar className="w-3.5 h-3.5" />
-                                {formatPortalDate(batch.createdAt, language)}
+                                <bdi dir="ltr">{formatPortalDate(batch.createdAt, language)}</bdi>
                               </span>
                             </div>
 
@@ -499,7 +499,7 @@ export default function ModernPortalShipments() {
                                 )}
                               >
                                 {pickLang(language, { ku: "گەیشتنی چاوەڕوانکراو:", en: "ETA:", ar: "الوصول المتوقع:", zh: "预计到达：" })}{" "}
-                                {formatPortalDate(batch.estimatedArrival, language)}
+                                <bdi dir="ltr">{formatPortalDate(batch.estimatedArrival, language)}</bdi>
                               </p>
                             )}
                           </div>

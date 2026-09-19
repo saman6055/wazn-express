@@ -43,7 +43,7 @@ export function PortalBackButton({
       type="button"
       onClick={() => back(to)}
       aria-label={children ? undefined : pickLang(language, BACK_WORDS)}
-      className={cn("inline-flex items-center", className)}
+      className={cn("relative tap-44 inline-flex items-center", className)}
     >
       <Icon className={iconClassName ?? "h-5 w-5"} aria-hidden="true" />
       {children}

@@ -200,7 +200,7 @@ export function ChinaDepotList({
                 type="button"
                 onClick={() => copy(item.code)}
                 className={cn(
-                  "-mx-1 flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 transition active:scale-[0.98]",
+                  "relative tap-44 -mx-1 flex max-w-full items-center gap-1.5 rounded-md px-1 py-0.5 transition active:scale-[0.98]",
                   isDark ? "hover:bg-white/5" : "hover:bg-black/5",
                 )}
               >
@@ -223,7 +223,7 @@ export function ChinaDepotList({
               <div className="flex items-center gap-2 px-1">
                 {item.date && (
                   <p className="text-[11px] text-muted-foreground">
-                    {formatPortalDate(item.date, language)}
+                    <bdi dir="ltr">{formatPortalDate(item.date, language)}</bdi>
                   </p>
                 )}
                 {item.name && <p className="truncate text-[11px] text-muted-foreground">{item.name}</p>}

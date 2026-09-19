@@ -328,7 +328,7 @@ function ClassicPortalInvoiceReports() {
                   key={f.value}
                   onClick={() => setDateRange(f.value as any)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
+                    "relative tap-44 px-3 py-1.5 rounded-lg text-sm font-medium transition-all",
                     dateRange === f.value
                       ? isDark 
                         ? "bg-emerald-600 text-white" 
@@ -351,7 +351,7 @@ function ClassicPortalInvoiceReports() {
                 value={selectedYear}
                 onChange={(e) => setSelectedYear(parseInt(e.target.value))}
                 className={cn(
-                  "px-3 py-1.5 rounded-lg text-base md:text-sm font-medium border-0 outline-none",
+                  "pointer-coarse:min-h-11 px-3 py-1.5 rounded-lg text-base md:text-sm font-medium border-0 outline-none",
                   isDark 
                     ? "bg-slate-700 text-white" 
                     : "bg-slate-100 dark:bg-slate-950/40 text-slate-700 dark:text-slate-300"
@@ -366,7 +366,7 @@ function ClassicPortalInvoiceReports() {
                 <button
                   onClick={() => setShowExportMenu(!showExportMenu)}
                   className={cn(
-                    "px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2",
+                    "relative tap-44 px-3 py-1.5 rounded-lg text-sm font-medium flex items-center gap-2",
                     isDark 
                       ? "bg-emerald-600 text-white hover:bg-emerald-700" 
                       : "bg-emerald-500 text-white hover:bg-emerald-600"

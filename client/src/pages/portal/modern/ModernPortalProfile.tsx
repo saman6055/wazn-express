@@ -298,7 +298,7 @@ export default function ModernPortalProfile() {
                     : "bg-slate-100 dark:bg-slate-950/40 text-slate-500"
                 )}
               >
-                {account.customerCode}
+                <bdi dir="ltr">{account.customerCode}</bdi>
               </span>
             )}
           </motion.div>

@@ -640,7 +640,7 @@ const { t, language } = useLanguage();
                 </h3>
                 <button 
                   onClick={() => changeTab("transactions")}
-                  className="text-sm text-blue-500 dark:text-blue-400 font-medium flex items-center gap-1"
+                  className="relative tap-44 text-sm text-blue-500 dark:text-blue-400 font-medium flex items-center gap-1"
                 >
                   {pickLang(language, { ku: "هەموو", en: "View All", ar: "عرض الكل", zh: "查看全部" })}
                   <ChevronRight className="w-4 h-4" />
@@ -673,7 +673,7 @@ const { t, language } = useLanguage();
                           {getTransactionTypeName(tx.transactionType)}
                         </p>
                         <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
-                          {formatPortalDate(tx.createdAt, language)}
+                          <bdi dir="ltr">{formatPortalDate(tx.createdAt, language)}</bdi>
                         </p>
                       </div>
                       <div className="text-end">
@@ -884,7 +884,7 @@ const { t, language } = useLanguage();
                             {getTransactionTypeName(tx.transactionType)}
                           </p>
                           <p className={cn("text-sm", isDark ? "text-slate-500" : "text-slate-500")}>
-                            {formatPortalDate(tx.createdAt, language)}
+                            <bdi dir="ltr">{formatPortalDate(tx.createdAt, language)}</bdi>
                           </p>
                         </div>
                         
@@ -988,7 +988,7 @@ const { t, language } = useLanguage();
                     {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                   </span>
                   <span className={cn("font-medium", isDark ? "text-white" : "")}>
-                    {formatPortalDate(receiptData.transaction.createdAt, language)}
+                    <bdi dir="ltr">{formatPortalDate(receiptData.transaction.createdAt, language)}</bdi>
                   </span>
                 </div>
                 <div className="flex justify-between">
@@ -1182,7 +1182,7 @@ const { t, language } = useLanguage();
                 <DialogHeader>
                   <DialogTitle className={cn("flex items-center gap-2", isDark ? "text-white" : "")}>
                     <FileText className="w-5 h-5" />
-                    {pickLang(language, { ku: "وەسڵ", en: "Invoice", ar: "فاتورة", zh: "发票" })} {invoice.invoiceNumber}
+                    {pickLang(language, { ku: "وەسڵ", en: "Invoice", ar: "فاتورة", zh: "发票" })} <bdi dir="ltr">{invoice.invoiceNumber}</bdi>
                   </DialogTitle>
                 </DialogHeader>
                 
@@ -1226,7 +1226,7 @@ const { t, language } = useLanguage();
                         {pickLang(language, { ku: "ژمارەی وەسڵ", en: "Invoice Number", ar: "رقم الفاتورة", zh: "发票号" })}
                       </span>
                       <span className={cn("font-medium", isDark ? "text-white" : "")}>
-                        {invoice.invoiceNumber}
+                        <bdi dir="ltr">{invoice.invoiceNumber}</bdi>
                       </span>
                     </div>
                     <div className="flex justify-between">
@@ -1235,7 +1235,7 @@ const { t, language } = useLanguage();
                         {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                       </span>
                       <span className={cn("font-medium", isDark ? "text-white" : "")}>
-                        {formatPortalDate(invoice.createdAt, language)}
+                        <bdi dir="ltr">{formatPortalDate(invoice.createdAt, language)}</bdi>
                       </span>
                     </div>
                     {invoice.dueDate && (
@@ -1245,7 +1245,7 @@ const { t, language } = useLanguage();
                           {pickLang(language, { ku: "بەرواری دوایی", en: "Due Date", ar: "تاريخ الاستحقاق", zh: "到期日" })}
                         </span>
                         <span className={cn("font-medium", isDark ? "text-white" : "")}>
-                          {formatPortalDate(invoice.dueDate, language)}
+                          <bdi dir="ltr">{formatPortalDate(invoice.dueDate, language)}</bdi>
                         </span>
                       </div>
                     )}
@@ -1256,7 +1256,7 @@ const { t, language } = useLanguage();
                           {pickLang(language, { ku: "بەرواری پارەدان", en: "Paid On", ar: "تاريخ الدفع", zh: "支付日期" })}
                         </span>
                         <span className={cn("font-medium text-emerald-500 dark:text-emerald-400")}>
-                          {formatPortalDate(invoice.paidAt, language)}
+                          <bdi dir="ltr">{formatPortalDate(invoice.paidAt, language)}</bdi>
                         </span>
                       </div>
                     )}

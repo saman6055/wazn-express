@@ -216,7 +216,7 @@ function NextStepCard({
         </div>
 
         <Link href={`/portal/shipments/${(shipment as any).id}`}>
-          <span className={cn("inline-flex items-center shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg",
+          <span className={cn("relative tap-44 inline-flex items-center shrink-0 text-xs font-medium px-3 py-1.5 rounded-lg",
                               ready
                                 ? "bg-emerald-500 text-white"
                                 : isDark ? "bg-slate-700 text-slate-200" : "bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200")}>
@@ -411,7 +411,7 @@ export default function PortalHome() {
           >
             <div className="mx-auto flex h-12 max-w-lg items-center justify-between px-4">
               <Link href="/portal/profile" aria-label={pickLang(language, { ku: "هەژماری من", en: "My account", ar: "حسابي", zh: "我的账户" })}>
-                <span className="flex items-center gap-2 min-w-0">
+                <span className="relative tap-44 flex items-center gap-2 min-w-0">
                   <span className="relative shrink-0">
                     <span aria-hidden="true" className="wazn-breathe absolute -inset-0.5 rounded-full bg-blue-500 blur-sm" />
                     <span className={cn("relative flex h-7 w-7 items-center justify-center overflow-hidden rounded-full", isDark ? "bg-[#1D4ED8]" : "bg-blue-600 dark:bg-[#1D4ED8]")}>
@@ -431,12 +431,12 @@ export default function PortalHome() {
               </Link>
               <div className="flex items-center gap-1.5">
                 <Link href="/portal/search" aria-label={pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}>
-                  <span className={cn("inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
+                  <span className={cn("relative tap-44 inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
                     <Search className={cn("h-4 w-4", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
                   </span>
                 </Link>
                 <Link href="/portal/notifications" aria-label={pickLang(language, { ku: "ئاگادارییەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}>
-                  <span className={cn("relative inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
+                  <span className={cn("tap-44 relative inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
                     <Bell className={cn("h-4 w-4", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
                     {(notificationCount ?? 0) > 0 && (
                       <span className="absolute top-1.5 end-1.5 h-2 w-2 rounded-full bg-red-500" />
@@ -748,7 +748,7 @@ export default function PortalHome() {
               {t("portal.recentShipments") || "گواستنەوە نوێیەکان"}
             </h2>
             <Link href="/portal/shipments">
-              <span className="flex items-center gap-1 text-sm font-medium text-blue-500 dark:text-blue-400 transition-colors hover:text-blue-600">
+              <span className="relative tap-44 flex items-center gap-1 text-sm font-medium text-blue-500 dark:text-blue-400 transition-colors hover:text-blue-600">
                 {t("portal.viewAll") || "هەموو ببینە"}
                 <ChevronRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
               </span>
@@ -835,7 +835,7 @@ export default function PortalHome() {
               live stages, this line keeps the past reachable. */}
           {pipelineFilter === null && deliveredCount > 0 && (
             <Link href="/portal/shipments?status=delivered">
-              <span className={cn("mt-2.5 flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-medium", card, isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+              <span className={cn("relative tap-44 mt-2.5 flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-medium", card, isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
                 <CheckCircle className="h-3.5 w-3.5" />
                 {pickLang(language, {
                   ku: `${deliveredCount} باری گەیشتوو ببینە`,

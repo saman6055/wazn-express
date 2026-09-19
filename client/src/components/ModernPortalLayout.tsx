@@ -92,7 +92,8 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         "portal-theme min-h-screen supports-[height:100dvh]:min-h-dvh flex flex-col transition-colors duration-300",
         isDark ? "bg-zinc-950" : "bg-gray-50 dark:bg-gray-950/40",
         isRTL && "rtl",
-        isInstalled ? "pb-28" : "pb-24"
+        // The bar's 80px, some air, and the home-indicator strip it sits over.
+        "pb-[calc(6rem+env(safe-area-inset-bottom))]"
       )}
     >
       {/* PWA Status Bar Spacer for iOS */}

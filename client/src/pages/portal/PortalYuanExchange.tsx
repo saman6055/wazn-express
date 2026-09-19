@@ -227,7 +227,7 @@ export default function PortalYuanExchange() {
                         key={q}
                         type="button"
                         onClick={() => syncFromUsd(String(q))}
-                        className="rounded-full border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-3.5 py-1.5 text-sm font-bold text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-95"
+                        className="relative tap-44 rounded-full border border-red-200 dark:border-red-900/50 bg-red-50 dark:bg-red-950/30 px-3.5 py-1.5 text-sm font-bold text-red-600 dark:text-red-400 transition hover:bg-red-100 dark:hover:bg-red-900/40 active:scale-95"
                       >
                         {q.toLocaleString("en-US")}$
                       </button>
@@ -354,7 +354,7 @@ export default function PortalYuanExchange() {
                   <button
                     type="button"
                     onClick={() => ordersQuery.refetch()}
-                    className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
+                    className="relative tap-44 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition"
                     aria-label={pickLang(language, { ku: "نوێکردنەوە", en: "refresh", ar: "تحديث", zh: "刷新" })}
                   >
                     <RefreshCw className={`w-4 h-4 ${ordersQuery.isFetching ? "animate-spin" : ""}`} />

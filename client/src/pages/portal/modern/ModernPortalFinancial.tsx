@@ -359,7 +359,7 @@ export default function ModernPortalFinancial() {
                             <button
                               onClick={() => handleDownloadReceipt(tx.id)}
                               className={cn(
-                                "w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
+                                "relative tap-44 w-8 h-8 rounded-lg flex items-center justify-center transition-colors",
                                 isDark
                                   ? "hover:bg-slate-700 text-slate-500"
                                   : "hover:bg-slate-100 text-slate-400"
@@ -475,7 +475,7 @@ export default function ModernPortalFinancial() {
                             isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
                           )}
                         >
-                          {inv.invoiceNumber}
+                          <bdi dir="ltr">{inv.invoiceNumber}</bdi>
                         </p>
                         <p className={cn("text-xs mt-0.5", isDark ? "text-slate-500" : "text-slate-400")}>
                           {inv.dueDate

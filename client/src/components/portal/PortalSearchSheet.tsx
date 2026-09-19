@@ -129,7 +129,7 @@ export const PortalSearchField = forwardRef<
             innerRef.current?.focus();
           }}
           aria-label={pickLang(language, { ku: "پاککردنەوە", en: "Clear", ar: "مسح", zh: "清除" })}
-          className="absolute end-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200/70 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
+          className="tap-44 absolute end-1.5 top-1/2 flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full text-slate-400 hover:bg-slate-200/70 hover:text-slate-600 dark:hover:bg-slate-700 dark:hover:text-slate-200"
         >
           <X className="h-4 w-4" />
         </button>

@@ -69,7 +69,7 @@ export function PortalWidthSwitch() {
   return (
     <div
       className={cn(
-        "fixed bottom-24 start-3 z-40 flex items-center gap-0.5 rounded-full p-1 shadow-lg backdrop-blur",
+        "fixed bottom-[calc(6rem+env(safe-area-inset-bottom))] start-3 z-40 flex items-center gap-0.5 rounded-full p-1 shadow-lg backdrop-blur",
         "border border-slate-200 dark:border-slate-700 bg-white/95 dark:bg-slate-900/95",
       )}
       title={pickLang(language, {
@@ -90,7 +90,7 @@ export function PortalWidthSwitch() {
             aria-label={pickLang(language, option.label)}
             aria-pressed={active}
             className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full transition-colors",
+              "relative tap-44 flex h-8 w-8 items-center justify-center rounded-full transition-colors",
               active
                 ? "bg-slate-900 text-white dark:bg-white dark:text-slate-900"
                 : "text-slate-500 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800",

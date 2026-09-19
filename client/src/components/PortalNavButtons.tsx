@@ -24,7 +24,7 @@ export function PortalNavButtons({ className }: { className?: string }) {
 
   const btn = (enabled: boolean) =>
     cn(
-      "flex h-9 w-9 items-center justify-center rounded-full transition-colors",
+      "relative tap-44 flex h-9 w-9 items-center justify-center rounded-full transition-colors",
       enabled
         ? isDark
           ? "text-zinc-200 hover:bg-white/10 active:scale-95"

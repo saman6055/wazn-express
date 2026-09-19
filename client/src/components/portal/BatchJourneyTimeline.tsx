@@ -6,7 +6,8 @@ import {
   Warehouse,
   Landmark,
   Plane,
-  Ship,  PackageCheck,
+  Ship,
+  PackageCheck,
   CheckCircle2,
   type LucideIcon,
 } from "lucide-react";
@@ -173,7 +174,11 @@ export function BatchJourneyTimeline({
   const showEta = eta && current < 2;
 
   return (
-    <div className={cn("select-none", className)}>
+    // A container, so the stage names can step aside on a narrow card: six
+    // 48px columns need 288px, and a 320px phone gives the card 256 — the
+    // names ran into each other ("لە گومرگ لە کۆگای"). Below that only the
+    // stage the shipment is at keeps its name; the card's heading says it too.
+    <div className={cn("@container select-none", className)}>
       <div className="flex items-start">
         {stages.map((stage, i) => {
           const state = i < current ? "done" : i === current ? "active" : "pending";
@@ -210,6 +215,7 @@ export function BatchJourneyTimeline({
                 <span
                   className={cn(
                     "mt-1.5 text-center text-[11px] font-semibold leading-tight",
+                    state !== "active" && "hidden @[18rem]:block",
                     state === "done" && "text-emerald-600 dark:text-emerald-400",
                     state === "active" &&
                       (shippingType === "sea"
@@ -224,6 +230,7 @@ export function BatchJourneyTimeline({
                   <span
                     className={cn(
                       "mt-0.5 text-[11px] font-mono tabular-nums",
+                      state !== "active" && "hidden @[18rem]:block",
                       isDark ? "text-slate-500" : "text-slate-400",
                     )}
                     dir="ltr"

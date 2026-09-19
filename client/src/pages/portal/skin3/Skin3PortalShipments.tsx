@@ -536,7 +536,7 @@ export default function Skin3PortalShipments() {
                                 )}
                               >
                                 <Calendar className="w-3.5 h-3.5" strokeWidth={2.5} />
-                                {formatPortalDate(batch.createdAt, language)}
+                                <bdi dir="ltr">{formatPortalDate(batch.createdAt, language)}</bdi>
                               </span>
                             </div>
 
@@ -548,7 +548,7 @@ export default function Skin3PortalShipments() {
                                 )}
                               >
                                 {pickLang(language, { ku: "گەیشتنی چاوەڕوانکراو:", en: "ETA:", ar: "الوصول المتوقع:", zh: "预计到达：" })}{" "}
-                                {formatPortalDate(batch.estimatedArrival, language)}
+                                <bdi dir="ltr">{formatPortalDate(batch.estimatedArrival, language)}</bdi>
                               </p>
                             )}
                           </div>

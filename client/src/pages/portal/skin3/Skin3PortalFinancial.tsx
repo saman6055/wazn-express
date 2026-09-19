@@ -572,7 +572,7 @@ export default function Skin3PortalFinancial() {
                             isDark ? "text-white" : "text-zinc-900 dark:text-zinc-200"
                           )}
                         >
-                          {inv.invoiceNumber}
+                          <bdi dir="ltr">{inv.invoiceNumber}</bdi>
                         </p>
                         <p
                           className={cn(

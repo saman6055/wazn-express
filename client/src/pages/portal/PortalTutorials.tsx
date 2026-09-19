@@ -170,7 +170,7 @@ export default function PortalTutorials() {
             {!allLanguages && (
               <button
                 onClick={() => setAllLanguages(true)}
-                className="mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition active:scale-95 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300"
+                className="relative tap-44 mt-3 inline-flex items-center gap-1.5 rounded-full border border-sky-200 bg-sky-50 px-3 py-1.5 text-xs font-medium text-sky-700 transition active:scale-95 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-300"
               >
                 <Languages className="h-3.5 w-3.5" />
                 {label({
@@ -245,7 +245,7 @@ export default function PortalTutorials() {
           >
             <div className="flex items-center justify-between gap-2 p-3 border-b border-black/10 dark:border-white/10">
               <p className="text-sm font-semibold truncate">{title(playing)}</p>
-              <button onClick={() => setPlaying(null)} className="shrink-0 rounded-lg p-1.5 hover:bg-black/5 dark:hover:bg-white/10">
+              <button onClick={() => setPlaying(null)} className="relative tap-44 shrink-0 rounded-lg p-1.5 hover:bg-black/5 dark:hover:bg-white/10">
                 <X className="h-5 w-5" />
               </button>
             </div>

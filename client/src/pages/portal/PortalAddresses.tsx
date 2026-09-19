@@ -214,7 +214,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
             <Button
               onClick={openNewDialog}
               size="sm"
-              className="bg-white/10 hover:bg-white/20 text-white"
+              className="relative tap-44 bg-white/10 hover:bg-white/20 text-white"
             >
               <Plus className="h-4 w-4 me-1" />
               {pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
@@ -292,7 +292,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                       
                       <div className="flex items-center gap-2 text-sm text-slate-600 dark:text-slate-300 mb-1">
                         <Phone className="h-4 w-4 text-slate-400" />
-                        {address.phone}
+                        <bdi dir="ltr">{address.phone}</bdi>
                       </div>
                       
                       <p className="text-sm text-slate-500 dark:text-slate-400">
