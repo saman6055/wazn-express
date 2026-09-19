@@ -73,9 +73,18 @@ export function PortalFinancialSkeleton() {
 
 /** Skeleton for search / tracking page */
 /** Skeleton for the search's answers: the three tabs, then a few cards. */
-export function PortalSearchResultsSkeleton({ rows = 4, tabs = true }: { rows?: number; tabs?: boolean }) {
+export function PortalSearchResultsSkeleton({
+  rows = 4,
+  tabs = true,
+  className = "px-4 pt-3",
+}: {
+  rows?: number;
+  tabs?: boolean;
+  /** Its own padding, for a page that pads the list already. */
+  className?: string;
+}) {
   return (
-    <div className="space-y-3 px-4 pt-3">
+    <div className={cn("space-y-3", className)}>
       {tabs && (
         <div className="grid grid-cols-3 gap-1.5">
           <Skeleton className="h-14 rounded-xl" />

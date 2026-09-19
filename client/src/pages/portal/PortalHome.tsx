@@ -678,7 +678,7 @@ export default function PortalHome() {
             >
               <Package className={cn("mx-auto h-5 w-5", isDark ? "text-blue-300" : "text-blue-600 dark:text-blue-300")} />
               <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
-                {stagesLoading ? "…" : <AnimatedCounter value={stageCounts.registered} />}
+                {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.registered} />}
               </p>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
                 {pickLang(language, SEARCH_TAB_LABEL.registered)}
@@ -694,7 +694,7 @@ export default function PortalHome() {
             >
               <Plane className={cn("mx-auto h-5 w-5", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")} />
               <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")}>
-                {stagesLoading ? "…" : <AnimatedCounter value={stageCounts.onTheWay} />}
+                {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.onTheWay} />}
               </p>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-sky-300" : "text-sky-700 dark:text-sky-300")}>
                 {pickLang(language, SEARCH_TAB_LABEL.onTheWay)}
@@ -715,7 +715,7 @@ export default function PortalHome() {
             >
               <CheckCircle className={cn("mx-auto h-5 w-5", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")} />
               <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")}>
-                {stagesLoading ? "…" : <AnimatedCounter value={stageCounts.arrived} />}
+                {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.arrived} />}
               </p>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
                 {pickLang(language, SEARCH_TAB_LABEL.arrived)}

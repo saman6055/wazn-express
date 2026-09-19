@@ -26,6 +26,7 @@ import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalSearchCard } from "@/components/portal/PortalSearchCard";
+import { PortalSearchResultsSkeleton } from "@/components/portal/PortalListSkeleton";
 import { usePortalParcelSheet } from "@/components/portal/PortalParcelSheet";
 import { searchStatusTone, searchStatusWords } from "@/components/portal/portalSearchChip";
 import { fmtCount, fmtDims, fmtKg } from "@/lib/portalFormat";
@@ -393,11 +394,8 @@ const { t, language } = useLanguage();
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">
-            {[1, 2, 3].map(i => (
-              <Skeleton key={i} className={cn("h-32 w-full rounded-2xl", isDark && "bg-slate-800")} />
-            ))}
-          </div>
+          // Shaped like the compact cards that are coming.
+          <PortalSearchResultsSkeleton rows={3} tabs={false} className="" />
         ) : isError ? (
           <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : !packages || packages.length === 0 ? (

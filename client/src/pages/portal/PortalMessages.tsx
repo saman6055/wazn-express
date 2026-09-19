@@ -437,12 +437,15 @@ export default function PortalMessages() {
             )}>
               {/* Loading state */}
               {(getOrCreateChat.isPending || messagesQuery.isLoading) && (
-                <div className="flex flex-col items-center justify-center h-full gap-3">
-                  <Loader2 className="w-8 h-8 animate-spin text-purple-500 dark:text-purple-400" />
-                  <p className={cn(
-                    "text-sm",
-                    isDark ? "text-slate-400" : "text-slate-600"
-                  )}>
+                <div
+                  className="flex h-full flex-col justify-end gap-3 p-4"
+                  aria-busy="true"
+                >
+                  {/* Bubbles in the shape of a conversation, not a spinner. */}
+                  <Skeleton className="h-10 w-[62%] self-start rounded-2xl rounded-ss-md" />
+                  <Skeleton className="h-14 w-[70%] self-end rounded-2xl rounded-se-md" />
+                  <Skeleton className="h-10 w-[48%] self-start rounded-2xl rounded-ss-md" />
+                  <p className="sr-only">
                     {pickLang(language, { ku: "چاوەڕوانبە...", en: "Loading...", ar: "جارٍ التحميل...", zh: "加载中..." })}
                   </p>
                 </div>

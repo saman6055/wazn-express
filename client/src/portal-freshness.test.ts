@@ -50,11 +50,29 @@ describe("a live event refreshes what is on screen, not just the badges", () => 
 });
 
 describe("the office's changes reach an open tab", () => {
-  it("polls slowly, and never in a background tab", () => {
+  it("polls within seconds while the screen is open, and never in a background tab", () => {
+    // The owner's brief (2026-09-19): a payment or a scan shows within
+    // seconds, not a minute and a half. Twenty seconds, accepted with its
+    // cost; not faster, which would only load the server.
     expect(PORTAL_LIVE_QUERY.refetchIntervalInBackground).toBe(false);
-    expect(PORTAL_LIVE_QUERY.refetchInterval).toBeGreaterThanOrEqual(60_000);
+    expect(PORTAL_LIVE_QUERY.refetchInterval).toBeLessThanOrEqual(20_000);
+    expect(PORTAL_LIVE_QUERY.refetchInterval).toBeGreaterThanOrEqual(15_000);
     expect(PORTAL_LIVE_QUERY.staleTime).toBeLessThan(PORTAL_LIVE_QUERY.refetchInterval);
     expect(PORTAL_SETTINGS_QUERY.staleTime).toBeLessThanOrEqual(60_000);
+  });
+
+  it("a list still loading looks like what is coming, not a spinner", () => {
+    expect(read("pages/portal/PortalBatchDetail.tsx")).toContain(
+      '<PortalSearchResultsSkeleton rows={3} tabs={false} className="" />',
+    );
+    expect(read("pages/portal/PortalHome.tsx")).toContain(
+      '{stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" />',
+    );
+    const chat = read("pages/portal/PortalMessages.tsx");
+    const loading = chat.slice(chat.indexOf("{/* Loading state */}"), chat.indexOf("{/* Loading state */}") + 700);
+    expect(loading.length).toBeGreaterThan(100);
+    expect(loading).toContain("<Skeleton");
+    expect(loading).not.toContain("animate-spin");
   });
 
   const MUST_BE_LIVE: Array<[string, string[]]> = [

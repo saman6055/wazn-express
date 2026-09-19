@@ -13,8 +13,12 @@
  *
  *  - LIVE: anything the office edits during the day — balance, ledger,
  *    batch and parcel status, boxes, orders, claims, prohibited decisions,
- *    notifications. Refetched on a slow interval while the tab is visible,
- *    never in a background tab.
+ *    notifications. Refetched every twenty seconds while the screen is open,
+ *    never in a background tab. It was ninety: a payment recorded at the
+ *    counter took up to a minute and a half to reach the customer's phone.
+ *    The owner's brief (2026-09-19) asked for seconds, and accepted the cost
+ *    — about four times the portal's requests, and only from screens that
+ *    are actually open.
  *  - SETTINGS: admin configuration that changes rarely — price list,
  *    announcement. A minute is plenty.
  *
@@ -26,8 +30,8 @@
  * (payment recorded, batch status changed, box delivered).
  */
 export const PORTAL_LIVE_QUERY = {
-  staleTime: 30_000,
-  refetchInterval: 90_000,
+  staleTime: 10_000,
+  refetchInterval: 20_000,
   refetchIntervalInBackground: false,
 } as const;
 
