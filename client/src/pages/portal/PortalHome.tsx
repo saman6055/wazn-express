@@ -323,7 +323,11 @@ export default function PortalHome() {
   const hasDebt = isDebt(balance);
   const balanceText = fmtUsd(Math.abs(balance));
 
-  const rmbRate = priceList?.rates?.rmb != null && Number(priceList.rates.rmb) > 0 ? Number(priceList.rates.rmb) : null;
+  // The yuan the ticker shows is the price a customer buys yuan at — the one
+  // rate the office uses too (server/lib/sharedRmbRate) — and only while
+  // buying yuan is switched on in the Portal Center.
+  const { data: yuanInfo } = trpc.customerPortal.getYuanExchangeInfo.useQuery(undefined, PORTAL_SETTINGS_QUERY);
+  const yuanRate = yuanInfo?.enabled && Number(yuanInfo.rate) > 0 ? Number(yuanInfo.rate) : null;
   const iqdRate = priceList?.rates?.iqd != null && Number(priceList.rates.iqd) > 0 ? Number(priceList.rates.iqd) : null;
 
   const getStatusIcon = (status: string) => {
@@ -520,19 +524,29 @@ export default function PortalHome() {
           </div>
         </div>
 
-        {/* Currency ticker — admin-set rates; hidden entirely until set */}
-        {(rmbRate || iqdRate) && (
+        {/* Currency ticker. The yuan is the price of buying yuan from us and
+            opens the page where it is bought; one rate with the office's,
+            edited in Settings → Currency or the Portal Center. The dinar is
+            the office's IQD rate, when the price list shows it. Hidden
+            entirely until either is set; wraps rather than cutting a figure
+            off on a narrow phone. */}
+        {(yuanRate || iqdRate) && (
           <div className="px-4 mt-3">
             <div className={cn(
-              "flex items-center gap-2 overflow-hidden whitespace-nowrap rounded-xl border px-3 py-1.5 text-xs",
+              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-3 py-1.5 text-xs",
               isDark ? "border-sky-500/25 bg-sky-950/40 text-sky-300" : "border-sky-200 dark:border-sky-500/25 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
             )}>
               <Coins className="h-3.5 w-3.5 shrink-0" />
-              <span dir="ltr" className="tabular-nums">
-                {rmbRate ? `$1 = ¥${fmtNumber(rmbRate, 2)}` : ""}
-                {rmbRate && iqdRate ? "  •  " : ""}
-                {iqdRate ? `$100 = ${(iqdRate * 100).toLocaleString("en-US")} IQD` : ""}
-              </span>
+              {yuanRate && (
+                <Link href="/portal/yuan-exchange" className="relative tap-44 inline-flex items-center gap-1 font-semibold underline-offset-2 hover:underline">
+                  {pickLang(language, { ku: "کڕینی یوان:", en: "Buy yuan:", ar: "شراء اليوان:", zh: "购买人民币：" })}
+                  <bdi dir="ltr" className="tabular-nums">$1 = ¥{fmtNumber(yuanRate, 2)}</bdi>
+                </Link>
+              )}
+              {yuanRate && iqdRate && <span aria-hidden="true">•</span>}
+              {iqdRate && (
+                <bdi dir="ltr" className="tabular-nums">$100 = {(iqdRate * 100).toLocaleString("en-US")} IQD</bdi>
+              )}
             </div>
           </div>
         )}

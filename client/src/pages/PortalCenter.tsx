@@ -2244,6 +2244,8 @@ function YuanSettingsCard({ p, marketRate, onMarketRate }: { p: (v: L) => string
       toast.success(p({ ku: "پاشەکەوتکرا", en: "Saved", ar: "حُفظ", zh: "已保存" }));
       utils.portalCenter.getYuanSettings.invalidate();
       utils.customerPortal.getYuanExchangeInfo.invalidate();
+      // The same rate the office's screens read (server/lib/sharedRmbRate).
+      utils.exchangeRates.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -2283,8 +2285,17 @@ function YuanSettingsCard({ p, marketRate, onMarketRate }: { p: (v: L) => string
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
           <div className="space-y-1">
-            <Label className="text-xs">{p({ ku: "نرخی فرۆشتن (1 دۆلار = چەند یوان)", en: "Sell rate (CNY per 1 USD)", ar: "سعر البيع (يوان لكل دولار)", zh: "出售价（1美元兑人民币）" })}</Label>
+            <Label className="text-xs">{p({ ku: "نرخی یوان (1 دۆلار = چەند یوان)", en: "Yuan rate (CNY per 1 USD)", ar: "سعر اليوان (يوان لكل دولار)", zh: "人民币汇率（1美元兑人民币）" })}</Label>
             <Input type="number" min="0" step="0.01" value={form.rate} onChange={(e) => setForm({ ...form, rate: e.target.value })} className="font-mono font-bold" dir="ltr" />
+            {/* One rate for the whole business (owner, 2026-09-19). */}
+            <p className="text-[11px] leading-snug text-muted-foreground">
+              {p({
+                ku: "هەمان نرخی ڕێکخستنەکان ← دراوە. گۆڕینی لێرە ئەوێش دەگۆڕێت، و بە پێچەوانەوە.",
+                en: "The same rate as Settings → Currency: changing it here changes it there, and the other way round.",
+                ar: "نفس سعر الإعدادات ← العملة: تغييره هنا يغيّره هناك، والعكس.",
+                zh: "与“设置 → 货币”为同一汇率：此处修改即同步修改，反之亦然。",
+              })}
+            </p>
           </div>
           <div className="space-y-1">
             <Label className="text-xs">{p({ ku: "کەمترین بڕ ($) — بەتاڵ = بێ سنوور", en: "Min amount ($) — empty = none", ar: "الحد الأدنى ($) — فارغ = بلا حد", zh: "最低金额（$）——留空为不限" })}</Label>

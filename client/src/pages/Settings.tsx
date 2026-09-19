@@ -62,6 +62,8 @@ const [companyData, setCompanyData] = useState({
     onSuccess: () => {
       toast.success(t("settings.exchangeRateUpdated") || "Exchange rate updated");
       refetchRates();
+      // The RMB rate is the Portal Center's yuan rate too (server/lib/sharedRmbRate).
+      utils.portalCenter.getYuanSettings.invalidate();
       setIqdRate("");
       setRmbRate("");
     },
@@ -878,6 +880,15 @@ const [companyData, setCompanyData] = useState({
                           {t("settings.lastUpdated") || "Last updated"}: {new Date(currentRmbRate.createdAt).toLocaleDateString("en-GB")}
                         </p>
                       )}
+                      {/* One rate for the whole business (owner, 2026-09-19). */}
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {pickLang(language, {
+                          ku: "هەمان نرخی کڕینی یوانی پۆرتاڵە — لە سەنتەری پۆرتاڵیش دەگۆڕدرێت.",
+                          en: "Also the portal's yuan price — it can be changed from the Portal Center too.",
+                          ar: "وهو أيضاً سعر اليوان في البوابة — ويمكن تغييره من مركز البوابة أيضاً.",
+                          zh: "也是门户的人民币价格——也可以在门户中心修改。",
+                        })}
+                      </p>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="rmbRate">{t("settings.newRate") || "New Rate"}</Label>

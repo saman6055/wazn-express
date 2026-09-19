@@ -15,6 +15,7 @@ import { appLogger } from "../utils/logger";
 import { occasionsFor } from "@shared/occasions";
 import { milestoneReached, milestoneGreeting } from "@shared/milestones";
 import { getHijriOccasionDates } from "../services/hijriCalendar.service";
+import { yuanSettingsWithSharedRate } from "../lib/sharedRmbRate";
 
 /**
  * Photos a customer attaches, checked before they are stored.
@@ -612,7 +613,8 @@ export const customerPortalRouter = router({
 
     // ---- Yuan exchange (buy CNY with USD at the company's sell rate) ----
     getYuanExchangeInfo: protectedProcedure.query(async () => {
-      const s = await db.getYuanExchangeSettings();
+      // The one yuan rate the office also uses (lib/sharedRmbRate).
+      const s = await yuanSettingsWithSharedRate();
       return {
         enabled: s.enabled,
         rate: s.rate,
@@ -638,7 +640,8 @@ export const customerPortalRouter = router({
       }))
       .mutation(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
-        const settings = await db.getYuanExchangeSettings();
+        // Priced at the one shared rate — the number the customer was shown.
+        const settings = await yuanSettingsWithSharedRate();
         if (!settings.enabled) {
           throw new TRPCError({ code: "PRECONDITION_FAILED", message: "Yuan exchange is currently unavailable" });
         }

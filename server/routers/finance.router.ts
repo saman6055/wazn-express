@@ -9,7 +9,7 @@ import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
+import { cacheGetOrSet, cacheInvalidate, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const exchangeRatesRouter = router({
@@ -42,6 +42,11 @@ export const exchangeRatesRouter = router({
           entityId: rate.id,
           newValues: input,
         });
+        // The lists above were cached for five minutes, so an order form kept
+        // converting at the old rate after it changed. The RMB rate is also
+        // the portal's yuan price now (lib/sharedRmbRate): the change must be
+        // seen at once everywhere.
+        cacheInvalidate(["exchangeRates:all", `exchangeRate:${input.targetCurrency}`]);
         return rate;
       }),
 });

@@ -9,6 +9,7 @@ import { FEATURES, isKnownFeature } from "@shared/customerFeatures";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import * as db from "../db";
 import { linkDeclaredParcel } from "../lib/linkDeclaredParcel";
+import { recordRmbRateFromPortalCenter, yuanSettingsWithSharedRate } from "../lib/sharedRmbRate";
 import { DECLARED_LINK_REFUSAL_MESSAGE } from "@shared/declaredLink";
 
 const ANNOUNCEMENT_KEY = "portal_announcement";
@@ -519,7 +520,7 @@ export const portalCenterRouter = router({
 
   // ---- Yuan exchange (portal "buy CNY" section) ----
   getYuanSettings: adminProcedure.query(async () => {
-    return db.getYuanExchangeSettings();
+    return yuanSettingsWithSharedRate();
   }),
 
   setYuanSettings: adminProcedure
@@ -534,6 +535,10 @@ export const portalCenterRouter = router({
       noteZh: z.string().max(500).default(""),
     }))
     .mutation(async ({ input, ctx }) => {
+      // The rate is the business's one RMB rate (owner, 2026-09-19): a change
+      // here is a new entry in the office's list — seen at once in Settings →
+      // Currency, on the order forms, and on the customer's yuan page.
+      await recordRmbRateFromPortalCenter(input.rate, ctx.user);
       await db.setYuanExchangeSettings(input, ctx.user.id);
       return { ok: true };
     }),
