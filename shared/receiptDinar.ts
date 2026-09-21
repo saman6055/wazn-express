@@ -31,11 +31,21 @@ export const DINAR_ROUND_STEPS = [1, 250, 1000] as const;
 export type DinarRoundStep = (typeof DINAR_ROUND_STEPS)[number];
 export const DEFAULT_DINAR_ROUND_STEP: DinarRoundStep = 250;
 
+/**
+ * Which way the step is taken (owner, 2026-09-21): to the nearer of the two,
+ * or downwards — the remainder dropped, never asking the customer for more
+ * than the sum. "Without a remainder": 150,250 becomes 150,000.
+ */
+export const DINAR_ROUND_MODES = ["nearest", "down"] as const;
+export type DinarRoundMode = (typeof DINAR_ROUND_MODES)[number];
+export const DEFAULT_DINAR_ROUND_MODE: DinarRoundMode = "nearest";
+
 /** What the person printing chooses. */
 export interface ReceiptDinarInput {
   /** Dinars per dollar. */
   rate: number;
   step?: DinarRoundStep;
+  mode?: DinarRoundMode;
   /** Received by hand, never entered. Empty or zero means none. */
   advanceAmount?: number | null;
   advanceCurrency?: AdvanceCurrency;
@@ -45,6 +55,7 @@ export interface ReceiptDinarInput {
 export interface ReceiptDinar {
   rate: number;
   step: DinarRoundStep;
+  mode: DinarRoundMode;
   /** The dollar figure the receipt asks for. */
   totalUsd: number;
   /** That total in dinars, rounded once. */
@@ -62,9 +73,20 @@ function isStep(value: unknown): value is DinarRoundStep {
   return (DINAR_ROUND_STEPS as readonly unknown[]).includes(value);
 }
 
-export function roundDinars(amount: number, step: DinarRoundStep = DEFAULT_DINAR_ROUND_STEP): number {
+function isMode(value: unknown): value is DinarRoundMode {
+  return (DINAR_ROUND_MODES as readonly unknown[]).includes(value);
+}
+
+export function roundDinars(
+  amount: number,
+  step: DinarRoundStep = DEFAULT_DINAR_ROUND_STEP,
+  mode: DinarRoundMode = DEFAULT_DINAR_ROUND_MODE,
+): number {
   if (!Number.isFinite(amount)) return 0;
-  return Math.round(amount / step) * step;
+  // Downwards is a floor, not a rounding: 150,250 at a step of 1,000 is
+  // 150,000, and so is 150,999 — the remainder is dropped, whatever it was.
+  const steps = mode === "down" ? Math.max(0, Math.floor(amount / step)) : Math.round(amount / step);
+  return steps * step;
 }
 
 /** Null when there is no usable rate: the receipt then prints without dinars. */
@@ -73,22 +95,24 @@ export function receiptDinar(totalUsd: number, input: ReceiptDinarInput | null |
   if (!input || !Number.isFinite(rate) || rate <= 0) return null;
 
   const step = isStep(input.step) ? input.step : DEFAULT_DINAR_ROUND_STEP;
+  const mode = isMode(input.mode) ? input.mode : DEFAULT_DINAR_ROUND_MODE;
   const total = Math.max(0, round2(Number(totalUsd) || 0));
   const currency: AdvanceCurrency = input.advanceCurrency === "USD" ? "USD" : "IQD";
   const raw = Number(input.advanceAmount);
   const amount = Number.isFinite(raw) && raw > 0 ? (currency === "USD" ? round2(raw) : Math.round(raw)) : 0;
   const advance = amount > 0 ? { amount, currency } : null;
-  const totalIqd = roundDinars(total * rate, step);
+  const totalIqd = roundDinars(total * rate, step, mode);
 
   if (advance?.currency === "USD") {
     // Never below zero: an advance bigger than the box is the account's
     // business, not change to hand back at the door.
     const dueUsd = Math.max(0, round2(total - advance.amount));
-    return { rate, step, totalUsd: total, totalIqd, advance, dueUsd, dueIqd: roundDinars(dueUsd * rate, step) };
+    return { rate, step, mode, totalUsd: total, totalIqd, advance, dueUsd, dueIqd: roundDinars(dueUsd * rate, step, mode) };
   }
   return {
     rate,
     step,
+    mode,
     totalUsd: total,
     totalIqd,
     advance,

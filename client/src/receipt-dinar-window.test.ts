@@ -42,8 +42,16 @@ describe("the window", () => {
   it("says when to round and when not: cash to 250, an electronic payment exact", () => {
     // Owner: FIB, Qi, ZainCash, AsiaPay… can pay any amount — one general name.
     expect(dialog).toContain('exact: { ku: "وەک خۆی — پارەدانی ئەلیکترۆنی"');
-    expect(dialog).toContain("<p className=\"text-xs text-muted-foreground\">{L(TXT.roundingHint)}</p>");
+    expect(dialog).toContain("{mode === \"down\" ? L(TXT.noRemainderHint) : L(TXT.roundingHint)}");
     expect(dialog).toContain('<SelectItem value="1">{L(TXT.exact)}</SelectItem>');
+  });
+
+  it("offers dinars without a remainder, and remembers it beside the step", () => {
+    // Owner, 2026-09-21: 150,250 is asked for as 150,000.
+    expect(dialog).toContain('<SelectItem value={`1000${ROUNDING_DOWN}`}>{L(TXT.noRemainder)}</SelectItem>');
+    expect(dialog).toContain("mode, advanceAmount: Number(advance) || null");
+    expect(dialog).toContain("rememberChoice({ rate: input.rate, at: Date.now(), step, mode })");
+    expect(dialog).toContain("setMode(isMode(saved.mode) ? saved.mode : DEFAULT_DINAR_ROUND_MODE);");
   });
 
   it("saves nothing: no mutation, and the advance is never remembered", () => {

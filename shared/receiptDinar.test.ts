@@ -53,6 +53,41 @@ describe("the receipt in dinars", () => {
     expect(receiptDinar(142.5, { rate: 1465, step: 1000 })!.totalIqd).toBe(209_000);
     expect(roundDinars(208_762.5, 250)).toBe(208_750);
   });
+});
+
+/**
+ * "Without a remainder" (owner, 2026-09-21): dinars with nothing left under
+ * the thousand — 150,250 is asked for as 150,000. It is a floor, not a
+ * rounding: the customer is never asked for more than the sum.
+ */
+describe("dinars without a remainder", () => {
+  it("drops whatever sits under the step, never rounding up", () => {
+    expect(roundDinars(150_250, 1000, "down")).toBe(150_000);
+    expect(roundDinars(150_999, 1000, "down")).toBe(150_000);
+    expect(roundDinars(150_000, 1000, "down")).toBe(150_000);
+    // The nearest of the two would have asked for 1,000 dinars more.
+    expect(roundDinars(150_999, 1000)).toBe(151_000);
+  });
+
+  it("asks for nothing rather than for a negative", () => {
+    expect(roundDinars(400, 1000, "down")).toBe(0);
+    expect(roundDinars(-400, 1000, "down")).toBe(0);
+  });
+
+  it("takes the whole receipt down: the total and what is left to pay", () => {
+    const d = receiptDinar(142.5, { rate: 1465, step: 1000, mode: "down" })!;
+    expect(d.mode).toBe("down");
+    expect(d.totalIqd).toBe(208_000);
+    expect(d.dueIqd).toBe(208_000);
+    const withAdvance = receiptDinar(142.5, { rate: 1465, step: 1000, mode: "down", advanceAmount: 10, advanceCurrency: "USD" })!;
+    expect(withAdvance.dueUsd).toBe(132.5);
+    expect(withAdvance.dueIqd).toBe(194_000);
+  });
+
+  it("changes nothing for a receipt that did not ask for it", () => {
+    expect(receiptDinar(142.5, { rate: 1465 })!.mode).toBe("nearest");
+    expect(receiptDinar(142.5, { rate: 1465, mode: "sideways" as never })!.totalIqd).toBe(208_750);
+  });
 
   it("never asks for less than nothing", () => {
     expect(receiptDinar(10, { rate: 1465, advanceAmount: 50_000 })!.dueIqd).toBe(0);

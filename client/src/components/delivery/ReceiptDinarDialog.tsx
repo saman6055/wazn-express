@@ -17,7 +17,9 @@ import {
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
 import {
+  DEFAULT_DINAR_ROUND_MODE,
   DEFAULT_DINAR_ROUND_STEP,
+  DINAR_ROUND_MODES,
   DINAR_ROUND_STEPS,
   formatIqd,
   formatRate,
@@ -25,6 +27,7 @@ import {
   receiptDinar,
   type AdvanceCurrency,
   type DatedRate,
+  type DinarRoundMode,
   type DinarRoundStep,
   type ReceiptDinarInput,
 } from "@shared/receiptDinar";
@@ -63,6 +66,7 @@ interface Remembered {
   rate?: number;
   at?: number;
   step?: number;
+  mode?: string;
 }
 
 function recall(): Remembered {
@@ -84,6 +88,16 @@ function rememberChoice(value: Remembered): void {
 
 const isStep = (value: unknown): value is DinarRoundStep =>
   (DINAR_ROUND_STEPS as readonly unknown[]).includes(value);
+
+const isMode = (value: unknown): value is DinarRoundMode =>
+  (DINAR_ROUND_MODES as readonly unknown[]).includes(value);
+
+/**
+ * One value for the list: the step, with "-down" when the remainder is
+ * dropped rather than rounded to the nearer thousand.
+ */
+const ROUNDING_DOWN = "-down";
+const roundingValue = (step: DinarRoundStep, mode: DinarRoundMode) => `${step}${mode === "down" ? ROUNDING_DOWN : ""}`;
 
 const TXT = {
   title: { ku: "پێش چاپی وەسڵ", en: "Before printing the receipt", ar: "قبل طباعة الإيصال", zh: "打印收据前" },
@@ -123,6 +137,15 @@ const TXT = {
   },
   nearest250: { ku: "نزیکترین 250", en: "Nearest 250", ar: "أقرب 250", zh: "最接近 250" },
   nearest1000: { ku: "نزیکترین 1,000", en: "Nearest 1,000", ar: "أقرب 1,000", zh: "最接近 1,000" },
+  // Owner, 2026-09-21: dinars with nothing left under the thousand. Never
+  // upwards — the customer is not asked for more than the sum.
+  noRemainder: { ku: "بەبێ کەسر (1,000)", en: "Without a remainder (1,000)", ar: "بدون كسر (1,000)", zh: "舍去零头（1,000）" },
+  noRemainderHint: {
+    ku: "کەسری خوار 1,000 دەکەوێتەوە: 150,250 دەبێتە 150,000",
+    en: "Anything under 1,000 is dropped: 150,250 becomes 150,000",
+    ar: "يُسقط ما دون 1,000: 150,250 تصبح 150,000",
+    zh: "舍去 1,000 以下的零头：150,250 变为 150,000",
+  },
   print: { ku: "چاپ", en: "Print", ar: "طباعة", zh: "打印" },
   cancel: { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" },
 } as const;
@@ -143,6 +166,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const [advance, setAdvance] = useState("");
   const [currency, setCurrency] = useState<AdvanceCurrency>("IQD");
   const [step, setStep] = useState<DinarRoundStep>(DEFAULT_DINAR_ROUND_STEP);
+  const [mode, setMode] = useState<DinarRoundMode>(DEFAULT_DINAR_ROUND_MODE);
 
   // Fresh for every receipt: the advance empty, dinars selected, the
   // rounding as last chosen on this device.
@@ -153,6 +177,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     setCurrency("IQD");
     setRateTouched(false);
     setStep(isStep(saved.step) ? saved.step : DEFAULT_DINAR_ROUND_STEP);
+    setMode(isMode(saved.mode) ? saved.mode : DEFAULT_DINAR_ROUND_MODE);
   }, [request]);
 
   // The rate offered: the newer of the last one printed on this device and
@@ -169,13 +194,13 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
 
   const input: ReceiptDinarInput | null =
     Number(rate) > 0
-      ? { rate: Number(rate), step, advanceAmount: Number(advance) || null, advanceCurrency: currency }
+      ? { rate: Number(rate), step, mode, advanceAmount: Number(advance) || null, advanceCurrency: currency }
       : null;
   const figures = request ? receiptDinar(request.totalUsd, input) : null;
 
   const confirm = () => {
     if (!request) return;
-    if (input) rememberChoice({ rate: input.rate, at: Date.now(), step });
+    if (input) rememberChoice({ rate: input.rate, at: Date.now(), step, mode });
     const print = request.onConfirm;
     onClose();
     print(input);
@@ -273,7 +298,16 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
 
           <div className="space-y-1.5">
             <Label>{L(TXT.rounding)}</Label>
-            <Select value={String(step)} onValueChange={(v) => { const n = Number(v); if (isStep(n)) setStep(n); }}>
+            <Select
+              value={roundingValue(step, mode)}
+              onValueChange={(v) => {
+                const down = v.endsWith(ROUNDING_DOWN);
+                const n = Number(down ? v.slice(0, -ROUNDING_DOWN.length) : v);
+                if (!isStep(n)) return;
+                setStep(n);
+                setMode(down ? "down" : "nearest");
+              }}
+            >
               <SelectTrigger className="h-10 w-full">
                 <SelectValue />
               </SelectTrigger>
@@ -281,9 +315,10 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                 <SelectItem value="1">{L(TXT.exact)}</SelectItem>
                 <SelectItem value="250">{L(TXT.nearest250)}</SelectItem>
                 <SelectItem value="1000">{L(TXT.nearest1000)}</SelectItem>
+                <SelectItem value={`1000${ROUNDING_DOWN}`}>{L(TXT.noRemainder)}</SelectItem>
               </SelectContent>
             </Select>
-            <p className="text-xs text-muted-foreground">{L(TXT.roundingHint)}</p>
+            <p className="text-xs text-muted-foreground">{mode === "down" ? L(TXT.noRemainderHint) : L(TXT.roundingHint)}</p>
           </div>
 
           {/* The receipt's own lines, in its order (dinarRowsHtml). */}
