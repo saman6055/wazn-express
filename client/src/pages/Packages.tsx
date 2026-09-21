@@ -58,6 +58,7 @@ import { fmtDate } from "@/lib/numericDate";
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { billingUnit } from "@shared/batchRate";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
+import { repriceIsGood, repriceWords, type RepriceReport } from "@shared/parcelReprice";
 import { readPackagesLink } from "@shared/listLinks";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel";
@@ -577,8 +578,24 @@ const [, setLocation] = useLocation();
     setNewStatus("");
     refetch();
   };
-  const onPackageUpdateSuccess = () => {
+  /**
+   * A correction says what it did to the price.
+   *
+   * The owner, 2026-09-21: a parcel entered with the wrong weight was
+   * corrected and the price did not move, with nothing on the screen to say
+   * why — so it looked broken, and the parcel was deleted and entered again.
+   * The server decides with one shared rule (@shared/parcelReprice) and sends
+   * its sentence here: a repricing is a quiet success, a refusal stays on the
+   * screen until it is read.
+   */
+  const onPackageUpdateSuccess = (result?: { pricing?: RepriceReport }) => {
     toast.success(t("packages.packageUpdated"));
+    const words = result?.pricing ? repriceWords(result.pricing) : null;
+    if (words) {
+      const sentence = pickLang(language, words);
+      if (repriceIsGood(result!.pricing!)) toast.success(sentence, { duration: 6000 });
+      else toast.warning(sentence, { duration: 12000 });
+    }
     setShowEditDialog(false);
     setSelectedPackage(null);
     refetch();

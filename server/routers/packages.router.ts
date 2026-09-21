@@ -14,6 +14,7 @@ import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, ba
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
 import { affectsCost } from "@shared/parcelCost";
+import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
 
 export const packagesRouter = router({
@@ -1655,33 +1656,47 @@ export const packagesRouter = router({
          *    means "not known", and blanking a good figure is worse than
          *    leaving it.
          */
+        let pricing: RepriceReport = { outcome: "untouched", wasUsd: null, nowUsd: null };
         if (affectsCost(data as Record<string, unknown>)) {
           const pkg = await db.getPackageById(id);
-          if (pkg && !pkg.isCharged && !pkg.isUnclaimed) {
-            const merged = { ...pkg, ...updateData };
-            const priced = await resolveParcelCost({
-              customerId: merged.customerId,
-              batchId: merged.batchId,
-              originWarehouseId: merged.originWarehouseId,
-              shippingType: merged.shippingType,
-              weightKg: merged.weightKg,
-              lengthCm: merged.lengthCm,
-              widthCm: merged.widthCm,
-              heightCm: merged.heightCm,
-              volumeCbm: merged.volumeCbm,
+          if (pkg) {
+            // Asked only when it can be answered: an unclaimed or an already
+            // charged parcel is decided without going near the pricing tables.
+            const priced = pkg.isUnclaimed || pkg.isCharged
+              ? null
+              : await resolveParcelCost({
+                  // The edit's own figures where it sent them, the parcel's
+                  // where it did not — including a customer it just changed,
+                  // whose agreed rate may differ from the one before.
+                  customerId: updateData.customerId ?? pkg.customerId,
+                  batchId: updateData.batchId !== undefined ? updateData.batchId : pkg.batchId,
+                  originWarehouseId: pkg.originWarehouseId,
+                  shippingType: updateData.shippingType ?? pkg.shippingType,
+                  weightKg: updateData.weightKg ?? pkg.weightKg,
+                  lengthCm: updateData.lengthCm ?? pkg.lengthCm,
+                  widthCm: updateData.widthCm ?? pkg.widthCm,
+                  heightCm: updateData.heightCm ?? pkg.heightCm,
+                  volumeCbm: updateData.volumeCbm ?? pkg.volumeCbm,
+                });
+            pricing = repriceReport({
+              isUnclaimed: pkg.isUnclaimed,
+              isCharged: pkg.isCharged,
+              wasUsd: pkg.calculatedCostUsd,
+              resolvedUsd: priced?.costUsd,
             });
-            if (priced.costUsd) {
+            if (shouldStoreNewPrice(pricing) && priced?.costUsd) {
               updateData.calculatedCostUsd = priced.costUsd;
               if (priced.pricingRuleId) updateData.appliedPricingRuleId = priced.pricingRuleId;
-              appLogger.info("[Pricing] Parcel repriced on edit", {
-                packageId: id,
-                from: pkg.calculatedCostUsd,
-                to: priced.costUsd,
-                rate: priced.rate,
-                unit: priced.unit,
-                source: priced.source,
-              });
             }
+            appLogger.info("[Pricing] Parcel price on edit", {
+              packageId: id,
+              outcome: pricing.outcome,
+              from: pkg.calculatedCostUsd,
+              to: pricing.nowUsd,
+              rate: priced?.rate,
+              unit: priced?.unit,
+              source: priced?.source,
+            });
           }
         }
 
@@ -1695,7 +1710,10 @@ export const packagesRouter = router({
           entityId: id,
           newValues: data,
         });
-        return { success: true };
+        // What the correction did to the price, in the words the screen
+        // shows — an edit that changes nothing must never do it silently
+        // (owner, 2026-09-21).
+        return { success: true, pricing };
       }),
     delete: adminProcedure
       .input(z.object({ id: z.number() }))

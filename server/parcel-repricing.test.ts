@@ -49,10 +49,11 @@ describe("correcting a parcel works its price out again", () => {
 
   it("feeds the resolver the corrected figures, not the ones on file", () => {
     // Reading the stored row and pricing that would recompute the same zero.
-    expect(update).toContain("const merged = { ...pkg, ...updateData };");
-    for (const f of ["weightKg", "lengthCm", "widthCm", "heightCm", "volumeCbm", "batchId", "customerId"]) {
-      expect(update, `${f} must come from the merged view`).toContain(`${f}: merged.${f}`);
+    for (const f of ["weightKg", "lengthCm", "widthCm", "heightCm", "volumeCbm", "customerId"]) {
+      expect(update, `${f} must come from the edit before the stored row`).toContain(`${f}: updateData.${f} ?? pkg.${f},`);
     }
+    // A batch can be removed by the edit, and null is an answer, not a gap.
+    expect(update).toContain("batchId: updateData.batchId !== undefined ? updateData.batchId : pkg.batchId,");
   });
 
   it("only when a fact behind the price actually moved", () => {
@@ -62,24 +63,27 @@ describe("correcting a parcel works its price out again", () => {
 
   it("never after the customer has been charged", () => {
     // That figure is on an invoice in somebody's hands. It gets corrected
-    // deliberately, not as a side effect of an edit.
-    expect(update).toContain("!pkg.isCharged");
+    // deliberately, not as a side effect of an edit. Since 2026-09-21 the
+    // refusal is spoken rather than silent — shared/parcelReprice.
+    expect(update).toContain("pkg.isUnclaimed || pkg.isCharged");
+    expect(update).toContain("isCharged: pkg.isCharged,");
   });
 
   it("never writes zero over a price that already exists", () => {
     // A rate that has gone missing means "not known". Blanking a good figure
     // is worse than leaving it.
-    expect(update).toContain("if (priced.costUsd) {");
-    const write = slice(update, "if (priced.costUsd) {", "appLogger.info", "cost write");
+    expect(update).toContain("if (shouldStoreNewPrice(pricing) && priced?.costUsd) {");
+    const write = slice(update, "if (shouldStoreNewPrice(pricing)", "appLogger.info", "cost write");
     expect(write).toContain("updateData.calculatedCostUsd = priced.costUsd;");
   });
 
   it("leaves it alone for an unclaimed parcel, which has nobody to bill", () => {
-    expect(update).toContain("!pkg.isUnclaimed");
+    expect(update).toContain("isUnclaimed: pkg.isUnclaimed,");
   });
 
   it("records the change, because it is money moving on its own", () => {
-    expect(update).toContain("Parcel repriced on edit");
+    expect(update).toContain("Parcel price on edit");
+    expect(update).toContain("outcome: pricing.outcome,");
   });
 });
 
