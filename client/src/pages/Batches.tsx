@@ -217,10 +217,21 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
    */
   const refreshBatchLists = () => {
     refetch();
-    trpcUtilsForAudit.batches.search.invalidate();
-    // A save may have added price-history rows (so may a delivery — the
-    // derived rate writes one); the box must not show yesterday's list.
-    trpcUtilsForAudit.batches.priceHistory.invalidate();
+    /**
+     * Everything a batch's screens work out — the money report's buying and
+     * selling rates, the profit per kg, the weight detail, the per-customer
+     * analysis, the manifest — is computed from the row just saved.
+     *
+     * Only the list was refreshed here, so a price corrected on a batch left
+     * the report showing the figures from before the correction, and the
+     * owner had no way to know which of the two was true (owner,
+     * 2026-09-21). The whole batch router goes stale instead: a save touches
+     * few enough screens that asking them again is cheaper than being wrong.
+     *
+     * A save may also have added price-history rows (so may a delivery — the
+     * derived rate writes one), and that box must not show yesterday's list.
+     */
+    trpcUtilsForAudit.batches.invalidate();
   };
 
   const onBatchCreateSuccess = () => {
