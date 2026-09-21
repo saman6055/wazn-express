@@ -304,6 +304,11 @@ export async function getPackageByTrackingNumber(trackingNumber: string): Promis
 }
 
 const DEFAULT_PAGE_SIZE = 50;
+/**
+ * How many matches a pre-query for the search may carry into the main one.
+ * A search for "2" must not build an IN list of every order ever placed.
+ */
+const SEARCH_MATCH_LIMIT = 500;
 
 export async function getAllPackages(options: {
   page?: number;
@@ -339,20 +344,42 @@ export async function getAllPackages(options: {
       ));
     const matchingCustomerIds = matchingCustomers.map(c => c.id);
 
+    /**
+     * The platform order number — staff check a parcel with the customer by
+     * it (owner, 2026-09-17) — through the parcel's own order or any order in
+     * its carton.
+     *
+     * Asked once here, not once per parcel. It was an EXISTS inside the where
+     * clause, so every row of `packages` scanned `fullPackageOrders` for a
+     * LIKE with no index to help it — in the count, and again for the page.
+     * Searching all parcels went from instant to a minute or never (owner,
+     * 2026-09-21). Two small questions up front give the same answer.
+     */
+    const matchingOrders = await db.select({ id: fullPackageOrders.id })
+      .from(fullPackageOrders)
+      .where(and(like(fullPackageOrders.orderNumber, searchTerm), isNull(fullPackageOrders.deletedAt)))
+      .limit(SEARCH_MATCH_LIMIT);
+    const matchingOrderIds = matchingOrders.map((o) => o.id);
+    const linkedPackageIds = matchingOrderIds.length
+      ? (await db.select({ packageId: packageOrderLinks.packageId })
+          .from(packageOrderLinks)
+          .where(inArray(packageOrderLinks.fullPackageOrderId, matchingOrderIds))
+          .limit(SEARCH_MATCH_LIMIT))
+          .map((l) => l.packageId)
+          .filter((id): id is number => id != null)
+      : [];
+
     const orConditions: any[] = [
       like(packages.trackingNumber, searchTerm),
       like(packages.packageCode, searchTerm),
       like(packages.description, searchTerm),
-      // The platform order number — staff check a parcel with the customer by
-      // it (owner, 2026-09-17) — through the parcel's own order or any order
-      // in its carton.
-      sql`EXISTS (
-        SELECT 1 FROM ${fullPackageOrders} spo
-        WHERE spo.orderNumber LIKE ${searchTerm} AND spo.deletedAt IS NULL
-          AND (spo.id = ${packages.fullPackageOrderId}
-            OR spo.id IN (SELECT spl.fullPackageOrderId FROM ${packageOrderLinks} spl WHERE spl.packageId = ${packages.id}))
-      )`,
     ];
+    if (matchingOrderIds.length > 0) {
+      orConditions.push(inArray(packages.fullPackageOrderId, matchingOrderIds));
+    }
+    if (linkedPackageIds.length > 0) {
+      orConditions.push(inArray(packages.id, linkedPackageIds));
+    }
     if (matchingCustomerIds.length > 0) {
       orConditions.push(inArray(packages.customerId, matchingCustomerIds));
     }
@@ -390,59 +417,60 @@ export async function getAllPackages(options: {
   }
   const dataWhereClause = dataConditions.length > 0 ? and(...dataConditions) : undefined;
   
-  // Get total count (full set, not filtered by cursor)
-  const countResult = await db.select({ count: count() }).from(packages).where(whereClause);
+  // The count and the page are asked at the same time: one after the other
+  // meant two full passes of the table in a row on every search.
+  const [countResult, data] = await Promise.all([
+    db.select({ count: count() }).from(packages).where(whereClause),
+    db.select({
+      id: packages.id,
+      packageCode: packages.packageCode,
+      trackingNumber: packages.trackingNumber,
+      customerId: packages.customerId,
+      originWarehouseId: packages.originWarehouseId,
+      batchId: packages.batchId,
+      fullPackageOrderId: packages.fullPackageOrderId,
+      packageOwnership: packages.packageOwnership,
+      categoryId: packages.categoryId,
+      isUnclaimed: packages.isUnclaimed,
+      weightKg: packages.weightKg,
+      lengthCm: packages.lengthCm,
+      widthCm: packages.widthCm,
+      heightCm: packages.heightCm,
+      volumeCbm: packages.volumeCbm,
+      shippingType: packages.shippingType,
+      description: packages.description,
+      photos: packages.photos,
+      calculatedCostUsd: packages.calculatedCostUsd,
+      status: packages.status,
+      createdAt: packages.createdAt,
+      updatedAt: packages.updatedAt,
+      // Who registered it and exactly when — the registrations view answers
+      // "who entered this and at what time", which createdAt alone can't.
+      registeredAt: packages.registeredAt,
+      registeredById: packages.registeredById,
+      registeredByName: users.name,
+      // Full package order type for display
+      orderType: fullPackageOrders.orderType,
+      // The order's own number — the table shows this, not the internal
+      // package code; a self-order parcel simply has none.
+      orderCode: fullPackageOrders.orderCode,
+      // The number the platform (Taobao/1688) gave the purchase. Two columns
+      // because both have been used over time; the screen shows whichever is
+      // filled, preferring the one the order forms write today.
+      platformOrderNumber: fullPackageOrders.orderNumber,
+      supplierOrderNumber: fullPackageOrders.supplierOrderNumber,
+  })
+      .from(packages)
+      .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
+      .leftJoin(users, eq(packages.registeredById, users.id))
+      .where(dataWhereClause)
+      .orderBy(desc(packages.id))
+      .limit(pageSize)
+      .offset(cursor != null ? 0 : offset),
+  ]);
   const total = countResult[0]?.count || 0;
   const totalPages = Math.ceil(total / pageSize);
-  
-  // Get paginated data (explicit columns only)
-  const data = await db.select({
-    id: packages.id,
-    packageCode: packages.packageCode,
-    trackingNumber: packages.trackingNumber,
-    customerId: packages.customerId,
-    originWarehouseId: packages.originWarehouseId,
-    batchId: packages.batchId,
-    fullPackageOrderId: packages.fullPackageOrderId,
-    packageOwnership: packages.packageOwnership,
-    categoryId: packages.categoryId,
-    isUnclaimed: packages.isUnclaimed,
-    weightKg: packages.weightKg,
-    lengthCm: packages.lengthCm,
-    widthCm: packages.widthCm,
-    heightCm: packages.heightCm,
-    volumeCbm: packages.volumeCbm,
-    shippingType: packages.shippingType,
-    description: packages.description,
-    photos: packages.photos,
-    calculatedCostUsd: packages.calculatedCostUsd,
-    status: packages.status,
-    createdAt: packages.createdAt,
-    updatedAt: packages.updatedAt,
-    // Who registered it and exactly when — the registrations view answers
-    // "who entered this and at what time", which createdAt alone can't.
-    registeredAt: packages.registeredAt,
-    registeredById: packages.registeredById,
-    registeredByName: users.name,
-    // Full package order type for display
-    orderType: fullPackageOrders.orderType,
-    // The order's own number — the table shows this, not the internal
-    // package code; a self-order parcel simply has none.
-    orderCode: fullPackageOrders.orderCode,
-    // The number the platform (Taobao/1688) gave the purchase. Two columns
-    // because both have been used over time; the screen shows whichever is
-    // filled, preferring the one the order forms write today.
-    platformOrderNumber: fullPackageOrders.orderNumber,
-    supplierOrderNumber: fullPackageOrders.supplierOrderNumber,
-  })
-    .from(packages)
-    .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
-    .leftJoin(users, eq(packages.registeredById, users.id))
-    .where(dataWhereClause)
-    .orderBy(desc(packages.id))
-    .limit(pageSize)
-    .offset(cursor != null ? 0 : offset);
-  
+
   const nextCursor = cursor != null && data.length === pageSize && data.length > 0 ? (data[data.length - 1] as { id: number }).id : undefined;
   return { data, total, page, pageSize, totalPages, nextCursor };
 }

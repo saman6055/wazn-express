@@ -129,10 +129,15 @@ describe("the server sends it", () => {
     expect(registrations).toContain("row.order?.orderNumber,");
   });
 
-  it("and the all-parcels search matches it too", () => {
+  it("and the all-parcels search matches it too — by both routes to an order", () => {
+    // Asked once each since 2026-09-21, not as an EXISTS run for every row of
+    // packages, which is what made that search unusable — see
+    // server/packages-search.test.ts.
     const list = slice("export async function getAllPackages", "if (status && status !== 'all')");
-    expect(list).toContain("spo.orderNumber LIKE ${searchTerm}");
-    expect(list).toContain("FROM ${packageOrderLinks} spl WHERE spl.packageId = ${packages.id}");
+    expect(list).toContain("like(fullPackageOrders.orderNumber, searchTerm)");
+    expect(list).toContain("inArray(packages.fullPackageOrderId, matchingOrderIds)");
+    expect(list).toContain(".from(packageOrderLinks)");
+    expect(list).toContain("inArray(packages.id, linkedPackageIds)");
   });
 
   it("with the arrival manifest, by both routes to an order", () => {
