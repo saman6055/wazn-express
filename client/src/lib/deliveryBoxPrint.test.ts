@@ -84,7 +84,7 @@ describe("no system advance on either receipt", () => {
     // panel shows it); nothing on paper reads it.
     expect(src).not.toMatch(/\.advanceAppliedUsd/);
     const a = src.indexOf("export function printBoxLabel");
-    const b = src.indexOf("export function printBoxReceipt");
+    const b = src.indexOf("export function buildBoxReceiptHtml");
     expect(a).toBeGreaterThan(-1);
     expect(b).toBeGreaterThan(a);
     const label = src.slice(a, b);
@@ -110,7 +110,7 @@ describe("the receipt in dinars", () => {
   };
 
   it("counts its dinars from the very dollar figure it prints", () => {
-    const receipt = between("export function printBoxReceipt", "export function downloadBoxReceiptPDF");
+    const receipt = between("export function buildBoxReceiptHtml", "export function downloadBoxReceiptPDF");
     expect(receipt).toContain("const dinar = receiptDinar(afterDiscountNum, options?.dinar);");
     expect(receipt).toContain('${dinar ? dinarRowsHtml(dinar, t) : ""}');
   });
@@ -119,7 +119,7 @@ describe("the receipt in dinars", () => {
     // receiptAmountUsd is what the window previews; the receipt's own line
     // is the same expression, so the two cannot drift apart.
     expect(between("export function receiptAmountUsd", "function dinarRowsHtml")).toContain("Math.max(0, grandTotalNum - discountNum)");
-    expect(between("export function printBoxReceipt", "export function downloadBoxReceiptPDF")).toContain("Math.max(0, grandTotalNum - discountNum)");
+    expect(between("export function buildBoxReceiptHtml", "export function downloadBoxReceiptPDF")).toContain("Math.max(0, grandTotalNum - discountNum)");
   });
 
   it("prints the lines in the order the owner approved", () => {
@@ -163,7 +163,7 @@ describe("the receipt in dinars", () => {
  */
 describe("a discounted box prints as a discounted box", () => {
   const receipt = () => {
-    const a = src.indexOf("export function printBoxReceipt");
+    const a = src.indexOf("export function buildBoxReceiptHtml");
     expect(a, "printBoxReceipt not found").toBeGreaterThan(-1);
     const b = src.indexOf("export function downloadBoxReceiptPDF", a);
     expect(b, "the receipt builder has moved").toBeGreaterThan(a);

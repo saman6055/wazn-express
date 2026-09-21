@@ -68,8 +68,10 @@ describe("every way into a receipt goes through it", () => {
     expect(panel).toContain("const handleDownloadReceiptPDF = (lang: Language) => askBeforePrinting(lang, downloadReceiptNow);");
     expect(panel).toContain("totalUsd: receiptAmountUsd(box, settlementForPrint)");
     expect(panel).toContain("<ReceiptDinarDialog request={receiptRequest}");
-    // Both outputs carry the choice to the paper.
-    expect(panel.match(/\n      dinar,\n/g)?.length).toBe(2);
+    // Every output carries the choice to the paper: print, PDF, and since
+    // 2026-09-21 the copy sent to the customer's WhatsApp.
+    expect(panel.match(/\n      dinar,\n/g)?.length).toBe(3);
+    expect(panel).toContain("const handleSendOnWhatsApp = () =>");
   });
 
   it("the box list's print", () => {

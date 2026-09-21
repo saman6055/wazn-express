@@ -180,6 +180,36 @@ export function receiptAmountUsd(
 }
 
 /**
+ * The house's electronic stamp, drawn on the receipt itself.
+ *
+ * The owner, 2026-09-21: the receipt that goes to the customer on WhatsApp
+ * must carry a Wazn Express stamp. It is drawn rather than uploaded — a seal
+ * made of lines prints crisply at any size, costs the file nothing, and
+ * cannot go missing the way an uploaded image once did.
+ *
+ * It names the box and the day it was issued, so the stamp belongs to this
+ * receipt and to no other, and it is written on every copy — the one printed
+ * at the counter and the one sent to the phone.
+ */
+function electronicStampHtml(boxCode: string): string {
+  const day = new Date();
+  const issued = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
+  return `
+          <div class="receipt-stamp">
+            <svg width="92" height="92" viewBox="0 0 104 104" xmlns="http://www.w3.org/2000/svg">
+              <circle cx="52" cy="52" r="47" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="2.5"/>
+              <circle cx="52" cy="52" r="40" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="1"/>
+              <text x="52" y="36" text-anchor="middle" textLength="62" lengthAdjust="spacingAndGlyphs" font-size="11" fill="${PRIMARY_COLOR}" font-family="Tahoma, Arial, sans-serif">وەزن ئێکسپرێس</text>
+              <line x1="24" y1="42" x2="80" y2="42" stroke="${PRIMARY_COLOR}" stroke-width="0.8"/>
+              <text x="52" y="55" text-anchor="middle" textLength="68" lengthAdjust="spacingAndGlyphs" font-size="12" fill="${PRIMARY_COLOR}" font-family="Arial, sans-serif">WAZN EXPRESS</text>
+              <line x1="24" y1="61" x2="80" y2="61" stroke="${PRIMARY_COLOR}" stroke-width="0.8"/>
+              <text x="52" y="72" text-anchor="middle" textLength="62" lengthAdjust="spacingAndGlyphs" font-size="9" fill="${PRIMARY_COLOR}" font-family="monospace">${escapeHtml(boxCode)}</text>
+              <text x="52" y="83" text-anchor="middle" textLength="42" lengthAdjust="spacingAndGlyphs" font-size="8" fill="${PRIMARY_COLOR}" font-family="monospace">${issued}</text>
+            </svg>
+          </div>`;
+}
+
+/**
  * The receipt's lines in dinars (shared/receiptDinar), in the order the owner
  * approved (2026-09-17, example 4).
  *
@@ -651,7 +681,7 @@ export function printBoxLabel(
 
 // ==================== RECEIPT TEMPLATE ====================
 
-export function printBoxReceipt(
+export function buildBoxReceiptHtml(
   box: BoxForPrint,
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
@@ -668,7 +698,7 @@ export function printBoxReceipt(
      *  printing. Absent, the receipt prints without dinars. */
     dinar?: ReceiptDinarInput | null;
   },
-): void {
+): string {
   // Direction follows the chosen receipt language (rtl for ku/ar, ltr for
   // en/zh). Defaults to rtl for back-compat with callers that don't pass it.
   const direction = options?.direction || 'rtl';
@@ -898,13 +928,26 @@ export function printBoxReceipt(
     }
     .signatures {
       display: flex;
+      align-items: flex-end;
       justify-content: space-between;
       margin-top: 10px;
       padding: 0 20px;
+      gap: 10px;
     }
     .signature-block {
       text-align: center;
-      width: 40%;
+      width: 34%;
+    }
+    /* The house's own mark on the paper (owner, 2026-09-21). Outline only —
+       a filled seal is a lot of ink for something said once. Tilted a little,
+       because a stamp that sits perfectly straight looks printed, not
+       stamped. */
+    .receipt-stamp {
+      flex-shrink: 0;
+      transform: rotate(-7deg);
+      opacity: 0.92;
+      -webkit-print-color-adjust: exact;
+      print-color-adjust: exact;
     }
     .signature-line-receipt {
       border-bottom: 1px solid #374151;
@@ -1066,6 +1109,7 @@ export function printBoxReceipt(
             <div class="signature-line-receipt"></div>
             <div class="signature-label">${t("delivery.staffSignature")}</div>
           </div>
+          ${electronicStampHtml(box.boxCode)}
           <div class="signature-block">
             <div class="signature-line-receipt"></div>
             <div class="signature-label">${t("delivery.customerSignature")}</div>
@@ -1083,6 +1127,24 @@ export function printBoxReceipt(
 </body>
 </html>`;
 
+  return html;
+}
+
+/**
+ * The receipt, on paper.
+ *
+ * The document itself is built by `buildBoxReceiptHtml`, which is also what
+ * the WhatsApp copy is drawn from — one receipt, whether it is printed at the
+ * counter or sent to a phone.
+ */
+export function printBoxReceipt(
+  box: BoxForPrint,
+  items: BoxItemForPrint[],
+  customer: CustomerForPrint | null,
+  t: TFunc,
+  options?: Parameters<typeof buildBoxReceiptHtml>[4],
+): void {
+  const html = buildBoxReceiptHtml(box, items, customer, t, options);
   const w = window.open("", "_blank");
   if (w) {
     w.document.write(html);

@@ -57,13 +57,44 @@ import {
   Pencil,
   Wallet,
   Unlock,
+  Send,
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
+import { receiptLanguageFor, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber } from "@shared/receiptWhatsApp";
+import { shareReceiptOnWhatsApp } from "@/lib/receiptShare";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
+
+/** What the counter is told after pressing "send on WhatsApp". */
+const SHARE_WORDS = {
+  shared: {
+    ku: "وەسڵەکە ئامادەیە — وەتسئاپ و کڕیارەکە هەڵبژێرە، تەنها Send ماوە",
+    en: "The receipt is ready — pick WhatsApp and the customer, then press Send",
+    ar: "الإيصال جاهز — اختر واتساب والزبون، ثم اضغط إرسال",
+    zh: "收据已就绪 — 选择 WhatsApp 和客户，然后按发送",
+  },
+  chatOpened: {
+    ku: "وەسڵەکە پاشەکەوت کرا و چاتی کڕیار کرایەوە — فایلەکە پێوە بکە و Send بکە",
+    en: "The receipt was saved and the customer's chat opened — attach the file and press Send",
+    ar: "حُفظ الإيصال وفُتحت محادثة الزبون — أرفق الملف ثم اضغط إرسال",
+    zh: "收据已保存并打开客户聊天 — 附上文件后按发送",
+  },
+  noNumber: {
+    ku: "وەسڵەکە پاشەکەوت کرا، بەڵام ئەم کڕیارە ژمارەی مۆبایلی نییە — چاتەکە خۆت بکەرەوە",
+    en: "The receipt was saved, but this customer has no mobile number — open the chat yourself",
+    ar: "حُفظ الإيصال، لكن لا يوجد رقم موبايل لهذا الزبون — افتح المحادثة بنفسك",
+    zh: "收据已保存，但该客户没有手机号 — 请自行打开聊天",
+  },
+  failed: {
+    ku: "وێنەی وەسڵەکە دروست نەبوو — هیچ نەنێردرا. تکایە چاپی وەسڵ بەکاربهێنە",
+    en: "The receipt picture could not be drawn — nothing was sent. Use print instead",
+    ar: "تعذّر إنشاء صورة الإيصال — لم يُرسل شيء. استخدم الطباعة بدلاً من ذلك",
+    zh: "无法生成收据图片 — 未发送任何内容。请改用打印",
+  },
+} as const;
 
 // Languages offered for the printable box receipt / PDF. Staff can print
 // any one regardless of the active UI language. Chinese is intentionally
@@ -77,7 +108,7 @@ const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 // slower, so it never auto-fires — Enter still submits it explicitly.
 const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
-import { printBoxLabel, printBoxReceipt, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
 import type { ReceiptDinarInput } from "@shared/receiptDinar";
 
@@ -144,6 +175,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const [isScanning, setIsScanning] = useState(false);
   const [editOpen, setEditOpen] = useState(false);
   const [payingOpen, setPayingOpen] = useState(false);
+  // Drawing the receipt takes a moment; the button says so rather than
+  // looking dead while it happens.
+  const [sharing, setSharing] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
   // Latest input value kept in a ref so submit reads the COMPLETE code even
   // when a scanner's trailing Enter fires before React re-renders (avoids the
@@ -568,7 +602,55 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       onConfirm: (dinar) => void output(lang, dinar),
     });
   };
+  /**
+   * The receipt on the customer's WhatsApp (owner, 2026-09-21).
+   *
+   * Same receipt, same window before it — the day's rate and any advance —
+   * and then the paper is drawn as a picture, put in a PDF, and handed to
+   * the share sheet with the message. The language is the customer's own,
+   * from the nationality chosen when they were created; nothing is asked,
+   * because there is nothing here the counter needs to decide.
+   */
+  const shareReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null) => {
+    await loadLocale(lang);
+    const [b, its, c] = buildReceiptPayload();
+    const html = buildBoxReceiptHtml(b, its, c, createTranslator(lang), {
+      direction: getLanguageDirection(lang),
+      logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
+      company: companyContact(company, lang),
+      settlement: settlementForPrint,
+      dinar,
+    });
+    const message = receiptWhatsAppMessage(receiptLanguageFor((customer as any)?.nationality), {
+      boxCode: box.boxCode,
+      parcelCount: box.totalPackages ?? items.length,
+      totalUsd: receiptAmountUsd(box, settlementForPrint),
+    });
+    const number = whatsappNumber(customer?.mobileNumber);
+    setSharing(true);
+    try {
+      const outcome = await shareReceiptOnWhatsApp({
+        html,
+        fileName: `${box.boxCode}.pdf`,
+        message,
+        chatUrl: number ? whatsappChatUrl(number, message) : null,
+      });
+      if (outcome === "shared") {
+        toast.success(pickLang(language, SHARE_WORDS.shared));
+      } else if (outcome === "chat_opened") {
+        toast.info(pickLang(language, number ? SHARE_WORDS.chatOpened : SHARE_WORDS.noNumber), { duration: 10000 });
+      } else if (outcome === "failed") {
+        toast.error(pickLang(language, SHARE_WORDS.failed), { duration: 10000 });
+      }
+    } finally {
+      setSharing(false);
+    }
+  };
+
   const handlePrintReceipt = (lang: Language) => askBeforePrinting(lang, printReceiptNow);
+  /** The customer's own language, so the receipt reads as their receipt. */
+  const handleSendOnWhatsApp = () =>
+    askBeforePrinting(receiptLanguageFor((customer as any)?.nationality) as Language, shareReceiptNow);
   const handleDownloadReceiptPDF = (lang: Language) => askBeforePrinting(lang, downloadReceiptNow);
 
   return (
@@ -1043,6 +1125,19 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               })}
             </DropdownMenuContent>
           </DropdownMenu>
+
+          {/* Straight to the customer's WhatsApp: same receipt, their own
+              language, the share sheet doing the attaching (owner, 2026-09-21). */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleSendOnWhatsApp}
+            disabled={sharing}
+            className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-300"
+          >
+            {sharing ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Send className="h-4 w-4 me-1" />}
+            {pickLang(language, { ku: "ناردنی وەسڵ", en: "Send receipt", ar: "إرسال الإيصال", zh: "发送收据" })}
+          </Button>
 
           {/* Download PDF — same language choice */}
           <DropdownMenu>
