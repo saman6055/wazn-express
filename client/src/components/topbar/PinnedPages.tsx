@@ -44,7 +44,10 @@ export function PinnedPages({ className }: { className?: string }) {
   return (
     <nav
       aria-label={pickLang(language, { ku: "بەشە سەرەکییەکان", en: "Main pages", ar: "الصفحات الرئيسية", zh: "主要页面" })}
-      className={cn("hidden items-center gap-0.5 lg:flex", className)}
+      // On a narrow window the names step aside and the icons stay: the
+      // owner wants these pages a tap away on a small screen too
+      // (2026-09-21). Below a phone's width the menu carries them.
+      className={cn("hidden items-center gap-0.5 sm:flex", className)}
     >
       {pins.map((pin) => {
         const active = isPinActive(location, pin.path);
@@ -53,14 +56,19 @@ export function PinnedPages({ className }: { className?: string }) {
             key={pin.path}
             href={pin.path}
             aria-current={active ? "page" : undefined}
+            title={pickLang(language, pin.label)}
+            aria-label={pickLang(language, pin.label)}
             className={cn(
-              "group relative flex h-9 items-center gap-1.5 rounded-lg px-2 text-[13px] font-semibold transition-colors xl:px-2.5",
+              // Narrower than a laptop the pills tighten — smaller name, less
+              // padding — rather than dropping their names: an icon with
+              // nothing written on it is no use to anyone (owner, 2026-09-17).
+              "group relative flex h-9 items-center gap-1 rounded-lg px-1.5 text-[11px] font-semibold transition-colors lg:gap-1.5 lg:px-2 lg:text-[13px] xl:px-2.5",
               active
                 ? "bg-background text-foreground shadow-sm ring-1 ring-border dark:bg-white/10"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground",
             )}
           >
-            <pin.icon className={cn("h-4 w-4 shrink-0 transition-colors", active ? "text-primary" : "group-hover:text-primary")} />
+            <pin.icon className={cn("h-3.5 w-3.5 shrink-0 transition-colors lg:h-4 lg:w-4", active ? "text-primary" : "group-hover:text-primary")} />
             <span className="whitespace-nowrap">{pickLang(language, pin.label)}</span>
             {/* The taskbar's line: long under the page you are on, a hint of it on hover. */}
             <span
