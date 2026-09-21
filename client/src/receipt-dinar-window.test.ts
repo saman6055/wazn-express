@@ -71,7 +71,7 @@ describe("every way into a receipt goes through it", () => {
     // Every output carries the choice to the paper: print, PDF, and since
     // 2026-09-21 the copy sent to the customer's WhatsApp.
     expect(panel.match(/\n      dinar,\n/g)?.length).toBe(3);
-    expect(panel).toContain("const handleSendOnWhatsApp = () =>");
+    expect(panel).toContain("const handleSendOnWhatsApp = (format: ReceiptShareFormat) =>");
   });
 
   it("the box list's print", () => {

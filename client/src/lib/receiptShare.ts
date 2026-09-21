@@ -1,4 +1,4 @@
-import { jpegDataUrlToPdfFile } from "./imagePdf";
+import { dataUrlToBytes, jpegDataUrlToPdfFile } from "./imagePdf";
 
 /**
  * Sending the receipt to the customer on WhatsApp (owner, 2026-09-21).
@@ -24,8 +24,18 @@ import { jpegDataUrlToPdfFile } from "./imagePdf";
 
 /** Roughly A4's width in CSS pixels, so the receipt lays out as it prints. */
 const A4_WIDTH_PX = 794;
-/** Twice the size, so the text is still sharp on a phone that zooms in. */
-const SHARPNESS = 2;
+/**
+ * How many pixels are drawn per CSS pixel.
+ *
+ * Twice over for the PDF, which a viewer can zoom into by itself; three times
+ * for the picture, because WhatsApp compresses a photo on its way out and a
+ * sharper original is what survives that (owner, 2026-09-21: "as an image
+ * too, and let the quality be good").
+ */
+const SHARPNESS = { pdf: 2, image: 3 } as const;
+
+/** What the customer receives: a document, or a picture in the chat. */
+export type ReceiptShareFormat = "pdf" | "image";
 
 export type ReceiptShareOutcome =
   /** Handed to the share sheet: the admin picks the chat and presses Send. */
@@ -40,7 +50,9 @@ export type ReceiptShareOutcome =
 export interface ReceiptShareRequest {
   /** The receipt document, exactly as it would be printed. */
   html: string;
-  /** What the file is called: "BOX-20260921-002.pdf". */
+  /** A PDF to keep, or a picture that opens in the chat itself. */
+  format: ReceiptShareFormat;
+  /** The box's code; the extension follows the format. */
   fileName: string;
   /** The message that travels with it (shared/receiptWhatsApp). */
   message: string;
@@ -55,7 +67,10 @@ export interface ReceiptShareRequest {
  * written for a document of its own, and letting it loose in the app would
  * restyle the screen behind it.
  */
-async function receiptPicture(html: string): Promise<{ dataUrl: string; width: number; height: number }> {
+async function receiptPicture(
+  html: string,
+  sharpness: number,
+): Promise<{ dataUrl: string; width: number; height: number }> {
   const frame = document.createElement("iframe");
   frame.setAttribute("aria-hidden", "true");
   frame.style.cssText = `position:fixed;left:-10000px;top:0;width:${A4_WIDTH_PX}px;height:10px;border:0;opacity:0;`;
@@ -102,15 +117,15 @@ async function receiptPicture(html: string): Promise<{ dataUrl: string; width: n
     // the biggest thing on this path and no other screen needs it.
     const { toJpeg } = await import("html-to-image");
     const dataUrl = await toJpeg(body, {
-      quality: 0.92,
+      quality: 0.95,
       backgroundColor: "#ffffff",
-      pixelRatio: SHARPNESS,
+      pixelRatio: sharpness,
       width,
       height,
       // The frame is off to the left; the picture must not be.
       style: { margin: "0", left: "0", top: "0" },
     });
-    return { dataUrl, width: width * SHARPNESS, height: height * SHARPNESS };
+    return { dataUrl, width: width * sharpness, height: height * sharpness };
   } finally {
     frame.remove();
   }
@@ -128,12 +143,17 @@ function saveFile(file: File): void {
 }
 
 export async function shareReceiptOnWhatsApp(request: ReceiptShareRequest): Promise<ReceiptShareOutcome> {
+  const asImage = request.format === "image";
   let file: File;
   try {
-    const picture = await receiptPicture(request.html);
-    file = jpegDataUrlToPdfFile(picture.dataUrl, picture.width, picture.height, request.fileName, {
-      title: request.fileName.replace(/\.pdf$/i, ""),
-    });
+    const picture = await receiptPicture(request.html, asImage ? SHARPNESS.image : SHARPNESS.pdf);
+    file = asImage
+      ? new File([dataUrlToBytes(picture.dataUrl).slice().buffer as ArrayBuffer], `${request.fileName}.jpg`, {
+          type: "image/jpeg",
+        })
+      : jpegDataUrlToPdfFile(picture.dataUrl, picture.width, picture.height, `${request.fileName}.pdf`, {
+          title: request.fileName,
+        });
   } catch {
     return "failed";
   }

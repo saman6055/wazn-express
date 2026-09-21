@@ -75,10 +75,23 @@ describe("the file and the chat", () => {
 
 describe("the button at the counter", () => {
   it("sends the same receipt, in the customer's own language", () => {
-    expect(panel).toContain("const handleSendOnWhatsApp = () =>");
-    expect(panel).toContain("askBeforePrinting(receiptLanguageFor((customer as any)?.nationality) as Language, shareReceiptNow)");
+    expect(panel).toContain("const handleSendOnWhatsApp = (format: ReceiptShareFormat) =>");
+    expect(panel).toContain("askBeforePrinting(receiptLanguageFor((customer as any)?.nationality) as Language, (lang, dinar) =>");
     expect(panel).toContain("receiptWhatsAppMessage(receiptLanguageFor((customer as any)?.nationality), {");
-    expect(panel).toContain("fileName: `${box.boxCode}.pdf`");
+    expect(panel).toContain("fileName: box.boxCode,");
+  });
+
+  it("offers it as a PDF to keep or as a picture that opens in the chat", () => {
+    // The owner, after sending the first one: "as an image too, good quality".
+    expect(panel).toContain('handleSendOnWhatsApp("pdf")');
+    expect(panel).toContain('handleSendOnWhatsApp("image")');
+    expect(share).toContain('const SHARPNESS = { pdf: 2, image: 3 } as const;');
+    expect(share).toContain('const asImage = request.format === "image";');
+    expect(share).toContain('`${request.fileName}.jpg`');
+    expect(share).toContain('`${request.fileName}.pdf`');
+    // A picture is compressed on its way through WhatsApp; the original is
+    // drawn large and saved at high quality so that survives.
+    expect(share).toContain("quality: 0.95,");
   });
 
   it("asks the day's rate first, like every other way to a receipt", () => {
