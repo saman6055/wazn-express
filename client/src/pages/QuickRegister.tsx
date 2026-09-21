@@ -23,6 +23,11 @@ import { PhotoStack } from "@/components/PhotoStack";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { CopyButton } from "@/components/CopyButton";
 
+/** Short enough to be half a number: not worth asking about yet. */
+const MIN_TRACKING_LOOKUP = 8;
+/** How long a pause in the typing means "that is the whole number". */
+const TRACKING_LOOKUP_PAUSE_MS = 800;
+
 export default function QuickRegister() {
   const systemAlert = useSystemAlert();
   const { t, language } = useTranslation();
@@ -128,8 +133,16 @@ export default function QuickRegister() {
   // Search tracking - use trpc client directly for manual search
   const trpcUtils = trpc.useUtils();
   
-  // Handle search - use ref to get latest tracking number
-  const handleTrackingSearch = async () => {
+  /**
+   * Look the tracking up. Quietly, when it runs by itself as the number is
+   * typed (owner, 2026-09-21): a quiet run still stops the person on a
+   * parcel already registered — that warning is the whole point of looking
+   * early — but it does not take the caret out of the tracking box, does not
+   * say "not found" for a number half typed, and does not cheer a match the
+   * person has not finished entering.
+   */
+  const handleTrackingSearch = async (opts?: { silent?: boolean }) => {
+    const silent = opts?.silent === true;
     const currentTracking = trackingRef.current?.value || trackingNumber;
     if (currentTracking.trim().length < 1) return;
 
@@ -216,30 +229,43 @@ export default function QuickRegister() {
               packageCode?: string | null;
               registeredAt?: Date | string | null;
               weightKg?: string | number | null;
+              calculatedCostUsd?: string | number | null;
             } | null;
             const when = already?.registeredAt ? new Date(already.registeredAt) : null;
+            /**
+             * What it was registered as — the weight and the price already
+             * charged for it. The owner asks for these here (2026-09-21):
+             * knowing the parcel is a duplicate is half the answer; the
+             * other half is whether the figures on it are the right ones.
+             */
+            const alreadyKg = Number(already?.weightKg);
+            const alreadyUsd = Number(already?.calculatedCostUsd);
+            const facts = [
+              Number.isFinite(alreadyKg) && alreadyKg > 0 ? `${alreadyKg} kg` : null,
+              Number.isFinite(alreadyUsd) && alreadyUsd > 0 ? `$${alreadyUsd.toFixed(2)}` : null,
+            ].filter(Boolean).join(" · ");
             systemAlert({
               kind: "warning",
               title: t("quickRegister.trackingAlreadyRegistered"),
               message: pickLang(language, {
                 ku: `ئەم پاکێجە پێشتر تۆمار کراوە${
                   result.customer?.customerCode ? ` بۆ ${result.customer.customerCode}` : ""
-                }${when ? ` لە ${when.toLocaleString("en-GB")}` : ""}. دووبارە تۆمارکردنی واتە دوو جار حیسابکردنی.`,
+                }${when ? ` لە ${when.toLocaleString("en-GB")}` : ""}${facts ? ` — ${facts}` : ""}. دووبارە تۆمارکردنی واتە دوو جار حیسابکردنی.`,
                 en: `This parcel is already registered${
                   result.customer?.customerCode ? ` to ${result.customer.customerCode}` : ""
-                }${when ? ` on ${when.toLocaleString("en-GB")}` : ""}. Registering it again means charging for it twice.`,
+                }${when ? ` on ${when.toLocaleString("en-GB")}` : ""}${facts ? ` — ${facts}` : ""}. Registering it again means charging for it twice.`,
                 ar: `هذا الطرد مسجل مسبقاً${
                   result.customer?.customerCode ? ` باسم ${result.customer.customerCode}` : ""
-                }${when ? ` بتاريخ ${when.toLocaleString("en-GB")}` : ""}. إعادة تسجيله تعني احتسابه مرتين.`,
+                }${when ? ` بتاريخ ${when.toLocaleString("en-GB")}` : ""}${facts ? ` — ${facts}` : ""}. إعادة تسجيله تعني احتسابه مرتين.`,
                 zh: `该包裹已登记${
                   result.customer?.customerCode ? `（${result.customer.customerCode}）` : ""
-                }${when ? `，时间 ${when.toLocaleString("en-GB")}` : ""}。再次登记会重复计费。`,
+                }${when ? `，时间 ${when.toLocaleString("en-GB")}` : ""}${facts ? `（${facts}）` : ""}。再次登记会重复计费。`,
               }),
               // The parcel's own code, not the tracking: it is what finds the
               // existing row, and the tracking is already on screen.
               detail: already?.packageCode || currentTracking.trim(),
             });
-          } else {
+          } else if (!silent) {
             soundManager.playFound();
             toast.success(
               <div className="flex items-center gap-2">
@@ -253,7 +279,7 @@ export default function QuickRegister() {
               </div>
             );
           }
-          setTimeout(() => {
+          if (!silent) setTimeout(() => {
             if (result.source === "package") {
               // A duplicate: the next thing to happen is the next parcel,
               // not the weight of this one. Putting the caret in the weight
@@ -284,8 +310,8 @@ export default function QuickRegister() {
           if (!categoryId && dm.categoryId) {
             setCategoryId(String(dm.categoryId));
           }
-          soundManager.playFound();
-          toast.success(
+          if (!silent) soundManager.playFound();
+          if (!silent) toast.success(
             <div className="flex items-center gap-2">
               <CheckCircle2 className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
               <div>
@@ -294,12 +320,13 @@ export default function QuickRegister() {
               </div>
             </div>
           );
-          setTimeout(() => {
+          if (!silent) setTimeout(() => {
             weightRef.current?.focus();
             weightRef.current?.select();
           }, 100);
         } else {
           setDeclaredMatch(null);
+          if (silent) return;
           // Not a toast. On a warehouse screen at arm's length a notice in
           // the corner is not read: the parcel goes on the shelf and nobody
           // learns it was never registered until the customer asks.
@@ -570,6 +597,20 @@ export default function QuickRegister() {
       clearTimeout(searchTimeout);
       setSearchTimeout(null);
     }
+    /**
+     * A number typed or pasted by hand is looked up when the typing stops.
+     *
+     * A scanner sends its own Enter and never waited for this. A person does
+     * not: they typed the number and went to the scales, and "this parcel is
+     * already registered" waited for the save to refuse it — after the
+     * weighing, the photograph and the customer (owner, 2026-09-21).
+     */
+    if (value.trim().length < MIN_TRACKING_LOOKUP) return;
+    const timer = setTimeout(() => {
+      setSearchTimeout(null);
+      void handleTrackingSearch({ silent: true });
+    }, TRACKING_LOOKUP_PAUSE_MS);
+    setSearchTimeout(timer);
   };
   
   const selectCustomer = (customer: any) => {
@@ -1024,7 +1065,7 @@ export default function QuickRegister() {
                       <Button
                         type="button"
                         size="lg"
-                        onClick={handleTrackingSearch}
+                        onClick={() => handleTrackingSearch()}
                         disabled={trackingNumber.trim().length < 1 || isSearching}
                         className="h-12 px-4 bg-amber-500 hover:bg-amber-600 text-white"
                       >
