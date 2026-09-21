@@ -21,6 +21,16 @@ export const BRAND_LOGO_URL = "/brand/wazn-logo.png";
 export const BRAND_LOGO_ON_DARK_URL = "/brand/wazn-logo-on-dark.png";
 
 /**
+ * The house's own stamp, the one on the office desk — photographed, lifted
+ * off the cardboard and kept in the build beside the mark (owner sent it,
+ * 2026-09-21: "let it be exactly like this, in blue").
+ *
+ * In the build rather than in uploads for the same reason as the mark: a
+ * redeploy without a mounted volume once took the uploads folder with it.
+ */
+export const BRAND_STAMP_URL = "/brand/wazn-stamp.png";
+
+/**
  * Which mark a coloured band should print — a receipt's green header, say.
  *
  * The owner's rule from September 2026 is that the mark sits straight on the

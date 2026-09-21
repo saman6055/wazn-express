@@ -6,7 +6,8 @@
 
 import { printWhenReady } from "./printWindow";
 import { escapeHtml } from "./html";
-import type { CompanyContact } from "./brand";
+import { BRAND_STAMP_URL, type CompanyContact } from "./brand";
+import { absoluteLogoUrl } from "./absoluteLogoUrl";
 import { formatIqd, formatRate, receiptDinar, type ReceiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
 
 export interface BoxForPrint {
@@ -180,32 +181,28 @@ export function receiptAmountUsd(
 }
 
 /**
- * The house's electronic stamp, drawn on the receipt itself.
+ * The house's own stamp on the receipt.
  *
- * The owner, 2026-09-21: the receipt that goes to the customer on WhatsApp
- * must carry a Wazn Express stamp. It is drawn rather than uploaded — a seal
- * made of lines prints crisply at any size, costs the file nothing, and
- * cannot go missing the way an uploaded image once did.
+ * The owner, 2026-09-21: the receipt that goes to the customer must carry the
+ * Wazn Express stamp — "exactly like this one, in blue" — and he sent a
+ * photograph of the stamp on his desk. It was lifted off the cardboard, its
+ * ink made one blue and the paper made transparent, and it lives in the build
+ * beside the mark (client/public/brand/wazn-stamp.png), never in uploads: a
+ * redeploy without a mounted volume once took that folder with it.
  *
- * It names the box and the day it was issued, so the stamp belongs to this
- * receipt and to no other, and it is written on every copy — the one printed
- * at the counter and the one sent to the phone.
+ * Drawn on every copy — the one printed at the counter and the one sent to
+ * the phone. The day it was issued is printed under it, so a stamped receipt
+ * says when it was stamped.
  */
-function electronicStampHtml(boxCode: string): string {
+function electronicStampHtml(): string {
+  const src = absoluteLogoUrl(BRAND_STAMP_URL);
+  if (!src) return "";
   const day = new Date();
   const issued = `${day.getFullYear()}-${String(day.getMonth() + 1).padStart(2, "0")}-${String(day.getDate()).padStart(2, "0")}`;
   return `
           <div class="receipt-stamp">
-            <svg width="92" height="92" viewBox="0 0 104 104" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="52" cy="52" r="47" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="2.5"/>
-              <circle cx="52" cy="52" r="40" fill="none" stroke="${PRIMARY_COLOR}" stroke-width="1"/>
-              <text x="52" y="36" text-anchor="middle" textLength="62" lengthAdjust="spacingAndGlyphs" font-size="11" fill="${PRIMARY_COLOR}" font-family="Tahoma, Arial, sans-serif">وەزن ئێکسپرێس</text>
-              <line x1="24" y1="42" x2="80" y2="42" stroke="${PRIMARY_COLOR}" stroke-width="0.8"/>
-              <text x="52" y="55" text-anchor="middle" textLength="68" lengthAdjust="spacingAndGlyphs" font-size="12" fill="${PRIMARY_COLOR}" font-family="Arial, sans-serif">WAZN EXPRESS</text>
-              <line x1="24" y1="61" x2="80" y2="61" stroke="${PRIMARY_COLOR}" stroke-width="0.8"/>
-              <text x="52" y="72" text-anchor="middle" textLength="62" lengthAdjust="spacingAndGlyphs" font-size="9" fill="${PRIMARY_COLOR}" font-family="monospace">${escapeHtml(boxCode)}</text>
-              <text x="52" y="83" text-anchor="middle" textLength="42" lengthAdjust="spacingAndGlyphs" font-size="8" fill="${PRIMARY_COLOR}" font-family="monospace">${issued}</text>
-            </svg>
+            <img src="${src}" alt="" class="receipt-stamp-img">
+            <div class="receipt-stamp-day">${issued}</div>
           </div>`;
 }
 
@@ -944,10 +941,22 @@ export function buildBoxReceiptHtml(
        stamped. */
     .receipt-stamp {
       flex-shrink: 0;
-      transform: rotate(-7deg);
-      opacity: 0.92;
+      text-align: center;
+      transform: rotate(-5deg);
       -webkit-print-color-adjust: exact;
       print-color-adjust: exact;
+    }
+    .receipt-stamp-img {
+      width: 86px;
+      height: 86px;
+      object-fit: contain;
+      display: block;
+    }
+    .receipt-stamp-day {
+      margin-top: -6px;
+      font-family: monospace;
+      font-size: 8px;
+      color: #1f2a6e;
     }
     .signature-line-receipt {
       border-bottom: 1px solid #374151;
@@ -1109,7 +1118,7 @@ export function buildBoxReceiptHtml(
             <div class="signature-line-receipt"></div>
             <div class="signature-label">${t("delivery.staffSignature")}</div>
           </div>
-          ${electronicStampHtml(box.boxCode)}
+          ${electronicStampHtml()}
           <div class="signature-block">
             <div class="signature-line-receipt"></div>
             <div class="signature-label">${t("delivery.customerSignature")}</div>

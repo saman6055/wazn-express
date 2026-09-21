@@ -32,15 +32,20 @@ describe("one receipt, two ways out", () => {
     expect(builder).toContain("return html;");
   });
 
-  it("carries the house's stamp, named for this box and this day", () => {
-    expect(print).toContain("function electronicStampHtml(boxCode: string): string {");
-    expect(print).toContain("${electronicStampHtml(box.boxCode)}");
+  it("carries the owner's own stamp, in the build, with the day under it", () => {
+    expect(print).toContain("function electronicStampHtml(): string {");
+    expect(print).toContain("${electronicStampHtml()}");
     const stamp = print.slice(print.indexOf("function electronicStampHtml"), print.indexOf("function dinarRowsHtml"));
-    expect(stamp).toContain("WAZN EXPRESS");
-    expect(stamp).toContain("وەزن ئێکسپرێس");
-    expect(stamp).toContain("escapeHtml(boxCode)");
-    // Drawn, not fetched: an uploaded mark has gone missing before.
-    expect(stamp).not.toContain("<img");
+    // His stamp, photographed and cleaned — not a drawing of one.
+    expect(stamp).toContain("absoluteLogoUrl(BRAND_STAMP_URL)");
+    expect(stamp).toContain('class="receipt-stamp-img"');
+    expect(stamp).toContain('class="receipt-stamp-day"');
+    // Absolute, or the print window fetches it against nothing.
+    expect(stamp).toContain('if (!src) return "";');
+    // In the build, never in uploads: that folder has vanished on a redeploy.
+    const brand = fs.readFileSync(path.join(SRC, "lib", "brand.ts"), "utf8");
+    expect(brand).toContain('export const BRAND_STAMP_URL = "/brand/wazn-stamp.png";');
+    expect(fs.existsSync(path.resolve(SRC, "..", "public", "brand", "wazn-stamp.png"))).toBe(true);
   });
 });
 
