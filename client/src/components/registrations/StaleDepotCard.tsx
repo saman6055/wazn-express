@@ -15,6 +15,7 @@ import { buildWhatsAppLink } from "@shared/volumetricAlert";
 import { AlertParcelSheet, type AlertParcel } from "@/components/registrations/AlertParcelSheet";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
+import type { ParcelOrderRef } from "@shared/parcelSource";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -36,6 +37,8 @@ type Stale = {
   registeredAt: Date | string | null;
   daysInDepot: number;
   orderNumbers?: string[];
+  /** The orders it belongs to: each number is then a door to its order. */
+  orders?: ParcelOrderRef[];
 };
 
 /** Where the whole list lives: this card on the registrations page, opened out. */
@@ -115,6 +118,7 @@ export function StaleDepotCard({ className, variant = "page" }: { className?: st
         weightKg: open.weightKg,
         daysInDepot: open.daysInDepot,
         orderNumbers: open.orderNumbers,
+        orders: open.orders ?? [],
       }
     : null;
 
@@ -193,7 +197,7 @@ export function StaleDepotCard({ className, variant = "page" }: { className?: st
                     </bdi>
                     <CopyButton value={r.trackingNumber ?? r.packageCode} label={label(COPY_TRACKING)} className="relative z-10" />
                   </span>
-                  <OrderNumbers numbers={r.orderNumbers} copyClassName="relative z-10" />
+                  <OrderNumbers numbers={r.orderNumbers} orders={r.orders} copyClassName="relative z-10" />
                 </span>
                 <span
                   title={label(RISK_LEVEL_LABEL[level])}

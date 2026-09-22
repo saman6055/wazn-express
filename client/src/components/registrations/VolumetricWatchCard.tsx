@@ -16,6 +16,7 @@ import { customerCodeOnly } from "@shared/customerCode";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { AlertParcelSheet, type AlertParcel } from "@/components/registrations/AlertParcelSheet";
+import type { ParcelOrderRef } from "@shared/parcelSource";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -45,6 +46,8 @@ type Parcel = {
   divisor: number;
   acknowledgedAt: string | Date | null;
   orderNumbers?: string[];
+  /** The orders it belongs to: each number is then a door to its order. */
+  orders?: ParcelOrderRef[];
 };
 
 /** Where the whole list lives: this card on the registrations page, opened out. */
@@ -169,6 +172,7 @@ export function VolumetricWatchCard({ className, variant = "page" }: { className
         extraKg: open.extraKg,
         ratio: open.ratio,
         orderNumbers: open.orderNumbers,
+        orders: open.orders ?? [],
       }
     : null;
 
@@ -251,7 +255,7 @@ export function VolumetricWatchCard({ className, variant = "page" }: { className
 
                 {/* The platform order number staff check with the customer by
                     (owner, 2026-09-17). */}
-                <OrderNumbers numbers={r.orderNumbers} className="mt-1 flex" copyClassName="relative z-10" />
+                <OrderNumbers numbers={r.orderNumbers} orders={r.orders} className="mt-1 flex" copyClassName="relative z-10" />
 
                 <div className="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 font-mono text-[11px]" dir="ltr">
                   <span className="flex items-center gap-3">

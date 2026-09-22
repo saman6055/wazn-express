@@ -31,7 +31,8 @@ import { createActivityAlert } from './admin.db';
 import { getUploadsDir } from '../services/localUpload';
 import { createCustomerNotification } from './portal.db';
 import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPackages.db';
-import { orderNumbersForPackages } from './orderNumbers.db';
+import { orderNumbersForPackages, orderSourcesForPackages } from './orderNumbers.db';
+import type { ParcelOrderRef } from '@shared/parcelSource';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -1502,6 +1503,8 @@ export type VolumetricParcel = {
   acknowledgedAt: Date | string | null;
   /** The platform order numbers of the orders in it, if any. */
   orderNumbers: string[];
+  /** The order this parcel is dealt with in — the alert links straight to it. */
+  orders: ParcelOrderRef[];
 };
 
 /**
@@ -1590,11 +1593,16 @@ export async function getVolumetricParcels(options: {
       alert: a.alert,
       acknowledgedAt: r.volumetricAckAt ?? null,
       orderNumbers: [],
+      orders: [],
     });
   }
 
-  const numbers = await orderNumbersForPackages(out.map((p) => p.id));
-  for (const parcel of out) parcel.orderNumbers = numbers.get(parcel.id) ?? [];
+  const ids = out.map((p) => p.id);
+  const [numbers, sources] = await Promise.all([orderNumbersForPackages(ids), orderSourcesForPackages(ids)]);
+  for (const parcel of out) {
+    parcel.orderNumbers = numbers.get(parcel.id) ?? [];
+    parcel.orders = sources.get(parcel.id) ?? [];
+  }
 
   // Biggest gap first: that is the order the conversations get difficult in.
   return out.sort((x, y) => y.extraKg - x.extraKg);
@@ -1959,6 +1967,8 @@ export type StaleDepotParcel = {
   daysInDepot: number;
   /** The platform order numbers of the orders in it, if any. */
   orderNumbers: string[];
+  /** The order this parcel is dealt with in — the alert links straight to it. */
+  orders: ParcelOrderRef[];
 };
 
 /**
@@ -1998,7 +2008,8 @@ export async function getStaleDepotPackages(options: { olderThanDays?: number } 
     .orderBy(asc(packages.registeredAt));
 
   const now = Date.now();
-  const numbers = await orderNumbersForPackages(rows.map((r) => r.id));
+  const ids = rows.map((r) => r.id);
+  const [numbers, sources] = await Promise.all([orderNumbersForPackages(ids), orderSourcesForPackages(ids)]);
   return rows.map((r) => ({
     ...r,
     shippingType: String(r.shippingType),
@@ -2006,6 +2017,7 @@ export async function getStaleDepotPackages(options: { olderThanDays?: number } 
       ? Math.max(0, Math.floor((now - new Date(r.registeredAt).getTime()) / 86_400_000))
       : 0,
     orderNumbers: numbers.get(r.id) ?? [],
+    orders: sources.get(r.id) ?? [],
   }));
 }
 

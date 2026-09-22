@@ -1,6 +1,7 @@
 import { and, inArray, isNull } from "drizzle-orm";
 import { getDb } from "./connection";
 import { fullPackageOrders, packageOrderLinks, packages } from "../../drizzle/schema";
+import type { ParcelOrderRef } from "@shared/parcelSource";
 
 /**
  * The platform order numbers behind parcels.
@@ -90,6 +91,75 @@ export async function orderNumbersForPackages(packageIds: readonly (number | nul
     for (const id of orderIds) {
       const number = numbers.get(id);
       if (number && !found.includes(number)) found.push(number);
+    }
+    if (found.length > 0) out.set(packageId, found);
+  });
+  return out;
+}
+
+/**
+ * Which order each parcel belongs to — the record a stuck parcel is actually
+ * dealt with in (owner, 2026-09-21).
+ *
+ * The same gathering as the order numbers above: the parcel's own order
+ * first, then the orders linked to its carton, the primary one before the
+ * rest. What comes back is enough to open the order's page without asking
+ * anything else: the id, which kind it is, its code and its platform number.
+ * Deleted orders say nothing. Read-only.
+ */
+export async function orderSourcesForPackages(
+  packageIds: readonly (number | null | undefined)[],
+): Promise<Map<number, ParcelOrderRef[]>> {
+  const out = new Map<number, ParcelOrderRef[]>();
+  const ids = cleanIds(packageIds);
+  if (ids.length === 0) return out;
+  const db = await getDb();
+  if (!db) return out;
+
+  const [mains, links] = await Promise.all([
+    db.select({ packageId: packages.id, orderId: packages.fullPackageOrderId }).from(packages).where(inArray(packages.id, ids)),
+    db
+      .select({ packageId: packageOrderLinks.packageId, orderId: packageOrderLinks.fullPackageOrderId, isPrimary: packageOrderLinks.isPrimary })
+      .from(packageOrderLinks)
+      .where(inArray(packageOrderLinks.packageId, ids)),
+  ]);
+
+  const ordersOf = new Map<number, number[]>();
+  const add = (packageId: number, orderId: number | null) => {
+    if (!orderId) return;
+    const list = ordersOf.get(packageId) ?? [];
+    if (!list.includes(orderId)) list.push(orderId);
+    ordersOf.set(packageId, list);
+  };
+  for (const main of mains) add(main.packageId, main.orderId);
+  for (const link of [...links].sort((a, b) => Number(b.isPrimary) - Number(a.isPrimary))) add(link.packageId, link.orderId);
+
+  const allOrderIds: number[] = [];
+  ordersOf.forEach((orderIds) => allOrderIds.push(...orderIds));
+  if (allOrderIds.length === 0) return out;
+
+  const rows = await db
+    .select({
+      id: fullPackageOrders.id,
+      orderType: fullPackageOrders.orderType,
+      orderCode: fullPackageOrders.orderCode,
+      orderNumber: fullPackageOrders.orderNumber,
+    })
+    .from(fullPackageOrders)
+    .where(and(inArray(fullPackageOrders.id, cleanIds(allOrderIds)), isNull(fullPackageOrders.deletedAt)));
+  const byId = new Map(rows.map((row) => [row.id, row]));
+
+  ordersOf.forEach((orderIds, packageId) => {
+    const found: ParcelOrderRef[] = [];
+    for (const id of orderIds) {
+      const row = byId.get(id);
+      if (!row) continue;
+      found.push({
+        orderId: row.id,
+        orderType: (row.orderType ?? "full_package") as ParcelOrderRef["orderType"],
+        orderCode: row.orderCode ?? null,
+        orderNumber: (row.orderNumber ?? "").trim() || null,
+      });
     }
     if (found.length > 0) out.set(packageId, found);
   });

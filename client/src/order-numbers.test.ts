@@ -22,7 +22,9 @@ describe("one way to show it", () => {
   const component = read("components/OrderNumbers.tsx");
 
   it("every number, each with its own copy button, nothing for a self order", () => {
-    expect(component).toContain("{list.map((number) => (");
+    // Since 2026-09-21 a number whose order is known is also a link to it;
+    // the shape is pinned in alert-to-record.test.ts.
+    expect(component).toContain("{list.map((number) => {");
     expect(component).toContain("<CopyButton value={number} label={copy} className={copyClassName} />");
     expect(component).toContain("if (list.length === 0) return null;");
   });
@@ -42,18 +44,18 @@ describe("one way to find it", () => {
 
 describe("the screens that show it", () => {
   it("the stuck-in-China card, under each tracking", () => {
-    expect(read("components/registrations/StaleDepotCard.tsx")).toContain('<OrderNumbers numbers={r.orderNumbers} copyClassName="relative z-10" />');
+    expect(read("components/registrations/StaleDepotCard.tsx")).toContain('<OrderNumbers numbers={r.orderNumbers} orders={r.orders} copyClassName="relative z-10" />');
   });
 
   it("the volumetric card", () => {
     expect(read("components/registrations/VolumetricWatchCard.tsx")).toContain(
-      '<OrderNumbers numbers={r.orderNumbers} className="mt-1 flex" copyClassName="relative z-10" />',
+      '<OrderNumbers numbers={r.orderNumbers} orders={r.orders} className="mt-1 flex" copyClassName="relative z-10" />',
     );
   });
 
   it("the parcel's details from either card", () => {
     const sheet = read("components/registrations/AlertParcelSheet.tsx");
-    expect(sheet).toContain("<OrderNumbers numbers={parcel.orderNumbers} bare");
+    expect(sheet).toContain("<OrderNumbers numbers={parcel.orderNumbers} orders={parcel.orders} bare");
     expect(read("components/registrations/StaleDepotCard.tsx")).toContain("orderNumbers: open.orderNumbers,");
     expect(read("components/registrations/VolumetricWatchCard.tsx")).toContain("orderNumbers: open.orderNumbers,");
   });

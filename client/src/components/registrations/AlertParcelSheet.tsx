@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
 import {
+  ArrowLeftRight,
   Boxes,
   CalendarDays,
   CheckCircle2,
@@ -35,6 +36,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { packagesHref } from "@shared/listLinks";
+import { parcelSourceTarget, type ParcelOrderRef } from "@shared/parcelSource";
 import { customerCodeOnly } from "@shared/customerCode";
 import { RISK_LEVEL_LABEL, type RiskLevel } from "@shared/riskRules";
 
@@ -65,6 +67,8 @@ export interface AlertParcel {
   ratio?: number;
   /** The platform order numbers of the orders in it. */
   orderNumbers?: string[] | null;
+  /** The order it is dealt with in — buy-at-cost, full package, or none. */
+  orders?: ParcelOrderRef[] | null;
 }
 
 const kg = (n: number | string | null | undefined) => {
@@ -130,6 +134,20 @@ export function AlertParcelSheet({
   const photos = dedupePhotos(detail?.photos).slice(0, 6);
   const history = ((historyQ.data ?? []) as Array<{ id: number; toStatus: string; changedAt: Date | string }>).slice(0, 8);
 
+  /**
+   * Where this parcel is actually dealt with (owner, 2026-09-21): its
+   * buy-at-cost order, its full-package order, or — with no order — its own
+   * row in the parcels list. One rule, shared/parcelSource, so every screen
+   * sends the same person to the same place.
+   */
+  const source = parcelSourceTarget(parcel?.orders, tracking);
+  const canSource =
+    source.kind === "commission"
+      ? canViewPath("/commission")
+      : source.kind === "parcel"
+        ? canViewPath("/packages/all")
+        : canViewPath("/full-package");
+
   const canCustomers = canViewPath("/customers") && !!parcel?.customerId;
   const canParcels = canViewPath("/packages/all");
   const canBatches = canViewPath("/batches");
@@ -163,7 +181,7 @@ export function AlertParcelSheet({
         key: "orderNumbers",
         icon: Hash,
         label: { ku: "ئۆردەر نەمبەر", en: "Order no.", ar: "رقم الطلب", zh: "订单号" },
-        value: <OrderNumbers numbers={parcel.orderNumbers} bare className="text-sm" />,
+        value: <OrderNumbers numbers={parcel.orderNumbers} orders={parcel.orders} bare className="text-sm" />,
       });
     }
     // The title already carries the tracking; the office's own code is the
@@ -342,6 +360,19 @@ export function AlertParcelSheet({
 
               {/* The way onward from here — each to where that job is done. */}
               <div className="grid grid-cols-2 gap-2">
+                {/* First, and across the row: the record this parcel lives in.
+                    A stuck buy-at-cost parcel is a question about that
+                    purchase, and the purchase is where the answer is. */}
+                {canSource && (
+                  <Link
+                    href={source.href}
+                    className={cn(action, "col-span-2 justify-center border-sky-300 bg-sky-50/60 font-semibold text-sky-800 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200")}
+                  >
+                    <ArrowLeftRight className="h-3.5 w-3.5" />
+                    {L(source.label)}
+                    {source.code && <bdi dir="ltr" className="font-mono text-[11px] opacity-80">{source.code}</bdi>}
+                  </Link>
+                )}
                 {canCustomers && (
                   <Link href={`/customers/${parcel.customerId}`} className={action}>
                     <User className="h-3.5 w-3.5" />
