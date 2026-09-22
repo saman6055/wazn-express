@@ -67,3 +67,30 @@ describe("every cell that stands for something opens it", () => {
     expect(page).toContain('ku: "هیچ کارێک"');
   });
 });
+
+describe("the \"not yet arrived\" card on a customer's page", () => {
+  const card = fs
+    .readFileSync(path.join(SRC, "components", "customers", "CustomerAwaitingCard.tsx"), "utf8")
+    .replace(/\r\n/g, "\n");
+
+  it("a row from an order opens that order", () => {
+    // Owner, 2026-09-22: "the not-arrived ones have no link in the customer
+    // section." The server already sent the order's id and kind.
+    expect(card).toContain("function awaitedHref(row: Awaited): string | null {");
+    expect(card).toContain("parcelSourceTarget([");
+    expect(card).toContain("orderType: (row.order.orderType as ParcelOrderType) ?? \"full_package\",");
+  });
+
+  it("one the customer declared opens the tracking list where it is matched", () => {
+    expect(card).toContain('portalCenterHref({ tab: "declared", status: "pending" })');
+  });
+
+  it("never sends anybody to the parcels list — these have not arrived", () => {
+    expect(card).not.toContain("packagesHref");
+  });
+
+  it("the tracking is copyable, and a row with nowhere to go stays a plain row", () => {
+    expect(card).toContain("<CopyButton");
+    expect(card).toContain('<div key={key} className={rowClass}>{body}</div>');
+  });
+});

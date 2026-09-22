@@ -1,3 +1,4 @@
+import { Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -5,6 +6,9 @@ import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PackageSearch, Clock, UserCircle, ShoppingBag, AlertTriangle } from "lucide-react";
+import { CopyButton } from "@/components/CopyButton";
+import { parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
+import { portalCenterHref } from "@shared/portalCenterNav";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -15,8 +19,34 @@ type Awaited = {
   daysWaiting: number;
   isLate: boolean;
   productName: string | null;
-  order: { orderCode: string } | null;
+  /** The order behind it, when it came from one — the server sends the id
+   *  and the kind, which is what the link needs. */
+  order: { id?: number | null; orderCode: string; orderType?: string | null } | null;
 };
+
+/**
+ * Where a row goes.
+ *
+ * Owner, 2026-09-22: "the not-arrived ones have no link in the customer
+ * section." One from an order opens that order — the record where its
+ * supplier, its money and its note are. One the customer declared in the
+ * portal opens the Portal Center's tracking list, which is where a
+ * declaration is matched to a parcel. Neither opens the parcels list: these
+ * have not arrived, so there is no parcel there to open.
+ */
+function awaitedHref(row: Awaited): string | null {
+  if (row.origin === "order" && row.order?.id) {
+    return parcelSourceTarget([
+      {
+        orderId: row.order.id,
+        orderType: (row.order.orderType as ParcelOrderType) ?? "full_package",
+        orderCode: row.order.orderCode,
+      },
+    ]).href;
+  }
+  if (row.origin === "customer") return portalCenterHref({ tab: "declared", status: "pending" });
+  return null;
+}
 
 /**
  * What this customer has coming that has not reached the China warehouse.
@@ -74,15 +104,23 @@ export function CustomerAwaitingCard({ customerId, className }: { customerId: nu
         </p>
 
         <div className="space-y-1.5">
-          {rows.map((r) => (
-            <div
-              key={`${r.trackingNumber}-${r.origin}`}
-              className={cn(
-                "flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2",
-                r.isLate && "border-red-300 bg-red-50/50 dark:border-red-800/70 dark:bg-red-950/20",
-              )}
-            >
-              <span className="shrink-0 font-mono text-[11.5px]" dir="ltr">{r.trackingNumber}</span>
+          {rows.map((r) => {
+            const href = awaitedHref(r);
+            const rowClass = cn(
+              "relative flex flex-wrap items-center gap-2 rounded-xl border px-3 py-2",
+              href && "transition-colors hover:border-primary/60 hover:bg-accent/50",
+              r.isLate && "border-red-300 bg-red-50/50 dark:border-red-800/70 dark:bg-red-950/20",
+            );
+            const body = (
+              <>
+              <span className="inline-flex shrink-0 items-center gap-1">
+                <bdi className="font-mono text-[11.5px]" dir="ltr">{r.trackingNumber}</bdi>
+                <CopyButton
+                  value={r.trackingNumber}
+                  label={label({ ku: "کۆپی تراکینگ", en: "Copy tracking", ar: "نسخ التتبع", zh: "复制运单号" })}
+                  className="relative z-10"
+                />
+              </span>
 
               {r.origin === "customer" ? (
                 <span className="inline-flex shrink-0 items-center gap-1 rounded-md bg-teal-100 px-1.5 py-0.5 text-[10.5px] font-medium text-teal-800 dark:bg-teal-950/50 dark:text-teal-200">
@@ -110,8 +148,15 @@ export function CustomerAwaitingCard({ customerId, className }: { customerId: nu
                 <span dir="ltr">{r.daysWaiting}</span>
                 {label({ ku: "ڕۆژ", en: "d", ar: "يوم", zh: "天" })}
               </span>
-            </div>
-          ))}
+              </>
+            );
+            const key = `${r.trackingNumber}-${r.origin}`;
+            return href ? (
+              <Link key={key} href={href} className={rowClass}>{body}</Link>
+            ) : (
+              <div key={key} className={rowClass}>{body}</div>
+            );
+          })}
         </div>
       </CardContent>
     </Card>
