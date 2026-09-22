@@ -1,4 +1,5 @@
 import { confirmAction } from "@/components/ConfirmDialog";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { loadLocale } from "@/lib/i18nRegistry";
@@ -70,6 +71,21 @@ import { receiptLanguageFor, receiptWhatsAppMessage, whatsappChatUrl, whatsappNu
 import { shareReceiptOnWhatsApp, type ReceiptShareDestination, type ReceiptShareFormat } from "@/lib/receiptShare";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
+
+/** Opening a finished box, and what the person is told before they do. */
+const REOPEN_WORDS = {
+  button: { ku: "کردنەوەی بۆکس", en: "Reopen the box", ar: "إعادة فتح الصندوق", zh: "重新打开箱子" },
+  title: { ku: "کردنەوەی بۆکسی تەواوبوو", en: "Reopen a finished box", ar: "إعادة فتح صندوق منتهٍ", zh: "重新打开已完成的箱子" },
+  body: {
+    ku: "بۆکسەکە دەگەڕێتەوە بۆ «کراوە» و پاکەتەکانی لە «گەیەندراو» دەگەڕێنەوە بۆ «ئامادەی گەیاندن». پارە دەستی لێ نادرێت: ئەوەی دراوە هەر دراوە و وەک قەرزی پێشەکی لەسەر بۆکسەکە دەمێنێتەوە. بۆ گەڕاندنەوەی قەرز، واصڵەکە لە شاشەی پارەدانەوە هەڵبوەشێنەوە.",
+    en: "The box goes back to open and its parcels from delivered to ready. The money is untouched: what was paid stays paid, as credit against this box. To put the debt back, undo the receipt on the payment screen.",
+    ar: "يعود الصندوق إلى مفتوح وتعود طرودُه من مسلَّم إلى جاهز. المال لا يُمسّ: ما دُفع يبقى مدفوعاً كرصيد على هذا الصندوق. لإعادة الدين، ألغِ الإيصال من شاشة الدفع.",
+    zh: "箱子回到打开状态，包裹从已送达回到待送达。款项保持不变：已付仍为已付，作为该箱子的预付。若要恢复欠款，请在付款页面撤销收据。",
+  },
+  reason: { ku: "هۆکار (پێویستە)", en: "Reason (required)", ar: "السبب (مطلوب)", zh: "原因（必填）" },
+  confirm: { ku: "بیکەرەوە", en: "Reopen", ar: "أعد الفتح", zh: "重新打开" },
+  done: { ku: "بۆکسەکە کرایەوە", en: "The box is open again", ar: "أُعيد فتح الصندوق", zh: "箱子已重新打开" },
+} as const;
 
 /** What the counter is told after pressing "send on WhatsApp". */
 const SHARE_WORDS = {
@@ -193,6 +209,20 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // Drawing the receipt takes a moment; the button says so rather than
   // looking dead while it happens.
   const [sharing, setSharing] = useState(false);
+  /**
+   * Opening a box that is already delivered or paid for (owner, 2026-09-22).
+   *
+   * Four cases he named, all the same shape: a box closed by mistake, one
+   * counted as paid on a promise that was not kept, one the customer is
+   * adding goods to, and one the office simply got wrong. The admin says why,
+   * the box and its parcels go back a step, and the money is left exactly as
+   * it is — a receipt is undone on the payment screen, which is what puts the
+   * debt back.
+   */
+  const { user } = useAuth();
+  const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  const [reopenReason, setReopenReason] = useState("");
+  const [reopenAsking, setReopenAsking] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
   // Latest input value kept in a ref so submit reads the COMPLETE code even
   // when a scanner's trailing Enter fires before React re-renders (avoids the
@@ -431,6 +461,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const isInTransit = status === "in_transit";
   // A delivered box was handed over and charged — a record, not a mistake.
   const isDelivered = status === "delivered";
+  /** A box that has gone out or been handed over: only an admin comes back. */
+  const canReopenFinished = isAdmin && (isInTransit || isDelivered || (isReady && !!(box as { isCharged?: boolean }).isCharged));
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.open;
 
   // Sea (دەریایی) batches are billed by CBM, not weight — the measurement
@@ -1014,6 +1046,19 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             </Button>
           )}
 
+          {/* The admin's way back from "finished" (owner, 2026-09-22). */}
+          {canReopenFinished && (
+            <Button
+              variant="outline"
+              onClick={() => { setReopenReason(""); setReopenAsking(true); }}
+              disabled={reopenBox.isPending}
+              className="border-amber-300 text-amber-800 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-200"
+            >
+              {reopenBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Unlock className="h-4 w-4 me-1" />}
+              {pickLang(language, REOPEN_WORDS.button)}
+            </Button>
+          )}
+
           {/* Edit shipping price + delivery details. Available while the box is
               still open or sealed — i.e. before it ships and the wallet is charged. */}
           {(isOpen || isReady) && (
@@ -1242,6 +1287,43 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           </DropdownMenu>
         </div>
       </CardContent>
+
+      <AlertDialog open={reopenAsking} onOpenChange={setReopenAsking}>
+        <AlertDialogContent dir={isRtl ? "rtl" : "ltr"}>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{pickLang(language, REOPEN_WORDS.title)}</AlertDialogTitle>
+            <AlertDialogDescription>{pickLang(language, REOPEN_WORDS.body)}</AlertDialogDescription>
+          </AlertDialogHeader>
+          <div className="space-y-1.5">
+            <label className="text-sm font-medium" htmlFor="reopen-reason">
+              {pickLang(language, REOPEN_WORDS.reason)}
+            </label>
+            <Input
+              id="reopen-reason"
+              value={reopenReason}
+              onChange={(e) => setReopenReason(e.target.value)}
+              data-testid="reopen-reason"
+            />
+          </div>
+          <AlertDialogFooter>
+            <AlertDialogCancel>{t("common.cancel")}</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={reopenReason.trim().length < 3 || reopenBox.isPending}
+              onClick={(e) => {
+                e.preventDefault();
+                reopenBox.mutate(
+                  { id: boxId, reason: reopenReason.trim() },
+                  { onSuccess: () => { setReopenAsking(false); toast.success(pickLang(language, REOPEN_WORDS.done)); } },
+                );
+              }}
+              data-testid="reopen-confirm"
+            >
+              {reopenBox.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {pickLang(language, REOPEN_WORDS.confirm)}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <QuickSettleDialog
         boxId={payingOpen ? boxId : null}

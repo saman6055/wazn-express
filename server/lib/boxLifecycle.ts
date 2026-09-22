@@ -115,6 +115,73 @@ export async function markBoxContentsDelivered(
   }
 }
 
+/**
+ * Open a box again after it has been handed over — the owner's rule of
+ * 2026-09-22.
+ *
+ * He asked for four things at once, and they are all the same thing: a box
+ * that is finished sometimes has to be unfinished. It was closed by mistake;
+ * it was counted as paid on a promise that was not kept; the customer came
+ * back with more goods for the same box; or the office simply got it wrong.
+ *
+ * What this does is put the box and its parcels back a step, and NOTHING
+ * else. No payment is undone, no charge is reversed, no receipt is touched:
+ * the money stays exactly as it was, because the money is a separate
+ * question with its own door (a receipt is undone on the payment screen,
+ * which puts the debt back). Undoing both at once from one button is how a
+ * customer ends up paying twice or not at all.
+ *
+ * So after this: the box is open and takes parcels again, its parcels are
+ * back to "ready for delivery", and what was paid is still paid — it sits as
+ * credit against the box's lines. Anything added now is simply owed on top,
+ * the payment screen says so, and when the box is paid in full again it
+ * finishes itself the same way it did the first time (finishPaidBox).
+ *
+ * The delivery fee is left charged if it was ever charged: `isCharged` is not
+ * cleared, so the fee cannot be posted a second time when the box goes out
+ * again.
+ *
+ * Orders (full-package, commission) inside the box keep their delivered
+ * state. Their money is their own order's, not the box's, and stepping an
+ * order backwards touches a charge gate that has nothing to do with this.
+ */
+export async function reopenDeliveredBox(
+  boxId: number,
+  userId: number,
+): Promise<{ parcels: number }> {
+  const items = await db.getBoxItems(boxId);
+  let parcels = 0;
+  for (const item of items) {
+    if (!item.packageId) continue;
+    try {
+      const pkg = await db.getPackageById(item.packageId);
+      if (!pkg || pkg.status !== "delivered") continue;
+      await db.updatePackage(item.packageId, {
+        status: "ready_for_delivery",
+        deliveredAt: null,
+        deliveredById: null,
+      });
+      parcels++;
+    } catch (e) {
+      appLogger.error("[DeliveryBox] Could not step a parcel back", {
+        packageId: item.packageId,
+        error: e instanceof Error ? e.message : String(e),
+      });
+    }
+  }
+
+  await db.updateDeliveryBox(boxId, {
+    status: "open",
+    deliveredAt: null,
+    deliveredById: null,
+    sealedAt: null,
+    sealedById: null,
+  });
+
+  appLogger.info("[DeliveryBox] Reopened after delivery", { boxId, parcels });
+  return { parcels };
+}
+
 export type FinishPaidBoxResult = {
   /** The box is delivered and, being paid for, drops into the archive. */
   finished: boolean;

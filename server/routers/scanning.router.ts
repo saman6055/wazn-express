@@ -1,5 +1,5 @@
 import { statusForScan, advanceStatus } from "../lib/scanStatus";
-import { chargeBoxDeliveryFee, markBoxContentsDelivered, finishPaidBox } from "../lib/boxLifecycle";
+import { chargeBoxDeliveryFee, markBoxContentsDelivered, finishPaidBox, reopenDeliveredBox } from "../lib/boxLifecycle";
 import { resolveGoodsCategory } from "../lib/goodsCategory";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -1438,17 +1438,51 @@ export const deliveryBoxRouter = router({
   // reopening a charged in-transit/delivered box would desync the amount
   // already billed to the customer wallet.
   reopen: staffProcedure
-    .input(z.object({ id: z.number() }))
-    .mutation(async ({ input }) => {
+    .input(z.object({ id: z.number(), reason: z.string().max(500).optional() }))
+    .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
-      if (box.status !== 'ready') {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "تەنها بۆکسی داخراوی نەنێردراو دەکرێتەوە بۆ دەستکاری" });
+      if (box.status === 'cancelled') {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکسی هەڵوەشێنراوە ناکرێتەوە" });
       }
-      if (box.isCharged) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم بۆکسە پارەی گەیاندنی لێبڕاوە — ناتوانرێت بکرێتەوە" });
+
+      // The ordinary way back: a box sealed but not yet sent out, and not yet
+      // charged. Anybody at the counter may do it and nothing has happened
+      // yet that needs undoing.
+      if (box.status === 'ready' && !box.isCharged) {
+        return db.updateDeliveryBox(input.id, { status: 'open', sealedAt: null, sealedById: null });
       }
-      return db.updateDeliveryBox(input.id, { status: 'open', sealedAt: null, sealedById: null });
+
+      /**
+       * The owner's rule, 2026-09-22: as an admin he must be able to open a
+       * box that has already gone out or been paid for — a box closed by
+       * mistake, one counted as paid on a promise, or one the customer is
+       * adding to.
+       *
+       * Admin only, and a reason is required, because this is a step
+       * backwards over something a customer was told. The money is not
+       * touched here: a receipt is undone on the payment screen, which is
+       * what puts the debt back.
+       */
+      if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
+        throw new TRPCError({ code: "FORBIDDEN", message: "تەنها ئادمین دەتوانێت بۆکسی نێردراو/پارەدراو بکاتەوە" });
+      }
+      const reason = (input.reason ?? "").trim();
+      if (reason.length < 3) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: "هۆکاری کردنەوە پێویستە" });
+      }
+
+      const result = await reopenDeliveredBox(input.id, ctx.user.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "reopen_delivery_box",
+        entityType: "delivery_box",
+        entityId: input.id,
+        oldValues: { status: box.status, deliveredAt: box.deliveredAt, isCharged: box.isCharged },
+        newValues: { status: 'open', reason, parcelsSteppedBack: result.parcels },
+      });
+      return db.getDeliveryBoxById(input.id);
     }),
 
   // Mark box as in-transit (charges customer wallet + creates invoice)
