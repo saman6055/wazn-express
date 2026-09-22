@@ -31,6 +31,8 @@ import {
   TrendingUp,
   Phone,
   Eye,
+  Package,
+  MessageCircle,
 } from "lucide-react";
 import { Link, useLocation, useSearch } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -39,13 +41,20 @@ import { MiniProgress } from "@/components/dashboard/MiniProgress";
 import { CopyButton } from "@/components/CopyButton";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { pickLang } from "@/lib/lang";
-import { FILTER_LABEL, debtorsHref, readDebtorsLink } from "@shared/listLinks";
+import { FILTER_LABEL, debtorsHref, packagesHref, readDebtorsLink } from "@shared/listLinks";
+import { customerCodeOnly } from "@shared/customerCode";
+import { whatsappNumber } from "@shared/receiptWhatsApp";
 import { isOverCreditLimit } from "@shared/riskRules";
 
 type AgingCategory = 'all' | '0-30' | '30-60' | '60-90' | '90+';
 
 const COPY_WORDS = { ku: "کۆپی کردن", en: "Copy", ar: "نسخ", zh: "复制" };
 const LIMIT_WORDS = { ku: "سنوور:", en: "Limit:", ar: "الحد:", zh: "额度：" };
+const NO_ACTIVITY_WORDS = { ku: "هیچ کارێک", en: "No activity", ar: "لا نشاط", zh: "无活动" };
+const BUCKET_WORDS = { ku: "تەنها ئەم تەمەنە پیشان بدە", en: "Show only this age", ar: "أظهر هذا العمر فقط", zh: "只看这个账龄" };
+const STATEMENT_WORDS = { ku: "کەشفی حساب", en: "Account statement", ar: "كشف الحساب", zh: "账户对账单" };
+const PARCELS_WORDS = { ku: "پاکەتەکانی", en: "Their parcels", ar: "طرودهم", zh: "其包裹" };
+const WHATSAPP_WORDS = { ku: "پەیام بۆ کڕیار", en: "Message the customer", ar: "راسل العميل", zh: "给客户发消息" };
 
 export default function DebtorsReport() {
     const { t, language } = useTranslation();
@@ -72,7 +81,13 @@ const [searchTerm, setSearchTerm] = useState("");
     return accounts
       .filter((acc: any) => parseFloat(acc.currentBalanceUsd || '0') > 0)
       .map((acc: any) => {
-        const lastActivityDate = acc.lastTransactionDate ? new Date(acc.lastTransactionDate) : new Date(acc.createdAt);
+        // The account's own column is `lastTransactionAt`. This read
+        // `lastTransactionDate`, which no row has ever had, so every debtor
+        // was aged from the day their account was opened and the "last
+        // activity" column said "-" for all of them. A customer who paid last
+        // week sat in "90+" (owner spotted the empty column, 2026-09-22).
+        const lastActivity = acc.lastTransactionAt ?? acc.lastTransactionDate ?? null;
+        const lastActivityDate = lastActivity ? new Date(lastActivity) : new Date(acc.createdAt);
         const daysSinceActivity = Math.floor((Date.now() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
         
         let agingCategory: '0-30' | '30-60' | '60-90' | '90+';
@@ -83,6 +98,12 @@ const [searchTerm, setSearchTerm] = useState("");
         
         return {
           ...acc,
+          // The account carries the customer; the code and the name were
+          // being read off the account itself, where they are not.
+          customerCode: acc.customer?.customerCode ?? acc.customerCode ?? null,
+          customerName: acc.customer?.fullName ?? null,
+          customerMobile: acc.customer?.mobileNumber ?? null,
+          lastActivity,
           daysSinceActivity,
           agingCategory,
         };
@@ -102,6 +123,7 @@ const [searchTerm, setSearchTerm] = useState("");
       const term = searchTerm.toLowerCase();
       result = result.filter((acc: any) => 
         acc.customerCode?.toLowerCase().includes(term) ||
+        acc.customerName?.toLowerCase().includes(term) ||
         acc.accountNumber?.toLowerCase().includes(term)
       );
     }
@@ -393,38 +415,79 @@ const [searchTerm, setSearchTerm] = useState("");
                     <TableRow key={debtor.id}>
                       <TableCell className="font-medium">
                         <span className="inline-flex items-center gap-1">
-                          {debtor.customerCode}
-                          <CopyButton value={debtor.customerCode} label={pickLang(language, COPY_WORDS)} />
+                          <Link
+                            href={`/customers/${debtor.customerId}`}
+                            className="text-sky-700 underline-offset-2 hover:underline dark:text-sky-300"
+                          >
+                            <bdi dir="ltr" className="font-mono">{debtor.customerCode ?? '-'}</bdi>
+                          </Link>
+                          {debtor.customerCode && (
+                            <CopyButton value={debtor.customerCode} label={pickLang(language, COPY_WORDS)} />
+                          )}
                         </span>
+                        {debtor.customerName && (
+                          <div className="text-xs text-muted-foreground">{debtor.customerName}</div>
+                        )}
                       </TableCell>
                       <TableCell className="font-mono text-sm">
                         <span className="inline-flex items-center gap-1">
-                          {debtor.accountNumber}
+                          <Link
+                            href={`/finance/customer/${debtor.customerId}`}
+                            className="text-sky-700 underline-offset-2 hover:underline dark:text-sky-300"
+                          >
+                            <bdi dir="ltr">{debtor.accountNumber}</bdi>
+                          </Link>
                           <CopyButton value={debtor.accountNumber} label={pickLang(language, COPY_WORDS)} />
                         </span>
                       </TableCell>
-                      <TableCell className="text-right font-bold text-red-600 dark:text-red-300">
+                      <TableCell className="p-0 text-right font-bold text-red-600 dark:text-red-300">
+                        {/* The figure opens the statement it was counted from. */}
+                        <Link href={`/finance/customer/${debtor.customerId}`} className="block w-full px-4 py-2 hover:underline">
                         {formatCurrency(parseFloat(debtor.currentBalanceUsd || '0'))}
                         {overLimitOnly && (
                           <div className="text-[11px] font-normal text-muted-foreground">
                             {pickLang(language, LIMIT_WORDS)} {formatCurrency(parseFloat(debtor.creditLimitUsd || '0'))}
                           </div>
                         )}
+                        </Link>
                       </TableCell>
-                      <TableCell>{getAgingBadge(debtor.agingCategory)}</TableCell>
+                      <TableCell>
+                        {/* The age chip filters the table to its own bucket. */}
+                        <button
+                          type="button"
+                          onClick={() => setAgingFilter(agingFilter === debtor.agingCategory ? 'all' : debtor.agingCategory)}
+                          title={pickLang(language, BUCKET_WORDS)}
+                        >
+                          {getAgingBadge(debtor.agingCategory)}
+                        </button>
+                      </TableCell>
                       <TableCell>{debtor.daysSinceActivity} {t("auto.text_05f45d")}</TableCell>
                       <TableCell>
-                        {debtor.lastTransactionDate 
-                          ? new Date(debtor.lastTransactionDate).toLocaleDateString("en-GB")
-                          : '-'}
+                        {debtor.lastActivity
+                          ? <bdi dir="ltr" className="tabular-nums">{new Date(debtor.lastActivity).toLocaleDateString("en-GB")}</bdi>
+                          : <span className="text-muted-foreground">{pickLang(language, NO_ACTIVITY_WORDS)}</span>}
                       </TableCell>
                       <TableCell>
                         <div className="flex gap-2">
                           <Link href={`/finance/customer/${debtor.customerId}`}>
-                            <Button variant="outline" size="sm">
+                            <Button variant="outline" size="sm" title={pickLang(language, STATEMENT_WORDS)}>
                               <Eye className="w-4 h-4" />
                             </Button>
                           </Link>
+                          {debtor.customerCode && (
+                            <Link href={packagesHref({ search: customerCodeOnly(debtor.customerCode) })}>
+                              <Button variant="outline" size="sm" title={pickLang(language, PARCELS_WORDS)}>
+                                <Package className="w-4 h-4" />
+                              </Button>
+                            </Link>
+                          )}
+                          {debtor.customerMobile && whatsappNumber(debtor.customerMobile) && (
+                            <a href={`https://wa.me/${whatsappNumber(debtor.customerMobile)}`} target="_blank" rel="noopener noreferrer">
+                              <Button variant="outline" size="sm" title={pickLang(language, WHATSAPP_WORDS)}>
+                                <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
+                              </Button>
+                            </a>
+                          )}
                         </div>
                       </TableCell>
                     </TableRow>
