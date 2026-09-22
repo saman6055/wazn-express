@@ -48,6 +48,13 @@ export interface ReceiptDinarRequest {
    * 2026-09-21: "in the send flow, 'Send' is better than 'Print'").
    */
   action?: "print" | "send";
+  /**
+   * The rate to start from, when this receipt already has one — the rate the
+   * payment used. The owner, 2026-09-22: a box that was paid for must still
+   * be able to be priced in dinars again when the receipt is corrected and
+   * sent, instead of the window being skipped and the dinars lost.
+   */
+  rate?: number | null;
   /** Prints, or saves the PDF, with what was chosen — null for no dinars. */
   onConfirm: (dinar: ReceiptDinarInput | null) => void;
 }
@@ -189,14 +196,16 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     setMode(isMode(saved.mode) ? saved.mode : DEFAULT_DINAR_ROUND_MODE);
   }, [request]);
 
-  // The rate offered: the newer of the last one printed on this device and
-  // the last one a payment used — until the person types their own.
+  // The rate offered: this receipt's own if it has one, otherwise the newer
+  // of the last one printed on this device and the last one a payment used —
+  // until the person types their own.
+  const ownRate = Number(request?.rate);
   const payment: DatedRate | null = lastPayment.data
     ? { rate: Number(lastPayment.data.rate), at: new Date(lastPayment.data.at).getTime() }
     : null;
   const saved = recall();
   const device: DatedRate | null = saved.rate && saved.at ? { rate: saved.rate, at: saved.at } : null;
-  const offered = offeredRate(device, payment);
+  const offered = Number.isFinite(ownRate) && ownRate > 0 ? ownRate : offeredRate(device, payment);
   useEffect(() => {
     if (request && !rateTouched) setRate(offered ? String(offered) : "");
   }, [request, rateTouched, offered]);

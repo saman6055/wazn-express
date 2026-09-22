@@ -134,6 +134,16 @@ describe("the button at the counter", () => {
     expect(panel).toContain('"send",');
   });
 
+  it("carries the dinars into the message, not only onto the paper", () => {
+    // Owner, 2026-09-22: "the amount worked out in dinars is not written in
+    // the chat — it matters, put it there too."
+    expect(panel).toContain("const figures = receiptDinar(totalUsd, dinar);");
+    expect(panel).toContain("totalIqd: figures?.totalIqd ?? null,");
+    const shared = fs.readFileSync(path.resolve(SRC, "../..", "shared/receiptWhatsApp.ts"), "utf8");
+    expect(shared).toContain("const dinars = Number.isFinite(iqd) && iqd > 0 ? Math.round(iqd).toLocaleString(\"en-GB\") : null;");
+    expect(shared).toContain("`${total} دۆلار (${dinars} دینار)`");
+  });
+
   it("asks the day's rate first, like every other way to a receipt", () => {
     const handler = panel.slice(panel.indexOf("const shareReceiptNow"), panel.indexOf("const handlePrintReceipt"));
     expect(handler).toContain("dinar,");

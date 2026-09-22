@@ -947,8 +947,10 @@ export function buildBoxReceiptHtml(
       print-color-adjust: exact;
     }
     .receipt-stamp-img {
-      width: 86px;
-      height: 86px;
+      /* The owner's own stamp is 42mm across; the paper shows it at that
+         size (2026-09-22) rather than at the thumbnail it started as. */
+      width: 42mm;
+      height: 42mm;
       object-fit: contain;
       display: block;
     }

@@ -96,7 +96,7 @@ const SHARE_WORDS = {
     zh: "收据已就绪 — 选择 WhatsApp 和客户，然后按发送",
   },
   copied: {
-    ku: "وێنەی وەسڵ کۆپی کرا و چاتەکە کرایەوە — لە چاتەکە Ctrl+V و ئینجا Enter",
+    ku: "وێنەی وەسڵ کۆپی کرا و چاتەکە کرایەوە — Ctrl+V بکە، دەقەکەش لەگەڵیدا دەچێت، ئینجا Enter",
     en: "The picture is on the clipboard and the chat is open — press Ctrl+V, then Enter",
     ar: "نُسخت صورة الإيصال وفُتحت المحادثة — اضغط Ctrl+V ثم Enter",
     zh: "收据图片已复制并打开聊天 — 按 Ctrl+V，然后回车",
@@ -141,7 +141,7 @@ const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scan
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
 import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
-import type { ReceiptDinarInput } from "@shared/receiptDinar";
+import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 
@@ -638,10 +638,6 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     output: (lang: Language, dinar: ReceiptDinarInput | null) => Promise<void>,
     action: "print" | "send" = "print",
   ) => {
-    if (settlementForPrint) {
-      void output(lang, null);
-      return;
-    }
     // Ready before the print button is pressed, so the window opens at once.
     void loadLocale(lang);
     setReceiptRequest({
@@ -653,6 +649,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       // The same window for both; its button says which one it is
       // (owner, 2026-09-21).
       action,
+      // A box already paid for opens the window too, at the rate its payment
+      // used, so a corrected receipt can be priced in dinars again rather
+      // than going out with none (owner, 2026-09-22).
+      rate: settlementForPrint?.exchangeRate ?? null,
       onConfirm: (dinar) => void output(lang, dinar),
     });
   };
@@ -680,10 +680,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       settlement: settlementForPrint,
       dinar,
     });
+    // The same figures the paper carries: the dinars go in the message too,
+    // because that is the number the customer is actually asked for
+    // (owner, 2026-09-22).
+    const totalUsd = receiptAmountUsd(box, settlementForPrint);
+    const figures = receiptDinar(totalUsd, dinar);
     const message = receiptWhatsAppMessage(receiptLanguageFor((customer as any)?.nationality), {
       boxCode: box.boxCode,
       parcelCount: box.totalPackages ?? items.length,
-      totalUsd: receiptAmountUsd(box, settlementForPrint),
+      totalUsd,
+      totalIqd: figures?.totalIqd ?? null,
     });
     const number = whatsappNumber(customer?.mobileNumber);
     setSharing(true);

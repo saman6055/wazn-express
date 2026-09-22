@@ -49,6 +49,13 @@ export interface ReceiptMessageFacts {
   boxCode: string;
   parcelCount: number;
   totalUsd: number;
+  /**
+   * The same figure in dinars, when the counter priced it in dinars before
+   * sending (owner, 2026-09-22: "the amount worked out in dinars is not
+   * written in the chat — it matters, put it there too"). Absent when no
+   * rate was given, and then the message says dollars only.
+   */
+  totalIqd?: number | null;
 }
 
 const money = (amount: number): string => {
@@ -66,21 +73,28 @@ export function receiptWhatsAppMessage(lang: ReceiptLanguage, facts: ReceiptMess
   const code = facts.boxCode;
   const parcels = Math.max(0, Math.round(Number(facts.parcelCount) || 0));
   const total = money(facts.totalUsd);
+  // Digits stay 0-9 and the thousands are grouped the way the receipt groups
+  // them, so the chat and the paper read as the same figure.
+  const iqd = Number(facts.totalIqd);
+  const dinars = Number.isFinite(iqd) && iqd > 0 ? Math.round(iqd).toLocaleString("en-GB") : null;
 
   if (lang === "ar") {
+    const amount = dinars ? `${total} دولار (${dinars} دينار)` : `${total} دولار`;
     return (
-      `السلام عليكم. هذا إيصال أغراضك الواصلة — الصندوق ${code}، ${parcels} طرد، ${total} دولار. ` +
+      `السلام عليكم. هذا إيصال أغراضك الواصلة — الصندوق ${code}، ${parcels} طرد، ${amount}. ` +
       `إن شاء الله تصلكم في أنسب وقت. شكراً لثقتكم — وزن اكسبريس`
     );
   }
   if (lang === "en") {
+    const amount = dinars ? `$${total} (${dinars} IQD)` : `$${total}`;
     return (
-      `Hello. Here is the receipt for your arrived goods — box ${code}, ${parcels} parcel(s), $${total}. ` +
+      `Hello. Here is the receipt for your arrived goods — box ${code}, ${parcels} parcel(s), ${amount}. ` +
       `It will reach you at the most suitable time, God willing. Thank you — Wazn Express`
     );
   }
+  const amount = dinars ? `${total} دۆلار (${dinars} دینار)` : `${total} دۆلار`;
   return (
-    `سڵاوت لێبێت. ئەمە وەسڵی کەل و پەلە گەیشتووەکانتە — بۆکس ${code}، ${parcels} پاکەت، ${total} دۆلار. ` +
+    `سڵاوت لێبێت. ئەمە وەسڵی کەل و پەلە گەیشتووەکانتە — بۆکس ${code}، ${parcels} پاکەت، ${amount}. ` +
     `ان شاءاللە لە گونجاوترین کاتدا دەگاتە دەستتان. سوپاس بۆ متمانەت — وەزن ئێکسپرێس`
   );
 }

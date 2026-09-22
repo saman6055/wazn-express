@@ -247,7 +247,11 @@ export async function shareReceiptOnWhatsApp(request: ReceiptShareRequest): Prom
   // asked for and is not there leaves the file saved, with no chat opened.
   const toWhatsApp = destination === "whatsapp";
   const copied = asImage && toWhatsApp ? await copyPicture(dataUrl) : false;
-  saveFile(file);
+  // Saved only when the clipboard would not take it. A receipt that is one
+  // paste away does not also need to land in the downloads folder — the
+  // owner ended up attaching that copy by hand, which is the slow way round
+  // (2026-09-22).
+  if (!copied) saveFile(file);
   if (toWhatsApp && request.chatUrl) window.open(request.chatUrl, "_blank", "noopener");
   if (!toWhatsApp) return "saved";
   return copied ? "copied" : "chat_opened";

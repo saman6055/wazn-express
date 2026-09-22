@@ -81,8 +81,15 @@ describe("every way into a receipt goes through it", () => {
     expect(table).toContain("<ReceiptDinarDialog request={receiptRequest}");
   });
 
-  it("a box already paid for prints as before — nothing left to convert", () => {
-    expect(panel).toContain("if (settlementForPrint) {\n      void output(lang, null);");
+  it("a box already paid for opens the window too, at the rate its payment used", () => {
+    // Owner, 2026-09-22: a corrected receipt must be priceable in dinars
+    // again — it was going out with none, because the window was skipped.
+    expect(panel).toContain("rate: settlementForPrint?.exchangeRate ?? null,");
+    expect(panel).not.toContain("if (settlementForPrint) {\n      void output(lang, null);");
+    expect(read("components/delivery/ReceiptDinarDialog.tsx")).toContain(
+      "const offered = Number.isFinite(ownRate) && ownRate > 0 ? ownRate : offeredRate(device, payment);",
+    );
+    // The box list still prints a cleared box straight off; it has no window.
     expect(table).toContain("if (box.settlementCleared === true) {\n      void printReceiptNow(box, lang, null);");
   });
 });
