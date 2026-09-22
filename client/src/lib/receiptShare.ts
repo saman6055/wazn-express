@@ -37,11 +37,25 @@ const SHARPNESS = { pdf: 2, image: 3 } as const;
 /** What the customer receives: a document, or a picture in the chat. */
 export type ReceiptShareFormat = "pdf" | "image";
 
+/**
+ * Where the receipt goes (owner, 2026-09-21).
+ *
+ * WhatsApp is the everyday one and must be direct — no sheet in the way. The
+ * other two are there for whatever else comes up: the sheet for any app on
+ * the machine, and plain saving for a receipt that is wanted as a file.
+ */
+export type ReceiptShareDestination = "whatsapp" | "share" | "save";
+
 export type ReceiptShareOutcome =
   /** Handed to the share sheet: the admin picks the chat and presses Send. */
   | "shared"
-  /** No share sheet: the file was saved and the chat opened with the message. */
+  /** On the counter's computer: the picture is on the clipboard and the chat
+   *  is open — Ctrl+V, Enter. */
+  | "copied"
+  /** The file was saved and the chat opened with the message. */
   | "chat_opened"
+  /** Saved to the machine, and nothing else asked for. */
+  | "saved"
   /** The admin closed the share sheet. Nothing was sent, and nothing is wrong. */
   | "cancelled"
   /** The picture could not be drawn — nothing was saved and no chat opened. */
@@ -52,6 +66,8 @@ export interface ReceiptShareRequest {
   html: string;
   /** A PDF to keep, or a picture that opens in the chat itself. */
   format: ReceiptShareFormat;
+  /** WhatsApp by default; the share sheet or the machine on request. */
+  destination?: ReceiptShareDestination;
   /** The box's code; the extension follows the format. */
   fileName: string;
   /** The message that travels with it (shared/receiptWhatsApp). */
@@ -131,6 +147,51 @@ async function receiptPicture(
   }
 }
 
+/**
+ * Whose share sheet is worth using.
+ *
+ * A phone's is one tap to the chat with the file attached. Windows' is a
+ * dialog, then an app, then a contact — the owner tried it and said so
+ * (2026-09-21): "that way is not nice; the second one is much faster." So a
+ * computer skips it and goes straight to the chat instead.
+ */
+function isTouchDevice(): boolean {
+  if (typeof window === "undefined") return false;
+  try {
+    return window.matchMedia("(pointer: coarse)").matches;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * The picture on the clipboard, so the chat takes it with Ctrl+V.
+ *
+ * The clipboard holds PNG and nothing else, so the drawing is re-encoded
+ * rather than drawn again. Browsers refuse this without a recent click, and
+ * that is fine: the saved file is still there.
+ */
+async function copyPicture(dataUrl: string): Promise<boolean> {
+  try {
+    if (!navigator.clipboard?.write || typeof ClipboardItem === "undefined") return false;
+    const image = new Image();
+    image.src = dataUrl;
+    await image.decode();
+    const canvas = document.createElement("canvas");
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext("2d");
+    if (!context) return false;
+    context.drawImage(image, 0, 0);
+    const png = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/png"));
+    if (!png) return false;
+    await navigator.clipboard.write([new ClipboardItem({ "image/png": png })]);
+    return true;
+  } catch {
+    return false;
+  }
+}
+
 /** Saved to the machine, for the path with no share sheet. */
 function saveFile(file: File): void {
   const url = URL.createObjectURL(file);
@@ -145,8 +206,10 @@ function saveFile(file: File): void {
 export async function shareReceiptOnWhatsApp(request: ReceiptShareRequest): Promise<ReceiptShareOutcome> {
   const asImage = request.format === "image";
   let file: File;
+  let dataUrl: string;
   try {
     const picture = await receiptPicture(request.html, asImage ? SHARPNESS.image : SHARPNESS.pdf);
+    dataUrl = picture.dataUrl;
     file = asImage
       ? new File([dataUrlToBytes(picture.dataUrl).slice().buffer as ArrayBuffer], `${request.fileName}.jpg`, {
           type: "image/jpeg",
@@ -158,9 +221,17 @@ export async function shareReceiptOnWhatsApp(request: ReceiptShareRequest): Prom
     return "failed";
   }
 
+  const destination = request.destination ?? "whatsapp";
   const share = navigator.share?.bind(navigator);
   const canShare = navigator.canShare?.bind(navigator);
-  if (share && canShare?.({ files: [file] })) {
+  const sheetWanted = destination === "share" || (destination === "whatsapp" && isTouchDevice());
+
+  if (destination === "save") {
+    saveFile(file);
+    return "saved";
+  }
+
+  if (sheetWanted && share && canShare?.({ files: [file] })) {
     try {
       await share({ files: [file], text: request.message });
       return "shared";
@@ -171,7 +242,13 @@ export async function shareReceiptOnWhatsApp(request: ReceiptShareRequest): Prom
     }
   }
 
+  // The counter's computer: the picture on the clipboard and the chat open —
+  // Ctrl+V and Enter, which is the fastest this can be made. A sheet that was
+  // asked for and is not there leaves the file saved, with no chat opened.
+  const toWhatsApp = destination === "whatsapp";
+  const copied = asImage && toWhatsApp ? await copyPicture(dataUrl) : false;
   saveFile(file);
-  if (request.chatUrl) window.open(request.chatUrl, "_blank", "noopener");
-  return "chat_opened";
+  if (toWhatsApp && request.chatUrl) window.open(request.chatUrl, "_blank", "noopener");
+  if (!toWhatsApp) return "saved";
+  return copied ? "copied" : "chat_opened";
 }

@@ -64,6 +64,33 @@ describe("the file and the chat", () => {
     expect(share).toContain("Array.from(doc.images)");
   });
 
+  it("goes straight to WhatsApp, and keeps the sheet for other apps", () => {
+    // Owner, 2026-09-21: WhatsApp direct; the sheet and plain saving there
+    // for whatever else comes up.
+    expect(share).toContain('const sheetWanted = destination === "share" || (destination === "whatsapp" && isTouchDevice());');
+    expect(share).toContain('if (destination === "save") {');
+    expect(share).toContain('return "saved";');
+    expect(share).toContain('const toWhatsApp = destination === "whatsapp";');
+    // Nothing opens a chat the person did not ask for.
+    expect(share).toContain("if (toWhatsApp && request.chatUrl) window.open(");
+  });
+
+  it("uses a phone's share sheet, and never the computer's", () => {
+    // The owner tried Windows' sheet: "that way is not nice; the second one
+    // is much faster" (2026-09-21). A computer goes straight to the chat.
+    expect(share).toContain("function isTouchDevice(): boolean {");
+    expect(share).toContain('window.matchMedia("(pointer: coarse)").matches');
+    expect(share).toContain("if (sheetWanted && share && canShare?.({ files: [file] })) {");
+  });
+
+  it("on a computer, puts the picture on the clipboard for Ctrl+V", () => {
+    expect(share).toContain("const copied = asImage && toWhatsApp ? await copyPicture(dataUrl) : false;");
+    expect(share).toContain('new ClipboardItem({ "image/png": png })');
+    expect(share).toContain('return copied ? "copied" : "chat_opened";');
+    // A refused clipboard is not a failure: the file is saved either way.
+    expect(share).toContain("saveFile(file);");
+  });
+
   it("hands the sheet the file and the message, and falls back to saving it", () => {
     expect(share).toContain("canShare?.({ files: [file] })");
     expect(share).toContain("await share({ files: [file], text: request.message })");
@@ -75,8 +102,8 @@ describe("the file and the chat", () => {
 
 describe("the button at the counter", () => {
   it("sends the same receipt, in the customer's own language", () => {
-    expect(panel).toContain("const handleSendOnWhatsApp = (format: ReceiptShareFormat) =>");
-    expect(panel).toContain("askBeforePrinting(receiptLanguageFor((customer as any)?.nationality) as Language, (lang, dinar) =>");
+    expect(panel).toContain("const handleSendOnWhatsApp = (format: ReceiptShareFormat, destination: ReceiptShareDestination = \"whatsapp\") =>");
+    expect(panel).toContain("receiptLanguageFor((customer as any)?.nationality) as Language,");
     expect(panel).toContain("receiptWhatsAppMessage(receiptLanguageFor((customer as any)?.nationality), {");
     expect(panel).toContain("fileName: box.boxCode,");
   });
@@ -85,6 +112,9 @@ describe("the button at the counter", () => {
     // The owner, after sending the first one: "as an image too, good quality".
     expect(panel).toContain('handleSendOnWhatsApp("pdf")');
     expect(panel).toContain('handleSendOnWhatsApp("image")');
+    expect(panel).toContain('handleSendOnWhatsApp("image", "share")');
+    expect(panel).toContain('handleSendOnWhatsApp("image", "save")');
+    expect(panel).toContain('handleSendOnWhatsApp("pdf", "save")');
     expect(share).toContain('const SHARPNESS = { pdf: 2, image: 3 } as const;');
     expect(share).toContain('const asImage = request.format === "image";');
     expect(share).toContain('`${request.fileName}.jpg`');
@@ -94,6 +124,16 @@ describe("the button at the counter", () => {
     expect(share).toContain("quality: 0.95,");
   });
 
+  it("the window says Send, not Print, when it is sending", () => {
+    // Owner, 2026-09-21: "in the send flow, Send is better than Print".
+    const dialog = read("components/delivery/ReceiptDinarDialog.tsx");
+    expect(dialog).toContain('const sending = request?.action === "send";');
+    expect(dialog).toContain("{L(sending ? TXT.send : TXT.print)}");
+    expect(dialog).toContain("{L(sending ? TXT.sendTitle : TXT.title)}");
+    expect(panel).toContain('(lang, dinar) => shareReceiptNow(lang, dinar, format, destination),');
+    expect(panel).toContain('"send",');
+  });
+
   it("asks the day's rate first, like every other way to a receipt", () => {
     const handler = panel.slice(panel.indexOf("const shareReceiptNow"), panel.indexOf("const handlePrintReceipt"));
     expect(handler).toContain("dinar,");
@@ -101,7 +141,7 @@ describe("the button at the counter", () => {
   });
 
   it("says which of the two happened, and says it in four languages", () => {
-    for (const outcome of ["shared", "chatOpened", "noNumber", "failed"]) {
+    for (const outcome of ["shared", "copied", "chatOpened", "noNumber", "saved", "failed"]) {
       expect(panel, outcome).toContain(`${outcome}: {`);
     }
     expect(panel).toContain("toast.success(pickLang(language, SHARE_WORDS.shared))");

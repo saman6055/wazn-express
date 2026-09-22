@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Printer } from "lucide-react";
+import { Printer, Send } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -42,6 +42,12 @@ export interface ReceiptDinarRequest {
   parcelCount: number;
   /** The dollar figure the receipt asks for: receiptAmountUsd(box, settlement). */
   totalUsd: number;
+  /**
+   * What the button at the bottom does, so it says so: this window is the
+   * same one for printing and for sending to the customer (owner,
+   * 2026-09-21: "in the send flow, 'Send' is better than 'Print'").
+   */
+  action?: "print" | "send";
   /** Prints, or saves the PDF, with what was chosen — null for no dinars. */
   onConfirm: (dinar: ReceiptDinarInput | null) => void;
 }
@@ -101,6 +107,8 @@ const roundingValue = (step: DinarRoundStep, mode: DinarRoundMode) => `${step}${
 
 const TXT = {
   title: { ku: "پێش چاپی وەسڵ", en: "Before printing the receipt", ar: "قبل طباعة الإيصال", zh: "打印收据前" },
+  sendTitle: { ku: "پێش ناردنی وەسڵ", en: "Before sending the receipt", ar: "قبل إرسال الإيصال", zh: "发送收据前" },
+  send: { ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" },
   parcels: (n: number): Words => ({ ku: `${n} پاکەت`, en: `${n} parcel(s)`, ar: `${n} طرد`, zh: `${n} 件包裹` }),
   totalUsd: { ku: "کۆی گشتی بە دۆلار", en: "Total in dollars", ar: "المجموع بالدولار", zh: "美元合计" },
   rate: { ku: "نرخی دۆلاری ئەمڕۆ", en: "Today's dollar rate", ar: "سعر الدولار اليوم", zh: "今日美元汇率" },
@@ -154,6 +162,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const { t, language, isRTL } = useTranslation();
   const L = (words: Words) => pickLang(language, words);
   const open = !!request;
+  const sending = request?.action === "send";
 
   const lastPayment = trpc.deliveryBox.lastExchangeRate.useQuery(undefined, {
     enabled: open,
@@ -220,8 +229,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
       <DialogContent dir={isRTL ? "rtl" : "ltr"} className="max-h-[90vh] overflow-y-auto sm:max-w-md">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
-            <Printer className="h-5 w-5 text-primary" />
-            {L(TXT.title)}
+            {sending ? <Send className="h-5 w-5 text-primary" /> : <Printer className="h-5 w-5 text-primary" />}
+            {L(sending ? TXT.sendTitle : TXT.title)}
             <bdi dir="ltr" className="ms-auto rounded-md border bg-muted px-2 py-0.5 font-mono text-xs">
               {request?.boxCode}
             </bdi>
@@ -350,8 +359,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
 
         <DialogFooter className="flex-row gap-2 sm:gap-2">
           <Button onClick={confirm} className="flex-1" data-testid="receipt-dinar-print">
-            <Printer className="me-1.5 h-4 w-4" />
-            {L(TXT.print)}
+            {sending ? <Send className="me-1.5 h-4 w-4" /> : <Printer className="me-1.5 h-4 w-4" />}
+            {L(sending ? TXT.send : TXT.print)}
           </Button>
           <Button variant="outline" onClick={onClose} className="flex-1">
             {L(TXT.cancel)}
