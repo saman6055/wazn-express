@@ -49,6 +49,11 @@ export type PackagesTab =
 export interface PackagesLink {
   tab?: PackagesTab;
   search?: string;
+  /**
+   * Air or sea, as the table's own filter names them. What "this customer
+   * mostly ships by air" means when it is clicked (owner, 2026-09-22).
+   */
+  shippingType?: "air_regular" | "air_irregular" | "sea";
   /** A batch id, as the table's own filter expects it. */
   batch?: string;
   /**
@@ -169,7 +174,7 @@ export function readCustomersLink(search: string): CustomersLink {
 
 /** The parcels table lives at /packages/all — /packages is the summary. */
 export function packagesHref(link: PackagesLink = {}): string {
-  return `/packages/all${query({ tab: link.tab, search: link.search, batch: link.batch, day: link.day })}`;
+  return `/packages/all${query({ tab: link.tab, search: link.search, batch: link.batch, day: link.day, shippingType: link.shippingType })}`;
 }
 
 export function readPackagesLink(search: string): PackagesLink {
@@ -181,6 +186,7 @@ export function readPackagesLink(search: string): PackagesLink {
     // Anything that is not a plain calendar date is no filter, rather than a
     // filter that quietly matches nothing.
     day: /^\d{4}-\d{2}-\d{2}$/.test(p.get("day") ?? "") ? p.get("day")! : undefined,
+    shippingType: oneOf(p.get("shippingType"), ["air_regular", "air_irregular", "sea"] as const),
   };
 }
 

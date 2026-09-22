@@ -432,6 +432,13 @@ const [, setLocation] = useLocation();
     setBatchId(v === "all" || v === "no_batch" ? undefined : parseInt(v, 10));
   };
 
+  // A link may name a shipping type — "this customer mostly ships by air",
+  // clicked. Applied once, after the hook's own state exists.
+  useEffect(() => {
+    if (linkFilters.shippingType) setShippingTypeFilter(linkFilters.shippingType);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   useEffect(() => {
     setSearch(debouncedSearch);

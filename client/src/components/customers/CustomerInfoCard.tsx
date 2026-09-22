@@ -1,4 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { whatsappNumber } from "@shared/receiptWhatsApp";
 import { Separator } from "@/components/ui/separator";
 import {
   Phone,
@@ -36,6 +37,53 @@ interface CustomerRecord {
 interface CustomerInfoCardProps {
   customer: CustomerRecord;
   t: (key: string) => string;
+}
+
+/**
+ * A way of reaching the customer, which is also the way of reaching them.
+ *
+ * Owner, 2026-09-22: "if it has a relation somewhere else, clicking should
+ * take me there." A mobile number opens that customer's WhatsApp — the office
+ * writes from its own account — and an address like an email opens the mail
+ * app. A number that is not a number stays plain text rather than opening a
+ * chat with nobody.
+ */
+function ContactRow({
+  value,
+  label,
+  icon,
+  tone,
+  href,
+}: {
+  value?: string | null;
+  label: string;
+  icon: React.ReactNode;
+  tone: string;
+  href?: string;
+}) {
+  const text = (value ?? "").trim();
+  if (!text) return null;
+  const number = whatsappNumber(text);
+  const target = href ?? (number ? `https://wa.me/${number}` : undefined);
+
+  const body = (
+    <>
+      <div className={`h-8 w-8 rounded-lg ${tone} flex items-center justify-center`}>{icon}</div>
+      <div className="min-w-0">
+        <p className={`text-sm font-medium ${target ? "text-sky-700 underline-offset-2 group-hover:underline dark:text-sky-300" : ""}`}>
+          <bdi dir="ltr">{text}</bdi>
+        </p>
+        <p className="text-xs text-muted-foreground">{label}</p>
+      </div>
+    </>
+  );
+
+  if (!target) return <div className="flex items-center gap-3">{body}</div>;
+  return (
+    <a href={target} target="_blank" rel="noopener noreferrer" className="group flex items-center gap-3 rounded-lg">
+      {body}
+    </a>
+  );
 }
 
 export function CustomerInfoCard({ customer, t }: CustomerInfoCardProps) {
@@ -83,36 +131,28 @@ export function CustomerInfoCard({ customer, t }: CustomerInfoCardProps) {
             {t("customers.contact")}
           </h4>
           <div className="space-y-2">
-            <div className="flex items-center gap-3">
-              <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-              </div>
-              <div>
-                <p className="text-sm font-medium">{customer.mobileNumber}</p>
-                <p className="text-xs text-muted-foreground">{t("customers.primaryMobile")}</p>
-              </div>
-            </div>
+            <ContactRow
+              value={customer.mobileNumber}
+              label={t("customers.primaryMobile")}
+              icon={<Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+              tone="bg-blue-100 dark:bg-blue-900/30"
+            />
             {c.secondaryMobile && (
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                  <Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{c.secondaryMobile}</p>
-                  <p className="text-xs text-muted-foreground">{t("customers.secondaryMobile")}</p>
-                </div>
-              </div>
+              <ContactRow
+                value={c.secondaryMobile}
+                label={t("customers.secondaryMobile")}
+                icon={<Phone className="h-4 w-4 text-blue-600 dark:text-blue-400" />}
+                tone="bg-blue-100 dark:bg-blue-900/30"
+              />
             )}
             {customer.email && (
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-lg bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                  <Mail className="h-4 w-4 text-green-600 dark:text-green-400" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium">{customer.email}</p>
-                  <p className="text-xs text-muted-foreground">{t("customers.email")}</p>
-                </div>
-              </div>
+              <ContactRow
+                value={customer.email}
+                label={t("customers.email")}
+                href={`mailto:${customer.email}`}
+                icon={<Mail className="h-4 w-4 text-green-600 dark:text-green-400" />}
+                tone="bg-green-100 dark:bg-green-900/30"
+              />
             )}
           </div>
         </div>

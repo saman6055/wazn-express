@@ -29,10 +29,12 @@ import {
   Download,
   User,
 } from "lucide-react";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { IRAQI_CITIES } from "../../../../shared/iraqi-cities";
-import { useLocation, useParams } from "wouter";
+import { Link, useLocation, useParams } from "wouter";
+import { packagesHref } from "@shared/listLinks";
+import { customerCodeOnly } from "@shared/customerCode";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { useCustomerDetail } from "@/hooks/useCustomerDetail";
@@ -49,6 +51,43 @@ import { Textarea } from "@/components/ui/textarea";
 import { Separator } from "@/components/ui/separator";
 import { toast } from "sonner";
 import { Plus } from "lucide-react";
+
+/**
+ * A figure that leads somewhere.
+ *
+ * Owner, 2026-09-22: "if it has detail or a relation somewhere else, clicking
+ * should take me to the thing itself." Either to another screen (href) or to
+ * the tab on this page that holds the detail (onClick). A figure with neither
+ * is left alone — a card that looks clickable and is not is worse than one
+ * that never pretended.
+ */
+function Drill({
+  href,
+  onClick,
+  children,
+}: {
+  href?: string;
+  onClick?: () => void;
+  children: React.ReactNode;
+}) {
+  const ring =
+    "block rounded-xl transition hover:ring-2 hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary";
+  if (href) {
+    return (
+      <Link href={href} className={ring}>
+        {children}
+      </Link>
+    );
+  }
+  if (onClick) {
+    return (
+      <button type="button" onClick={onClick} className={`${ring} w-full text-start`}>
+        {children}
+      </button>
+    );
+  }
+  return <>{children}</>;
+}
 
 export default function CustomerDetail() {
   const { t: tToast, language } = useTranslation();
@@ -86,6 +125,28 @@ export default function CustomerDetail() {
   } = cd;
 
   const deliveryRatePct = totalPackages > 0 ? Math.round((deliveredPackages / totalPackages) * 100) : 0;
+
+  /**
+   * Every figure on this page that stands for records opens them.
+   *
+   * The owner, 2026-09-22: "each of these, if it has detail or a relation
+   * somewhere else — clicking should take me to the thing itself. Connect the
+   * links." A count of parcels means those parcels; a balance means the
+   * account it was counted from; a favourite shipping type means the parcels
+   * that carry it. Figures that stand for nothing — a total weight, an
+   * average — stay as they are rather than pretending to be doors.
+   *
+   * The addresses come from the shared link vocabulary, so a filter renamed
+   * there breaks the build instead of quietly opening an unfiltered list.
+   */
+  const code = customerCodeOnly(customer?.customerCode);
+  const [tab, setTab] = useState("packages");
+  const parcelsHref = (link: Parameters<typeof packagesHref>[0] = {}) =>
+    code ? packagesHref({ search: code, ...link }) : undefined;
+  const preferredShippingHref =
+    preferredShippingType === "air_regular" || preferredShippingType === "air_irregular" || preferredShippingType === "sea"
+      ? parcelsHref({ shippingType: preferredShippingType })
+      : parcelsHref();
 
   const lastActivity = useMemo(() => {
     const dates = (packages ?? [])
@@ -237,66 +298,74 @@ export default function CustomerDetail() {
 
           <div className="lg:col-span-2 space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">{t("customers.balance")}</p>
-                      <p className={`text-2xl font-bold ${(balance ?? 0) > 0 ? "text-red-600 dark:text-red-300" : (balance ?? 0) < 0 ? "text-green-600 dark:text-green-300" : ""}`}>
-                        ${Math.abs(balance ?? 0).toFixed(2)}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        {(balance ?? 0) > 0 ? t("customers.inDebt") : (balance ?? 0) < 0 ? t("customers.hasCredit") : t("customers.settled")}
-                      </p>
+              <Drill onClick={() => setTab("finance")}>
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("customers.balance")}</p>
+                        <p className={`text-2xl font-bold ${(balance ?? 0) > 0 ? "text-red-600 dark:text-red-300" : (balance ?? 0) < 0 ? "text-green-600 dark:text-green-300" : ""}`}>
+                          ${Math.abs(balance ?? 0).toFixed(2)}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {(balance ?? 0) > 0 ? t("customers.inDebt") : (balance ?? 0) < 0 ? t("customers.hasCredit") : t("customers.settled")}
+                        </p>
+                      </div>
+                      <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${(balance ?? 0) > 0 ? "bg-red-100 dark:bg-red-900/30" : "bg-green-100 dark:bg-green-900/30"}`}>
+                        <Wallet className={`h-5 w-5 ${(balance ?? 0) > 0 ? "text-red-600 dark:text-red-300" : "text-green-600 dark:text-green-300"}`} />
+                      </div>
                     </div>
-                    <div className={`h-10 w-10 rounded-xl flex items-center justify-center ${(balance ?? 0) > 0 ? "bg-red-100 dark:bg-red-900/30" : "bg-green-100 dark:bg-green-900/30"}`}>
-                      <Wallet className={`h-5 w-5 ${(balance ?? 0) > 0 ? "text-red-600 dark:text-red-300" : "text-green-600 dark:text-green-300"}`} />
+                  </CardContent>
+                </Card>
+              </Drill>
+              <Drill href={parcelsHref()}>
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("customers.totalPackages")}</p>
+                        <p className="text-2xl font-bold">{totalPackages}</p>
+                        <p className="text-xs text-muted-foreground">{deliveredPackages} {t("packages.delivered")}</p>
+                      </div>
+                      <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                        <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">{t("customers.totalPackages")}</p>
-                      <p className="text-2xl font-bold">{totalPackages}</p>
-                      <p className="text-xs text-muted-foreground">{deliveredPackages} {t("packages.delivered")}</p>
+                  </CardContent>
+                </Card>
+              </Drill>
+              <Drill href={parcelsHref({ tab: "pending_delivery" })}>
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("packages.inProgress")}</p>
+                        <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">{pendingPackages}</p>
+                        <p className="text-xs text-muted-foreground">{t("common.active")}</p>
+                      </div>
+                      <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
+                        <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
+                      </div>
                     </div>
-                    <div className="h-10 w-10 rounded-xl bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
-                      <Package className="h-5 w-5 text-blue-600 dark:text-blue-300" />
+                  </CardContent>
+                </Card>
+              </Drill>
+              <Drill onClick={() => setTab("finance")}>
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("customers.totalSpent")}</p>
+                        <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
+                        <p className="text-xs text-muted-foreground">{t("common.allTime")}</p>
+                      </div>
+                      <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                        <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">{t("packages.inProgress")}</p>
-                      <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">{pendingPackages}</p>
-                      <p className="text-xs text-muted-foreground">{t("common.active")}</p>
-                    </div>
-                    <div className="h-10 w-10 rounded-xl bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center">
-                      <Clock className="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">{t("customers.totalSpent")}</p>
-                      <p className="text-2xl font-bold">${totalSpent.toFixed(2)}</p>
-                      <p className="text-xs text-muted-foreground">{t("common.allTime")}</p>
-                    </div>
-                    <div className="h-10 w-10 rounded-xl bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
-                      <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Drill>
             </div>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               <Card className="border-0 shadow-lg">
@@ -322,36 +391,40 @@ export default function CustomerDetail() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">{t("customers.preferredShipping")}</p>
-                      <p className="text-2xl font-bold">{preferredShippingType}</p>
-                      <p className="text-xs text-muted-foreground">{preferredShippingCount} {t("common.packages")}</p>
+              <Drill href={preferredShippingHref}>
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("customers.preferredShipping")}</p>
+                        <p className="text-2xl font-bold">{preferredShippingType}</p>
+                        <p className="text-xs text-muted-foreground">{preferredShippingCount} {t("common.packages")}</p>
+                      </div>
+                      <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
+                        <Globe className="h-5 w-5 text-teal-600 dark:text-teal-300" />
+                      </div>
                     </div>
-                    <div className="h-10 w-10 rounded-xl bg-teal-100 dark:bg-teal-900/30 flex items-center justify-center">
-                      <Globe className="h-5 w-5 text-teal-600 dark:text-teal-300" />
+                  </CardContent>
+                </Card>
+              </Drill>
+              <Drill href={parcelsHref({ tab: "delivered" })}>
+                <Card className="border-0 shadow-lg">
+                  <CardContent className="p-4">
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-xs font-medium text-muted-foreground">{t("customers.deliveryRate")}</p>
+                        <p className="text-2xl font-bold text-green-600 dark:text-green-300">{deliveryRatePct}%</p>
+                      </div>
+                      <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
+                        <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
+                      </div>
                     </div>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-lg">
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <p className="text-xs font-medium text-muted-foreground">{t("customers.deliveryRate")}</p>
-                      <p className="text-2xl font-bold text-green-600 dark:text-green-300">{deliveryRatePct}%</p>
-                    </div>
-                    <div className="h-10 w-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
-                      <Check className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
+                  </CardContent>
+                </Card>
+              </Drill>
             </div>
 
-            <Tabs defaultValue="packages" className="w-full">
+            <Tabs value={tab} onValueChange={setTab} className="w-full">
               <TabsList className="grid w-full grid-cols-6">
                 <TabsTrigger value="packages" className="gap-2">
                   <Package className="h-4 w-4" />
@@ -383,7 +456,7 @@ export default function CustomerDetail() {
                 {/* What is still coming, above what already arrived: the office
                     reads this out when the customer rings to ask where it is. */}
                 <CustomerAwaitingCard customerId={customerId} />
-                <CustomerPackagesTab packages={packages as any} customerId={customerId} t={t} />
+                <CustomerPackagesTab packages={packages as any} customerId={customerId} customerCode={customer?.customerCode} t={t} />
               </TabsContent>
 
               <TabsContent value="services" className="mt-4">
