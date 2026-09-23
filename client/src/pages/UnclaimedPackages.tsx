@@ -12,7 +12,7 @@ import { trpc } from "@/lib/trpc";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Package, Search, User, Loader2, CheckCircle2, AlertTriangle, UserPlus } from "lucide-react";
-import { formatDistanceToNow } from "date-fns";
+import { fmtWhen } from "@/lib/numericDate";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 export default function UnclaimedPackages() {
@@ -226,7 +226,7 @@ const [search, setSearch] = useState("");
                           )}
                         </TableCell>
                         <TableCell className="text-muted-foreground text-sm">
-                          {formatDistanceToNow(new Date(pkg.createdAt), { addSuffix: true })}
+                          <bdi dir="ltr" className="tabular-nums">{fmtWhen(pkg.createdAt)}</bdi>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button

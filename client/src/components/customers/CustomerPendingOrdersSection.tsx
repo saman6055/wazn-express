@@ -15,6 +15,7 @@
 import { useMemo, useState } from "react";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { fmtWhen } from "@/lib/numericDate";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,21 +37,8 @@ interface Props {
 type OrderType = "all" | "full_package" | "commission" | "purchase_request";
 type SortKey = "newest" | "oldest" | "highest";
 
-function formatRelative(iso: string | Date | null | undefined, t: (k: string) => string): string {
-  if (!iso) return "—";
-  const date = typeof iso === "string" ? new Date(iso) : iso;
-  const ms = Date.now() - date.getTime();
-  const sec = Math.floor(ms / 1000);
-  if (sec < 60) return t("time.justNow");
-  const min = Math.floor(sec / 60);
-  if (min < 60) return `${min} ${t("time.minutesAgo")}`;
-  const hr = Math.floor(min / 60);
-  if (hr < 24) return `${hr} ${t("time.hoursAgo")}`;
-  const day = Math.floor(hr / 24);
-  if (day < 30) return `${day} ${t("time.daysAgo")}`;
-  const mo = Math.floor(day / 30);
-  return `${mo} ${t("time.monthsAgo")}`;
-}
+// Dates are written, never counted backwards from today (owner,
+// 2026-09-23) — lib/numericDate.
 
 function orderTypeIcon(type: string) {
   if (type === "commission") return <ShoppingBag className="h-4 w-4" />;
@@ -195,7 +183,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
                   <span className="text-xs font-medium">{t("customers.oldestOrder")}</span>
                 </div>
                 <p className="text-2xl font-bold text-purple-900 dark:text-purple-200">
-                  {summary?.oldestAt ? formatRelative(summary.oldestAt, t) : "—"}
+                  {summary?.oldestAt ? fmtWhen(summary.oldestAt) : "—"}
                 </p>
                 <p className="text-xs text-purple-700 dark:text-purple-300 mt-1">{t("customers.sinceCreation")}</p>
               </div>
@@ -310,7 +298,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
                           <TableCell className="text-xs">
                             <div className="flex items-center gap-1 text-muted-foreground">
                               <Clock className="h-3 w-3" />
-                              {formatRelative(order.updatedAt, t)}
+                              {fmtWhen(order.updatedAt)}
                             </div>
                           </TableCell>
                           <TableCell>

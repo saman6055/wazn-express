@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 
 import { Database, Download, Trash2, RefreshCw, AlertCircle, CheckCircle2, Clock } from "lucide-react";
 import { toast } from "sonner";
-import { formatDistanceToNow } from "date-fns";
+import { fmtWhen } from "@/lib/numericDate";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 
@@ -283,7 +283,7 @@ export default function BackupManagement() {
                     </div>
                     <div className="text-sm text-muted-foreground space-y-1">
                       <p>{pickLang(language, { ku: "قەبارە", en: "Size", ar: "الحجم", zh: "大小" })}: {formatFileSize(backup.fileSize)}</p>
-                      <p>{pickLang(language, { ku: "دروستکراوە", en: "Created", ar: "تم الإنشاء", zh: "创建于" })}: {backup.createdAt ? formatDistanceToNow(new Date(backup.createdAt), { addSuffix: true }) : pickLang(language, { ku: "نەزانراو", en: "Unknown", ar: "غير معروف", zh: "未知" })}</p>
+                      <p>{pickLang(language, { ku: "دروستکراوە", en: "Created", ar: "تم الإنشاء", zh: "创建于" })}: {backup.createdAt ? fmtWhen(backup.createdAt, true) : pickLang(language, { ku: "نەزانراو", en: "Unknown", ar: "غير معروف", zh: "未知" })}</p>
                       {backup.createdByName && <p>{pickLang(language, { ku: "دروستکراوە لەلایەن", en: "Created by", ar: "أنشأها", zh: "创建者" })}: {backup.createdByName}</p>}
                       {backup.errorMessage && (
                         <p className="text-red-600 dark:text-red-300">{pickLang(language, { ku: "هەڵە", en: "Error", ar: "خطأ", zh: "错误" })}: {backup.errorMessage}</p>

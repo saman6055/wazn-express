@@ -1,5 +1,5 @@
 import { openExternal } from "@/lib/html";
-import { fmtDate, fmtTime } from "@/lib/numericDate";
+import { fmtWhen } from "@/lib/numericDate";
 import { useState, useEffect, useRef } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -227,19 +227,10 @@ export default function CustomerMessages() {
     setIsUploading(false);
   };
 
-  const formatTime = (date: any) => {
-    const d = new Date(date);
-    const now = new Date();
-    const diff = now.getTime() - d.getTime();
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24));
-
-    if (days === 0) {
-      return fmtTime(d);
-    } else if (days === 1) {
-      return pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" });
-    }
-    return fmtDate(d);
-  };
+  // A message carries the moment it was sent, written out: a conversation is
+  // read long after it happened, and "yesterday" stops being true overnight
+  // (owner, 2026-09-23).
+  const formatTime = (date: any) => fmtWhen(date, true);
 
   const renderMessageContent = (msg: any) => {
     const isStaff = msg.senderType === "staff";

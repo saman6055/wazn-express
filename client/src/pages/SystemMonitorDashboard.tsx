@@ -25,6 +25,7 @@ import {
 import { cn } from "@/lib/utils";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { fmtWhen } from "@/lib/numericDate";
 
 // Translations
 const translations = {
@@ -263,20 +264,10 @@ export default function SystemMonitorDashboard() {
     color: CATEGORY_COLORS[item.category as keyof typeof CATEGORY_COLORS] || "#6b7280",
   })) || [];
   
-  // Format time ago
-  const formatTimeAgo = (date: Date | string) => {
-    const now = new Date();
-    const then = new Date(date);
-    const diffMs = now.getTime() - then.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-    const diffHours = Math.floor(diffMins / 60);
-    const diffDays = Math.floor(diffHours / 24);
-    
-    if (diffMins < 1) return language === 'ku' ? 'ئێستا' : 'Just now';
-    if (diffMins < 60) return `${diffMins} ${language === 'ku' ? 'خولەک' : 'min'} ${t.ago}`;
-    if (diffHours < 24) return `${diffHours} ${language === 'ku' ? 'کاتژمێر' : 'hr'} ${t.ago}`;
-    return `${diffDays} ${language === 'ku' ? 'ڕۆژ' : 'day'} ${t.ago}`;
-  };
+  // The moment itself, with its clock: a monitor is read to find out when
+  // something happened, and "2 hours ago" changes meaning while you look
+  // at it (owner, 2026-09-23).
+  const formatTimeAgo = (date: Date | string) => fmtWhen(date, true);
   
   const getSeverityIcon = (severity: string) => {
     switch (severity) {

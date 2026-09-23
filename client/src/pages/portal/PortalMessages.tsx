@@ -309,20 +309,9 @@ export default function PortalMessages() {
     return isNaN(d.getTime()) ? "" : formatClockTime(d, language);
   };
   
-  const formatDate = (date: Date | string) => {
-    const d = new Date(date);
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    if (d.toDateString() === today.toDateString()) {
-      return pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" });
-    } else if (d.toDateString() === yesterday.toDateString()) {
-      return pickLang(language, { ku: "دوێنێ", en: "Yesterday", ar: "أمس", zh: "昨天" });
-    } else {
-      return formatPortalDate(d, language);
-    }
-  };
+  // The day a group of messages belongs to, written out — never "today",
+  // which is a different day every day it is read (owner, 2026-09-23).
+  const formatDate = (date: Date | string) => formatPortalDate(date, language);
   
   // Group messages by date
   const groupedMessages = messagesQuery.data?.reduce((groups: Record<string, any[]>, message: any) => {
