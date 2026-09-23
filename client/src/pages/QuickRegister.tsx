@@ -8,11 +8,12 @@ import { trpc } from "@/lib/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers } from "lucide-react";
+import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { useLocation } from "wouter";
+import { Link, useLocation } from "wouter";
+import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { OrderNote } from "@/components/scanner/OrderNote";
@@ -27,6 +28,18 @@ import { CopyButton } from "@/components/CopyButton";
 const MIN_TRACKING_LOOKUP = 8;
 /** How long a pause in the typing means "that is the whole number". */
 const TRACKING_LOOKUP_PAUSE_MS = 800;
+
+/**
+ * The order behind a shared tracking, and the way to it.
+ *
+ * One rule for every screen — @shared/parcelSource — so the warning here and
+ * the alert card elsewhere send the same person to the same page.
+ */
+function orderHref(order: { id: number; orderCode: string; orderType?: string | null }): string {
+  return parcelSourceTarget([
+    { orderId: order.id, orderType: (order.orderType as ParcelOrderType) ?? "full_package", orderCode: order.orderCode },
+  ]).href;
+}
 
 export default function QuickRegister() {
   const systemAlert = useSystemAlert();
@@ -150,9 +163,20 @@ export default function QuickRegister() {
 
     setIsSearching(true);
     try {
-      const result = await trpcUtils.scanning.searchTrackingAllTypes.fetch({
-        trackingNumber: currentTracking.trim()
-      });
+      /**
+       * Asked afresh, never from the cache.
+       *
+       * The owner, 2026-09-23: he searched a tracking, found the record that
+       * held it, deleted it — and Quick Register went on showing the same
+       * warning. The app's queries are good for two minutes by default, and
+       * `.fetch()` honours that, so the screen was answering from a copy of
+       * the world as it had been before he fixed it. A lookup here is the one
+       * question that must never be answered from memory.
+       */
+      const result = await trpcUtils.scanning.searchTrackingAllTypes.fetch(
+        { trackingNumber: currentTracking.trim() },
+        { staleTime: 0 },
+      );
 
       if (searchVersionRef.current !== thisSearchVersion) {
         console.log(`[QuickRegister] Stale search ignored: "${currentTracking}"`);
@@ -169,9 +193,10 @@ export default function QuickRegister() {
         // never block the existing flow — we just leave expandedLookup null.
         try {
           if (result.found && (result.source === 'full_package' || result.source === 'commission')) {
-            const exp = await trpcUtils.packages.lookupTrackingExpanded.fetch({
-              trackingNumber: currentTracking.trim(),
-            });
+            const exp = await trpcUtils.packages.lookupTrackingExpanded.fetch(
+              { trackingNumber: currentTracking.trim() },
+              { staleTime: 0 },
+            );
             if (searchVersionRef.current === thisSearchVersion && exp) {
               setExpandedLookup(exp as any);
               setLinkAllSharingOrders(true);
@@ -264,6 +289,15 @@ export default function QuickRegister() {
               // The parcel's own code, not the tracking: it is what finds the
               // existing row, and the tracking is already on screen.
               detail: already?.packageCode || currentTracking.trim(),
+              // And a way to it: the owner, 2026-09-23 — an alert that names
+              // a record and leaves you to find it is half an alert.
+              openHref: parcelListHref(already?.packageCode || currentTracking.trim()),
+              openLabel: pickLang(language, {
+                ku: "پاکەتەکە بکەرەوە",
+                en: "Open the parcel",
+                ar: "افتح الطرد",
+                zh: "打开包裹",
+              }),
             });
           } else if (!silent) {
             soundManager.playFound();
@@ -1112,6 +1146,30 @@ export default function QuickRegister() {
                           <div>
                             <div className="font-bold">{t("quickRegister.sharedTrackingDifferentCustomer")}</div>
                             <div className="text-xs opacity-90">{t("quickRegister.submitDisabledFixInAlerts")}</div>
+                            {/* The record that holds it, one click away — the
+                                owner, 2026-09-23: "it is very important that
+                                there is a link to the very place that has that
+                                tracking." */}
+                            <div className="mt-2 flex flex-wrap gap-2">
+                              {expandedLookup.orders.map((od) => (
+                                <Link
+                                  key={od.order.id}
+                                  href={orderHref(od.order)}
+                                  className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 font-mono text-xs font-medium text-rose-900 transition-colors hover:bg-white dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
+                                >
+                                  <ExternalLink className="h-3 w-3" />
+                                  {od.order.orderCode}
+                                  <span className="font-sans opacity-80">{od.customer?.customerCode ?? "?"}</span>
+                                </Link>
+                              ))}
+                              <Link
+                                href="/tracking-alerts"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 text-xs font-medium text-rose-900 transition-colors hover:bg-white dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
+                              >
+                                <AlertTriangle className="h-3 w-3" />
+                                Tracking Alerts
+                              </Link>
+                            </div>
                           </div>
                         </div>
                       </div>
@@ -1124,8 +1182,12 @@ export default function QuickRegister() {
                         </div>
                         <div className="space-y-1 mb-2">
                           {expandedLookup.orders.map((od) => (
-                            <div key={od.order.id} className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-orange-200/60 dark:border-orange-800/40">
-                              <span className="font-mono font-medium">{od.order.orderCode}</span>
+                            <Link
+                              key={od.order.id}
+                              href={orderHref(od.order)}
+                              className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-orange-200/60 dark:border-orange-800/40 transition-colors hover:border-orange-400 hover:bg-white dark:hover:bg-black/50"
+                            >
+                              <span className="font-mono font-medium underline-offset-2">{od.order.orderCode}</span>
                               <OrderNumbers numbers={od.order.orderNumber} />
                               {/* Which shop it was bought from — context only,
                                   and absent for orders that never recorded one. */}
@@ -1138,7 +1200,7 @@ export default function QuickRegister() {
                                   {od.batch.batchCode}
                                 </span>
                               )}
-                            </div>
+                            </Link>
                           ))}
                         </div>
                         {expandedLookup.flags?.batchConflict && (

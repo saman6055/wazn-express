@@ -8,8 +8,23 @@
     {
       "name": "wazn-dev-needs-reachable-db",
       "runtimeExecutable": "C:\\Program Files\\nodejs\\npm.cmd",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": [
+        "run",
+        "dev"
+      ],
       "port": 3500
+    },
+    {
+      "name": "brochure",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5599",
+        "--directory",
+        "brochure"
+      ],
+      "port": 5599
     }
   ]
 }

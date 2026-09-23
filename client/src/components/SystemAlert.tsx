@@ -1,6 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { AlertTriangle, XCircle } from "lucide-react";
+import { AlertTriangle, ExternalLink, XCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
@@ -34,6 +34,15 @@ export interface SystemAlertRequest {
   detail?: string;
   /** Named so the button can say what happens, not just "OK". */
   actionLabel?: string;
+  /**
+   * Where the thing it is talking about lives (owner, 2026-09-23).
+   *
+   * "It says this tracking exists somewhere else — it is very important that
+   * there is a link, so I can go to the very record that has it." An alert
+   * that names a record and leaves you to find it is half an alert.
+   */
+  openHref?: string;
+  openLabel?: string;
   /**
    * Show it, say it loudly, and get out of the way after this many
    * milliseconds — no backdrop, no button, no focus taken.
@@ -254,6 +263,22 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
                 <Button ref={okRef} onClick={dismiss} className="px-10" data-testid="system-alert-ok">
                   {current.actionLabel || "OK"}
                 </Button>
+                {current.openHref && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const href = current.openHref!;
+                      dismiss();
+                      // A full navigation rather than a router push: the alert
+                      // can be raised from anywhere, including outside a route.
+                      window.location.assign(href);
+                    }}
+                    data-testid="system-alert-open"
+                  >
+                    <ExternalLink className="h-4 w-4 me-1.5" />
+                    {current.openLabel || "Open"}
+                  </Button>
+                )}
                 <span className="text-xs text-muted-foreground">Enter · Esc</span>
                 {queue.length > 1 && (
                   <span className="ms-auto text-xs text-muted-foreground">

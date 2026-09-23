@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ckb">
+<head>
+<meta charset="utf-8">
+<title>Wazn Express — Brochure Mockup</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Kufi+Arabic:wght@400;600;700;800;900&family=Noto+Sans+Arabic:wght@300;400;500;600;700&family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+<style>
+:root{
+  --ink:#0A0A0B;
+  --cyan:#00ADEE;
+  --cyan-deep:#0084C7;
+  --grey:#6C7278;
+  --line:#E3E7EA;
+  --wash:#F5F7F9;
+  --pad-x:16mm;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-print-color-adjust:exact;print-color-adjust:exact}
+body{background:#8b9097;font-family:"Noto Sans Arabic","Inter",Tahoma,sans-serif;color:var(--ink)}
+
+@page{size:210mm 297mm;margin:0}
+.page{width:210mm;height:297mm;position:relative;overflow:hidden;background:#fff;page-break-after:always;break-after:page}
+@media screen{.page{margin:10mm auto;box-shadow:0 10px 40px rgba(0,0,0,.35)}}
+@media print{body{background:#fff}.page{margin:0;box-shadow:none}}
+
+/* ───── shared ───── */
+.pad{position:absolute;inset:15mm var(--pad-x) 14mm}
+.foot{position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:9mm;display:flex;align-items:center;gap:4mm;
+  font-family:"Inter",sans-serif;font-size:7pt;letter-spacing:.16em;text-transform:uppercase;color:#A7AEB4}
+.foot .rule{flex:1;height:1px;background:var(--line)}
+.foot .num{font-weight:800;color:var(--ink);letter-spacing:.04em;font-size:9pt}
+
+.kicker{display:flex;align-items:center;gap:3mm;font-family:"Inter",sans-serif;font-size:7.5pt;font-weight:700;
+  letter-spacing:.22em;text-transform:uppercase;color:var(--cyan)}
+.kicker::after{content:"";flex:1;height:2px;background:linear-gradient(90deg,var(--cyan),rgba(0,173,238,0))}
+[dir="rtl"] .kicker::after{background:linear-gradient(270deg,var(--cyan),rgba(0,173,238,0))}
+.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:8mm;margin-top:12mm;padding-top:8mm;border-top:1px solid var(--line)}
+.step .n{font-family:"Inter",sans-serif;font-size:8pt;font-weight:900;color:var(--cyan);letter-spacing:.18em}
+.step h4{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:10.5pt;margin-top:3mm;line-height:1.5}
+.step p{font-size:9.6pt;line-height:1.7;color:var(--grey);margin-top:1.8mm}
+
+h1.title{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:31pt;line-height:1.22;letter-spacing:-.01em;margin-top:5mm}
+h1.title .hl{color:var(--cyan)}
+.lede{font-size:11.5pt;line-height:1.75;color:var(--grey);max-width:150mm;margin-top:4mm}
+.ic{width:1em;height:1em;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}
+
+/* ───── cover ───── */
+.dark{background:var(--ink);color:#fff}
+.cover .bg{position:absolute;inset:0}
+.cover .bg svg{position:absolute;inset:0;width:100%;height:100%}
+.cover-top{position:absolute;top:15mm;left:var(--pad-x);right:var(--pad-x);display:flex;justify-content:space-between;
+  align-items:center;font-family:"Inter",sans-serif;font-size:7.5pt;font-weight:600;letter-spacing:.24em;
+  text-transform:uppercase;color:rgba(255,255,255,.5)}
+.chip{border:1px solid rgba(255,255,255,.25);border-radius:99px;padding:2.2mm 5mm;color:#fff;letter-spacing:.2em}
+.chip b{color:var(--cyan);font-weight:800}
+.cover-mid{position:absolute;left:var(--pad-x);right:var(--pad-x);top:62mm}
+.cover-mid img{width:88mm;display:block}
+.tag-ku{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:18pt;line-height:1.55;margin-top:12mm;direction:rtl}
+.tag-ku .hl{color:var(--cyan)}
+.tag-ar{direction:rtl;font-size:11pt;line-height:1.9;color:rgba(255,255,255,.58);margin-top:3.5mm;font-weight:300}
+.tag-en{font-family:"Inter",sans-serif;font-size:8pt;font-weight:600;letter-spacing:.22em;text-transform:uppercase;
+  color:rgba(255,255,255,.38);margin-top:5mm}
+.cover-index{position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:57mm;display:flex;gap:0;direction:rtl}
+.cover-index div{flex:1;padding:0 5mm;border-inline-start:1px solid rgba(255,255,255,.14)}
+.cover-index div:first-child{padding-inline-start:0;border:0}
+.cover-index b{display:block;font-family:"Inter",sans-serif;font-size:7pt;font-weight:800;letter-spacing:.2em;color:var(--cyan)}
+.cover-index span{display:block;font-family:"Noto Kufi Arabic",sans-serif;font-weight:600;font-size:10pt;margin-top:2mm;color:rgba(255,255,255,.9)}
+.cover-bot{position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:14mm}
+.plats{display:flex;flex-wrap:wrap;gap:2.5mm;padding-bottom:7mm;border-bottom:1px solid rgba(255,255,255,.14)}
+.plats span{font-family:"Inter",sans-serif;font-size:8pt;font-weight:600;letter-spacing:.1em;
+  border:1px solid rgba(255,255,255,.22);border-radius:99px;padding:1.8mm 4.5mm;color:rgba(255,255,255,.82)}
+.route{display:flex;align-items:center;gap:4mm;margin-top:7mm;font-family:"Inter",sans-serif;font-size:9pt;
+  font-weight:800;letter-spacing:.26em;text-transform:uppercase;color:#fff}
+.route .line{flex:1;height:1px;background:repeating-linear-gradient(90deg,rgba(255,255,255,.45) 0 3px,transparent 3px 7px)}
+.route .dot{width:2.6mm;height:2.6mm;border-radius:50%;background:var(--cyan)}
+
+/* ───── panels / features ───── */
+.hero-panel{margin-top:9mm;background:var(--ink);color:#fff;border-radius:4mm;padding:9mm 10mm;position:relative;overflow:hidden}
+.hero-panel .glow{position:absolute;inset:auto auto -46mm -34mm;width:104mm;height:104mm;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,173,238,.5),rgba(0,173,238,0) 66%)}
+.hero-panel .badge{width:11mm;height:11mm;border-radius:3mm;background:var(--cyan);color:#fff;display:flex;
+  align-items:center;justify-content:center;font-size:6mm;margin-bottom:5mm;position:relative}
+.hero-panel h2{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:17pt;line-height:1.45;position:relative}
+.hero-panel p{font-size:10.5pt;line-height:1.85;color:rgba(255,255,255,.66);margin-top:3.5mm;font-weight:300;position:relative;max-width:125mm}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:7mm 8mm;margin-top:9mm}
+.feat{display:flex;gap:4mm;align-items:flex-start}
+.feat .mark{width:8mm;height:8mm;border-radius:50%;background:rgba(0,173,238,.1);color:var(--cyan-deep);
+  display:flex;align-items:center;justify-content:center;font-size:4.4mm;flex:none;margin-top:.5mm}
+.feat h3{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:11.5pt;line-height:1.5}
+.feat p{font-size:10pt;line-height:1.7;color:var(--grey);margin-top:1.5mm}
+
+.quote{position:absolute;left:var(--pad-x);right:var(--pad-x);bottom:22mm;border-top:1px solid var(--line);
+  padding-top:6mm;display:flex;align-items:center;gap:5mm}
+.quote .bar{width:1.2mm;align-self:stretch;background:var(--cyan);border-radius:1mm}
+.quote p{font-family:"Noto Kufi Arabic",sans-serif;font-weight:600;font-size:12.5pt;line-height:1.6}
+
+/* ───── warehouses ───── */
+.wh{display:grid;gap:4.5mm;margin-top:8mm}
+.wh-card{position:relative;overflow:hidden;border:1px solid var(--line);border-radius:4mm;background:var(--wash);
+  padding:7.5mm 9mm;display:flex;align-items:center;gap:8mm}
+.wh-card .cn{position:absolute;top:50%;left:7mm;transform:translateY(-50%);font-size:56pt;font-weight:700;
+  color:rgba(10,10,11,.045);letter-spacing:-.02em;line-height:1}
+.wh-card .ico{width:15mm;height:15mm;border-radius:3.4mm;background:#fff;border:1px solid var(--line);display:flex;
+  align-items:center;justify-content:center;font-size:7.4mm;color:var(--cyan-deep);flex:none}
+.wh-card .body{flex:1;position:relative}
+.whhead{display:flex;align-items:center;justify-content:space-between;gap:5mm}
+.wh-card h3{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:14pt}
+.wh-card h3 small{font-family:"Inter",sans-serif;font-weight:600;font-size:8.5pt;color:var(--grey);letter-spacing:.1em;margin-inline-start:3mm}
+.wh-card p{font-size:10pt;line-height:1.7;color:var(--grey);margin-top:2.4mm;max-width:112mm}
+.wh-card .mode{font-family:"Inter",sans-serif;font-size:7pt;font-weight:800;white-space:nowrap;
+  letter-spacing:.18em;text-transform:uppercase;color:#fff;background:var(--ink);border-radius:99px;padding:1.6mm 4mm}
+.office{margin-top:7mm;background:var(--ink);color:#fff;border-radius:4mm;padding:7mm 8mm;display:flex;align-items:center;gap:5mm}
+.office .ico{font-size:6mm;color:var(--cyan)}
+.office b{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:11.5pt}
+.office span{display:block;font-size:9.5pt;color:rgba(255,255,255,.6);margin-top:1.5mm;font-weight:300}
+
+/* ───── route map ───── */
+.routemap{margin-top:9mm;background:var(--ink);color:#fff;border-radius:4mm;padding:9mm;display:flex;
+  align-items:center;gap:6mm;height:52mm;position:relative;overflow:hidden}
+.routemap .halo{position:absolute;inset:auto -20mm -30mm auto;width:80mm;height:80mm;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,173,238,.35),rgba(0,173,238,0) 65%)}
+.rm-cities{display:grid;gap:4mm;position:relative}
+.rm-city{display:flex;align-items:center;gap:3mm;font-family:"Inter",sans-serif;font-size:8.5pt;font-weight:700;
+  letter-spacing:.1em;color:rgba(255,255,255,.9);white-space:nowrap}
+.rm-city i{width:2.4mm;height:2.4mm;border-radius:50%;background:var(--cyan);font-style:normal;flex:none}
+.rm-city em{font-style:normal;color:rgba(255,255,255,.34);font-size:8pt;margin-inline-start:1.5mm;letter-spacing:0}
+.rm-arc{flex:1;align-self:stretch;position:relative}
+.rm-arc svg{position:absolute;inset:0;width:100%;height:100%}
+.rm-arc .cap{position:absolute;top:2mm;left:0;right:0;text-align:center;font-family:"Inter",sans-serif;
+  font-size:6.5pt;font-weight:700;letter-spacing:.26em;text-transform:uppercase;color:rgba(255,255,255,.35)}
+.rm-dest{text-align:center;position:relative}
+.rm-dest b{font-family:"Noto Kufi Arabic",sans-serif;font-size:14pt;font-weight:800;display:block}
+.rm-dest span{font-family:"Inter",sans-serif;font-size:6.8pt;letter-spacing:.2em;color:rgba(255,255,255,.4);text-transform:uppercase}
+
+/* ───── dashboard page with phone ───── */
+.split{display:flex;gap:10mm;margin-top:9mm;align-items:flex-start}
+.split .col{flex:1}
+.dash-item{display:flex;gap:4.5mm;align-items:flex-start;padding:8mm 0;border-bottom:1px dashed var(--line)}
+.dash-item:last-child{border:0}
+.dash-item .mark{width:8.5mm;height:8.5mm;border-radius:2.4mm;background:var(--ink);color:var(--cyan);
+  display:flex;align-items:center;justify-content:center;font-size:4.6mm;flex:none}
+.dash-item h3{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:11pt;line-height:1.45}
+.dash-item p{font-size:9.6pt;line-height:1.65;color:var(--grey);margin-top:1.2mm}
+
+/* phone */
+.phone{width:70mm;flex:none;border-radius:8mm;background:#0A0A0B;padding:2mm;box-shadow:0 6mm 14mm rgba(10,10,11,.22);position:relative}
+.phone .screen{border-radius:6.4mm;background:#0B1220;overflow:hidden;height:152mm;position:relative;direction:rtl;
+  font-family:"Noto Sans Arabic",sans-serif}
+.phone .notch{position:absolute;top:1.6mm;left:50%;transform:translateX(-50%);width:16mm;height:1.6mm;border-radius:99px;background:#1d2533;z-index:3}
+.ph-top{display:flex;align-items:center;justify-content:space-between;padding:5mm 4mm 2.5mm}
+.ph-top .lg{font-family:"Inter",sans-serif;font-weight:900;font-size:8pt;color:#fff;letter-spacing:-.03em}
+.ph-top .lg i{color:var(--cyan);font-style:normal}
+.ph-chip{background:#1E3A8A;color:#DBEAFE;font-family:"Inter",sans-serif;font-size:5.4pt;font-weight:700;
+  border-radius:99px;padding:1mm 2.6mm;letter-spacing:.02em}
+.ph-body{padding:0 4mm}
+.ph-card{border-radius:2.6mm;padding:3.2mm;margin-bottom:2.4mm}
+.ph-rate{background:#111C31;border:.3mm solid #1E2C48;border-radius:2mm;padding:1.8mm 3mm;margin-bottom:2.4mm;
+  font-family:"Inter",sans-serif;font-size:5.8pt;font-weight:700;color:#7DD3FC;text-align:center;letter-spacing:.04em}
+.ph-debt{background:linear-gradient(135deg,#2A1A06,#3A2408);border:.3mm solid #78350F;display:flex;align-items:center;justify-content:space-between}
+.ph-debt .amt{font-family:"Inter",sans-serif;font-weight:900;font-size:13pt;color:#FBBF24;letter-spacing:-.02em}
+.ph-debt .lbl{font-size:6pt;color:#FCD34D;margin-bottom:.6mm}
+.ph-debt .btn{background:#059669;color:#fff;font-size:5.6pt;font-weight:700;border-radius:1.6mm;padding:1.4mm 2.6mm}
+.ph-stats{display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.8mm;margin-bottom:2.4mm}
+.ph-stat{background:#111C31;border:.3mm solid #1E2C48;border-radius:2.4mm;padding:2.6mm 1.6mm;text-align:center}
+.ph-stat b{display:block;font-family:"Inter",sans-serif;font-size:11pt;font-weight:900;letter-spacing:-.02em}
+.ph-stat span{display:block;font-size:5.4pt;color:#94A3B8;margin-top:.8mm}
+.s-green b{color:#34D399}.s-cyan b{color:#38BDF8}.s-white b{color:#E2E8F0}
+.ph-ready{background:#06281F;border:.3mm solid #065F46;border-radius:2.4mm;padding:2.8mm 3mm;margin-bottom:2.4mm;
+  display:flex;align-items:center;justify-content:space-between}
+.ph-ready .t{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:6.6pt;color:#6EE7B7}
+.ph-ready .c{font-family:"Inter",sans-serif;font-size:5.4pt;color:#34D399;margin-top:.8mm;letter-spacing:.04em}
+.ph-ready .pill{background:#10B981;color:#04231A;font-size:5.4pt;font-weight:800;border-radius:99px;padding:1.2mm 2.4mm}
+.ph-h{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:6.8pt;color:#E2E8F0;margin:3mm 0 2mm}
+.ph-row{background:#111C31;border:.3mm solid #1E2C48;border-radius:2.4mm;padding:2.6mm 3mm;margin-bottom:1.8mm;
+  display:flex;align-items:center;justify-content:space-between}
+.ph-row .code{font-family:"Inter",sans-serif;font-weight:800;font-size:6.6pt;color:#38BDF8;letter-spacing:.02em}
+.ph-row .sub{font-size:5.4pt;color:#94A3B8;margin-top:.8mm}
+.ph-row .ic-box{width:6mm;height:6mm;border-radius:1.8mm;background:#1E3A8A;color:#93C5FD;display:flex;
+  align-items:center;justify-content:center;font-size:3.2mm}
+.ph-nav{position:absolute;bottom:0;left:0;right:0;height:13mm;background:#0F1728;border-top:.3mm solid #1E2C48;
+  display:flex;align-items:center;justify-content:space-around;padding:0 3mm}
+.ph-nav i{font-style:normal;font-size:5.2pt;color:#64748B;display:flex;flex-direction:column;align-items:center;gap:.8mm}
+.ph-nav i.on{color:#38BDF8}
+.ph-nav .fab{width:11mm;height:11mm;border-radius:50%;background:#2563EB;color:#fff;display:flex;align-items:center;
+  justify-content:center;font-size:5mm;margin-top:-6mm;box-shadow:0 2mm 5mm rgba(37,99,235,.5)}
+.cta{margin-top:10mm;background:var(--ink);color:#fff;border-radius:4mm;padding:8mm 9mm;
+  display:flex;align-items:center;justify-content:space-between;gap:6mm;position:relative;overflow:hidden}
+.cta .halo{position:absolute;inset:auto -16mm -26mm auto;width:70mm;height:70mm;border-radius:50%;
+  background:radial-gradient(circle,rgba(0,173,238,.4),rgba(0,173,238,0) 65%)}
+.cta .t{position:relative}
+.cta .t b{font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:12pt;display:block}
+.cta .t span{display:block;font-size:9.6pt;color:rgba(255,255,255,.6);margin-top:1.8mm;font-weight:300}
+.cta .url{position:relative;font-family:"Inter",sans-serif;font-weight:800;font-size:14pt;color:var(--cyan);
+  letter-spacing:-.01em;white-space:nowrap}
+.phone-cap{font-family:"Inter",sans-serif;font-size:6.5pt;font-weight:700;letter-spacing:.18em;text-transform:uppercase;
+  color:#A7AEB4;text-align:center;margin-top:4mm}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5"/></symbol>
+  <symbol id="i-key" viewBox="0 0 24 24"><circle cx="7.5" cy="15.5" r="4.5"/><path d="m10.7 12.3 8.3-8.3M16 7l3 3M13.5 9.5l2.5 2.5"/></symbol>
+  <symbol id="i-plane" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a.5.5 0 0 0-.5.8l3.4 3.9-2.5 2.5-2.3-.6a.5.5 0 0 0-.5.8L4.7 16l1.9 2.3a.5.5 0 0 0 .8-.5l-.6-2.3 2.5-2.5 3.9 3.4a.5.5 0 0 0 .8-.5Z"/></symbol>
+  <symbol id="i-ship" viewBox="0 0 24 24"><path d="M2 17.5c1.6 0 1.6 1.5 3.2 1.5s1.6-1.5 3.2-1.5 1.6 1.5 3.2 1.5 1.6-1.5 3.2-1.5 1.6 1.5 3.2 1.5 1.6-1.5 3.2-1.5"/><path d="M4 15.5 5.5 9h13L20 15.5"/><path d="M12 9V5M9 5h6"/></symbol>
+  <symbol id="i-bag" viewBox="0 0 24 24"><path d="M6 7h12l1.2 13H4.8L6 7Z"/><path d="M9 9V6a3 3 0 0 1 6 0v3"/></symbol>
+  <symbol id="i-pin" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></symbol>
+  <symbol id="i-radar" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1"/></symbol>
+  <symbol id="i-calc" viewBox="0 0 24 24"><rect x="5" y="3" width="14" height="18" rx="2.5"/><path d="M8.5 7.5h7M8.5 12h.01M12 12h.01M15.5 12h.01M8.5 16h.01M12 16h.01M15.5 16h.01"/></symbol>
+  <symbol id="i-doc" viewBox="0 0 24 24"><path d="M14 3H7.5A2.5 2.5 0 0 0 5 5.5v13A2.5 2.5 0 0 0 7.5 21h9a2.5 2.5 0 0 0 2.5-2.5V8l-5-5Z"/><path d="M14 3v5h5M8.5 13h7M8.5 17h5"/></symbol>
+  <symbol id="i-bell" viewBox="0 0 24 24"><path d="M18 8.5a6 6 0 1 0-12 0c0 6-2 7.5-2 7.5h16s-2-1.5-2-7.5Z"/><path d="M10.3 20a2 2 0 0 0 3.4 0"/></symbol>
+  <symbol id="i-card" viewBox="0 0 24 24"><rect x="2.5" y="5" width="19" height="14" rx="2.5"/><path d="M2.5 10h19"/></symbol>
+  <symbol id="i-box" viewBox="0 0 24 24"><path d="m12 3 8 4.2v9.6L12 21l-8-4.2V7.2L12 3Z"/><path d="m4 7.2 8 4.3 8-4.3M12 21v-9.5"/></symbol>
+  <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="m16 16 4.5 4.5"/></symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="m3.5 10.5 8.5-7 8.5 7V20a1.5 1.5 0 0 1-1.5 1.5H5A1.5 1.5 0 0 1 3.5 20v-9.5Z"/></symbol>
+  <symbol id="i-wallet" viewBox="0 0 24 24"><rect x="3" y="6" width="18" height="13" rx="2.5"/><path d="M3 10h18M17 14.5h.01"/></symbol>
+</defs></svg>
+
+
+<!-- ══════════ PAGE 01 — COVER ══════════ -->
+<section class="page dark cover">
+  <div class="bg">
+    <svg viewBox="0 0 210 297" preserveAspectRatio="none">
+      <path d="M-40 288 C 30 196, 150 168, 260 236" fill="none" stroke="#ffffff" stroke-opacity=".055" stroke-width="30" stroke-linecap="round"/>
+      <path d="M-24 250 C 34 172, 128 150, 196 178" fill="none" stroke="#00ADEE" stroke-opacity=".85" stroke-width="1" stroke-dasharray="2.6 3.6" stroke-linecap="round"/>
+    </svg>
+    <svg viewBox="0 0 210 297"><circle cx="196" cy="178" r="3.2" fill="#00ADEE"/></svg>
+  </div>
+
+  <div class="cover-top">
+    <span>Wazn Express · Erbil ⇄ China</span>
+    <span class="chip">Complete Import Guide <b>2026</b></span>
+  </div>
+
+  <div class="cover-mid">
+    <img src="assets/logo-white.png" alt="Wazn Express">
+    <div class="tag-ku">دەروازەی تۆ بۆ <span class="hl">کارگەکانی چین</span><br>کڕین بە نرخی ڕاستەقینە، بەبێ نێوەندگیر</div>
+    <div class="tag-ar">بوابتك إلى مصانع الصين مباشرةً — اشترِ بالسعر الحقيقي بلا وسطاء</div>
+    <div class="tag-en">We don’t move cargo. We build futures.</div>
+  </div>
+
+  <div class="cover-index">
+    <div><b>01</b><span>ئەپەکانی چین</span></div>
+    <div><b>02</b><span>ئەکاونتی Alipay</span></div>
+    <div><b>03</b><span>٣ کۆگا لە چین</span></div>
+    <div><b>04</b><span>داشبۆردی کڕیار</span></div>
+  </div>
+
+  <div class="cover-bot">
+    <div class="plats"><span>Taobao</span><span>1688</span><span>Alibaba</span><span>AliExpress</span><span>Pinduoduo</span></div>
+    <div class="route"><span>China</span><span class="line"></span><span class="dot"></span><span>Iraq</span></div>
+  </div>
+</section>
+
+
+<!-- ══════════ PAGE 03 — ALIPAY ══════════ -->
+<section class="page" dir="rtl">
+  <div class="pad">
+    <div class="kicker"><span dir="ltr">03 — Alipay</span></div>
+    <h1 class="title">شۆڕشی <span class="hl">Alipay</span></h1>
+    <p class="lede">لە چین، ووشەی «کاش» بوونی نییە! Alipay شادەماری بازرگانییە. ئەگەر ئەکاونتت هەبێت، تۆ پاسپۆرتێکی بازرگانیت لە گیرفاندایە.</p>
+
+    <div class="hero-panel">
+      <div class="glow"></div>
+      <div class="badge"><svg class="ic" style="stroke-width:1.6"><use href="#i-key"/></svg></div>
+      <h2>ئێمە ئەکاونتت بۆ دروست دەکەین!</h2>
+      <p>بە ناوی خۆت و بە پاسپۆرتی خۆت، بەبێ کێشەی بلۆک بوون.<br>ئەکاونتێکی فەرمی تایبەت بە تۆ — نەک هاوبەش لەگەڵ کەسی تر.</p>
+    </div>
+
+    <div class="grid2">
+      <div class="feat"><div class="mark"><svg class="ic"><use href="#i-check"/></svg></div>
+        <div><h3>پارەدان لە ٥ چرکەدا</h3><p>بەبێ واسیتە و نێوەندگیر پارەی کارگە بدە.</p></div></div>
+      <div class="feat"><div class="mark"><svg class="ic"><use href="#i-check"/></svg></div>
+        <div><h3>نرخی دۆلاری هەرزان</h3><p>پڕکردنەوەی باڵانس بە کەمترین تێچوو لای ئێمە.</p></div></div>
+      <div class="feat"><div class="mark"><svg class="ic"><use href="#i-check"/></svg></div>
+        <div><h3>متمانەی کارگە</h3><p>کارگە چینییەکان وەک «کڕیارێکی ناوخۆیی» مامەڵەت لەگەڵ دەکەن.</p></div></div>
+      <div class="feat"><div class="mark"><svg class="ic"><use href="#i-check"/></svg></div>
+        <div><h3>گەرەنتی Refund</h3><p>ئەگەر کاڵاکەت نەنێردرا، پارەکە ڕاستەوخۆ دەگەڕێتەوە.</p></div></div>
+    </div>
+
+    <div class="steps">
+      <div class="step"><div class="n" dir="ltr">01</div><h4>پاسپۆرتەکەت بێنە</h4>
+        <p>وێنەیەکی پاسپۆرت و ژمارەی مۆبایلت بەسە بۆ دەستپێکردن.</p></div>
+      <div class="step"><div class="n" dir="ltr">02</div><h4>ئێمە ئەکاونتەکە دەکەینەوە</h4>
+        <p>ئەکاونتێکی فەرمی بە ناوی خۆت — فێرت دەکەین چۆن بەکاری بهێنیت.</p></div>
+      <div class="step"><div class="n" dir="ltr">03</div><h4>باڵانس پڕ بکەرەوە</h4>
+        <p>لە نووسینگەکەمان باڵانس وەربگرە و ڕاستەوخۆ لە کارگە بکڕە.</p></div>
+    </div>
+  </div>
+
+  <div class="quote"><div class="bar"></div>
+    <p>«Alipay تەنها ئەپ نییە — ئەمە هێزی بازرگانی تۆیە لە چین!»</p></div>
+  <div class="foot" dir="ltr"><span>Wazn Express</span><span class="rule"></span><span class="num">03</span></div>
+</section>
+
+
+<!-- ══════════ PAGE 07 — WAREHOUSES ══════════ -->
+<section class="page" dir="rtl">
+  <div class="pad">
+    <div class="kicker"><span dir="ltr">07 — Warehouses</span></div>
+    <h1 class="title">٣ کۆگای سەرەکی <span class="hl">لە چین</span></h1>
+    <p class="lede">لەو شوێنانەین کە پیشەسازی لێیە — تا نزیک بین لە دابینکەرەکانت.</p>
+
+    <div class="routemap">
+      <div class="halo"></div>
+      <div class="rm-cities">
+        <div class="rm-city"><i></i>GUANGZHOU <em>广州</em></div>
+        <div class="rm-city"><i></i>SHENZHEN <em>深圳</em></div>
+        <div class="rm-city"><i></i>YIWU <em>义乌</em></div>
+      </div>
+      <div class="rm-arc">
+        <div class="cap">Door to Door</div>
+        <svg viewBox="0 0 100 40" preserveAspectRatio="none">
+          <path d="M100 30 C 74 8, 26 8, 0 22" fill="none" stroke="#00ADEE" stroke-width=".7"
+                stroke-dasharray="2 2.6" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="rm-dest"><b>هەولێر</b><span>Erbil · Iraq</span></div>
+    </div>
+
+    <div class="wh">
+      <div class="wh-card"><div class="cn">广州</div>
+        <div class="ico"><svg class="ic"><use href="#i-plane"/></svg></div>
+        <div class="body">
+          <div class="whhead"><h3>گوانگژۆ <small dir="ltr">GUANGZHOU</small></h3><span class="mode" dir="ltr">Air · Regular</span></div>
+          <p>خێراترین و بەئارەزووترین. گونجاوە بۆ بارە بچووک و ناوەندەکان کە خێراییان گرنگترە.</p></div></div>
+
+      <div class="wh-card"><div class="cn">深圳</div>
+        <div class="ico"><svg class="ic"><use href="#i-ship"/></svg></div>
+        <div class="body">
+          <div class="whhead"><h3>شێنجێن <small dir="ltr">SHENZHEN</small></h3><span class="mode" dir="ltr">Sea Freight</span></div>
+          <p>بۆ بارە گەورەکان بە کەمترین تێچوو. بژاردەی باش بۆ بازرگانانی کۆمەڵکی زیاد.</p></div></div>
+
+      <div class="wh-card"><div class="cn">义乌</div>
+        <div class="ico"><svg class="ic"><use href="#i-bag"/></svg></div>
+        <div class="body">
+          <div class="whhead"><h3>ییوو <small dir="ltr">YIWU</small></h3><span class="mode" dir="ltr">Air · Irregular</span></div>
+          <p>شاری کۆکردنەوەی جیهانی — کاڵای جۆراوجۆر و بازارچەیی بە نرخی کارگە.</p></div></div>
+    </div>
+
+    <div class="office">
+      <div class="ico"><svg class="ic"><use href="#i-pin"/></svg></div>
+      <div><b>نووسینگەمان لە عێراق</b>
+        <span>هەولێر — گەڕەکی حەمرین — شەقامی ٣٢ — نزیک نەخۆشخانەی پار</span></div>
+    </div>
+  </div>
+  <div class="foot" dir="ltr"><span>Wazn Express</span><span class="rule"></span><span class="num">07</span></div>
+</section>
+
+
+<!-- ══════════ PAGE 08 — DASHBOARD ══════════ -->
+<section class="page" dir="rtl">
+  <div class="pad">
+    <div class="kicker"><span dir="ltr">08 — Customer Portal</span></div>
+    <h1 class="title">داشبۆردی زیرەکی <span class="hl">وەزن</span></h1>
+    <p class="lede">هەموو شتێک لەژێر دەستی خۆتە — لە مۆبایلەکەتەوە، بە کوردی.</p>
+
+    <div class="split">
+      <div class="col">
+        <div class="dash-item"><div class="mark"><svg class="ic"><use href="#i-radar"/></svg></div>
+          <div><h3>شوێنپێکردنی Live</h3><p>کاڵاکانت ئێستا لە کوێن؟ لە کارگەی چینەوە تا دەرگاکەت.</p></div></div>
+        <div class="dash-item"><div class="mark"><svg class="ic"><use href="#i-calc"/></svg></div>
+          <div><h3>ماشینی حیساب</h3><p>پێش کڕین تێچووی گواستنەوەکە بزانە.</p></div></div>
+        <div class="dash-item"><div class="mark"><svg class="ic"><use href="#i-doc"/></svg></div>
+          <div><h3>مێژووی کڕین</h3><p>دابەزاندنی وەسڵ و پسوولەکان بە یەک کلیک.</p></div></div>
+        <div class="dash-item"><div class="mark"><svg class="ic"><use href="#i-bell"/></svg></div>
+          <div><h3>ئاگادارکردنەوەی زیرەک</h3><p>نۆتیفیکەیشن بۆ هەر قۆناغێکی گواستنەوە.</p></div></div>
+        <div class="dash-item"><div class="mark"><svg class="ic"><use href="#i-card"/></svg></div>
+          <div><h3>بەڕێوەبردنی پارەدان</h3><p>Qi-Card · Mastercard · Visa — بە نرخی ئەرزان.</p></div></div>
+      </div>
+
+      <div>
+        <div class="phone">
+          <div class="screen">
+            <div class="notch"></div>
+            <div class="ph-top">
+              <span class="ph-chip" dir="ltr">AZ002 · Khogr</span>
+              <span class="lg">wazn<i>.</i></span>
+            </div>
+            <div class="ph-body">
+              <div class="ph-rate" dir="ltr">¥6.85 = $1 · کڕینی یوان</div>
+              <div class="ph-card ph-debt">
+                <div><div class="lbl">قەرزی ماوە</div><div class="amt" dir="ltr">$139.02</div></div>
+                <div class="btn">پارەدان لە واتساپ</div>
+              </div>
+              <div class="ph-stats">
+                <div class="ph-stat s-green"><b>17</b><span>گەیشتە هەولێر</span></div>
+                <div class="ph-stat s-cyan"><b>7</b><span>لە ڕێگادا</span></div>
+                <div class="ph-stat s-white"><b>21</b><span>لە کۆگای چین</span></div>
+              </div>
+              <div class="ph-ready">
+                <div><div class="t">بارت ئامادەیە بۆ وەرگرتن</div><div class="c" dir="ltr">AIR-2026-047 · Erbil</div></div>
+                <div class="pill">ببین</div>
+              </div>
+              <div class="ph-h">گواستنەوە نوێیەکان</div>
+              <div class="ph-row"><div><div class="code" dir="ltr">AIR-2026-062</div><div class="sub">لە کۆگای چین · ١ پاکەت</div></div>
+                <div class="ic-box"><svg class="ic"><use href="#i-plane"/></svg></div></div>
+              <div class="ph-row"><div><div class="code" dir="ltr">AIR-2026-057</div><div class="sub">لە ڕێگادا · ١٦ پاکەت</div></div>
+                <div class="ic-box"><svg class="ic"><use href="#i-plane"/></svg></div></div>
+              <div class="ph-row"><div><div class="code" dir="ltr">BOX-20260910-005</div><div class="sub">گەیشتە دەست · ٤ پاکەت</div></div>
+                <div class="ic-box"><svg class="ic"><use href="#i-box"/></svg></div></div>
+              <div class="ph-row"><div><div class="code" dir="ltr">BOX-20260827-011</div><div class="sub">گەیشتە دەست · ٣٦ پاکەت</div></div>
+                <div class="ic-box"><svg class="ic"><use href="#i-box"/></svg></div></div>
+            </div>
+            <div class="ph-nav">
+              <i><svg class="ic" style="font-size:3.4mm"><use href="#i-wallet"/></svg>دارایی</i>
+              <i><svg class="ic" style="font-size:3.4mm"><use href="#i-bag"/></svg>کاڵاکانم</i>
+              <div class="fab"><svg class="ic"><use href="#i-search"/></svg></div>
+              <i><svg class="ic" style="font-size:3.4mm"><use href="#i-box"/></svg>بارەکانم</i>
+              <i class="on"><svg class="ic" style="font-size:3.4mm"><use href="#i-home"/></svg>سەرەکی</i>
+            </div>
+          </div>
+        </div>
+        <div class="phone-cap">Wazn Portal</div>
+      </div>
+    </div>
+
+    <div class="cta">
+      <div class="halo"></div>
+      <div class="t"><b>داشبۆردەکەت ئامادەیە</b>
+        <span>هەر کڕیارێکی وەزن هەژماری تایبەتی خۆی هەیە — بەبێ دابەزاندنی ئەپ.</span></div>
+      <div class="url" dir="ltr">waznexpress.com</div>
+    </div>
+  </div>
+  <div class="foot" dir="ltr"><span>Wazn Express</span><span class="rule"></span><span class="num">08</span></div>
+</section>
+
+</body>
+</html>
