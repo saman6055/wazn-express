@@ -41,12 +41,12 @@ describe("what sits where", () => {
     expect(at('{t("quickRegister.stepWeight")}')).toBeLessThan(at('{t("quickRegister.stepDimensions")}'));
   });
 
-  it("the side column is the warehouse, then the photos, then the register button", () => {
+  it("the side column is the warehouse, then the photos", () => {
     const side = at('className="lg:col-span-1 min-w-0 space-y-3"');
     const photos = at('className="border-2 border-sky-200 dark:border-sky-900/60');
-    const register = at('className="lg:sticky lg:top-4 border-2 border-primary/30');
     expect(photos).toBeGreaterThan(side);
-    expect(register).toBeGreaterThan(photos);
+    // The register button is no longer a card here — it is the bar below.
+    expect(page).not.toContain("lg:sticky lg:top-4 border-2 border-primary/30");
   });
 
   it("neither column can be stretched by one wide child", () => {
@@ -72,11 +72,17 @@ describe("what sits where", () => {
     expect(prohibited).toBeLessThan(at('{t("quickRegister.stepTracking")}'));
   });
 
-  it("the register button is sticky, and no longer buried in the summary", () => {
-    expect(page).toContain('<Card className="lg:sticky lg:top-4 border-2 border-primary/30');
-    // It is in the side column, not inside the summary card.
-    const register = at("{/* Submit Button - Below Summary */}");
-    expect(register).toBeGreaterThan(at('className="lg:col-span-1 min-w-0 space-y-3"'));
+  it("register and clear are the form's own bar, as the buy-at-cost form has", () => {
+    // Owner, 2026-09-23: "look at the buy-at-cost form — at the bottom Save
+    // and Cancel are fixed. That one is very nice."
+    expect(page).toContain('import { StickyFormBar } from "@/components/forms/sticky-form-bar";');
+    expect(page).toContain("<StickyFormBar>");
+    const bar = page.slice(at("<StickyFormBar>"), at("</StickyFormBar>"));
+    expect(bar).toContain('type="submit"');
+    expect(bar).toContain("onClick={clearAllForm}");
+    expect(bar).toContain('{t("quickRegister.estimatedPrice")}');
+    // And it is after everything, not inside a column.
+    expect(at("<StickyFormBar>")).toBeGreaterThan(at('className="lg:col-span-1 min-w-0 space-y-3"'));
     const summaryCard = page.slice(page.lastIndexOf("<Card", at('{t("quickRegister.summary")}')), at('className="lg:col-span-1 min-w-0 space-y-3"'));
     expect(summaryCard).not.toContain('type="submit"');
   });

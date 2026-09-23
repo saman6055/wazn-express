@@ -14,6 +14,7 @@ import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Link, useLocation } from "wouter";
 import { confirmAction } from "@/components/ConfirmDialog";
+import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -2268,57 +2269,53 @@ export default function QuickRegister() {
                 </CardContent>
               </Card>
 
-              {/* The register button, always in view.
-
-                  Owner, 2026-09-23: Enter matters too, so it shows
-                  without scrolling. It used to sit at the foot of the
-                  summary, the longest card on the page. */}
-              <Card className="lg:sticky lg:top-4 border-2 border-primary/30 bg-card rounded-2xl shadow-sm">
-                <CardContent className="p-3">
-                  {estimatedPrice > 0 && (
-                    <div className="mb-2 flex items-baseline gap-2">
-                      <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
-                      <span className="ms-auto text-2xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
-                    </div>
-                  )}
-                    {/* Submit Button - Below Summary */}
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className={cn(
-                        "w-full h-11 text-sm font-bold shadow-sm mt-2 transition-all min-w-0 truncate",
-                        !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary text-primary-foreground hover:bg-primary/90"
-                      )}
-                      disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
-                    >
-                      {registerMutation.isPending ? (
-                        <Loader2 className="h-5 w-5 animate-spin ms-1.5" />
-                      ) : foundOrder?.source === "package" ? (
-                        <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
-                      ) : expandedLookup?.flags?.customerMismatch ? (
-                        <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
-                      ) : (
-                        <Plus className="h-5 w-5 ms-1.5" />
-                      )}
-                      {foundOrder?.source === "package"
-                        ? t("quickRegister.btnDuplicate")
-                        : expandedLookup?.flags?.customerMismatch
-                          ? t("quickRegister.btnCustomerIssue")
-                          : !trackingNumber.trim()
-                            ? t("quickRegister.btnEnterTracking")
-                            : t("quickRegister.btnRegister")}
-                    </Button>
-
-                    <p className="text-[10px] text-center text-muted-foreground mt-1.5">
-                      {t("quickRegister.footerHint")}
-                    </p>
-                </CardContent>
-              </Card>
-
             </div>
           </div>
+
+          {/* The bar the buy-at-cost form uses, which the owner asked for
+              here too (2026-09-23): the two things you do with a form, at
+              the foot of the window, always in reach. The price rides on
+              it so the figure and the button that commits it are together. */}
+          <StickyFormBar>
+            {estimatedPrice > 0 && (
+              <span className="me-auto flex items-baseline gap-2">
+                <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
+                <span className="text-xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
+              </span>
+            )}
+            <Button type="button" variant="outline" onClick={clearAllForm}>
+              <RotateCcw className="h-4 w-4 ms-2" />
+              {t("quickRegister.clear")}
+            </Button>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    className={cn(
+                      "h-10 px-6 text-sm font-bold shadow-sm transition-all",
+                      !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
+                        ? "bg-muted text-muted-foreground cursor-not-allowed"
+                        : "bg-primary text-primary-foreground hover:bg-primary/90"
+                    )}
+                    disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
+                  >
+                    {registerMutation.isPending ? (
+                      <Loader2 className="h-5 w-5 animate-spin ms-1.5" />
+                    ) : foundOrder?.source === "package" ? (
+                      <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
+                    ) : expandedLookup?.flags?.customerMismatch ? (
+                      <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
+                    ) : (
+                      <Plus className="h-5 w-5 ms-1.5" />
+                    )}
+                    {foundOrder?.source === "package"
+                      ? t("quickRegister.btnDuplicate")
+                      : expandedLookup?.flags?.customerMismatch
+                        ? t("quickRegister.btnCustomerIssue")
+                        : !trackingNumber.trim()
+                          ? t("quickRegister.btnEnterTracking")
+                          : t("quickRegister.btnRegister")}
+                  </Button>
+          </StickyFormBar>
         </form>
       </div>
     </DashboardLayout>
