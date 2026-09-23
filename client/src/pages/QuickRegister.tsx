@@ -995,30 +995,30 @@ export default function QuickRegister() {
         {/* Professional Header with Stats */}
         <div className="mb-4">
           {/* Top Bar with Title and Stats */}
-          <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 p-5 shadow-xl ring-1 ring-white/10 text-white">
+          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 px-4 py-2.5 shadow-md ring-1 ring-white/10 text-white">
             <div className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" />
             <div className="relative flex items-center justify-between flex-wrap gap-4">
               {/* Title Section */}
               <div className="flex items-center gap-3">
-                <div className="w-12 h-12 rounded-2xl bg-white/15 backdrop-blur-md ring-1 ring-white/25 text-white shadow-lg flex items-center justify-center">
-                  <Zap className="h-6 w-6" />
+                <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md ring-1 ring-white/25 text-white shadow-lg flex items-center justify-center">
+                  <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold tracking-tight text-white drop-shadow-sm">{t("quickRegister.title")}</h1>
-                  <p className="text-white/85 text-sm">{t("quickRegister.shortcutsHint")}</p>
+                  <h1 className="text-lg font-bold tracking-tight text-white drop-shadow-sm">{t("quickRegister.title")}</h1>
+                  <p className="text-white/85 text-[11px]">{t("quickRegister.shortcutsHint")}</p>
                 </div>
               </div>
 
               {/* Today's Counter */}
               <div className="flex items-center gap-3">
-                <div className="rounded-xl bg-white/15 backdrop-blur ring-1 ring-white/25 px-4 py-2 flex items-center gap-3">
-                  <div className="w-9 h-9 rounded-full bg-white/20 text-white flex items-center justify-center">
-                    <Calendar className="h-5 w-5" />
+                <div className="rounded-lg bg-white/15 backdrop-blur ring-1 ring-white/25 px-3 py-1.5 flex items-center gap-3">
+                  <div className="w-7 h-7 rounded-full bg-white/20 text-white flex items-center justify-center">
+                    <Calendar className="h-4 w-4" />
                   </div>
                   <div>
                     <div className="text-xs text-white/80">{t("quickRegister.todayRegistered")}</div>
-                    <div className="text-2xl font-bold text-white">{packageStats?.todayCount || 0}</div>
+                    <div className="text-xl font-bold text-white leading-none">{packageStats?.todayCount || 0}</div>
                   </div>
                 </div>
 
@@ -1027,9 +1027,9 @@ export default function QuickRegister() {
                   type="button"
                   variant="outline"
                   onClick={clearAllForm}
-                  className="h-12 px-4 bg-white/15 text-white border-white/25 hover:bg-white/25 hover:text-white backdrop-blur"
+                  className="h-9 px-3 text-sm bg-white/15 text-white border-white/25 hover:bg-white/25 hover:text-white backdrop-blur"
                 >
-                  <RotateCcw className="h-5 w-5 ms-2" />
+                  <RotateCcw className="h-4 w-4 ms-1.5" />
                   {t("quickRegister.clear")}
                 </Button>
               </div>
@@ -1322,6 +1322,235 @@ export default function QuickRegister() {
                   </CardContent>
                 </Card>
 
+              {foundOrder?.found && foundOrder.order && (
+                <Card className="md:col-span-2 border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
+                  <CardContent className="p-5 space-y-4">
+                    {/* Header: product image + type + order code + product name */}
+                    <div className="flex items-center gap-4 min-w-0">
+                      <PhotoStack
+                        photos={[foundOrder.order.productImage, ...(foundOrder.order.productImages ?? [])]}
+                        className="w-20 h-20 rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-sm"
+                        fallback={
+                          <div className="w-20 h-20 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
+                            <Package className="h-8 w-8 text-indigo-400" />
+                          </div>
+                        }
+                      />
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-600 text-white">
+                            {foundOrder.order.orderType === "commission"
+                              ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "شراء بعمولة", zh: "代购" })
+                              : foundOrder.order.orderType === "purchase_request"
+                              ? pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })
+                              : pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "整包" })}
+                          </span>
+                          {foundOrder.order.orderCode && (
+                            <span className="text-sm font-mono font-bold text-indigo-900 dark:text-indigo-200" dir="ltr">{foundOrder.order.orderCode}</span>
+                          )}
+                        </div>
+                        {foundOrder.order.productName && (
+                          <p className="text-base font-semibold text-foreground truncate mt-1" title={String(foundOrder.order.productName)}>{foundOrder.order.productName}</p>
+                        )}
+
+                        {/* What the parcel should contain, beside the picture
+                            of it. The person holding the goods is checking
+                            them against the order, and size and colour are
+                            what they are checking — they were recorded and
+                            then shown nowhere on this screen. Hidden when
+                            blank rather than shown as a dash: an empty field
+                            here is normal, and four "—" would crowd out the
+                            two that are filled in. */}
+                        {(foundOrder.order.size || foundOrder.order.color || (foundOrder.order.quantity ?? 0) > 1) && (
+                          <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                            {foundOrder.order.size && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
+                                <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
+                                {pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺码" })}:
+                                <b className="font-bold">{foundOrder.order.size}</b>
+                              </span>
+                            )}
+                            {foundOrder.order.color && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
+                                <Palette className="h-3.5 w-3.5 text-muted-foreground" />
+                                {pickLang(language, { ku: "ڕەنگ", en: "Colour", ar: "اللون", zh: "颜色" })}:
+                                <b className="font-bold">{foundOrder.order.color}</b>
+                              </span>
+                            )}
+                            {(foundOrder.order.quantity ?? 0) > 1 && (
+                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
+                                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
+                                {pickLang(language, { ku: "دانە", en: "Qty", ar: "الكمية", zh: "数量" })}:
+                                <b className="font-bold">{foundOrder.order.quantity}</b>
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+
+                    {/* Facts: order number, date, waiting days, entered-by */}
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
+                      {foundOrder.order.orderNumber && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order #", ar: "رقم الطلب", zh: "订单号" })}</p>
+                          <p className="flex items-center justify-center gap-1 min-w-0">
+                            <span className="text-xs font-mono font-semibold truncate" dir="ltr" title={String(foundOrder.order.orderNumber)}>{foundOrder.order.orderNumber}</span>
+                            <CopyButton value={String(foundOrder.order.orderNumber)} label={pickLang(language, { ku: "کۆپی ئۆردەر نەمبەر", en: "Copy order number", ar: "نسخ رقم الطلب", zh: "复制订单号" })} />
+                          </p>
+                        </div>
+                      )}
+                      {foundOrder.order.createdAt && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</p>
+                          <p className="text-xs font-semibold truncate">{new Date(foundOrder.order.createdAt).toLocaleDateString("en-GB")}</p>
+                        </div>
+                      )}
+                      {foundOrder.order.createdAt && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "ماوەی گەیشتن", en: "Waiting", ar: "الانتظار", zh: "等待" })}</p>
+                          <p className="text-xs font-mono font-semibold">{Math.max(0, Math.round((Date.now() - new Date(foundOrder.order.createdAt).getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "d", ar: "ي", zh: "天" })}</p>
+                        </div>
+                      )}
+                      {foundOrder.createdByName && (
+                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
+                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "تۆمارکەر", en: "By", ar: "بواسطة", zh: "录入" })}</p>
+                          <p className="text-xs font-semibold truncate" title={foundOrder.createdByName}>{foundOrder.createdByName}</p>
+                        </div>
+                      )}
+                    </div>
+
+                    {/*
+                      What the person at the counter needs, in the order they
+                      need it.
+
+                      This said "13 of 38 registered" under the heading "this
+                      customer's orders", which reads as though 13 of their
+                      orders exist and 25 do not. Both numbers were true and
+                      neither was the question. The question, with a box in
+                      hand and a queue behind, is: how many more of this
+                      customer's parcels am I still waiting for?
+
+                      So the sentence leads with that, in words, and the
+                      ratio stays underneath for anyone who wants it.
+                      "Arrived" rather than "registered": the order was
+                      registered the day it was placed.
+                    */}
+                    {customerOrderProgress && customerOrderProgress.total > 0 && (() => {
+                      const { total, registered, remaining, allRegistered } = customerOrderProgress;
+                      const pct = Math.min(100, Math.round((registered / total) * 100));
+                      return (
+                        <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 p-3 space-y-2">
+                          {/* Nothing here when everything has arrived: the
+                              green banner underneath says so, and says what
+                              to do next. */}
+                          {!allRegistered && (
+                            <div className="flex items-center gap-2">
+                              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+                              <span className="text-sm font-semibold">
+                                {pickLang(language, {
+                                  ku: `${remaining} پاکێجی تری ئەم کڕیارە چاوەڕوانە`,
+                                  en: `${remaining} more parcels expected for this customer`,
+                                  ar: `${remaining} طرد آخر متوقع لهذا العميل`,
+                                  zh: `该客户还有 ${remaining} 件包裹待到达`,
+                                })}
+                              </span>
+                            </div>
+                          )}
+                          <div className="h-2 w-full rounded-full bg-red-200 dark:bg-red-950/50 overflow-hidden">
+                            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                          </div>
+                          {/* "13 of 38 arrived", not "13/38". In a
+                              right-to-left line the slash and its two numbers
+                              come apart — the 13 lands on one side and the
+                              /38 on the other. Words do not reorder. */}
+                          <span className="text-xs text-muted-foreground">
+                            {pickLang(language, {
+                              ku: `${registered} لە ${total} ئۆردەری ئەم کڕیارە گەیشتووە`,
+                              en: `${registered} of this customer's ${total} orders have arrived`,
+                              ar: `وصل ${registered} من أصل ${total} من طلبات هذا العميل`,
+                              zh: `该客户 ${total} 张订单中已到 ${registered} 张`,
+                            })}
+                          </span>
+                        </div>
+                      );
+                    })()}
+
+                    {/* All of this customer's orders are in — delivery-ready. */}
+                    {customerOrderProgress?.allRegistered && customerOrderProgress.total > 0 && (
+                      <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 px-3 py-2.5">
+                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
+                        <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
+                          {pickLang(language, { ku: "هەموو پاکێجەکانی ئەم کڕیارە گەیشتوون — ئامادەیە بۆ ئامادەکاری گەیاندن", en: "Every parcel for this customer has arrived — ready for delivery prep", ar: "وصلت كل طرود هذا العميل — جاهز لتحضير التسليم", zh: "该客户的包裹已全部到达 — 可准备配送" })}
+                        </span>
+                      </div>
+                    )}
+                  </CardContent>
+                </Card>
+              )}
+
+                {/* What was just registered, and what is still coming.
+                    Owner, 2026-09-23: after Enter the customer's data stays
+                    here — how many pieces are left — until the next tracking
+                    is typed. The screen then belongs to that parcel again. */}
+                {!foundOrder?.found && lastRegistered && customerId && (
+                  <Card className="md:col-span-2 border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/25 rounded-2xl shadow-sm">
+                    <CardContent className="p-3 space-y-2">
+                      <div className="flex flex-wrap items-center gap-2 text-sm">
+                        <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                        <span className="font-bold text-emerald-800 dark:text-emerald-300">{t("quickRegister.packageRegistered")}</span>
+                        <bdi dir="ltr" className="font-mono text-xs">{lastRegistered.packageCode}</bdi>
+                        <bdi dir="ltr" className="font-mono text-xs text-muted-foreground">{lastRegistered.trackingNumber}</bdi>
+                        <span className="ms-auto rounded-lg bg-white/70 dark:bg-black/30 px-2 py-0.5 text-xs font-medium">
+                          {lastRegistered.customerName}
+                        </span>
+                      </div>
+
+                      {customerOrderProgress && customerOrderProgress.total > 0 && (() => {
+                        const { total, registered, remaining, allRegistered } = customerOrderProgress;
+                        const pct = Math.min(100, Math.round((registered / total) * 100));
+                        return (
+                          <div className="space-y-1.5">
+                            {!allRegistered && (
+                              <div className="flex items-center gap-2">
+                                <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
+                                <span className="text-sm font-semibold">
+                                  {pickLang(language, {
+                                    ku: `${remaining} پاکێجی تری ئەم کڕیارە چاوەڕوانە`,
+                                    en: `${remaining} more parcels expected for this customer`,
+                                    ar: `${remaining} طرد آخر متوقع لهذا العميل`,
+                                    zh: `该客户还有 ${remaining} 件包裹待到达`,
+                                  })}
+                                </span>
+                              </div>
+                            )}
+                            <div className="h-2 w-full overflow-hidden rounded-full bg-red-200 dark:bg-red-950/50">
+                              <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
+                            </div>
+                            <span className="text-xs text-muted-foreground">
+                              {pickLang(language, {
+                                ku: `${registered} لە ${total} ئۆردەری ئەم کڕیارە گەیشتووە`,
+                                en: `${registered} of this customer's ${total} orders have arrived`,
+                                ar: `وصل ${registered} من أصل ${total} من طلبات هذا العميل`,
+                                zh: `该客户 ${total} 张订单中已到 ${registered} 张`,
+                              })}
+                            </span>
+                          </div>
+                        );
+                      })()}
+
+                      <p className="text-[11px] text-muted-foreground">
+                        {pickLang(language, {
+                          ku: "تراکی دواتر داخڵ بکە — ئەم کارتە خۆی دەگۆڕدرێت",
+                          en: "Type the next tracking — this card changes with it",
+                          ar: "أدخل التتبع التالي — تتغير هذه البطاقة معه",
+                          zh: "输入下一个运单号 — 此卡片会随之更新",
+                        })}
+                      </p>
+                    </CardContent>
+                  </Card>
+                )}
+
                 {/* Customer Selection */}
                 <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
@@ -1477,6 +1706,50 @@ export default function QuickRegister() {
                         </div>
                       </div>
                     </div>
+
+                    {/* The volume itself, for when it is already known.
+                        Owner, 2026-09-23: "sometimes you do not need to
+                        measure — the CBM is there", and it must set the
+                        volumetric price, not merely be recorded. Given, it
+                        stands for the three sides above
+                        (@shared/chargeableWeight). */}
+                    <div className="mt-3 flex items-center gap-2">
+                      <span className="h-px flex-1 bg-border" />
+                      <span className="text-[11px] text-muted-foreground">
+                        {pickLang(language, {
+                          ku: "یان، ئەگەر CBM ئامادەیە",
+                          en: "or, when the CBM is already known",
+                          ar: "أو، إذا كان الـ CBM معروفاً",
+                          zh: "或者，已知 CBM 时",
+                        })}
+                      </span>
+                      <span className="h-px flex-1 bg-border" />
+                    </div>
+                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_1.4fr] gap-3 items-center">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-semibold text-sky-700 dark:text-sky-400">CBM (m³)</Label>
+                        <div className="relative" dir="ltr">
+                          <Input
+                            type="number"
+                            step="0.001"
+                            placeholder="0.000"
+                            value={directCbm}
+                            onChange={(e) => setDirectCbm(e.target.value)}
+                            className="h-14 text-xl font-mono font-bold text-center border-sky-300 dark:border-sky-800"
+                            data-testid="quick-register-direct-cbm"
+                          />
+                        </div>
+                      </div>
+                      <p className="text-xs leading-relaxed text-muted-foreground">
+                        {pickLang(language, {
+                          ku: "ئەگەر ئەمە پڕ بکرێتەوە، پێویست ناکات درێژی/پانی/بەرزی بنووسیت — هەر ئەم ژمارەیە کێشی قەبارەیی و نرخ دیاری دەکات.",
+                          en: "Fill this and the three sides are not needed — this figure sets the volumetric weight and the price.",
+                          ar: "إذا مُلئ هذا فلا حاجة للطول/العرض/الارتفاع — هذا الرقم يحدد الوزن الحجمي والسعر.",
+                          zh: "填写此项即无需长/宽/高 — 体积重量与价格由该数值决定。",
+                        })}
+                      </p>
+                    </div>
+
                     {/* The weight this parcel is charged on.
                         One figure with its own name, rather than two figures
                         and a third called "chargeable" — the larger of the two
@@ -1657,172 +1930,6 @@ export default function QuickRegister() {
                   progress meters: THIS order's cartons, and the customer's
                   overall commission+FP orders (green = registered/arrived,
                   red = still expected). Display-only — no business logic. */}
-              {foundOrder?.found && foundOrder.order && (
-                <Card className="border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
-                  <CardContent className="p-5 space-y-4">
-                    {/* Header: product image + type + order code + product name */}
-                    <div className="flex items-center gap-4 min-w-0">
-                      <PhotoStack
-                        photos={[foundOrder.order.productImage, ...(foundOrder.order.productImages ?? [])]}
-                        className="w-20 h-20 rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-sm"
-                        fallback={
-                          <div className="w-20 h-20 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
-                            <Package className="h-8 w-8 text-indigo-400" />
-                          </div>
-                        }
-                      />
-                      <div className="min-w-0 flex-1">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-600 text-white">
-                            {foundOrder.order.orderType === "commission"
-                              ? pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "شراء بعمولة", zh: "代购" })
-                              : foundOrder.order.orderType === "purchase_request"
-                              ? pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })
-                              : pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "طرد كامل", zh: "整包" })}
-                          </span>
-                          {foundOrder.order.orderCode && (
-                            <span className="text-sm font-mono font-bold text-indigo-900 dark:text-indigo-200" dir="ltr">{foundOrder.order.orderCode}</span>
-                          )}
-                        </div>
-                        {foundOrder.order.productName && (
-                          <p className="text-base font-semibold text-foreground truncate mt-1" title={String(foundOrder.order.productName)}>{foundOrder.order.productName}</p>
-                        )}
-
-                        {/* What the parcel should contain, beside the picture
-                            of it. The person holding the goods is checking
-                            them against the order, and size and colour are
-                            what they are checking — they were recorded and
-                            then shown nowhere on this screen. Hidden when
-                            blank rather than shown as a dash: an empty field
-                            here is normal, and four "—" would crowd out the
-                            two that are filled in. */}
-                        {(foundOrder.order.size || foundOrder.order.color || (foundOrder.order.quantity ?? 0) > 1) && (
-                          <div className="flex items-center gap-1.5 flex-wrap mt-2">
-                            {foundOrder.order.size && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
-                                <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
-                                {pickLang(language, { ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺码" })}:
-                                <b className="font-bold">{foundOrder.order.size}</b>
-                              </span>
-                            )}
-                            {foundOrder.order.color && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
-                                <Palette className="h-3.5 w-3.5 text-muted-foreground" />
-                                {pickLang(language, { ku: "ڕەنگ", en: "Colour", ar: "اللون", zh: "颜色" })}:
-                                <b className="font-bold">{foundOrder.order.color}</b>
-                              </span>
-                            )}
-                            {(foundOrder.order.quantity ?? 0) > 1 && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
-                                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                                {pickLang(language, { ku: "دانە", en: "Qty", ar: "الكمية", zh: "数量" })}:
-                                <b className="font-bold">{foundOrder.order.quantity}</b>
-                              </span>
-                            )}
-                          </div>
-                        )}
-                      </div>
-                    </div>
-
-                    {/* Facts: order number, date, waiting days, entered-by */}
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
-                      {foundOrder.order.orderNumber && (
-                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
-                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order #", ar: "رقم الطلب", zh: "订单号" })}</p>
-                          <p className="flex items-center justify-center gap-1 min-w-0">
-                            <span className="text-xs font-mono font-semibold truncate" dir="ltr" title={String(foundOrder.order.orderNumber)}>{foundOrder.order.orderNumber}</span>
-                            <CopyButton value={String(foundOrder.order.orderNumber)} label={pickLang(language, { ku: "کۆپی ئۆردەر نەمبەر", en: "Copy order number", ar: "نسخ رقم الطلب", zh: "复制订单号" })} />
-                          </p>
-                        </div>
-                      )}
-                      {foundOrder.order.createdAt && (
-                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
-                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</p>
-                          <p className="text-xs font-semibold truncate">{new Date(foundOrder.order.createdAt).toLocaleDateString("en-GB")}</p>
-                        </div>
-                      )}
-                      {foundOrder.order.createdAt && (
-                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
-                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "ماوەی گەیشتن", en: "Waiting", ar: "الانتظار", zh: "等待" })}</p>
-                          <p className="text-xs font-mono font-semibold">{Math.max(0, Math.round((Date.now() - new Date(foundOrder.order.createdAt).getTime()) / 86400000))} {pickLang(language, { ku: "ڕۆژ", en: "d", ar: "ي", zh: "天" })}</p>
-                        </div>
-                      )}
-                      {foundOrder.createdByName && (
-                        <div className="rounded-lg bg-white/70 dark:bg-card/40 border border-indigo-100 dark:border-indigo-900/40 py-2 px-1 min-w-0">
-                          <p className="text-[10px] text-muted-foreground">{pickLang(language, { ku: "تۆمارکەر", en: "By", ar: "بواسطة", zh: "录入" })}</p>
-                          <p className="text-xs font-semibold truncate" title={foundOrder.createdByName}>{foundOrder.createdByName}</p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/*
-                      What the person at the counter needs, in the order they
-                      need it.
-
-                      This said "13 of 38 registered" under the heading "this
-                      customer's orders", which reads as though 13 of their
-                      orders exist and 25 do not. Both numbers were true and
-                      neither was the question. The question, with a box in
-                      hand and a queue behind, is: how many more of this
-                      customer's parcels am I still waiting for?
-
-                      So the sentence leads with that, in words, and the
-                      ratio stays underneath for anyone who wants it.
-                      "Arrived" rather than "registered": the order was
-                      registered the day it was placed.
-                    */}
-                    {customerOrderProgress && customerOrderProgress.total > 0 && (() => {
-                      const { total, registered, remaining, allRegistered } = customerOrderProgress;
-                      const pct = Math.min(100, Math.round((registered / total) * 100));
-                      return (
-                        <div className="rounded-xl border border-indigo-100 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 p-3 space-y-2">
-                          {/* Nothing here when everything has arrived: the
-                              green banner underneath says so, and says what
-                              to do next. */}
-                          {!allRegistered && (
-                            <div className="flex items-center gap-2">
-                              <span className="h-2.5 w-2.5 shrink-0 rounded-full bg-red-500" />
-                              <span className="text-sm font-semibold">
-                                {pickLang(language, {
-                                  ku: `${remaining} پاکێجی تری ئەم کڕیارە چاوەڕوانە`,
-                                  en: `${remaining} more parcels expected for this customer`,
-                                  ar: `${remaining} طرد آخر متوقع لهذا العميل`,
-                                  zh: `该客户还有 ${remaining} 件包裹待到达`,
-                                })}
-                              </span>
-                            </div>
-                          )}
-                          <div className="h-2 w-full rounded-full bg-red-200 dark:bg-red-950/50 overflow-hidden">
-                            <div className="h-full rounded-full bg-emerald-500 transition-all" style={{ width: `${pct}%` }} />
-                          </div>
-                          {/* "13 of 38 arrived", not "13/38". In a
-                              right-to-left line the slash and its two numbers
-                              come apart — the 13 lands on one side and the
-                              /38 on the other. Words do not reorder. */}
-                          <span className="text-xs text-muted-foreground">
-                            {pickLang(language, {
-                              ku: `${registered} لە ${total} ئۆردەری ئەم کڕیارە گەیشتووە`,
-                              en: `${registered} of this customer's ${total} orders have arrived`,
-                              ar: `وصل ${registered} من أصل ${total} من طلبات هذا العميل`,
-                              zh: `该客户 ${total} 张订单中已到 ${registered} 张`,
-                            })}
-                          </span>
-                        </div>
-                      );
-                    })()}
-
-                    {/* All of this customer's orders are in — delivery-ready. */}
-                    {customerOrderProgress?.allRegistered && customerOrderProgress.total > 0 && (
-                      <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 px-3 py-2.5">
-                        <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
-                        <span className="text-sm font-bold text-emerald-800 dark:text-emerald-300">
-                          {pickLang(language, { ku: "هەموو پاکێجەکانی ئەم کڕیارە گەیشتوون — ئامادەیە بۆ ئامادەکاری گەیاندن", en: "Every parcel for this customer has arrived — ready for delivery prep", ar: "وصلت كل طرود هذا العميل — جاهز لتحضير التسليم", zh: "该客户的包裹已全部到达 — 可准备配送" })}
-                        </span>
-                      </div>
-                    )}
-                  </CardContent>
-                </Card>
-              )}
 
               {/* Photos — a card of its own, always open.
                   These used to live inside the collapsed "additional info"
@@ -1832,56 +1939,6 @@ export default function QuickRegister() {
                   on arrival, and it is the first thing anyone asks for when a
                   customer disputes what they received. It belongs in plain
                   sight. */}
-              <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-md bg-sky-500 text-white flex items-center justify-center">
-                      <Camera className="h-3.5 w-3.5" />
-                    </div>
-                    <span className="text-xs font-semibold">{t("quickRegister.photos")}</span>
-                    {photos.length > 0 && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200">
-                        {photos.length}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-muted-foreground ms-auto">
-                      {t("quickRegister.photosHint")}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img src={photo} alt="" className="w-20 h-20 object-cover rounded-lg border shadow-sm" />
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(index)}
-                          className="absolute -top-2 -end-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <label className="w-20 h-20 border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        disabled={isUploading}
-                      />
-                      {isUploading ? (
-                        <Loader2 className="h-6 w-6 animate-spin text-sky-500 dark:text-sky-400" />
-                      ) : (
-                        <>
-                          <ImagePlus className="h-6 w-6 text-sky-500 dark:text-sky-400" />
-                          <span className="text-[9.5px] text-sky-600 dark:text-sky-400">{t("quickRegister.addPhoto")}</span>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </CardContent>
-              </Card>
 
               {/* Row 3: Optional Fields — compact, rarely used, sits low */}
               <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
@@ -1929,6 +1986,98 @@ export default function QuickRegister() {
                       </div>
                     </div>
                   )}
+                </CardContent>
+              </Card>
+
+              {/* The summary, last: it repeats what the fields above
+                  already say, and the owner wants the room (2026-09-23). */}
+              <Card className="border bg-card rounded-2xl shadow-sm">
+                <CardContent className="p-5">
+                  <div className="flex items-center gap-3 mb-4 pb-3 border-b">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                      <Clipboard className="h-5 w-5" />
+                    </div>
+                    <span className="font-bold text-lg">{t("quickRegister.summary")}</span>
+                  </div>
+
+                  {/* Whatever somebody wrote on this order when they took it.
+                      Above the tiles, because it is an instruction and the
+                      tiles are only facts. */}
+                  <OrderNote note={(foundOrder as any)?.order?.notes} className="mb-2.5" />
+
+                  {/* Info tiles stack in the narrow sidebar (2-up on mid widths) */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 text-sm">
+                    {trackingNumber.trim() && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                        <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</span>
+                        <span className="font-mono font-medium truncate" title={trackingNumber}>{trackingNumber}</span>
+                      </div>
+                    )}
+
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
+                      <span className="font-bold text-primary truncate">
+                        {isUnclaimed ? t("quickRegister.unclaimed") : (customerId ? customers?.find(c => c.id === customerId)?.customerCode : "-")}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryWarehouse")}</span>
+                      <span className="font-medium truncate">
+                        {selectedWarehouse ? (selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })) : "-"}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryShipping")}</span>
+                      <span className="font-medium truncate">
+                        {shippingType === "air_regular" ? t("quickRegister.summaryAir") : shippingType === "air_irregular" ? t("quickRegister.summaryIrregular") : t("quickRegister.summarySea")}
+                      </span>
+                    </div>
+                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-900/50 min-w-0">
+                      <span className="text-xs text-emerald-700 dark:text-emerald-400">{t("quickRegister.summaryWeight")}</span>
+                      <span className="font-mono font-bold text-emerald-800 dark:text-emerald-300">{parseFloat(weightKg || "0").toFixed(2)} kg</span>
+                    </div>
+
+                    {(shippingType === "air_regular" || shippingType === "air_irregular") && chargeableWeight > 0 && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 min-w-0">
+                        <span className="text-xs text-amber-700 dark:text-amber-400">{t("quickRegister.chargeableWeight")}</span>
+                        <span className="font-mono font-bold text-amber-900 dark:text-amber-300">{chargeableWeight.toFixed(2)} kg</span>
+                      </div>
+                    )}
+
+                    {shippingType === "sea" && cbm > 0 && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-cyan-50 dark:bg-cyan-950/30 rounded-xl border border-cyan-200 dark:border-cyan-900/50 min-w-0">
+                        <span className="text-xs text-cyan-700 dark:text-cyan-400">CBM</span>
+                        <span className="font-mono font-bold text-cyan-900 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
+                      </div>
+                    )}
+
+                    {(lengthCm || widthCm || heightCm) && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                        <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "قەبارە", en: "Dimensions", ar: "الأبعاد", zh: "尺寸" })}</span>
+                        <span className="font-mono text-xs truncate">{lengthCm || 0}×{widthCm || 0}×{heightCm || 0} cm</span>
+                      </div>
+                    )}
+
+                    {batchId && batchId !== "none" && (
+                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
+                        <span className="text-xs text-muted-foreground">{t("quickRegister.summaryBatch")}</span>
+                        <span className="font-medium truncate">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
+                      </div>
+                    )}
+
+                    {estimatedPrice > 0 && (
+                      <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1 p-4 bg-primary/5 rounded-xl border border-primary/20 min-w-0">
+                        <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
+                        <span className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</span>
+                        {estimate && estimate.rate > 0 && (
+                          <span className="text-xs text-muted-foreground font-mono" dir="ltr">
+                            ${estimate.rate.toFixed(2)}/{estimate.unit}
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
                 </CardContent>
               </Card>
             </div>
@@ -1979,6 +2128,108 @@ export default function QuickRegister() {
                         <SelectContent>
                           <SelectItem value="air_regular">
                             <div className="flex items-center gap-2">
+
+              {/* The register button, always in view.
+
+                  Owner, 2026-09-23: "Enter matters too — let it show
+                  without scrolling." It used to live at the foot of the
+                  summary, which is the longest card on the page, so the
+                  one control that finishes the job was the one thing you
+                  had to scroll to reach. Sticky, so it stays there. */}
+              <Card className="lg:sticky lg:top-4 z-10 border-2 border-primary/30 bg-card rounded-2xl shadow-sm">
+                <CardContent className="p-3">
+                  {estimatedPrice > 0 && (
+                    <div className="mb-2 flex items-baseline gap-2">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
+                      <span className="ms-auto text-2xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
+                    </div>
+                  )}
+                    {/* Submit Button - Below Summary */}
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className={cn(
+                        "w-full h-14 text-lg font-bold shadow-sm mt-5 transition-all",
+                        !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
+                          ? "bg-muted text-muted-foreground cursor-not-allowed"
+                          : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      )}
+                      disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
+                    >
+                      {registerMutation.isPending ? (
+                        <Loader2 className="h-6 w-6 animate-spin ms-2" />
+                      ) : foundOrder?.source === "package" ? (
+                        <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
+                      ) : expandedLookup?.flags?.customerMismatch ? (
+                        <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
+                      ) : (
+                        <Plus className="h-6 w-6 ms-2" />
+                      )}
+                      {foundOrder?.source === "package"
+                        ? t("quickRegister.btnDuplicate")
+                        : expandedLookup?.flags?.customerMismatch
+                          ? t("quickRegister.btnCustomerIssue")
+                          : !trackingNumber.trim()
+                            ? t("quickRegister.btnEnterTracking")
+                            : t("quickRegister.btnRegister")}
+                    </Button>
+
+                    <p className="text-xs text-center text-muted-foreground mt-3">
+                      {t("quickRegister.footerHint")}
+                    </p>
+                </CardContent>
+              </Card>
+
+              <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-md bg-sky-500 text-white flex items-center justify-center">
+                      <Camera className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-semibold">{t("quickRegister.photos")}</span>
+                    {photos.length > 0 && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200">
+                        {photos.length}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground ms-auto">
+                      {t("quickRegister.photosHint")}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img src={photo} alt="" className="w-20 h-20 object-cover rounded-lg border shadow-sm" />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -end-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                      {isUploading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-sky-500 dark:text-sky-400" />
+                      ) : (
+                        <>
+                          <ImagePlus className="h-6 w-6 text-sky-500 dark:text-sky-400" />
+                          <span className="text-[9.5px] text-sky-600 dark:text-sky-400">{t("quickRegister.addPhoto")}</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
                               <Plane className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                               <span>{t("quickRegister.airRegular")}</span>
                             </div>
@@ -2072,128 +2323,6 @@ export default function QuickRegister() {
                 </CardContent>
               </Card>
 
-              <Card className="lg:sticky lg:top-4 border bg-card rounded-2xl shadow-sm">
-                <CardContent className="p-5">
-                  <div className="flex items-center gap-3 mb-4 pb-3 border-b">
-                    <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
-                      <Clipboard className="h-5 w-5" />
-                    </div>
-                    <span className="font-bold text-lg">{t("quickRegister.summary")}</span>
-                  </div>
-
-                  {/* Whatever somebody wrote on this order when they took it.
-                      Above the tiles, because it is an instruction and the
-                      tiles are only facts. */}
-                  <OrderNote note={(foundOrder as any)?.order?.notes} className="mb-2.5" />
-
-                  {/* Info tiles stack in the narrow sidebar (2-up on mid widths) */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-1 gap-2.5 text-sm">
-                    {trackingNumber.trim() && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
-                        <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "تراکینگ", en: "Tracking", ar: "التتبع", zh: "追踪号" })}</span>
-                        <span className="font-mono font-medium truncate" title={trackingNumber}>{trackingNumber}</span>
-                      </div>
-                    )}
-
-                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
-                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryCustomer")}</span>
-                      <span className="font-bold text-primary truncate">
-                        {isUnclaimed ? t("quickRegister.unclaimed") : (customerId ? customers?.find(c => c.id === customerId)?.customerCode : "-")}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
-                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryWarehouse")}</span>
-                      <span className="font-medium truncate">
-                        {selectedWarehouse ? (selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? t("quickRegister.warehouseN", { id: selectedWarehouse.id })) : "-"}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
-                      <span className="text-xs text-muted-foreground">{t("quickRegister.summaryShipping")}</span>
-                      <span className="font-medium truncate">
-                        {shippingType === "air_regular" ? t("quickRegister.summaryAir") : shippingType === "air_irregular" ? t("quickRegister.summaryIrregular") : t("quickRegister.summarySea")}
-                      </span>
-                    </div>
-                    <div className="flex flex-col gap-1 py-2.5 px-3 bg-emerald-50 dark:bg-emerald-950/30 rounded-xl border border-emerald-200 dark:border-emerald-900/50 min-w-0">
-                      <span className="text-xs text-emerald-700 dark:text-emerald-400">{t("quickRegister.summaryWeight")}</span>
-                      <span className="font-mono font-bold text-emerald-800 dark:text-emerald-300">{parseFloat(weightKg || "0").toFixed(2)} kg</span>
-                    </div>
-
-                    {(shippingType === "air_regular" || shippingType === "air_irregular") && chargeableWeight > 0 && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 min-w-0">
-                        <span className="text-xs text-amber-700 dark:text-amber-400">{t("quickRegister.chargeableWeight")}</span>
-                        <span className="font-mono font-bold text-amber-900 dark:text-amber-300">{chargeableWeight.toFixed(2)} kg</span>
-                      </div>
-                    )}
-
-                    {shippingType === "sea" && cbm > 0 && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-cyan-50 dark:bg-cyan-950/30 rounded-xl border border-cyan-200 dark:border-cyan-900/50 min-w-0">
-                        <span className="text-xs text-cyan-700 dark:text-cyan-400">CBM</span>
-                        <span className="font-mono font-bold text-cyan-900 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
-                      </div>
-                    )}
-
-                    {(lengthCm || widthCm || heightCm) && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
-                        <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "قەبارە", en: "Dimensions", ar: "الأبعاد", zh: "尺寸" })}</span>
-                        <span className="font-mono text-xs truncate">{lengthCm || 0}×{widthCm || 0}×{heightCm || 0} cm</span>
-                      </div>
-                    )}
-
-                    {batchId && batchId !== "none" && (
-                      <div className="flex flex-col gap-1 py-2.5 px-3 bg-muted/50 rounded-xl min-w-0">
-                        <span className="text-xs text-muted-foreground">{t("quickRegister.summaryBatch")}</span>
-                        <span className="font-medium truncate">{batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode}</span>
-                      </div>
-                    )}
-
-                    {estimatedPrice > 0 && (
-                      <div className="sm:col-span-2 lg:col-span-1 flex flex-col gap-1 p-4 bg-primary/5 rounded-xl border border-primary/20 min-w-0">
-                        <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
-                        <span className="text-3xl font-bold text-primary">${estimatedPrice.toFixed(2)}</span>
-                        {estimate && estimate.rate > 0 && (
-                          <span className="text-xs text-muted-foreground font-mono" dir="ltr">
-                            ${estimate.rate.toFixed(2)}/{estimate.unit}
-                          </span>
-                        )}
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Submit Button - Below Summary */}
-                  <Button
-                    type="submit"
-                    size="lg"
-                    className={cn(
-                      "w-full h-14 text-lg font-bold shadow-sm mt-5 transition-all",
-                      !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
-                        ? "bg-muted text-muted-foreground cursor-not-allowed"
-                        : "bg-primary text-primary-foreground hover:bg-primary/90"
-                    )}
-                    disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
-                  >
-                    {registerMutation.isPending ? (
-                      <Loader2 className="h-6 w-6 animate-spin ms-2" />
-                    ) : foundOrder?.source === "package" ? (
-                      <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
-                    ) : expandedLookup?.flags?.customerMismatch ? (
-                      <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
-                    ) : (
-                      <Plus className="h-6 w-6 ms-2" />
-                    )}
-                    {foundOrder?.source === "package"
-                      ? t("quickRegister.btnDuplicate")
-                      : expandedLookup?.flags?.customerMismatch
-                        ? t("quickRegister.btnCustomerIssue")
-                        : !trackingNumber.trim()
-                          ? t("quickRegister.btnEnterTracking")
-                          : t("quickRegister.btnRegister")}
-                  </Button>
-
-                  <p className="text-xs text-center text-muted-foreground mt-3">
-                    {t("quickRegister.footerHint")}
-                  </p>
-                </CardContent>
-              </Card>
             </div>
           </div>
         </form>
