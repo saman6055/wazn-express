@@ -979,18 +979,6 @@ export default function QuickRegister() {
           </div>
         )}
 
-        {/* Quick access: register a prohibited item (goes to its own fast flow) */}
-        <button
-          type="button"
-          onClick={() => setLocation("/packages/prohibited-register")}
-          className="mb-3 w-full flex items-center justify-between gap-3 rounded-xl border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
-        >
-          <span className="flex items-center gap-2.5 text-sm font-medium text-red-700 dark:text-red-300">
-            <AlertTriangle className="h-4 w-4" />
-            {pickLang(language, { ku: "کەلوپەلی قەدەغە؟ لێرەوە تۆماری بکە", en: "Prohibited item? Register it here", ar: "بضاعة ممنوعة؟ سجّلها من هنا", zh: "违禁物品？在此登记" })}
-          </span>
-          <ChevronDown className="h-4 w-4 -rotate-90 rtl:rotate-90 text-red-400" />
-        </button>
 
         {/* Professional Header with Stats */}
         <div className="mb-4">
@@ -1086,16 +1074,29 @@ export default function QuickRegister() {
           {/* Two-column layout: all fields on the left, the summary as a
               sticky sidebar on the right — keeps the whole form on one
               screen (no downward scrolling), like before. */}
+        {/* Quick access: register a prohibited item (goes to its own fast flow) */}
+        <button
+          type="button"
+          onClick={() => setLocation("/packages/prohibited-register")}
+          className="mb-2 w-full flex items-center justify-between gap-2 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+        >
+          <span className="flex items-center gap-2.5 text-xs font-medium text-red-700 dark:text-red-300">
+            <AlertTriangle className="h-3.5 w-3.5" />
+            {pickLang(language, { ku: "کەلوپەلی قەدەغە؟ لێرەوە تۆماری بکە", en: "Prohibited item? Register it here", ar: "بضاعة ممنوعة؟ سجّلها من هنا", zh: "违禁物品？在此登记" })}
+          </span>
+          <ChevronDown className="h-4 w-4 -rotate-90 rtl:rotate-90 text-red-400" />
+        </button>
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
             {/* Fields column */}
-            <div className="lg:col-span-2 space-y-3">
+            <div className="lg:col-span-2 min-w-0 space-y-3">
 
               {/* Tracking + Customer + Warehouse + Shipping + Weight —
                   two per row so each field is a comfortable, wide rectangle */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-stretch [&>*]:h-full">
+              <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-stretch [&>*]:h-full">
                 {/* Tracking Number — spans the full row so the field is a
                     wide, comfortable rectangle (it's the primary input) */}
-                <Card className="md:col-span-2 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
@@ -1131,7 +1132,7 @@ export default function QuickRegister() {
                             handleTrackingSearch();
                           }
                         }}
-                        className="font-mono text-base h-12 flex-1"
+                        className="font-mono text-base h-11 flex-1"
                         autoFocus
                       />
                       <Button
@@ -1139,7 +1140,7 @@ export default function QuickRegister() {
                         size="lg"
                         onClick={() => handleTrackingSearch()}
                         disabled={trackingNumber.trim().length < 1 || isSearching}
-                        className="h-12 px-4 bg-amber-500 hover:bg-amber-600 text-white"
+                        className="h-11 px-3 bg-amber-500 hover:bg-amber-600 text-white"
                       >
                         {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
                       </Button>
@@ -1323,7 +1324,7 @@ export default function QuickRegister() {
                 </Card>
 
               {foundOrder?.found && foundOrder.order && (
-                <Card className="md:col-span-2 border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
+                <Card className="md:col-span-5 border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
                   <CardContent className="p-5 space-y-4">
                     {/* Header: product image + type + order code + product name */}
                     <div className="flex items-center gap-4 min-w-0">
@@ -1494,7 +1495,7 @@ export default function QuickRegister() {
                     here — how many pieces are left — until the next tracking
                     is typed. The screen then belongs to that parcel again. */}
                 {!foundOrder?.found && lastRegistered && customerId && (
-                  <Card className="md:col-span-2 border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/25 rounded-2xl shadow-sm">
+                  <Card className="md:col-span-5 border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/25 rounded-2xl shadow-sm">
                     <CardContent className="p-3 space-y-2">
                       <div className="flex flex-wrap items-center gap-2 text-sm">
                         <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -1552,7 +1553,7 @@ export default function QuickRegister() {
                 )}
 
                 {/* Customer Selection */}
-                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-3 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 flex items-center justify-center">
@@ -1631,7 +1632,7 @@ export default function QuickRegister() {
 
                 {/* Weight — the primary numeric field. Warehouse & Shipping
                     moved out of the center to the compact side panel. */}
-                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-2 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
@@ -1656,7 +1657,7 @@ export default function QuickRegister() {
 
               {/* Row 2.5: Dimensions - Only for Air shipping */}
               {(shippingType === "air_regular" || shippingType === "air_irregular") && (
-                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 flex items-center justify-center">
@@ -1665,9 +1666,9 @@ export default function QuickRegister() {
                       <span className="text-base font-bold text-violet-700 dark:text-violet-400">{t("quickRegister.stepDimensions")}</span>
                       <span className="text-xs text-muted-foreground me-2">{t("quickRegister.forVolumetricWeight")}</span>
                     </div>
-                    <div className="grid grid-cols-3 gap-4">
+                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.length")}</Label>
+                        <Label className="text-xs font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.length")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1675,12 +1676,12 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={lengthCm}
                             onChange={(e) => setLengthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center"
+                            className="h-11 text-base font-mono font-bold text-center"
                           />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.width")}</Label>
+                        <Label className="text-xs font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.width")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1688,12 +1689,12 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={widthCm}
                             onChange={(e) => setWidthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center"
+                            className="h-11 text-base font-mono font-bold text-center"
                           />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.height")}</Label>
+                        <Label className="text-xs font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.height")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1701,7 +1702,7 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={heightCm}
                             onChange={(e) => setHeightCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center"
+                            className="h-11 text-base font-mono font-bold text-center"
                           />
                         </div>
                       </div>
@@ -1711,23 +1712,13 @@ export default function QuickRegister() {
                         Owner, 2026-09-23: "sometimes you do not need to
                         measure — the CBM is there", and it must set the
                         volumetric price, not merely be recorded. Given, it
-                        stands for the three sides above
-                        (@shared/chargeableWeight). */}
-                    <div className="mt-3 flex items-center gap-2">
-                      <span className="h-px flex-1 bg-border" />
-                      <span className="text-[11px] text-muted-foreground">
-                        {pickLang(language, {
-                          ku: "یان، ئەگەر CBM ئامادەیە",
-                          en: "or, when the CBM is already known",
-                          ar: "أو، إذا كان الـ CBM معروفاً",
-                          zh: "或者，已知 CBM 时",
-                        })}
-                      </span>
-                      <span className="h-px flex-1 bg-border" />
-                    </div>
-                    <div className="mt-2 grid grid-cols-1 sm:grid-cols-[minmax(0,1fr)_1.4fr] gap-3 items-center">
+                        stands for the three sides beside it
+                        (@shared/chargeableWeight). It sits in the same row as
+                        them, small: four boxes for one measurement, not a
+                        section of its own. */}
+                    <div className="mt-2 grid grid-cols-2 sm:grid-cols-4 gap-2 items-start">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-sky-700 dark:text-sky-400">CBM (m³)</Label>
+                        <Label className="text-xs font-semibold text-sky-700 dark:text-sky-400">CBM (m³)</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1735,17 +1726,17 @@ export default function QuickRegister() {
                             placeholder="0.000"
                             value={directCbm}
                             onChange={(e) => setDirectCbm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center border-sky-300 dark:border-sky-800"
+                            className="h-11 text-base font-mono font-bold text-center border-sky-300 dark:border-sky-800"
                             data-testid="quick-register-direct-cbm"
                           />
                         </div>
                       </div>
-                      <p className="text-xs leading-relaxed text-muted-foreground">
+                      <p className="sm:col-span-3 self-center text-[11px] leading-relaxed text-muted-foreground">
                         {pickLang(language, {
-                          ku: "ئەگەر ئەمە پڕ بکرێتەوە، پێویست ناکات درێژی/پانی/بەرزی بنووسیت — هەر ئەم ژمارەیە کێشی قەبارەیی و نرخ دیاری دەکات.",
-                          en: "Fill this and the three sides are not needed — this figure sets the volumetric weight and the price.",
-                          ar: "إذا مُلئ هذا فلا حاجة للطول/العرض/الارتفاع — هذا الرقم يحدد الوزن الحجمي والسعر.",
-                          zh: "填写此项即无需长/宽/高 — 体积重量与价格由该数值决定。",
+                          ku: "ئەگەر CBM پڕ بکرێتەوە، پێویست ناکات درێژی/پانی/بەرزی بنووسیت.",
+                          en: "Fill the CBM and the three sides are not needed.",
+                          ar: "إذا مُلئ الـ CBM فلا حاجة للطول/العرض/الارتفاع.",
+                          zh: "填写 CBM 即无需长/宽/高。",
                         })}
                       </p>
                     </div>
@@ -1806,7 +1797,7 @@ export default function QuickRegister() {
 
               {/* Sea shipping - CBM input */}
               {shippingType === "sea" && (
-                <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400 flex items-center justify-center">
@@ -1816,7 +1807,7 @@ export default function QuickRegister() {
                     </div>
                     <div className="grid grid-cols-4 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.length")}</Label>
+                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.length")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1824,12 +1815,12 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={lengthCm}
                             onChange={(e) => setLengthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center"
+                            className="h-11 text-base font-mono font-bold text-center"
                           />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.width")}</Label>
+                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.width")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1837,12 +1828,12 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={widthCm}
                             onChange={(e) => setWidthCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center"
+                            className="h-11 text-base font-mono font-bold text-center"
                           />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.height")}</Label>
+                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.height")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1850,12 +1841,12 @@ export default function QuickRegister() {
                             placeholder="0"
                             value={heightCm}
                             onChange={(e) => setHeightCm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center"
+                            className="h-11 text-base font-mono font-bold text-center"
                           />
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-sm font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.orCbm")}</Label>
+                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.orCbm")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -1863,7 +1854,7 @@ export default function QuickRegister() {
                             placeholder="0.0000"
                             value={directCbm}
                             onChange={(e) => setDirectCbm(e.target.value)}
-                            className="h-14 text-xl font-mono font-bold text-center"
+                            className="h-11 text-base font-mono font-bold text-center"
                           />
                         </div>
                       </div>
@@ -2084,7 +2075,7 @@ export default function QuickRegister() {
 
             {/* Side panel: compact Warehouse + Shipping + Batch selectors
                 (moved out of the center) followed by the sticky Summary */}
-            <div className="lg:col-span-1 space-y-3">
+            <div className="lg:col-span-1 min-w-0 space-y-3">
               <Card className="border bg-card rounded-2xl shadow-sm">
                 <CardContent className="p-4 space-y-3">
                   <div className="grid grid-cols-2 gap-2.5">
@@ -2130,55 +2121,6 @@ export default function QuickRegister() {
                             <div className="flex items-center gap-2">
 
               {/* The register button, always in view.
-
-                  Owner, 2026-09-23: "Enter matters too — let it show
-                  without scrolling." It used to live at the foot of the
-                  summary, which is the longest card on the page, so the
-                  one control that finishes the job was the one thing you
-                  had to scroll to reach. Sticky, so it stays there. */}
-              <Card className="lg:sticky lg:top-4 z-10 border-2 border-primary/30 bg-card rounded-2xl shadow-sm">
-                <CardContent className="p-3">
-                  {estimatedPrice > 0 && (
-                    <div className="mb-2 flex items-baseline gap-2">
-                      <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
-                      <span className="ms-auto text-2xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
-                    </div>
-                  )}
-                    {/* Submit Button - Below Summary */}
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className={cn(
-                        "w-full h-14 text-lg font-bold shadow-sm mt-5 transition-all",
-                        !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary text-primary-foreground hover:bg-primary/90"
-                      )}
-                      disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
-                    >
-                      {registerMutation.isPending ? (
-                        <Loader2 className="h-6 w-6 animate-spin ms-2" />
-                      ) : foundOrder?.source === "package" ? (
-                        <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
-                      ) : expandedLookup?.flags?.customerMismatch ? (
-                        <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
-                      ) : (
-                        <Plus className="h-6 w-6 ms-2" />
-                      )}
-                      {foundOrder?.source === "package"
-                        ? t("quickRegister.btnDuplicate")
-                        : expandedLookup?.flags?.customerMismatch
-                          ? t("quickRegister.btnCustomerIssue")
-                          : !trackingNumber.trim()
-                            ? t("quickRegister.btnEnterTracking")
-                            : t("quickRegister.btnRegister")}
-                    </Button>
-
-                    <p className="text-xs text-center text-muted-foreground mt-3">
-                      {t("quickRegister.footerHint")}
-                    </p>
-                </CardContent>
-              </Card>
 
               <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
                 <CardContent className="p-3">
@@ -2228,6 +2170,54 @@ export default function QuickRegister() {
                       )}
                     </label>
                   </div>
+                </CardContent>
+              </Card>
+                  Owner, 2026-09-23: "Enter matters too — let it show
+                  without scrolling." It used to live at the foot of the
+                  summary, which is the longest card on the page, so the
+                  one control that finishes the job was the one thing you
+                  had to scroll to reach. Sticky, so it stays there. */}
+              <Card className="lg:sticky lg:top-4 border-2 border-primary/30 bg-card rounded-2xl shadow-sm">
+                <CardContent className="p-3">
+                  {estimatedPrice > 0 && (
+                    <div className="mb-2 flex items-baseline gap-2">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
+                      <span className="ms-auto text-2xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
+                    </div>
+                  )}
+                    {/* Submit Button - Below Summary */}
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className={cn(
+                        "w-full h-11 text-sm font-bold shadow-sm mt-2 transition-all min-w-0 truncate",
+                        !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
+                          ? "bg-muted text-muted-foreground cursor-not-allowed"
+                          : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      )}
+                      disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
+                    >
+                      {registerMutation.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin ms-1.5" />
+                      ) : foundOrder?.source === "package" ? (
+                        <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
+                      ) : expandedLookup?.flags?.customerMismatch ? (
+                        <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
+                      ) : (
+                        <Plus className="h-5 w-5 ms-1.5" />
+                      )}
+                      {foundOrder?.source === "package"
+                        ? t("quickRegister.btnDuplicate")
+                        : expandedLookup?.flags?.customerMismatch
+                          ? t("quickRegister.btnCustomerIssue")
+                          : !trackingNumber.trim()
+                            ? t("quickRegister.btnEnterTracking")
+                            : t("quickRegister.btnRegister")}
+                    </Button>
+
+                    <p className="text-[10px] text-center text-muted-foreground mt-1.5">
+                      {t("quickRegister.footerHint")}
+                    </p>
                 </CardContent>
               </Card>
                               <Plane className="h-4 w-4 text-blue-500 dark:text-blue-400" />

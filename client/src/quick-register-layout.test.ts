@@ -30,7 +30,7 @@ const at = (needle: string) => {
 describe("what sits where", () => {
   it("the found order is under the tracking box, before the customer step", () => {
     const tracking = at('{t("quickRegister.stepTracking")}');
-    const order = at('className="md:col-span-2 border-2 border-indigo-200');
+    const order = at('className="md:col-span-5 border-2 border-indigo-200');
     const customer = at('{t("quickRegister.stepCustomer")}');
     expect(order).toBeGreaterThan(tracking);
     expect(order).toBeLessThan(customer);
@@ -41,20 +41,43 @@ describe("what sits where", () => {
     expect(at('{t("quickRegister.stepWeight")}')).toBeLessThan(at('{t("quickRegister.stepDimensions")}'));
   });
 
-  it("the side column is the warehouse, then the register button, then the photos", () => {
-    const side = at('className="lg:col-span-1 space-y-3"');
-    const register = at('className="lg:sticky lg:top-4 z-10 border-2 border-primary/30');
+  it("the side column is the warehouse, then the photos, then the register button", () => {
+    const side = at('className="lg:col-span-1 min-w-0 space-y-3"');
     const photos = at('className="border-2 border-sky-200 dark:border-sky-900/60');
-    expect(register).toBeGreaterThan(side);
-    expect(photos).toBeGreaterThan(register);
+    const register = at('className="lg:sticky lg:top-4 border-2 border-primary/30');
+    expect(photos).toBeGreaterThan(side);
+    expect(register).toBeGreaterThan(photos);
+  });
+
+  it("neither column can be stretched by one wide child", () => {
+    // A grid track is as wide as its widest child unless told otherwise; the
+    // long button label was pushing the side column over the form.
+    expect(page).toContain('<div className="lg:col-span-2 min-w-0 space-y-3">');
+    expect(page).toContain('<div className="lg:col-span-1 min-w-0 space-y-3">');
+  });
+
+  it("the boxes are the size of what goes in them", () => {
+    // Owner, 2026-09-23: the tracking, the weight and the centimetre row were
+    // all far longer than the numbers they hold.
+    expect(page).toContain('className="font-mono text-base h-11 flex-1"');
+    expect(page).toContain('md:col-span-3 border bg-card');  // customer
+    expect(page).toContain('md:col-span-2 border bg-card');  // weight, narrower
+    expect(page).toContain('grid grid-cols-2 sm:grid-cols-4 gap-2');
+    expect(page).not.toContain("h-14 text-xl font-mono font-bold text-center");
+  });
+
+  it("the prohibited strip sits just above the tracking box", () => {
+    const prohibited = at("کەلوپەلی قەدەغە");
+    expect(prohibited).toBeGreaterThan(at('<h1 className="text-lg font-bold'));
+    expect(prohibited).toBeLessThan(at('{t("quickRegister.stepTracking")}'));
   });
 
   it("the register button is sticky, and no longer buried in the summary", () => {
-    expect(page).toContain('<Card className="lg:sticky lg:top-4 z-10 border-2 border-primary/30');
+    expect(page).toContain('<Card className="lg:sticky lg:top-4 border-2 border-primary/30');
     // It is in the side column, not inside the summary card.
     const register = at("{/* Submit Button - Below Summary */}");
-    expect(register).toBeGreaterThan(at('className="lg:col-span-1 space-y-3"'));
-    const summaryCard = page.slice(page.lastIndexOf("<Card", at('{t("quickRegister.summary")}')), at('className="lg:col-span-1 space-y-3"'));
+    expect(register).toBeGreaterThan(at('className="lg:col-span-1 min-w-0 space-y-3"'));
+    const summaryCard = page.slice(page.lastIndexOf("<Card", at('{t("quickRegister.summary")}')), at('className="lg:col-span-1 min-w-0 space-y-3"'));
     expect(summaryCard).not.toContain('type="submit"');
   });
 
@@ -62,7 +85,7 @@ describe("what sits where", () => {
     const summary = at('{t("quickRegister.summary")}');
     // After the last step, before the side column starts.
     expect(summary).toBeGreaterThan(at('{t("quickRegister.stepDimensions")}'));
-    expect(summary).toBeLessThan(at('className="lg:col-span-1 space-y-3"'));
+    expect(summary).toBeLessThan(at('className="lg:col-span-1 min-w-0 space-y-3"'));
     const card = page.slice(page.lastIndexOf("<Card", summary), summary);
     expect(card).not.toContain("lg:sticky");
   });
@@ -87,7 +110,7 @@ describe("after Enter", () => {
 describe("the cubic metre", () => {
   it("sits under the three sides and says what it does", () => {
     expect(page).toContain('data-testid="quick-register-direct-cbm"');
-    expect(page).toContain("یان، ئەگەر CBM ئامادەیە");
+    expect(page).toContain("ئەگەر CBM پڕ بکرێتەوە");
     expect(page).toContain("volumeCbm: directCbm || undefined,");
   });
 
