@@ -1105,7 +1105,9 @@ export default function QuickRegister() {
                       <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t("quickRegister.stepTracking")}</span>
                       {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500 dark:text-amber-400" />}
                     </div>
-                    <div className="flex gap-2">
+                    {/* A box the width of a tracking number, not of the
+                        card it sits in (owner, 2026-09-23). */}
+                    <div className="flex gap-2 max-w-xl">
                       <Input
                         ref={trackingRef}
                         placeholder={t("quickRegister.trackingPlaceholder")}
@@ -2119,107 +2121,6 @@ export default function QuickRegister() {
                         <SelectContent>
                           <SelectItem value="air_regular">
                             <div className="flex items-center gap-2">
-
-              {/* The register button, always in view.
-
-              <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
-                <CardContent className="p-3">
-                  <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-md bg-sky-500 text-white flex items-center justify-center">
-                      <Camera className="h-3.5 w-3.5" />
-                    </div>
-                    <span className="text-xs font-semibold">{t("quickRegister.photos")}</span>
-                    {photos.length > 0 && (
-                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200">
-                        {photos.length}
-                      </span>
-                    )}
-                    <span className="text-[10px] text-muted-foreground ms-auto">
-                      {t("quickRegister.photosHint")}
-                    </span>
-                  </div>
-                  <div className="flex flex-wrap gap-3">
-                    {photos.map((photo, index) => (
-                      <div key={index} className="relative group">
-                        <img src={photo} alt="" className="w-20 h-20 object-cover rounded-lg border shadow-sm" />
-                        <button
-                          type="button"
-                          onClick={() => removePhoto(index)}
-                          className="absolute -top-2 -end-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
-                        >
-                          <X className="h-4 w-4" />
-                        </button>
-                      </div>
-                    ))}
-                    <label className="w-20 h-20 border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleImageUpload}
-                        className="hidden"
-                        disabled={isUploading}
-                      />
-                      {isUploading ? (
-                        <Loader2 className="h-6 w-6 animate-spin text-sky-500 dark:text-sky-400" />
-                      ) : (
-                        <>
-                          <ImagePlus className="h-6 w-6 text-sky-500 dark:text-sky-400" />
-                          <span className="text-[9.5px] text-sky-600 dark:text-sky-400">{t("quickRegister.addPhoto")}</span>
-                        </>
-                      )}
-                    </label>
-                  </div>
-                </CardContent>
-              </Card>
-                  Owner, 2026-09-23: "Enter matters too — let it show
-                  without scrolling." It used to live at the foot of the
-                  summary, which is the longest card on the page, so the
-                  one control that finishes the job was the one thing you
-                  had to scroll to reach. Sticky, so it stays there. */}
-              <Card className="lg:sticky lg:top-4 border-2 border-primary/30 bg-card rounded-2xl shadow-sm">
-                <CardContent className="p-3">
-                  {estimatedPrice > 0 && (
-                    <div className="mb-2 flex items-baseline gap-2">
-                      <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
-                      <span className="ms-auto text-2xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
-                    </div>
-                  )}
-                    {/* Submit Button - Below Summary */}
-                    <Button
-                      type="submit"
-                      size="lg"
-                      className={cn(
-                        "w-full h-11 text-sm font-bold shadow-sm mt-2 transition-all min-w-0 truncate",
-                        !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
-                          ? "bg-muted text-muted-foreground cursor-not-allowed"
-                          : "bg-primary text-primary-foreground hover:bg-primary/90"
-                      )}
-                      disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
-                    >
-                      {registerMutation.isPending ? (
-                        <Loader2 className="h-5 w-5 animate-spin ms-1.5" />
-                      ) : foundOrder?.source === "package" ? (
-                        <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
-                      ) : expandedLookup?.flags?.customerMismatch ? (
-                        <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
-                      ) : (
-                        <Plus className="h-5 w-5 ms-1.5" />
-                      )}
-                      {foundOrder?.source === "package"
-                        ? t("quickRegister.btnDuplicate")
-                        : expandedLookup?.flags?.customerMismatch
-                          ? t("quickRegister.btnCustomerIssue")
-                          : !trackingNumber.trim()
-                            ? t("quickRegister.btnEnterTracking")
-                            : t("quickRegister.btnRegister")}
-                    </Button>
-
-                    <p className="text-[10px] text-center text-muted-foreground mt-1.5">
-                      {t("quickRegister.footerHint")}
-                    </p>
-                </CardContent>
-              </Card>
                               <Plane className="h-4 w-4 text-blue-500 dark:text-blue-400" />
                               <span>{t("quickRegister.airRegular")}</span>
                             </div>
@@ -2310,6 +2211,109 @@ export default function QuickRegister() {
                       ))}
                     </SelectContent>
                   </Select>
+                </CardContent>
+              </Card>
+
+              {/* The photo of the parcel as it arrived, with what it is
+                  a photo of. The owner, 2026-09-23: this is the place for
+                  it — the empty panel under the shipping selectors. */}
+              <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
+                <CardContent className="p-3">
+                  <div className="flex items-center gap-2 mb-3">
+                    <div className="w-6 h-6 rounded-md bg-sky-500 text-white flex items-center justify-center">
+                      <Camera className="h-3.5 w-3.5" />
+                    </div>
+                    <span className="text-xs font-semibold">{t("quickRegister.photos")}</span>
+                    {photos.length > 0 && (
+                      <span className="text-[10px] font-medium px-1.5 py-0.5 rounded-md bg-sky-100 text-sky-800 dark:bg-sky-950/50 dark:text-sky-200">
+                        {photos.length}
+                      </span>
+                    )}
+                    <span className="text-[10px] text-muted-foreground ms-auto">
+                      {t("quickRegister.photosHint")}
+                    </span>
+                  </div>
+                  <div className="flex flex-wrap gap-3">
+                    {photos.map((photo, index) => (
+                      <div key={index} className="relative group">
+                        <img src={photo} alt="" className="w-20 h-20 object-cover rounded-lg border shadow-sm" />
+                        <button
+                          type="button"
+                          onClick={() => removePhoto(index)}
+                          className="absolute -top-2 -end-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity shadow-sm"
+                        >
+                          <X className="h-4 w-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <label className="w-20 h-20 border-2 border-dashed border-sky-300 dark:border-sky-800 rounded-lg flex flex-col items-center justify-center gap-1 cursor-pointer hover:border-sky-500 hover:bg-sky-50 dark:hover:bg-sky-950/30 transition-colors">
+                      <input
+                        type="file"
+                        accept="image/*"
+                        multiple
+                        onChange={handleImageUpload}
+                        className="hidden"
+                        disabled={isUploading}
+                      />
+                      {isUploading ? (
+                        <Loader2 className="h-6 w-6 animate-spin text-sky-500 dark:text-sky-400" />
+                      ) : (
+                        <>
+                          <ImagePlus className="h-6 w-6 text-sky-500 dark:text-sky-400" />
+                          <span className="text-[9.5px] text-sky-600 dark:text-sky-400">{t("quickRegister.addPhoto")}</span>
+                        </>
+                      )}
+                    </label>
+                  </div>
+                </CardContent>
+              </Card>
+
+              {/* The register button, always in view.
+
+                  Owner, 2026-09-23: Enter matters too, so it shows
+                  without scrolling. It used to sit at the foot of the
+                  summary, the longest card on the page. */}
+              <Card className="lg:sticky lg:top-4 border-2 border-primary/30 bg-card rounded-2xl shadow-sm">
+                <CardContent className="p-3">
+                  {estimatedPrice > 0 && (
+                    <div className="mb-2 flex items-baseline gap-2">
+                      <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
+                      <span className="ms-auto text-2xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
+                    </div>
+                  )}
+                    {/* Submit Button - Below Summary */}
+                    <Button
+                      type="submit"
+                      size="lg"
+                      className={cn(
+                        "w-full h-11 text-sm font-bold shadow-sm mt-2 transition-all min-w-0 truncate",
+                        !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch
+                          ? "bg-muted text-muted-foreground cursor-not-allowed"
+                          : "bg-primary text-primary-foreground hover:bg-primary/90"
+                      )}
+                      disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
+                    >
+                      {registerMutation.isPending ? (
+                        <Loader2 className="h-5 w-5 animate-spin ms-1.5" />
+                      ) : foundOrder?.source === "package" ? (
+                        <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
+                      ) : expandedLookup?.flags?.customerMismatch ? (
+                        <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
+                      ) : (
+                        <Plus className="h-5 w-5 ms-1.5" />
+                      )}
+                      {foundOrder?.source === "package"
+                        ? t("quickRegister.btnDuplicate")
+                        : expandedLookup?.flags?.customerMismatch
+                          ? t("quickRegister.btnCustomerIssue")
+                          : !trackingNumber.trim()
+                            ? t("quickRegister.btnEnterTracking")
+                            : t("quickRegister.btnRegister")}
+                    </Button>
+
+                    <p className="text-[10px] text-center text-muted-foreground mt-1.5">
+                      {t("quickRegister.footerHint")}
+                    </p>
                 </CardContent>
               </Card>
 
