@@ -22,6 +22,20 @@ export type Dimensions = {
   lengthCm?: string | number | null;
   widthCm?: string | number | null;
   heightCm?: string | number | null;
+  /**
+   * The volume itself, when somebody already has it (owner, 2026-09-23).
+   *
+   * A supplier's sheet often states the CBM, and measuring a carton to
+   * rediscover a number already written down is work for nothing. Given, it
+   * IS the volume — for air too, where it decides the volumetric weight the
+   * same way the three sides would have. Asked whether a CBM typed in should
+   * set the air price, the owner: "it must decide the volumetric price."
+   *
+   * Absent — which is the ordinary case — the three sides decide, exactly as
+   * before. Where the system fills this in itself it fills it from those same
+   * three sides, so the two agree and nothing moves.
+   */
+  volumeCbm?: string | number | null;
 };
 
 const n = (v: unknown): number => {
@@ -30,19 +44,27 @@ const n = (v: unknown): number => {
   return Number.isFinite(x) && x > 0 ? x : 0;
 };
 
-/** Volume in cubic metres, or 0 when a side is missing. */
+/** Volume in cubic metres: the one given, else the three sides, else 0. */
 export function volumeCbm(dims: Dimensions): number {
+  const given = n(dims.volumeCbm);
+  if (given > 0) return given;
   const l = n(dims.lengthCm), w = n(dims.widthCm), h = n(dims.heightCm);
   if (l === 0 || w === 0 || h === 0) return 0;
   return (l * w * h) / 1_000_000;
 }
 
-/** What the dimensions weigh, in the carrier's arithmetic. */
+/**
+ * What the volume weighs, in the carrier's arithmetic.
+ *
+ * One cubic metre is 1,000,000 cm³, so a volume in m³ and three sides in cm
+ * reach the divisor by the same road: (L × W × H) / divisor is exactly
+ * (cbm × 1,000,000) / divisor.
+ */
 export function volumetricWeightKg(dims: Dimensions, divisor = DEFAULT_VOLUMETRIC_DIVISOR): number {
-  const l = n(dims.lengthCm), w = n(dims.widthCm), h = n(dims.heightCm);
-  if (l === 0 || w === 0 || h === 0) return 0;
+  const cbm = volumeCbm(dims);
+  if (cbm === 0) return 0;
   const d = divisor > 0 ? divisor : DEFAULT_VOLUMETRIC_DIVISOR;
-  return (l * w * h) / d;
+  return (cbm * 1_000_000) / d;
 }
 
 export type ChargeableBreakdown = {

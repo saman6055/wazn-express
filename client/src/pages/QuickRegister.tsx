@@ -14,6 +14,7 @@ import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Link, useLocation } from "wouter";
 import { confirmAction } from "@/components/ConfirmDialog";
+import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
@@ -449,20 +450,30 @@ export default function QuickRegister() {
     return 0;
   }, [lengthCm, widthCm, heightCm]);
   
+  /**
+   * The parcel's volume: the one typed in, else the three sides.
+   *
+   * Owner, 2026-09-23: "sometimes you do not need to measure — the CBM is
+   * already there", and, asked whether it should set the air price too, "it
+   * must decide the volumetric price". So it is no longer a sea-only field:
+   * the shared rule (@shared/chargeableWeight) reads a given volume for air
+   * as well, and turns it into volumetric kilos the same way the sides would.
+   */
   const cbm = useMemo(() => {
-    if (shippingType === "sea" && directCbm) {
-      return parseFloat(directCbm) || 0;
-    }
+    const typed = parseFloat(directCbm);
+    if (Number.isFinite(typed) && typed > 0) return typed;
     return calculatedCbm;
-  }, [calculatedCbm, directCbm, shippingType]);
+  }, [calculatedCbm, directCbm]);
   
-  const volumetricWeight = useMemo(() => {
-    if (lengthCm && widthCm && heightCm) {
-      const divisor = parseFloat(volumetricDivisor) || 6000;
-      return (parseFloat(lengthCm) * parseFloat(widthCm) * parseFloat(heightCm)) / divisor;
-    }
-    return 0;
-  }, [lengthCm, widthCm, heightCm, volumetricDivisor]);
+  // The same rule the server prices with: a volume given stands for the
+  // sides, and one cubic metre is 1,000,000 cm³ (@shared/chargeableWeight).
+  const volumetricWeight = useMemo(
+    () => volumetricWeightKg(
+      { lengthCm, widthCm, heightCm, volumeCbm: directCbm },
+      parseFloat(volumetricDivisor) || DEFAULT_VOLUMETRIC_DIVISOR,
+    ),
+    [lengthCm, widthCm, heightCm, directCbm, volumetricDivisor],
+  );
   
   const chargeableWeight = useMemo(() => {
     const actualWeight = parseFloat(weightKg) || 0;
@@ -587,7 +598,7 @@ export default function QuickRegister() {
     lengthCm: lengthCm || undefined,
     widthCm: widthCm || undefined,
     heightCm: heightCm || undefined,
-    volumeCbm: shippingType === "sea" && directCbm ? directCbm : undefined,
+    volumeCbm: directCbm || undefined,
   }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm]);
 
   // A keystroke in the weight field should not fire a request per digit.
@@ -891,7 +902,7 @@ export default function QuickRegister() {
       lengthCm: lengthCm || undefined,
       widthCm: widthCm || undefined,
       heightCm: heightCm || undefined,
-      volumeCbm: shippingType === "sea" && directCbm ? directCbm : undefined,
+      volumeCbm: directCbm || undefined,
       shippingType,
       description: description || undefined,
       batchId: batchId && batchId !== "none" ? parseInt(batchId) : undefined,
@@ -1508,7 +1519,9 @@ export default function QuickRegister() {
 
                           {byVolume && (
                             <p className="mt-2 font-mono text-xs text-amber-700 dark:text-amber-400" dir="ltr">
-                              {lengthCm || 0} × {widthCm || 0} × {heightCm || 0} ÷ {volumetricDivisor} = {volumetricWeight.toFixed(2)}
+                              {parseFloat(directCbm) > 0
+                                ? `${directCbm} m³ × 1,000,000 ÷ ${volumetricDivisor} = ${volumetricWeight.toFixed(2)} kg`
+                                : `${lengthCm || 0} × ${widthCm || 0} × ${heightCm || 0} ÷ ${volumetricDivisor} = ${volumetricWeight.toFixed(2)} kg`}
                             </p>
                           )}
                         </div>
