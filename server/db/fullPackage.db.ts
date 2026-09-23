@@ -853,6 +853,42 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
       }).from(fullPackageOrders).where(eq(fullPackageOrders.id, id)).limit(1);
       const list = (refreshed[0]?.trackingNumbers as string[] | null) ?? [];
       const single = refreshed[0]?.trackingNumber ?? undefined;
+
+      /**
+       * A tracking taken off the order is taken off the table too.
+       *
+       * The owner, 2026-09-23: he found the order that carried a tracking,
+       * removed it there, and Quick Register went on warning that the
+       * tracking sat on another customer. The mirror below only ever
+       * inserted, so the row stayed for ever — and the warning is computed
+       * from exactly that table.
+       *
+       * Only what THIS order used to carry in its own fields and no longer
+       * does is removed. Trackings added through the multi-tracking screen
+       * (addOrderTrackings) never appear in the JSON and are left alone; a
+       * blind prune to the JSON would delete somebody else's cartons.
+       *
+       * Each one goes through removeOrderTracking, which also releases the
+       * parcel that was linked to the order because of it — the link runs
+       * both ways and both have to be undone.
+       */
+      const clean = (values: (string | null | undefined)[]) =>
+        new Set(values.map((v) => (v ?? "").trim()).filter(Boolean));
+      const before = clean([...(((existing as { trackingNumbers?: string[] | null }).trackingNumbers) ?? []), existing.trackingNumber]);
+      const after = clean([...list, single]);
+      const dropped = Array.from(before).filter((t) => !after.has(t));
+      if (dropped.length > 0) {
+        const stale = await db
+          .select({ id: fullPackageOrderTrackings.id })
+          .from(fullPackageOrderTrackings)
+          .where(and(
+            eq(fullPackageOrderTrackings.fullPackageOrderId, id),
+            inArray(fullPackageOrderTrackings.trackingNumber, dropped),
+          ));
+        for (const row of stale) await removeOrderTracking(row.id);
+        appLogger.info("[FullPackage] Trackings removed from an order", { orderId: id, dropped, rows: stale.length });
+      }
+
       if (list.length > 0 || single) {
         await syncOrderTrackingsTable(id, list ?? [], single);
       }

@@ -59,3 +59,29 @@ describe("a warning leads to the record", () => {
     expect(panel).toContain("od.customer?.customerCode");
   });
 });
+
+describe("the warning can be acted on", () => {
+  const db = fs
+    .readFileSync(path.resolve(SRC, "../..", "server/db/fullPackage.db.ts"), "utf8")
+    .replace(/\r\n/g, "\n");
+
+  it("a tracking taken off an order is taken off the table too", () => {
+    // The mirror only ever inserted, so an edited-away tracking stayed on the
+    // order for ever — and the warning is computed from that very table.
+    expect(db).toContain("const dropped = Array.from(before).filter((t) => !after.has(t));");
+    expect(db).toContain("for (const row of stale) await removeOrderTracking(row.id);");
+    // Only what the order itself used to carry: rows added through the
+    // multi-tracking screen never appear in the JSON and must survive.
+    expect(db).toContain("const before = clean([...(((existing as { trackingNumbers?: string[] | null }).trackingNumbers) ?? []), existing.trackingNumber]);");
+    expect(db).toContain("const after = clean([...list, single]);");
+  });
+
+  it("and the rows already left behind can be cleared from the warning itself", () => {
+    expect(page).toContain("const unlinkTracking = trpc.fullPackage.removeOrderTracking.useMutation({");
+    expect(page).toContain("const row = od.trackings?.find((tr) => tr.trackingNumber === trackingNumber.trim());");
+    expect(page).toContain("if (ok) unlinkTracking.mutate({ id: row.id });");
+    // Nothing is unlinked without being asked, and the screen re-reads after.
+    expect(page).toContain("const ok = await confirmAction(pickLang(language, {");
+    expect(page).toContain("await handleTrackingSearch({ silent: true });");
+  });
+});

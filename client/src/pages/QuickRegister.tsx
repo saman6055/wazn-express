@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Link, useLocation } from "wouter";
+import { confirmAction } from "@/components/ConfirmDialog";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
@@ -689,6 +690,32 @@ export default function QuickRegister() {
   // State for last registered package
   const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null; orderNumber?: string | null } | null>(null);
   
+  /**
+   * Take this tracking off an order that should not carry it.
+   *
+   * The owner, 2026-09-23: he removed a tracking from the order that held it
+   * and this screen went on warning that the tracking belonged to another
+   * customer. Editing an order used to leave the row in the multi-tracking
+   * table behind (fixed in fullPackage.db), but the rows already left behind
+   * are still there — and this is the screen where they get in the way. So
+   * the warning carries the cure: one click takes the tracking off that
+   * order, which also releases any parcel that was linked because of it.
+   */
+  const unlinkTracking = trpc.fullPackage.removeOrderTracking.useMutation({
+    onSuccess: async () => {
+      toast.success(pickLang(language, {
+        ku: "تراکەکە لەو داواکارییە بڕایەوە",
+        en: "The tracking was taken off that order",
+        ar: "أُزيل التتبع من ذلك الطلب",
+        zh: "已从该订单移除该运单号",
+      }));
+      // Ask again, from the server: the whole point is that the screen must
+      // now show what is true.
+      await handleTrackingSearch({ silent: true });
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
   const registerMutation = trpc.packages.register.useMutation({
     meta: { skipGlobalToast: true },
     onSuccess: (data) => {
@@ -1152,15 +1179,42 @@ export default function QuickRegister() {
                                 tracking." */}
                             <div className="mt-2 flex flex-wrap gap-2">
                               {expandedLookup.orders.map((od) => (
-                                <Link
-                                  key={od.order.id}
-                                  href={orderHref(od.order)}
-                                  className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 font-mono text-xs font-medium text-rose-900 transition-colors hover:bg-white dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
-                                >
-                                  <ExternalLink className="h-3 w-3" />
-                                  {od.order.orderCode}
-                                  <span className="font-sans opacity-80">{od.customer?.customerCode ?? "?"}</span>
-                                </Link>
+                                <span key={od.order.id} className="inline-flex items-center gap-1">
+                                  <Link
+                                    href={orderHref(od.order)}
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 font-mono text-xs font-medium text-rose-900 transition-colors hover:bg-white dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
+                                  >
+                                    <ExternalLink className="h-3 w-3" />
+                                    {od.order.orderCode}
+                                    <span className="font-sans opacity-80">{od.customer?.customerCode ?? "?"}</span>
+                                  </Link>
+                                  {/* The cure beside the complaint: take this
+                                      tracking off that order (owner, 2026-09-23). */}
+                                  {(() => {
+                                    const row = od.trackings?.find((tr) => tr.trackingNumber === trackingNumber.trim());
+                                    if (!row) return null;
+                                    return (
+                                      <button
+                                        type="button"
+                                        disabled={unlinkTracking.isPending}
+                                        onClick={async () => {
+                                          const ok = await confirmAction(pickLang(language, {
+                                            ku: `تراکی ${trackingNumber.trim()} لە داواکاری ${od.order.orderCode} (${od.customer?.customerCode ?? "?"}) ببڕدرێتەوە؟`,
+                                            en: `Take tracking ${trackingNumber.trim()} off order ${od.order.orderCode} (${od.customer?.customerCode ?? "?"})?`,
+                                            ar: `إزالة التتبع ${trackingNumber.trim()} من الطلب ${od.order.orderCode} (${od.customer?.customerCode ?? "?"})؟`,
+                                            zh: `将运单号 ${trackingNumber.trim()} 从订单 ${od.order.orderCode}（${od.customer?.customerCode ?? "?"}）移除？`,
+                                          }));
+                                          if (ok) unlinkTracking.mutate({ id: row.id });
+                                        }}
+                                        className="inline-flex items-center gap-1 rounded-md border border-rose-400 px-1.5 py-1 text-[11px] font-medium text-rose-800 transition-colors hover:bg-rose-100 disabled:opacity-50 dark:border-rose-700 dark:text-rose-200 dark:hover:bg-rose-950/50"
+                                        data-testid={`unlink-tracking-${od.order.id}`}
+                                      >
+                                        {unlinkTracking.isPending ? <Loader2 className="h-3 w-3 animate-spin" /> : <X className="h-3 w-3" />}
+                                        {pickLang(language, { ku: "بیبڕەوە", en: "Unlink", ar: "أزل", zh: "解除" })}
+                                      </button>
+                                    );
+                                  })()}
+                                </span>
                               ))}
                               <Link
                                 href="/tracking-alerts"
