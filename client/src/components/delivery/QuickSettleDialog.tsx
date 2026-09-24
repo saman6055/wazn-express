@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Loader2, Check, ChevronDown } from "lucide-react";
+import { Loader2, Check, ChevronDown, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import {
@@ -18,7 +18,11 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
-import { settlementTotals, differenceOf, iqdToUsd, usdToIqd } from "@shared/boxSettlement";
+import {
+  settlementTotals, differenceOf, iqdToUsd, usdToIqd, allocateBoxDiscount,
+  type ParcelIntent,
+} from "@shared/boxSettlement";
+import { pledgeFloors, reasonText } from "@shared/pledgedDiscount";
 import { cn } from "@/lib/utils";
 
 /**
@@ -75,7 +79,47 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
     () => (data?.parcels ?? []).filter((p) => p.outstandingUsd > 0 || p.notChargedYet),
     [data],
   );
-  const totals = useMemo(() => settlementTotals(parcels), [parcels]);
+  /**
+   * Discounts already promised on a printed receipt.
+   *
+   * They are not a suggestion here: the paper is in the customer's hand, so
+   * this screen shows them, takes them off the figure it asks for, and sends
+   * them with the payment. Raising or changing one is the full payment
+   * screen's business — one line down, under "the parcels".
+   */
+  const pledges = data?.pledges ?? [];
+  const floors = useMemo(() => pledgeFloors(pledges), [pledges]);
+  const boxCutByParcel = useMemo(
+    () => allocateBoxDiscount(floors.boxUsd, parcels, []),
+    [floors.boxUsd, parcels],
+  );
+  const intents: ParcelIntent[] = useMemo(
+    () => parcels.map((p) => ({
+      lineId: p.lineId,
+      discountUsd: (floors.byLine.get(p.lineId) ?? 0) + (boxCutByParcel.get(p.lineId) ?? 0),
+    })),
+    [parcels, floors, boxCutByParcel],
+  );
+  const totals = useMemo(() => settlementTotals(parcels, intents), [parcels, intents]);
+
+  /** What the receipt promised, in the words it promised them in. */
+  const promised = useMemo(
+    () =>
+      [...pledges]
+        .sort((a, b) => b.usd - a.usd)
+        .filter((p, i, all) => {
+          // One row per target, the largest — a reprinted receipt replaced
+          // the one before it rather than promising both.
+          const key = p.lineId ?? "box";
+          return all.findIndex((o) => (o.lineId ?? "box") === key) === i;
+        })
+        .map((p) => ({
+          usd: p.lineId === null ? floors.boxUsd : floors.byLine.get(p.lineId) ?? p.usd,
+          what: p.trackingNumber ?? null,
+          why: reasonText(p, language === "ku" || language === "ar" || language === "zh" ? language : "en"),
+        })),
+    [pledges, floors, language],
+  );
 
   const rateNum = Number(rate) || 0;
   const nothingEntered = !iqd && !usd;
@@ -119,7 +163,31 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
     if (!boxId) return;
     settle.mutate({
       boxId,
-      lines: parcels.map((p) => ({ lineId: p.lineId })),
+      /**
+       * The promised discounts go with the payment — each on the thing it
+       * was promised on, and with the reason it was given for.
+       *
+       * A promise made on one parcel travels as that parcel's own discount;
+       * one made on the box travels as the box's, and the server spreads it.
+       * Folding the box one into the lines instead would look like the same
+       * money and read as a broken promise, because the receipt named the
+       * box.
+       */
+      lines: parcels.map((p) => {
+        const pledged = pledges
+          .filter((q) => q.lineId === p.lineId)
+          .sort((a, b) => b.usd - a.usd)[0];
+        const cut = floors.byLine.get(p.lineId) ?? 0;
+        return {
+          lineId: p.lineId,
+          discountUsd: cut > 0 ? cut : undefined,
+          discountReason: cut > 0 ? (pledged?.reason ?? "other") : undefined,
+          discountNote: cut > 0 ? (pledged?.note ?? undefined) : undefined,
+        };
+      }),
+      boxDiscount: floors.boxUsd > 0 ? { mode: "amount" as const, value: floors.boxUsd } : undefined,
+      boxDiscountReason: floors.boxUsd > 0 ? (boxReason?.reason ?? "other") : undefined,
+      boxDiscountNote: floors.boxUsd > 0 ? (boxReason?.note ?? undefined) : undefined,
       amountIqd: Number(iqd) || undefined,
       amountUsd: nothingEntered ? totals.dueUsd : (Number(usd) || undefined),
       exchangeRate: rateNum || undefined,
@@ -127,6 +195,9 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
       differenceReason: reason || undefined,
     });
   };
+
+  /** The reason a box-wide promise was given for, for the parcels it is spread over. */
+  const boxReason = pledges.filter((p) => p.lineId === null).sort((a, b) => b.usd - a.usd)[0] ?? null;
 
   const code = splitCustomerCode(data?.customer?.customerCode);
   // A failed load is not "nothing to pay": it says so, with its report.
@@ -170,6 +241,36 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                 <p className="mt-1 font-mono text-sm text-muted-foreground" dir="ltr">
                   {fmtNumber(usdToIqd(totals.dueUsd, rateNum), 0)} IQD
                 </p>
+              )}
+              {promised.length > 0 && (
+                <div
+                  className="mt-3 space-y-1 border-t pt-2 text-start"
+                  data-testid="quick-pledged"
+                >
+                  <p className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                    <Lock className="h-3.5 w-3.5" />
+                    {t({
+                      ku: "داشکاندنی لەسەر وەسڵ چاپکراو — لە ژمارەکەی سەرەوە کەم کراوەتەوە",
+                      en: "Discount printed on the receipt — already off the figure above",
+                      ar: "خصم مطبوع على الإيصال — مخصوم من المبلغ أعلاه",
+                      zh: "收据上已打印的折扣 — 已从上方金额中扣除",
+                    })}
+                  </p>
+                  {promised.map((p, i) => (
+                    <p key={i} className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs">
+                      <span className="min-w-0">
+                        {p.what && (
+                          <bdi dir="ltr" className="font-mono">{p.what}</bdi>
+                        )}
+                        {p.what && p.why ? " · " : ""}
+                        {p.why}
+                      </span>
+                      <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
+                        −{fmtUsd(p.usd)}
+                      </bdi>
+                    </p>
+                  ))}
+                </div>
               )}
             </div>
 

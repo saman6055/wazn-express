@@ -9,6 +9,7 @@ import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { withFix } from "@shared/fixAdvice";
+import { DISCOUNT_REASONS } from "@shared/boxSettlement";
 import { notifyPackageStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
@@ -1092,7 +1093,7 @@ export const deliveryBoxRouter = router({
       /** The box item it is given on; null or absent is the box as a whole. */
       lineId: z.number().nullable().optional(),
       discountUsd: z.number().min(0),
-      reason: z.enum(["damaged", "late", "goodwill", "loyal", "rounding", "other"]),
+      reason: z.enum(DISCOUNT_REASONS),
       note: z.string().max(500).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
@@ -1119,7 +1120,7 @@ export const deliveryBoxRouter = router({
         correctionUsd: z.number().optional(),
         correctionReason: z.string().max(500).optional(),
         discountUsd: z.number().min(0).optional(),
-        discountReason: z.enum(["damaged", "late", "goodwill", "loyal", "rounding", "other"]).optional(),
+        discountReason: z.enum(DISCOUNT_REASONS).optional(),
         discountNote: z.string().max(500).optional(),
       })).min(1),
       boxDiscount: z.object({
@@ -1128,7 +1129,7 @@ export const deliveryBoxRouter = router({
         fromRatePerKg: z.number().optional(),
         toRatePerKg: z.number().optional(),
       }).optional(),
-      boxDiscountReason: z.enum(["damaged", "late", "goodwill", "loyal", "rounding", "other"]).optional(),
+      boxDiscountReason: z.enum(DISCOUNT_REASONS).optional(),
       boxDiscountNote: z.string().max(500).optional(),
       amountIqd: z.number().min(0).optional(),
       amountUsd: z.number().min(0).optional(),

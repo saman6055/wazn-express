@@ -30,7 +30,7 @@ import {
   DISCOUNT_REASON_LABELS,
   type ParcelIntent, type BoxDiscount, type DiscountReason,
 } from "@shared/boxSettlement";
-import { pledgeFloors, pledgeBreaches, pledgeRefusal, wholeBoxName } from "@shared/pledgedDiscount";
+import { pledgeFloors, pledgeBreaches, pledgeRefusal, reasonText, wholeBoxName } from "@shared/pledgedDiscount";
 
 /**
  * Taking the money, at the counter, with the parcels in front of both people.
@@ -68,7 +68,9 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
 
   const [held, setHeld] = useState<Record<number, string>>({});
   const [corrections, setCorrections] = useState<Record<number, { amount: string; reason: string }>>({});
-  const [lineDiscounts, setLineDiscounts] = useState<Record<number, { amount: string; reason: DiscountReason }>>({});
+  const [lineDiscounts, setLineDiscounts] = useState<
+    Record<number, { amount: string; reason: DiscountReason; note?: string | null }>
+  >({});
 
   const [discountMode, setDiscountMode] = useState<BoxDiscount["mode"]>("none");
   const [discountValue, setDiscountValue] = useState("");
@@ -124,6 +126,19 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
     return named ?? parcel?.trackingNumber ?? parcel?.packageCode ?? `#${lineId}`;
   };
 
+  /**
+   * Why it was given — the owner, 2026-09-24: "show the reason there too, in
+   * the box payment." The words the receipt used, including one written by
+   * hand when the list did not have it.
+   */
+  const whyOf = (lineId: number | null): string => {
+    const promised = pledges
+      .filter((p) => (p.lineId ?? null) === lineId)
+      .sort((a, b) => b.usd - a.usd)[0];
+    if (!promised) return "";
+    return reasonText(promised, language === "ku" || language === "ar" || language === "zh" ? language : "en");
+  };
+
   // Filled once per distinct set of promises: a refetch that brings back the
   // same ones must not undo what the operator has typed since.
   const pledgeKey = pledges.map((p) => `${p.lineId ?? "box"}:${p.usd}`).join("|");
@@ -137,7 +152,10 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
         .sort((a, b) => b.usd - a.usd)[0];
       setDiscountMode((m) => (m === "none" ? "amount" : m));
       setDiscountValue((v) => (Number(v) >= floors.boxUsd ? v : String(floors.boxUsd)));
-      if (promised) setDiscountReason(promised.reason);
+      if (promised) {
+        setDiscountReason(promised.reason);
+        if (promised.note) setDiscountNote(promised.note);
+      }
     }
     setLineDiscounts((current) => {
       const next = { ...current };
@@ -147,7 +165,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
         const promised = pledges
           .filter((p) => p.lineId === lineId)
           .sort((a, b) => b.usd - a.usd)[0];
-        next[lineId] = { amount: String(usd), reason: promised?.reason ?? "other" };
+        next[lineId] = { amount: String(usd), reason: promised?.reason ?? "other", note: promised?.note ?? null };
         changed = true;
       });
       return changed ? next : current;
@@ -307,6 +325,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
         correctionReason: corrections[p.lineId]?.reason || undefined,
         discountUsd: Number(lineDiscounts[p.lineId]?.amount || 0) || undefined,
         discountReason: lineDiscounts[p.lineId]?.reason,
+        discountNote: lineDiscounts[p.lineId]?.note ?? undefined,
       })),
       boxDiscount: boxCut > 0 ? boxDiscount : undefined,
       boxDiscountReason: boxCut > 0 ? discountReason : undefined,
@@ -384,6 +403,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                   <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
                     −{fmtAmount(floors.boxUsd)}
                   </bdi>
+                  <span className="text-muted-foreground">{whyOf(null)}</span>
                 </li>
               )}
               {Array.from(floors.byLine.entries()).map(([lineId, usd]) => (
@@ -392,6 +412,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                   <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
                     −{fmtAmount(usd)}
                   </bdi>
+                  <span className="text-muted-foreground">{whyOf(lineId)}</span>
                 </li>
               ))}
             </ul>

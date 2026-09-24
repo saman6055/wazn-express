@@ -209,11 +209,28 @@ export function lowerPledgeRefusal(
  * screen all say it the same way.
  */
 export function pledgeLabel(
-  pledge: Pick<DiscountPledge, "reason" | "trackingNumber" | "lineId">,
+  pledge: Pick<DiscountPledge, "reason" | "trackingNumber" | "lineId" | "note">,
   lang: "ku" | "en" | "ar" | "zh" = "ku",
 ): string {
-  const reason = DISCOUNT_REASON_LABELS[pledge.reason]?.[lang] ?? "";
+  const reason = reasonText(pledge, lang);
   const tracking = (pledge.trackingNumber ?? "").trim();
   if (!tracking) return reason;
   return reason ? `${tracking} · ${reason}` : tracking;
+}
+
+/**
+ * The reason in words: what was written by hand when the list did not have
+ * it, and the list's own name otherwise.
+ *
+ * The owner, 2026-09-24: "when you pick other, let it allow you to write the
+ * reason." Printing "Other" on the paper when somebody took the trouble to
+ * write one would be the same as printing nothing.
+ */
+export function reasonText(
+  pledge: Pick<DiscountPledge, "reason" | "note">,
+  lang: "ku" | "en" | "ar" | "zh" = "ku",
+): string {
+  const written = (pledge.note ?? "").trim();
+  if (written) return written;
+  return DISCOUNT_REASON_LABELS[pledge.reason]?.[lang] ?? "";
 }

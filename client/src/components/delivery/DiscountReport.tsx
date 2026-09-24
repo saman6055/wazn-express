@@ -8,7 +8,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { fmtAmount, fmtUsd } from "@/lib/portalFormat";
 import { cn } from "@/lib/utils";
-import type { DiscountReason } from "@shared/boxSettlement";
+import { DISCOUNT_REASON_LABELS, type DiscountReason } from "@shared/boxSettlement";
 
 /**
  * How much has been given away, and on what grounds.
@@ -24,14 +24,8 @@ import type { DiscountReason } from "@shared/boxSettlement";
  * can be understood.
  */
 
-const REASON_LABELS: Record<DiscountReason, { ku: string; en: string; ar: string; zh: string }> = {
-  damaged: { ku: "شکاون یان زیانیان پێگەیشتووە", en: "Damaged in transit", ar: "تضرر أثناء النقل", zh: "运输中损坏" },
-  late: { ku: "دواکەوتن لە گەیاندن", en: "Late delivery", ar: "تأخر في التسليم", zh: "延迟送达" },
-  goodwill: { ku: "هاندان و ستایش", en: "Goodwill", ar: "مجاملة", zh: "友好折扣" },
-  loyal: { ku: "کڕیاری باش", en: "Loyal customer", ar: "عميل مميز", zh: "老客户" },
-  rounding: { ku: "خڕکردنەوەی دینار", en: "Dinar rounding", ar: "تقريب الدينار", zh: "第纳尔取整" },
-  other: { ku: "هۆکارێکی تر", en: "Other", ar: "سبب آخر", zh: "其他" },
-};
+// The six words this report groups by are the ones the counter chose from.
+const REASON_LABELS = DISCOUNT_REASON_LABELS;
 
 const money = (n: number) => fmtUsd(n);
 

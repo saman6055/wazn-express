@@ -31,9 +31,14 @@ describe("every cut the owner named is on the screen", () => {
 
   it("names every reason a discount can carry", () => {
     // A reason with no label renders as a raw enum value, which is how a
-    // report starts being ignored.
+    // report starts being ignored. The labels moved into the lib that
+    // defines the reasons (2026-09-24), because this screen, the payment
+    // screen and the window before printing each kept their own copy of the
+    // same words and the list then grew.
+    expect(report).toContain("const REASON_LABELS = DISCOUNT_REASON_LABELS;");
+    const labels = fs.readFileSync(path.join(HERE, "..", "..", "..", "..", "shared", "boxSettlement.ts"), "utf8");
     for (const reason of DISCOUNT_REASONS) {
-      expect(report, `${reason} has no label`).toContain(`${reason}:`);
+      expect(labels, `${reason} has no label`).toContain(`${reason}: { ku:`);
     }
   });
 

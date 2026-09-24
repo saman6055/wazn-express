@@ -898,11 +898,15 @@ export const boxSettlementLines = mysqlTable("boxSettlementLines", {
   /** Coarse enough to report on, with the free text for what it does not cover. */
   discountReason: mysqlEnum("discountReason", [
     "damaged",       // شکاون لە ڕێگا
+    "missing",       // شتێکی کەم بووە
+    "wrong_item",    // کاڵای هەڵە
     "late",          // دواکەوتن
     "goodwill",      // هاندان و ستایش
     "loyal",         // کڕیاری باش
+    "agreed",        // ڕێککەوتن لەسەر نرخ
+    "bulk",          // بڕی زۆر
     "rounding",      // خڕکردنەوەی دینار
-    "other",
+    "other",         // بە دەست دەنووسرێت — discountNote
   ]),
   discountNote: text("discountNote"),
 
@@ -955,7 +959,9 @@ export const boxDiscountPledges = mysqlTable("boxDiscountPledges", {
 
   discountUsd: decimal("discountUsd", { precision: 12, scale: 2 }).notNull(),
   /** The same six the settlement uses — one discount report, one vocabulary. */
-  reason: mysqlEnum("reason", ["damaged", "late", "goodwill", "loyal", "rounding", "other"]).notNull(),
+  reason: mysqlEnum("reason", [
+    "damaged", "missing", "wrong_item", "late", "goodwill", "loyal", "agreed", "bulk", "rounding", "other",
+  ]).notNull(),
   note: text("note"),
 
   /** The settlement that kept the promise; null while it is still open. */

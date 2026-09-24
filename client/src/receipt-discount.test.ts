@@ -23,6 +23,7 @@ const dialog = read("client/src/components/delivery/ReceiptDinarDialog.tsx");
 const boxPanel = read("client/src/components/delivery/BoxDetailPanel.tsx");
 const settle = read("client/src/components/delivery/BoxSettlementPanel.tsx");
 const print = read("client/src/lib/deliveryBoxPrintUtils.ts");
+const quick = read("client/src/components/delivery/QuickSettleDialog.tsx");
 
 /** A slice that matched nothing checks nothing — so it is checked. */
 function slice(source: string, from: string, to: string, what: string): string {
@@ -39,7 +40,7 @@ describe("the window before printing", () => {
     expect(dialog).toContain('data-testid="receipt-discount-reason"');
     expect(dialog).toContain('data-testid="receipt-discount-target"');
     // The six reasons come from the one place that defines them.
-    expect(dialog).toContain('import { DISCOUNT_REASON_LABELS, type DiscountReason } from "@shared/boxSettlement";');
+    expect(dialog).toContain('import { DISCOUNT_REASON_LABELS, REASON_NEEDS_TEXT, type DiscountReason } from "@shared/boxSettlement";');
   });
 
   it("will not print a discount whose reason nobody chose", () => {
@@ -61,7 +62,7 @@ describe("the window before printing", () => {
   it("opens at what an earlier printing promised and will not go below it", () => {
     expect(dialog).toContain('import { pledgeFloors, type DiscountPledge } from "@shared/pledgedDiscount";');
     expect(dialog).toContain("const belowPledge = floorUsd > 0 && cutUsd + 0.004 < floorUsd;");
-    expect(dialog).toContain("const blocked = reasonMissing || belowPledge;");
+    expect(dialog).toContain("const blocked = reasonMissing || noteMissing || belowPledge;");
   });
 
   it("does not offer one on a box with nothing left to settle", () => {
@@ -119,10 +120,10 @@ describe("the receipt", () => {
 
 describe("the payment screen", () => {
   it("opens with what the receipt promised already filled in", () => {
-    expect(settle).toContain('import { pledgeFloors, pledgeBreaches, pledgeRefusal, wholeBoxName } from "@shared/pledgedDiscount";');
+    expect(settle).toContain('import { pledgeFloors, pledgeBreaches, pledgeRefusal, reasonText, wholeBoxName } from "@shared/pledgedDiscount";');
     const fill = slice(settle, "const filledRef = useRef", "const boxCut =", "the pre-fill");
     expect(fill).toContain("setDiscountValue((v) => (Number(v) >= floors.boxUsd ? v : String(floors.boxUsd)));");
-    expect(fill).toContain("next[lineId] = { amount: String(usd), reason: promised?.reason ?? \"other\" };");
+    expect(fill).toContain('next[lineId] = { amount: String(usd), reason: promised?.reason ?? "other", note: promised?.note ?? null };');
     // A refetch bringing back the same promises must not undo an edit made
     // since; the fill happens once per distinct set.
     expect(fill).toContain("filledRef.current === pledgeKey");
@@ -137,6 +138,80 @@ describe("the payment screen", () => {
   it("shows which discounts came off a printed receipt", () => {
     expect(settle).toContain('data-testid="settle-pledged"');
     expect(settle).toContain('data-testid={`settle-pledged-${line.lineId}`}');
+  });
+});
+
+describe("the one-press payment screen", () => {
+  /**
+   * The owner, 2026-09-24, with a screenshot of this dialog: "the box
+   * payment is supposed to remember the discount made on the receipt and
+   * confirm it was given — there is no news of it there at all … it should
+   * be added in the box payment too. And show the reason there as well."
+   *
+   * It settled with no intents and one bare lineId per parcel, so the
+   * promise was invisible — and after the pledge rule landed, unsettleable
+   * from here at all.
+   */
+  it("takes the promised discount off the figure it asks for", () => {
+    expect(quick).toContain('import { pledgeFloors, reasonText } from "@shared/pledgedDiscount";');
+    expect(quick).toContain("const totals = useMemo(() => settlementTotals(parcels, intents), [parcels, intents]);");
+  });
+
+  it("says it was given, on what, and why", () => {
+    expect(quick).toContain('data-testid="quick-pledged"');
+    expect(quick).toContain("why: reasonText(p,");
+  });
+
+  it("sends each promise on the thing it was promised on", () => {
+    // A promise made on one parcel is not kept by a discount spread over
+    // all of them — the receipt named that parcel.
+    const submit = slice(quick, "const submit = () => {", "const boxReason", "the quick submit");
+    expect(submit).toContain("const cut = floors.byLine.get(p.lineId) ?? 0;");
+    expect(submit).toContain("boxDiscount: floors.boxUsd > 0 ? { mode: \"amount\" as const, value: floors.boxUsd } : undefined,");
+    expect(submit).toContain("discountNote:");
+  });
+});
+
+describe("a reason that is not on the list", () => {
+  it("is written out, and nothing prints until it is", () => {
+    expect(dialog).toContain('data-testid="receipt-discount-note"');
+    expect(dialog).toContain("const noteMissing = cutUsd > 0 && discountReason === REASON_NEEDS_TEXT && !discountNote.trim();");
+    expect(dialog).toContain("const blocked = reasonMissing || noteMissing || belowPledge;");
+  });
+
+  it("is what the paper and the screens then say, instead of \"Other\"", () => {
+    const shared = read("shared/pledgedDiscount.ts");
+    expect(shared).toContain("export function reasonText(");
+    // A reason written by hand is what comes back, before the list's own name.
+    expect(shared).toContain("if (written) return written;");
+    expect(boxPanel).toContain("note: given.note,");
+  });
+
+  it("travels with the money, not only with the promise", () => {
+    expect(boxPanel).toContain("note: given.note ?? undefined,");
+    expect(settle).toContain("discountNote: lineDiscounts[p.lineId]?.note ?? undefined,");
+  });
+});
+
+describe("the reasons themselves", () => {
+  it("live in one place, and the screens and the router read it", () => {
+    const shared = read("shared/boxSettlement.ts");
+    for (const reason of ["missing", "wrong_item", "agreed", "bulk"]) {
+      expect(shared, reason).toContain(`${reason}: { ku:`);
+    }
+    // Three screens used to keep their own copy of the same six words.
+    expect(read("client/src/components/delivery/DiscountReport.tsx")).toContain("const REASON_LABELS = DISCOUNT_REASON_LABELS;");
+    expect(settle).toContain("const REASON_LABELS = DISCOUNT_REASON_LABELS;");
+    expect(read("server/routers/scanning.router.ts")).toContain("z.enum(DISCOUNT_REASONS)");
+  });
+
+  it("widen the columns that store them, on a database that already has rows", () => {
+    // MySQL refuses an unknown enum value with "Data truncated", which names
+    // neither the value nor the column that mattered.
+    const migrations = read("server/_core/migrations.ts");
+    expect(migrations).toContain('name: "boxSettlementLines.discountReason.more"');
+    expect(migrations).toContain('name: "boxDiscountPledges.reason.more"');
+    expect(migrations).toContain("'damaged','missing','wrong_item','late','goodwill','loyal','agreed','bulk','rounding','other'");
   });
 });
 

@@ -1357,7 +1357,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       correctionUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       correctionReason TEXT,
       discountUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
-      discountReason ENUM('damaged','late','goodwill','loyal','rounding','other') NULL,
+      discountReason ENUM('damaged','missing','wrong_item','late','goodwill','loyal','agreed','bulk','rounding','other') NULL,
       discountNote TEXT,
       paidUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       isHeld BOOLEAN NOT NULL DEFAULT FALSE,
@@ -1380,7 +1380,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       lineId INT NULL,
       trackingNumber VARCHAR(100) NULL,
       discountUsd DECIMAL(12, 2) NOT NULL,
-      reason ENUM('damaged','late','goodwill','loyal','rounding','other') NOT NULL,
+      reason ENUM('damaged','missing','wrong_item','late','goodwill','loyal','agreed','bulk','rounding','other') NOT NULL,
       note TEXT,
       settlementId INT NULL,
       honouredAt TIMESTAMP NULL,
@@ -2579,6 +2579,11 @@ export async function getMigrationStatus(connection: Connection): Promise<{
 
 // ============ SCHEMA PATCHES (ALTER existing tables - e.g. serviceTypes had old columns only) ============
 export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
+  // More reasons for a discount (owner, 2026-09-24). A column left at the
+  // old six refuses the new ones with "Data truncated", which names neither
+  // the value nor the column that mattered.
+  { name: "boxSettlementLines.discountReason.more", sql: "ALTER TABLE boxSettlementLines MODIFY COLUMN discountReason ENUM('damaged','missing','wrong_item','late','goodwill','loyal','agreed','bulk','rounding','other') NULL" },
+  { name: "boxDiscountPledges.reason.more", sql: "ALTER TABLE boxDiscountPledges MODIFY COLUMN reason ENUM('damaged','missing','wrong_item','late','goodwill','loyal','agreed','bulk','rounding','other') NOT NULL" },
   { name: "serviceTypes.sortOrder", sql: "ALTER TABLE serviceTypes ADD COLUMN sortOrder INT NOT NULL DEFAULT 0" },
   { name: "serviceTypes.icon", sql: "ALTER TABLE serviceTypes ADD COLUMN icon VARCHAR(50)" },
   { name: "serviceTypes.color", sql: "ALTER TABLE serviceTypes ADD COLUMN color VARCHAR(20)" },

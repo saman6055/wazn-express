@@ -6,6 +6,7 @@ import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import {
   Dialog,
   DialogContent,
@@ -32,7 +33,7 @@ import {
   roundDinars,
   type ReceiptDinarInput,
 } from "@shared/receiptDinar";
-import { DISCOUNT_REASON_LABELS, type DiscountReason } from "@shared/boxSettlement";
+import { DISCOUNT_REASON_LABELS, REASON_NEEDS_TEXT, type DiscountReason } from "@shared/boxSettlement";
 import { pledgeFloors, type DiscountPledge } from "@shared/pledgedDiscount";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
@@ -57,6 +58,8 @@ export interface ReceiptDiscount {
   lineId: number | null;
   usd: number;
   reason: DiscountReason;
+  /** Written out when the list did not have it. Printed instead of "Other". */
+  note?: string | null;
   trackingNumber: string | null;
 }
 
@@ -232,6 +235,18 @@ const TXT = {
     ar: "يُكتب بالدولار ويُحوَّل بنفس السعر والتقريب أعلاه. ويُطبع على الإيصال مع سببه.",
     zh: "以美元填写，按上方同一汇率与取整换算。收据上会连同原因一起打印。",
   },
+  writeReason: {
+    ku: "هۆکارەکە بنووسە — لەسەر وەسڵەکە چاپ دەکرێت",
+    en: "Write the reason — it is printed on the receipt",
+    ar: "اكتب السبب — يُطبع على الإيصال",
+    zh: "写下原因 — 会印在收据上",
+  },
+  writeReasonNeeded: {
+    ku: "هۆکارەکە بنووسە — «هۆکارێکی تر» بە تەنها هیچ ناڵێت",
+    en: "Write the reason — \"Other\" on its own says nothing",
+    ar: "اكتب السبب — «سبب آخر» وحدها لا تقول شيئاً",
+    zh: "请写下原因 — 只写“其他”等于没说",
+  },
   belowPledge: {
     ku: "لە بەڵێنی سەر وەسڵی چاپکراو کەمترە — بیگەڕێنەوە بۆ ئەم بڕە یان زیاتری بکە",
     en: "Below what a printed receipt promised — put it back to this, or higher",
@@ -272,6 +287,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const [target, setTarget] = useState<string>("box");
   const [discount, setDiscount] = useState("");
   const [discountReason, setDiscountReason] = useState<DiscountReason | "">("");
+  const [discountNote, setDiscountNote] = useState("");
 
   // Fresh for every receipt: the advance empty, dinars selected, the
   // rounding as last chosen on this device — and the discount at whatever an
@@ -294,6 +310,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     setTarget(first && first.lineId !== null ? String(first.lineId) : "box");
     setDiscount(promised > 0 ? String(promised) : "");
     setDiscountReason(first?.reason ?? "");
+    setDiscountNote(first?.note ?? "");
   }, [request]);
 
   // The rate offered: this receipt's own if it has one, otherwise the newer
@@ -341,8 +358,11 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const floors = pledgeFloors(request?.pledges ?? []);
   const floorUsd = chosen ? (floors.byLine.get(chosen.lineId) ?? 0) : floors.boxUsd;
   const belowPledge = floorUsd > 0 && cutUsd + 0.004 < floorUsd;
+  // "Other" with nothing written beside it is a discount nobody can explain
+  // a month later (owner, 2026-09-24).
+  const noteMissing = cutUsd > 0 && discountReason === REASON_NEEDS_TEXT && !discountNote.trim();
   const reasonMissing = cutUsd > 0 && !discountReason;
-  const blocked = reasonMissing || belowPledge;
+  const blocked = reasonMissing || noteMissing || belowPledge;
 
   const confirm = () => {
     if (!request || blocked) return;
@@ -354,6 +374,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
             lineId: chosen ? chosen.lineId : null,
             usd: cutUsd,
             reason: discountReason,
+            note: discountNote.trim() || null,
             trackingNumber: chosen ? (chosen.trackingNumber ?? chosen.packageCode ?? null) : null,
           }
         : null;
@@ -538,6 +559,17 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                 </Select>
               </div>
 
+              {discountReason === REASON_NEEDS_TEXT && (
+                <Input
+                  value={discountNote}
+                  onChange={(e) => setDiscountNote(e.target.value)}
+                  maxLength={120}
+                  placeholder={L(TXT.writeReason)}
+                  className={cn("h-9", noteMissing && "border-red-400 dark:border-red-700")}
+                  data-testid="receipt-discount-note"
+                />
+              )}
+
               {cutUsd > 0 && input && (
                 <p className="text-xs text-amber-700 dark:text-amber-400">
                   {L(TXT.dinar)}: <bdi dir="ltr" className="font-mono">{formatIqd(cutIqd)}</bdi>
@@ -557,10 +589,14 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                   <bdi dir="ltr" className="font-mono">${floorUsd.toFixed(2)}</bdi>
                 </p>
               )}
-              {reasonMissing && (
-                <p className="text-xs font-medium text-red-600 dark:text-red-400">{L(TXT.reasonNeeded)}</p>
+              {(reasonMissing || noteMissing) && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                  {L(noteMissing ? TXT.writeReasonNeeded : TXT.reasonNeeded)}
+                </p>
               )}
-              {!reasonMissing && <p className="text-xs text-muted-foreground">{L(TXT.discountHint)}</p>}
+              {!reasonMissing && !noteMissing && (
+                <p className="text-xs text-muted-foreground">{L(TXT.discountHint)}</p>
+              )}
             </div>
           )}
 

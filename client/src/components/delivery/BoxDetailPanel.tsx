@@ -654,7 +654,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     const total = Math.round((settled + now) * 100) / 100;
     if (total <= 0) return { discountUsd: 0, discountReason: null as string | null };
     const source = given
-      ? { reason: given.reason, trackingNumber: given.trackingNumber, lineId: given.lineId }
+      ? { reason: given.reason, note: given.note, trackingNumber: given.trackingNumber, lineId: given.lineId }
       : [...openPledges].sort((a, b) => b.usd - a.usd)[0] ?? null;
     const words = (lang === "ku" || lang === "en" || lang === "ar" || lang === "zh") ? lang : "ku";
     return {
@@ -761,6 +761,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           lineId: given.lineId,
           discountUsd: given.usd,
           reason: given.reason,
+          note: given.note ?? undefined,
         });
         await utils.deliveryBox.settlementView.invalidate({ boxId });
       } catch (err: any) {

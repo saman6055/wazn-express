@@ -19,7 +19,18 @@
  */
 
 /** How a discount is classified, for the report that has to add them up. */
-export const DISCOUNT_REASONS = ["damaged", "late", "goodwill", "loyal", "rounding", "other"] as const;
+export const DISCOUNT_REASONS = [
+  "damaged",
+  "missing",
+  "wrong_item",
+  "late",
+  "goodwill",
+  "loyal",
+  "agreed",
+  "bulk",
+  "rounding",
+  "other",
+] as const;
 export type DiscountReason = (typeof DISCOUNT_REASONS)[number];
 
 /**
@@ -32,12 +43,26 @@ export type DiscountReason = (typeof DISCOUNT_REASONS)[number];
  */
 export const DISCOUNT_REASON_LABELS: Record<DiscountReason, { ku: string; en: string; ar: string; zh: string }> = {
   damaged: { ku: "شکاون یان زیانیان پێگەیشتووە", en: "Damaged in transit", ar: "تضرر أثناء النقل", zh: "运输中损坏" },
+  missing: { ku: "شتێکی کەم بووە لە ناو پاکەتەکە", en: "Something missing from the parcel", ar: "نقص في محتوى الطرد", zh: "包裹内少件" },
+  wrong_item: { ku: "کاڵای هەڵە گەیشتووە", en: "The wrong goods arrived", ar: "وصلت بضاعة خاطئة", zh: "到货有误" },
   late: { ku: "دواکەوتن لە گەیاندن", en: "Late delivery", ar: "تأخر في التسليم", zh: "延迟送达" },
   goodwill: { ku: "هاندان و ستایش", en: "Goodwill", ar: "مجاملة", zh: "友好折扣" },
   loyal: { ku: "کڕیاری باش", en: "Loyal customer", ar: "عميل مميز", zh: "老客户" },
+  agreed: { ku: "ڕێککەوتن لەسەر نرخ", en: "Price agreed beforehand", ar: "سعر متفق عليه", zh: "事先议定价格" },
+  bulk: { ku: "بڕی زۆر", en: "Large quantity", ar: "كمية كبيرة", zh: "大批量" },
   rounding: { ku: "خڕکردنەوەی دینار", en: "Dinar rounding", ar: "تقريب الدينار", zh: "第纳尔取整" },
-  other: { ku: "هۆکارێکی تر", en: "Other", ar: "سبب آخر", zh: "其他" },
+  other: { ku: "هۆکارێکی تر — بینووسە", en: "Other — write it", ar: "سبب آخر — اكتبه", zh: "其他——请写明" },
 };
+
+/**
+ * The reason that has to be written out.
+ *
+ * The owner, 2026-09-24: "when you pick other, let it allow you to write the
+ * reason." A discount filed under "other" with nothing beside it is a
+ * discount nobody can explain a month later, and the discount report counts
+ * it as nothing at all.
+ */
+export const REASON_NEEDS_TEXT: DiscountReason = "other";
 
 export interface ParcelMoney {
   /**
