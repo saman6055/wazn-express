@@ -22,6 +22,23 @@
 export const DISCOUNT_REASONS = ["damaged", "late", "goodwill", "loyal", "rounding", "other"] as const;
 export type DiscountReason = (typeof DISCOUNT_REASONS)[number];
 
+/**
+ * One name per reason, kept beside the reasons themselves.
+ *
+ * The payment screen held these words alone until the receipt began printing
+ * the reason it was given for (owner, 2026-09-24) and the window before
+ * printing began offering them. Three copies of six words drift; one does
+ * not.
+ */
+export const DISCOUNT_REASON_LABELS: Record<DiscountReason, { ku: string; en: string; ar: string; zh: string }> = {
+  damaged: { ku: "شکاون یان زیانیان پێگەیشتووە", en: "Damaged in transit", ar: "تضرر أثناء النقل", zh: "运输中损坏" },
+  late: { ku: "دواکەوتن لە گەیاندن", en: "Late delivery", ar: "تأخر في التسليم", zh: "延迟送达" },
+  goodwill: { ku: "هاندان و ستایش", en: "Goodwill", ar: "مجاملة", zh: "友好折扣" },
+  loyal: { ku: "کڕیاری باش", en: "Loyal customer", ar: "عميل مميز", zh: "老客户" },
+  rounding: { ku: "خڕکردنەوەی دینار", en: "Dinar rounding", ar: "تقريب الدينار", zh: "第纳尔取整" },
+  other: { ku: "هۆکارێکی تر", en: "Other", ar: "سبب آخر", zh: "其他" },
+};
+
 export interface ParcelMoney {
   /**
    * Whatever the caller uses to identify one line — the box item, in

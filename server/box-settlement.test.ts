@@ -281,7 +281,7 @@ describe("the procedures are mounted, and staff-only", () => {
   });
 
   it("keeps the reading procedure read-only", () => {
-    const view = slice(router, "settlementView: staffProcedure", "settle: staffProcedure", "view proc");
+    const view = slice(router, "settlementView: staffProcedure", "lastExchangeRate:", "view proc");
     expect(view).toContain(".query(");
     expect(view).not.toContain(".mutation(");
   });

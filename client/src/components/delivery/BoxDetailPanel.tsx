@@ -87,6 +87,16 @@ const REOPEN_WORDS = {
   done: { ku: "بۆکسەکە کرایەوە", en: "The box is open again", ar: "أُعيد فتح الصندوق", zh: "箱子已重新打开" },
 } as const;
 
+/** When a discount promised on a receipt could not be written down. */
+const DISCOUNT_WORDS = {
+  notRecorded: {
+    ku: "داشکاندنەکە تۆمار نەکرا — وەسڵەکە چاپ نەکرا",
+    en: "The discount was not recorded — nothing was printed",
+    ar: "لم يُسجَّل الخصم — لم يُطبع شيء",
+    zh: "折扣未被记录 — 未打印任何内容",
+  },
+} as const;
+
 /** What the counter is told after pressing "send on WhatsApp". */
 const SHARE_WORDS = {
   shared: {
@@ -140,8 +150,9 @@ const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
 import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
-import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
+import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
+import { pledgeLabel } from "@shared/pledgedDiscount";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 
@@ -348,6 +359,20 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     },
     onError: (err) => toast.error(err.message),
   });
+
+  /**
+   * A discount promised on a receipt, written down before the paper prints.
+   *
+   * The owner, 2026-09-24: the payment screen must be in step with the
+   * receipt — "you cannot lower it, only raise it." That only holds if the
+   * promise outlives this screen, so it becomes a row before anything is
+   * printed, and a refusal stops the printing rather than letting a promise
+   * out of the building that nothing in the system knows about.
+   *
+   * Up here with the other mutations because every hook must run before the
+   * screen's early returns, whatever the code that uses it looks like.
+   */
+  const pledgeDiscount = trpc.deliveryBox.pledgeDiscount.useMutation();
 
   const cancelBox = trpc.deliveryBox.cancel.useMutation({
     onSuccess: () => {
@@ -613,7 +638,32 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     };
   })();
 
-  const printReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null) => {
+  const openPledges = settlementView?.pledges ?? [];
+
+  /**
+   * What the receipt says was taken off: the discounts already settled, plus
+   * the one being given right now.
+   *
+   * One line on the paper, with its reason and — when it was given on one
+   * parcel rather than the box — the tracking it was given on.
+   */
+  const receiptDiscount = (lang: Language, given: ReceiptDiscount | null) => {
+    const settled = Number(settlementForPrint?.discountUsd ?? 0);
+    const open = openPledges.reduce((most, p) => Math.max(most, Number(p.usd || 0)), 0);
+    const now = given ? given.usd : open;
+    const total = Math.round((settled + now) * 100) / 100;
+    if (total <= 0) return { discountUsd: 0, discountReason: null as string | null };
+    const source = given
+      ? { reason: given.reason, trackingNumber: given.trackingNumber, lineId: given.lineId }
+      : [...openPledges].sort((a, b) => b.usd - a.usd)[0] ?? null;
+    const words = (lang === "ku" || lang === "en" || lang === "ar" || lang === "zh") ? lang : "ku";
+    return {
+      discountUsd: total,
+      discountReason: source ? pledgeLabel(source, words) : null,
+    };
+  };
+
+  const printReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => {
     // Locales load on demand now; fetch the chosen one before translating a
     // document that is about to be printed.
     await loadLocale(lang);
@@ -622,18 +672,19 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
-      settlement: settlementForPrint,
+      settlement: { ...settlementForPrint, ...receiptDiscount(lang, given) },
       dinar,
     });
   };
 
-  const downloadReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null) => {
+  const downloadReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => {
     await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
     downloadBoxReceiptPDF(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
+      settlement: { ...settlementForPrint, ...receiptDiscount(lang, given) },
       dinar,
     });
   };
@@ -645,7 +696,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
    */
   const askBeforePrinting = (
     lang: Language,
-    output: (lang: Language, dinar: ReceiptDinarInput | null) => Promise<void>,
+    output: (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => Promise<void>,
     action: "print" | "send" = "print",
   ) => {
     // Ready before the print button is pressed, so the window opens at once.
@@ -656,6 +707,27 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       customerCode: customer?.customerCode,
       parcelCount: box.totalPackages ?? items.length,
       totalUsd: receiptAmountUsd(box, settlementForPrint),
+      /**
+       * A discount may be given on the whole total or on one tracking
+       * (owner, 2026-09-24): "the customer said one parcel was broken, so I
+       * had to give twenty dollars on it — that discount was for one
+       * tracking, not for the total."
+       *
+       * Only offered while something is still owed on the box: a discount on
+       * a box already paid in full has no money to come off, and putting the
+       * field there would promise the customer something no screen could
+       * then give them.
+       */
+      parcels: (settlementView?.parcels ?? [])
+        .filter((p) => p.outstandingUsd > 0 || p.notChargedYet)
+        .map((p) => ({
+          lineId: p.lineId,
+          trackingNumber: p.trackingNumber,
+          packageCode: p.packageCode,
+          chargedUsd: p.chargedUsd,
+        })),
+      pledges: openPledges,
+      canDiscount: settlementDueUsd > 0,
       // The same window for both; its button says which one it is
       // (owner, 2026-09-21).
       action,
@@ -663,8 +735,44 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       // used, so a corrected receipt can be priced in dinars again rather
       // than going out with none (owner, 2026-09-22).
       rate: settlementForPrint?.exchangeRate ?? null,
-      onConfirm: (dinar) => void output(lang, dinar),
+      onConfirm: (dinar, given) => void printWithPledge(lang, dinar, given, output),
     });
+  };
+
+  /**
+   * Write the promise down, then print — never the other way round.
+   *
+   * If recording it fails, nothing is printed. A receipt in a customer's
+   * hand that the system does not know about is exactly the drift the owner
+   * asked to be rid of, and a refusal here (the discount is lower than one
+   * already promised, the parcel is not in this box) is something the person
+   * at the counter has to read before the paper exists.
+   */
+  const printWithPledge = async (
+    lang: Language,
+    dinar: ReceiptDinarInput | null,
+    given: ReceiptDiscount | null,
+    output: (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => Promise<void>,
+  ) => {
+    if (given) {
+      try {
+        await pledgeDiscount.mutateAsync({
+          boxId,
+          lineId: given.lineId,
+          discountUsd: given.usd,
+          reason: given.reason,
+        });
+        await utils.deliveryBox.settlementView.invalidate({ boxId });
+      } catch (err: any) {
+        systemAlert({
+          kind: "error",
+          title: pickLang(language, DISCOUNT_WORDS.notRecorded),
+          message: err?.message ?? String(err),
+        });
+        return;
+      }
+    }
+    await output(lang, dinar, given);
   };
   /**
    * The receipt on the customer's WhatsApp (owner, 2026-09-21).
@@ -678,22 +786,25 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const shareReceiptNow = async (
     lang: Language,
     dinar: ReceiptDinarInput | null,
+    given: ReceiptDiscount | null,
     format: ReceiptShareFormat = "image",
     destination: ReceiptShareDestination = "whatsapp",
   ) => {
     await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
+    const discounted = receiptDiscount(lang, given);
     const html = buildBoxReceiptHtml(b, its, c, createTranslator(lang), {
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
-      settlement: settlementForPrint,
+      settlement: { ...settlementForPrint, ...discounted },
       dinar,
     });
     // The same figures the paper carries: the dinars go in the message too,
     // because that is the number the customer is actually asked for
     // (owner, 2026-09-22).
-    const totalUsd = receiptAmountUsd(box, settlementForPrint);
+    // The message quotes what the paper says, discount and all.
+    const totalUsd = receiptAmountUsd(box, discounted);
     const figures = receiptDinar(totalUsd, dinar);
     const message = receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {
       boxCode: box.boxCode,
@@ -737,7 +848,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const handleSendOnWhatsApp = (format: ReceiptShareFormat, destination: ReceiptShareDestination = "whatsapp") =>
     askBeforePrinting(
       (sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) as Language,
-      (lang, dinar) => shareReceiptNow(lang, dinar, format, destination),
+      (lang, dinar, given) => shareReceiptNow(lang, dinar, given, format, destination),
       "send",
     );
   const handleDownloadReceiptPDF = (lang: Language) => askBeforePrinting(lang, downloadReceiptNow);

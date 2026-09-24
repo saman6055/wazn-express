@@ -158,6 +158,16 @@ function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
  */
 export interface SettlementForPrint {
   discountUsd?: number;
+  /**
+   * Why it was given, already in the receipt's language, and the tracking it
+   * was given on when it was not given on the box as a whole.
+   *
+   * The owner, 2026-09-24: "the reason for the discount must be written on
+   * the receipt — what it was for." A line that says only "discount: -20"
+   * raises the question it was meant to answer, and a month later nobody at
+   * the counter can answer it either.
+   */
+  discountReason?: string | null;
   paidUsd?: number;
   amountIqd?: number;
   exchangeRate?: number | null;
@@ -1085,7 +1095,7 @@ export function buildBoxReceiptHtml(
         </div>
         ${discountNum > 0 ? `
         <div class="financial-row">
-          <span>${t("delivery.discount")}:</span>
+          <span>${t("delivery.discount")}${settlement?.discountReason ? ` — ${escapeHtml(settlement.discountReason)}` : ""}:</span>
           <span style="font-weight:600; color:#b45309;">− $${discountNum.toFixed(2)}</span>
         </div>
         <div class="financial-row total">
@@ -1180,13 +1190,23 @@ export function downloadBoxReceiptPDF(
   items: BoxItemForPrint[],
   customer: CustomerForPrint | null,
   t: TFunc,
-  options?: { direction?: 'ltr' | 'rtl'; logoUrl?: string; company?: CompanyContact; dinar?: ReceiptDinarInput | null },
+  options?: {
+    direction?: 'ltr' | 'rtl';
+    logoUrl?: string;
+    company?: CompanyContact;
+    settlement?: SettlementForPrint;
+    dinar?: ReceiptDinarInput | null;
+  },
 ): void {
   printBoxReceipt(box, items, customer, t, {
     documentTitle: `${box.boxCode}.pdf`,
     direction: options?.direction,
     logoUrl: options?.logoUrl,
     company: options?.company,
+    // The saved copy carries the same discount and the same reason as the
+    // one handed over at the counter; a PDF that quietly disagreed with the
+    // paper would be the version somebody finds later.
+    settlement: options?.settlement,
     dinar: options?.dinar,
   });
 }

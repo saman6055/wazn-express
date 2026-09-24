@@ -132,7 +132,7 @@ describe("the button at the counter", () => {
     expect(dialog).toContain('const sending = request?.action === "send";');
     expect(dialog).toContain("{L(sending ? TXT.send : TXT.print)}");
     expect(dialog).toContain("{L(sending ? TXT.sendTitle : TXT.title)}");
-    expect(panel).toContain('(lang, dinar) => shareReceiptNow(lang, dinar, format, destination),');
+    expect(panel).toContain('(lang, dinar, given) => shareReceiptNow(lang, dinar, given, format, destination),');
     expect(panel).toContain('"send",');
   });
 
@@ -149,7 +149,8 @@ describe("the button at the counter", () => {
   it("asks the day's rate first, like every other way to a receipt", () => {
     const handler = panel.slice(panel.indexOf("const shareReceiptNow"), panel.indexOf("const handlePrintReceipt"));
     expect(handler).toContain("dinar,");
-    expect(handler).toContain("settlement: settlementForPrint,");
+    // With whatever discount the receipt promises on top of it.
+    expect(handler).toContain("settlement: { ...settlementForPrint, ...discounted },");
   });
 
   it("says which of the two happened, and says it in four languages", () => {

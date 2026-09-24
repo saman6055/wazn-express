@@ -924,3 +924,49 @@ export const boxSettlementLines = mysqlTable("boxSettlementLines", {
 
 export type BoxSettlementLine = typeof boxSettlementLines.$inferSelect;
 export type InsertBoxSettlementLine = typeof boxSettlementLines.$inferInsert;
+
+/**
+ * A discount promised on a receipt, before the money was taken.
+ *
+ * The owner, 2026-09-24: the receipt printed at the counter may carry a
+ * discount — on the whole total, or on one tracking, "for example the
+ * customer said one parcel was broken, so I had to give twenty dollars on
+ * it" — and the payment screen must be in step with it: "you cannot lower
+ * it, only raise it."
+ *
+ * That only works if the promise outlives the screen it was made on. A
+ * receipt can be printed today and paid for next week, by somebody else,
+ * with the browser closed in between, so the promise is a row rather than a
+ * piece of state: what was given, on what, why, by whom and when.
+ *
+ * It is not money. Nothing here touches the ledger — the ledger moves when
+ * the settlement is confirmed, and this is the floor that settlement has to
+ * meet. `settlementId` is set when a settlement honours it, and cleared
+ * again if that settlement is reversed, because reversing a receipt does not
+ * un-promise what the customer was told.
+ */
+export const boxDiscountPledges = mysqlTable("boxDiscountPledges", {
+  id: int("id").autoincrement().primaryKey(),
+  boxId: int("boxId").notNull(),
+  /** The box item it was given on. NULL is the box as a whole. */
+  lineId: int("lineId"),
+  /** Written down as the receipt showed it, so a refusal can name it back. */
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
+
+  discountUsd: decimal("discountUsd", { precision: 12, scale: 2 }).notNull(),
+  /** The same six the settlement uses — one discount report, one vocabulary. */
+  reason: mysqlEnum("reason", ["damaged", "late", "goodwill", "loyal", "rounding", "other"]).notNull(),
+  note: text("note"),
+
+  /** The settlement that kept the promise; null while it is still open. */
+  settlementId: int("settlementId"),
+  honouredAt: timestamp("honouredAt"),
+
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  boxIdIdx: index("idx_box_discount_pledges_box").on(table.boxId),
+}));
+
+export type BoxDiscountPledge = typeof boxDiscountPledges.$inferSelect;
+export type InsertBoxDiscountPledge = typeof boxDiscountPledges.$inferInsert;

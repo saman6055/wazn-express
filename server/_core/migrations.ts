@@ -1369,6 +1369,28 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "boxDiscountPledges",
+    dependencies: ["deliveryBoxes", "deliveryBoxItems", "users"],
+    // A discount promised on a printed receipt, on the whole box or on one
+    // tracking, before any money moved (owner, 2026-09-24). Not money: the
+    // floor the settlement has to meet. See drizzle/schema/finance.schema.ts.
+    sql: `CREATE TABLE IF NOT EXISTS boxDiscountPledges (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      boxId INT NOT NULL,
+      lineId INT NULL,
+      trackingNumber VARCHAR(100) NULL,
+      discountUsd DECIMAL(12, 2) NOT NULL,
+      reason ENUM('damaged','late','goodwill','loyal','rounding','other') NOT NULL,
+      note TEXT,
+      settlementId INT NULL,
+      honouredAt TIMESTAMP NULL,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_box_discount_pledges_box (boxId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "expenseBudgets",
     dependencies: ["expenseCategories", "users"],
     // One row per category, plus at most one with categoryId NULL covering

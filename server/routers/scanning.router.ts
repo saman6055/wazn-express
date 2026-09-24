@@ -1076,6 +1076,30 @@ export const deliveryBoxRouter = router({
   }),
 
   /**
+   * Write down a discount the receipt about to be printed promises.
+   *
+   * The owner, 2026-09-24: the receipt may carry a discount on the whole
+   * total or on one tracking, "and it must exist as data" — because the
+   * payment screen has to be in step with it, and "you cannot lower it, only
+   * raise it."
+   *
+   * No money moves here. This records the promise; the settlement is where
+   * it is paid for, and it cannot settle for less.
+   */
+  pledgeDiscount: staffProcedure
+    .input(z.object({
+      boxId: z.number(),
+      /** The box item it is given on; null or absent is the box as a whole. */
+      lineId: z.number().nullable().optional(),
+      discountUsd: z.number().min(0),
+      reason: z.enum(["damaged", "late", "goodwill", "loyal", "rounding", "other"]),
+      note: z.string().max(500).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      return db.pledgeBoxDiscount(input, ctx.user.id);
+    }),
+
+  /**
    * Take the money.
    *
    * Every rule that protects it lives in the db layer, inside one

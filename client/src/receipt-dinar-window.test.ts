@@ -24,7 +24,10 @@ const table = read("components/delivery/BoxTable.tsx");
 
 describe("the window", () => {
   it("previews with the same rule the receipt prints with", () => {
-    expect(dialog).toContain("receiptDinar(request.totalUsd, input)");
+    // The discount comes off in dollars and what remains is converted once,
+    // so the lines on the paper still add up by hand (owner, 2026-09-24).
+    expect(dialog).toContain("const netUsd = Math.round(Math.max(0, grossUsd - cutUsd) * 100) / 100;");
+    expect(dialog).toContain("receiptDinar(netUsd, input)");
     expect(dialog).toContain('from "@shared/receiptDinar"');
   });
 

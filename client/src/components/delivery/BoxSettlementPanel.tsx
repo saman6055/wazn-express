@@ -1,8 +1,8 @@
-import { useMemo, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
-  Wallet, Percent, Pencil, Ban, RotateCcw, AlertTriangle, Check, Loader2, Undo2,
+  Wallet, Percent, Pencil, Ban, RotateCcw, AlertTriangle, Check, Loader2, Undo2, Lock,
 } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -27,8 +27,10 @@ import { fmtDateTime } from "@/lib/numericDate";
 import {
   settlementTotals, differenceOf, boxDiscountUsd, allocateBoxDiscount,
   iqdToUsd, usdToIqd,
+  DISCOUNT_REASON_LABELS,
   type ParcelIntent, type BoxDiscount, type DiscountReason,
 } from "@shared/boxSettlement";
+import { pledgeFloors, pledgeBreaches, pledgeRefusal, wholeBoxName } from "@shared/pledgedDiscount";
 
 /**
  * Taking the money, at the counter, with the parcels in front of both people.
@@ -47,14 +49,7 @@ import {
 
 type Lang = string | undefined;
 
-const REASON_LABELS: Record<DiscountReason, { ku: string; en: string; ar: string; zh: string }> = {
-  damaged: { ku: "شکاون یان زیانیان پێگەیشتووە", en: "Damaged in transit", ar: "تضرر أثناء النقل", zh: "运输中损坏" },
-  late: { ku: "دواکەوتن لە گەیاندن", en: "Late delivery", ar: "تأخر في التسليم", zh: "延迟送达" },
-  goodwill: { ku: "هاندان و ستایش", en: "Goodwill", ar: "مجاملة", zh: "友好折扣" },
-  loyal: { ku: "کڕیاری باش", en: "Loyal customer", ar: "عميل مميز", zh: "老客户" },
-  rounding: { ku: "خڕکردنەوەی دینار", en: "Dinar rounding", ar: "تقريب الدينار", zh: "第纳尔取整" },
-  other: { ku: "هۆکارێکی تر", en: "Other", ar: "سبب آخر", zh: "其他" },
-};
+const REASON_LABELS = DISCOUNT_REASON_LABELS;
 
 const money = (n: number) => fmtUsd(n);
 
@@ -111,6 +106,53 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
     if (discountMode === "none") return { mode: "none" };
     return { mode: discountMode, value: Number(discountValue) || 0 };
   }, [discountMode, discountValue, fromRate, toRate]);
+
+  /**
+   * Discounts already promised on a receipt that has been printed.
+   *
+   * The owner, 2026-09-24: they are fixed here — "you cannot lower it, only
+   * raise it, if you want to give more." So the screen opens with them
+   * filled in, and refuses to settle for less. The server checks again; this
+   * is so that nobody has to be refused to find out.
+   */
+  const pledges = useMemo(() => data?.pledges ?? [], [data?.pledges]);
+  const floors = useMemo(() => pledgeFloors(pledges), [pledges]);
+  const nameOf = (lineId: number | null): string => {
+    if (lineId === null) return wholeBoxName(language === "ku" ? "ku" : "en");
+    const named = pledges.find((p) => p.lineId === lineId)?.trackingNumber;
+    const parcel = parcels.find((p) => p.lineId === lineId);
+    return named ?? parcel?.trackingNumber ?? parcel?.packageCode ?? `#${lineId}`;
+  };
+
+  // Filled once per distinct set of promises: a refetch that brings back the
+  // same ones must not undo what the operator has typed since.
+  const pledgeKey = pledges.map((p) => `${p.lineId ?? "box"}:${p.usd}`).join("|");
+  const filledRef = useRef("");
+  useEffect(() => {
+    if (floors.totalUsd <= 0 || filledRef.current === pledgeKey) return;
+    filledRef.current = pledgeKey;
+    if (floors.boxUsd > 0) {
+      const promised = pledges
+        .filter((p) => p.lineId === null)
+        .sort((a, b) => b.usd - a.usd)[0];
+      setDiscountMode((m) => (m === "none" ? "amount" : m));
+      setDiscountValue((v) => (Number(v) >= floors.boxUsd ? v : String(floors.boxUsd)));
+      if (promised) setDiscountReason(promised.reason);
+    }
+    setLineDiscounts((current) => {
+      const next = { ...current };
+      let changed = false;
+      floors.byLine.forEach((usd, lineId) => {
+        if (Number(next[lineId]?.amount || 0) >= usd) return;
+        const promised = pledges
+          .filter((p) => p.lineId === lineId)
+          .sort((a, b) => b.usd - a.usd)[0];
+        next[lineId] = { amount: String(usd), reason: promised?.reason ?? "other" };
+        changed = true;
+      });
+      return changed ? next : current;
+    });
+  }, [floors, pledges, pledgeKey]);
 
   const boxCut = useMemo(() => boxDiscountUsd(boxDiscount, parcels), [boxDiscount, parcels]);
   const heldIds = useMemo(() => Object.keys(held).map(Number), [held]);
@@ -230,7 +272,31 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
     });
   };
 
+  const breaches = pledgeBreaches(
+    floors,
+    {
+      boxUsd: boxCut,
+      byLine: new Map(parcels.map((p) => [p.lineId, Number(lineDiscounts[p.lineId]?.amount || 0)])),
+    },
+    nameOf,
+  );
+
   const submit = () => {
+    // The paper in the customer's hand cannot be argued with from here.
+    if (breaches.length > 0) {
+      setConfirmOpen(false);
+      systemAlert({
+        kind: "error",
+        title: t({
+          ku: "داشکاندنی بەڵێندراو کەمکراوەتەوە",
+          en: "A promised discount was lowered",
+          ar: "تم تخفيض خصم موعود به",
+          zh: "已承诺的折扣被降低",
+        }),
+        message: pledgeRefusal(breaches, language === "ku" ? "ku" : "en"),
+      });
+      return;
+    }
     settle.mutate({
       boxId,
       lines: parcels.map((p) => ({
@@ -289,6 +355,52 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                 en: `${notCharged.length} parcel(s) have not been charged yet — their batch has not been delivered. Set them aside, or settle them later.`,
                 ar: `${notCharged.length} طرد لم يُحمّل على العميل بعد — لم تصل دفعته. استبعدها أو استلمها لاحقاً.`,
                 zh: `${notCharged.length} 件包裹尚未计费——所属批次未送达。请先搁置或稍后结算。`,
+              })}
+            </p>
+          </div>
+        )}
+
+        {/* ── what a printed receipt already promised ──────────────── */}
+        {floors.totalUsd > 0 && (
+          <div
+            className="rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:bg-amber-950/30"
+            data-testid="settle-pledged"
+          >
+            <div className="flex items-center gap-2">
+              <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-medium">
+                {t({
+                  ku: "داشکاندن لەسەر وەسڵی چاپکراو",
+                  en: "Discount on a printed receipt",
+                  ar: "خصم على إيصال مطبوع",
+                  zh: "已打印收据上的折扣",
+                })}
+              </span>
+            </div>
+            <ul className="mt-1.5 space-y-0.5 text-sm">
+              {floors.boxUsd > 0 && (
+                <li className="flex flex-wrap items-center gap-x-2">
+                  <span>{nameOf(null)}</span>
+                  <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
+                    −{fmtAmount(floors.boxUsd)}
+                  </bdi>
+                </li>
+              )}
+              {Array.from(floors.byLine.entries()).map(([lineId, usd]) => (
+                <li key={lineId} className="flex flex-wrap items-center gap-x-2">
+                  <bdi dir="ltr" className="font-mono text-xs">{nameOf(lineId)}</bdi>
+                  <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
+                    −{fmtAmount(usd)}
+                  </bdi>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-1.5 text-xs text-muted-foreground">
+              {t({
+                ku: "ئەمە دراوەتە کڕیار لەسەر کاغەز — کەمتر ناکرێتەوە، زیاتر دەکرێت.",
+                en: "This is on paper in the customer's hand — it cannot go down, only up.",
+                ar: "هذا مكتوب على ورقة بيد الزبون — لا يمكن تقليله، فقط زيادته.",
+                zh: "这写在客户手上的单据上 — 只能增加，不能减少。",
               })}
             </p>
           </div>
@@ -353,7 +465,16 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
                       </td>
                       <td className="p-2 text-end font-mono tabular-nums">
                         {line.discountUsd > 0
-                          ? <span className="text-amber-600 dark:text-amber-400">−{fmtAmount(line.discountUsd)}</span>
+                          ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                              {(floors.byLine.get(line.lineId) ?? 0) > 0 && (
+                                <Lock
+                                  className="h-3 w-3"
+                                  aria-hidden="true"
+                                  data-testid={`settle-pledged-${line.lineId}`}
+                                />
+                              )}
+                              −{fmtAmount(line.discountUsd)}
+                            </span>
                           : <span className="text-muted-foreground">—</span>}
                       </td>
                       <td className="p-2 text-end font-mono tabular-nums font-semibold">

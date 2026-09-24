@@ -19,7 +19,7 @@ describe("Migration System", () => {
       // that; 93 since expenseBudgets — what the office means to spend, so
       // the screen can say how much is left while there is time to act.
       // 92 was dailySnapshots. 91 was customerFeatures.
-      expect(TABLE_DEFINITIONS.length).toBe(99);
+      expect(TABLE_DEFINITIONS.length).toBe(100);
     });
     
     it("should have unique table names", () => {

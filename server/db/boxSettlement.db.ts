@@ -1,4 +1,4 @@
-import { eq, ne, and, or, desc, inArray, sql, gte, lte } from "drizzle-orm";
+import { eq, ne, and, or, desc, inArray, isNull, sql, gte, lte } from "drizzle-orm";
 import { SETTLED_SLACK_USD } from "@shared/archive";
 import { generateTransactionNumber } from "./utils.db";
 import { getDb } from "./connection";
@@ -6,6 +6,7 @@ import { withParcelOrderNumbers } from "./orderNumbers.db";
 import {
   boxSettlements,
   boxSettlementLines,
+  boxDiscountPledges,
   ledgerTransactions,
   customerAccounts,
   paymentRecords,
@@ -29,6 +30,15 @@ import {
   type DiscountReason,
   type BoxDiscount,
 } from "@shared/boxSettlement";
+import {
+  pledgeFloors,
+  pledgeBreaches,
+  pledgeRefusal,
+  lowerPledgeRefusal,
+  shortOfPledge,
+  wholeBoxName,
+  type DiscountPledge,
+} from "@shared/pledgedDiscount";
 
 /**
  * Money coming back through the box.
@@ -132,6 +142,13 @@ export interface BoxSettlementView {
   parcels: BoxParcelView[];
   /** Confirmed and reversed alike, newest first — the box's money history. */
   settlements: Array<BoxSettlement & { staffName: string | null }>;
+  /**
+   * Discounts promised on a receipt already printed, still to be honoured.
+   *
+   * The payment screen fills itself from these and will not go below them
+   * (owner, 2026-09-24: "you cannot lower it, only raise it").
+   */
+  pledges: OpenPledge[];
   /** Pre-fills the rate box so the ordinary day needs no typing. */
   lastExchangeRate: number | null;
   /** What the customer's account stands at now. Negative means credit. */
@@ -626,7 +643,7 @@ export async function getLastSettlementRate(): Promise<{ rate: number; at: Date 
 
 export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
   const empty: BoxSettlementView = {
-    box: null, customer: null, parcels: [], settlements: [],
+    box: null, customer: null, parcels: [], settlements: [], pledges: [],
     lastExchangeRate: null, accountBalanceUsd: 0,
   };
   const db = await getDb();
@@ -684,9 +701,122 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
       : null,
     parcels: await withParcelOrderNumbers(parcels),
     settlements: history.map((h) => ({ ...h.s, staffName: h.staffName ?? null })),
+    pledges: await getOpenPledges(boxId),
     lastExchangeRate: lastRate?.rate ?? null,
     accountBalanceUsd: Number(account?.balance ?? 0),
   };
+}
+
+/**
+ * A discount promised on a receipt that has been printed and handed over.
+ *
+ * The owner, 2026-09-24: the receipt may carry a discount on the whole total
+ * or on one tracking, and the payment screen must be in step with it — "you
+ * cannot lower it, only raise it, if you want to give more."
+ *
+ * So the promise is written down at the moment the paper is printed, and the
+ * settlement has to meet it. This is not money: nothing here touches the
+ * ledger. It is the floor the money has to clear.
+ */
+export interface OpenPledge extends DiscountPledge {
+  id: number;
+  createdAt: Date | null;
+  createdById: number;
+}
+
+/** The promises on this box that no settlement has kept yet. */
+export async function getOpenPledges(boxId: number): Promise<OpenPledge[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select()
+    .from(boxDiscountPledges)
+    .where(and(eq(boxDiscountPledges.boxId, boxId), isNull(boxDiscountPledges.settlementId)))
+    .orderBy(boxDiscountPledges.createdAt);
+  return rows.map((r) => ({
+    id: r.id,
+    lineId: r.lineId ?? null,
+    usd: Number(r.discountUsd || 0),
+    reason: r.reason as DiscountReason,
+    note: r.note ?? null,
+    trackingNumber: r.trackingNumber ?? null,
+    createdAt: (r.createdAt as Date | null) ?? null,
+    createdById: r.createdById,
+  }));
+}
+
+export interface PledgeDiscountInput {
+  boxId: number;
+  /** The box item it is given on; null is the box as a whole. */
+  lineId?: number | null;
+  discountUsd: number;
+  reason: DiscountReason;
+  note?: string | null;
+}
+
+/**
+ * Write down what the receipt about to be printed promises.
+ *
+ * Append-only. Printing the same receipt again writes another row, and the
+ * floor is the largest promise still open on that target rather than their
+ * sum — a receipt reprinted at twenty replaced the one that said ten, it did
+ * not promise thirty.
+ *
+ * Going down is refused, with the way out (shared/fixAdvice): the paper in
+ * the customer's hand cannot be argued with from this screen.
+ */
+export async function pledgeBoxDiscount(
+  input: PledgeDiscountInput,
+  userId: number,
+): Promise<{ pledges: OpenPledge[] }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const usd = Math.round(Math.max(0, Number(input.discountUsd) || 0) * 100) / 100;
+  const lineId = input.lineId ?? null;
+
+  const [box] = await db
+    .select({ id: deliveryBoxes.id })
+    .from(deliveryBoxes)
+    .where(eq(deliveryBoxes.id, input.boxId))
+    .limit(1);
+  if (!box) throw new Error("بۆکس نەدۆزرایەوە");
+
+  // The tracking as the receipt will name it, kept with the promise so a
+  // refusal weeks later can say which parcel it was about.
+  let trackingNumber: string | null = null;
+  if (lineId !== null) {
+    const [item] = await db
+      .select({ tracking: deliveryBoxItems.trackingNumber, code: deliveryBoxItems.packageCode })
+      .from(deliveryBoxItems)
+      .where(and(eq(deliveryBoxItems.id, lineId), eq(deliveryBoxItems.boxId, input.boxId)))
+      .limit(1);
+    if (!item) throw new Error("ئەو پاکەتە لەم بۆکسەدا نییە");
+    trackingNumber = item.tracking ?? item.code ?? null;
+  }
+
+  const open = await getOpenPledges(input.boxId);
+  const floors = pledgeFloors(open);
+  const current = lineId === null ? floors.boxUsd : (floors.byLine.get(lineId) ?? 0);
+  if (shortOfPledge(current, usd) > 0) {
+    throw new Error(lowerPledgeRefusal(trackingNumber ?? wholeBoxName("ku"), current, usd));
+  }
+  // Nothing new promised: reprinting the same receipt is not a second promise.
+  if (usd <= 0 || usd === current) return { pledges: open };
+
+  await db.insert(boxDiscountPledges).values({
+    boxId: input.boxId,
+    lineId,
+    trackingNumber,
+    discountUsd: usd.toFixed(2),
+    reason: input.reason,
+    note: input.note ?? null,
+    createdById: userId,
+  });
+  appLogger.info("[BoxSettlement] discount pledged on a printed receipt", {
+    boxId: input.boxId, lineId, usd, reason: input.reason, userId,
+  });
+  return { pledges: await getOpenPledges(input.boxId) };
 }
 
 export interface SettlementLineInput {
@@ -836,6 +966,31 @@ export async function createBoxSettlement(
     if ((line.correctionUsd ?? 0) !== 0 && !(line.correctionReason ?? "").trim()) {
       throw new Error("هۆکاری ڕاستکردنەوەی نرخ پێویستە");
     }
+  }
+
+  /**
+   * A discount already promised on a printed receipt is a floor, not a
+   * suggestion (owner, 2026-09-24). Compared like with like: a promise made
+   * on one tracking is kept by that parcel's own discount, because that is
+   * what the paper in the customer's hand names.
+   *
+   * The screen fills itself from these and will not go below them, so this
+   * is the second reading of the same rule — for the day somebody settles
+   * from an older tab, or from somewhere else entirely.
+   */
+  const openPledges = await getOpenPledges(input.boxId);
+  if (openPledges.length > 0) {
+    const floors = pledgeFloors(openPledges);
+    const offeredByLine = new Map<number, number>(
+      input.lines.map((l) => [l.lineId, Math.max(0, Number(l.discountUsd ?? 0))]),
+    );
+    const breaches = pledgeBreaches(floors, { boxUsd: boxCut, byLine: offeredByLine }, (lineId) => {
+      if (lineId === null) return wholeBoxName("ku");
+      const named = openPledges.find((p) => p.lineId === lineId)?.trackingNumber;
+      const parcel = view.parcels.find((p) => p.lineId === lineId);
+      return named ?? parcel?.trackingNumber ?? parcel?.packageCode ?? `#${lineId}`;
+    });
+    if (breaches.length > 0) throw new Error(pledgeRefusal(breaches, "ku"));
   }
 
   const now = new Date();
@@ -991,6 +1146,20 @@ export async function createBoxSettlement(
         isHeld: line.held,
         heldReason: line.held ? (source?.heldReason ?? null) : null,
       });
+    }
+
+    // The promises this receipt kept. Inside the transaction: a promise
+    // marked as kept by a payment that then failed to commit would be a
+    // discount the customer never received and nothing left to claim it
+    // with.
+    if (openPledges.length > 0) {
+      await tx
+        .update(boxDiscountPledges)
+        .set({ settlementId, honouredAt: now })
+        .where(and(
+          eq(boxDiscountPledges.boxId, input.boxId),
+          isNull(boxDiscountPledges.settlementId),
+        ));
     }
 
     return { settlementId, settlementNumber, paidUsd, differenceKind: difference.kind, discountTotal };
@@ -1243,6 +1412,17 @@ export async function reverseBoxSettlement(
         reversalReason: reason.trim(),
       })
       .where(eq(boxSettlements.id, settlementId));
+
+    /**
+     * The promises this receipt had kept are open again.
+     *
+     * Undoing a payment does not un-tell the customer they were given twenty
+     * dollars off. Whatever is settled next still has to honour it.
+     */
+    await tx
+      .update(boxDiscountPledges)
+      .set({ settlementId: null, honouredAt: null })
+      .where(eq(boxDiscountPledges.settlementId, settlementId));
 
     /**
      * And when it is undone. This one matters more than the payment: the

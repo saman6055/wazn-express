@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Printer, Send } from "lucide-react";
+import { Printer, Send, Percent } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -29,10 +29,36 @@ import {
   type DatedRate,
   type DinarRoundMode,
   type DinarRoundStep,
+  roundDinars,
   type ReceiptDinarInput,
 } from "@shared/receiptDinar";
+import { DISCOUNT_REASON_LABELS, type DiscountReason } from "@shared/boxSettlement";
+import { pledgeFloors, type DiscountPledge } from "@shared/pledgedDiscount";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
+
+/** One parcel the discount may be given on, for the list. */
+export interface ReceiptDiscountParcel {
+  lineId: number;
+  trackingNumber?: string | null;
+  packageCode?: string | null;
+  chargedUsd: number;
+}
+
+/**
+ * A discount the person printing is giving, before the paper comes out.
+ *
+ * The owner, 2026-09-24: it may be on the whole total or on one tracking —
+ * "the customer said one parcel was broken, so I had to give twenty dollars
+ * on it" — and the reason goes on the receipt with it.
+ */
+export interface ReceiptDiscount {
+  /** The box item it is given on; null is the box as a whole. */
+  lineId: number | null;
+  usd: number;
+  reason: DiscountReason;
+  trackingNumber: string | null;
+}
 
 /** What the window needs to know about the receipt about to be printed. */
 export interface ReceiptDinarRequest {
@@ -40,8 +66,27 @@ export interface ReceiptDinarRequest {
   customerName?: string | null;
   customerCode?: string | null;
   parcelCount: number;
-  /** The dollar figure the receipt asks for: receiptAmountUsd(box, settlement). */
+  /**
+   * The dollar figure the receipt asks for BEFORE anything given here:
+   * receiptAmountUsd(box, settlement).
+   */
   totalUsd: number;
+  /**
+   * The parcels a discount can be pointed at. Empty or absent leaves only
+   * the box as a whole.
+   */
+  parcels?: ReceiptDiscountParcel[];
+  /**
+   * Discounts already promised on an earlier printing of this receipt. The
+   * field opens at them and will not go below: a printed discount is a
+   * promise (owner, 2026-09-24).
+   */
+  pledges?: DiscountPledge[];
+  /**
+   * False when there is nothing left to settle on this box. A discount then
+   * has no money to come off, so the field is not offered at all.
+   */
+  canDiscount?: boolean;
   /**
    * What the button at the bottom does, so it says so: this window is the
    * same one for printing and for sending to the customer (owner,
@@ -55,8 +100,13 @@ export interface ReceiptDinarRequest {
    * sent, instead of the window being skipped and the dinars lost.
    */
   rate?: number | null;
-  /** Prints, or saves the PDF, with what was chosen — null for no dinars. */
-  onConfirm: (dinar: ReceiptDinarInput | null) => void;
+  /**
+   * Prints, or saves the PDF, with what was chosen — null for no dinars, and
+   * null for no discount. The discount is written down before the paper is
+   * printed, so the payment screen cannot disagree with what the customer
+   * was handed.
+   */
+  onConfirm: (dinar: ReceiptDinarInput | null, discount: ReceiptDiscount | null) => void;
 }
 
 /**
@@ -163,6 +213,38 @@ const TXT = {
   },
   print: { ku: "چاپ", en: "Print", ar: "طباعة", zh: "打印" },
   cancel: { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" },
+
+  // ── the discount (owner, 2026-09-24) ──────────────────────────────
+  discount: { ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" },
+  discountFor: { ku: "داشکاندن بۆ کێ؟", en: "Discount on what?", ar: "الخصم على ماذا؟", zh: "折扣给谁？" },
+  wholeBox: { ku: "کۆی گشتی", en: "The whole total", ar: "الإجمالي كله", zh: "全部总额" },
+  reason: { ku: "هۆکاری داشکاندن", en: "Reason for the discount", ar: "سبب الخصم", zh: "折扣原因" },
+  pickReason: { ku: "هۆکارەکە هەڵبژێرە", en: "Choose the reason", ar: "اختر السبب", zh: "选择原因" },
+  reasonNeeded: {
+    ku: "بەبێ هۆکار داشکاندن ناکرێت — هۆکارەکە لەسەر وەسڵەکە چاپ دەکرێت",
+    en: "No discount without a reason — the reason is printed on the receipt",
+    ar: "لا خصم بدون سبب — يُطبع السبب على الإيصال",
+    zh: "没有原因不能打折 — 原因会印在收据上",
+  },
+  discountHint: {
+    ku: "بە دۆلار دەنووسرێت و بە هەمان نرخ و خڕکردنەوەی سەرەوە دەگۆڕدرێت. لەسەر وەسڵەکە بە هۆکارەکەیەوە دەنووسرێت.",
+    en: "Written in dollars and converted at the same rate and rounding above. It is printed on the receipt with its reason.",
+    ar: "يُكتب بالدولار ويُحوَّل بنفس السعر والتقريب أعلاه. ويُطبع على الإيصال مع سببه.",
+    zh: "以美元填写，按上方同一汇率与取整换算。收据上会连同原因一起打印。",
+  },
+  belowPledge: {
+    ku: "لە بەڵێنی سەر وەسڵی چاپکراو کەمترە — بیگەڕێنەوە بۆ ئەم بڕە یان زیاتری بکە",
+    en: "Below what a printed receipt promised — put it back to this, or higher",
+    ar: "أقل مما وعد به إيصال مطبوع — أعده إلى هذا المبلغ أو أكثر",
+    zh: "低于已打印收据上的承诺 — 请调回该金额或更高",
+  },
+  pledged: {
+    ku: "لەسەر وەسڵێکی چاپکراو بەڵێن دراوە — کەمتر ناکرێتەوە، زیاتر دەکرێت",
+    en: "Promised on a receipt already printed — it cannot go down, only up",
+    ar: "وُعد به على إيصال مطبوع — لا يمكن تقليله، فقط زيادته",
+    zh: "已在打印的收据上承诺 — 只能增加，不能减少",
+  },
+  afterDiscount: { ku: "کۆی گشتی دوای داشکاندن", en: "Total after the discount", ar: "الإجمالي بعد الخصم", zh: "折后总额" },
 } as const;
 
 export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinarRequest | null; onClose: () => void }) {
@@ -184,8 +266,16 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const [step, setStep] = useState<DinarRoundStep>(DEFAULT_DINAR_ROUND_STEP);
   const [mode, setMode] = useState<DinarRoundMode>(DEFAULT_DINAR_ROUND_MODE);
 
+  // The discount: what it is given on, how much, and why (owner, 2026-09-24).
+  // The reason starts unchosen on purpose — it is printed on the receipt, and
+  // a default would quietly put the wrong one there.
+  const [target, setTarget] = useState<string>("box");
+  const [discount, setDiscount] = useState("");
+  const [discountReason, setDiscountReason] = useState<DiscountReason | "">("");
+
   // Fresh for every receipt: the advance empty, dinars selected, the
-  // rounding as last chosen on this device.
+  // rounding as last chosen on this device — and the discount at whatever an
+  // earlier printing of this receipt already promised.
   useEffect(() => {
     if (!request) return;
     const saved = recall();
@@ -194,6 +284,16 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     setRateTouched(false);
     setStep(isStep(saved.step) ? saved.step : DEFAULT_DINAR_ROUND_STEP);
     setMode(isMode(saved.mode) ? saved.mode : DEFAULT_DINAR_ROUND_MODE);
+
+    const open = request.pledges ?? [];
+    const first = open.length > 0 ? [...open].sort((a, b) => b.usd - a.usd)[0]! : null;
+    const floors = pledgeFloors(open);
+    const promised = first
+      ? (first.lineId === null ? floors.boxUsd : floors.byLine.get(first.lineId) ?? first.usd)
+      : 0;
+    setTarget(first && first.lineId !== null ? String(first.lineId) : "box");
+    setDiscount(promised > 0 ? String(promised) : "");
+    setDiscountReason(first?.reason ?? "");
   }, [request]);
 
   // The rate offered: this receipt's own if it has one, otherwise the newer
@@ -210,18 +310,55 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     if (request && !rateTouched) setRate(offered ? String(offered) : "");
   }, [request, rateTouched, offered]);
 
+  /**
+   * The discount comes off in dollars, and what remains is converted once —
+   * the rule the whole receipt is built on, so the lines on the paper add up
+   * by hand.
+   *
+   * Its own figure in dinars is therefore the difference between the two
+   * rounded totals rather than a third rounding of its own. At "without a
+   * remainder" that is what the customer actually saves on the day, and it
+   * can never leave the paper one thousand short.
+   */
+  const canDiscount = request?.canDiscount !== false;
+  const grossUsd = request?.totalUsd ?? 0;
+  const cutUsd = canDiscount ? Math.max(0, Math.min(grossUsd, Number(discount) || 0)) : 0;
+  const netUsd = Math.round(Math.max(0, grossUsd - cutUsd) * 100) / 100;
+
   const input: ReceiptDinarInput | null =
     Number(rate) > 0
       ? { rate: Number(rate), step, mode, advanceAmount: Number(advance) || null, advanceCurrency: currency }
       : null;
-  const figures = request ? receiptDinar(request.totalUsd, input) : null;
+  const figures = request ? receiptDinar(netUsd, input) : null;
+  const cutIqd = input && cutUsd > 0
+    ? roundDinars(grossUsd * input.rate, step, mode) - roundDinars(netUsd * input.rate, step, mode)
+    : 0;
+
+  const parcels = request?.parcels ?? [];
+  const chosen = target === "box" ? null : parcels.find((p) => String(p.lineId) === target) ?? null;
+  // The floor this receipt may not go under: what an earlier printing of it
+  // already promised on the same target.
+  const floors = pledgeFloors(request?.pledges ?? []);
+  const floorUsd = chosen ? (floors.byLine.get(chosen.lineId) ?? 0) : floors.boxUsd;
+  const belowPledge = floorUsd > 0 && cutUsd + 0.004 < floorUsd;
+  const reasonMissing = cutUsd > 0 && !discountReason;
+  const blocked = reasonMissing || belowPledge;
 
   const confirm = () => {
-    if (!request) return;
+    if (!request || blocked) return;
     if (input) rememberChoice({ rate: input.rate, at: Date.now(), step, mode });
     const print = request.onConfirm;
+    const given: ReceiptDiscount | null =
+      cutUsd > 0 && discountReason
+        ? {
+            lineId: chosen ? chosen.lineId : null,
+            usd: cutUsd,
+            reason: discountReason,
+            trackingNumber: chosen ? (chosen.trackingNumber ?? chosen.packageCode ?? null) : null,
+          }
+        : null;
     onClose();
-    print(input);
+    print(input, given);
   };
 
   const row = (label: string, value: string, strong = false) => (
@@ -339,9 +476,103 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
             <p className="text-xs text-muted-foreground">{mode === "down" ? L(TXT.noRemainderHint) : L(TXT.roundingHint)}</p>
           </div>
 
+          {/* ── the discount, and what it was given for ──────────────
+              Owner, 2026-09-24: in dollars, in step with the rate above,
+              on the whole total or on one tracking, with the reason — and
+              the reason is printed on the paper. */}
+          {canDiscount && (
+            <div className="space-y-2 rounded-lg border border-amber-500/40 bg-amber-50/60 p-3 dark:bg-amber-950/20">
+              <div className="flex items-center gap-2">
+                <Percent className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <Label className="text-sm font-medium">{L(TXT.discount)}</Label>
+              </div>
+
+              {parcels.length > 0 && (
+                <div className="space-y-1">
+                  <span className="text-xs text-muted-foreground">{L(TXT.discountFor)}</span>
+                  <Select value={target} onValueChange={setTarget}>
+                    <SelectTrigger className="h-9 w-full" data-testid="receipt-discount-target">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="box">{L(TXT.wholeBox)}</SelectItem>
+                      {parcels.map((p) => (
+                        <SelectItem key={p.lineId} value={String(p.lineId)}>
+                          <bdi dir="ltr" className="font-mono text-xs">
+                            {p.trackingNumber || p.packageCode || `#${p.lineId}`}
+                          </bdi>
+                          {" · "}
+                          <bdi dir="ltr">${p.chargedUsd.toFixed(2)}</bdi>
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+
+              <div className="grid gap-2 sm:grid-cols-2">
+                <div className="flex items-stretch gap-2">
+                  <span className="flex items-center text-sm text-muted-foreground">$</span>
+                  <GroupedNumberInput
+                    inputMode="decimal"
+                    dir="ltr"
+                    value={discount}
+                    onValueChange={setDiscount}
+                    placeholder="0"
+                    className="h-9 flex-1"
+                    data-testid="receipt-discount-amount"
+                  />
+                </div>
+                <Select
+                  value={discountReason || undefined}
+                  onValueChange={(v) => setDiscountReason(v as DiscountReason)}
+                >
+                  <SelectTrigger className="h-9" data-testid="receipt-discount-reason">
+                    <SelectValue placeholder={L(TXT.pickReason)} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(Object.keys(DISCOUNT_REASON_LABELS) as DiscountReason[]).map((r) => (
+                      <SelectItem key={r} value={r}>{L(DISCOUNT_REASON_LABELS[r])}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {cutUsd > 0 && input && (
+                <p className="text-xs text-amber-700 dark:text-amber-400">
+                  {L(TXT.dinar)}: <bdi dir="ltr" className="font-mono">{formatIqd(cutIqd)}</bdi>
+                </p>
+              )}
+              {floorUsd > 0 && (
+                <p
+                  className={cn(
+                    "text-xs",
+                    belowPledge
+                      ? "font-medium text-red-600 dark:text-red-400"
+                      : "text-amber-700 dark:text-amber-400",
+                  )}
+                  data-testid="receipt-discount-pledged"
+                >
+                  {L(belowPledge ? TXT.belowPledge : TXT.pledged)} —{" "}
+                  <bdi dir="ltr" className="font-mono">${floorUsd.toFixed(2)}</bdi>
+                </p>
+              )}
+              {reasonMissing && (
+                <p className="text-xs font-medium text-red-600 dark:text-red-400">{L(TXT.reasonNeeded)}</p>
+              )}
+              {!reasonMissing && <p className="text-xs text-muted-foreground">{L(TXT.discountHint)}</p>}
+            </div>
+          )}
+
           {/* The receipt's own lines, in its order (dinarRowsHtml). */}
           {figures && (
             <div className="rounded-lg border-2 border-dashed border-emerald-500/60 px-3 py-1" data-testid="receipt-dinar-preview">
+              {cutUsd > 0 && (
+                <>
+                  {row(L(TXT.discount), `− $${cutUsd.toFixed(2)}`)}
+                  {row(L(TXT.afterDiscount), `$${netUsd.toFixed(2)}`)}
+                </>
+              )}
               {figures.advance?.currency === "USD" ? (
                 <>
                   {row(t("delivery.advancePaid"), `− $${figures.advance.amount.toFixed(2)}`)}
@@ -367,7 +598,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
         </div>
 
         <DialogFooter className="flex-row gap-2 sm:gap-2">
-          <Button onClick={confirm} className="flex-1" data-testid="receipt-dinar-print">
+          <Button onClick={confirm} disabled={blocked} className="flex-1" data-testid="receipt-dinar-print">
             {sending ? <Send className="me-1.5 h-4 w-4" /> : <Printer className="me-1.5 h-4 w-4" />}
             {L(sending ? TXT.send : TXT.print)}
           </Button>

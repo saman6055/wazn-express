@@ -238,7 +238,7 @@ describe("the paper and the screen read from the same place", () => {
 
   it("builds the printed figures from the settlement query", () => {
     expect(panel).toContain("trpc.deliveryBox.settlementView.useQuery({ boxId })");
-    expect(panel).toContain("settlement: settlementForPrint");
+    expect(panel).toContain("settlement: { ...settlementForPrint, ...receiptDiscount(lang, given) },");
   });
 
   it("leaves reversed receipts off the paper", () => {
