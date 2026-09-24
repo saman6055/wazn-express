@@ -13,11 +13,28 @@
  * window never runs in production: the security policy runs scripts from
  * this site's files only, and an inline one is not a file.
  */
-export function printWhenReady(w: Window, maxWaitMs = 1500): void {
+export function printWhenReady(
+  w: Window,
+  maxWaitMs = 1500,
+  /**
+   * One last look at the finished page, before the dialog opens.
+   *
+   * It runs here rather than at the call site because here is the only
+   * moment that is both after the images and fonts have arrived and before
+   * anything is paginated — and a receipt is measured with its stamp on it
+   * (lib/printFit). Runs exactly once, on whichever path gets there first.
+   */
+  beforePrint?: (w: Window) => void,
+): void {
   let printed = false;
   const print = () => {
     if (printed) return;
     printed = true;
+    try {
+      beforePrint?.(w);
+    } catch {
+      // A last touch that fails must never cost the print itself.
+    }
     w.print();
   };
 

@@ -5,6 +5,7 @@
  */
 
 import { printWhenReady } from "./printWindow";
+import { fitToWholePages } from "./printFit";
 import { escapeHtml } from "./html";
 import { BRAND_STAMP_URL, type CompanyContact } from "./brand";
 import { absoluteLogoUrl } from "./absoluteLogoUrl";
@@ -1173,7 +1174,9 @@ export function printBoxReceipt(
     // Printed from here, not by a script inside the page: the security
     // policy runs no inline script, so the old onload never fired in production.
     w.addEventListener("afterprint", () => w.close());
-    printWhenReady(w);
+    // And measured against the page first, so a stamp and a footer never get
+    // a sheet of A4 to themselves (owner, 2026-09-24).
+    printWhenReady(w, undefined, (win) => fitToWholePages(win));
   }
 }
 
