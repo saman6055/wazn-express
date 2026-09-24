@@ -239,14 +239,17 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
                 sentence that says what to do next is the reason the notice
                 is worth showing at all. */}
             {current.autoDismissMs && current.message && (
-              <p className="px-4 pb-3 text-xs leading-relaxed text-muted-foreground">
+              <p className="whitespace-pre-line px-4 pb-3 text-xs leading-relaxed text-muted-foreground">
                 {current.message}
               </p>
             )}
 
             {!current.autoDismissMs && (current.message || current.detail) && (
               <div className="space-y-3 p-5 text-[15px] leading-relaxed">
-                {current.message && <p>{current.message}</p>}
+                {/* Written with its cure: a refusal says the reason and then
+                    the numbered steps out of it (@shared/fixAdvice, the
+                    owner's idea of 2026-09-24). The lines are real lines. */}
+                {current.message && <p className="whitespace-pre-line">{current.message}</p>}
                 {current.detail && (
                   <p
                     dir="ltr"

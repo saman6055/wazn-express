@@ -1,4 +1,4 @@
-import { eq, and, or, desc, inArray, sql, gte, lte } from "drizzle-orm";
+import { eq, ne, and, or, desc, inArray, sql, gte, lte } from "drizzle-orm";
 import { SETTLED_SLACK_USD } from "@shared/archive";
 import { generateTransactionNumber } from "./utils.db";
 import { getDb } from "./connection";
@@ -512,12 +512,37 @@ export async function getBoxesPaidInFull(boxIds: number[]): Promise<Set<number>>
  * Returns the box to name in the refusal, or null when nothing is paid.
  * Cancelled boxes are ignored; so is the box being scanned into.
  */
+export interface PaidBoxHolding {
+  boxId: number;
+  boxCode: string;
+  status: string;
+  /** When it was handed over, if it has been. */
+  deliveredAt: Date | null;
+  /** What the customer paid on it, and when the last payment was taken. */
+  paidUsd: number;
+  settledAt: Date | null;
+  /** The parcel as that box holds it. */
+  packageCode: string | null;
+  trackingNumber: string | null;
+  itemPriceUsd: number;
+}
+
+/**
+ * The paid box that already holds this parcel — with everything the person
+ * scanning needs to see.
+ *
+ * The owner, 2026-09-24: a refusal that only names the box makes somebody
+ * walk to another screen to find out whether it is true. So the box's state,
+ * the day it was handed over, what was paid on it, the parcel's own code and
+ * the price it was charged at all come back together, and the refusal says
+ * them.
+ */
 export async function findPaidBoxHolding(opts: {
   packageId?: number | null;
   fullPackageOrderId?: number | null;
   trackingNumber?: string | null;
   exceptBoxId?: number | null;
-}): Promise<{ boxId: number; boxCode: string } | null> {
+}): Promise<PaidBoxHolding | null> {
   const db = await getDb();
   if (!db) return null;
 
@@ -529,9 +554,18 @@ export async function findPaidBoxHolding(opts: {
   if (identities.length === 0) return null;
 
   const rows = await db
-    .select({ boxId: deliveryBoxItems.boxId, boxCode: deliveryBoxes.boxCode })
+    .select({
+      boxId: deliveryBoxItems.boxId,
+      boxCode: deliveryBoxes.boxCode,
+      status: deliveryBoxes.status,
+      deliveredAt: deliveryBoxes.deliveredAt,
+      trackingNumber: deliveryBoxItems.trackingNumber,
+      itemPriceUsd: deliveryBoxItems.calculatedCostUsd,
+      packageCode: packages.packageCode,
+    })
     .from(deliveryBoxItems)
     .innerJoin(deliveryBoxes, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
+    .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
     .where(and(
       or(...(identities as any[])),
       sql`${deliveryBoxes.status} <> 'cancelled'`,
@@ -542,7 +576,29 @@ export async function findPaidBoxHolding(opts: {
 
   const paid = await getBoxesPaidInFull(candidates.map((r) => Number(r.boxId)));
   const hit = candidates.find((r) => paid.has(Number(r.boxId)));
-  return hit ? { boxId: Number(hit.boxId), boxCode: hit.boxCode } : null;
+  if (!hit) return null;
+
+  // What was taken on that box, and when — the receipts it was cleared with.
+  const receipts = await db
+    .select({ paidUsd: boxSettlements.paidUsd, at: boxSettlements.createdAt })
+    .from(boxSettlements)
+    .where(and(eq(boxSettlements.boxId, Number(hit.boxId)), ne(boxSettlements.status, "reversed")));
+  const paidUsd = receipts.reduce((sum, r) => sum + Number(r.paidUsd || 0), 0);
+  const settledAt = receipts.length
+    ? receipts.map((r) => r.at).sort((a, b) => new Date(b as Date).getTime() - new Date(a as Date).getTime())[0] ?? null
+    : null;
+
+  return {
+    boxId: Number(hit.boxId),
+    boxCode: hit.boxCode,
+    status: String(hit.status),
+    deliveredAt: (hit.deliveredAt as Date | null) ?? null,
+    paidUsd: Math.round(paidUsd * 100) / 100,
+    settledAt: (settledAt as Date | null) ?? null,
+    packageCode: hit.packageCode ?? null,
+    trackingNumber: hit.trackingNumber ?? null,
+    itemPriceUsd: Number(hit.itemPriceUsd || 0),
+  };
 }
 
 /**

@@ -8,6 +8,7 @@ import { appLogger } from "../utils/logger";
 import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { withFix } from "@shared/fixAdvice";
 import { notifyPackageStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
@@ -1231,9 +1232,36 @@ export const deliveryBoxRouter = router({
         exceptBoxId: input.boxId,
       });
       if (paidElsewhere) {
+        /**
+         * Loud, and with the whole story (owner, 2026-09-24).
+         *
+         * PRECONDITION_FAILED rather than CONFLICT on purpose: the screen
+         * treats a CONFLICT as the routine "you scanned the same barcode
+         * twice" and lets it fade after three seconds. This one is the
+         * opposite — a parcel the customer has already paid for and taken
+         * home — so it stops the screen, names the box, the money, the day
+         * and the price, and says the one way out of it.
+         */
+        const day = (d: Date | null) => (d ? new Date(d).toLocaleDateString("en-GB") : null);
+        const facts = [
+          `بۆکس ${paidElsewhere.boxCode}`,
+          paidElsewhere.packageCode ? `کۆدی پاکەت ${paidElsewhere.packageCode}` : null,
+          paidElsewhere.itemPriceUsd > 0 ? `نرخی پاکەت $${paidElsewhere.itemPriceUsd.toFixed(2)}` : null,
+          paidElsewhere.paidUsd > 0 ? `پارەی دراو $${paidElsewhere.paidUsd.toFixed(2)}` : null,
+          day(paidElsewhere.settledAt) ? `بەرواری پارەدان ${day(paidElsewhere.settledAt)}` : null,
+          day(paidElsewhere.deliveredAt) ? `بەرواری گەیاندن ${day(paidElsewhere.deliveredAt)}` : null,
+        ].filter(Boolean).join(" · ");
         throw new TRPCError({
-          code: "CONFLICT",
-          message: `ئەم تراکە پێشتر لە بۆکسی ${paidElsewhere.boxCode} حیساب کراوە و پارەکەی دراوە — دووبارە حیساب ناکرێتەوە`,
+          code: "PRECONDITION_FAILED",
+          message: withFix(
+            `ئەم تراکە پێشتر لە بۆکسێکدا حیساب کراوە و پارەکەی وەرگیراوە — ${facts}. دوو جار حیسابکردنی هەمان پاکەت ڕێگە پێنەدراوە.`,
+            [
+              `بۆکسی ${paidElsewhere.boxCode} بکەرەوە (دوگمەی «کردنەوەی بۆکس» — تەنها ئادمین، بە هۆکارەوە)`,
+              "پاکەتەکە لەو بۆکسە دەربهێنە",
+              "ئینجا لێرە دووبارە سکانی بکە",
+              "ئەگەر پارەکەشی دەگەڕێتەوە، واصڵەکە لە شاشەی پارەدانەوە هەڵبوەشێنەوە",
+            ],
+          ),
         });
       }
 
