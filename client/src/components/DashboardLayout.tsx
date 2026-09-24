@@ -97,7 +97,6 @@ import { CommandPalette } from "./CommandPalette";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { RiskBell } from "./RiskBell";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
-import { ScrollButtons } from "./ScrollButtons";
 import { QuickCreate } from "./QuickCreate";
 import { PinnedPages } from "./topbar/PinnedPages";
 import { QuickSettings } from "./topbar/QuickSettings";
@@ -1206,7 +1205,6 @@ function DashboardLayoutContent({
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} destinations={menuGroups} />
       <ShortcutsOverlay />
-      <ScrollButtons />
     </div>
   );
 }

@@ -75,15 +75,13 @@ describe("floating elements follow the reading direction", () => {
     ).toEqual([]);
   });
 
-  it("keeps the tip card and the scroll buttons on the away side", () => {
-    // The two this was written for. `end` is the far corner from the sidebar
-    // in every language.
+  it("keeps the tip card on the away side", () => {
+    // `end` is the far corner from the sidebar in every language. The scroll
+    // buttons were the other case this was written for; they are gone — the
+    // owner wanted a scrollbar instead (2026-09-24), which has no side to get
+    // wrong. See scrollbar-and-send-language.test.ts.
     const tips = fs.readFileSync(path.join(SRC, "components/StaffTips.tsx"), "utf8");
     expect(tips).toContain("fixed bottom-4 end-4");
     expect(tips).not.toContain("bottom-4 left-4");
-
-    const scroll = fs.readFileSync(path.join(SRC, "components/ScrollButtons.tsx"), "utf8");
-    expect(scroll).toContain("fixed end-2");
-    expect(scroll).not.toContain("fixed left-2");
   });
 });

@@ -103,8 +103,10 @@ describe("the file and the chat", () => {
 describe("the button at the counter", () => {
   it("sends the same receipt, in the customer's own language", () => {
     expect(panel).toContain("const handleSendOnWhatsApp = (format: ReceiptShareFormat, destination: ReceiptShareDestination = \"whatsapp\") =>");
-    expect(panel).toContain("receiptLanguageFor((customer as any)?.nationality) as Language,");
-    expect(panel).toContain("receiptWhatsAppMessage(receiptLanguageFor((customer as any)?.nationality), {");
+    expect(panel).toContain("(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) as Language,");
+    // Since 2026-09-24 the guess can be overridden before sending; the paper
+    // and the message still follow the same choice.
+    expect(panel).toContain("receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {");
     expect(panel).toContain("fileName: box.boxCode,");
   });
 

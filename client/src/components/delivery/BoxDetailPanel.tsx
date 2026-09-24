@@ -67,7 +67,7 @@ import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
-import { receiptLanguageFor, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber } from "@shared/receiptWhatsApp";
+import { receiptLanguageFor, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber, type ReceiptLanguage } from "@shared/receiptWhatsApp";
 import { shareReceiptOnWhatsApp, type ReceiptShareDestination, type ReceiptShareFormat } from "@/lib/receiptShare";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
@@ -221,6 +221,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
    */
   const { user } = useAuth();
   const isAdmin = user?.role === "admin" || user?.role === "super_admin";
+  /**
+   * Which language this receipt goes out in.
+   *
+   * The customer's nationality decides it, and that is right nearly always —
+   * but a customer created without one falls back to Kurdish, and the owner
+   * found an Arab customer being written to in Kurdish (2026-09-24). So the
+   * guess is shown, and can be changed here before sending; the paper and the
+   * message always follow the same choice.
+   */
+  const [sendLanguage, setSendLanguage] = useState<ReceiptLanguage | null>(null);
   const [reopenReason, setReopenReason] = useState("");
   const [reopenAsking, setReopenAsking] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
@@ -685,7 +695,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     // (owner, 2026-09-22).
     const totalUsd = receiptAmountUsd(box, settlementForPrint);
     const figures = receiptDinar(totalUsd, dinar);
-    const message = receiptWhatsAppMessage(receiptLanguageFor((customer as any)?.nationality), {
+    const message = receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {
       boxCode: box.boxCode,
       parcelCount: box.totalPackages ?? items.length,
       totalUsd,
@@ -726,7 +736,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
    */
   const handleSendOnWhatsApp = (format: ReceiptShareFormat, destination: ReceiptShareDestination = "whatsapp") =>
     askBeforePrinting(
-      receiptLanguageFor((customer as any)?.nationality) as Language,
+      (sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) as Language,
       (lang, dinar) => shareReceiptNow(lang, dinar, format, destination),
       "send",
     );
@@ -1233,10 +1243,40 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 <ChevronDown className="h-3 w-3 ms-1 opacity-60" />
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
+              <DropdownMenuContent align="end">
               <DropdownMenuLabel>
                 {pickLang(language, { ku: "ناردن بۆ وەتسئاپ", en: "Send on WhatsApp", ar: "إرسال عبر واتساب", zh: "通过 WhatsApp 发送" })}
               </DropdownMenuLabel>
+              {/* The language the paper and the message will both be in. It
+                  comes from the customer's nationality; a customer created
+                  without one used to be written to in Kurdish with nobody the
+                  wiser (owner, 2026-09-24). */}
+              <div className="px-2 pb-1.5">
+                <p className="mb-1 text-[11px] text-muted-foreground">
+                  {pickLang(language, { ku: "زمانی وەسڵ و پەیام", en: "Receipt and message language", ar: "لغة الإيصال والرسالة", zh: "收据与消息语言" })}
+                </p>
+                <div className="grid grid-cols-3 gap-1">
+                  {(["ku", "ar", "en"] as const).map((code) => {
+                    const chosen = (sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) === code;
+                    return (
+                      <button
+                        key={code}
+                        type="button"
+                        onClick={(e) => { e.preventDefault(); setSendLanguage(code); }}
+                        className={cn(
+                          "rounded-md border px-2 py-1 text-xs font-medium transition-colors",
+                          chosen
+                            ? "border-emerald-400 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
+                            : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted",
+                        )}
+                        data-testid={`receipt-language-${code}`}
+                      >
+                        {code === "ku" ? "کوردی" : code === "ar" ? "عربي" : "English"}
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => handleSendOnWhatsApp("image")}>
                 <ImageIcon className="h-4 w-4 me-2 opacity-70" />

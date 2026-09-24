@@ -704,6 +704,43 @@
   .status-cancelled { @apply bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300; }
 }
 
+/*
+ * A scrollbar you can see and drag, everywhere (owner, 2026-09-24).
+ *
+ * "A slider is better than those two arrows — they are annoying." He is
+ * right about more than taste: a pair of buttons that jump a screen at a
+ * time cannot tell you how long the page is or where in it you are, and a
+ * thumb does both without being asked. Slim, the colour of a border, darker
+ * under the pointer — visible without being furniture.
+ *
+ * Both engines are told: `scrollbar-width`/`scrollbar-color` for Firefox,
+ * the ::-webkit- pseudo-elements for Chrome and Safari. Rows that are
+ * deliberately bare keep .no-scrollbar below.
+ */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background-color: var(--border);
+  border: 2px solid transparent;
+  background-clip: content-box;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background-color: color-mix(in oklch, var(--muted-foreground) 55%, transparent);
+}
+::-webkit-scrollbar-corner {
+  background: transparent;
+}
+
 /* Chip rows scroll sideways on a phone; the bar itself is noise. Two
    names, because the portal already uses both and neither was defined —
    every chip row had been drawing a scrollbar on desktop. */
@@ -747,15 +784,9 @@
     overscroll-behavior: none;
   }
   
-  /* Hide scrollbar in PWA mode for cleaner look */
-  ::-webkit-scrollbar {
-    display: none;
-  }
-  
-  html {
-    -ms-overflow-style: none;
-    scrollbar-width: none;
-  }
+  /* The installed app keeps its scrollbar too: the owner asked for the
+     slider everywhere (2026-09-24), and hiding it here was how a long
+     page stopped saying how long it was. */
 }
 
 /* Touch-friendly tap highlights */
