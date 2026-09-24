@@ -1,4 +1,4 @@
-import { useMemo, useRef, useState, useEffect } from "react";
+import { useMemo, useRef, useState, useEffect, type ReactNode } from "react";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -57,9 +57,27 @@ interface Props {
   boxId: number;
   /** Refresh the box list when money moves. */
   onSettled?: () => void;
+  /**
+   * Inside a window that already says whose box this is.
+   *
+   * Without it this panel draws its own card, its own "Take payment" heading
+   * and its own customer line — which, opened inside the payment dialog, was
+   * the second of two headers above the second of two forms.
+   */
+  embedded?: boolean;
 }
 
-export function BoxSettlementPanel({ boxId, onSettled }: Props) {
+const CardFrame = ({ children }: { children: ReactNode }) => (
+  <Card data-testid="box-settlement">
+    <CardContent className="space-y-4 pt-6">{children}</CardContent>
+  </Card>
+);
+
+const EmbeddedFrame = ({ children }: { children: ReactNode }) => (
+  <div className="space-y-4" data-testid="box-settlement">{children}</div>
+);
+
+export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
   const { language } = useTranslation();
   const systemAlert = useSystemAlert();
   const utils = trpc.useUtils();
@@ -338,414 +356,427 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
     });
   };
 
+  const Frame = embedded ? EmbeddedFrame : CardFrame;
+
   return (
-    <Card data-testid="box-settlement">
-      <CardContent className="space-y-4 pt-6">
+    <Frame>
 
-        {/* ── who and how much ─────────────────────────────────────── */}
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
-            <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+        {!embedded && (
+          <>
+          {/* ── who and how much ─────────────────────────────────────── */}
+          <div className="flex flex-wrap items-center gap-3">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-emerald-100 dark:bg-emerald-950/50">
+              <Wallet className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
+            </div>
+            <div className="min-w-0 flex-1">
+              <p className="font-semibold leading-tight">
+                {t({ ku: "واصڵکردنی پارە", en: "Take payment", ar: "استلام المبلغ", zh: "收款" })}
+              </p>
+              <p className="truncate text-sm text-muted-foreground">
+                {data.customer?.customerCode} · {data.box.boxCode}
+              </p>
+            </div>
+            {data.accountBalanceUsd !== 0 && (
+              <Badge variant={data.accountBalanceUsd > 0 ? "destructive" : "secondary"}>
+                {data.accountBalanceUsd > 0
+                  ? t({ ku: "قەرز", en: "Owes", ar: "مدين", zh: "欠款" })
+                  : t({ ku: "کریدیت", en: "Credit", ar: "رصيد", zh: "余额" })}
+                {" "}{money(Math.abs(data.accountBalanceUsd))}
+              </Badge>
+            )}
           </div>
-          <div className="min-w-0 flex-1">
-            <p className="font-semibold leading-tight">
-              {t({ ku: "واصڵکردنی پارە", en: "Take payment", ar: "استلام المبلغ", zh: "收款" })}
-            </p>
-            <p className="truncate text-sm text-muted-foreground">
-              {data.customer?.customerCode} · {data.box.boxCode}
-            </p>
-          </div>
-          {data.accountBalanceUsd !== 0 && (
-            <Badge variant={data.accountBalanceUsd > 0 ? "destructive" : "secondary"}>
-              {data.accountBalanceUsd > 0
-                ? t({ ku: "قەرز", en: "Owes", ar: "مدين", zh: "欠款" })
-                : t({ ku: "کریدیت", en: "Credit", ar: "رصيد", zh: "余额" })}
-              {" "}{money(Math.abs(data.accountBalanceUsd))}
-            </Badge>
-          )}
-        </div>
-
-        {blocked && (
-          <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40">
-            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
-            <p>
-              {t({
-                ku: `${notCharged.length} پارسێل هێشتا پارەیان نەچووەتە سەر کڕیار — باچەکەیان نەگەیشتووە. تەحدیدیان بکە یان دوایی واصڵیان بکە.`,
-                en: `${notCharged.length} parcel(s) have not been charged yet — their batch has not been delivered. Set them aside, or settle them later.`,
-                ar: `${notCharged.length} طرد لم يُحمّل على العميل بعد — لم تصل دفعته. استبعدها أو استلمها لاحقاً.`,
-                zh: `${notCharged.length} 件包裹尚未计费——所属批次未送达。请先搁置或稍后结算。`,
-              })}
-            </p>
-          </div>
+          </>
         )}
 
-        {/* ── what a printed receipt already promised ──────────────── */}
-        {floors.totalUsd > 0 && (
-          <div
-            className="rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:bg-amber-950/30"
-            data-testid="settle-pledged"
-          >
-            <div className="flex items-center gap-2">
-              <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-              <span className="text-sm font-medium">
+        {/*
+         * Two columns when there is room for two.
+         *
+         * The parcels and their exceptions are the work; the money is the
+         * answer, and it belongs beside the work rather than below a
+         * screenful of it. Under lg they stack, in the same order.
+         */}
+        <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_19rem]">
+          <div className="min-w-0 space-y-4">
+          {blocked && (
+            <div className="flex items-start gap-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm dark:border-amber-900 dark:bg-amber-950/40">
+              <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600 dark:text-amber-400" />
+              <p>
                 {t({
-                  ku: "داشکاندن لەسەر وەسڵی چاپکراو",
-                  en: "Discount on a printed receipt",
-                  ar: "خصم على إيصال مطبوع",
-                  zh: "已打印收据上的折扣",
+                  ku: `${notCharged.length} پارسێل هێشتا پارەیان نەچووەتە سەر کڕیار — باچەکەیان نەگەیشتووە. تەحدیدیان بکە یان دوایی واصڵیان بکە.`,
+                  en: `${notCharged.length} parcel(s) have not been charged yet — their batch has not been delivered. Set them aside, or settle them later.`,
+                  ar: `${notCharged.length} طرد لم يُحمّل على العميل بعد — لم تصل دفعته. استبعدها أو استلمها لاحقاً.`,
+                  zh: `${notCharged.length} 件包裹尚未计费——所属批次未送达。请先搁置或稍后结算。`,
                 })}
-              </span>
-            </div>
-            <ul className="mt-1.5 space-y-0.5 text-sm">
-              {floors.boxUsd > 0 && (
-                <li className="flex flex-wrap items-center gap-x-2">
-                  <span>{nameOf(null)}</span>
-                  <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
-                    −{fmtAmount(floors.boxUsd)}
-                  </bdi>
-                  <span className="text-muted-foreground">{whyOf(null)}</span>
-                </li>
-              )}
-              {Array.from(floors.byLine.entries()).map(([lineId, usd]) => (
-                <li key={lineId} className="flex flex-wrap items-center gap-x-2">
-                  <bdi dir="ltr" className="font-mono text-xs">{nameOf(lineId)}</bdi>
-                  <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
-                    −{fmtAmount(usd)}
-                  </bdi>
-                  <span className="text-muted-foreground">{whyOf(lineId)}</span>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-1.5 text-xs text-muted-foreground">
-              {t({
-                ku: "ئەمە دراوەتە کڕیار لەسەر کاغەز — کەمتر ناکرێتەوە، زیاتر دەکرێت.",
-                en: "This is on paper in the customer's hand — it cannot go down, only up.",
-                ar: "هذا مكتوب على ورقة بيد الزبون — لا يمكن تقليله، فقط زيادته.",
-                zh: "这写在客户手上的单据上 — 只能增加，不能减少。",
-              })}
-            </p>
-          </div>
-        )}
-
-        {/* ── the parcels ──────────────────────────────────────────── */}
-        {parcels.length === 0 ? (
-          <NothingToTake view={data} />
-        ) : (
-          <div className="overflow-x-auto rounded-lg border">
-            <table className="w-full min-w-[640px] text-sm">
-              <thead>
-                <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
-                  <th className="p-2 text-start font-medium">{t({ ku: "پارسێل", en: "Parcel", ar: "الطرد", zh: "包裹" })}</th>
-                  <th className="p-2 text-end font-medium">{t({ ku: "بارکراو", en: "Charged", ar: "محمّل", zh: "已计费" })}</th>
-                  <th className="p-2 text-end font-medium">{t({ ku: "ڕاستکردنەوە", en: "Correction", ar: "تصحيح", zh: "更正" })}</th>
-                  <th className="p-2 text-end font-medium">{t({ ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })}</th>
-                  <th className="p-2 text-end font-medium">{t({ ku: "دەدرێت", en: "To pay", ar: "المطلوب", zh: "应付" })}</th>
-                  <th className="p-2 text-center font-medium">{t({ ku: "دۆخ", en: "State", ar: "الحالة", zh: "状态" })}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {totals.lines.map((line) => {
-                  const parcel = parcels.find((p) => p.lineId === line.lineId)!;
-                  const isHeld = line.held;
-                  return (
-                    <tr
-                      key={line.lineId}
-                      className={cn("border-b last:border-0", isHeld && "bg-red-50 dark:bg-red-950/30")}
-                      data-testid={`settle-row-${line.lineId}`}
-                    >
-                      <td className="p-2">
-                        <span className="font-mono text-xs" dir="ltr">
-                          {parcel.trackingNumber || parcel.packageCode}
-                        </span>
-                        <OrderNumbers numbers={parcel.orderNumbers} className="flex" />
-                        {parcel.notChargedYet && (
-                          <span className="mt-0.5 block text-xs text-amber-600 dark:text-amber-400">
-                            {t({ ku: "هێشتا بار نەکراوە", en: "Not charged yet", ar: "لم يُحمّل بعد", zh: "尚未计费" })}
-                          </span>
-                        )}
-                        {/* Why an order carton asks for less than its price:
-                            the advance on the order is already paid. */}
-                        {parcel.advanceUsd > 0 && (
-                          <span className="mt-0.5 block text-xs text-emerald-700 dark:text-emerald-400">
-                            {t({
-                              ku: `پێشەکی دراو ${fmtAmount(parcel.advanceUsd)}`,
-                              en: `Advance paid ${fmtAmount(parcel.advanceUsd)}`,
-                              ar: `دفعة مقدمة ${fmtAmount(parcel.advanceUsd)}`,
-                              zh: `已付预付款 ${fmtAmount(parcel.advanceUsd)}`,
-                            })}
-                          </span>
-                        )}
-                      </td>
-                      <td className="p-2 text-end font-mono tabular-nums">{fmtAmount(line.chargedUsd)}</td>
-                      <td className="p-2 text-end font-mono tabular-nums">
-                        {line.correctionUsd !== 0
-                          ? <span className={line.correctionUsd < 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}>
-                              {line.correctionUsd > 0 ? "+" : ""}{fmtAmount(line.correctionUsd)}
-                            </span>
-                          : <span className="text-muted-foreground">—</span>}
-                      </td>
-                      <td className="p-2 text-end font-mono tabular-nums">
-                        {line.discountUsd > 0
-                          ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
-                              {(floors.byLine.get(line.lineId) ?? 0) > 0 && (
-                                <Lock
-                                  className="h-3 w-3"
-                                  aria-hidden="true"
-                                  data-testid={`settle-pledged-${line.lineId}`}
-                                />
-                              )}
-                              −{fmtAmount(line.discountUsd)}
-                            </span>
-                          : <span className="text-muted-foreground">—</span>}
-                      </td>
-                      <td className="p-2 text-end font-mono tabular-nums font-semibold">
-                        {isHeld
-                          ? <span className="text-red-600 dark:text-red-400">0.00</span>
-                          : <span className="text-emerald-600 dark:text-emerald-400">{fmtAmount(line.paidUsd)}</span>}
-                      </td>
-                      <td className="p-2">
-                        <div className="flex items-center justify-center gap-1">
-                          <Button
-                            type="button" variant="ghost" size="sm" className="h-7 px-2"
-                            onClick={() => toggleHold(line.lineId)}
-                            data-testid={`settle-hold-${line.lineId}`}
-                            title={t({ ku: "تەحدید", en: "Set aside", ar: "استبعاد", zh: "搁置" })}
-                          >
-                            {isHeld ? <Undo2 className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
-                          </Button>
-                        </div>
-                      </td>
-                    </tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
-        )}
-
-        {/* ── the discount, given on the box ───────────────────────── */}
-        <div className="rounded-lg border p-3 space-y-3">
-          <div className="flex flex-wrap items-center gap-2">
-            <Percent className="h-4 w-4 text-amber-600 dark:text-amber-400" />
-            <span className="text-sm font-medium">
-              {t({ ku: "داشکاندن لەسەر بۆکس", en: "Discount on the box", ar: "خصم على الصندوق", zh: "整箱折扣" })}
-            </span>
-            <Select value={discountMode} onValueChange={(v) => setDiscountMode(v as BoxDiscount["mode"])}>
-              <SelectTrigger className="h-8 w-auto min-w-[10rem]" data-testid="settle-discount-mode">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="none">{t({ ku: "بێ داشکاندن", en: "No discount", ar: "بدون خصم", zh: "无折扣" })}</SelectItem>
-                <SelectItem value="newTotal">{t({ ku: "کۆی نوێ", en: "New total", ar: "الإجمالي الجديد", zh: "新总额" })}</SelectItem>
-                <SelectItem value="amount">{t({ ku: "بڕی داشکاندن", en: "Amount off", ar: "مبلغ الخصم", zh: "折扣金额" })}</SelectItem>
-                <SelectItem value="perKg">{t({ ku: "نرخ بۆ هەر kg", en: "Rate per kg", ar: "السعر لكل kg", zh: "每 kg 单价" })}</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {discountMode !== "none" && (
-            <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
-              {discountMode === "perKg" ? (
-                <>
-                  <label className="space-y-1">
-                    <span className="text-xs text-muted-foreground">{t({ ku: "لە", en: "From", ar: "من", zh: "从" })}</span>
-                    <GroupedNumberInput value={fromRate} onValueChange={setFromRate} placeholder="11" className="h-9" />
-                  </label>
-                  <label className="space-y-1">
-                    <span className="text-xs text-muted-foreground">{t({ ku: "بۆ", en: "To", ar: "إلى", zh: "到" })}</span>
-                    <GroupedNumberInput value={toRate} onValueChange={setToRate} placeholder="10" className="h-9" data-testid="settle-to-rate" />
-                  </label>
-                </>
-              ) : (
-                <label className="space-y-1">
-                  <span className="text-xs text-muted-foreground">
-                    {discountMode === "newTotal"
-                      ? t({ ku: "کۆی گشتی ببێتە", en: "Make the total", ar: "اجعل الإجمالي", zh: "总额改为" })
-                      : t({ ku: "بڕ", en: "Amount", ar: "المبلغ", zh: "金额" })}
-                  </span>
-                  <GroupedNumberInput value={discountValue} onValueChange={setDiscountValue} className="h-9" data-testid="settle-discount-value" />
-                </label>
-              )}
-              <label className="space-y-1">
-                <span className="text-xs text-muted-foreground">{t({ ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })}</span>
-                <Select value={discountReason} onValueChange={(v) => setDiscountReason(v as DiscountReason)}>
-                  <SelectTrigger className="h-9" data-testid="settle-discount-reason"><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                    {(Object.keys(REASON_LABELS) as DiscountReason[]).map((r) => (
-                      <SelectItem key={r} value={r}>{t(REASON_LABELS[r])}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </label>
-              {boxCut > 0 && (
-                <p className="self-end text-sm text-amber-600 dark:text-amber-400 lg:col-span-3">
-                  −{money(boxCut)} {t({ ku: "بەسەر پارسێلەکاندا دابەش دەکرێت", en: "spread across the parcels", ar: "موزع على الطرود", zh: "分摊到各包裹" })}
-                </p>
-              )}
+              </p>
             </div>
           )}
-        </div>
-
-        {/* ── totals and the money ─────────────────────────────────── */}
-        <div className="grid gap-3 md:grid-cols-3">
-          <div className="rounded-lg border p-3 space-y-1.5">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t({ ku: "حیسابی پارسێلەکان", en: "The parcels", ar: "حساب الطرود", zh: "包裹合计" })}
-            </p>
-            <Row label={t({ ku: "کۆی بارکراو", en: "Charged", ar: "المحمّل", zh: "已计费" })} value={fmtAmount(totals.chargedUsd)} />
-            {totals.correctionUsd !== 0 && (
-              <Row label={t({ ku: "ڕاستکردنەوە", en: "Corrections", ar: "التصحيحات", zh: "更正" })}
-                   value={`${totals.correctionUsd > 0 ? "+" : ""}${fmtAmount(totals.correctionUsd)}`} tone="blue" />
-            )}
-            {totals.discountUsd > 0 && (
-              <Row label={t({ ku: "داشکاندن", en: "Discount", ar: "الخصم", zh: "折扣" })}
-                   value={`−${fmtAmount(totals.discountUsd)}`} tone="amber" />
-            )}
-            {totals.heldUsd > 0 && (
-              <Row label={t({ ku: "تەحدید کراو", en: "Set aside", ar: "مستبعد", zh: "已搁置" })}
-                   value={`−${fmtAmount(totals.heldUsd)}`} tone="red" />
-            )}
-            <div className="flex items-baseline justify-between border-t pt-1.5 font-semibold">
-              <span>{t({ ku: "پێویستە بدرێت", en: "Due", ar: "المطلوب", zh: "应付" })}</span>
-              <span className="font-mono tabular-nums" data-testid="settle-due">{money(totals.dueUsd)}</span>
-            </div>
-          </div>
-
-          <div className="rounded-lg border p-3 space-y-2">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t({ ku: "وەرگرتن", en: "Received", ar: "المستلم", zh: "已收" })}
-            </p>
-            <label className="space-y-1 block">
-              <span className="text-xs text-muted-foreground">{t({ ku: "بە دینار", en: "In dinars", ar: "بالدينار", zh: "第纳尔" })}</span>
-              <GroupedNumberInput value={iqd} onValueChange={setIqd} className="h-9"
-                placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
-                data-testid="settle-iqd" />
-            </label>
-            <label className="space-y-1 block">
-              <span className="text-xs text-muted-foreground">{t({ ku: "نرخی دۆلار", en: "Dollar rate", ar: "سعر الدولار", zh: "美元汇率" })}</span>
-              <GroupedNumberInput value={rate} onValueChange={setRate} className="h-9" data-testid="settle-rate" />
-            </label>
-            <label className="space-y-1 block">
-              <span className="text-xs text-muted-foreground">{t({ ku: "بە دۆلار", en: "In dollars", ar: "بالدولار", zh: "美元" })}</span>
-              <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-9" data-testid="settle-usd" />
-            </label>
-            <div className="flex items-baseline justify-between border-t pt-1.5 text-sm">
-              <span className="text-muted-foreground">{t({ ku: "یەکسانە بە", en: "Comes to", ar: "يعادل", zh: "折合" })}</span>
-              <span className="font-mono tabular-nums font-semibold">{money(effectivePaid)}</span>
-            </div>
-          </div>
-
-          <div className={cn(
-            "rounded-lg border p-3 space-y-2",
-            difference.kind === "none" && "border-emerald-300 dark:border-emerald-800",
-            difference.kind === "debt" && "border-red-300 dark:border-red-800",
-            difference.kind === "credit" && "border-blue-300 dark:border-blue-800",
-            difference.kind === "discount" && "border-amber-300 dark:border-amber-800",
-          )}>
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t({ ku: "جیاوازی", en: "Difference", ar: "الفرق", zh: "差额" })}
-            </p>
-            {difference.kind === "none" ? (
-              <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
-                <Check className="h-4 w-4" />
-                <span data-testid="settle-exact">
-                  {t({ ku: "ڕێکە — هیچ هۆکارێک ناوێت", en: "Exact — no reason needed", ar: "مطابق — لا حاجة لسبب", zh: "正好——无需说明" })}
+          {/* ── what a printed receipt already promised ──────────────── */}
+          {floors.totalUsd > 0 && (
+            <div
+              className="rounded-lg border border-amber-500/50 bg-amber-50 p-3 dark:bg-amber-950/30"
+              data-testid="settle-pledged"
+            >
+              <div className="flex items-center gap-2">
+                <Lock className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+                <span className="text-sm font-medium">
+                  {t({
+                    ku: "داشکاندن لەسەر وەسڵی چاپکراو",
+                    en: "Discount on a printed receipt",
+                    ar: "خصم على إيصال مطبوع",
+                    zh: "已打印收据上的折扣",
+                  })}
                 </span>
               </div>
-            ) : (
-              <>
-                <p className="font-mono text-lg font-semibold tabular-nums">
-                  {difference.kind === "credit" ? "+" : "−"}{money(difference.amountUsd)}
-                </p>
-                {difference.kind === "credit" ? (
-                  <p className="text-sm text-blue-600 dark:text-blue-400">
-                    {t({ ku: "دەبێتە کریدیت لەسەر کڕیار", en: "Becomes credit on the customer", ar: "يصبح رصيداً للعميل", zh: "转为客户余额" })}
-                  </p>
-                ) : (
+              <ul className="mt-1.5 space-y-0.5 text-sm">
+                {floors.boxUsd > 0 && (
+                  <li className="flex flex-wrap items-center gap-x-2">
+                    <span>{nameOf(null)}</span>
+                    <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
+                      −{fmtAmount(floors.boxUsd)}
+                    </bdi>
+                    <span className="text-muted-foreground">{whyOf(null)}</span>
+                  </li>
+                )}
+                {Array.from(floors.byLine.entries()).map(([lineId, usd]) => (
+                  <li key={lineId} className="flex flex-wrap items-center gap-x-2">
+                    <bdi dir="ltr" className="font-mono text-xs">{nameOf(lineId)}</bdi>
+                    <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
+                      −{fmtAmount(usd)}
+                    </bdi>
+                    <span className="text-muted-foreground">{whyOf(lineId)}</span>
+                  </li>
+                ))}
+              </ul>
+              <p className="mt-1.5 text-xs text-muted-foreground">
+                {t({
+                  ku: "ئەمە دراوەتە کڕیار لەسەر کاغەز — کەمتر ناکرێتەوە، زیاتر دەکرێت.",
+                  en: "This is on paper in the customer's hand — it cannot go down, only up.",
+                  ar: "هذا مكتوب على ورقة بيد الزبون — لا يمكن تقليله، فقط زيادته.",
+                  zh: "这写在客户手上的单据上 — 只能增加，不能减少。",
+                })}
+              </p>
+            </div>
+          )}
+          {/* ── the parcels ──────────────────────────────────────────── */}
+          {parcels.length === 0 ? (
+            <NothingToTake view={data} />
+          ) : (
+            <div className="overflow-x-auto rounded-lg border">
+              <table className="w-full min-w-[560px] text-sm">
+                <thead>
+                  <tr className="border-b bg-muted/50 text-xs text-muted-foreground">
+                    <th className="p-2 text-start font-medium">{t({ ku: "پارسێل", en: "Parcel", ar: "الطرد", zh: "包裹" })}</th>
+                    <th className="p-2 text-end font-medium">{t({ ku: "بارکراو", en: "Charged", ar: "محمّل", zh: "已计费" })}</th>
+                    <th className="p-2 text-end font-medium">{t({ ku: "ڕاستکردنەوە", en: "Correction", ar: "تصحيح", zh: "更正" })}</th>
+                    <th className="p-2 text-end font-medium">{t({ ku: "داشکاندن", en: "Discount", ar: "خصم", zh: "折扣" })}</th>
+                    <th className="p-2 text-end font-medium">{t({ ku: "دەدرێت", en: "To pay", ar: "المطلوب", zh: "应付" })}</th>
+                    <th className="p-2 text-center font-medium">{t({ ku: "دۆخ", en: "State", ar: "الحالة", zh: "状态" })}</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {totals.lines.map((line) => {
+                    const parcel = parcels.find((p) => p.lineId === line.lineId)!;
+                    const isHeld = line.held;
+                    return (
+                      <tr
+                        key={line.lineId}
+                        className={cn("border-b last:border-0", isHeld && "bg-red-50 dark:bg-red-950/30")}
+                        data-testid={`settle-row-${line.lineId}`}
+                      >
+                        <td className="p-2">
+                          <span className="font-mono text-xs" dir="ltr">
+                            {parcel.trackingNumber || parcel.packageCode}
+                          </span>
+                          <OrderNumbers numbers={parcel.orderNumbers} className="flex" />
+                          {parcel.notChargedYet && (
+                            <span className="mt-0.5 block text-xs text-amber-600 dark:text-amber-400">
+                              {t({ ku: "هێشتا بار نەکراوە", en: "Not charged yet", ar: "لم يُحمّل بعد", zh: "尚未计费" })}
+                            </span>
+                          )}
+                          {/* Why an order carton asks for less than its price:
+                              the advance on the order is already paid. */}
+                          {parcel.advanceUsd > 0 && (
+                            <span className="mt-0.5 block text-xs text-emerald-700 dark:text-emerald-400">
+                              {t({
+                                ku: `پێشەکی دراو ${fmtAmount(parcel.advanceUsd)}`,
+                                en: `Advance paid ${fmtAmount(parcel.advanceUsd)}`,
+                                ar: `دفعة مقدمة ${fmtAmount(parcel.advanceUsd)}`,
+                                zh: `已付预付款 ${fmtAmount(parcel.advanceUsd)}`,
+                              })}
+                            </span>
+                          )}
+                        </td>
+                        <td className="p-2 text-end font-mono tabular-nums">{fmtAmount(line.chargedUsd)}</td>
+                        <td className="p-2 text-end font-mono tabular-nums">
+                          {line.correctionUsd !== 0
+                            ? <span className={line.correctionUsd < 0 ? "text-blue-600 dark:text-blue-400" : "text-red-600 dark:text-red-400"}>
+                                {line.correctionUsd > 0 ? "+" : ""}{fmtAmount(line.correctionUsd)}
+                              </span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="p-2 text-end font-mono tabular-nums">
+                          {line.discountUsd > 0
+                            ? <span className="inline-flex items-center gap-1 text-amber-600 dark:text-amber-400">
+                                {(floors.byLine.get(line.lineId) ?? 0) > 0 && (
+                                  <Lock
+                                    className="h-3 w-3"
+                                    aria-hidden="true"
+                                    data-testid={`settle-pledged-${line.lineId}`}
+                                  />
+                                )}
+                                −{fmtAmount(line.discountUsd)}
+                              </span>
+                            : <span className="text-muted-foreground">—</span>}
+                        </td>
+                        <td className="p-2 text-end font-mono tabular-nums font-semibold">
+                          {isHeld
+                            ? <span className="text-red-600 dark:text-red-400">0.00</span>
+                            : <span className="text-emerald-600 dark:text-emerald-400">{fmtAmount(line.paidUsd)}</span>}
+                        </td>
+                        <td className="p-2">
+                          <div className="flex items-center justify-center gap-1">
+                            <Button
+                              type="button" variant="ghost" size="sm" className="h-7 px-2"
+                              onClick={() => toggleHold(line.lineId)}
+                              data-testid={`settle-hold-${line.lineId}`}
+                              title={t({ ku: "تەحدید", en: "Set aside", ar: "استبعاد", zh: "搁置" })}
+                            >
+                              {isHeld ? <Undo2 className="h-3.5 w-3.5" /> : <Ban className="h-3.5 w-3.5" />}
+                            </Button>
+                          </div>
+                        </td>
+                      </tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          )}
+          {/* ── the discount, given on the box ───────────────────────── */}
+          <div className="rounded-lg border p-3 space-y-3">
+            <div className="flex flex-wrap items-center gap-2">
+              <Percent className="h-4 w-4 text-amber-600 dark:text-amber-400" />
+              <span className="text-sm font-medium">
+                {t({ ku: "داشکاندن لەسەر بۆکس", en: "Discount on the box", ar: "خصم على الصندوق", zh: "整箱折扣" })}
+              </span>
+              <Select value={discountMode} onValueChange={(v) => setDiscountMode(v as BoxDiscount["mode"])}>
+                <SelectTrigger className="h-8 w-auto min-w-[10rem]" data-testid="settle-discount-mode">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{t({ ku: "بێ داشکاندن", en: "No discount", ar: "بدون خصم", zh: "无折扣" })}</SelectItem>
+                  <SelectItem value="newTotal">{t({ ku: "کۆی نوێ", en: "New total", ar: "الإجمالي الجديد", zh: "新总额" })}</SelectItem>
+                  <SelectItem value="amount">{t({ ku: "بڕی داشکاندن", en: "Amount off", ar: "مبلغ الخصم", zh: "折扣金额" })}</SelectItem>
+                  <SelectItem value="perKg">{t({ ku: "نرخ بۆ هەر kg", en: "Rate per kg", ar: "السعر لكل kg", zh: "每 kg 单价" })}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {discountMode !== "none" && (
+              <div className="grid gap-2 sm:grid-cols-2 lg:grid-cols-3">
+                {discountMode === "perKg" ? (
                   <>
-                    <Select value={treatShortAs} onValueChange={(v) => setTreatShortAs(v as "debt" | "discount")}>
-                      <SelectTrigger className="h-8" data-testid="settle-short-as"><SelectValue /></SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="debt">{t({ ku: "قەرز لەسەر کڕیار", en: "Debt on the customer", ar: "دين على العميل", zh: "记为欠款" })}</SelectItem>
-                        <SelectItem value="discount">{t({ ku: "داشکاندن", en: "Written off", ar: "خصم", zh: "折扣核销" })}</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Textarea
-                      value={differenceReason}
-                      onChange={(e) => setDifferenceReason(e.target.value)}
-                      rows={2}
-                      className={cn("text-sm", needsReason && "border-red-400 dark:border-red-700")}
-                      placeholder={t({ ku: "هۆکار — داواکراوە", en: "Reason — required", ar: "السبب — مطلوب", zh: "原因——必填" })}
-                      data-testid="settle-difference-reason"
-                    />
+                    <label className="space-y-1">
+                      <span className="text-xs text-muted-foreground">{t({ ku: "لە", en: "From", ar: "من", zh: "从" })}</span>
+                      <GroupedNumberInput value={fromRate} onValueChange={setFromRate} placeholder="11" className="h-9" />
+                    </label>
+                    <label className="space-y-1">
+                      <span className="text-xs text-muted-foreground">{t({ ku: "بۆ", en: "To", ar: "إلى", zh: "到" })}</span>
+                      <GroupedNumberInput value={toRate} onValueChange={setToRate} placeholder="10" className="h-9" data-testid="settle-to-rate" />
+                    </label>
                   </>
-                )}
-              </>
-            )}
-          </div>
-        </div>
-
-        <div className="flex flex-wrap items-center gap-2">
-          <Button
-            onClick={() => setConfirmOpen(true)}
-            disabled={!canSettle || settle.isPending}
-            data-testid="settle-open-confirm"
-          >
-            {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-            {t({ ku: "پێداچوونەوە و واصڵکردن", en: "Review and take payment", ar: "مراجعة واستلام", zh: "复核并收款" })}
-            {" — "}{money(totals.dueUsd)}
-          </Button>
-          <span className="text-xs text-muted-foreground">
-            {t({
-              ku: "نرخی دۆلار و بەروار لەگەڵ واصڵەکەدا خەزن دەکرێن",
-              en: "The dollar rate and the date are stored with the receipt",
-              ar: "يُحفظ سعر الدولار والتاريخ مع الإيصال",
-              zh: "汇率与日期随收据一并保存",
-            })}
-          </span>
-        </div>
-
-        {/* ── what has already been taken on this box ──────────────── */}
-        {data.settlements.length > 0 && (
-          <div className="space-y-2 border-t pt-3">
-            <p className="text-xs uppercase tracking-wide text-muted-foreground">
-              {t({ ku: "واصڵەکانی پێشوو", en: "Earlier receipts", ar: "الإيصالات السابقة", zh: "此前收据" })}
-            </p>
-            {data.settlements.map((s) => (
-              <div key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm"
-                   data-testid={`settlement-${s.id}`}>
-                <span className="font-mono text-xs" dir="ltr">{s.settlementNumber}</span>
-                <span className="font-mono tabular-nums font-semibold">{money(Number(s.paidUsd))}</span>
-                {Number(s.discountUsd) > 0 && (
-                  <Badge variant="secondary" className="text-amber-600 dark:text-amber-400">
-                    −{money(Number(s.discountUsd))}
-                  </Badge>
-                )}
-                {Number(s.amountIqd) > 0 && (
-                  <span className="text-xs text-muted-foreground" dir="ltr">
-                    {fmtNumber(s.amountIqd)} IQD @ {fmtNumber(s.exchangeRate ?? 0)}
-                  </span>
-                )}
-                <span className="text-xs text-muted-foreground">
-                  {fmtDateTime(new Date(s.createdAt))}{s.staffName ? ` · ${s.staffName}` : ""}
-                </span>
-                {s.status === "reversed" ? (
-                  <Badge variant="destructive" className="ms-auto">
-                    {t({ ku: "هەڵوەشێنراوەتەوە", en: "Reversed", ar: "ملغى", zh: "已撤销" })}
-                  </Badge>
                 ) : (
-                  <Button variant="ghost" size="sm" className="ms-auto h-7"
-                          onClick={() => setReversing(s.id)}
-                          data-testid={`settlement-reverse-${s.id}`}>
-                    <RotateCcw className="me-1 h-3.5 w-3.5" />
-                    {t({ ku: "ڕاستکردنەوە", en: "Correct", ar: "تصحيح", zh: "更正" })}
-                  </Button>
+                  <label className="space-y-1">
+                    <span className="text-xs text-muted-foreground">
+                      {discountMode === "newTotal"
+                        ? t({ ku: "کۆی گشتی ببێتە", en: "Make the total", ar: "اجعل الإجمالي", zh: "总额改为" })
+                        : t({ ku: "بڕ", en: "Amount", ar: "المبلغ", zh: "金额" })}
+                    </span>
+                    <GroupedNumberInput value={discountValue} onValueChange={setDiscountValue} className="h-9" data-testid="settle-discount-value" />
+                  </label>
+                )}
+                <label className="space-y-1">
+                  <span className="text-xs text-muted-foreground">{t({ ku: "هۆکار", en: "Reason", ar: "السبب", zh: "原因" })}</span>
+                  <Select value={discountReason} onValueChange={(v) => setDiscountReason(v as DiscountReason)}>
+                    <SelectTrigger className="h-9" data-testid="settle-discount-reason"><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                      {(Object.keys(REASON_LABELS) as DiscountReason[]).map((r) => (
+                        <SelectItem key={r} value={r}>{t(REASON_LABELS[r])}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </label>
+                {boxCut > 0 && (
+                  <p className="self-end text-sm text-amber-600 dark:text-amber-400 lg:col-span-3">
+                    −{money(boxCut)} {t({ ku: "بەسەر پارسێلەکاندا دابەش دەکرێت", en: "spread across the parcels", ar: "موزع على الطرود", zh: "分摊到各包裹" })}
+                  </p>
                 )}
               </div>
-            ))}
+            )}
           </div>
-        )}
-      </CardContent>
+          {/* ── what has already been taken on this box ──────────────── */}
+          {data.settlements.length > 0 && (
+            <div className="space-y-2 border-t pt-3">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t({ ku: "واصڵەکانی پێشوو", en: "Earlier receipts", ar: "الإيصالات السابقة", zh: "此前收据" })}
+              </p>
+              {data.settlements.map((s) => (
+                <div key={s.id} className="flex flex-wrap items-center gap-2 rounded-lg border p-2 text-sm"
+                     data-testid={`settlement-${s.id}`}>
+                  <span className="font-mono text-xs" dir="ltr">{s.settlementNumber}</span>
+                  <span className="font-mono tabular-nums font-semibold">{money(Number(s.paidUsd))}</span>
+                  {Number(s.discountUsd) > 0 && (
+                    <Badge variant="secondary" className="text-amber-600 dark:text-amber-400">
+                      −{money(Number(s.discountUsd))}
+                    </Badge>
+                  )}
+                  {Number(s.amountIqd) > 0 && (
+                    <span className="text-xs text-muted-foreground" dir="ltr">
+                      {fmtNumber(s.amountIqd)} IQD @ {fmtNumber(s.exchangeRate ?? 0)}
+                    </span>
+                  )}
+                  <span className="text-xs text-muted-foreground">
+                    {fmtDateTime(new Date(s.createdAt))}{s.staffName ? ` · ${s.staffName}` : ""}
+                  </span>
+                  {s.status === "reversed" ? (
+                    <Badge variant="destructive" className="ms-auto">
+                      {t({ ku: "هەڵوەشێنراوەتەوە", en: "Reversed", ar: "ملغى", zh: "已撤销" })}
+                    </Badge>
+                  ) : (
+                    <Button variant="ghost" size="sm" className="ms-auto h-7"
+                            onClick={() => setReversing(s.id)}
+                            data-testid={`settlement-reverse-${s.id}`}>
+                      <RotateCcw className="me-1 h-3.5 w-3.5" />
+                      {t({ ku: "ڕاستکردنەوە", en: "Correct", ar: "تصحيح", zh: "更正" })}
+                    </Button>
+                  )}
+                </div>
+              ))}
+            </div>
+          )}
+          </div>
+
+          <div className="min-w-0 space-y-3 lg:sticky lg:top-2 lg:self-start">
+          {/* ── totals and the money ─────────────────────────────────── */}
+          <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1">
+            <div className="rounded-lg border p-3 space-y-1.5">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t({ ku: "حیسابی پارسێلەکان", en: "The parcels", ar: "حساب الطرود", zh: "包裹合计" })}
+              </p>
+              <Row label={t({ ku: "کۆی بارکراو", en: "Charged", ar: "المحمّل", zh: "已计费" })} value={fmtAmount(totals.chargedUsd)} />
+              {totals.correctionUsd !== 0 && (
+                <Row label={t({ ku: "ڕاستکردنەوە", en: "Corrections", ar: "التصحيحات", zh: "更正" })}
+                     value={`${totals.correctionUsd > 0 ? "+" : ""}${fmtAmount(totals.correctionUsd)}`} tone="blue" />
+              )}
+              {totals.discountUsd > 0 && (
+                <Row label={t({ ku: "داشکاندن", en: "Discount", ar: "الخصم", zh: "折扣" })}
+                     value={`−${fmtAmount(totals.discountUsd)}`} tone="amber" />
+              )}
+              {totals.heldUsd > 0 && (
+                <Row label={t({ ku: "تەحدید کراو", en: "Set aside", ar: "مستبعد", zh: "已搁置" })}
+                     value={`−${fmtAmount(totals.heldUsd)}`} tone="red" />
+              )}
+              <div className="flex items-baseline justify-between border-t pt-1.5 font-semibold">
+                <span>{t({ ku: "پێویستە بدرێت", en: "Due", ar: "المطلوب", zh: "应付" })}</span>
+                <span className="font-mono tabular-nums" data-testid="settle-due">{money(totals.dueUsd)}</span>
+              </div>
+            </div>
+
+            <div className="rounded-lg border p-3 space-y-2">
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t({ ku: "وەرگرتن", en: "Received", ar: "المستلم", zh: "已收" })}
+              </p>
+              <label className="space-y-1 block">
+                <span className="text-xs text-muted-foreground">{t({ ku: "بە دینار", en: "In dinars", ar: "بالدينار", zh: "第纳尔" })}</span>
+                <GroupedNumberInput value={iqd} onValueChange={setIqd} className="h-9"
+                  placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
+                  data-testid="settle-iqd" />
+              </label>
+              <label className="space-y-1 block">
+                <span className="text-xs text-muted-foreground">{t({ ku: "نرخی دۆلار", en: "Dollar rate", ar: "سعر الدولار", zh: "美元汇率" })}</span>
+                <GroupedNumberInput value={rate} onValueChange={setRate} className="h-9" data-testid="settle-rate" />
+              </label>
+              <label className="space-y-1 block">
+                <span className="text-xs text-muted-foreground">{t({ ku: "بە دۆلار", en: "In dollars", ar: "بالدولار", zh: "美元" })}</span>
+                <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-9" data-testid="settle-usd" />
+              </label>
+              <div className="flex items-baseline justify-between border-t pt-1.5 text-sm">
+                <span className="text-muted-foreground">{t({ ku: "یەکسانە بە", en: "Comes to", ar: "يعادل", zh: "折合" })}</span>
+                <span className="font-mono tabular-nums font-semibold">{money(effectivePaid)}</span>
+              </div>
+            </div>
+
+            <div className={cn(
+              "rounded-lg border p-3 space-y-2",
+              difference.kind === "none" && "border-emerald-300 dark:border-emerald-800",
+              difference.kind === "debt" && "border-red-300 dark:border-red-800",
+              difference.kind === "credit" && "border-blue-300 dark:border-blue-800",
+              difference.kind === "discount" && "border-amber-300 dark:border-amber-800",
+            )}>
+              <p className="text-xs uppercase tracking-wide text-muted-foreground">
+                {t({ ku: "جیاوازی", en: "Difference", ar: "الفرق", zh: "差额" })}
+              </p>
+              {difference.kind === "none" ? (
+                <div className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400">
+                  <Check className="h-4 w-4" />
+                  <span data-testid="settle-exact">
+                    {t({ ku: "ڕێکە — هیچ هۆکارێک ناوێت", en: "Exact — no reason needed", ar: "مطابق — لا حاجة لسبب", zh: "正好——无需说明" })}
+                  </span>
+                </div>
+              ) : (
+                <>
+                  <p className="font-mono text-lg font-semibold tabular-nums">
+                    {difference.kind === "credit" ? "+" : "−"}{money(difference.amountUsd)}
+                  </p>
+                  {difference.kind === "credit" ? (
+                    <p className="text-sm text-blue-600 dark:text-blue-400">
+                      {t({ ku: "دەبێتە کریدیت لەسەر کڕیار", en: "Becomes credit on the customer", ar: "يصبح رصيداً للعميل", zh: "转为客户余额" })}
+                    </p>
+                  ) : (
+                    <>
+                      <Select value={treatShortAs} onValueChange={(v) => setTreatShortAs(v as "debt" | "discount")}>
+                        <SelectTrigger className="h-8" data-testid="settle-short-as"><SelectValue /></SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="debt">{t({ ku: "قەرز لەسەر کڕیار", en: "Debt on the customer", ar: "دين على العميل", zh: "记为欠款" })}</SelectItem>
+                          <SelectItem value="discount">{t({ ku: "داشکاندن", en: "Written off", ar: "خصم", zh: "折扣核销" })}</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <Textarea
+                        value={differenceReason}
+                        onChange={(e) => setDifferenceReason(e.target.value)}
+                        rows={2}
+                        className={cn("text-sm", needsReason && "border-red-400 dark:border-red-700")}
+                        placeholder={t({ ku: "هۆکار — داواکراوە", en: "Reason — required", ar: "السبب — مطلوب", zh: "原因——必填" })}
+                        data-testid="settle-difference-reason"
+                      />
+                    </>
+                  )}
+                </>
+              )}
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              onClick={() => setConfirmOpen(true)}
+              disabled={!canSettle || settle.isPending}
+              data-testid="settle-open-confirm"
+            >
+              {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t({ ku: "پێداچوونەوە و واصڵکردن", en: "Review and take payment", ar: "مراجعة واستلام", zh: "复核并收款" })}
+              {" — "}{money(totals.dueUsd)}
+            </Button>
+            <span className="text-xs text-muted-foreground">
+              {t({
+                ku: "نرخی دۆلار و بەروار لەگەڵ واصڵەکەدا خەزن دەکرێن",
+                en: "The dollar rate and the date are stored with the receipt",
+                ar: "يُحفظ سعر الدولار والتاريخ مع الإيصال",
+                zh: "汇率与日期随收据一并保存",
+              })}
+            </span>
+          </div>
+          </div>
+        </div>
 
       {/* ── read it all back before it is written ──────────────────── */}
       <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -831,7 +862,7 @@ export function BoxSettlementPanel({ boxId, onSettled }: Props) {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </Card>
+    </Frame>
   );
 }
 

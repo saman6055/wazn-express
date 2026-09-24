@@ -205,7 +205,13 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
 
   return (
     <Dialog open={boxId !== null} onOpenChange={onOpenChange}>
-      <DialogContent dir="rtl" className="max-w-md">
+      <DialogContent
+        dir="rtl"
+        className={cn(
+          "transition-[max-width] duration-200",
+          showParcels ? "max-w-5xl" : "max-w-md",
+        )}
+      >
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-baseline gap-2">
             {t({ ku: "پارەدان", en: "Take payment", ar: "استلام المبلغ", zh: "收款" })}
@@ -228,118 +234,130 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
           <NothingToTake view={data} />
         ) : (
           <div className="space-y-4">
-            {/* Who, and how much. Nothing else above the fold. */}
-            <div className="rounded-lg border p-4 text-center">
-              <p className="text-sm text-muted-foreground">
-                <span className="font-mono" dir="ltr">{code.code}</span>
-                {code.name ? ` · ${code.name}` : ""}
-              </p>
-              <p className="mt-1 font-mono text-4xl font-semibold tabular-nums" data-testid="quick-due">
-                {fmtUsd(totals.dueUsd)}
-              </p>
-              {rateNum > 0 && (
-                <p className="mt-1 font-mono text-sm text-muted-foreground" dir="ltr">
-                  {fmtNumber(usdToIqd(totals.dueUsd, rateNum), 0)} IQD
+            {/*
+             * The one-press answer, and the whole of it.
+             *
+             * It steps aside when the parcels are opened: the full panel
+             * below has the same figure, the same inputs and the same
+             * button, and two of each in one window is what made this
+             * screen unreadable (owner, 2026-09-24).
+             */}
+            {!showParcels && (
+              <>
+              {/* Who, and how much. Nothing else above the fold. */}
+              <div className="rounded-lg border p-4 text-center">
+                <p className="text-sm text-muted-foreground">
+                  <span className="font-mono" dir="ltr">{code.code}</span>
+                  {code.name ? ` · ${code.name}` : ""}
                 </p>
-              )}
-              {promised.length > 0 && (
-                <div
-                  className="mt-3 space-y-1 border-t pt-2 text-start"
-                  data-testid="quick-pledged"
-                >
-                  <p className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
-                    <Lock className="h-3.5 w-3.5" />
-                    {t({
-                      ku: "داشکاندنی لەسەر وەسڵ چاپکراو — لە ژمارەکەی سەرەوە کەم کراوەتەوە",
-                      en: "Discount printed on the receipt — already off the figure above",
-                      ar: "خصم مطبوع على الإيصال — مخصوم من المبلغ أعلاه",
-                      zh: "收据上已打印的折扣 — 已从上方金额中扣除",
-                    })}
+                <p className="mt-1 font-mono text-4xl font-semibold tabular-nums" data-testid="quick-due">
+                  {fmtUsd(totals.dueUsd)}
+                </p>
+                {rateNum > 0 && (
+                  <p className="mt-1 font-mono text-sm text-muted-foreground" dir="ltr">
+                    {fmtNumber(usdToIqd(totals.dueUsd, rateNum), 0)} IQD
                   </p>
-                  {promised.map((p, i) => (
-                    <p key={i} className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs">
-                      <span className="min-w-0">
-                        {p.what && (
-                          <bdi dir="ltr" className="font-mono">{p.what}</bdi>
-                        )}
-                        {p.what && p.why ? " · " : ""}
-                        {p.why}
-                      </span>
-                      <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
-                        −{fmtUsd(p.usd)}
-                      </bdi>
+                )}
+                {promised.length > 0 && (
+                  <div
+                    className="mt-3 space-y-1 border-t pt-2 text-start"
+                    data-testid="quick-pledged"
+                  >
+                    <p className="flex items-center gap-1.5 text-xs font-medium text-amber-700 dark:text-amber-400">
+                      <Lock className="h-3.5 w-3.5" />
+                      {t({
+                        ku: "داشکاندنی لەسەر وەسڵ چاپکراو — لە ژمارەکەی سەرەوە کەم کراوەتەوە",
+                        en: "Discount printed on the receipt — already off the figure above",
+                        ar: "خصم مطبوع على الإيصال — مخصوم من المبلغ أعلاه",
+                        zh: "收据上已打印的折扣 — 已从上方金额中扣除",
+                      })}
                     </p>
-                  ))}
+                    {promised.map((p, i) => (
+                      <p key={i} className="flex flex-wrap items-baseline justify-between gap-x-2 text-xs">
+                        <span className="min-w-0">
+                          {p.what && (
+                            <bdi dir="ltr" className="font-mono">{p.what}</bdi>
+                          )}
+                          {p.what && p.why ? " · " : ""}
+                          {p.why}
+                        </span>
+                        <bdi dir="ltr" className="font-mono text-amber-700 dark:text-amber-400">
+                          −{fmtUsd(p.usd)}
+                        </bdi>
+                      </p>
+                    ))}
+                  </div>
+                )}
+              </div>
+
+
+              {/* One question: how much came back. Already answered. */}
+              <div className="grid grid-cols-2 gap-2">
+                <label className="space-y-1">
+                  <span className="text-xs text-muted-foreground">
+                {t({ ku: "وەرگیراو بە دینار", en: "Received in dinars", ar: "المستلم بالدينار", zh: "收到（第纳尔）" })}
+                  </span>
+                  <GroupedNumberInput
+                value={iqd} onValueChange={setIqd} className="h-10"
+                placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
+                data-testid="quick-iqd"
+                  />
+                </label>
+                <label className="space-y-1">
+                  <span className="text-xs text-muted-foreground">
+                {t({ ku: "نرخی دۆلار", en: "Dollar rate", ar: "سعر الدولار", zh: "美元汇率" })}
+                  </span>
+                  <GroupedNumberInput value={rate} onValueChange={setRate} className="h-10"
+                                  data-testid="quick-rate" />
+                </label>
+              </div>
+              <label className="block space-y-1">
+                <span className="text-xs text-muted-foreground">
+                  {t({ ku: "یان بە دۆلار", en: "Or in dollars", ar: "أو بالدولار", zh: "或美元" })}
+                </span>
+                <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-10"
+                                data-testid="quick-usd" />
+              </label>
+
+              {/* Only when the money is not the money. */}
+              {difference.kind === "none" ? (
+                <p className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400"
+                   data-testid="quick-exact">
+                  <Check className="h-4 w-4" />
+                  {t({ ku: "پارەکە تەواوە", en: "Paid in full", ar: "مدفوع بالكامل", zh: "已全额支付" })}
+                </p>
+              ) : difference.kind === "credit" ? (
+                <p className="text-sm text-blue-600 dark:text-blue-400">
+                  {t({ ku: "زیادە", en: "Over", ar: "زائد", zh: "多付" })}
+                  {" "}{fmtUsd(difference.amountUsd)} —{" "}
+                  {t({ ku: "دەبێتە کریدیت لەسەر کڕیار", en: "becomes credit on the customer", ar: "يصبح رصيداً للعميل", zh: "转为客户余额" })}
+                </p>
+              ) : (
+                <div className="space-y-2 rounded-lg border border-red-300 p-3 dark:border-red-800">
+                  <p className="text-sm font-medium text-red-600 dark:text-red-400">
+                {t({ ku: "کەمە بە", en: "Short by", ar: "ناقص", zh: "少付" })}
+                {" "}{fmtUsd(difference.amountUsd)}
+                  </p>
+                  <Select value={treatShortAs} onValueChange={(v) => setTreatShortAs(v as "debt" | "discount")}>
+                <SelectTrigger className="h-9" data-testid="quick-short-as"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="debt">
+                    {t({ ku: "قەرز لەسەر کڕیار", en: "Debt on the customer", ar: "دين على العميل", zh: "记为欠款" })}
+                  </SelectItem>
+                  <SelectItem value="discount">
+                    {t({ ku: "داشکاندن", en: "Written off", ar: "خصم", zh: "折扣核销" })}
+                  </SelectItem>
+                </SelectContent>
+                  </Select>
+                  <Textarea
+                value={reason} onChange={(e) => setReason(e.target.value)} rows={2}
+                className={cn("text-sm", needsReason && "border-red-400 dark:border-red-700")}
+                placeholder={t({ ku: "هۆکار — داواکراوە", en: "Reason — required", ar: "السبب — مطلوب", zh: "原因——必填" })}
+                data-testid="quick-reason"
+                  />
                 </div>
               )}
-            </div>
-
-
-            {/* One question: how much came back. Already answered. */}
-            <div className="grid grid-cols-2 gap-2">
-              <label className="space-y-1">
-                <span className="text-xs text-muted-foreground">
-              {t({ ku: "وەرگیراو بە دینار", en: "Received in dinars", ar: "المستلم بالدينار", zh: "收到（第纳尔）" })}
-                </span>
-                <GroupedNumberInput
-              value={iqd} onValueChange={setIqd} className="h-10"
-              placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
-              data-testid="quick-iqd"
-                />
-              </label>
-              <label className="space-y-1">
-                <span className="text-xs text-muted-foreground">
-              {t({ ku: "نرخی دۆلار", en: "Dollar rate", ar: "سعر الدولار", zh: "美元汇率" })}
-                </span>
-                <GroupedNumberInput value={rate} onValueChange={setRate} className="h-10"
-                                data-testid="quick-rate" />
-              </label>
-            </div>
-            <label className="block space-y-1">
-              <span className="text-xs text-muted-foreground">
-                {t({ ku: "یان بە دۆلار", en: "Or in dollars", ar: "أو بالدولار", zh: "或美元" })}
-              </span>
-              <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-10"
-                              data-testid="quick-usd" />
-            </label>
-
-            {/* Only when the money is not the money. */}
-            {difference.kind === "none" ? (
-              <p className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400"
-                 data-testid="quick-exact">
-                <Check className="h-4 w-4" />
-                {t({ ku: "پارەکە تەواوە", en: "Paid in full", ar: "مدفوع بالكامل", zh: "已全额支付" })}
-              </p>
-            ) : difference.kind === "credit" ? (
-              <p className="text-sm text-blue-600 dark:text-blue-400">
-                {t({ ku: "زیادە", en: "Over", ar: "زائد", zh: "多付" })}
-                {" "}{fmtUsd(difference.amountUsd)} —{" "}
-                {t({ ku: "دەبێتە کریدیت لەسەر کڕیار", en: "becomes credit on the customer", ar: "يصبح رصيداً للعميل", zh: "转为客户余额" })}
-              </p>
-            ) : (
-              <div className="space-y-2 rounded-lg border border-red-300 p-3 dark:border-red-800">
-                <p className="text-sm font-medium text-red-600 dark:text-red-400">
-              {t({ ku: "کەمە بە", en: "Short by", ar: "ناقص", zh: "少付" })}
-              {" "}{fmtUsd(difference.amountUsd)}
-                </p>
-                <Select value={treatShortAs} onValueChange={(v) => setTreatShortAs(v as "debt" | "discount")}>
-              <SelectTrigger className="h-9" data-testid="quick-short-as"><SelectValue /></SelectTrigger>
-              <SelectContent>
-                <SelectItem value="debt">
-                  {t({ ku: "قەرز لەسەر کڕیار", en: "Debt on the customer", ar: "دين على العميل", zh: "记为欠款" })}
-                </SelectItem>
-                <SelectItem value="discount">
-                  {t({ ku: "داشکاندن", en: "Written off", ar: "خصم", zh: "折扣核销" })}
-                </SelectItem>
-              </SelectContent>
-                </Select>
-                <Textarea
-              value={reason} onChange={(e) => setReason(e.target.value)} rows={2}
-              className={cn("text-sm", needsReason && "border-red-400 dark:border-red-700")}
-              placeholder={t({ ku: "هۆکار — داواکراوە", en: "Reason — required", ar: "السبب — مطلوب", zh: "原因——必填" })}
-              data-testid="quick-reason"
-                />
-              </div>
+              </>
             )}
 
             {/* One line, for the day a parcel is actually in dispute. */}
@@ -379,9 +397,10 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
 
         {/* The full machinery, when it is genuinely wanted. */}
         {showParcels && boxId !== null && (
-          <div className="-mx-2 max-h-[60vh] overflow-y-auto">
+          <div className="-mx-1 max-h-[72vh] overflow-y-auto px-1">
             <BoxSettlementPanel
               boxId={boxId}
+              embedded
               onSettled={() => { onOpenChange(false); onSettled?.(); }}
             />
           </div>
