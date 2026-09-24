@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useSearch } from "wouter";
 import { toast } from "sonner";
+import { useFailure } from "@/hooks/useFailure";
 import { Loader2, PackageX, Trash2 } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -44,6 +45,8 @@ const DELETE_WORD: Words = { ku: "سڕینەوە", en: "Delete", ar: "حذف", z
 export function DeleteEmptyBoxDialog({ box, onClose }: { box: EmptyBoxRef | null; onClose: () => void }) {
   const { language } = useTranslation();
   const L = (words: Words) => pickLang(language, words);
+  // A refusal that carries steps is read, not glimpsed (hooks/useFailure).
+  const showFailure = useFailure();
   const utils = trpc.useUtils();
   const remove = trpc.deliveryBox.delete.useMutation({
     onSuccess: (data) => {
@@ -60,7 +63,7 @@ export function DeleteEmptyBoxDialog({ box, onClose }: { box: EmptyBoxRef | null
       void utils.dashboard.risks.invalidate();
       onClose();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   return (

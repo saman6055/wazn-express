@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
+import { useFailure } from "@/hooks/useFailure";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { companyContact, logoUrlOnDark } from "@/lib/brand";
@@ -200,6 +201,13 @@ interface BoxDetailPanelProps {
 
 export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProps) {
   const systemAlert = useSystemAlert();
+  /**
+   * One way to show a failure (hooks/useFailure): a refusal that carries its
+   * steps opens the window where the steps are printed as steps, and
+   * everything else stays the toast it was. A toast clamps to two lines, so
+   * the steps arrived and were cut off below the fold.
+   */
+  const showFailure = useFailure();
   const company = useCompanyInfo();
   const { logoUrl } = company;
   const { t, language } = useTranslation();
@@ -312,7 +320,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       toast.success(t("delivery.toastItemRemoved"));
       refetchBox();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   const sealBox = trpc.deliveryBox.seal.useMutation({
@@ -321,7 +329,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       soundManager.playComplete();
       refetchBox();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   const reopenBox = trpc.deliveryBox.reopen.useMutation({
@@ -330,7 +338,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       soundManager.playSuccess();
       refetchBox();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   const markInTransit = trpc.deliveryBox.markInTransit.useMutation({
@@ -339,7 +347,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       soundManager.playSuccess();
       refetchBox();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   const markDelivered = trpc.deliveryBox.markDelivered.useMutation({
@@ -348,7 +356,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       soundManager.playComplete();
       refetchBox();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   const deleteBox = trpc.deliveryBox.delete.useMutation({
@@ -357,7 +365,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       utils.deliveryBox.list.invalidate();
       onClose();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   /**
@@ -379,7 +387,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       toast.success(t("delivery.toastBoxCancelled"));
       onClose();
     },
-    onError: (err) => toast.error(err.message),
+    onError: (err) => showFailure(err),
   });
 
   // Recompute every package-linked item against current batch state. Used
@@ -398,7 +406,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       refetchBox();
     },
     onError: (err) => {
-      toast.error(err.message);
+      showFailure(err);
       soundManager.playError();
     },
   });

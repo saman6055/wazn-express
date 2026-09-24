@@ -41,11 +41,20 @@ const Toaster = ({ ...props }: ToasterProps) => {
       className="toaster group print:hidden"
       toastOptions={{
         classNames: {
-          toast: "max-h-48 overflow-hidden",
-          // Wrap unbroken strings (base64, long ids) instead of letting them
-          // stretch the toast, keep the message's own line breaks, and cap the
-          // visible text at seven lines.
-          title: "line-clamp-3 whitespace-pre-line break-words [overflow-wrap:anywhere]",
+          toast: "max-h-80 overflow-hidden",
+          /*
+           * Wrap unbroken strings (base64, long ids) instead of letting them
+           * stretch the toast, and keep the message's own line breaks.
+           *
+           * The cap was three lines, which was one line more than the cause
+           * of a refusal and none at all for what to do about it. Every
+           * refusal now carries numbered steps (shared/fixAdvice) — a cause,
+           * a heading and three or four steps — and a message cut off above
+           * the steps is the same as one that never had them. So the cap is
+           * what a cure needs, and the toast's own height is still bounded:
+           * a runaway payload is clipped, it does not take the page.
+           */
+          title: "line-clamp-[14] whitespace-pre-line break-words [overflow-wrap:anywhere]",
           description: "line-clamp-4 whitespace-pre-line break-words [overflow-wrap:anywhere]",
         },
         ...props.toastOptions,

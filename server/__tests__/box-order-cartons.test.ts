@@ -68,7 +68,8 @@ describe("a box receipt never charges an order as a parcel", () => {
 
   it("sends a price correction to the order instead of dropping it", () => {
     expect(create).toContain("if (parcel.fromOrder) {");
-    expect(create).toContain("لە ئۆردەرەکەوە ڕاستی بکەرەوە");
+    expect(create).toContain("لەسەر ئۆردەرەکەیەتی");
+    expect(create).toContain("نرخەکەی لەوێ ڕاست بکەرەوە، بە هۆکارەوە");
   });
 
   it("the payment panel says why a carton asks for less than its price", () => {

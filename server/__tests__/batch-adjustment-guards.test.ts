@@ -70,7 +70,9 @@ describe("a price changed after delivery", () => {
   });
 
   it("requires a reason, because next year somebody will ask why", () => {
-    expect(apply).toContain("هۆکار پێویستە");
+    expect(apply).toContain("بەبێ هۆکار تۆمار ناکرێت");
+    // …and says what to write (shared/fixAdvice).
+    expect(apply).toContain("لە خانەی هۆکار بنووسە بۆچی دەگۆڕدرێت");
   });
 });
 

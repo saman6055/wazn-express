@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { withFix } from "@shared/fixAdvice";
 import { generateTransactionNumber } from "./utils.db";
 import { appLogger } from '../utils/logger';
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
@@ -141,7 +142,13 @@ export async function createBatch(data: InsertBatch): Promise<Batch> {
   const existing = await db.select({ id: batches.id }).from(batches)
     .where(eq(batches.batchCode, batchCode)).limit(1);
   if (existing.length > 0) {
-    throw new Error(`کۆدی باچ «${batchCode}» پێشتر بەکارهاتووە — تکایە کۆدێکی جیاواز بنووسە`);
+    throw new Error(withFix(
+      `کۆدی باچی «${batchCode}» پێشتر بەکارهاتووە — دوو باچ بە یەک کۆد واتای ئەوەیە کە نازانرێت پاکەتەکان بۆ کامیانن.`,
+      [
+        "کۆدێکی جیاواز بنووسە",
+        "یان خانەی کۆد بەتاڵ بهێڵەرەوە تا سیستەم خۆی کۆدێکی نوێ دروست بکات",
+      ],
+    ));
   }
   data = { ...data, batchCode };
   const result = await db.insert(batches).values(data);
@@ -1509,7 +1516,15 @@ export async function applyBatchCustomerAdjustment(args: {
   }
 
   const reason = args.reason.trim();
-  if (!reason) throw new Error("هۆکار پێویستە — لە داهاتوودا کەس نازانێت ئەم بڕە بۆچی گۆڕدرا");
+  if (!reason) {
+    throw new Error(withFix(
+      "گۆڕینی ئەم بڕە بەبێ هۆکار تۆمار ناکرێت — دوای مانگێک کەس نازانێت بۆچی گۆڕدرا.",
+      [
+        "لە خانەی هۆکار بنووسە بۆچی دەگۆڕدرێت (نموونە: «کێشی دووبارە پێوانە کرایەوە»)",
+        "ئینجا دووبارە خەزنکردن لێبدە",
+      ],
+    ));
+  }
 
   const isDiscount = preview.direction === "discount";
   const rateDetail =

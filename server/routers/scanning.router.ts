@@ -1218,30 +1218,97 @@ export const deliveryBoxRouter = router({
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.boxId);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
-      if (box.status !== 'open') throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم بۆکسە داخراوە، ناتوانرێت پاکەت زیاد بکرێت" });
+      if (box.status !== 'open') {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} داخراوە — پاکەتی نوێی تێناکرێت.`,
+            [
+              "لە شاشەی بۆکسەکە دوگمەی «کردنەوەی بۆکس» لێبدە",
+              "پاکەتەکە دووبارە سکان بکە",
+              "دووبارە بیداخە",
+              "ئەگەر بۆکسەکە نێردراوە یان پارەی دراوە، تەنها ئادمین بە هۆکارەوە دەیکاتەوە — یان بۆکسێکی نوێ بۆ هەمان کڕیار دروست بکە",
+            ],
+          ),
+        });
+      }
 
       // Search package by tracking number
       const pkg = await db.getPackageByTrackingNumber(input.trackingNumber);
       const fpOrder = pkg ? null : await db.getFullPackageOrderByTrackingNumber(input.trackingNumber);
 
       if (!pkg && !fpOrder) {
-        throw new TRPCError({ code: "NOT_FOUND", message: `پاکەت بە تراکینگ "${input.trackingNumber}" نەدۆزرایەوە` });
+        throw new TRPCError({
+          code: "NOT_FOUND",
+          message: withFix(
+            `هیچ پاکەتێک بە تراکی ${input.trackingNumber} لە سیستەمدا نییە.`,
+            [
+              "تراکەکە بپشکنە — لەوانەیە پیتێک یان ژمارەیەکی کەم یان زیاد بێت",
+              "لە «هەموو پاکەتەکان» بەو تراکە بگەڕێ",
+              "ئەگەر پاکەتەکە تۆمار نەکراوە، لە «تۆماری خێرا» تۆماری بکە",
+              "ئینجا لێرە دووبارە سکانی بکە",
+            ],
+          ),
+        });
       }
 
       // Check ownership
       const itemCustomerId = pkg?.customerId || fpOrder?.customerId;
       if (itemCustomerId && itemCustomerId !== box.customerId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم پاکەتە بۆ کڕیارێکی تر تۆمارکراوە" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `ئەم پاکەتە لەسەر کڕیارێکی ترە، نەک خاوەنی بۆکسی ${box.boxCode}.`,
+            [
+              "پاکەتەکە بکەرەوە و سەیری خاوەنەکەی بکە",
+              "ئەگەر خاوەنەکەی هەڵەیە، لە پاکەتەکەوە کڕیارەکە ڕاست بکەرەوە و ئینجا سکانی بکە",
+              "ئەگەر خاوەنەکەی ڕاستە، بۆکسێک بۆ ئەو کڕیارە بکەرەوە و لەوێ سکانی بکە",
+            ],
+          ),
+        });
       }
 
       // Check if already in a box
       if (pkg) {
         const check = await db.isPackageInAnyBox(pkg.id);
-        if (check.inBox) throw new TRPCError({ code: "CONFLICT", message: `ئەم پاکەتە لە بۆکسی ${check.boxCode} دایە` });
+        if (check.inBox) {
+          // The same barcode fired twice into the box in front of you: the
+          // commonest thing that happens while filling one. CONFLICT, which
+          // the screen says quietly and takes away again.
+          if (check.boxId === box.id) {
+            throw new TRPCError({ code: "CONFLICT", message: "ئەم پاکەتە پێشتر لەم بۆکسەدایە" });
+          }
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: withFix(
+              `ئەم پاکەتە لە بۆکسی ${check.boxCode} دایە. یەک پاکەت لە دوو بۆکسدا نابێت.`,
+              [
+                `بۆکسی ${check.boxCode} بکەرەوە`,
+                "پاکەتەکە لەو بۆکسە دەربهێنە",
+                "ئینجا لێرە دووبارە سکانی بکە",
+              ],
+            ),
+          });
+        }
       }
       if (fpOrder) {
         const check = await db.isFPOrderInAnyBox(fpOrder.id);
-        if (check.inBox) throw new TRPCError({ code: "CONFLICT", message: `ئەم ئۆردەرە لە بۆکسی ${check.boxCode} دایە` });
+        if (check.inBox) {
+          if (check.boxId === box.id) {
+            throw new TRPCError({ code: "CONFLICT", message: "ئەم ئۆردەرە پێشتر لەم بۆکسەدایە" });
+          }
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: withFix(
+              `ئەم ئۆردەرە لە بۆکسی ${check.boxCode} دایە. یەک ئۆردەر لە دوو بۆکسدا نابێت.`,
+              [
+                `بۆکسی ${check.boxCode} بکەرەوە`,
+                "ئۆردەرەکە لەو بۆکسە دەربهێنە",
+                "ئینجا لێرە دووبارە سکانی بکە",
+              ],
+            ),
+          });
+        }
       }
 
       // ...and the box the checks above cannot see. They look at open, ready
@@ -1480,8 +1547,31 @@ export const deliveryBoxRouter = router({
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
-      if (box.status !== 'open') throw new TRPCError({ code: "BAD_REQUEST", message: "تەنها بۆکسی کراوە داخرانی دەکرێت" });
-      if (box.totalPackages === 0) throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکس خالییە — سەرەتا پاکەت زیاد بکە" });
+      if (box.status !== 'open') {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} پێشتر داخراوە — دووبارە داخستنی واتای نییە.`,
+            [
+              "ئەگەر شتێکی تێدا بگۆڕدرێت، «کردنەوەی بۆکس» لێبدە و دوایی دووبارە بیداخە",
+              "ئەگەر ئامادەیە بۆ ڕێکەوتن، «ناردن» لێبدە",
+            ],
+          ),
+        });
+      }
+      if (box.totalPackages === 0) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} بەتاڵە — بۆکسێکی بەتاڵ ناداخرێت.`,
+            [
+              "پاکەتەکانی کڕیار بە تراک سکان بکە و بیانخە ناو بۆکسەکە",
+              "ئینجا بیداخە",
+              "ئەگەر بۆکسەکە بە هەڵە دروست کراوە، لە لیستی بۆکسەکان بیسڕەوە",
+            ],
+          ),
+        });
+      }
       return db.sealBox(input.id, ctx.user.id);
     }),
 
@@ -1496,7 +1586,16 @@ export const deliveryBoxRouter = router({
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
       if (box.status === 'cancelled') {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکسی هەڵوەشێنراوە ناکرێتەوە" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} هەڵوەشێنراوەتەوە — بۆکسی هەڵوەشێنراوە ناکرێتەوە، چونکە هەڵەکە خۆی بەشێکە لە تۆمارەکە.`,
+            [
+              "بۆکسێکی نوێ بۆ هەمان کڕیار دروست بکە",
+              "پاکەتەکان بخە ناوی و بیداخە",
+            ],
+          ),
+        });
       }
 
       // The ordinary way back: a box sealed but not yet sent out, and not yet
@@ -1518,11 +1617,30 @@ export const deliveryBoxRouter = router({
        * what puts the debt back.
        */
       if (ctx.user.role !== 'admin' && ctx.user.role !== 'super_admin') {
-        throw new TRPCError({ code: "FORBIDDEN", message: "تەنها ئادمین دەتوانێت بۆکسی نێردراو/پارەدراو بکاتەوە" });
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: withFix(
+            `بۆکسی ${box.boxCode} نێردراوە یان پارەکەی دراوە — کردنەوەی ئەم جۆرە بۆکسە تەنها بە دەستی ئادمینە.`,
+            [
+              "داوا لە ئادمین بکە بیکاتەوە، بە هۆکارەوە",
+              "پارە دەستی لێ نادرێت: ئەگەر پارەکەش دەگەڕێتەوە، واصڵەکە لە شاشەی پارەدانەوە هەڵبوەشێنەوە",
+            ],
+          ),
+        });
       }
       const reason = (input.reason ?? "").trim();
       if (reason.length < 3) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "هۆکاری کردنەوە پێویستە" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            "کردنەوەی بۆکسێکی نێردراو بەبێ هۆکار تۆمار ناکرێت — دوای مانگێک کەس نازانێت بۆچی کرایەوە.",
+            [
+              "لە خانەی هۆکار بنووسە بۆچی دەکرێتەوە (نموونە: «کڕیار پاکەتێکی زیاد کرد»)",
+              "بەلایەنی کەم سێ پیت",
+              "دووبارە «بیکەرەوە» لێبدە",
+            ],
+          ),
+        });
       }
 
       const result = await reopenDeliveredBox(input.id, ctx.user.id);
@@ -1544,7 +1662,19 @@ export const deliveryBoxRouter = router({
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
-      if (box.status !== 'ready') throw new TRPCError({ code: "BAD_REQUEST", message: "سەرەتا بۆکسەکە داخە (seal)" });
+      if (box.status !== 'ready') {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} هێشتا داخراو نییە — بۆکسێکی کراوە نانێردرێت، چونکە هێشتا پاکەتی تێدەکرێت.`,
+            [
+              "دڵنیا بەرەوە کە هەموو پاکەتەکانی کڕیار سکان کراون",
+              "دوگمەی «داخستن» لێبدە",
+              "ئینجا «ناردن» لێبدە",
+            ],
+          ),
+        });
+      }
 
       // Charge delivery fee to customer wallet — lib/boxLifecycle, shared
       // with the payment door so the fee is posted by one piece of code.
@@ -1588,7 +1718,17 @@ export const deliveryBoxRouter = router({
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
       if (box.status !== 'in_transit' && box.status !== 'ready') {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکس لە دۆخی گونجاو نییە" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} لە دۆخی «گەیەنراو»دا نییە — تەنها بۆکسێکی داخراو یان لە ڕێگا دەگاتە کڕیار.`,
+            [
+              "ئەگەر هێشتا کراوەیە، سەرەتا «داخستن» لێبدە",
+              "ئینجا «ناردن» لێبدە",
+              "دوای ئەوە «گەیەنرا» لێبدە",
+            ],
+          ),
+        });
       }
 
       // Mark all packages and linked orders in the box delivered.
@@ -1607,8 +1747,28 @@ export const deliveryBoxRouter = router({
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND" });
-      if (box.status === 'delivered') throw new TRPCError({ code: "BAD_REQUEST", message: "بۆکسی گەیاندراو هەڵناوەشێنرێتەوە" });
-      if (box.status === 'cancelled') throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم بۆکسە پێشتر هەڵوەشێنراوەتەوە" });
+      if (box.status === 'delivered') {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} گەیەنراوە بە کڕیار — ئەوەی گەیشتووە هەڵناوەشێنرێتەوە.`,
+            [
+              "ئەگەر بە هەڵە گەیەنراو نیشان دراوە، «کردنەوەی بۆکس» لێبدە (ئادمین، بە هۆکارەوە)",
+              "ئەگەر پارەشی لەسەر وەرگیراوە، واصڵەکە لە شاشەی پارەدانەوە هەڵبوەشێنەوە",
+              "ئینجا پاکەتەکانی لێ دەربهێنە",
+            ],
+          ),
+        });
+      }
+      if (box.status === 'cancelled') {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            `بۆکسی ${box.boxCode} پێشتر هەڵوەشێنراوەتەوە — هیچی تر پێویست ناکات.`,
+            ["ئەگەر کاڵاکە هێشتا دەبێت بنێردرێت، بۆکسێکی نوێ بۆ هەمان کڕیار دروست بکە"],
+          ),
+        });
+      }
 
       const cancelled = await db.updateDeliveryBox(input.id, {
         status: 'cancelled',
@@ -1656,13 +1816,26 @@ export const deliveryBoxRouter = router({
       if (input.onlyIfEmpty && !(await db.isBoxStillEmpty(box.id))) {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "ئەم بۆکسە ئیتر بەتاڵ نییە — شتێکی تێکراوە یان پارەی لەسەر تۆمارکراوە، بۆیە نەسڕایەوە",
+          message: withFix(
+            `بۆکسی ${box.boxCode} ئیتر بەتاڵ نییە — لەو کاتەوەی لیستەکە کرایەوە شتێکی تێکراوە یان پارەی لەسەر تۆمار کراوە، بۆیە نەسڕایەوە.`,
+            [
+              "لیستەکە نوێ بکەرەوە",
+              "بۆکسەکە بکەرەوە و سەیری ئەوە بکە چی تێدایە",
+              "ئەگەر بەڕاستی دەبێت بسڕدرێتەوە، سەرەتا پاکەتەکانی لێ دەربهێنە",
+            ],
+          ),
         });
       }
       if (box.status === 'delivered') {
         throw new TRPCError({
           code: "CONFLICT",
-          message: "بۆکسی گەیەنراو ناسڕدرێتەوە — گەیەنراوە و حسابی بۆ کراوە. هەڵیبوەشێنەرەوە لەبری ئەوە",
+          message: withFix(
+            `بۆکسی ${box.boxCode} گەیەنراوە و حسابی بۆ کراوە — سڕینەوەی تۆمارێکی وا مێژووی پارەکەش لەگەڵ خۆی دەبات.`,
+            [
+              "لە جیاتی سڕینەوە، «هەڵوەشاندنەوە» بەکاربهێنە",
+              "ئەگەر پارەی لەسەر وەرگیراوە، سەرەتا واصڵەکە لە شاشەی پارەدانەوە هەڵبوەشێنەوە",
+            ],
+          ),
         });
       }
 

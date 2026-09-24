@@ -1,7 +1,9 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { ReactNode } from "react";
-import { AlertTriangle, ExternalLink, XCircle } from "lucide-react";
+import { AlertTriangle, Copy, ExternalLink, XCircle } from "lucide-react";
+import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
+import { getErrorBoundaryStrings } from "@/components/ErrorBoundary";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
 
@@ -43,6 +45,14 @@ export interface SystemAlertRequest {
    */
   openHref?: string;
   openLabel?: string;
+  /**
+   * The report behind this failure, on a button beside it.
+   *
+   * The standing rule is that anything that fails can be copied and sent
+   * (ErrorBoundary's buildErrorReport). This window shows the failures that
+   * stop the work — the ones most worth sending on.
+   */
+  copyText?: string;
   /**
    * Show it, say it loudly, and get out of the way after this many
    * milliseconds — no backdrop, no button, no focus taken.
@@ -280,6 +290,25 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
                   >
                     <ExternalLink className="h-4 w-4 me-1.5" />
                     {current.openLabel || "Open"}
+                  </Button>
+                )}
+                {current.copyText && (
+                  <Button
+                    variant="outline"
+                    onClick={() => {
+                      const text = current.copyText!;
+                      const { copyDetails, copied } = getErrorBoundaryStrings();
+                      navigator.clipboard
+                        .writeText(text)
+                        .then(() => toast.success(copied))
+                        // Refused clipboard (insecure context, denied
+                        // permission): a selectable prompt beats nothing.
+                        .catch(() => window.prompt(copyDetails, text));
+                    }}
+                    data-testid="system-alert-copy"
+                  >
+                    <Copy className="h-4 w-4 me-1.5" />
+                    {getErrorBoundaryStrings().copyDetails}
                   </Button>
                 )}
                 <span className="text-xs text-muted-foreground">Enter · Esc</span>

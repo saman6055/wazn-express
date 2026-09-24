@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { withFix } from "@shared/fixAdvice";
 import { eq } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
@@ -523,28 +524,68 @@ export const packagesRouter = router({
 
         const warehouse = await db.getWarehouseById(input.originWarehouseId);
         if (!warehouse) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "کۆگا نەدۆزرایەوە. تکایە کۆگایەک زیاد بکە یان هەڵبژێرە." });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: withFix(
+              "ئەو کۆگایە نەدۆزرایەوە — هەر پاکەتێک دەبێت بزانرێت لە کام کۆگاوە دەستی پێکردووە.",
+              [
+                "لە خانەی کۆگا، کۆگایەکی ناو لیستەکە هەڵبژێرە",
+                "ئەگەر کۆگاکە لە لیستەکەدا نییە، لە ڕێکخستنەکان زیادی بکە",
+                "ئینجا دووبارە تۆمارکردن لێبدە",
+              ],
+            ),
+          });
         }
         const codePrefix = warehouse.codePrefix ?? "PKG";
 
         if (input.batchId != null) {
           const batch = await db.getBatchById(input.batchId);
           if (!batch) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "گرووپ/بەچ نەدۆزرایەوە. تکایە بەچێکی دروست هەڵبژێرە یان بە خاڵی بەچ پاک بکەرەوە." });
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: withFix(
+                "ئەو باچە نەدۆزرایەوە — لەوانەیە سڕدرابێتەوە یان لەلایەن کەسێکی ترەوە گۆڕدرابێت.",
+                [
+                  "لیستی باچەکان نوێ بکەرەوە و باچێکی ناو لیستەکە هەڵبژێرە",
+                  "ئەگەر پاکەتەکە هێشتا باچی نییە، خانەی باچ بەتاڵ بهێڵەرەوە",
+                  "ئینجا دووبارە تۆمارکردن لێبدە",
+                ],
+              ),
+            });
           }
         }
 
         if (input.categoryId != null) {
           const category = await db.getProductCategoryById(input.categoryId);
           if (!category) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "جۆری بەرهەم نەدۆزرایەوە. تکایە جۆرێکی دروست هەڵبژێرە یان بە خاڵی جۆر پاک بکەرەوە." });
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: withFix(
+                "ئەو جۆرە بەرهەمە نەدۆزرایەوە.",
+                [
+                  "جۆرێکی ناو لیستەکە هەڵبژێرە",
+                  "ئەگەر جۆرەکە نییە، خانەکە بەتاڵ بهێڵەرەوە یان لە ڕێکخستنەکان زیادی بکە",
+                  "ئینجا دووبارە تۆمارکردن لێبدە",
+                ],
+              ),
+            });
           }
         }
 
         if (input.trackingNumber?.trim()) {
           const existing = await db.getPackageByTrackingNumber(input.trackingNumber.trim());
           if (existing) {
-            throw new TRPCError({ code: "CONFLICT", message: "ئەم تراکینگە پێشتر تۆمار کراوە. ناتوانرێت دووبارە تۆماری بکەیت." });
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: withFix(
+                `تراکی ${input.trackingNumber.trim()} پێشتر تۆمار کراوە — دوو تۆمار بۆ یەک پاکەت واتای دوو جار حیسابکردنە.`,
+                [
+                  "لە «هەموو پاکەتەکان» بەو تراکە بگەڕێ و تۆمارە کۆنەکە بکەرەوە",
+                  "ئەگەر زانیارییەک کەمە، لەوێدا چاکی بکە — نەک تۆمارێکی نوێ",
+                  "ئەگەر تراکەکە بە هەڵە نووسراوە، ڕاستی بکەرەوە و دووبارە هەوڵ بدە",
+                ],
+              ),
+            });
           }
         }
 
@@ -585,7 +626,14 @@ export const packagesRouter = router({
           if (customerIds.size > 1) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "ئۆردەرە گرێدراوەکان دەبێ هەر یەک کڕیاریان هەبێ. تکایە لە سەرچاوە چاکی بکەرەوە.",
+              message: withFix(
+                "ئۆردەرە گرێدراوەکان هی یەک کڕیار نین — پاکەتێک ناتوانرێت لەسەر دوو کڕیار حیساب بکرێت.",
+                [
+                  "هەریەک لەو ئۆردەرانە بکەرەوە و سەیری خاوەنیان بکە",
+                  "ئەوانەی هی کڕیارێکی ترن لە گرێدانەکە لابدە",
+                  "یان خاوەنی ئۆردەرە هەڵەکە ڕاست بکەرەوە، ئینجا دووبارە تۆمارکردن لێبدە",
+                ],
+              ),
             });
           }
           primaryOrder = orders[0]!;
@@ -601,7 +649,17 @@ export const packagesRouter = router({
         if (effectiveCustomerId && !input.isUnclaimed) {
           customer = await db.getCustomerById(effectiveCustomerId);
           if (!customer) {
-            throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە. تکایە کڕیارێکی دروست هەڵبژێرە یان بێ خاوەن دیاری بکە." });
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: withFix(
+                "ئەو کڕیارە نەدۆزرایەوە.",
+                [
+                  "لە خانەی کڕیار بە کۆد یان ناو بگەڕێ و لە لیستەکە هەڵیبژێرە",
+                  "ئەگەر کڕیارەکە نوێیە، سەرەتا تۆماری بکە",
+                  "ئەگەر هێشتا نازانیت هی کێیە، «بێ خاوەن» دیاری بکە و دواتر بیدەیێ",
+                ],
+              ),
+            });
           }
         }
 
@@ -742,7 +800,16 @@ export const packagesRouter = router({
             });
 
             if (isDuplicateTracking) {
-              throw new TRPCError({ code: "CONFLICT", message: "ئەم تراکینگە پێشتر تۆمار کراوە. ناتوانرێت دووبارە تۆماری بکەیت." });
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: withFix(
+                  "ئەم تراکە پێشتر تۆمار کراوە — دوو تۆمار بۆ یەک پاکەت واتای دوو جار حیسابکردنە.",
+                  [
+                    "لە «هەموو پاکەتەکان» بەو تراکە بگەڕێ و تۆمارە کۆنەکە بکەرەوە",
+                    "ئەگەر زانیارییەک کەمە، لەوێدا چاکی بکە — نەک تۆمارێکی نوێ",
+                  ],
+                ),
+              });
             }
             if (!isDuplicate || attempt === maxAttempts - 1) {
               // Translate common MySQL errors to Kurdish before falling

@@ -30,6 +30,7 @@ import {
   type DiscountReason,
   type BoxDiscount,
 } from "@shared/boxSettlement";
+import { withFix } from "@shared/fixAdvice";
 import {
   pledgeFloors,
   pledgeBreaches,
@@ -791,7 +792,16 @@ export async function pledgeBoxDiscount(
       .from(deliveryBoxItems)
       .where(and(eq(deliveryBoxItems.id, lineId), eq(deliveryBoxItems.boxId, input.boxId)))
       .limit(1);
-    if (!item) throw new Error("ئەو پاکەتە لەم بۆکسەدا نییە");
+    if (!item) {
+      throw new Error(withFix(
+        "ئەو پاکەتە لەم بۆکسەدا نییە، بۆیە داشکاندنی بۆ ناکرێت.",
+        [
+          "لیستی پاکەتەکانی بۆکسەکە نوێ بکەرەوە",
+          "پاکەتەکە لە لیستەکە هەڵبژێرە، نەک بە دەست بینووسە",
+          "ئەگەر پاکەتەکە دەبێت لەم بۆکسەدا بێت، سەرەتا سکانی بکە",
+        ],
+      ));
+    }
     trackingNumber = item.tracking ?? item.code ?? null;
   }
 
@@ -888,7 +898,16 @@ export async function createBoxSettlement(
 
   const requested = new Set(input.lines.map((l) => l.lineId));
   const parcels = view.parcels.filter((p) => requested.has(p.lineId));
-  if (parcels.length === 0) throw new Error("هیچ پارسێلێک هەڵنەبژێردراوە");
+  if (parcels.length === 0) {
+    throw new Error(withFix(
+      "هیچ پارسێلێک بۆ واصڵکردن هەڵنەبژێردراوە.",
+      [
+        "لیستی پارسێلەکان نوێ بکەرەوە",
+        "ئەگەر هەموویان تەحدید کراون، تەحدیدی لانیکەم یەکێکیان لاببە",
+        "ئەگەر هیچ پارەیەک لەسەر ئەم بۆکسە نەماوە، واصڵکردن پێویست ناکات",
+      ],
+    ));
+  }
 
   /**
    * Parcels the customer's account has never been told about.
@@ -935,7 +954,14 @@ export async function createBoxSettlement(
 
   const boxCut = input.boxDiscount ? boxDiscountUsd(input.boxDiscount, parcels) : 0;
   if (boxCut > 0 && !input.boxDiscountReason) {
-    throw new Error("هۆکاری داشکاندن پێویستە — بەبێ ئەو، ڕاپۆرتی داشکاندن بێ واتایە");
+    throw new Error(withFix(
+      "داشکاندن لەسەر بۆکس بەبێ هۆکار تۆمار ناکرێت — بەبێ هۆکار ڕاپۆرتی داشکاندن هیچ ناڵێت.",
+      [
+        "لە بەشی «داشکاندن لەسەر بۆکس»، هۆکارەکە هەڵبژێرە",
+        "ئەگەر هۆکارەکە لە لیستەکەدا نییە، «هۆکارێکی تر» هەڵبژێرە و بینووسە",
+        "دووبارە واصڵکردن لێبدە",
+      ],
+    ));
   }
   const boxCutByParcel = allocateBoxDiscount(boxCut, parcels, held);
 
@@ -950,21 +976,49 @@ export async function createBoxSettlement(
   const rate = Number(input.exchangeRate ?? 0);
   const iqd = Number(input.amountIqd ?? 0);
   if (iqd > 0 && !(rate > 0)) {
-    throw new Error("نرخی دۆلار پێویستە کاتێک پارە بە دینار وەردەگیرێت");
+    throw new Error(withFix(
+      "پارە بە دینار وەرگیراوە بەبێ نرخی دۆلار — بەبێ نرخ، ئەو دینارانە بە دۆلار حیساب ناکرێن.",
+      [
+        "لە خانەی «نرخی دۆلار» نرخی ئەمڕۆ بنووسە",
+        "ئەگەر پارەکە بە دۆلار وەرگیراوە، بڕەکە لە خانەی دۆلار بنووسە و خانەی دینار بەتاڵ بهێڵەرەوە",
+        "دووبارە واصڵکردن لێبدە",
+      ],
+    ));
   }
   const fromIqd = iqd > 0 && rate > 0 ? round2(iqd / rate) : 0;
   const paidUsd = round2(fromIqd + Number(input.amountUsd ?? 0));
 
   const difference = differenceOf(totals.dueUsd, paidUsd, input.treatShortAs ?? "debt");
   if (difference.reasonRequired && !(input.differenceReason ?? "").trim()) {
-    throw new Error("هۆکار پێویستە بۆ ئەو جیاوازییەی نێوان پارەی پێویست و پارەی وەرگیراو");
+    throw new Error(withFix(
+      "پارەی وەرگیراو لەگەڵ پارەی پێویست یەک ناگرێتەوە، و هۆکارەکە نەنووسراوە — ئەم جیاوازییە دەبێتە قەرز یان داشکاندن لەسەر کڕیار.",
+      [
+        "دیاری بکە جیاوازییەکە «قەرز لەسەر کڕیار»ە یان «داشکاندن»",
+        "لە خانەی هۆکار بنووسە بۆچی",
+        "یان بڕی وەرگیراو ڕاست بکەرەوە تا یەک بگرنەوە",
+      ],
+    ));
   }
   for (const line of input.lines) {
     if ((line.discountUsd ?? 0) > 0 && !line.discountReason) {
-      throw new Error("هۆکاری داشکاندن پێویستە — بەبێ ئەو، ڕاپۆرتی داشکاندن بێ واتایە");
+      throw new Error(withFix(
+        "داشکاندنێک لەسەر پارسێلێک هەیە بەبێ هۆکار — بەبێ هۆکار ڕاپۆرتی داشکاندن هیچ ناڵێت.",
+        [
+          "لە ڕیزی ئەو پارسێلە هۆکاری داشکاندنەکە هەڵبژێرە",
+          "ئەگەر هۆکارەکە لە لیستەکەدا نییە، «هۆکارێکی تر» هەڵبژێرە و بینووسە",
+          "دووبارە واصڵکردن لێبدە",
+        ],
+      ));
     }
     if ((line.correctionUsd ?? 0) !== 0 && !(line.correctionReason ?? "").trim()) {
-      throw new Error("هۆکاری ڕاستکردنەوەی نرخ پێویستە");
+      throw new Error(withFix(
+        "ڕاستکردنەوەی نرخ بەبێ هۆکار تۆمار ناکرێت — ڕاستکردنەوە نرخەکە خۆی دەگۆڕێت، نەک پارەدان.",
+        [
+          "بنووسە بۆچی نرخەکە هەڵە بوو (نموونە: «کێشەکەی هەڵە نووسرابوو»)",
+          "ئەگەر نرخەکە ڕاستە و تەنها داشکاندنی بۆ دەکەیت، لە خانەی داشکاندن بینووسە نەک ڕاستکردنەوە",
+          "دووبارە واصڵکردن لێبدە",
+        ],
+      ));
     }
   }
 
@@ -1030,7 +1084,14 @@ export async function createBoxSettlement(
       // Skipping it quietly would print a corrected receipt over an
       // uncorrected account.
       if (parcel.fromOrder) {
-        throw new Error(`نرخی ${parcel.trackingNumber ?? parcel.packageCode ?? parcel.lineId} لەسەر ئۆردەرەکەیەتی — لە ئۆردەرەکەوە ڕاستی بکەرەوە، نەک لە وەسڵی بۆکس`);
+        throw new Error(withFix(
+          `نرخی ${parcel.trackingNumber ?? parcel.packageCode ?? parcel.lineId} لەسەر ئۆردەرەکەیەتی، نەک لەسەر پاکەتەکە — لێرە ڕاستکردنەوەی واتای ئەوەیە کە وەسڵ ڕاست بێت و حیساب هەڵە بمێنێتەوە.`,
+          [
+            "ئۆردەرەکە بکەرەوە",
+            "نرخەکەی لەوێ ڕاست بکەرەوە، بە هۆکارەوە",
+            "بگەڕێوە بۆ ئەم شاشەیە و دووبارە واصڵکردن لێبدە",
+          ],
+        ));
       }
       // Only an ordinary parcel has a ledger charge to adjust.
       if (parcel.packageId === null) continue;
@@ -1045,7 +1106,14 @@ export async function createBoxSettlement(
         .orderBy(desc(ledgerTransactions.id))
         .limit(1);
       if (!chargeTxn) {
-        throw new Error(`ناتوانرێت نرخی پارسێلی ${parcel.packageCode ?? parcel.lineId} ڕاست بکرێتەوە — بارکردنی سەرەکی نەدۆزرایەوە`);
+        throw new Error(withFix(
+          `نرخی پارسێلی ${parcel.packageCode ?? parcel.lineId} ڕاست ناکرێتەوە — هێشتا هیچ بارکردنێک لەسەر حیسابی کڕیار بۆی نەنووسراوە، و ئەوەی نییە ڕاست ناکرێتەوە.`,
+          [
+            "ئەم پارسێلە بەبێ ڕاستکردنەوە واصڵ بکە — بارکردنەکەی لە کاتی واصڵکردندا بە نرخی دروست دەنووسرێت",
+            "ئەگەر نرخەکەی هەڵەیە، سەرەتا لە پاکەتەکەوە نرخەکە ڕاست بکەرەوە",
+            "ئینجا دووبارە واصڵکردن لێبدە",
+          ],
+        ));
       }
       await adjustCharge(
         chargeTxn.id,
@@ -1310,7 +1378,13 @@ export async function reverseBoxSettlement(
   userId: number,
 ): Promise<{ ok: true }> {
   if (!reason || reason.trim().length < 3) {
-    throw new Error("هۆکاری هەڵوەشاندنەوە پێویستە");
+    throw new Error(withFix(
+      "هەڵوەشاندنەوەی واصڵ بەبێ هۆکار تۆمار ناکرێت — واصڵەکە لە دەستی کڕیاردایە و پارەکەش دەگەڕێتەوە سەر حیسابی.",
+      [
+        "بنووسە بۆچی هەڵدەوەشێنرێتەوە (بەلایەنی کەم سێ پیت)",
+        "دووبارە هەڵوەشاندنەوە لێبدە",
+      ],
+    ));
   }
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -1322,7 +1396,15 @@ export async function reverseBoxSettlement(
       .where(eq(boxSettlements.id, settlementId))
       .limit(1);
     if (!settlement) throw new Error("واصڵ نەدۆزرایەوە");
-    if (settlement.status === "reversed") throw new Error("ئەم واصڵە پێشتر هەڵوەشێنراوەتەوە");
+    if (settlement.status === "reversed") {
+      throw new Error(withFix(
+        `واصڵی ${settlement.settlementNumber} پێشتر هەڵوەشێنراوەتەوە — دوو جار هەڵوەشاندنەوە پارەکە دوو جار دەگەڕێنێتەوە.`,
+        [
+          "لیستی واصڵەکان نوێ بکەرەوە",
+          "ئەگەر پارەکە هێشتا لەسەر کڕیارە، واصڵێکی نوێ بۆ بڕی دروست تۆمار بکە",
+        ],
+      ));
+    }
 
     const [account] = await tx
       .select()

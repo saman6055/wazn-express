@@ -72,11 +72,14 @@ describe("the money is written once, or not at all", () => {
 
 describe("nothing is given away without a reason", () => {
   it("refuses a discount with no reason", () => {
-    expect(create()).toContain("هۆکاری داشکاندن پێویستە");
+    // Now with the steps out of it, per the owner's rule (shared/fixAdvice).
+    expect(create()).toContain("داشکاندنێک لەسەر پارسێلێک هەیە بەبێ هۆکار");
+    expect(create()).toContain("هۆکاری داشکاندنەکە هەڵبژێرە");
   });
 
   it("refuses a price correction with no reason", () => {
-    expect(create()).toContain("هۆکاری ڕاستکردنەوەی نرخ پێویستە");
+    expect(create()).toContain("ڕاستکردنەوەی نرخ بەبێ هۆکار تۆمار ناکرێت");
+    expect(create()).toContain("بنووسە بۆچی نرخەکە هەڵە بوو");
   });
 
   it("refuses a shortfall with no reason", () => {
@@ -84,7 +87,7 @@ describe("nothing is given away without a reason", () => {
     // which. Either way somebody has to write down why.
     const body = create();
     expect(body).toContain("difference.reasonRequired");
-    expect(body).toContain("هۆکار پێویستە");
+    expect(body).toContain("یەک ناگرێتەوە، و هۆکارەکە نەنووسراوە");
   });
 
   it("refuses a box-level discount with no reason", () => {

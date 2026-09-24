@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { withFix } from "@shared/fixAdvice";
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { isBatchEditLocked } from "@shared/batchPriceHistory";
@@ -1023,7 +1024,14 @@ export const batchesRouter = router({
         if (typedCode && await db.getBatchByCode(typedCode)) {
           throw new TRPCError({
             code: "CONFLICT",
-            message: `کۆدی باچ «${typedCode}» پێشتر بەکارهاتووە — تکایە کۆدێکی جیاواز بنووسە`,
+            message: withFix(
+              `کۆدی باچی «${typedCode}» پێشتر بەکارهاتووە — دوو باچ بە یەک کۆد واتای ئەوەیە کە نازانرێت پاکەتەکان بۆ کامیانن.`,
+              [
+                "کۆدێکی جیاواز بنووسە",
+                "یان خانەی کۆد بەتاڵ بهێڵەرەوە تا سیستەم خۆی کۆدێکی نوێ دروست بکات",
+                "ئەگەر مەبەستت باچە کۆنەکە بوو، لە لیستی باچەکان بیکەرەوە",
+              ],
+            ),
           });
         }
         // Where the work was done, copied in now rather than looked up later.
@@ -1992,7 +2000,13 @@ export const batchesRouter = router({
         if (isBatchEditLocked(existing.status)) {
           throw new TRPCError({
             code: "FORBIDDEN",
-            message: "ئەم باچە گەیشتووە و داخراوە — هیچ خانەیەک ناگۆڕدرێت",
+            message: withFix(
+          "ئەم باچە گەیشتووە و داخراوە — گۆڕینی خانەکانی باچێکی گەیشتوو کرێ و کێش و حیسابی کڕیارەکانی دەگۆڕێت.",
+          [
+            "ئەگەر پاکەتێکی تاک هەڵەیە، لە پاکەتەکەوە چاکی بکەرەوە",
+            "ئەگەر نرخ هەڵەیە، لە شاشەی پارەدانی بۆکسەکەوە بە هۆکارەوە ڕاستی بکەرەوە",
+          ],
+        ),
           });
         }
 
