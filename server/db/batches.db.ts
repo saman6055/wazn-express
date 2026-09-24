@@ -1,5 +1,5 @@
 import { getDb } from './connection';
-import { withFix } from "@shared/fixAdvice";
+import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { generateTransactionNumber } from "./utils.db";
 import { appLogger } from '../utils/logger';
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from '@shared/chargeableWeight';
@@ -1504,7 +1504,7 @@ export async function applyBatchCustomerAdjustment(args: {
   // figure, and this is what guarantees the figure they confirmed is the
   // figure that posts.
   const preview = await previewBatchCustomerAdjustment(args.input);
-  if (!preview) throw new Error("باچەکە نەدۆزرایەوە");
+  if (!preview) throw new Error(vanishedFix("باچەکە", { bin: true }));
   if (!preview.allowed) {
     const message =
       preview.refusal === "not_delivered"
@@ -1546,7 +1546,15 @@ export async function applyBatchCustomerAdjustment(args: {
     const account = accountRows[0];
     // A customer invoiced at delivery always has an account; one without has
     // never been charged, so there is nothing here to correct.
-    if (!account) throw new Error("حیسابی کڕیار نەدۆزرایەوە — ئەم کڕیارە هیچ چارجێکی نییە");
+    if (!account) {
+      throw new Error(withFix(
+        "ئەم کڕیارە هیچ بارکردنێکی لەم باچەدا نییە — هیچ نییە کە ڕاست بکرێتەوە.",
+        [
+          "دڵنیا بەرەوە کە کڕیارە دروستەکەت هەڵبژاردووە",
+          "ئەگەر باچەکە هێشتا نەگەیشتووە، کرێکان لە کاتی گەیشتندا دەنووسرێن — پاشان ڕاستی بکەرەوە",
+        ],
+      ));
+    }
 
     const balanceBefore = Number(account.currentBalanceUsd || 0);
     const balanceIqd = Number(account.currentBalanceIqd || 0);

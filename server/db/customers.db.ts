@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { vanishedFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import {
@@ -388,7 +389,7 @@ export async function deleteCustomer(customerId: number, deletedById: number): P
   if (!db) throw new Error("Database not available");
 
   const customer = await getCustomerById(customerId);
-  if (!customer) throw new Error("کڕیار نەدۆزرایەوە");
+  if (!customer) throw new Error(vanishedFix("کڕیار", { bin: true }));
 
   // Count related data before deletion
   const [pkgCount] = await db.select({ count: count() }).from(packages).where(eq(packages.customerId, customerId));

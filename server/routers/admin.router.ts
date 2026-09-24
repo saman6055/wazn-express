@@ -1,4 +1,5 @@
 import { withoutSecrets } from "../lib/accountSecrets";
+import { retryFix } from "@shared/fixAdvice";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
@@ -974,7 +975,7 @@ export const backupRouter = router({
             appLogger.error("[BACKUP] Full ZIP backup failed", { error: msg });
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: msg || "پاشەکەوتی ZIP شکستی هێنا / ZIP backup failed",
+              message: msg || retryFix("پاشەکەوتی ZIP دروست نەبوو."),
             });
           }
         }

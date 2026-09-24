@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
 import * as bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
@@ -86,7 +87,10 @@ export const portalCenterRouter = router({
       if (!result.ok) {
         throw new TRPCError({
           code: result.reason === "not_found" ? "NOT_FOUND" : "CONFLICT",
-          message: result.reason === "not_found" ? "تراکینگەکە نەدۆزرایەوە" : DECLARED_LINK_REFUSAL_MESSAGE[result.reason].ku,
+          message:
+            result.reason === "not_found"
+              ? vanishedFix("ئەو تراکە")
+              : DECLARED_LINK_REFUSAL_MESSAGE[result.reason].ku,
         });
       }
       await db.createAuditLog({
@@ -200,7 +204,16 @@ export const portalCenterRouter = router({
     .input(z.object({ feature: z.string().max(64) }))
     .query(async ({ input }) => {
       if (!isKnownFeature(input.feature)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "تایبەتمەندی نەناسراو" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            "ئەم تایبەتمەندییە لە لیستی تایبەتمەندیەکاندا نییە — لەوانەیە لاپەڕەکە کۆن بێت.",
+            [
+              "لاپەڕەکە نوێ بکەرەوە",
+              "تایبەتمەندییەک لە لیستەکە هەڵبژێرە، نەک بە دەست بینووسە",
+            ],
+          ),
+        });
       }
       const grants = await db.getCustomersWithFeature(input.feature);
       // When each last opened their receipts (owner, 2026-09-18).
@@ -223,7 +236,16 @@ export const portalCenterRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       if (!isKnownFeature(input.feature)) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "تایبەتمەندی نەناسراو" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            "ئەم تایبەتمەندییە لە لیستی تایبەتمەندیەکاندا نییە — لەوانەیە لاپەڕەکە کۆن بێت.",
+            [
+              "لاپەڕەکە نوێ بکەرەوە",
+              "تایبەتمەندییەک لە لیستەکە هەڵبژێرە، نەک بە دەست بینووسە",
+            ],
+          ),
+        });
       }
       await db.grantCustomerFeature(input.customerId, input.feature, ctx.user.id, input.note);
       await db.createAuditLog({
@@ -278,7 +300,7 @@ export const portalCenterRouter = router({
     .input(z.object({ customerId: z.number().int() }))
     .query(async ({ input }) => {
       const c = await db.getCustomerById(input.customerId);
-      if (!c) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+      if (!c) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
       return {
         id: c.id,
         customerCode: c.customerCode,
@@ -406,7 +428,7 @@ export const portalCenterRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const customer = await db.getCustomerById(input.customerId);
-      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
 
       const passwordHash = await bcrypt.hash(input.newPassword, 12);
       await db.updateCustomerPassword(input.customerId, passwordHash);
@@ -441,11 +463,21 @@ export const portalCenterRouter = router({
     .input(z.object({ customerId: z.number().int(), mobileNumber: phoneSchema }))
     .mutation(async ({ input, ctx }) => {
       const customer = await db.getCustomerById(input.customerId);
-      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
 
       const existing = await db.getCustomerByMobile(input.mobileNumber);
       if (existing && existing.id !== input.customerId) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم ژمارەیە پێشتر بۆ کڕیارێکی تر تۆمارکراوە" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            "ئەم ژمارەیە پێشتر لەسەر کڕیارێکی ترە — دوو کڕیار بە یەک ژمارە لە یەکتر ناکرێنەوە.",
+            [
+              "لە لیستی کڕیاران بەم ژمارەیە بگەڕێ و بزانە هی کێیە",
+              "ئەگەر هەمان کەسە، تۆمارە کۆنەکەی بەکاربهێنە",
+              "ئەگەر کەسێکی ترە، ژمارەی ڕاستی خۆی بنووسە",
+            ],
+          ),
+        });
       }
 
       await db.updateCustomer(input.customerId, { mobileNumber: input.mobileNumber });
@@ -465,7 +497,7 @@ export const portalCenterRouter = router({
     .input(z.object({ customerId: z.number().int(), isActive: z.boolean() }))
     .mutation(async ({ input, ctx }) => {
       const customer = await db.getCustomerById(input.customerId);
-      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
 
       await db.updateCustomer(input.customerId, { isActive: input.isActive });
       await db.createAuditLog({

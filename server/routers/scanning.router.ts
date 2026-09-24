@@ -8,7 +8,7 @@ import { appLogger } from "../utils/logger";
 import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { withFix } from "@shared/fixAdvice";
+import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { DISCOUNT_REASONS } from "@shared/boxSettlement";
 import { notifyPackageStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -1217,7 +1217,7 @@ export const deliveryBoxRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.boxId);
-      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
       if (box.status !== 'open') {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -1546,7 +1546,7 @@ export const deliveryBoxRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
-      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
       if (box.status !== 'open') {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -1584,7 +1584,7 @@ export const deliveryBoxRouter = router({
     .input(z.object({ id: z.number(), reason: z.string().max(500).optional() }))
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
-      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
       if (box.status === 'cancelled') {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -1661,7 +1661,7 @@ export const deliveryBoxRouter = router({
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
-      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
       if (box.status !== 'ready') {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -1682,7 +1682,10 @@ export const deliveryBoxRouter = router({
         await chargeBoxDeliveryFee(box, ctx.user.id);
       } catch (err) {
         appLogger.error("[DeliveryBox] Failed to charge delivery", { boxCode: box.boxCode, error: err instanceof Error ? err.message : String(err) });
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە charge کردنی والیت" });
+        throw new TRPCError({
+          code: "INTERNAL_SERVER_ERROR",
+          message: retryFix("کرێی گەیاندن نەچووە سەر حیسابی کڕیار — بۆکسەکە نەنێردرا."),
+        });
       }
 
       const dispatched = await db.markBoxInTransit(box.id, ctx.user.id);
@@ -1716,7 +1719,7 @@ export const deliveryBoxRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
-      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "بۆکس نەدۆزرایەوە" });
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
       if (box.status !== 'in_transit' && box.status !== 'ready') {
         throw new TRPCError({
           code: "BAD_REQUEST",

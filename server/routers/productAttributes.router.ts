@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { retryFix } from "@shared/fixAdvice";
 import { router, protectedProcedure } from "../_core/trpc";
 import { staffProcedure, adminProcedure } from "../middleware/auth";
 import {
@@ -66,7 +67,7 @@ export const productAttributesRouter = router({
         sortOrder: input.sortOrder,
         isActive: true,
       });
-      if (!result) throw new Error("نەتوانرا دروست بکرێت");
+      if (!result) throw new Error(retryFix("دروست نەکرا."));
       return result;
     }),
 

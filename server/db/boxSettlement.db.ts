@@ -30,7 +30,7 @@ import {
   type DiscountReason,
   type BoxDiscount,
 } from "@shared/boxSettlement";
-import { withFix } from "@shared/fixAdvice";
+import { vanishedFix, withFix } from "@shared/fixAdvice";
 import {
   pledgeFloors,
   pledgeBreaches,
@@ -781,7 +781,7 @@ export async function pledgeBoxDiscount(
     .from(deliveryBoxes)
     .where(eq(deliveryBoxes.id, input.boxId))
     .limit(1);
-  if (!box) throw new Error("بۆکس نەدۆزرایەوە");
+  if (!box) throw new Error(vanishedFix("بۆکس", { bin: true }));
 
   // The tracking as the receipt will name it, kept with the promise so a
   // refusal weeks later can say which parcel it was about.
@@ -893,8 +893,8 @@ export async function createBoxSettlement(
   const view = await getBoxSettlementView(input.boxId);
   const box = view.box;
   const customer = view.customer;
-  if (!box) throw new Error("بۆکس نەدۆزرایەوە");
-  if (!customer) throw new Error("کڕیاری بۆکس نەدۆزرایەوە");
+  if (!box) throw new Error(vanishedFix("بۆکس", { bin: true }));
+  if (!customer) throw new Error(vanishedFix("کڕیاری ئەم بۆکسە", { bin: true }));
 
   const requested = new Set(input.lines.map((l) => l.lineId));
   const parcels = view.parcels.filter((p) => requested.has(p.lineId));
@@ -1322,7 +1322,7 @@ async function postDiscountCredits(
     .where(eq(customerAccounts.customerId, args.customerId))
     .for("update")
     .limit(1);
-  if (!account) throw new Error("حیسابی کڕیار نەدۆزرایەوە");
+  if (!account) throw new Error(vanishedFix("حیسابی کڕیار"));
 
   let balance = Number(account.currentBalanceUsd || 0);
   const balanceIqd = Number(account.currentBalanceIqd || 0);
@@ -1395,7 +1395,7 @@ export async function reverseBoxSettlement(
       .from(boxSettlements)
       .where(eq(boxSettlements.id, settlementId))
       .limit(1);
-    if (!settlement) throw new Error("واصڵ نەدۆزرایەوە");
+    if (!settlement) throw new Error(vanishedFix("واصڵەکە"));
     if (settlement.status === "reversed") {
       throw new Error(withFix(
         `واصڵی ${settlement.settlementNumber} پێشتر هەڵوەشێنراوەتەوە — دوو جار هەڵوەشاندنەوە پارەکە دوو جار دەگەڕێنێتەوە.`,
@@ -1412,7 +1412,7 @@ export async function reverseBoxSettlement(
       .where(eq(customerAccounts.customerId, settlement.customerId))
       .for("update")
       .limit(1);
-    if (!account) throw new Error("حیسابی کڕیار نەدۆزرایەوە");
+    if (!account) throw new Error(vanishedFix("حیسابی کڕیار"));
 
     /**
      * The payment record this settlement wrote.

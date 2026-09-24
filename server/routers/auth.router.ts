@@ -2,6 +2,7 @@ import { sessionAccount } from "../lib/accountSecrets";
 import { COOKIE_NAME } from "@shared/const";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
@@ -144,7 +145,16 @@ export const authRouter = router({
 
       // Only someone who already knows the password learns the account is off.
       if (!customer.isActive) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: withFix(
+            "ئەم هەژمارە ناچالاک کراوە — وشەی نهێنیەکەت ڕاستە، بەڵام هەژمارەکە داخراوە.",
+            [
+              "پەیوەندی بە وەزن ئێکسپرێس بکە بە ژمارە 07709183535",
+              "داوا بکە هەژمارەکەت چالاک بکرێتەوە",
+            ],
+          ),
+        });
       }
 
       // A good password ends the run. Otherwise four old mistakes would sit
@@ -239,7 +249,16 @@ export const authRouter = router({
         clearStaffFailures(lockKey);
         // Only someone who already knows the password learns the account is off.
         if (!user.isActive) {
-          throw new TRPCError({ code: "UNAUTHORIZED", message: "ئەکاونتەکە ناچالاکە" });
+          throw new TRPCError({
+            code: "UNAUTHORIZED",
+            message: withFix(
+              "ئەم هەژمارە ناچالاک کراوە — وشەی نهێنیەکەت ڕاستە، بەڵام ڕێگەی چوونەژوورەوەی نییە.",
+              [
+                "پەیوەندی بە بەڕێوەبەری سیستەم بکە تا هەژمارەکەت چالاک بکاتەوە",
+                "ئەگەر هەژمارێکی تریشت هەیە، بەوەوە بچۆ ژوورەوە",
+              ],
+            ),
+          });
         }
         const { SignJWT } = await import("jose");
         const secret = new TextEncoder().encode(getConfig().jwtSecret);
@@ -263,7 +282,7 @@ export const authRouter = router({
       } catch (err) {
         if (err instanceof TRPCError) throw err;
         appLogger.error("staffLogin failed", { error: err instanceof Error ? err.message : String(err), stack: err instanceof Error ? err.stack : undefined });
-        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵەیەک ڕوویدا. دووبارە هەوڵ بدەرەوە یان پەیوەندی بکە بە بەڕێوەبەر." });
+        throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: retryFix("چوونەژوورەوە تەواو نەبوو.") });
       }
     }),
   registerStaff: adminProcedure
@@ -282,19 +301,61 @@ export const authRouter = router({
     }))
     .mutation(async ({ input }) => {
       if (!input.username && !input.email && !input.mobileNumber) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "دەبێت یوزەرنەیم، ئیمەیڵ یان ژمارەی مۆبایل دابنێیت" });
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(
+            "هیچ ناوێکی چوونەژوورەوە دانەنراوە — بەبێ یەکێکیان ئەم کارمەندە ناتوانێت بچێتە ژوورەوە.",
+            [
+              "لانیکەم یەکێک لەمانە پڕ بکەرەوە: یوزەرنەیم، ئیمەیڵ یان ژمارەی مۆبایل",
+              "ئینجا خەزنکردن لێبدە",
+            ],
+          ),
+        });
       }
       if (input.username) {
         const existingByUsername = await db.getUserByUsername(input.username);
-        if (existingByUsername) throw new TRPCError({ code: "CONFLICT", message: "بەکارهێنەرێک بەم یوزەرنەیمە پێشتر هەیە" });
+        if (existingByUsername) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: withFix(
+              "یوزەرنەیمێکی وا پێشتر هەیە — دوو کارمەند بە یەک ناو لە یەکتر ناکرێنەوە.",
+              [
+                "یوزەرنەیمێکی جیاواز بنووسە",
+                "ئەگەر ئەم کارمەندە پێشتر هەژماری هەیە، لە لیستی کارمەندان بیدۆزەوە و لەوێ چاکی بکە",
+              ],
+            ),
+          });
+        }
       }
       if (input.email) {
         const existingByEmail = await db.getUserByUsername(input.email);
-        if (existingByEmail) throw new TRPCError({ code: "CONFLICT", message: "بەکارهێنەرێک بەم ئیمەیڵە پێشتر هەیە" });
+        if (existingByEmail) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: withFix(
+              "ئیمەیڵێکی وا پێشتر لەسەر کارمەندێکی ترە.",
+              [
+                "ئیمەیڵێکی جیاواز بنووسە",
+                "ئەگەر ئەم کارمەندە پێشتر هەژماری هەیە، لە لیستی کارمەندان بیدۆزەوە و لەوێ چاکی بکە",
+              ],
+            ),
+          });
+        }
       }
       if (input.mobileNumber) {
         const existingByMobile = await db.getUserByMobile(input.mobileNumber);
-        if (existingByMobile) throw new TRPCError({ code: "CONFLICT", message: "بەکارهێنەرێک بەم ژمارەی مۆبایلە پێشتر هەیە" });
+        if (existingByMobile) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: withFix(
+              "ژمارەی مۆبایلێکی وا پێشتر لەسەر کارمەندێکی ترە.",
+              [
+                "ژمارەیەکی جیاواز بنووسە",
+                "ئەگەر ئەم کارمەندە پێشتر هەژماری هەیە، لە لیستی کارمەندان بیدۆزەوە و لەوێ چاکی بکە",
+              ],
+            ),
+          });
+        }
       }
       const passwordHash = await bcrypt.hash(input.password, 12);
       const user = await db.createStaffUser({

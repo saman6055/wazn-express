@@ -36,7 +36,11 @@ function refusals(): Array<{ file: string; line: number; cured: boolean }> {
         if (!ln.includes("throw new TRPCError(") && !ln.includes("throw new Error(")) return;
         const chunk = lines.slice(i, i + 8).join("\n");
         if (!KURDISH.test(chunk)) return;
-        found.push({ file: rel, line: i + 1, cured: chunk.includes("withFix") });
+        // Two shapes of cure: one written by hand, and the one every
+        // vanished record shares (shared/fixAdvice vanishedFix).
+        // Three shapes of cure: one written by hand, the one every vanished
+        // record shares, and the one for a failure nobody at the screen caused.
+        found.push({ file: rel, line: i + 1, cured: /withFix\(|vanishedFix\(|retryFix\(/.test(chunk) });
       });
     }
   };
@@ -46,12 +50,18 @@ function refusals(): Array<{ file: string; line: number; cured: boolean }> {
 }
 
 /**
- * What was left the day the sweep started, so the number can only fall.
+ * What is left, so the number can only fall.
  *
- * Lower it when a batch is done; never raise it. A new refusal without a
- * cure fails this test, which is the point.
+ * It began at 135 and the sweep finished on 2026-09-25. The seven that
+ * remain are not refusals at all: three charge descriptions in
+ * prohibited.router, two "Database not available" in English, a batch
+ * lookup in English, and a payment note — each caught only because a
+ * Kurdish string sits within eight lines of a throw.
+ *
+ * Lower it when something else is swept; never raise it. A new refusal
+ * written without a cure fails this test, which is the point.
  */
-const STILL_UNCURED = 92;
+const STILL_UNCURED = 7;
 
 describe("every refusal says how to put it right", () => {
   const all = refusals();
@@ -120,10 +130,26 @@ describe("every refusal says how to put it right", () => {
     }
   });
 
+  it("has one cure for a record that is simply not there", () => {
+    // "Box not found" told somebody looking straight at the box's code that
+    // it was not there. Written once (vanishedFix), used everywhere.
+    const lib = read("shared/fixAdvice.ts");
+    expect(lib).toContain("export function vanishedFix(");
+    expect(lib).toContain("سەبەتەی خاوێنکردنەوە");
+    expect(all.filter((r) => r.cured).length).toBeGreaterThan(100);
+  });
+
+  it("and one for a failure nobody at the screen caused", () => {
+    const lib = read("shared/fixAdvice.ts");
+    expect(lib).toContain("export function retryFix(");
+    // "Contact the administrator" is not a step; copying the report is.
+    expect(lib).toContain("کۆپیکردنی وردەکاری");
+  });
+
   it("writes them in the shape the screens can print", () => {
     // Belt and braces on the lib itself: the steps must survive as lines.
     const sample = read("server/routers/scanning.router.ts");
-    expect(sample).toContain('import { withFix } from "@shared/fixAdvice";');
+    expect(sample).toMatch(/import \{[^}]*withFix[^}]*\} from "@shared\/fixAdvice";/);
     expect(hasFix("a\n\nچۆن چارەسەری بکەیت:\n1. b")).toBe(true);
   });
 });

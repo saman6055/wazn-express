@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
+import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { explainFigure, explainCashOnHand } from "@shared/financeExplain";
 import { partnerAccounts, reconcile, ownershipCheck, partnershipTotals, statement } from "@shared/partnerLedger";
 import { buildBatchInvoice } from "@shared/batchInvoice";
@@ -195,35 +196,58 @@ export const ledgerRouter = router({
       .mutation(async ({ input, ctx }) => {
         const payment = await db.getPaymentRecordById(input.paymentId);
         if (!payment) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "پارەدان نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("پارەدانەکە") });
         }
         if (payment.transactionId == null) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "ئەم پارەدانە لینکی ledger transaction-ـی نییە، ناتوانرێت بگەڕێنرێتەوە",
+            message: withFix(
+              "ئەم پارەدانە هیچ جووڵەیەکی لە دەفتەری حیسابدا نییە — بۆیە هیچی نییە بگەڕێنرێتەوە. پارەدانێکی کۆنە کە پێش دەفتەرەکە تۆمار کراوە.",
+              [
+                "لە شاشەی حیسابی کڕیار سەیری دەفتەرەکە بکە و بزانە ئەو پارەیە کەوتووەتە ناوی یان نا",
+                "ئەگەر نەکەوتووە، بە «ڕێکخستنی باڵانس» بڕەکە ڕاست بکەرەوە، بە هۆکارەوە",
+                "ئەگەر کەوتووە بەڵام بەم پارەدانەوە بەستراو نییە، لەوێوە هەڵیبوەشێنەوە",
+              ],
+            ),
           });
         }
         const original = parseFloat(payment.amountUsd || '0');
         const alreadyReversed = parseFloat(payment.reversedAmountUsd || '0');
         const remaining = original - alreadyReversed;
         if (remaining <= 0.005) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم پارەدانە پێشتر گەڕێنراوەتەوە" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix(
+              "ئەم پارەدانە پێشتر بە تەواوی گەڕێنراوەتەوە — دوو جار گەڕاندنەوە پارەکە دوو جار دەخاتە سەر کڕیار.",
+              [
+                "لیستی پارەدانەکان نوێ بکەرەوە",
+                "ئەگەر پارەیەکی تر دەبێت بگەڕێتەوە، ئەو پارەدانەی خۆی هەڵبژێرە",
+                "ئەگەر باڵانسی کڕیار هەڵەیە، بە «ڕێکخستنی باڵانس» ڕاستی بکەرەوە، بە هۆکارەوە",
+              ],
+            ),
+          });
         }
         const requested = input.amountUsd ?? remaining;
         if (requested > remaining + 0.005) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `بڕی داواکراو ($${requested.toFixed(2)}) لە ماوە ($${remaining.toFixed(2)}) زیاترە`,
+            message: withFix(
+              `داوای گەڕاندنەوەی $${requested.toFixed(2)} کراوە بەڵام تەنها $${remaining.toFixed(2)} لەم پارەدانەدا ماوە — ئەوەی نەدراوە ناگەڕێتەوە.`,
+              [
+                `بڕەکە بکە $${remaining.toFixed(2)} یان کەمتر`,
+                "ئەگەر زیاتر دەبێت بگەڕێتەوە، پارەدانەکانی تری هەمان کڕیار هەڵبژێرە",
+              ],
+            ),
           });
         }
 
         const account = await db.getCustomerAccountById(payment.accountId);
         if (!account) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "حسابی کڕیار نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("حیسابی کڕیار") });
         }
         const customer = await db.getCustomerById(account.customerId);
         if (!customer) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
         }
 
         const result = await db.reverseAdvancePayment(
@@ -267,38 +291,70 @@ export const ledgerRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (input.amountUsd <= 0) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "بڕی Refund پێویستە لە سفر زیاتر بێت" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix(
+              "بڕی ڕیفەند سفر یان کەمترە — ڕیفەندی سفر هیچ ناگۆڕێت.",
+              [
+                "بڕێکی لە سفر زیاتر بنووسە",
+                "ئەگەر مەبەستت گەڕاندنەوەی هەموو پارەکەیە، «گەڕاندنەوە» بەکاربهێنە نەک ڕیفەند",
+              ],
+            ),
+          });
         }
         const payment = await db.getPaymentRecordById(input.paymentId);
         if (!payment) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "پارەدان نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("پارەدانەکە") });
         }
         if (payment.transactionId == null) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "ئەم پارەدانە لینکی ledger transaction-ـی نییە، ناتوانرێت refund بکرێت",
+            message: withFix(
+              "ئەم پارەدانە هیچ جووڵەیەکی لە دەفتەری حیسابدا نییە — بۆیە ڕیفەندی بۆ ناکرێت. پارەدانێکی کۆنە کە پێش دەفتەرەکە تۆمار کراوە.",
+              [
+                "لە شاشەی حیسابی کڕیار سەیری دەفتەرەکە بکە و بزانە ئەو پارەیە کەوتووەتە ناوی یان نا",
+                "ئەگەر کەوتووە، لەوێوە هەڵیبوەشێنەوە",
+                "ئەگەر نەکەوتووە، بە «ڕێکخستنی باڵانس» بڕەکە ڕاست بکەرەوە، بە هۆکارەوە",
+              ],
+            ),
           });
         }
         const original = parseFloat(payment.amountUsd || '0');
         const alreadyReversed = parseFloat(payment.reversedAmountUsd || '0');
         const remaining = original - alreadyReversed;
         if (remaining <= 0.005) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم پارەدانە پێشتر گەڕێنراوەتەوە" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix(
+              "ئەم پارەدانە پێشتر بە تەواوی گەڕێنراوەتەوە — دوو جار گەڕاندنەوە پارەکە دوو جار دەخاتە سەر کڕیار.",
+              [
+                "لیستی پارەدانەکان نوێ بکەرەوە",
+                "ئەگەر پارەیەکی تر دەبێت بگەڕێتەوە، ئەو پارەدانەی خۆی هەڵبژێرە",
+                "ئەگەر باڵانسی کڕیار هەڵەیە، بە «ڕێکخستنی باڵانس» ڕاستی بکەرەوە، بە هۆکارەوە",
+              ],
+            ),
+          });
         }
         if (input.amountUsd > remaining + 0.005) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: `بڕی داواکراو ($${input.amountUsd.toFixed(2)}) لە ماوە ($${remaining.toFixed(2)}) زیاترە`,
+            message: withFix(
+              `داوای ڕیفەندی $${input.amountUsd.toFixed(2)} کراوە بەڵام تەنها $${remaining.toFixed(2)} لەم پارەدانەدا ماوە — ئەوەی نەدراوە ناگەڕێتەوە.`,
+              [
+                `بڕەکە بکە $${remaining.toFixed(2)} یان کەمتر`,
+                "ئەگەر زیاتر دەبێت بگەڕێتەوە، پارەدانەکانی تری هەمان کڕیار هەڵبژێرە",
+              ],
+            ),
           });
         }
 
         const account = await db.getCustomerAccountById(payment.accountId);
         if (!account) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "حسابی کڕیار نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("حیسابی کڕیار") });
         }
         const customer = await db.getCustomerById(account.customerId);
         if (!customer) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "کڕیار نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
         }
 
         let result;
@@ -360,11 +416,21 @@ export const ledgerRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         if (input.amountUsd <= 0) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "بڕی ڕێکخستن پێویستە لە سفر زیاتر بێت" });
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix(
+              "بڕی ڕێکخستن سفر یان کەمترە — ڕێکخستنی سفر هیچ لە باڵانس ناگۆڕێت.",
+              [
+                "بڕێکی لە سفر زیاتر بنووسە",
+                "ئاراستەکە دیاری بکە: زیادکردن لەسەر کڕیار یان کەمکردنەوەی",
+                "هۆکارەکەش بنووسە — ئەم جووڵەیە لە دەفتەری حیسابدا دەمێنێتەوە",
+              ],
+            ),
+          });
         }
         const customer = await db.getCustomerById(input.customerId);
         if (!customer) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "کریار نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
         }
 
         const result = await db.adjustCustomerBalance(
@@ -1237,7 +1303,7 @@ export const customerBatchInvoiceRouter = router({
     .input(z.object({ batchId: idSchema, customerId: idSchema }))
     .query(async ({ input }) => {
       const batch = await db.getBatchById(input.batchId);
-      if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "باچ نەدۆزرایەوە" });
+      if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچ", { bin: true }) });
 
       const [orders, customer] = await Promise.all([
         db.getCustomerOrdersInBatch(input.batchId, input.customerId),
@@ -1271,7 +1337,7 @@ export const customerBatchInvoiceRouter = router({
     .query(async ({ input }) => {
       const boxes = await db.getCustomerVisibleBoxes(input.customerId, 200);
       const box = boxes.find((b) => b.id === input.boxId);
-      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "سندوق نەدۆزرایەوە" });
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("سندوقەکە") });
 
       const items = await db.getBoxItems(box.id);
       return { box, invoice: buildBoxInvoice(items, ourDeliveryFee(box.deliveryChargeUsd)), money: boxMoneyIn(items, box) };

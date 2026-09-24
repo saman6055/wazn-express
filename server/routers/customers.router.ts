@@ -1,6 +1,7 @@
 import { withoutSecrets } from "../lib/accountSecrets";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
@@ -57,7 +58,17 @@ export const customersRouter = router({
         // Check if mobile already exists in customers table
         const existingCustomer = await db.getCustomerByMobile(input.mobileNumber);
         if (existingCustomer) {
-          throw new TRPCError({ code: "CONFLICT", message: "ئەم ژمارە مۆبایلە پێشتر تۆمارکراوە" });
+          throw new TRPCError({
+          code: "CONFLICT",
+          message: withFix(
+            "ئەم ژمارە مۆبایلە پێشتر لەسەر کڕیارێکی ترە — ژمارەی مۆبایل ئەوەیە کە کڕیارەکان پێی لە یەکتر دەکرێنەوە.",
+            [
+              "لە لیستی کڕیاران بەم ژمارەیە بگەڕێ",
+              "ئەگەر هەمان کەسە، تۆمارە کۆنەکەی چاک بکە لە جیاتی تۆمارێکی نوێ",
+              "ئەگەر کەسێکی ترە، ژمارەی ڕاستی خۆی بنووسە",
+            ],
+          ),
+        });
         }
 
         const passwordHash = await bcrypt.hash(input.password, 12);
@@ -332,7 +343,7 @@ export const customersRouter = router({
       .mutation(async ({ input, ctx }) => {
         const customer = await db.getCustomerById(input.id);
         if (!customer) {
-          throw new TRPCError({ code: 'NOT_FOUND', message: 'کڕیار نەدۆزرایەوە' });
+          throw new TRPCError({ code: 'NOT_FOUND', message: vanishedFix("کڕیار", { bin: true }) });
         }
 
         const result = await db.deleteCustomer(input.id, ctx.user.id);

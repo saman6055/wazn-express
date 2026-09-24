@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
+import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import * as bcrypt from "bcryptjs";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, customerProcedure } from "../middleware/auth";
@@ -100,12 +101,32 @@ export const customerPortalRouter = router({
         const customerId = ctx.customerId;
         const customer = await db.getCustomerById(customerId);
         if (!customer || !customer.passwordHash) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'ناتوانرێت وشەی نهێنی بگۆڕدرێت بۆ ئەم هەژمارە.' });
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: withFix(
+              "وشەی نهێنی ئەم هەژمارە لێرەوە ناگۆڕدرێت — هێشتا وشەی نهێنیەکی بۆ دانەنراوە.",
+              [
+                "پەیوەندی بە وەزن ئێکسپرێس بکە بە ژمارە 07709183535",
+                "داوا بکە وشەی نهێنیەکت بۆ دابنرێت",
+                "دوای ئەوە لێرەوە دەتوانیت خۆت بیگۆڕیت",
+              ],
+            ),
+          });
         }
 
         const isValid = await bcrypt.compare(input.currentPassword, customer.passwordHash);
         if (!isValid) {
-          throw new TRPCError({ code: 'BAD_REQUEST', message: 'وشەی نهێنی ئێستا هەڵەیە.' });
+          throw new TRPCError({
+            code: 'BAD_REQUEST',
+            message: withFix(
+              "وشەی نهێنی ئێستات هەڵەیە.",
+              [
+                "دڵنیا بەرەوە لە وشەی نهێنیەکەی ئێستا و دووبارە بینووسە",
+                "سەیری دوگمەی Caps Lock بکە",
+                "ئەگەر لەبیرت چووە، پەیوەندی بە وەزن ئێکسپرێس بکە بە ژمارە 07709183535",
+              ],
+            ),
+          });
         }
 
         const newHash = await bcrypt.hash(input.newPassword, 12);
@@ -175,7 +196,7 @@ export const customerPortalRouter = router({
         const customerId = ctx.customerId;
         const boxes = await db.getCustomerVisibleBoxes(customerId, 200);
         const box = boxes.find((b) => b.id === input.boxId);
-        if (!box) throw new TRPCError({ code: "NOT_FOUND", message: "سندوق نەدۆزرایەوە" });
+        if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("سندوقەکە") });
 
         const items = await db.getBoxItems(box.id);
         // Customer edition: full-package cartons show their agreed price and
@@ -256,7 +277,9 @@ export const customerPortalRouter = router({
           };
           throw new TRPCError({
             code: result.reason === "not_yours" ? "FORBIDDEN" : "BAD_REQUEST",
-            message: messages[result.reason ?? ""] ?? "نەتوانرا دووپات بکرێتەوە",
+            message:
+              messages[result.reason ?? ""] ??
+              retryFix("وەرگرتنی بۆکسەکە دووپات نەکرایەوە."),
           });
         }
         return { success: true };
@@ -317,14 +340,14 @@ export const customerPortalRouter = router({
       .query(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
         const batch = await db.getBatchById(input.batchId);
-        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "باچ نەدۆزرایەوە" });
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچ", { bin: true }) });
 
         const orders = await db.getCustomerOrdersInBatch(input.batchId, customerId);
         if (orders.length === 0) {
           // Nothing of theirs is in it. Said as not-found rather than as an
           // empty invoice, so a guessed batch id reveals nothing about
           // whether that batch exists at all.
-          throw new TRPCError({ code: "NOT_FOUND", message: "باچ نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچ", { bin: true }) });
         }
 
         return {
@@ -744,7 +767,7 @@ export const customerPortalRouter = router({
       .input(z.object({ packageId: z.number() }))
       .mutation(async ({ input, ctx }) => {
         const link = await db.createShareLink(input.packageId, ctx.customerId);
-        if (!link) throw new TRPCError({ code: "NOT_FOUND", message: "پاکێج نەدۆزرایەوە" });
+        if (!link) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("پاکێج", { bin: true }) });
         return link;
       }),
 
@@ -976,8 +999,14 @@ export const customerPortalRouter = router({
           }
           throw new TRPCError({
             code: "CONFLICT",
-            message:
-              "ئەم ژمارەی تراکە پێشتر تۆمارکراوە. تکایە پەیوەندیمان پێوە بکە تاکو دڵنیا ببینەوە هی کێیە.",
+            message: withFix(
+              "ئەم ژمارەی تراکە پێشتر لە سیستەمدا تۆمار کراوە — لەوانەیە خۆت پێشتر تۆمارت کردبێت، یان کەسێکی تر بە هەڵە.",
+              [
+                "سەیری لیستی پاکەتەکانی خۆت بکە — لەوانەیە لەوێ بێت",
+                "ئەگەر لەوێ نەبوو، پەیوەندی بە وەزن ئێکسپرێس بکە بە ژمارە 07709183535",
+                "ژمارەی تراکەکە بۆیان بنێرە تا دڵنیا ببنەوە هی کێیە",
+              ],
+            ),
           });
         }
 
@@ -1234,7 +1263,10 @@ export const customerPortalRouter = router({
         // boundary. They're authenticated — just on the wrong role —
         // so return a non-auth error.
         if (!ctx.user.isCustomer) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم تایبەتمەندیە تەنها بۆ هەژماری کریار بەردەستە" });
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix(
+            "ئەم تایبەتمەندییە تەنها بۆ هەژماری کڕیارە، و تۆ بە هەژماری کارمەندەوە چوویتە ژوورەوە.",
+            ["لەم هەژمارە بچۆ دەرەوە", "بە هەژماری کڕیارەکەوە بچۆ ژوورەوە"],
+          ) });
         }
         const sub = await db.upsertPushSubscription({
           customerId: ctx.user.id,
@@ -1259,7 +1291,10 @@ export const customerPortalRouter = router({
     sendTestPush: protectedProcedure.mutation(async ({ ctx }) => {
       // BAD_REQUEST instead of FORBIDDEN — see subscribePush comment.
       if (!ctx.user.isCustomer) {
-        throw new TRPCError({ code: "BAD_REQUEST", message: "ئەم تایبەتمەندیە تەنها بۆ هەژماری کریار بەردەستە" });
+        throw new TRPCError({ code: "BAD_REQUEST", message: withFix(
+            "ئەم تایبەتمەندییە تەنها بۆ هەژماری کڕیارە، و تۆ بە هەژماری کارمەندەوە چوویتە ژوورەوە.",
+            ["لەم هەژمارە بچۆ دەرەوە", "بە هەژماری کڕیارەکەوە بچۆ ژوورەوە"],
+          ) });
       }
       const result = await sendPushToCustomer(ctx.user.id, {
         title: "Wazn Express",

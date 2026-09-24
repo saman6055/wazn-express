@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { withFix } from "@shared/fixAdvice";
 import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
 import { staffProcedure, adminProcedure } from "../middleware/auth";
@@ -165,7 +166,17 @@ export const trashRouter = router({
             (input.recordId == null || item.recordId === input.recordId)
         );
         if (!visible || !canSeeTrashItem(visible, ctx.user)) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "لە سەبەتەکەدا نییە" });
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: withFix(
+              "ئەم تۆمارە لە سەبەتەکەدا نییە — لەوانەیە پێشتر گەڕێنرابێتەوە، یان بە تەواوی سڕدرابێتەوە، یان هی بەشێک بێت کە تۆ نایبینیت.",
+              [
+                "سەبەتەکە نوێ بکەرەوە",
+                "ئەگەر گەڕێنراوەتەوە، لە لیستی خۆیدا بیدۆزەوە",
+                "ئەگەر بە تەواوی سڕدراوەتەوە، ناگەڕێتەوە — دەبێت لە نوێوە تۆمار بکرێت",
+              ],
+            ),
+          });
         }
 
         await db.createAuditLog({
@@ -178,13 +189,29 @@ export const trashRouter = router({
 
         if (input.entityType === "batch" || input.entityType === "delivery_box") {
           const entry = await entryFor(input.entityType, input.entityId, input.recordId ?? visible.recordId ?? undefined);
-          if (!entry) throw new TRPCError({ code: "NOT_FOUND", message: "لە سەبەتەکەدا نییە" });
+          if (!entry) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: withFix(
+                "ئەم تۆمارە لە سەبەتەکەدا نییە — لەوانەیە پێشتر گەڕێنرابێتەوە یان بە تەواوی سڕدرابێتەوە.",
+                ["سەبەتەکە نوێ بکەرەوە", "ئەگەر گەڕێنراوەتەوە، لە لیستی خۆیدا بیدۆزەوە"],
+              ),
+            });
+          }
           await db.removeDeletedRecordById(entry.id);
           return { success: true };
         }
 
         const order = await db.getDeletedFullPackageOrder(input.entityId);
-        if (!order) throw new TRPCError({ code: "NOT_FOUND", message: "لە سەبەتەکەدا نییە" });
+        if (!order) {
+          throw new TRPCError({
+            code: "NOT_FOUND",
+            message: withFix(
+              "ئەم ئۆردەرە لە سەبەتەکەدا نییە — لەوانەیە پێشتر گەڕێنرابێتەوە یان بە تەواوی سڕدرابێتەوە.",
+              ["سەبەتەکە نوێ بکەرەوە", "ئەگەر گەڕێنراوەتەوە، لە لیستی ئۆردەرەکاندا بیدۆزەوە"],
+            ),
+          });
+        }
         await db.purgeFullPackageOrder(input.entityId);
         return { success: true };
       }),

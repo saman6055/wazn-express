@@ -48,17 +48,21 @@ describe("a charge no longer makes a typo permanent", () => {
 describe("what still cannot be moved", () => {
   it("an advance, because that is real money from the old customer", () => {
     expect(move).toContain("const hasAdvance =");
-    expect(move).toContain("پارەی پێشەکی لەم ئۆردەرەدا وەرگیراوە");
+    expect(move).toContain("پارەی پێشەکی لە کڕیارە کۆنەکەوە وەرگیراوە");
+    // …and says how to move it anyway (shared/fixAdvice).
+    expect(move).toContain("پارە پێشەکییەکە بگەڕێنەوە");
   });
 
   it("an order sitting in a delivery box", () => {
     expect(move).toContain("isFPOrderBoxedNonCancelled(id)");
-    expect(move).toContain("لە بۆکسی گەیاندندایە");
+    expect(move).toContain("لە بۆکسێکی گەیاندندایە");
+    expect(move).toContain("ئۆردەرەکە لە بۆکسەکە دەربهێنە");
   });
 
   it("a parcel already charged at batch delivery", () => {
     expect(move).toContain("p.isCharged || p.isShippingCharged");
-    expect(move).toContain("پێشتر چارج کراوە بۆ کڕیارە کۆنەکە");
+    expect(move).toContain("پێشتر چووەتە سەر کڕیارە کۆنەکە");
+    expect(move).toContain("هەڵبوەشێنەوە");
   });
 });
 

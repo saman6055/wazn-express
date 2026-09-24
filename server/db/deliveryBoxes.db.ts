@@ -1,4 +1,5 @@
 import { eq, ne, desc, and, gte, lte, sql, inArray, isNull } from "drizzle-orm";
+import { withFix } from "@shared/fixAdvice";
 import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
@@ -1229,10 +1230,23 @@ export async function recomputeBoxItems(
   const [box] = await db.select().from(deliveryBoxes).where(eq(deliveryBoxes.id, boxId)).limit(1);
   if (!box) throw new Error("Box not found");
   if (box.status === 'delivered' || box.status === 'cancelled') {
-    throw new Error("بۆکسی گەیاندراو/هەڵوەشاوە نوێ ناکرێتەوە");
+    throw new Error(withFix(
+      "ئەم بۆکسە گەیەنراوە یان هەڵوەشێنراوەتەوە — نوێکردنەوەی ناوەڕۆکی بۆکسێکی وا کێش و نرخێک دەگۆڕێت کە کڕیار پێشتر پێی ڕاگەیەنراوە.",
+      [
+        "ئەگەر بۆکسەکە بە هەڵە گەیەنراو نیشان دراوە، سەرەتا «کردنەوەی بۆکس» لێبدە (ئادمین، بە هۆکارەوە)",
+        "ئینجا نوێکردنەوە لێبدە",
+        "ئەگەر هەڵوەشێنراوەتەوە، بۆکسێکی نوێ بۆ هەمان کڕیار دروست بکە",
+      ],
+    ));
   }
   if (!box.batchId || !box.customerId) {
-    throw new Error("بۆکس بەستراو نییە بە باچ یاخود کریار");
+    throw new Error(withFix(
+      "ئەم بۆکسە بە هیچ باچ یان کڕیارێکەوە بەستراو نییە — نوێکردنەوە پاکەتەکان لە باچی کڕیارەکەوە دەهێنێت، و ئەم بۆکسە نایزانێت کامەیە.",
+      [
+        "بۆکسەکە بکەرەوە و کڕیارەکەی دیاری بکە",
+        "ئەگەر بۆکسێکی دەستییە و باچی نییە، پاکەتەکانی بە تراک سکان بکە لە جیاتی نوێکردنەوە",
+      ],
+    ));
   }
 
   const [batchRow] = await db.select().from(batches).where(eq(batches.id, box.batchId)).limit(1);

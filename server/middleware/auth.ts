@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { withFix } from "@shared/fixAdvice";
 import { protectedProcedure } from "../_core/trpc";
 import * as db from "../db";
 
@@ -30,7 +31,13 @@ export const customerProcedure = protectedProcedure.use(async ({ ctx, next }) =>
   if (!customerId) {
     throw new TRPCError({
       code: "BAD_REQUEST",
-      message: "پرۆفایلی کڕیار نەدۆزرایەوە بۆ ئەم هەژمارە. تکایە پەیوەندی بە پشتگیرییەوە بکە.",
+      message: withFix(
+        "ئەم هەژمارە بە هیچ پرۆفایلێکی کڕیارەوە بەستراو نییە — بۆیە هیچ پاکەت و حیسابێکی نییە نیشان بدرێت.",
+        [
+          "پەیوەندی بە وەزن ئێکسپرێس بکە بە ژمارە 07709183535",
+          "کۆدی هەژمارەکەت پێیان بڵێ تا پرۆفایلەکەت پێوە ببەستنەوە",
+        ],
+      ),
     });
   }
 

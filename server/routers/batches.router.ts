@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { withFix } from "@shared/fixAdvice";
+import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { isBatchEditLocked } from "@shared/batchPriceHistory";
@@ -605,7 +605,7 @@ export const batchesRouter = router({
       }))
       .query(async ({ input }) => {
         const preview = await db.previewBatchCustomerAdjustment(input);
-        if (!preview) throw new TRPCError({ code: "NOT_FOUND", message: "باچەکە نەدۆزرایەوە" });
+        if (!preview) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچەکە", { bin: true }) });
         return preview;
       }),
 
@@ -1103,7 +1103,7 @@ export const batchesRouter = router({
       .mutation(async ({ input, ctx }) => {
         const batch = await db.getBatchById(input.id);
         if (!batch) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "باچەکە نەدۆزرایەوە" });
+          throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچەکە", { bin: true }) });
         }
 
         // Parcels are no longer a reason to refuse. A batch created by

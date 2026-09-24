@@ -45,7 +45,7 @@ describe("the refusal", () => {
   });
 
   it("says the way out, in order", () => {
-    expect(router).toContain('import { withFix } from "@shared/fixAdvice";');
+    expect(router).toMatch(/import \{[^}]*withFix[^}]*\} from "@shared\/fixAdvice";/);
     expect(refusal).toContain("withFix(");
     expect(refusal).toContain("بکەرەوە");
     expect(refusal).toContain("پاکەتەکە لەو بۆکسە دەربهێنە");

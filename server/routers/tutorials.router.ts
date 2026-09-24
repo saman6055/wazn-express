@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { retryFix } from "@shared/fixAdvice";
 import { router, protectedProcedure } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
 import * as db from "../db";
@@ -70,7 +71,7 @@ export const tutorialsRouter = router({
     .input(z.object(tutorialInput))
     .mutation(async ({ input, ctx }) => {
       const created = await db.createTutorial({ ...input, createdById: ctx.user.id });
-      if (!created) throw new Error("نەتوانرا دروست بکرێت | Could not create");
+      if (!created) throw new Error(retryFix("دروست نەکرا."));
       return created;
     }),
 

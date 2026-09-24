@@ -1,6 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
-import { withFix } from "@shared/fixAdvice";
+import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { eq } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
@@ -100,7 +100,7 @@ export const packagesRouter = router({
       .input(z.object({ packageId: idSchema }))
       .mutation(async ({ input, ctx }) => {
         const pkg = await db.getPackageById(input.packageId);
-        if (!pkg) throw new TRPCError({ code: "NOT_FOUND", message: "پاکەت نەدۆزرایەوە" });
+        if (!pkg) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("پاکەت", { bin: true }) });
 
         await db.acknowledgeVolumetric(input.packageId, ctx.user.id);
         await db.createAuditLog({
@@ -616,7 +616,14 @@ export const packagesRouter = router({
           if (missing !== -1) {
             throw new TRPCError({
               code: "NOT_FOUND",
-              message: `ئۆردەری گرێدراو نەدۆزرایەوە (id=${linkedOrderIds[missing]})`,
+              message: withFix(
+                "یەکێک لەو ئۆردەرانەی ئەم پاکەتەی پێوە بەستراوە نەدۆزرایەوە — لەوانەیە سڕدرابێتەوە.",
+                [
+                  "لاپەڕەکە نوێ بکەرەوە",
+                  "ئۆردەرە سڕدراوەکە لە «سەبەتەی خاوێنکردنەوە» بگەڕێنەوە، یان لە گرێدانەکە لایبدە",
+                  "ئینجا دووبارە خەزنکردن لێبدە",
+                ],
+              ),
             });
           }
           const customerIds = new Set<number>();
@@ -833,7 +840,7 @@ export const packagesRouter = router({
               }
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: `هەڵەی داتابەیس: ${friendly.slice(0, 300)}`,
+                message: retryFix(`داتابەیس ئەم تۆمارەی وەرنەگرت: ${friendly.slice(0, 300)}`),
               });
             }
           }

@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -294,7 +295,14 @@ export const fullPackageRouter = router({
         if (!input.orderNumber || !input.orderNumber.trim()) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "ئۆردەر نەمبەر پێویستە | An order number is required",
+            message: withFix(
+              "ژمارەی ئۆردەر نەنووسراوە — بەبێ ئەو، ئەم ئۆردەرە ناگەڕێتەوە بۆ ئەو کڕینەی لەسەر پلاتفۆرمەکە کراوە.",
+              [
+                "ژمارەی ئۆردەرەکە لە ئەپی کڕینەکە (تاوباو، 1688، پیندوودو…) کۆپی بکە",
+                "لە خانەی «ژمارەی ئۆردەر» بیلکێنە",
+                "ئینجا خەزنکردن لێبدە",
+              ],
+            ),
           });
         }
         // Order numbers must be unique — each real order has exactly one. Reject
@@ -305,7 +313,14 @@ export const fullPackageRouter = router({
           if (dup) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `ئەم ئۆردەر نەمبەرە پێشتر بەکارهاتووە لە ئۆردەری ${dup.orderCode}. هەر ئۆردەرێک دەبێت ئۆردەر نەمبەرێکی ناوازەی هەبێت. | This order number is already used by ${dup.orderCode}. Each order must have a unique order number.`,
+              message: withFix(
+                `ئەم ژمارەی ئۆردەرە پێشتر لە ئۆردەری ${dup.orderCode} بەکارهاتووە — دوو ئۆردەر بە یەک ژمارە واتای ئەوەیە کە نازانرێت پارەکە بۆ کامیانە.`,
+                [
+                  `ئۆردەری ${dup.orderCode} بکەرەوە و سەیری بکە — لەوانەیە هەر هەمان کڕینە`,
+                  "ئەگەر هەر ئەوەیە، لەوێدا چاکی بکە لە جیاتی ئۆردەرێکی نوێ",
+                  "ئەگەر کڕینێکی جیاوازە، ژمارەی ئۆردەری ڕاستی خۆی لە ئەپەکەوە کۆپی بکە",
+                ],
+              ),
             });
           }
         }
@@ -722,8 +737,14 @@ export const fullPackageRouter = router({
           if (hasAdvance) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message:
-                "ناتوانرێت کڕیار بگۆڕدرێت — پارەی پێشەکی لەم ئۆردەرەدا وەرگیراوە لە کڕیارە کۆنەکە. سەرەتا پارەکە بگەڕێنەوە. | Can't change the customer: an advance was taken from the old customer. Refund it first.",
+              message: withFix(
+                "کڕیاری ئەم ئۆردەرە ناگۆڕدرێت — پارەی پێشەکی لە کڕیارە کۆنەکەوە وەرگیراوە، و گۆڕینی خاوەن پارەکەی بەجێدەهێڵێت لەسەر کەسێک کە ئیتر ئۆردەرەکەی نییە.",
+                [
+                  "لە حیسابی کڕیارە کۆنەکە پارە پێشەکییەکە بگەڕێنەوە",
+                  "ئینجا کڕیارەکە بگۆڕە",
+                  "دوای ئەوە پارە پێشەکییەکە لەسەر کڕیارە نوێیەکە تۆمار بکەرەوە",
+                ],
+              ),
             });
           }
 
@@ -733,8 +754,15 @@ export const fullPackageRouter = router({
           if (await db.isFPOrderBoxedNonCancelled(id)) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message:
-                "ناتوانرێت کڕیار بگۆڕدرێت — ئەم ئۆردەرە لە بۆکسی گەیاندندایە. سەرەتا لە بۆکسەکە دەریبهێنە. | Can't change the customer: this order is in a delivery box. Take it out of the box first.",
+              message: withFix(
+                "کڕیاری ئەم ئۆردەرە ناگۆڕدرێت — لە بۆکسێکی گەیاندندایە، و بۆکس هی یەک کڕیارە.",
+                [
+                  "بۆکسەکە بکەرەوە",
+                  "ئۆردەرەکە لە بۆکسەکە دەربهێنە",
+                  "کڕیارەکە بگۆڕە",
+                  "ئینجا بیخەرەوە ناو بۆکسی کڕیارە نوێیەکە",
+                ],
+              ),
             });
           }
 
@@ -748,8 +776,14 @@ export const fullPackageRouter = router({
           if (chargedParcel) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message:
-                `ناتوانرێت کڕیار بگۆڕدرێت — پاکەتی ${chargedParcel.packageCode} پێشتر چارج کراوە بۆ کڕیارە کۆنەکە. | Can't change the customer: parcel ${chargedParcel.packageCode} has already been charged to the old customer.`,
+              message: withFix(
+                `کڕیاری ئەم ئۆردەرە ناگۆڕدرێت — کرێی پاکەتی ${chargedParcel.packageCode} پێشتر چووەتە سەر کڕیارە کۆنەکە، و گۆڕینی خاوەن ئەو قەرزە لەسەری بەجێدەهێڵێت.`,
+                [
+                  `لە حیسابی کڕیارە کۆنەکە، بارکردنی پاکەتی ${chargedParcel.packageCode} هەڵبوەشێنەوە`,
+                  "ئینجا کڕیارەکە بگۆڕە",
+                  "دوای ئەوە پاکەتەکە لەسەر کڕیارە نوێیەکە بار بکە",
+                ],
+              ),
             });
           }
           packagesToMove = linkedPackages.map((p: any) => p.id);
@@ -766,7 +800,7 @@ export const fullPackageRouter = router({
           if (!newCustomer) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: "کڕیاری هەڵبژێردراو نەدۆزرایەوە | Selected customer not found",
+              message: vanishedFix("کڕیارە هەڵبژێردراوەکە", { bin: true }),
             });
           }
         }
@@ -784,7 +818,14 @@ export const fullPackageRouter = router({
           if (dup) {
             throw new TRPCError({
               code: "BAD_REQUEST",
-              message: `ئەم ئۆردەر نەمبەرە پێشتر بەکارهاتووە لە ئۆردەری ${dup.orderCode}. هەر ئۆردەرێک دەبێت ئۆردەر نەمبەرێکی ناوازەی هەبێت. | This order number is already used by ${dup.orderCode}. Each order must have a unique order number.`,
+              message: withFix(
+                `ئەم ژمارەی ئۆردەرە پێشتر لە ئۆردەری ${dup.orderCode} بەکارهاتووە — دوو ئۆردەر بە یەک ژمارە واتای ئەوەیە کە نازانرێت پارەکە بۆ کامیانە.`,
+                [
+                  `ئۆردەری ${dup.orderCode} بکەرەوە و سەیری بکە — لەوانەیە هەر هەمان کڕینە`,
+                  "ئەگەر هەر ئەوەیە، لەوێدا چاکی بکە لە جیاتی ئۆردەرێکی نوێ",
+                  "ئەگەر کڕینێکی جیاوازە، ژمارەی ئۆردەری ڕاستی خۆی لە ئەپەکەوە کۆپی بکە",
+                ],
+              ),
             });
           }
         }
@@ -822,7 +863,13 @@ export const fullPackageRouter = router({
         if (!isUncharged && (chargeChanged || advanceChanged) && (!reason || reason.trim().length < 3)) {
           throw new TRPCError({
             code: "BAD_REQUEST",
-            message: "هۆکار پێویستە (بەلایەنی کەم 3 پیت) بۆ هەر گۆڕانکاریەک لە پارە. | Reason (min 3 chars) is required when amounts change.",
+            message: withFix(
+              "گۆڕینی پارەی ئەم ئۆردەرە بەبێ هۆکار تۆمار ناکرێت — ئەم ئۆردەرە پێشتر چووەتە سەر حیسابی کڕیار، و باڵانسەکەی بەم گۆڕانکارییە دەجووڵێت.",
+              [
+                "لە خانەی هۆکار بنووسە بۆچی بڕەکە دەگۆڕدرێت (بەلایەنی کەم سێ پیت)",
+                "ئینجا خەزنکردن لێبدە",
+              ],
+            ),
           });
         }
 
@@ -856,7 +903,7 @@ export const fullPackageRouter = router({
             });
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: "هەڵە لە گۆڕینی نرخی ئۆردەر لە دەفتەری هەژمار | Failed to adjust charge on customer ledger",
+              message: retryFix("نرخی ئۆردەرەکە لە دەفتەری حیسابدا نەگۆڕدرا — گۆڕانکارییەکە خەزن نەکرا."),
             });
           }
         }
@@ -884,7 +931,7 @@ export const fullPackageRouter = router({
               });
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: "هەڵە لە گەڕاندنەوەی چارجی کڕیارە کۆنەکە | Failed to reverse the old customer's charge",
+                message: retryFix("بارکردنەکەی کڕیارە کۆنەکە نەگەڕێنرایەوە — گۆڕینی کڕیار تەواو نەبوو."),
               });
             }
           } else {
@@ -946,7 +993,7 @@ export const fullPackageRouter = router({
                   error: err instanceof Error ? err.message : String(err),
                   orderId: id,
                 });
-                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "هەڵە لە گۆڕینی پارەی پێشەکی" });
+                throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: retryFix("پارە پێشەکییەکە نەگۆڕدرا — گۆڕانکارییەکە خەزن نەکرا.") });
               }
             }
           }
@@ -995,7 +1042,7 @@ export const fullPackageRouter = router({
             .slice(0, 300);
           throw new TRPCError({
             code: "INTERNAL_SERVER_ERROR",
-            message: `نەتوانرا خەزن بکرێت | Could not save — ${reason}`,
+            message: retryFix(`ئۆردەرەکە خەزن نەکرا. (${reason})`),
           });
         }
 
@@ -1368,7 +1415,7 @@ export const fullPackageRouter = router({
             // and we cannot diagnose the failure from the UI.
             throw new TRPCError({
               code: "INTERNAL_SERVER_ERROR",
-              message: `هەڵە لە گەڕاندنەوەی نرخی ئۆردەر لە دەفتەری هەژمار | Failed to reverse charge on customer ledger: ${underlying}`,
+              message: retryFix(`نرخی ئۆردەرەکە لە دەفتەری حیسابدا نەگەڕێنرایەوە — سڕینەوەکە تەواو نەبوو. (${underlying})`),
             });
           }
         } else if ((existing as any).isCharged || (existing as any).isChargedToCustomer) {
@@ -1422,7 +1469,7 @@ export const fullPackageRouter = router({
               // we are flying blind.
               throw new TRPCError({
                 code: "INTERNAL_SERVER_ERROR",
-                message: `هەڵە لە گەڕاندنەوەی پارەی پێشەکی | Advance reversal failed: ${underlying}`,
+                message: retryFix(`پارە پێشەکییەکە نەگەڕێنرایەوە — سڕینەوەکە تەواو نەبوو. (${underlying})`),
               });
             }
           }
