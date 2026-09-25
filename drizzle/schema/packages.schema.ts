@@ -410,7 +410,14 @@ export const deliveryBoxItems = mysqlTable("deliveryBoxItems", {
   // سکان
   scannedAt: timestamp("scannedAt").defaultNow().notNull(),
   scannedById: int("scannedById").notNull(),
-});
+}, (table) => ({
+  // Joined on every box screen, every scan, and the check that refuses a
+  // parcel already sitting in a box somebody paid for.
+  boxIdIdx: index("idx_delivery_box_items_box").on(table.boxId),
+  packageIdIdx: index("idx_delivery_box_items_package").on(table.packageId),
+  orderIdIdx: index("idx_delivery_box_items_order").on(table.fullPackageOrderId),
+  trackingIdx: index("idx_delivery_box_items_tracking").on(table.trackingNumber),
+}));
 
 export type DeliveryBoxItem = typeof deliveryBoxItems.$inferSelect;
 export type InsertDeliveryBoxItem = typeof deliveryBoxItems.$inferInsert;

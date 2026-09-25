@@ -1,7 +1,7 @@
 import { getDb } from './connection';
 import { vanishedFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -181,15 +181,39 @@ export async function getCustomerByCode(customerCode: string): Promise<Customer 
   return result[0];
 }
 
+/**
+ * Every column of a customer except the scans.
+ *
+ * The passport, the national ID, the contract and the photo are stored as
+ * base64 data URIs in TEXT columns — hundreds of kilobytes each. This list
+ * is read by thirty-six screens, nearly all of them to fill a dropdown or a
+ * filter, and not one of them shows a document: documents are read one
+ * customer at a time, on that customer's own page (customers.getById).
+ *
+ * Taken as "all columns minus four" rather than as a list of the rest, so a
+ * column added later is carried automatically and the four that must never
+ * be carried are named in exactly one place.
+ */
+const {
+  photoUrl: _photoUrl,
+  passportUrl: _passportUrl,
+  nationalIdUrl: _nationalIdUrl,
+  contractUrl: _contractUrl,
+  ...CUSTOMER_LIST_COLUMNS
+} = getTableColumns(customers);
+
 export async function getAllCustomers(activeOnly = false) {
   const db = await getDb();
   if (!db) return [];
-  
-  // Get customers from customers table only
+
   if (activeOnly) {
-    return db.select().from(customers).where(eq(customers.isActive, true)).orderBy(desc(customers.createdAt));
+    return db
+      .select(CUSTOMER_LIST_COLUMNS)
+      .from(customers)
+      .where(eq(customers.isActive, true))
+      .orderBy(desc(customers.createdAt));
   }
-  return db.select().from(customers).orderBy(desc(customers.createdAt));
+  return db.select(CUSTOMER_LIST_COLUMNS).from(customers).orderBy(desc(customers.createdAt));
 }
 
 export async function updateCustomer(id: number, data: Partial<InsertCustomer>) {

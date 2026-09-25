@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { trpc } from "@/lib/trpc";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import { 
@@ -94,6 +95,14 @@ const fieldLabels: Record<string, LangLabel> = {
 export default function AuditLogs() {
   const { t, language } = useTranslation();
   const [search, setSearch] = useState("");
+  /*
+   * What the server is asked about, a moment after typing stops.
+   *
+   * The search box fed the query directly, so every keystroke was a round
+   * trip and a table scan; "AZ295" was five searches, of which four were
+   * thrown away, and the answer to the last one queued behind them.
+   */
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [selectedLog, setSelectedLog] = useState<any>(null);
@@ -160,7 +169,7 @@ export default function AuditLogs() {
     offset: page * pageSize,
     category: categoryFilter !== "all" ? categoryFilter : undefined,
     action: actionFilter !== "all" ? actionFilter : undefined,
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     dateFrom: dateFrom || undefined,
     dateTo: dateTo || undefined,
   });

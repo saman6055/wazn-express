@@ -1280,7 +1280,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       scannedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       scannedById INT NOT NULL,
       INDEX idx_delivery_box_items_box (boxId),
-      INDEX idx_delivery_box_items_package (packageId)
+      INDEX idx_delivery_box_items_package (packageId),
+      INDEX idx_delivery_box_items_order (fullPackageOrderId),
+      INDEX idx_delivery_box_items_tracking (trackingNumber)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -2734,6 +2736,26 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.batch_customer_pricing",    sql: "CREATE INDEX idx_batch_customer_pricing ON batchCustomerPricing (batchId, customerId)" },
   { name: "idx.delivery_boxes_batch_id",   sql: "CREATE INDEX idx_delivery_boxes_batch_id ON deliveryBoxes (batchId)" },
   { name: "idx.delivery_boxes_customer_id", sql: "CREATE INDEX idx_delivery_boxes_customer_id ON deliveryBoxes (customerId)" },
+
+  // ============ Performance indexes (2026-09 audit) ============
+  // The owner, 2026-09-25: "the buy-at-cost table loads very heavily … test
+  // the whole system and fix the slowness." These are the access paths the
+  // hot queries were missing. Pure additions: identical results, less work.
+  //
+  // The order lists filter on the type and sort by the date; there was an
+  // index on neither, so each of them read and sorted the whole table to
+  // show a page.
+  { name: "idx.fpo_type_created",          sql: "CREATE INDEX idx_fpo_type_created ON fullPackageOrders (orderType, createdAt)" },
+  { name: "idx.fpo_created_at",            sql: "CREATE INDEX idx_fpo_created_at ON fullPackageOrders (createdAt)" },
+  // deliveryBoxItems is joined on all four of these — the box screen, every
+  // scan, and the check that refuses a parcel already in a paid box — and a
+  // database older than its CREATE statement has no index on any of them.
+  { name: "idx.dbi_box",                   sql: "CREATE INDEX idx_delivery_box_items_box ON deliveryBoxItems (boxId)" },
+  { name: "idx.dbi_package",               sql: "CREATE INDEX idx_delivery_box_items_package ON deliveryBoxItems (packageId)" },
+  { name: "idx.dbi_order",                 sql: "CREATE INDEX idx_delivery_box_items_order ON deliveryBoxItems (fullPackageOrderId)" },
+  { name: "idx.dbi_tracking",              sql: "CREATE INDEX idx_delivery_box_items_tracking ON deliveryBoxItems (trackingNumber)" },
+  // Added by a patch, joined ever since, never indexed.
+  { name: "idx.bsl_box_item",              sql: "CREATE INDEX idx_box_settlement_lines_box_item ON boxSettlementLines (boxItemId)" },
 
   // Tutorials added before videos were split by spoken language. Kurdish is
   // the right default: every video recorded up to that point was in Kurdish.

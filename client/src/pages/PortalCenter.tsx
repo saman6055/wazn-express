@@ -5,6 +5,7 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import { trpc } from "@/lib/trpc";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -383,9 +384,17 @@ function EmptyRow({ text }: { text: string }) {
 // ---------------------------------------------------------------------------
 function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: number; name: string; code: string }) => void }) {
   const [search, setSearch] = useState("");
+  /*
+   * What the server is asked about, a moment after typing stops.
+   *
+   * The search box fed the query directly, so every keystroke was a round
+   * trip and a table scan; "AZ295" was five searches, of which four were
+   * thrown away, and the answer to the last one queued behind them.
+   */
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [page, setPage] = useState(1);
   const pageSize = 25;
-  const { data, isLoading } = trpc.portalCenter.listCustomers.useQuery({ search: search || undefined, page, pageSize });
+  const { data, isLoading } = trpc.portalCenter.listCustomers.useQuery({ search: debouncedSearch || undefined, page, pageSize });
 
   return (
     <Card className="rounded-2xl">
@@ -516,12 +525,14 @@ function ActivityTab({ p, initialSinceDays }: { p: (v: L) => string; initialSinc
 // ---------------------------------------------------------------------------
 function DeclaredTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?: string }) {
   const [search, setSearch] = useState("");
+  // A moment after typing stops, not on every keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [status, setStatus] = useState<string>(initialStatus ?? "all");
   const [page, setPage] = useState(1);
   const pageSize = 25;
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.portalCenter.listDeclaredPackages.useQuery({
-    search: search || undefined, status: status === "all" ? undefined : (status as any), page, pageSize,
+    search: debouncedSearch || undefined, status: status === "all" ? undefined : (status as any), page, pageSize,
   });
 
   // Give a declared tracking its parcel when the parcel is here and nobody's
@@ -634,12 +645,14 @@ function DeclaredTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?
 // ---------------------------------------------------------------------------
 function ProhibitedTab({ p }: { p: (v: L) => string }) {
   const [search, setSearch] = useState("");
+  // A moment after typing stops, not on every keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [fees, setFees] = useState<Record<number, string>>({});
   const pageSize = 25;
   const { data, isLoading, refetch } = trpc.prohibited.listAdmin.useQuery({
-    search: search || undefined, status: status === "all" ? undefined : status, page, pageSize,
+    search: debouncedSearch || undefined, status: status === "all" ? undefined : status, page, pageSize,
   });
   const chargeMut = trpc.prohibited.chargeFee.useMutation({
     onSuccess: () => { toast.success(p({ ku: "کولفە خرایە سەر باڵانس", en: "Fee charged to balance", ar: "تمت إضافة الرسوم", zh: "已计入余额" })); refetch(); },
@@ -754,11 +767,13 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
 // ---------------------------------------------------------------------------
 function ClaimsTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?: string }) {
   const [search, setSearch] = useState("");
+  // A moment after typing stops, not on every keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [status, setStatus] = useState<string>(initialStatus ?? "all");
   const [page, setPage] = useState(1);
   const pageSize = 25;
   const { data, isLoading } = trpc.portalCenter.listClaimRequests.useQuery({
-    search: search || undefined, status: status === "all" ? undefined : (status as any), page, pageSize,
+    search: debouncedSearch || undefined, status: status === "all" ? undefined : (status as any), page, pageSize,
   });
 
   return (
@@ -1261,6 +1276,8 @@ function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
 
 function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
   const [search, setSearch] = useState("");
+  // A moment after typing stops, not on every keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [focused, setFocused] = useState(false);
   const [customer, setCustomer] = useState<{ id: number; name: string; code: string; mobile: string } | null>(null);
   const [title, setTitle] = useState("");
@@ -2500,12 +2517,14 @@ function FeaturesTab({ p }: { p: (v: L) => string }) {
   const utils = trpc.useUtils();
   const [feature, setFeature] = useState<string>("finance_detail");
   const [search, setSearch] = useState("");
+  // A moment after typing stops, not on every keystroke.
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [note, setNote] = useState("");
 
   const { data: features = [] } = trpc.portalCenter.listFeatures.useQuery();
   const { data: grants = [], isLoading } = trpc.portalCenter.listFeatureGrants.useQuery({ feature });
   const { data: found } = trpc.portalCenter.listCustomers.useQuery(
-    { search: search || undefined, page: 1, pageSize: 8 },
+    { search: debouncedSearch || undefined, page: 1, pageSize: 8 },
     { enabled: search.trim().length > 1 },
   );
 

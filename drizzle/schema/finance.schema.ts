@@ -923,6 +923,7 @@ export const boxSettlementLines = mysqlTable("boxSettlementLines", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   settlementIdIdx: index("idx_box_settlement_lines_settlement").on(table.settlementId),
+  boxItemIdIdx: index("idx_box_settlement_lines_box_item").on(table.boxItemId),
   packageIdIdx: index("idx_box_settlement_lines_package").on(table.packageId),
 }));
 

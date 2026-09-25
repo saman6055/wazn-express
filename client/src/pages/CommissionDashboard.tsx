@@ -18,6 +18,7 @@ import { Input } from "@/components/ui/input";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
+import { OrderThumb, OrderThumbs } from "@/components/orders/OrderThumb";
 import { toast } from "sonner";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
@@ -851,6 +852,7 @@ export default function CommissionDashboard() {
               />
             ) : (
               <div className="overflow-x-auto">
+                <OrderThumbs orders={orderPage.pageRows}>
                 <Table>
                   {/* Headings sat flush to one edge while their columns were a
                       mix of text, badges and figures, so nothing lined up with
@@ -928,17 +930,7 @@ export default function CommissionDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {order.productImage ? (
-                              <ZoomImage
-                                src={order.productImage}
-                                alt={order.productName}
-                                className="w-10 h-10"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-amber-100 dark:bg-amber-950/40 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-amber-600 dark:text-amber-300" />
-                              </div>
-                            )}
+                            <OrderThumb order={order} tone="amber" />
                             <div>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className="font-medium text-sm">{order.productName}</p>
@@ -1047,6 +1039,7 @@ export default function CommissionDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+                </OrderThumbs>
                 <ListPager {...orderPage} />
               </div>
             )}

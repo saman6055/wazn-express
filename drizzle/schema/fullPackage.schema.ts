@@ -230,6 +230,9 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   trackingNumberIdx: index("idx_fpo_tracking_number").on(table.trackingNumber),
   batchIdIdx: index("idx_fpo_batch_id").on(table.batchId),
   statusIdx: index("idx_fpo_status").on(table.status),
+  // The lists filter on the type and sort by the date (2026-09 audit).
+  typeCreatedIdx: index("idx_fpo_type_created").on(table.orderType, table.createdAt),
+  createdAtIdx: index("idx_fpo_created_at").on(table.createdAt),
 }));
 
 export type FullPackageOrder = typeof fullPackageOrders.$inferSelect;

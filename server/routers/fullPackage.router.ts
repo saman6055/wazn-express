@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
+import { thumbnailsFor } from "../services/orderThumbs.service";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -132,6 +133,22 @@ export const fullPackageRouter = router({
         return db.getAllFullPackageOrders(input);
       }),
     
+    /**
+     * The small square each row of a list draws.
+     *
+     * Asked for once per page of a table, never per row, and answered from
+     * thumbnails the server shrank and remembered
+     * (services/orderThumbs.service.ts). The list itself no longer carries
+     * pictures at all — that is what made it heavy.
+     */
+    thumbs: staffProcedure
+      .input(z.object({ ids: z.array(z.number()).max(300) }))
+      .query(async ({ input }) => {
+        if (input.ids.length === 0) return {} as Record<number, string>;
+        const rows = await db.getOrderImagesByIds(input.ids);
+        return thumbnailsFor(rows);
+      }),
+
     /**
      * Get all pending (uncharged, not-yet-delivered) orders for a customer.
      * Used by the Customer Finance tab's "Pending Orders" section to show

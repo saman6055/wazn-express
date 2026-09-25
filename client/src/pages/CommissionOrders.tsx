@@ -3,6 +3,7 @@ import { fmtDate } from "@/lib/numericDate";
 import { useMemo, useState } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
@@ -12,6 +13,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
+import { OrderThumb, OrderThumbs } from "@/components/orders/OrderThumb";
 import {
   Package,
   Plus,
@@ -126,6 +128,14 @@ export default function CommissionOrders() {
   const statusOptions = getStatusOptions(language);
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
+  /*
+   * What the server is asked about, a moment after typing stops.
+   *
+   * The search box fed the query directly, so every keystroke was a round
+   * trip and a table scan; "AZ295" was five searches, of which four were
+   * thrown away, and the answer to the last one queued behind them.
+   */
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [shippingFilter, setShippingFilter] = useState<string>("all");
   // New client-side filters + sort
@@ -141,7 +151,7 @@ export default function CommissionOrders() {
 
   const { data: orders, isLoading, refetch } = trpc.fullPackage.list.useQuery({
     orderType: "commission",
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
@@ -616,6 +626,7 @@ export default function CommissionOrders() {
                 </Link>
               </div>
             ) : (
+              <OrderThumbs orders={fullPackageOrders}>
               <Table>
                 <TableHeader>
                   <TableRow>
@@ -659,17 +670,7 @@ export default function CommissionOrders() {
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          {order.productImage ? (
-                            <ZoomImage
-                              src={order.productImage}
-                              alt={order.productName}
-                              className="w-10 h-10"
-                            />
-                          ) : (
-                            <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                              <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
-                            </div>
-                          )}
+                          <OrderThumb order={order} />
                           <div>
                             <p className="font-medium text-sm">{order.productName}</p>
                             {order.quantity > 1 && (
@@ -788,6 +789,7 @@ export default function CommissionOrders() {
                   ))}
                 </TableBody>
               </Table>
+              </OrderThumbs>
             )}
           </CardContent>
         </Card>

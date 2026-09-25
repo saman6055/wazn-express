@@ -1,6 +1,6 @@
 import { getDb } from './connection';
 import { appLogger } from '../utils/logger';
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
 import { applyCharge } from './finance.db';
 import { getCustomerPriceInBatch } from './batches.db';
@@ -340,19 +340,52 @@ export async function getFullPackageOrderById(id: number) {
   };
 }
 
+/**
+ * Every column of an order except the pictures.
+ *
+ * `productImage` is a base64 data URI in a MEDIUMTEXT column and
+ * `productImages` is a JSON array of more of them — a megabyte each, on a
+ * table that is read as a list. The lists draw a 40px square from them,
+ * which is now `hasImage` plus a thumbnail asked for separately
+ * (services/orderThumbs). An order's own page still reads the full picture,
+ * one row at a time.
+ */
+const {
+  productImage: _productImage,
+  productImages: _productImages,
+  purchaseInvoiceUrl: _purchaseInvoiceUrl,
+  ...ORDER_LIST_COLUMNS
+} = getTableColumns(fullPackageOrders);
+
+/** True when the order has a picture, without sending one. */
+const HAS_IMAGE = sql<boolean>`(
+  (${fullPackageOrders.productImage} IS NOT NULL AND ${fullPackageOrders.productImage} <> '')
+  OR (${fullPackageOrders.productImages} IS NOT NULL AND JSON_LENGTH(${fullPackageOrders.productImages}) > 0)
+)`;
+
+/**
+ * How many orders a list may return before it has to be asked for more.
+ *
+ * Not a page size chosen for looks: an unbounded list is a screen that gets
+ * slower every month the business succeeds, and this one had grown to the
+ * point where the owner could watch it load.
+ */
+export const ORDER_LIST_LIMIT = 300;
+
 export async function getAllFullPackageOrders(filters?: {
   customerId?: number;
   status?: string;
   hasBatch?: boolean;
   orderType?: string;
   search?: string;
+  /** Default ORDER_LIST_LIMIT; pass 0 for everything, which reports need. */
+  limit?: number;
+  offset?: number;
 }) {
   const db = await getDb();
   if (!db) return [];
 
   // Plan v3: every list query hides soft-deleted orders by default.
-  // `any[]` matches the original implicit typing (the search branch pushes
-  // `or(...)` which drizzle types as SQL | undefined).
   const conditions: any[] = [notDeleted];
   if (filters?.customerId) {
     conditions.push(eq(fullPackageOrders.customerId, filters.customerId));
@@ -373,21 +406,34 @@ export async function getAllFullPackageOrders(filters?: {
     const rawSearch = filters.search.trim();
     const searchTerm = `%${rawSearch}%`;
 
-    // Find customer IDs matching the search term (by fullName, customerCode, or mobileNumber)
-    const matchingCustomers = await db.select({ id: customers.id })
+    /*
+     * The two lookups the search needs, each capped.
+     *
+     * They were uncapped, and their whole result was poured into an
+     * IN (...) list: a search for "a" matched every customer in the
+     * business and built a query with thousands of ids in it, which is why
+     * typing in the search box hung the screen. A customer search that
+     * matches more than this many people is not a search, and the columns
+     * the order itself carries still match on their own.
+     */
+    const MATCH_CAP = 200;
+    const matchingCustomers = await db
+      .select({ id: customers.id })
       .from(customers)
       .where(or(
         like(customers.fullName, searchTerm),
         like(customers.customerCode, searchTerm),
         like(customers.mobileNumber, searchTerm),
-      ));
-    const matchingCustomerIds = matchingCustomers.map(c => c.id);
+      ))
+      .limit(MATCH_CAP);
+    const matchingCustomerIds = matchingCustomers.map((c) => c.id);
 
-    // Find order IDs that have the tracking number in the multi-tracking table
-    const matchingTrackingRows = await db.select({ fullPackageOrderId: fullPackageOrderTrackings.fullPackageOrderId })
+    const matchingTrackingRows = await db
+      .select({ fullPackageOrderId: fullPackageOrderTrackings.fullPackageOrderId })
       .from(fullPackageOrderTrackings)
-      .where(like(fullPackageOrderTrackings.trackingNumber, searchTerm));
-    const matchingOrderIdsFromTrackings = matchingTrackingRows.map(r => r.fullPackageOrderId);
+      .where(like(fullPackageOrderTrackings.trackingNumber, searchTerm))
+      .limit(MATCH_CAP);
+    const matchingOrderIdsFromTrackings = matchingTrackingRows.map((r) => r.fullPackageOrderId);
 
     const orConditions: any[] = [
       like(fullPackageOrders.productName, searchTerm),
@@ -403,37 +449,72 @@ export async function getAllFullPackageOrders(filters?: {
     }
     conditions.push(or(...orConditions));
   }
-  
-  // Query orders
-  let ordersResult;
-  if (conditions.length > 0) {
-    ordersResult = await db.select().from(fullPackageOrders).where(and(...conditions)).orderBy(desc(fullPackageOrders.createdAt));
-  } else {
-    ordersResult = await db.select().from(fullPackageOrders).orderBy(desc(fullPackageOrders.createdAt));
-  }
-  
-  // Fetch batch info for orders that have batchId
-  const batchIds = ordersResult.filter(o => o.batchId).map(o => o.batchId as number);
+
+  const limit = filters?.limit === 0 ? 0 : (filters?.limit ?? ORDER_LIST_LIMIT);
+  const rows = db
+    .select({ ...ORDER_LIST_COLUMNS, hasImage: HAS_IMAGE })
+    .from(fullPackageOrders)
+    .where(and(...conditions))
+    .orderBy(desc(fullPackageOrders.createdAt));
+  const ordersResult = limit > 0
+    ? await rows.limit(limit).offset(filters?.offset ?? 0)
+    : await rows;
+
+  // The batch and the customer each order belongs to — the few columns the
+  // lists actually print, not the whole row.
+  const batchIds = Array.from(new Set(ordersResult.filter((o) => o.batchId).map((o) => o.batchId as number)));
   let batchMap: Record<number, any> = {};
   if (batchIds.length > 0) {
     const batchesResult = await db.select().from(batches).where(inArray(batches.id, batchIds));
-    batchMap = Object.fromEntries(batchesResult.map(b => [b.id, b]));
+    batchMap = Object.fromEntries(batchesResult.map((b) => [b.id, b]));
   }
-  
-  // Fetch customer info for orders
-  const customerIds = ordersResult.filter(o => o.customerId).map(o => o.customerId as number);
+
+  const customerIds = Array.from(new Set(ordersResult.filter((o) => o.customerId).map((o) => o.customerId as number)));
   let customerMap: Record<number, any> = {};
   if (customerIds.length > 0) {
-    const customersResult = await db.select().from(customers).where(inArray(customers.id, customerIds));
-    customerMap = Object.fromEntries(customersResult.map(c => [c.id, c]));
+    const customersResult = await db
+      .select({
+        id: customers.id,
+        customerCode: customers.customerCode,
+        fullName: customers.fullName,
+        fullNameKurdish: customers.fullNameKurdish,
+        mobileNumber: customers.mobileNumber,
+        nationality: customers.nationality,
+        city: customers.city,
+      })
+      .from(customers)
+      .where(inArray(customers.id, customerIds));
+    customerMap = Object.fromEntries(customersResult.map((c) => [c.id, c]));
   }
-  
-  // Combine orders with batch and customer info
-  return ordersResult.map(order => ({
+
+  return ordersResult.map((order) => ({
     ...order,
+    hasImage: Boolean(Number(order.hasImage)),
     batch: order.batchId ? batchMap[order.batchId] : null,
     customer: order.customerId ? customerMap[order.customerId] : null,
   }));
+}
+
+/**
+ * Just the pictures, for a page of rows that is about to be drawn.
+ *
+ * The one query in the system that asks for `productImage` in bulk, and it
+ * is bounded by the ids the screen can see. What comes back is shrunk to a
+ * thumbnail and thrown away (services/orderThumbs.service.ts); nothing this
+ * heavy reaches the browser.
+ */
+export async function getOrderImagesByIds(ids: number[]) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return [];
+  return db
+    .select({
+      id: fullPackageOrders.id,
+      updatedAt: fullPackageOrders.updatedAt,
+      productImage: fullPackageOrders.productImage,
+      productImages: fullPackageOrders.productImages,
+    })
+    .from(fullPackageOrders)
+    .where(inArray(fullPackageOrders.id, ids.slice(0, 300)));
 }
 
 export async function getFullPackageOrderByTrackingNumber(trackingNumber: string) {

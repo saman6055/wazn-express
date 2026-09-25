@@ -4,6 +4,7 @@ import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import {
   Package, Search, AlertTriangle, Clock, CheckCircle, XCircle,
   ChevronRight, Send, Loader2, PackageSearch, Scale, Calendar, MessageCircle
@@ -41,6 +42,14 @@ export default function PortalUnclaimedPackages() {
   
   
   const [searchTerm, setSearchTerm] = useState("");
+  /*
+   * What the server is asked about, a moment after typing stops.
+   *
+   * The search box fed the query directly, so every keystroke was a round
+   * trip and a table scan; "AZ295" was five searches, of which four were
+   * thrown away, and the answer to the last one queued behind them.
+   */
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [claimNote, setClaimNote] = useState("");
   const [proofImages, setProofImages] = useState<string[]>([]);
@@ -50,7 +59,7 @@ export default function PortalUnclaimedPackages() {
   
   // Queries
   const { data: unclaimedData, isLoading: unclaimedLoading, isError: unclaimedError, isFetching: unclaimedFetching, refetch: refetchUnclaimed } = 
-    trpc.customerPortal.getUnclaimedPackages.useQuery({ search: searchTerm || undefined });
+    trpc.customerPortal.getUnclaimedPackages.useQuery({ search: debouncedSearchTerm || undefined });
   
   const { data: myClaimRequests, isLoading: claimsLoading, isError: claimsError, isFetching: claimsFetching, refetch: refetchClaims } = 
     trpc.customerPortal.getMyClaimRequests.useQuery(undefined, PORTAL_LIVE_QUERY);

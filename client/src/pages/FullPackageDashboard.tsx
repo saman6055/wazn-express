@@ -4,6 +4,7 @@ import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -20,6 +21,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
+import { OrderThumb, OrderThumbs } from "@/components/orders/OrderThumb";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
@@ -93,6 +95,14 @@ export default function FullPackageDashboard() {
   const { t, language } = useTranslation();
   const [, setLocation] = useLocation();
   const [search, setSearch] = useState("");
+  /*
+   * What the server is asked about, a moment after typing stops.
+   *
+   * The search box fed the query directly, so every keystroke was a round
+   * trip and a table scan; "AZ295" was five searches, of which four were
+   * thrown away, and the answer to the last one queued behind them.
+   */
+  const debouncedSearch = useDebouncedValue(search, 300);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
@@ -138,7 +148,7 @@ export default function FullPackageDashboard() {
 
   const { data: orders, isLoading, refetch } = trpc.fullPackage.list.useQuery({
     orderType: "full_package",
-    search: search || undefined,
+    search: debouncedSearch || undefined,
     status: statusFilter !== "all" ? statusFilter : undefined,
   });
 
@@ -209,8 +219,7 @@ export default function FullPackageDashboard() {
     // Image filter (has / no product photo)
     if (imageFilter !== "all") {
       result = result.filter(o => {
-        const imgs = (o as any).productImages;
-        const has = (Array.isArray(imgs) && imgs.length > 0) || !!(o as any).productImage;
+        const has = Boolean((o as any).hasImage);
         return imageFilter === "with" ? has : !has;
       });
     }
@@ -925,6 +934,7 @@ export default function FullPackageDashboard() {
               />
             ) : (
               <div className="overflow-x-auto">
+                <OrderThumbs orders={orderPage.pageRows}>
                 <Table>
                   {/* Same treatment as the markup-purchase table: headings
                       centred over their columns, money columns right-aligned
@@ -989,17 +999,7 @@ export default function FullPackageDashboard() {
                         </TableCell>
                         <TableCell>
                           <div className="flex items-center gap-2">
-                            {order.productImage ? (
-                              <ZoomImage
-                                src={order.productImage}
-                                alt={order.productName}
-                                className="w-10 h-10"
-                              />
-                            ) : (
-                              <div className="w-10 h-10 rounded-lg bg-emerald-100 dark:bg-emerald-950/40 flex items-center justify-center">
-                                <Package className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
-                              </div>
-                            )}
+                            <OrderThumb order={order} />
                             <div>
                               <div className="flex items-center gap-1.5 flex-wrap">
                                 <p className="font-medium text-sm">{order.productName}</p>
@@ -1120,6 +1120,7 @@ export default function FullPackageDashboard() {
                     ))}
                   </TableBody>
                 </Table>
+                </OrderThumbs>
                 <ListPager {...orderPage} />
               </div>
             )}
