@@ -48,14 +48,32 @@ function SheetContent({
   className,
   children,
   side = "right",
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof SheetPrimitive.Content> & {
   side?: "top" | "right" | "bottom" | "left";
 }) {
+  /**
+   * The same rule as the dialogs (components/ui/dialog.tsx): a panel somebody
+   * has typed in does not close because they clicked past it. One untouched
+   * still dismisses on a click outside.
+   */
+  const [typedIn, setTypedIn] = React.useState(false);
+  const handleInteractOutside = React.useCallback(
+    (e: Parameters<NonNullable<typeof onInteractOutside>>[0]) => {
+      onInteractOutside?.(e);
+      if (!e.defaultPrevented && typedIn) e.preventDefault();
+    },
+    [onInteractOutside, typedIn],
+  );
+
   return (
     <SheetPortal>
       <SheetOverlay />
       <SheetPrimitive.Content
+        onInteractOutside={handleInteractOutside}
+        onInputCapture={() => setTypedIn(true)}
+        onChangeCapture={() => setTypedIn(true)}
         data-slot="sheet-content"
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out fixed z-50 flex flex-col gap-4 shadow-lg transition ease-in-out data-[state=closed]:duration-300 data-[state=open]:duration-500",

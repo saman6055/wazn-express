@@ -94,11 +94,56 @@ function DialogContent({
   children,
   showCloseButton = true,
   onEscapeKeyDown,
+  onInteractOutside,
   ...props
 }: React.ComponentProps<typeof DialogPrimitive.Content> & {
   showCloseButton?: boolean;
 }) {
   const { isComposing } = useDialogComposition();
+
+  /**
+   * Whether anybody has typed in here.
+   *
+   * The owner, 2026-09-25: a stray click beside the window threw away
+   * everything he had filled in, and there is no undo for that — the form is
+   * gone and so is the work. So a window that has been written in stops
+   * closing on a click outside.
+   *
+   * It is not a blanket lock. A window nobody has touched still dismisses on
+   * a click past it, because that is the right way to put down something you
+   * opened only to read. Typing is what makes it stubborn, and then the ways
+   * out are the ones a person means: the X, Cancel, or Escape.
+   *
+   * Read from the events rather than from the values: this primitive knows
+   * nothing about the forms inside it, and every control in the app — plain
+   * inputs, textareas, selects, the rich editors — announces a change the
+   * same way.
+   */
+  const [typedIn, setTypedIn] = React.useState(false);
+  const [refused, setRefused] = React.useState(false);
+  const refusedTimer = React.useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  React.useEffect(() => {
+    return () => {
+      if (refusedTimer.current) clearTimeout(refusedTimer.current);
+    };
+  }, []);
+
+  const handleInteractOutside = React.useCallback(
+    (e: Parameters<NonNullable<typeof onInteractOutside>>[0]) => {
+      onInteractOutside?.(e);
+      if (e.defaultPrevented || !typedIn) return;
+      e.preventDefault();
+      /*
+       * And say so, briefly. A click that does nothing at all reads as a
+       * broken window; a ring around it says the window heard, and stayed.
+       */
+      setRefused(true);
+      if (refusedTimer.current) clearTimeout(refusedTimer.current);
+      refusedTimer.current = setTimeout(() => setRefused(false), 600);
+    },
+    [onInteractOutside, typedIn],
+  );
 
   const handleEscapeKeyDown = React.useCallback(
     (e: KeyboardEvent) => {
@@ -125,9 +170,17 @@ function DialogContent({
         data-slot="dialog-content"
         className={cn(
           "bg-background data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 fixed top-[50%] left-[50%] z-50 grid w-[calc(100%-2rem)] max-w-lg max-h-[calc(100dvh-2rem)] overflow-y-auto overscroll-contain translate-x-[-50%] translate-y-[-50%] gap-4 rounded-lg border p-6 shadow-lg duration-200",
+          // It heard the click, and stayed.
+          refused && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           className
         )}
         onEscapeKeyDown={handleEscapeKeyDown}
+        onInteractOutside={handleInteractOutside}
+        // Any control inside announcing a change is what makes this window
+        // worth keeping; `capture` so a field that stops the event still
+        // counts.
+        onInputCapture={() => setTypedIn(true)}
+        onChangeCapture={() => setTypedIn(true)}
         {...props}
       >
         {children}
