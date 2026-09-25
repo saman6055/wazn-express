@@ -5,7 +5,13 @@ import { useBackCloses } from "@/hooks/useBackCloses";
 import { pickLang } from "@/lib/lang";
 import { onImageError } from "@/lib/imageFallback";
 import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
-import { progressIndex, stageReachedBy, stagesFor, type JourneyStage } from "@shared/packageJourney";
+import {
+  PARCEL_STAGE_LABELS,
+  parcelStage,
+  stagesFor,
+  type ParcelFacts,
+  type ParcelStage,
+} from "@shared/parcelStage";
 
 // ---------------------------------------------------------------------------
 // PackageTrackingTimeline — the customer-facing movement timeline.
@@ -17,27 +23,33 @@ import { progressIndex, stageReachedBy, stagesFor, type JourneyStage } from "@sh
 
 type L10n = { ku: string; en: string; ar: string; zh: string };
 
-const STAGES: { key: string; label: L10n; icon: typeof Package; color: string }[] = [
-  { key: "registered",       label: { ku: "تۆمارکرا",            en: "Registered",          ar: "تم التسجيل",        zh: "已登记" },   icon: Package,   color: "bg-slate-500" },
-  { key: "received_china",   label: { ku: "گەیشتە کۆگای چین",     en: "At China warehouse",  ar: "في مستودع الصين",   zh: "到达中国仓库" }, icon: Warehouse, color: "bg-violet-500" },
-  { key: "in_batch",         label: { ku: "خرایە ناو بار",        en: "Added to shipment",   ar: "أُضيف إلى الشحنة",  zh: "已加入批次" },  icon: Package,   color: "bg-blue-500" },
-  { key: "in_transit",       label: { ku: "لە ڕێگادایە",          en: "In transit",          ar: "قيد الشحن",         zh: "运输中" },    icon: Ship,      color: "bg-amber-500" },
-  { key: "received_local",   label: { ku: "گەیشتە کۆگای هەولێر",  en: "At Erbil warehouse",  ar: "في مستودع أربيل",   zh: "到达埃尔比勒仓库" }, icon: MapPin, color: "bg-cyan-500" },
-  { key: "out_for_delivery", label: { ku: "لە ڕێی گەیاندنە",      en: "Out for delivery",    ar: "خرج للتسليم",       zh: "派送中" },    icon: Truck,     color: "bg-indigo-500" },
-  { key: "delivered",        label: { ku: "گەیشتە دەستت",             en: "Delivered",           ar: "تم التسليم",        zh: "已送达" },    icon: CheckCircle, color: "bg-emerald-500" },
+const STAGES: { key: ParcelStage; icon: typeof Package; color: string }[] = [
+  { key: "received",   icon: Warehouse,   color: "bg-violet-500" },
+  { key: "in_transit", icon: Ship,        color: "bg-amber-500" },
+  { key: "arrived",    icon: MapPin,      color: "bg-cyan-500" },
+  { key: "ready",      icon: Package,     color: "bg-indigo-500" },
+  { key: "delivered",  icon: CheckCircle, color: "bg-emerald-500" },
 ];
 
-// Normalize the many raw status spellings stored by different flows (enum
-// keys, scanTypes, human-readable strings) onto the canonical stage keys.
-const RAW_TO_STAGE: Record<string, string> = {
-  registered: "registered", Registered: "registered",
-  received_china: "received_china", "In China Warehouse": "received_china",
-  in_batch: "in_batch", "In Batch": "in_batch",
+/**
+ * Where the stored status maps, for a parcel whose stage the server has not
+ * worked out — an older screen, or a cached answer from before the change.
+ *
+ * Everything that used to be its own step and is not one now lands on the
+ * step it really was: being in a batch is being in the China warehouse,
+ * because that is where the batch is made; customs was never observed at
+ * all; out-for-delivery is the same as ready, since a box that exists is
+ * going out.
+ */
+const RAW_TO_STAGE: Record<string, ParcelStage> = {
+  registered: "received", Registered: "received",
+  received_china: "received", "In China Warehouse": "received",
+  in_batch: "received", "In Batch": "received",
   in_transit: "in_transit", "In Transit": "in_transit",
   customs_processing: "in_transit", customs_hold: "in_transit", "Customs Hold": "in_transit",
-  received_local: "received_local", "In Local Warehouse": "received_local",
-  ready_for_delivery: "received_local",
-  out_for_delivery: "out_for_delivery", "Out for Delivery": "out_for_delivery",
+  received_local: "arrived", "In Local Warehouse": "arrived",
+  ready_for_delivery: "ready",
+  out_for_delivery: "ready", "Out for Delivery": "ready",
   delivered: "delivered", Delivered: "delivered",
 };
 
@@ -59,6 +71,12 @@ interface PackageTrackingTimelineProps {
    * location stamp went through that depot.
    */
   registeredAtOrigin?: boolean | null;
+  /**
+   * The four facts the stage is worked out from, when the server sent them
+   * (customerPortal.searchPackage). Without them the timeline falls back to
+   * the stored status, which is what it always used.
+   */
+  facts?: Pick<ParcelFacts, "batch" | "box">;
 }
 
 /**
@@ -82,6 +100,7 @@ export function PackageTrackingTimeline({
   language = "en",
   className,
   registeredAtOrigin,
+  facts,
 }: PackageTrackingTimelineProps) {
   // The journey this parcel actually has. One registered in Erbil never sees
   // the China warehouse, so that step is not merely un-reached — it is not
@@ -89,8 +108,9 @@ export function PackageTrackingTimeline({
   const [openPhoto, setOpenPhoto] = useState<string | null>(null);
   useBackCloses(openPhoto != null, () => setOpenPhoto(null));
 
-  const journey = { registeredAtOrigin };
-  const stages = STAGES.filter((s) => stagesFor(journey).includes(s.key as JourneyStage));
+  const journey: ParcelFacts = { registeredAtOrigin, ...(facts ?? {}), status: currentStatus };
+  const shown = stagesFor(journey);
+  const stages = STAGES.filter((s) => shown.includes(s.key));
   // First timestamp per canonical stage, from real events.
   const stageDates = new Map<string, string | Date>();
   /**
@@ -110,13 +130,13 @@ export function PackageTrackingTimeline({
     if (!raw) continue;
     // The registration event carries the China-warehouse date too, because
     // registering it there is the same moment as arriving.
-    const stage = stageReachedBy(raw as JourneyStage, journey);
+    const stage = raw;
     if (!stageDates.has(stage)) stageDates.set(stage, e.at);
     const photo = (e as any).photoUrl;
     if (photo && !stagePhotos.has(stage)) stagePhotos.set(stage, photo);
   }
 
-  const normalizedCurrent = RAW_TO_STAGE[currentStatus] ?? currentStatus;
+  const normalizedCurrent: string = RAW_TO_STAGE[currentStatus] ?? currentStatus;
 
   /**
    * The furthest stage reached: prefer real events, fall back to the status.
@@ -125,7 +145,12 @@ export function PackageTrackingTimeline({
    * notification sent for that same scan already says so — so `registered`
    * resolves to the warehouse step rather than sitting one short of it.
    */
-  let currentIndex = progressIndex(normalizedCurrent, journey);
+  /*
+   * Where the parcel is, from the facts rather than from a stored column
+   * (shared/parcelStage). A batch nobody remembered to move, or a delivery
+   * write that failed quietly, can no longer hold a parcel back.
+   */
+  let currentIndex = shown.indexOf(parcelStage(journey) as ParcelStage);
   for (let i = stages.length - 1; i >= 0; i--) {
     if (stageDates.has(stages[i].key)) { currentIndex = Math.max(currentIndex, i); break; }
   }
@@ -193,7 +218,7 @@ export function PackageTrackingTimeline({
         const isDone = index < safeIndex || isDeliveredAll;
         const isCurrent = index === safeIndex && !isDeliveredAll;
         const Icon = stage.icon;
-        const label = pickLang(language, stage.label);
+        const label = pickLang(language, PARCEL_STAGE_LABELS[stage.key]);
         const date = stageDates.get(stage.key);
         const photo = stagePhotos.get(stage.key);
 

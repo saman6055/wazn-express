@@ -1,6 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
+import { missingShippingNumber, type BatchAwaitingDetails } from "@shared/batchReminders";
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { isBatchEditLocked } from "@shared/batchPriceHistory";
@@ -1178,6 +1179,44 @@ export const batchesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
+
+        /**
+         * A batch does not leave without the number it leaves under.
+         *
+         * The owner, 2026-09-25: the tracking field is what tells the system
+         * the goods have gone, so it must be filled the moment they do. It is
+         * not asked for while the batch is filling — that takes about a week
+         * and the number does not exist yet — only here, at the one moment it
+         * both exists and matters.
+         *
+         * Only departure is refused. A batch that reached Erbil with the
+         * field still blank is recorded as arrived anyway: the goods being
+         * here is the more important fact, and the reminder list chases the
+         * number (shared/batchReminders).
+         */
+        if (input.status === "in_transit") {
+          const batch = await db.getBatchById(id);
+          const missing = batch ? missingShippingNumber(batch as BatchAwaitingDetails) : null;
+          if (missing) {
+            const sea = missing === "container";
+            throw new TRPCError({
+              code: "PRECONDITION_FAILED",
+              message: withFix(
+                sea
+                  ? `باچی ${batch?.batchCode ?? id} ژمارەی کۆنتێنەری نییە — ئەو ژمارەیە ئەوەیە کە بە سیستەم دەڵێت بارەکە ڕۆیشتووە.`
+                  : `باچی ${batch?.batchCode ?? id} ژمارەی AWB ی نییە — ئەو ژمارەیە ئەوەیە کە بە سیستەم دەڵێت بارەکە ڕۆیشتووە.`,
+                [
+                  sea
+                    ? "لە شاشەی باچەکە خانەی ژمارەی کۆنتێنەر پڕ بکەرەوە"
+                    : "لە شاشەی باچەکە خانەی AWB پڕ بکەرەوە",
+                  "خەزنی بکە — بەوە باچەکە خۆی دەچێتە دۆخی «لە ڕێگا»",
+                  "تا ئەو کاتە کڕیارەکان دەیبینن کە کاڵاکەیان هێشتا لە کۆگای ئێمەیە",
+                ],
+              ),
+            });
+          }
+        }
+
         // ctx.user.id so the history says who moved the shipment.
         await db.updateBatch(id, data, ctx.user.id);
 

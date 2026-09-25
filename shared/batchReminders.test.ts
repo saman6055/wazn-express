@@ -131,7 +131,7 @@ describe("a sea batch keeps its own clock", () => {
 describe("the list of batches to chase", () => {
   it("returns only the overdue ones, most overdue first", () => {
     const batches = [
-      { id: 1, ...air({ createdAt: daysAgo(6) }) },
+      { id: 1, ...air({ createdAt: daysAgo(8) }) },
       { id: 2, ...air({ createdAt: daysAgo(30) }) },
       { id: 3, ...air({ createdAt: daysAgo(1) }) },
       { id: 4, ...sea({ createdAt: daysAgo(100) }) },
@@ -195,13 +195,14 @@ describe("a missing flight number is chased like any other gap", () => {
   });
 
   it("speaks up once the watcher would already have been looking", () => {
-    // The watcher starts at four days. A batch that reaches five without a
+    // The watcher starts at four days, and the grace period is the week a
+    // batch takes to fill (owner, 2026-09-25). A batch past that without a
     // flight number has already missed a check.
-    expect(reminderSeverity({ ...base, createdAt: daysAgo(6) })).toBe("due");
+    expect(reminderSeverity({ ...base, createdAt: daysAgo(8) })).toBe("due");
   });
 
   it("appears in the list with the reason named", () => {
-    const rows = batchesAwaitingShippingNumber([{ ...base, createdAt: daysAgo(6) }]);
+    const rows = batchesAwaitingShippingNumber([{ ...base, createdAt: daysAgo(8) }]);
     expect(rows).toHaveLength(1);
     expect(rows[0].missing).toEqual(["flight-number"]);
   });

@@ -19,6 +19,7 @@ import {
   pricingRules, InsertPricingRule, PricingRule,
   batches, InsertBatch, Batch,
   packages, InsertPackage, Package,
+  deliveryBoxes, deliveryBoxItems,
   invoices, InsertInvoice, Invoice,
   exchangeRates, InsertExchangeRate, ExchangeRate,
   auditLogs, InsertAuditLog,
@@ -717,6 +718,76 @@ export async function searchCustomerPackage(customerId: number, trackingNumber: 
   if (!result[0]) return null;
   const [row] = await concealFullPackageParcels(result);
   return row;
+}
+
+/**
+ * What a parcel's stage is worked out from (shared/parcelStage).
+ *
+ * Four facts, none of which needs anybody outside the company to say
+ * anything: the batch's own travelling number, whether its arrival was
+ * verified, whether a box has been made, and whether that box was paid for.
+ *
+ * Read here rather than stored on the parcel, because a stored stage is a
+ * second opinion that a dozen code paths have to remember to keep true — and
+ * where one of them fails, as the box-delivery loop quietly does, the parcel
+ * stays in China for ever while the goods are in the customer's hand.
+ */
+export async function parcelStageFacts(packageId: number): Promise<{
+  batch: { hasShipmentTracking: boolean; status: string | null } | null;
+  box: { status: string | null; paidInFull: boolean } | null;
+}> {
+  const db = await getDb();
+  if (!db) return { batch: null, box: null };
+
+  const [pkg] = await db
+    .select({ batchId: packages.batchId })
+    .from(packages)
+    .where(eq(packages.id, packageId))
+    .limit(1);
+
+  let batch: { hasShipmentTracking: boolean; status: string | null } | null = null;
+  if (pkg?.batchId) {
+    const [row] = await db
+      .select({
+        status: batches.status,
+        awbNumber: batches.awbNumber,
+        containerNumber: batches.containerNumber,
+        shippingType: batches.shippingType,
+      })
+      .from(batches)
+      .where(eq(batches.id, pkg.batchId))
+      .limit(1);
+    if (row) {
+      // The number the batch travels under: the waybill by air, the
+      // container by sea. Filling it is what says the goods have left.
+      const number = row.shippingType === "sea" ? row.containerNumber : row.awbNumber;
+      batch = { hasShipmentTracking: Boolean((number ?? "").trim()), status: row.status ?? null };
+    }
+  }
+
+  const [item] = await db
+    .select({ boxId: deliveryBoxItems.boxId, boxStatus: deliveryBoxes.status })
+    .from(deliveryBoxItems)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, deliveryBoxItems.boxId))
+    .where(and(eq(deliveryBoxItems.packageId, packageId), sql`${deliveryBoxes.status} <> 'cancelled'`))
+    .orderBy(desc(deliveryBoxItems.id))
+    .limit(1);
+
+  let box: { status: string | null; paidInFull: boolean } | null = null;
+  if (item) {
+    /*
+     * Imported here rather than at the top: boxSettlement.db imports this
+     * module for createCustomerNotification, and a static import both ways
+     * leaves whichever loads second holding undefined for the other's
+     * exports — which showed up as an unrelated notification function
+     * "not being a function" in a full test run.
+     */
+    const { getBoxesPaidInFull } = await import("./boxSettlement.db");
+    const paid = await getBoxesPaidInFull([item.boxId]);
+    box = { status: item.boxStatus ?? null, paidInFull: paid.has(item.boxId) };
+  }
+
+  return { batch, box };
 }
 
 // Search the customer's full-package/commission orders by order number

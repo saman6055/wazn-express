@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
+import { parcelStage } from "@shared/parcelStage";
 import * as bcrypt from "bcryptjs";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, customerProcedure } from "../middleware/auth";
@@ -490,9 +491,24 @@ export const customerPortalRouter = router({
          */
         const originIds = await db.getOriginCountryIds();
         const countryId = (found as any).registeredInCountryId ?? null;
+        const registeredAtOrigin = countryId == null ? null : originIds.has(countryId);
+
+        /*
+         * Where the parcel actually is, worked out rather than read off a
+         * stored column (shared/parcelStage).
+         *
+         * The owner, 2026-09-25: "some goods are in the customer's hand and
+         * it says they are in the China warehouse." They were: the stored
+         * status is written by a dozen code paths and one of them fails
+         * quietly. These four facts cannot be stale, because nothing has to
+         * remember to write them.
+         */
+        const facts = await db.parcelStageFacts((found as any).id);
         return {
           ...found,
-          registeredAtOrigin: countryId == null ? null : originIds.has(countryId),
+          registeredAtOrigin,
+          stage: parcelStage({ ...facts, registeredAtOrigin, status: (found as any).status }),
+          stageFacts: facts,
         };
       }),
 

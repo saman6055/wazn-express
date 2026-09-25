@@ -306,6 +306,7 @@ export default function PortalSearchDetail({
                     }
                     language={language}
                     registeredAtOrigin={journeyQ.data?.registeredAtOrigin ?? null}
+                    facts={journeyQ.data?.stageFacts}
                   />
                 )}
               </section>

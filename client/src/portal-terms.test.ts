@@ -3,6 +3,7 @@ import fs from "fs";
 import path from "path";
 import { STATUS_LABEL, BATCH_STATUS_TONE } from "./lib/shipmentFilters";
 import { PACKAGE_STATUS_LABEL } from "./lib/packageStatus";
+import { PARCEL_STAGES, PARCEL_STAGE_LABELS } from "@shared/parcelStage";
 
 /**
  * One status, one name, one meaning — on every portal screen.
@@ -45,15 +46,34 @@ describe("delivered has one name", () => {
     expect(PACKAGE_STATUS_LABEL.delivered.ku).toBe(word);
   });
 
-  it("the tracking timeline, the shipments pill and the orders page agree", () => {
-    expect(read("components/portal/PackageTrackingTimeline.tsx")).toContain(`ku: "${word}"`);
+  it("the shipments pill and the orders page agree", () => {
     expect(line(read("pages/portal/PortalShipments.tsx"), '{ value: "delivered",')).toContain(`labelKu: "${word}"`);
     expect(line(read("pages/portal/PortalShipments.tsx"), '{ value: "delivered",')).not.toContain('"Arrived"');
     expect(read("pages/portal/PortalFullPackage.tsx")).toContain(`{ key: "delivered", ku: "${word}"`);
   });
 
-  it("out for delivery has one spelling", () => {
-    expect(read("components/portal/PackageTrackingTimeline.tsx")).toContain(`ku: "${PACKAGE_STATUS_LABEL.out_for_delivery.ku}"`);
+  it("and the timeline takes its words from the one place that names a stage", () => {
+    /*
+     * The timeline stopped keeping its own list (2026-09-25). Its seven
+     * steps were cut to the five the system can actually observe, and their
+     * names live in shared/parcelStage beside the rule that picks one — so
+     * there is one spelling of each rather than a copy per screen.
+     */
+    const timeline = read("components/portal/PackageTrackingTimeline.tsx");
+    expect(timeline).toContain("PARCEL_STAGE_LABELS[stage.key]");
+    expect(timeline).not.toMatch(/label: \{ ku:/);
+  });
+
+  it("no longer shows a step the system cannot observe", () => {
+    // "Out for delivery" was never set by anything; a box that exists is
+    // going out, so it is the same as ready. Customs was a guess made the
+    // morning after a landing, from a flight number a third party often
+    // never sends.
+    for (const gone of ["out_for_delivery", "customs_processing", "in_batch"]) {
+      expect(PARCEL_STAGES as readonly string[], gone).not.toContain(gone);
+    }
+    // Five stages and the two endings, and nothing else with a name.
+    expect(Object.keys(PARCEL_STAGE_LABELS)).toHaveLength(PARCEL_STAGES.length + 2);
   });
 });
 

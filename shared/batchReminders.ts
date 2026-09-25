@@ -16,8 +16,15 @@
  * the tests all read the same definition of "overdue".
  */
 
-/** Grace period before a batch without its number is worth chasing. */
-export const REMIND_AFTER_DAYS = 5;
+/**
+ * Grace period before a batch without its number is worth chasing.
+ *
+ * Seven days, not five: the owner, 2026-09-25, "a batch needs time too,
+ * maybe seven days to fill". A batch is created empty and fills over about a
+ * week, and asking for a waybill on the fifth day was asking for a number
+ * that does not exist yet — which is how a reminder list stops being read.
+ */
+export const REMIND_AFTER_DAYS = 7;
 
 /** Overdue by this much and it is no longer a reminder. */
 export const URGENT_AFTER_DAYS = 14;
