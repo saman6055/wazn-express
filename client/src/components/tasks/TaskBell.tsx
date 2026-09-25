@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { ListChecks, Plus, Clock, ExternalLink } from "lucide-react";
+import { ListChecks, Plus, Clock, ExternalLink, HelpCircle, Moon, Undo2 } from "lucide-react";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -11,11 +12,13 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTaskComposer } from "@/components/tasks/TaskComposer";
 import {
+  TASK_GUIDE,
   TASK_WORDS,
   ageInDays,
   isAwake,
   taskTone,
   tomorrowMorning,
+  wakeWhenWords,
   type Task,
 } from "@shared/tasks";
 
@@ -31,6 +34,11 @@ import {
  * learn which is which without looking up. Muted the same way, remembered per
  * browser, and it only ever rings for something that was not there before —
  * a page reload is not news.
+ *
+ * Two things he asked for the same day, after using it: a snoozed task must
+ * not simply vanish — it says the hour it returns and waits under "Sleeping",
+ * where it can be woken early — and the list carries its own short lesson,
+ * because an icon nobody understands is an icon nobody presses.
  */
 
 const chimedKey = (userId: number) => `wazn-task-chimed:${userId}`;
@@ -44,6 +52,8 @@ export function TaskBell({ className }: { className?: string }) {
 
   const [open, setOpen] = useState(false);
   const [flash, setFlash] = useState(false);
+  const [guide, setGuide] = useState(false);
+  const [openSleeping, setOpenSleeping] = useState(false);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const utils = trpc.useUtils();
@@ -54,9 +64,29 @@ export function TaskBell({ className }: { className?: string }) {
     staleTime: 30_000,
   });
   const setDone = trpc.tasks.setDone.useMutation({ onSuccess: () => void utils.tasks.invalidate() });
-  const snooze = trpc.tasks.snooze.useMutation({ onSuccess: () => void utils.tasks.invalidate() });
+  // Putting one down says when it comes back; picking it up early says
+  // nothing, because the task reappearing is the whole answer.
+  const snooze = trpc.tasks.snooze.useMutation({
+    onSuccess: (_result, sent) => {
+      void utils.tasks.invalidate();
+      toast.success(L(TASK_WORDS.backAt(L(wakeWhenWords(sent.until)))));
+    },
+  });
+  const wake = trpc.tasks.snooze.useMutation({ onSuccess: () => void utils.tasks.invalidate() });
 
-  const awake = (mine.data?.open ?? []).filter((t) => isAwake(t as Task));
+  /** Pressing a task lands on the record it is about, and the list steps aside. */
+  const goTo = (href?: string | null) => {
+    if (!href) return;
+    setOpen(false);
+    navigate(href);
+  };
+
+  const mineOpen = mine.data?.open ?? [];
+  const awake = mineOpen.filter((t) => isAwake(t as Task));
+  const sleeping = mineOpen.filter((t) => !isAwake(t as Task));
+  // When nothing is awake, the sleeping ones are the list — otherwise the
+  // popover would say "nothing waiting" while work sits behind a fold.
+  const showSleeping = openSleeping || awake.length === 0;
 
   /*
    * Ring once for a task that was not there before.
@@ -101,7 +131,7 @@ export function TaskBell({ className }: { className?: string }) {
   } as const;
 
   return (
-    <Popover open={open} onOpenChange={setOpen}>
+    <Popover open={open} onOpenChange={(v) => { setOpen(v); if (!v) setGuide(false); }}>
       <PopoverTrigger asChild>
         <Button
           variant="ghost"
@@ -121,13 +151,26 @@ export function TaskBell({ className }: { className?: string }) {
       </PopoverTrigger>
 
       <PopoverContent align="end" className="w-80 p-0">
-        <div className="flex items-center gap-2 border-b px-3 py-2">
+        <div className="flex items-center gap-1 border-b px-3 py-2">
           <span className="text-sm font-medium">{L(TASK_WORDS.mine)}</span>
           <span className="text-xs text-muted-foreground">{awake.length}</span>
+          <button
+            type="button"
+            onClick={() => setGuide((g) => !g)}
+            className={cn(
+              "ms-auto grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
+              guide && "bg-muted text-foreground",
+            )}
+            title={L(TASK_WORDS.guide)}
+            aria-label={L(TASK_WORDS.guide)}
+            data-testid="task-guide-toggle"
+          >
+            <HelpCircle className="h-4 w-4" />
+          </button>
           <Button
             variant="ghost"
             size="sm"
-            className="ms-auto h-7 gap-1 px-2 text-xs"
+            className="h-7 gap-1 px-2 text-xs"
             onClick={() => { setOpen(false); newTask(); }}
             data-testid="task-new"
           >
@@ -136,62 +179,142 @@ export function TaskBell({ className }: { className?: string }) {
           </Button>
         </div>
 
-        <div className="max-h-[22rem] overflow-y-auto">
-          {awake.length === 0 ? (
-            <p className="px-3 py-6 text-center text-sm text-muted-foreground">{L(TASK_WORDS.empty)}</p>
-          ) : (
-            awake.map((task) => {
-              const days = ageInDays(task as Task);
-              const tone = taskTone(task as Task);
-              return (
-                <div key={task.id} className="flex gap-2 border-b px-3 py-2.5 last:border-0" data-testid={`task-${task.id}`}>
-                  <button
-                    type="button"
-                    onClick={() => setDone.mutate({ id: task.id, done: true })}
-                    className="mt-0.5 h-4 w-4 shrink-0 rounded border-[1.5px] border-muted-foreground/60 transition-colors hover:border-primary hover:bg-primary/10"
-                    title={L(TASK_WORDS.done)}
-                    aria-label={L(TASK_WORDS.done)}
-                    data-testid={`task-done-${task.id}`}
-                  />
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm leading-snug">{task.text}</p>
-                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
-                      <span className={toneClass[tone]}>
-                        {days === 0 ? L({ ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" }) : L(TASK_WORDS.openDays(days))}
-                      </span>
-                      {task.createdById !== user.id && task.createdByName && (
-                        <span className="text-muted-foreground">· {task.createdByName}</span>
-                      )}
-                      {task.about?.label && (
+        {guide ? (
+          /*
+           * The short lesson, in the one place somebody looks when they have
+           * no tasks yet and are wondering what the icon is for.
+           */
+          <div className="max-h-[24rem] overflow-y-auto" data-testid="task-guide">
+            {TASK_GUIDE.map((step) => (
+              <div key={step.title.en} className="border-b px-3 py-2.5 last:border-0">
+                <p className="text-xs font-medium">{L(step.title)}</p>
+                <p className="mt-1 text-[11px] leading-relaxed text-muted-foreground">{L(step.body)}</p>
+              </div>
+            ))}
+            <div className="flex items-center gap-2 px-3 py-2">
+              <kbd className="rounded border px-1.5 py-0.5 font-mono text-[10px] text-muted-foreground">Alt T</kbd>
+              <Button variant="ghost" size="sm" className="ms-auto h-7 px-2 text-xs" onClick={() => setGuide(false)}>
+                {L(TASK_WORDS.close)}
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="max-h-[22rem] overflow-y-auto">
+            {awake.length === 0 ? (
+              <div className="px-3 py-6 text-center">
+                <p className="text-sm text-muted-foreground">{L(TASK_WORDS.empty)}</p>
+                <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground/80">{L(TASK_WORDS.hint)}</p>
+                <button
+                  type="button"
+                  onClick={() => setGuide(true)}
+                  className="mt-2 text-[11px] text-primary hover:underline"
+                >
+                  {L(TASK_WORDS.guide)}
+                </button>
+              </div>
+            ) : (
+              awake.map((task) => {
+                const days = ageInDays(task as Task);
+                const tone = taskTone(task as Task);
+                return (
+                  /*
+                   * The whole line is the link, not the small code at the end
+                   * of it. The owner, 2026-09-25: "when I press it, it must
+                   * go straight to the section that task belongs to."
+                   */
+                  <div
+                    key={task.id}
+                    className={cn(
+                      "flex gap-2 border-b px-3 py-2.5 last:border-0",
+                      task.about?.href && "cursor-pointer hover:bg-muted/50",
+                    )}
+                    onClick={() => goTo(task.about?.href)}
+                    role={task.about?.href ? "link" : undefined}
+                    data-testid={`task-${task.id}`}
+                  >
+                    <button
+                      type="button"
+                      onClick={(e) => { e.stopPropagation(); setDone.mutate({ id: task.id, done: true }); }}
+                      className="mt-0.5 h-4 w-4 shrink-0 rounded border-[1.5px] border-muted-foreground/60 transition-colors hover:border-primary hover:bg-primary/10"
+                      title={L(TASK_WORDS.done)}
+                      aria-label={L(TASK_WORDS.done)}
+                      data-testid={`task-done-${task.id}`}
+                    />
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm leading-snug">{task.text}</p>
+                      <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px]">
+                        <span className={toneClass[tone]}>
+                          {days === 0 ? L({ ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" }) : L(TASK_WORDS.openDays(days))}
+                        </span>
+                        {task.createdById !== user.id && task.createdByName && (
+                          <span className="text-muted-foreground">· {task.createdByName}</span>
+                        )}
+                        {task.about?.label && (
+                          <span className="inline-flex max-w-[11rem] items-center gap-1 font-mono text-primary">
+                            <bdi dir="ltr" className="truncate">{task.about.label}</bdi>
+                            {task.about.href && <ExternalLink className="h-3 w-3 shrink-0" />}
+                          </span>
+                        )}
                         <button
                           type="button"
-                          className="inline-flex max-w-[11rem] items-center gap-1 font-mono text-primary hover:underline"
-                          onClick={() => {
-                            if (!task.about?.href) return;
-                            setOpen(false);
-                            navigate(task.about.href);
-                          }}
+                          className="ms-auto inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
+                          onClick={(e) => { e.stopPropagation(); snooze.mutate({ id: task.id, until: tomorrowMorning() }); }}
+                          title={L(TASK_WORDS.snooze)}
+                          data-testid={`task-snooze-${task.id}`}
                         >
-                          <bdi dir="ltr" className="truncate">{task.about.label}</bdi>
-                          {task.about.href && <ExternalLink className="h-3 w-3 shrink-0" />}
+                          <Clock className="h-3 w-3" />
                         </button>
-                      )}
-                      <button
-                        type="button"
-                        className="ms-auto inline-flex items-center gap-1 text-muted-foreground hover:text-foreground"
-                        onClick={() => snooze.mutate({ id: task.id, until: tomorrowMorning() })}
-                        title={L(TASK_WORDS.snooze)}
-                        data-testid={`task-snooze-${task.id}`}
-                      >
-                        <Clock className="h-3 w-3" />
-                      </button>
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })
-          )}
-        </div>
+                );
+              })
+            )}
+
+            {sleeping.length > 0 && (
+              /*
+               * Nothing was deleted. It waits here, says the hour it comes
+               * back, and can be picked up again before then.
+               */
+              <div className="border-t bg-muted/30" data-testid="task-sleeping">
+                <button
+                  type="button"
+                  onClick={() => setOpenSleeping((s) => !s)}
+                  className="flex w-full items-center gap-2 px-3 py-2 text-[11px] text-muted-foreground hover:text-foreground"
+                >
+                  <Moon className="h-3.5 w-3.5" />
+                  {L(TASK_WORDS.sleeping)}
+                  <span>{sleeping.length}</span>
+                </button>
+                {showSleeping && sleeping.map((task) => (
+                  <div
+                    key={task.id}
+                    className={cn("flex gap-2 px-3 pb-2.5 ps-6", task.about?.href && "cursor-pointer")}
+                    onClick={() => goTo(task.about?.href)}
+                    data-testid={`task-asleep-${task.id}`}
+                  >
+                    <div className="min-w-0 flex-1">
+                      <p className="truncate text-xs text-muted-foreground">{task.text}</p>
+                      <p className="text-[11px] text-muted-foreground/80">
+                        {L(TASK_WORDS.returnsAt(L(wakeWhenWords(task.snoozedUntil ?? new Date()))))}
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="inline-flex h-6 shrink-0 items-center gap-1 self-center rounded-md px-1.5 text-[11px] text-muted-foreground hover:bg-background hover:text-foreground"
+                      onClick={(e) => { e.stopPropagation(); wake.mutate({ id: task.id, until: new Date(Date.now() - 1000) }); }}
+                      title={L(TASK_WORDS.wakeNow)}
+                      data-testid={`task-wake-${task.id}`}
+                    >
+                      <Undo2 className="h-3 w-3" />
+                      {L(TASK_WORDS.wakeNow)}
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

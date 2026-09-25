@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
 } from "@/components/ui/select";
-import { TASK_WORDS, type TaskAbout, type TaskAboutType } from "@shared/tasks";
+import { TASK_WORDS, hrefForValue, type TaskAbout, type TaskAboutType } from "@shared/tasks";
 
 /**
  * The window a task is written in, and the three ways to open it.
@@ -54,22 +54,39 @@ export function useTaskComposer() {
   return useContext(TaskComposerContext);
 }
 
+/** One word of letters and digits, long enough to be a code and not a label. */
+const CODE_LIKE = /^[A-Za-z0-9][A-Za-z0-9._\/-]{5,39}$/;
+
 /** Where the browser's own menu must keep working: paste lives there. */
 const EDITABLE = "input, textarea, select, [contenteditable='true'], [contenteditable='']";
 
 /** How far out from the pointer a value still counts as "this one". */
 const NEARBY_STEPS = 5;
 
-/** The nearest copyable value in the same cell, then the same row. */
+/**
+ * The nearest copyable value in the same cell, then the same row.
+ *
+ * It stops the moment the scope holds more than one: a container with three
+ * parcels in it cannot say which one the pointer meant, and guessing the
+ * first is worse than not guessing — it fastens the task to the wrong
+ * parcel, and nothing on screen says so.
+ */
 function nearestValue(target: Element): HTMLElement | null {
   let scope: Element | null = target;
   for (let step = 0; step < NEARBY_STEPS && scope; step += 1) {
     if (scope === document.body) break;
-    const found = scope.querySelector<HTMLElement>("[data-task-value]");
-    if (found?.dataset.taskValue) return found;
+    const all = scope.querySelectorAll<HTMLElement>("[data-task-value]");
+    if (all.length > 1) return null;
+    if (all.length === 1 && all[0].dataset.taskValue) return all[0];
     scope = scope.parentElement;
   }
   return null;
+}
+
+/** The text the pointer is actually on, when it reads like a code. */
+function codeUnderPointer(target: Element): string | null {
+  const own = (target.textContent ?? "").trim();
+  return CODE_LIKE.test(own) ? own : null;
 }
 
 /** What the global right-click found under the pointer, if anything. */
@@ -98,20 +115,29 @@ function aboutFromEvent(target: EventTarget | null): TaskAbout | null {
    * same cell, then the same row — which is what a person means when they
    * right-click a line and say "make a task about this".
    */
+  const here = window.location.pathname + window.location.search;
+
+  // The pointer's own text first: if it is on the number, that is the answer,
+  // whether or not anybody printed a copy button beside it.
+  const own = codeUnderPointer(target);
+  if (own) return { type: "none", label: own, href: hrefForValue(own, here) };
+
   const copyable =
     target.closest<HTMLElement>("[data-task-value]") ?? nearestValue(target);
   if (copyable?.dataset.taskValue) {
     return {
       type: (copyable.dataset.taskType as TaskAboutType) || "none",
       label: copyable.dataset.taskValue,
-      href: copyable.dataset.taskHref || window.location.pathname + window.location.search,
+      // Not the page it was taken from: the record itself (shared/tasks
+      // hrefForValue), so pressing the task lands on the thing it is about.
+      href: copyable.dataset.taskHref || hrefForValue(copyable.dataset.taskValue, here),
     };
   }
 
   // Failing both: whatever the person has selected on the page.
   const selected = window.getSelection()?.toString().trim();
   if (selected && selected.length <= 120) {
-    return { type: "none", label: selected, href: window.location.pathname + window.location.search };
+    return { type: "none", label: selected, href: hrefForValue(selected, here) };
   }
   return null;
 }
@@ -135,16 +161,25 @@ export function TaskComposerProvider({ children }: { children: ReactNode }) {
     setOpen(true);
   }, []);
 
-  // Alt+T from anywhere; Ctrl+T too, for the desktop app.
+  /*
+   * Alt+T from anywhere — Ctrl+T and Ctrl+Alt+T too.
+   *
+   * By position (e.code), not by the letter the key produces. On a Kurdish or
+   * Arabic layout that key types ج, and reading e.key meant the shortcut
+   * worked in English and silently did nothing in the language the office
+   * actually types in.
+   *
+   * In the capture phase, so an open window with a focus trap cannot eat it.
+   */
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const isT = e.key === "t" || e.key === "T";
+      const isT = e.code === "KeyT" || e.key === "t" || e.key === "T";
       if (!isT || (!e.altKey && !(e.ctrlKey || e.metaKey))) return;
       e.preventDefault();
       openComposer({ about: aboutFromEvent(document.activeElement) ?? undefined });
     };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
+    window.addEventListener("keydown", onKey, true);
+    return () => window.removeEventListener("keydown", onKey, true);
   }, [openComposer]);
 
   /*
@@ -159,10 +194,15 @@ export function TaskComposerProvider({ children }: { children: ReactNode }) {
       if (e.shiftKey) return; // the escape hatch to the browser's own menu
       // Inside a field, a right-click is how a person pastes. Never take it.
       if (e.target instanceof Element && e.target.closest(EDITABLE)) return;
-      const found = aboutFromEvent(e.target);
-      if (!found) return;
+      /*
+       * Anywhere, not only over a copy button. The owner, 2026-09-25: "the
+       * copy icon is not in every place, so a right-click cannot reach a
+       * task." So the menu is ours everywhere on a working screen — with a
+       * record attached where one is under the pointer, and without where
+       * there is not.
+       */
       e.preventDefault();
-      openComposer({ about: found });
+      openComposer({ about: aboutFromEvent(e.target) ?? undefined });
     };
     window.addEventListener("contextmenu", onContextMenu);
     return () => window.removeEventListener("contextmenu", onContextMenu);
@@ -278,6 +318,12 @@ export function TaskComposerProvider({ children }: { children: ReactNode }) {
               </span>
             )}
           </div>
+
+          {!about?.label && (
+            <p className="text-[11px] leading-relaxed text-muted-foreground" data-testid="task-fasten-hint">
+              {L(TASK_WORDS.fastenHint)}
+            </p>
+          )}
 
           <div className="flex items-center gap-3">
             <Button onClick={submit} disabled={!text.trim() || create.isPending} data-testid="task-add">

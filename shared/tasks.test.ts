@@ -2,15 +2,19 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 import {
+  TASK_GUIDE,
   TASK_LATE_AFTER_DAYS,
   TASK_WAITING_AFTER_DAYS,
+  TASK_WORDS,
   ageInDays,
   byOldestFirst,
   canSeeTask,
+  hrefForValue,
   isAwake,
   isSnoozed,
   taskTone,
   tomorrowMorning,
+  wakeWhenWords,
 } from "./tasks";
 
 const read = (rel: string) =>
@@ -125,5 +129,131 @@ describe("the three ways in", () => {
     expect(composer).toMatch(/e\.altKey/);
     expect(read("client/src/App.tsx")).toContain("TaskComposerProvider");
     expect(read("client/src/components/DashboardLayout.tsx")).toContain("TaskBell");
+  });
+
+  it("reads the shortcut key by position, not by the letter it types", () => {
+    /*
+     * The owner, 2026-09-25: "Ctrl+Alt+T does not work everywhere." On a
+     * Kurdish or Arabic layout that key produces an Arabic letter, so a
+     * handler comparing e.key worked in English and nowhere else.
+     */
+    const composer = read("client/src/components/tasks/TaskComposer.tsx");
+    expect(composer).toContain('e.code === "KeyT"');
+    // And in the capture phase, so a window with a focus trap cannot eat it.
+    expect(composer).toContain('window.addEventListener("keydown", onKey, true)');
+  });
+
+  it("opens from a right-click even where no copy button was printed", () => {
+    // "The copy icon is not in every place, so a right-click cannot reach a
+    // task." Now the menu is ours on every working screen; only a field and
+    // Shift are left to the browser.
+    const composer = read("client/src/components/tasks/TaskComposer.tsx");
+    const handler = composer.slice(
+      composer.indexOf("const onContextMenu ="),
+      composer.indexOf('window.addEventListener("contextmenu"'),
+    );
+    expect(handler.length).toBeGreaterThan(20);
+    expect(handler).toContain("openComposer({ about: aboutFromEvent(e.target) ?? undefined })");
+    expect(handler).not.toContain("if (!found) return");
+    // A code printed as plain text is still a code.
+    expect(composer).toContain("CODE_LIKE.test(own)");
+  });
+});
+
+describe("a task that was put down", () => {
+  /*
+   * The owner, 2026-09-25, having pressed "remind me tomorrow": the task
+   * vanished and nothing said when it returns. A task that disappears
+   * silently is a task nobody trusts.
+   */
+  it("says the hour it comes back", () => {
+    const at8 = tomorrowMorning(NOW);
+    expect(wakeWhenWords(at8, NOW).en).toBe("tomorrow at 08:00");
+    expect(wakeWhenWords(at8, NOW).ku).toContain("08:00");
+    const later = new Date(NOW.getTime() + 3 * 60 * 60 * 1000);
+    expect(wakeWhenWords(later, NOW).en).toMatch(/^today at /);
+    const next = new Date(NOW.getTime() + 9 * 24 * 60 * 60 * 1000);
+    expect(wakeWhenWords(next, NOW).en).toMatch(/^\d{4}-\d{2}-\d{2} at /);
+  });
+
+  it("says it the moment it is put down, and again in the list", () => {
+    const bell = read("client/src/components/tasks/TaskBell.tsx");
+    const snooze = bell.slice(bell.indexOf("const snooze ="), bell.indexOf("const wake ="));
+    expect(snooze.length).toBeGreaterThan(20);
+    expect(snooze).toContain("TASK_WORDS.backAt");
+    expect(snooze).toContain("wakeWhenWords");
+    expect(bell).toContain("TASK_WORDS.returnsAt");
+  });
+
+  it("waits in sight, and can be picked up early", () => {
+    const bell = read("client/src/components/tasks/TaskBell.tsx");
+    expect(bell).toContain('data-testid="task-sleeping"');
+    expect(bell).toContain("TASK_WORDS.wakeNow");
+    // With nothing awake, the sleeping ones are the list — otherwise the
+    // popover says "nothing waiting" while work sits behind a fold.
+    expect(bell).toContain("openSleeping || awake.length === 0");
+  });
+});
+
+describe("the short lesson", () => {
+  // The owner, 2026-09-25: "add a little teaching \u2014 what a task is, the
+  // shortcut and how it works \u2014 so the person knows what a task means."
+  it("covers what it is, how to make one, who sees it and how it ends", () => {
+    expect(TASK_GUIDE.length).toBeGreaterThanOrEqual(5);
+    for (const step of TASK_GUIDE) {
+      for (const lang of ["ku", "en", "ar", "zh"] as const) {
+        expect(step.title[lang].trim().length, `${step.title.en} title ${lang}`).toBeGreaterThan(0);
+        expect(step.body[lang].trim().length, `${step.title.en} body ${lang}`).toBeGreaterThan(0);
+      }
+    }
+    const ku = TASK_GUIDE.map((s) => s.body.ku).join(" ");
+    expect(ku).toContain("Alt+T");
+    expect(ku).toContain("08:00");
+  });
+
+  it("sits where somebody with no tasks is already looking", () => {
+    const bell = read("client/src/components/tasks/TaskBell.tsx");
+    expect(bell).toContain('data-testid="task-guide-toggle"');
+    expect(bell).toContain('data-testid="task-guide"');
+    const empty = bell.slice(bell.indexOf("awake.length === 0 ? ("), bell.indexOf("awake.map("));
+    expect(empty.length).toBeGreaterThan(20);
+    expect(empty).toContain("TASK_WORDS.hint");
+    expect(empty).toContain("setGuide(true)");
+  });
+
+  it("keeps a Latin shortcut upright inside Kurdish", () => {
+    // Without an isolate, "Alt+T" reorders in an RTL line.
+    for (const words of [TASK_WORDS.hint.ku, TASK_GUIDE[1].body.ku]) {
+      if (!words.includes("Alt+T")) continue;
+      expect(words, words).toContain("\u2066Alt+T\u2069");
+    }
+  });
+});
+
+describe("pressing a task", () => {
+  /*
+   * The owner, 2026-09-25: "the link of the place must go into the task —
+   * when I press it, it goes straight to the section that task belongs to.
+   * This is very important."
+   */
+  it("goes to the record, not to the page it was written on", () => {
+    expect(hrefForValue("SF1234567890", "/batches")).toBe("/packages/all?search=SF1234567890");
+    // A box code has no row in the parcels table; the screen it came from is
+    // the box screen, so that is where it stays.
+    expect(hrefForValue("BOX-20260918-004", "/delivery?tab=open")).toBe("/delivery?tab=open");
+    expect(hrefForValue("   ", "/here")).toBe("/here");
+  });
+
+  it("is the whole line, not the small code at the end of it", () => {
+    const bell = read("client/src/components/tasks/TaskBell.tsx");
+    expect(bell).toContain("onClick={() => goTo(task.about?.href)}");
+    // The tick and the snooze must not navigate as well.
+    expect(bell).toMatch(/e\.stopPropagation\(\); setDone\.mutate/);
+    expect(bell).toMatch(/e\.stopPropagation\(\); snooze\.mutate/);
+  });
+
+  it("is what the right-click writes into the task in the first place", () => {
+    const composer = read("client/src/components/tasks/TaskComposer.tsx");
+    expect(composer).toContain("hrefForValue(copyable.dataset.taskValue, here)");
   });
 });
