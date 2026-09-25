@@ -1280,6 +1280,29 @@ export const batchesRouter = router({
               error: e instanceof Error ? e.message : String(e),
             });
           }
+          /*
+           * Anything this run will not reach.
+           *
+           * The consolidated flow below bills the orders it can link to a
+           * parcel, and a single bad row is caught and skipped so the rest
+           * survive — which means an order can come out of a delivery
+           * uncharged and nothing downstream ever notices. A box built from
+           * it then shows the goods at full price while the account holds
+           * nothing, and a receipt against that box credits money to a debt
+           * that does not exist (db/orderCharging.db tells the whole story).
+           *
+           * So the same idempotent charge runs first, by tracking. Anything
+           * it bills, the run below then skips as already charged; anything
+           * it misses, the run below bills. Neither can bill twice.
+           */
+          try {
+            await db.chargeOrdersInBatch(id, ctx.user.id);
+          } catch (e) {
+            appLogger.error("[OrderCharge] batch delivery net failed", {
+              batchId: id,
+              error: e instanceof Error ? e.message : String(e),
+            });
+          }
           // Build a diagnostic report so the caller can see exactly what
           // happened in the consolidated invoice flow without needing
           // server logs. Surfaced back to the UI as part of the response.

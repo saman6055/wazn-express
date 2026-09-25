@@ -502,7 +502,27 @@ export async function addItemToBox(data: InsertDeliveryBoxItem): Promise<Deliver
   // Update box totals
   await recalculateBoxTotals(data.boxId);
 
+  /*
+   * The goods are in the box, so the account must know what they cost — the
+   * owner's rule, 2026-09-26. Idempotent and quiet: an order billed at entry
+   * is not billed again, and a failure here never stops a parcel going in
+   * (db/orderCharging.db).
+   */
+  await chargeOrdersForBoxQuietly(Number(data.boxId), Number(data.scannedById ?? 0));
+
   return item;
+}
+
+/** Bill anything in this box that has never been billed. Never throws. */
+async function chargeOrdersForBoxQuietly(boxId: number, userId: number): Promise<void> {
+  try {
+    const { chargeOrdersInBox } = await import("./orderCharging.db");
+    await chargeOrdersInBox(boxId, userId);
+  } catch (e) {
+    appLogger.error("[DeliveryBox] failed to bill orders in box", {
+      boxId, error: e instanceof Error ? e.message : String(e),
+    });
+  }
 }
 
 export async function removeItemFromBox(itemId: number): Promise<void> {
@@ -1054,6 +1074,7 @@ export async function createDeliveryBoxesForBatch(
       const values = await buildBoxItemValuesFromPackage(pkg, batchRow, userId);
       await db.insert(deliveryBoxItems).values({ boxId, ...values });
     }
+    await chargeOrdersForBoxQuietly(boxId, userId);
 
     // Recalculate totals (use inline calc since we're inside this function)
     const items = await db.select().from(deliveryBoxItems).where(eq(deliveryBoxItems.boxId, boxId));
@@ -1317,6 +1338,8 @@ export async function recomputeBoxItems(
       added++;
     }
   }
+
+  if (added > 0) await chargeOrdersForBoxQuietly(boxId, userId);
 
   // Recompute box totals from the (now refreshed) items.
   const items = await db.select().from(deliveryBoxItems).where(eq(deliveryBoxItems.boxId, boxId));
