@@ -3,6 +3,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
+import { AirWaybillFields } from "@/components/batches/AirWaybillFields";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -853,19 +854,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="grid gap-1.5">
-                              <Label className="text-xs">{t('batches.flightName')}</Label>
-                              <Input name="airlineName" placeholder="e.g., Turkish Airlines" className="h-9" />
-                            </div>
-                            <div className="grid gap-1.5">
-                              <Label className="text-xs">{t('batches.flightNumber')}</Label>
-                              <Input name="flightNumber" placeholder="e.g., TK123" className="h-9" />
-                            </div>
+                            {/* The airline fills itself from the waybill's
+                                first three digits (shared/airWaybill). */}
+                            <AirWaybillFields />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="grid gap-1.5">
-                              <Label className="text-xs">{t('batches.awbNumber')}</Label>
-                              <Input name="awbNumber" placeholder="176-48293011" className="h-9 font-mono" />
+                              <Label className="text-xs">{t('batches.flightNumber')}</Label>
+                              <Input name="flightNumber" placeholder="e.g., TK123" className="h-9" />
                             </div>
                             <div className="grid gap-1.5">
                               <Label className="text-xs">{t('batches.shippingCompany')}</Label>
@@ -2284,19 +2280,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardHeader>
                         <CardContent className="space-y-3">
                           <div className="grid grid-cols-2 gap-3">
-                            <div className="grid gap-1.5">
-                              <Label className="text-xs">{t("batches.flightName")}</Label>
-                              <Input name="airlineName" defaultValue={editingBatch.airlineName || ""} className="h-9" />
-                            </div>
-                            <div className="grid gap-1.5">
-                              <Label className="text-xs">{t("batches.flightNumber")}</Label>
-                              <Input name="flightNumber" defaultValue={editingBatch.flightNumber || ""} className="h-9" />
-                            </div>
+                            <AirWaybillFields
+                              defaultAwb={editingBatch.awbNumber || ""}
+                              defaultAirline={editingBatch.airlineName || ""}
+                            />
                           </div>
                           <div className="grid grid-cols-2 gap-3">
                             <div className="grid gap-1.5">
-                              <Label className="text-xs">{t("batches.awbNumber")}</Label>
-                              <Input name="awbNumber" defaultValue={editingBatch.awbNumber || ""} placeholder="176-48293011" className="h-9 font-mono" />
+                              <Label className="text-xs">{t("batches.flightNumber")}</Label>
+                              <Input name="flightNumber" defaultValue={editingBatch.flightNumber || ""} className="h-9" />
                             </div>
                             <div className="grid gap-1.5">
                               <Label className="text-xs">{t("batches.shippingCompany")}</Label>
