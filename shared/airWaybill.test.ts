@@ -62,6 +62,29 @@ describe("the check digit", () => {
   });
 });
 
+describe("the carriers this company flies", () => {
+  it("has the three it is sure of", () => {
+    // Owner, 2026-09-25: "from China to Iraq it is mostly Turkish, Emirates,
+    // Qatari, Mahan and Iraqi Airways."
+    expect(AIRLINE_PREFIXES["235"]).toBe("Turkish Airlines");
+    expect(AIRLINE_PREFIXES["176"]).toBe("Emirates");
+    expect(AIRLINE_PREFIXES["157"]).toBe("Qatar Airways");
+  });
+
+  it("does not invent the two it is not", () => {
+    /*
+     * Mahan and Iraqi Airways are not written from memory. They are learned
+     * from the company's own waybills instead (batches.airlinePrefixes):
+     * every batch carries both the number and the airline somebody typed
+     * beside it, so the first one is typed by hand and every one after it
+     * fills itself.
+     */
+    const named = new Set(Object.values(AIRLINE_PREFIXES).map((n) => n.toLowerCase()));
+    expect(named.has("mahan air")).toBe(false);
+    expect(named.has("iraqi airways")).toBe(false);
+  });
+});
+
 describe("the table", () => {
   it("is all three-digit prefixes with a real name", () => {
     for (const [prefix, name] of Object.entries(AIRLINE_PREFIXES)) {

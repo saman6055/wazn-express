@@ -534,6 +534,17 @@ async function emitCmInvoices(
 }
 
 export const batchesRouter = router({
+    /**
+     * Waybill prefix to airline, as this company's own paperwork has it.
+     *
+     * The built-in table covers the carriers we are sure of; this covers the
+     * ones the office flies. Typed once beside a waybill, filled in for ever
+     * after (owner, 2026-09-25).
+     */
+    airlinePrefixes: staffProcedure.query(async () => {
+      return db.airlineNamesByPrefix();
+    }),
+
     list: staffProcedure
       .input(z.object({ page: z.number().min(1).optional(), pageSize: z.number().min(1).max(100).optional() }).optional())
       .query(async ({ input }) => {

@@ -496,6 +496,56 @@ const BATCH_RANK: Record<string, number> = {
  * Only ever forwards, and never onto a batch that is already delivered or
  * closed.
  */
+/**
+ * Which airline each waybill prefix belongs to, read off our own batches.
+ *
+ * The first three digits of an air waybill are the airline's IATA prefix, so
+ * a batch that carries both an AWB and an airline name is a statement about
+ * one. The built-in table (shared/airWaybill) holds the carriers we are sure
+ * of; this fills in the rest from what the office has actually typed, which
+ * is how a prefix nobody hard-coded — Mahan, Iraqi Airways, whatever flies
+ * next year — starts filling itself in after being typed once.
+ *
+ * The most common name per prefix, not the latest: one typo should not
+ * rename a carrier.
+ */
+export async function airlineNamesByPrefix(): Promise<Record<string, string>> {
+  const db = await getDb();
+  if (!db) return {};
+
+  const rows = await db
+    .select({
+      prefix: sql<string>`LEFT(REPLACE(REPLACE(${batches.awbNumber}, '-', ''), ' ', ''), 3)`,
+      name: batches.airlineName,
+      seen: sql<number>`COUNT(*)`,
+    })
+    .from(batches)
+    .where(and(
+      isNotNull(batches.awbNumber),
+      ne(batches.awbNumber, ""),
+      isNotNull(batches.airlineName),
+      ne(batches.airlineName, ""),
+    ))
+    .groupBy(
+      sql`LEFT(REPLACE(REPLACE(${batches.awbNumber}, '-', ''), ' ', ''), 3)`,
+      batches.airlineName,
+    );
+
+  const best = new Map<string, { name: string; seen: number }>();
+  for (const row of rows) {
+    const prefix = String(row.prefix ?? "").trim();
+    const name = String(row.name ?? "").trim();
+    if (!/^\d{3}$/.test(prefix) || !name) continue;
+    const seen = Number(row.seen ?? 0);
+    const held = best.get(prefix);
+    if (!held || seen > held.seen) best.set(prefix, { name, seen });
+  }
+
+  const out: Record<string, string> = {};
+  best.forEach((value, prefix) => { out[prefix] = value.name; });
+  return out;
+}
+
 export async function advanceBatchToDepot(
   batchId: number,
   changedById?: number | null,

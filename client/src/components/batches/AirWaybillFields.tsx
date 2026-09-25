@@ -6,6 +6,7 @@ import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { parseAwb } from "@shared/airWaybill";
+import { trpc } from "@/lib/trpc";
 
 /**
  * The waybill number, and the airline it already contains.
@@ -63,13 +64,30 @@ export function AirWaybillFields({
   // Filled from the number only while nobody has typed over it.
   const [airlineTouched, setAirlineTouched] = useState(Boolean(defaultAirline));
 
+  /*
+   * The prefixes this company actually flies, learned from its own waybills.
+   *
+   * The built-in table holds the carriers we are sure of. Mahan, Iraqi
+   * Airways and whatever flies next year are not in it and must not be
+   * guessed — so they come from the office's own paperwork instead: typed
+   * once beside a waybill, filled in for ever after.
+   */
+  const learned = trpc.batches.airlinePrefixes.useQuery(undefined, {
+    staleTime: 30 * 60_000,
+    gcTime: 60 * 60_000,
+  });
+
   const parsed = parseAwb(awb);
   const wrong = parsed !== null && !parsed.checkDigitValid;
+  // The built-in name wins where there is one: those are verified, and a
+  // single mistyped airline should not be able to rename a carrier.
+  const known = parsed ? (parsed.airline ?? learned.data?.[parsed.prefix] ?? null) : null;
 
   const onAwb = (value: string) => {
     setAwb(value);
     const next = parseAwb(value);
-    if (next?.airline && !airlineTouched) setAirline(next.airline);
+    const name = next ? (next.airline ?? learned.data?.[next.prefix] ?? null) : null;
+    if (name && !airlineTouched) setAirline(name);
   };
 
   return (
@@ -87,7 +105,7 @@ export function AirWaybillFields({
           className="h-9"
           data-testid="batch-airline"
         />
-        {parsed?.airline && airline === parsed.airline && (
+        {known && airline === known && (
           <p className="flex items-center gap-1 text-xs text-emerald-600 dark:text-emerald-400">
             <Check className="h-3.5 w-3.5" />
             {L(WORDS.recognised)}
