@@ -31,6 +31,7 @@ import {
   type BoxDiscount,
 } from "@shared/boxSettlement";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
+import { chargeOrdersInBox } from "./orderCharging.db";
 import {
   pledgeFloors,
   pledgeBreaches,
@@ -890,11 +891,34 @@ export async function createBoxSettlement(
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
+  /*
+   * Before anything: the goods in this box must be on the account.
+   *
+   * An order that travelled as a parcel can reach the till unbilled — the
+   * four doors that each declined are written out in db/orderCharging. When
+   * that happens the receipt used to post the payment and the discount as
+   * credits against a debt that was never there, and the customer ended up
+   * owed money for goods they had just been handed (AZ295, 2026-09-26:
+   * $211.78 of goods, $40.15 in credit).
+   *
+   * So the till is the last door, and it is the one that cannot be skipped:
+   * whatever is unbilled is billed now, through the same idempotent charge
+   * an order entered today takes. It runs before the transaction opens
+   * because it posts through its own — and a charge that stands on its own
+   * is the true debt whether or not the money is taken a second later.
+   */
+  const billed = await chargeOrdersInBox(input.boxId, userId);
+
   const view = await getBoxSettlementView(input.boxId);
   const box = view.box;
   const customer = view.customer;
   if (!box) throw new Error(vanishedFix("بۆکس", { bin: true }));
   if (!customer) throw new Error(vanishedFix("کڕیاری ئەم بۆکسە", { bin: true }));
+  if (billed.charged > 0) {
+    appLogger.info("[BoxSettlement] billed goods at the till before settling", {
+      boxId: input.boxId, orders: billed.charged, amountUsd: billed.amountUsd,
+    });
+  }
 
   const requested = new Set(input.lines.map((l) => l.lineId));
   const parcels = view.parcels.filter((p) => requested.has(p.lineId));

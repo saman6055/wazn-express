@@ -60,6 +60,9 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
 
   const t = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, k);
 
+  const [undoing, setUndoing] = useState<number | null>(null);
+  const [undoReason, setUndoReason] = useState("");
+
   const { data, isLoading, error, refetch } = trpc.deliveryBox.settlementView.useQuery(
     { boxId: boxId ?? 0 },
     { enabled: boxId !== null },
@@ -103,6 +106,36 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const totals = useMemo(() => settlementTotals(parcels, intents), [parcels, intents]);
 
   /** What the receipt promised, in the words it promised them in. */
+  /** Receipts still standing on this box — a reversed one took nothing. */
+  const undo = trpc.deliveryBox.reverseSettlement.useMutation({
+    onSuccess: () => {
+      setUndoing(null);
+      setUndoReason("");
+      void refetch();
+      toast.success(t({
+        ku: "وەسڵەکە هەڵوەشێنرایەوە — پارەکە و داشکاندنەکە گەڕانەوە سەر حیساب",
+        en: "Receipt undone — the payment and the discount are back on the account",
+        ar: "تم إلغاء الإيصال — الدفعة والخصم عادا إلى الحساب",
+        zh: "收据已撤销 — 款项与折扣已退回账户",
+      }));
+    },
+    onError: (err) => systemAlert({
+      kind: "error",
+      title: t({
+        ku: "هەڵنەوەشێنرایەوە",
+        en: "Not undone",
+        ar: "لم يُلغَ",
+        zh: "未撤销",
+      }),
+      message: err.message,
+    }),
+  });
+
+  const earlier = useMemo(
+    () => (data?.settlements ?? []).filter((s) => s.status !== "reversed"),
+    [data?.settlements],
+  );
+
   const promised = useMemo(
     () =>
       [...pledges]
@@ -204,6 +237,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const nothingToPay = !isLoading && !error && parcels.length === 0;
 
   return (
+    <>
     <Dialog open={boxId !== null} onOpenChange={onOpenChange}>
       <DialogContent
         dir="rtl"
@@ -244,6 +278,61 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
              */}
             {!showParcels && (
               <>
+              {/*
+               * The receipt that already took this money.
+               *
+               * The owner, 2026-09-26: "I cannot do the payment again and I
+               * do not know why." Because a receipt exists and nothing on
+               * this screen said so — the figure simply read zero. A box
+               * whose money was handed back outside the receipt still counts
+               * as paid until the receipt itself is undone, so the receipt is
+               * named here, with the way to undo it, where the money is
+               * taken. It is the same undo as the parcels panel below; it was
+               * only ever one click too far away.
+               */}
+              {earlier.length > 0 && (
+                <div className="rounded-lg border border-amber-300 bg-amber-50/60 p-3 dark:border-amber-800 dark:bg-amber-950/30"
+                     data-testid="quick-earlier">
+                  <p className="text-xs font-medium text-amber-800 dark:text-amber-300">
+                    {t({
+                      ku: "ئەم بۆکسە پێشتر وەسڵی بۆ دەرکراوە",
+                      en: "This box already has a receipt",
+                      ar: "لهذا الصندوق إيصال سابق",
+                      zh: "此箱已开具收据",
+                    })}
+                  </p>
+                  {earlier.map((s) => (
+                    <div key={s.id} className="mt-2 flex flex-wrap items-baseline gap-x-2 gap-y-1 text-xs">
+                      <bdi dir="ltr" className="font-mono">{s.settlementNumber}</bdi>
+                      <bdi dir="ltr" className="font-mono">{fmtUsd(Number(s.paidUsd || 0))}</bdi>
+                      {Number(s.discountUsd || 0) > 0 && (
+                        <span className="text-amber-700 dark:text-amber-400">
+                          {t({ ku: "داشکاندن", en: "discount", ar: "خصم", zh: "折扣" })}{" "}
+                          <bdi dir="ltr" className="font-mono">{fmtUsd(Number(s.discountUsd || 0))}</bdi>
+                        </span>
+                      )}
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="ms-auto h-6 px-2 text-xs text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-950"
+                        onClick={() => { setUndoing(s.id); setUndoReason(""); }}
+                        data-testid={`quick-undo-${s.id}`}
+                      >
+                        {t({ ku: "هەڵوەشاندنەوە", en: "Undo", ar: "إلغاء", zh: "撤销" })}
+                      </Button>
+                    </div>
+                  ))}
+                  <p className="mt-2 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/90">
+                    {t({
+                      ku: "تا وەسڵەکە هەڵنەوەشێنرێتەوە، ئەم بۆکسە بە پارەدراو دەژمێردرێت — هەڵوەشاندنەوەی پارەکە و داشکاندنەکە پێکەوە دەگەڕێنێتەوە.",
+                      en: "Until the receipt is undone this box counts as paid — undoing it puts back the payment and the discount together.",
+                      ar: "يُعتبر الصندوق مدفوعاً حتى يُلغى الإيصال — والإلغاء يعيد الدفعة والخصم معاً.",
+                      zh: "在撤销收据之前，此箱视为已付 — 撤销会同时退回款项与折扣。",
+                    })}
+                  </p>
+                </div>
+              )}
+
               {/* Who, and how much. Nothing else above the fold. */}
               <div className="rounded-lg border p-4 text-center">
                 <p className="text-sm text-muted-foreground">
@@ -407,5 +496,60 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
         )}
       </DialogContent>
     </Dialog>
+
+      {/*
+       * Undoing a receipt is never a slip: the reason is printed into the
+       * ledger row that puts the money back, so the account can later say
+       * why the debt reappeared.
+       */}
+      <Dialog open={undoing !== null} onOpenChange={(o) => !o && setUndoing(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>
+              {t({
+                ku: "هەڵوەشاندنەوەی وەسڵ",
+                en: "Undo the receipt",
+                ar: "إلغاء الإيصال",
+                zh: "撤销收据",
+              })}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t({
+              ku: "پارەکە و داشکاندنەکە پێکەوە دەگەڕێنەوە سەر حیسابی کڕیار، و بۆکسەکە دێتەوە بۆ پارەدان.",
+              en: "The payment and the discount both go back onto the customer's account, and the box is payable again.",
+              ar: "تعود الدفعة والخصم إلى حساب الزبون، ويصبح الصندوق قابلاً للدفع مجدداً.",
+              zh: "款项与折扣将一同退回客户账户，此箱可再次收款。",
+            })}
+          </p>
+          <Textarea
+            value={undoReason}
+            onChange={(e) => setUndoReason(e.target.value)}
+            rows={2}
+            placeholder={t({
+              ku: "هۆکار — بۆچی هەڵدەوەشێنرێتەوە؟",
+              en: "Reason — why is it being undone?",
+              ar: "السبب — لماذا يُلغى؟",
+              zh: "原因 — 为何撤销？",
+            })}
+            data-testid="quick-undo-reason"
+          />
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setUndoing(null)}>
+              {t({ ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={undoReason.trim().length < 3 || undo.isPending}
+              onClick={() => undo.mutate({ settlementId: undoing!, reason: undoReason.trim() })}
+              data-testid="quick-undo-confirm"
+            >
+              {undo.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t({ ku: "هەڵوەشاندنەوە", en: "Undo", ar: "إلغاء", zh: "撤销" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
