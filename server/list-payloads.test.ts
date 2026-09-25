@@ -125,6 +125,47 @@ describe("the thumbnails the tables draw instead", () => {
   });
 });
 
+describe("the parcels list", () => {
+  const db = read("server/db/packages.db.ts");
+
+  it("says whether a parcel has photographs, and never carries them", () => {
+    // `photos` is a JSON array of base64 images. The table never drew them;
+    // they were there so the edit dialog could fill its box for the one row
+    // somebody opened, and every other row paid for it.
+    const page = slice(db, "const [countResult, data] = await Promise.all", "leftJoin(users", "the page query");
+    expect(page).toContain("hasPhotos: sql<boolean>`(");
+    expect(page).not.toContain("photos: packages.photos,");
+  });
+
+  it("hands them over one parcel at a time instead", () => {
+    expect(db).toContain("export async function getPackagePhotos(");
+    expect(read("server/routers/packages.router.ts")).toContain("return db.getPackagePhotos(input.id);");
+    const screen = read("client/src/pages/Packages.tsx");
+    expect(screen).toContain("utils.packages.photos");
+    expect(screen).toContain("if (pkg.hasPhotos)");
+  });
+
+  it("caps every lookup its search fans out to", () => {
+    const search = slice(db, "if (search) {", "if (status && status !== 'all')", "the parcel search");
+    expect((search.match(/\.limit\(SEARCH_MATCH_LIMIT\)/g) ?? []).length).toBe(3);
+  });
+});
+
+describe("the delivery box list", () => {
+  const db = read("server/db/deliveryBoxes.db.ts");
+
+  it("leaves the signature and the delivery photograph behind", () => {
+    const picked = slice(db, "const {\n  signature:", "} = getTableColumns(deliveryBoxes);", "the column list");
+    expect(picked).toContain("signature");
+    expect(picked).toContain("deliveryPhoto");
+    expect(db).toContain("db.select(BOX_LIST_COLUMNS).from(deliveryBoxes)");
+  });
+
+  it("and says so in its type, so nothing reads what is not there", () => {
+    expect(db).toContain('Omit<DeliveryBox, "signature" | "deliveryPhoto">');
+  });
+});
+
 describe("the search boxes", () => {
   it("wait for the typing to stop", () => {
     for (const screen of [

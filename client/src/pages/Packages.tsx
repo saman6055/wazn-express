@@ -116,7 +116,14 @@ type Package = {
   batchId: number | null;
   categoryId: number | null;
   isUnclaimed: boolean | null;
-  photos: string | null;
+  /*
+   * Whether it has photographs — not the photographs.
+   *
+   * The list used to carry the base64 array on every row so that the edit
+   * dialog could fill its photo box for the one row somebody opened. The
+   * dialog asks for them itself now (packages.photos).
+   */
+  hasPhotos?: boolean | null;
   fullPackageOrderId: number | null;
   orderType: 'full_package' | 'commission' | null;
 };
@@ -485,6 +492,7 @@ const [, setLocation] = useLocation();
   const [showDeleteDialog, setShowDeleteDialog] = useState(false);
 
   const packages = packagesFromHook;
+  const utils = trpc.useUtils();
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
   const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
@@ -975,7 +983,15 @@ const [, setLocation] = useLocation();
     setEditCategoryId(pkg.categoryId?.toString() || "");
     setEditDescription(pkg.description || "");
     setEditDirectCbm(pkg.volumeCbm || "");
-    setEditPhotos(pkg.photos ? (typeof pkg.photos === 'string' ? JSON.parse(pkg.photos) : pkg.photos) : []);
+    // Cleared now and filled from the server, because the list no longer
+    // carries pictures (see hasPhotos).
+    setEditPhotos([]);
+    if (pkg.hasPhotos) {
+      void utils.packages.photos
+        .fetch({ id: pkg.id })
+        .then((photos: string[]) => setEditPhotos(photos ?? []))
+        .catch(() => setEditPhotos([]));
+    }
     setEditVolumetricDivisor(String(volumetricDivisor));
     setShowEditDialog(true);
   };

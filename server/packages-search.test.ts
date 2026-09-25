@@ -33,7 +33,8 @@ describe("the parcel search", () => {
 
   it("never builds an unbounded list out of a one-character search", () => {
     expect(source).toContain("const SEARCH_MATCH_LIMIT = 500;");
-    expect((search.match(/\.limit\(SEARCH_MATCH_LIMIT\)/g) ?? []).length).toBe(2);
+    // Three now: the customer lookup was the one still uncapped (2026-09-25).
+    expect((search.match(/\.limit\(SEARCH_MATCH_LIMIT\)/g) ?? []).length).toBe(3);
   });
 
   it("counts the matches and reads the page at the same time", () => {

@@ -167,6 +167,17 @@ export const packagesRouter = router({
       .query(async ({ input }) => {
         return db.getPackageById(input.id);
       }),
+    /**
+     * A parcel's photographs, for the dialog that shows them.
+     *
+     * The list carries `hasPhotos` and no pictures at all — carrying them
+     * was what made the parcels screen heavy.
+     */
+    photos: staffProcedure
+      .input(z.object({ id: idSchema }))
+      .query(async ({ input }) => {
+        return db.getPackagePhotos(input.id);
+      }),
     getByCode: staffProcedure
       .input(z.object({ code: packageCodeSchema }))
       .query(async ({ input }) => {

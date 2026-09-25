@@ -29,7 +29,7 @@ function slice(src: string, from: string, to: string): string {
 
 describe("a search is not narrowed by the chip above it", () => {
   const dbsrc = read("server/db/deliveryBoxes.db.ts");
-  const list = slice(dbsrc, "export async function getAllDeliveryBoxes", "const boxes = await db.select().from(deliveryBoxes)");
+  const list = slice(dbsrc, "export async function getAllDeliveryBoxes", "const boxes = await db.select(BOX_LIST_COLUMNS).from(deliveryBoxes)");
 
   it("the archive filter stands down while searching", () => {
     expect(list).toContain("const isSearching = Boolean(filters?.search && filters.search.trim());");

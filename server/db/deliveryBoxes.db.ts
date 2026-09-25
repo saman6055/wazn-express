@@ -1,4 +1,4 @@
-import { eq, ne, desc, and, gte, lte, sql, inArray, isNull } from "drizzle-orm";
+import { and, desc, eq, getTableColumns, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { withFix } from "@shared/fixAdvice";
 import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers } from "../../drizzle/schema";
@@ -117,6 +117,20 @@ export async function getDeliveryBoxById(id: number): Promise<DeliveryBox | null
   return box || null;
 }
 
+/**
+ * Every column of a box except the proof of delivery.
+ *
+ * `signature` is a drawn PNG and `deliveryPhoto` is a photograph, both
+ * base64 in TEXT columns. A page of fifty boxes carried fifty of each to
+ * draw a table that shows neither; the customer's own screen asks for them
+ * one box at a time (portal deliveryProof).
+ */
+const {
+  signature: _boxSignature,
+  deliveryPhoto: _boxDeliveryPhoto,
+  ...BOX_LIST_COLUMNS
+} = getTableColumns(deliveryBoxes);
+
 export async function getDeliveryBoxByCode(code: string): Promise<DeliveryBox | null> {
   const db = await getDb();
   if (!db) return null;
@@ -124,14 +138,14 @@ export async function getDeliveryBoxByCode(code: string): Promise<DeliveryBox | 
   return box || null;
 }
 
-export async function getOpenBoxes(userId?: number): Promise<DeliveryBox[]> {
+export async function getOpenBoxes(userId?: number): Promise<Omit<DeliveryBox, "signature" | "deliveryPhoto">[]> {
   const db = await getDb();
   if (!db) return [];
   const conditions = [
     inArray(deliveryBoxes.status, ['open', 'ready']),
   ];
   if (userId) conditions.push(eq(deliveryBoxes.createdById, userId));
-  return db.select().from(deliveryBoxes).where(and(...conditions)).orderBy(desc(deliveryBoxes.createdAt));
+  return db.select(BOX_LIST_COLUMNS).from(deliveryBoxes).where(and(...conditions)).orderBy(desc(deliveryBoxes.createdAt));
 }
 
 /**
@@ -218,7 +232,13 @@ export async function getAllDeliveryBoxes(filters?: {
   /** A slice of the unpaid list (archive "exclude" only): opened within the
    *  red badge's five days, opened before them, or handed over. */
   segment?: "new" | "old" | "handed";
-}): Promise<{ boxes: (DeliveryBox & { shippingType: string | null; settlementCleared?: boolean | null })[]; total: number; archivedTotal?: number; segmentCounts?: BoxSegmentCounts }> {
+}): Promise<{
+  // Omit: a list never carries the signature or the delivery photograph.
+  boxes: (Omit<DeliveryBox, "signature" | "deliveryPhoto"> & { shippingType: string | null; settlementCleared?: boolean | null })[];
+  total: number;
+  archivedTotal?: number;
+  segmentCounts?: BoxSegmentCounts;
+}> {
   const db = await getDb();
   if (!db) return { boxes: [], total: 0 };
 
@@ -347,7 +367,7 @@ export async function getAllDeliveryBoxes(filters?: {
     if (filters.archive === "exclude") archivedTotal = paid;
   }
 
-  const boxes = await db.select().from(deliveryBoxes)
+  const boxes = await db.select(BOX_LIST_COLUMNS).from(deliveryBoxes)
     .where(where)
     .orderBy(desc(deliveryBoxes.createdAt))
     .limit(filters?.limit || 50)

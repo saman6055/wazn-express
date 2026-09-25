@@ -336,13 +336,17 @@ export async function getAllPackages(options: {
     const searchTerm = `%${search.trim()}%`;
 
     // Find customer IDs matching the search term
+    // Capped like the other three lookups around it: uncapped, one letter
+    // matched every customer in the business and built an IN (...) list out
+    // of them.
     const matchingCustomers = await db.select({ id: customers.id })
       .from(customers)
       .where(or(
         like(customers.fullName, searchTerm),
         like(customers.customerCode, searchTerm),
         like(customers.mobileNumber, searchTerm),
-      ));
+      ))
+      .limit(SEARCH_MATCH_LIMIT);
     const matchingCustomerIds = matchingCustomers.map(c => c.id);
 
     /**
@@ -440,7 +444,15 @@ export async function getAllPackages(options: {
       volumeCbm: packages.volumeCbm,
       shippingType: packages.shippingType,
       description: packages.description,
-      photos: packages.photos,
+      /*
+       * Whether it has photographs, not the photographs.
+       *
+       * `photos` is a JSON array of base64 images. The table never draws
+       * them — they were carried so the edit dialog could fill its photo box
+       * for the one row somebody opens, and every other row paid for it. The
+       * dialog asks for them itself now (packages.photos).
+       */
+      hasPhotos: sql<boolean>`(${packages.photos} IS NOT NULL AND JSON_LENGTH(${packages.photos}) > 0)`,
       calculatedCostUsd: packages.calculatedCostUsd,
       status: packages.status,
       createdAt: packages.createdAt,
@@ -540,6 +552,33 @@ export async function getPackagesStats() {
     byStatus,
     byShippingType
   };
+}
+
+/**
+ * A parcel's photographs, asked for when a dialog opens.
+ *
+ * The one place the base64 array is read on purpose. Everything else takes
+ * `hasPhotos` from the list and leaves the pictures where they are.
+ */
+export async function getPackagePhotos(id: number): Promise<string[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [row] = await db
+    .select({ photos: packages.photos })
+    .from(packages)
+    .where(eq(packages.id, id))
+    .limit(1);
+  const raw = row?.photos as unknown;
+  if (Array.isArray(raw)) return raw.filter((x): x is string => typeof x === "string");
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return Array.isArray(parsed) ? parsed.filter((x): x is string => typeof x === "string") : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
 }
 
 export async function getRecentPackages(limit = 10) {
