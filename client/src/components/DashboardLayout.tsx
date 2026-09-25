@@ -96,6 +96,7 @@ import { Button } from "./ui/button";
 import { CommandPalette } from "./CommandPalette";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { RiskBell } from "./RiskBell";
+import { TaskBell } from "@/components/tasks/TaskBell";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { QuickCreate } from "./QuickCreate";
 import { PinnedPages } from "./topbar/PinnedPages";
@@ -687,7 +688,9 @@ function DashboardLayoutContent({
           />
           <span className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white">{company.name}</span>
         </div>
-        {/* Today's risks, on the phone too. */}
+        {/* Today's risks, on the phone too — and what people promised,
+            beside it under its own face (owner, 2026-09-25). */}
+        <TaskBell className="h-9 w-9" />
         <RiskBell className="h-9 w-9" />
       </header>
 
@@ -1026,6 +1029,13 @@ function DashboardLayoutContent({
                 is in the header above. */}
             <div className="hidden md:block">
               <RiskBell />
+            </div>
+
+            {/* Tasks and reminders: what people promised, which only a person
+                can tick off. Its own icon, not the bell's — they are
+                different animals (owner, 2026-09-25). */}
+            <div className="hidden md:block">
+              <TaskBell />
             </div>
 
             {/* Dark mode stays on the bar itself, one click away — the owner

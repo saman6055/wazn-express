@@ -22,6 +22,13 @@ export function CopyButton({
   return (
     <button
       type="button"
+      /*
+       * Right-clicking a value offers to make a task of it
+       * (components/tasks/TaskComposer). Marked here rather than on
+       * twenty-one screens: every tracking, box code, customer code and
+       * order number in the system already carries one of these.
+       */
+      data-task-value={String(value)}
       title={label || "کۆپی کردن"}
       aria-label={label || "کۆپی کردن"}
       onClick={(e) => {

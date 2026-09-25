@@ -1371,6 +1371,32 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "tasks",
+    dependencies: ["users"],
+    // A promise somebody made, held until they say it is done. Stored, not
+    // derived: no query can know whether the piece came back.
+    sql: `CREATE TABLE IF NOT EXISTS tasks (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      text VARCHAR(1000) NOT NULL,
+      aboutType VARCHAR(24) NOT NULL DEFAULT 'none',
+      aboutId INT NULL,
+      aboutLabel VARCHAR(255) NULL,
+      aboutHref VARCHAR(500) NULL,
+      createdById INT NOT NULL,
+      assignedToId INT NOT NULL,
+      dueAt TIMESTAMP NULL,
+      snoozedUntil TIMESTAMP NULL,
+      doneAt TIMESTAMP NULL,
+      doneById INT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_tasks_assigned (assignedToId, doneAt),
+      INDEX idx_tasks_created_by (createdById, doneAt),
+      INDEX idx_tasks_about (aboutType, aboutId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "boxDiscountPledges",
     dependencies: ["deliveryBoxes", "deliveryBoxItems", "users"],
     // A discount promised on a printed receipt, on the whole box or on one
@@ -2745,6 +2771,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // The order lists filter on the type and sort by the date; there was an
   // index on neither, so each of them read and sorted the whole table to
   // show a page.
+  { name: "idx.tasks_assigned",            sql: "CREATE INDEX idx_tasks_assigned ON tasks (assignedToId, doneAt)" },
+  { name: "idx.tasks_created_by",          sql: "CREATE INDEX idx_tasks_created_by ON tasks (createdById, doneAt)" },
+  { name: "idx.tasks_about",               sql: "CREATE INDEX idx_tasks_about ON tasks (aboutType, aboutId)" },
   { name: "idx.fpo_type_created",          sql: "CREATE INDEX idx_fpo_type_created ON fullPackageOrders (orderType, createdAt)" },
   { name: "idx.fpo_created_at",            sql: "CREATE INDEX idx_fpo_created_at ON fullPackageOrders (createdAt)" },
   // deliveryBoxItems is joined on all four of these — the box screen, every

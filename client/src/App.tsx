@@ -2,6 +2,7 @@ import { lazy, Suspense, type ComponentType, type ReactNode } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { ConfirmHost } from "@/components/ConfirmDialog";
 import { SystemAlertProvider } from "@/components/SystemAlert";
+import { TaskComposerProvider } from "@/components/tasks/TaskComposer";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
@@ -428,11 +429,16 @@ function App() {
                     alert; outside the error boundary, so one still shows
                     when a screen has fallen over. */}
                 <SystemAlertProvider>
+                {/* Alt+T, right-click on any value, and the icon in the top
+                    bar all open the same window — so it wraps everything
+                    (owner, 2026-09-25). */}
+                <TaskComposerProvider>
                 <RouteErrorBoundary>
                   <PortalHistoryProvider>
                     <Router />
                   </PortalHistoryProvider>
                 </RouteErrorBoundary>
+                </TaskComposerProvider>
                 </SystemAlertProvider>
                 <Suspense fallback={null}>
                   <StaffTips />

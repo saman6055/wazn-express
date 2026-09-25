@@ -422,3 +422,55 @@ export type ChatMessage = typeof chatMessages.$inferSelect;
 export type InsertChatMessage = typeof chatMessages.$inferInsert;
 
 // ============ CUSTOMER CODE PREFIXES ============
+
+/**
+ * A task somebody wrote for themselves or for a colleague.
+ *
+ * The owner, 2026-09-25: "a piece went to Layla by mistake … the piece is
+ * still with her, so until I forget I need a reminder, until the task is
+ * done." Nothing the database can be asked will ever say whether she handed
+ * it back — so unlike almost everything else here, this is stored rather than
+ * worked out, and only a person closes it.
+ *
+ * `about*` fastens it to the record it concerns, so the words can be short
+ * and one click goes to the box or the parcel it names. All four are optional
+ * together: a task about nothing in particular is still a task.
+ */
+export const tasks = mysqlTable("tasks", {
+  id: int("id").autoincrement().primaryKey(),
+  text: varchar("text", { length: 1000 }).notNull(),
+
+  /** What it is about — see shared/tasks TASK_ABOUT_TYPES. */
+  aboutType: varchar("aboutType", { length: 24 }).default("none").notNull(),
+  aboutId: int("aboutId"),
+  /** A tracking, a box code, a name: what the row prints. */
+  aboutLabel: varchar("aboutLabel", { length: 255 }),
+  /** Where clicking it goes. */
+  aboutHref: varchar("aboutHref", { length: 500 }),
+
+  /**
+   * Seen by exactly these two people and nobody else (shared/tasks
+   * canSeeTask). There is no company-wide list of everybody's promises.
+   */
+  createdById: int("createdById").notNull(),
+  assignedToId: int("assignedToId").notNull(),
+
+  dueAt: timestamp("dueAt"),
+  /** Put down for now; back in the list when this passes. */
+  snoozedUntil: timestamp("snoozedUntil"),
+
+  doneAt: timestamp("doneAt"),
+  doneById: int("doneById"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  // The two questions ever asked of this table: what is on my list, and what
+  // did I send somebody.
+  assignedIdx: index("idx_tasks_assigned").on(table.assignedToId, table.doneAt),
+  createdIdx: index("idx_tasks_created_by").on(table.createdById, table.doneAt),
+  aboutIdx: index("idx_tasks_about").on(table.aboutType, table.aboutId),
+}));
+
+export type Task = typeof tasks.$inferSelect;
+export type InsertTask = typeof tasks.$inferInsert;
