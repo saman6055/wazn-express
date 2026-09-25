@@ -9,6 +9,7 @@ import {
   arrivedMessage,
   customsShouldStart,
   findLanded,
+  type FlightRow,
   watchDecision,
 } from "@shared/flightWatch";
 import { BAND_MEANING, overdueBatches } from "@shared/batchAge";
@@ -41,6 +42,8 @@ import { BAND_MEANING, overdueBatches } from "@shared/batchAge";
 interface WatchableRow {
   id: number;
   batchCode?: string | null;
+  /** Compared against the board so an unchanged date is not rewritten. */
+  estimatedArrival?: Date | string | null;
   status?: string | null;
   shippingType?: string | null;
   flightNumber?: string | null;
@@ -100,8 +103,12 @@ export async function checkFlights(now = new Date()): Promise<void> {
       for (const batch of watching) {
         if (airlinePrefix(String(batch.flightNumber ?? "")) !== prefix) continue;
         const landed = findLanded(result.board.arrivals, batch.flightNumber);
-        if (!landed) continue;
-        await recordLanding(batch, landed.flight, landed.estimated || landed.scheduled || "", now);
+        if (landed) {
+          await recordLanding(batch, landed.flight, landed.estimated || landed.scheduled || "", now);
+          continue;
+        }
+        // Still in the air: take the schedule while it is worth something.
+        await recordSchedule(batch, result.board.arrivals);
       }
     }
 
@@ -229,6 +236,58 @@ async function recordLanding(
     customers: byCustomer.size,
     packages: packages.length,
   });
+}
+
+/**
+ * When the board says this flight is due, while it is still on its way.
+ *
+ * The owner, 2026-09-25: once the waybill is in, the shipment is definitely
+ * travelling — look the schedule up. The board was already being read and
+ * its scheduled time already came back with every row, but it was only read
+ * once the flight had landed, which is the one moment a schedule is worth
+ * nothing. A batch in the air carried no date, so the customer's page
+ * promised them nothing at all.
+ *
+ * Written to the batch's own estimate, which is the office's figure. What
+ * the customer reads is that date plus the days between a plane landing and
+ * goods being ready to hand over (shared/customerEta) — he does not want
+ * anybody turning up at the counter on the day the plane lands.
+ *
+ * Only ever moved forward onto a real reading, and never onto a batch that
+ * has already arrived: a board that re-lists an old flight number must not
+ * drag a delivered shipment back into the future.
+ */
+async function recordSchedule(batch: WatchableRow, rows: FlightRow[]): Promise<void> {
+  if (batch.flightArrivedAt) return;
+  const wanted = String(batch.flightNumber ?? "").replace(/\s+/g, "").toUpperCase();
+  if (!wanted) return;
+
+  const row = rows.find(
+    (r) => String(r.flight ?? "").replace(/\s+/g, "").toUpperCase() === wanted,
+  );
+  const when = row?.estimated || row?.scheduled;
+  if (!when) return;
+
+  const at = new Date(when);
+  if (!Number.isFinite(at.getTime())) return;
+
+  // Nothing to say if the batch already carries this date.
+  const current = batch.estimatedArrival ? new Date(batch.estimatedArrival).getTime() : null;
+  if (current !== null && Math.abs(current - at.getTime()) < 60_000) return;
+
+  try {
+    await db.updateBatch(batch.id, { estimatedArrival: at });
+    appLogger.info("[FlightWatch] Took the schedule off the board", {
+      batchCode: batch.batchCode || batch.id,
+      flight: row?.flight,
+      at: at.toISOString(),
+    });
+  } catch (error) {
+    appLogger.error("[FlightWatch] Could not record the schedule", {
+      batchId: batch.id,
+      error: error instanceof Error ? error.message : String(error),
+    });
+  }
 }
 
 /**

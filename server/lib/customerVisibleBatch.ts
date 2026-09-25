@@ -1,3 +1,5 @@
+import { customerEta } from "@shared/customerEta";
+
 /**
  * What a customer is allowed to see of a shipment (batch) they have goods in.
  *
@@ -39,6 +41,16 @@ export function toCustomerVisibleBatch<B extends Record<VisibleBatchKey, unknown
 ): Pick<B, VisibleBatchKey> {
   const out = {} as Pick<B, VisibleBatchKey>;
   for (const key of VISIBLE_BATCH_KEYS) out[key] = batch[key];
+  /*
+   * The estimate a customer reads is later than the airline's, by the days
+   * between a plane landing and goods being ready to hand over
+   * (shared/customerEta). Here, on the one road out to the portal, so the
+   * office keeps planning against the real schedule.
+   *
+   * `actualArrival` is not touched: once it has arrived, the date is a fact.
+   */
+  const padded = customerEta(out.estimatedArrival as Date | string | null | undefined);
+  (out as Record<string, unknown>).estimatedArrival = padded;
   return out;
 }
 
