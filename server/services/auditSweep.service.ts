@@ -31,6 +31,25 @@ type Row = Record<string, unknown>;
 
 /** Every check's query, keyed by the id declared in the catalogue. */
 const QUERIES: Record<CheckId, string> = {
+  /*
+   * Staff who register parcels and have no work location.
+   *
+   * The stage rule asks one question to tell the two routes apart — China or
+   * Erbil — and it is answered from the person's own work country. Unset, the
+   * parcel is read as China and shows two steps it can never reach.
+   *
+   * Only staff who have actually registered something: a manager with no work
+   * country registers nothing and is nobody's problem.
+   */
+  staff_without_work_location: `
+    SELECT u.id, u.name, u.username, COUNT(p.id) AS parcelsRegistered
+    FROM users u
+    JOIN packages p ON p.registeredById = u.id
+    WHERE u.workCountryId IS NULL
+    GROUP BY u.id, u.name, u.username
+    ORDER BY parcelsRegistered DESC
+    LIMIT ${SAMPLE_LIMIT}`,
+
   /* ── money that contradicts itself ─────────────────────────────────── */
 
   invoice_total_mismatch: `

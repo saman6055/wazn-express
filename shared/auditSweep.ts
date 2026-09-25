@@ -32,6 +32,7 @@ export interface Localised {
 export type CheckSeverity = "critical" | "warning" | "info";
 
 export type CheckId =
+  | "staff_without_work_location"
   | "invoice_total_mismatch"
   | "invoice_paid_but_unbalanced"
   | "account_balance_drift"
@@ -62,6 +63,23 @@ export interface CheckDefinition {
 }
 
 export const CHECKS: readonly CheckDefinition[] = [
+  {
+    id: "staff_without_work_location",
+    severity: "warning",
+    path: "/staff-management",
+    title: {
+      ku: "کارمەندی بەبێ شوێنی کار، کە پاکەت تۆمار دەکات",
+      en: "Staff registering parcels with no work location set",
+      ar: "موظفون يسجلون طروداً بلا موقع عمل محدد",
+      zh: "登记包裹但未设置工作地点的员工",
+    },
+    meaning: {
+      ku: "قۆناغەکانی پاکەت لەوەوە دەزانرێن کە لە کوێ تۆمار کراوە: لە چین پێنج قۆناغ، لە هەولێر سێ. کارمەندێکی بەبێ شوێنی کار، پاکەتەکانی بە چین دەژمێردرێن — بۆیە پاکەتێکی هەولێر دوو قۆناغ نیشان دەدات کە هەرگیز ناگاتێ. لە ڕێکخستنی کارمەندان شوێنی کاریان دابنێ.",
+      en: "A parcel's stages come from where it was registered: five in China, three in Erbil. A staff member with no work location has their parcels read as China, so an Erbil parcel shows two steps it can never reach. Set their location in staff settings.",
+      ar: "مراحل الطرد تأتي من مكان تسجيله: خمس في الصين وثلاث في أربيل. موظف بلا موقع عمل تُقرأ طروده على أنها من الصين، فيظهر طرد أربيل بمرحلتين لن يصل إليهما أبداً. عيّن موقعه في إعدادات الموظفين.",
+      zh: "包裹的阶段取决于登记地点：中国五个，埃尔比勒三个。未设置工作地点的员工，其包裹被视为来自中国，于是埃尔比勒的包裹会显示两个永远到不了的步骤。请在员工设置中指定其地点。",
+    },
+  },
   {
     id: "invoice_total_mismatch",
     severity: "critical",
