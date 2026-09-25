@@ -1,6 +1,6 @@
 import { toCustomerVisibleBatch } from "../lib/customerVisibleBatch";
 import { getDb } from './connection';
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
 import { customerBatchStatus } from '@shared/customerBatchStage';
 import { concealsSizeAndCarriage, concealParcelSize } from '@shared/fullPackagePrivacy';
@@ -315,9 +315,21 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
   const trackingNumbers = customerPackages
     .map(p => p.trackingNumber)
     .filter((tn): tn is string => !!tn);
-  const fpOrderByTracking = new Map<string, typeof fullPackageOrders.$inferSelect>();
+  /*
+   * Three fields, not the whole order.
+   *
+   * All this answers is "is this parcel part of an order, and which kind" —
+   * and the row it read to answer it carries the product photograph, base64,
+   * up to a megabyte. A customer with thirty parcels was downloading thirty
+   * pictures onto a phone to colour in a badge.
+   */
+  const fpOrderByTracking = new Map<string, { id: number; trackingNumber: string | null; orderType: string }>();
   if (trackingNumbers.length > 0) {
-    const fpOrders = await db.select()
+    const fpOrders = await db.select({
+      id: fullPackageOrders.id,
+      trackingNumber: fullPackageOrders.trackingNumber,
+      orderType: fullPackageOrders.orderType,
+    })
       .from(fullPackageOrders)
       .where(inArray(fullPackageOrders.trackingNumber, trackingNumbers))
       .orderBy(fullPackageOrders.id);
@@ -962,11 +974,30 @@ export async function getPendingClaimRequestsCount(): Promise<number> {
 }
 
 // Search unclaimed packages by tracking number
-export async function searchUnclaimedPackages(searchTerm: string): Promise<Package[]> {
+/**
+ * Every column of a parcel except what a phone should never be sent.
+ *
+ * `photos` is a JSON array of base64 images, `qrCodeData` is a rendered
+ * code, and the signature and delivery photograph are pictures of a
+ * handover. None of them belong in a list.
+ */
+const {
+  photos: _pkgPhotos,
+  qrCodeData: _pkgQr,
+  recipientSignature: _pkgSignature,
+  deliveryPhoto: _pkgDeliveryPhoto,
+  ...PORTAL_PACKAGE_COLUMNS
+} = getTableColumns(packages);
+
+export async function searchUnclaimedPackages(
+  searchTerm: string,
+): Promise<Omit<Package, "photos" | "qrCodeData" | "recipientSignature" | "deliveryPhoto">[]> {
   const db = await getDb();
   if (!db) return [];
   
-  return db.select()
+  // A parcel nobody has claimed is looked at by its tracking and its code;
+  // its photographs are not part of the answer, and there are fifty of them.
+  return db.select(PORTAL_PACKAGE_COLUMNS)
     .from(packages)
     .where(and(
       eq(packages.isUnclaimed, true),

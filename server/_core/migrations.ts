@@ -2757,6 +2757,66 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // Added by a patch, joined ever since, never indexed.
   { name: "idx.bsl_box_item",              sql: "CREATE INDEX idx_box_settlement_lines_box_item ON boxSettlementLines (boxItemId)" },
 
+  // ============ Indexes a live database never got (2026-09-25) ============
+  //
+  // An index inside CREATE TABLE only reaches a database created after it
+  // was written. Production predates most of these, so it has been running
+  // without them — including the five the customer ledger is read through
+  // and the four on the audit log. Taken from the CREATE statements, so the
+  // list is what the schema asks for rather than what anyone remembered.
+  //
+  // Free to re-run: "duplicate key name" is swallowed by runSchemaPatches.
+  { name: "idx.audit_category", sql: "CREATE INDEX idx_audit_category ON auditLogs (category)" },
+  { name: "idx.audit_created_at", sql: "CREATE INDEX idx_audit_created_at ON auditLogs (createdAt)" },
+  { name: "idx.audit_entity_type", sql: "CREATE INDEX idx_audit_entity_type ON auditLogs (entityType)" },
+  { name: "idx.audit_user", sql: "CREATE INDEX idx_audit_user ON auditLogs (userId)" },
+  { name: "idx.bph_batch_id", sql: "CREATE INDEX idx_bph_batch_id ON batchPriceHistory (batchId)" },
+  { name: "idx.bsh_batch_id", sql: "CREATE INDEX idx_bsh_batch_id ON batchStatusHistory (batchId)" },
+  { name: "idx.bsh_changed_at", sql: "CREATE INDEX idx_bsh_changed_at ON batchStatusHistory (changedAt)" },
+  { name: "idx.box_discount_pledges_box", sql: "CREATE INDEX idx_box_discount_pledges_box ON boxDiscountPledges (boxId)" },
+  { name: "idx.box_settlement_lines_package", sql: "CREATE INDEX idx_box_settlement_lines_package ON boxSettlementLines (packageId)" },
+  { name: "idx.box_settlement_lines_settlement", sql: "CREATE INDEX idx_box_settlement_lines_settlement ON boxSettlementLines (settlementId)" },
+  { name: "idx.box_settlements_box", sql: "CREATE INDEX idx_box_settlements_box ON boxSettlements (boxId)" },
+  { name: "idx.box_settlements_created", sql: "CREATE INDEX idx_box_settlements_created ON boxSettlements (createdAt)" },
+  { name: "idx.box_settlements_customer", sql: "CREATE INDEX idx_box_settlements_customer ON boxSettlements (customerId)" },
+  { name: "idx.cal_action", sql: "CREATE INDEX idx_cal_action ON customerActivityLog (action)" },
+  { name: "idx.cal_created", sql: "CREATE INDEX idx_cal_created ON customerActivityLog (createdAt)" },
+  { name: "idx.cal_customer", sql: "CREATE INDEX idx_cal_customer ON customerActivityLog (customerId)" },
+  { name: "idx.can_customer", sql: "CREATE INDEX idx_can_customer ON customerAdminNotes (customerId)" },
+  { name: "idx.cdp_customer", sql: "CREATE INDEX idx_cdp_customer ON customerDeclaredPackages (customerId)" },
+  { name: "idx.cdp_status", sql: "CREATE INDEX idx_cdp_status ON customerDeclaredPackages (status)" },
+  { name: "idx.cdp_tracking", sql: "CREATE INDEX idx_cdp_tracking ON customerDeclaredPackages (trackingNumber)" },
+  { name: "idx.customer_features_customer", sql: "CREATE INDEX idx_customer_features_customer ON customerFeatures (customerId)" },
+  { name: "idx.customerPushSubscriptions_active_idx", sql: "CREATE INDEX customerPushSubscriptions_active_idx ON customer_push_subscriptions (isActive)" },
+  { name: "idx.customerPushSubscriptions_customerId_idx", sql: "CREATE INDEX customerPushSubscriptions_customerId_idx ON customer_push_subscriptions (customerId)" },
+  { name: "idx.deleted_records_deleted_at", sql: "CREATE INDEX idx_deleted_records_deleted_at ON deletedRecords (deletedAt)" },
+  { name: "idx.deleted_records_entity", sql: "CREATE INDEX idx_deleted_records_entity ON deletedRecords (entityType, entityId)" },
+  { name: "idx.dr_customer", sql: "CREATE INDEX idx_dr_customer ON deliveryRatings (customerId)" },
+  { name: "idx.dr_rating", sql: "CREATE INDEX idx_dr_rating ON deliveryRatings (rating)" },
+  { name: "idx.ledger_account_created", sql: "CREATE INDEX idx_ledger_account_created ON ledgerTransactions (accountId, createdAt)" },
+  { name: "idx.ledger_account_created_type", sql: "CREATE INDEX idx_ledger_account_created_type ON ledgerTransactions (accountId, createdAt, transactionType)" },
+  { name: "idx.ledger_account_id", sql: "CREATE INDEX idx_ledger_account_id ON ledgerTransactions (accountId)" },
+  { name: "idx.ledger_created_at", sql: "CREATE INDEX idx_ledger_created_at ON ledgerTransactions (createdAt)" },
+  { name: "idx.ledger_transaction_type", sql: "CREATE INDEX idx_ledger_transaction_type ON ledgerTransactions (transactionType)" },
+  { name: "idx.share_links_customer", sql: "CREATE INDEX idx_share_links_customer ON packageShareLinks (customerId)" },
+  { name: "idx.share_links_package", sql: "CREATE INDEX idx_share_links_package ON packageShareLinks (packageId)" },
+  { name: "idx.user_module", sql: "CREATE INDEX idx_user_module ON permissions (userId, module)" },
+  { name: "idx.portal_tutorials_category", sql: "CREATE INDEX idx_portal_tutorials_category ON portalTutorials (category)" },
+  { name: "idx.portal_tutorials_published", sql: "CREATE INDEX idx_portal_tutorials_published ON portalTutorials (isPublished, sortOrder)" },
+  { name: "idx.prohibitedPackages_customer_idx", sql: "CREATE INDEX prohibitedPackages_customer_idx ON prohibitedPackages (customerId)" },
+  { name: "idx.prohibitedPackages_status_idx", sql: "CREATE INDEX prohibitedPackages_status_idx ON prohibitedPackages (status)" },
+  { name: "idx.pushCampaigns_created_idx", sql: "CREATE INDEX pushCampaigns_created_idx ON push_notification_campaigns (createdAt)" },
+  { name: "idx.pushCampaigns_scheduled_idx", sql: "CREATE INDEX pushCampaigns_scheduled_idx ON push_notification_campaigns (scheduledAt)" },
+  { name: "idx.pushCampaigns_status_idx", sql: "CREATE INDEX pushCampaigns_status_idx ON push_notification_campaigns (status)" },
+  { name: "idx.storeOrders_created_idx", sql: "CREATE INDEX storeOrders_created_idx ON storeOrders (createdAt)" },
+  { name: "idx.storeOrders_product_idx", sql: "CREATE INDEX storeOrders_product_idx ON storeOrders (productId)" },
+  { name: "idx.storeOrders_status_idx", sql: "CREATE INDEX storeOrders_status_idx ON storeOrders (status)" },
+  { name: "idx.storeProducts_status_idx", sql: "CREATE INDEX storeProducts_status_idx ON storeProducts (status)" },
+  { name: "idx.user_module_key", sql: "CREATE INDEX idx_user_module_key ON sub_permissions (userId, module, permissionKey)" },
+  { name: "idx.yeo_created", sql: "CREATE INDEX idx_yeo_created ON yuanExchangeOrders (createdAt)" },
+  { name: "idx.yeo_customer", sql: "CREATE INDEX idx_yeo_customer ON yuanExchangeOrders (customerId)" },
+  { name: "idx.yeo_status", sql: "CREATE INDEX idx_yeo_status ON yuanExchangeOrders (status)" },
+
   // Tutorials added before videos were split by spoken language. Kurdish is
   // the right default: every video recorded up to that point was in Kurdish.
   { name: "portalTutorials.language", sql: "ALTER TABLE portalTutorials ADD COLUMN language VARCHAR(10) NOT NULL DEFAULT 'ku'" },

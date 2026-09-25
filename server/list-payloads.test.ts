@@ -184,6 +184,37 @@ describe("the search boxes", () => {
   });
 });
 
+describe("every index reaches a database that already exists", () => {
+  const migrations = read("server/_core/migrations.ts");
+
+  it("has a patch for each one written into a CREATE", () => {
+    /*
+     * An index inside `CREATE TABLE IF NOT EXISTS` only ever reaches a
+     * database created after it was written. Production predates most of
+     * them and had been running without fifty — the five the customer
+     * ledger is read through among them — with nothing to say so.
+     */
+    const inCreates = new Map<string, string>();
+    const tables = migrations.matchAll(
+      /CREATE TABLE IF NOT EXISTS (\w+) \(([\s\S]*?)\) ENGINE=InnoDB/g,
+    );
+    for (const table of tables) {
+      for (const idx of table[2]!.matchAll(/\bINDEX (\w+) \(/g)) {
+        inCreates.set(idx[1]!, table[1]!);
+      }
+    }
+    const patched = new Set(
+      Array.from(migrations.matchAll(/CREATE INDEX (\w+) ON/g), (m) => m[1]!),
+    );
+    const orphans = Array.from(inCreates).filter(([name]) => !patched.has(name));
+    expect(inCreates.size, "no CREATE indexes found — the scan is broken").toBeGreaterThan(40);
+    expect(
+      orphans.map(([name, table]) => `${table}.${name}`),
+      "these exist only on a brand-new database",
+    ).toEqual([]);
+  });
+});
+
 describe("the access paths those queries need", () => {
   const migrations = read("server/_core/migrations.ts");
 
