@@ -1,10 +1,11 @@
 import { useState, type ReactNode } from "react";
-import { AlertTriangle, Banknote, Box, Hash, ImageOff, PackageX, ScanLine, Scale, UserX } from "lucide-react";
+import { AlertTriangle, Banknote, Box, Hash, ImageOff, PackageX, Printer, ScanLine, Scale, UserX } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { fmtUsd } from "@/lib/portalFormat";
 import { CopyButton } from "@/components/CopyButton";
+import { printCloseCheckSection } from "@/lib/closeCheckPrint";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { AlertParcelSheet } from "@/components/registrations/AlertParcelSheet";
 import { customerCodeOnly } from "@shared/customerCode";
@@ -87,7 +88,7 @@ function Tile({ label, value, warn, danger, mono }: { label: string; value: stri
 }
 
 /** Every new section, in the order a person should read them. */
-export function BatchCloseCheckSections({ audit }: { audit: CloseCheckAudit }) {
+export function BatchCloseCheckSections({ audit, batchCode }: { audit: CloseCheckAudit; batchCode?: string }) {
   const { language } = useLanguage();
   const L = (w: Words) => pickLang(language, w);
   const [open, setOpen] = useState<{ parcel: CloseCheckParcel; reason: Words } | null>(null);
@@ -112,6 +113,7 @@ export function BatchCloseCheckSections({ audit }: { audit: CloseCheckAudit }) {
         parcels={f.unboxed ?? []}
         onOpen={show(REASON.unboxed)}
         testId="close-check-unboxed"
+        batchCode={batchCode}
       />
       <ParcelSection
         icon={<ScanLine className="h-4 w-4" />}
@@ -120,6 +122,7 @@ export function BatchCloseCheckSections({ audit }: { audit: CloseCheckAudit }) {
         parcels={f.notArrivalChecked ?? []}
         onOpen={show(REASON.unchecked)}
         testId="close-check-unchecked"
+        batchCode={batchCode}
       />
       <ParcelSection
         icon={<Scale className="h-4 w-4" />}
@@ -128,6 +131,7 @@ export function BatchCloseCheckSections({ audit }: { audit: CloseCheckAudit }) {
         parcels={f.unmeasured ?? []}
         onOpen={show(REASON.unmeasured)}
         testId="close-check-unmeasured"
+        batchCode={batchCode}
       />
       <ParcelSection
         icon={<UserX className="h-4 w-4" />}
@@ -136,6 +140,7 @@ export function BatchCloseCheckSections({ audit }: { audit: CloseCheckAudit }) {
         parcels={f.ownerless ?? []}
         onOpen={show(REASON.ownerless)}
         testId="close-check-ownerless"
+        batchCode={batchCode}
       />
 
       <OtherSection boxes={f.unpaidBoxes ?? []} capped={!!f.unpaidBoxesCapped} missingNumber={f.missingNumber ?? []} />
@@ -207,6 +212,7 @@ function ParcelSection({
   parcels,
   onOpen,
   testId,
+  batchCode,
 }: {
   icon: ReactNode;
   title: string;
@@ -214,6 +220,8 @@ function ParcelSection({
   parcels: CloseCheckParcel[];
   onOpen: (parcel: CloseCheckParcel) => void;
   testId: string;
+  /** Printed at the head of the sheet, so a shared PDF names its shipment. */
+  batchCode?: string;
 }) {
   const { language } = useLanguage();
   const L = (w: Words) => pickLang(language, w);
@@ -228,6 +236,23 @@ function ParcelSection({
       <div className="font-bold text-amber-900 dark:text-amber-200 flex items-center gap-1">
         {icon}
         {title} ({parcels.length})
+        {/*
+          * This list, on its own sheet.
+          *
+          * The owner, 2026-09-26: each section should become a PDF and be
+          * shared for checking — with the China depot, or with whoever can
+          * answer where a carton went. The print dialog saves it; the PDF
+          * goes into the chat (lib/closeCheckPrint).
+          */}
+        <button
+          type="button"
+          className="ms-auto inline-flex items-center gap-1 rounded-md border border-amber-400/60 px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-900/40"
+          onClick={() => printCloseCheckSection({ language, title, hint, batchCode: batchCode ?? "", parcels })}
+          data-testid={`${testId}-pdf`}
+        >
+          <Printer className="h-3.5 w-3.5" />
+          PDF
+        </button>
       </div>
       <div className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mb-2">{hint}</div>
       <div className="space-y-1.5">

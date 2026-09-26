@@ -74,7 +74,9 @@ describe("the dialog shows it", () => {
   it("three more tiles, and the sections after a customer mismatch", () => {
     expect(page).toContain("<CloseCheckTiles audit={auditData} />");
     const mismatch = page.indexOf("{/* Blocking: customer mismatch */}");
-    const sections = page.indexOf("<BatchCloseCheckSections audit={auditData} />");
+    // It gained the batch code, which each section prints at the head of
+    // its own sheet (lib/closeCheckPrint, 2026-09-26).
+    const sections = page.indexOf("<BatchCloseCheckSections audit={auditData} batchCode={auditData?.batchCode} />");
     expect(mismatch).toBeGreaterThan(-1);
     expect(sections).toBeGreaterThan(mismatch);
   });
