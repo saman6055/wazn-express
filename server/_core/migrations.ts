@@ -1371,6 +1371,22 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "staffMessages",
+    dependencies: ["users"],
+    // What one member of staff said to another. Two people, never a group.
+    sql: `CREATE TABLE IF NOT EXISTS staffMessages (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      fromId INT NOT NULL,
+      toId INT NOT NULL,
+      text VARCHAR(2000) NOT NULL,
+      readAt TIMESTAMP NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_staff_msg_pair (fromId, toId, createdAt),
+      INDEX idx_staff_msg_unread (toId, readAt)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "tasks",
     dependencies: ["users"],
     // A promise somebody made, held until they say it is done. Stored, not
@@ -2771,6 +2787,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // The order lists filter on the type and sort by the date; there was an
   // index on neither, so each of them read and sorted the whole table to
   // show a page.
+  { name: "idx.staff_msg_pair",             sql: "CREATE INDEX idx_staff_msg_pair ON staffMessages (fromId, toId, createdAt)" },
+  { name: "idx.staff_msg_unread",           sql: "CREATE INDEX idx_staff_msg_unread ON staffMessages (toId, readAt)" },
   { name: "idx.tasks_assigned",            sql: "CREATE INDEX idx_tasks_assigned ON tasks (assignedToId, doneAt)" },
   { name: "idx.tasks_created_by",          sql: "CREATE INDEX idx_tasks_created_by ON tasks (createdById, doneAt)" },
   { name: "idx.tasks_about",               sql: "CREATE INDEX idx_tasks_about ON tasks (aboutType, aboutId)" },

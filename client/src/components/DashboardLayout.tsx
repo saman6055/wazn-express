@@ -97,6 +97,7 @@ import { CommandPalette } from "./CommandPalette";
 import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { RiskBell } from "./RiskBell";
 import { TaskBell } from "@/components/tasks/TaskBell";
+import { StaffChat } from "@/components/chat/StaffChat";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { QuickCreate } from "./QuickCreate";
 import { PinnedPages } from "./topbar/PinnedPages";
@@ -1169,6 +1170,13 @@ function DashboardLayoutContent({
           )}
         </div>
       </main>
+
+      {/*
+        * The office talking to itself, in the corner the owner pointed at
+        * (2026-09-26). Hidden in full screen, where the point is that there
+        * is nothing on the screen but the work.
+        */}
+      {!fullScreen && <StaffChat />}
 
       {/* The one control left on screen in full screen. Without it the only
           way back is a keyboard shortcut nobody was told about. */}

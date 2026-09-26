@@ -26,6 +26,7 @@ import { storeRouter } from "./store.router";
 import { prohibitedRouter } from "./prohibited.router";
 import { auditRouter } from "./audit.router";
 import { tasksRouter } from "./tasks.router";
+import { staffChatRouter } from "./staffChat.router";
 
 export const appRouter = router({
   /**
@@ -71,6 +72,7 @@ export const appRouter = router({
   prohibited: prohibitedRouter,
   audit: auditRouter,
   tasks: tasksRouter,
+  staffChat: staffChatRouter,
 });
 
 export type AppRouter = typeof appRouter;

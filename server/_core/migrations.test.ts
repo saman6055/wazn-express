@@ -14,6 +14,9 @@ describe("Migration System", () => {
     // A count, so adding a table is a deliberate act rather than something
     // that slips in. Bump it in the same commit that adds the table.
     it("should have 93 table definitions", () => {
+      // 102 since staffMessages — what one member of staff said to
+      // another, so the office can ask about one parcel without
+      // leaving the system.
       // 101 since tasks — a promise somebody made, held until a person says
       // it is done; the one thing here no query can close.
       // 100 was boxDiscountPledges. 99 since batchPriceHistory — every change to a batch's money
@@ -21,7 +24,7 @@ describe("Migration System", () => {
       // that; 93 since expenseBudgets — what the office means to spend, so
       // the screen can say how much is left while there is time to act.
       // 92 was dailySnapshots. 91 was customerFeatures.
-      expect(TABLE_DEFINITIONS.length).toBe(101);
+      expect(TABLE_DEFINITIONS.length).toBe(102);
     });
     
     it("should have unique table names", () => {

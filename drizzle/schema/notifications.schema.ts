@@ -474,3 +474,35 @@ export const tasks = mysqlTable("tasks", {
 
 export type Task = typeof tasks.$inferSelect;
 export type InsertTask = typeof tasks.$inferInsert;
+
+/**
+ * A message from one member of staff to another.
+ *
+ * The owner, 2026-09-26: «گرنگە پەیام ناردن هەبێ لە نێوان
+ * ئادمینەکان، چات کردن هەبێ وەکو مەسنجەر.»
+ *
+ * Between two people, always — there is no room, no group and no channel.
+ * The office is four or five people who need to ask each other about one
+ * parcel; a group chat is a place where that question is asked to nobody in
+ * particular and answered by nobody in particular.
+ *
+ * Kept, not expired: «ئەو پارچەیە کێ وەریگرت؟» is a question whose
+ * answer is worth having in a month.
+ */
+export const staffMessages = mysqlTable("staffMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  fromId: int("fromId").notNull(),
+  toId: int("toId").notNull(),
+  text: varchar("text", { length: 2000 }).notNull(),
+  /** When the person it was sent to opened the conversation. */
+  readAt: timestamp("readAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  // The two questions: what did these two say to each other, and what have
+  // I not read.
+  pairIdx: index("idx_staff_msg_pair").on(table.fromId, table.toId, table.createdAt),
+  unreadIdx: index("idx_staff_msg_unread").on(table.toId, table.readAt),
+}));
+
+export type StaffMessage = typeof staffMessages.$inferSelect;
+export type InsertStaffMessage = typeof staffMessages.$inferInsert;
