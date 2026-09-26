@@ -1,4 +1,4 @@
-import { and, desc, eq, isNull, or, sql } from "drizzle-orm";
+import { and, desc, eq, isNotNull, isNull, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
 import { tasks } from "../../drizzle/schema/notifications.schema";
 import { users } from "../../drizzle/schema/users.schema";
@@ -176,4 +176,78 @@ export async function assignableStaff() {
     .from(users)
     .where(eq(users.isActive, true))
     .orderBy(users.name);
+}
+
+/**
+ * The finished ones, kept.
+ *
+ * The owner, 2026-09-26: «گرنگە تاسکە تەواو بووەکان ئەرشیف بن
+ * بش توانی دووبارە وەکو تاسک ئاکتیف ببنەوە، لە بەشی ئەرشیف
+ * سڕینەوەی یەکجاری هەبێ بۆ یەکە یەکەیان.»
+ *
+ * Newest first: what was finished this morning is what somebody wants to
+ * check, or to reopen because it turned out not to be finished after all.
+ */
+export async function archivedTasks(userId: number, limit = 100) {
+  const db = await getDb();
+  if (!db) return [];
+
+  const rows = await db
+    .select({
+      id: tasks.id,
+      text: tasks.text,
+      aboutType: tasks.aboutType,
+      aboutId: tasks.aboutId,
+      aboutLabel: tasks.aboutLabel,
+      aboutHref: tasks.aboutHref,
+      createdById: tasks.createdById,
+      assignedToId: tasks.assignedToId,
+      dueAt: tasks.dueAt,
+      snoozedUntil: tasks.snoozedUntil,
+      doneAt: tasks.doneAt,
+      doneById: tasks.doneById,
+      createdAt: tasks.createdAt,
+      createdByName: creator.name,
+    })
+    .from(tasks)
+    .leftJoin(users, eq(users.id, tasks.createdById))
+    .where(and(visibleTo(userId), isNotNull(tasks.doneAt)))
+    .orderBy(desc(tasks.doneAt))
+    .limit(Math.min(Math.max(limit, 1), 300));
+
+  return rows.map((r) => ({
+    id: r.id,
+    text: r.text,
+    about: {
+      type: (r.aboutType ?? "none") as TaskAboutType,
+      id: r.aboutId,
+      label: r.aboutLabel,
+      href: r.aboutHref,
+    },
+    createdById: r.createdById,
+    createdByName: r.createdByName,
+    assignedToId: r.assignedToId,
+    dueAt: r.dueAt,
+    snoozedUntil: r.snoozedUntil,
+    doneAt: r.doneAt,
+    doneById: r.doneById,
+    createdAt: r.createdAt,
+  }));
+}
+
+/**
+ * Thrown away for good, one at a time.
+ *
+ * Only from the archive: a task still asking to be done is closed, not
+ * deleted, so nobody loses a promise by pressing the wrong thing. Through
+ * the same visibility clause as everything else — a task nobody may see is
+ * a task nobody may delete.
+ */
+export async function deleteTask(id: number, userId: number): Promise<{ ok: boolean }> {
+  const db = await getDb();
+  if (!db) return { ok: false };
+  await db
+    .delete(tasks)
+    .where(and(eq(tasks.id, id), visibleTo(userId), isNotNull(tasks.doneAt)));
+  return { ok: true };
 }

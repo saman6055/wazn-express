@@ -1,4 +1,5 @@
-import { packagesHref } from "./listLinks";
+import { customersHref, packagesHref } from "./listLinks";
+import { customerCodeOnly } from "./customerCode";
 
 /**
  * A promise somebody made to themselves, and the system holding them to it.
@@ -150,7 +151,26 @@ export function tomorrowMorning(now: Date = new Date()): Date {
 export function hrefForValue(value: string, here: string): string {
   const code = (value ?? "").trim();
   if (!code) return here;
-  if (/^BOX-/i.test(code)) return here;
+
+  /*
+   * A box opens its own box.
+   *
+   * The owner, 2026-09-26: «گرنگە لینکی تاسک یەکسەر بچێتە سەر
+   * خودی شتەکە — ئەو لینکە خۆش بوو یەکسەر بچووبایە ناو خودی
+   * بۆکسەکە.» It used to keep the page the task was written on,
+   * because a box has no row in the parcels table. The delivery screen
+   * takes the code and opens it (pages/CustomerDeliveryScanner).
+   */
+  if (/^BOX-/i.test(code)) return `/customer-delivery-scanner?boxCode=${encodeURIComponent(code)}`;
+
+  /*
+   * A customer code opens that customer, not a search for their parcels.
+   * AZ295, or AZ295(Osamah Anwar) as the office writes it.
+   */
+  if (/^[A-Za-z]{2,4}\d{2,6}(\(|$)/.test(code)) {
+    return customersHref({ search: customerCodeOnly(code) });
+  }
+
   return packagesHref({ search: code });
 }
 
@@ -190,6 +210,28 @@ export const TASK_WORDS = {
     ar: "⁦Alt+T⁩ لمهمة جديدة، أو انقر بالزر الأيمن على أي تتبع",
     zh: "Alt+T 新建任务，或右键点击任意运单号",
   },
+  archive: { ku: "ئەرشیف", en: "Archive", ar: "الأرشيف", zh: "存档" },
+  archiveEmpty: {
+    ku: "هیچ تاسکێکی تەواوبوو نییە",
+    en: "Nothing finished yet",
+    ar: "لا شيء منجز بعد",
+    zh: "尚无已完成任务",
+  },
+  reopen: { ku: "بیهێنەوە", en: "Reopen", ar: "أعد فتحها", zh: "重新打开" },
+  reopened: {
+    ku: "تاسکەکە گەڕایەوە ناو لیست",
+    en: "Back on the list",
+    ar: "عادت إلى القائمة",
+    zh: "已回到列表",
+  },
+  deleteTitle: {
+    ku: "سڕینەوەی یەکجاریی",
+    en: "Delete for good",
+    ar: "حذف نهائي",
+    zh: "永久删除",
+  },
+  deleteConfirm: { ku: "بیسڕەوە", en: "Delete", ar: "احذف", zh: "删除" },
+  deleted: { ku: "سڕایەوە", en: "Deleted", ar: "حُذفت", zh: "已删除" },
   /** Taught in the empty window, because nobody guesses a right-click. */
   fastenHint: {
     ku: "کلیکی لای ڕاست لەسەر هەر تراک یان کۆدێک، تاسکەکە بەو تۆمارەوە دەبەستێت",

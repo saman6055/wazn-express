@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
-import { ListChecks, Plus, Clock, ExternalLink, HelpCircle, Moon, Undo2 } from "lucide-react";
+import { Archive, ListChecks, Plus, Clock, ExternalLink, HelpCircle, Moon, RotateCcw, Trash2, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
+import { confirmDanger } from "@/components/ConfirmDialog";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -53,6 +54,7 @@ export function TaskBell({ className }: { className?: string }) {
   const [open, setOpen] = useState(false);
   const [flash, setFlash] = useState(false);
   const [guide, setGuide] = useState(false);
+  const [archive, setArchive] = useState(false);
   const [openSleeping, setOpenSleeping] = useState(false);
   const flashTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -73,6 +75,27 @@ export function TaskBell({ className }: { className?: string }) {
     },
   });
   const wake = trpc.tasks.snooze.useMutation({ onSuccess: () => void utils.tasks.invalidate() });
+
+  /*
+   * The finished ones, kept rather than gone.
+   *
+   * The owner, 2026-09-26: they should be archived, able to come back as
+   * tasks, and deletable for good one at a time. Only fetched when the
+   * archive is opened — it is the rarer half of the two.
+   */
+  const archived = trpc.tasks.archive.useQuery(undefined, { enabled: archive, staleTime: 30_000 });
+  const reopen = trpc.tasks.setDone.useMutation({
+    onSuccess: () => {
+      void utils.tasks.invalidate();
+      toast.success(L(TASK_WORDS.reopened));
+    },
+  });
+  const forget = trpc.tasks.remove.useMutation({
+    onSuccess: () => {
+      void utils.tasks.invalidate();
+      toast.success(L(TASK_WORDS.deleted));
+    },
+  });
 
   /** Pressing a task lands on the record it is about, and the list steps aside. */
   const goTo = (href?: string | null) => {
@@ -156,9 +179,22 @@ export function TaskBell({ className }: { className?: string }) {
           <span className="text-xs text-muted-foreground">{awake.length}</span>
           <button
             type="button"
-            onClick={() => setGuide((g) => !g)}
+            onClick={() => { setArchive((a) => !a); setGuide(false); }}
             className={cn(
               "ms-auto grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
+              archive && "bg-muted text-foreground",
+            )}
+            title={L(TASK_WORDS.archive)}
+            aria-label={L(TASK_WORDS.archive)}
+            data-testid="task-archive-toggle"
+          >
+            <Archive className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => { setGuide((g) => !g); setArchive(false); }}
+            className={cn(
+              "grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted hover:text-foreground",
               guide && "bg-muted text-foreground",
             )}
             title={L(TASK_WORDS.guide)}
@@ -179,7 +215,60 @@ export function TaskBell({ className }: { className?: string }) {
           </Button>
         </div>
 
-        {guide ? (
+        {archive ? (
+          <div className="max-h-[24rem] overflow-y-auto" data-testid="task-archive">
+            {(archived.data ?? []).length === 0 ? (
+              <p className="px-3 py-6 text-center text-sm text-muted-foreground">
+                {L(TASK_WORDS.archiveEmpty)}
+              </p>
+            ) : (
+              (archived.data ?? []).map((task) => (
+                <div key={task.id} className="flex gap-2 border-b px-3 py-2.5 last:border-0" data-testid={`task-done-row-${task.id}`}>
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm leading-snug text-muted-foreground line-through">{task.text}</p>
+                    <div className="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] text-muted-foreground">
+                      {task.about?.label && (
+                        <button
+                          type="button"
+                          className="inline-flex max-w-[11rem] items-center gap-1 font-mono text-primary hover:underline"
+                          onClick={() => goTo(task.about?.href)}
+                        >
+                          <bdi dir="ltr" className="truncate">{task.about.label}</bdi>
+                        </button>
+                      )}
+                      <button
+                        type="button"
+                        className="ms-auto inline-flex items-center gap-1 hover:text-foreground"
+                        onClick={() => reopen.mutate({ id: task.id, done: false })}
+                        title={L(TASK_WORDS.reopen)}
+                        data-testid={`task-reopen-${task.id}`}
+                      >
+                        <RotateCcw className="h-3 w-3" />
+                        {L(TASK_WORDS.reopen)}
+                      </button>
+                      <button
+                        type="button"
+                        className="inline-flex items-center gap-1 text-red-600 hover:text-red-700 dark:text-red-400"
+                        onClick={async () => {
+                          const ok = await confirmDanger({
+                            title: L(TASK_WORDS.deleteTitle),
+                            message: task.text,
+                            confirmLabel: L(TASK_WORDS.deleteConfirm),
+                          });
+                          if (ok) forget.mutate({ id: task.id });
+                        }}
+                        title={L(TASK_WORDS.deleteTitle)}
+                        data-testid={`task-delete-${task.id}`}
+                      >
+                        <Trash2 className="h-3 w-3" />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        ) : guide ? (
           /*
            * The short lesson, in the one place somebody looks when they have
            * no tasks yet and are wondering what the icon is for.

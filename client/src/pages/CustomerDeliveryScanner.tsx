@@ -77,6 +77,27 @@ export default function CustomerDeliveryScanner() {
     window.history.replaceState({}, "", window.location.pathname + (query ? `?${query}` : ""));
   }, [search]);
 
+  /*
+   * ?boxCode=BOX-... opens it too.
+   *
+   * A task written on a box carries its code, never its id — the code is
+   * what is printed on the screen and copied (shared/tasks hrefForValue).
+   * The code is looked up once and the address is cleaned the same way.
+   */
+  const askedCode = new URLSearchParams(search).get("boxCode") ?? "";
+  const byCode = trpc.deliveryBox.findByCode.useQuery(
+    { boxCode: askedCode },
+    { enabled: askedCode.trim().length > 0, retry: false },
+  );
+  useEffect(() => {
+    if (!askedCode || !byCode.data?.id) return;
+    setActiveBoxId(byCode.data.id);
+    const rest = new URLSearchParams(search);
+    rest.delete("boxCode");
+    const query = rest.toString();
+    window.history.replaceState({}, "", window.location.pathname + (query ? `?${query}` : ""));
+  }, [askedCode, byCode.data, search]);
+
   // Build query params from filters
   const queryParams = useMemo(() => {
     const params: Record<string, any> = {

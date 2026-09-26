@@ -1174,6 +1174,20 @@ export const deliveryBoxRouter = router({
    * receipt it produced is already in a customer's hand. A corrected
    * settlement is then written beside it, pointing back.
    */
+  /**
+   * A box by the code printed on it.
+   *
+   * A task written on a box carries the code, because that is what is on
+   * the screen and in the clipboard; the screen that opens boxes wants an
+   * id (owner, 2026-09-26: the link should open the box itself).
+   */
+  findByCode: staffProcedure
+    .input(z.object({ boxCode: z.string().trim().min(3).max(64) }))
+    .query(async ({ input }) => {
+      const box = await db.getDeliveryBoxByCode(input.boxCode);
+      return box ? { id: box.id, boxCode: box.boxCode } : null;
+    }),
+
   reverseSettlement: staffProcedure
     .input(z.object({
       settlementId: z.number(),

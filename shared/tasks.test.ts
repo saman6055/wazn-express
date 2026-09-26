@@ -238,9 +238,13 @@ describe("pressing a task", () => {
    */
   it("goes to the record, not to the page it was written on", () => {
     expect(hrefForValue("SF1234567890", "/batches")).toBe("/packages/all?search=SF1234567890");
-    // A box code has no row in the parcels table; the screen it came from is
-    // the box screen, so that is where it stays.
-    expect(hrefForValue("BOX-20260918-004", "/delivery?tab=open")).toBe("/delivery?tab=open");
+    // And a box opens its own box (owner, 2026-09-26): the delivery screen
+    // takes the code, because a task only ever carries the code.
+    expect(hrefForValue("BOX-20260918-004", "/delivery?tab=open"))
+      .toBe("/customer-delivery-scanner?boxCode=BOX-20260918-004");
+    // A customer code opens that customer, not a hunt through parcels.
+    expect(hrefForValue("AZ295(Osamah Anwar)", "/here")).toContain("/customers");
+    expect(hrefForValue("AZ295(Osamah Anwar)", "/here")).toContain("AZ295");
     expect(hrefForValue("   ", "/here")).toBe("/here");
   });
 
@@ -255,5 +259,38 @@ describe("pressing a task", () => {
   it("is what the right-click writes into the task in the first place", () => {
     const composer = read("client/src/components/tasks/TaskComposer.tsx");
     expect(composer).toContain("hrefForValue(copyable.dataset.taskValue, here)");
+  });
+});
+
+describe("a finished task is kept, not gone", () => {
+  /*
+   * The owner, 2026-09-26: «گرنگە تاسکە تەواو بووەکان ئەرشیف بن، بشتوانی
+   * دووبارە وەکو تاسک ئاکتیڤ ببنەوە، لە بەشی ئەرشیف سڕینەوەی یەکجاری هەبێ
+   * بۆ یەکە یەکەیان.»
+   */
+  it("is read back newest first, through the same visibility clause", () => {
+    const db = read("server/db/tasks.db.ts");
+    const fn = db.slice(db.indexOf("export async function archivedTasks"), db.indexOf("export async function deleteTask"));
+    expect(fn.length).toBeGreaterThan(200);
+    expect(fn).toContain("and(visibleTo(userId), isNotNull(tasks.doneAt))");
+    expect(fn).toContain("orderBy(desc(tasks.doneAt))");
+  });
+
+  it("can only be deleted once it is finished", () => {
+    // A task still asking to be done is ticked, never deleted: losing a
+    // promise to a mis-tap is what this whole feature exists to prevent.
+    const db = read("server/db/tasks.db.ts");
+    const fn = db.slice(db.indexOf("export async function deleteTask"));
+    expect(fn).toContain("and(eq(tasks.id, id), visibleTo(userId), isNotNull(tasks.doneAt))");
+  });
+
+  it("comes back as a task, and is thrown away one at a time", () => {
+    const bell = read("client/src/components/tasks/TaskBell.tsx");
+    expect(bell).toContain('data-testid="task-archive-toggle"');
+    expect(bell).toContain('data-testid="task-archive"');
+    expect(bell).toContain("reopen.mutate({ id: task.id, done: false })");
+    // Deleting for good asks first.
+    expect(bell).toContain("confirmDanger({");
+    expect(bell).toContain("forget.mutate({ id: task.id })");
   });
 });

@@ -28,6 +28,26 @@ export const tasksRouter = router({
     return db.assignableStaff();
   }),
 
+  /** What has been finished, newest first. */
+  archive: staffProcedure
+    .input(z.object({ limit: z.number().int().min(1).max(300).default(100) }).optional())
+    .query(async ({ ctx, input }) => {
+      return db.archivedTasks(ctx.user.id, input?.limit ?? 100);
+    }),
+
+  /**
+   * Thrown away for good — only from the archive, one at a time.
+   *
+   * A task still asking to be done is ticked, never deleted: losing a
+   * promise to a mis-tap is the one thing this whole feature exists to
+   * prevent.
+   */
+  remove: staffProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ input, ctx }) => {
+      return db.deleteTask(input.id, ctx.user.id);
+    }),
+
   create: staffProcedure
     .input(z.object({
       text: z.string().trim().min(1).max(1000),
