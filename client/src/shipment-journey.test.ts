@@ -92,3 +92,32 @@ describe("the shipments page reads it", () => {
     expect(page).toContain('const step = sortBy === "journey" ? journeyOf(batch.status) : null;');
   });
 });
+
+describe("what a customer sees on a shipment card", () => {
+  const page = read("client/src/pages/portal/PortalShipments.tsx");
+
+  it("is what they own, not what we call the container", () => {
+    // The owner, 2026-09-26: "as a customer I go into my shipments and
+    // understand nothing." AIR-2026-041 is our name for a box somebody else
+    // is also in; their own parcels are the thing they recognise.
+    expect(page).toContain("${batch.customerPackageCount ?? 0} پاکەتی تۆ");
+    // The code stays, small, at the foot of the card.
+    expect(page).toContain('<span className={cn("font-mono text-[11px]"');
+  });
+
+  it("says in words that it opens, and how many are behind it", () => {
+    // "The customer still does not know they can tap a shipment." A chevron
+    // is not an instruction.
+    expect(page).toContain('data-testid="open-parcels"');
+    expect(page).toContain("پاکەتەکانم ببینە (${batch.customerPackageCount ?? 0})");
+  });
+
+  it("does not ask them to choose a filter before they can look", () => {
+    // The shipping-type row is our word for how the freight was bought, and
+    // the three stage tiles now repeat the headings down the list. Folded
+    // away, not removed: the button above still opens all of it.
+    const sticky = page.indexOf('"sticky top-14 z-20 border-b backdrop-blur-md');
+    expect(sticky).toBeGreaterThan(-1);
+    expect(page.slice(sticky - 400, sticky)).toContain("{showFilters && (");
+  });
+});

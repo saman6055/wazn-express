@@ -421,6 +421,20 @@ function ClassicPortalShipments() {
           carries — then collapses on the first scroll to a single compact row
           per filter, so the list gets the screen back once the reader is past
           choosing. */}
+      {/*
+        * The filters, folded away until asked for.
+        *
+        * The owner, 2026-09-26: "the row at the top is confusing too — you
+        * do not know what those are for." He is right: «ئاسمانی
+        * ئالتالبی» is our word for how we bought the freight, not
+        * anything a customer has an opinion about, and the three stage tiles
+        * now say the same thing as the headings down the list.
+        *
+        * Nothing is removed — the button above opens all of it. What changed
+        * is that a customer who just wants to see their goods is no longer
+        * asked to choose something first.
+        */}
+      {showFilters && (
       <div className={cn(
         "sticky top-14 z-20 border-b backdrop-blur-md transition-all duration-300",
         compactFilters ? "px-3 py-2" : "px-4 py-3",
@@ -560,6 +574,7 @@ function ClassicPortalShipments() {
           })}
         </div>
       </div>
+      )}
 
       {/* Sort Options (shown when filters expanded) */}
       {showFilters && (
@@ -761,7 +776,24 @@ function ClassicPortalShipments() {
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
                           <p className={cn("font-bold text-lg", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
-                            <bdi dir="ltr">{batch.batchCode}</bdi>
+                            {/*
+                              * What the customer owns, in the biggest letters
+                              * on the card.
+                              *
+                              * It used to be the batch code â AIR-2026-041 â
+                              * which is our name for a container somebody else
+                              * is also in. The owner, 2026-09-26: "as a
+                              * customer I go into my shipments and understand
+                              * nothing." Their own parcels are the thing they
+                              * recognise; the code stays, small, at the foot of
+                              * the card, for when they quote it to us.
+                              */}
+                            {pickLang(language, {
+                              ku: `${batch.customerPackageCount ?? 0} پاکەتی تۆ`,
+                              en: `${batch.customerPackageCount ?? 0} of your parcels`,
+                              ar: `${batch.customerPackageCount ?? 0} من طرودك`,
+                              zh: `您的 ${batch.customerPackageCount ?? 0} 件包裹`,
+                            })}
                           </p>
                           <ChevronRight className={cn(
                             "w-5 h-5 shrink-0",
@@ -790,12 +822,37 @@ function ClassicPortalShipments() {
                         language={language}
                         isDark={isDark}
                       />
-                      <div className="mt-2 flex justify-end">
-                        <WhatsAppHelpButton
-                          language={language}
-                          section={language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : language === "zh" ? "货运" : "Shipments"}
-                          topic={`${batch.batchCode} — ${getStatusText(batch.status)}`}
-                        />
+                      {/*
+                        * The way in, in words.
+                        *
+                        * The owner, 2026-09-26: "the customer still does not
+                        * know they can tap a shipment and see their parcels
+                        * inside it." A chevron is not an instruction. This
+                        * says what happens, and how many are behind it.
+                        */}
+                      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-slate-200/70 pt-3 dark:border-slate-700/70">
+                        <span
+                          className="inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 dark:bg-sky-950/40 dark:text-sky-300"
+                          data-testid="open-parcels"
+                        >
+                          <Package className="h-3.5 w-3.5" />
+                          {pickLang(language, {
+                            ku: `پاکەتەکانم ببینە (${batch.customerPackageCount ?? 0})`,
+                            en: `See my parcels (${batch.customerPackageCount ?? 0})`,
+                            ar: `عرض طرودي (${batch.customerPackageCount ?? 0})`,
+                            zh: `查看我的包裹（${batch.customerPackageCount ?? 0}）`,
+                          })}
+                        </span>
+                        <span className={cn("font-mono text-[11px]", isDark ? "text-slate-500" : "text-slate-400")}>
+                          <bdi dir="ltr">{batch.batchCode}</bdi>
+                        </span>
+                        <div className="ms-auto">
+                          <WhatsAppHelpButton
+                            language={language}
+                            section={language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : language === "zh" ? "货运" : "Shipments"}
+                            topic={`${batch.batchCode} — ${getStatusText(batch.status)}`}
+                          />
+                        </div>
                       </div>
                     </div>
 
