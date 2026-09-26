@@ -163,6 +163,63 @@ export default function ArrivalVerificationScanner() {
   const trpcUtils = trpc.useUtils();
   // Writes the arrival scan. See the call site for why this screen needs it.
   const recordArrival = trpc.scanning.registerScan.useMutation();
+
+  /*
+   * And reads back the ones checked in before this session.
+   *
+   * The owner, 2026-09-26, opening AIR-2026-055 a second time: it read 0 of
+   * 84 checked and 84 missing, for a batch whose boxes went out weeks ago.
+   * «ئەوانەی پشکنینی گەیشتنی بۆ کراوە پێشووتر وەکو داتا هەر بمێنێ.»
+   *
+   * The work was never lost — every scan writes a row — but this screen
+   * kept its list in the browser's own session, so a reload, another device
+   * or the next morning all began at zero, and a screen saying 84 parcels
+   * are missing when they are in the customer's shop is worse than none.
+   */
+  const { data: earlierChecks } = trpc.scanning.arrivalChecks.useQuery(
+    { batchIds: selectedBatchIds },
+    { enabled: selectedBatchIds.length > 0, staleTime: 30_000 },
+  );
+
+  /*
+   * Fold the earlier checks into the list, once.
+   *
+   * Keyed on the parcel, so a parcel scanned again at this bench keeps the
+   * scan in front of the person — theirs is the newer fact — and everything
+   * else appears as it was left, with the day it was checked in.
+   */
+  useEffect(() => {
+    if (!earlierChecks || earlierChecks.length === 0) return;
+    setVerifiedPackages((current) => {
+      const known = new Set(current.map((p) => p.id));
+      const restored: VerifiedPackage[] = [];
+      for (const check of earlierChecks) {
+        const id = Number(check.packageId);
+        if (!id || known.has(id)) continue;
+        const inBatch = check.batchId != null
+          ? (batchPackages.get(Number(check.batchId)) ?? []).find((p) => p.id === id)
+          : undefined;
+        restored.push({
+          id,
+          trackingNumber: String(check.trackingNumber ?? inBatch?.trackingNumber ?? ""),
+          customerCode: inBatch?.customerCode ?? "",
+          customerName: inBatch?.customerName ?? "",
+          orderCode: inBatch?.orderCode ?? null,
+          orderNumbers: inBatch?.orderNumbers,
+          photo: inBatch?.photo ?? null,
+          weight: inBatch?.weight ?? null,
+          cbm: inBatch?.cbm ?? null,
+          hasCompleteData: inBatch?.hasCompleteData ?? false,
+          batchId: Number(check.batchId ?? 0),
+          batchNumber: String(check.packageCode ?? ""),
+          verifiedAt: new Date(check.scannedAt ?? Date.now()),
+          isExtra: false,
+        });
+      }
+      return restored.length > 0 ? [...restored, ...current] : current;
+    });
+  }, [earlierChecks, batchPackages]);
+
   
   // Get batches that are in transit (ready for arrival verification)
   const availableBatches = useMemo(() => {

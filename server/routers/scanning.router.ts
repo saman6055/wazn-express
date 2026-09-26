@@ -151,6 +151,21 @@ export const scanningRouter = router({
         };
       }),
     
+    /**
+     * What has already been checked in on these shipments.
+     *
+     * The owner, 2026-09-26, opening AIR-2026-055 again: 0 of 84 checked,
+     * 84 missing, for a batch whose boxes went out weeks ago. The work was
+     * never lost — every scan writes a row — but the screen kept its list
+     * in the browser's session and read nothing back, so a reload, another
+     * device or the next morning all started at zero.
+     */
+    arrivalChecks: staffProcedure
+      .input(z.object({ batchIds: z.array(z.number().int().positive()).max(50) }))
+      .query(async ({ input }) => {
+        return db.getArrivalChecksForBatches(input.batchIds);
+      }),
+
     // Register a new scan
     registerScan: staffProcedure
       .input(z.object({

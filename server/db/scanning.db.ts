@@ -852,3 +852,58 @@ export async function getTopScanners(days: number): Promise<{ userId: number; us
   }));
 }
 
+/**
+ * The arrival checks already done on these shipments.
+ *
+ * The owner, 2026-09-26, opening AIR-2026-055 a second time: it read 0 of 84
+ * checked and 84 missing, for a batch whose boxes were handed over weeks
+ * ago. «ئەوانەی پشکنینی گەیشتنی بۆ کراوە پێشووتر وەکو داتا هەر
+ * بمێنێ نەک سفر ببێتەوە کەس نەزانی چی بووە.»
+ *
+ * The work was never lost: every scan writes a packageScans row. The screen
+ * simply kept its list in the browser's own session and read nothing back,
+ * so a reload, another device or the next morning all started at zero — and
+ * a screen that says 84 parcels are missing when they are in the customer's
+ * shop is worse than no screen at all.
+ *
+ * The scan is the record, not the parcel's status: a status can be set by a
+ * box being built or by a hand on another screen, while a `received_local`
+ * scan means somebody stood at the bench with that parcel.
+ *
+ * The earliest scan per parcel, because that is when it was checked in; a
+ * second scan of the same parcel is the same parcel, not a second arrival.
+ */
+export async function getArrivalChecksForBatches(batchIds: number[]) {
+  const db = await getDb();
+  if (!db || batchIds.length === 0) return [];
+
+  const rows = await db
+    .select({
+      packageId: packageScans.packageId,
+      trackingNumber: packageScans.trackingNumber,
+      scannedAt: packageScans.scannedAt,
+      scannedById: packageScans.scannedById,
+      scannedByName: users.name,
+      batchId: packages.batchId,
+      packageCode: packages.packageCode,
+      customerId: packages.customerId,
+    })
+    .from(packageScans)
+    .innerJoin(packages, eq(packages.id, packageScans.packageId))
+    .leftJoin(users, eq(users.id, packageScans.scannedById))
+    .where(and(
+      eq(packageScans.scanType, "received_local"),
+      inArray(packages.batchId, batchIds),
+    ))
+    .orderBy(packageScans.scannedAt);
+
+  // The earliest per parcel wins; later scans of the same parcel are the
+  // same arrival looked at twice.
+  const first = new Map<number, (typeof rows)[number]>();
+  for (const row of rows) {
+    const id = Number(row.packageId);
+    if (!id || first.has(id)) continue;
+    first.set(id, row);
+  }
+  return Array.from(first.values());
+}
