@@ -1808,7 +1808,7 @@ export default function QuickRegister() {
                       </div>
                       <span className="text-base font-bold text-cyan-700 dark:text-cyan-400">{t("quickRegister.stepDimensionsSea")}</span>
                     </div>
-                    <div className="grid grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.length")}</Label>
                         <div className="relative" dir="ltr">

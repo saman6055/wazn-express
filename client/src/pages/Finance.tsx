@@ -798,7 +798,7 @@ export default function Finance() {
                               <ChevronDown className="ms-2 h-4 w-4 shrink-0 opacity-50" />
                             </Button>
                           </PopoverTrigger>
-                          <PopoverContent variant="panel" className="w-[400px]" align="start">
+                          <PopoverContent variant="panel" className="w-[min(400px,calc(100vw-2rem))]" align="start">
                             <Command shouldFilter={false}>
                               <CommandInput
                                 placeholder={t("finance.searchCustomer") || pickLang(language, { ku: "گەڕان بە ناو یان کۆد...", en: "Search by name or code...", ar: "ابحث بالاسم أو الرمز...", zh: "按姓名或编号搜索..." })}

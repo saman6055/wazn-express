@@ -1344,7 +1344,7 @@ export default function BatchFinancialReport() {
           ) : customerPackages && customerPackages.length > 0 ? (
             <div className="space-y-4">
               {/* Summary Stats */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <Card className="bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-800/60">
                   <CardContent className="p-4 text-center">
                     <p className="text-sm text-blue-600 dark:text-blue-300">{pickLang(language, { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "包裹总数" })}</p>

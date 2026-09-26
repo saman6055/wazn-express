@@ -277,7 +277,7 @@ const [activeTab, setActiveTab] = useState("company");
             <Card>
               <CardContent className="pt-6">
                 <Tabs value={activeTab} onValueChange={setActiveTab}>
-                  <TabsList className="grid w-full grid-cols-5">
+                  <TabsList className="grid w-full grid-cols-2 md:grid-cols-5">
                     <TabsTrigger value="company" className="gap-1">
                       <Building className="h-4 w-4" />
                       <span className="hidden sm:inline">{t("auto.text_42a50d")} </span>

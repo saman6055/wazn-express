@@ -18,7 +18,7 @@ export function LoadingSkeleton() {
         <div className="mx-auto w-full max-w-lg space-y-4 p-4">
           <Skeleton className="h-12 w-full rounded-xl animate-pulse" />
           <Skeleton className="h-32 w-full rounded-2xl animate-pulse" />
-          <div className="grid grid-cols-4 gap-3">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
             {[1, 2, 3, 4].map((i) => (
               <Skeleton key={i} className="h-16 rounded-xl animate-pulse" />
             ))}

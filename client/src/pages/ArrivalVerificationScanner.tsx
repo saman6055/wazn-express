@@ -1207,7 +1207,7 @@ export default function ArrivalVerificationScanner() {
             
             <div className="space-y-4">
               {/* Summary */}
-              <div className="grid grid-cols-4 gap-4">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                 <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg text-center">
                   <div className="text-2xl font-bold">{verificationStats.totalExpected}</div>
                   <div className="text-xs text-muted-foreground">{t("scan.total")}</div>

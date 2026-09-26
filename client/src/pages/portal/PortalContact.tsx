@@ -78,7 +78,7 @@ export default function PortalContact() {
         </div>
 
         {/* One tap each — the four things a customer actually wants to do. */}
-        <div className="grid grid-cols-4 gap-2">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
           {DIRECT_CHANNELS.map((c) => (
             <button
               key={c.id}

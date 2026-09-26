@@ -201,7 +201,7 @@ export default function UnifiedOrdersDashboard() {
           </div>
 
           {/* Quick Stats in Header */}
-          <div className="relative mt-8 grid grid-cols-5 gap-4">
+          <div className="relative mt-8 grid grid-cols-2 md:grid-cols-5 gap-4">
             {[
               { label: pickLang(language, { ku: 'کۆی گشتی', en: 'Total', ar: 'الإجمالي', zh: '总计' }), value: stats.total, icon: Package, color: 'from-white/20 to-white/10' },
               { label: pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全包' }), value: stats.fullPackage, icon: Package, color: 'from-emerald-400/30 to-emerald-500/20' },

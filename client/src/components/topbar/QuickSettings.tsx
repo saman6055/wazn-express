@@ -135,7 +135,7 @@ export function QuickSettings({ fullScreen, onToggleFullScreen }: { fullScreen: 
           </div>
 
           <p className="mb-1.5 mt-3 text-xs font-semibold text-muted-foreground">{L(TXT.language)}</p>
-          <div className="grid grid-cols-4 gap-1">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-1">
             {LANGUAGES.map((l) => (
               <button
                 key={l.code}

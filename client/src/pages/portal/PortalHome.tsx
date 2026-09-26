@@ -838,7 +838,7 @@ export default function PortalHome() {
 
         {/* Four tools, one row — the owner's shortlist */}
         <div className="px-4 mt-5">
-          <div className="grid grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
             {quickActions.map((action, index) => (
               <Link key={index} href={action.href}>
                 <span className={cn("flex h-full flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all active:scale-[0.97]", card)}>

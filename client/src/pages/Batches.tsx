@@ -1929,7 +1929,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 </div>
                 
                 {/* Summary Cards */}
-                <div className="grid grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <Card className="border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-red-100 dark:to-red-900/40">
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-red-700 dark:text-red-300 flex items-center gap-1">

@@ -484,7 +484,7 @@ export default function BulkOrderForm() {
                       <ChevronsUpDown className="w-4 h-4 opacity-50" />
                     </Button>
                   </PopoverTrigger>
-                  <PopoverContent variant="panel" className="w-[400px]" align="start">
+                  <PopoverContent variant="panel" className="w-[min(400px,calc(100vw-2rem))]" align="start">
                     <Command>
                       <CommandInput
                         placeholder={pickLang(language, { ku: "گەڕان بە ناو، کۆد، یان ژمارە...", en: "Search by name, code, or number...", ar: "البحث بالاسم أو الرمز أو الرقم...", zh: "按姓名、编号或号码搜索..." })}
@@ -624,7 +624,7 @@ export default function BulkOrderForm() {
                   )}
                   
                   {/* Inline quick fields */}
-                  <div className="flex-1 grid grid-cols-12 gap-2 items-center" onClick={e => e.stopPropagation()}>
+                  <div className="flex-1 grid grid-cols-2 md:grid-cols-12 gap-2 items-center" onClick={e => e.stopPropagation()}>
                     <div className="col-span-4">
                       <AttributeSelect
                         usageKey="productType"

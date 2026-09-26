@@ -741,7 +741,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                       {/* A grid rather than a dropdown: choosing a picture
                           from a list of names is choosing blind. */}
                       <div
-                        className="grid grid-cols-8 gap-1 rounded-lg border p-2"
+                        className="grid grid-cols-2 md:grid-cols-8 gap-1 rounded-lg border p-2"
                         role="radiogroup"
                         aria-label={t("common.icon")}
                       >

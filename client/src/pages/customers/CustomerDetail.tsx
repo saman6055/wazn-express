@@ -425,7 +425,7 @@ export default function CustomerDetail() {
             </div>
 
             <Tabs value={tab} onValueChange={setTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-6">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-6">
                 <TabsTrigger value="packages" className="gap-2">
                   <Package className="h-4 w-4" />
                   <span className="hidden sm:inline">{pickLang(language, { ku: "پاکێجەکان", en: "Packages", ar: "الطرود", zh: "包裹" })}</span>

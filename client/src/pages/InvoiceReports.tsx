@@ -554,7 +554,7 @@ export default function InvoiceReports() {
 
         {/* Tabs for different reports */}
         <Tabs defaultValue="monthly" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="monthly" className="gap-2">
               <BarChart3 className="h-4 w-4" />
               <span className="hidden sm:inline">{pickLang(language, {ku:"مانگانە", en:"Monthly", ar:"شهري", zh:"月度"})}</span>
@@ -610,7 +610,7 @@ export default function InvoiceReports() {
                 ) : (
                   <div className="space-y-4">
                     {/* Simple bar chart */}
-                    <div className="grid grid-cols-12 gap-2 h-48 items-end">
+                    <div className="grid grid-cols-2 md:grid-cols-12 gap-2 h-48 items-end">
                       {monthlyTotals.map((m, i) => (
                         <div key={i} className="flex flex-col items-center gap-1">
                           <div 

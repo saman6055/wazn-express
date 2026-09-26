@@ -338,7 +338,7 @@ function ComposeTab() {
           </CardHeader>
           <CardContent>
             <Tabs defaultValue="ku">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-2 md:grid-cols-4">
                 <TabsTrigger value="ku">کوردی</TabsTrigger>
                 <TabsTrigger value="en">English</TabsTrigger>
                 <TabsTrigger value="ar">العربية</TabsTrigger>

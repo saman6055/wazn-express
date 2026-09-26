@@ -158,7 +158,7 @@ export default function CompanyFinanceDashboard() {
 
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-          <TabsList className="grid w-full grid-cols-5 h-12">
+          <TabsList className="grid w-full grid-cols-2 md:grid-cols-5 h-12">
             <TabsTrigger value="overview" className="text-sm font-medium">
               <BarChart3 className="w-4 h-4 ms-2" />
               {t("companyFinance.tabOverview") || "گشتی"}

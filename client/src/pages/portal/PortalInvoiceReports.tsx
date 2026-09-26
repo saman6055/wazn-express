@@ -547,7 +547,7 @@ function ClassicPortalInvoiceReports() {
           ) : (
             <div className="space-y-4">
               {/* Bar Chart */}
-              <div className="grid grid-cols-12 gap-1 h-32 items-end">
+              <div className="grid grid-cols-2 md:grid-cols-12 gap-1 h-32 items-end">
                 {monthlyReport.map((m, i) => (
                   <div key={i} className="flex flex-col items-center gap-1">
                     <div 
