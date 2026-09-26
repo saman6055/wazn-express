@@ -462,10 +462,25 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
  */
 function ViewAsButton({ customerId, name, p }: { customerId: number; name: string; p: (v: L) => string }) {
   const view = trpc.portalCenter.viewAsCustomer.useMutation({
-    onSuccess: () => {
-      // A full load, not a route change: every cached answer in this tab
-      // belongs to the admin, and none of it belongs to the customer.
-      window.location.href = "/portal";
+    onSuccess: (result) => {
+      /*
+       * In a tab of its own, the owner' rule of 2026-09-26.
+       *
+       * The token travels in the address and the new tab keeps it to
+       * itself (main.tsx VIEW_AS_TOKEN_KEY), so this page stays signed in
+       * as the admin — which it could not while the look lived in the
+       * cookie the whole browser shares.
+       */
+      const href = "/portal?viewas=" + encodeURIComponent(result.token);
+      const tab = window.open(href, "_blank", "noopener,noreferrer");
+      if (!tab) {
+        toast.error(p({
+          ku: "وێبگەڕەکە پەنجەرەی نوێی ڕێگە نەدا — مۆڵەتی پەنجەرەی نوێ بدە و دووبارە هەوڵ بدە",
+          en: "The browser blocked the new tab — allow pop-ups and try again",
+          ar: "حجب المتصفح العلامة الجديدة — اسمح بالنوافذ المنبثقة وأعد المحاولة",
+          zh: "浏览器阻止了新标签页 — 请允许弹窗后重试",
+        }));
+      }
     },
     onError: (err) => toast.error(err.message),
   });

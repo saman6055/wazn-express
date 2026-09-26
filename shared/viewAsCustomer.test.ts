@@ -84,8 +84,11 @@ describe("looking at a customer's portal", () => {
     const block = proc.length > 200 ? proc : router.slice(router.indexOf("viewAsCustomer: adminProcedure"));
     expect(block).toContain("adminProcedure");
     expect(block.indexOf('action: "view_as_customer"')).toBeGreaterThan(-1);
-    // The audit row is written before the cookie is set.
-    expect(block.indexOf('action: "view_as_customer"')).toBeLessThan(block.indexOf("ctx.res.cookie"));
+    // The audit row is written before the token is minted, let alone handed
+    // over. (It used to be compared against the cookie; the look now travels
+    // as a token so it can live in one tab — 2026-09-26.)
+    expect(block.indexOf('action: "view_as_customer"')).toBeLessThan(block.indexOf("new SignJWT"));
+    expect(block).not.toContain("ctx.res.cookie");
   });
 
   it("wears a bar the customer's own session never wears", () => {
@@ -96,5 +99,35 @@ describe("looking at a customer's portal", () => {
     expect(banner).toContain("exitViewAs");
     // Above all three skins, so no skin can be the one that forgets.
     expect(read("client/src/components/portal/PortalLayout.tsx")).toContain("<ViewAsBanner />");
+  });
+});
+
+describe("a look lives in one tab", () => {
+  it("is handed over as a token, not set as a cookie", () => {
+    // The owner, 2026-09-26: opening one should not cost him the admin page
+    // he was on. A cookie is the whole browser's; a token is this tab's.
+    const router = read("server/routers/portalCenter.router.ts");
+    const proc = router.slice(router.indexOf("viewAsCustomer: adminProcedure"));
+    expect(proc.slice(0, 3000)).toContain("token,");
+    expect(read("client/src/pages/PortalCenter.tsx"))
+      .toContain('const href = "/portal?viewas=" + encodeURIComponent(result.token);');
+  });
+
+  it("keeps the token to that tab, and off the address bar", () => {
+    const main = read("client/src/main.tsx");
+    expect(main).toContain('export const VIEW_AS_TOKEN_KEY = "wazn-view-as";');
+    expect(main).toContain("sessionStorage.setItem(VIEW_AS_TOKEN_KEY, handed)");
+    // A token left in a shared link is a session shared with it.
+    expect(main).toContain('params.delete("viewas")');
+    expect(main).toContain("window.history.replaceState");
+    expect(main).toContain("authorization: `Bearer ${viewAs}`");
+  });
+
+  it("is the only bearer the server prefers over a cookie", () => {
+    const sdk = read("server/_core/sdk.ts");
+    expect(sdk).toContain("if (bearer && looksLikeViewAs(bearer)) return bearer;");
+    expect(sdk).toContain("JSON.parse(json)?.viewAs === true");
+    // Everything else keeps the old order: the cookie the server set.
+    expect(sdk).toContain("if (fromCookie) return fromCookie;");
   });
 });

@@ -82,6 +82,23 @@ const createOAuthHttpClient = (): AxiosInstance =>
     timeout: AXIOS_TIMEOUT_MS,
   });
 
+/**
+ * Does this token claim to be a look at a customer's portal?
+ *
+ * Reads the payload without verifying it — the answer only decides which
+ * token is handed to verifySession, never whether it is trusted.
+ */
+function looksLikeViewAs(token: string): boolean {
+  try {
+    const payload = token.split(".")[1];
+    if (!payload) return false;
+    const json = Buffer.from(payload.replace(/-/g, "+").replace(/_/g, "/"), "base64").toString("utf8");
+    return JSON.parse(json)?.viewAs === true;
+  } catch {
+    return false;
+  }
+}
+
 class SDKServer {
   private readonly client: AxiosInstance;
   private readonly oauthService: OAuthService;
@@ -294,13 +311,32 @@ class SDKServer {
    */
   private sessionTokenFrom(req: Request): string | undefined {
     const fromCookie = this.parseCookies(req.headers.cookie).get(COOKIE_NAME);
-    if (fromCookie) return fromCookie;
 
     const header = (req.headers as Record<string, unknown>)["authorization"];
     const value = Array.isArray(header) ? header[0] : header;
-    if (typeof value !== "string") return undefined;
-    const match = /^Bearer\s+(.+)$/i.exec(value.trim());
-    return match?.[1]?.trim() || undefined;
+    const match = typeof value === "string" ? /^Bearer\s+(.+)$/i.exec(value.trim()) : null;
+    const bearer = match?.[1]?.trim() || undefined;
+
+    /*
+     * The one bearer that outranks a cookie: a look at a customer's portal.
+     *
+     * The owner, 2026-09-26: opening one should not cost him the admin page
+     * he was on. Both live in the same cookie, so a look used to replace his
+     * session in every tab. A token carried by one tab does not \u2014 but only
+     * if it is read ahead of the cookie.
+     *
+     * Narrow on purpose: preferred only when the token itself says it is a
+     * look, and a look can write nothing at all (shared/viewAsCustomer, and
+     * the single check in _core/trpc). The worst it can do is show one
+     * customer's own pages to somebody who already holds an admin session.
+     *
+     * The claim is read without verifying, only to choose which token to
+     * verify; whichever is chosen then goes through verifySession as before.
+     */
+    if (bearer && looksLikeViewAs(bearer)) return bearer;
+
+    if (fromCookie) return fromCookie;
+    return bearer;
   }
 
   async authenticateRequest(req: Request): Promise<any> {

@@ -4,6 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { VIEW_AS_WORDS } from "@shared/viewAsCustomer";
+import { VIEW_AS_TOKEN_KEY } from "@/main";
 
 /**
  * The bar that says whose portal this is, and whose eyes are on it.
@@ -28,13 +29,39 @@ export function ViewAsBanner() {
 
   const exit = trpc.auth.exitViewAs.useMutation({
     onSuccess: () => {
-      // A full reload, not a route change: every cached answer on this page
-      // belongs to the customer, and none of it belongs to the admin coming
-      // back.
       window.location.href = "/portal-center";
     },
     onError: () => setLeaving(false),
   });
+
+  /*
+   * Leaving.
+   *
+   * A look opened from Portal Center lives in this tab alone — its token is
+   * in this tab's sessionStorage (main.tsx) and the admin's own session was
+   * never touched. So leaving is: forget the token, close the tab. If the
+   * browser will not close a tab it did not open by script, the page falls
+   * back to Portal Center, which is where the admin came from.
+   *
+   * A look that arrived the old way, in the cookie, still has to be handed
+   * back on the server, so that path remains for it.
+   */
+  const leave = () => {
+    setLeaving(true);
+    let hadToken = false;
+    try {
+      hadToken = !!sessionStorage.getItem(VIEW_AS_TOKEN_KEY);
+      sessionStorage.removeItem(VIEW_AS_TOKEN_KEY);
+    } catch {
+      /* no storage: it was a cookie look */
+    }
+    if (hadToken) {
+      window.close();
+      window.location.href = "/portal-center";
+      return;
+    }
+    exit.mutate();
+  };
 
   if (!viewAs) return null;
 
@@ -55,7 +82,7 @@ export function ViewAsBanner() {
       <button
         type="button"
         className="ms-auto inline-flex items-center gap-1.5 rounded-md bg-amber-950/10 px-2.5 py-1 text-xs font-medium hover:bg-amber-950/20"
-        onClick={() => { setLeaving(true); exit.mutate(); }}
+        onClick={leave}
         disabled={leaving}
         data-testid="view-as-leave"
       >

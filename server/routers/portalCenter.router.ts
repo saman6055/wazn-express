@@ -1,7 +1,5 @@
 import { z } from "zod";
-import { COOKIE_NAME } from "@shared/const";
 import { getConfig } from "../config";
-import { getSessionCookieOptions } from "../_core/cookies";
 import { VIEW_AS_MINUTES } from "@shared/viewAsCustomer";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
@@ -90,16 +88,22 @@ export const portalCenterRouter = router({
         .setExpirationTime(`${VIEW_AS_MINUTES}m`)
         .sign(secret);
 
-      ctx.res.cookie(COOKIE_NAME, token, {
-        ...getSessionCookieOptions(ctx.req),
-        maxAge: VIEW_AS_MINUTES * 60 * 1000,
-      });
-
+      /*
+       * Handed back rather than set as a cookie.
+       *
+       * The owner, 2026-09-26: the look should open in its own tab and
+       * leave the admin page he was on alone. A cookie is the whole
+       * browser's, so it could not — a token the new tab keeps to itself
+       * can (the tab stores it in sessionStorage and sends it as a bearer;
+       * _core/sdk prefers a look-only bearer over the cookie, and only a
+       * look-only one).
+       */
       return {
         customerId: customer.id,
         customerCode: customer.customerCode,
         customerName: customer.fullName,
         minutes: VIEW_AS_MINUTES,
+        token,
       };
     }),
 

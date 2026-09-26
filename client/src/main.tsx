@@ -156,6 +156,28 @@ queryClient.getMutationCache().subscribe(event => {
   }
 });
 
+/**
+ * Where a tab keeps the look it was opened with.
+ *
+ * Read out of the URL once, on the way in, and taken off the address bar
+ * straight away: a token in a link that gets shared is a session that gets
+ * shared with it.
+ */
+export const VIEW_AS_TOKEN_KEY = "wazn-view-as";
+
+try {
+  const params = new URLSearchParams(window.location.search);
+  const handed = params.get("viewas");
+  if (handed) {
+    sessionStorage.setItem(VIEW_AS_TOKEN_KEY, handed);
+    params.delete("viewas");
+    const rest = params.toString();
+    window.history.replaceState({}, "", window.location.pathname + (rest ? `?${rest}` : ""));
+  }
+} catch {
+  /* no storage, no look: the tab falls back to whatever the cookie says */
+}
+
 const trpcClient = trpc.createClient({
   links: [
     httpBatchLink({
@@ -176,7 +198,24 @@ const trpcClient = trpc.createClient({
       // The reader's language rides along too, so a server fault can be
       // described to a customer in their own words (shared/errorMessages).
       headers() {
-        return { [LANG_HEADER]: storedLanguage() };
+        /*
+         * A look at a customer's portal, carried by this tab alone.
+         *
+         * sessionStorage is per tab, so the admin's other tabs keep their
+         * own session and this one asks as the customer. The server only
+         * prefers a bearer over the cookie when the token says it is a
+         * look, and a look can write nothing (shared/viewAsCustomer).
+         */
+        let viewAs: string | null = null;
+        try {
+          viewAs = sessionStorage.getItem(VIEW_AS_TOKEN_KEY);
+        } catch {
+          /* private mode: the tab simply has no look */
+        }
+        return {
+          [LANG_HEADER]: storedLanguage(),
+          ...(viewAs ? { authorization: `Bearer ${viewAs}` } : {}),
+        };
       },
       async fetch(input, init) {
         try {
