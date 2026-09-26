@@ -72,6 +72,19 @@ function visibleFields(o: AnyRow) {
   return {
     id: o.id,
     orderCode: o.orderCode ?? null,
+    /*
+     * The number the shop itself gave the purchase.
+     *
+     * Published for the owner's re-order button, 2026-09-26: the message the
+     * customer sends back carries it, so the office can find the exact
+     * purchase and buy it again without anybody describing a pair of
+     * sunglasses down a phone line (shared/reorderRequest).
+     *
+     * It is an order id inside a platform's own account, not a way to reach
+     * the supplier — the shop URL, the WeChat id and the contact stay out,
+     * as they always were.
+     */
+    orderNumber: o.orderNumber ?? null,
     orderType: o.orderType,
     status: o.status,
     customerId: o.customerId ?? null,

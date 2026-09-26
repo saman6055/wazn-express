@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { onImageError } from "@/lib/imageFallback";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
+import { ReorderButton } from "@/components/portal/ReorderButton";
 import { openWaznChat, waznChatMessage } from "@/lib/waznChat";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -1119,6 +1120,22 @@ export default function PortalFullPackage() {
                               </span>
                             </div>
                           )}
+                          {/*
+                            * The cheapest repeat sale there is: they liked
+                            * the thing and they are looking at it
+                            * (shared/reorderRequest, owner 2026-09-26).
+                            */}
+                          <ReorderButton
+                            language={language}
+                            subject={{
+                              orderCode: order.orderCode,
+                              orderNumber: (order as { orderNumber?: string | null }).orderNumber ?? null,
+                              productName: order.productName,
+                              trackingNumber: order.trackingNumber,
+                              quantity: order.quantity,
+                              image: [(order as { productImage?: unknown }).productImage, (order as { productImages?: unknown }).productImages],
+                            }}
+                          />
                           <WhatsAppHelpButton
                             language={language}
                             section={language === "ku" ? "پاکێجی تەواو / کڕین بە تێچوو" : language === "ar" ? "الطرد الكامل / العمولة" : language === "zh" ? "全包裹/佣金" : "Full package / commission"}
