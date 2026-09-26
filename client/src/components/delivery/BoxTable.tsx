@@ -44,7 +44,7 @@ import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/deliv
 import { printBoxLabel, printBoxReceipt, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
-import { fmtUsd } from "@/lib/portalFormat";
+import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { companyContact, logoUrlOnDark } from "@/lib/brand";
@@ -276,6 +276,15 @@ export function BoxTable({
             <TableHead>{t("delivery.deliveryMethod")}</TableHead>
             <TableHead>{t("delivery.status")}</TableHead>
             <TableHead className="text-center">{t("delivery.packages")}</TableHead>
+            {/*
+              * The owner, 2026-09-26: «لێرە گرنگە وەزنی بۆکسەکەش
+              * نیشان بدات». The row said how many parcels and how much
+              * they are worth, and nothing about what the courier is being
+              * handed — which is the number he is charged by.
+              */}
+            <TableHead className="text-end">
+              {pickLang(language, { ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" })}
+            </TableHead>
             <TableHead className="text-end">{t("delivery.totalValue")}</TableHead>
             <TableHead className="text-end">{t("delivery.deliveryCharge")}</TableHead>
             <TableHead>{t("delivery.date")}</TableHead>
@@ -359,6 +368,13 @@ export function BoxTable({
                   )}
                 </TableCell>
                 <TableCell className="text-center font-medium">{box.totalPackages}</TableCell>
+                <TableCell className="text-end font-mono text-sm tabular-nums">
+                  {Number(box.totalWeightKg || 0) > 0 ? (
+                    <bdi dir="ltr">{fmtNumber(Number(box.totalWeightKg), 2)} kg</bdi>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-end font-mono text-sm">
                   {fmtUsd(Number(box.totalValueUsd || 0))}
                 </TableCell>

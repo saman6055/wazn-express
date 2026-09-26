@@ -965,37 +965,46 @@ function DashboardLayoutContent({
           fullScreen && !isMobile && "hidden",
           isMobile ? "top-14" : "top-0"
         )}>
-          {/* Nav cluster — Windows 11–style rounded pill group */}
-          <div className="flex items-center gap-0.5 rounded-full bg-muted/50 p-0.5">
+          {/*
+            * Nav cluster — Windows 11–style rounded pill group.
+            *
+            * The owner, 2026-09-26: «ئەو دوو ئیشارەی چوونە پێش و گەڕانەوە
+            * جوان دیار نیە». They were ghost buttons — no edge, a hairline
+            * icon, on a pale pill — and a control that does not look like a
+            * control is one nobody presses. Each has its own face now, the
+            * arrows are drawn heavier, and the cluster is a shade darker
+            * than the bar it sits on.
+            */}
+          <div className="flex items-center gap-1 rounded-full bg-muted p-1 shadow-inner">
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full"
+              className="h-8 w-8 rounded-full border border-border bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
               title={t("nav.back") || "گەڕانەوە"}
               aria-label={t("nav.back") || "گەڕانەوە"}
               onClick={() => goBackOr("/dashboard", setLocation)}
             >
-              {isRTL ? <ChevronRight className="h-4 w-4" /> : <ChevronLeft className="h-4 w-4" />}
+              {isRTL ? <ChevronRight className="h-4 w-4" strokeWidth={2.75} /> : <ChevronLeft className="h-4 w-4" strokeWidth={2.75} />}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full"
+              className="h-8 w-8 rounded-full border border-border bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
               title={t("nav.forward") || "بۆ دواتر"}
               aria-label={t("nav.forward") || "بۆ دواتر"}
               onClick={() => window.history.forward()}
             >
-              {isRTL ? <ChevronLeft className="h-4 w-4" /> : <ChevronRight className="h-4 w-4" />}
+              {isRTL ? <ChevronLeft className="h-4 w-4" strokeWidth={2.75} /> : <ChevronRight className="h-4 w-4" strokeWidth={2.75} />}
             </Button>
             <Button
               variant="ghost"
               size="icon"
-              className="h-8 w-8 rounded-full"
+              className="h-8 w-8 rounded-full border border-border bg-background text-foreground shadow-sm hover:bg-accent hover:text-accent-foreground"
               title={t("nav.home") || "پەڕەی سەرەکی"}
               aria-label={t("nav.home") || "پەڕەی سەرەکی"}
               onClick={() => setLocation("/dashboard")}
             >
-              <Home className="h-4 w-4" />
+              <Home className="h-4 w-4" strokeWidth={2.75} />
             </Button>
           </div>
 
