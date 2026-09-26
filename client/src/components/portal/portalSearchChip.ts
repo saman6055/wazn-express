@@ -16,7 +16,9 @@ type Words = { ku: string; en: string; ar: string; zh: string };
 export function searchStatusWords(item: SearchItem, originCountries: ReadonlySet<number>): Words | null {
   switch (item.kind) {
     case "parcel":
-      return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries);
+      // The batch travels with the item, so the chip can ask it whether
+      // the goods could be here at all (lib/packageStatus).
+      return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries, item.batch?.status);
     case "order":
       if (item.status === "returned") return PACKAGE_STATUS_LABEL.returned ?? null;
       return orderStatusLabel(item.status) ?? ORDER_NOT_SHIPPED_LABEL;

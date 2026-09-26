@@ -55,7 +55,9 @@ describe("one card, one sheet, wherever a parcel is listed", () => {
 
   it("the search's chip and the sheet's say the same words", () => {
     const chip = read("components/portal/portalSearchChip.ts");
-    expect(chip).toContain("return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries);");
+    // It also hands over the batch, so the chip can refuse to say Erbil
+    // for a parcel whose shipment has not left China (2026-09-26).
+    expect(chip).toContain("return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries, item.batch?.status);");
     const sheet = read("components/portal/PortalParcelSheet.tsx");
     expect(sheet).toContain("words: searchStatusWords(shownItem, origins)");
   });

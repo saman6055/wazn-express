@@ -76,8 +76,15 @@ export interface ParcelFacts {
   status?: string | null;
 }
 
-/** A batch at or past the depot has arrived, whatever else is true. */
-const BATCH_ARRIVED = ["arrived", "customs", "at_depot", "delivered", "closed"];
+/**
+ * A batch at or past the depot has arrived, whatever else is true.
+ *
+ * Exported because the counter asks the same question before stamping a
+ * parcel "ready to collect" (server/routers/scanning.router): one list,
+ * so the stamp and the timeline cannot disagree about where the goods are.
+ */
+export const BATCH_ARRIVED_STATUSES = ["arrived", "customs", "at_depot", "delivered", "closed"];
+const BATCH_ARRIVED = BATCH_ARRIVED_STATUSES;
 
 /**
  * A parcel registered at the destination has no journey to show.
@@ -99,6 +106,21 @@ export function endingOf(facts: Pick<ParcelFacts, "status">): ParcelEnding | nul
 }
 
 /**
+ * Could this parcel physically be in the Erbil depot?
+ *
+ * Exported because the portal's chip asks the same question of a row that
+ * carries only its batch's status (client/src/lib/packageStatus).
+ */
+export function goodsCouldBeHere(
+  facts: Pick<ParcelFacts, "registeredAtOrigin" | "batch">,
+): boolean {
+  if (facts.registeredAtOrigin === false) return true;
+  const status = (facts.batch?.status ?? "").trim();
+  if (!facts.batch) return true;
+  return BATCH_ARRIVED.includes(status);
+}
+
+/**
  * The furthest thing that is true.
  *
  * Each fact implies a stage the parcel must be at least at; the answer is
@@ -111,7 +133,22 @@ export function parcelStage(facts: ParcelFacts): ParcelStage | ParcelEnding {
   if (ending) return ending;
 
   if (facts.box?.paidInFull) return "delivered";
-  if (facts.box) return "ready";
+  /*
+   * A box means the goods are here — usually.
+   *
+   * Boxes are made in the Erbil depot, so one existing is normally proof
+   * the parcel arrived. But a box can also be built from a batch before it
+   * flies, to plan the sorting, and then it proves nothing about where the
+   * goods are. The owner, 2026-09-26, looking at AIR-2026-041: the shipment
+   * said «لە کۆگای چین» and every parcel inside it said
+   * «ئامادەیە بۆ وەرگرتن» — a customer reading that drives to the
+   * office for goods that have not left China.
+   *
+   * So the box counts when the goods could be here: a parcel that never
+   * travelled, a parcel with no batch (somebody boxed it at the counter),
+   * or a batch that has reached Erbil. Otherwise the journey below answers.
+   */
+  if (facts.box && goodsCouldBeHere(facts)) return "ready";
 
   // Only a parcel that travelled with us has the two middle stages.
   if (facts.registeredAtOrigin !== false) {

@@ -1,5 +1,6 @@
 import { statusForScan, advanceStatus } from "../lib/scanStatus";
 import { chargeBoxDeliveryFee, markBoxContentsDelivered, finishPaidBox, reopenDeliveredBox } from "../lib/boxLifecycle";
+import { BATCH_ARRIVED_STATUSES } from "@shared/parcelStage";
 import { resolveGoodsCategory } from "../lib/goodsCategory";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
@@ -1501,14 +1502,29 @@ export const deliveryBoxRouter = router({
         scannedById: ctx.user.id,
       });
 
-      // Putting a package into a delivery box means it is physically in the
-      // Erbil depot, being sorted for this customer. That is the moment the
-      // customer's own goods reach the city — batch status cannot say it,
-      // because a batch is shared by everyone in it.
-      //
-      // advanceStatus keeps this from moving anything backwards: a box built
-      // after delivery, or from a returned package, leaves the status alone.
-      if (pkg?.id) {
+      /*
+       * Putting a package into a delivery box usually means it is physically
+       * in the Erbil depot, being sorted for this customer. That is the
+       * moment the customer's own goods reach the city — batch status cannot
+       * say it, because a batch is shared by everyone in it.
+       *
+       * Usually. A box can also be built from a batch before it flies, to
+       * plan the sorting, and stamping "ready to collect" then tells the
+       * customer to come and collect goods that are still in China — which
+       * is what the owner found on AIR-2026-041, 2026-09-26: the shipment
+       * said «لە کۆگای چین» and all six parcels inside it said
+       * «ئامادەیە بۆ وەرگرتن».
+       *
+       * So the stamp waits for the batch to arrive. A parcel with no batch
+       * is unaffected: it was boxed at the counter, and it is here.
+       *
+       * advanceStatus keeps this from moving anything backwards: a box built
+       * after delivery, or from a returned package, leaves the status alone.
+       */
+      const batchHere = !pkg?.batchId || BATCH_ARRIVED_STATUSES.includes(
+        String((await db.getBatchById(pkg.batchId))?.status ?? ""),
+      );
+      if (pkg?.id && batchHere) {
         try {
           const next = advanceStatus(pkg.status, "ready_for_delivery");
           if (next) {

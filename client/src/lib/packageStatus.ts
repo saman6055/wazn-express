@@ -8,6 +8,8 @@
  * portal-audit.test.ts fails if this map and the enum ever disagree again.
  */
 
+import { goodsCouldBeHere } from "@shared/parcelStage";
+
 type L = { ku: string; en: string; ar: string; zh: string };
 
 /**
@@ -119,11 +121,28 @@ export function registeredInChina(parcel: ParcelWhere, originCountries: Readonly
  * where one fits, the exact name otherwise — «لە گومرگ» for customs (the
  * owner kept it), out for delivery, delivered, returned, cancelled.
  */
-export function parcelStatusWords(parcel: ParcelWhere, originCountries: ReadonlySet<number>): L | null {
+export function parcelStatusWords(
+  parcel: ParcelWhere,
+  originCountries: ReadonlySet<number>,
+  /** The status of the batch it travelled in, when the caller knows it. */
+  batchStatus?: string | null,
+): L | null {
   const status = String(parcel.status ?? "");
   switch (status) {
-    case "ready_for_delivery":
+    case "ready_for_delivery": {
+      /*
+       * "Ready to collect" is stamped when a parcel goes into a box — and a
+       * box can be built from a batch before it flies. Saying Erbil then
+       * sends somebody to the office for goods still in China (the owner,
+       * 2026-09-26, on AIR-2026-041). With the batch known, the batch
+       * decides; without it, the stamp stands, because a boxed parcel with
+       * no batch was boxed at the counter.
+       */
+      if (batchStatus !== undefined && batchStatus !== null && !goodsCouldBeHere({ batch: { status: batchStatus } })) {
+        return String(batchStatus) === "in_transit" ? PARCEL_WHERE_WORDS.onTheWay : PARCEL_WHERE_WORDS.china;
+      }
       return PARCEL_WHERE_WORDS.erbil;
+    }
     case "in_transit":
       return PARCEL_WHERE_WORDS.onTheWay;
     case "registered":

@@ -141,6 +141,14 @@ export interface OrderRow {
 export interface BatchRow {
   id: number;
   batchCode?: string | null;
+  /**
+   * The shipment's own status.
+   *
+   * Carried so a parcel's chip can ask whether the goods could be in Erbil
+   * at all: "ready to collect" is stamped when a parcel goes into a box, and
+   * a box can be built from a batch before it flies (lib/packageStatus).
+   */
+  status?: string | null;
   shippingType?: string | null;
   estimatedArrival?: When;
   actualArrival?: When;
