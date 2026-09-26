@@ -60,6 +60,16 @@ export interface CloseCheckMoney {
   profitUsd: number | null;
 }
 
+/**
+ * The lists a check sheet can be made of.
+ *
+ * Named here because the screen asks for one by name and the server reads
+ * the same name off the facts — a typo on either side would quietly print
+ * an empty sheet (owner, 2026-09-26).
+ */
+export const CHECK_SHEET_SECTIONS = ["unboxed", "notArrivalChecked", "unmeasured", "ownerless"] as const;
+export type CheckSheetSection = (typeof CHECK_SHEET_SECTIONS)[number];
+
 /** Returned or cancelled: nothing left to box, check in or charge. */
 export const ENDED_PARCEL_STATUSES = ["returned", "cancelled"] as const;
 

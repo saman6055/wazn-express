@@ -2697,7 +2697,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 {/* The owner's checks before a batch closes: money, cartons with
                     no box, never checked in, unmeasured, ownerless, boxes still
                     owing, a missing number. Warnings only (2026-09-18). */}
-                <BatchCloseCheckSections audit={auditData} batchCode={auditData?.batchCode} />
+                <BatchCloseCheckSections audit={auditData} batchCode={auditData?.batchCode} batchId={auditData?.batchId} />
 
                 {/* Warning: shared-tracking siblings outside batch */}
                 {auditData.findings.sharedSiblingNotInBatch?.length > 0 && (

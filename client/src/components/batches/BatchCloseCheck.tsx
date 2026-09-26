@@ -1,11 +1,13 @@
-import { useState, type ReactNode } from "react";
-import { AlertTriangle, Banknote, Box, Hash, ImageOff, PackageX, Printer, ScanLine, Scale, UserX } from "lucide-react";
+import { useRef, useState, type ReactNode } from "react";
+import { AlertTriangle, Banknote, Box, FileDown, Hash, ImageOff, Loader2, PackageX, ScanLine, Scale, Share2, UserX } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { fmtUsd } from "@/lib/portalFormat";
 import { CopyButton } from "@/components/CopyButton";
-import { printCloseCheckSection } from "@/lib/closeCheckPrint";
+import { toast } from "sonner";
+import { trpc } from "@/lib/trpc";
+import type { CheckSheetSection } from "@shared/batchCloseCheck";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { AlertParcelSheet } from "@/components/registrations/AlertParcelSheet";
 import { customerCodeOnly } from "@shared/customerCode";
@@ -87,8 +89,96 @@ function Tile({ label, value, warn, danger, mono }: { label: string; value: stri
   );
 }
 
+
+/**
+ * One section, as a file the office can keep and send.
+ *
+ * The owner, 2026-09-26, on the first attempt: the print dialog is not it.
+ * «سیستەمی خۆم بیکات بە پی دی ئێف و بۆ کوێی ناو کۆمپیوتەر و
+ * ئەپەکان بمەوێ بتوانم شێری بکەم، وەکو پی دی ئێفی وەسل.»
+ *
+ * So the same road the receipt and the account statement take: the server
+ * writes the PDF, the browser saves it, and where the device has a share
+ * sheet it goes straight into WhatsApp. The language is the one the office
+ * is reading in.
+ */
+function CheckSheetPdfButton({
+  batchId,
+  section,
+  title,
+  hint,
+  testId,
+}: {
+  batchId: number;
+  section: CheckSheetSection;
+  title: string;
+  hint: string;
+  testId: string;
+}) {
+  const { language } = useLanguage();
+  const L = (w: Words) => pickLang(language, w);
+  const wantShare = useRef(false);
+
+  const make = trpc.batches.getCheckSheetPdf.useMutation({
+    onSuccess: async (data) => {
+      const bytes = atob(data.pdf);
+      const arr = new Uint8Array(bytes.length);
+      for (let i = 0; i < bytes.length; i += 1) arr[i] = bytes.charCodeAt(i);
+      const blob = new Blob([arr], { type: "application/pdf" });
+      const file = new File([blob], data.filename, { type: "application/pdf" });
+
+      if (wantShare.current) {
+        try {
+          if (navigator.canShare?.({ files: [file] })) {
+            await navigator.share({ files: [file] });
+            return;
+          }
+        } catch (err) {
+          // The person closing the share sheet is not a failure.
+          if ((err as Error)?.name === "AbortError") return;
+        }
+      }
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = data.filename;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success(L({ ku: "پی دی ئێف داگیرا", en: "PDF downloaded", ar: "تم تنزيل PDF", zh: "PDF 已下载" }));
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
+  const ask = (share: boolean) => {
+    wantShare.current = share;
+    make.mutate({ batchId, section, language: language as "ku" | "en" | "ar" | "zh", title, hint });
+  };
+
+  const pill =
+    "inline-flex items-center gap-1 rounded-md border border-amber-400/60 px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100 disabled:opacity-60 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-900/40";
+
+  return (
+    <span className="ms-auto inline-flex items-center gap-1">
+      <button type="button" className={pill} disabled={make.isPending} onClick={() => ask(false)} data-testid={`${testId}-pdf`}>
+        {make.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <FileDown className="h-3.5 w-3.5" />}
+        PDF
+      </button>
+      <button
+        type="button"
+        className={pill}
+        disabled={make.isPending}
+        onClick={() => ask(true)}
+        title={L({ ku: "ناردن", en: "Share", ar: "مشارکة", zh: "分享" })}
+        data-testid={`${testId}-share`}
+      >
+        <Share2 className="h-3.5 w-3.5" />
+      </button>
+    </span>
+  );
+}
+
 /** Every new section, in the order a person should read them. */
-export function BatchCloseCheckSections({ audit, batchCode }: { audit: CloseCheckAudit; batchCode?: string }) {
+export function BatchCloseCheckSections({ audit, batchCode, batchId }: { audit: CloseCheckAudit; batchCode?: string; batchId?: number }) {
   const { language } = useLanguage();
   const L = (w: Words) => pickLang(language, w);
   const [open, setOpen] = useState<{ parcel: CloseCheckParcel; reason: Words } | null>(null);
@@ -113,7 +203,8 @@ export function BatchCloseCheckSections({ audit, batchCode }: { audit: CloseChec
         parcels={f.unboxed ?? []}
         onOpen={show(REASON.unboxed)}
         testId="close-check-unboxed"
-        batchCode={batchCode}
+        section="unboxed"
+        batchId={batchId}
       />
       <ParcelSection
         icon={<ScanLine className="h-4 w-4" />}
@@ -122,7 +213,8 @@ export function BatchCloseCheckSections({ audit, batchCode }: { audit: CloseChec
         parcels={f.notArrivalChecked ?? []}
         onOpen={show(REASON.unchecked)}
         testId="close-check-unchecked"
-        batchCode={batchCode}
+        section="notArrivalChecked"
+        batchId={batchId}
       />
       <ParcelSection
         icon={<Scale className="h-4 w-4" />}
@@ -131,7 +223,8 @@ export function BatchCloseCheckSections({ audit, batchCode }: { audit: CloseChec
         parcels={f.unmeasured ?? []}
         onOpen={show(REASON.unmeasured)}
         testId="close-check-unmeasured"
-        batchCode={batchCode}
+        section="unmeasured"
+        batchId={batchId}
       />
       <ParcelSection
         icon={<UserX className="h-4 w-4" />}
@@ -140,7 +233,8 @@ export function BatchCloseCheckSections({ audit, batchCode }: { audit: CloseChec
         parcels={f.ownerless ?? []}
         onOpen={show(REASON.ownerless)}
         testId="close-check-ownerless"
-        batchCode={batchCode}
+        section="ownerless"
+        batchId={batchId}
       />
 
       <OtherSection boxes={f.unpaidBoxes ?? []} capped={!!f.unpaidBoxesCapped} missingNumber={f.missingNumber ?? []} />
@@ -212,7 +306,8 @@ function ParcelSection({
   parcels,
   onOpen,
   testId,
-  batchCode,
+  section,
+  batchId,
 }: {
   icon: ReactNode;
   title: string;
@@ -220,8 +315,9 @@ function ParcelSection({
   parcels: CloseCheckParcel[];
   onOpen: (parcel: CloseCheckParcel) => void;
   testId: string;
-  /** Printed at the head of the sheet, so a shared PDF names its shipment. */
-  batchCode?: string;
+  /** Which list the server should gather for the file. */
+  section?: CheckSheetSection;
+  batchId?: number;
 }) {
   const { language } = useLanguage();
   const L = (w: Words) => pickLang(language, w);
@@ -244,15 +340,15 @@ function ParcelSection({
           * answer where a carton went. The print dialog saves it; the PDF
           * goes into the chat (lib/closeCheckPrint).
           */}
-        <button
-          type="button"
-          className="ms-auto inline-flex items-center gap-1 rounded-md border border-amber-400/60 px-2 py-0.5 text-[11px] font-medium text-amber-900 hover:bg-amber-100 dark:border-amber-700/60 dark:text-amber-200 dark:hover:bg-amber-900/40"
-          onClick={() => printCloseCheckSection({ language, title, hint, batchCode: batchCode ?? "", parcels })}
-          data-testid={`${testId}-pdf`}
-        >
-          <Printer className="h-3.5 w-3.5" />
-          PDF
-        </button>
+        {section && batchId ? (
+          <CheckSheetPdfButton
+            batchId={batchId}
+            section={section}
+            title={title}
+            hint={hint}
+            testId={testId}
+          />
+        ) : null}
       </div>
       <div className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mb-2">{hint}</div>
       <div className="space-y-1.5">

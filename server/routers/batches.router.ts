@@ -686,6 +686,59 @@ export const batchesRouter = router({
      *
      * Read-only — never mutates anything. Safe to call repeatedly.
      */
+    /**
+     * One section of that audit, as a PDF the office can keep and send.
+     *
+     * The owner, 2026-09-26: «سیستەمی خۆم بیکات بە پی دی ئێف و بۆ
+     * کوێی ناو کۆمپیوتەر و ئەپەکان بمەوێ بتوانم شێری بکەم، بە هەر
+     * زمانێک بمەوێ، وەکو پی دی ئێفی وەسل.»
+     *
+     * The rows are gathered here rather than sent up from the screen: the
+     * screen is showing a shortened list with a "show all" button, and a
+     * sheet that is short because somebody had not expanded a list is the
+     * kind of mistake nobody notices until China asks about a carton that
+     * is not on it.
+     */
+    getCheckSheetPdf: staffProcedure
+      .input(z.object({
+        batchId: idSchema,
+        section: z.enum(["unboxed", "notArrivalChecked", "unmeasured", "ownerless"]),
+        language: z.enum(["ku", "en", "ar", "zh"]).default("ku"),
+        title: z.string().min(1).max(120),
+        hint: z.string().max(400).optional(),
+      }))
+      .mutation(async ({ input }) => {
+        const batch = await db.getBatchById(input.batchId);
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچ") });
+
+        const close = await db.getBatchCloseFacts(input.batchId);
+        const rows = (close as unknown as Record<string, unknown>)[input.section];
+        const list = Array.isArray(rows) ? rows : [];
+
+        const { generateCheckSheetPdf } = await import("../services/closeCheckPdf");
+        const pdf = await generateCheckSheetPdf({
+          lang: input.language,
+          title: input.title,
+          hint: input.hint,
+          batchCode: batch.batchCode ?? String(input.batchId),
+          rows: list.map((r: Record<string, unknown>) => ({
+            packageCode: String(r.packageCode ?? ""),
+            trackingNumber: (r.trackingNumber as string | null) ?? null,
+            customerCode: (r.customerCode as string | null) ?? null,
+            customerName: (r.customerName as string | null) ?? null,
+            weightKg: (r.weightKg as string | null) ?? null,
+            volumeCbm: (r.volumeCbm as string | null) ?? null,
+            photo: (r.photo as string | null) ?? null,
+          })),
+        });
+
+        return {
+          pdf: pdf.toString("base64"),
+          filename: `${batch.batchCode ?? input.batchId}-${input.section}.pdf`,
+          count: list.length,
+        };
+      }),
+
     getPreDeliveryAudit: staffProcedure
       .input(z.object({ batchId: idSchema }))
       .query(async ({ input }) => {

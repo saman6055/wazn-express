@@ -76,7 +76,7 @@ describe("the dialog shows it", () => {
     const mismatch = page.indexOf("{/* Blocking: customer mismatch */}");
     // It gained the batch code, which each section prints at the head of
     // its own sheet (lib/closeCheckPrint, 2026-09-26).
-    const sections = page.indexOf("<BatchCloseCheckSections audit={auditData} batchCode={auditData?.batchCode} />");
+    const sections = page.indexOf("<BatchCloseCheckSections audit={auditData} batchCode={auditData?.batchCode} batchId={auditData?.batchId} />");
     expect(mismatch).toBeGreaterThan(-1);
     expect(sections).toBeGreaterThan(mismatch);
   });
