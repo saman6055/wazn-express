@@ -52,13 +52,25 @@ export function TrackingNumberLink({
     window.open(target.url, "_blank", "noopener,noreferrer");
   };
 
+  /*
+   * The number takes the colour it is given.
+   *
+   * It used to be `text-primary` on the button itself, which won over the
+   * `text-white` the portal's blue header passes down — so the waybill read
+   * as a faint tint on a dark blue field (the owner, 2026-09-26: «رەنگی
+   * AWB بکە سپی»). Tailwind classes do not beat each other by being
+   * later in an attribute, so the default is only applied when the caller
+   * has not chosen a colour of its own.
+   */
+  const colourGiven = /(^|\s)text-/.test(className ?? "");
+
   return (
-    <span className={cn("inline-flex items-center gap-1.5 flex-wrap", className)}>
+    <span className={cn("inline-flex items-center gap-1.5 flex-wrap", !colourGiven && "text-primary", className)}>
       <button
         type="button"
         onClick={open}
         title={t("batches.trackOnCarrierSite")}
-        className="font-mono text-primary underline underline-offset-2 hover:opacity-80 inline-flex items-center gap-1"
+        className="font-mono underline underline-offset-2 hover:opacity-80 inline-flex items-center gap-1"
       >
         {value}
         <ExternalLink className="h-3.5 w-3.5 shrink-0" />

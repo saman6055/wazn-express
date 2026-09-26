@@ -37,12 +37,31 @@ describe("air waybill", () => {
     expect(etihad?.url).toContain("awb=60712345675");
   });
 
-  it("names the carrier and opens its page when the number can't be passed", () => {
+  it("names the carrier, and lands on the data rather than an empty form", () => {
+    /*
+     * The owner, 2026-09-26: «ئەوە ئەچێتە تورکیش ئیرلاین بە ناتەواوی» — the
+     * click opened Turkish Cargo's tracker with the prefix filled and the
+     * number still to paste.
+     *
+     * Checked again that day: the tracker takes nothing in the URL and
+     * searching does not change the address, so there is no deep link to
+     * write. The aggregator does take it, so the number goes there and the
+     * airline's own page travels beside it.
+     */
     const turkish = getAwbTracking("235-12345675");
     expect(turkish?.carrierName).toBe("Turkish Cargo");
-    // Nothing to pre-fill, so the caller copies the number for pasting.
-    expect(turkish?.prefilled).toBe(false);
-    expect(turkish?.url).toContain("turkishcargo.com");
+    expect(turkish?.prefilled).toBe(true);
+    expect(turkish?.url).toContain("track-trace.com/aircargo");
+    expect(turkish?.url).toContain("235-12345675");
+    expect(turkish?.officialUrl).toContain("turkishcargo.com");
+  });
+
+  it("still opens the carrier's own page when the number cannot be trusted", () => {
+    // A wrong check digit is dropped by the aggregator, so there is nothing
+    // to gain by sending it there.
+    const wrong = getAwbTracking("235-12345670");
+    expect(wrong?.prefilled).toBe(false);
+    expect(wrong?.url).toContain("turkishcargo.com");
   });
 
   it("falls back to the aggregator for an airline we don't know", () => {
@@ -120,5 +139,27 @@ describe("container number", () => {
 
   it("refuses to send a mistyped number to the aggregator", () => {
     expect(getContainerTracking("TGHU1234561", "")).toBeNull();
+  });
+});
+
+describe("the number takes the colour it is given", () => {
+  it("does not force its own over the portal's white header", () => {
+    /*
+     * The owner, 2026-09-26: «رەنگی AWB بکە سپی». The button carried
+     * `text-primary`, which beat the `text-white` the blue header passes
+     * down — Tailwind classes do not beat each other by being later in an
+     * attribute — so the waybill read as a faint tint on dark blue.
+     */
+    const fs = require("fs") as typeof import("fs");
+    const path = require("path") as typeof import("path");
+    const src = fs.readFileSync(
+      path.resolve(__dirname, "../components/batches/TrackingNumberLink.tsx"),
+      "utf8",
+    );
+    const button = src.slice(src.indexOf("<button"), src.indexOf("</button>"));
+    expect(button.length).toBeGreaterThan(20);
+    expect(button).not.toContain("text-primary");
+    expect(src).toContain("const colourGiven");
+    expect(src).toContain('!colourGiven && "text-primary"');
   });
 });

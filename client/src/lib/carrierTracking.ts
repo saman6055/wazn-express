@@ -27,6 +27,14 @@ export interface TrackingTarget {
   url: string;
   /** True when the URL carries the number; false means "copy, then paste". */
   prefilled: boolean;
+  /**
+   * The carrier's own page, when the click goes somewhere else.
+   *
+   * Set when a carrier has a tracking page that cannot take the number: the
+   * number goes to the aggregator, which can, and this is offered beside it
+   * for whoever wants the airline's own words.
+   */
+  officialUrl?: string;
 }
 
 /**
@@ -242,7 +250,31 @@ export function getAwbTracking(raw: string | null | undefined): TrackingTarget |
   if (airline?.deepLink) {
     return { carrierName: airline.name, url: airline.deepLink(awb.prefix, awb.serial), prefilled: true };
   }
+  /*
+   * An airline with a tracking page but no deep link.
+   *
+   * It used to open that page, with the number copied for pasting. The
+   * owner, 2026-09-26: «ئەوە ئەچێتە تورکیش ئیرلاین بە ناتەواوی» — he is
+   * shown an empty form with the prefix in it and has to paste the rest,
+   * which is not what a link is for.
+   *
+   * Checked again today against turkishcargo.com: the tracker is a form
+   * with generated field ids, it accepts nothing in the URL, and searching
+   * does not even change the address — so there is no deep link to write.
+   * The aggregator does take the number, in the fragment, and says "Number
+   * from URL inserted" when it lands. So the click goes there, where the
+   * data actually is, and the airline's own page travels beside it as
+   * `officialUrl` for anyone who wants the source.
+   */
   if (airline?.url) {
+    if (awb.valid) {
+      return {
+        carrierName: airline.name,
+        url: AGGREGATOR.air(awb.formatted),
+        prefilled: true,
+        officialUrl: airline.url,
+      };
+    }
     return { carrierName: airline.name, url: airline.url, prefilled: false };
   }
   // Unknown prefix, or an airline we can name but have nowhere to send. The
