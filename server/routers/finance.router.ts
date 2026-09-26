@@ -543,6 +543,31 @@ export const ledgerRouter = router({
     reconciliationReport: adminProcedure.query(async () => {
       return db.getLedgerReconciliation();
     }),
+
+    /**
+     * Goods a customer already has, that their account was never told about.
+     *
+     * The doors that bill an order arriving as a parcel were built on
+     * 2026-09-26 (db/orderCharging.db); everything that came through before
+     * them is still unbilled, and a box settled against it credited the
+     * customer money for goods they were carrying out.
+     *
+     * Read only. Nothing moves because the list was opened.
+     */
+    unbilledGoods: adminProcedure.query(async () => {
+      return db.findUnbilledArrivedOrders();
+    }),
+
+    /**
+     * And putting them right — only the orders named, by an admin, through
+     * the same charge a new order takes. An order somebody billed in the
+     * meantime is skipped, never billed twice.
+     */
+    billUnbilledGoods: adminProcedure
+      .input(z.object({ orderIds: z.array(z.number().int().positive()).min(1).max(500) }))
+      .mutation(async ({ input, ctx }) => {
+        return db.billUnbilledOrders(input.orderIds, ctx.user.id);
+      }),
     
     // ============ INVOICES ============
     

@@ -1,6 +1,8 @@
-import { and, eq, inArray, isNull } from "drizzle-orm";
+import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { getDb } from "./connection";
 import {
+  customers,
+  deliveryBoxes,
   deliveryBoxItems,
   fullPackageOrders,
   fullPackageOrderTrackings,
@@ -193,4 +195,203 @@ export async function chargeOrdersInBatch(
     .from(packages)
     .where(eq(packages.batchId, batchId));
   return chargeOrdersBehindTrackings(rows.map((r) => r.trackingNumber), userId);
+}
+
+/** Where the goods already are, which is why the debt is certain. */
+export type UnbilledWhere = "box" | "delivered" | "order_delivered";
+
+export interface UnbilledOrder {
+  orderId: number;
+  orderCode: string;
+  orderType: string;
+  productName: string | null;
+  customerId: number;
+  customerCode: string;
+  customerName: string;
+  amountUsd: number;
+  where: UnbilledWhere;
+  boxCode: string | null;
+  trackingNumber: string | null;
+  createdAt: Date | string | null;
+}
+
+/**
+ * The ones the doors were built too late for.
+ *
+ * Read only. It answers one question and no other: which goods has a
+ * customer already been given, that their account has never been told about?
+ *
+ * "Already been given" is deliberately narrow — the order is in a delivery
+ * box, or its parcel is marked delivered, or the order itself is. Goods still
+ * in China are not billed here whatever their age: charging at entry is the
+ * rule going forward (fullPackage.db chargeOrderAtCreation), and reaching
+ * back to bill things that have not arrived would be a second, quieter rule.
+ *
+ * Nothing moves because this was opened. Billing is a separate decision with
+ * its own button — the owner's, not a screen's.
+ */
+export async function findUnbilledArrivedOrders(): Promise<UnbilledOrder[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const candidates = await db
+    .select({
+      id: fullPackageOrders.id,
+      orderCode: fullPackageOrders.orderCode,
+      orderType: fullPackageOrders.orderType,
+      productName: fullPackageOrders.productName,
+      status: fullPackageOrders.status,
+      trackingNumber: fullPackageOrders.trackingNumber,
+      quantity: fullPackageOrders.quantity,
+      sellingPriceUsd: fullPackageOrders.sellingPriceUsd,
+      itemPriceUsd: fullPackageOrders.itemPriceUsd,
+      commissionFeeUsd: fullPackageOrders.commissionFeeUsd,
+      customerId: fullPackageOrders.customerId,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+      createdAt: fullPackageOrders.createdAt,
+    })
+    .from(fullPackageOrders)
+    .innerJoin(customers, eq(customers.id, fullPackageOrders.customerId))
+    .where(and(
+      eq(fullPackageOrders.isCharged, false),
+      isNull(fullPackageOrders.chargeTransactionId),
+      isNull(fullPackageOrders.deletedAt),
+      // A quote is not a debt until the customer approves it.
+      ne(fullPackageOrders.orderType, "purchase_request"),
+    ));
+  if (candidates.length === 0) return [];
+
+  const ids = candidates.map((o) => Number(o.id));
+
+  // Every tracking an order arrived on: its own, and the list for an order
+  // that came in several pieces.
+  const extra = await db
+    .select({
+      orderId: fullPackageOrderTrackings.fullPackageOrderId,
+      trackingNumber: fullPackageOrderTrackings.trackingNumber,
+    })
+    .from(fullPackageOrderTrackings)
+    .where(inArray(fullPackageOrderTrackings.fullPackageOrderId, ids));
+
+  const trackingsOf = new Map<number, string[]>();
+  const add = (orderId: number, tracking: string | null | undefined) => {
+    const t = clean(tracking);
+    if (!t) return;
+    const list = trackingsOf.get(orderId) ?? [];
+    if (!list.includes(t)) list.push(t);
+    trackingsOf.set(orderId, list);
+  };
+  for (const o of candidates) add(Number(o.id), o.trackingNumber);
+  for (const r of extra) add(Number(r.orderId), r.trackingNumber);
+
+  const allTrackings = Array.from(new Set(Array.from(trackingsOf.values()).flat()));
+
+  // In a box, or marked delivered: either way the customer has the goods.
+  const inBox = allTrackings.length
+    ? await db
+        .select({
+          trackingNumber: deliveryBoxItems.trackingNumber,
+          boxCode: deliveryBoxes.boxCode,
+        })
+        .from(deliveryBoxItems)
+        .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, deliveryBoxItems.boxId))
+        .where(inArray(deliveryBoxItems.trackingNumber, allTrackings))
+    : [];
+  const boxOf = new Map(inBox.map((r) => [clean(r.trackingNumber), r.boxCode]));
+
+  const arrived = allTrackings.length
+    ? await db
+        .select({ trackingNumber: packages.trackingNumber, status: packages.status })
+        .from(packages)
+        .where(and(
+          inArray(packages.trackingNumber, allTrackings),
+          eq(packages.status, "delivered"),
+        ))
+    : [];
+  const deliveredTrackings = new Set(arrived.map((r) => clean(r.trackingNumber)));
+
+  const { computeOrderChargeAmount } = await import("./fullPackage.db");
+
+  const rows: UnbilledOrder[] = [];
+  for (const o of candidates) {
+    const orderId = Number(o.id);
+    const trackings = trackingsOf.get(orderId) ?? [];
+    const boxTracking = trackings.find((t) => boxOf.has(t));
+    const deliveredTracking = trackings.find((t) => deliveredTrackings.has(t));
+
+    let where: UnbilledWhere | null = null;
+    if (boxTracking) where = "box";
+    else if (deliveredTracking) where = "delivered";
+    else if (String(o.status) === "delivered") where = "order_delivered";
+    if (!where) continue;
+
+    const amountUsd = computeOrderChargeAmount(o as never);
+    if (!(amountUsd > 0)) continue;
+
+    rows.push({
+      orderId,
+      orderCode: String(o.orderCode ?? ""),
+      orderType: String(o.orderType ?? ""),
+      productName: o.productName ?? null,
+      customerId: Number(o.customerId),
+      customerCode: String(o.customerCode ?? ""),
+      customerName: String(o.customerName ?? ""),
+      amountUsd: Math.round(amountUsd * 100) / 100,
+      where,
+      boxCode: boxTracking ? (boxOf.get(boxTracking) ?? null) : null,
+      trackingNumber: boxTracking ?? deliveredTracking ?? trackings[0] ?? null,
+      createdAt: o.createdAt ?? null,
+    });
+  }
+
+  // Oldest first: the debt that has been missing longest is the one to look
+  // at, and it is the one a customer is most likely to argue about.
+  rows.sort((a, b) => new Date(a.createdAt ?? 0).getTime() - new Date(b.createdAt ?? 0).getTime());
+  return rows;
+}
+
+/**
+ * Put them on the accounts — only the ones named, one at a time.
+ *
+ * Through the same charge as everything else, so the amount is the one rule
+ * and an order that somebody billed in the meantime is skipped rather than
+ * billed twice. What it could not do is reported back by order code, because
+ * a repair that silently half-finished is worse than one that did nothing.
+ */
+export async function billUnbilledOrders(
+  orderIds: number[],
+  userId: number,
+): Promise<{ charged: number; amountUsd: number; skipped: Array<{ orderCode: string; reason: string }> }> {
+  const ids = Array.from(new Set(orderIds.map(Number).filter(Boolean)));
+  const skipped: Array<{ orderCode: string; reason: string }> = [];
+  if (ids.length === 0) return { charged: 0, amountUsd: 0, skipped };
+
+  const db = await getDb();
+  if (!db) return { charged: 0, amountUsd: 0, skipped };
+
+  const rows = await db
+    .select()
+    .from(fullPackageOrders)
+    .where(and(
+      inArray(fullPackageOrders.id, ids),
+      eq(fullPackageOrders.isCharged, false),
+      isNull(fullPackageOrders.chargeTransactionId),
+      isNull(fullPackageOrders.deletedAt),
+    ));
+
+  const { chargeOrderAtCreation } = await import("./fullPackage.db");
+  let charged = 0;
+  let amountUsd = 0;
+  for (const order of rows) {
+    const result = await chargeOrderAtCreation(order as never, userId);
+    if (result.charged) {
+      charged += 1;
+      amountUsd = Math.round((amountUsd + result.amount) * 100) / 100;
+    } else {
+      skipped.push({ orderCode: String(order.orderCode ?? order.id), reason: result.reason ?? "unknown" });
+    }
+  }
+  appLogger.info("[OrderCharge] repair run", { asked: ids.length, charged, amountUsd, skipped: skipped.length });
+  return { charged, amountUsd, skipped };
 }

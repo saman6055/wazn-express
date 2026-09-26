@@ -66,3 +66,46 @@ describe("an order that travelled as a parcel", () => {
     );
   });
 });
+
+describe("the ones that arrived before the doors existed", () => {
+  /*
+   * The owner, 2026-09-26: "it has to fix the old ones too." The doors only
+   * bill what passes through them from now on.
+   */
+  const charging = read("server/db/orderCharging.db.ts");
+
+  it("are found by what the customer is holding, not by their age", () => {
+    const finder = charging.slice(
+      charging.indexOf("export async function findUnbilledArrivedOrders"),
+      charging.indexOf("export async function billUnbilledOrders"),
+    );
+    expect(finder.length).toBeGreaterThan(200);
+    // In a box, or delivered. Goods still in China are not billed by a
+    // repair — charging at entry is the rule going forward.
+    expect(finder).toContain('where = "box"');
+    expect(finder).toContain('eq(packages.status, "delivered")');
+    expect(finder).toContain('ne(fullPackageOrders.orderType, "purchase_request")');
+    // It reads. It must not write.
+    expect(finder).not.toMatch(/\.insert\(|\.update\(|chargeOrderAtCreation\(/);
+  });
+
+  it("are billed only when somebody names them", () => {
+    const repair = charging.slice(charging.indexOf("export async function billUnbilledOrders"));
+    expect(repair).toContain("inArray(fullPackageOrders.id, ids)");
+    expect(repair).toContain("eq(fullPackageOrders.isCharged, false)");
+    // What it could not do comes back by order code: a repair that silently
+    // half-finished is worse than one that did nothing.
+    expect(repair).toContain("skipped.push(");
+  });
+
+  it("are behind an admin, and a list that is read first", () => {
+    const router = read("server/routers/finance.router.ts");
+    expect(router).toContain("unbilledGoods: adminProcedure.query");
+    expect(router).toContain("billUnbilledGoods: adminProcedure");
+    const screen = read("client/src/components/admin/UnbilledGoodsSection.tsx");
+    // The scan runs when asked, not when the tab opens.
+    expect(screen).toContain("enabled: false");
+    expect(screen).toContain("billUnbilledGoods");
+    expect(read("client/src/pages/admin/DataManagement.tsx")).toContain("UnbilledGoodsSection");
+  });
+});
