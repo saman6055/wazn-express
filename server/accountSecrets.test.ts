@@ -59,7 +59,14 @@ describe("account secrets stay on the server", () => {
 describe("the wiring", () => {
   it("auth.me answers with the session account, not ctx.user", () => {
     const src = read("routers/auth.router.ts");
-    expect(src).toContain("me: publicProcedure.query(opts => sessionAccount(opts.ctx.user))");
+    // It grew a second line when the look-only session was added (it also
+    // says whose eyes are on the portal, shared/viewAsCustomer) — what must
+    // not change is that what goes out is the stripped account, never the
+    // raw context user with its hash and its office files.
+    const me = src.slice(src.indexOf("me: publicProcedure.query"), src.indexOf("exitViewAs"));
+    expect(me.length).toBeGreaterThan(20);
+    expect(me).toContain("sessionAccount(opts.ctx.user)");
+    expect(me).not.toMatch(/return\s+opts\.ctx\.user/);
   });
 
   it("the staff customer list and customer detail drop the secrets", () => {

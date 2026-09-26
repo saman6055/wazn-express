@@ -39,6 +39,15 @@ export type TrpcContext = {
   res: CreateExpressContextOptions["res"];
   user: ContextUser | null;
   logger: AppLogger;
+  /**
+   * An admin looking at this customer's portal, changing nothing.
+   *
+   * Read off the session cookie the same request already verified. It is a
+   * claim inside the signed token, so nothing on the client can set it, and
+   * the single check in trpc.ts refuses every mutation while it is true
+   * (shared/viewAsCustomer).
+   */
+  viewAs?: { by: number; name: string } | null;
 };
 
 /**
@@ -55,6 +64,24 @@ export type TrpcContext = {
  * verified, and any failure here leaves that still-valid token in place.
  */
 const RENEW_WHEN_REMAINING_MS = ONE_YEAR_MS - 7 * 24 * 60 * 60 * 1000;
+
+/**
+ * Is this session somebody looking, rather than the customer themselves?
+ *
+ * Decoded without verifying, because authenticateRequest has just verified
+ * this exact token — and a token that did not verify never reaches here.
+ */
+function readViewAs(req: CreateExpressContextOptions["req"]): { by: number; name: string } | null {
+  try {
+    const token = parseCookieHeader(req.headers.cookie ?? "")[COOKIE_NAME];
+    if (!token) return null;
+    const claims = decodeJwt(token) as { viewAs?: boolean; viewAsBy?: number; viewAsName?: string };
+    if (!claims.viewAs || !claims.viewAsBy) return null;
+    return { by: Number(claims.viewAsBy), name: String(claims.viewAsName ?? "") };
+  } catch {
+    return null;
+  }
+}
 
 async function renewCustomerSession(
   req: CreateExpressContextOptions["req"],
@@ -96,7 +123,9 @@ export async function createContext(
     user = null;
   }
 
-  if (user?.isCustomer) {
+  // A look-only session is never renewed: two hours is the whole of it.
+  const viewAs = user?.isCustomer ? readViewAs(opts.req) : null;
+  if (user?.isCustomer && !viewAs) {
     await renewCustomerSession(opts.req, opts.res, user);
   }
 
@@ -105,5 +134,6 @@ export async function createContext(
     res: opts.res,
     user,
     logger: appLogger,
+    viewAs,
   };
 }

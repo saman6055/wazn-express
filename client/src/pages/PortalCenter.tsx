@@ -4,6 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
+import { VIEW_AS_WORDS } from "@shared/viewAsCustomer";
 import { trpc } from "@/lib/trpc";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
@@ -417,6 +418,7 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
                   <TableHead className="text-center">{p({ ku: "خاوەنداری", en: "Claims", ar: "مطالبات", zh: "认领" })}</TableHead>
                   <TableHead className="text-center">{p({ ku: "چالاکی", en: "Activity", ar: "النشاط", zh: "活动" })}</TableHead>
                   <TableHead>{p({ ku: "دواجار چوونەژوورەوە", en: "Last login", ar: "آخر دخول", zh: "上次登录" })}</TableHead>
+                  <TableHead className="w-10" />
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -430,6 +432,9 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
                     <TableCell className="text-center tabular-nums">{c.claimCount || "—"}</TableCell>
                     <TableCell className="text-center tabular-nums">{c.activityCount || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(c.lastSignedIn)}</TableCell>
+                    <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
+                      <ViewAsButton customerId={c.id} name={c.fullName} p={p} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
@@ -439,6 +444,57 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
         )}
       </CardContent>
     </Card>
+  );
+}
+
+/**
+ * Open a customer's portal, to look.
+ *
+ * The owner, 2026-09-26: he needs to see what a customer sees, because a
+ * portal screen is built from one customer's own data and a fault in it is
+ * invisible from the office.
+ *
+ * It replaces this browser's staff session for two hours — both live in the
+ * same cookie — so it asks first, and the portal wears a bar the whole time
+ * with the way back on it (components/portal/ViewAsBanner). Nothing can be
+ * changed while looking: every write is refused on the server
+ * (shared/viewAsCustomer).
+ */
+function ViewAsButton({ customerId, name, p }: { customerId: number; name: string; p: (v: L) => string }) {
+  const view = trpc.portalCenter.viewAsCustomer.useMutation({
+    onSuccess: () => {
+      // A full load, not a route change: every cached answer in this tab
+      // belongs to the admin, and none of it belongs to the customer.
+      window.location.href = "/portal";
+    },
+    onError: (err) => toast.error(err.message),
+  });
+
+  return (
+    <Button
+      variant="ghost"
+      size="icon"
+      className="h-8 w-8"
+      title={p(VIEW_AS_WORDS.open)}
+      aria-label={p(VIEW_AS_WORDS.open)}
+      disabled={view.isPending}
+      data-testid={`view-as-${customerId}`}
+      onClick={async () => {
+        const ok = await confirmAction({
+          title: p(VIEW_AS_WORDS.open),
+          message: `${name} — ${p({
+            ku: "کۆتایی بە سێشنەکەی خۆت دێت لەم وێبگەڕەدا و پۆرتاڵی ئەم کڕیارە دەکرێتەوە بۆ ماوەی 2 کاتژمێر. تەنها بینینە — هیچ شتێک ناگۆڕدرێت.",
+            en: "Your own session in this browser ends and this customer's portal opens for 2 hours. Look only — nothing can be changed.",
+            ar: "تنتهي جلستك في هذا المتصفح ويُفتح بوابة هذا الزبون لمدة ساعتين. للعرض فقط.",
+            zh: "此浏览器中您的会话将结束，并打开该客户的门户 2 小时。仅可查看。",
+          })}`,
+          confirmLabel: p(VIEW_AS_WORDS.open),
+        });
+        if (ok) view.mutate({ customerId });
+      }}
+    >
+      {view.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
+    </Button>
   );
 }
 

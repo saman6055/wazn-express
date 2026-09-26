@@ -1,5 +1,6 @@
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 import { mayPerform, READ_ONLY_REFUSAL } from '@shared/readOnlyRole';
+import { viewAsMayPerform, VIEW_AS_REFUSAL } from '@shared/viewAsCustomer';
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { LANG_HEADER } from "@shared/errorMessages";
@@ -80,7 +81,7 @@ export const router = t.router;
 export const publicProcedure = t.procedure;
 
 const requireUser = t.middleware(async opts => {
-  const { ctx, next, type } = opts;
+  const { ctx, next, type, path } = opts;
 
   if (!ctx.user) {
     throw new TRPCError({ code: "UNAUTHORIZED", message: UNAUTHED_ERR_MSG });
@@ -100,6 +101,19 @@ const requireUser = t.middleware(async opts => {
    */
   if (!mayPerform(ctx.user.role, type)) {
     throw new TRPCError({ code: "FORBIDDEN", message: READ_ONLY_REFUSAL });
+  }
+
+  /*
+   * And the same question for an admin looking at a customer's portal.
+   *
+   * It rides on the auditor's rule rather than beside it: one place where
+   * "is this a write?" is asked, so a look-only session cannot leave a
+   * declaration, a claim or a rating on a real customer's account, and a
+   * router written next year is covered before it is written
+   * (shared/viewAsCustomer).
+   */
+  if (!viewAsMayPerform(!!ctx.viewAs, type, path)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: VIEW_AS_REFUSAL });
   }
 
   return next({

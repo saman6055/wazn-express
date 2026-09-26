@@ -1,4 +1,8 @@
 import { z } from "zod";
+import { COOKIE_NAME } from "@shared/const";
+import { getConfig } from "../config";
+import { getSessionCookieOptions } from "../_core/cookies";
+import { VIEW_AS_MINUTES } from "@shared/viewAsCustomer";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
 import * as bcrypt from "bcryptjs";
@@ -41,6 +45,64 @@ const pagination = {
 };
 
 export const portalCenterRouter = router({
+  /**
+   * Open a customer's portal without their password — to look, only.
+   *
+   * The owner, 2026-09-26: he needs to see what a customer sees, because a
+   * portal screen is built from one customer's own data and a fault in it is
+   * invisible from the office. So: a session in that customer's name, two
+   * hours long, that cannot write a single thing (shared/viewAsCustomer, and
+   * the one check in _core/trpc.ts).
+   *
+   * It replaces the staff session in this browser, because both live in the
+   * same cookie — so the way back is minted from the id kept inside the
+   * look token, and the audit log holds who looked at whom, before the
+   * cookie is even set.
+   */
+  viewAsCustomer: adminProcedure
+    .input(z.object({ customerId: idSchema }))
+    .mutation(async ({ input, ctx }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار") });
+
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "view_as_customer",
+        entityType: "customer",
+        entityId: customer.id,
+        newValues: { customerCode: customer.customerCode, minutes: VIEW_AS_MINUTES },
+      });
+
+      const { SignJWT } = await import("jose");
+      const secret = new TextEncoder().encode(getConfig().jwtSecret);
+      const token = await new SignJWT({
+        customerId: customer.id,
+        customerCode: customer.customerCode,
+        role: "customer",
+        isCustomer: true,
+        // The three claims that make it a look and not a login.
+        viewAs: true,
+        viewAsBy: ctx.user.id,
+        viewAsName: ctx.user.name ?? "",
+      })
+        .setProtectedHeader({ alg: "HS256" })
+        .setExpirationTime(`${VIEW_AS_MINUTES}m`)
+        .sign(secret);
+
+      ctx.res.cookie(COOKIE_NAME, token, {
+        ...getSessionCookieOptions(ctx.req),
+        maxAge: VIEW_AS_MINUTES * 60 * 1000,
+      });
+
+      return {
+        customerId: customer.id,
+        customerCode: customer.customerCode,
+        customerName: customer.fullName,
+        minutes: VIEW_AS_MINUTES,
+      };
+    }),
+
   getOverview: adminProcedure.query(async () => {
     return db.getPortalCenterOverview();
   }),

@@ -26,24 +26,45 @@ const Skin3PortalLayout = lazy(() => import("@/components/Skin3PortalLayout"));
  * carries the classic chrome directly and the skin navs were aligned to match
  * it rather than the other way round.
  */
+import { ViewAsBanner } from "@/components/portal/ViewAsBanner";
+
 export function PortalLayout({ children }: { children: ReactNode }) {
   const { portalTheme } = usePortalTheme();
 
+  /*
+   * One bar, above all three skins.
+   *
+   * An admin looking at a customer's portal sees every screen exactly as the
+   * customer does — the point of it, and the hazard. Put here rather than
+   * in each skin so no skin can be the one that forgets to say it
+   * (shared/viewAsCustomer).
+   */
+  const withBanner = (inner: ReactNode) => (
+    <>
+      <ViewAsBanner />
+      {inner}
+    </>
+  );
+
   if (portalTheme === "modern") {
     return (
-      <Suspense fallback={<CustomerPortalLayout>{children}</CustomerPortalLayout>}>
-        <ModernPortalLayout>{children}</ModernPortalLayout>
-      </Suspense>
+      withBanner(
+        <Suspense fallback={<CustomerPortalLayout>{children}</CustomerPortalLayout>}>
+          <ModernPortalLayout>{children}</ModernPortalLayout>
+        </Suspense>
+      )
     );
   }
 
   if (portalTheme === "skin3") {
     return (
-      <Suspense fallback={<CustomerPortalLayout>{children}</CustomerPortalLayout>}>
-        <Skin3PortalLayout>{children}</Skin3PortalLayout>
-      </Suspense>
+      withBanner(
+        <Suspense fallback={<CustomerPortalLayout>{children}</CustomerPortalLayout>}>
+          <Skin3PortalLayout>{children}</Skin3PortalLayout>
+        </Suspense>
+      )
     );
   }
 
-  return <CustomerPortalLayout>{children}</CustomerPortalLayout>;
+  return withBanner(<CustomerPortalLayout>{children}</CustomerPortalLayout>);
 }

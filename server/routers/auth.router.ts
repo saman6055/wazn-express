@@ -60,7 +60,57 @@ async function spendComparisonTime(password: string): Promise<void> {
 
 export const authRouter = router({
   // Who is signed in — never the account row itself (see accountSecrets).
-  me: publicProcedure.query(opts => sessionAccount(opts.ctx.user)),
+  /**
+   * Who is signed in — and, when an admin is looking at a customer's portal,
+   * that this is a look and whose name is on it (shared/viewAsCustomer).
+   * The portal draws its bar from this and nothing else, so a page cannot
+   * pretend to be a real session or pretend not to be a look.
+   */
+  me: publicProcedure.query(opts => {
+    const account = sessionAccount(opts.ctx.user);
+    if (!account) return null;
+    return opts.ctx.viewAs ? { ...account, viewAs: opts.ctx.viewAs } : account;
+  }),
+
+  /**
+   * Leave a look-only session and come back as yourself.
+   *
+   * The staff session was replaced rather than kept — both live in the same
+   * cookie — so it is minted again from the id inside the look token. An
+   * account switched off in the meantime does not come back: it signs out,
+   * which is the same answer that account would get anywhere else.
+   */
+  exitViewAs: protectedProcedure.mutation(async ({ ctx }) => {
+    const cookieOptions = getSessionCookieOptions(ctx.req);
+    if (!ctx.viewAs) {
+      throw new TRPCError({
+        code: "BAD_REQUEST",
+        message: withFix("ئەم سێشنە دۆخی «بینین وەک کڕیار» نییە.", [
+          "ئەگەر دەتەوێت دەربچیت، دوگمەی ئاسایی دەرچوون بەکار بهێنە",
+        ]),
+      });
+    }
+    const staff = await db.getUserById(ctx.viewAs.by);
+    if (!staff || staff.isActive === false) {
+      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+      return { restored: false } as const;
+    }
+    const { SignJWT } = await import("jose");
+    const secret = new TextEncoder().encode(getConfig().jwtSecret);
+    // The same claims and the same lifetime a staff sign-in mints, so what
+    // comes back is an ordinary session and not a second kind of one.
+    const token = await new SignJWT({
+      userId: staff.id,
+      openId: staff.openId || `staff_${staff.id}`,
+      role: staff.role,
+      isStaff: true,
+    })
+      .setProtectedHeader({ alg: "HS256" })
+      .setExpirationTime("24h")
+      .sign(secret);
+    ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
+    return { restored: true } as const;
+  }),
   logout: publicProcedure.mutation(({ ctx }) => {
     const cookieOptions = getSessionCookieOptions(ctx.req);
     ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
