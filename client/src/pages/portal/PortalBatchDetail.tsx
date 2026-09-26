@@ -86,7 +86,9 @@ const { t, language } = useLanguage();
   const [currentPhotoIndex, setCurrentPhotoIndex] = useState(0);
   
   const selectedPkg = packages?.find(p => p.id === selectedPackage);
-  const photos = selectedPkg?.photos as string[] | undefined;
+  // What was ordered first, then what arrived — the one order the portal
+  // shows pictures in (shared/parcelPhotos, owner 2026-09-26).
+  const photos = selectedPkg ? resolvePackageImage(selectedPkg as never).urls : undefined;
 
   // Generate timeline steps based on batch status
   const getTimelineSteps = (): TimelineStep[] => {

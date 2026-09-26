@@ -5,6 +5,7 @@ import { Box } from "lucide-react";
 import { useMemo, useState } from "react";
 import { PhotoLightbox } from "@/components/PhotoStack";
 import { dedupePhotos } from "@/lib/photoList";
+import { customerPhotos, firstPhotoSource } from "@shared/parcelPhotos";
 
 // ---------------------------------------------------------------------------
 // PackageThumb — a package's best available picture, with a small badge saying
@@ -12,11 +13,15 @@ import { dedupePhotos } from "@/lib/photoList";
 // already exposes and joins them on the client by tracking number. No backend
 // or business-logic changes.
 //
-// Fallback chain (most trustworthy first):
-//   1. warehouse photo  — staff photographed the real item at our depot (proof)
-//   2. product photo    — the image the customer sent for a commission/full order
+// Order (owner, 2026-09-26 — shared/parcelPhotos):
+//   1. product photo    — the image attached when the order was entered. What
+//                          the customer chose, and the one they recognise.
+//   2. warehouse photo  — the depot shot from quick register: the same goods
+//                          in a sack under a strip light, proof it arrived.
 //   3. your photo       — the image the customer uploaded when pre-declaring
 //   4. box icon         — nothing available yet
+// All of them are kept and openable, so the customer swipes from what they
+// bought to what turned up. Nothing is hidden, only ordered.
 // ---------------------------------------------------------------------------
 
 type PackageLike = {
@@ -69,14 +74,15 @@ export function usePackageImages() {
   }, [declared]);
 
   const resolve = (pkg: PackageLike): Resolved => {
-    const photos = dedupePhotos(pkg.photos);
-    if (photos.length > 0) return { url: photos[0], source: "warehouse", urls: photos };
     const tn = pkg.trackingNumber ? String(pkg.trackingNumber) : "";
-    const product = tn ? productByTracking.get(tn) : undefined;
-    if (product?.length) return { url: product[0], source: "product", urls: product };
-    const dec = tn ? declaredByTracking.get(tn) : undefined;
-    if (dec?.length) return { url: dec[0], source: "declared", urls: dec };
-    return { url: null, source: null, urls: [] };
+    const sets = {
+      order: tn ? productByTracking.get(tn) : undefined,
+      warehouse: pkg.photos,
+      declared: tn ? declaredByTracking.get(tn) : undefined,
+    };
+    const urls = customerPhotos(sets);
+    if (urls.length === 0) return { url: null, source: null, urls: [] };
+    return { url: urls[0], source: firstPhotoSource(sets), urls };
   };
 
   return { resolve };

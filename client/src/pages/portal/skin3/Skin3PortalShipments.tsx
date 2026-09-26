@@ -29,6 +29,7 @@ import { BatchJourneyTimeline } from "@/components/portal/BatchJourneyTimeline";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { useState, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { usePackageImages } from "@/components/portal/PackageThumb";
 import { ESTIMATE_EXCLUDES, parcelPriceDisplay } from "@shared/parcelPrice";
 import { motion, AnimatePresence } from "framer-motion";
 import { useSearch } from "wouter";
@@ -39,6 +40,11 @@ type StatusFilter = "all" | ShipmentStage;
 
 export default function Skin3PortalShipments() {
   const { language } = useLanguage();
+
+  /** Every picture of this parcel, in the order the portal shows them. */
+  const { resolve: resolvePicture } = usePackageImages();
+  const parcelPictures = (pkg: { photos?: unknown; trackingNumber?: string | null }) =>
+    resolvePicture(pkg as never).urls;
 
   const chinaDepotItems = useChinaDepotItems();
 
@@ -661,10 +667,11 @@ export default function Skin3PortalShipments() {
                                             : "bg-amber-50/80 border-black/5"
                                         )}
                                       >
-                                        {/* Warehouse photos taken at registration */}
-                                        {Array.isArray(pkg.photos) && pkg.photos.length > 0 && (
+                                        {/* What was ordered first, then the depot shot — shared/parcelPhotos,
+                                            the owner's rule of 2026-09-26. */}
+                                        {parcelPictures(pkg).length > 0 && (
                                           <div className="flex flex-wrap gap-1.5 mb-2">
-                                            {pkg.photos.slice(0, 4).map((photo: string, pi: number) => (
+                                            {parcelPictures(pkg).slice(0, 4).map((photo: string, pi: number) => (
                                               <a key={pi} href={photo} target="_blank" rel="noopener noreferrer" className="shrink-0">
                                                 <img onError={onImageError}
                                                   src={photo}

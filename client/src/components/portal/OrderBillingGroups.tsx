@@ -8,6 +8,7 @@ import { PhotoStack } from "@/components/PhotoStack";
 import { formatPortalDate } from "@/lib/portalClock";
 import { describeLedgerRef, LEDGER_TYPE_LABEL } from "@/lib/portalMoney";
 import { fmtUsd } from "@/lib/portalFormat";
+import { customerPhotos } from "@shared/parcelPhotos";
 import { chargeEffect } from "@shared/accountStatement";
 
 // ---------------------------------------------------------------------------
@@ -179,12 +180,12 @@ export function OrderBillingGroups({
         const pkg = g.refType === "package" ? pkgById.get(g.refId) : undefined;
         // Every picture of the thing being billed, not just the first: the
         // warehouse shots and the product shot are all evidence of what the
-        // customer is paying for.
-        const images: string[] = [
-          ...(Array.isArray(pkg?.photos) ? (pkg.photos as string[]) : []),
-          ...(fp?.productImage ? [fp.productImage as string] : []),
-          ...(Array.isArray((fp as any)?.productImages) ? ((fp as any).productImages as string[]) : []),
-        ];
+        // customer is paying for — in the one order the portal shows them
+        // (shared/parcelPhotos): what was ordered, then what arrived.
+        const images: string[] = customerPhotos({
+          order: [(fp as any)?.productImage, (fp as any)?.productImages],
+          warehouse: pkg?.photos,
+        });
         const code = fp?.orderCode || pkg?.packageCode || null;
         const tracking = fp?.trackingNumber || pkg?.trackingNumber || null;
         const quantity = fp?.quantity != null && Number(fp.quantity) > 0 ? Number(fp.quantity) : null;
