@@ -195,3 +195,95 @@ export const BATCH_STATUS_TONE: Record<BatchStatus, string> = {
 export function batchStatusTone(status: string | null | undefined): string {
   return BATCH_STATUS_TONE[status as BatchStatus] ?? BATCH_STATUS_TONE.preparing;
 }
+
+/* ─── the order they are read in ──────────────────────────────────────── */
+
+/**
+ * Where a shipment stands on the road, for sorting and for grouping.
+ *
+ * The owner, 2026-09-26: «قۆناغەکان زۆر تێکەلن — سەرەتا ئەوانە نیشان بدات
+ * کە تازە گەیشتوونەتە مەخزەن، بە گوێرەی تایم لاین، یەکەم ستێپەکان، پاشان
+ * دووەم، تا کۆتایی.»
+ *
+ * The list was sorted by the date the batch was created, which mixes a box
+ * waiting to be collected in with goods that landed in China this morning.
+ * A customer does not think in dates; they think in "where is it now", and
+ * the road has an order of its own.
+ *
+ * Five steps, because five is what the parcel timeline already has
+ * (shared/parcelStage) and two answers to "how far along is it" is one too
+ * many. The seven raw statuses fold into them: customs and arrived are both
+ * "it is in Iraq", closed is delivered.
+ */
+export const JOURNEY_STEPS = ["in_china", "on_way", "in_iraq", "in_erbil", "delivered"] as const;
+export type JourneyStep = (typeof JOURNEY_STEPS)[number];
+
+const JOURNEY_OF: Record<BatchStatus, JourneyStep> = {
+  preparing: "in_china",
+  in_transit: "on_way",
+  arrived: "in_iraq",
+  customs: "in_iraq",
+  at_depot: "in_erbil",
+  delivered: "delivered",
+  closed: "delivered",
+};
+
+/** Which step a raw status stands on. An unknown status is treated as new. */
+export function journeyOf(status: string | null | undefined): JourneyStep {
+  return JOURNEY_OF[(status ?? "") as BatchStatus] ?? "in_china";
+}
+
+/** 0 for the first step, 4 for the last — the order the list is read in. */
+export function journeyRank(status: string | null | undefined): number {
+  return JOURNEY_STEPS.indexOf(journeyOf(status));
+}
+
+/** What each step is called at the head of its group. */
+export const JOURNEY_LABEL: Record<JourneyStep, { ku: string; en: string; ar: string; zh: string }> = {
+  in_china: {
+    ku: "تازە گەیشتوونەتە کۆگای چین",
+    en: "Just arrived at the China warehouse",
+    ar: "وصلت للتو إلى مستودع الصين",
+    zh: "刚到中国仓库",
+  },
+  on_way: { ku: "لە ڕێگان", en: "On the way", ar: "في الطريق", zh: "运输途中" },
+  in_iraq: { ku: "گەیشتوونەتە عێراق", en: "Arrived in Iraq", ar: "وصلت العراق", zh: "已抵达伊拉克" },
+  in_erbil: {
+    ku: "لە کۆگای هەولێر — ئامادە بۆ وەرگرتن",
+    en: "In the Erbil depot — ready to collect",
+    ar: "في مستودع أربيل — جاهزة للاستلام",
+    zh: "埃尔比勒仓库 — 可自取",
+  },
+  delivered: { ku: "گەیشتوونەتە دەستت", en: "In your hands", ar: "في يدك", zh: "已在您手中" },
+};
+
+/** One quiet line under the heading: what is happening, in plain words. */
+export const JOURNEY_HINT: Record<JourneyStep, { ku: string; en: string; ar: string; zh: string }> = {
+  in_china: {
+    ku: "وەرمانگرتوون — چاوەڕێی ناردنن",
+    en: "We have them — waiting to be sent",
+    ar: "استلمناها — بانتظار الشحن",
+    zh: "已收到 — 等待发运",
+  },
+  on_way: { ku: "بەڕێکەوتوون بۆ عێراق", en: "On their way to Iraq", ar: "في طريقها إلى العراق", zh: "正在运往伊拉克" },
+  in_iraq: { ku: "ئامادەکارییان بۆ دەکرێت", en: "Being prepared for you", ar: "يجري تجهيزها لك", zh: "正在为您备货" },
+  in_erbil: { ku: "دەتوانیت وەریانبگریت", en: "You can collect them", ar: "يمكنك استلامها", zh: "您可以领取" },
+  delivered: { ku: "", en: "", ar: "", zh: "" },
+};
+
+/**
+ * The shipments in the order they are read: along the road, newest first
+ * inside each step.
+ *
+ * Empty steps are left out rather than shown empty — a heading with nothing
+ * under it is a question ("why is that there?"), not information.
+ */
+export function groupByJourney<T extends { status?: string | null; createdAt?: unknown }>(
+  rows: readonly T[],
+): Array<{ step: JourneyStep; rows: T[] }> {
+  const newestFirst = (a: T, b: T) =>
+    new Date(String(b.createdAt ?? 0)).getTime() - new Date(String(a.createdAt ?? 0)).getTime();
+  return JOURNEY_STEPS
+    .map((step) => ({ step, rows: rows.filter((r) => journeyOf(r.status) === step).sort(newestFirst) }))
+    .filter((group) => group.rows.length > 0);
+}

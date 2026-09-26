@@ -2,7 +2,7 @@ import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import { lazy } from "react";
+import { Fragment, lazy } from "react";
 // Lazy: only the active skin's chunk is downloaded — the skin is a global
 // admin setting, so shipping all three variants to every customer tripled
 // the route bundle for nothing.
@@ -27,7 +27,11 @@ import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
-import { matchesStage, countByStage, STATUS_LABEL, orderStageOf, type ShipmentStage } from "@/lib/shipmentFilters";
+import {
+  matchesStage, countByStage, STATUS_LABEL, orderStageOf,
+  journeyOf, journeyRank, JOURNEY_LABEL, JOURNEY_HINT,
+  type ShipmentStage,
+} from "@/lib/shipmentFilters";
 import { tint, gradient } from "@/lib/portalModes";
 import { formatClockDate, formatPortalDate } from "@/lib/portalClock";
 import { filterChinaDepot, matchesRoute } from "@/lib/chinaDepotFilter";
@@ -39,7 +43,16 @@ import { fmtChargeable, fmtCount } from "@/lib/portalFormat";
 // and letting nothing-selected mean everything is one less thing to explain.
 type StatusFilter = ShipmentStage;
 type ShippingFilter = "" | "air_regular" | "sea" | "air_irregular";
-type SortOption = "newest" | "oldest" | "status";
+/**
+ * How the list is read.
+ *
+ * "journey" is the default and the owner's rule of 2026-09-26: along the
+ * road, first step first, so what has just reached the China warehouse is
+ * at the top and what is already in his hands is at the bottom. Sorting by
+ * date mixed a box waiting to be collected in with goods that landed this
+ * morning. The other three stay, for the customer who wants them.
+ */
+type SortOption = "journey" | "newest" | "oldest" | "status";
 
 /**
  * How far along the China → Iraq line the marker sits, as a percentage.
@@ -75,7 +88,7 @@ function ClassicPortalShipments() {
   const [statusFilter, setStatusFilter] = useState<StatusFilter>(initialStatus);
   const [shippingType, setShippingType] = useState<ShippingFilter>("");
   const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<SortOption>("newest");
+  const [sortBy, setSortBy] = useState<SortOption>("journey");
   const [showFilters, setShowFilters] = useState(false);
 
   // The filter bar shrinks once the reader scrolls past choosing, handing the
@@ -136,6 +149,14 @@ function ClassicPortalShipments() {
     
     // Sort
     result = [...result].sort((a, b) => {
+      // Along the road, then newest first within a step. The grouped view
+      // below reads the same order, so switching between them does not
+      // reshuffle the list under the reader (lib/shipmentFilters).
+      if (sortBy === "journey") {
+        const step = journeyRank(a.status) - journeyRank(b.status);
+        if (step !== 0) return step;
+        return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
+      }
       if (sortBy === "newest") {
         return new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime();
       }
@@ -553,6 +574,7 @@ function ClassicPortalShipments() {
             </span>
             <div className="flex gap-2">
               {[
+                { value: "journey" as SortOption, label: pickLang(language, { ku: "بە پێی ڕێگا", en: "By journey", ar: "حسب الرحلة", zh: "按行程" }) },
                 { value: "newest" as SortOption, label: pickLang(language, { ku: "نوێترین", en: "Newest", ar: "الأحدث", zh: "最新" }) },
                 { value: "oldest" as SortOption, label: pickLang(language, { ku: "کۆنترین", en: "Oldest", ar: "الأقدم", zh: "最早" }) },
                 { value: "status" as SortOption, label: pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" }) },
@@ -690,9 +712,35 @@ function ClassicPortalShipments() {
           </div>
         ) : (
           <div className="space-y-3">
-            {filteredBatches.map((batch) => {
+            {filteredBatches.map((batch, i) => {
+              /*
+               * The heading for a step, drawn once above the first shipment
+               * standing on it. Inline rather than a second pass over the
+               * list so the cards keep their order exactly as sorted, and
+               * only while reading along the road — the date sorts are a
+               * flat list, which is what they are for.
+               */
+              const step = sortBy === "journey" ? journeyOf(batch.status) : null;
+              const previous = i > 0 && sortBy === "journey" ? journeyOf(filteredBatches[i - 1].status) : null;
+              const heading = step && step !== previous ? step : null;
               return (
-                <Link key={batch.id} href={`/portal/shipments/${batch.id}`}>
+                <Fragment key={batch.id}>
+                {heading && (
+                  <div className={cn("flex items-center gap-2", i > 0 && "pt-3")} data-testid={`journey-${heading}`}>
+                    <h2 className="text-sm font-bold text-slate-800 dark:text-slate-200">
+                      {pickLang(language, JOURNEY_LABEL[heading])}
+                    </h2>
+                    <span className="rounded-full bg-slate-100 px-2 py-0.5 text-[11px] text-slate-600 dark:bg-slate-700 dark:text-slate-300">
+                      {filteredBatches.filter((b) => journeyOf(b.status) === heading).length}
+                    </span>
+                    {pickLang(language, JOURNEY_HINT[heading]) && (
+                      <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                        {pickLang(language, JOURNEY_HINT[heading])}
+                      </span>
+                    )}
+                  </div>
+                )}
+                <Link href={`/portal/shipments/${batch.id}`}>
                   <div className={cn(
                     "rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border",
                     isDark 
@@ -850,6 +898,7 @@ function ClassicPortalShipments() {
                     </div>
                   </div>
                 </Link>
+                </Fragment>
               );
             })}
           </div>
