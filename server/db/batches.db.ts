@@ -559,6 +559,35 @@ export async function advanceBatchToDepot(
   const current = BATCH_RANK[batch.status] ?? 0;
   if (current >= BATCH_RANK.at_depot!) return { moved: false, from: batch.status };
 
+  /*
+   * A batch with no number to travel under has not travelled.
+   *
+   * The owner, 2026-09-27: «هەر باچێکی نوێ دروست کرا بەبێ AWB ئەوە
+   * دەبێ یەکسەر بە ئامادەکاری حیسابی بکات نەک لە کۆگای هەوڵێر.»
+   *
+   * One arrival scan used to carry the whole shipment to the Erbil depot,
+   * which is right when the shipment flew and wrong when it has not been
+   * given a waybill yet — a parcel scanned onto a brand-new batch dragged
+   * that batch, and every customer in it, to «لە کۆگای هەوڵێر».
+   *
+   * It is the same rule the parcel timeline already runs on: the number a
+   * shipment travels under — the waybill by air, the container by sea — is
+   * what says it left (shared/parcelStage). Without one there is nothing
+   * saying it ever did, so the batch stays in preparation and the scan still
+   * moves its own parcel, which is the fact that scan actually establishes.
+   */
+  const travelsUnder = String(
+    (batch.shippingType === "sea" ? batch.containerNumber : batch.awbNumber) ?? "",
+  ).trim();
+  if (!travelsUnder) {
+    appLogger.info("[ArrivalVerification] Batch left in preparation: no waybill or container", {
+      batchId,
+      status: batch.status,
+      shippingType: batch.shippingType,
+    });
+    return { moved: false, from: batch.status };
+  }
+
   await updateBatch(batchId, { status: "at_depot" }, changedById ?? null);
   appLogger.info("[ArrivalVerification] Batch moved to the Erbil depot", {
     batchId,
