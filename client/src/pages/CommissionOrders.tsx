@@ -11,6 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { InlineTracking } from "@/components/orders/InlineTracking";
 import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
 import { OrderThumb, OrderThumbs } from "@/components/orders/OrderThumb";
@@ -212,6 +213,35 @@ export default function CommissionOrders() {
 
   const getOrderValue = (o: any): number =>
     parseFloat((o as any).totalCostUsd ?? (o as any).totalPrepaidUsd ?? "0") || 0;
+
+  /*
+   * A tracking, typed straight into the row.
+   *
+   * The owner, 2026-09-27: «لێرەش بە دوو کلیک لە شوێنی تراک
+   * بتوانی تراک زیاد بکەی زۆر باشە.» The list already shows
+   * which orders are waiting for one; going to another screen to type it is
+   * the part that made it a chore.
+   *
+   * Through the same endpoint the tracking-alerts screen uses, so an order
+   * gets whatever else the system does when its tracking arrives — this is
+   * a second door onto one flow, not a second flow.
+   */
+  const [typingFor, setTypingFor] = useState<number | null>(null);
+  const [typed, setTyped] = useState("");
+  const addTracking = trpc.fullPackage.addOrderTrackings.useMutation({
+    onSuccess: () => {
+      setTypingFor(null);
+      setTyped("");
+      void refetch();
+      toast.success(pickLang(language, {
+        ku: "تراکینگ زیاد کرا",
+        en: "Tracking added",
+        ar: "تمت إضافة التتبع",
+        zh: "已添加运单号",
+      }));
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const updateStatusMutation = trpc.fullPackage.updateStatus.useMutation({
     onSuccess: () => {
@@ -699,8 +729,31 @@ export default function CommissionOrders() {
                       <TableCell className="font-mono font-bold text-green-600 dark:text-green-300">
                         ${order.profitUsd || "0.00"}
                       </TableCell>
-                      <TableCell>
-                        {order.trackingNumber ? (
+                      <TableCell
+                        onDoubleClick={() => { setTypingFor(order.id); setTyped(""); }}
+                        title={pickLang(language, {
+                          ku: "دوو جار کلیک بکە بۆ زیادکردنی تراکینگ",
+                          en: "Double-click to add a tracking",
+                          ar: "انقر مرتين لإضافة تتبع",
+                          zh: "双击以添加运单号",
+                        })}
+                        className="cursor-text"
+                      >
+                        {typingFor === order.id ? (
+                          <InlineTracking
+                            value={typed}
+                            onChange={setTyped}
+                            orderNumber={order.orderNumber}
+                            saving={addTracking.isPending}
+                            language={language}
+                            onCancel={() => { setTypingFor(null); setTyped(""); }}
+                            onSave={() => {
+                              const one = typed.trim();
+                              if (!one) return;
+                              addTracking.mutate({ fullPackageOrderId: order.id, trackingNumbers: [one] });
+                            }}
+                          />
+                        ) : order.trackingNumber ? (
                           <div className="flex flex-col gap-1">
                             <div className="flex items-center gap-1">
                               <Badge variant="secondary" className="font-mono text-xs">
