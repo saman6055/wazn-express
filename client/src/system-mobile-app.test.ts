@@ -91,7 +91,7 @@ describe("lists on a phone are cards (phase 2)", () => {
   });
 
   it("a page's title row wraps on a phone instead of pushing the page wider", () => {
-    expect(read("index.css")).toContain("main div.flex.justify-between:has(> div > h1)");
+    expect(read("index.css")).toContain("main div.flex.justify-between:has(h1) {");
   });
 
   it("the dashboard starts with the day's jobs on a phone", () => {

@@ -871,12 +871,11 @@
    * buttons ran off the screen and made the whole page scroll sideways
    * (Batches' «باچی نوێ», 2026-09-27). Let every such row wrap there.
    */
-  main div.flex.justify-between:has(> h1),
-  main div.flex.justify-between:has(> div > h1) {
+  main div.flex.justify-between:has(h1) {
     flex-wrap: wrap;
     row-gap: 0.75rem;
   }
-  main div.flex.justify-between:has(> div > h1) > div:has(> button, > a) {
+  main div.flex.justify-between:has(h1) > div:has(> button, > a) {
     flex-wrap: wrap;
   }
 }

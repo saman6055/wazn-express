@@ -62,7 +62,10 @@ export function StickyDashboardHeader({
         className,
       )}
     >
-      <div className="flex items-center gap-3">
+      {/* Wraps on a phone: at 360px the title and the buttons are 6px wider
+          than the screen (2026-09-27), and one row too many beats a page that
+          scrolls sideways. One line from md up, as designed. */}
+      <div className="flex flex-wrap items-center gap-x-3 gap-y-2 md:flex-nowrap">
         {/* Identity: small mark, one line of text, no subtitle. The subtitle
             said what the page manifestly is, in a smaller font. */}
         <div className="flex shrink-0 items-center gap-2">
@@ -94,9 +97,11 @@ export function StickyDashboardHeader({
       </div>
 
       {/* Below md the figures would squeeze the buttons off the bar, so they
-          take a line of their own — still one compact strip, still sticky. */}
+          take a line of their own, still sticky. They wrap rather than slide:
+          a figure hidden past the edge of a phone is a figure nobody reads,
+          and the hidden strip widened the whole page (2026-09-27). */}
       {stats.length > 0 && (
-        <div className="mt-1.5 flex items-center gap-4 overflow-x-auto md:hidden [&::-webkit-scrollbar]:hidden [scrollbar-width:none]">
+        <div className="mt-1.5 flex flex-wrap items-center gap-x-4 gap-y-1 md:hidden">
           {stats.map((stat) => (
             <div key={stat.label} className="whitespace-nowrap" dir={stat.ltr ? "ltr" : undefined}>
               <span className="text-[11px] text-muted-foreground">{stat.label} </span>

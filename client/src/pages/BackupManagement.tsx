@@ -229,8 +229,8 @@ export default function BackupManagement() {
         </Card>
       </div>
 
-      {/* Filter Tabs */}
-      <div className="flex gap-2">
+      {/* Filter Tabs — they wrap on a phone rather than run off it. */}
+      <div className="flex flex-wrap gap-2">
         <Button
           variant={selectedStatus === undefined ? "default" : "outline"}
           onClick={() => setSelectedStatus(undefined)}
