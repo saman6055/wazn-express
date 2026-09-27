@@ -22,15 +22,17 @@ describe("the bar actually sticks, and in the right place", () => {
   const src = read(COMPONENT);
 
   it("it sticks below the layout's own nav strip, not behind it", () => {
-    // DashboardLayout's strip is h-11 (44px) at top-0 on desktop and top-14
-    // (56px) on mobile. top-0 here would park the header underneath it.
-    expect(src).toContain('"sticky top-[100px] z-20 md:top-[44px]"');
+    // DashboardLayout's strip is h-11 (44px) at top-0 on desktop. On a phone
+    // the strip is gone (2026-09-27): only the app's 3.5rem top bar, under
+    // the notch. top-0 here would park the header underneath either.
+    expect(src).toContain('"sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 md:top-[44px]"');
   });
 
   it("the layout it measures against has not moved", () => {
     const layout = read("components/DashboardLayout.tsx");
     expect(layout, "nav strip height").toContain("h-11");
-    expect(layout, "mobile offset").toContain('isMobile ? "top-14" : "top-0"');
+    expect(layout, "mobile offset").toContain("pt-[calc(3.5rem+env(safe-area-inset-top))]");
+    expect(layout, "strip hidden on a phone").toContain('isMobile && "hidden",');
     expect(layout, "page padding").toContain('<div className="p-4 md:p-6">');
     // Sticky dies silently if an ancestor scrolls; main must not.
     const main = layout.slice(layout.indexOf("<main"), layout.indexOf("<main") + 400);

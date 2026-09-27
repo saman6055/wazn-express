@@ -256,7 +256,7 @@ export function StaffChat() {
             // Its own colours, stated rather than inherited, so the panel
             // reads the same for every member of staff whatever their
             // appearance settings (owner, 2026-09-27).
-            "flex h-[30rem] max-h-[calc(100dvh-7rem)] w-[23rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-2xl print:hidden",
+            "flex h-[30rem] max-h-[calc(100dvh-14rem)] md:max-h-[calc(100dvh-7rem)] w-[23rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-2xl print:hidden",
             dragging && "ring-2 ring-primary",
           )}
           data-testid="staff-chat-panel"

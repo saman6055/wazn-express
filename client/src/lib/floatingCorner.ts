@@ -48,14 +48,22 @@ const SLOT_RIGHT = [
  * hide the problem.
  */
 export function cornerSlot(slot: number): string {
-  return `fixed bottom-4 ${SLOT_RIGHT[slot] ?? SLOT_RIGHT[0]} z-40`;
+  return `fixed ${ROW_BOTTOM} ${SLOT_RIGHT[slot] ?? SLOT_RIGHT[0]} z-40`;
 }
+
+/**
+ * On a phone the office has a tab bar along the bottom (components/mobile,
+ * 2026-09-27): 4rem tall, above the home-indicator strip. The row sits just
+ * over it there; on a desktop, in the corner as before.
+ */
+const ROW_BOTTOM = "bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4";
 
 /**
  * A panel opened by one of those buttons: above the whole row rather than
  * beside it, so it never covers a neighbour.
  */
-export const CORNER_PANEL = "fixed bottom-20 right-4 md:right-24 z-40";
+export const CORNER_PANEL =
+  "fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] md:bottom-20 right-4 md:right-24 z-40";
 
 /** Which slot each button holds. Named, so a reader can see the row. */
 export const CORNER = {

@@ -54,7 +54,7 @@ export function StickyDashboardHeader({
         // — Tailwind's `md` exactly. So: 56 + 44 = 100px on a phone, 44px on
         // a desktop. Sticking at top-0 would have parked this under it and
         // looked, from the outside, like the header had simply vanished.
-        "sticky top-[100px] z-20 md:top-[44px]",
+        "sticky top-[calc(3.5rem+env(safe-area-inset-top))] z-20 md:top-[44px]",
         // `-mx` + `px` so the bar's background reaches the full width of the
         // page padding (p-4 md:p-6) while its contents stay on the grid.
         "-mx-4 mb-4 px-4 py-2 md:-mx-6 md:px-6",

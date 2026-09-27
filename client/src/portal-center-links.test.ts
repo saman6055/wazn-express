@@ -46,7 +46,8 @@ describe("the page", () => {
 
 describe("the tabs", () => {
   it("sit in one row, held under the top bar while the page scrolls", () => {
-    expect(page).toContain('<TabsList className="sticky top-[100px] md:top-11 z-20 flex w-full flex-nowrap');
+    // Under the phone's app bar (3.5rem + notch, 2026-09-27) or the desktop strip.
+    expect(page).toContain('<TabsList className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] md:top-11 z-20 flex w-full flex-nowrap');
     expect(page).toContain("overflow-x-auto");
     expect(page).not.toContain("lg:grid-cols-11");
     expect(page).toContain('"shrink-0 gap-1.5 rounded-xl px-2 py-2');

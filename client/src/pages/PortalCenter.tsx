@@ -247,7 +247,7 @@ export default function PortalCenter() {
               2026-09-19). The bar is 44px on a wide screen; on a phone it sits
               under the 56px header, so 100px. A narrow screen scrolls the row
               sideways rather than wrapping it. */}
-          <TabsList className="sticky top-[100px] md:top-11 z-20 flex w-full flex-nowrap items-center justify-start overflow-x-auto h-auto gap-0.5 rounded-2xl p-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-200/70 dark:border-slate-700/60 shadow-sm" data-portal-tabs>
+          <TabsList className="sticky top-[calc(3.5rem+env(safe-area-inset-top))] md:top-11 z-20 flex w-full flex-nowrap items-center justify-start overflow-x-auto h-auto gap-0.5 rounded-2xl p-2 bg-gradient-to-r from-slate-100 to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-200/70 dark:border-slate-700/60 shadow-sm" data-portal-tabs>
             <TabsTrigger value="customers" className={TAB_TRIGGER_CLS}><Users className="h-4 w-4" />{p({ ku: "موشتەرەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TabsTrigger>
             <TabsTrigger value="messages" className={TAB_TRIGGER_CLS}><MessageCircle className="h-4 w-4" />{p({ ku: "پەیامەکان", en: "Messages", ar: "الرسائل", zh: "消息" })}{badge("messages")}</TabsTrigger>
             <TabsTrigger value="send" className={TAB_TRIGGER_CLS}><Send className="h-4 w-4" />{p({ ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" })}</TabsTrigger>

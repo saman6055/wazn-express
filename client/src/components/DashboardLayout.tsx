@@ -98,6 +98,7 @@ import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { RiskBell } from "./RiskBell";
 import { TaskBell } from "@/components/tasks/TaskBell";
 import { StaffChat } from "@/components/chat/StaffChat";
+import { MobileMoreSheet, MobileScanSheet, MobileTabBar, MobileTopBar, useMobileSheet } from "@/components/mobile/MobileAppShell";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { QuickCreate } from "./QuickCreate";
 import { PinnedPages } from "./topbar/PinnedPages";
@@ -270,6 +271,8 @@ function DashboardLayoutContent({
   const [clickClosedGroup, setClickClosedGroup] = useState<string | null>(null);
   const hoverLeaveTimer = useRef<number | null>(null);
   const [cmdOpen, setCmdOpen] = useState(false);
+  // The phone's two sheets (scan, «زیاتر») — each one step in history.
+  const mobileSheet = useMobileSheet(setLocation);
 
   const { canViewPath, isReady: permissionsReady } = usePermissions();
 
@@ -575,6 +578,9 @@ function DashboardLayoutContent({
 
   const isItemActive = (path: string) => location === path || location.startsWith(path + '/');
 
+  const roleLabel =
+    userRole === "admin" ? t("roles.admin") : userRole === "employee" ? t("roles.employee") : userRole === "accountant" ? t("roles.accountant") : userRole === "auditor" ? t("roles.auditor") : userRole === "super_admin" ? t("roles.superAdmin") || "Super Admin" : userRole;
+
   // Desktop icon-rail mode: rail shows only group icons; clicking one pops out
   // that group's items. Mobile renders the full menu inside its drawer.
   const compact = !isMobile;
@@ -666,27 +672,25 @@ function DashboardLayoutContent({
 
   return (
     <div className={cn("min-h-screen bg-gray-50 dark:bg-gray-900", isRTL && "rtl")}>
-      {/* Mobile Header */}
-      <header className="md:hidden fixed top-0 left-0 right-0 z-50 h-14 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between px-4">
-        <button
-          onClick={() => setSidebarOpen(true)}
-          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-        >
-          <Menu className="h-5 w-5 text-gray-600 dark:text-gray-300" />
-        </button>
-        <div className="flex items-center gap-2">
-          <CompanyLogo
-            size={24}
-            iconClassName="h-4 w-4 text-white"
-            fallbackBg="bg-emerald-600"
-          />
-          <span className="font-semibold text-gray-900 dark:text-gray-200 dark:text-white">{company.name}</span>
-        </div>
-        {/* Today's risks, on the phone too — and what people promised,
-            beside it under its own face (owner, 2026-09-25). */}
-        <TaskBell className="h-9 w-9" />
-        <RiskBell className="h-9 w-9" />
-      </header>
+      {/* The phone: an app's own top bar (owner, 2026-09-27 — «وەکو ئەپی
+          پۆرتال بێت»). The page's name and a back arrow, or «سیستەم» on a
+          tab's home; search and the two bells. components/mobile. */}
+      {isMobile && (
+        <MobileTopBar
+          groups={menuGroups}
+          location={location}
+          language={language}
+          isRTL={isRTL}
+          onBack={() => goBackOr("/dashboard", setLocation)}
+          onSearch={() => setCmdOpen(true)}
+          bells={
+            <>
+              <TaskBell className="h-10 w-10" />
+              <RiskBell className="h-10 w-10" />
+            </>
+          }
+        />
+      )}
 
       {/* Mobile Sidebar Overlay */}
       {isMobile && sidebarOpen && (
@@ -696,7 +700,8 @@ function DashboardLayoutContent({
       {/* Sidebar */}
       {/* Rail + flyout share one mouse-leave boundary so moving from an icon
           onto its flyout doesn't close it; leaving both closes the flyout. */}
-      <div onMouseLeave={handleSidebarLeave}>
+      {/* Desktop only: on a phone «زیاتر» is the menu. */}
+      <div onMouseLeave={handleSidebarLeave} className={cn(isMobile && "hidden")}>
       <aside
         id="sidebar"
         className={cn(
@@ -940,7 +945,9 @@ function DashboardLayoutContent({
         onDoubleClick={onBackgroundDoubleClick}
         className={cn(
           "min-h-screen transition-all duration-300 bg-gradient-to-b from-background to-muted/20 dark:to-muted/10",
-          isMobile ? "pt-14" : fullScreen ? "ms-0" : "ms-20"
+          isMobile
+            ? "pt-[calc(3.5rem+env(safe-area-inset-top))] pb-[calc(5.5rem+env(safe-area-inset-bottom))]"
+            : fullScreen ? "ms-0" : "ms-20"
         )}
         // Zoom only in full screen: at the normal width it would push content
         // under the rail. `zoom` is used rather than `transform: scale` because
@@ -957,7 +964,10 @@ function DashboardLayoutContent({
           // as well. Escape brings it back — the same key that leaves any
           // other full screen.
           fullScreen && !isMobile && "hidden",
-          isMobile ? "top-14" : "top-0"
+          // On a phone the app bars above and below carry what this strip
+          // does: back, search, the bells, and «زیاتر» for the rest.
+          isMobile && "hidden",
+          "top-0"
         )}>
           {/*
             * Nav cluster — Windows 11–style rounded pill group.
@@ -1221,6 +1231,46 @@ function DashboardLayoutContent({
             <Plus className="h-4 w-4" />
           </Button>
         </div>
+      )}
+
+      {isMobile && (
+        <>
+          <MobileTabBar
+            location={location}
+            language={language}
+            canViewPath={canViewPath}
+            onNavigate={mobileSheet.go}
+            onScan={() => mobileSheet.setSheet((s) => (s === "scan" ? null : "scan"))}
+            onMore={() => mobileSheet.setSheet((s) => (s === "more" ? null : "more"))}
+            sheet={mobileSheet.sheet}
+          />
+          {mobileSheet.sheet === "scan" && (
+            <MobileScanSheet
+              groups={menuGroups}
+              location={location}
+              language={language}
+              onNavigate={mobileSheet.go}
+              onClose={() => mobileSheet.setSheet(null)}
+            />
+          )}
+          {mobileSheet.sheet === "more" && (
+            <MobileMoreSheet
+              groups={menuGroups}
+              location={location}
+              language={language}
+              userName={user?.name || ""}
+              userRoleLabel={String(roleLabel ?? "")}
+              isDark={theme === "dark"}
+              onToggleTheme={() => toggleTheme?.()}
+              onSignOut={async () => {
+                await logout();
+                window.location.replace(getLoginUrl());
+              }}
+              onNavigate={mobileSheet.go}
+              onClose={() => mobileSheet.setSheet(null)}
+            />
+          )}
+        </>
       )}
 
       <CommandPalette open={cmdOpen} onOpenChange={setCmdOpen} destinations={menuGroups} />

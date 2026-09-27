@@ -20,7 +20,8 @@ const layout = read("components/DashboardLayout.tsx");
 describe("the bell is on every staff page", () => {
   it("in the desktop bar's tray and in the phone's header", () => {
     expect(layout).toContain('import { RiskBell } from "./RiskBell";');
-    const mobileStart = layout.indexOf("{/* Mobile Header */}");
+    // The phone's header is the app's top bar now (components/mobile).
+    const mobileStart = layout.indexOf("<MobileTopBar");
     const mobileEnd = layout.indexOf("{/* Mobile Sidebar Overlay */}");
     expect(mobileStart).toBeGreaterThan(-1);
     expect(mobileEnd).toBeGreaterThan(mobileStart);
