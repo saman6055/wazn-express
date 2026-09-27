@@ -2,6 +2,7 @@ import { confirmAction } from "@/components/ConfirmDialog";
 import { reportClientError } from "./lib/reportClientError";
 import { captureInstallOffer } from "./lib/installPrompt";
 import { installHistorySteps } from "./lib/historySteps";
+import { SYSTEM_APP_NAME, isSystemHost } from "@shared/appVariant";
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 
@@ -37,6 +38,21 @@ captureInstallOffer();
 // behind is not the portal's (lib/historySteps.ts). Before the first
 // navigation, or the first step goes unstamped.
 installHistorySteps();
+
+// On the staff host the phone's home-screen name is «سیستەم» (the owner,
+// 2026-09-27). Android reads it from the manifest the server varies by host;
+// iPhone reads these two tags when "Add to Home Screen" is tapped.
+if (isSystemHost(window.location.hostname)) {
+  for (const name of ["apple-mobile-web-app-title", "application-name"]) {
+    let tag = document.querySelector<HTMLMetaElement>(`meta[name="${name}"]`);
+    if (!tag) {
+      tag = document.createElement("meta");
+      tag.name = name;
+      document.head.appendChild(tag);
+    }
+    tag.content = SYSTEM_APP_NAME;
+  }
+}
 
 // Register Service Worker for PWA
 if ('serviceWorker' in navigator) {

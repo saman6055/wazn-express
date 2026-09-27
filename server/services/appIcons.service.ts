@@ -27,6 +27,7 @@ import * as db from "../db";
 import { appLogger } from "../utils/logger";
 import { getUploadsDir } from "./localUpload";
 import { localUploadFileName } from "../lib/photoUrls";
+import { SYSTEM_APP_NAME, isSystemHost } from "@shared/appVariant";
 
 // Sizes we can render on demand. 192 + 512 are the PWA minimums; the rest
 // cover Android density buckets, apple-touch (180), and the favicon (16/32).
@@ -114,9 +115,14 @@ function hashString(s: string): string {
   return (h >>> 0).toString(36);
 }
 
-function buildManifest(logoUrl: string | null, info: Record<string, unknown> | null) {
-  const name = (info?.name as string) || "Wazn Express";
-  const shortName = name.split(/\s+/)[0] || "Wazn";
+export function buildManifest(
+  logoUrl: string | null,
+  info: Record<string, unknown> | null,
+  /** The office's own app (admin.…): named «سیستەم» on the phone. */
+  system = false,
+) {
+  const name = system ? SYSTEM_APP_NAME : (info?.name as string) || "Wazn Express";
+  const shortName = system ? SYSTEM_APP_NAME : name.split(/\s+/)[0] || "Wazn";
   const icons = logoUrl
     ? MANIFEST_SIZES.map((size) => ({
         src: `/app-icons/icon-${size}.png?v=${hashString(logoUrl)}`,
@@ -132,9 +138,13 @@ function buildManifest(logoUrl: string | null, info: Record<string, unknown> | n
       }));
 
   return {
+    // A stable identity per app, so the phone never mistakes one for the other.
+    id: system ? "/?app=system" : "/",
     name,
     short_name: shortName,
-    description: "International Shipping & Logistics from China to Iraq",
+    description: system
+      ? "Wazn Express — سیستەمی کارمەندان"
+      : "International Shipping & Logistics from China to Iraq",
     start_url: "/",
     display: "standalone",
     background_color: "#1e293b",
@@ -176,7 +186,7 @@ export function registerAppIconRoutes(app: Express): void {
     }
   });
 
-  app.get("/manifest.json", async (_req: Request, res: Response) => {
+  app.get("/manifest.json", async (req: Request, res: Response) => {
     try {
       const info = await getCompanyInfo();
       const url = readLogoUrl(info);
@@ -185,7 +195,12 @@ export function registerAppIconRoutes(app: Express): void {
       const renderable = url && (await getLogoBytes(url)) ? url : null;
       res.setHeader("Content-Type", "application/manifest+json; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
-      res.json(buildManifest(renderable, info));
+      // Behind the proxy the original host arrives as X-Forwarded-Host.
+      const forwarded = String(req.headers["x-forwarded-host"] ?? "").split(",")[0].trim();
+      const system = isSystemHost(forwarded || req.hostname || String(req.headers.host ?? ""));
+      // One URL, two answers: a cache must not hand one host's to the other.
+      res.setHeader("Vary", "Host, X-Forwarded-Host");
+      res.json(buildManifest(renderable, info, system));
     } catch (err) {
       appLogger.warn("[appIcons] manifest failed", {
         error: err instanceof Error ? err.message : String(err),

@@ -9,6 +9,7 @@ import { useTranslation } from '@/contexts/LanguageContext';
 import { pickLang } from '@/lib/lang';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 import { useBackCloses } from '@/hooks/useBackCloses';
+import { SYSTEM_APP_NAME, isSystemHost } from '@shared/appVariant';
 
 /**
  * Remembered once the app has been installed, so the prompt does not come
@@ -225,6 +226,9 @@ export function PWAInstallPrompt() {
   // away for this visit, like "later", instead of leaving the page under it.
   useBackCloses(onPortal && showPrompt && !isStandalone && !alreadyInstalled, handleDismiss);
 
+  // The office's app is «سیستەم» on the staff host (shared/appVariant).
+  const staffAppName = isSystemHost(window.location.hostname) ? SYSTEM_APP_NAME : company.name;
+
   // Never ask somebody to install what they have already installed.
   if (isStandalone || alreadyInstalled || !showPrompt) return null;
 
@@ -336,10 +340,10 @@ export function PWAInstallPrompt() {
             </h3>
             <p className="text-slate-400 text-sm mb-3">
               {pickLang(language, {
-                ku: `${company.name} وەک ئەپ دابەزێنە بۆ ئەزموونی باشتر`,
-                en: `Install ${company.name} as an app for a better experience`,
-                ar: `ثبّت ${company.name} كتطبيق للحصول على تجربة أفضل`,
-                zh: `将 ${company.name} 安装为应用以获得更佳体验`,
+                ku: `${staffAppName} وەک ئەپ دابەزێنە بۆ ئەزموونی باشتر`,
+                en: `Install ${staffAppName} as an app for a better experience`,
+                ar: `ثبّت ${staffAppName} كتطبيق للحصول على تجربة أفضل`,
+                zh: `将 ${staffAppName} 安装为应用以获得更佳体验`,
               })}
             </p>
 
