@@ -58,6 +58,29 @@ export function readOptionUsage(list: string): OptionUsage {
 }
 
 /**
+ * The last thing picked from this list, or nothing.
+ *
+ * The owner, 2026-09-27: «جۆری کاڵا لە کڕین بە تێچوو و پاکێجی
+ * تەواو، دوایین جۆر کە دیاری کرابوو لە بیری بمێنێ.»
+ *
+ * The same complaint that kept the shipping type after a save: a shop sells
+ * the same kind of thing all morning, and picking it again on every order
+ * is work the form should have done. The ranking above already records when
+ * each value was last chosen; this only reads it back.
+ */
+export function lastOptionUsed(list: string): string | null {
+  let best: string | null = null;
+  let bestAt = 0;
+  for (const [value, use] of Object.entries(readOptionUsage(list))) {
+    if (use.last > bestAt) {
+      best = value;
+      bestAt = use.last;
+    }
+  }
+  return best;
+}
+
+/**
  * Remember one pick.
  *
  * `now` is a parameter so the rule can be tested without waiting for a

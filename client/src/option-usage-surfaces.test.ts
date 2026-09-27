@@ -63,18 +63,28 @@ describe("the component behaves the way the rule describes", () => {
   const src = read("components/AttributeSelect.tsx");
 
   it("it records the pick and re-reads the order for next time", () => {
-    expect(src).toContain("recordOptionUse(usageKey, picked)");
+    expect(src).toContain("recordOptionUse(usageKey, next)");
     expect(src).toContain("setUsageVersion((n) => n + 1)");
   });
 
   it("an empty pick is not counted as a use", () => {
-    expect(src).toContain("if (picked) {");
+    expect(src).toContain("if (next) {");
   });
 
   it("the promoted few are labelled, so the order explains itself", () => {
-    expect(src).toContain("SelectGroup");
-    expect(src).toContain("SelectLabel");
+    // Built on the command list since 2026-09-27, so the list can be typed
+    // into; the heading that explains the order is the same.
+    expect(src).toContain("CommandGroup");
+    expect(src).toContain("heading={pickLang(language, {");
     expect(src).toContain('ku: "زۆرترین بەکارهاتوو"');
+  });
+
+  it("can be typed into once the list is longer than a glance", () => {
+    // The owner, 2026-09-27: «لێرەش سێرچ هەبێ» — a product-type list fifteen
+    // long is one nobody reads to the end.
+    expect(src).toContain("const SEARCH_FROM = 8;");
+    expect(src).toContain("showSearch && (");
+    expect(src).toContain("<CommandInput");
   });
 
   it("a list nobody has used yet renders exactly as before", () => {
@@ -111,5 +121,31 @@ describe("what the rule refuses to do", () => {
   it("a browser that refuses storage still gets a working list", () => {
     expect(lib).toContain("} catch {");
     expect(lib).toContain("return {};");
+  });
+});
+
+describe("the kind of goods is remembered", () => {
+  /*
+   * The owner, 2026-09-27: «جۆری کاڵا لە کڕین بە تێچوو و پاکێجی تەواو،
+   * دوایین جۆر کە دیاری کرابوو لە بیری بمێنێ» — the same complaint that
+   * kept the shipping type after a save. A shop sells the same kind of
+   * thing all morning.
+   */
+  it("reads back the last one picked", () => {
+    const lib = read("lib/optionUsage.ts");
+    expect(lib).toContain("export function lastOptionUsed(list: string): string | null");
+    expect(lib).toContain("if (use.last > bestAt)");
+  });
+
+  it("opens both order forms on it, and keeps it after a save", () => {
+    for (const page of ["pages/CommissionForm.tsx", "pages/FullPackageForm.tsx"]) {
+      const src = read(page);
+      expect(src, page).toContain('lastOptionUsed("productType")');
+      // Only a new order, only an empty field, and only a type still on the
+      // list: one deleted from settings must not reappear as a dead word.
+      expect(src, page).toContain("if (isEditMode) return;");
+      expect(src, page).toContain("if (formData.productType) return;");
+      expect(src, page).toContain("productType: keepProductType,");
+    }
   });
 });

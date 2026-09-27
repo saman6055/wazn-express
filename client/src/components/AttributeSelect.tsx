@@ -1,15 +1,16 @@
 import { useMemo, useState } from "react";
+import { Check, ChevronDown } from "lucide-react";
 import {
-  Select, SelectContent, SelectGroup, SelectItem, SelectLabel,
-  SelectSeparator, SelectTrigger, SelectValue,
-} from "@/components/ui/select";
+  Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator,
+} from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { rankOptions, readOptionUsage, recordOptionUse } from "@/lib/optionUsage";
 
 /**
- * A picker that learns.
+ * A picker that learns, and that can be searched.
  *
  * The owner's rule (Sep 2026), meant for every list in the app: what gets
  * picked most rises to the top, and among equals the one picked last. The
@@ -20,6 +21,17 @@ import { rankOptions, readOptionUsage, recordOptionUse } from "@/lib/optionUsage
  * The few promoted sit in their own group under a heading, so the change in
  * order explains itself; everything else keeps exactly the order it was
  * given. A list nobody has used yet looks precisely as it always did.
+ *
+ * And it takes typing. The owner, 2026-09-27, looking at a product-type list
+ * fifteen long: «لێرەش سێرچ هەبێ». A dropdown that has to be scrolled past
+ * Cosmetics, Make up, Furniture, Instrument, Dress, Skirt, Tshirt, Heel,
+ * PANT, Pants, Jeans, Set is a dropdown somebody stops reading. Two letters
+ * now reach any of them.
+ *
+ * Built on the command list rather than the select, because a native select
+ * swallows keystrokes for its own first-letter jumping and cannot hold a
+ * box to type in. What the caller sees is unchanged: the same props, the
+ * same value, the same learning.
  *
  * `usageKey` names the list, not the field — two screens picking a product
  * type should share what they have learned, so they pass the same key.
@@ -47,7 +59,8 @@ interface AttributeSelectProps {
   onOpenChange?: (open: boolean) => void;
 }
 
-const NONE = "__none__";
+/** Typing is worth offering once a list is longer than a glance. */
+const SEARCH_FROM = 8;
 
 export function AttributeSelect({
   usageKey,
@@ -62,6 +75,12 @@ export function AttributeSelect({
   onOpenChange,
 }: AttributeSelectProps) {
   const { language } = useTranslation();
+  const [uncontrolledOpen, setUncontrolledOpen] = useState(false);
+  const isOpen = open ?? uncontrolledOpen;
+  const setOpen = (next: boolean) => {
+    setUncontrolledOpen(next);
+    onOpenChange?.(next);
+  };
 
   /**
    * Read once per open, not on every keystroke elsewhere on the form: the
@@ -76,49 +95,96 @@ export function AttributeSelect({
     [options, usage],
   );
 
+  const all = options ?? [];
+  const chosen = all.find((o) => o.value === value);
+  const showSearch = all.length >= SEARCH_FROM;
+
+  const pick = (next: string) => {
+    onChange(next);
+    if (next) {
+      recordOptionUse(usageKey, next);
+      setUsageVersion((n) => n + 1);
+    }
+    setOpen(false);
+  };
+
   const row = (o: AttributeOption) => (
-    <SelectItem key={o.value} value={o.value}>{o.label ?? o.value}</SelectItem>
+    <CommandItem
+      key={o.value}
+      // cmdk matches on this, not on the element's text, so a value whose
+      // label differs is still reachable by either.
+      value={`${o.label ?? o.value} ${o.value}`}
+      onSelect={() => pick(o.value)}
+    >
+      <Check className={cn("me-2 h-4 w-4", o.value === value ? "opacity-100" : "opacity-0")} />
+      {o.label ?? o.value}
+    </CommandItem>
   );
 
   return (
-    <Select
-      value={value}
-      disabled={disabled}
-      open={open}
-      onOpenChange={onOpenChange}
-      onValueChange={(v) => {
-        const picked = v === NONE ? "" : v;
-        onChange(picked);
-        if (picked) {
-          recordOptionUse(usageKey, picked);
-          setUsageVersion((n) => n + 1);
-        }
-      }}
-    >
-      <SelectTrigger className={className}>
-        <SelectValue placeholder={placeholder} />
-      </SelectTrigger>
-      <SelectContent>
-        {emptyLabel && <SelectItem value={NONE}>{emptyLabel}</SelectItem>}
-        {top.length > 0 && (
-          <>
-            <SelectGroup>
-              <SelectLabel className="text-[11px] text-muted-foreground">
-                {pickLang(language, {
-                  ku: "زۆرترین بەکارهاتوو",
-                  en: "Used most",
-                  ar: "الأكثر استخداماً",
-                  zh: "最常用",
-                })}
-              </SelectLabel>
-              {top.map(row)}
-            </SelectGroup>
-            {rest.length > 0 && <SelectSeparator />}
-          </>
-        )}
-        {rest.map(row)}
-      </SelectContent>
-    </Select>
+    <Popover open={isOpen} onOpenChange={setOpen}>
+      <PopoverTrigger asChild disabled={disabled}>
+        <button
+          type="button"
+          disabled={disabled}
+          className={cn(
+            "flex w-full items-center justify-between gap-2 rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs outline-none disabled:cursor-not-allowed disabled:opacity-50",
+            !chosen && "text-muted-foreground",
+            className,
+          )}
+          data-testid={`attribute-${usageKey}`}
+        >
+          <span className="truncate">{chosen ? chosen.label ?? chosen.value : placeholder}</span>
+          <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent className="w-[min(18rem,calc(100vw-2rem))] p-0" align="start">
+        <Command>
+          {showSearch && (
+            <CommandInput
+              placeholder={pickLang(language, {
+                ku: "بگەڕێ…",
+                en: "Search…",
+                ar: "ابحث…",
+                zh: "搜索…",
+              })}
+            />
+          )}
+          <CommandList>
+            <CommandEmpty>
+              {pickLang(language, {
+                ku: "هیچ نەدۆزرایەوە",
+                en: "Nothing found",
+                ar: "لا نتائج",
+                zh: "无结果",
+              })}
+            </CommandEmpty>
+            {emptyLabel && (
+              <CommandItem value={emptyLabel} onSelect={() => pick("")}>
+                <Check className={cn("me-2 h-4 w-4", value ? "opacity-0" : "opacity-100")} />
+                {emptyLabel}
+              </CommandItem>
+            )}
+            {top.length > 0 && (
+              <>
+                <CommandGroup
+                  heading={pickLang(language, {
+                    ku: "زۆرترین بەکارهاتوو",
+                    en: "Used most",
+                    ar: "الأكثر استخداماً",
+                    zh: "最常用",
+                  })}
+                >
+                  {top.map(row)}
+                </CommandGroup>
+                {rest.length > 0 && <CommandSeparator />}
+              </>
+            )}
+            <CommandGroup>{rest.map(row)}</CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
   );
 }
 

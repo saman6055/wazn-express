@@ -12,6 +12,7 @@ import { toast } from "sonner";
 import CompressedImageUpload from "@/components/CompressedImageUpload";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { lastOptionUsed } from "@/lib/optionUsage";
 import { pickLang } from "@/lib/lang";
 import { AttributeSelect } from "@/components/AttributeSelect";
 import { useProductTypeSuggestion } from "@/hooks/useProductTypeSuggestion";
@@ -286,6 +287,8 @@ export default function FullPackageForm() {
       if (keepPlatform) {
         localStorage.setItem(LAST_PLATFORM_KEY, keepPlatform);
       }
+      // The next order is nearly always the same kind of thing.
+      const keepProductType = formData.productType;
       const keepShipping = formData.shippingType;
       if (keepShipping) {
         localStorage.setItem(LAST_SHIPPING_TYPE_KEY, keepShipping);
@@ -305,7 +308,7 @@ export default function FullPackageForm() {
         quantity: "1",
         color: "",
         size: "",
-        productType: "",
+        productType: keepProductType,
         purchasePriceUsd: "",
         sellingPriceUsd: "",
         advancePaidUsd: "",
@@ -394,6 +397,27 @@ export default function FullPackageForm() {
   // Armed by the first save with no picture; cleared once one is
   // added, and after a save, so the next order asks again.
   const askedForImage = useRef(false);
+  /*
+   * The kind of goods, remembered.
+   *
+   * The owner, 2026-09-27: «دوایین جۆر کە دیاری کرابوو لە بیری
+   * بمێنێ» — the same complaint that kept the shipping type after a save.
+   * A shop sells the same kind of thing all morning.
+   *
+   * Only for a new order, only while the field is still empty, and only
+   * when the remembered value is still on the list: a type deleted from
+   * settings must not reappear in a form as a word nobody can pick again
+   * (lib/optionUsage).
+   */
+  useEffect(() => {
+    if (isEditMode) return;
+    if (formData.productType) return;
+    const remembered = lastOptionUsed("productType");
+    if (!remembered) return;
+    if (!(typeAttrs ?? []).some((a: { value?: string; name?: string }) => (a.value ?? a.name) === remembered)) return;
+    setFormData((prev) => (prev.productType ? prev : { ...prev, productType: remembered }));
+  }, [typeAttrs, isEditMode, formData.productType]);
+
   const productTypeRef = useRef<HTMLDivElement>(null);
   const [productTypeOpen, setProductTypeOpen] = useState(false);
   const goToMissingProductType = () => {
