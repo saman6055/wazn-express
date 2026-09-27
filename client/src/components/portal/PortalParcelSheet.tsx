@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { PORTAL_LIVE_QUERY } from "@/lib/portalQuery";
 import { hasFeature } from "@shared/customerFeatures";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
-import { buildSearchIndex, type ParcelRow, type SearchItem } from "@/lib/portalSearch";
+import { buildSearchIndex, type BoxRow, type ParcelRow, type SearchItem } from "@/lib/portalSearch";
 import { originCountriesOf } from "@/lib/packageStatus";
 import { pathOf } from "@/lib/historySteps";
 import { useBackCloses } from "@/hooks/useBackCloses";
@@ -69,6 +69,19 @@ export function usePortalParcelSheet() {
     [itemFor],
   );
 
+  /**
+   * One delivery box's sheet: what it is, where it is, the parcels packed in
+   * it and — for a customer given receipts — the way to its receipt. The
+   * owner, 2026-09-27: "My boxes" was a list you could not go into.
+   */
+  const openBox = useCallback((box: BoxRow, more: Extras = {}) => {
+    const item = buildSearchIndex({ boxes: [box] }).find((i) => i.kind === "box") ?? null;
+    if (!item) return;
+    setExtras(more);
+    setOpenItem(item);
+    setShownItem(item);
+  }, []);
+
   const close = useCallback(() => setOpenItem(null), []);
   useBackCloses(openItem != null, close);
 
@@ -118,5 +131,5 @@ export function usePortalParcelSheet() {
     </Suspense>
   ) : null;
 
-  return { openParcel, itemFor, origins, sheet };
+  return { openParcel, openBox, itemFor, origins, sheet };
 }

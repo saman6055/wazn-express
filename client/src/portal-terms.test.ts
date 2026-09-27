@@ -107,8 +107,10 @@ describe("every state has its own name", () => {
   });
 
   it("each delivery-box state has a label", () => {
-    const src = read("components/portal/MyDeliveryBoxes.tsx");
-    const map = src.slice(src.indexOf("const BOX_STATUS_LABEL"), src.indexOf("function DeliveryProof("));
+    // The map moved to lib/boxStatus (2026-09-27) so the search chip can read
+    // it without importing the box list.
+    const src = read("lib/boxStatus.ts");
+    const map = src.slice(src.indexOf("const BOX_STATUS_LABEL"));
     for (const status of ["open", "ready", "in_transit", "delivered", "cancelled"]) {
       expect(map, `${status} has no label`).toContain(`${status}: { ku:`);
     }

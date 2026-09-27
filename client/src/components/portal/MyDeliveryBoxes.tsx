@@ -8,9 +8,15 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner";
-import { PackageCheck, CheckCircle2, Loader2, Truck, Camera, PenLine } from "lucide-react";
+import { PackageCheck, CheckCircle2, Loader2, Truck, Camera, PenLine, ChevronLeft, ChevronRight, Package } from "lucide-react";
+import { usePortalParcelSheet } from "@/components/portal/PortalParcelSheet";
+import { BOX_STATUS_LABEL } from "@/lib/boxStatus";
 
 type Label = (t: { ku: string; en: string; ar: string; zh: string }) => string;
+
+// The names live in lib/boxStatus so the search's chip can read them
+// without importing this component (which opens the box sheet).
+export { BOX_STATUS_LABEL } from "@/lib/boxStatus";
 
 /**
  * The photo and the signature taken when the box was handed over.
@@ -21,18 +27,6 @@ type Label = (t: { ku: string; en: string; ar: string; zh: string }) => string;
  * are collected from the warehouse and were never photographed, and an empty
  * "Proof of delivery" heading reads like something went missing.
  */
-/**
- * What each box status is called. The chip used to know two states —
- * received, or "on its way" — so a box still being packed, a box waiting to
- * leave and a cancelled box all told the customer it was out for delivery.
- */
-export const BOX_STATUS_LABEL: Record<string, { ku: string; en: string; ar: string; zh: string }> = {
-  open: { ku: "ئامادە دەکرێت", en: "Being packed", ar: "قيد التجهيز", zh: "打包中" },
-  ready: { ku: "ئامادەیە بۆ ناردن", en: "Ready to send", ar: "جاهز للإرسال", zh: "待发出" },
-  in_transit: { ku: "لە ڕێی گەیاندنە", en: "Out for delivery", ar: "خرج للتسليم", zh: "派送中" },
-  delivered: { ku: "گەیشتە دەستت", en: "Received", ar: "تم الاستلام", zh: "已签收" },
-  cancelled: { ku: "هەڵوەشێنرایەوە", en: "Cancelled", ar: "أُلغي", zh: "已取消" },
-};
 
 function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
   const [open, setOpen] = useState(false);
@@ -150,6 +144,11 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
 
   const { data: boxes, isLoading } = trpc.customerPortal.getMyDeliveryBoxes.useQuery(undefined, PORTAL_LIVE_QUERY);
   const [confirming, setConfirming] = useState<number | null>(null);
+  // Tapping a box opens it: its parcels, where it is, its receipt. The same
+  // sheet the search opens for a box (PortalParcelSheet).
+  const boxSheet = usePortalParcelSheet();
+  const isRTL = language === "ku" || language === "ar";
+  const Chevron = isRTL ? ChevronLeft : ChevronRight;
 
   const confirm = trpc.customerPortal.confirmBoxReceived.useMutation({
     onSuccess: () => {
@@ -193,12 +192,19 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
           const confirmedByCustomer = !!box.customerConfirmedAt;
 
           return (
-            <div key={box.id} className={cn("rounded-2xl border p-3.5", card)}>
-              <div className="flex items-start justify-between gap-3">
+            <div key={box.id} className={cn("rounded-2xl border p-3.5 transition-shadow hover:shadow-md", card)}>
+              {/* The top of the card is the way in: a button, not a label —
+                  the owner, 2026-09-27, "my boxes has no link". */}
+              <button
+                type="button"
+                onClick={() => boxSheet.openBox(box)}
+                data-testid="open-box"
+                className="flex w-full items-start justify-between gap-3 text-start transition active:scale-[0.99]"
+              >
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold"><bdi dir="ltr" className="font-mono">{box.boxCode}</bdi></p>
                   <p className="mt-0.5 text-xs text-muted-foreground">
-                    {box.totalPackages}{" "}
+                    <bdi dir="ltr" className="tabular-nums">{box.totalPackages}</bdi>{" "}
                     {label({ ku: "پاکەت", en: "packages", ar: "طرد", zh: "件" })}
                   </p>
                 </div>
@@ -215,7 +221,16 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
                 >
                   {label(BOX_STATUS_LABEL[box.status] ?? BOX_STATUS_LABEL.in_transit)}
                 </span>
-              </div>
+              </button>
+              <button
+                type="button"
+                onClick={() => boxSheet.openBox(box)}
+                className="relative tap-44 mt-2 inline-flex items-center gap-1.5 rounded-full bg-sky-50 px-3 py-1.5 text-xs font-semibold text-sky-700 transition active:scale-95 dark:bg-sky-950/40 dark:text-sky-300"
+              >
+                <Package className="h-3.5 w-3.5" />
+                {label({ ku: "ناوەڕۆکی بۆکس نیشان بدە", en: "Show what is inside", ar: "اعرض محتوى الصندوق", zh: "查看箱内物品" })}
+                <Chevron className="h-3.5 w-3.5" />
+              </button>
 
               {isDone ? (
                 <>
@@ -274,6 +289,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
           );
         })}
       </div>
+      {boxSheet.sheet}
     </div>
   );
 }

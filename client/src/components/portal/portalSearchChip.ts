@@ -1,7 +1,7 @@
 import { PACKAGE_STATUS_LABEL, packageStatusTone, parcelStatusWords } from "@/lib/packageStatus";
 import { orderStatusLabel } from "@/lib/shipmentFilters";
 import { DECLARED_PENDING_LABEL, ORDER_NOT_SHIPPED_LABEL, SEARCH_TAB_TONE, type SearchItem } from "@/lib/portalSearch";
-import { BOX_STATUS_LABEL } from "@/components/portal/MyDeliveryBoxes";
+import { BOX_STATUS_LABEL } from "@/lib/boxStatus";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
