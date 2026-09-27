@@ -64,6 +64,20 @@ function fmtDate(d: string | Date | null | undefined, language: string): string 
   return formatPortalDate(date, language);
 }
 
+/**
+ * A stage's date on two lines — day and month, then the year. Each node is a
+ * 48px column and "23/09/2026" at 11px is about 70px: side by side, two
+ * recorded dates ran into each other ("23/09/202615/09/2026", the owner's
+ * screenshot of 2026-09-27). The year stays: "05/03" alone was two days.
+ */
+export function splitStageDate(formatted: string): [string, string] {
+  const zh = formatted.indexOf("年");
+  if (zh > 0) return [formatted.slice(zh + 1), formatted.slice(0, zh + 1)];
+  const slash = formatted.lastIndexOf("/");
+  if (slash > 0) return [formatted.slice(0, slash), formatted.slice(slash + 1)];
+  return [formatted, ""];
+}
+
 function toTime(d: string | Date | null | undefined): number | null {
   if (!d) return null;
   const t = new Date(d).getTime();
@@ -231,13 +245,15 @@ export function BatchJourneyTimeline({
                 {stage.date && state !== "pending" && (
                   <span
                     className={cn(
-                      "mt-0.5 text-[11px] font-mono tabular-nums",
+                      "mt-0.5 text-center text-[11px] font-mono leading-tight tabular-nums whitespace-nowrap",
                       state !== "active" && "hidden @[18rem]:block",
                       isDark ? "text-slate-500" : "text-slate-400",
                     )}
                     dir="ltr"
+                    title={stage.date}
                   >
-                    {stage.date}
+                    <span className="block">{splitStageDate(stage.date)[0]}</span>
+                    <span className="block opacity-75">{splitStageDate(stage.date)[1]}</span>
                   </span>
                 )}
               </div>

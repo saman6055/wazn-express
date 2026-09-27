@@ -409,7 +409,7 @@ export default function PortalUnclaimedPackages() {
 
       {/* Claim Dialog */}
       <Dialog open={isClaimDialogOpen} onOpenChange={setIsClaimDialogOpen}>
-        <DialogContent className="sm:max-w-md mx-4 rounded-2xl">
+        <DialogContent className="sm:max-w-md rounded-2xl">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Package className="w-5 h-5 text-slate-800 dark:text-slate-200" />

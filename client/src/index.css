@@ -777,6 +777,21 @@
   }
 }
 
+/*
+ * iPhone and iPad zoom the whole page into any field whose text is under
+ * 16px the moment it is tapped, and leave it zoomed — the customer then has
+ * to pinch back out of their own app. 16px on those devices only (the
+ * -webkit-touch-callout test matches iOS Safari and nothing else); every
+ * other screen keeps the size it was drawn at.
+ */
+@supports (-webkit-touch-callout: none) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea,
+  select {
+    font-size: max(16px, 1em);
+  }
+}
+
 /* PWA Standalone Mode Styles */
 @media (display-mode: standalone) {
   body {
@@ -793,6 +808,9 @@
 @media (hover: none) and (pointer: coarse) {
   button, a, [role="button"] {
     -webkit-tap-highlight-color: transparent;
+    /* A tap is a tap: no wait to see whether it becomes a double-tap zoom.
+       What makes a web page feel like an app on a phone (2026-09-27). */
+    touch-action: manipulation;
   }
   
   /* Larger touch targets on mobile */

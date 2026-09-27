@@ -1214,10 +1214,22 @@ export default function PortalFullPackage() {
       
       {/* Order Detail Dialog */}
       <Dialog open={showDetailDialog} onOpenChange={setShowDetailDialog}>
-        <DialogContent className={cn(
-          "max-w-md mx-auto rounded-3xl p-0 overflow-hidden",
-          isDark ? "bg-slate-900 border-slate-800" : "bg-white"
-        )}>
+        {/* On a phone the order rises from the bottom as a sheet, the full
+            width, as tall as it needs up to the top of the screen, and it
+            scrolls. It used to be a centred card with `overflow-hidden`,
+            which beat the primitive's own scroll — the dates at the foot
+            were cut off on every phone (the owner, 2026-09-27). From a
+            tablet up it is the centred card again. */}
+        <DialogContent
+          showCloseButton={false}
+          className={cn(
+            "gap-0 p-0 overflow-x-hidden overflow-y-auto overscroll-contain sm:max-w-md sm:rounded-3xl",
+            "max-sm:inset-x-0 max-sm:top-auto max-sm:bottom-0 max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0",
+            "max-sm:max-h-[94dvh] max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0",
+            "max-sm:data-[state=open]:slide-in-from-bottom-10 max-sm:data-[state=closed]:slide-out-to-bottom-10",
+            isDark ? "bg-slate-900 border-slate-800" : "bg-white"
+          )}
+        >
           {selectedOrder && (
             <>
               {/* Dialog Header with Gradient */}
@@ -1226,7 +1238,12 @@ export default function PortalFullPackage() {
                   "h-32",
                   `bg-gradient-to-r ${getStatusInfo(selectedOrder.status).gradient}`
                 )} />
+                {/* The sheet's grip, so a phone reads it as something that
+                    came up and can be put back down. */}
+                <span aria-hidden="true" className="absolute inset-x-0 top-2 mx-auto h-1.5 w-12 rounded-full bg-white/60 sm:hidden" />
                 <button
+                  type="button"
+                  aria-label={pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
                   onClick={() => setShowDetailDialog(false)}
                   className="tap-44 absolute top-4 end-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
                 >
@@ -1258,7 +1275,7 @@ export default function PortalFullPackage() {
               </div>
               
               {/* Dialog Content */}
-              <div className="p-6 pt-14">
+              <div className="p-5 pt-14 pb-[calc(1.5rem+env(safe-area-inset-bottom))] sm:p-6 sm:pt-14">
                 <DialogHeader className="text-start mb-6">
                   <DialogTitle className={cn(
                     "text-xl font-bold",
