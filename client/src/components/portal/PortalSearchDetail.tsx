@@ -1,9 +1,11 @@
 import type { ReactNode } from "react";
-import { Boxes, Calendar, Copy, Hash, MapPin, Receipt, Ruler, Scale, ShoppingBag, Truck, type LucideIcon } from "lucide-react";
+import { Boxes, Calendar, Copy, Hash, MapPin, Plane, Receipt, Ruler, Scale, Ship, ShoppingBag, Truck, type LucideIcon } from "lucide-react";
+import { travelModeOf } from "@/lib/travelMode";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
 import { Skeleton } from "@/components/ui/skeleton";
 import { trpc } from "@/lib/trpc";
+import { PORTAL_LIVE_QUERY } from "@/lib/portalQuery";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
@@ -142,7 +144,8 @@ export default function PortalSearchDetail({
   if (SHIPPING_TYPE_LABEL[shippingType]) {
     facts.push({
       key: "shipping",
-      icon: Truck,
+      // How it travels, drawn as it travels (lib/travelMode).
+      icon: travelModeOf(shippingType) === "sea" ? Ship : travelModeOf(shippingType) === "air" ? Plane : Truck,
       label: { ku: "جۆری ناردن", en: "Shipping", ar: "نوع الشحن", zh: "运输方式" },
       value: L(SHIPPING_TYPE_LABEL[shippingType]),
     });

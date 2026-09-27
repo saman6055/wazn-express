@@ -9,6 +9,7 @@
  */
 
 import { goodsCouldBeHere } from "@shared/parcelStage";
+import { ON_THE_WAY_WORDS, onTheWayWords } from "@/lib/travelMode";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -72,7 +73,10 @@ export function packageStatusTone(status: string | null | undefined): string {
  */
 export const PARCEL_WHERE_WORDS: Record<"erbil" | "onTheWay" | "china", L> = {
   erbil: { ku: "گەیشتە هەولێر — ئامادەیە بۆ وەرگرتن", en: "In Erbil — ready to collect", ar: "وصل إلى أربيل — جاهز للاستلام", zh: "已到埃尔比勒——可以取件" },
-  onTheWay: { ku: "لە ڕێگادایە (لە فڕۆکە یان کەشتیدایە)", en: "On the way (on a plane or ship)", ar: "في الطريق (على متن طائرة أو سفينة)", zh: "运输中（在飞机或船上）" },
+  // The mode-free fallback. A parcel whose shipment is known says how it
+  // travels instead — «لە ڕێگای ئاسمانی» / «لە ڕێگای دەریایی» (lib/travelMode,
+  // the owner 2026-09-27: never "a plane or a ship" about goods on a plane).
+  onTheWay: ON_THE_WAY_WORDS.unknown,
   china: { ku: "تۆمارکراوە لە کۆگای چین", en: "Registered at our China warehouse", ar: "مسجّل في مستودعنا في الصين", zh: "已在我们的中国仓库登记" },
 };
 
@@ -126,6 +130,8 @@ export function parcelStatusWords(
   originCountries: ReadonlySet<number>,
   /** The status of the batch it travelled in, when the caller knows it. */
   batchStatus?: string | null,
+  /** air_regular / sea …: the parcel's own, else its shipment's. */
+  shippingType?: string | null,
 ): L | null {
   const status = String(parcel.status ?? "");
   switch (status) {
@@ -139,12 +145,12 @@ export function parcelStatusWords(
        * no batch was boxed at the counter.
        */
       if (batchStatus !== undefined && batchStatus !== null && !goodsCouldBeHere({ batch: { status: batchStatus } })) {
-        return String(batchStatus) === "in_transit" ? PARCEL_WHERE_WORDS.onTheWay : PARCEL_WHERE_WORDS.china;
+        return String(batchStatus) === "in_transit" ? onTheWayWords(shippingType) : PARCEL_WHERE_WORDS.china;
       }
       return PARCEL_WHERE_WORDS.erbil;
     }
     case "in_transit":
-      return PARCEL_WHERE_WORDS.onTheWay;
+      return onTheWayWords(shippingType);
     case "registered":
     case "in_batch":
       return registeredInChina(parcel, originCountries) ? PARCEL_WHERE_WORDS.china : PACKAGE_STATUS_LABEL.registered;

@@ -54,10 +54,20 @@ describe("where a parcel is, in the customer's words (owner, 2026-09-19)", () =>
 
   it("says the owner's three phrases, word for word", () => {
     expect(PARCEL_WHERE_WORDS.erbil.ku).toBe("گەیشتە هەولێر — ئامادەیە بۆ وەرگرتن");
-    expect(PARCEL_WHERE_WORDS.onTheWay.ku).toBe("لە ڕێگادایە (لە فڕۆکە یان کەشتیدایە)");
+    // The either/or «لە فڕۆکە یان کەشتیدایە» is gone (owner, 2026-09-27):
+    // with the mode known it says the mode, without it just "on the way".
+    expect(PARCEL_WHERE_WORDS.onTheWay.ku).toBe("لە ڕێگادایە");
     expect(PARCEL_WHERE_WORDS.china.ku).toBe("تۆمارکراوە لە کۆگای چین");
     expect(parcelStatusWords({ status: "ready_for_delivery" }, none)).toBe(PARCEL_WHERE_WORDS.erbil);
     expect(parcelStatusWords({ status: "in_transit" }, none)).toBe(PARCEL_WHERE_WORDS.onTheWay);
+    expect(parcelStatusWords({ status: "in_transit" }, none, null, "air_regular")?.ku).toBe("لە ڕێگای ئاسمانی");
+    expect(parcelStatusWords({ status: "in_transit" }, none, null, "air_irregular")?.ku).toBe("لە ڕێگای ئاسمانی");
+    expect(parcelStatusWords({ status: "in_transit" }, none, null, "sea")?.ku).toBe("لە ڕێگای دەریایی");
+    // A boxed parcel whose shipment is still flying: on the way, by air.
+    expect(parcelStatusWords({ status: "ready_for_delivery" }, none, "in_transit", "air_regular")?.ku).toBe("لە ڕێگای ئاسمانی");
+    for (const words of Object.values(PARCEL_WHERE_WORDS)) {
+      expect(words.ku).not.toContain("یان کەشتی");
+    }
     for (const words of Object.values(PARCEL_WHERE_WORDS)) {
       expect(words.ku && words.en && words.ar && words.zh).toBeTruthy();
     }

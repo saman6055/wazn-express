@@ -282,7 +282,11 @@ describe("status wording has one home", () => {
     // the shared map, through parcelStatusWords.
     const chip = fs.readFileSync(path.join(SRC, "components", "portal", "portalSearchChip.ts"), "utf8");
     const words = fs.readFileSync(path.join(SRC, "lib", "packageStatus.ts"), "utf8");
-    expect(home).toContain("STATUS_LABEL[status as BatchStatus]");
+    // Through batchStatusWords, which is STATUS_LABEL told how the shipment
+    // travels (lib/travelMode, 2026-09-27).
+    expect(home).toContain("batchStatusWords(status, shippingType)");
+    const filters = fs.readFileSync(path.join(SRC, "lib", "shipmentFilters.ts"), "utf8");
+    expect(filters).toContain("return STATUS_LABEL[status as BatchStatus] ?? null;");
     expect(chip).toContain("parcelStatusWords(");
     expect(words).toContain("PACKAGE_STATUS_LABEL[status]");
   });

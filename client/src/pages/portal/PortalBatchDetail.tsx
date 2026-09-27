@@ -3,7 +3,8 @@ import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { pickLang } from "@/lib/lang";
 import { ShareParcelButton } from "@/components/portal/ShareParcelButton";
 import { copyText } from "@/lib/copyText";
-import { STATUS_LABEL, SHIPPING_TYPE_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
+import { STATUS_LABEL, SHIPPING_TYPE_LABEL, batchStatusWords, type BatchStatus } from "@/lib/shipmentFilters";
+import { travelModeOf } from "@/lib/travelMode";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { usePackageImages } from "@/components/portal/PackageThumb";
@@ -106,7 +107,7 @@ const { t, language } = useLanguage();
       { 
         status: "in_transit", 
         stepKey: "in_transit" as const,
-        icon: Plane, 
+        icon: travelModeOf(batch?.shippingType) === "sea" ? Ship : Plane, 
         completed: currentIndex > 1, 
         current: currentIndex === 1 
       },
@@ -218,7 +219,7 @@ const { t, language } = useLanguage();
                   "px-3 py-1 rounded-full text-xs font-medium",
                   "bg-white/15 text-white"
                 )}>
-                  {batch.shippingType === "sea" ? "🚢" : "✈️"}{" "}
+                  {travelModeOf(batch.shippingType) === "sea" ? "🚢" : "✈️"}{" "}
                   {batch.shippingType && SHIPPING_TYPE_LABEL[batch.shippingType]
                     ? pickLang(language, SHIPPING_TYPE_LABEL[batch.shippingType])
                     : batch.shippingType?.replace("_", " ")}
@@ -271,7 +272,7 @@ const { t, language } = useLanguage();
                 <WhatsAppHelpButton
                   language={language}
                   section={language === "ku" ? "وردەکاری بار" : language === "ar" ? "تفاصيل الشحنة" : language === "zh" ? "货运详情" : "Batch detail"}
-                  topic={`${batch.batchCode} — ${STATUS_LABEL[batch.status as BatchStatus] ? pickLang(language, STATUS_LABEL[batch.status as BatchStatus]) : batch.status}`}
+                  topic={`${batch.batchCode} — ${batchStatusWords(batch.status, batch.shippingType) ? pickLang(language, batchStatusWords(batch.status, batch.shippingType)!) : batch.status}`}
                 />
               </div>
             )}
@@ -296,7 +297,11 @@ const { t, language } = useLanguage();
             {pickLang(language, { ku: "شوێنکەوتنی بار", en: "Shipment Progress", ar: "تقدّم الشحنة", zh: "运输进度" })}
           </h3>
           
-          <div className="relative">
+          {/* A container, like the list's stepper (BatchJourneyTimeline): six
+              names in a 256px card on a 320px phone ran into each other
+              («لە گومرگ لە کۆگای هەولێر»). Below 18rem only the stage the
+              shipment is at keeps its name. */}
+          <div className="relative @container">
             {/* Timeline line */}
             <div className={cn(
               "absolute top-5 start-[8.33%] end-[8.33%] h-1 rounded-full",
@@ -334,11 +339,12 @@ const { t, language } = useLanguage();
                   </div>
                   <span className={cn(
                     "text-[11px] leading-tight font-medium mt-2 w-full break-words text-center",
+                    !step.current && "hidden @[18rem]:block",
                     step.completed || step.current 
                       ? (isDark ? "text-white" : "text-slate-800 dark:text-slate-200")
                       : (isDark ? "text-slate-500" : "text-slate-400")
                   )}>
-                    {pickLang(language, STATUS_LABEL[step.stepKey])}
+                    {pickLang(language, batchStatusWords(step.stepKey, batch?.shippingType) ?? STATUS_LABEL[step.stepKey])}
                   </span>
                 </div>
               ))}

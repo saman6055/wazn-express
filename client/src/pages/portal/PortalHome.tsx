@@ -28,7 +28,8 @@ import { isDebt, isCredit } from "@/lib/portalMoney";
 import { onImageError } from "@/lib/imageFallback";
 import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "@/lib/brand";
 import { PortalWelcomeCard } from "@/components/portal/PortalWelcomeCard";
-import { stageOf, isInIraqNotDelivered, STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
+import { stageOf, isInIraqNotDelivered, STATUS_LABEL, batchStatusWords, type BatchStatus } from "@/lib/shipmentFilters";
+import { travelModeOf } from "@/lib/travelMode";
 import { openWaznChat, waznChatMessage } from "@/lib/waznChat";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalChip } from "@/components/portal/PortalStatusChip";
@@ -178,7 +179,13 @@ function NextStepCard({
           </span>
         ) : (
           <div className={cn("w-11 h-11 shrink-0 rounded-xl flex items-center justify-center", isDark ? "bg-[#2563EB]" : "bg-blue-500 dark:bg-[#2563EB]")}>
-            <Truck className="w-5 h-5 text-white" />
+            {/* In the air or at sea, the way it travels; a truck only on
+                the road at this end (customs, the Erbil depot). */}
+            {step.key === "arriving_iraq" || step.key === "leaving_china" ? (
+              travelModeOf(shipment.shippingType) === "sea" ? <Ship className="w-5 h-5 text-white" /> : <Plane className="w-5 h-5 text-white" />
+            ) : (
+              <Truck className="w-5 h-5 text-white" />
+            )}
           </div>
         )}
 
@@ -330,13 +337,14 @@ export default function PortalHome() {
   const yuanRate = yuanInfo?.enabled && Number(yuanInfo.rate) > 0 ? Number(yuanInfo.rate) : null;
   const iqdRate = priceList?.rates?.iqd != null && Number(priceList.rates.iqd) > 0 ? Number(priceList.rates.iqd) : null;
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string, shippingType?: string | null) => {
     switch (status) {
       case "delivered":
       case "closed":
         return <CheckCircle className="w-4 h-4" />;
       case "in_transit":
-        return <Truck className="w-4 h-4" />;
+        // The way it travels, not a truck (the owner, 2026-09-27).
+        return travelModeOf(shippingType) === "sea" ? <Ship className="w-4 h-4" /> : <Plane className="w-4 h-4" />;
       case "customs":
         return <AlertCircle className="w-4 h-4" />;
       default:
@@ -345,10 +353,10 @@ export default function PortalHome() {
   };
 
   // The shared wording, not a second copy of it — see shipmentFilters.ts.
-  const getStatusText = (status: string) =>
-    STATUS_LABEL[status as BatchStatus]
-      ? pickLang(language, STATUS_LABEL[status as BatchStatus]!)
-      : status;
+  const getStatusText = (status: string, shippingType?: string | null) => {
+    const words = batchStatusWords(status, shippingType);
+    return words ? pickLang(language, words) : status;
+  };
 
   const getShippingIcon = (type: string) => {
     if (type?.includes("sea")) return <Ship className="w-5 h-5" />;
@@ -793,12 +801,14 @@ export default function PortalHome() {
                       </div>
 
                       <div className="min-w-0 flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <p dir="ltr" className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                        {/* The code never breaks in the middle ("AIR-2026-" / "062"
+                            on a 360px phone); the chip wraps below it instead. */}
+                        <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
+                          <p dir="ltr" className={cn("whitespace-nowrap font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                             {batch.batchCode}
                           </p>
-                          <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status)}>
-                            {getStatusText(batch.status)}
+                          <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status, batch.shippingType)}>
+                            {getStatusText(batch.status, batch.shippingType)}
                           </PortalChip>
                         </div>
                         <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>

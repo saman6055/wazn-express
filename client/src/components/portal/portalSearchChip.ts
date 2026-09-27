@@ -18,7 +18,8 @@ export function searchStatusWords(item: SearchItem, originCountries: ReadonlySet
     case "parcel":
       // The batch travels with the item, so the chip can ask it whether
       // the goods could be here at all (lib/packageStatus).
-      return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries, item.batch?.status);
+      // And how it travels: by air or by sea, never "a plane or a ship".
+      return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries, item.batch?.status, item.parcel?.shippingType || item.batch?.shippingType);
     case "order":
       if (item.status === "returned") return PACKAGE_STATUS_LABEL.returned ?? null;
       return orderStatusLabel(item.status) ?? ORDER_NOT_SHIPPED_LABEL;

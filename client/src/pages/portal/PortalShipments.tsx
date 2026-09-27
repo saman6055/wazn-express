@@ -28,10 +28,11 @@ import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import {
-  matchesStage, countByStage, STATUS_LABEL, orderStageOf,
+  matchesStage, countByStage, STATUS_LABEL, batchStatusWords, orderStageOf,
   journeyOf, journeyRank, JOURNEY_LABEL, JOURNEY_HINT,
   type ShipmentStage,
 } from "@/lib/shipmentFilters";
+import { travelModeOf } from "@/lib/travelMode";
 import { tint, gradient } from "@/lib/portalModes";
 import { formatClockDate, formatPortalDate } from "@/lib/portalClock";
 import { filterChinaDepot, matchesRoute } from "@/lib/chinaDepotFilter";
@@ -226,13 +227,14 @@ function ClassicPortalShipments() {
     }
   };
 
-  const getStatusIcon = (status: string) => {
+  const getStatusIcon = (status: string, shippingType?: string | null) => {
     switch (status) {
       case "delivered":
       case "closed":
         return <CheckCircle className="w-4 h-4" />;
       case "in_transit":
-        return <Truck className="w-4 h-4" />;
+        // The way it travels, not a truck (the owner, 2026-09-27).
+        return travelModeOf(shippingType) === "sea" ? <Ship className="w-4 h-4" /> : <Plane className="w-4 h-4" />;
       case "customs":
         return <AlertCircle className="w-4 h-4" />;
       default:
@@ -250,8 +252,8 @@ function ClassicPortalShipments() {
    * the raw column value, and used different words from the filters directly
    * above it — the page disagreeing with itself.
    */
-  const getStatusText = (status: string) => {
-    const label = STATUS_LABEL[status as keyof typeof STATUS_LABEL];
+  const getStatusText = (status: string, shippingType?: string | null) => {
+    const label = batchStatusWords(status, shippingType);
     return label ? pickLang(language, label) : status;
   };
 
@@ -803,8 +805,8 @@ function ClassicPortalShipments() {
                         </div>
                         
                         {/* Status Badge */}
-                        <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status)}>
-                          {getStatusText(batch.status)}
+                        <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status, batch.shippingType)}>
+                          {getStatusText(batch.status, batch.shippingType)}
                         </PortalChip>
                       </div>
                     </div>
@@ -850,7 +852,7 @@ function ClassicPortalShipments() {
                           <WhatsAppHelpButton
                             language={language}
                             section={language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : language === "zh" ? "货运" : "Shipments"}
-                            topic={`${batch.batchCode} — ${getStatusText(batch.status)}`}
+                            topic={`${batch.batchCode} — ${getStatusText(batch.status, batch.shippingType)}`}
                           />
                         </div>
                       </div>
@@ -893,7 +895,7 @@ function ClassicPortalShipments() {
                               : (isDark ? "bg-slate-600 text-slate-400" : "bg-slate-200 text-slate-500")
                         )}>
                           {batch.status === "in_transit" ? (
-                            <Plane className="w-3 h-3" />
+                            travelModeOf(batch.shippingType) === "sea" ? <Ship className="w-3 h-3" /> : <Plane className="w-3 h-3" />
                           ) : batch.status === "delivered" || batch.status === "closed" ? (
                             <CheckCircle className="w-3 h-3" />
                           ) : (

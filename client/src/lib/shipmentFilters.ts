@@ -1,3 +1,4 @@
+import { onTheWayWords, travelModeOf } from "@/lib/travelMode";
 /**
  * Grouping the six batch statuses into the three stages a customer recognises.
  *
@@ -70,6 +71,19 @@ export const STATUS_LABEL: Record<
   delivered: { ku: "گەیشتە دەستت", en: "Delivered", ar: "تم التسليم", zh: "已交付" },
   closed: { ku: "تەواو بوو", en: "Completed", ar: "مكتمل", zh: "已完成" },
 };
+
+/**
+ * A shipment's status in a customer's words, told how it travels: in transit
+ * reads «لە ڕێگای ئاسمانی» or «لە ڕێگای دەریایی» (lib/travelMode) rather than
+ * the bare «لە ڕێگادا». Every other status is its STATUS_LABEL.
+ */
+export function batchStatusWords(
+  status: string | null | undefined,
+  shippingType?: string | null,
+): { ku: string; en: string; ar: string; zh: string } | null {
+  if (status === "in_transit" && travelModeOf(shippingType)) return onTheWayWords(shippingType);
+  return STATUS_LABEL[status as BatchStatus] ?? null;
+}
 
 /** How a shipment travels, for anywhere that shows the raw column value. */
 export const SHIPPING_TYPE_LABEL: Record<

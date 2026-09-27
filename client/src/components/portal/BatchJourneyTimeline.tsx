@@ -1,6 +1,7 @@
 import { pickLang, type Lang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { STATUS_LABEL } from "@/lib/shipmentFilters";
+import { onTheWayWords, travelModeOf } from "@/lib/travelMode";
 import { formatPortalDate } from "@/lib/portalClock";
 import {
   Warehouse,
@@ -110,7 +111,7 @@ export function BatchJourneyTimeline({
 }: BatchJourneyTimelineProps) {
   const pick = (v: L10n) => pickLang(language as Lang, v);
   const current = STAGE_INDEX[status] ?? 0;
-  const TransitIcon: LucideIcon = shippingType === "sea" ? Ship : Plane;
+  const TransitIcon: LucideIcon = travelModeOf(shippingType) === "sea" ? Ship : Plane;
 
   /**
    * The recorded move first, the batch's own column second.
@@ -137,7 +138,8 @@ export function BatchJourneyTimeline({
       },
       {
         icon: TransitIcon,
-        label: STATUS_LABEL.in_transit,
+        // «لە ڕێگای ئاسمانی» / «لە ڕێگای دەریایی» — the way it travels.
+        label: travelModeOf(shippingType) ? onTheWayWords(shippingType) : STATUS_LABEL.in_transit,
         // departureDate is typed by staff and createdAt is stamped by the
         // system, which is how the stepper came to read "in China warehouse,
         // 28 July → in transit, 1 February". A recorded move beats both: it is

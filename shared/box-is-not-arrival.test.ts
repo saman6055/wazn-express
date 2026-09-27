@@ -58,7 +58,7 @@ describe("the same question, asked in the other two places", () => {
     expect(branch).toContain("return PARCEL_WHERE_WORDS.erbil;");
     // And the caller hands it the batch it already carries.
     expect(read("client/src/components/portal/portalSearchChip.ts"))
-      .toContain("originCountries, item.batch?.status)");
+      .toContain("originCountries, item.batch?.status, item.parcel?.shippingType || item.batch?.shippingType)");
   });
 
   it("by the counter, before it stamps one", () => {

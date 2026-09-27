@@ -7,7 +7,7 @@ import path from "path";
  *
  * The owner's brief (2026-09-19), third part, and the four decisions that
  * came with it: green «گەیشتە هەولێر — ئامادەیە بۆ وەرگرتن», blue «لە
- * ڕێگادایە (لە فڕۆکە یان کەشتیدایە)», grey «تۆمارکراوە لە کۆگای چین»;
+ * ڕێگای ئاسمانی / دەریایی» (lib/travelMode, 2026-09-27), grey «تۆمارکراوە لە کۆگای چین»;
  * delivered leaves the green tab; packed into a shipment still in China is
  * grey; customs stays blue as «لە گومرگ». The rules and their words are
  * tested in lib/portalSearch.test.ts and lib/packageStatus.test.ts; this
@@ -57,7 +57,7 @@ describe("one card, one sheet, wherever a parcel is listed", () => {
     const chip = read("components/portal/portalSearchChip.ts");
     // It also hands over the batch, so the chip can refuse to say Erbil
     // for a parcel whose shipment has not left China (2026-09-26).
-    expect(chip).toContain("return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries, item.batch?.status);");
+    expect(chip).toContain("return parcelStatusWords(item.parcel ?? { status: item.status }, originCountries, item.batch?.status, item.parcel?.shippingType || item.batch?.shippingType);");
     const sheet = read("components/portal/PortalParcelSheet.tsx");
     expect(sheet).toContain("words: searchStatusWords(shownItem, origins)");
   });
