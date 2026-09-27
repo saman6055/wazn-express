@@ -16,6 +16,8 @@ import {
 } from "@/lib/portalModes";
 import { formatClockTime, formatClockDate, msUntilNextMinute, CLOCK_HOUR12_KEY } from "@/lib/portalClock";
 import { Languages, Check } from "lucide-react";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { useBackCloses } from "@/hooks/useBackCloses";
 
 /**
  * The colour mode currently in force, kept in sync with the theme context.
@@ -144,48 +146,63 @@ export function PortalLanguagePicker({ glass, className }: { glass: string; clas
   const { language, setLanguage } = useLanguage();
   const [langOpen, setLangOpen] = useState(false);
   const current = LANGUAGES.find((l) => l.code === language);
+  // The phone's Back closes the list rather than leaving the page.
+  useBackCloses(langOpen, () => setLangOpen(false));
 
+  /* A Radix popover, portalled to <body> and kept inside the screen by its
+     collision logic. The hand-placed list pinned to the end edge it replaces opened
+     toward the screen edge in Kurdish and Arabic (end = left in RTL, so the
+     list grew rightwards off a picker that sits on the right) and was cut in
+     half on every phone — the owner's screenshot of 2026-09-27. */
   return (
-    <div className={cn("relative", className)}>
-      <button
-        type="button"
-        onClick={() => setLangOpen((o) => !o)}
-        className={cn(
-          "relative tap-44 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition active:scale-95",
-          glass,
-        )}
+    <Popover open={langOpen} onOpenChange={setLangOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          aria-haspopup="listbox"
+          aria-expanded={langOpen}
+          className={cn(
+            "relative tap-44 inline-flex items-center gap-1.5 rounded-full border px-3 py-1.5 text-xs font-medium backdrop-blur-sm transition active:scale-95",
+            glass,
+            className,
+          )}
+        >
+          <Languages className="h-3.5 w-3.5" />
+          {current?.nativeName ?? language}
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        variant="panel"
+        align="start"
+        sideOffset={8}
+        collisionPadding={12}
+        className="z-[60] w-44 max-w-[calc(100vw-24px)] p-1"
       >
-        <Languages className="h-3.5 w-3.5" />
-        {current?.nativeName ?? language}
-      </button>
-
-      {langOpen && (
-        <>
-          {/* Tap-away layer — a dropdown with no way out is worse than none. */}
-          <div className="fixed inset-0 z-40" onClick={() => setLangOpen(false)} />
-          <div className="absolute end-0 z-50 mt-2 w-36 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-xl dark:border-slate-700 dark:bg-slate-900">
-            {LANGUAGES.map((l) => (
-              <button
-                key={l.code}
-                type="button"
-                onClick={() => {
-                  setLanguage(l.code as Language);
-                  setLangOpen(false);
-                }}
-                className={cn(
-                  "flex w-full items-center gap-2 px-3 py-2 text-sm transition hover:bg-slate-100 dark:hover:bg-slate-800",
-                  language === l.code && "font-semibold",
-                )}
-              >
-                <span>{l.flag}</span>
-                <span className="flex-1 text-start">{l.nativeName}</span>
-                {language === l.code && <Check className="h-3.5 w-3.5 text-emerald-600 dark:text-emerald-300" />}
-              </button>
-            ))}
-          </div>
-        </>
-      )}
-    </div>
+        <div role="listbox" aria-label={pickLang(language, { ku: "زمان", en: "Language", ar: "اللغة", zh: "语言" })}>
+          {LANGUAGES.map((l) => (
+            <button
+              key={l.code}
+              type="button"
+              role="option"
+              aria-selected={language === l.code}
+              dir={l.code === "ku" || l.code === "ar" ? "rtl" : "ltr"}
+              onClick={() => {
+                setLanguage(l.code as Language);
+                setLangOpen(false);
+              }}
+              className={cn(
+                "flex min-h-11 w-full items-center gap-2.5 rounded-xl px-3 text-sm transition hover:bg-slate-100 active:scale-[0.98] dark:hover:bg-slate-800",
+                language === l.code && "bg-slate-100 font-semibold dark:bg-slate-800",
+              )}
+            >
+              <span aria-hidden="true">{l.flag}</span>
+              <span className="flex-1 text-start">{l.nativeName}</span>
+              {language === l.code && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
+            </button>
+          ))}
+        </div>
+      </PopoverContent>
+    </Popover>
   );
 }
 
