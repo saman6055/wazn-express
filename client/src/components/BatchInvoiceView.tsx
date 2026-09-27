@@ -67,32 +67,16 @@ function Line({ line, language }: { line: InvoiceLine; language: string }) {
       </div>
 
       <dl className="mt-3 space-y-1.5 border-t border-border pt-3 text-sm">
-        {/* A commission line shows both halves, because the customer chose the
-            item and knows what it cost. A resale line has one figure and no
-            second number they are entitled to see. */}
-        {line.basis === "item_plus_commission" ? (
-          <>
-            <div className="flex items-center justify-between gap-2">
-              <dt className="text-muted-foreground">
-                {pickLang(language, { ku: "نرخی کاڵا", en: "Item price", ar: "سعر السلعة", zh: "商品价格" })}
-              </dt>
-              <dd className="font-mono">{money(line.itemPrice ?? 0)}</dd>
-            </div>
-            <div className="flex items-center justify-between gap-2">
-              <dt className="text-muted-foreground">
-                {pickLang(language, { ku: "کرێی کڕین", en: "Purchase fee", ar: "أجرة الشراء", zh: "代购费" })}
-              </dt>
-              <dd className="font-mono">{money(line.commissionFee ?? 0)}</dd>
-            </div>
-          </>
-        ) : (
-          <div className="flex items-center justify-between gap-2">
-            <dt className="text-muted-foreground">
-              {pickLang(language, { ku: "تێچووی کڕین", en: "Goods", ar: "قيمة البضاعة", zh: "货款" })}
-            </dt>
-            <dd className="font-mono">{money(line.goods)}</dd>
-          </div>
-        )}
+        {/* One goods figure for every line. A commission line used to print
+            the item price and the purchase fee apart; the owner, 2026-09-27:
+            the customer sees the final number, never the fee. `goods` is
+            already item + fee for commission (shared/batchInvoice). */}
+        <div className="flex items-center justify-between gap-2">
+          <dt className="text-muted-foreground">
+            {pickLang(language, { ku: "نرخی کاڵا", en: "Goods", ar: "قيمة البضاعة", zh: "货款" })}
+          </dt>
+          <dd className="font-mono">{money(line.goods)}</dd>
+        </div>
 
         {/* A concealed (full-package) line has no shipping row at all: the
             agreed price is the whole story, and a $0.00 carriage row would

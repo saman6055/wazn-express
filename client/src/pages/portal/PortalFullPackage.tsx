@@ -1325,24 +1325,21 @@ export default function PortalFullPackage() {
                         {formatPrice(orderDisplayTotal(selectedOrder))}
                       </span>
                     </div>
-                    {selectedOrder.orderType === 'commission' && selectedOrder.itemPriceUsd != null && (
-                      <p className={cn("mb-1 text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
-                        {pickLang(language, { ku: "نرخی کاڵا", en: "Goods", ar: "البضاعة", zh: "货款" })} {formatPrice(selectedOrder.itemPriceUsd)}
-                        {" + "}
-                        {pickLang(language, { ku: "کرێی کڕین", en: "purchase fee", ar: "أجرة الشراء", zh: "代购费" })} {formatPrice(selectedOrder.commissionFeeUsd)}
-                        {Number(selectedOrder.quantity) > 1
-                          ? ` · ${pickLang(language, { ku: "بۆ هەر دانەیەک", en: "per piece", ar: "لكل قطعة", zh: "每件" })}`
-                          : ""}
-                      </p>
+                    {/* One figure, the one the customer pays. The goods and the
+                        purchase fee used to be printed apart under it — the
+                        owner, 2026-09-27: never show the fee, only the final
+                        number. The pieces count only when there is more than
+                        one; "quantity 1" under a price says nothing. */}
+                    {Number(selectedOrder.quantity) > 1 && (
+                      <div className="flex items-center justify-between text-sm">
+                        <span className={isDark ? "text-slate-500" : "text-slate-400"}>
+                          {pickLang(language, { ku: "ژمارەی دانە", en: "Pieces", ar: "عدد القطع", zh: "件数" })}
+                        </span>
+                        <bdi dir="ltr" className={cn("tabular-nums", isDark ? "text-slate-300" : "text-slate-600")}>
+                          {selectedOrder.quantity}
+                        </bdi>
+                      </div>
                     )}
-                    <div className="flex items-center justify-between text-sm mt-1">
-                      <span className={isDark ? "text-slate-500" : "text-slate-400"}>
-{pickLang(language, { ku: "ژمارە", en: "Quantity", ar: "الكمية", zh: "数量" })}
-                      </span>
-                      <span className={isDark ? "text-slate-300" : "text-slate-600"}>
-                        {selectedOrder.quantity}
-                      </span>
-                    </div>
                   </div>
 
                   {/* Shipping Cost Info */}

@@ -325,7 +325,6 @@ function renderLedgerRef(
   const FULL_PACKAGE: L = { ku: "پاکێجی تەواو", en: "Full package", ar: "الباقة الكاملة", zh: "全包套餐" };
   const CARRIAGE: L = { ku: "کرێی گواستنەوە", en: "Shipping", ar: "أجرة الشحن", zh: "运费" };
   const DEFERRED: L = { ku: "پاشاکەوتکراو", en: "deferred", ar: "مؤجل", zh: "延后收取" };
-  const GOODS_PLUS_FEE: L = { ku: "کاڵا + کرێی کڕین", en: "goods + fee", ar: "البضاعة + الأجرة", zh: "货款 + 代购费" };
   const DELIVERY: L = { ku: "گەیاندن", en: "delivery", ar: "التسليم", zh: "派送" };
   const PAYMENT: L = { ku: "پارەدانی کڕیار", en: "Customer payment", ar: "دفعة العميل", zh: "客户付款" };
 
@@ -347,7 +346,9 @@ function renderLedgerRef(
   const commissionGoods = raw.match(/^کڕین بە تێچوو\s+(\S+)\s*-\s*(.+?)\s*\(کاڵا \+ عمولە\)$/);
   if (commissionGoods) {
     const [, code, product] = commissionGoods;
-    return `${pick(COMMISSION)} ${code} · ${product} (${pick(GOODS_PLUS_FEE)})`;
+    // The row is one figure; naming its halves ("goods + fee") put the
+    // purchase fee back in front of the customer (owner, 2026-09-27).
+    return `${pick(COMMISSION)} ${code} · ${product}`;
   }
 
   const fullPackageDelivery = raw.match(/^پاکێجی تەواو\s+(\S+)\s*-\s*(.+?)\s*-\s*گەیاندن$/);
