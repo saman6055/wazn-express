@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
+import { STAFF_ATTACHMENT_MAX_BYTES, staffAttachmentAllowed } from "@shared/staffChatAttachment";
 
 const read = (rel: string) =>
   fs.readFileSync(path.resolve(__dirname, "..", rel), "utf8").replace(/\r\n/g, "\n");
@@ -46,7 +47,8 @@ describe("the office talking to itself", () => {
 
   it("refuses a message to nobody, and to yourself", () => {
     const send = db.slice(db.indexOf("export async function sendStaffMessage"), db.indexOf("export async function staffConversation"));
-    expect(send).toContain("if (!body)");
+    // Empty text with nothing attached (a picture alone is a message).
+    expect(send).toContain("if (!body && !attachment?.url)");
     expect(send).toContain("if (fromId === toId)");
   });
 });
@@ -75,5 +77,46 @@ describe("the bubble in the corner", () => {
 
   it("reads a conversation by opening it", () => {
     expect(ui).toContain("markRead.mutate({ userId: withId })");
+  });
+});
+
+describe("files in the chat, and no applause (owner, 2026-09-27)", () => {
+  const ui = read("client/src/components/chat/StaffChat.tsx");
+  const router = read("server/routers/staffChat.router.ts");
+
+  it("sends and reads without the global success toast", () => {
+    expect((ui.match(/meta: \{ skipGlobalToast: true \}/g) ?? []).length).toBe(2);
+    // A failure still speaks, inside the panel, with a copyable report.
+    expect(ui).toContain("buildErrorReport(sendError)");
+  });
+
+  it("takes a file three ways: picked, pasted, dropped — and a screenshot", () => {
+    expect(ui).toContain("onPaste={onPaste}");
+    expect(ui).toContain("onDrop={(e) => {");
+    expect(ui).toContain('type="file"');
+    expect(ui).toContain("captureScreen()");
+  });
+
+  it("refuses what a browser would run, and anything over 10 MB", () => {
+    expect(STAFF_ATTACHMENT_MAX_BYTES).toBe(10 * 1024 * 1024);
+    expect(staffAttachmentAllowed("image/png", "shot.png")).toBe(true);
+    expect(staffAttachmentAllowed("image/jpeg", "photo.jpg")).toBe(true);
+    expect(staffAttachmentAllowed("application/pdf", "invoice.pdf")).toBe(true);
+    expect(staffAttachmentAllowed("image/svg+xml", "x.svg")).toBe(false);
+    expect(staffAttachmentAllowed("text/html", "page.html")).toBe(false);
+    expect(staffAttachmentAllowed("application/octet-stream", "run.exe")).toBe(false);
+    expect(router).toContain("buffer.length > STAFF_ATTACHMENT_MAX_BYTES");
+  });
+
+  it("a picture alone is a message", () => {
+    expect(read("server/db/staffChat.db.ts")).toContain("if (!body && !attachment?.url)");
+  });
+
+  it("the live table gains the columns without losing its NOT NULLs", () => {
+    const mig = read("server/_core/migrations.ts");
+    const block = mig.slice(mig.indexOf("  staffMessages: ["), mig.indexOf("  expenses: ["));
+    for (const col of ["fromId", "toId", "text", "readAt", "createdAt", "attachmentUrl", "attachmentName", "attachmentType"]) {
+      expect(block, col).toContain(`name: "${col}"`);
+    }
   });
 });

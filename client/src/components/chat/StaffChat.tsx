@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Loader2, MessageCircle, Send, X } from "lucide-react";
+import { ArrowRight, Copy, FileText, Loader2, MessageCircle, Monitor, Paperclip, Send, X } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -10,6 +10,9 @@ import { soundManager } from "@/lib/soundManager";
 import { fmtWhen } from "@/lib/numericDate";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { buildErrorReport } from "@/components/ErrorBoundary";
+import { copyText } from "@/lib/copyText";
+import { canCaptureScreen, captureScreen, fileToBase64, isImageType, shrinkImage } from "@/lib/chatAttachment";
 
 /**
  * The office talking to itself, in the corner of every screen.
@@ -27,6 +30,11 @@ import { Button } from "@/components/ui/button";
  * one sound for "somebody wants you" — and only for a message that was not
  * there before: the highest id already announced is remembered per person,
  * per browser, so a reload is silent.
+ *
+ * 2026-09-27, the owner again: no "done successfully" toast for a chat — the
+ * message appearing is the confirmation — and a way to send a file, a
+ * screenshot, or a picture pasted with Ctrl+V. One component for every
+ * member of staff, whatever their role: everybody gets the same chat.
  */
 
 type Words = { ku: string; en: string; ar: string; zh: string };
@@ -38,7 +46,19 @@ const WORDS = {
   empty: { ku: "هێشتا هیچ پەیامێک نییە", en: "No messages yet", ar: "لا رسائل بعد", zh: "暂无消息" },
   back: { ku: "گەڕانەوە", en: "Back", ar: "رجوع", zh: "返回" },
   send: { ku: "بینێرە", en: "Send", ar: "إرسال", zh: "发送" },
+  attach: { ku: "فایل یان وێنە هاوپێچ بکە", en: "Attach a file or picture", ar: "إرفاق ملف أو صورة", zh: "附加文件或图片" },
+  screen: { ku: "وێنەی شاشە بگرە", en: "Take a screenshot", ar: "التقاط صورة للشاشة", zh: "截屏" },
+  photo: { ku: "📷 وێنە", en: "📷 Photo", ar: "📷 صورة", zh: "📷 图片" },
+  file: { ku: "📎 فایل", en: "📎 File", ar: "📎 ملف", zh: "📎 文件" },
+  pasteHint: { ku: "بنووسە… (وێنە: Ctrl+V)", en: "Write… (picture: Ctrl+V)", ar: "اكتب… (صورة: Ctrl+V)", zh: "输入…（图片：Ctrl+V）" },
+  failed: { ku: "نەنێردرا", en: "Not sent", ar: "لم تُرسل", zh: "未发送" },
+  copyReport: { ku: "کۆپیکردنی وردەکاری", en: "Copy details", ar: "نسخ التفاصيل", zh: "复制详情" },
+  copied: { ku: "کۆپی کرا", en: "Copied", ar: "تم النسخ", zh: "已复制" },
+  remove: { ku: "لابردن", en: "Remove", ar: "إزالة", zh: "移除" },
 } as const;
+
+/** A file waiting in the composer, not yet sent. */
+type Pending = { blob: Blob; name: string; type: string; preview: string | null };
 
 const chimedKey = (userId: number) => `wazn-chat-chimed:${userId}`;
 
@@ -52,7 +72,13 @@ export function StaffChat() {
   const [withId, setWithId] = useState<number | null>(null);
   const [draft, setDraft] = useState("");
   const [flash, setFlash] = useState(false);
+  const [pending, setPending] = useState<Pending | null>(null);
+  const [preparing, setPreparing] = useState(false);
+  const [sendError, setSendError] = useState<Error | null>(null);
+  const [copied, setCopied] = useState(false);
+  const [dragging, setDragging] = useState(false);
   const bottom = useRef<HTMLDivElement | null>(null);
+  const fileInput = useRef<HTMLInputElement | null>(null);
 
   const utils = trpc.useUtils();
   // A colleague's message should land within the minute, not on the next
@@ -62,12 +88,32 @@ export function StaffChat() {
     { userId: withId ?? 0 },
     { enabled: open && !!withId, refetchInterval: 8_000, staleTime: 4_000 },
   );
-  const markRead = trpc.staffChat.markRead.useMutation({ onSuccess: () => void utils.staffChat.inbox.invalidate() });
+
+  const clearPending = () => {
+    setPending((p) => {
+      if (p?.preview) URL.revokeObjectURL(p.preview);
+      return null;
+    });
+  };
+
+  /*
+   * No global "done successfully" toast for either of these: the message in
+   * the thread says it was sent, and reading needs no applause. A failure
+   * still speaks — inside the panel, with its details to copy.
+   */
+  const markRead = trpc.staffChat.markRead.useMutation({
+    meta: { skipGlobalToast: true },
+    onSuccess: () => void utils.staffChat.inbox.invalidate(),
+  });
   const send = trpc.staffChat.send.useMutation({
+    meta: { skipGlobalToast: true },
     onSuccess: () => {
       setDraft("");
+      clearPending();
+      setSendError(null);
       void utils.staffChat.invalidate();
     },
+    onError: (e) => setSendError(e instanceof Error ? e : new Error(String(e))),
   });
 
   const rows = useMemo(() => inbox.data ?? [], [inbox.data]);
@@ -113,12 +159,71 @@ export function StaffChat() {
     if (thread.data) bottom.current?.scrollIntoView({ block: "end" });
   }, [thread.data]);
 
+  // A file waiting to go belongs to the conversation it was meant for.
+  useEffect(() => {
+    clearPending();
+    setSendError(null);
+  }, [withId]);
+
+  useEffect(() => setCopied(false), [sendError]);
+
   if (!user) return null;
 
-  const submit = () => {
+  /** A picked, pasted, dropped or captured file, into the composer. */
+  const attach = async (blob: Blob, name: string) => {
+    setSendError(null);
+    setPreparing(true);
+    try {
+      const type = blob.type || "application/octet-stream";
+      // A phone photo or a 4K screenshot is made lighter before it travels.
+      const ready = isImageType(type) ? await shrinkImage(blob) : blob;
+      const readyType = ready.type || type;
+      const readyName = ready === blob ? name : `${name.replace(/\.[a-z0-9]+$/i, "")}.jpg`;
+      clearPending();
+      setPending({
+        blob: ready,
+        name: readyName,
+        type: readyType,
+        preview: isImageType(readyType) ? URL.createObjectURL(ready) : null,
+      });
+    } catch (e) {
+      setSendError(e instanceof Error ? e : new Error(String(e)));
+    } finally {
+      setPreparing(false);
+    }
+  };
+
+  const onPaste = (e: React.ClipboardEvent) => {
+    const file = Array.from(e.clipboardData.files ?? [])[0];
+    if (!file) return; // text pastes as text
+    e.preventDefault();
+    void attach(file, file.name && file.name !== "image.png" ? file.name : `screenshot-${Date.now()}.png`);
+  };
+
+  const takeScreenshot = async () => {
+    setSendError(null);
+    try {
+      const shot = await captureScreen();
+      if (shot) await attach(shot, `screenshot-${Date.now()}.png`);
+    } catch (e) {
+      // Closing the browser's "share your screen" picker is not a failure.
+      if ((e as { name?: string } | null)?.name === "NotAllowedError") return;
+      setSendError(e instanceof Error ? e : new Error(String(e)));
+    }
+  };
+
+  const submit = async () => {
     const text = draft.trim();
-    if (!text || !withId || send.isPending) return;
-    send.mutate({ toId: withId, text });
+    if ((!text && !pending) || !withId || send.isPending || preparing) return;
+    setSendError(null);
+    try {
+      const attachment = pending
+        ? { name: pending.name, type: pending.type, base64: await fileToBase64(pending.blob) }
+        : undefined;
+      send.mutate({ toId: withId, text, attachment });
+    } catch (e) {
+      setSendError(e instanceof Error ? e : new Error(String(e)));
+    }
   };
 
   return (
@@ -148,9 +253,26 @@ export function StaffChat() {
         <div
           className={cn(
             CORNER_PANEL,
-            "flex h-[26rem] w-[21rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl print:hidden",
+            // Its own colours, stated rather than inherited, so the panel
+            // reads the same for every member of staff whatever their
+            // appearance settings (owner, 2026-09-27).
+            "flex h-[30rem] max-h-[calc(100dvh-7rem)] w-[23rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border bg-card text-card-foreground shadow-2xl print:hidden",
+            dragging && "ring-2 ring-primary",
           )}
           data-testid="staff-chat-panel"
+          onDragOver={(e) => {
+            if (!withId || !Array.from(e.dataTransfer.types).includes("Files")) return;
+            e.preventDefault();
+            setDragging(true);
+          }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={(e) => {
+            setDragging(false);
+            const file = e.dataTransfer.files?.[0];
+            if (!withId || !file) return;
+            e.preventDefault();
+            void attach(file, file.name);
+          }}
         >
           <div className="flex items-center gap-2 border-b px-3 py-2">
             {withId && (
@@ -194,7 +316,10 @@ export function StaffChat() {
                     <span className="min-w-0 flex-1">
                       <span className="block truncate text-sm font-medium">{r.name}</span>
                       <span className="block truncate text-[11px] text-muted-foreground">
-                        {r.lastText ? (r.lastFromMe ? "↩ " : "") + r.lastText : L(WORDS.empty)}
+                        {r.lastText || r.lastAttachmentType
+                          ? (r.lastFromMe ? "↩ " : "") +
+                            (r.lastText || (isImageType(r.lastAttachmentType) ? L(WORDS.photo) : L(WORDS.file)))
+                          : L(WORDS.empty)}
                       </span>
                     </span>
                     <span className="flex shrink-0 flex-col items-end gap-1">
@@ -222,10 +347,43 @@ export function StaffChat() {
                       <div
                         className={cn(
                           "max-w-[85%] rounded-2xl px-3 py-1.5 text-sm",
-                          mine ? "bg-primary text-primary-foreground" : "bg-muted",
+                          mine ? "bg-primary text-primary-foreground" : "bg-muted text-foreground",
                         )}
                       >
-                        <p className="whitespace-pre-wrap break-words">{m.text}</p>
+                        {m.attachmentUrl &&
+                          (isImageType(m.attachmentType) ? (
+                            <a
+                              href={m.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="-mx-1.5 mb-1 mt-0.5 block"
+                              title={m.attachmentName ?? ""}
+                              data-testid="staff-chat-image"
+                            >
+                              <img
+                                src={m.attachmentUrl}
+                                alt={m.attachmentName ?? ""}
+                                loading="lazy"
+                                className="max-h-56 w-full rounded-xl bg-black/10 object-contain"
+                                onLoad={() => bottom.current?.scrollIntoView({ block: "end" })}
+                              />
+                            </a>
+                          ) : (
+                            <a
+                              href={m.attachmentUrl}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              download={m.attachmentName ?? undefined}
+                              className={cn(
+                                "mb-1 mt-0.5 flex items-center gap-2 rounded-lg px-2 py-1.5 underline-offset-2 hover:underline",
+                                mine ? "bg-primary-foreground/15" : "bg-background/60",
+                              )}
+                            >
+                              <FileText className="h-4 w-4 shrink-0" />
+                              <span className="truncate">{m.attachmentName}</span>
+                            </a>
+                          ))}
+                        {m.text && <p className="whitespace-pre-wrap break-words">{m.text}</p>}
                         <p className={cn("mt-0.5 text-[10px]", mine ? "text-primary-foreground/70" : "text-muted-foreground")}>
                           {fmtWhen(m.createdAt, true)}
                         </p>
@@ -236,27 +394,112 @@ export function StaffChat() {
                 <div ref={bottom} />
               </div>
 
-              <div className="flex items-end gap-1.5 border-t p-2">
+              {(pending || preparing || sendError) && (
+                <div className="space-y-1.5 border-t px-2 pt-2">
+                  {preparing && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                  {pending && (
+                    <div className="flex items-center gap-2 rounded-lg border bg-muted/40 p-1.5" data-testid="staff-chat-pending">
+                      {pending.preview ? (
+                        <img src={pending.preview} alt="" className="h-12 w-12 rounded-md object-cover" />
+                      ) : (
+                        <FileText className="h-8 w-8 shrink-0 text-muted-foreground" />
+                      )}
+                      <span className="min-w-0 flex-1 truncate text-xs">{pending.name}</span>
+                      <button
+                        type="button"
+                        onClick={clearPending}
+                        className="grid h-7 w-7 shrink-0 place-items-center rounded-md text-muted-foreground hover:bg-muted"
+                        title={L(WORDS.remove)}
+                        aria-label={L(WORDS.remove)}
+                      >
+                        <X className="h-4 w-4" />
+                      </button>
+                    </div>
+                  )}
+                  {sendError && (
+                    <div
+                      className="flex items-start gap-2 rounded-lg border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
+                      role="alert"
+                      data-testid="staff-chat-error"
+                    >
+                      <span className="min-w-0 flex-1 whitespace-pre-wrap break-words">
+                        <b>{L(WORDS.failed)}:</b> {sendError.message}
+                      </span>
+                      <button
+                        type="button"
+                        className="inline-flex shrink-0 items-center gap-1 rounded-md px-1.5 py-0.5 font-semibold hover:bg-destructive/15"
+                        onClick={async () => {
+                          if (await copyText(buildErrorReport(sendError))) setCopied(true);
+                        }}
+                      >
+                        <Copy className="h-3.5 w-3.5" />
+                        {copied ? L(WORDS.copied) : L(WORDS.copyReport)}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              )}
+
+              <div className="flex items-end gap-1 border-t p-2">
+                <input
+                  ref={fileInput}
+                  type="file"
+                  className="hidden"
+                  accept="image/*,.pdf,.doc,.docx,.xls,.xlsx,.csv,.txt,.ppt,.pptx,.zip,.rar,.7z"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    e.target.value = "";
+                    if (file) void attach(file, file.name);
+                  }}
+                  data-testid="staff-chat-file"
+                />
+                <Button
+                  type="button"
+                  size="icon"
+                  variant="ghost"
+                  className="h-9 w-9 shrink-0"
+                  onClick={() => fileInput.current?.click()}
+                  title={L(WORDS.attach)}
+                  aria-label={L(WORDS.attach)}
+                  data-testid="staff-chat-attach"
+                >
+                  <Paperclip className="h-4 w-4" />
+                </Button>
+                {canCaptureScreen() && (
+                  <Button
+                    type="button"
+                    size="icon"
+                    variant="ghost"
+                    className="h-9 w-9 shrink-0"
+                    onClick={() => void takeScreenshot()}
+                    title={L(WORDS.screen)}
+                    aria-label={L(WORDS.screen)}
+                    data-testid="staff-chat-screenshot"
+                  >
+                    <Monitor className="h-4 w-4" />
+                  </Button>
+                )}
                 <Textarea
                   value={draft}
                   onChange={(e) => setDraft(e.target.value)}
+                  onPaste={onPaste}
                   onKeyDown={(e) => {
                     // Enter sends it; Shift+Enter is a new line, as everywhere.
                     if (e.key === "Enter" && !e.shiftKey) {
                       e.preventDefault();
-                      submit();
+                      void submit();
                     }
                   }}
                   rows={1}
-                  placeholder={L(WORDS.write)}
+                  placeholder={pending ? L(WORDS.write) : L(WORDS.pasteHint)}
                   className="max-h-24 min-h-9 resize-none py-2 text-sm"
                   data-testid="staff-chat-input"
                 />
                 <Button
                   size="icon"
                   className="h-9 w-9 shrink-0"
-                  disabled={!draft.trim() || send.isPending}
-                  onClick={submit}
+                  disabled={(!draft.trim() && !pending) || send.isPending || preparing}
+                  onClick={() => void submit()}
                   title={L(WORDS.send)}
                   data-testid="staff-chat-send"
                 >

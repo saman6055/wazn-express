@@ -1379,6 +1379,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       fromId INT NOT NULL,
       toId INT NOT NULL,
       text VARCHAR(2000) NOT NULL,
+      attachmentUrl VARCHAR(500) NULL,
+      attachmentName VARCHAR(255) NULL,
+      attachmentType VARCHAR(100) NULL,
       readAt TIMESTAMP NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_staff_msg_pair (fromId, toId, createdAt),
@@ -3203,6 +3206,26 @@ export const REQUIRED_COLUMNS: Record<string, { name: string; ddl: string }[]> =
     { name: "lastPaymentAt", ddl: "TIMESTAMP NULL" },
     { name: "createdAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
     { name: "updatedAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+  ],
+
+  /**
+   * Files in the staff chat (2026-09-27). The table went live the day before
+   * without them; the CREATE above has them for a fresh database.
+   */
+  staffMessages: [
+    // Every column the insert names, not only the new ones: a column missing
+    // from this list reads as "nothing writes it" and has its NOT NULL
+    // relaxed (seen against a real MySQL before this shipped).
+    // The defaults only matter to a table that somehow lacks them: a column
+    // added NOT NULL to a table with rows needs something to put there.
+    { name: "fromId", ddl: "INT NOT NULL DEFAULT 0" },
+    { name: "toId", ddl: "INT NOT NULL DEFAULT 0" },
+    { name: "text", ddl: "VARCHAR(2000) NOT NULL DEFAULT ''" },
+    { name: "readAt", ddl: "TIMESTAMP NULL" },
+    { name: "createdAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+    { name: "attachmentUrl", ddl: "VARCHAR(500) NULL" },
+    { name: "attachmentName", ddl: "VARCHAR(255) NULL" },
+    { name: "attachmentType", ddl: "VARCHAR(100) NULL" },
   ],
 
   expenses: [

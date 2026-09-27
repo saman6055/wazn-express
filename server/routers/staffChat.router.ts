@@ -1,4 +1,7 @@
 import { z } from "zod";
+import { TRPCError } from "@trpc/server";
+import { withFix } from "@shared/fixAdvice";
+import { STAFF_ATTACHMENT_MAX_BYTES, staffAttachmentAllowed } from "@shared/staffChatAttachment";
 import { router } from "../_core/trpc";
 import { staffProcedure } from "../middleware/auth";
 import * as db from "../db";
@@ -12,6 +15,44 @@ import * as db from "../db";
  * Every read is bounded by the pair in the db layer (server/db/staffChat.db),
  * never here: a conversation belongs to the two people in it.
  */
+/** Keep the file where the system keeps every upload: object storage, else the uploads folder. */
+async function storeStaffAttachment(name: string, type: string, base64: string): Promise<db.StaffAttachment> {
+  if (!staffAttachmentAllowed(type, name)) {
+    throw new TRPCError({
+      code: "BAD_REQUEST",
+      message: withFix("ئەم جۆرە فایلە نانێردرێت.", [
+        "وێنە (PNG / JPG)، PDF، Word، Excel یان ZIP بنێرە",
+        "ئەگەر پێویستە، فایلەکە بکە بە PDF یان ZIP پاشان بینێرەوە",
+      ]),
+    });
+  }
+  const buffer = Buffer.from(base64, "base64");
+  if (buffer.length === 0) {
+    throw new TRPCError({ code: "BAD_REQUEST", message: withFix("فایلەکە بەتاڵە.", ["فایلەکە دووبارە هەڵبژێرە"]) });
+  }
+  if (buffer.length > STAFF_ATTACHMENT_MAX_BYTES) {
+    throw new TRPCError({
+      code: "PAYLOAD_TOO_LARGE",
+      message: withFix("فایلەکە لە 10 MB گەورەترە.", [
+        "وێنەکە بچووکتر بکەرەوە یان تەنها بەشێکی شاشەکە بگرە (Win+Shift+S)",
+        "فایلی گەورە بکە بە ZIP",
+      ]),
+    });
+  }
+  const { nanoid } = await import("nanoid");
+  const ext = (name.split(".").pop() || "bin").toLowerCase().replace(/[^a-z0-9]/g, "").slice(0, 8) || "bin";
+  const { ENV } = await import("../_core/env");
+  const hasForge = Boolean(ENV.forgeApiUrl?.trim() && ENV.forgeApiKey?.trim());
+  if (hasForge) {
+    const { storagePut } = await import("../services/storage.service");
+    const { url } = await storagePut(`staff-chat/${nanoid(16)}.${ext}`, buffer, type || "application/octet-stream");
+    return { url, name, type };
+  }
+  const { localUpload } = await import("../services/localUpload");
+  const { url } = localUpload(`file.${ext}`, buffer, type);
+  return { url, name, type };
+}
+
 export const staffChatRouter = router({
   /** Everybody to write to, the last thing said, and what is unread. */
   inbox: staffProcedure.query(async ({ ctx }) => {
@@ -33,10 +74,20 @@ export const staffChatRouter = router({
   send: staffProcedure
     .input(z.object({
       toId: z.number().int().positive(),
-      text: z.string().trim().min(1).max(2000),
+      // Empty is allowed when a file goes with it: a screenshot is a message.
+      text: z.string().trim().max(2000).default(""),
+      attachment: z.object({
+        name: z.string().trim().min(1).max(255),
+        type: z.string().trim().max(100),
+        /** The file, base64 without the data: prefix. */
+        base64: z.string().min(1),
+      }).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      return db.sendStaffMessage(ctx.user.id, input.toId, input.text);
+      const stored = input.attachment
+        ? await storeStaffAttachment(input.attachment.name, input.attachment.type, input.attachment.base64)
+        : null;
+      return db.sendStaffMessage(ctx.user.id, input.toId, input.text, stored);
     }),
 
   /** Opening a conversation is reading it. */

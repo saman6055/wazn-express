@@ -24,19 +24,29 @@ const between = (a: number, b: number) =>
     and(eq(staffMessages.fromId, b), eq(staffMessages.toId, a)),
   );
 
+/** A file already stored, to go with a message. */
+export interface StaffAttachment {
+  url: string;
+  name: string;
+  type: string;
+}
+
 export async function sendStaffMessage(
   fromId: number,
   toId: number,
   text: string,
+  attachment?: StaffAttachment | null,
 ): Promise<{ id: number }> {
   const db = await getDb();
   if (!db) {
     throw new Error(retryFix("پەیامەکە نەنێردرا — پەیوەندی بە داتابەیسەوە نییە."));
   }
   const body = (text ?? "").trim();
-  if (!body) {
+  // A screenshot on its own is a whole message.
+  if (!body && !attachment?.url) {
     throw new Error(withFix("پەیامەکە بەتاڵە — هیچ نەنووسراوە.", [
       "شتێک بنووسە پاشان Enter بدە",
+      "یان وێنەیەک Paste بکە (Ctrl+V) یان فایلێک هاوپێچ بکە",
     ]));
   }
   if (fromId === toId) {
@@ -50,6 +60,9 @@ export async function sendStaffMessage(
     fromId,
     toId,
     text: body.slice(0, 2000),
+    attachmentUrl: attachment?.url ? attachment.url.slice(0, 500) : null,
+    attachmentName: attachment?.url ? (attachment.name || "file").slice(0, 255) : null,
+    attachmentType: attachment?.url ? (attachment.type || "application/octet-stream").slice(0, 100) : null,
   });
   return { id: Number(inserted[0].insertId) };
 }
@@ -69,6 +82,9 @@ export async function staffConversation(userId: number, otherId: number, limit =
       fromId: staffMessages.fromId,
       toId: staffMessages.toId,
       text: staffMessages.text,
+      attachmentUrl: staffMessages.attachmentUrl,
+      attachmentName: staffMessages.attachmentName,
+      attachmentType: staffMessages.attachmentType,
       readAt: staffMessages.readAt,
       createdAt: staffMessages.createdAt,
     })
@@ -108,6 +124,9 @@ export async function staffInbox(userId: number) {
       fromId: staffMessages.fromId,
       toId: staffMessages.toId,
       text: staffMessages.text,
+      attachmentUrl: staffMessages.attachmentUrl,
+      attachmentName: staffMessages.attachmentName,
+      attachmentType: staffMessages.attachmentType,
       readAt: staffMessages.readAt,
       createdAt: staffMessages.createdAt,
     })
@@ -135,6 +154,8 @@ export async function staffInbox(userId: number) {
         name: s.name ?? "",
         role: s.role ?? "",
         lastText: last?.text ?? null,
+        // "a photo" / "a file" in the list when that is all that was sent.
+        lastAttachmentType: last?.attachmentUrl ? last.attachmentType ?? "application/octet-stream" : null,
         lastAt: last?.createdAt ?? null,
         lastFromMe: last ? Number(last.fromId) === userId : false,
         unread: unread.get(Number(s.id)) ?? 0,

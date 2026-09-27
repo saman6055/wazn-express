@@ -494,6 +494,13 @@ export const staffMessages = mysqlTable("staffMessages", {
   fromId: int("fromId").notNull(),
   toId: int("toId").notNull(),
   text: varchar("text", { length: 2000 }).notNull(),
+  /**
+   * A file sent with it — a screenshot, a photo, a PDF (owner, 2026-09-27).
+   * The URL of the stored copy; the text may then be empty.
+   */
+  attachmentUrl: varchar("attachmentUrl", { length: 500 }),
+  attachmentName: varchar("attachmentName", { length: 255 }),
+  attachmentType: varchar("attachmentType", { length: 100 }),
   /** When the person it was sent to opened the conversation. */
   readAt: timestamp("readAt"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

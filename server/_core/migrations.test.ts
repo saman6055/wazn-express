@@ -282,9 +282,18 @@ describe("the columns the code writes all have somewhere to go", () => {
     return [...body.matchAll(/^ {2}(\w+): /gm)].map((m) => m[1]!);
   };
 
+  /** The schema file that declares a table — most are finance, staffMessages is not. */
+  const schemaFileOf = (table: string): string => {
+    const dir = path.join(__dirname, "..", "..", "drizzle", "schema");
+    const hit = fs.readdirSync(dir).find((f) =>
+      fs.readFileSync(path.join(dir, f), "utf8").includes(`export const ${table} = mysqlTable("${table}", {`),
+    );
+    return hit ?? "finance.schema.ts";
+  };
+
   for (const table of Object.keys(REQUIRED_COLUMNS)) {
     it(`${table}: every declared column is in REQUIRED_COLUMNS`, () => {
-      const declared = schemaColumns(table, "finance.schema.ts");
+      const declared = schemaColumns(table, schemaFileOf(table));
       const required = new Set(REQUIRED_COLUMNS[table]!.map((c) => c.name));
       for (const column of declared) {
         // `id` is the auto-increment key; it cannot be added after the fact
@@ -295,7 +304,7 @@ describe("the columns the code writes all have somewhere to go", () => {
     });
 
     it(`${table}: nothing in REQUIRED_COLUMNS was invented`, () => {
-      const declared = new Set(schemaColumns(table, "finance.schema.ts"));
+      const declared = new Set(schemaColumns(table, schemaFileOf(table)));
       for (const column of REQUIRED_COLUMNS[table]!) {
         expect(declared.has(column.name), `${table}.${column.name} is not a column the code writes`).toBe(true);
       }
