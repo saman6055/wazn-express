@@ -1,4 +1,5 @@
 import { confirmAction } from "@/components/ConfirmDialog";
+import { LanguageFlag } from "@/components/LanguageFlag";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useState, useRef, useEffect } from "react";
 import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
@@ -1340,7 +1341,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 const info = LANGUAGES.find((l) => l.code === lang);
                 return (
                   <DropdownMenuItem key={lang} onClick={() => handlePrintReceipt(lang)}>
-                    <span className="me-2">{info?.flag}</span>
+                    <LanguageFlag code={lang} className="me-2" />
                     {info?.nativeName}
                   </DropdownMenuItem>
                 );
@@ -1444,7 +1445,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 const info = LANGUAGES.find((l) => l.code === lang);
                 return (
                   <DropdownMenuItem key={lang} onClick={() => handleDownloadReceiptPDF(lang)}>
-                    <span className="me-2">{info?.flag}</span>
+                    <LanguageFlag code={lang} className="me-2" />
                     {info?.nativeName}
                   </DropdownMenuItem>
                 );

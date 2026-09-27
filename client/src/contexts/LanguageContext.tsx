@@ -19,9 +19,12 @@ export interface LanguageInfo {
 }
 
 export const LANGUAGES: LanguageInfo[] = [
-  { code: 'ku', name: 'Kurdish', nativeName: 'کوردی', direction: 'rtl', flag: '🇮🇶' },
+  // `flag` is a text fallback only; every picker draws components/LanguageFlag
+  // (Kurdistan / UK / Iraq / China — the owner, 2026-09-27). Kurdistan has no
+  // flag emoji, so its fallback is the sun.
+  { code: 'ku', name: 'Kurdish', nativeName: 'کوردی', direction: 'rtl', flag: '☀️' },
   { code: 'en', name: 'English', nativeName: 'English', direction: 'ltr', flag: '🇬🇧' },
-  { code: 'ar', name: 'Arabic', nativeName: 'العربية', direction: 'rtl', flag: '🇸🇦' },
+  { code: 'ar', name: 'Arabic', nativeName: 'العربية', direction: 'rtl', flag: '🇮🇶' },
   { code: 'zh', name: 'Chinese', nativeName: '中文', direction: 'ltr', flag: '🇨🇳' },
 ];
 

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { LanguageFlag } from "@/components/LanguageFlag";
 import { useTheme } from "@/contexts/ThemeContext";
 import { useLanguage, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -15,7 +16,7 @@ import {
   type PortalMode,
 } from "@/lib/portalModes";
 import { formatClockTime, formatClockDate, msUntilNextMinute, CLOCK_HOUR12_KEY } from "@/lib/portalClock";
-import { Languages, Check } from "lucide-react";
+import { Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useBackCloses } from "@/hooks/useBackCloses";
 
@@ -167,7 +168,8 @@ export function PortalLanguagePicker({ glass, className }: { glass: string; clas
             className,
           )}
         >
-          <Languages className="h-3.5 w-3.5" />
+          {/* The flag of the language in force (components/LanguageFlag). */}
+          <LanguageFlag code={language} className="h-3 w-[18px]" />
           {current?.nativeName ?? language}
         </button>
       </PopoverTrigger>
@@ -195,7 +197,7 @@ export function PortalLanguagePicker({ glass, className }: { glass: string; clas
                 language === l.code && "bg-slate-100 font-semibold dark:bg-slate-800",
               )}
             >
-              <span aria-hidden="true">{l.flag}</span>
+              <LanguageFlag code={l.code} />
               <span className="flex-1 text-start">{l.nativeName}</span>
               {language === l.code && <Check className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
             </button>

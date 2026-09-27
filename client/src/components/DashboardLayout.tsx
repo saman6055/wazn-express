@@ -110,13 +110,6 @@ import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { usePermissions } from "@/hooks/usePermissions";
 
-const languages: { value: Language; label: string; flag: string }[] = [
-  { value: "ku", label: "کوردی", flag: "🇮🇶" },
-  { value: "en", label: "English", flag: "🇬🇧" },
-  { value: "ar", label: "العربية", flag: "🇸🇦" },
-  { value: "zh", label: "中文", flag: "🇨🇳" },
-];
-
 interface MenuItem {
   icon: LucideIcon;
   label: string;

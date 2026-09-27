@@ -1,5 +1,6 @@
 // Invoice Template Settings - v2
 import DashboardLayout from "@/components/DashboardLayout";
+import { LanguageFlag } from "@/components/LanguageFlag";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -629,7 +630,7 @@ const [companyData, setCompanyData] = useState({
                 <div className="grid gap-4">
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">🇬🇧</span>
+                      <LanguageFlag code="en" className="h-5 w-[30px]" />
                       <div>
                         <p className="font-medium">English</p>
                         <p className="text-xs text-muted-foreground">LTR</p>
@@ -639,7 +640,7 @@ const [companyData, setCompanyData] = useState({
                   </div>
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">🇮🇶</span>
+                      <LanguageFlag code="ku" className="h-5 w-[30px]" />
                       <div>
                         <p className="font-medium">Kurdish Sorani</p>
                         <p className="text-xs text-muted-foreground">RTL</p>
@@ -649,7 +650,7 @@ const [companyData, setCompanyData] = useState({
                   </div>
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">🇸🇦</span>
+                      <LanguageFlag code="ar" className="h-5 w-[30px]" />
                       <div>
                         <p className="font-medium">Arabic</p>
                         <p className="text-xs text-muted-foreground">RTL</p>
@@ -659,7 +660,7 @@ const [companyData, setCompanyData] = useState({
                   </div>
                   <div className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center gap-3">
-                      <span className="text-lg">🇨🇳</span>
+                      <LanguageFlag code="zh" className="h-5 w-[30px]" />
                       <div>
                         <p className="font-medium">Chinese</p>
                         <p className="text-xs text-muted-foreground">LTR</p>

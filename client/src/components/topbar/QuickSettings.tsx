@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LanguageFlag } from "@/components/LanguageFlag";
 import { ChevronLeft, ChevronRight, Maximize2, Moon, Rows3, SlidersHorizontal, Type, type LucideIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AppearanceDialog } from "@/components/AppearanceDialog";
@@ -143,10 +144,11 @@ export function QuickSettings({ fullScreen, onToggleFullScreen }: { fullScreen: 
                 onClick={() => setLanguage(l.code as Language)}
                 aria-pressed={language === l.code}
                 className={cn(
-                  "rounded-lg border px-1 py-1.5 text-xs font-semibold transition-colors",
+                  "flex items-center justify-center gap-1.5 rounded-lg border px-1 py-1.5 text-xs font-semibold transition-colors",
                   language === l.code ? "border-primary bg-primary/10 text-primary" : "border-border hover:bg-muted",
                 )}
               >
+                <LanguageFlag code={l.code} className="h-3 w-[18px]" />
                 {l.nativeName}
               </button>
             ))}

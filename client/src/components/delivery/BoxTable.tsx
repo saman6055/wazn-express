@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { LanguageFlag } from "@/components/LanguageFlag";
 import { useTranslation, createTranslator, getLanguageDirection, LANGUAGES, type Language } from "@/contexts/LanguageContext";
 import { loadLocale } from "@/lib/i18nRegistry";
 import { cn } from "@/lib/utils";
@@ -445,7 +446,7 @@ export function BoxTable({
                               const info = LANGUAGES.find((l) => l.code === lang);
                               return (
                                 <DropdownMenuItem key={lang} onClick={() => handlePrintReceipt(box, lang)}>
-                                  <span className="me-2">{info?.flag}</span>
+                                  <LanguageFlag code={lang} className="me-2" />
                                   {info?.nativeName}
                                 </DropdownMenuItem>
                               );

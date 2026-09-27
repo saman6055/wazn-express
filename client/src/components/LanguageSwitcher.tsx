@@ -1,4 +1,5 @@
 import { useLanguage, LANGUAGES, Language } from '@/contexts/LanguageContext';
+import { LanguageFlag } from '@/components/LanguageFlag';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -34,7 +35,7 @@ export function LanguageSwitcher({
             onClick={() => setLanguage(lang.code)}
             className="gap-2"
           >
-            {showFlag && <span>{lang.flag}</span>}
+            {showFlag && <LanguageFlag code={lang.code} />}
             <span>{showNativeName ? lang.nativeName : lang.name}</span>
           </Button>
         ))}
@@ -55,7 +56,7 @@ export function LanguageSwitcher({
                 : 'border-border hover:border-primary/50 hover:bg-muted'
             }`}
           >
-            {showFlag && <span className="text-2xl">{lang.flag}</span>}
+            {showFlag && <LanguageFlag code={lang.code} className="h-6 w-9 rounded" />}
             <div className="flex flex-col items-start">
               <span className="font-medium">{lang.nativeName}</span>
               <span className="text-xs text-muted-foreground">{lang.name}</span>
@@ -74,8 +75,7 @@ export function LanguageSwitcher({
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="outline" size="sm" className={`gap-2 ${className}`}>
-          <Globe className="w-4 h-4" />
-          {showFlag && <span>{languageInfo.flag}</span>}
+          {showFlag ? <LanguageFlag code={languageInfo.code} /> : <Globe className="w-4 h-4" />}
           <span>{showNativeName ? languageInfo.nativeName : languageInfo.name}</span>
         </Button>
       </DropdownMenuTrigger>
@@ -86,7 +86,7 @@ export function LanguageSwitcher({
             onClick={() => setLanguage(lang.code)}
             className={`gap-2 cursor-pointer ${language === lang.code ? 'bg-primary/10' : ''}`}
           >
-            {showFlag && <span>{lang.flag}</span>}
+            {showFlag && <LanguageFlag code={lang.code} />}
             <span className="flex-1">{showNativeName ? lang.nativeName : lang.name}</span>
             {language === lang.code && <Check className="w-4 h-4 text-primary" />}
           </DropdownMenuItem>
@@ -114,7 +114,7 @@ export function CompactLanguageSwitcher({ className = '' }: { className?: string
       className={className}
       title={`${languageInfo.nativeName} - Click to change`}
     >
-      <span className="text-lg">{languageInfo.flag}</span>
+      <LanguageFlag code={languageInfo.code} className="h-4 w-6" />
     </Button>
   );
 }

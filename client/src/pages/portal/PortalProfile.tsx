@@ -1,4 +1,5 @@
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
+import { LanguageFlag } from "@/components/LanguageFlag";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { usePortalTheme } from "@/contexts/PortalThemeContext";
 import { lazy, useState } from "react";
@@ -33,9 +34,9 @@ import { fmtCount, fmtUsd } from "@/lib/portalFormat";
 
 // Language options for the picker — each labelled in its own script (native) so
 // a customer always recognises their language regardless of the current UI
-// locale, plus a Latin `roman` subtitle for quick scanning. No flags: languages
-// don't map cleanly to countries (Kurdish has no flag emoji; Arabic/English span
-// many nations), and a wrong flag reads worse than none.
+// locale, plus a Latin `roman` subtitle for quick scanning, and the flag the
+// owner chose for each (2026-09-27): Kurdistan for Kurdish, Iraq for Arabic,
+// China for Chinese — drawn by components/LanguageFlag, not emoji.
 const LANG_OPTIONS: { code: "ku" | "en" | "ar" | "zh"; native: string; roman: string }[] = [
   { code: "ku", native: "کوردی", roman: "Kurdî" },
   { code: "en", native: "English", roman: "English" },
@@ -658,6 +659,8 @@ const { t, language, setLanguage } = useLanguage();
                       : isDark ? "hover:bg-slate-800" : "hover:bg-slate-50"
                   )}
                 >
+                  <span className="flex items-center gap-3">
+                  <LanguageFlag code={opt.code} className="h-6 w-9 rounded-md" />
                   <span className="flex flex-col items-start">
                     <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
                       {opt.native}
@@ -665,6 +668,7 @@ const { t, language, setLanguage } = useLanguage();
                     <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
                       {opt.roman}
                     </span>
+                  </span>
                   </span>
                   {active && (
                     <span className="w-6 h-6 rounded-full bg-blue-600 flex items-center justify-center shrink-0">
