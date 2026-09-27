@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
+import { CORNER, CORNER_PANEL, cornerSlot } from "@/lib/floatingCorner";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -248,7 +249,7 @@ export function StaffTips() {
           }}
           title={labels.tip}
           aria-label={labels.tip}
-          className="fixed bottom-4 end-4 z-40 flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg hover:bg-amber-600 transition-colors"
+          className={`${cornerSlot(CORNER.tips)} flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg transition-colors hover:bg-amber-600`}
         >
           <Lightbulb className="h-5 w-5" />
         </button>
@@ -268,7 +269,7 @@ export function StaffTips() {
       {overlay}
       <div
         dir={isRTL ? "rtl" : "ltr"}
-        className="fixed bottom-4 end-4 z-40 w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-amber-200 dark:border-amber-900/50 bg-white dark:bg-gray-900 shadow-lg"
+        className={`${CORNER_PANEL} w-80 max-w-[calc(100vw-2rem)] rounded-xl border border-amber-200 bg-white shadow-lg dark:border-amber-900/50 dark:bg-gray-900`}
       >
         <div className="flex items-center gap-2 border-b border-amber-100 dark:border-amber-900/40 bg-amber-50 dark:bg-amber-950/30 px-3 py-2 rounded-t-xl">
           <Lightbulb className="h-4 w-4 text-amber-500 dark:text-amber-400" />

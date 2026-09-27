@@ -5,6 +5,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { CORNER, CORNER_PANEL, cornerSlot } from "@/lib/floatingCorner";
 import { soundManager } from "@/lib/soundManager";
 import { fmtWhen } from "@/lib/numericDate";
 import { Textarea } from "@/components/ui/textarea";
@@ -127,7 +128,8 @@ export function StaffChat() {
         type="button"
         onClick={() => setOpen((o) => !o)}
         className={cn(
-          "fixed bottom-4 end-4 z-40 grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:brightness-110 active:scale-95 print:hidden",
+          cornerSlot(CORNER.chat),
+          "grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:brightness-110 active:scale-95 print:hidden",
           flash && "ring-4 ring-primary/40 animate-pulse",
         )}
         title={L(WORDS.title)}
@@ -144,7 +146,10 @@ export function StaffChat() {
 
       {open && (
         <div
-          className="fixed bottom-20 end-4 z-40 flex h-[26rem] w-[21rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl print:hidden"
+          className={cn(
+            CORNER_PANEL,
+            "flex h-[26rem] w-[21rem] max-w-[calc(100vw-2rem)] flex-col overflow-hidden rounded-2xl border bg-card shadow-2xl print:hidden",
+          )}
           data-testid="staff-chat-panel"
         >
           <div className="flex items-center gap-2 border-b px-3 py-2">

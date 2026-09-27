@@ -73,7 +73,9 @@ describe("a screen fits the phone it is opened on", () => {
     // The chat bubble and the task list sit where a thumb reaches, and
     // neither is printed.
     const chat = fs.readFileSync(path.join(ROOT, "components/chat/StaffChat.tsx"), "utf8");
-    expect(chat).toContain("fixed bottom-4 end-4");
+    // The corner is handed out by lib/floatingCorner since 2026-09-27, so
+    // the bubble and the lamp cannot stand on each other.
+    expect(chat).toContain("cornerSlot(CORNER.chat)");
     expect(chat).toContain("max-w-[calc(100vw-2rem)]");
   });
 });

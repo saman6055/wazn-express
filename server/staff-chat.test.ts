@@ -61,7 +61,9 @@ describe("the bubble in the corner", () => {
   });
 
   it("opens where he asked, and gets out of the way when printing", () => {
-    expect(ui).toContain("fixed bottom-4 end-4");
+    // The corner, and which slot of it, comes from lib/floatingCorner: the
+    // owner asked for the right-hand side, clear of the sidebar rail.
+    expect(ui).toContain("cornerSlot(CORNER.chat)");
     expect(ui).toContain("print:hidden");
     const layout = read("client/src/components/DashboardLayout.tsx");
     expect(layout).toContain("{!fullScreen && <StaffChat />}");

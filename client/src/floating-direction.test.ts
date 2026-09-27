@@ -61,6 +61,11 @@ describe("floating elements follow the reading direction", () => {
       const side = classes.match(/(?:^|\s)(left|right)-([\w./[\]-]+)(?=\s|$)/);
       if (!side) continue;
 
+      // The two corner buttons are placed by hand, through one module, on
+      // the side the owner asked for and clear of the rail. Everything else
+      // still follows the language.
+      if (file === "lib/floatingCorner.ts") continue;
+
       // Both edges pinned — a full-width bar has no side to get wrong.
       if (/(?:^|\s)left-\S+/.test(classes) && /(?:^|\s)right-\S+/.test(classes)) continue;
       // Centred, and moved back by half its own width.
@@ -75,13 +80,25 @@ describe("floating elements follow the reading direction", () => {
     ).toEqual([]);
   });
 
-  it("keeps the tip card on the away side", () => {
-    // `end` is the far corner from the sidebar in every language. The scroll
-    // buttons were the other case this was written for; they are gone — the
-    // owner wanted a scrollbar instead (2026-09-24), which has no side to get
-    // wrong. See scrollbar-and-send-language.test.ts.
+  it("keeps the corner buttons off the sidebar, on the side the owner asked for", () => {
+    /*
+     * This used to insist on `end-4` for the tip card: the corner away from
+     * the sidebar in either language.
+     *
+     * The owner overruled it on 2026-09-27 — «من وتم شوێنی نامە
+     * ناردن لەلای دەستی ڕاست دروست بکە نەک چەپ» — because a corner
+     * is a place a thumb goes to, not a reading direction. The reason the
+     * old rule existed is still honoured: the row starts clear of the 80px
+     * rail from `md` up, so nothing lands on the sidebar in either
+     * language (lib/floatingCorner).
+     *
+     * The rule below still holds for everything else: only these two
+     * buttons and their panels are placed by hand, and they are placed
+     * through that one module.
+     */
     const tips = fs.readFileSync(path.join(SRC, "components/StaffTips.tsx"), "utf8");
-    expect(tips).toContain("fixed bottom-4 end-4");
+    expect(tips).toContain("cornerSlot(CORNER.tips)");
+    expect(tips).not.toContain("fixed bottom-4 end-4");
     expect(tips).not.toContain("bottom-4 left-4");
   });
 });
