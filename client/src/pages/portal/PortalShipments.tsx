@@ -839,8 +839,8 @@ function ClassicPortalShipments() {
                         >
                           <Package className="h-3.5 w-3.5" />
                           {pickLang(language, {
-                            ku: `پاکەتەکانم ببینە (${batch.customerPackageCount ?? 0})`,
-                            en: `See my parcels (${batch.customerPackageCount ?? 0})`,
+                            ku: `پاکەتەکانم نیشان بدە (${batch.customerPackageCount ?? 0})`,
+                            en: `Show my parcels (${batch.customerPackageCount ?? 0})`,
                             ar: `عرض طرودي (${batch.customerPackageCount ?? 0})`,
                             zh: `查看我的包裹（${batch.customerPackageCount ?? 0}）`,
                           })}

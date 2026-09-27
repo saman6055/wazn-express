@@ -109,7 +109,7 @@ describe("what a customer sees on a shipment card", () => {
     // "The customer still does not know they can tap a shipment." A chevron
     // is not an instruction.
     expect(page).toContain('data-testid="open-parcels"');
-    expect(page).toContain("پاکەتەکانم ببینە (${batch.customerPackageCount ?? 0})");
+    expect(page).toContain("پاکەتەکانم نیشان بدە (${batch.customerPackageCount ?? 0})");
   });
 
   it("does not ask them to choose a filter before they can look", () => {

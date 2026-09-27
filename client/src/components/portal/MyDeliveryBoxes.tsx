@@ -45,7 +45,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
       >
         <Camera className="h-3.5 w-3.5" />
         {label({
-          ku: "بەڵگەی گەیاندن ببینە",
+          ku: "بەڵگەی گەیاندن نیشان بدە",
           en: "View delivery proof",
           ar: "عرض إثبات التسليم",
           zh: "查看签收凭证",

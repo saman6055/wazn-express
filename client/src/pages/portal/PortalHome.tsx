@@ -758,7 +758,7 @@ export default function PortalHome() {
             </h2>
             <Link href="/portal/shipments">
               <span className="relative tap-44 flex items-center gap-1 text-sm font-medium text-blue-500 dark:text-blue-400 transition-colors hover:text-blue-600">
-                {t("portal.viewAll") || "هەموو ببینە"}
+                {t("portal.viewAll") || "هەمووی نیشان بدە"}
                 <ChevronRight className={cn("h-4 w-4", isRTL && "rotate-180")} />
               </span>
             </Link>
@@ -836,8 +836,8 @@ export default function PortalHome() {
               <span className={cn("relative tap-44 mt-2.5 flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-medium", card, isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
                 <CheckCircle className="h-3.5 w-3.5" />
                 {pickLang(language, {
-                  ku: `${deliveredCount} باری گەیشتوو ببینە`,
-                  en: `See ${deliveredCount} delivered shipments`,
+                  ku: `${deliveredCount} باری گەیشتوو نیشان بدە`,
+                  en: `Show ${deliveredCount} delivered shipments`,
                   ar: `شاهد ${deliveredCount} شحنة مسلّمة`,
                   zh: `查看 ${deliveredCount} 个已送达货件`,
                 })}
