@@ -12,19 +12,33 @@ const read = (rel: string) =>
  * chore.
  */
 describe("a tracking typed into the row it belongs to", () => {
-  const page = read("pages/CommissionOrders.tsx");
+  /*
+   * Both commission lists, named here on purpose.
+   *
+   * The owner, 2026-09-27, after the first attempt: «گۆڕانکارییەکەش جێبەجێ
+   * نەبوو، تراک زیاد نابێ لەوێدا». He was right — there are two of these
+   * screens, /commission and /commission-orders, and the one in the top bar
+   * is the one he uses. A third would now be noticed here.
+   */
+  const LISTS = ["pages/CommissionDashboard.tsx", "pages/CommissionOrders.tsx"];
   const box = read("components/orders/InlineTracking.tsx");
 
   it("opens on a double-click, and says so before it is tried", () => {
-    expect(page).toContain("onDoubleClick={() => { setTypingFor(order.id); setTyped(\"\"); }}");
-    expect(page).toContain('ku: "دوو جار کلیک بکە بۆ زیادکردنی تراکینگ"');
+    for (const list of LISTS) {
+      const page = read(list);
+      expect(page, list).toContain("onDoubleClick={() => { setTypingFor(order.id); setTyped(\"\"); }}");
+      expect(page, list).toContain('ku: "دوو جار کلیک بکە بۆ زیادکردنی تراکینگ"');
+    }
   });
 
   it("saves through the door the tracking-alerts screen uses", () => {
     // A second door onto one flow, not a second flow: an order gets
     // whatever else the system does when its tracking arrives.
-    expect(page).toContain("trpc.fullPackage.addOrderTrackings.useMutation");
-    expect(page).toContain("addTracking.mutate({ fullPackageOrderId: order.id, trackingNumbers: [one] })");
+    for (const list of LISTS) {
+      const page = read(list);
+      expect(page, list).toContain("trpc.fullPackage.addOrderTrackings.useMutation");
+      expect(page, list).toContain("addTracking.mutate({ fullPackageOrderId: order.id, trackingNumbers: [one] })");
+    }
   });
 
   it("takes Enter, gives up on Escape", () => {

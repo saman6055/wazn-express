@@ -20,6 +20,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { ZoomImage } from "@/components/ZoomImage";
 import { OrderThumb, OrderThumbs } from "@/components/orders/OrderThumb";
 import { toast } from "sonner";
+import { InlineTracking } from "@/components/orders/InlineTracking";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import {
@@ -141,6 +142,37 @@ export default function CommissionDashboard() {
   const { data: settings } = trpc.settings.list.useQuery();
 
   // Update status mutation
+  /*
+   * A tracking, typed straight into the row.
+   *
+   * The owner, 2026-09-27: «لێرەش بە دوو کلیک لە شوێنی تراک
+   * بتوانی تراک زیاد بکەی» — and then, when it did not work:
+   * «گۆڕانکارییەکەش جێبەجێ نەبوو، تراک زیاد نابێ لەوێدا.»
+   *
+   * He was right: there are two commission lists — /commission and
+   * /commission-orders — and the first one, the one in the top bar, is the
+   * one he uses. A guard now names both, so a third would be noticed.
+   *
+   * Through the same endpoint the tracking-alerts screen uses, so an order
+   * gets whatever else the system does when its tracking arrives.
+   */
+  const [typingFor, setTypingFor] = useState<number | null>(null);
+  const [typed, setTyped] = useState("");
+  const addTracking = trpc.fullPackage.addOrderTrackings.useMutation({
+    onSuccess: () => {
+      setTypingFor(null);
+      setTyped("");
+      void refetch();
+      toast.success(pickLang(language, {
+        ku: "تراکینگ زیاد کرا",
+        en: "Tracking added",
+        ar: "تمت إضافة التتبع",
+        zh: "已添加运单号",
+      }));
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const updateStatusMutation = trpc.fullPackage.updateStatus.useMutation({
     onSuccess: () => {
       toast.success(t("commission.statusUpdated"));
@@ -966,8 +998,31 @@ export default function CommissionDashboard() {
                         <TableCell className="font-mono text-amber-600 dark:text-amber-300">
                           ${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
-                        <TableCell>
-                          {order.trackingNumber ? (
+                        <TableCell
+                          onDoubleClick={() => { setTypingFor(order.id); setTyped(""); }}
+                          title={pickLang(language, {
+                            ku: "دوو جار کلیک بکە بۆ زیادکردنی تراکینگ",
+                            en: "Double-click to add a tracking",
+                            ar: "انقر مرتين لإضافة تتبع",
+                            zh: "双击以添加运单号",
+                          })}
+                          className="cursor-text"
+                        >
+                          {typingFor === order.id ? (
+                            <InlineTracking
+                              value={typed}
+                              onChange={setTyped}
+                              orderNumber={(order as { orderNumber?: string | null }).orderNumber}
+                              saving={addTracking.isPending}
+                              language={language}
+                              onCancel={() => { setTypingFor(null); setTyped(""); }}
+                              onSave={() => {
+                                const one = typed.trim();
+                                if (!one) return;
+                                addTracking.mutate({ fullPackageOrderId: order.id, trackingNumbers: [one] });
+                              }}
+                            />
+                          ) : order.trackingNumber ? (
                             <div className="flex items-center gap-1">
                               <Badge variant="secondary" className="font-mono text-xs">
                                 {order.trackingNumber}
