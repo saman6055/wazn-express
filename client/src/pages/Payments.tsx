@@ -285,7 +285,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
+            <Table mobileCards>
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead>Date</TableHead>

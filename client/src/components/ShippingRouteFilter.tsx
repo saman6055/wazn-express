@@ -74,7 +74,10 @@ export function ShippingRouteFilter({
   return (
     <div
       className={cn(
-        "inline-flex items-center gap-0.5 rounded-xl border bg-card p-0.5",
+        // A phone gets four equal cells, label under icon, so the row fits
+        // the screen instead of pushing it wider (2026-09-27); from sm up
+        // the one-line pill row it always was.
+        "grid w-full grid-cols-4 items-stretch gap-0.5 rounded-xl border bg-card p-0.5 sm:inline-flex sm:w-auto sm:items-center",
         className,
       )}
       role="group"
@@ -86,7 +89,7 @@ export function ShippingRouteFilter({
         aria-pressed={value === null}
         title={label({ ku: "هەموو ڕێگاکان", en: "All routes", ar: "كل المسارات", zh: "全部方式" })}
         className={cn(
-          "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-all",
+          "flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] font-medium leading-tight transition-all sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-[12.5px]",
           value === null
             ? "bg-gradient-to-br from-blue-700 to-indigo-700 text-white shadow-md shadow-blue-700/25"
             : "text-foreground/70 hover:bg-muted hover:text-foreground",
@@ -112,7 +115,7 @@ export function ShippingRouteFilter({
             aria-pressed={on}
             title={label(r.label)}
             className={cn(
-              "inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-[12.5px] font-medium transition-all",
+              "flex min-w-0 flex-col items-center justify-center gap-0.5 rounded-lg px-1 py-1.5 text-[11px] font-medium leading-tight transition-all sm:flex-row sm:gap-1.5 sm:px-2.5 sm:text-[12.5px]",
               on ? r.active : r.tone,
             )}
           >

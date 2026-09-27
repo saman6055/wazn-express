@@ -175,7 +175,7 @@ const [search, setSearch] = useState("");
               </div>
             ) : (
               <div className="border rounded-lg">
-                <Table pageSticky>
+                <Table mobileCards pageSticky>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Package Code</TableHead>

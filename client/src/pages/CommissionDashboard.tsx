@@ -885,7 +885,7 @@ export default function CommissionDashboard() {
             ) : (
               <div className="overflow-x-auto">
                 <OrderThumbs orders={orderPage.pageRows}>
-                <Table>
+                <Table mobileCards>
                   {/* Headings sat flush to one edge while their columns were a
                       mix of text, badges and figures, so nothing lined up with
                       the thing it named. Every heading is centred except the

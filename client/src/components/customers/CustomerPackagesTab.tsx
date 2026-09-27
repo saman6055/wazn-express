@@ -65,7 +65,7 @@ export function CustomerPackagesTab({ packages, customerCode, t }: CustomerPacka
         </div>
       </CardHeader>
       <CardContent className="p-0">
-        <Table>
+        <Table mobileCards>
           <TableHeader>
             <TableRow className="bg-muted/30">
               <TableHead>{L({ ku: "کۆدی پاکەت", en: "Package code", ar: "كود الطرد", zh: "包裹编号" })}</TableHead>

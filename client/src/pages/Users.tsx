@@ -118,7 +118,7 @@ const [search, setSearch] = useState("");
             </div>
           </CardHeader>
           <CardContent>
-            <Table>
+            <Table mobileCards>
               <TableHeader>
                 <TableRow>
                   <TableHead>Name</TableHead>

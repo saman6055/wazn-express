@@ -236,7 +236,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
 
             {/* Table */}
             <div className="rounded-xl border overflow-hidden">
-              <Table>
+              <Table mobileCards>
                 <TableHeader className="bg-muted/40">
                   <TableRow>
                     <TableHead className="w-32">{t("fullPackage.orderCode")}</TableHead>

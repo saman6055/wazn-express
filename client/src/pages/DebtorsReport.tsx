@@ -398,7 +398,7 @@ const [searchTerm, setSearchTerm] = useState("");
                 {t("auto.text_295932")}
               </div>
             ) : (
-              <Table>
+              <Table mobileCards>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("customers.customerCode")}</TableHead>

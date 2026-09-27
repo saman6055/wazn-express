@@ -1,6 +1,7 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  ChevronLeft, ChevronRight, Home, LayoutGrid, LogOut, Moon, Package, ScanLine, Search, Sun, Layers, X,
+  BarChart3, Boxes, ChevronLeft, ChevronRight, Home, LayoutGrid, LogOut, Moon, Package, Receipt, ScanLine, Search,
+  ShoppingCart, Sun, Layers, Users, Wallet, X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -448,4 +449,51 @@ export function useMobileSheet(navigate: (path: string) => void) {
   );
 
   return { sheet, setSheet, go };
+}
+
+const QUICK = [
+  { path: "/quick-register", icon: ScanLine, tone: "emerald", words: { ku: "تۆماری خێرا", en: "Quick register", ar: "تسجيل سريع", zh: "快速登记" } },
+  { path: "/customer-delivery-scanner", icon: Package, tone: "blue", words: { ku: "گەیاندن", en: "Delivery", ar: "التسليم", zh: "派送" } },
+  { path: "/customers", icon: Users, tone: "violet", words: { ku: "کڕیاران", en: "Customers", ar: "العملاء", zh: "客户" } },
+  { path: "/finance", icon: Wallet, tone: "amber", words: { ku: "دارایی", en: "Finance", ar: "المالية", zh: "财务" } },
+  { path: "/commission", icon: ShoppingCart, tone: "orange", words: { ku: "کڕین بە تێچوو", en: "Buy at cost", ar: "شراء بالتكلفة", zh: "代购" } },
+  { path: "/full-package", icon: Boxes, tone: "cyan", words: { ku: "پاکێجی تەواو", en: "Full package", ar: "الباقة الكاملة", zh: "全包" } },
+  { path: "/company/expenses", icon: Receipt, tone: "rose", words: { ku: "خەرجی", en: "Expenses", ar: "المصاريف", zh: "支出" } },
+  { path: "/reports", icon: BarChart3, tone: "indigo", words: { ku: "ڕاپۆرت", en: "Reports", ar: "التقارير", zh: "报表" } },
+] as const;
+
+/**
+ * The dashboard's first row on a phone: the eight jobs the office does all
+ * day, one tap each, before any figure (the mockup the owner approved,
+ * 2026-09-27). Pages the person may not open are left out. Hidden from md up,
+ * where the rail and the pinned pages already do this.
+ */
+export function MobileQuickActions({
+  language,
+  canViewPath,
+  onNavigate,
+}: {
+  language: string;
+  canViewPath: (path: string) => boolean;
+  onNavigate: (path: string) => void;
+}) {
+  const items = QUICK.filter((q) => canViewPath(q.path));
+  if (items.length === 0) return null;
+  return (
+    <div className="grid grid-cols-4 gap-2 md:hidden" data-testid="mobile-quick-actions">
+      {items.map((q) => (
+        <button
+          key={q.path}
+          type="button"
+          onClick={() => onNavigate(q.path)}
+          className="flex min-h-[4.75rem] flex-col items-center justify-center gap-1 rounded-2xl border border-border bg-card p-1.5 text-center transition active:scale-[0.97]"
+        >
+          <span className={cn("grid h-9 w-9 place-items-center rounded-xl", tileTone(q.tone))}>
+            <q.icon className="h-[18px] w-[18px]" />
+          </span>
+          <span className="line-clamp-2 text-[11px] font-semibold leading-tight">{pickLang(language, q.words)}</span>
+        </button>
+      ))}
+    </div>
+  );
 }

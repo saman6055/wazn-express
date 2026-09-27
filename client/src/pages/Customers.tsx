@@ -1252,7 +1252,7 @@ const [, setLocation] = useLocation();
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
+            <Table mobileCards>
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead>{t("customers.title")}</TableHead>

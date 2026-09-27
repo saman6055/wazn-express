@@ -788,7 +788,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
               </DialogDescription>
             </DialogHeader>
             <div className="overflow-auto max-h-[50vh]">
-              <Table>
+              <Table mobileCards>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("common.date")}</TableHead>

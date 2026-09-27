@@ -792,6 +792,95 @@
   }
 }
 
+/*
+ * A table as cards, on a phone (components/ui/table `mobileCards`,
+ * 2026-09-27). Each row is a card, each cell a line with its column's title
+ * on the start side and the value on the end side; the first cell is the
+ * title of the card. Above md nothing here applies.
+ */
+@media (max-width: 767px) {
+  table[data-mobile-cards],
+  table[data-mobile-cards] > tbody,
+  table[data-mobile-cards] > tbody > tr,
+  table[data-mobile-cards] > tbody > tr > td {
+    display: block;
+    width: 100%;
+  }
+  table[data-mobile-cards] > thead {
+    display: none;
+  }
+  table[data-mobile-cards] > tbody > tr {
+    margin-bottom: 0.625rem;
+    border: 1px solid var(--border) !important;
+    border-radius: 1rem;
+    background: var(--card);
+    padding: 0.5rem 0.75rem;
+    box-shadow: 0 1px 2px rgb(0 0 0 / 0.05);
+  }
+  table[data-mobile-cards] > tbody > tr > td {
+    display: flex;
+    min-height: 2rem;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    padding: 0.25rem 0 !important;
+    border: 0;
+    text-align: end !important;
+    white-space: normal;
+  }
+  table[data-mobile-cards] > tbody > tr > td[data-label]:not([data-label=""])::before {
+    content: attr(data-label);
+    flex-shrink: 0;
+    max-width: 45%;
+    text-align: start;
+    font-size: 12px;
+    font-weight: 500;
+    color: var(--muted-foreground);
+    /* The label is words, whatever the value is: a mono or tracked cell
+       spelled its Kurdish title one letter at a time. */
+    font-family: var(--font-sans, ui-sans-serif, system-ui, sans-serif);
+    letter-spacing: normal;
+    font-variant-numeric: normal;
+    direction: inherit;
+  }
+  /* The first cell names the card: full width, no label, a rule under it. */
+  table[data-mobile-cards] > tbody > tr > td:first-child {
+    display: block;
+    text-align: start !important;
+    padding-bottom: 0.5rem !important;
+    margin-bottom: 0.25rem;
+    border-bottom: 1px dashed var(--border);
+  }
+  table[data-mobile-cards] > tbody > tr > td:first-child::before {
+    content: none !important;
+  }
+  /* An empty-state row spanning every column stays a plain block. */
+  table[data-mobile-cards] > tbody > tr > td[colspan] {
+    display: block;
+    text-align: center !important;
+    border: 0;
+  }
+  table[data-mobile-cards] > tbody > tr:has(> td[colspan]:only-child) {
+    border-style: dashed !important;
+    box-shadow: none;
+  }
+
+  /*
+   * A page's own title row — the h1 on one side, its buttons on the other —
+   * is written once per page as a no-wrap flex row, and on a phone the
+   * buttons ran off the screen and made the whole page scroll sideways
+   * (Batches' «باچی نوێ», 2026-09-27). Let every such row wrap there.
+   */
+  main div.flex.justify-between:has(> h1),
+  main div.flex.justify-between:has(> div > h1) {
+    flex-wrap: wrap;
+    row-gap: 0.75rem;
+  }
+  main div.flex.justify-between:has(> div > h1) > div:has(> button, > a) {
+    flex-wrap: wrap;
+  }
+}
+
 /* PWA Standalone Mode Styles */
 @media (display-mode: standalone) {
   body {

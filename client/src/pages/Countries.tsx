@@ -148,7 +148,7 @@ export default function Countries() {
 
         <Card>
           <CardContent className="pt-6">
-            <Table>
+            <Table mobileCards>
               <TableHeader>
                 <TableRow>
                   <TableHead>ISO</TableHead>

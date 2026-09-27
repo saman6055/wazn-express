@@ -361,7 +361,7 @@ const [searchQuery, setSearchQuery] = useState("");
                 </Button>
               </div>
             ) : (
-              <Table>
+              <Table mobileCards>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("common.name")}</TableHead>

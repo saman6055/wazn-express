@@ -218,7 +218,7 @@ export default function SelfOrders() {
                 counts={routeCounts}
               />
             </div>
-            <Table>
+            <Table mobileCards>
               <TableHeader>
                 <TableRow>
                   <TableHead>{pickLang(language, { ku: "کۆد", en: "Code", ar: "الرمز", zh: "编号" })}</TableHead>

@@ -847,7 +847,7 @@ const [activeTab, setActiveTab] = useState("partners");
                 shrink. Oldest first, because a running balance read from the
                 newest row down is the account run backwards. */}
             <div className="overflow-auto max-h-[50vh]">
-              <Table>
+              <Table mobileCards>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("common.date")}</TableHead>

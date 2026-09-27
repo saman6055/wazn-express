@@ -86,11 +86,46 @@ function FloatingHScroll({ targetRef }: { targetRef: React.RefObject<HTMLDivElem
   );
 }
 
+/**
+ * Gives every body cell the title of its column as `data-label`, for the
+ * phone's card layout to print beside the value. Kept up to date as rows
+ * come and go; a cell that set its own label keeps it; spanned columns are
+ * counted so the labels line up.
+ */
+function useCardLabels(ref: React.RefObject<HTMLTableElement | null>, on: boolean) {
+  React.useEffect(() => {
+    const table = ref.current;
+    if (!on || !table) return;
+    const apply = () => {
+      const heads = Array.from(table.querySelectorAll(":scope > thead > tr:last-child > th")).map((th) =>
+        (th.textContent ?? "").trim(),
+      );
+      table.querySelectorAll(":scope > tbody > tr").forEach((tr) => {
+        let col = 0;
+        Array.from(tr.children).forEach((cell) => {
+          const el = cell as HTMLElement;
+          const span = Number(el.getAttribute("colspan") ?? 1) || 1;
+          if (span === 1 && !el.hasAttribute("data-label-own")) {
+            const label = heads[col] ?? "";
+            if (el.getAttribute("data-label") !== label) el.setAttribute("data-label", label);
+          }
+          col += span;
+        });
+      });
+    };
+    apply();
+    const mo = new MutationObserver(apply);
+    mo.observe(table, { childList: true, subtree: true, characterData: true });
+    return () => mo.disconnect();
+  }, [ref, on]);
+}
+
 function Table({
   className,
   containerClassName,
   stickyHeader = true,
   pageSticky = false,
+  mobileCards = false,
   ...props
 }: React.ComponentProps<"table"> & {
   /** Extra classes for the scroll container (e.g. a different max-height). */
@@ -109,8 +144,18 @@ function Table({
    * scrollbar. Takes precedence over stickyHeader.
    */
   pageSticky?: boolean;
+  /**
+   * On a phone, every row becomes a card and every cell a labelled line
+   * (owner, 2026-09-27: the system on a phone like the portal app). The
+   * labels are the column titles, read from the header, so a table opts in
+   * with this one prop. The first cell is the card's title. Desktop is
+   * untouched. See `table[data-mobile-cards]` in index.css.
+   */
+  mobileCards?: boolean;
 }) {
   const containerRef = React.useRef<HTMLDivElement>(null);
+  const tableRef = React.useRef<HTMLTableElement>(null);
+  useCardLabels(tableRef, mobileCards);
   return (
     <>
       <div
@@ -124,13 +169,16 @@ function Table({
           // sticky can reach the page scroll. Otherwise the table is its own
           // capped scroll box and the header sticks to the top of that box.
           pageSticky
-            ? "[--tbl-sticky-top:100px] md:[--tbl-sticky-top:44px]"
+            // A phone has one app bar now (components/mobile), under the notch.
+            ? "[--tbl-sticky-top:calc(3.5rem+env(safe-area-inset-top))] md:[--tbl-sticky-top:44px]"
             : cn("overflow-auto", stickyHeader && "max-h-[70vh]"),
           containerClassName,
         )}
       >
         <table
+          ref={tableRef}
           data-slot="table"
+          data-mobile-cards={mobileCards ? "" : undefined}
           className={cn("w-full caption-bottom text-sm", className)}
           {...props}
         />

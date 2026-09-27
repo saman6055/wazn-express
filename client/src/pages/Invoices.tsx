@@ -185,7 +185,7 @@ export default function Invoices() {
               </div>
             ) : (
               <>
-                <Table>
+                <Table mobileCards>
                   <TableHeader>
                     <TableRow className="bg-gray-50/80 dark:bg-gray-900/80 hover:bg-gray-50/80">
                       <TableHead className="font-semibold text-gray-700 dark:text-gray-300">{t('invoicesList.invoiceNumber')}</TableHead>

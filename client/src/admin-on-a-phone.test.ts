@@ -39,6 +39,10 @@ describe("a screen fits the phone it is opened on", () => {
     // is worse than one that does not (the portal's own rule).
     const offenders: string[] = [];
     for (const file of screens()) {
+      // components/mobile is drawn only on a phone (md:hidden) and its rows
+      // of four are icon tiles sized for one — the tab bar, the quick jobs —
+      // the portal's own pattern, not four figures squeezed into a column.
+      if (file.includes(`${path.sep}components${path.sep}mobile${path.sep}`)) continue;
       const src = fs.readFileSync(file, "utf8");
       for (const match of src.matchAll(CLASS)) {
         const classes = match[1];

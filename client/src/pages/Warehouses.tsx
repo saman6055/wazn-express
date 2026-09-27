@@ -186,7 +186,7 @@ export default function Warehouses() {
 
         <Card>
           <CardContent className="pt-6">
-            <Table>
+            <Table mobileCards>
               <TableHeader>
                 <TableRow>
                   <TableHead>Prefix</TableHead>

@@ -1202,7 +1202,7 @@ const [activeTab, setActiveTab] = useState("expenses");
             {/* Expenses Table */}
             <Card>
               <CardContent className="p-0">
-                <Table>
+                <Table mobileCards>
                   <TableHeader>
                     <TableRow>
                       <TableHead>{t("common.date")}</TableHead>

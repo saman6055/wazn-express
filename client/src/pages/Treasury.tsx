@@ -652,7 +652,7 @@ const [activeTab, setActiveTab] = useState("accounts");
               </DialogDescription>
             </DialogHeader>
             <div className="overflow-auto max-h-[50vh]">
-              <Table>
+              <Table mobileCards>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("common.date")}</TableHead>

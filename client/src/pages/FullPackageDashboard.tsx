@@ -935,7 +935,7 @@ export default function FullPackageDashboard() {
             ) : (
               <div className="overflow-x-auto">
                 <OrderThumbs orders={orderPage.pageRows}>
-                <Table>
+                <Table mobileCards>
                   {/* Same treatment as the markup-purchase table: headings
                       centred over their columns, money columns right-aligned
                       with their figures, one padding value throughout. */}

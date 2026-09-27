@@ -56,6 +56,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, memo, useEffect } from "react";
 import { useLocation } from "wouter";
+import { MobileQuickActions } from "@/components/mobile/MobileAppShell";
 import {
   Dialog,
   DialogContent,
@@ -317,6 +318,8 @@ export default function Dashboard() {
           the very bottom while keeping the dense stat/alert/list cards on top
           for the most info-per-screen on a laptop — without relocating JSX. */}
       <div className="pro-page flex flex-col gap-5">
+        {/* On a phone the day's jobs come first, one tap each. */}
+        <MobileQuickActions language={language} canViewPath={canViewPath} onNavigate={setLocation} />
         <PageHeader
           icon={LayoutDashboard}
           title={t("dashboard.title")}

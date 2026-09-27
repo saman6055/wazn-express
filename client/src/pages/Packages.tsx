@@ -47,6 +47,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo, useEffect, useCallback, memo } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useIsMobile } from "@/hooks/useMobile";
 import { useLocation } from "wouter";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
 import { toast } from "sonner";
@@ -272,86 +273,16 @@ const PackageTableRow = memo(function PackageTableRow({
         )}
       </TableCell>
       <TableCell>
-        {(() => {
-          // Sea is sold by the volume it occupies, air by weight. A sea
-          // parcel records no weight, so running it through the weight
-          // comparison printed "-" in every sea row — a column that said
-          // nothing on exactly the shipments it was asked about. The batch
-          // decides the unit when the parcel is in one; otherwise the
-          // parcel's own type does, the same order the box receipt uses.
-          const billedType = getBatchShippingType(pkg.batchId) || pkg.shippingType;
-          if (billingUnit(billedType) === "cbm") {
-            const cbm = Number(pkg.volumeCbm || 0);
-            if (cbm <= 0) return "-";
-            return <span dir="ltr" className="tabular-nums">{cbm.toFixed(3)} CBM</span>;
-          }
-          // The shared rule with the configured divisor — a hardcoded 6000
-          // here showed a different weight than the invoice whenever the
-          // setting was changed.
-          const { chargeableKg, billedOnVolume } = chargeableWeight(pkg, divisor);
-          if (chargeableKg === 0) return "-";
-          return (
-            <div className="flex items-center gap-1">
-              <span>{chargeableKg.toFixed(2)} kg</span>
-              {billedOnVolume && (
-                <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
-                  {t('packages.volumetric')}
-                </Badge>
-              )}
-            </div>
-          );
-        })()}
+        <PackageWeight pkg={pkg} getBatchShippingType={getBatchShippingType} divisor={divisor} t={t} />
       </TableCell>
       {/* The raw decimal string printed $12.5 in one row and $12.50 in the
           next, from the same column. */}
       <TableCell className="font-mono tabular-nums">${Number(pkg.calculatedCostUsd || 0).toFixed(2)}</TableCell>
       <TableCell>
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <button
-              className="inline-flex cursor-pointer items-center gap-1 rounded-full transition-all hover:ring-2 hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
-              title={t("packages.clickToChangeStatus")}
-            >
-              <StatusBadge status={pkg.status} kind="package" />
-              <ChevronDown className="h-3 w-3 text-muted-foreground" />
-            </button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="start">
-            {statusOptionsFor(language).map((option) => (
-              <DropdownMenuItem
-                key={option.value}
-                onClick={() => option.value !== pkg.status && onStatusChange(pkg, option.value)}
-                className={pkg.status === option.value ? "bg-accent" : ""}
-              >
-                <span className={`w-2 h-2 rounded-full me-2 ${statusDot(option.value, "package")}`} />
-                {option.label}
-                {pkg.status === option.value && " ✓"}
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuContent>
-        </DropdownMenu>
+        <PackageStatusMenu pkg={pkg} onStatusChange={onStatusChange} language={language} t={t} />
       </TableCell>
       <TableCell>
-        {(() => {
-          const registeredAt = new Date(pkg.createdAt);
-          const now = new Date();
-          const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
-          // A cancelled or returned parcel is not a delivered one. Grouping
-          // the three together put a green ✅ "Delivered" badge on parcels
-          // that were cancelled — the alert column saying the opposite of
-          // the status column two cells away.
-          if (pkg.status === "delivered") return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {t("packages.delivered")}</Badge>;
-          if (pkg.status === "cancelled" || pkg.status === "returned") {
-            return (
-              <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
-                {pickLang(language, PACKAGE_STATUS_LABEL[pkg.status]!)}
-              </Badge>
-            );
-          }
-          if (daysSince > 20) return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} {t("common.days")}</Badge>;
-          if (daysSince > 10) return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysSince} {t("common.days")}</Badge>;
-          return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} {t("common.days")}</Badge>;
-        })()}
+        <PackageAge pkg={pkg} language={language} t={t} />
       </TableCell>
       <TableCell className="text-sm text-muted-foreground">
         {/* Numbers, not "days ago" — 8.9.2026, LTR so digits keep their order */}
@@ -371,11 +302,187 @@ const PackageTableRow = memo(function PackageTableRow({
   );
 });
 
+/*
+ * Three cells the table and the phone's card share, so the two can never
+ * disagree about a parcel's status, its billed weight or its age.
+ */
+type PieceT = (key: string, opts?: Record<string, string | number>) => string;
+
+function PackageWeight({ pkg, getBatchShippingType, divisor, t }: { pkg: Package; getBatchShippingType: (id: number | null) => string | null; divisor: number; t: PieceT }) {
+  return (
+    <>
+    {(() => {
+      // Sea is sold by the volume it occupies, air by weight. A sea
+      // parcel records no weight, so running it through the weight
+      // comparison printed "-" in every sea row — a column that said
+      // nothing on exactly the shipments it was asked about. The batch
+      // decides the unit when the parcel is in one; otherwise the
+      // parcel's own type does, the same order the box receipt uses.
+      const billedType = getBatchShippingType(pkg.batchId) || pkg.shippingType;
+      if (billingUnit(billedType) === "cbm") {
+        const cbm = Number(pkg.volumeCbm || 0);
+        if (cbm <= 0) return "-";
+        return <span dir="ltr" className="tabular-nums">{cbm.toFixed(3)} CBM</span>;
+      }
+      // The shared rule with the configured divisor — a hardcoded 6000
+      // here showed a different weight than the invoice whenever the
+      // setting was changed.
+      const { chargeableKg, billedOnVolume } = chargeableWeight(pkg, divisor);
+      if (chargeableKg === 0) return "-";
+      return (
+        <div dir="ltr" className="flex items-center gap-1">
+          <span className="tabular-nums">{chargeableKg.toFixed(2)} kg</span>
+          {billedOnVolume && (
+            <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
+              {t('packages.volumetric')}
+            </Badge>
+          )}
+        </div>
+      );
+    })()}
+    </>
+  );
+}
+
+function PackageStatusMenu({ pkg, onStatusChange, language, t }: { pkg: Package; onStatusChange: (pkg: Package, newStatus: string) => void; language: string; t: PieceT }) {
+  return (
+    <DropdownMenu>
+      <DropdownMenuTrigger asChild>
+        <button
+          className="inline-flex cursor-pointer items-center gap-1 rounded-full transition-all hover:ring-2 hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
+          title={t("packages.clickToChangeStatus")}
+        >
+          <StatusBadge status={pkg.status} kind="package" />
+          <ChevronDown className="h-3 w-3 text-muted-foreground" />
+        </button>
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align="start">
+        {statusOptionsFor(language).map((option) => (
+          <DropdownMenuItem
+            key={option.value}
+            onClick={() => option.value !== pkg.status && onStatusChange(pkg, option.value)}
+            className={pkg.status === option.value ? "bg-accent" : ""}
+          >
+            <span className={`w-2 h-2 rounded-full me-2 ${statusDot(option.value, "package")}`} />
+            {option.label}
+            {pkg.status === option.value && " ✓"}
+          </DropdownMenuItem>
+        ))}
+      </DropdownMenuContent>
+    </DropdownMenu>
+  );
+}
+
+function PackageAge({ pkg, language, t }: { pkg: Package; language: string; t: PieceT }) {
+  return (
+    <>
+    {(() => {
+      const registeredAt = new Date(pkg.createdAt);
+      const now = new Date();
+      const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
+      // A cancelled or returned parcel is not a delivered one. Grouping
+      // the three together put a green ✅ "Delivered" badge on parcels
+      // that were cancelled — the alert column saying the opposite of
+      // the status column two cells away.
+      if (pkg.status === "delivered") return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {t("packages.delivered")}</Badge>;
+      if (pkg.status === "cancelled" || pkg.status === "returned") {
+        return (
+          <Badge variant="outline" className="bg-slate-100 dark:bg-slate-800/60 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700">
+            {pickLang(language, PACKAGE_STATUS_LABEL[pkg.status]!)}
+          </Badge>
+        );
+      }
+      if (daysSince > 20) return <Badge variant="destructive" className="animate-pulse">🔴 {daysSince} {t("common.days")}</Badge>;
+      if (daysSince > 10) return <Badge variant="outline" className="bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">⚠️ {daysSince} {t("common.days")}</Badge>;
+      return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} {t("common.days")}</Badge>;
+    })()}
+    </>
+  );
+}
+
+/**
+ * One parcel on a phone (owner, 2026-09-27: the system on a phone like the
+ * portal app). The twelve table columns become a card a thumb can read: the
+ * tracking and the status on top, the customer, then the batch, the billed
+ * weight, the cost and the age — the same pieces the table row draws. The
+ * card opens the parcel; the pencil edits it.
+ */
+const PackageMobileCard = memo(function PackageMobileCard({
+  pkg,
+  getCustomerName,
+  getCustomerCode,
+  getBatchCode,
+  getBatchShippingType,
+  onStatusChange,
+  onView,
+  onEdit,
+  divisor,
+  language,
+  t,
+}: PackageRowProps) {
+  const pkgType = (pkg as any).orderType || "regular";
+  const config = packageTypeConfig[pkgType] || packageTypeConfig.regular;
+  const orderCode = (pkg as any).orderCode as string | null;
+  return (
+    <div className="rounded-2xl border border-border bg-card p-3 shadow-sm" data-testid="package-card">
+      <div className="flex items-start gap-2">
+        <button type="button" onClick={() => onView(pkg)} className="min-w-0 flex-1 text-start">
+          {pkg.trackingNumber ? (
+            <span dir="ltr" className="block truncate font-mono text-[15px] font-bold">{pkg.trackingNumber}</span>
+          ) : (
+            <Badge variant="outline" className="text-xs bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60">
+              <Link2Off className="h-3 w-3 me-1" />
+              {t("packages.noTracking")}
+            </Badge>
+          )}
+          <span dir="ltr" className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">{orderCode || pkg.packageCode}</span>
+        </button>
+        {pkg.trackingNumber && <CopyButton value={pkg.trackingNumber} label="کۆپی تراکینگ" />}
+        <PackageStatusMenu pkg={pkg} onStatusChange={onStatusChange} language={language} t={t} />
+      </div>
+
+      <button type="button" onClick={() => onView(pkg)} className="mt-2 flex w-full items-center gap-2 text-start">
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold">{getCustomerName(pkg.customerId)}</span>
+        <span dir="ltr" className="shrink-0 font-mono text-xs text-muted-foreground">{shortCustomerCode(getCustomerCode(pkg.customerId))}</span>
+        {pkgType !== "regular" && (
+          <Badge variant="outline" className={`shrink-0 text-[11px] ${config.color}`}>{t(config.tKey)}</Badge>
+        )}
+      </button>
+
+      {/* The batch code is the longest of the three; it gets the room. */}
+      <div className="mt-2 grid grid-cols-[1.4fr_1fr_1fr] gap-1.5 text-xs">
+        <div className="min-w-0 rounded-lg bg-muted/60 px-2 py-1.5">
+          <div className="text-[11px] text-muted-foreground">{t("batches.title")}</div>
+          <div dir="ltr" className="truncate font-mono font-semibold">{pkg.batchId ? getBatchCode(pkg.batchId) : "—"}</div>
+        </div>
+        <div className="min-w-0 rounded-lg bg-muted/60 px-2 py-1.5">
+          <div className="text-[11px] text-muted-foreground">{t("packages.weight")}</div>
+          <div className="truncate font-semibold"><PackageWeight pkg={pkg} getBatchShippingType={getBatchShippingType} divisor={divisor} t={t} /></div>
+        </div>
+        <div className="min-w-0 rounded-lg bg-muted/60 px-2 py-1.5">
+          <div className="text-[11px] text-muted-foreground">{t("packages.cost")}</div>
+          <div dir="ltr" className="truncate font-mono font-semibold tabular-nums">${Number(pkg.calculatedCostUsd || 0).toFixed(2)}</div>
+        </div>
+      </div>
+
+      <div className="mt-2 flex items-center gap-2">
+        <PackageAge pkg={pkg} language={language} t={t} />
+        <span dir="ltr" className="text-[11px] tabular-nums text-muted-foreground">{fmtDate(new Date(pkg.createdAt))}</span>
+        <span className="flex-1" />
+        <Button variant="ghost" size="icon" className="h-9 w-9" title={t("packages.editPackage")} aria-label={t("packages.editPackage")} onClick={() => onEdit(pkg)}>
+          <Pencil className="h-4 w-4" />
+        </Button>
+      </div>
+    </div>
+  );
+});
+
 /** "AZ225(Muhammad Ismail Omar)" → "AZ225" — what a person types and reads. */
 const shortCustomerCode = (code?: string | null) => (code ?? "").split("(")[0]!.trim();
 
 export default function Packages() {
     const { t, language } = useTranslation();
+  const isMobile = useIsMobile();
 const [, setLocation] = useLocation();
   // Deep link: /packages/all?search=PKG-XYZ opens the table already looking
   // for that parcel. Anything that used to link to /packages/:id — which has
@@ -1595,12 +1702,51 @@ const [, setLocation] = useLocation();
               </div>
             </div>
           </CardHeader>
-          <CardContent>
+          <CardContent className="px-2 sm:px-6">
             {filterChips.length > 0 && (
               <FilterChips chips={filterChips} onClearAll={clearAllFilters} className="mb-4" />
             )}
-            {/* Dense on purpose: every column visible without a horizontal
-                scroll — the owner's ask off the live screen. */}
+            {/* On a phone: one card per parcel, the same pieces as the row. */}
+            {isMobile ? (
+              <div className="space-y-2" data-testid="package-cards">
+                {isLoadingPackages ? (
+                  <TableSkeleton rows={4} cols={2} />
+                ) : routedPackages.length === 0 ? (
+                  <EmptyState
+                    icon={<Package />}
+                    title={t("packages.noPackages") || "هیچ پاکەتێک نییە"}
+                    description={activeFiltersCount > 0 ? t("common.tryClearingFilters") || "هەوڵبدە فلتەرەکان پاک بکەیتەوە" : undefined}
+                    action={
+                      activeFiltersCount > 0 ? (
+                        <Button variant="outline" onClick={clearAllFilters}>
+                          <X className="h-4 w-4 me-1" />
+                          {t("common.clear") || "پاککردنەوە"}
+                        </Button>
+                      ) : undefined
+                    }
+                  />
+                ) : (
+                  routedPackages.map((pkg) => (
+                    <PackageMobileCard
+                      key={pkg.id}
+                      pkg={pkg as Package}
+                      getCustomerName={getCustomerName}
+                      getCustomerCode={getCustomerCode}
+                      getBatchCode={getBatchCode}
+                      getBatchShippingType={getBatchShippingType}
+                      onStatusChange={onStatusChange}
+                      onView={handleViewClick}
+                      onEdit={handleEditClick}
+                      divisor={volumetricDivisor}
+                      language={language}
+                      t={t}
+                    />
+                  ))
+                )}
+              </div>
+            ) : (
+            /* Dense on purpose: every column visible without a horizontal
+               scroll — the owner's ask off the live screen. */
             <Table className="text-xs [&_th]:px-2 [&_th]:whitespace-nowrap [&_td]:px-2 [&_td]:py-2">
               <TableHeader>
                 <TableRow>
@@ -1673,6 +1819,7 @@ const [, setLocation] = useLocation();
                 )}
               </TableBody>
             </Table>
+            )}
             
             {/* Pagination Controls */}
             {totalPages > 1 && (

@@ -1363,7 +1363,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         )}
 
         <Card>
-          <CardContent className="pt-6">
+          {/* Narrower sides on a phone, where each row is its own card. */}
+          <CardContent className="px-2 pt-6 sm:px-6">
             {/* One box for whichever number the phone call gave you: batch
                 code, container, AWB, flight, vessel, the batch's own courier
                 trackings, a parcel's tracking, an order's tracking, or a
@@ -1428,7 +1429,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 )}
               </>
             )}
-            <Table pageSticky>
+            <Table pageSticky mobileCards>
               {/* Header and cell share one alignment per column: text columns
                   start-aligned, everything numeric or badge-shaped centered —
                   a header pointing one way over content pointing another was

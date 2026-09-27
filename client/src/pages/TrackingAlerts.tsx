@@ -746,7 +746,7 @@ export default function TrackingAlerts() {
                       </p>
                     </div>
                   ) : (
-                    <Table pageSticky>
+                    <Table mobileCards pageSticky>
                       {/* Multi-select toolbar */}
                       {selectedOrders.length > 0 && (
                         <div className="mb-3 p-3 bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800/60 rounded-lg flex items-center justify-between gap-3">

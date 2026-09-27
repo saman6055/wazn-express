@@ -657,7 +657,7 @@ export default function CommissionOrders() {
               </div>
             ) : (
               <OrderThumbs orders={fullPackageOrders}>
-              <Table>
+              <Table mobileCards>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{pickLang(language, { ku: "کۆدی ئۆردەر", en: "Order code", ar: "كود الطلب", zh: "订单编码" })}</TableHead>

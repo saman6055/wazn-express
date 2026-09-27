@@ -931,7 +931,7 @@ export default function ServicesManagement() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <Table>
+            <Table mobileCards>
               <TableHeader>
                 <TableRow className="bg-muted/30">
                   <TableHead className="text-right">{t('services.date')}</TableHead>

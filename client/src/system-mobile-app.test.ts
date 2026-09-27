@@ -61,3 +61,40 @@ describe("the office on a phone", () => {
     expect(corner).toContain("bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4");
   });
 });
+
+describe("lists on a phone are cards (phase 2)", () => {
+  it("the parcels list draws one card per parcel, with the row's own pieces", () => {
+    const page = read("pages/Packages.tsx");
+    expect(page).toContain("{isMobile ? (");
+    expect(page).toContain("<PackageMobileCard");
+    // One status menu, one weight rule, one age badge for table and card.
+    for (const piece of ["<PackageStatusMenu", "<PackageWeight", "<PackageAge"]) {
+      expect((page.match(new RegExp(piece, "g")) ?? []).length, piece).toBeGreaterThanOrEqual(2);
+    }
+  });
+
+  it("any table becomes cards on a phone with one prop, labelled by its own header", () => {
+    const table = read("components/ui/table.tsx");
+    expect(table).toContain('data-mobile-cards={mobileCards ? "" : undefined}');
+    expect(table).toContain('el.setAttribute("data-label", label)');
+    const css = read("index.css");
+    expect(css).toContain("table[data-mobile-cards] > thead {");
+    expect(css).toContain("content: attr(data-label);");
+    for (const f of ["pages/Batches.tsx", "pages/Customers.tsx", "components/delivery/BoxTable.tsx", "pages/CommissionOrders.tsx", "pages/Invoices.tsx"]) {
+      expect(read(f), f).toContain("<Table ");
+      expect(read(f), f).toMatch(/<Table[^>]*mobileCards/);
+    }
+  });
+
+  it("the first render already knows it is a phone — no desktop flash, no slide", () => {
+    expect(read("hooks/useMobile.tsx")).toContain("window.innerWidth < MOBILE_BREAKPOINT\n  );");
+  });
+
+  it("a page's title row wraps on a phone instead of pushing the page wider", () => {
+    expect(read("index.css")).toContain("main div.flex.justify-between:has(> div > h1)");
+  });
+
+  it("the dashboard starts with the day's jobs on a phone", () => {
+    expect(read("pages/Dashboard.tsx")).toContain("<MobileQuickActions");
+  });
+});
