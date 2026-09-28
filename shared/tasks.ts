@@ -205,10 +205,10 @@ export const TASK_WORDS = {
   close: { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" },
   /** Where a new task comes from, said once on an empty list. */
   hint: {
-    ku: "⁦Alt+T⁩ بۆ تاسکێکی نوێ، یان کلیکی لای ڕاست لەسەر هەر تراکێک",
-    en: "Alt+T for a new task, or right-click any tracking",
-    ar: "⁦Alt+T⁩ لمهمة جديدة، أو انقر بالزر الأيمن على أي تتبع",
-    zh: "Alt+T 新建任务，或右键点击任意运单号",
+    ku: "⁦Alt+T⁩ بۆ تاسکێکی نوێ، یان ⁦Ctrl⁩ + کلیکی ڕاست لەسەر هەر تراکێک",
+    en: "Alt+T for a new task, or Ctrl + right-click any tracking",
+    ar: "⁦Alt+T⁩ لمهمة جديدة، أو ⁦Ctrl⁩ + النقر بالزر الأيمن على أي تتبع",
+    zh: "Alt+T 新建任务，或按住 Ctrl 右键点击任意运单号",
   },
   archive: { ku: "ئەرشیف", en: "Archive", ar: "الأرشيف", zh: "存档" },
   archiveEmpty: {
@@ -326,10 +326,10 @@ export const TASK_GUIDE: readonly { title: Words; body: Words }[] = [
   {
     title: { ku: "چۆن دروستی دەکەیت", en: "How to make one", ar: "كيف تنشئها", zh: "如何创建" },
     body: {
-      ku: "کلیکی لای ڕاست لەسەر هەر تراک، کۆدی بۆکس یان کۆدی کڕیارێک — پەنجەرەکە بەو تۆمارەوە بەستراو دەکرێتەوە. یان ⁦Alt+T⁩ لە هەر شوێنێک، یان دوگمەی «تاسکێکی نوێ» لە سەرەوەی ئەم لیستە.",
-      en: "Right-click any tracking, box code or customer code — the window opens already fastened to it. Or Alt+T from anywhere, or the + button here.",
-      ar: "انقر بالزر الأيمن على أي تتبع أو رمز صندوق أو رمز زبون — تفتح النافذة مرتبطة به. أو ⁦Alt+T⁩ من أي مكان، أو زر «مهمة جديدة» أعلى هذه القائمة.",
-      zh: "右键点击任意运单号、箱号或客户编号——窗口会自动关联该记录。也可随处按 Alt+T，或点此处的 + 按钮。",
+      ku: "⁦Ctrl⁩ ڕابگرە و کلیکی ڕاست بکە لەسەر هەر تراک، کۆدی بۆکس یان کۆدی کڕیارێک — پەنجەرەکە بەو تۆمارەوە بەستراو دەکرێتەوە. یان ⁦Alt+T⁩ لە هەر شوێنێک، یان دوگمەی «تاسکێکی نوێ» لە سەرەوەی ئەم لیستە.",
+      en: "Hold Ctrl and right-click any tracking, box code or customer code — the window opens already fastened to it. Or Alt+T from anywhere, or the + button here.",
+      ar: "اضغط ⁦Ctrl⁩ وانقر بالزر الأيمن على أي تتبع أو رمز صندوق أو رمز زبون — تفتح النافذة مرتبطة به. أو ⁦Alt+T⁩ من أي مكان، أو زر «مهمة جديدة» أعلى هذه القائمة.",
+      zh: "按住 Ctrl 右键点击任意运单号、箱号或客户编号——窗口会自动关联该记录。也可随处按 Alt+T，或点此处的 + 按钮。",
     },
   },
   {

@@ -108,13 +108,14 @@ describe("the three ways in", () => {
     expect(imports).not.toMatch(/\bBell\b/);
   });
 
-  it("opens on a right-click over anything that carries a value", () => {
+  it("opens on a Ctrl + right-click over anything that carries a value", () => {
     const composer = read("client/src/components/tasks/TaskComposer.tsx");
     expect(composer).toContain('window.addEventListener("contextmenu"');
     expect(composer).toContain("[data-task-value]");
-    // Shift is the way back to the browser's own menu, so copy and paste
-    // never become unreachable.
-    expect(composer).toContain("e.shiftKey");
+    // A plain right-click is the browser's — that is where Copy lives
+    // (owner, 2026-09-28). Only Ctrl (⌘) + right-click opens a task.
+    expect(composer).toContain("if (!isTaskRightClick(e)) return;");
+    expect(composer).toContain("return (e.ctrlKey || e.metaKey) && !e.shiftKey;");
     // And a right-click inside a field is left to the browser, because that
     // is where paste lives.
     expect(composer).toContain("closest(EDITABLE)");
@@ -145,8 +146,8 @@ describe("the three ways in", () => {
 
   it("opens from a right-click even where no copy button was printed", () => {
     // "The copy icon is not in every place, so a right-click cannot reach a
-    // task." Now the menu is ours on every working screen; only a field and
-    // Shift are left to the browser.
+    // task." Ctrl + right-click works on every working screen; a plain
+    // right-click, a field and Shift are left to the browser.
     const composer = read("client/src/components/tasks/TaskComposer.tsx");
     const handler = composer.slice(
       composer.indexOf("const onContextMenu ="),

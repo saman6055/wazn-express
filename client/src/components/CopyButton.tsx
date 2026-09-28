@@ -23,7 +23,7 @@ export function CopyButton({
     <button
       type="button"
       /*
-       * Right-clicking a value offers to make a task of it
+       * Ctrl + right-clicking a value offers to make a task of it
        * (components/tasks/TaskComposer). Marked here rather than on
        * twenty-one screens: every tracking, box code, customer code and
        * order number in the system already carries one of these.

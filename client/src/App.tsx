@@ -429,7 +429,7 @@ function App() {
                     alert; outside the error boundary, so one still shows
                     when a screen has fallen over. */}
                 <SystemAlertProvider>
-                {/* Alt+T, right-click on any value, and the icon in the top
+                {/* Alt+T, Ctrl + right-click on any value, and the icon in the top
                     bar all open the same window — so it wraps everything
                     (owner, 2026-09-25). */}
                 <TaskComposerProvider>

@@ -60,6 +60,15 @@ const CODE_LIKE = /^[A-Za-z0-9][A-Za-z0-9._\/-]{5,39}$/;
 /** Where the browser's own menu must keep working: paste lives there. */
 const EDITABLE = "input, textarea, select, [contenteditable='true'], [contenteditable='']";
 
+/**
+ * The right-click that opens a task: with Ctrl held (⌘ on a Mac). A plain
+ * right-click stays the browser's — that is where Copy lives (owner,
+ * 2026-09-28). On a Mac, Ctrl+click is itself a right-click; it counts too.
+ */
+export function isTaskRightClick(e: Pick<MouseEvent, "ctrlKey" | "metaKey" | "shiftKey">): boolean {
+  return (e.ctrlKey || e.metaKey) && !e.shiftKey;
+}
+
 /** How far out from the pointer a value still counts as "this one". */
 const NEARBY_STEPS = 5;
 
@@ -183,23 +192,23 @@ export function TaskComposerProvider({ children }: { children: ReactNode }) {
   }, [openComposer]);
 
   /*
-   * Right-click, anywhere.
+   * Ctrl + right-click, anywhere.
    *
-   * Only where there is something to make a task about — a tracking, a code,
-   * a selection. Everywhere else the browser's own menu is left alone, which
-   * is what keeps copy and paste working.
+   * A plain right-click is the browser's again: the owner, 2026-09-28 —
+   * «تاسک بار لێناگەرێ کۆپی لە ڕیگای کلیکی ڕاست بکرێ… وابکە بە کۆنترۆڵ
+   * کلیکی ڕاست بێ نەک دایرێکت». Taking every right-click for the task
+   * window had cost the office Copy on every screen. Ctrl (⌘ on a Mac) is
+   * the one extra key; Alt+T and the icon still open it without the mouse.
    */
   useEffect(() => {
     const onContextMenu = (e: MouseEvent) => {
-      if (e.shiftKey) return; // the escape hatch to the browser's own menu
+      if (!isTaskRightClick(e)) return; // a plain right-click: copy, paste, the browser's menu
       // Inside a field, a right-click is how a person pastes. Never take it.
       if (e.target instanceof Element && e.target.closest(EDITABLE)) return;
       /*
-       * Anywhere, not only over a copy button. The owner, 2026-09-25: "the
-       * copy icon is not in every place, so a right-click cannot reach a
-       * task." So the menu is ours everywhere on a working screen — with a
-       * record attached where one is under the pointer, and without where
-       * there is not.
+       * Anywhere, not only over a copy button (owner, 2026-09-25: "the copy
+       * icon is not in every place"). With a record attached where one is
+       * under the pointer, and without where there is not.
        */
       e.preventDefault();
       openComposer({ about: aboutFromEvent(e.target) ?? undefined });
