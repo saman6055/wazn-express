@@ -75,7 +75,23 @@ export function PWAInstallPrompt() {
   const company = useCompanyInfo();
   const { language } = useTranslation();
   const [locationPath] = useLocation();
-  const onPortal = locationPath.startsWith('/portal');
+  const inPortal = locationPath.startsWith('/portal');
+  /*
+   * The office on a phone asks the same way (owner, 2026-09-28: «لەگەڵ
+   * کردنەوەی داوا بکە بیکەیتە ئەپ»): the front-and-center dialog on every
+   * visit until it is installed, "later" quiet for this visit only. Only on
+   * a phone-sized touch screen, and never on the sign-in or public pages —
+   * the ask is for someone already at work in the system.
+   */
+  const staffOnPhone =
+    !inPortal &&
+    typeof window !== 'undefined' &&
+    window.innerWidth < 768 &&
+    window.matchMedia('(pointer: coarse)').matches &&
+    !['/', '/staff-login', '/customer-login', '/login'].includes(locationPath) &&
+    !locationPath.startsWith('/t/');
+  /** Ask with the big dialog, right away — the portal, and the office on a phone. */
+  const onPortal = inPortal || staffOnPhone;
   // The browser's offer, caught in main.tsx before the first paint: by the
   // time this component could listen for it, it had already come and gone.
   const deferredPrompt = useInstallOffer();
@@ -245,19 +261,26 @@ export function PWAInstallPrompt() {
             </div>
             <DialogTitle className="text-center text-xl">
               {pickLang(language, {
-                ku: `${company.name} بخە سەر شاشەکەت`,
-                en: `Put ${company.name} on your screen`,
-                ar: `ضع ${company.name} على شاشتك`,
-                zh: `把 ${company.name} 放到主屏幕`,
+                ku: `${inPortal ? company.name : staffAppName} بخە سەر شاشەکەت`,
+                en: `Put ${inPortal ? company.name : staffAppName} on your screen`,
+                ar: `ضع ${inPortal ? company.name : staffAppName} على شاشتك`,
+                zh: `把 ${inPortal ? company.name : staffAppName} 放到主屏幕`,
               })}
             </DialogTitle>
             <DialogDescription className="text-center">
-              {pickLang(language, {
-                ku: "وەک ئەپ دایبنێ — بە یەک کلیک شوێن شەحنەکانت بکەوە.",
-                en: "Install it as an app — track your shipments with one tap.",
-                ar: "ثبّته كتطبيق — تتبّع شحناتك بنقرة واحدة.",
-                zh: "安装为应用，一键跟踪您的货物。",
-              })}
+              {inPortal
+                ? pickLang(language, {
+                    ku: "وەک ئەپ دایبنێ — بە یەک کلیک شوێن شەحنەکانت بکەوە.",
+                    en: "Install it as an app — track your shipments with one tap.",
+                    ar: "ثبّته كتطبيق — تتبّع شحناتك بنقرة واحدة.",
+                    zh: "安装为应用，一键跟踪您的货物。",
+                  })
+                : pickLang(language, {
+                    ku: "وەک ئەپ دایبنێ — بە یەک کلیک سیستەم بکەوە، بێ وێبگەڕ و شریتی ناونیشان.",
+                    en: "Install it as an app — open the system with one tap, no browser bar.",
+                    ar: "ثبّته كتطبيق — افتح النظام بنقرة واحدة دون شريط المتصفح.",
+                    zh: "安装为应用——一键打开系统，无浏览器地址栏。",
+                  })}
             </DialogDescription>
           </DialogHeader>
 
