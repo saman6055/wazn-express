@@ -98,3 +98,42 @@ describe("lists on a phone are cards (phase 2)", () => {
     expect(read("pages/Dashboard.tsx")).toContain("<MobileQuickActions");
   });
 });
+
+describe("tested against a real database, 2026-09-28 (phase 4)", () => {
+  it("nothing can make a phone or tablet page wider than the screen", () => {
+    const css = read("index.css");
+    const block = css.slice(css.indexOf("@media (max-width: 1023px) {"));
+    expect(block).toContain("html:has(main) body {\n    overflow-x: clip;");
+    expect(block).toContain("main {\n    overflow-x: clip;");
+    // Rows of buttons and tab lists wrap instead of being cut.
+    expect(block).toContain('main [data-slot="tabs-list"]');
+    expect(block).toContain("main .grid > * {\n    min-width: 0;");
+    // Wide tables scroll inside themselves below lg instead.
+    expect(read("components/ui/table.tsx")).toContain("md:[--tbl-sticky-top:44px] max-lg:overflow-x-auto");
+  });
+
+  it("the batch-number buttons on the dashboard and batches page wrap, touch screens too", () => {
+    for (const f of ["pages/Dashboard.tsx", "pages/Batches.tsx"]) {
+      expect(read(f), f).toContain('className={cn("h-auto pointer-coarse:h-auto min-h-8 pointer-coarse:min-h-10 max-w-full flex-wrap');
+    }
+  });
+
+  it("the phone's Back closes the search instead of leaving the page", () => {
+    expect(read("components/DashboardLayout.tsx")).toContain("useBackCloses(cmdOpen && isMobile, () => setCmdOpen(false));");
+  });
+
+  it("opening the system on a phone asks to install it as an app", () => {
+    const prompt = read("components/PWAInstallPrompt.tsx");
+    expect(prompt).toContain("const staffOnPhone =");
+    expect(prompt).toContain("const onPortal = inPortal || staffOnPhone;");
+    expect(prompt).toContain("inPortal ? company.name : staffAppName");
+  });
+
+  it("the named pinned pages wait for lg — at tablet width they widened every page", () => {
+    expect(read("components/topbar/PinnedPages.tsx")).toContain('className={cn("hidden items-center gap-0.5 lg:flex", className)}');
+  });
+
+  it("business analytics survives weights that arrive as text", () => {
+    expect(read("pages/BusinessAnalytics.tsx")).toContain("Number(stat.totalWeight ?? 0).toFixed(1)");
+  });
+});

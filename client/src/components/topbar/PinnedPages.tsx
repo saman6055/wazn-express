@@ -44,10 +44,11 @@ export function PinnedPages({ className }: { className?: string }) {
   return (
     <nav
       aria-label={pickLang(language, { ku: "بەشە سەرەکییەکان", en: "Main pages", ar: "الصفحات الرئيسية", zh: "主要页面" })}
-      // On a narrow window the names step aside and the icons stay: the
-      // owner wants these pages a tap away on a small screen too
-      // (2026-09-21). Below a phone's width the menu carries them.
-      className={cn("hidden items-center gap-0.5 sm:flex", className)}
+      // From lg up, with their names. At tablet width (768-1023) the five
+      // named pills made the bar 72px wider than the screen and pushed every
+      // page sideways (measured 2026-09-28); the rail carries them there, and
+      // a phone has the tab bar and «زیاتر» (components/mobile).
+      className={cn("hidden items-center gap-0.5 lg:flex", className)}
     >
       {pins.map((pin) => {
         const active = isPinActive(location, pin.path);

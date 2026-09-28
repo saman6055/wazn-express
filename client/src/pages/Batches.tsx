@@ -1334,11 +1334,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     {/* Each one copies its code, and a click shows it in the
                         list below (owner, 2026-09-18). */}
                     {awaitingNumber.slice(0, 8).map((batch: any) => (
-                      <div key={batch.id} className="inline-flex items-center gap-0.5" data-awaiting-batch={batch.batchCode}>
+                      <div key={batch.id} className="inline-flex max-w-full items-center gap-0.5" data-awaiting-batch={batch.batchCode}>
                         <Button
                           size="sm"
                           variant={batch.severity === "urgent" ? "default" : "outline"}
-                          className={batch.severity === "urgent" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                          className={cn("h-auto pointer-coarse:h-auto min-h-8 pointer-coarse:min-h-10 max-w-full flex-wrap justify-start gap-y-1 whitespace-normal py-1 text-start", batch.severity === "urgent" && "bg-amber-600 hover:bg-amber-700")}
                           onClick={() => showInList(batch.batchCode)}
                           title={pickLang(language, { ku: "لە لیستەکەدا نیشانی بدە", en: "Show it in the list", ar: "اعرضها في القائمة", zh: "在列表中显示" })}
                         >

@@ -170,7 +170,10 @@ function Table({
           // capped scroll box and the header sticks to the top of that box.
           pageSticky
             // A phone has one app bar now (components/mobile), under the notch.
-            ? "[--tbl-sticky-top:calc(3.5rem+env(safe-area-inset-top))] md:[--tbl-sticky-top:44px]"
+            // Below lg a table wider than the screen scrolls inside itself —
+            // the page-level safety net would otherwise cut its last columns
+            // (tablet, 2026-09-28). The header then sticks within the table.
+            ? "[--tbl-sticky-top:calc(3.5rem+env(safe-area-inset-top))] md:[--tbl-sticky-top:44px] max-lg:overflow-x-auto"
             : cn("overflow-auto", stickyHeader && "max-h-[70vh]"),
           containerClassName,
         )}

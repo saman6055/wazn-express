@@ -99,6 +99,7 @@ import { RiskBell } from "./RiskBell";
 import { TaskBell } from "@/components/tasks/TaskBell";
 import { StaffChat } from "@/components/chat/StaffChat";
 import { MobileMoreSheet, MobileScanSheet, MobileTabBar, MobileTopBar, useMobileSheet } from "@/components/mobile/MobileAppShell";
+import { useBackCloses } from "@/hooks/useBackCloses";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
 import { QuickCreate } from "./QuickCreate";
 import { PinnedPages } from "./topbar/PinnedPages";
@@ -273,6 +274,10 @@ function DashboardLayoutContent({
   const [cmdOpen, setCmdOpen] = useState(false);
   // The phone's two sheets (scan, «زیاتر») — each one step in history.
   const mobileSheet = useMobileSheet(setLocation);
+  // The search is a layer too: the phone's Back closes it rather than
+  // leaving the page under it (the owner's one-step Back rule; found testing
+  // the phone app, 2026-09-28).
+  useBackCloses(cmdOpen && isMobile, () => setCmdOpen(false));
 
   const { canViewPath, isReady: permissionsReady } = usePermissions();
 

@@ -56,6 +56,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, memo, useEffect } from "react";
 import { useLocation } from "wouter";
+import { cn } from "@/lib/utils";
 import { MobileQuickActions } from "@/components/mobile/MobileAppShell";
 import {
   Dialog,
@@ -422,11 +423,11 @@ export default function Dashboard() {
                   </p>
                   <div className="flex flex-wrap gap-2">
                     {awaitingNumber.slice(0, 6).map((batch: any) => (
-                      <div key={batch.id} className="inline-flex items-center gap-0.5" data-awaiting-batch={batch.batchCode}>
+                      <div key={batch.id} className="inline-flex max-w-full items-center gap-0.5" data-awaiting-batch={batch.batchCode}>
                       <Button
                         size="sm"
                         variant={batch.severity === "urgent" ? "default" : "outline"}
-                        className={batch.severity === "urgent" ? "bg-amber-600 hover:bg-amber-700" : ""}
+                        className={cn("h-auto pointer-coarse:h-auto min-h-8 pointer-coarse:min-h-10 max-w-full flex-wrap justify-start gap-y-1 whitespace-normal py-1 text-start", batch.severity === "urgent" && "bg-amber-600 hover:bg-amber-700")}
                         onClick={() => setLocation(`/batches?find=${encodeURIComponent(batch.batchCode)}`)}
                       >
                         <span className="font-mono">{batch.batchCode}</span>

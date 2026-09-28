@@ -865,12 +865,67 @@
     box-shadow: none;
   }
 
+}
+
+/*
+ * Phones and tablets (below lg): nothing may make a page wider than the
+ * screen. Measured 2026-09-28 across all 71 menu pages at 320, 360, 375 and
+ * 768px against a real database; each rule below answers something that did.
+ */
+@media (max-width: 1023px) {
   /*
    * A page's own title row — the h1 on one side, its buttons on the other —
    * is written once per page as a no-wrap flex row, and on a phone the
    * buttons ran off the screen and made the whole page scroll sideways
    * (Batches' «باچی نوێ», 2026-09-27). Let every such row wrap there.
    */
+  /*
+   * The safety net. One wide element anywhere — a button that would not wrap
+   * on the dashboard (owner's screenshot, 2026-09-28) — made the phone lay
+   * the whole page out wider than the screen: the content slid sideways, a
+   * dark strip appeared, and the tab bar lost «باچ» and «زیاتر» off the
+   * edge. Clip, not hidden: it creates no scroll box, so sticky headers keep
+   * working. Whatever is too wide is cut at the screen's edge instead of
+   * moving everything else.
+   */
+  html:has(main),
+  html:has(main) body {
+    overflow-x: clip;
+  }
+  main {
+    overflow-x: clip;
+    max-width: 100vw;
+  }
+
+  /* Tab rows (finance, settings) and plain rows of buttons wrap onto a
+     second line when a phone is too narrow for them, instead of being cut
+     at the edge. A row that fits is untouched: wrap only acts on overflow.
+     Rows built to slide (overflow-x-auto) keep sliding. */
+  main [data-slot="tabs-list"]:not([class*="overflow-x-auto"]):not([class*="flex-nowrap"]) {
+    flex-wrap: wrap;
+    height: auto;
+    max-width: 100%;
+    justify-content: flex-start;
+  }
+  main div.flex:not(.flex-col):not(.flex-nowrap):not([class*="overflow-x"]):is(:has(> button ~ button), :has(> a ~ a), :has(> a ~ button), :has(> button ~ a)) {
+    flex-wrap: wrap;
+  }
+
+  /* A grid cell is as wide as its content unless told otherwise, so one
+     wide button row pushed a whole column past the screen (push
+     notifications at 320px). On a phone cells shrink to their column. */
+  main .grid > * {
+    min-width: 0;
+  }
+  /* Form controls with a width typed in pixels (w-64, w-[260px]) stop at
+     the width of the box they are in, on a 320px phone as on any other. */
+  main [data-slot="select-trigger"],
+  main input:not([type="checkbox"]):not([type="radio"]),
+  main textarea,
+  main .flex-wrap > * {
+    max-width: 100%;
+  }
+
   main div.flex.justify-between:has(h1) {
     flex-wrap: wrap;
     row-gap: 0.75rem;

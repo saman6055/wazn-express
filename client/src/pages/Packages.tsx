@@ -1398,7 +1398,9 @@ const [, setLocation] = useLocation();
               />
 
               {/* Search and Filter Toggle Row */}
-              <div className="flex flex-col sm:flex-row gap-4">
+              {/* One row from lg; stacked below it, where the search box was
+                  squeezed to 50px beside the route filter (tablet, 2026-09-28). */}
+              <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                   <Input

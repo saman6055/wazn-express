@@ -326,7 +326,7 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
               />
             </div>
           </div>
-          <div className="flex items-center gap-4">
+          <div className="flex flex-wrap items-center gap-4">
             <Button 
               onClick={handleSaveWhatsappConfig}
               disabled={saveWhatsappConfig.isPending || !whatsappConfig.apiKey}
@@ -338,7 +338,7 @@ const [settings, setSettings] = useState<Record<string, NotificationSetting>>({}
               )}
               Save WhatsApp Config
             </Button>
-            <span className="text-sm text-muted-foreground">
+            <span className="min-w-0 text-sm text-muted-foreground">
               Get your credentials from <a href="https://business.facebook.com/settings/whatsapp-business-accounts" target="_blank" rel="noopener noreferrer" className="text-primary hover:underline">Meta Business Suite</a>
             </span>
           </div>
