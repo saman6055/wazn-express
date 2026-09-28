@@ -90,6 +90,25 @@ export const staffChatRouter = router({
       return db.sendStaffMessage(ctx.user.id, input.toId, input.text, stored);
     }),
 
+  /**
+   * Take a message out of the conversation — for both people, at once.
+   *
+   * Which messages may go, and what is left behind, is decided in the db
+   * layer with the rest of the pair's rules (server/db/staffChat.db).
+   */
+  remove: staffProcedure
+    .input(z.object({ messageId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      return db.deleteStaffMessage(ctx.user.id, input.messageId);
+    }),
+
+  /** The same, for everything in one conversation. */
+  clearWith: staffProcedure
+    .input(z.object({ userId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      return db.clearStaffConversation(ctx.user.id, input.userId);
+    }),
+
   /** Opening a conversation is reading it. */
   markRead: staffProcedure
     .input(z.object({ userId: z.number().int().positive() }))

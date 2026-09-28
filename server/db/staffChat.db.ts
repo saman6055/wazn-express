@@ -24,6 +24,21 @@ const between = (a: number, b: number) =>
     and(eq(staffMessages.fromId, b), eq(staffMessages.toId, a)),
   );
 
+/**
+ * A message still in the conversation.
+ *
+ * The owner, 2026-09-28: «سڕینەوەی نامەش بوونی هەبێ» — and, asked what
+ * the other person should be left with, «هەمووی بسرێتەوە هیچ
+ * نەمێنێ». So a struck message leaves no trace on any screen: not a
+ * bubble, not a "this was deleted" line, not a count.
+ *
+ * It is still a strike and not an erase. The row stays with the hour and the
+ * person who struck it, because this office does not delete what it has
+ * written down — it stops showing it. One condition, used by every read here,
+ * so no query can forget and show what somebody took back.
+ */
+const standing = isNull(staffMessages.deletedAt);
+
 /** A file already stored, to go with a message. */
 export interface StaffAttachment {
   url: string;
@@ -89,7 +104,7 @@ export async function staffConversation(userId: number, otherId: number, limit =
       createdAt: staffMessages.createdAt,
     })
     .from(staffMessages)
-    .where(between(userId, otherId))
+    .where(and(between(userId, otherId), standing))
     .orderBy(desc(staffMessages.id))
     .limit(Math.min(Math.max(limit, 1), 200));
   return rows.reverse();
@@ -131,9 +146,12 @@ export async function staffInbox(userId: number) {
       createdAt: staffMessages.createdAt,
     })
     .from(staffMessages)
-    .where(or(
-      and(eq(staffMessages.fromId, userId), inArray(staffMessages.toId, ids)),
-      and(eq(staffMessages.toId, userId), inArray(staffMessages.fromId, ids)),
+    .where(and(
+      or(
+        and(eq(staffMessages.fromId, userId), inArray(staffMessages.toId, ids)),
+        and(eq(staffMessages.toId, userId), inArray(staffMessages.fromId, ids)),
+      ),
+      standing,
     ))
     .orderBy(desc(staffMessages.id))
     .limit(500);
@@ -179,7 +197,7 @@ export async function staffUnreadCount(userId: number): Promise<number> {
   const [row] = await db
     .select({ n: sql<number>`COUNT(*)` })
     .from(staffMessages)
-    .where(and(eq(staffMessages.toId, userId), isNull(staffMessages.readAt)));
+    .where(and(eq(staffMessages.toId, userId), isNull(staffMessages.readAt), standing));
   return Number(row?.n ?? 0);
 }
 
@@ -194,6 +212,60 @@ export async function markStaffMessagesRead(userId: number, otherId: number): Pr
       eq(staffMessages.toId, userId),
       eq(staffMessages.fromId, otherId),
       isNull(staffMessages.readAt),
+      standing,
     ));
   return { ok: true };
+}
+
+/**
+ * Take one message out of the conversation.
+ *
+ * Either of the two may strike any message in it, theirs or the other
+ * person's — the owner's choice on 2026-09-28, and it fits an office of four
+ * people sharing one screen more than the messenger rule of "only your own"
+ * would.
+ *
+ * Bounded by the pair here rather than in the screen, the same as every read
+ * above: a message belongs to the two people in it, so an id from outside
+ * that pair matches nothing however it was asked for.
+ */
+export async function deleteStaffMessage(userId: number, messageId: number): Promise<{ ok: boolean }> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error(retryFix("پەیامەکە نەسڕایەوە — پەیوەندی بە داتابەیسەوە نییە."));
+  }
+  const done = await db
+    .update(staffMessages)
+    .set({ deletedAt: new Date(), deletedById: userId })
+    .where(and(
+      eq(staffMessages.id, messageId),
+      standing,
+      or(eq(staffMessages.fromId, userId), eq(staffMessages.toId, userId)),
+    ));
+  if (!Number(done[0]?.affectedRows ?? 0)) {
+    throw new Error(withFix("ئەم پەیامە نەدۆزرایەوە — لەوانەیە پێشتر سڕابێتەوە.", [
+      "پەنجەرەی چات دابخە و دووبارە بیکەرەوە",
+      "ئەگەر هێشتا دیارە، وێنەی شاشە بگرە و پیشانی بەڕێوەبەری سیستەم بدە",
+    ]));
+  }
+  return { ok: true };
+}
+
+/**
+ * Empty a whole conversation.
+ *
+ * A thread of forty test messages is what prompted this: striking them one at
+ * a time is forty questions. Same rule, same bound, applied to everything
+ * still standing between the two.
+ */
+export async function clearStaffConversation(userId: number, otherId: number): Promise<{ cleared: number }> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error(retryFix("گفتوگۆکە نەسڕایەوە — پەیوەندی بە داتابەیسەوە نییە."));
+  }
+  const done = await db
+    .update(staffMessages)
+    .set({ deletedAt: new Date(), deletedById: userId })
+    .where(and(between(userId, otherId), standing));
+  return { cleared: Number(done[0]?.affectedRows ?? 0) };
 }

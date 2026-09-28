@@ -1383,6 +1383,8 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       attachmentName VARCHAR(255) NULL,
       attachmentType VARCHAR(100) NULL,
       readAt TIMESTAMP NULL,
+      deletedAt TIMESTAMP NULL,
+      deletedById INT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_staff_msg_pair (fromId, toId, createdAt),
       INDEX idx_staff_msg_unread (toId, readAt)
@@ -3076,6 +3078,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "batches.awbNumber", sql: "ALTER TABLE batches ADD COLUMN awbNumber VARCHAR(50) NULL" },
   { name: "batches.shipmentTrackings", sql: "ALTER TABLE batches ADD COLUMN shipmentTrackings JSON NULL" },
   { name: "batches.cartonCount", sql: "ALTER TABLE batches ADD COLUMN cartonCount INT NULL" },
+
+  // A message either of the two can take back out of the conversation. Struck
+  // out, not erased — see the schema note beside these columns.
+  { name: "staffMessages.deletedAt", sql: "ALTER TABLE staffMessages ADD COLUMN deletedAt TIMESTAMP NULL" },
+  { name: "staffMessages.deletedById", sql: "ALTER TABLE staffMessages ADD COLUMN deletedById INT NULL" },
 ];
 
 /**
@@ -3226,6 +3233,8 @@ export const REQUIRED_COLUMNS: Record<string, { name: string; ddl: string }[]> =
     { name: "attachmentUrl", ddl: "VARCHAR(500) NULL" },
     { name: "attachmentName", ddl: "VARCHAR(255) NULL" },
     { name: "attachmentType", ddl: "VARCHAR(100) NULL" },
+    { name: "deletedAt", ddl: "TIMESTAMP NULL" },
+    { name: "deletedById", ddl: "INT NULL" },
   ],
 
   expenses: [

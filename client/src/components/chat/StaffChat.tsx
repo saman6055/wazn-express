@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Copy, FileText, Loader2, MessageCircle, Monitor, Paperclip, Send, X } from "lucide-react";
+import { ArrowRight, Copy, FileText, Loader2, MessageCircle, Monitor, Paperclip, Send, Trash2, X } from "lucide-react";
+import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -13,6 +14,8 @@ import { Button } from "@/components/ui/button";
 import { buildErrorReport } from "@/components/ErrorBoundary";
 import { copyText } from "@/lib/copyText";
 import { canCaptureScreen, captureScreen, fileToBase64, isImageType, shrinkImage } from "@/lib/chatAttachment";
+import { confirmDanger } from "@/components/ConfirmDialog";
+import { isNotificationEnabled, showNotification } from "@/lib/pushNotifications";
 
 /**
  * The office talking to itself, in the corner of every screen.
@@ -55,6 +58,23 @@ const WORDS = {
   copyReport: { ku: "کۆپیکردنی وردەکاری", en: "Copy details", ar: "نسخ التفاصيل", zh: "复制详情" },
   copied: { ku: "کۆپی کرا", en: "Copied", ar: "تم النسخ", zh: "已复制" },
   remove: { ku: "لابردن", en: "Remove", ar: "إزالة", zh: "移除" },
+  del: { ku: "سڕینەوەی پەیام", en: "Delete message", ar: "حذف الرسالة", zh: "删除消息" },
+  delAsk: {
+    ku: "ئەم پەیامە بسڕێتەوە؟ لە هەردوو لاوە ون دەبێت.",
+    en: "Delete this message? It disappears for both of you.",
+    ar: "حذف هذه الرسالة؟ ستختفي لدى الطرفين.",
+    zh: "删除这条消息？双方都会看不到。",
+  },
+  clear: { ku: "سڕینەوەی هەموو گفتوگۆکە", en: "Clear this conversation", ar: "مسح المحادثة", zh: "清空对话" },
+  clearAsk: {
+    ku: "هەموو پەیامەکانی ئەم گفتوگۆیە بسڕێتەوە؟ لە هەردوو لاوە ون دەبن.",
+    en: "Delete every message in this conversation? They disappear for both of you.",
+    ar: "حذف كل رسائل هذه المحادثة؟ ستختفي لدى الطرفين.",
+    zh: "删除这个对话的全部消息？双方都会看不到。",
+  },
+  yes: { ku: "بیسڕەوە", en: "Delete", ar: "حذف", zh: "删除" },
+  arrived: { ku: "نامەت بۆ هات", en: "A message for you", ar: "وصلتك رسالة", zh: "你有新消息" },
+  openIt: { ku: "کردنەوە", en: "Open", ar: "فتح", zh: "打开" },
 } as const;
 
 /** A file waiting in the composer, not yet sent. */
@@ -116,20 +136,55 @@ export function StaffChat() {
     onError: (e) => setSendError(e instanceof Error ? e : new Error(String(e))),
   });
 
+  /*
+   * Taking a message back, and emptying a thread.
+   *
+   * No cheerful toast for either: what confirms a delete is the bubble being
+   * gone. A failure still speaks, in the panel, with its details to copy —
+   * the same shape as a send that did not go.
+   */
+  const removeMsg = trpc.staffChat.remove.useMutation({
+    meta: { skipGlobalToast: true },
+    onSuccess: () => void utils.staffChat.invalidate(),
+    onError: (e) => setSendError(e instanceof Error ? e : new Error(String(e))),
+  });
+  const clearWith = trpc.staffChat.clearWith.useMutation({
+    meta: { skipGlobalToast: true },
+    onSuccess: () => void utils.staffChat.invalidate(),
+    onError: (e) => setSendError(e instanceof Error ? e : new Error(String(e))),
+  });
+
   const rows = useMemo(() => inbox.data ?? [], [inbox.data]);
   const unread = rows.reduce((sum, r) => sum + (r.unread ?? 0), 0);
   const active = rows.find((r) => r.id === withId) ?? null;
 
   /*
-   * Ring once for a message that was not there before.
+   * Ring once for a message that was not there before — and say so in words.
    *
-   * Keyed on the highest id already announced, per person per browser, so
-   * reopening the app is silent and a genuinely new message is not.
+   * Keyed on the newest unread moment already announced, per person per
+   * browser, so reopening the app is silent and a genuinely new message is
+   * not.
+   *
+   * The owner, 2026-09-28: «ئەو کەسەی نامەی بۆ دەچێت بە
+   * نۆتفیکەیشن بنووسێ نامەت بۆ هات». A sound alone says something
+   * happened somewhere; it does not say who wants you, and a badge on a
+   * bubble in the corner is missed by somebody typing into a form. So the
+   * note now comes with a line naming the sender, and one tap on it opens
+   * that conversation.
+   *
+   * When this window is not the one being looked at, the operating system's
+   * own notification carries it instead — but only where the browser was
+   * already given permission; nothing here asks for it.
    */
   useEffect(() => {
     if (!user?.id || !inbox.data) return;
-    const newest = rows.reduce((max, r) => (r.unread > 0 && r.lastAt ? Math.max(max, new Date(r.lastAt).getTime()) : max), 0);
-    if (!newest) return;
+    const waiting = rows.filter((r) => r.unread > 0 && r.lastAt);
+    let hot: (typeof waiting)[number] | null = null;
+    for (const r of waiting) {
+      if (!hot || new Date(r.lastAt!).getTime() > new Date(hot.lastAt!).getTime()) hot = r;
+    }
+    if (!hot?.lastAt) return;
+    const newest = new Date(hot.lastAt).getTime();
     let lastSeen = 0;
     try {
       lastSeen = Number(localStorage.getItem(chimedKey(user.id)) ?? 0) || 0;
@@ -144,9 +199,31 @@ export function StaffChat() {
     }
     soundManager.playNotice();
     setFlash(true);
+
+    // What was said — or what came instead of words.
+    const from = hot;
+    const preview = from.lastText
+      || (isImageType(from.lastAttachmentType) ? L(WORDS.photo) : from.lastAttachmentType ? L(WORDS.file) : "");
+    const openThem = () => {
+      setOpen(true);
+      setWithId(from.id);
+    };
+    toast(`${L(WORDS.arrived)} — ${from.name}`, {
+      description: preview || undefined,
+      duration: 8000,
+      action: { label: L(WORDS.openIt), onClick: openThem },
+    });
+    if (typeof document !== "undefined" && document.hidden && isNotificationEnabled()) {
+      showNotification("new_message", `${from.name}: ${preview}`.trim(), {
+        isKurdish: language === "ku",
+        onClick: openThem,
+      });
+    }
+
     const t = setTimeout(() => setFlash(false), 2600);
     return () => clearTimeout(t);
-  }, [inbox.data, rows, user?.id]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [inbox.data, rows, user?.id, language]);
 
   // Opening a conversation is reading it.
   useEffect(() => {
@@ -287,14 +364,32 @@ export function StaffChat() {
               </button>
             )}
             <span className="truncate text-sm font-medium">{active ? active.name : L(WORDS.title)}</span>
-            <button
-              type="button"
-              className="ms-auto grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted"
-              onClick={() => setOpen(false)}
-              aria-label="close"
-            >
-              <X className="h-4 w-4" />
-            </button>
+            <div className="ms-auto flex items-center gap-0.5">
+              {/* Forty test messages are forty questions one at a time. */}
+              {withId && (thread.data ?? []).length > 0 && (
+                <button
+                  type="button"
+                  className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-destructive/10 hover:text-destructive"
+                  onClick={async () => {
+                    if (!(await confirmDanger({ message: L(WORDS.clearAsk), confirmLabel: L(WORDS.yes) }))) return;
+                    clearWith.mutate({ userId: withId });
+                  }}
+                  title={L(WORDS.clear)}
+                  aria-label={L(WORDS.clear)}
+                  data-testid="staff-chat-clear"
+                >
+                  {clearWith.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Trash2 className="h-4 w-4" />}
+                </button>
+              )}
+              <button
+                type="button"
+                className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted"
+                onClick={() => setOpen(false)}
+                aria-label="close"
+              >
+                <X className="h-4 w-4" />
+              </button>
+            </div>
           </div>
 
           {!withId ? (
@@ -343,7 +438,42 @@ export function StaffChat() {
                 {(thread.data ?? []).map((m) => {
                   const mine = m.fromId === user.id;
                   return (
-                    <div key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
+                    <div
+                      key={m.id}
+                      className={cn("group flex items-center gap-1.5", mine ? "justify-end" : "justify-start")}
+                    >
+                      {/*
+                        The handle sits on the open side of the bubble, never
+                        over the words: before mine, after theirs.
+
+                        Always there on a phone, where there is no hovering to
+                        do; on a desktop it appears when the row is pointed at
+                        or reached by keyboard, so a thread being read is a
+                        thread of words and not of buttons.
+                      */}
+                      <button
+                        type="button"
+                        className={cn(
+                          "grid h-7 w-7 shrink-0 place-items-center rounded-full text-muted-foreground transition",
+                          "hover:bg-destructive/10 hover:text-destructive focus-visible:opacity-100",
+                          // The resting state is stated rather than left to
+                          // the default. A phone has no hover to bring the
+                          // handle back, so "visible unless md" is the whole
+                          // behaviour there and should not depend on no other
+                          // rule happening to set it.
+                          "opacity-100 md:opacity-0 md:group-hover:opacity-100",
+                          mine ? "order-first" : "order-last",
+                        )}
+                        onClick={async () => {
+                          if (!(await confirmDanger({ message: L(WORDS.delAsk), confirmLabel: L(WORDS.yes) }))) return;
+                          removeMsg.mutate({ messageId: m.id });
+                        }}
+                        title={L(WORDS.del)}
+                        aria-label={L(WORDS.del)}
+                        data-testid={`staff-chat-delete-${m.id}`}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </button>
                       <div
                         className={cn(
                           "max-w-[85%] rounded-2xl px-3 py-1.5 text-sm",

@@ -503,6 +503,14 @@ export const staffMessages = mysqlTable("staffMessages", {
   attachmentType: varchar("attachmentType", { length: 100 }),
   /** When the person it was sent to opened the conversation. */
   readAt: timestamp("readAt"),
+  /**
+   * Taken out of the conversation — by either of the two people in it
+   * (owner, 2026-09-28). Struck out rather than erased: the row stays, every
+   * read skips it, and nothing in the office's history quietly rewrites
+   * itself. Nobody can see a struck message again from any screen.
+   */
+  deletedAt: timestamp("deletedAt"),
+  deletedById: int("deletedById"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({
   // The two questions: what did these two say to each other, and what have

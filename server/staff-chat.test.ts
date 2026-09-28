@@ -21,7 +21,9 @@ describe("the office talking to itself", () => {
     expect(db).toContain("const between = (a: number, b: number) =>");
     const conv = db.slice(db.indexOf("export async function staffConversation"), db.indexOf("export async function staffInbox"));
     expect(conv.length).toBeGreaterThan(100);
-    expect(conv).toContain("where(between(userId, otherId))");
+    // `standing` joined it on 2026-09-28: a struck message is not part of
+    // the conversation any more. The pair bound is what must never leave.
+    expect(conv).toContain("where(and(between(userId, otherId), standing))");
   });
 
   it("reads a long conversation as cheaply as a short one", () => {
@@ -85,7 +87,10 @@ describe("files in the chat, and no applause (owner, 2026-09-27)", () => {
   const router = read("server/routers/staffChat.router.ts");
 
   it("sends and reads without the global success toast", () => {
-    expect((ui.match(/meta: \{ skipGlobalToast: true \}/g) ?? []).length).toBe(2);
+    // Four now: sending, reading, deleting one, emptying a thread. None of
+    // them earns a "done successfully" — the message appearing, or being
+    // gone, is the confirmation.
+    expect((ui.match(/meta: \{ skipGlobalToast: true \}/g) ?? []).length).toBe(4);
     // A failure still speaks, inside the panel, with a copyable report.
     expect(ui).toContain("buildErrorReport(sendError)");
   });
@@ -118,5 +123,99 @@ describe("files in the chat, and no applause (owner, 2026-09-27)", () => {
     for (const col of ["fromId", "toId", "text", "readAt", "createdAt", "attachmentUrl", "attachmentName", "attachmentType"]) {
       expect(block, col).toContain(`name: "${col}"`);
     }
+  });
+});
+
+/**
+ * Taking a message back out (owner, 2026-09-28).
+ *
+ * «سڕینەوەی نامەش بوونی هەبێ», and when asked what the other
+ * person should be left with, «هەمووی بسرێتەوە هیچ نەمێنێ» — and
+ * either of the two may do it, not only whoever wrote the message.
+ */
+describe("a message can be taken out of the conversation", () => {
+  const db = read("server/db/staffChat.db.ts");
+  const router = read("server/routers/staffChat.router.ts");
+  const ui = read("client/src/components/chat/StaffChat.tsx");
+
+  it("is struck, never erased", () => {
+    // The office does not delete what it has written down; it stops showing
+    // it. The row keeps the hour and the person who struck it.
+    expect(db).toContain("set({ deletedAt: new Date(), deletedById: userId })");
+    expect(db).not.toMatch(/delete\(staffMessages\)/);
+  });
+
+  it("every read skips a struck message, through one condition", () => {
+    expect(db).toContain("const standing = isNull(staffMessages.deletedAt);");
+    // Each of the four reads, so none can forget and show what was taken back.
+    const inbox = db.slice(db.indexOf("export async function staffInbox"), db.indexOf("export async function staffUnreadCount"));
+    const count = db.slice(db.indexOf("export async function staffUnreadCount"), db.indexOf("export async function markStaffMessagesRead"));
+    const read0 = db.slice(db.indexOf("export async function markStaffMessagesRead"), db.indexOf("export async function deleteStaffMessage"));
+    for (const [name, body] of [["inbox", inbox], ["unread count", count], ["mark read", read0]] as const) {
+      expect(body.length, name).toBeGreaterThan(100);
+      expect(body, name).toContain("standing");
+    }
+  });
+
+  it("can only reach a message in your own conversation", () => {
+    // Bounded here and not in the screen, the same as every read: an id from
+    // outside the pair matches nothing however it is asked for.
+    const one = db.slice(db.indexOf("export async function deleteStaffMessage"), db.indexOf("export async function clearStaffConversation"));
+    expect(one).toContain("or(eq(staffMessages.fromId, userId), eq(staffMessages.toId, userId))");
+    const all = db.slice(db.indexOf("export async function clearStaffConversation"));
+    expect(all).toContain("where(and(between(userId, otherId), standing))");
+    // The router hands over the signed-in person and nothing else.
+    expect(router).toContain("db.deleteStaffMessage(ctx.user.id, input.messageId)");
+    expect(router).toContain("db.clearStaffConversation(ctx.user.id, input.userId)");
+  });
+
+  it("a refusal says what to do about it", () => {
+    const one = db.slice(db.indexOf("export async function deleteStaffMessage"), db.indexOf("export async function clearStaffConversation"));
+    expect(one).toContain("withFix(");
+  });
+
+  it("asks before it deletes, in the app's own dialog", () => {
+    // Never the browser's box — it speaks the phone's language and offers to
+    // stop asking (confirm-dialog.test).
+    expect((ui.match(/confirmDanger\(/g) ?? []).length).toBe(2);
+    expect(ui).toContain("WORDS.delAsk");
+    expect(ui).toContain("WORDS.clearAsk");
+  });
+
+  it("the handle is reachable on a phone, where there is no hovering", () => {
+    const btn = ui.slice(ui.indexOf("staff-chat-delete-"), ui.indexOf("staff-chat-delete-") + 400);
+    // Visible at rest and hidden only from `md` up: a phone has no hover to
+    // bring it back, so that resting state is stated, not assumed.
+    expect(ui).toContain("opacity-100 md:opacity-0 md:group-hover:opacity-100");
+    expect(btn.length).toBeGreaterThan(50);
+  });
+});
+
+/**
+ * "A message came for you" (owner, 2026-09-28).
+ *
+ * A sound says something happened somewhere. It does not say who wants you,
+ * and a badge in the corner is missed by somebody typing into a form.
+ */
+describe("an arriving message says who sent it", () => {
+  const ui = read("client/src/components/chat/StaffChat.tsx");
+
+  it("names the sender and opens that conversation in one tap", () => {
+    expect(ui).toContain("WORDS.arrived");
+    expect(ui).toContain("action: { label: L(WORDS.openIt), onClick: openThem }");
+    expect(ui).toContain("setWithId(from.id)");
+  });
+
+  it("still rings the same note as a task, and still only once", () => {
+    expect(ui).toContain("soundManager.playNotice()");
+    expect(ui).toContain("localStorage.setItem(chimedKey(user.id), String(newest))");
+    expect(ui).toContain("if (newest <= lastSeen) return;");
+  });
+
+  it("uses the operating system only when this window is not the one being read", () => {
+    // And only where permission was already given: nothing here asks for it.
+    expect(ui).toContain("document.hidden && isNotificationEnabled()");
+    expect(ui).toContain('showNotification("new_message"');
+    expect(ui).not.toContain("requestPermission");
   });
 });
