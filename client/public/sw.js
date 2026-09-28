@@ -23,6 +23,31 @@ self.addEventListener("activate", (event) => {
 });
 
 /**
+ * Page loads only, straight to the network — nothing is cached, for the
+ * reason above. Chrome on many Android phones will not offer "Install app"
+ * for a site whose worker has no fetch handler at all (the owner, 2026-09-28:
+ * «لە کرۆمیش داوا ناکات»), and a handler that never answers is treated as
+ * none. So navigations are answered: from the network, and when there is no
+ * network, with a one-line page saying so instead of the browser's dinosaur.
+ * Every other request (scripts, API, images) is left alone.
+ */
+const OFFLINE_PAGE = `<!doctype html><html lang="ku" dir="rtl"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Wazn Express</title></head>
+<body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#0f172a;color:#e2e8f0;text-align:center;padding:24px">
+<div><p style="font-size:20px;font-weight:700;margin:0 0 8px">ئینتەرنێت نییە</p>
+<p style="margin:0 0 16px;color:#94a3b8">پەیوەندی ئینتەرنێت بپشکنە، پاشان دووبارە هەوڵ بدەرەوە.</p>
+<button onclick="location.reload()" style="font:inherit;padding:10px 20px;border-radius:12px;border:0;background:#0ea5e9;color:#fff">دووبارە هەوڵ بدەرەوە</button></div>
+</body></html>`;
+
+self.addEventListener("fetch", (event) => {
+  if (event.request.mode !== "navigate") return;
+  event.respondWith(
+    fetch(event.request).catch(
+      () => new Response(OFFLINE_PAGE, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8" } })
+    )
+  );
+});
+
+/**
  * Push payload contract: `{ title, body, url }` — exactly what
  * server/services/push.service.ts sends (bodyFor / campaign sender).
  */

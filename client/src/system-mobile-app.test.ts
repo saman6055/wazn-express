@@ -137,3 +137,16 @@ describe("tested against a real database, 2026-09-28 (phase 4)", () => {
     expect(read("pages/BusinessAnalytics.tsx")).toContain("Number(stat.totalWeight ?? 0).toFixed(1)");
   });
 });
+
+describe("Chrome offers to install it (2026-09-28)", () => {
+  it("the service worker answers page loads, so Chrome counts it as an app — and caches nothing", () => {
+    const sw = fs.readFileSync(path.join(__dirname, "..", "public", "sw.js"), "utf8");
+    expect(sw).toContain('self.addEventListener("fetch"');
+    expect(sw).toContain('if (event.request.mode !== "navigate") return;');
+    expect(sw).not.toMatch(/caches\.(open|match)/);
+  });
+
+  it("the staff sign-in page on a phone already asks", () => {
+    expect(read("components/PWAInstallPrompt.tsx")).toContain("(locationPath === '/staff-login' ||");
+  });
+});

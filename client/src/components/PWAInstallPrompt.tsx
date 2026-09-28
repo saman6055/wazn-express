@@ -80,15 +80,18 @@ export function PWAInstallPrompt() {
    * The office on a phone asks the same way (owner, 2026-09-28: «لەگەڵ
    * کردنەوەی داوا بکە بیکەیتە ئەپ»): the front-and-center dialog on every
    * visit until it is installed, "later" quiet for this visit only. Only on
-   * a phone-sized touch screen, and never on the sign-in or public pages —
-   * the ask is for someone already at work in the system.
+   * a phone-sized touch screen. The staff sign-in page asks too: it is the
+   * first thing a phone opens, and asking only after sign-in meant most
+   * visits never saw it. Public pages and shared tracking links never ask.
    */
   const staffOnPhone =
     !inPortal &&
     typeof window !== 'undefined' &&
     window.innerWidth < 768 &&
     window.matchMedia('(pointer: coarse)').matches &&
-    !['/', '/staff-login', '/customer-login', '/login'].includes(locationPath) &&
+    (locationPath === '/staff-login' ||
+      (isSystemHost(window.location.hostname) && locationPath === '/') ||
+      !['/', '/customer-login', '/login'].includes(locationPath)) &&
     !locationPath.startsWith('/t/');
   /** Ask with the big dialog, right away — the portal, and the office on a phone. */
   const onPortal = inPortal || staffOnPhone;
