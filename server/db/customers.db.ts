@@ -229,6 +229,15 @@ export async function updateCustomer(id: number, data: Partial<InsertCustomer>) 
  * staff resetting it to the shared default. Only the first stamps
  * passwordChangedAt, because that stamp is what tells the office whether an
  * account is still on the password they handed out.
+ *
+ * A new password also ends any run of failed attempts, lock included. It has
+ * to happen here rather than at the one caller, because the sequence that
+ * broke was exactly the one the office reaches for: a customer mistypes five
+ * times, the account shuts for fifteen minutes, they ring the office, the
+ * office resets the password — and the reset left the lock standing, so the
+ * brand-new password was refused too and the reset looked like it had done
+ * nothing. The old password is gone; the tally of failures against it is not
+ * evidence about the new one.
  */
 export async function updateCustomerPassword(
   id: number,
@@ -244,6 +253,10 @@ export async function updateCustomerPassword(
       // A staff reset deliberately clears it: the account is back on a
       // password we know, and saying otherwise would be worse than silence.
       passwordChangedAt: options.changedByCustomer ? new Date() : null,
+      // The run of failures belonged to the password that is now gone.
+      failedLoginAttempts: 0,
+      lastFailedLoginAt: null,
+      lockedUntil: null,
     })
     .where(eq(customers.id, id));
 }

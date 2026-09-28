@@ -3,6 +3,7 @@ import { getConfig } from "../config";
 import { VIEW_AS_MINUTES } from "@shared/viewAsCustomer";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
+import { lockState } from "@shared/loginLockout";
 import * as bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
@@ -394,13 +395,69 @@ export const portalCenterRouter = router({
         isOnDefaultPassword: c.passwordHash
           ? await bcrypt.compare(DEFAULT_RESET_PASSWORD, c.passwordHash)
           : false,
+
+        /**
+         * How many minutes the account is shut for, or null when it is open.
+         *
+         * Five wrong passwords shut a customer out for fifteen minutes
+         * (shared/loginLockout). Until now that fact appeared on no screen at
+         * all: the office saw an account that was active, had a password, and
+         * still refused the customer, with no way to tell why and no way to
+         * lift it.
+         *
+         * The counters themselves stay on the server — accountSecrets keeps
+         * `lockedUntil` and the attempt tally out of every account row that
+         * goes to a browser, and this does not undo that. What goes out is
+         * one derived number, on an admin-only call, because "shut for nine
+         * more minutes" is the answer to the question being asked.
+         */
+        lockedForMinutes: (() => {
+          const lock = lockState({ lockedUntil: c.lockedUntil, now: new Date() });
+          return lock.locked ? lock.remainingMinutes : null;
+        })(),
       };
+    }),
+
+  /**
+   * Let a shut-out customer try again now.
+   *
+   * The lock lifts by itself after fifteen minutes, so this is a convenience
+   * — but it is the difference between a customer standing at the counter
+   * waiting and one who can sign in while the staff member is still on the
+   * phone. Resetting the password clears the lock too; this exists so the
+   * office does not have to change a password that was never wrong.
+   *
+   * It grants nothing an admin could not already do by resetting the
+   * password, and it is logged on both sides: the audit trail and the
+   * customer's own activity list.
+   */
+  unlockCustomerLogin: adminProcedure
+    .input(z.object({ customerId: idSchema }))
+    .mutation(async ({ input, ctx }) => {
+      const customer = await db.getCustomerById(input.customerId);
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
+
+      await db.clearFailedCustomerLogins(input.customerId);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "unlock_customer_login",
+        entityType: "customer",
+        entityId: input.customerId,
+      });
+      await db.logCustomerActivity({
+        customerId: input.customerId,
+        action: "admin_unlocked_login",
+        category: "auth",
+        metadata: { by: ctx.user.id },
+      });
+      return { success: true } as const;
     }),
 
   /**
    * "This customer says they cannot sign in." Answers why, in one call.
    *
-   * There are four ways the portal login refuses, and two of them print the
+   * There are five ways the portal login refuses, and two of them print the
    * same sentence — "wrong phone number or password" covers both "no account
    * with that number" and "that password does not match". So staff reset the
    * password, the customer still cannot get in, staff reset it again, and
@@ -410,6 +467,13 @@ export const portalCenterRouter = router({
    * customer would type it, and reports which step fails. Optionally checks a
    * password too, which is the only way to tell the two identical messages
    * apart.
+   *
+   * The fifth way was the one this tool itself was blind to: an account shut
+   * for fifteen minutes after five wrong tries. The login refuses it before
+   * it looks at the password, so this would report "that password works"
+   * about an account the portal was turning away — the exact confusion it
+   * was written to end. Every answer now carries the lock, and it gets a step
+   * of its own when it is the reason.
    *
    * Admin-only and audit-logged. It reveals no hash and grants nothing an
    * admin could not already do by resetting the password — it only replaces
@@ -433,6 +497,7 @@ export const portalCenterRouter = router({
         };
       }
 
+      const lock = lockState({ lockedUntil: customer.lockedUntil, now: new Date() });
       const found = {
         id: customer.id,
         customerCode: customer.customerCode,
@@ -441,6 +506,9 @@ export const portalCenterRouter = router({
         // The number is stored one way and typed another far more often than
         // anyone expects; say so plainly when it happens.
         storedDiffersFromTyped: customer.mobileNumber !== typed,
+        // On every answer, not only the one below: a lock explains a customer
+        // who "still cannot get in" after everything else checked out.
+        lockedForMinutes: lock.locked ? lock.remainingMinutes : null,
       };
 
       if (!customer.isActive) {
@@ -452,6 +520,21 @@ export const portalCenterRouter = router({
           step: "no_password" as const,
           found,
           message: "هیچ وشەیەکی نهێنی بۆ ئەم هەژمارە دانەنراوە — ڕیسێتی بکە.",
+        };
+      }
+
+      /*
+       * Reported before any password is tried, because that is the order the
+       * login itself uses: while the account is shut, what the customer types
+       * is never even compared. Testing the password here and calling it
+       * "working" would be true and useless — the portal is refusing them
+       * regardless.
+       */
+      if (lock.locked) {
+        return {
+          step: "locked" as const,
+          found,
+          message: `هەژمارەکە داخراوە دوای چەند هەوڵی هەڵە — ${lock.remainingMinutes} خولەکی ماوە. وشەی نهێنی هەرچی بێت ڕەت دەکرێتەوە. بە دوگمەی کردنەوە یەکسەر بکەرەوە، یان چاوەڕێ بکە.`,
         };
       }
 

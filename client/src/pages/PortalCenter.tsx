@@ -50,7 +50,7 @@ import {
   UserCheck, PackageCheck, Ban, Sparkles, Send, Bell, Megaphone,
   StickyNote, DollarSign, Plane, Zap, Ship, Loader2, Star, Newspaper, Pin, Eye,
   EyeOff, KeyRound, ShieldCheck, Copy, Check, RefreshCw, Phone, Power, Undo2,
-  GraduationCap, AlertTriangle, Lock,
+  GraduationCap, AlertTriangle, Lock, LockOpen,
   Link2,
 } from "lucide-react";
 
@@ -1736,14 +1736,17 @@ function genPassword(): string {
 /**
  * "This customer says they cannot sign in."
  *
- * The portal login refuses in four ways and two of them print the same
+ * The portal login refuses in five ways and two of them print the same
  * sentence — "wrong phone number or password" covers both "no account with
  * that number" and "that password does not match". So staff reset the
  * password, the customer still cannot get in, staff reset it again, and
  * nobody learns anything.
  *
  * This walks the same path the login walks, with the number typed the way the
- * customer types it, and says which step fails.
+ * customer types it, and says which step fails. The fifth way, an account
+ * shut for fifteen minutes after five wrong tries, is the one it used to be
+ * blind to: it would report the password as working about an account the
+ * portal was turning away.
  */
 function LoginDiagnostic({ p, defaultMobile }: { p: (v: L) => string; defaultMobile: string }) {
   const [phone, setPhone] = useState(defaultMobile);
@@ -1758,7 +1761,10 @@ function LoginDiagnostic({ p, defaultMobile }: { p: (v: L) => string; defaultMob
   const tone =
     r?.step === "ok" ? "text-emerald-600 dark:text-emerald-400"
       : r?.step === "reaches_password" ? "text-sky-600 dark:text-sky-400"
-        : "text-amber-600 dark:text-amber-400";
+        // A lock is not a mistake anybody made, and it lifts by itself; red
+        // would read as an account gone wrong.
+        : r?.step === "locked" ? "text-red-600 dark:text-red-400"
+          : "text-amber-600 dark:text-amber-400";
 
   return (
     <div className="space-y-1.5 rounded-lg border border-dashed p-2.5">
@@ -1806,6 +1812,21 @@ function LoginDiagnostic({ p, defaultMobile }: { p: (v: L) => string; defaultMob
           {"found" in r && r.found && (
             <p className="text-[10px] text-muted-foreground leading-snug">
               {r.found.customerCode} · {r.found.fullName}
+              {/* On an answer that did not already say it: the password can
+                  be perfectly right and the portal still refuse them. */}
+              {r.step !== "locked" && typeof r.found.lockedForMinutes === "number" && (
+                <>
+                  {" — "}
+                  <span className="font-semibold text-red-600 dark:text-red-400">
+                    {p({
+                      ku: `هەژمارەکە ئێستا داخراوە (${r.found.lockedForMinutes} خولەک)`,
+                      en: `the account is shut right now (${r.found.lockedForMinutes} min)`,
+                      ar: `الحساب مغلق الآن (${r.found.lockedForMinutes} دقيقة)`,
+                      zh: `账户当前已锁定（${r.found.lockedForMinutes} 分钟）`,
+                    })}
+                  </span>
+                </>
+              )}
               {r.found.storedDiffersFromTyped && (
                 <>
                   {" — "}
@@ -1858,6 +1879,18 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
     },
     onError: (e) => toast.error(e.message),
   });
+  const unlock = trpc.portalCenter.unlockCustomerLogin.useMutation({
+    onSuccess: () => {
+      toast.success(p({
+        ku: "هەژمارەکە کرایەوە — ئێستا دەتوانێت هەوڵ بداتەوە",
+        en: "Account reopened — they can try again now",
+        ar: "تم فتح الحساب — يمكنه المحاولة الآن",
+        zh: "账户已解锁 — 可以重新尝试",
+      }));
+      utils.portalCenter.getCustomerSecurity.invalidate({ customerId });
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   const copyPw = () => {
     if (!newPw) return;
@@ -1893,6 +1926,46 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
             : p({ ku: "ناچالاک", en: "Disabled", ar: "معطل", zh: "停用" })}
         </Badge>
       </div>
+
+      {/*
+        Shut out after five wrong tries — and, until now, invisible.
+        The account is active, it has a password, and the portal still turns
+        the customer away, for fifteen minutes (shared/loginLockout). The
+        office had no way to see that and no way to lift it, so the only
+        remedy anyone reached for was another password reset, which used to
+        leave the lock exactly where it was. It goes above everything else on
+        this card because while it stands, nothing else here explains
+        anything.
+      */}
+      {typeof sec.lockedForMinutes === "number" && (
+        <div className="flex items-start gap-2 rounded-md bg-red-50 dark:bg-red-950/40 px-2 py-2 text-[11px] text-red-800 dark:text-red-200">
+          <Lock className="h-3.5 w-3.5 shrink-0 mt-0.5" />
+          <div className="flex-1 space-y-1.5">
+            <p className="font-semibold leading-snug">
+              {p({
+                ku: `هەژمارەکە داخراوە — ${sec.lockedForMinutes} خولەکی ماوە`,
+                en: `Account shut — ${sec.lockedForMinutes} min remaining`,
+                ar: `الحساب مغلق — ${sec.lockedForMinutes} دقيقة متبقية`,
+                zh: `账户已锁定 — 还剩 ${sec.lockedForMinutes} 分钟`,
+              })}
+            </p>
+            <p className="leading-snug opacity-80">
+              {p({
+                ku: "دوای پێنج هەوڵی هەڵە خۆکارانە دادەخرێت. تا ئەو کاتە وشەی نهێنی هەرچی بێت ڕەت دەکرێتەوە.",
+                en: "Five wrong attempts shut it automatically. Until it lifts, any password is refused.",
+                ar: "خمس محاولات خاطئة تغلقه تلقائياً. حتى ينتهي، تُرفض أي كلمة مرور.",
+                zh: "五次错误尝试后自动锁定。解锁前任何密码都会被拒绝。",
+              })}
+            </p>
+            <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"
+              disabled={unlock.isPending}
+              onClick={() => unlock.mutate({ customerId })}>
+              {unlock.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <LockOpen className="h-3.5 w-3.5" />}
+              {p({ ku: "کردنەوەی ئێستا", en: "Reopen now", ar: "الفتح الآن", zh: "立即解锁" })}
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* Reset password */}
       <div className="space-y-2">
