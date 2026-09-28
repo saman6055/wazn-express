@@ -19,8 +19,17 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  // vite.config.ts exports defineConfig(({ command }) => …) — a function.
+  // Spreading the function itself spread nothing, so the dev server ran
+  // with no root, no aliases and no plugins and answered every client file
+  // with index.html ("Failed to load url /src/main.tsx"). Resolve it first.
+  const config =
+    typeof viteConfig === "function"
+      ? await viteConfig({ command: "serve", mode: "development", isSsrBuild: false, isPreview: false })
+      : viteConfig;
+
   const vite = await createViteServer({
-    ...viteConfig,
+    ...config,
     configFile: false,
     server: serverOptions,
     appType: "custom",
