@@ -17,14 +17,15 @@ describe("the office as an app of its own", () => {
     expect(isSystemHost("waznexpress.com")).toBe(false);
     expect(isSystemHost("www.waznexpress.com")).toBe(false);
     expect(isSystemHost(undefined)).toBe(false);
-    expect(SYSTEM_APP_NAME).toBe("سیستەم");
+    expect(SYSTEM_APP_NAME).toBe("Wazn System");
   });
 
-  it("the manifest is named «سیستەم» on that host, with its own identity", () => {
+  it("the manifest is named Wazn System on that host, with its own identity and dark icon", () => {
     const src = read("server/services/appIcons.service.ts");
     expect(src).toContain("const name = system ? SYSTEM_APP_NAME");
     expect(src).toContain("const shortName = system ? SYSTEM_APP_NAME");
     expect(src).toContain('id: system ? "/?app=system" : "/"');
+    expect(src).toContain("src: systemIconUrl(size),");
     expect(src).toContain('req.headers["x-forwarded-host"]');
     expect(src).toContain('res.setHeader("Vary", "Host, X-Forwarded-Host")');
   });

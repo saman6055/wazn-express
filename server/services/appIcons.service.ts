@@ -27,7 +27,7 @@ import * as db from "../db";
 import { appLogger } from "../utils/logger";
 import { getUploadsDir } from "./localUpload";
 import { localUploadFileName } from "../lib/photoUrls";
-import { SYSTEM_APP_NAME, isSystemHost } from "@shared/appVariant";
+import { SYSTEM_APP_NAME, SYSTEM_ICON_SIZES, isSystemHost, systemIconUrl } from "@shared/appVariant";
 
 // Sizes we can render on demand. 192 + 512 are the PWA minimums; the rest
 // cover Android density buckets, apple-touch (180), and the favicon (16/32).
@@ -118,12 +118,20 @@ function hashString(s: string): string {
 export function buildManifest(
   logoUrl: string | null,
   info: Record<string, unknown> | null,
-  /** The office's own app (admin.…): named «سیستەم» on the phone. */
+  /** The office's own app (admin.…): "Wazn System", with its own dark icon. */
   system = false,
 ) {
   const name = system ? SYSTEM_APP_NAME : (info?.name as string) || "Wazn Express";
   const shortName = system ? SYSTEM_APP_NAME : name.split(/\s+/)[0] || "Wazn";
-  const icons = logoUrl
+  // The office's app wears its own dark icon, whatever logo is uploaded.
+  const icons = system
+    ? SYSTEM_ICON_SIZES.filter((size) => size !== 180).map((size) => ({
+        src: systemIconUrl(size),
+        sizes: `${size}x${size}`,
+        type: "image/png",
+        purpose: "any maskable",
+      }))
+    : logoUrl
     ? MANIFEST_SIZES.map((size) => ({
         src: `/app-icons/icon-${size}.png?v=${hashString(logoUrl)}`,
         sizes: `${size}x${size}`,
@@ -147,8 +155,8 @@ export function buildManifest(
       : "International Shipping & Logistics from China to Iraq",
     start_url: "/",
     display: "standalone",
-    background_color: "#1e293b",
-    theme_color: "#1e293b",
+    background_color: system ? "#0f172a" : "#1e293b",
+    theme_color: system ? "#0f172a" : "#1e293b",
     scope: "/",
     lang: "ku",
     dir: "rtl",

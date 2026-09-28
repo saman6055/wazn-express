@@ -9,7 +9,7 @@ import { useTranslation } from '@/contexts/LanguageContext';
 import { pickLang } from '@/lib/lang';
 import { useCompanyInfo } from '@/hooks/useCompanyInfo';
 import { useBackCloses } from '@/hooks/useBackCloses';
-import { SYSTEM_APP_NAME, isSystemHost } from '@shared/appVariant';
+import { SYSTEM_APP_NAME, isSystemHost, systemIconUrl } from '@shared/appVariant';
 
 /**
  * Remembered once the app has been installed, so the prompt does not come
@@ -260,7 +260,7 @@ export function PWAInstallPrompt() {
         <DialogContent className="max-w-sm">
           <DialogHeader>
             <div className="mx-auto mb-2 h-20 w-20 overflow-hidden rounded-2xl shadow-lg">
-              <img src="/icons/icon-192x192.png" alt="" className="h-full w-full object-cover" />
+              <img src={isSystemHost(window.location.hostname) ? systemIconUrl(192) : "/icons/icon-192x192.png"} alt="" className="h-full w-full object-cover" />
             </div>
             <DialogTitle className="text-center text-xl">
               {pickLang(language, {

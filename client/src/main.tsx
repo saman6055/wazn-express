@@ -2,7 +2,7 @@ import { confirmAction } from "@/components/ConfirmDialog";
 import { reportClientError } from "./lib/reportClientError";
 import { captureInstallOffer } from "./lib/installPrompt";
 import { installHistorySteps } from "./lib/historySteps";
-import { SYSTEM_APP_NAME, isSystemHost } from "@shared/appVariant";
+import { SYSTEM_APP_NAME, isSystemHost, systemIconUrl } from "@shared/appVariant";
 import { trpc } from "@/lib/trpc";
 import { UNAUTHED_ERR_MSG } from '@shared/const';
 
@@ -52,6 +52,11 @@ if (isSystemHost(window.location.hostname)) {
     }
     tag.content = SYSTEM_APP_NAME;
   }
+  // And iPhone's home-screen picture: the system's own dark icon.
+  document.querySelectorAll<HTMLLinkElement>('link[rel="apple-touch-icon"]').forEach((link) => {
+    const size = Number((link.getAttribute("sizes") ?? "180x180").split("x")[0]) || 180;
+    link.href = systemIconUrl([144, 152, 180].includes(size) ? size : 180);
+  });
 }
 
 // Register Service Worker for PWA

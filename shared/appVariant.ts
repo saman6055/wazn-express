@@ -9,7 +9,23 @@
  * phone, so the two never replace each other.
  */
 
-export const SYSTEM_APP_NAME = "سیستەم";
+/**
+ * The installed app's name under its icon (owner, 2026-09-28: «بنووسرێت
+ * Wazn System»). Latin, so it reads the same on every phone's home screen
+ * and sits apart from the customers' "Wazn".
+ */
+export const SYSTEM_APP_NAME = "Wazn System";
+
+/** Inside the app, the top bar still says what it is in Kurdish. */
+export const SYSTEM_TITLE = "سیستەم";
+
+/**
+ * Its own icon: the mark in white on the system's dark tile, full-bleed
+ * (client/public/icons/system, drawn from docs/brand/wazn-logo-master.png).
+ * The customers' app keeps the white tile, so the two never look alike.
+ */
+export const SYSTEM_ICON_SIZES = [72, 96, 128, 144, 152, 180, 192, 384, 512] as const;
+export const systemIconUrl = (size: number) => `/icons/system/icon-${size}x${size}.png`;
 
 /** The staff host: admin.… (and staff.…, the alias Home.tsx also honours). */
 export function isSystemHost(hostname: string | null | undefined): boolean {

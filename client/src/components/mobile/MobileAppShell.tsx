@@ -8,7 +8,7 @@ import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { useBackCloses } from "@/hooks/useBackCloses";
 import CompanyLogo from "@/components/CompanyLogo";
-import { SYSTEM_APP_NAME } from "@shared/appVariant";
+import { SYSTEM_TITLE } from "@shared/appVariant";
 
 /**
  * The office system on a phone, shaped like an app (owner, 2026-09-27):
@@ -135,7 +135,7 @@ export function MobileTopBar({
         {atRoot ? (
           <span className="flex min-w-0 items-center gap-2 ps-1">
             <CompanyLogo size={30} iconClassName="h-4 w-4 text-white" fallbackBg="bg-emerald-600" />
-            <span className="truncate text-lg font-bold">{SYSTEM_APP_NAME}</span>
+            <span className="truncate text-lg font-bold">{SYSTEM_TITLE}</span>
           </span>
         ) : (
           <>
@@ -148,7 +148,7 @@ export function MobileTopBar({
             >
               <BackIcon className="h-6 w-6" strokeWidth={2.5} />
             </button>
-            <span className="min-w-0 truncate text-base font-bold">{item?.label ?? SYSTEM_APP_NAME}</span>
+            <span className="min-w-0 truncate text-base font-bold">{item?.label ?? SYSTEM_TITLE}</span>
           </>
         )}
         <span className="flex-1" />
