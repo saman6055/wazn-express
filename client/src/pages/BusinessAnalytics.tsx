@@ -120,8 +120,8 @@ export default function BusinessAnalytics() {
     // Profit by type
     csv += pickLang(language, { ku: 'قازانج بە جۆر', en: 'Profit by Type', ar: 'الربح حسب النوع', zh: '按类型分类的利润' }) + '\n';
     csv += pickLang(language, { ku: 'جۆر,ژمارە,کۆی قازانج,تێکڕای قازانج', en: 'Type,Count,Total Profit,Average Profit', ar: 'النوع,العدد,إجمالي الربح,متوسط الربح', zh: '类型,数量,总利润,平均利润' }) + '\n';
-    csv += `${pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' })},${profitByType?.fullPackage?.count || 0},${profitByType?.fullPackage?.totalProfit || 0},${profitByType?.fullPackage?.avgProfit?.toFixed(2) || 0}\n`;
-    csv += `${pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' })},${profitByType?.commission?.count || 0},${profitByType?.commission?.totalProfit || 0},${profitByType?.commission?.avgProfit?.toFixed(2) || 0}\n`;
+    csv += `${pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' })},${profitByType?.fullPackage?.count || 0},${profitByType?.fullPackage?.totalProfit || 0},${Number(profitByType?.fullPackage?.avgProfit ?? 0).toFixed(2)}\n`;
+    csv += `${pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' })},${profitByType?.commission?.count || 0},${profitByType?.commission?.totalProfit || 0},${Number(profitByType?.commission?.avgProfit ?? 0).toFixed(2)}\n`;
     csv += `${pickLang(language, { ku: 'پاکەتی ئاسایی', en: 'Regular Package', ar: 'الطرد العادي', zh: '普通包裹' })},${profitByType?.packages?.count || 0},${profitByType?.packages?.totalRevenue || 0},-\n\n`;
 
     // Top customers
@@ -343,7 +343,7 @@ export default function BusinessAnalytics() {
                       <span className={`font-medium ${config.text}`}>{config.label}</span>
                       <div className="flex items-center gap-4">
                         <span className={`font-bold ${config.text}`}>{stat.count} {pickLang(language, { ku: 'پاکەت', en: 'packages', ar: 'طرد', zh: '包裹' })}</span>
-                        <span className="text-sm text-muted-foreground">{stat.totalWeight?.toFixed(1)} {pickLang(language, { ku: 'kg', en: 'kg', ar: 'kg', zh: 'kg' })}</span>
+                        <span className="text-sm text-muted-foreground">{Number(stat.totalWeight ?? 0).toFixed(1)} {pickLang(language, { ku: 'kg', en: 'kg', ar: 'kg', zh: 'kg' })}</span>
                       </div>
                     </div>
                   );
