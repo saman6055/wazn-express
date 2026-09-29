@@ -44,6 +44,7 @@ import {
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch } from "@shared/batchDeletion";
+import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isBatchEditLocked } from "@shared/batchPriceHistory";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -328,6 +329,26 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     const msg = err.data?.zodError?.errors?.[0]?.message || err.message || t("common.error");
     toast.error(msg);
   };
+  /**
+   * A batch saved at or below cost (shared/batchCostGuard): the server asks
+   * an admin once, in words, and this turns the question into a confirm and
+   * sends the same save again with the admin's yes. Staff get the refusal
+   * as an ordinary error — only an admin can approve.
+   */
+  const onCostAwareError = (retryApproved: () => void) => async (error: unknown) => {
+    const err = error as { message?: string; data?: { code?: string } };
+    if (err.data?.code === "PRECONDITION_FAILED" && mayApproveCostBreach(userRole)) {
+      const ok = await confirmAction({
+        title: pickLang(language, { ku: "تێچوو لە نرخی فرۆشتن کەمتر نییە", en: "Cost is not below the selling price", ar: "التكلفة ليست أقل من سعر البيع", zh: "成本不低于售价" }),
+        message: err.message ?? "",
+        confirmLabel: pickLang(language, { ku: "بەڵێ، سەیڤی بکە", en: "Yes, save it", ar: "نعم، احفظ", zh: "是，保存" }),
+        danger: true,
+      });
+      if (ok) retryApproved();
+      return;
+    }
+    onMutationError(error);
+  };
 
   /**
    * Post-delivery adjustment (داشکاندن / ڕاستکردنەوە) for one customer of a
@@ -444,7 +465,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     // as-is (no forced SEA/AIR format); leaving it blank lets the server
     // auto-generate one. Empty string → undefined so the server mints a code.
     const rawBatchCode = (formData.get("batchCode") as string)?.trim() || "";
-    createMutation.mutate({
+    const createPayload = {
       batchCode: rawBatchCode || undefined,
       originWarehouseId,
       destinationCountryId,
@@ -480,7 +501,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Customer-specific pricing
       customerPricing: customerPricing.length > 0 ? customerPricing : undefined,
       notes: formData.get("notes") as string || undefined,
-    }, { onSuccess: onBatchCreateSuccess, onError: onMutationError });
+    };
+    createMutation.mutate(createPayload, {
+      onSuccess: onBatchCreateSuccess,
+      onError: onCostAwareError(() =>
+        createMutation.mutate({ ...createPayload, approveCostBreach: true },
+          { onSuccess: onBatchCreateSuccess, onError: onMutationError })),
+    });
   };
 
   // A delivered batch is settled — the server refuses edits, the form is
@@ -525,7 +552,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       return value.trim() ? value : null;
     };
 
-    updateMutation.mutate({
+    const updatePayload = {
       id: editingBatch.id,
       batchCode: formData.get("batchCode") as string || undefined,
       carrierInfo: formData.get("carrierInfo") as string || undefined,
@@ -567,7 +594,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // what is stored. `|| undefined` treated both as "keep", so a note
       // somebody had deliberately erased kept coming back.
       notes: formData.get("notes") === null ? undefined : (formData.get("notes") as string),
-    }, { onSuccess: onBatchUpdateSuccess, onError: onMutationError });
+    };
+    updateMutation.mutate(updatePayload, {
+      onSuccess: onBatchUpdateSuccess,
+      onError: onCostAwareError(() =>
+        updateMutation.mutate({ ...updatePayload, approveCostBreach: true },
+          { onSuccess: onBatchUpdateSuccess, onError: onMutationError })),
+    });
   };
 
   const openEditDialog = (batch: any) => {

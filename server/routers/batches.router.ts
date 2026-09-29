@@ -8,6 +8,14 @@ import { isBatchEditLocked } from "@shared/batchPriceHistory";
 import { batchMissingSellingPrice } from "@shared/batchPricing";
 import { missingPieces } from "@shared/batchReminders";
 import { closeCheckWarns, type CloseCheckMoney } from "@shared/batchCloseCheck";
+import {
+  batchCostBreaches,
+  mayApproveCostBreach,
+  costBreachRefusal,
+  costBreachQuestion,
+  type BatchCostGuardInput,
+  type CostBreach,
+} from "@shared/batchCostGuard";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
@@ -531,6 +539,43 @@ async function emitCmInvoices(
     }
   }
   return result;
+}
+
+/**
+ * The save-time stop on a batch whose cost is not below its price (owner,
+ * 2026-09-29 — see shared/batchCostGuard). Staff are refused; an admin is
+ * refused once with the question (PRECONDITION_FAILED, which the form turns
+ * into a confirm) and may send it again with `approveCostBreach`.
+ *
+ * On an edit, only a breach this save introduces counts: an old batch that
+ * already sat at a loss must still take its AWB number without an admin.
+ * Returns the breaches an admin approved, for the audit log.
+ */
+async function guardBatchCost(args: {
+  next: BatchCostGuardInput;
+  previous?: BatchCostGuardInput;
+  role: string | null | undefined;
+  approved?: boolean;
+}): Promise<CostBreach[]> {
+  const breaches = batchCostBreaches(args.next);
+  if (breaches.length === 0) return [];
+  if (args.previous) {
+    const key = (list: CostBreach[]) =>
+      JSON.stringify(list.map((b) => [b.customerId, b.costUsd, b.priceUsd, b.unit]));
+    if (key(batchCostBreaches(args.previous)) === key(breaches)) return [];
+  }
+  for (const b of breaches) {
+    if (b.customerId !== null && !b.customerCode) {
+      b.customerCode = (await db.getCustomerById(b.customerId))?.customerCode ?? null;
+    }
+  }
+  if (!mayApproveCostBreach(args.role)) {
+    throw new TRPCError({ code: "CONFLICT", message: costBreachRefusal(breaches) });
+  }
+  if (!args.approved) {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: costBreachQuestion(breaches) });
+  }
+  return breaches;
 }
 
 export const batchesRouter = router({
@@ -1080,9 +1125,16 @@ export const batchesRouter = router({
           notes: z.string().max(500).optional(),
         })).optional(),
         notes: z.string().max(2000).optional(),
+        /** An admin's yes to saving at or below cost — see guardBatchCost. */
+        approveCostBreach: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { pricingTiers, customerPricing, ...batchData } = input;
+        const { pricingTiers, customerPricing, approveCostBreach, ...batchData } = input;
+        const approvedBreaches = await guardBatchCost({
+          next: { ...batchData, customerPricing },
+          role: ctx.user.role,
+          approved: approveCostBreach,
+        });
         // A manually-typed code must be unique — reject a duplicate up front
         // with a clear CONFLICT (a blank code auto-generates a free one).
         const typedCode = input.batchCode?.trim();
@@ -1142,6 +1194,16 @@ export const batchesRouter = router({
           entityId: batch.id,
           newValues: input,
         });
+        if (approvedBreaches.length > 0) {
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "approve_batch_cost_breach",
+            entityType: "batch",
+            entityId: batch.id,
+            newValues: { breaches: approvedBreaches },
+          });
+        }
         return batch;
       }),
 
@@ -2113,9 +2175,11 @@ export const batchesRouter = router({
           notes: z.string().optional(),
         })).optional(),
         notes: z.string().optional(),
+        /** An admin's yes to saving at or below cost — see guardBatchCost. */
+        approveCostBreach: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, pricingTiers, customerPricing, ...data } = input;
+        const { id, pricingTiers, customerPricing, approveCostBreach, ...data } = input;
 
         // A delivered batch is settled: weights final, cost derived, money
         // invoiced from them. The owner's rule — no field changes after
@@ -2135,6 +2199,23 @@ export const batchesRouter = router({
         ),
           });
         }
+
+        // What the batch will hold after this save: a field left out keeps
+        // its stored value, null clears it.
+        const storedPricing = await db.getBatchCustomerPricing(id);
+        const approvedBreaches = await guardBatchCost({
+          next: {
+            shippingType: existing.shippingType,
+            costPerKg: data.costPerKg !== undefined ? data.costPerKg : existing.costPerKg,
+            costPerCbm: data.costPerCbm !== undefined ? data.costPerCbm : existing.costPerCbm,
+            pricePerKg: data.pricePerKg !== undefined ? data.pricePerKg : existing.pricePerKg,
+            pricePerCbm: data.pricePerCbm !== undefined ? data.pricePerCbm : existing.pricePerCbm,
+            customerPricing: customerPricing ?? storedPricing,
+          },
+          previous: { ...existing, customerPricing: storedPricing },
+          role: ctx.user.role,
+          approved: approveCostBreach,
+        });
 
         await db.updateBatch(id, data, ctx.user.id);
 
@@ -2167,6 +2248,16 @@ export const batchesRouter = router({
           entityId: id,
           newValues: data,
         });
+        if (approvedBreaches.length > 0) {
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "approve_batch_cost_breach",
+            entityType: "batch",
+            entityId: id,
+            newValues: { breaches: approvedBreaches },
+          });
+        }
 
         // The owner's 2026-09-09 rule: shipping debt is born when the price
         // is, not when the batch closes. Idempotent — charges only parcels
