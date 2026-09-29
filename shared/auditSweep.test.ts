@@ -191,7 +191,9 @@ describe("the catalogue and the queries stay in step", () => {
     // it found would be changing the books with nobody's name on it.
     const body = service.slice(service.indexOf("const QUERIES"), service.indexOf("async function runCheck"));
 
-    for (const forbidden of ["INSERT", "UPDATE ", "DELETE", "DROP", "ALTER", "TRUNCATE", "REPLACE INTO"]) {
+    // Trailing spaces on the verbs that are also the start of column names:
+    // updatedAt and deletedAt are read, never written.
+    for (const forbidden of ["INSERT", "UPDATE ", "DELETE ", "DROP", "ALTER", "TRUNCATE", "REPLACE INTO"]) {
       expect(body.toUpperCase(), `a sweep query contains ${forbidden}`).not.toContain(forbidden);
     }
   });

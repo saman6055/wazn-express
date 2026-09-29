@@ -50,7 +50,14 @@ export type CheckId =
   | "package_never_batched"
   | "package_arrived_undelivered"
   | "unclaimed_no_request"
-  | "debt_unreminded";
+  | "debt_unreminded"
+  | "batch_cost_not_below_price"
+  | "batch_closed_without_cost"
+  | "rounding_cent_debt"
+  | "courier_fee_on_account"
+  | "payment_without_ledger"
+  | "arrived_goods_unbilled"
+  | "commission_profit_one_unit";
 
 export interface CheckDefinition {
   id: CheckId;
@@ -384,6 +391,128 @@ export const CHECKS: readonly CheckDefinition[] = [
       en: "A debt nobody has asked for gets older, not smaller.",
       ar: "الدين الذي لا يطالب به أحد يزداد قِدماً لا نقصاً.",
       zh: "无人催讨的欠款只会变旧，不会变少。",
+    },
+  },
+
+  /* ── money: added 2026-09-29, owner: "alert me to anything abnormal or
+     incomplete in the finance system". Each only reports. ─────────────── */
+  {
+    id: "batch_cost_not_below_price",
+    severity: "warning",
+    path: "/batches",
+    title: {
+      ku: "باچ کە تێچووەکەی لە نرخی فرۆشتن کەمتر نییە",
+      en: "Batches whose cost is not below their selling price",
+      ar: "دفعات تكلفتها ليست أقل من سعر بيعها",
+      zh: "成本不低于售价的批次",
+    },
+    meaning: {
+      ku: "هەموو کیلۆیەکی ئەم باچە زیانە — یان تێچووەکە هەڵە نووسراوە (نموونە: کۆی پارەی کارگۆ لە خانەی تێچووی کیلۆ). ڕاپۆرتی قازانج لەسەر ئەم ژمارەیە هەڵەیە تا ڕاست دەکرێتەوە.",
+      en: "Every kilo of this batch is a loss — or the cost was typed wrong (the carrier's total in the per-kilo box). Profit reports built on it are wrong until it is corrected.",
+      ar: "كل كيلو في هذه الدفعة خسارة — أو أن التكلفة كُتبت خطأً (إجمالي شركة الشحن في خانة الكيلو). تقارير الربح المبنية عليها خاطئة حتى تُصحَّح.",
+      zh: "该批次每公斤都在亏损——或成本填错了（把承运商总价填进了每公斤一栏）。在更正之前，基于它的利润报表都是错的。",
+    },
+  },
+  {
+    id: "batch_closed_without_cost",
+    severity: "warning",
+    path: "/batches",
+    title: {
+      ku: "باچی داخراو بەبێ تێچوو",
+      en: "Closed batches with no cost recorded",
+      ar: "دفعات مغلقة بلا تكلفة مسجَّلة",
+      zh: "已关闭但未记录成本的批次",
+    },
+    meaning: {
+      ku: "باچەکە داخراوە بەڵام نە تێچووی کیلۆ/CBM و نە کۆی کرێی گەیاندنی نووسراوە — بۆیە قازانجەکەی هەموو فرۆشتنەکە نیشان دەدات، کە ڕاست نییە.",
+      en: "The batch is closed but neither a per-unit cost nor a total shipping cost was recorded, so its profit reads as the whole sale — which it is not.",
+      ar: "الدفعة مغلقة ولم تُسجَّل تكلفة للوحدة ولا إجمالي كلفة الشحن، فيظهر ربحها وكأنه كامل البيع — وهذا غير صحيح.",
+      zh: "批次已关闭，但既没有单位成本也没有运费总额，所以它的利润显示为全部销售额——这不是真的。",
+    },
+  },
+  {
+    id: "rounding_cent_debt",
+    severity: "warning",
+    path: "/customer-delivery-scanner",
+    title: {
+      ku: "قەرزی چەند سەنتی لە خڕکردنەوەی دینار",
+      en: "Few-cent debts left by dinar rounding",
+      ar: "ديون ببضعة سنتات من تقريب الدينار",
+      zh: "第纳尔取整留下的几分钱欠款",
+    },
+    meaning: {
+      ku: "وەسڵێکی بۆکس کە تەنها چەند سەنتێک (≤ $0.50) بە قەرز ماوەتەوە. زۆربەیان پێش 1bac007 لە خڕکردنەوەی دینار دروست بوون، کە ئێستا خۆکار سفر دەکرێتەوە. بپشکنە کڕیار بەڕاستی قەرزارە یان نا.",
+      en: "A box receipt that left a few cents (≤ $0.50) owed. Most came from dinar rounding before 1bac007, which is now written off by itself. Check whether the customer really owes it.",
+      ar: "إيصال صندوق ترك بضعة سنتات (≤ 0.50$) ديناً. معظمها من تقريب الدينار قبل 1bac007، وهو الآن يُشطب تلقائياً. تحقق هل العميل مدين فعلاً.",
+      zh: "箱子收据留下了几分钱（≤ $0.50）欠款。多数来自 1bac007 之前的第纳尔取整，现在会自动核销。请核实客户是否真的欠款。",
+    },
+  },
+  {
+    id: "courier_fee_on_account",
+    severity: "warning",
+    path: "/finance",
+    title: {
+      ku: "کرێی گەیاندنی ناوخۆ کە هێشتا لەسەر حیسابی کڕیارە",
+      en: "Local delivery fees still on customer accounts",
+      ar: "رسوم توصيل محلي ما زالت على حسابات العملاء",
+      zh: "仍记在客户账上的本地配送费",
+    },
+    meaning: {
+      ku: "لە 2026-09-10ـەوە کرێی گەیاندنی ناوخۆ هی ئێمە نییە و ناخرێتە سەر حیساب. ئەمانە پێش ئەو ڕۆژە خراونەتە سەر کڕیار و هێشتا لە باڵانسیاندان. گەڕاندنەوەیان بڕیاری خاوەنە.",
+      en: "Since 2026-09-10 the local delivery fee is not ours and is not posted. These were posted before that day and are still in the balances. Reversing them is the owner's decision.",
+      ar: "منذ 2026-09-10 رسوم التوصيل المحلي ليست لنا ولا تُقيَّد. هذه قُيِّدت قبل ذلك اليوم وما زالت في الأرصدة. عكسها قرار المالك.",
+      zh: "自 2026-09-10 起本地配送费不属于我们，也不再入账。这些是在那之前入账的，仍在余额里。是否冲回由老板决定。",
+    },
+  },
+  {
+    id: "payment_without_ledger",
+    severity: "critical",
+    path: "/payments",
+    title: {
+      ku: "پارەی وەرگیراو کە بە حیسابەوە نەبەستراوە",
+      en: "Money taken that is not tied to the account",
+      ar: "مبالغ مستلمة غير مربوطة بالحساب",
+      zh: "已收款但未关联账户流水",
+    },
+    meaning: {
+      ku: "پارەیەک وەرگیراوە بەڵام هیچ جوڵەیەکی حیسابی کڕیار بۆی نییە — یان وەسڵێکی بۆکس پارەی تێدایە بەبێ تۆماری پارەدان. باڵانسی کڕیار ئەم پارەیە نابینێت.",
+      en: "Money was recorded as taken with no transaction on the customer's account — or a box receipt holds money with no payment record. The customer's balance does not see it.",
+      ar: "سُجِّل مبلغ مستلم بلا حركة في حساب العميل — أو إيصال صندوق فيه مبلغ بلا سجل دفع. رصيد العميل لا يراه.",
+      zh: "记录了收款，但客户账户没有对应流水——或箱子收据有金额却没有付款记录。客户余额看不到这笔钱。",
+    },
+  },
+  {
+    id: "arrived_goods_unbilled",
+    severity: "critical",
+    path: "/settings/data-management",
+    title: {
+      ku: "کاڵای گەیشتوو کە لەسەر حیساب نییە",
+      en: "Arrived goods never put on the account",
+      ar: "بضائع وصلت ولم تُقيَّد على الحساب",
+      zh: "已到货却从未记账的商品",
+    },
+    meaning: {
+      ku: "ئۆردەرێکی کۆمیشن یان پاکێجی تەواو گەیشتووە (لە بۆکسە، گەیەندراوە، یان ئۆردەرەکە گەیەندراوە) بەڵام نرخەکەی هەرگیز نەخراوەتە سەر حیسابی کڕیار. لە Data management → Repairs حیسابی بکە.",
+      en: "A commission or full-package order has arrived (in a box, delivered, or the order delivered) and its price was never put on the customer's account. Bill it from Data management → Repairs.",
+      ar: "طلب عمولة أو باقة كاملة وصل (في صندوق، أو سُلِّم، أو سُلِّم الطلب) ولم يُقيَّد سعره على حساب العميل. قيّده من إدارة البيانات ← الإصلاحات.",
+      zh: "佣金或全包订单已到（在箱中、已派送或订单已交付），但价格从未记到客户账上。请在 数据管理 → 修复 中记账。",
+    },
+  },
+  {
+    id: "commission_profit_one_unit",
+    severity: "info",
+    path: "/commission",
+    title: {
+      ku: "قازانجی کۆمیشن کە تەنها بۆ یەک دانە ژمێردراوە",
+      en: "Commission profit counted for one unit only",
+      ar: "ربح عمولة محسوب لوحدة واحدة فقط",
+      zh: "佣金利润只按一件计算",
+    },
+    meaning: {
+      ku: "ئۆردەرێکی چەند دانەیی: کڕیار بۆ کۆمیشن × ژمارەی دانەکان حیساب کراوە، بەڵام قازانجی تۆمارکراو تەنها یەک دانەیە. ڕاپۆرتی قازانج کەمتر لە ڕاستی نیشان دەدات.",
+      en: "A multi-unit order: the customer was charged commission × quantity, but the recorded profit is one unit's. Profit reports read lower than the truth.",
+      ar: "طلب متعدد الوحدات: حوسب العميل على العمولة × الكمية، لكن الربح المسجَّل لوحدة واحدة. تقارير الربح أقل من الحقيقة.",
+      zh: "多件订单：向客户收取了 佣金 × 数量，但记录的利润只有一件的。利润报表低于实际。",
     },
   },
 ];

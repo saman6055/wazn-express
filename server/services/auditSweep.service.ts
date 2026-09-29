@@ -227,6 +227,142 @@ const QUERIES: Record<CheckId, string> = {
       AND m.id IS NULL
     ORDER BY a.currentBalanceUsd DESC
     LIMIT ${SAMPLE_LIMIT}`,
+
+  /* ── money: added 2026-09-29 ───────────────────────────────────────── */
+
+  /*
+   * The same comparison as the save-time guard (shared/batchCostGuard): kg
+   * for air, CBM for sea, only prices actually typed, the batch's own price
+   * or any customer's price on it.
+   */
+  batch_cost_not_below_price: `
+    SELECT b.id, b.batchCode, b.shippingType,
+           IF(b.shippingType = 'sea', b.costPerCbm, b.costPerKg)   AS cost,
+           IF(b.shippingType = 'sea', b.pricePerCbm, b.pricePerKg) AS price
+    FROM batches b
+    WHERE CAST(COALESCE(IF(b.shippingType = 'sea', b.costPerCbm, b.costPerKg), 0) AS DECIMAL(12,2)) > 0
+      AND (
+        (CAST(COALESCE(IF(b.shippingType = 'sea', b.pricePerCbm, b.pricePerKg), 0) AS DECIMAL(12,2)) > 0
+         AND CAST(IF(b.shippingType = 'sea', b.costPerCbm, b.costPerKg) AS DECIMAL(12,2))
+             >= CAST(IF(b.shippingType = 'sea', b.pricePerCbm, b.pricePerKg) AS DECIMAL(12,2)))
+        OR EXISTS (
+          SELECT 1 FROM batchCustomerPricing cp
+          WHERE cp.batchId = b.id
+            AND CAST(COALESCE(IF(b.shippingType = 'sea', cp.pricePerCbm, cp.pricePerKg), 0) AS DECIMAL(12,2)) > 0
+            AND CAST(IF(b.shippingType = 'sea', b.costPerCbm, b.costPerKg) AS DECIMAL(12,2))
+                >= CAST(IF(b.shippingType = 'sea', cp.pricePerCbm, cp.pricePerKg) AS DECIMAL(12,2))
+        )
+      )
+    ORDER BY b.id DESC
+    LIMIT ${SAMPLE_LIMIT}`,
+
+  /*
+   * resolveBatchCost's "none": no per-unit rate and no total. Only batches
+   * finished since 2026-09-15, the start of the accrual reports (owner) —
+   * older ones were recorded differently and would never go quiet.
+   */
+  batch_closed_without_cost: `
+    SELECT id, batchCode, shippingType, status, updatedAt
+    FROM batches
+    WHERE status IN ('delivered','closed')
+      AND updatedAt >= '2026-09-15'
+      AND CAST(COALESCE(IF(shippingType = 'sea', costPerCbm, costPerKg), 0) AS DECIMAL(12,2)) <= 0
+      AND CAST(COALESCE(shippingCost, 0) AS DECIMAL(12,2)) <= 0
+    ORDER BY updatedAt DESC
+    LIMIT ${SAMPLE_LIMIT}`,
+
+  rounding_cent_debt: `
+    SELECT s.id, s.settlementNumber, s.boxId, s.customerId, s.differenceUsd, s.exchangeRate, s.createdAt
+    FROM boxSettlements s
+    WHERE s.status = 'confirmed'
+      AND s.differenceKind = 'debt'
+      AND CAST(s.differenceUsd AS DECIMAL(12,2)) > 0
+      AND CAST(s.differenceUsd AS DECIMAL(12,2)) <= 0.50
+    ORDER BY s.createdAt DESC
+    LIMIT ${SAMPLE_LIMIT}`,
+
+  /*
+   * chargeBoxDeliveryFee posted the fee as DEBIT_PACKAGE with no parcel
+   * (reference 0) and the box code in the text. Nothing posts it now
+   * (shared/deliveryFee), so every row here predates 2026-09-10. Not
+   * matched on the Kurdish words, so the query stays plain ASCII.
+   */
+  courier_fee_on_account: `
+    SELECT t.id, t.transactionNumber, t.accountId, t.amountUsd, t.description, t.createdAt
+    FROM ledgerTransactions t
+    WHERE t.transactionType = 'DEBIT_PACKAGE'
+      AND COALESCE(t.referenceId, 0) = 0
+      AND t.description LIKE '%BOX-%'
+    ORDER BY t.createdAt DESC
+    LIMIT ${SAMPLE_LIMIT}`,
+
+  payment_without_ledger: `
+    SELECT 'payment' AS what, p.id, p.paymentNumber AS number, p.accountId AS owner,
+           p.amountUsd, p.createdAt
+    FROM paymentRecords p
+    WHERE p.transactionId IS NULL
+      AND p.paymentStatus IN ('pending','confirmed')
+      AND CAST(p.amountUsd AS DECIMAL(12,2)) > 0
+    UNION ALL
+    SELECT 'box_receipt' AS what, s.id, s.settlementNumber AS number, s.customerId AS owner,
+           s.paidUsd AS amountUsd, s.createdAt
+    FROM boxSettlements s
+    WHERE s.status = 'confirmed'
+      AND CAST(s.paidUsd AS DECIMAL(12,2)) > 0
+      AND s.paymentRecordId IS NULL
+    LIMIT ${SAMPLE_LIMIT}`,
+
+  /*
+   * The same three meanings of "arrived" as findUnbilledArrivedOrders
+   * (db/orderCharging): its tracking is in a box, its parcel is delivered, or
+   * the order itself is delivered. Quotes are not debts; a price of zero is
+   * the zero_price_sale check's business.
+   */
+  arrived_goods_unbilled: `
+    SELECT o.id, o.orderCode, o.orderType, o.customerId, o.status, o.createdAt
+    FROM fullPackageOrders o
+    WHERE o.isCharged = 0
+      AND o.chargeTransactionId IS NULL
+      AND o.deletedAt IS NULL
+      AND o.orderType <> 'purchase_request'
+      AND o.status NOT IN ('cancelled','rejected','refunded','returned')
+      AND (CAST(COALESCE(o.sellingPriceUsd, 0) AS DECIMAL(14,2)) > 0
+           OR CAST(COALESCE(o.itemPriceUsd, 0) AS DECIMAL(14,2)) > 0)
+      AND (
+        o.status = 'delivered'
+        OR EXISTS (
+          SELECT 1 FROM packages p
+          WHERE p.status = 'delivered'
+            AND (p.trackingNumber = o.trackingNumber
+                 OR p.trackingNumber IN (SELECT t.trackingNumber FROM fullPackageOrderTrackings t
+                                         WHERE t.fullPackageOrderId = o.id)))
+        OR EXISTS (
+          SELECT 1 FROM deliveryBoxItems i
+          WHERE i.trackingNumber = o.trackingNumber
+             OR i.trackingNumber IN (SELECT t.trackingNumber FROM fullPackageOrderTrackings t
+                                     WHERE t.fullPackageOrderId = o.id))
+      )
+    ORDER BY o.createdAt ASC
+    LIMIT ${SAMPLE_LIMIT}`,
+
+  /*
+   * The charge is commission × quantity (commissionGoodsTotal); the stored
+   * profit was written as commission − shipping, for one unit.
+   */
+  commission_profit_one_unit: `
+    SELECT id, orderCode, quantity, commissionFeeUsd, shippingCostUsd, profitUsd,
+           ROUND(CAST(commissionFeeUsd AS DECIMAL(14,2)) * quantity
+                 - CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(14,2)), 2) AS shouldBe
+    FROM fullPackageOrders
+    WHERE orderType = 'commission'
+      AND deletedAt IS NULL
+      AND quantity > 1
+      AND CAST(COALESCE(commissionFeeUsd, 0) AS DECIMAL(14,2)) > 0
+      AND ABS(CAST(COALESCE(profitUsd, 0) AS DECIMAL(14,2))
+              - (CAST(commissionFeeUsd AS DECIMAL(14,2)) * quantity
+                 - CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(14,2)))) > 0.01
+    ORDER BY id DESC
+    LIMIT ${SAMPLE_LIMIT}`,
 };
 
 /**
