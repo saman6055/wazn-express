@@ -19,7 +19,7 @@ import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
 import {
-  settlementTotals, differenceOf, iqdToUsd, usdToIqd, allocateBoxDiscount,
+  settlementTotals, differenceOf, roundingToleranceUsd, iqdToUsd, usdToIqd, allocateBoxDiscount,
   type ParcelIntent,
 } from "@shared/boxSettlement";
 import { pledgeFloors, reasonText } from "@shared/pledgedDiscount";
@@ -159,7 +159,10 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const paid = nothingEntered
     ? totals.dueUsd
     : Math.round((iqdToUsd(Number(iqd) || 0, rateNum) + (Number(usd) || 0)) * 100) / 100;
-  const difference = differenceOf(totals.dueUsd, paid, treatShortAs);
+  // Same tolerance the server applies: dinars were rounded on the receipt,
+  // so a few cents either way is the rounding, not a shortfall.
+  const tolerance = Number(iqd) > 0 ? roundingToleranceUsd(rateNum) : 0;
+  const difference = differenceOf(totals.dueUsd, paid, treatShortAs, tolerance);
   const needsReason = difference.reasonRequired && !reason.trim();
 
   const settle = trpc.deliveryBox.settle.useMutation({
@@ -409,7 +412,16 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
               </label>
 
               {/* Only when the money is not the money. */}
-              {difference.kind === "none" ? (
+              {difference.roundingUsd !== undefined ? (
+                <p className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400"
+                   data-testid="quick-rounding">
+                  <Check className="h-4 w-4" />
+                  {t({ ku: "پارەکە تەواوە", en: "Paid in full", ar: "مدفوع بالكامل", zh: "已全额支付" })}
+                  {" — "}
+                  {t({ ku: "جیاوازی خڕکردنەوەی دراو", en: "currency rounding", ar: "فرق تقريب العملة", zh: "汇率取整差额" })}
+                  {" "}<bdi dir="ltr">{difference.roundingUsd < 0 ? "−" : "+"}{fmtUsd(Math.abs(difference.roundingUsd))}</bdi>
+                </p>
+              ) : difference.kind === "none" ? (
                 <p className="flex items-center gap-2 text-sm text-emerald-600 dark:text-emerald-400"
                    data-testid="quick-exact">
                   <Check className="h-4 w-4" />

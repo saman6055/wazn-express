@@ -284,6 +284,36 @@ export interface Difference {
   amountUsd: number;
   /** Whether the operator has to say why before this can be saved. */
   reasonRequired: boolean;
+  /**
+   * Set when the gap is only the dinar rounding — see `roundingToleranceUsd`.
+   * Signed, paid − due: negative means a few cents short. Nobody decides
+   * anything about it and nobody owes it.
+   */
+  roundingUsd?: number;
+}
+
+/** The reason written on a settlement whose only gap was the dinar rounding. */
+export const ROUNDING_VARIANCE_REASON = "جیاوازی خڕکردنەوەی دراو";
+
+/** Never forgive more than this as rounding, whatever the rate or step. */
+export const ROUNDING_TOLERANCE_CAP_USD = 0.5;
+
+/**
+ * How many cents the dinar rounding is allowed to eat.
+ *
+ * The receipt rounds its dinars to the nearest 250 (shared/receiptDinar), so
+ * $142.50 at 1,465 is printed as 208,750 — which is $142.49. The customer
+ * hands over exactly what the paper asked and the till was still one cent
+ * short, and that cent used to become a debt (owner, 2026-09-29: it must
+ * not). Half a step at the day's rate is the most the rounding can move the
+ * total, so that is the tolerance; a payment in dollars alone has no
+ * rounding and gets none (`rate` 0). Capped so a wrong rate cannot turn a
+ * real shortfall into "rounding".
+ */
+export function roundingToleranceUsd(rate: number, stepIqd = 250): number {
+  if (!Number.isFinite(rate) || rate <= 0 || !Number.isFinite(stepIqd) || stepIqd <= 1) return 0;
+  const half = Math.ceil(((stepIqd / 2) / rate) * 100) / 100;
+  return Math.min(ROUNDING_TOLERANCE_CAP_USD, half);
 }
 
 /**
@@ -297,14 +327,25 @@ export interface Difference {
  * give, and only a person can say which — so the caller passes `treatShortAs`
  * and a reason is required either way. Over is credit, which needs no
  * decision: it sits on their balance and comes off the next box.
+ *
+ * A gap no bigger than `toleranceUsd` is the dinar rounding, not a decision:
+ * short is forgiven as a discount with `ROUNDING_VARIANCE_REASON` and no
+ * question asked; over is simply taken as paid in full, so no one-cent credit
+ * ever appears on a statement. `roundingUsd` says which it was.
  */
 export function differenceOf(
   dueUsd: number,
   paidUsd: number,
   treatShortAs: "debt" | "discount" = "debt",
+  toleranceUsd = 0,
 ): Difference {
   const delta = round2(paidUsd - dueUsd);
   if (delta === 0) return { kind: "none", amountUsd: 0, reasonRequired: false };
+  if (paidUsd > 0 && Math.abs(delta) <= toleranceUsd) {
+    return delta < 0
+      ? { kind: "discount", amountUsd: round2(-delta), reasonRequired: false, roundingUsd: delta }
+      : { kind: "none", amountUsd: 0, reasonRequired: false, roundingUsd: delta };
+  }
   if (delta > 0) return { kind: "credit", amountUsd: delta, reasonRequired: false };
   return { kind: treatShortAs, amountUsd: round2(-delta), reasonRequired: true };
 }

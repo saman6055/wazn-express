@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   settlementTotals,
   differenceOf,
+  roundingToleranceUsd,
+  ROUNDING_TOLERANCE_CAP_USD,
   outstandingOf,
   iqdToUsd,
   usdToIqd,
@@ -167,6 +169,56 @@ describe("the gap between what is due and what was handed over", () => {
     expect(d.kind).toBe("credit");
     expect(d.amountUsd).toBe(2.60);
     expect(d.reasonRequired).toBe(false);
+  });
+});
+
+/**
+ * The receipt rounds its dinars to the nearest 250, so the paper asks for a
+ * hair less or more than the dollars. The owner's own example (2026-09-29):
+ * $142.50 at 1,465 prints as 208,750 IQD, which is $142.49 — and that cent
+ * must never become a debt on the customer.
+ */
+describe("a gap that is only the dinar rounding", () => {
+  it("allows half a step at the day's rate, and nothing for dollars", () => {
+    expect(roundingToleranceUsd(1465)).toBe(0.09);       // 125 / 1465 = 0.0853 → up to the cent
+    expect(roundingToleranceUsd(1465, 1000)).toBe(0.35);
+    expect(roundingToleranceUsd(1465, 1)).toBe(0);       // «وەک خۆی»: exact, no rounding
+    expect(roundingToleranceUsd(0)).toBe(0);             // paid in dollars
+    expect(roundingToleranceUsd(100, 1000), "a silly rate cannot forgive a real shortfall")
+      .toBe(ROUNDING_TOLERANCE_CAP_USD);
+  });
+
+  it("forgives the owner's missing cent without asking anyone", () => {
+    const paid = iqdToUsd(208_750, 1465);
+    expect(paid).toBe(142.49);
+    const d = differenceOf(142.50, paid, "debt", roundingToleranceUsd(1465));
+    expect(d.kind).toBe("discount");
+    expect(d.amountUsd).toBe(0.01);
+    expect(d.reasonRequired, "rounding is not a decision").toBe(false);
+    expect(d.roundingUsd).toBe(-0.01);
+  });
+
+  it("takes a few cents over as paid in full, not as a one-cent credit", () => {
+    const d = differenceOf(142.40, 142.49, "debt", roundingToleranceUsd(1465));
+    expect(d.kind).toBe("none");
+    expect(d.amountUsd).toBe(0);
+    expect(d.roundingUsd).toBe(0.09);
+  });
+
+  it("stops being rounding one cent past the tolerance", () => {
+    const d = differenceOf(142.50, 142.40, "debt", roundingToleranceUsd(1465));
+    expect(d.kind).toBe("debt");
+    expect(d.amountUsd).toBe(0.10);
+    expect(d.reasonRequired).toBe(true);
+    expect(d.roundingUsd).toBeUndefined();
+  });
+
+  it("does not turn an empty till into rounding", () => {
+    expect(differenceOf(0.05, 0, "debt", 0.09).kind).toBe("debt");
+  });
+
+  it("changes nothing when no tolerance is given", () => {
+    expect(differenceOf(142.50, 142.49)).toEqual({ kind: "debt", amountUsd: 0.01, reasonRequired: true });
   });
 });
 

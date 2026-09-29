@@ -24,6 +24,8 @@ import { notifyPaymentReceived } from "../services/customerWhatsApp.service";
 import {
   settlementTotals,
   differenceOf,
+  roundingToleranceUsd,
+  ROUNDING_VARIANCE_REASON,
   boxDiscountUsd,
   allocateBoxDiscount,
   type ParcelIntent,
@@ -1010,9 +1012,19 @@ export async function createBoxSettlement(
     ));
   }
   const fromIqd = iqd > 0 && rate > 0 ? round2(iqd / rate) : 0;
-  const paidUsd = round2(fromIqd + Number(input.amountUsd ?? 0));
+  const handedOverUsd = round2(fromIqd + Number(input.amountUsd ?? 0));
 
-  const difference = differenceOf(totals.dueUsd, paidUsd, input.treatShortAs ?? "debt");
+  // Dinars were rounded on the receipt, so a gap of a few cents is the
+  // rounding, not a decision (owner, 2026-09-29): short is written off as
+  // «جیاوازی خڕکردنەوەی دراو», over is taken as paid in full. Dollars alone
+  // are exact and get no tolerance.
+  const tolerance = iqd > 0 ? roundingToleranceUsd(rate) : 0;
+  const difference = differenceOf(totals.dueUsd, handedOverUsd, input.treatShortAs ?? "debt", tolerance);
+  const isRounding = difference.roundingUsd !== undefined;
+  const paidUsd = isRounding && difference.roundingUsd! > 0 ? totals.dueUsd : handedOverUsd;
+  const differenceReason = isRounding
+    ? `${ROUNDING_VARIANCE_REASON} (${difference.roundingUsd! > 0 ? "+" : "−"}$${Math.abs(difference.roundingUsd!).toFixed(2)})`
+    : input.differenceReason;
   if (difference.reasonRequired && !(input.differenceReason ?? "").trim()) {
     throw new Error(withFix(
       "پارەی وەرگیراو لەگەڵ پارەی پێویست یەک ناگرێتەوە، و هۆکارەکە نەنووسراوە — ئەم جیاوازییە دەبێتە قەرز یان داشکاندن لەسەر کڕیار.",
@@ -1168,7 +1180,7 @@ export async function createBoxSettlement(
             discountUsd: l.discountUsd,
           })),
         extraUsd: difference.kind === "discount" ? difference.amountUsd : 0,
-        reason: input.differenceReason ?? "",
+        reason: differenceReason ?? "",
         userId,
       });
     }
@@ -1207,7 +1219,7 @@ export async function createBoxSettlement(
       exchangeRate: rate > 0 ? rate.toFixed(2) : null,
       differenceUsd: difference.amountUsd.toFixed(2),
       differenceKind: difference.kind,
-      differenceReason: input.differenceReason ?? null,
+      differenceReason: differenceReason ?? null,
       paymentMethod: input.paymentMethod ?? "CASH",
       ledgerTransactionId,
       paymentRecordId,
