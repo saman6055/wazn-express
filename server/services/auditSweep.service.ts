@@ -281,21 +281,6 @@ const QUERIES: Record<CheckId, string> = {
     ORDER BY s.createdAt DESC
     LIMIT ${SAMPLE_LIMIT}`,
 
-  /*
-   * chargeBoxDeliveryFee posted the fee as DEBIT_PACKAGE with no parcel
-   * (reference 0) and the box code in the text. Nothing posts it now
-   * (shared/deliveryFee), so every row here predates 2026-09-10. Not
-   * matched on the Kurdish words, so the query stays plain ASCII.
-   */
-  courier_fee_on_account: `
-    SELECT t.id, t.transactionNumber, t.accountId, t.amountUsd, t.description, t.createdAt
-    FROM ledgerTransactions t
-    WHERE t.transactionType = 'DEBIT_PACKAGE'
-      AND COALESCE(t.referenceId, 0) = 0
-      AND t.description LIKE '%BOX-%'
-    ORDER BY t.createdAt DESC
-    LIMIT ${SAMPLE_LIMIT}`,
-
   payment_without_ledger: `
     SELECT 'payment' AS what, p.id, p.paymentNumber AS number, p.accountId AS owner,
            p.amountUsd, p.createdAt

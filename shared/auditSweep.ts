@@ -54,7 +54,6 @@ export type CheckId =
   | "batch_cost_not_below_price"
   | "batch_closed_without_cost"
   | "rounding_cent_debt"
-  | "courier_fee_on_account"
   | "payment_without_ledger"
   | "arrived_goods_unbilled"
   | "commission_profit_one_unit";
@@ -445,23 +444,6 @@ export const CHECKS: readonly CheckDefinition[] = [
       en: "A box receipt that left a few cents (≤ $0.50) owed. Most came from dinar rounding before 1bac007, which is now written off by itself. Check whether the customer really owes it.",
       ar: "إيصال صندوق ترك بضعة سنتات (≤ 0.50$) ديناً. معظمها من تقريب الدينار قبل 1bac007، وهو الآن يُشطب تلقائياً. تحقق هل العميل مدين فعلاً.",
       zh: "箱子收据留下了几分钱（≤ $0.50）欠款。多数来自 1bac007 之前的第纳尔取整，现在会自动核销。请核实客户是否真的欠款。",
-    },
-  },
-  {
-    id: "courier_fee_on_account",
-    severity: "warning",
-    path: "/finance",
-    title: {
-      ku: "کرێی گەیاندنی ناوخۆ کە هێشتا لەسەر حیسابی کڕیارە",
-      en: "Local delivery fees still on customer accounts",
-      ar: "رسوم توصيل محلي ما زالت على حسابات العملاء",
-      zh: "仍记在客户账上的本地配送费",
-    },
-    meaning: {
-      ku: "لە 2026-09-10ـەوە کرێی گەیاندنی ناوخۆ هی ئێمە نییە و ناخرێتە سەر حیساب. ئەمانە پێش ئەو ڕۆژە خراونەتە سەر کڕیار و هێشتا لە باڵانسیاندان. گەڕاندنەوەیان بڕیاری خاوەنە.",
-      en: "Since 2026-09-10 the local delivery fee is not ours and is not posted. These were posted before that day and are still in the balances. Reversing them is the owner's decision.",
-      ar: "منذ 2026-09-10 رسوم التوصيل المحلي ليست لنا ولا تُقيَّد. هذه قُيِّدت قبل ذلك اليوم وما زالت في الأرصدة. عكسها قرار المالك.",
-      zh: "自 2026-09-10 起本地配送费不属于我们，也不再入账。这些是在那之前入账的，仍在余额里。是否冲回由老板决定。",
     },
   },
   {
