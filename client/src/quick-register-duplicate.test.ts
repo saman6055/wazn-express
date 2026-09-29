@@ -26,13 +26,31 @@ describe("the tracking box", () => {
     expect(change).toContain("if (value.trim().length < MIN_TRACKING_LOOKUP) return;");
   });
 
-  it("a lookup that ran by itself takes neither the caret nor the screen", () => {
+  it("a lookup that ran by itself takes no screen", () => {
     expect(page).toContain("const silent = opts?.silent === true;");
-    // Not found is the ordinary case while a number is half typed.
-    expect(page).toContain("if (silent) return;");
-    // The focus moves and the cheerful toasts belong to a run somebody asked for.
-    expect((page.match(/if \(!silent\) setTimeout\(\(\) => \{/g) ?? []).length).toBe(2);
+    // The cheerful toast and the loud alert belong to a run somebody asked
+    // for. Nothing pops up while a number is still being typed.
     expect(page).toContain("if (!silent) toast.success(");
+    expect(page).toContain("if (silent) {");
+  });
+
+  it("but it does hand the caret to the kilos", () => {
+    /*
+     * This used to say "neither the caret nor the screen", and the caret half
+     * was right at the time: the weight box sat in the middle of the page, so
+     * moving to it scrolled away the order that had just been found.
+     *
+     * The owner overruled it on 2026-09-29 — «پاش تراک ئەبێ ماوس خۆی یەکسەر
+     * بێتە سەر کیلۆ، ئەوێ گلۆ بکات» — once the box was on the bottom bar,
+     * where there is nothing to scroll. Typed by hand or scanned, the tracking
+     * now ends in the same place.
+     */
+    expect(page).toContain("const focusWeight = useCallback(() => {");
+    expect((page.match(/if \(!silent\) setTimeout\(\(\) => \{/g) ?? []).length).toBe(0);
+    // One exception, and it is the one that matters: a duplicate. The next
+    // thing to happen is the next parcel, not the weight of this one.
+    const found = page.slice(page.indexOf("if (result.source === \"package\") {", page.indexOf("setTimeout(() => {")));
+    expect(found.slice(0, 600)).toContain("if (silent) return;");
   });
 
   it("says the code it is registered on, and what it weighed and cost", () => {

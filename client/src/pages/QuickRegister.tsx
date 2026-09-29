@@ -20,6 +20,7 @@ import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@share
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { OrderNote } from "@/components/scanner/OrderNote";
+import { useIsMobile } from "@/hooks/useMobile";
 
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
@@ -46,6 +47,20 @@ function orderHref(order: { id: number; orderCode: string; orderType?: string | 
 
 export default function QuickRegister() {
   const systemAlert = useSystemAlert();
+  /**
+   * Where the weight box lives.
+   *
+   * On a desktop it is on the bottom bar, because a scan used to push it off
+   * the screen at the moment it was wanted. A phone has no such bar to spare:
+   * the bottom of the screen already carries the tab bar and the two round
+   * buttons, and a form bar with a number box in it becomes three rows of
+   * chrome over the page. The owner, 2026-09-29: «بۆ مۆبایل کێش هەر لە جێگای
+   * خۆی بێت». So on a phone it stays a card in the flow, where scrolling to
+   * it is the ordinary way of working anyway.
+   *
+   * One box either way — never two bound to the same state.
+   */
+  const isMobile = useIsMobile();
   const { t, language } = useTranslation();
   const { user } = useAuth();
 
@@ -87,6 +102,8 @@ export default function QuickRegister() {
   const [batchId, setBatchId] = useState<string>("");
   const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
   const [isUnclaimed, setIsUnclaimed] = useState(false);
+  /** A moment's ring on the weight box, so the handover is seen, not guessed. */
+  const [weightGlow, setWeightGlow] = useState(false);
   // Portal pre-declaration match: set when a scanned tracking was pre-declared
   // by a customer from the portal, so we can auto-own it + show a badge.
   const [declaredMatch, setDeclaredMatch] = useState<any>(null);
@@ -316,18 +333,19 @@ export default function QuickRegister() {
               </div>
             );
           }
-          if (!silent) setTimeout(() => {
+          setTimeout(() => {
             if (result.source === "package") {
               // A duplicate: the next thing to happen is the next parcel,
               // not the weight of this one. Putting the caret in the weight
               // box would be the form inviting exactly the second
-              // registration the dialog just warned about.
+              // registration the dialog just warned about. And on the quiet
+              // path nothing has been said yet, so nothing is moved either.
+              if (silent) return;
               trackingRef.current?.focus();
               trackingRef.current?.select();
               return;
             }
-            weightRef.current?.focus();
-            weightRef.current?.select();
+            focusWeight();
           }, 100);
         } else if (result.declaredMatch?.customer) {
           // The customer pre-declared this tracking from the portal — auto-own
@@ -357,13 +375,16 @@ export default function QuickRegister() {
               </div>
             </div>
           );
-          if (!silent) setTimeout(() => {
-            weightRef.current?.focus();
-            weightRef.current?.select();
-          }, 100);
+          setTimeout(() => focusWeight(), 100);
         } else {
           setDeclaredMatch(null);
-          if (silent) return;
+          if (silent) {
+            // A tracking the system has never seen is the ordinary case here
+            // — the parcel is new. No alert while somebody is still at the
+            // keyboard, but the kilos are still the next thing.
+            setTimeout(() => focusWeight(), 100);
+            return;
+          }
           // Not a toast. On a warehouse screen at arm's length a notice in
           // the corner is not read: the parcel goes on the shelf and nobody
           // learns it was never registered until the customer asks.
@@ -383,10 +404,7 @@ export default function QuickRegister() {
             }),
             detail: trackingNumber,
           });
-          setTimeout(() => {
-            weightRef.current?.focus();
-            weightRef.current?.select();
-          }, 100);
+          setTimeout(() => focusWeight(), 100);
         }
       }
     } catch (error: any) {
@@ -614,7 +632,49 @@ export default function QuickRegister() {
     enabled: hasMeasure,
     placeholderData: keepPreviousData,
   });
+  /**
+   * The tracking is done; the kilos are next.
+   *
+   * The owner, 2026-09-29: «پاش تراک، ئەبێ ماوس خۆی یەکسەر بێتە سەر کیلۆ و
+   * ئەوێ گلۆ بکات». It used to happen only when a scanner sent its own
+   * Enter — a number typed by hand was looked up quietly and the caret was
+   * left where it was, deliberately, because the weight box was in the
+   * middle of the page and jumping to it scrolled away what had just been
+   * scanned. On a bar that never leaves the screen there is nothing to
+   * scroll, so both ways end in the same place.
+   *
+   * The ring is the point of it: a caret that moved without being seen to
+   * move is a caret somebody types past.
+   */
+  const focusWeight = useCallback(() => {
+    weightRef.current?.focus();
+    weightRef.current?.select();
+    setWeightGlow(true);
+    window.setTimeout(() => setWeightGlow(false), 1800);
+  }, []);
+
   const estimatedPrice = hasMeasure && estimate ? estimate.amountUsd : 0;
+
+  /**
+   * What the bottom bar says beside the weight — and it says nothing it does
+   * not have to.
+   *
+   * The owner, 2026-09-29: «تەنها لەکاتی گونجاو زانیاری تر بێت، با زۆریش
+   * قەرباڵغ نەبێ». So each of these is a question with an answer only
+   * sometimes, and the bar stays a weight, a price and two buttons for an
+   * ordinary parcel.
+   */
+  /**
+   * The rate behind the price, so an agreed per-customer rate is not a figure
+   * that changed for no visible reason.
+   *
+   * The rate alone, not "20.00 × 11.00": the number it multiplies is already
+   * on the bar, in the weight box or in the billed chip beside it. Printing
+   * it again is how a bar of four facts became a bar of seven.
+   */
+  const priceWorking = estimate?.rate && estimatedPrice > 0
+    ? `× ${Number(estimate.rate).toFixed(2)}`
+    : null;
   
   const [, setLocation] = useLocation();
   const [returnToScanner, setReturnToScanner] = useState<string | null>(null);
@@ -1099,54 +1159,168 @@ export default function QuickRegister() {
                     wide, comfortable rectangle (it's the primary input) */}
                 <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
                   <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
-                        <PackageSearch className="h-4 w-4" />
+                    {/*
+                      One frame for the two things a person does here (owner,
+                      2026-09-29: «ئەو دووانە لە چوارچێوەی یەک کارتدا بن،
+                      پێویست ناکات زۆر مەسافە داگیر بکەن»). Two cards for two
+                      short fields meant two borders, two headings and twice
+                      the height, for scanning a parcel and saying whose it
+                      is — which is one action, done in one breath.
+
+                      Side by side from `md` up, stacked on a phone. What the
+                      lookup finds runs full width underneath both, because it
+                      belongs to neither on its own.
+                    */}
+                    <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
+                            <PackageSearch className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t("quickRegister.stepTracking")}</span>
+                          {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500 dark:text-amber-400" />}
+                        </div>
+                        {/* A box the width of a tracking number, not of the
+                            card it sits in (owner, 2026-09-23). */}
+                        <div className="flex gap-2 max-w-xl">
+                          <Input
+                            ref={trackingRef}
+                            placeholder={t("quickRegister.trackingPlaceholder")}
+                            value={trackingNumber}
+                            onChange={(e) => handleTrackingChange(e.target.value)}
+                            onKeyDown={(e) => {
+                              // Barcode scanners send Enter at the end of the
+                              // scan. Without this handler the Enter bubbles to
+                              // the form's outer onKeyDown and triggers
+                              // handleSubmit — which (because customerId is
+                              // sticky between registrations) succeeds with an
+                              // empty weight on every package after the first.
+                              // Intercept Enter here, run the search
+                              // immediately (cancelling the 300ms debounce),
+                              // and let handleTrackingSearch's success path
+                              // move focus to the weight field.
+                              if (e.key === 'Enter') {
+                                e.preventDefault();
+                                e.stopPropagation();
+                                if (searchTimeout) {
+                                  clearTimeout(searchTimeout);
+                                  setSearchTimeout(null);
+                                }
+                                handleTrackingSearch();
+                              }
+                            }}
+                            className="font-mono text-base h-11 flex-1"
+                            autoFocus
+                          />
+                          <Button
+                            type="button"
+                            size="lg"
+                            onClick={() => handleTrackingSearch()}
+                            disabled={trackingNumber.trim().length < 1 || isSearching}
+                            className="h-11 px-3 bg-amber-500 hover:bg-amber-600 text-white"
+                          >
+                            {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
+                          </Button>
+                        </div>
                       </div>
-                      <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t("quickRegister.stepTracking")}</span>
-                      {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500 dark:text-amber-400" />}
-                    </div>
-                    {/* A box the width of a tracking number, not of the
-                        card it sits in (owner, 2026-09-23). */}
-                    <div className="flex gap-2 max-w-xl">
-                      <Input
-                        ref={trackingRef}
-                        placeholder={t("quickRegister.trackingPlaceholder")}
-                        value={trackingNumber}
-                        onChange={(e) => handleTrackingChange(e.target.value)}
-                        onKeyDown={(e) => {
-                          // Barcode scanners send Enter at the end of the
-                          // scan. Without this handler the Enter bubbles to
-                          // the form's outer onKeyDown and triggers
-                          // handleSubmit — which (because customerId is
-                          // sticky between registrations) succeeds with an
-                          // empty weight on every package after the first.
-                          // Intercept Enter here, run the search
-                          // immediately (cancelling the 300ms debounce),
-                          // and let handleTrackingSearch's success path
-                          // move focus to the weight field.
-                          if (e.key === 'Enter') {
-                            e.preventDefault();
-                            e.stopPropagation();
-                            if (searchTimeout) {
-                              clearTimeout(searchTimeout);
-                              setSearchTimeout(null);
-                            }
-                            handleTrackingSearch();
-                          }
-                        }}
-                        className="font-mono text-base h-11 flex-1"
-                        autoFocus
-                      />
-                      <Button
-                        type="button"
-                        size="lg"
-                        onClick={() => handleTrackingSearch()}
-                        disabled={trackingNumber.trim().length < 1 || isSearching}
-                        className="h-11 px-3 bg-amber-500 hover:bg-amber-600 text-white"
-                      >
-                        {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
-                      </Button>
+
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2 mb-3">
+                          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 flex items-center justify-center">
+                            <User className="h-4 w-4" />
+                          </div>
+                          <span className="text-sm font-bold text-blue-700 dark:text-blue-400">{t("quickRegister.stepCustomer")}</span>
+                        </div>
+                        <div className="flex gap-2">
+                          <div className="relative flex-1">
+                            <Input
+                              ref={customerInputRef}
+                              placeholder={t("quickRegister.customerSearchPlaceholder")}
+                              value={customerSearch}
+                              onChange={(e) => {
+                                setCustomerSearch(e.target.value);
+                                setShowCustomerDropdown(true);
+                                if (e.target.value === "") setCustomerId(null);
+                              }}
+                              onFocus={() => setShowCustomerDropdown(true)}
+                              onKeyDown={handleCustomerKeyDown}
+                              disabled={isUnclaimed || (foundOrder?.customer != null)}
+                              className="text-base h-12"
+                            />
+                            {showCustomerDropdown && filteredCustomers.length > 0 && !isUnclaimed && !foundOrder?.customer && (
+                              <div className="absolute z-50 w-full mt-1 bg-popover border rounded-xl shadow-lg max-h-48 overflow-auto">
+                                {filteredCustomers.map((customer, index) => (
+                                  <button
+                                    key={customer.id}
+                                    type="button"
+                                    className={cn(
+                                      "w-full px-4 py-3 text-sm text-start transition-colors",
+                                      index === highlightedCustomerIndex
+                                        ? "bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200"
+                                        : "hover:bg-muted"
+                                    )}
+                                    onClick={() => selectCustomer(customer)}
+                                    onMouseEnter={() => setHighlightedCustomerIndex(index)}
+                                  >
+                                    <span className="font-bold text-blue-600 dark:text-blue-400">{customer.customerCode}</span>
+                                    <span className="text-muted-foreground me-2">- {customer.fullName}</span>
+                                  </button>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+                          {/* A lone warning triangle said nothing about what
+                              pressing it would do (owner, 2026-09-29: «ئایکۆنی
+                              داخل کردنی بێ ناو جوانتر و واضحتر بکە، بنووسە تۆماری
+                              پاکەتی بێ ناو»). It carries the sentence now, and
+                              says plainly when it is on. */}
+                          <Button
+                            type="button"
+                            size="lg"
+                            variant={isUnclaimed ? "default" : "outline"}
+                            onClick={toggleUnclaimed}
+                            disabled={foundOrder?.customer != null}
+                            aria-pressed={isUnclaimed}
+                            data-testid="qr-unclaimed"
+                            className={cn(
+                              "h-12 shrink-0 gap-2 px-4 font-semibold",
+                              isUnclaimed
+                                ? "bg-amber-500 hover:bg-amber-600 text-white border-amber-500"
+                                : "border-amber-300 text-amber-700 hover:bg-amber-50 dark:border-amber-800 dark:text-amber-300 dark:hover:bg-amber-950/40",
+                            )}
+                          >
+                            {isUnclaimed ? <CheckCircle2 className="h-4 w-4" /> : <AlertTriangle className="h-4 w-4" />}
+                            {/* Short on a phone rather than nothing: a lone
+                                triangle is exactly what the sentence was
+                                added to fix. */}
+                            <span className="hidden sm:inline">
+                              {isUnclaimed
+                                ? pickLang(language, { ku: "پاکەتی بێ ناو", en: "Nameless parcel", ar: "طرد بلا اسم", zh: "无主包裹" })
+                                : pickLang(language, { ku: "تۆماری پاکەتی بێ ناو", en: "Register a nameless parcel", ar: "تسجيل طرد بلا اسم", zh: "登记无主包裹" })}
+                            </span>
+                            <span className="sm:hidden">
+                              {pickLang(language, { ku: "بێ ناو", en: "No name", ar: "بلا اسم", zh: "无主" })}
+                            </span>
+                          </Button>
+                        </div>
+                        {(customerId || isUnclaimed) && (() => {
+                          const lockedByOrder = foundOrder?.customer != null
+                            && (foundOrder.source === 'full_package' || foundOrder.source === 'commission');
+                          return (
+                            <div className={cn("mt-3 p-2 rounded-lg text-sm flex items-center gap-2",
+                              isUnclaimed ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" : "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/60"
+                            )}>
+                              {isUnclaimed ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
+                              <span className="font-bold">{isUnclaimed ? t("quickRegister.unclaimed") : customers?.find(c => c.id === customerId)?.customerCode}</span>
+                              {lockedByOrder && (
+                                <span className="ms-auto text-[11px] bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 px-2 py-0.5 rounded-full font-semibold">
+                                  🔒 {t("quickRegister.locked")}
+                                </span>
+                              )}
+                            </div>
+                          );
+                        })()}
+                      </div>
                     </div>
                     {/* Tracking Info Display */}
                     {foundOrder?.found && (
@@ -1329,17 +1503,11 @@ export default function QuickRegister() {
               {foundOrder?.found && foundOrder.order && (
                 <Card className="md:col-span-5 border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
                   <CardContent className="p-5 space-y-4">
-                    {/* Header: product image + type + order code + product name */}
+                    {/* Header: type + order code + product name. The picture
+                        of the goods is in the photo card on the other side —
+                        one place for photographs, not two (owner,
+                        2026-09-29). */}
                     <div className="flex items-center gap-4 min-w-0">
-                      <PhotoStack
-                        photos={[foundOrder.order.productImage, ...(foundOrder.order.productImages ?? [])]}
-                        className="w-20 h-20 rounded-xl border-2 border-indigo-200 dark:border-indigo-800 shadow-sm"
-                        fallback={
-                          <div className="w-20 h-20 rounded-xl bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center shrink-0">
-                            <Package className="h-8 w-8 text-indigo-400" />
-                          </div>
-                        }
-                      />
                       <div className="min-w-0 flex-1">
                         <div className="flex items-center gap-2 flex-wrap">
                           <span className="text-xs font-bold px-2.5 py-1 rounded-full bg-indigo-600 text-white">
@@ -1393,6 +1561,39 @@ export default function QuickRegister() {
                       </div>
                     </div>
 
+                    {/*
+                      The paperwork, folded.
+
+                      Order number, date, waiting days, who entered it and how
+                      far through this customer's orders we are: all true, all
+                      occasionally wanted, and together 351px of reading
+                      standing between the tracking box and the rest of the
+                      job. Closed by default (owner, 2026-09-29: «تەنها لەکاتی
+                      گونجاو زانیاری تر بێت، با زۆریش قەرباڵغ نەبێ»).
+
+                      The one figure that changes what the counter does — how
+                      many of this customer's parcels are still to come — is
+                      on the fold itself, so it is read without opening
+                      anything.
+                    */}
+                    <details className="group rounded-xl border border-indigo-100 dark:border-indigo-900/40 bg-white/60 dark:bg-card/30">
+                      <summary className="flex cursor-pointer list-none items-center gap-2 px-3 py-2 text-xs font-semibold text-indigo-800 dark:text-indigo-200">
+                        <ChevronDown className="h-4 w-4 shrink-0 transition-transform group-open:rotate-180" />
+                        {pickLang(language, { ku: "وردەکاری داواکاری", en: "Order details", ar: "تفاصيل الطلب", zh: "订单详情" })}
+                        {customerOrderProgress && customerOrderProgress.total > 0 && !customerOrderProgress.allRegistered && (
+                          <span className="ms-auto flex items-center gap-1.5 rounded-full bg-red-50 dark:bg-red-950/40 px-2 py-0.5 text-[11px] font-bold text-red-700 dark:text-red-300">
+                            <span className="h-2 w-2 rounded-full bg-red-500" />
+                            {pickLang(language, {
+                              ku: `${customerOrderProgress.remaining} پاکێجی تر چاوەڕوانە`,
+                              en: `${customerOrderProgress.remaining} more expected`,
+                              ar: `${customerOrderProgress.remaining} طرد آخر متوقع`,
+                              zh: `还有 ${customerOrderProgress.remaining} 件待到`,
+                            })}
+                          </span>
+                        )}
+                      </summary>
+
+                      <div className="space-y-3 px-3 pb-3">
                     {/* Facts: order number, date, waiting days, entered-by */}
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-center">
                       {foundOrder.order.orderNumber && (
@@ -1480,7 +1681,12 @@ export default function QuickRegister() {
                       );
                     })()}
 
-                    {/* All of this customer's orders are in — delivery-ready. */}
+                      </div>
+                    </details>
+
+                    {/* All of this customer's orders are in — delivery-ready.
+                        Outside the fold: it is not a detail, it is the cue to
+                        start the delivery box. */}
                     {customerOrderProgress?.allRegistered && customerOrderProgress.total > 0 && (
                       <div className="flex items-center gap-2 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-300 dark:border-emerald-800 px-3 py-2.5">
                         <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400 shrink-0" />
@@ -1555,87 +1761,12 @@ export default function QuickRegister() {
                   </Card>
                 )}
 
-                {/* Customer Selection */}
-                <Card className="md:col-span-3 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
-                  <CardContent className="p-4">
-                    <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 flex items-center justify-center">
-                        <User className="h-4 w-4" />
-                      </div>
-                      <span className="text-sm font-bold text-blue-700 dark:text-blue-400">{t("quickRegister.stepCustomer")}</span>
-                    </div>
-                    <div className="flex gap-2">
-                      <div className="relative flex-1">
-                        <Input
-                          ref={customerInputRef}
-                          placeholder={t("quickRegister.customerSearchPlaceholder")}
-                          value={customerSearch}
-                          onChange={(e) => {
-                            setCustomerSearch(e.target.value);
-                            setShowCustomerDropdown(true);
-                            if (e.target.value === "") setCustomerId(null);
-                          }}
-                          onFocus={() => setShowCustomerDropdown(true)}
-                          onKeyDown={handleCustomerKeyDown}
-                          disabled={isUnclaimed || (foundOrder?.customer != null)}
-                          className="text-base h-12"
-                        />
-                        {showCustomerDropdown && filteredCustomers.length > 0 && !isUnclaimed && !foundOrder?.customer && (
-                          <div className="absolute z-50 w-full mt-1 bg-popover border rounded-xl shadow-lg max-h-48 overflow-auto">
-                            {filteredCustomers.map((customer, index) => (
-                              <button
-                                key={customer.id}
-                                type="button"
-                                className={cn(
-                                  "w-full px-4 py-3 text-sm text-start transition-colors",
-                                  index === highlightedCustomerIndex
-                                    ? "bg-blue-50 text-blue-900 dark:bg-blue-900/30 dark:text-blue-200"
-                                    : "hover:bg-muted"
-                                )}
-                                onClick={() => selectCustomer(customer)}
-                                onMouseEnter={() => setHighlightedCustomerIndex(index)}
-                              >
-                                <span className="font-bold text-blue-600 dark:text-blue-400">{customer.customerCode}</span>
-                                <span className="text-muted-foreground me-2">- {customer.fullName}</span>
-                              </button>
-                            ))}
-                          </div>
-                        )}
-                      </div>
-                      <Button
-                        type="button"
-                        size="lg"
-                        variant={isUnclaimed ? "default" : "outline"}
-                        onClick={toggleUnclaimed}
-                        disabled={foundOrder?.customer != null}
-                        className={cn("h-12 px-3", isUnclaimed && "bg-amber-500 hover:bg-amber-600 text-white border-amber-500")}
-                      >
-                        <AlertTriangle className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    {(customerId || isUnclaimed) && (() => {
-                      const lockedByOrder = foundOrder?.customer != null
-                        && (foundOrder.source === 'full_package' || foundOrder.source === 'commission');
-                      return (
-                        <div className={cn("mt-3 p-2 rounded-lg text-sm flex items-center gap-2",
-                          isUnclaimed ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" : "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/60"
-                        )}>
-                          {isUnclaimed ? <AlertTriangle className="h-4 w-4" /> : <CheckCircle2 className="h-4 w-4" />}
-                          <span className="font-bold">{isUnclaimed ? t("quickRegister.unclaimed") : customers?.find(c => c.id === customerId)?.customerCode}</span>
-                          {lockedByOrder && (
-                            <span className="ms-auto text-[11px] bg-green-100 dark:bg-green-950/40 text-green-800 dark:text-green-200 px-2 py-0.5 rounded-full font-semibold">
-                              🔒 {t("quickRegister.locked")}
-                            </span>
-                          )}
-                        </div>
-                      );
-                    })()}
-                  </CardContent>
-                </Card>
+              </div>
 
-                {/* Weight — the primary numeric field. Warehouse & Shipping
-                    moved out of the center to the compact side panel. */}
-                <Card className="md:col-span-2 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              {/* The weight, on a phone. On a desktop this is the first thing
+                  on the bottom bar instead. */}
+              {isMobile && (
+                <Card className="border bg-card rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
                       <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
@@ -1651,12 +1782,16 @@ export default function QuickRegister() {
                         placeholder="0.00"
                         value={weightKg}
                         onChange={(e) => setWeightKg(e.target.value)}
-                        className="h-14 text-2xl font-mono font-bold text-center"
+                        className={cn(
+                          "h-14 text-2xl font-mono font-bold text-center transition-shadow",
+                          weightGlow && "ring-4 ring-emerald-400/70 border-emerald-500",
+                        )}
+                        data-testid="qr-bar-weight"
                       />
                     </div>
                   </CardContent>
                 </Card>
-              </div>
+              )}
 
               {/* Row 2.5: Dimensions - Only for Air shipping */}
               {(shippingType === "air_regular" || shippingType === "air_irregular") && (
@@ -2215,9 +2350,14 @@ export default function QuickRegister() {
                 </CardContent>
               </Card>
 
-              {/* The photo of the parcel as it arrived, with what it is
-                  a photo of. The owner, 2026-09-23: this is the place for
-                  it — the empty panel under the shipping selectors. */}
+              {/* Every photograph in one card, on the side.
+                  The owner, 2026-09-23: this is the place for it — the empty
+                  panel under the shipping selectors. And 2026-09-29: «دوو
+                  شوێنێ وێنە هەیە... ببە لای چەپ، بە یەک کارت» — the picture
+                  that arrives with the scan was in the order card on the
+                  other side of the screen, so the same card now holds both:
+                  what was ordered above, what turned up below — the
+                  order the portal shows them in too (@shared/parcelPhotos). */}
               <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2 mb-3">
@@ -2234,6 +2374,29 @@ export default function QuickRegister() {
                       {t("quickRegister.photosHint")}
                     </span>
                   </div>
+                  {/* What was ordered — only once a scan has found it. */}
+                  {foundOrder?.found && foundOrder.order && (
+                    <div className="mb-3">
+                      <p className="mb-1.5 text-[10px] font-medium text-muted-foreground">
+                        {pickLang(language, { ku: "وێنەی داواکاری", en: "Order photo", ar: "صورة الطلب", zh: "订单图片" })}
+                      </p>
+                      <PhotoStack
+                        photos={[foundOrder.order.productImage, ...(foundOrder.order.productImages ?? [])]}
+                        className="h-24 w-full rounded-lg border-2 border-indigo-200 dark:border-indigo-800 shadow-sm"
+                        fallback={
+                          <div className="flex h-24 w-full items-center justify-center rounded-lg border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/20">
+                            <Package className="h-7 w-7 text-indigo-300 dark:text-indigo-700" />
+                          </div>
+                        }
+                      />
+                    </div>
+                  )}
+
+                  {foundOrder?.found && (
+                    <p className="mb-1.5 text-[10px] font-medium text-muted-foreground">
+                      {pickLang(language, { ku: "وێنەی گەیشتن", en: "Arrival photo", ar: "صورة الوصول", zh: "到货照片" })}
+                    </p>
+                  )}
                   <div className="flex flex-wrap gap-3">
                     {photos.map((photo, index) => (
                       <div key={index} className="relative group">
@@ -2277,12 +2440,108 @@ export default function QuickRegister() {
               the foot of the window, always in reach. The price rides on
               it so the figure and the button that commits it are together. */}
           <StickyFormBar>
-            {estimatedPrice > 0 && (
-              <span className="me-auto flex items-baseline gap-2">
-                <span className="text-xs text-muted-foreground">{t("quickRegister.estimatedPrice")}</span>
-                <span className="text-xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
-              </span>
-            )}
+            {/*
+              The weight lives here now, beside the button that commits it.
+              (Owner, 2026-09-29: «لەو لاکێشەی سپیەی خوارەوە لەلای ئینتەر، کێش
+              و نرخی کێش لەوێ نیشان بدات».)
+
+              It used to sit in the middle of the page, and a successful scan
+              filled the page with the order's details and pushed it 445px
+              down — off a 694px screen, at the exact moment it was wanted.
+              Either the page jumped to it and hid what had just been scanned,
+              or it did not jump and the field was simply gone. On a bar that
+              never leaves the screen, nothing has to move at all.
+            */}
+            <span className="me-auto flex flex-wrap items-center gap-x-4 gap-y-2">
+              {!isMobile && (
+                <span className="flex items-center gap-2">
+                  {/* Plainly "weight": the step heading carries its number and
+                      its unit ("3. کێش (kg)"), which on a bar that already
+                      prints kg beside the box would say it twice. */}
+                  <span className="text-xs text-muted-foreground">
+                    {pickLang(language, { ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" })}
+                  </span>
+                  <Input
+                    ref={weightRef}
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={weightKg}
+                    onChange={(e) => setWeightKg(e.target.value)}
+                    className={cn(
+                      "h-10 w-24 text-lg font-mono font-bold text-center transition-shadow",
+                      weightGlow && "ring-4 ring-emerald-400/70 border-emerald-500",
+                    )}
+                    dir="ltr"
+                    data-testid="qr-bar-weight"
+                  />
+                  <span className="text-xs text-muted-foreground">kg</span>
+                </span>
+              )}
+
+              {/* The chargeable weight is NOT repeated here. It has its own
+                  amber panel under the three sides, beside the very boxes
+                  that produce it, naming the actual weight underneath — and
+                  the owner, seeing it twice: «پسوولە و کۆد زیادەیە، چ سوودێکی
+                  هەیە؟». A bar that repeats the screen is a bar nobody
+                  reads. */}
+
+              {/* Sea is billed by volume outright, so the cubic metres are the
+                  figure — never the kilograms beside them. */}
+              {shippingType === "sea" && cbm > 0 && (
+                <span className="flex items-center gap-1.5 rounded-lg border bg-muted/50 px-2 py-1" data-testid="qr-bar-cbm">
+                  <span className="text-[11px] text-muted-foreground">
+                    {pickLang(language, { ku: "قەبارە", en: "Volume", ar: "الحجم", zh: "体积" })}
+                  </span>
+                  <span className="font-mono text-sm font-bold" dir="ltr">{cbm.toFixed(3)}</span>
+                  <span className="text-[10px] text-muted-foreground">
+                    {pickLang(language, { ku: "م³", en: "m³", ar: "م³", zh: "m³" })}
+                  </span>
+                </span>
+              )}
+
+              {/* Only the wrong state is worth a place here. The customer
+                  code is two lines up, in step 2, locked by the scan — a
+                  second copy told nobody anything. Having NO owner is
+                  different: it is the one thing somebody must come back and
+                  fix, and it is easy to commit without noticing. */}
+              {isUnclaimed && (
+                <span className="flex items-center gap-1.5 rounded-lg border border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/40 px-2 py-1 text-[11px] font-bold text-red-700 dark:text-red-300" data-testid="qr-bar-owner">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {pickLang(language, { ku: "بێ خاوەن", en: "No owner", ar: "بلا مالك", zh: "无主" })}
+                </span>
+              )}
+
+              {/* The price, with its arithmetic — an agreed per-customer rate
+                  is otherwise a figure that changed for no visible reason. */}
+              {estimatedPrice > 0 ? (
+                /* No "estimated price" label: the dollar sign says what the
+                   figure is, and the words were a third of the bar. */
+                <span
+                  className="flex items-baseline gap-1.5"
+                  data-testid="qr-bar-price"
+                  title={t("quickRegister.estimatedPrice")}
+                >
+                  <span className="text-xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
+                  {priceWorking && (
+                    <span className="font-mono text-[11px] text-muted-foreground" dir="ltr">{priceWorking}</span>
+                  )}
+                </span>
+              ) : hasMeasure ? (
+                /* Measured, and still no price: the batch has no rate yet.
+                   Saying so beats a blank space where a figure belongs. */
+                <span className="flex items-center gap-1.5 text-[11px] text-amber-700 dark:text-amber-300" data-testid="qr-bar-norate">
+                  <AlertTriangle className="h-3.5 w-3.5" />
+                  {pickLang(language, {
+                    ku: "باچ نرخی نییە — دواتر نرخ دادەنرێت",
+                    en: "The batch has no rate yet — it is priced later",
+                    ar: "لا سعر للدفعة بعد — يُسعَّر لاحقًا",
+                    zh: "该批次尚无费率 — 稍后定价",
+                  })}
+                </span>
+              ) : null}
+            </span>
+
             <Button type="button" variant="outline" onClick={clearAllForm}>
               <RotateCcw className="h-4 w-4 ms-2" />
               {t("quickRegister.clear")}
