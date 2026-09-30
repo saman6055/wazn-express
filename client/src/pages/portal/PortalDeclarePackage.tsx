@@ -1,6 +1,8 @@
 ﻿import { useEffect, useState } from "react";
 import { useSearch } from "wouter";
 import { cleanTrackingPaste } from "@/lib/entry/cleanPaste";
+import { useLeaveGuard } from "@/hooks/useLeaveGuard";
+import { confirmAction } from "@/components/ConfirmDialog";
 import {
   looksLikeOrderNumber,
   ORDER_NUMBER_IN_TRACKING_TEXT,
@@ -86,6 +88,7 @@ export default function PortalDeclarePackage() {
    * it. Said while they are still looking at the box, not at save.
    */
   const trackingLooksLikeOrder = looksLikeOrderNumber(trackingNumber);
+
   // One list for the whole system — see FALLBACK_PLATFORMS above.
   const { data: platformAttrs } = trpc.productAttributes.list.useQuery({ type: "platform" });
   const platformOptions = (platformAttrs ?? []).filter((x: any) => x.isActive !== false).map((x: any) => x.value as string);
@@ -95,6 +98,34 @@ export default function PortalDeclarePackage() {
   const [purchaseDate, setPurchaseDate] = useState("");
   // Which declaration is one tap away from being cancelled.
   const [confirmCancelId, setConfirmCancelId] = useState<number | null>(null);
+
+  /**
+   * Back does not throw the form away.
+   *
+   * The owner, 2026-09-30: «دوگمەی گەڕانەوە ... بنووسرێ دڵنیایت دەتەوێ
+   * دەرچیت؟ کە ئۆکەی کرد ئینجا بڕوات». On a phone Back is a swipe from the
+   * edge of the screen, pressed by accident more than any other control —
+   * and here it costs a number copied off a courier's slip, a photograph of
+   * the parcel and a note.
+   *
+   * Only while there is something to lose: an empty form lets Back straight
+   * through, because then it costs nothing.
+   */
+  const hasSomethingTyped = Boolean(
+    trackingNumber.trim() || platform || images.length > 0 || notes.trim() || purchaseDate,
+  );
+  useLeaveGuard(hasSomethingTyped, () =>
+    confirmAction({
+      message: pickLang(language, {
+        ku: "دڵنیایت دەتەوێت دەرچیت؟ ئەوەی نووسیوتە پاشەکەوت نەکراوە.",
+        en: "Leave this screen? What you have typed is not saved.",
+        ar: "هل تريد الخروج؟ ما كتبته لم يُحفظ.",
+        zh: "要离开吗？您填写的内容尚未保存。",
+      }),
+      confirmLabel: pickLang(language, { ku: "دەرچوون", en: "Leave", ar: "خروج", zh: "离开" }),
+      cancelLabel: pickLang(language, { ku: "مانەوە", en: "Stay", ar: "البقاء", zh: "留下" }),
+    }),
+  );
 
   const { data: declared, isLoading, isError, isFetching, refetch } = trpc.customerPortal.getMyDeclaredPackages.useQuery(undefined, PORTAL_LIVE_QUERY);
 
