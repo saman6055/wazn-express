@@ -11,10 +11,19 @@
  * cost-purchase (commission) forms; pure so it can be unit-tested.
  */
 
+import { looksLikeOrderNumber } from "./orderNumberPlatform";
+
 /** Anything shorter than this is suspicious for either box. */
 export const SHORT_ID_MIN = 8;
 
-/** A pure-digit run at least this long smells like a shop order number. */
+/**
+ * A pure-digit run at least this long smells like a shop order number.
+ *
+ * Kept exported for the screens that still name it, but the judgement itself
+ * moved to orderNumberPlatform on 2026-09-30: Pinduoduo writes its order
+ * numbers with a dash in the middle (260930-434834019861958), which a
+ * digits-only rule could not see at all.
+ */
 export const ORDER_LIKE_DIGITS = 16;
 
 export type OrderTrackingWarning =
@@ -30,8 +39,8 @@ export type OrderTrackingWarning =
 /** SF1234567890123 / YT7565…-style courier codes: letters, then digits. */
 const COURIER_SHAPE = /^[A-Za-z]{2,4}\d{8,}$/;
 
-/** A shop order id shape: nothing but digits, and a lot of them. */
-const orderShape = new RegExp(`^\\d{${ORDER_LIKE_DIGITS},}$`);
+/* The shop-order shapes live in orderNumberPlatform: one definition, so a
+   number the portal warns about is a number these forms warn about too. */
 
 export function orderTrackingWarnings(
   orderNumber: string | null | undefined,
@@ -49,7 +58,7 @@ export function orderTrackingWarnings(
   if (!swapped && order && COURIER_SHAPE.test(order)) {
     warnings.push("orderLooksLikeTracking");
   }
-  if (!swapped && tracking && orderShape.test(tracking)) {
+  if (!swapped && tracking && looksLikeOrderNumber(tracking)) {
     warnings.push("trackingLooksLikeOrder");
   }
 

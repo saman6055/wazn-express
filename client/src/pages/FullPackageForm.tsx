@@ -1,5 +1,6 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
 import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orderTrackingSanity";
+import { platformFromOrderNumber } from "@shared/orderNumberPlatform";
 import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
 import { useLocation, useParams } from "wouter";
 import { trpc } from "@/lib/trpc";
@@ -390,6 +391,12 @@ export default function FullPackageForm() {
   });
   // Swapped or oddly short numbers are said under the field they are
   // about, the moment both are on screen — not held back for the save.
+  /** The shops this order number could belong to — a hint, never a change. */
+  const platformHint = useMemo(
+    () => platformFromOrderNumber(formData.orderNumber).candidates,
+    [formData.orderNumber],
+  );
+
   const idWarnings = useMemo(
     () => orderTrackingWarnings(formData.orderNumber, formData.trackingNumber),
     [formData.orderNumber, formData.trackingNumber],
@@ -934,12 +941,40 @@ export default function FullPackageForm() {
                     onChange={(v) => setFormData((p) => ({ ...p, platform: v }))}
                     className={cn(filledCls(formData.platform))}
                   />
+                  {/* Two shops, one shape. Naming both is a short question;
+                      choosing one would be wrong half the time. */}
+                  {platformHint.length > 1 && (
+                    <p className="flex items-center gap-1 text-[11px] text-sky-600 dark:text-sky-300">
+                      {pickLang(language, {
+                        ku: `ئەم ژمارەیە لە ${platformHint.join(" یان ")} دەچێت`,
+                        en: `This number looks like ${platformHint.join(" or ")}`,
+                        ar: `هذا الرقم يشبه ${platformHint.join(" أو ")}`,
+                        zh: `这个号码像 ${platformHint.join(" 或 ")}`,
+                      })}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-1.5">
                   <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر *", en: "Order number *", ar: "رقم الطلب *", zh: "订单号 *" })}</Label>
                   <Input
                     value={formData.orderNumber}
-                    onChange={(e) => setFormData({ ...formData, orderNumber: e.target.value })}
+                    onChange={(e) => {
+                      /*
+                        The number names its own shop (owner, 2026-09-30).
+                        A confident reading wins over whatever was in the box,
+                        the platform remembered from the last order included:
+                        that is a guess about this parcel and this is evidence.
+                        Taobao and 1688 wear the same number, so neither is
+                        chosen — the hint below names both.
+                      */
+                      const orderNumber = e.target.value;
+                      const guess = platformFromOrderNumber(orderNumber);
+                      setFormData((p) => ({
+                        ...p,
+                        orderNumber,
+                        platform: guess.platform ?? p.platform,
+                      }));
+                    }}
                     placeholder={pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单号" })}
                     className={cn("h-10", orderNumberCheck.taken ? "border-red-400 ring-1 ring-red-300" : filledCls(formData.orderNumber))}
                     dir="ltr"

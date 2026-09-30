@@ -16,8 +16,11 @@ import { cn } from "@/lib/utils";
  * the parcel. That is the single most important moment in the funnel and it
  * was an empty state.
  *
- * Three steps, their own code ready to copy, and one tap to register a
- * tracking number.
+ * It began as three steps — copy the code, give it to the seller, register
+ * the tracking. The owner cut it to one on 2026-09-30: «خاڵەکانی تر لابەرە،
+ * تەنها تۆمارکردنی ژمارەی تراکینگ بهێڵەوە». The code is still here, in the
+ * box below, ready to copy; what a new customer has to *do* is one thing, and
+ * a list of three made it look like three.
  */
 export function PortalWelcomeCard({
   customerCode,
@@ -31,18 +34,6 @@ export function PortalWelcomeCard({
   const { language } = useTranslation();
 
   const steps = [
-    {
-      ku: "کۆدەکەت کۆپی بکە",
-      en: "Copy your customer code",
-      ar: "انسخ رمز العميل الخاص بك",
-      zh: "复制您的客户编号",
-    },
-    {
-      ku: "لە کاتی کڕیندا بیدە بە فرۆشیارەکە",
-      en: "Give it to the seller when you buy",
-      ar: "أعطه للبائع عند الشراء",
-      zh: "购买时把编号给卖家",
-    },
     {
       ku: "ژمارەی تراکینگەکە لێرە تۆمار بکە",
       en: "Register the tracking number here",
@@ -70,10 +61,10 @@ export function PortalWelcomeCard({
     >
       <p className={cn("text-base font-bold", isDark ? "text-white" : "text-emerald-900 dark:text-emerald-100")}>
         {pickLang(language, {
-          ku: "بەخێربێیت! بەم سێ هەنگاوە دەست پێبکە",
+          ku: "بەخێربێیت! بەم هەنگاوە دەست پێبکە",
           en: "Welcome — here's how to start",
-          ar: "أهلاً بك — ابدأ بهذه الخطوات الثلاث",
-          zh: "欢迎 — 三步开始使用",
+          ar: "أهلاً بك — ابدأ من هنا",
+          zh: "欢迎 — 从这里开始",
         })}
       </p>
 

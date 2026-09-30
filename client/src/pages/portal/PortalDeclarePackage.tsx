@@ -1,6 +1,11 @@
 ﻿import { useEffect, useState } from "react";
 import { useSearch } from "wouter";
 import { cleanTrackingPaste } from "@/lib/entry/cleanPaste";
+import {
+  looksLikeOrderNumber,
+  ORDER_NUMBER_IN_TRACKING_TEXT,
+  platformFromOrderNumber,
+} from "@shared/orderNumberPlatform";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { PortalLayout } from "@/components/portal/PortalLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
@@ -32,6 +37,7 @@ import {
   CheckCircle2,
   Clock,
   Package,
+  AlertTriangle,
   StickyNote,
   CalendarDays,
   XCircle,
@@ -69,6 +75,17 @@ export default function PortalDeclarePackage() {
     if (trackingFromLink) setTrackingNumber(trackingFromLink);
   }, [trackingFromLink]);
   const [platform, setPlatform] = useState<string>("");
+
+  /**
+   * The shop's order number, typed where the courier's number belongs.
+   *
+   * The owner, 2026-09-30: «ئەگەر کەسێ لە جیاتی تراک نەمبەر، ئۆردەر نەمبەری
+   * داخڵ کرد، ئاگاداری بکەوە.» It is the one mistake here that cannot be put
+   * right afterwards: nothing ever arrives under that number, so the parcel
+   * reaches the depot unclaimed while the customer is certain they registered
+   * it. Said while they are still looking at the box, not at save.
+   */
+  const trackingLooksLikeOrder = looksLikeOrderNumber(trackingNumber);
   // One list for the whole system — see FALLBACK_PLATFORMS above.
   const { data: platformAttrs } = trpc.productAttributes.list.useQuery({ type: "platform" });
   const platformOptions = (platformAttrs ?? []).filter((x: any) => x.isActive !== false).map((x: any) => x.value as string);
@@ -165,13 +182,30 @@ export default function PortalDeclarePackage() {
               onKeyDown={onEnter(handleSubmit)}
               enterKeyHint="go"
               value={trackingNumber}
-              onChange={(e) => setTrackingNumber(e.target.value)}
+              onChange={(e) => {
+                const value = e.target.value;
+                setTrackingNumber(value);
+                // Even a number in the wrong box says which shop it came
+                // from, and the customer should not have to say it twice.
+                const guess = platformFromOrderNumber(value).platform;
+                if (guess) setPlatform(guess);
+              }}
               placeholder={label({ ku: "بۆ نموونە: 78123456789", en: "e.g. 78123456789", ar: "مثال: 78123456789", zh: "例如：78123456789" })}
               className="h-12 font-mono text-base"
               dir="ltr"
               inputMode="text"
               autoFocus
             />
+            {trackingLooksLikeOrder && (
+              <p
+                className="flex items-start gap-1.5 rounded-lg bg-amber-50 px-2.5 py-2 text-[12px] leading-relaxed text-amber-800 dark:bg-amber-950/40 dark:text-amber-200"
+                role="alert"
+                data-testid="portal-declare-order-number"
+              >
+                <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {label(ORDER_NUMBER_IN_TRACKING_TEXT)}
+              </p>
+            )}
           </div>
 
           {/* Optional fields divider */}
