@@ -2481,21 +2481,36 @@ export default function QuickRegister() {
             <span className="me-auto flex flex-wrap items-center gap-x-4 gap-y-2">
               {!isMobile && (
                 <span className="flex items-center gap-2">
-                  {/* Plainly "weight": the step heading carries its number and
-                      its unit ("3. کێش (kg)"), which on a bar that already
-                      prints kg beside the box would say it twice. */}
+                  {/* The step's number, without its unit. The heading in the
+                      locales is "3. کێش (kg)", and beside a box that already
+                      prints kg that says it twice — but dropping the number
+                      with it left the screen counting 1, 2, 4. */}
                   <span className="text-xs text-muted-foreground">
-                    {pickLang(language, { ku: "کێش", en: "Weight", ar: "الوزن", zh: "重量" })}
+                    {pickLang(language, { ku: "3. کێش", en: "3. Weight", ar: "3. الوزن", zh: "3. 重量" })}
                   </span>
+                  {/*
+                    No stepper pill on the bar. It reserves 56px of padding on
+                    the right of a 96px box, which left the number 40px to sit
+                    in and clipped "0.00" to "0.0" — the owner, 2026-09-30:
+                    «زۆر ڕێک نیە، نازانم بۆ». Nudging a weight by 0.1 is not
+                    how a parcel is weighed either: the figure is read off the
+                    scales and typed. The phone's card keeps its stepper,
+                    where there is room for it.
+                  */}
                   <Input
                     ref={weightRef}
                     type="number"
                     step="0.01"
+                    stepper={false}
                     placeholder="0.00"
                     value={weightKg}
                     onChange={(e) => setWeightKg(e.target.value)}
                     className={cn(
-                      "h-10 w-24 text-lg font-mono font-bold text-center transition-shadow",
+                      // `md:text-lg` as well as `text-lg`: the input primitive
+                      // ends its own classes with `md:text-sm`, which a plain
+                      // `text-lg` does not override on a desktop — the box was
+                      // rendering at 14px in a bar sized for 18.
+                      "h-10 w-28 text-lg md:text-lg font-mono font-bold text-center transition-shadow",
                       weightGlow && "ring-4 ring-emerald-400/70 border-emerald-500",
                     )}
                     dir="ltr"
