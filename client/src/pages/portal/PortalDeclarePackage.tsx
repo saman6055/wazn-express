@@ -169,7 +169,7 @@ export default function PortalDeclarePackage() {
         </div>
 
         {/* Form card */}
-        <div className={cn("rounded-2xl border p-4 space-y-4", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60")}>
+        <div className={cn("rounded-2xl border p-4 space-y-4", "bg-card border-border")}>
           {/* Tracking (required) */}
           <div className="space-y-1.5">
             <Label className="flex items-center gap-1.5 text-sm font-semibold">
@@ -304,7 +304,7 @@ export default function PortalDeclarePackage() {
               const StIcon = st.icon;
               const platformLabel = d.platform || null;
               return (
-                <div key={d.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60")}>
+                <div key={d.id} className={cn("flex items-center gap-3 rounded-2xl border p-3", "bg-card border-border")}>
                   <PhotoStack
                     photos={d.productImages ?? []}
                     className="h-14 w-14 rounded-xl border"

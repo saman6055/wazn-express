@@ -96,7 +96,7 @@ export function PortalWelcomeCard({
             isDark ? "border-emerald-700 bg-emerald-900/40" : "border-emerald-300 bg-white/70 dark:border-emerald-700 dark:bg-emerald-900/40",
           )}
         >
-          <span className={cn("text-xs", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
+          <span className={cn("text-xs", "text-emerald-700 dark:text-emerald-300")}>
             {pickLang(language, { ku: "کۆدی تۆ", en: "Your code", ar: "رمزك", zh: "您的编号" })}
           </span>
           <span className="flex items-center gap-2">
@@ -106,7 +106,7 @@ export function PortalWelcomeCard({
             >
               {customerCode}
             </span>
-            <Copy className={cn("h-4 w-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
+            <Copy className={cn("h-4 w-4", "text-emerald-600 dark:text-emerald-400")} />
           </span>
         </button>
       )}

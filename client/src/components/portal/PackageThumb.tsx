@@ -135,7 +135,7 @@ export function PackageThumb({
     <div
       className={cn(
         "relative flex shrink-0 items-center justify-center overflow-visible rounded-xl",
-        isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40",
+        "bg-muted",
       )}
       style={{ width: size, height: size }}
     >
@@ -150,7 +150,7 @@ export function PackageThumb({
           }}
         />
       ) : (
-        <Box className={cn(isDark ? "text-slate-400" : "text-slate-500")} style={{ width: size * 0.5, height: size * 0.5 }} />
+        <Box className={cn("text-muted-foreground")} style={{ width: size * 0.5, height: size * 0.5 }} />
       )}
       {/* How many pictures exist of this parcel. Without it a customer has no
           way to know there is anything behind the one they can see. */}

@@ -214,7 +214,7 @@ const { t, language } = useLanguage();
   const getTransactionColor = (type: string, isDark: boolean) => {
     if (isCreditTx(type)) {
       return { 
-        bg: isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40", 
+        bg: "bg-emerald-100 dark:bg-emerald-950/40", 
         icon: "text-emerald-500", 
         amount: "text-emerald-500" 
       };
@@ -384,13 +384,13 @@ const { t, language } = useLanguage();
       <div className="px-4 -mt-16 relative z-10">
         <div className={cn(
           "rounded-3xl shadow-xl overflow-hidden",
-          isDark ? "bg-slate-800 shadow-slate-900/50" : "bg-white shadow-slate-200/50"
+          "bg-card shadow-md"
         )}>
           {/* Balance Display */}
           <div className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className={cn("text-sm font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
+                <p className={cn("text-sm font-medium", "text-muted-foreground")}>
                   {pickLang(language, { ku: "باڵانسی ئێستا", en: "Current Balance", ar: "الرصيد الحالي", zh: "当前余额" })}
                 </p>
                 {summaryLoading ? (
@@ -407,8 +407,8 @@ const { t, language } = useLanguage();
               <div className={cn(
                 "w-16 h-16 rounded-2xl flex items-center justify-center",
                 isDebt 
-                  ? isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40" 
-                  : isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
+                  ? "bg-red-100 dark:bg-red-950/40" 
+                  : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 {isDebt ? (
                   <TrendingDown className={cn("w-8 h-8", isDebt ? "text-red-500 dark:text-red-400" : "text-emerald-500 dark:text-emerald-400")} />
@@ -428,7 +428,7 @@ const { t, language } = useLanguage();
                 ? isDark ? "bg-red-900/30" : "bg-red-50 dark:bg-red-950/40"
                 : balanceKind === "credit"
                   ? isDark ? "bg-sky-900/30" : "bg-sky-50 dark:bg-sky-950/40"
-                  : isDark ? "bg-emerald-900/30" : "bg-emerald-50 dark:bg-emerald-950/40"
+                  : "bg-emerald-50 dark:bg-emerald-950/40"
             )}>
               {balanceKind === "debt" ? (
                 <AlertCircle className="w-4 h-4 text-red-500 dark:text-red-400" />
@@ -453,22 +453,22 @@ const { t, language } = useLanguage();
           {/* Stats Row */}
           <div className={cn(
             "grid grid-cols-3 border-t",
-            isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
+            "border-border"
           )}>
-            <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
-              <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
+            <div className={cn("p-4 text-center border-r", "border-border")}>
+              <p className={cn("text-xs mb-1", "text-muted-foreground")}>
                 {pickLang(language, { ku: "سنووری قەرز", en: "Credit Limit", ar: "حد الائتمان", zh: "信用额度" })}
               </p>
               {summaryLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
               ) : (
-                <p className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                <p className={cn("text-lg font-bold", "text-foreground")}>
                   {formatCurrency(summary?.creditLimitUsd || 0)}
                 </p>
               )}
             </div>
-            <div className={cn("p-4 text-center border-r", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
-              <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
+            <div className={cn("p-4 text-center border-r", "border-border")}>
+              <p className={cn("text-xs mb-1", "text-muted-foreground")}>
                 {pickLang(language, { ku: "کۆی پارەدان", en: "Total Paid", ar: "إجمالي المدفوع", zh: "已付总额" })}
               </p>
               {summaryLoading ? (
@@ -480,13 +480,13 @@ const { t, language } = useLanguage();
               )}
             </div>
             <div className="p-4 text-center">
-              <p className={cn("text-xs mb-1", isDark ? "text-slate-500" : "text-slate-500")}>
+              <p className={cn("text-xs mb-1", "text-muted-foreground")}>
                 {pickLang(language, { ku: "ئەم مانگە", en: "This Month", ar: "هذا الشهر", zh: "本月" })}
               </p>
               {monthlyLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
               ) : (
-                <p className={cn("text-lg font-bold tabular-nums", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                <p className={cn("text-lg font-bold tabular-nums", "text-foreground")}>
                   {monthlyStats.count} {pickLang(language, { ku: "مامەڵە", en: "txns", ar: "معاملة", zh: "笔" })}
                 </p>
               )}
@@ -499,7 +499,7 @@ const { t, language } = useLanguage();
       <div className="px-4 mt-6">
         <div className={cn(
           "flex rounded-2xl p-1.5",
-          isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40"
+          "bg-muted"
         )}>
           {tabs.map((tab) => (
             <button
@@ -543,15 +543,15 @@ const { t, language } = useLanguage();
             <div className="grid grid-cols-2 gap-4">
               <div className={cn(
                 "rounded-2xl p-4",
-                isDark ? "bg-slate-800" : "bg-white shadow-sm"
+                "bg-card shadow-sm"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
-                  isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
+                  "bg-emerald-100 dark:bg-emerald-950/40"
                 )}>
                   <ArrowDownLeft className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
                 </div>
-                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                <p className={cn("text-xs", "text-muted-foreground")}>
                   {pickLang(language, { ku: "پارەدانی ئەم مانگە", en: "Payments This Month", ar: "مدفوعات هذا الشهر", zh: "本月付款" })}
                 </p>
                 <p className="text-xl font-bold text-emerald-500 dark:text-emerald-400 mt-1">
@@ -560,15 +560,15 @@ const { t, language } = useLanguage();
               </div>
               <div className={cn(
                 "rounded-2xl p-4",
-                isDark ? "bg-slate-800" : "bg-white shadow-sm"
+                "bg-card shadow-sm"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center mb-3",
-                  isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40"
+                  "bg-red-100 dark:bg-red-950/40"
                 )}>
                   <ArrowUpRight className="w-5 h-5 text-red-500 dark:text-red-400" />
                 </div>
-                <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                <p className={cn("text-xs", "text-muted-foreground")}>
                   {pickLang(language, { ku: "کرێی ئەم مانگە", en: "Charges This Month", ar: "رسوم هذا الشهر", zh: "本月费用" })}
                 </p>
                 <p className="text-xl font-bold text-red-500 dark:text-red-400 mt-1">
@@ -580,13 +580,13 @@ const { t, language } = useLanguage();
             {/* Chart */}
             <div className={cn(
               "rounded-2xl p-4",
-              isDark ? "bg-slate-800" : "bg-white shadow-sm"
+              "bg-card shadow-sm"
             )}>
               <div className="flex items-center justify-between mb-4">
-                <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                <h3 className={cn("font-semibold", "text-foreground")}>
                   {pickLang(language, { ku: "چارتی 6 مانگی ڕابردوو", en: "Last 6 Months", ar: "آخر 6 أشهر", zh: "近 6 个月" })}
                 </h3>
-                <BarChart3 className={cn("w-5 h-5", isDark ? "text-slate-500" : "text-slate-400")} />
+                <BarChart3 className={cn("w-5 h-5", "text-muted-foreground")} />
               </div>
               
               {/* Simple Bar Chart */}
@@ -605,7 +605,7 @@ const { t, language } = useLanguage();
                         style={{ height: `${(data.charges / maxChartValue) * 100}%`, minHeight: data.charges > 0 ? '4px' : '0' }}
                       />
                     </div>
-                    <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+                    <span className={cn("text-xs", "text-muted-foreground")}>
                       {data.month}
                     </span>
                   </div>
@@ -616,13 +616,13 @@ const { t, language } = useLanguage();
               <div className="flex items-center justify-center gap-6 mt-4">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-emerald-500" />
-                  <span className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                  <span className={cn("text-xs", "text-muted-foreground")}>
                     {pickLang(language, { ku: "پارەدان", en: "Payments", ar: "المدفوعات", zh: "付款" })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-red-500" />
-                  <span className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                  <span className={cn("text-xs", "text-muted-foreground")}>
                     {pickLang(language, { ku: "کرێ", en: "Charges", ar: "الرسوم", zh: "费用" })}
                   </span>
                 </div>
@@ -632,10 +632,10 @@ const { t, language } = useLanguage();
             {/* Recent Transactions Preview */}
             <div className={cn(
               "rounded-2xl overflow-hidden",
-              isDark ? "bg-slate-800" : "bg-white shadow-sm"
+              "bg-card shadow-sm"
             )}>
               <div className="flex items-center justify-between p-4 border-b border-slate-100 dark:border-slate-700">
-                <h3 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                <h3 className={cn("font-semibold", "text-foreground")}>
                   {pickLang(language, { ku: "دوایین مامەڵەکان", en: "Recent Transactions", ar: "أحدث المعاملات", zh: "最近交易" })}
                 </h3>
                 <button 
@@ -658,7 +658,7 @@ const { t, language } = useLanguage();
                     <PortalErrorState compact onRetry={() => void refetchTransactions()} isRetrying={transactionsFetching} />
                   </div>
                 ) : !transactions?.length ? (
-                  <p className={cn("p-6 text-center text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+                  <p className={cn("p-6 text-center text-sm", "text-muted-foreground")}>
                     {pickLang(language, { ku: "هێشتا هیچ مامەڵەیەک نییە", en: "No transactions yet", ar: "لا توجد معاملات بعد", zh: "暂无交易记录" })}
                   </p>
                 ) : transactions.slice(0, 3).map((tx) => {
@@ -669,10 +669,10 @@ const { t, language } = useLanguage();
                         <span className={colors.icon}>{getTransactionIcon(tx.transactionType)}</span>
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={cn("font-medium text-sm", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                        <p className={cn("font-medium text-sm", "text-foreground")}>
                           {getTransactionTypeName(tx.transactionType)}
                         </p>
-                        <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+                        <p className={cn("text-xs", "text-muted-foreground")}>
                           <bdi dir="ltr">{formatPortalDate(tx.createdAt, language)}</bdi>
                         </p>
                       </div>
@@ -845,15 +845,15 @@ const { t, language } = useLanguage();
             ) : !shownTransactions || shownTransactions.length === 0 ? (
               <div className={cn(
                 "rounded-2xl p-10 text-center",
-                isDark ? "bg-slate-800" : "bg-white shadow-sm"
+                "bg-card shadow-sm"
               )}>
                 <div className={cn(
                   "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
-                  isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
+                  "bg-muted"
                 )}>
-                  <Receipt className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
+                  <Receipt className={cn("w-8 h-8", "text-muted-foreground")} />
                 </div>
-                <p className={cn("font-medium", isDark ? "text-slate-400" : "text-slate-600")}>
+                <p className={cn("font-medium", "text-muted-foreground")}>
                   {pickLang(language, { ku: "هیچ مامەڵەیەک نییە", en: "No transactions yet", ar: "لا توجد معاملات بعد", zh: "暂无交易记录" })}
                 </p>
               </div>
@@ -880,10 +880,10 @@ const { t, language } = useLanguage();
                         </div>
                         
                         <div className="flex-1 min-w-0">
-                          <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                          <p className={cn("font-semibold", "text-foreground")}>
                             {getTransactionTypeName(tx.transactionType)}
                           </p>
-                          <p className={cn("text-sm", isDark ? "text-slate-500" : "text-slate-500")}>
+                          <p className={cn("text-sm", "text-muted-foreground")}>
                             <bdi dir="ltr">{formatPortalDate(tx.createdAt, language)}</bdi>
                           </p>
                         </div>
@@ -907,26 +907,24 @@ const { t, language } = useLanguage();
                               )}
                               title={pickLang(language, { ku: "بینینی وەسڵ", en: "View Invoice", ar: "عرض الفاتورة", zh: "查看发票" })}
                             >
-                              <FileText className={cn("w-4 h-4", isDark ? "text-blue-400" : "text-blue-600")} />
+                              <FileText className={cn("w-4 h-4", "text-blue-600 dark:text-blue-400")} />
                             </button>
                           )}
                           <button
                             onClick={(e) => { e.stopPropagation(); setSelectedTransaction(tx.id); }}
                             className={cn(
                               "w-10 h-10 rounded-xl flex items-center justify-center transition-colors",
-                              isDark
-                                ? "bg-slate-700 hover:bg-slate-600"
-                                : "bg-slate-100 dark:bg-slate-950/40 hover:bg-slate-200"
+                              "bg-muted hover:bg-muted/70"
                             )}
                             title={pickLang(language, { ku: "داگرتنی وەسڵ", en: "Download Receipt", ar: "تحميل الإيصال", zh: "下载收据" })}
                           >
-                            <Download className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-600")} />
+                            <Download className={cn("w-4 h-4", "text-muted-foreground")} />
                           </button>
                         </div>
                       </div>
                       
                       {tx.description && (
-                        <p className={cn("text-sm mt-2 ps-16", isDark ? "text-slate-500" : "text-slate-500")}>
+                        <p className={cn("text-sm mt-2 ps-16", "text-muted-foreground")}>
                           {describeLedgerRef(tx.description, language, getTransactionTypeName(String(tx.transactionType ?? "")))}
                         </p>
                       )}
@@ -943,9 +941,9 @@ const { t, language } = useLanguage();
 
       {/* Receipt Dialog */}
       <Dialog open={!!selectedTransaction} onOpenChange={() => setSelectedTransaction(null)}>
-        <DialogContent className={cn("max-w-sm", isDark ? "bg-slate-800 border-slate-700" : "")}>
+        <DialogContent className={cn("max-w-sm", "bg-card border-border")}>
           <DialogHeader>
-            <DialogTitle className={cn("flex items-center gap-2", isDark ? "text-white" : "")}>
+            <DialogTitle className={cn("flex items-center gap-2", "text-foreground")}>
               <Receipt className="w-5 h-5" />
               {pickLang(language, { ku: "وەسڵ", en: "Receipt", ar: "إيصال", zh: "收据" })}
             </DialogTitle>
@@ -959,8 +957,8 @@ const { t, language } = useLanguage();
             </div>
           ) : receiptData && (
             <div className="space-y-4">
-              <div className={cn("text-center py-4 border-b", isDark ? "border-slate-700" : "")}>
-                <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+              <div className={cn("text-center py-4 border-b", "border-border")}>
+                <p className={cn("text-sm", "text-muted-foreground")}>
                   {pickLang(language, { ku: "بڕ", en: "Amount", ar: "المبلغ", zh: "金额" })}
                 </p>
                 <p className={cn(
@@ -976,26 +974,26 @@ const { t, language } = useLanguage();
               
               <div className="space-y-2 text-sm">
                 <div className="flex justify-between">
-                  <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                  <span className={"text-muted-foreground"}>
                     {pickLang(language, { ku: "ژمارەی وەسڵ", en: "Receipt #", ar: "رقم الإيصال", zh: "收据号" })}
                   </span>
-                  <span className={cn("font-medium", isDark ? "text-white" : "")}>
+                  <span className={cn("font-medium", "text-foreground")}>
                     {receiptData.transaction.transactionNumber}
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                  <span className={"text-muted-foreground"}>
                     {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                   </span>
-                  <span className={cn("font-medium", isDark ? "text-white" : "")}>
+                  <span className={cn("font-medium", "text-foreground")}>
                     <bdi dir="ltr">{formatPortalDate(receiptData.transaction.createdAt, language)}</bdi>
                   </span>
                 </div>
                 <div className="flex justify-between">
-                  <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                  <span className={"text-muted-foreground"}>
                     {pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}
                   </span>
-                  <span className={cn("font-medium", isDark ? "text-white" : "")}>
+                  <span className={cn("font-medium", "text-foreground")}>
                     {getTransactionTypeName(receiptData.transaction.transactionType)}
                   </span>
                 </div>
@@ -1012,7 +1010,7 @@ const { t, language } = useLanguage();
 
       {/* Invoice Detail Dialog */}
       <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
-        <DialogContent className={cn("max-w-md max-h-[90vh] overflow-y-auto", isDark ? "bg-slate-800 border-slate-700" : "")}>
+        <DialogContent className={cn("max-w-md max-h-[90vh] overflow-y-auto", "bg-card border-border")}>
           {(() => {
             const invoice = invoices?.find(inv => inv.id === selectedInvoice) as any;
             if (!invoice) return null;
@@ -1180,7 +1178,7 @@ const { t, language } = useLanguage();
             return (
               <>
                 <DialogHeader>
-                  <DialogTitle className={cn("flex items-center gap-2", isDark ? "text-white" : "")}>
+                  <DialogTitle className={cn("flex items-center gap-2", "text-foreground")}>
                     <FileText className="w-5 h-5" />
                     {pickLang(language, { ku: "وەسڵ", en: "Invoice", ar: "فاتورة", zh: "发票" })} <bdi dir="ltr">{invoice.invoiceNumber}</bdi>
                   </DialogTitle>
@@ -1209,11 +1207,11 @@ const { t, language } = useLanguage();
                   })()}
                   
                   {/* Amount */}
-                  <div className={cn("text-center py-4 border-b", isDark ? "border-slate-700" : "")}>
-                    <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+                  <div className={cn("text-center py-4 border-b", "border-border")}>
+                    <p className={cn("text-sm", "text-muted-foreground")}>
                       {pickLang(language, { ku: "کۆی گشتی", en: "Total Amount", ar: "المبلغ الإجمالي", zh: "总金额" })}
                     </p>
-                    <p className={cn("text-4xl font-bold mt-1", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                    <p className={cn("text-4xl font-bold mt-1", "text-foreground")}>
                       {fmtUsd(invoice.totalUsd)}
                     </p>
                   </div>
@@ -1221,37 +1219,37 @@ const { t, language } = useLanguage();
                   {/* Details */}
                   <div className="space-y-3 text-sm">
                     <div className="flex justify-between">
-                      <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                      <span className={"text-muted-foreground"}>
                         <Hash className="w-4 h-4 inline me-1" />
                         {pickLang(language, { ku: "ژمارەی وەسڵ", en: "Invoice Number", ar: "رقم الفاتورة", zh: "发票号" })}
                       </span>
-                      <span className={cn("font-medium", isDark ? "text-white" : "")}>
+                      <span className={cn("font-medium", "text-foreground")}>
                         <bdi dir="ltr">{invoice.invoiceNumber}</bdi>
                       </span>
                     </div>
                     <div className="flex justify-between">
-                      <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                      <span className={"text-muted-foreground"}>
                         <Calendar className="w-4 h-4 inline me-1" />
                         {pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}
                       </span>
-                      <span className={cn("font-medium", isDark ? "text-white" : "")}>
+                      <span className={cn("font-medium", "text-foreground")}>
                         <bdi dir="ltr">{formatPortalDate(invoice.createdAt, language)}</bdi>
                       </span>
                     </div>
                     {invoice.dueDate && (
                       <div className="flex justify-between">
-                        <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                        <span className={"text-muted-foreground"}>
                           <Clock className="w-4 h-4 inline me-1" />
                           {pickLang(language, { ku: "بەرواری دوایی", en: "Due Date", ar: "تاريخ الاستحقاق", zh: "到期日" })}
                         </span>
-                        <span className={cn("font-medium", isDark ? "text-white" : "")}>
+                        <span className={cn("font-medium", "text-foreground")}>
                           <bdi dir="ltr">{formatPortalDate(invoice.dueDate, language)}</bdi>
                         </span>
                       </div>
                     )}
                     {invoice.paidAt && (
                       <div className="flex justify-between">
-                        <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                        <span className={"text-muted-foreground"}>
                           <CheckCircle2 className="w-4 h-4 inline me-1" />
                           {pickLang(language, { ku: "بەرواری پارەدان", en: "Paid On", ar: "تاريخ الدفع", zh: "支付日期" })}
                         </span>
@@ -1268,8 +1266,8 @@ const { t, language } = useLanguage();
                       we render with `whitespace-pre-line` and a bordered card per
                       row to keep it scannable. */}
                   {invoice.lineItems && invoice.lineItems.length > 0 && (
-                    <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50 dark:bg-slate-950/40")}>
-                      <p className={cn("text-xs font-medium mb-2", isDark ? "text-slate-400" : "text-slate-500")}>
+                    <div className={cn("rounded-xl p-3", "bg-muted")}>
+                      <p className={cn("text-xs font-medium mb-2", "text-muted-foreground")}>
                         {pickLang(language, { ku: "بەندەکان", en: "Items", ar: "البنود", zh: "项目" })}
                       </p>
                       <div className="space-y-2">
@@ -1285,13 +1283,13 @@ const { t, language } = useLanguage();
                           >
                             <span className={cn(
                               "whitespace-pre-line leading-relaxed flex-1 min-w-0",
-                              isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300",
+                              "text-foreground",
                             )}>
                               {describeLedgerRef(item.description, language, pickLang(language, { ku: "بڕگە", en: "Item", ar: "بند", zh: "项目" }))}
                             </span>
                             <span className={cn(
                               "font-mono font-semibold text-sm shrink-0",
-                              isDark ? "text-white" : "text-slate-900 dark:text-slate-200",
+                              "text-foreground",
                             )}>
                               {fmtUsd(item.total)}
                             </span>
@@ -1303,13 +1301,13 @@ const { t, language } = useLanguage();
 
                   {/* Notes */}
                   {invoice.notes && (
-                    <div className={cn("rounded-xl p-3", isDark ? "bg-slate-700" : "bg-slate-50 dark:bg-slate-950/40")}>
-                      <p className={cn("text-xs font-medium mb-1", isDark ? "text-slate-400" : "text-slate-500")}>
+                    <div className={cn("rounded-xl p-3", "bg-muted")}>
+                      <p className={cn("text-xs font-medium mb-1", "text-muted-foreground")}>
                         {pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}
                       </p>
                       <p className={cn(
                         "text-sm whitespace-pre-line leading-relaxed",
-                        isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300",
+                        "text-foreground",
                       )}>
                         {invoice.notes}
                       </p>

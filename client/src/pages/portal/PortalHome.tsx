@@ -78,8 +78,8 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
     return (
       <div className="px-4 mt-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Megaphone className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")} />
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+          <Megaphone className={cn("w-5 h-5", "text-foreground")} />
+          <h2 className={cn("text-lg font-bold", "text-foreground")}>
             {t("portal.announcements") || "ڕاگەیاندنەکان"}
           </h2>
         </div>
@@ -93,8 +93,8 @@ function AnnouncementsSection({ isDark, language, t }: { isDark: boolean; langua
     return (
       <div className="px-4 mt-6 mb-6">
         <div className="flex items-center gap-2 mb-4">
-          <Megaphone className={cn("w-5 h-5", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")} />
-          <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+          <Megaphone className={cn("w-5 h-5", "text-foreground")} />
+          <h2 className={cn("text-lg font-bold", "text-foreground")}>
             {t("portal.announcements") || "ڕاگەیاندنەکان"}
           </h2>
         </div>
@@ -192,14 +192,14 @@ function NextStepCard({
         <div className="min-w-0 flex-1">
           <p className={cn("text-[11px] font-medium uppercase tracking-wide",
                            ready
-                             ? isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400"
-                             : isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                             ? "text-emerald-600 dark:text-emerald-400"
+                             : "text-muted-foreground")}>
             {L({ ku: "دواتر", en: "Next", ar: "التالي", zh: "接下来" })}
           </p>
           <p className={cn("font-semibold leading-snug",
                            ready
-                             ? isDark ? "text-emerald-200" : "text-emerald-800 dark:text-emerald-200"
-                             : isDark ? "text-white" : "text-slate-800 dark:text-slate-100")}>
+                             ? "text-emerald-800 dark:text-emerald-200"
+                             : "text-foreground")}>
             {L(HEADLINE[step.key] ?? HEADLINE.leaving_china!)}
           </p>
 
@@ -208,8 +208,8 @@ function NextStepCard({
           {date && (
             <p className={cn("text-sm mt-0.5",
                              step.overdue
-                               ? isDark ? "text-amber-400" : "text-amber-600 dark:text-amber-400"
-                               : isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")}>
+                               ? "text-amber-600 dark:text-amber-400"
+                               : "text-muted-foreground")}>
               {step.overdue
                 ? L({ ku: "چاوەڕوان بوو", en: "Was expected", ar: "كان متوقعًا", zh: "原预计" })
                 : L({ ku: "چاوەڕوانە", en: "Expected", ar: "متوقع", zh: "预计" })}
@@ -217,7 +217,7 @@ function NextStepCard({
             </p>
           )}
 
-          <p className={cn("text-xs mt-1 font-mono", isDark ? "text-slate-500" : "text-slate-400 dark:text-slate-500")} dir="ltr">
+          <p className={cn("text-xs mt-1 font-mono", "text-muted-foreground")} dir="ltr">
             {(shipment as any).batchCode}
           </p>
         </div>
@@ -442,12 +442,12 @@ export default function PortalHome() {
               <div className="flex items-center gap-1.5">
                 <Link href="/portal/search" aria-label={pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}>
                   <span className={cn("relative tap-44 inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
-                    <Search className={cn("h-4 w-4", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                    <Search className={cn("h-4 w-4", "text-muted-foreground")} />
                   </span>
                 </Link>
                 <Link href="/portal/notifications" aria-label={pickLang(language, { ku: "ئاگادارییەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}>
                   <span className={cn("tap-44 relative inline-flex h-9 w-9 items-center justify-center rounded-xl border", card)}>
-                    <Bell className={cn("h-4 w-4", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                    <Bell className={cn("h-4 w-4", "text-muted-foreground")} />
                     {(notificationCount ?? 0) > 0 && (
                       <span className="absolute top-1.5 end-1.5 h-2 w-2 rounded-full bg-red-500" />
                     )}
@@ -499,7 +499,7 @@ export default function PortalHome() {
                   {accountLoading ? (
                     <Skeleton className={cn("h-6 w-36", isDark && "bg-slate-700")} />
                   ) : (
-                    <h1 className={cn("truncate text-base font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                    <h1 className={cn("truncate text-base font-bold", "text-foreground")}>
                       {account?.fullName || account?.customerCode}
                     </h1>
                   )}
@@ -515,14 +515,14 @@ export default function PortalHome() {
             <div className="flex items-center gap-2">
               <Link href="/portal/search" aria-label={pickLang(language, { ku: "گەڕان", en: "Search", ar: "بحث", zh: "搜索" })}>
                 <span className={cn("inline-flex h-11 w-11 items-center justify-center rounded-xl border", card)}>
-                  <Search className={cn("h-[18px] w-[18px]", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                  <Search className={cn("h-[18px] w-[18px]", "text-muted-foreground")} />
                 </span>
               </Link>
               {/* A red dot, not a number: "something is new" is the whole
                   message. Guard with a boolean — React renders a literal 0. */}
               <Link href="/portal/notifications" aria-label={pickLang(language, { ku: "ئاگادارییەکان", en: "Notifications", ar: "الإشعارات", zh: "通知" })}>
                 <span className={cn("relative inline-flex h-11 w-11 items-center justify-center rounded-xl border", card)}>
-                  <Bell className={cn("h-[18px] w-[18px]", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")} />
+                  <Bell className={cn("h-[18px] w-[18px]", "text-muted-foreground")} />
                   {(notificationCount ?? 0) > 0 && (
                     <span className="absolute top-2 end-2 h-2 w-2 animate-pulse rounded-full bg-red-500" />
                   )}
@@ -591,10 +591,10 @@ export default function PortalHome() {
               )}>
                 <div className="flex items-center justify-between gap-3">
                   <div className="min-w-0">
-                    <p className={cn("text-xs", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")}>
+                    <p className={cn("text-xs", "text-amber-700 dark:text-amber-300")}>
                       {t("portal.outstandingBalance")}
                     </p>
-                    <p dir="ltr" className={cn("text-2xl font-bold tabular-nums", isDark ? "text-amber-400" : "text-amber-600 dark:text-amber-400")}>
+                    <p dir="ltr" className={cn("text-2xl font-bold tabular-nums", "text-amber-600 dark:text-amber-400")}>
                       {balanceText}
                     </p>
                   </div>
@@ -634,15 +634,15 @@ export default function PortalHome() {
                 isDark ? "border-emerald-500/30 bg-emerald-950/30" : "border-emerald-200 dark:border-emerald-500/30 bg-emerald-50 dark:bg-emerald-950/30",
               )}>
                 <div className="flex min-w-0 items-center gap-2.5">
-                  <CheckCircle className={cn("h-5 w-5 shrink-0", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")} />
-                  <p className={cn("truncate text-sm font-semibold", isDark ? "text-emerald-200" : "text-emerald-800 dark:text-emerald-200")}>
+                  <CheckCircle className={cn("h-5 w-5 shrink-0", "text-emerald-600 dark:text-emerald-400")} />
+                  <p className={cn("truncate text-sm font-semibold", "text-emerald-800 dark:text-emerald-200")}>
                     {isCredit(balance)
                       ? pickLang(language, { ku: "پارەی خۆت لای ئێمەیە", en: "Your money is held with us", ar: "لديك رصيد محفوظ لدينا", zh: "您有余额存放在我们这里" })
                       : pickLang(language, { ku: "هیچ قەرزێکت لەسەر نییە", en: "Nothing owed", ar: "لا يوجد رصيد مستحق", zh: "没有欠款" })}
                   </p>
                 </div>
                 {balance !== 0 && (
-                  <span dir="ltr" className={cn("shrink-0 text-sm font-bold tabular-nums", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
+                  <span dir="ltr" className={cn("shrink-0 text-sm font-bold tabular-nums", "text-emerald-700 dark:text-emerald-300")}>
                     {balanceText}
                   </span>
                 )}
@@ -665,16 +665,16 @@ export default function PortalHome() {
                   <AlertTriangle className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
-                  <p className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+                  <p className={cn("text-sm font-bold", "text-foreground")}>
                     {pickLang(language, { ku: "کەل و پەلی قەدەغە", en: "Prohibited packages", ar: "طرود ممنوعة", zh: "违禁包裹" })}
                   </p>
-                  <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                  <p className={cn("text-xs", "text-muted-foreground")}>
                     {prohibitedPending > 0
                       ? pickLang(language, { ku: `${prohibitedPending} پاکێج پێویستی بە بڕیارتە`, en: `${prohibitedPending} need your decision`, ar: `${prohibitedPending} بحاجة لقرارك`, zh: `${prohibitedPending} 项需要您处理` })
                       : pickLang(language, { ku: "بینینی وردەکاری", en: "View details", ar: "عرض التفاصيل", zh: "查看详情" })}
                   </p>
                 </div>
-                <ChevronRight className={cn("h-5 w-5 shrink-0", isDark ? "text-slate-500" : "text-slate-400", isRTL && "rotate-180")} />
+                <ChevronRight className={cn("h-5 w-5 shrink-0", "text-muted-foreground", isRTL && "rotate-180")} />
               </div>
             </Link>
           </div>
@@ -698,11 +698,11 @@ export default function PortalHome() {
               href="/portal/search?tab=registered"
               className={cn("block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]", card)}
             >
-              <Package className={cn("mx-auto h-5 w-5", isDark ? "text-blue-300" : "text-blue-600 dark:text-blue-300")} />
-              <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-100")}>
+              <Package className={cn("mx-auto h-5 w-5", "text-blue-600 dark:text-blue-300")} />
+              <p className={cn("mt-1 text-2xl font-bold tabular-nums", "text-foreground")}>
                 {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.registered} />}
               </p>
-              <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+              <p className={cn("mt-0.5 text-[11px] leading-tight", "text-muted-foreground")}>
                 {pickLang(language, SEARCH_TAB_LABEL.registered)}
               </p>
             </Link>
@@ -714,8 +714,8 @@ export default function PortalHome() {
                 isDark ? "border-sky-500/35 bg-[#152238]" : "border-sky-300 dark:border-sky-500/35 bg-white dark:bg-[#152238]",
               )}
             >
-              <Plane className={cn("mx-auto h-5 w-5", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")} />
-              <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-sky-400" : "text-sky-600 dark:text-sky-400")}>
+              <Plane className={cn("mx-auto h-5 w-5", "text-sky-600 dark:text-sky-400")} />
+              <p className={cn("mt-1 text-2xl font-bold tabular-nums", "text-sky-600 dark:text-sky-400")}>
                 {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.onTheWay} />}
               </p>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-sky-300" : "text-sky-700 dark:text-sky-300")}>
@@ -735,11 +735,11 @@ export default function PortalHome() {
                 isDark ? "border-emerald-500/50 bg-emerald-950/40" : "border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40",
               )}
             >
-              <CheckCircle className={cn("mx-auto h-5 w-5", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")} />
-              <p className={cn("mt-1 text-2xl font-bold tabular-nums", isDark ? "text-emerald-400" : "text-emerald-600 dark:text-emerald-400")}>
+              <CheckCircle className={cn("mx-auto h-5 w-5", "text-emerald-600 dark:text-emerald-400")} />
+              <p className={cn("mt-1 text-2xl font-bold tabular-nums", "text-emerald-600 dark:text-emerald-400")}>
                 {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.arrived} />}
               </p>
-              <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
+              <p className={cn("mt-0.5 text-[11px] leading-tight", "text-emerald-700 dark:text-emerald-300")}>
                 {pickLang(language, SEARCH_TAB_LABEL.arrived)}
               </p>
             </Link>
@@ -753,7 +753,7 @@ export default function PortalHome() {
         {/* Recent shipments */}
         <div className="px-4 mt-5">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className={cn("text-lg font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+            <h2 className={cn("text-lg font-bold", "text-foreground")}>
               {t("portal.recentShipments") || "گواستنەوە نوێیەکان"}
             </h2>
             <Link href="/portal/shipments">
@@ -804,14 +804,14 @@ export default function PortalHome() {
                         {/* The code never breaks in the middle ("AIR-2026-" / "062"
                             on a 360px phone); the chip wraps below it instead. */}
                         <div className="mb-1 flex flex-wrap items-center gap-x-2 gap-y-1">
-                          <p dir="ltr" className={cn("whitespace-nowrap font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                          <p dir="ltr" className={cn("whitespace-nowrap font-bold", "text-foreground")}>
                             {batch.batchCode}
                           </p>
                           <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status, batch.shippingType)}>
                             {getStatusText(batch.status, batch.shippingType)}
                           </PortalChip>
                         </div>
-                        <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+                        <p className={cn("text-sm", "text-muted-foreground")}>
                           {fmtCount(batch.customerPackageCount)}{" "}
                           {pickLang(language, { ku: "پاکەت", en: "packages", ar: "طرد", zh: "件包裹" })}
                         </p>
@@ -819,7 +819,7 @@ export default function PortalHome() {
 
                       <ChevronRight className={cn(
                         "h-5 w-5 shrink-0",
-                        isDark ? "text-slate-500" : "text-slate-400",
+                        "text-muted-foreground",
                         isRTL && "rotate-180"
                       )} />
                     </div>
@@ -833,7 +833,7 @@ export default function PortalHome() {
               live stages, this line keeps the past reachable. */}
           {deliveredCount > 0 && (
             <Link href="/portal/shipments?status=delivered">
-              <span className={cn("relative tap-44 mt-2.5 flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-medium", card, isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")}>
+              <span className={cn("relative tap-44 mt-2.5 flex items-center justify-center gap-1.5 rounded-xl border p-2.5 text-xs font-medium", card, "text-muted-foreground")}>
                 <CheckCircle className="h-3.5 w-3.5" />
                 {pickLang(language, {
                   ku: `${deliveredCount} باری گەیشتوو نیشان بدە`,
@@ -852,8 +852,8 @@ export default function PortalHome() {
             {quickActions.map((action, index) => (
               <Link key={index} href={action.href}>
                 <span className={cn("flex h-full flex-col items-center gap-1.5 rounded-2xl border p-3 text-center transition-all active:scale-[0.97]", card)}>
-                  <action.icon className={cn("h-5 w-5", isDark ? "text-blue-300" : "text-blue-600 dark:text-blue-300")} />
-                  <span className={cn("text-[11px] font-medium leading-tight", isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")}>
+                  <action.icon className={cn("h-5 w-5", "text-blue-600 dark:text-blue-300")} />
+                  <span className={cn("text-[11px] font-medium leading-tight", "text-muted-foreground")}>
                     {action.label}
                   </span>
                 </span>
@@ -879,13 +879,13 @@ export default function PortalHome() {
                   <div className="min-w-0 flex-1">
                     <div className="mb-2 flex items-center gap-2">
                       <div className={cn("rounded-xl p-2", isDark ? "bg-amber-600/30" : "bg-amber-500/20")}>
-                        <Clock className={cn("h-5 w-5", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")} />
+                        <Clock className={cn("h-5 w-5", "text-amber-700 dark:text-amber-300")} />
                       </div>
                       <div className="min-w-0">
-                        <h3 className={cn("truncate text-base font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                        <h3 className={cn("truncate text-base font-bold", "text-amber-900 dark:text-amber-200")}>
                           {t("portal.pendingOrdersTitle")}
                         </h3>
-                        <p className={cn("text-xs", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                        <p className={cn("text-xs", "text-amber-700 dark:text-amber-300")}>
                           {t("portal.pendingOrdersSubtitle")}
                         </p>
                       </div>
@@ -893,26 +893,26 @@ export default function PortalHome() {
 
                     <div className="mt-3 grid grid-cols-3 gap-2">
                       <div className="text-center">
-                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", "text-amber-700 dark:text-amber-300")}>
                           📦 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full package", ar: "حزمة كاملة", zh: "完整套餐" })}
                         </p>
-                        <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                        <p className={cn("text-xl font-bold", "text-amber-900 dark:text-amber-200")}>
                           <AnimatedCounter value={pendingOrders.byType.full_package} />
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", "text-amber-700 dark:text-amber-300")}>
                           🛍️ {pickLang(language, { ku: "کڕین بە تێچوو", en: "Markup purchase", ar: "شراء بهامش", zh: "加价采购" })}
                         </p>
-                        <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                        <p className={cn("text-xl font-bold", "text-amber-900 dark:text-amber-200")}>
                           <AnimatedCounter value={pendingOrders.byType.commission} />
                         </p>
                       </div>
                       <div className="text-center">
-                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                        <p className={cn("flex min-h-[28px] items-center justify-center text-[11px] font-medium leading-tight", "text-amber-700 dark:text-amber-300")}>
                           📝 {pickLang(language, { ku: "داواکاری کڕین", en: "Purchase request", ar: "طلب شراء", zh: "采购请求" })}
                         </p>
-                        <p className={cn("text-xl font-bold", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                        <p className={cn("text-xl font-bold", "text-amber-900 dark:text-amber-200")}>
                           <AnimatedCounter value={pendingOrders.byType.purchase_request} />
                         </p>
                       </div>
@@ -920,10 +920,10 @@ export default function PortalHome() {
                   </div>
 
                   <div className="shrink-0 text-end">
-                    <p className={cn("mb-1 text-xs font-medium", isDark ? "text-amber-300/80" : "text-amber-700 dark:text-amber-300")}>
+                    <p className={cn("mb-1 text-xs font-medium", "text-amber-700 dark:text-amber-300")}>
                       {t("portal.estimatedTotal")}
                     </p>
-                    <p dir="ltr" className={cn("font-mono text-xl font-bold tabular-nums", isDark ? "text-amber-100" : "text-amber-900 dark:text-amber-200")}>
+                    <p dir="ltr" className={cn("font-mono text-xl font-bold tabular-nums", "text-amber-900 dark:text-amber-200")}>
                       {fmtUsd(pendingOrders.totalPriceUsd)}
                     </p>
                     <div className={cn(

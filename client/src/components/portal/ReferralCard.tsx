@@ -89,7 +89,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
             "p-2.5 rounded-xl shrink-0",
             isDark ? "bg-blue-800/50" : "bg-blue-500/15"
           )}>
-            <Gift className={cn("w-5 h-5", isDark ? "text-blue-300" : "text-blue-600")} />
+            <Gift className={cn("w-5 h-5", "text-blue-600 dark:text-blue-300")} />
           </div>
           <div className="flex-1 min-w-0">
             <h3 className={cn("font-bold text-base", isDark ? "text-blue-100" : "text-blue-900 dark:text-blue-200")}>

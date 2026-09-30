@@ -91,10 +91,10 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
             }
           />
           <div className="flex-1 min-w-0 pe-6">
-            <h3 className={cn("text-base font-bold leading-tight", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+            <h3 className={cn("text-base font-bold leading-tight", "text-foreground")}>
               {pickLang(language, { ku: "گەیاندنەکەمان چۆن بوو؟", en: "How was your delivery?", ar: "كيف كان التسليم؟", zh: "配送体验如何？" })}
             </h3>
-            <p className={cn("text-xs mt-0.5 truncate", isDark ? "text-slate-300" : "text-slate-600")}>
+            <p className={cn("text-xs mt-0.5 truncate", "text-muted-foreground")}>
               {pickLang(language, {
                 ku: `${count} پاکەت لە یەک بۆکسدا`,
                 en: `${count} parcel(s) in one box`,
@@ -102,7 +102,7 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
                 zh: `一个箱子，共 ${count} 件`,
               })}
             </p>
-            <p className={cn("text-[11px]", isDark ? "text-slate-500" : "text-slate-400")}>
+            <p className={cn("text-[11px]", "text-muted-foreground")}>
               <bdi dir="ltr" className="font-mono">{box.boxCode}</bdi>
             </p>
           </div>
@@ -124,7 +124,7 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
                   "w-8 h-8 transition-colors",
                   (hover || rating) >= n
                     ? "fill-amber-400 text-amber-400"
-                    : isDark ? "text-slate-600" : "text-slate-300",
+                    : "text-muted-foreground",
                 )}
               />
             </button>

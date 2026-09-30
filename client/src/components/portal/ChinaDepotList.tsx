@@ -160,8 +160,8 @@ export function ChinaDepotList({
   return (
     <div className={cn("mt-6", className)}>
       <div className="mb-3 flex items-center gap-2">
-        <Warehouse className={cn("h-5 w-5", isDark ? "text-emerald-400" : "text-emerald-600")} />
-        <h3 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+        <Warehouse className={cn("h-5 w-5", "text-emerald-600 dark:text-emerald-400")} />
+        <h3 className={cn("font-bold", "text-foreground")}>
           {pickLang(language, STATUS_LABEL.preparing)}
         </h3>
         <span className={cn(
@@ -194,7 +194,7 @@ export function ChinaDepotList({
                 A picture, not the thumbnail's own button: the row is the button
                 (its sheet shows the photo large). */}
             {item.image?.url ? (
-              <span className={cn("relative h-11 w-11 shrink-0 overflow-hidden rounded-xl", isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40")}>
+              <span className={cn("relative h-11 w-11 shrink-0 overflow-hidden rounded-xl", "bg-muted")}>
                 <img
                   src={item.image.url}
                   alt=""
@@ -209,7 +209,7 @@ export function ChinaDepotList({
                 "flex h-11 w-11 shrink-0 items-center justify-center rounded-xl",
                 isDark ? "bg-emerald-900/40" : "bg-emerald-50 dark:bg-emerald-950/40",
               )}>
-                <Package className={cn("h-4 w-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
+                <Package className={cn("h-4 w-4", "text-emerald-600 dark:text-emerald-400")} />
               </div>
             )}
 

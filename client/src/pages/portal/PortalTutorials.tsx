@@ -187,7 +187,7 @@ export default function PortalTutorials() {
             {shown.map((t: any) => (
               <div
                 key={t.id}
-                className={cn("rounded-2xl border overflow-hidden", isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-white")}
+                className={cn("rounded-2xl border overflow-hidden", "border-border bg-card")}
               >
                 <button onClick={() => open(t)} className="relative block w-full aspect-video bg-slate-900 group">
                   {t.thumbnailUrl && (
@@ -240,7 +240,7 @@ export default function PortalTutorials() {
         >
           <div
             dir={isRTL ? "rtl" : "ltr"}
-            className={cn("w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl overflow-hidden", isDark ? "bg-slate-900" : "bg-white")}
+            className={cn("w-full sm:max-w-2xl rounded-t-2xl sm:rounded-2xl overflow-hidden", "bg-card")}
             onClick={(e) => e.stopPropagation()}
           >
             <div className="flex items-center justify-between gap-2 p-3 border-b border-black/10 dark:border-white/10">

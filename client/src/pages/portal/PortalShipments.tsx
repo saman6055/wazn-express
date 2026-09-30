@@ -440,10 +440,10 @@ function ClassicPortalShipments() {
       <div className={cn(
         "sticky top-14 z-20 border-b backdrop-blur-md transition-all duration-300",
         compactFilters ? "px-3 py-2" : "px-4 py-3",
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100 dark:border-slate-800/60"
+        "bg-card/90 border-border"
       )}>
         {!compactFilters && (
-          <p className={cn("mb-2 text-[11px] font-medium", isDark ? "text-slate-500" : "text-slate-400")}>
+          <p className={cn("mb-2 text-[11px] font-medium", "text-muted-foreground")}>
             {pickLang(language, { ku: "چۆن دەنێردرێت", en: "How it ships", ar: "كيف تُشحن", zh: "运输方式" })}
           </p>
         )}
@@ -468,9 +468,7 @@ function ClassicPortalShipments() {
                     : "flex-col gap-1.5 rounded-xl px-2 py-2.5 text-[11px]",
                   isActive
                     ? "text-white"
-                    : (isDark
-                        ? "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600"
-                        : "bg-white text-slate-600 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300")
+                    : ("bg-card text-muted-foreground border border-border hover:border-foreground/30")
                 )}
                 style={isActive ? {
                   backgroundImage: gradient("135deg", pal.light, pal.brand),
@@ -496,8 +494,8 @@ function ClassicPortalShipments() {
             "mt-2 flex items-start gap-2 rounded-xl px-3 py-2",
             isDark ? "bg-slate-800/60" : "bg-slate-50 dark:bg-slate-950/40"
           )}>
-            <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", isDark ? "text-slate-500" : "text-slate-400")} />
-            <p className={cn("text-xs leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
+            <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", "text-muted-foreground")} />
+            <p className={cn("text-xs leading-relaxed", "text-muted-foreground")}>
               {shippingHint}
             </p>
           </div>
@@ -543,9 +541,7 @@ function ClassicPortalShipments() {
                     : "flex-col gap-1 rounded-xl px-1.5 py-2 text-xs",
                   isActive
                     ? "text-white"
-                    : (isDark
-                        ? "bg-slate-800 text-slate-300 border border-slate-700 hover:border-slate-600"
-                        : "bg-white text-slate-600 border border-slate-200 dark:border-slate-800/60 hover:border-slate-300")
+                    : ("bg-card text-muted-foreground border border-border hover:border-foreground/30")
                 )}
                 style={isActive ? {
                   // The glow is the mode's own brand colour, so the row stays
@@ -585,8 +581,8 @@ function ClassicPortalShipments() {
           isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 dark:border-slate-800/60"
         )}>
           <div className="flex items-center gap-2">
-            <ArrowUpDown className={cn("w-4 h-4", isDark ? "text-slate-400" : "text-slate-500")} />
-            <span className={cn("text-sm font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
+            <ArrowUpDown className={cn("w-4 h-4", "text-muted-foreground")} />
+            <span className={cn("text-sm font-medium", "text-muted-foreground")}>
               {pickLang(language, { ku: "ڕیزکردن:", en: "Sort by:", ar: "الترتيب:", zh: "排序：" })}
             </span>
             <div className="flex gap-2">
@@ -621,14 +617,14 @@ function ClassicPortalShipments() {
           reads the page's scroll position when its container isn't the thing
           scrolling. */}
       <div
-        className={cn("transition-colors duration-300", isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40")}
+        className={cn("transition-colors duration-300", "bg-muted")}
         {...pullToRefreshProps}
       >
         {/* Pull indicator */}
         {pullDistance > 0 && (
           <div className={cn(
             "sticky top-0 z-10 flex items-center justify-center py-2 text-sm font-medium",
-            isDark ? "text-slate-400" : "text-slate-500"
+            "text-muted-foreground"
           )}>
             {pullDistance >= 80
               ? (pickLang(language, { ku: "فڕێبدە بۆ نوێکردنەوە", en: "Release to refresh", ar: "أفلت للتحديث", zh: "松开以刷新" }))
@@ -638,9 +634,9 @@ function ClassicPortalShipments() {
         {/* Results Count */}
         <div className={cn(
           "px-4 py-2 transition-colors duration-300",
-          isDark ? "bg-slate-900" : "bg-white"
+          "bg-card"
         )}>
-          <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+          <p className={cn("text-sm", "text-muted-foreground")}>
             {pickLang(language, {
               ku: `${totalResults} ئەنجام دۆزرایەوە`,
               en: `${totalResults} results found`,
@@ -653,7 +649,7 @@ function ClassicPortalShipments() {
         {/* Batches List */}
         <div className={cn(
           "px-4 py-4 pb-24 transition-colors duration-300",
-          isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
+          "bg-muted"
         )}>
           {isLoading ? (
           <PortalListSkeleton rows={4} />
@@ -665,18 +661,18 @@ function ClassicPortalShipments() {
         ) : totalResults === 0 ? (
           <div className={cn(
             "rounded-2xl p-10 text-center shadow-sm transition-colors duration-300",
-            isDark ? "bg-slate-800" : "bg-white"
+            "bg-card"
           )}>
             <div className={cn(
               "w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4",
-              isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
+              "bg-muted"
             )}>
-              <Package className={cn("w-8 h-8", isDark ? "text-slate-500" : "text-slate-400")} />
+              <Package className={cn("w-8 h-8", "text-muted-foreground")} />
             </div>
-            <p className={cn("font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
+            <p className={cn("font-medium", "text-muted-foreground")}>
               {pickLang(language, { ku: "هیچ بارێک نەدۆزرایەوە", en: "No shipments found", ar: "لا توجد شحنات", zh: "未找到运单" })}
             </p>
-            <p className={cn("text-sm mt-1", isDark ? "text-slate-500" : "text-slate-400")}>
+            <p className={cn("text-sm mt-1", "text-muted-foreground")}>
               {/* Three different situations shared one sentence. A customer
                   with no shipments at all was told to try a different filter
                   — the filter was never the problem — and so was a customer
@@ -777,7 +773,7 @@ function ClassicPortalShipments() {
                       {/* Info */}
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between mb-1">
-                          <p className={cn("font-bold text-lg", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                          <p className={cn("font-bold text-lg", "text-foreground")}>
                             {/*
                               * What the customer owns, in the biggest letters
                               * on the card.
@@ -799,7 +795,7 @@ function ClassicPortalShipments() {
                           </p>
                           <ChevronRight className={cn(
                             "w-5 h-5 shrink-0",
-                            isDark ? "text-slate-500" : "text-slate-400",
+                            "text-muted-foreground",
                             isRTL && "rotate-180"
                           )} />
                         </div>
@@ -845,7 +841,7 @@ function ClassicPortalShipments() {
                             zh: `查看我的包裹（${batch.customerPackageCount ?? 0}）`,
                           })}
                         </span>
-                        <span className={cn("font-mono text-[11px]", isDark ? "text-slate-500" : "text-slate-400")}>
+                        <span className={cn("font-mono text-[11px]", "text-muted-foreground")}>
                           <bdi dir="ltr">{batch.batchCode}</bdi>
                         </span>
                         <div className="ms-auto">
@@ -860,7 +856,7 @@ function ClassicPortalShipments() {
 
                     {/* Route Indicator */}
                     <div className="flex items-center gap-2 mt-4 px-2">
-                      <div className={cn("flex items-center gap-1 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+                      <div className={cn("flex items-center gap-1 text-sm", "text-muted-foreground")}>
                         <span className="text-lg">🇨🇳</span>
                         <span>{pickLang(language, { ku: "چین", en: "China", ar: "الصين", zh: "中国" })}</span>
                       </div>
@@ -903,7 +899,7 @@ function ClassicPortalShipments() {
                           )}
                         </div>
                       </div>
-                      <div className={cn("flex items-center gap-1 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+                      <div className={cn("flex items-center gap-1 text-sm", "text-muted-foreground")}>
                         <span className="text-lg">🇮🇶</span>
                         <span>{pickLang(language, { ku: "عێراق", en: "Iraq", ar: "العراق", zh: "伊拉克" })}</span>
                       </div>
@@ -912,10 +908,10 @@ function ClassicPortalShipments() {
                     {/* Bottom Stats */}
                     <div className={cn(
                       "flex items-center justify-between mt-4 pt-3 border-t",
-                      isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
+                      "border-border"
                     )}>
                       <div className="flex items-center gap-4">
-                        <div className={cn("flex items-center gap-1.5 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+                        <div className={cn("flex items-center gap-1.5 text-sm", "text-muted-foreground")}>
                           <Package className="w-4 h-4" />
                           <span>{fmtCount(batch.customerPackageCount)} {pickLang(language, { ku: "پاکەت", en: "pkgs", ar: "طرد", zh: "件" })}</span>
                         </div>
@@ -924,7 +920,7 @@ function ClassicPortalShipments() {
                             the whole batch, everybody's goods — and always in
                             kg, including for sea batches billed by volume. */}
                         {(batch as any).customerChargeable > 0 && (
-                          <div className={cn("flex items-center gap-1.5 text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+                          <div className={cn("flex items-center gap-1.5 text-sm", "text-muted-foreground")}>
                             <span>{(batch as any).customerUnit === "cbm" ? "📦" : "⚖️"}</span>
                             <span className="tabular-nums" dir="ltr">
                               {fmtChargeable((batch as any).customerChargeable, (batch as any).customerUnit)}
@@ -949,7 +945,7 @@ function ClassicPortalShipments() {
                           );
                         }
                         return batch.createdAt ? (
-                          <div className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+                          <div className={cn("text-xs", "text-muted-foreground")}>
                             <bdi dir="ltr">{formatPortalDate(batch.createdAt, language)}</bdi>
                           </div>
                         ) : null;

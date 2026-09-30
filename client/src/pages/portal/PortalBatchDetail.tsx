@@ -291,9 +291,9 @@ const { t, language } = useLanguage();
       <div className="px-4 -mt-4">
         <div className={cn(
           "rounded-2xl shadow-lg p-4 transition-colors duration-300",
-          isDark ? "bg-slate-800" : "bg-white"
+          "bg-card"
         )}>
-          <h3 className={cn("font-semibold mb-4", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+          <h3 className={cn("font-semibold mb-4", "text-foreground")}>
             {pickLang(language, { ku: "شوێنکەوتنی بار", en: "Shipment Progress", ar: "تقدّم الشحنة", zh: "运输进度" })}
           </h3>
           
@@ -305,7 +305,7 @@ const { t, language } = useLanguage();
             {/* Timeline line */}
             <div className={cn(
               "absolute top-5 start-[8.33%] end-[8.33%] h-1 rounded-full",
-              isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
+              "bg-muted"
             )} />
             
             {/* Progress line */}
@@ -341,8 +341,8 @@ const { t, language } = useLanguage();
                     "text-[11px] leading-tight font-medium mt-2 w-full break-words text-center",
                     !step.current && "hidden @[18rem]:block",
                     step.completed || step.current 
-                      ? (isDark ? "text-white" : "text-slate-800 dark:text-slate-200")
-                      : (isDark ? "text-slate-500" : "text-slate-400")
+                      ? ("text-foreground")
+                      : ("text-muted-foreground")
                   )}>
                     {pickLang(language, batchStatusWords(step.stepKey, batch?.shippingType) ?? STATUS_LABEL[step.stepKey])}
                   </span>
@@ -360,19 +360,19 @@ const { t, language } = useLanguage();
             return (
               <div className={cn(
                 "mt-5 pt-4 border-t flex items-center gap-3",
-                isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
+                "border-border"
               )}>
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center",
                   isDark ? "bg-blue-900/50" : "bg-blue-50 dark:bg-blue-950/40"
                 )}>
-                  <Calendar className={cn("w-5 h-5", isDark ? "text-blue-400" : "text-blue-600")} />
+                  <Calendar className={cn("w-5 h-5", "text-blue-600 dark:text-blue-400")} />
                 </div>
                 <div>
-                  <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+                  <p className={cn("text-xs", "text-muted-foreground")}>
                     {language === "ku" ? "کاتی گەیشتنی خەمڵێنراو" : language === "ar" ? "الوصول المتوقع" : language === "zh" ? "预计到达" : "Estimated Arrival"}
                   </p>
-                  <p className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                  <p className={cn("font-semibold", "text-foreground")}>
                     {eta.kind === "exact"
                       ? formatPortalDate(eta.date, language)
                       : formatBatchEta(eta, language)}
@@ -387,10 +387,10 @@ const { t, language } = useLanguage();
       {/* Packages List */}
       <div className={cn(
         "px-4 py-6 transition-colors duration-300",
-        isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
+        "bg-muted"
       )}>
         <div className="flex items-center justify-between mb-4">
-          <h2 className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+          <h2 className={cn("font-semibold", "text-foreground")}>
             {pickLang(language, { ku: "پاکەتەکانت", en: "Your Packages", ar: "طرودك", zh: "您的包裹" })}
           </h2>
           <span className={cn(
@@ -409,10 +409,10 @@ const { t, language } = useLanguage();
         ) : !packages || packages.length === 0 ? (
           <div className={cn(
             "rounded-2xl p-10 text-center transition-colors duration-300",
-            isDark ? "bg-slate-800" : "bg-white"
+            "bg-card"
           )}>
-            <Package className={cn("w-12 h-12 mx-auto mb-3", isDark ? "text-slate-600" : "text-slate-300")} />
-            <p className={cn(isDark ? "text-slate-400" : "text-slate-500")}>
+            <Package className={cn("w-12 h-12 mx-auto mb-3", "text-muted-foreground")} />
+            <p className={cn("text-muted-foreground")}>
               {pickLang(language, { ku: "هیچ پاکەتێک نییە", en: "No packages", ar: "لا توجد طرود", zh: "暂无包裹" })}
             </p>
           </div>

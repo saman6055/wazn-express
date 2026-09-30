@@ -56,8 +56,8 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
         )}
       >
         <div className="flex items-center gap-2.5">
-          <Link2 className={cn("h-4 w-4", isDark ? "text-slate-400" : "text-slate-500 dark:text-slate-400")} />
-          <p className={cn("font-semibold text-sm", isDark ? "text-white" : "text-slate-800 dark:text-slate-100")}>
+          <Link2 className={cn("h-4 w-4", "text-muted-foreground")} />
+          <p className={cn("font-semibold text-sm", "text-foreground")}>
             {L({
               ku: "ئەو لینکانەی ناردووتن",
               en: "Links you have shared",
@@ -78,7 +78,7 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
             >
               <div className="min-w-0 flex-1">
                 <p className={cn("flex items-center gap-1.5 text-xs",
-                                 isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300")}>
+                                 "text-muted-foreground")}>
                   <Eye className="h-3.5 w-3.5" />
                   {/* How far it has travelled. Their link, their judgement. */}
                   {link.viewCount === 0
@@ -86,7 +86,7 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
                     : `${link.viewCount} ${L({ ku: "جار کراوەتەوە", en: "opens", ar: "مرة فتح", zh: "次打开" })}`}
                 </p>
                 <p className={cn("text-[11px] mt-0.5",
-                                 isDark ? "text-slate-500" : "text-slate-400 dark:text-slate-500")}>
+                                 "text-muted-foreground")}>
                   {L({ ku: "بەسەردەچێت", en: "Expires", ar: "ينتهي", zh: "到期" })}{" "}
                   {/* Was hardcoded to the Arabic locale with a spelled-out
                       month, so an English or Chinese reader was told their

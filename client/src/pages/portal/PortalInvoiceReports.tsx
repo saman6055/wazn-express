@@ -319,7 +319,7 @@ function ClassicPortalInvoiceReports() {
       <div className="px-4 -mt-10 relative z-10 mb-4">
         <div className={cn(
           "rounded-2xl p-4 shadow-lg",
-          isDark ? "bg-slate-800" : "bg-white"
+          "bg-card"
         )}>
           <div className="flex flex-wrap gap-3 items-center justify-between">
             <div className="flex gap-2 flex-wrap">
@@ -333,9 +333,7 @@ function ClassicPortalInvoiceReports() {
                       ? isDark 
                         ? "bg-emerald-600 text-white" 
                         : "bg-emerald-500 text-white"
-                      : isDark 
-                        ? "bg-slate-700 text-slate-300 hover:bg-slate-600" 
-                        : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200"
+                      : "bg-muted text-muted-foreground hover:bg-muted/70"
                   )}
                 >
                   {f.label}
@@ -425,7 +423,7 @@ function ClassicPortalInvoiceReports() {
         <div className="grid grid-cols-2 gap-3">
           <div className={cn(
             "rounded-2xl p-4 shadow-lg",
-            isDark ? "bg-slate-800" : "bg-white"
+            "bg-card"
           )}>
             <div className="flex items-center gap-2 mb-2">
               <div className={cn(
@@ -436,7 +434,7 @@ function ClassicPortalInvoiceReports() {
               </div>
               <span className={cn(
                 "text-xs",
-                isDark ? "text-slate-400" : "text-slate-500"
+                "text-muted-foreground"
               )}>
                 {pickLang(language, { ku: "کۆی پسوڵە", en: "Total Invoices", ar: "إجمالي الفواتير", zh: "发票总数" })}
               </span>
@@ -447,13 +445,13 @@ function ClassicPortalInvoiceReports() {
               <>
                 <p className={cn(
                   "text-xl font-bold",
-                  isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
+                  "text-foreground"
                 )}>
                   {summary?.totalInvoices || 0}
                 </p>
                 <p className={cn(
                   "text-xs mt-1",
-                  isDark ? "text-slate-400" : "text-slate-500"
+                  "text-muted-foreground"
                 )}>
                   {formatCurrency(summary?.totalAmountUsd || 0)}
                 </p>
@@ -463,18 +461,18 @@ function ClassicPortalInvoiceReports() {
 
           <div className={cn(
             "rounded-2xl p-4 shadow-lg",
-            isDark ? "bg-slate-800" : "bg-white"
+            "bg-card"
           )}>
             <div className="flex items-center gap-2 mb-2">
               <div className={cn(
                 "w-8 h-8 rounded-lg flex items-center justify-center",
-                isDark ? "bg-emerald-900/50" : "bg-emerald-100 dark:bg-emerald-950/40"
+                "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 <CheckCircle className="w-4 h-4 text-emerald-500 dark:text-emerald-400" />
               </div>
               <span className={cn(
                 "text-xs",
-                isDark ? "text-slate-400" : "text-slate-500"
+                "text-muted-foreground"
               )}>
                 {pickLang(language, { ku: "پارەدراو", en: "Paid", ar: "مدفوعة", zh: "已支付" })}
               </span>
@@ -488,7 +486,7 @@ function ClassicPortalInvoiceReports() {
                 </p>
                 <p className={cn(
                   "text-xs mt-1",
-                  isDark ? "text-slate-400" : "text-slate-500"
+                  "text-muted-foreground"
                 )}>
                   {formatCurrency(summary?.paidAmountUsd || 0)}
                 </p>
@@ -498,7 +496,7 @@ function ClassicPortalInvoiceReports() {
 
           <div className={cn(
             "rounded-2xl p-4 shadow-lg",
-            isDark ? "bg-slate-800" : "bg-white"
+            "bg-card"
           )}>
             <div className="flex items-center gap-2 mb-2">
               <div className={cn(
@@ -509,7 +507,7 @@ function ClassicPortalInvoiceReports() {
               </div>
               <span className={cn(
                 "text-xs",
-                isDark ? "text-slate-400" : "text-slate-500"
+                "text-muted-foreground"
               )}>
                 {pickLang(language, { ku: "ناوەندی", en: "Average", ar: "المتوسط", zh: "平均" })}
               </span>
@@ -529,11 +527,11 @@ function ClassicPortalInvoiceReports() {
       <div className="px-4 mb-4">
         <div className={cn(
           "rounded-2xl p-4 shadow-lg",
-          isDark ? "bg-slate-800" : "bg-white"
+          "bg-card"
         )}>
           <h3 className={cn(
             "font-semibold mb-4",
-            isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
+            "text-foreground"
           )}>
             {pickLang(language, { ku: `ڕاپۆرتی مانگانە - ${selectedYear}`, en: `Monthly report - ${selectedYear}`, ar: `التقرير الشهري - ${selectedYear}`, zh: `月度报表 - ${selectedYear}` })}
           </h3>
@@ -565,7 +563,7 @@ function ClassicPortalInvoiceReports() {
                     />
                     <span className={cn(
                       "text-[11px] tabular-nums w-full text-center",
-                      isDark ? "text-slate-400" : "text-slate-500"
+                      "text-muted-foreground"
                     )}>
                       {m.monthNumber}
                     </span>
@@ -593,13 +591,13 @@ function ClassicPortalInvoiceReports() {
                       <div>
                         <p className={cn(
                           "text-sm font-medium",
-                          isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
+                          "text-foreground"
                         )}>
                           {m.month}
                         </p>
                         <p className={cn(
                           "text-xs",
-                          isDark ? "text-slate-400" : "text-slate-500"
+                          "text-muted-foreground"
                         )}>
                           {m.count} {pickLang(language, { ku: "پسوڵە", en: "invoices", ar: "فاتورة", zh: "张发票" })}
                         </p>
@@ -608,7 +606,7 @@ function ClassicPortalInvoiceReports() {
                     <div className="text-end">
                       <p className={cn(
                         "text-sm font-semibold",
-                        isDark ? "text-white" : "text-slate-900 dark:text-slate-200"
+                        "text-foreground"
                       )}>
                         {formatCurrency(m.total)}
                       </p>

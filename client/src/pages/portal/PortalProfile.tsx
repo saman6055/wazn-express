@@ -343,7 +343,7 @@ const { t, language, setLanguage } = useLanguage();
       <div className="px-4 -mt-3 relative z-10">
         <div className={cn(
           "rounded-2xl shadow-xl p-4",
-          isDark ? "bg-slate-800 shadow-slate-900/50" : "bg-white shadow-slate-200/50"
+          "bg-card shadow-md"
         )}>
           <div className="grid grid-cols-3 gap-2">
             <div className="text-center">
@@ -353,22 +353,22 @@ const { t, language, setLanguage } = useLanguage();
               )}>
                 <Package className="w-5 h-5 text-blue-500 dark:text-blue-400" />
               </div>
-              <p className={cn("text-base font-bold tabular-nums", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+              <p className={cn("text-base font-bold tabular-nums", "text-foreground")}>
                 {summaryLoading ? "…" : fmtCount(summary?.totalPackages)}
               </p>
-              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+              <p className={cn("text-xs", "text-muted-foreground")}>
                 {pickLang(language, { ku: "پاکەتی گەیشتوو", en: "Delivered", ar: "طرود مُسلّمة", zh: "已交付包裹" })}
               </p>
             </div>
-            <div className={cn("text-center border-x", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
+            <div className={cn("text-center border-x", "border-border")}>
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
-                isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
+                "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 <CreditCard className="w-5 h-5 text-emerald-500 dark:text-emerald-400" />
               </div>
               <p className="text-base font-bold tabular-nums text-emerald-500 dark:text-emerald-400" dir="ltr">{summaryLoading ? "…" : fmtUsd(summary?.totalPaid || 0)}</p>
-              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+              <p className={cn("text-xs", "text-muted-foreground")}>
                 {pickLang(language, { ku: "پارەدان", en: "Paid", ar: "المدفوع", zh: "已付" })}
               </p>
             </div>
@@ -376,8 +376,8 @@ const { t, language, setLanguage } = useLanguage();
               <div className={cn(
                 "w-10 h-10 rounded-xl flex items-center justify-center mx-auto mb-2",
                 isDebt(summary?.balanceUsd) 
-                  ? isDark ? "bg-red-900/30" : "bg-red-100 dark:bg-red-950/40"
-                  : isDark ? "bg-emerald-900/30" : "bg-emerald-100 dark:bg-emerald-950/40"
+                  ? "bg-red-100 dark:bg-red-950/40"
+                  : "bg-emerald-100 dark:bg-emerald-950/40"
               )}>
                 <CreditCard className={cn(
                   "w-5 h-5",
@@ -390,7 +390,7 @@ const { t, language, setLanguage } = useLanguage();
               )} dir="ltr">
                 {summaryLoading ? "…" : fmtUsd(Math.abs(summary?.balanceUsd || 0))}
               </p>
-              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+              <p className={cn("text-xs", "text-muted-foreground")}>
                 {pickLang(language, { ku: "باڵانس", en: "Balance", ar: "الرصيد", zh: "余额" })}
               </p>
             </div>
@@ -403,21 +403,21 @@ const { t, language, setLanguage } = useLanguage();
         <div className="px-4 mt-4">
           <div className={cn(
             "rounded-2xl p-4 space-y-3",
-            isDark ? "bg-slate-800" : "bg-white shadow-sm"
+            "bg-card shadow-sm"
           )}>
             {account.mobileNumber && (
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center",
-                  isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
+                  "bg-muted"
                 )}>
-                  <Phone className={cn("w-5 h-5", isDark ? "text-slate-400" : "text-slate-600")} />
+                  <Phone className={cn("w-5 h-5", "text-muted-foreground")} />
                 </div>
                 <div className="min-w-0">
-                  <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
+                  <p className={cn("text-xs", "text-muted-foreground")}>
                     {pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile", ar: "رقم الهاتف", zh: "手机号" })}
                   </p>
-                  <p className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                  <p className={cn("font-medium", "text-foreground")}>
                     <bdi dir="ltr">{account.mobileNumber}</bdi>
                   </p>
                 </div>
@@ -427,15 +427,15 @@ const { t, language, setLanguage } = useLanguage();
               <div className="flex items-center gap-3">
                 <div className={cn(
                   "w-10 h-10 rounded-xl flex items-center justify-center",
-                  isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
+                  "bg-muted"
                 )}>
-                  <Mail className={cn("w-5 h-5", isDark ? "text-slate-400" : "text-slate-600")} />
+                  <Mail className={cn("w-5 h-5", "text-muted-foreground")} />
                 </div>
                 <div className="min-w-0">
-                  <p className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
+                  <p className={cn("text-xs", "text-muted-foreground")}>
                     {pickLang(language, { ku: "ئیمەیل", en: "Email", ar: "البريد الإلكتروني", zh: "邮箱" })}
                   </p>
-                  <p dir="ltr" className={cn("font-medium break-all text-start", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                  <p dir="ltr" className={cn("font-medium break-all text-start", "text-foreground")}>
                     {account.email}
                   </p>
                 </div>
@@ -447,19 +447,19 @@ const { t, language, setLanguage } = useLanguage();
 
       {/* Menu Items */}
       <div className="px-4 py-4">
-        <p className={cn("text-sm font-medium mb-3 px-1", isDark ? "text-slate-400" : "text-slate-500")}>
+        <p className={cn("text-sm font-medium mb-3 px-1", "text-muted-foreground")}>
           {pickLang(language, { ku: "خزمەتگوزارییەکان", en: "Services", ar: "الخدمات", zh: "服务" })}
         </p>
         <div className={cn(
           "rounded-2xl overflow-hidden",
-          isDark ? "bg-slate-800" : "bg-white shadow-sm"
+          "bg-card shadow-sm"
         )}>
           {menuItems.map((item, index) => (
             <Link key={item.path} href={item.path}>
               <div className={cn(
                 "flex items-center justify-between p-4 transition-all duration-200",
-                isDark ? "hover:bg-slate-700 active:bg-slate-600" : "hover:bg-slate-50 active:bg-slate-100",
-                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100 dark:border-slate-800/60")
+                "hover:bg-muted active:bg-muted/70",
+                index !== 0 && ("border-t border-border")
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -468,7 +468,7 @@ const { t, language, setLanguage } = useLanguage();
                   )}>
                     <item.icon className="w-5 h-5" />
                   </div>
-                  <span className={cn("font-medium", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                  <span className={cn("font-medium", "text-foreground")}>
                     {item.label}
                   </span>
                 </div>
@@ -480,7 +480,7 @@ const { t, language, setLanguage } = useLanguage();
                   )}
                   <ChevronRight className={cn(
                     "w-5 h-5",
-                    isDark ? "text-slate-600" : "text-slate-400",
+                    "text-muted-foreground",
                     isRTL && "rotate-180"
                   )} />
                 </div>
@@ -490,19 +490,19 @@ const { t, language, setLanguage } = useLanguage();
         </div>
 
         {/* Support Section */}
-        <p className={cn("text-sm font-medium mb-3 px-1 mt-6", isDark ? "text-slate-400" : "text-slate-500")}>
+        <p className={cn("text-sm font-medium mb-3 px-1 mt-6", "text-muted-foreground")}>
           {pickLang(language, { ku: "پشتگیری و یارمەتی", en: "Help & Support", ar: "المساعدة والدعم", zh: "帮助与支持" })}
         </p>
         <div className={cn(
           "rounded-2xl overflow-hidden",
-          isDark ? "bg-slate-800" : "bg-white shadow-sm"
+          "bg-card shadow-sm"
         )}>
           {supportItems.map((item, index) => {
             const content = (
               <div className={cn(
                 "flex items-center justify-between p-4 transition-all duration-200",
-                isDark ? "hover:bg-slate-700 active:bg-slate-600" : "hover:bg-slate-50 active:bg-slate-100",
-                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100 dark:border-slate-800/60")
+                "hover:bg-muted active:bg-muted/70",
+                index !== 0 && ("border-t border-border")
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -512,17 +512,17 @@ const { t, language, setLanguage } = useLanguage();
                     <item.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className={cn("font-medium block", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                    <span className={cn("font-medium block", "text-foreground")}>
                       {item.label}
                     </span>
-                    <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
+                    <span className={cn("text-xs", "text-muted-foreground")}>
                       {item.description}
                     </span>
                   </div>
                 </div>
                 <ChevronRight className={cn(
                   "w-5 h-5",
-                  isDark ? "text-slate-600" : "text-slate-400",
+                  "text-muted-foreground",
                   isRTL && "rotate-180"
                 )} />
               </div>
@@ -545,19 +545,19 @@ const { t, language, setLanguage } = useLanguage();
         </div>
 
         {/* Settings Section */}
-        <p className={cn("text-sm font-medium mb-3 px-1 mt-6", isDark ? "text-slate-400" : "text-slate-500")}>
+        <p className={cn("text-sm font-medium mb-3 px-1 mt-6", "text-muted-foreground")}>
           {pickLang(language, { ku: "ڕێکخستنەکان", en: "Settings", ar: "الإعدادات", zh: "设置" })}
         </p>
         <div className={cn(
           "rounded-2xl overflow-hidden",
-          isDark ? "bg-slate-800" : "bg-white shadow-sm"
+          "bg-card shadow-sm"
         )}>
           {settingsItems.map((item, index) => {
             const content = (
               <div className={cn(
                 "flex items-center justify-between p-4 transition-all duration-200",
-                isDark ? "hover:bg-slate-700 active:bg-slate-600" : "hover:bg-slate-50 active:bg-slate-100",
-                index !== 0 && (isDark ? "border-t border-slate-700" : "border-t border-slate-100 dark:border-slate-800/60")
+                "hover:bg-muted active:bg-muted/70",
+                index !== 0 && ("border-t border-border")
               )}>
                 <div className="flex items-center gap-3">
                   <div className={cn(
@@ -567,17 +567,17 @@ const { t, language, setLanguage } = useLanguage();
                     <item.icon className="w-5 h-5" />
                   </div>
                   <div>
-                    <span className={cn("font-medium block", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                    <span className={cn("font-medium block", "text-foreground")}>
                       {item.label}
                     </span>
-                    <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-500")}>
+                    <span className={cn("text-xs", "text-muted-foreground")}>
                       {item.description}
                     </span>
                   </div>
                 </div>
                 <ChevronRight className={cn(
                   "w-5 h-5",
-                  isDark ? "text-slate-600" : "text-slate-400",
+                  "text-muted-foreground",
                   isRTL && "rotate-180"
                 )} />
               </div>
@@ -616,17 +616,17 @@ const { t, language, setLanguage } = useLanguage();
         {/* App Info */}
         <div className="mt-8 mb-24 text-center">
           <div className="flex items-center justify-center gap-4 mb-3">
-            <button type="button" onClick={handleFeedback} className={cn("relative tap-44 text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
+            <button type="button" onClick={handleFeedback} className={cn("relative tap-44 text-xs flex items-center gap-1 transition", "text-muted-foreground hover:text-foreground")}>
               <Heart className="w-3 h-3" />
               {pickLang(language, { ku: "ڕەخنە و پێشنیار", en: "Feedback", ar: "ملاحظات", zh: "反馈" })}
             </button>
-            <span className={isDark ? "text-slate-700 dark:text-slate-300" : "text-slate-300"}>•</span>
-            <button type="button" onClick={handleShareApp} className={cn("relative tap-44 text-xs flex items-center gap-1 transition", isDark ? "text-slate-500 hover:text-slate-400" : "text-slate-400 hover:text-slate-600")}>
+            <span className={"text-foreground"}>•</span>
+            <button type="button" onClick={handleShareApp} className={cn("relative tap-44 text-xs flex items-center gap-1 transition", "text-muted-foreground hover:text-foreground")}>
               <Share2 className="w-3 h-3" />
               {pickLang(language, { ku: "هاوبەشکردن", en: "Share App", ar: "مشاركة التطبيق", zh: "分享应用" })}
             </button>
           </div>
-          <p className={cn("text-xs", isDark ? "text-slate-600" : "text-slate-400")}>
+          <p className={cn("text-xs", "text-muted-foreground")}>
             {company.name}
           </p>
         </div>
@@ -636,10 +636,10 @@ const { t, language, setLanguage } = useLanguage();
       <Dialog open={showLangPicker} onOpenChange={setShowLangPicker}>
         <DialogContent className={cn(
           "max-w-xs rounded-3xl p-0 overflow-hidden",
-          isDark ? "bg-slate-900 border-slate-800" : "bg-white"
+          "bg-card border-border"
         )}>
           <DialogHeader className="px-5 pt-5 pb-2">
-            <DialogTitle className={cn("text-center", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
+            <DialogTitle className={cn("text-center", "text-foreground")}>
               {pickLang(language, { ku: "زمان هەڵبژێرە", en: "Choose language", ar: "اختر اللغة", zh: "选择语言" })}
             </DialogTitle>
           </DialogHeader>
@@ -662,10 +662,10 @@ const { t, language, setLanguage } = useLanguage();
                   <span className="flex items-center gap-3">
                   <LanguageFlag code={opt.code} className="h-6 w-9 rounded-md" />
                   <span className="flex flex-col items-start">
-                    <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                    <span className={cn("font-semibold", "text-foreground")}>
                       {opt.native}
                     </span>
-                    <span className={cn("text-xs", isDark ? "text-slate-500" : "text-slate-400")}>
+                    <span className={cn("text-xs", "text-muted-foreground")}>
                       {opt.roman}
                     </span>
                   </span>

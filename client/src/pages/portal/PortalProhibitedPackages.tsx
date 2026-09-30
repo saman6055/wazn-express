@@ -109,27 +109,27 @@ export default function PortalProhibitedPackages() {
             <Ban className="w-6 h-6" />
           </div>
           <div>
-            <h1 className={cn("text-xl font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
+            <h1 className={cn("text-xl font-bold", "text-foreground")}>
               {label({ ku: "کەل و پەلی قەدەغە", en: "Prohibited packages", ar: "الطرود الممنوعة", zh: "违禁包裹" })}
             </h1>
-            <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+            <p className={cn("text-sm", "text-muted-foreground")}>
               {label({ ku: "پاکێجەکانی کە ناتوانرێن بگوازرێنەوە", en: "Packages that can't be shipped", ar: "طرود لا يمكن شحنها", zh: "无法运输的包裹" })}
             </p>
           </div>
         </div>
 
         {isLoading ? (
-          <div className="space-y-3">{[1, 2].map((i) => <div key={i} className={cn("h-40 rounded-2xl animate-pulse", isDark ? "bg-slate-800" : "bg-slate-200")} />)}</div>
+          <div className="space-y-3">{[1, 2].map((i) => <div key={i} className={cn("h-40 rounded-2xl animate-pulse", "bg-muted")} />)}</div>
         ) : isError ? (
           /* These are decisions the customer has to make about goods we are
              holding. Reporting a failed request as "nothing here" hides them. */
           <PortalErrorState onRetry={() => void refetch()} isRetrying={isFetching} />
         ) : !items || items.length === 0 ? (
           <div className="text-center py-20">
-            <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4", isDark ? "bg-slate-800" : "bg-slate-100 dark:bg-slate-950/40")}>
+            <div className={cn("w-16 h-16 rounded-2xl flex items-center justify-center mx-auto mb-4", "bg-muted")}>
               <CheckCircle2 className="w-8 h-8 text-emerald-500 dark:text-emerald-400" />
             </div>
-            <p className={cn("font-medium", isDark ? "text-slate-300" : "text-slate-600")}>
+            <p className={cn("font-medium", "text-muted-foreground")}>
               {label({ ku: "هیچ پاکێجێکی قەدەغە نییە", en: "No prohibited packages", ar: "لا توجد طرود ممنوعة", zh: "没有违禁包裹" })}
             </p>
           </div>
@@ -146,10 +146,10 @@ export default function PortalProhibitedPackages() {
                   highlightId === it.id && "ring-2 ring-offset-2 ring-amber-400 dark:ring-offset-slate-900",
                   pending ? "wazn-prohibited-flash border-red-400" : (isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60"),
                 )}>
-                  <div className={cn("p-4", pending && (isDark ? "bg-slate-800" : "bg-white"))}>
+                  <div className={cn("p-4", pending && ("bg-card"))}>
                     {/* Top: tracking + status */}
                     <div className="flex items-center justify-between mb-3">
-                      <span className={cn("inline-flex items-center gap-1.5 text-sm font-mono", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
+                      <span className={cn("inline-flex items-center gap-1.5 text-sm font-mono", "text-foreground")}>
                         <Hash className="w-3.5 h-3.5 opacity-60" />{it.trackingNumber}
                       </span>
                       <span className={cn(
@@ -174,10 +174,10 @@ export default function PortalProhibitedPackages() {
                       <AlertTriangle className="w-4 h-4 text-red-500 dark:text-red-400 mt-0.5 flex-shrink-0" />
                       <div>
                         <p className={cn("text-xs font-medium", isDark ? "text-red-300" : "text-red-700 dark:text-red-300")}>{label({ ku: "هۆکاری قەدەغە", en: "Reason", ar: "السبب", zh: "原因" })}</p>
-                        <p className={cn("text-sm mt-0.5", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
+                        <p className={cn("text-sm mt-0.5", "text-foreground")}>
                           {reason ? label(reason) : label({ ku: "کاڵای قەدەغەکراو", en: "Prohibited item", ar: "بضاعة ممنوعة", zh: "违禁物品" })}
                         </p>
-                        {it.reasonNote && <p className={cn("text-xs mt-1", isDark ? "text-slate-400" : "text-slate-500")}>{it.reasonNote}</p>}
+                        {it.reasonNote && <p className={cn("text-xs mt-1", "text-muted-foreground")}>{it.reasonNote}</p>}
                       </div>
                     </div>
 
@@ -195,7 +195,7 @@ export default function PortalProhibitedPackages() {
                     {/* Resolution */}
                     {pending ? (
                       <div className="mt-4">
-                        <p className={cn("text-sm font-medium mb-2", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
+                        <p className={cn("text-sm font-medium mb-2", "text-foreground")}>
                           {label({ ku: "چی لەم کاڵایە بکرێت؟ (هەر ڕێگایەک کولفەی خۆی هەیە)", en: "What should we do with it? (each option has a fee)", ar: "ماذا نفعل بها؟ (لكل خيار رسوم)", zh: "该如何处理？（每个选项都有费用）" })}
                         </p>
                         <div className="grid grid-cols-3 gap-2">
@@ -222,7 +222,7 @@ export default function PortalProhibitedPackages() {
                       </div>
                     ) : (
                       <div className="mt-4 flex items-center justify-between gap-2">
-                        <span className={cn("inline-flex items-center gap-1.5 text-sm font-medium", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
+                        <span className={cn("inline-flex items-center gap-1.5 text-sm font-medium", "text-foreground")}>
                           {chosen && <chosen.icon className="w-4 h-4" />}
                           {chosen ? label(chosen.label) : ""}
                         </span>

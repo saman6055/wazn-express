@@ -63,7 +63,7 @@ export function GreetingCard({ isDark, language }: { isDark: boolean; language: 
           <p
             className={cn(
               "font-semibold leading-snug",
-              isDark ? "text-white" : "text-slate-800 dark:text-slate-100",
+              "text-foreground",
             )}
           >
             {L(data.title)}
@@ -71,7 +71,7 @@ export function GreetingCard({ isDark, language }: { isDark: boolean; language: 
           <p
             className={cn(
               "text-sm mt-0.5 leading-relaxed",
-              isDark ? "text-slate-300" : "text-slate-600 dark:text-slate-300",
+              "text-muted-foreground",
             )}
           >
             {L(data.message)}

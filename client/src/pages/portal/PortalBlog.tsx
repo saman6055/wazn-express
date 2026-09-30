@@ -103,22 +103,22 @@ const { banner: portalBanner } = usePortalPalette();
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 px-4 py-4 border-b backdrop-blur-lg",
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100 dark:border-slate-800/60"
+        "bg-card/90 border-border"
       )}>
         <div className="flex items-center gap-3">
           <PortalBackButton
-            className={cn("p-2 rounded-xl transition-colors", isDark ? "hover:bg-slate-800" : "hover:bg-slate-100")}
-            iconClassName={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}
+            className={cn("p-2 rounded-xl transition-colors", "hover:bg-muted")}
+            iconClassName={cn("w-5 h-5", "text-foreground")}
           />
           <div className="flex items-center gap-2 flex-1 min-w-0">
             <div className="p-2 rounded-xl text-white shadow-sm shrink-0" style={portalBanner}>
               <Newspaper className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <h1 className={cn("text-xl font-black", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+              <h1 className={cn("text-xl font-black", "text-foreground")}>
                 {pickLang(language, { ku: "وەزن نیوز", en: "Wazn News", ar: "وزن نيوز", zh: "Wazn 资讯" })}
               </h1>
-              <p className={cn("text-xs", isDark ? "text-slate-400" : "text-slate-500")}>
+              <p className={cn("text-xs", "text-muted-foreground")}>
                 {pickLang(language, { ku: "هەواڵ، ڕیکلام و ڤیدیۆ", en: "News, promos & videos", ar: "أخبار وإعلانات وفيديو", zh: "新闻、优惠与视频" })}
               </p>
             </div>
@@ -170,12 +170,12 @@ const { banner: portalBanner } = usePortalPalette();
           )}>
             <Megaphone className={cn(
               "w-16 h-16 mx-auto mb-4",
-              isDark ? "text-slate-600" : "text-slate-300"
+              "text-muted-foreground"
             )} />
-            <h3 className={cn("text-lg font-semibold mb-2", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+            <h3 className={cn("text-lg font-semibold mb-2", "text-foreground")}>
               {pickLang(language, { ku: "هیچ هەواڵێک نییە", en: "No announcements yet", ar: "لا توجد إعلانات بعد", zh: "暂无公告" })}
             </h3>
-            <p className={cn("text-sm", isDark ? "text-slate-400" : "text-slate-500")}>
+            <p className={cn("text-sm", "text-muted-foreground")}>
               {pickLang(language, { ku: "هەواڵەکان لێرە دەردەکەون", en: "Announcements will appear here", ar: "ستظهر الإعلانات هنا", zh: "公告将显示在这里" })}
             </p>
           </div>
@@ -185,7 +185,7 @@ const { banner: portalBanner } = usePortalPalette();
               <Link key={post.id} href={`/portal/blog/${post.id}`}>
                 <div className={cn(
                   "rounded-2xl overflow-hidden shadow-lg transition-all duration-300 hover:scale-[1.02] hover:shadow-xl cursor-pointer",
-                  isDark ? "bg-slate-800" : "bg-white"
+                  "bg-card"
                 )}>
                   {/* Cover Image */}
                   {post.coverImageUrl ? (
@@ -265,14 +265,14 @@ const { banner: portalBanner } = usePortalPalette();
                   <div className="p-4">
                     <h3 className={cn(
                       "font-bold text-lg mb-2 line-clamp-2",
-                      isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                      "text-foreground"
                     )} dir={isRTL ? "rtl" : "ltr"}>
                       {getTitle(post)}
                     </h3>
                     
                     <p className={cn(
                       "text-sm mb-4 line-clamp-2",
-                      isDark ? "text-slate-400" : "text-slate-600"
+                      "text-muted-foreground"
                     )} dir={isRTL ? "rtl" : "ltr"}>
                       {getSummary(post)}
                     </p>
@@ -282,14 +282,14 @@ const { banner: portalBanner } = usePortalPalette();
                       <div className="flex items-center gap-4">
                         <div className={cn(
                           "flex items-center gap-1.5 text-xs",
-                          isDark ? "text-slate-500" : "text-slate-400"
+                          "text-muted-foreground"
                         )}>
                           <Calendar className="w-3.5 h-3.5" />
                           {formatDate(post.publishedAt || post.createdAt)}
                         </div>
                         <div className={cn(
                           "flex items-center gap-1.5 text-xs",
-                          isDark ? "text-slate-500" : "text-slate-400"
+                          "text-muted-foreground"
                         )}>
                           <Eye className="w-3.5 h-3.5" />
                           {post.viewCount}
@@ -298,7 +298,7 @@ const { banner: portalBanner } = usePortalPalette();
                       
                       <div className={cn(
                         "flex items-center gap-1 text-sm font-medium",
-                        isDark ? "text-blue-400" : "text-blue-600"
+                        "text-blue-600 dark:text-blue-400"
                       )}>
                         <span>{pickLang(language, { ku: "بخوێنەوە", en: "Read", ar: "اقرأ", zh: "阅读" })}</span>
                         <ChevronRight className="w-4 h-4" />

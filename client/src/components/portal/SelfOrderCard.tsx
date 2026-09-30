@@ -122,7 +122,7 @@ export function SelfOrderCard({
     <div
       className={cn(
         "rounded-2xl border p-3.5",
-        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100 dark:border-slate-800/60 shadow-sm",
+        "bg-card border-border shadow-sm",
       )}
     >
       <div className="flex items-start gap-3">
@@ -132,16 +132,16 @@ export function SelfOrderCard({
           fallback={
             <div className={cn(
               "flex h-16 w-16 shrink-0 items-center justify-center rounded-xl",
-              isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40",
+              "bg-muted",
             )}>
-              <PackageIcon className={cn("h-7 w-7", isDark ? "text-slate-500" : "text-slate-400")} />
+              <PackageIcon className={cn("h-7 w-7", "text-muted-foreground")} />
             </div>
           }
         />
 
         <div className="min-w-0 flex-1">
           <div className="flex items-start justify-between gap-2">
-            <p className={cn("truncate text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+            <p className={cn("truncate text-sm font-bold", "text-foreground")}>
               {pkg.description || pkg.packageCode}
             </p>
             <span className={cn("inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-semibold", status.cls)}>
@@ -167,27 +167,27 @@ export function SelfOrderCard({
             )}
 
             {shipping && ShippingIcon && (
-              <span className={cn("inline-flex items-center gap-1 text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+              <span className={cn("inline-flex items-center gap-1 text-[11px]", "text-muted-foreground")}>
                 <ShippingIcon className="h-3 w-3" />
                 {pick(shipping.label)}
               </span>
             )}
 
             {measureValue > 0 && (
-              <span className={cn("inline-flex items-center gap-1 text-[11px] tabular-nums", isDark ? "text-slate-400" : "text-slate-500")} dir="ltr">
+              <span className={cn("inline-flex items-center gap-1 text-[11px] tabular-nums", "text-muted-foreground")} dir="ltr">
                 <measure.icon className="h-3 w-3" />
                 {isSea ? fmtCbm(measure.value) : fmtKg(measure.value)}
               </span>
             )}
 
             {pkg.batchCode && (
-              <span className={cn("inline-flex items-center gap-1 font-mono text-[11px]", isDark ? "text-slate-400" : "text-slate-500")} dir="ltr">
+              <span className={cn("inline-flex items-center gap-1 font-mono text-[11px]", "text-muted-foreground")} dir="ltr">
                 <Box className="h-3 w-3" />
                 {pkg.batchCode}
               </span>
             )}
 
-            <span className={cn("ms-auto inline-flex items-center gap-1 text-[11px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+            <span className={cn("ms-auto inline-flex items-center gap-1 text-[11px] tabular-nums", "text-muted-foreground")} dir="ltr">
               <Calendar className="h-3 w-3" />
               {fmtDate(pkg.createdAt, language)}
             </span>
@@ -195,7 +195,7 @@ export function SelfOrderCard({
 
           {price.kind === "pending" && (
             <div className="mt-2">
-              <span className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+              <span className={cn("text-[11px]", "text-muted-foreground")}>
                 {pick(PRICE_NOT_SET_YET)}
               </span>
             </div>
@@ -204,7 +204,7 @@ export function SelfOrderCard({
           {price.kind !== "pending" && (
             <div className="mt-2">
               <div className="flex items-center gap-2">
-                <span className={cn("text-base font-bold tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
+                <span className={cn("text-base font-bold tabular-nums", "text-foreground")} dir="ltr">
                   {fmtUsd(price.amount)}
                 </span>
                 <span className={cn(
@@ -221,7 +221,7 @@ export function SelfOrderCard({
               {/* Named in advance, because the gap between an estimate and an
                   invoice is exactly where an argument starts. */}
               {price.kind === "estimate" && (
-                <p className={cn("mt-1 text-[11px] leading-snug", isDark ? "text-slate-400" : "text-slate-500")}>
+                <p className={cn("mt-1 text-[11px] leading-snug", "text-muted-foreground")}>
                   {pick(ESTIMATE_EXCLUDES)}
                 </p>
               )}

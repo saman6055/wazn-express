@@ -648,7 +648,7 @@ export default function PortalFullPackage() {
       {/* Content Area */}
       <div className={cn(
         "px-4 py-6 min-h-screen",
-        isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40"
+        "bg-muted"
       )}>
         {/* Tab Filters — all of them in the width of the phone, never a row to
             swipe (owner, 2026-09-19): equal cells, and a long name takes two
@@ -667,7 +667,7 @@ export default function PortalFullPackage() {
               "pointer-coarse:min-h-11 min-w-0 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
               activeTab === "all"
                 ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-lg"
-                : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
 {pickLang(language, { ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
@@ -678,7 +678,7 @@ export default function PortalFullPackage() {
               "pointer-coarse:min-h-11 min-w-0 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
               activeTab === "full_package"
                 ? "bg-gradient-to-r from-emerald-500 to-teal-600 text-white shadow-lg"
-                : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
 {pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الباقة الكاملة", zh: "全包套餐" })}
@@ -689,7 +689,7 @@ export default function PortalFullPackage() {
               "pointer-coarse:min-h-11 min-w-0 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
               activeTab === "commission"
                 ? "bg-gradient-to-r from-amber-500 to-orange-600 text-white shadow-lg"
-                : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                : "text-muted-foreground hover:text-foreground"
             )}
           >
 {pickLang(language, { ku: "کڕین بە تێچوو", en: "Commission", ar: "عمولة", zh: "代购佣金" })}
@@ -704,7 +704,7 @@ export default function PortalFullPackage() {
                 "pointer-coarse:min-h-11 min-w-0 flex flex-wrap items-center justify-center gap-x-1 gap-y-0.5 py-1.5 px-1 rounded-lg text-center text-xs font-semibold leading-tight transition-all",
                 activeTab === "self"
                   ? "bg-gradient-to-r from-sky-500 to-blue-600 text-white shadow-lg"
-                  : isDark ? "text-slate-400 hover:text-white" : "text-slate-600 hover:text-slate-900"
+                  : "text-muted-foreground hover:text-foreground"
               )}
             >
               {pickLang(language, { ku: "کڕینی خۆم", en: "My own", ar: "شرائي الخاص", zh: "自购" })}
@@ -726,7 +726,7 @@ export default function PortalFullPackage() {
           <div className="relative flex-1">
             <Search className={cn(
               "absolute end-4 top-1/2 -translate-y-1/2 w-5 h-5",
-              isDark ? "text-slate-500" : "text-slate-400"
+              "text-muted-foreground"
             )} />
             <input
               type="text"
@@ -779,7 +779,7 @@ export default function PortalFullPackage() {
                 <div>
                   <p className={cn(
                     "text-xs font-semibold mb-2.5 flex items-center gap-1.5",
-                    isDark ? "text-slate-400" : "text-slate-500"
+                    "text-muted-foreground"
                   )}>
                     <Filter className="w-3.5 h-3.5" />
                     {pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}
@@ -799,9 +799,7 @@ export default function PortalFullPackage() {
                           "relative tap-44 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                           statusFilter === s.key
                             ? `bg-gradient-to-r ${s.gradient} text-white shadow-md`
-                            : isDark
-                              ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                              : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200"
+                            : "bg-muted text-muted-foreground hover:bg-muted/70"
                         )}
                       >
                         {pickLang(language, { ku: s.ku, en: s.en, ar: s.ar, zh: s.zh })}
@@ -814,7 +812,7 @@ export default function PortalFullPackage() {
                 <div>
                   <p className={cn(
                     "text-xs font-semibold mb-2.5 flex items-center gap-1.5",
-                    isDark ? "text-slate-400" : "text-slate-500"
+                    "text-muted-foreground"
                   )}>
                     <ArrowUpDown className="w-3.5 h-3.5" />
                     {pickLang(language, { ku: "ڕیزکردن", en: "Sort", ar: "الترتيب", zh: "排序" })}
@@ -833,9 +831,7 @@ export default function PortalFullPackage() {
                           "relative tap-44 px-4 py-2 rounded-xl text-sm font-medium transition-all",
                           sortBy === s.key
                             ? "bg-gradient-to-r from-violet-500 to-purple-600 text-white shadow-md"
-                            : isDark
-                              ? "bg-slate-700 text-slate-300 hover:bg-slate-600"
-                              : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200"
+                            : "bg-muted text-muted-foreground hover:bg-muted/70"
                         )}
                       >
                         {pickLang(language, { ku: s.ku, en: s.en, ar: s.ar, zh: s.zh })}
@@ -868,7 +864,7 @@ export default function PortalFullPackage() {
         {(statusFilter !== "all" || sortBy !== "newest" || searchQuery) && !isLoading && (
           <p className={cn(
             "text-sm mb-3",
-            isDark ? "text-slate-400" : "text-slate-500"
+            "text-muted-foreground"
           )}>
             {visibleCount} {pickLang(language, { ku: "ئەنجام", en: "results", ar: "نتيجة", zh: "条结果" })}
           </p>
@@ -902,11 +898,11 @@ export default function PortalFullPackage() {
               <>
                 <h3 className={cn(
                   "text-xl font-bold mb-2",
-                  isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                  "text-foreground"
                 )}>
 {pickLang(language, { ku: "هیچ ئەنجامێک بۆ ئەم فلتەرە نییە", en: "Nothing matches this filter", ar: "لا نتائج لهذا الفلتر", zh: "没有符合筛选的结果" })}
                 </h3>
-                <p className={cn("mb-6", isDark ? "text-slate-400" : "text-slate-500")}>
+                <p className={cn("mb-6", "text-muted-foreground")}>
 {pickLang(language, { ku: "فلتەر یان گەڕانەکە بگۆڕە بۆ بینینی ئۆردەرەکانت", en: "Change the filter or search to see your orders", ar: "غيّر الفلتر أو البحث لرؤية طلباتك", zh: "更改筛选或搜索以查看您的订单" })}
                 </p>
                 <Button
@@ -921,13 +917,13 @@ export default function PortalFullPackage() {
               <>
                 <h3 className={cn(
                   "text-xl font-bold mb-2",
-                  isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                  "text-foreground"
                 )}>
 {pickLang(language, { ku: "هیچ داواکارییەک نییە", en: "No orders yet", ar: "لا توجد طلبات بعد", zh: "暂无订单" })}
                 </h3>
                 <p className={cn(
                   "mb-6",
-                  isDark ? "text-slate-400" : "text-slate-500"
+                  "text-muted-foreground"
                 )}>
 {pickLang(language, { ku: "دەستپێبکە بە داواکاری نوێ", en: "Start by creating a new request", ar: "ابدأ بإنشاء طلب جديد", zh: "从创建新订单开始" })}
                 </p>
@@ -973,7 +969,7 @@ export default function PortalFullPackage() {
                           {/* Product Image */}
                           <div className={cn(
                             "w-20 h-20 rounded-xl flex-shrink-0 overflow-hidden",
-                            isDark ? "bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40"
+                            "bg-muted"
                           )}>
                             {order.productImage ? (
                               <img onError={onImageError} loading="lazy" decoding="async" 
@@ -985,7 +981,7 @@ export default function PortalFullPackage() {
                               <div className="w-full h-full flex items-center justify-center">
                                 <ImageIcon className={cn(
                                   "w-8 h-8",
-                                  isDark ? "text-slate-600" : "text-slate-300"
+                                  "text-muted-foreground"
                                 )} />
                               </div>
                             )}
@@ -1016,7 +1012,7 @@ export default function PortalFullPackage() {
                             {/* Product Name */}
                             <h3 className={cn(
                               "font-semibold text-base mb-1 truncate",
-                              isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                              "text-foreground"
                             )}>
                               {order.productName}
                             </h3>
@@ -1050,14 +1046,14 @@ export default function PortalFullPackage() {
                                 {order.orderType === 'commission' ? (
                                   <span className={cn(
                                     "text-lg font-bold",
-                                    isDark ? "text-amber-400" : "text-amber-600"
+                                    "text-amber-600 dark:text-amber-400"
                                   )}>
                                     {formatPrice(order.totalPrepaidUsd)}
                                   </span>
                                 ) : (
                                   <span className={cn(
                                     "text-lg font-bold",
-                                    isDark ? "text-emerald-400" : "text-emerald-600"
+                                    "text-emerald-600 dark:text-emerald-400"
                                   )}>
                                     {formatPrice(orderDisplayTotal(order))}
                                   </span>
@@ -1065,7 +1061,7 @@ export default function PortalFullPackage() {
                                 {order.shippingChargedUsd && parseFloat(order.shippingChargedUsd) > 0 && (
                                   <span className={cn(
                                     "text-sm font-medium flex items-center gap-1",
-                                    isDark ? "text-blue-400" : "text-blue-600"
+                                    "text-blue-600 dark:text-blue-400"
                                   )}>
                                     + {formatPrice(order.shippingChargedUsd)} <Truck className="w-3.5 h-3.5" />
                                   </span>
@@ -1073,7 +1069,7 @@ export default function PortalFullPackage() {
                                 {order.quantity > 1 && (
                                   <span className={cn(
                                     "text-sm",
-                                    isDark ? "text-slate-400" : "text-slate-500"
+                                    "text-muted-foreground"
                                   )}>
                                     {order.orderType === 'commission'
                                       ? `${order.quantity} ${pickLang(language, { ku: "دانە", en: "pcs", ar: "قطعة", zh: "件" })}`
@@ -1083,7 +1079,7 @@ export default function PortalFullPackage() {
                               </div>
                               <ChevronRight className={cn(
                                 "w-5 h-5",
-                                isDark ? "text-slate-600" : "text-slate-300"
+                                "text-muted-foreground"
                               )} />
                             </div>
                           </div>
@@ -1092,16 +1088,16 @@ export default function PortalFullPackage() {
                         {/* Date Footer */}
                         <div className={cn(
                           "mt-3 pt-3 border-t flex items-center justify-between",
-                          isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60"
+                          "border-border"
                         )}>
                           <div className="flex items-center gap-2">
                             <Calendar className={cn(
                               "w-4 h-4",
-                              isDark ? "text-slate-500" : "text-slate-400"
+                              "text-muted-foreground"
                             )} />
                             <span className={cn(
                               "text-sm",
-                              isDark ? "text-slate-400" : "text-slate-500"
+                              "text-muted-foreground"
                             )}>
                               <bdi dir="ltr">{formatPortalDate(order.createdAt, language)}</bdi>
                             </span>
@@ -1110,11 +1106,11 @@ export default function PortalFullPackage() {
                             <div className="flex items-center gap-1">
                               <Truck className={cn(
                                 "w-4 h-4",
-                                isDark ? "text-slate-500" : "text-slate-400"
+                                "text-muted-foreground"
                               )} />
                               <span className={cn(
                                 "text-xs font-mono",
-                                isDark ? "text-slate-400" : "text-slate-500"
+                                "text-muted-foreground"
                               )}>
                                 {order.trackingNumber}
                               </span>
@@ -1227,7 +1223,7 @@ export default function PortalFullPackage() {
             "max-sm:inset-x-0 max-sm:top-auto max-sm:bottom-0 max-sm:w-full max-sm:max-w-none max-sm:translate-x-0 max-sm:translate-y-0",
             "max-sm:max-h-[94dvh] max-sm:rounded-t-3xl max-sm:rounded-b-none max-sm:border-x-0 max-sm:border-b-0",
             "max-sm:data-[state=open]:slide-in-from-bottom-10 max-sm:data-[state=closed]:slide-out-to-bottom-10",
-            isDark ? "bg-slate-900 border-slate-800" : "bg-white"
+            "bg-card border-border"
           )}
         >
           {selectedOrder && (
@@ -1266,7 +1262,7 @@ export default function PortalFullPackage() {
                       <div className="w-full h-full flex items-center justify-center">
                         <Package className={cn(
                           "w-8 h-8",
-                          isDark ? "text-slate-600" : "text-slate-300"
+                          "text-muted-foreground"
                         )} />
                       </div>
                     )}
@@ -1279,7 +1275,7 @@ export default function PortalFullPackage() {
                 <DialogHeader className="text-start mb-6">
                   <DialogTitle className={cn(
                     "text-xl font-bold",
-                    isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                    "text-foreground"
                   )}>
                     {selectedOrder.productName}
                   </DialogTitle>
@@ -1329,15 +1325,15 @@ export default function PortalFullPackage() {
                   {/* Price Info */}
                   <div className={cn(
                     "p-4 rounded-2xl",
-                    isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
+                    "bg-muted"
                   )}>
                     <div className="flex items-center justify-between mb-3">
-                      <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                      <span className={"text-muted-foreground"}>
 {pickLang(language, { ku: "کۆی نرخ", en: "Total price", ar: "السعر الإجمالي", zh: "总价" })}
                       </span>
                       <span className={cn(
                         "text-xl font-bold",
-                        isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                        "text-foreground"
                       )}>
                         {formatPrice(orderDisplayTotal(selectedOrder))}
                       </span>
@@ -1349,10 +1345,10 @@ export default function PortalFullPackage() {
                         one; "quantity 1" under a price says nothing. */}
                     {Number(selectedOrder.quantity) > 1 && (
                       <div className="flex items-center justify-between text-sm">
-                        <span className={isDark ? "text-slate-500" : "text-slate-400"}>
+                        <span className={"text-muted-foreground"}>
                           {pickLang(language, { ku: "ژمارەی دانە", en: "Pieces", ar: "عدد القطع", zh: "件数" })}
                         </span>
-                        <bdi dir="ltr" className={cn("tabular-nums", isDark ? "text-slate-300" : "text-slate-600")}>
+                        <bdi dir="ltr" className={cn("tabular-nums", "text-muted-foreground")}>
                           {selectedOrder.quantity}
                         </bdi>
                       </div>
@@ -1371,7 +1367,7 @@ export default function PortalFullPackage() {
                             "w-4 h-4",
                             isDark ? "text-blue-400" : "text-blue-500"
                           )} />
-                          <span className={isDark ? "text-blue-300" : "text-blue-600"}>
+                          <span className={"text-blue-600 dark:text-blue-300"}>
 {pickLang(language, { ku: "نرخی گەیاندن", en: "Shipping Cost", ar: "تكلفة الشحن", zh: "运费" })}
                           </span>
                         </div>
@@ -1397,39 +1393,39 @@ export default function PortalFullPackage() {
                     return (
                       <div className={cn(
                         "p-4 rounded-2xl space-y-2",
-                        isDark ? "bg-emerald-900/30" : "bg-emerald-50 dark:bg-emerald-950/40"
+                        "bg-emerald-50 dark:bg-emerald-950/40"
                       )}>
                         <div className="flex items-center gap-2 mb-1">
-                          <DollarSign className={cn("w-4 h-4", isDark ? "text-emerald-400" : "text-emerald-600")} />
-                          <span className={cn("font-semibold", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
+                          <DollarSign className={cn("w-4 h-4", "text-emerald-600 dark:text-emerald-400")} />
+                          <span className={cn("font-semibold", "text-emerald-700 dark:text-emerald-300")}>
                             {pickLang(language, { ku: "پوختەی پارەدان", en: "Payment Summary", ar: "ملخص الدفع", zh: "付款摘要" })}
                           </span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                          <span className={"text-muted-foreground"}>
                             {pickLang(language, { ku: "کۆی نرخ", en: "Total", ar: "السعر الإجمالي", zh: "总价" })}
                           </span>
                           <span className="font-mono font-semibold">{formatPrice(totalPrice)}</span>
                         </div>
                         <div className="flex items-center justify-between text-sm">
-                          <span className={isDark ? "text-emerald-400" : "text-emerald-600"}>
+                          <span className={"text-emerald-600 dark:text-emerald-400"}>
                             {pickLang(language, { ku: "پێشەکی دراو", en: "Advance Paid", ar: "مدفوع مقدماً", zh: "已付预付款" })}
                           </span>
-                          <span className={cn("font-mono font-semibold", isDark ? "text-emerald-400" : "text-emerald-600")}>-{formatPrice(advance)}</span>
+                          <span className={cn("font-mono font-semibold", "text-emerald-600 dark:text-emerald-400")}>-{formatPrice(advance)}</span>
                         </div>
                         <div className={cn("h-px", isDark ? "bg-emerald-800" : "bg-emerald-200")} />
                         <div className="flex items-center justify-between">
-                          <span className={cn("font-semibold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                          <span className={cn("font-semibold", "text-foreground")}>
                             {isFullyPaid
                               ? pickLang(language, { ku: "ڕەوش", en: "Status", ar: "الحالة", zh: "状态" })
                               : pickLang(language, { ku: "ماوە بۆ پارەدان", en: "Remaining", ar: "المتبقي", zh: "剩余应付" })}
                           </span>
                           {isFullyPaid ? (
-                            <span className={cn("font-bold", isDark ? "text-emerald-300" : "text-emerald-700 dark:text-emerald-300")}>
+                            <span className={cn("font-bold", "text-emerald-700 dark:text-emerald-300")}>
                               ✓ {pickLang(language, { ku: "تەواو پارەدراوە", en: "Fully Paid", ar: "مدفوع بالكامل", zh: "已全额付款" })}
                             </span>
                           ) : (
-                            <span className={cn("font-mono font-bold text-lg", isDark ? "text-amber-300" : "text-amber-700 dark:text-amber-300")}>
+                            <span className={cn("font-mono font-bold text-lg", "text-amber-700 dark:text-amber-300")}>
                               {formatPrice(remaining)}
                             </span>
                           )}
@@ -1442,20 +1438,20 @@ export default function PortalFullPackage() {
                   {selectedOrder.trackingNumber && (
                     <div className={cn(
                       "p-4 rounded-2xl",
-                      isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
+                      "bg-muted"
                     )}>
                       <div className="flex items-center gap-2 mb-2">
                         <Truck className={cn(
                           "w-4 h-4",
-                          isDark ? "text-slate-400" : "text-slate-500"
+                          "text-muted-foreground"
                         )} />
-                        <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                        <span className={"text-muted-foreground"}>
 {pickLang(language, { ku: "تراکینگ نەمبەر", en: "Tracking Number", ar: "رقم التتبع", zh: "物流单号" })}
                         </span>
                       </div>
                       <p className={cn(
                         "text-sm",
-                        isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                        "text-foreground"
                       )}>
                         <bdi dir="ltr" className="font-mono">{selectedOrder.trackingNumber}</bdi>
                       </p>
@@ -1478,15 +1474,15 @@ export default function PortalFullPackage() {
                       <div className="flex items-center gap-2">
                         <ExternalLink className={cn(
                           "w-4 h-4",
-                          isDark ? "text-slate-400" : "text-slate-500"
+                          "text-muted-foreground"
                         )} />
-                        <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                        <span className={"text-muted-foreground"}>
 {pickLang(language, { ku: "لینکی کاڵا", en: "Product Link", ar: "رابط المنتج", zh: "产品链接" })}
                         </span>
                       </div>
                       <ChevronRight className={cn(
                         "w-5 h-5",
-                        isDark ? "text-slate-600" : "text-slate-300"
+                        "text-muted-foreground"
                       )} />
                     </a>
                   )}
@@ -1494,20 +1490,20 @@ export default function PortalFullPackage() {
                   {/* Date Info */}
                   <div className={cn(
                     "p-4 rounded-2xl",
-                    isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
+                    "bg-muted"
                   )}>
                     <div className="flex items-center gap-2 mb-2">
                       <Calendar className={cn(
                         "w-4 h-4",
-                        isDark ? "text-slate-400" : "text-slate-500"
+                        "text-muted-foreground"
                       )} />
-                      <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                      <span className={"text-muted-foreground"}>
 {pickLang(language, { ku: "بەرواری دروستکردن", en: "Created Date", ar: "تاريخ الإنشاء", zh: "创建日期" })}
                       </span>
                     </div>
                     <p className={cn(
                       "text-sm",
-                      isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                      "text-foreground"
                     )}>
                       <bdi dir="ltr">{formatPortalDate(selectedOrder.createdAt, language).replace(/\//g, '/')}</bdi>
                     </p>
@@ -1517,20 +1513,20 @@ export default function PortalFullPackage() {
                   {selectedOrder.productDescription && (
                     <div className={cn(
                       "p-4 rounded-2xl",
-                      isDark ? "bg-slate-800" : "bg-slate-50 dark:bg-slate-950/40"
+                      "bg-muted"
                     )}>
                       <div className="flex items-center gap-2 mb-2">
                         <FileText className={cn(
                           "w-4 h-4",
-                          isDark ? "text-slate-400" : "text-slate-500"
+                          "text-muted-foreground"
                         )} />
-                        <span className={isDark ? "text-slate-400" : "text-slate-500"}>
+                        <span className={"text-muted-foreground"}>
 {pickLang(language, { ku: "تێبینی", en: "Notes", ar: "ملاحظات", zh: "备注" })}
                         </span>
                       </div>
                       <p className={cn(
                         "text-sm",
-                        isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+                        "text-foreground"
                       )}>
                         {selectedOrder.productDescription}
                       </p>

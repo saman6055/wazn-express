@@ -63,7 +63,7 @@ export function WaznNewsCarousel({ language, isDark }: { language: string; isDar
   if (isLoading) {
     return (
       <div className="px-4 mt-6 mb-6">
-        <div className={cn("h-44 w-full rounded-2xl animate-pulse", isDark ? "bg-slate-800" : "bg-slate-200")} />
+        <div className={cn("h-44 w-full rounded-2xl animate-pulse", "bg-muted")} />
       </div>
     );
   }
@@ -78,7 +78,7 @@ export function WaznNewsCarousel({ language, isDark }: { language: string; isDar
             <div className="p-1.5 rounded-lg bg-gradient-to-br from-orange-500 to-red-600 text-white shadow-sm">
               <Newspaper className="w-4 h-4" />
             </div>
-            <h2 className={cn("text-lg font-black group-hover:opacity-80 transition", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+            <h2 className={cn("text-lg font-black group-hover:opacity-80 transition", "text-foreground")}>
               {pick({ ku: "وەزن نیوز", en: "Wazn News", ar: "وزن نيوز", zh: "Wazn 新闻" })}
             </h2>
           </div>

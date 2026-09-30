@@ -140,8 +140,8 @@ export function OrderBillingGroups({
   return (
     <div className="space-y-2.5">
       <div className="flex items-center gap-2">
-        <Receipt className={cn("h-4 w-4", isDark ? "text-indigo-400" : "text-indigo-600")} />
-        <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+        <Receipt className={cn("h-4 w-4", "text-indigo-600 dark:text-indigo-400")} />
+        <h3 className={cn("text-sm font-bold", "text-foreground")}>
           {pick({
             ku: "حیسابی هەر ئۆردەرێک بە یەکەوە",
             en: "Billing grouped per order",
@@ -150,7 +150,7 @@ export function OrderBillingGroups({
           })}
         </h3>
       </div>
-      <p className={cn("text-[11px] leading-relaxed", isDark ? "text-slate-400" : "text-slate-500")}>
+      <p className={cn("text-[11px] leading-relaxed", "text-muted-foreground")}>
         {pick({
           ku: "هەموو پارەدانەکانی یەک ئۆردەر (کڕین، عمولە، گواستنەوە...) لێرە بە یەک کۆ دەبینیت",
           en: "All charges of one order (purchase, commission, shipping...) shown as a single total here",
@@ -195,7 +195,7 @@ export function OrderBillingGroups({
             key={g.key}
             className={cn(
               "rounded-2xl border overflow-hidden transition-colors",
-              isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-100 dark:border-slate-800/60 shadow-sm",
+              "bg-card border-border shadow-sm",
             )}
           >
             {/* The thumbnail sits outside the expand button rather than inside
@@ -224,16 +224,16 @@ export function OrderBillingGroups({
                 <div className="flex items-center gap-3">
                 <div className="min-w-0 flex-1">
                   <div className="flex items-center justify-between gap-2">
-                    <span className={cn("truncate text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                    <span className={cn("truncate text-sm font-bold", "text-foreground")}>
                       {title}
                       {quantity != null && quantity > 1 && (
-                        <span className={cn("ms-1.5 font-black", isDark ? "text-amber-400" : "text-amber-600")} dir="ltr">
+                        <span className={cn("ms-1.5 font-black", "text-amber-600 dark:text-amber-400")} dir="ltr">
                           ×{quantity}
                         </span>
                       )}
                     </span>
                     <span
-                      className={cn("shrink-0 text-base font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}
+                      className={cn("shrink-0 text-base font-black tabular-nums", "text-foreground")}
                       dir="ltr"
                     >
                       {fmtUsd(g.total)}
@@ -256,7 +256,7 @@ export function OrderBillingGroups({
                     )}
                     {tracking && (
                       <span
-                        className={cn("inline-flex items-center gap-1 text-[11px] font-mono", isDark ? "text-slate-400" : "text-slate-500")}
+                        className={cn("inline-flex items-center gap-1 text-[11px] font-mono", "text-muted-foreground")}
                         dir="ltr"
                       >
                         <Truck className="h-3 w-3" />
@@ -264,17 +264,17 @@ export function OrderBillingGroups({
                       </span>
                     )}
                     {quantity != null && (
-                      <span className={cn("text-[11px] font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
+                      <span className={cn("text-[11px] font-medium", "text-muted-foreground")}>
                         {pick({ ku: "عەدەد", en: "Qty", ar: "الكمية", zh: "数量" })}: <b dir="ltr">{quantity}</b>
                       </span>
                     )}
-                    <span className={cn("ms-auto shrink-0 text-[11px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                    <span className={cn("ms-auto shrink-0 text-[11px] tabular-nums", "text-muted-foreground")} dir="ltr">
                       {formatPortalDate(g.firstAt, language)}
                     </span>
                   </div>
                   {!code && (
                     <div className="mt-0.5">
-                      <span className={cn("truncate text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+                      <span className={cn("truncate text-[11px]", "text-muted-foreground")}>
                         {subtitle}
                       </span>
                     </div>
@@ -284,12 +284,12 @@ export function OrderBillingGroups({
                   className={cn(
                     "h-4 w-4 shrink-0 transition-transform",
                     open && "rotate-180",
-                    isDark ? "text-slate-500" : "text-slate-400",
+                    "text-muted-foreground",
                   )}
                 />
               </div>
               {g.lines.length > 1 && !open && (
-                <p className={cn("mt-1.5 text-[11px] font-medium", isDark ? "text-indigo-400" : "text-indigo-600")}>
+                <p className={cn("mt-1.5 text-[11px] font-medium", "text-indigo-600 dark:text-indigo-400")}>
                   {pick({
                     ku: `${g.lines.length} بڕگە لەم ئۆردەرەدا — کلیک بکە بۆ وردەکاری`,
                     en: `${g.lines.length} charges in this order — tap for details`,
@@ -302,28 +302,28 @@ export function OrderBillingGroups({
             </div>
 
             {open && (
-              <div className={cn("border-t px-3.5 py-2", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
+              <div className={cn("border-t px-3.5 py-2", "border-border")}>
                 {g.lines
                   .slice()
                   .sort((a, b) => new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime())
                   .map((line) => (
                     <div key={line.id} className="flex items-start justify-between gap-3 py-1.5">
                       <div className="min-w-0 flex-1">
-                        <p className={cn("text-xs font-medium leading-snug", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")}>
+                        <p className={cn("text-xs font-medium leading-snug", "text-foreground")}>
                           {describeLedgerRef(line.description, language, ledgerTypeName(line.transactionType, language)) ||
                             pick({ ku: "بڕگە", en: "Charge", ar: "بند", zh: "费用" })}
                         </p>
-                        <p className={cn("text-[11px] tabular-nums", isDark ? "text-slate-500" : "text-slate-400")} dir="ltr">
+                        <p className={cn("text-[11px] tabular-nums", "text-muted-foreground")} dir="ltr">
                           {formatPortalDate(line.createdAt, language)}
                         </p>
                       </div>
-                      <span className={cn("shrink-0 text-xs font-bold tabular-nums", isDark ? "text-slate-200" : "text-slate-700 dark:text-slate-300")} dir="ltr">
+                      <span className={cn("shrink-0 text-xs font-bold tabular-nums", "text-foreground")} dir="ltr">
                         {fmtUsd(chargeEffect(line) * (Number(line.amountUsd) || 0))}
                       </span>
                     </div>
                   ))}
-                <div className={cn("mt-1 flex items-center justify-between border-t pt-2", isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60")}>
-                  <span className={cn("flex items-center gap-1 text-xs font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+                <div className={cn("mt-1 flex items-center justify-between border-t pt-2", "border-border")}>
+                  <span className={cn("flex items-center gap-1 text-xs font-bold", "text-foreground")}>
                     <Wallet className="h-3.5 w-3.5" />
                     {/* Grouped from the transactions this screen was handed,
                         which is the most recent fifty — so on a long-standing
@@ -333,7 +333,7 @@ export function OrderBillingGroups({
                         is. */}
                     {pick({ ku: "کۆی ئەم بڕگانە", en: "Total of these charges", ar: "مجموع هذه البنود", zh: "以上费用合计" })}
                   </span>
-                  <span className={cn("text-sm font-black tabular-nums", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")} dir="ltr">
+                  <span className={cn("text-sm font-black tabular-nums", "text-foreground")} dir="ltr">
                     {fmtUsd(g.total)}
                   </span>
                 </div>

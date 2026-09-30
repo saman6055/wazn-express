@@ -140,7 +140,7 @@ const { id } = useParams<{ id: string }>();
       <PortalLayout>
         <div className={cn(
           "text-center py-16 px-4",
-          isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+          "text-foreground"
         )}>
           <Megaphone className="w-16 h-16 mx-auto mb-4 opacity-30" />
           <h2 className="text-xl font-bold mb-2">
@@ -159,22 +159,22 @@ const { id } = useParams<{ id: string }>();
       {/* Header */}
       <div className={cn(
         "sticky top-0 z-10 px-4 py-4 border-b backdrop-blur-lg",
-        isDark ? "bg-slate-900/90 border-slate-800" : "bg-white/90 border-slate-100 dark:border-slate-800/60"
+        "bg-card/90 border-border"
       )}>
         <div className="flex items-center justify-between">
           <PortalBackButton
-            className={cn("p-2 rounded-xl transition-colors", isDark ? "hover:bg-slate-800" : "hover:bg-slate-100")}
-            iconClassName={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}
+            className={cn("p-2 rounded-xl transition-colors", "hover:bg-muted")}
+            iconClassName={cn("w-5 h-5", "text-foreground")}
           />
           
           <button 
             onClick={handleShare}
             className={cn(
               "p-2 rounded-xl transition-colors",
-              isDark ? "hover:bg-slate-800" : "hover:bg-slate-100"
+              "hover:bg-muted"
             )}
           >
-            <Share2 className={cn("w-5 h-5", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")} />
+            <Share2 className={cn("w-5 h-5", "text-foreground")} />
           </button>
         </div>
       </div>
@@ -214,7 +214,7 @@ const { id } = useParams<{ id: string }>();
           {/* Title */}
           <h1 className={cn(
             "text-2xl font-bold mb-4 leading-tight",
-            isDark ? "text-white" : "text-slate-800 dark:text-slate-200"
+            "text-foreground"
           )} dir={isRTL ? "rtl" : "ltr"}>
             {getTitle(post)}
           </h1>
@@ -222,11 +222,11 @@ const { id } = useParams<{ id: string }>();
           {/* Meta Info */}
           <div className={cn(
             "flex flex-wrap items-center gap-4 mb-6 pb-6 border-b",
-            isDark ? "border-slate-700" : "border-slate-200 dark:border-slate-800/60"
+            "border-border"
           )}>
             <div className={cn(
               "flex items-center gap-1.5 text-sm",
-              isDark ? "text-slate-400" : "text-slate-500"
+              "text-muted-foreground"
             )}>
               <Calendar className="w-4 h-4" />
               {formatDate(post.publishedAt || post.createdAt)}
@@ -234,7 +234,7 @@ const { id } = useParams<{ id: string }>();
             
             <div className={cn(
               "flex items-center gap-1.5 text-sm",
-              isDark ? "text-slate-400" : "text-slate-500"
+              "text-muted-foreground"
             )}>
               <Eye className="w-4 h-4" />
               {post.viewCount} {pickLang(language, { ku: "بینین", en: "views", ar: "مشاهدة", zh: "次浏览" })}
@@ -242,7 +242,7 @@ const { id } = useParams<{ id: string }>();
             
             <div className={cn(
               "flex items-center gap-1.5 text-sm",
-              isDark ? "text-slate-400" : "text-slate-500"
+              "text-muted-foreground"
             )}>
               <Clock className="w-4 h-4" />
               {getReadTime(getContent(post))} {pickLang(language, { ku: "خولەک", en: "min read", ar: "دقيقة قراءة", zh: "分钟阅读" })}
@@ -291,7 +291,7 @@ const { id } = useParams<{ id: string }>();
               return (
                 <p key={index} className={cn(
                   "mb-4 leading-relaxed",
-                  isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300"
+                  "text-foreground"
                 )}>
                   {paragraph}
                 </p>
@@ -300,8 +300,8 @@ const { id } = useParams<{ id: string }>();
           </article>
 
           {/* Follow-us channels */}
-          <div className={cn("mt-8 pt-6 border-t", isDark ? "border-slate-700" : "border-slate-200 dark:border-slate-800/60")}>
-            <p className={cn("text-sm font-semibold mb-3", isDark ? "text-slate-300" : "text-slate-600")}>
+          <div className={cn("mt-8 pt-6 border-t", "border-border")}>
+            <p className={cn("text-sm font-semibold mb-3", "text-muted-foreground")}>
               {pickLang(language, { ku: "لە کەناڵەکانمان بمانبینە", en: "Follow us on our channels", ar: "تابعنا على قنواتنا", zh: "关注我们的频道" })}
             </p>
             <SocialChannels />
@@ -310,9 +310,9 @@ const { id } = useParams<{ id: string }>();
           {/* Share Section — WhatsApp, copy link, and the native share sheet */}
           <div className={cn(
             "mt-8 pt-6 border-t",
-            isDark ? "border-slate-700" : "border-slate-200 dark:border-slate-800/60"
+            "border-border"
           )}>
-            <p className={cn("text-sm font-semibold mb-3", isDark ? "text-slate-300" : "text-slate-600")}>
+            <p className={cn("text-sm font-semibold mb-3", "text-muted-foreground")}>
               {pickLang(language, { ku: "ئەم بابەتە هاوبەش بکە", en: "Share this post", ar: "شارك هذا المنشور", zh: "分享这篇文章" })}
             </p>
             <div className="grid grid-cols-3 gap-2">
@@ -332,7 +332,7 @@ const { id } = useParams<{ id: string }>();
                 }}
                 className={cn(
                   "flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition active:scale-95",
-                  isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 hover:bg-slate-200",
+                  "bg-muted text-foreground hover:bg-muted/70",
                 )}
               >
                 <LinkIcon className="w-5 h-5" />
@@ -342,7 +342,7 @@ const { id } = useParams<{ id: string }>();
                 onClick={handleShare}
                 className={cn(
                   "flex items-center justify-center gap-2 py-3 rounded-xl font-bold transition active:scale-95",
-                  isDark ? "bg-slate-800 text-white hover:bg-slate-700" : "bg-slate-100 dark:bg-slate-950/40 text-slate-800 dark:text-slate-200 hover:bg-slate-200",
+                  "bg-muted text-foreground hover:bg-muted/70",
                 )}
               >
                 <Share2 className="w-5 h-5" />

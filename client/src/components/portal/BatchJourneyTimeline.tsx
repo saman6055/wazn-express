@@ -237,7 +237,7 @@ export function BatchJourneyTimeline({
                       (shippingType === "sea"
                         ? "text-cyan-600 dark:text-cyan-400"
                         : "text-blue-600 dark:text-blue-400"),
-                    state === "pending" && (isDark ? "text-slate-500" : "text-slate-400"),
+                    state === "pending" && ("text-muted-foreground"),
                   )}
                 >
                   {pick(stage.label)}
@@ -247,7 +247,7 @@ export function BatchJourneyTimeline({
                     className={cn(
                       "mt-0.5 text-center text-[11px] font-mono leading-tight tabular-nums whitespace-nowrap",
                       state !== "active" && "hidden @[18rem]:block",
-                      isDark ? "text-slate-500" : "text-slate-400",
+                      "text-muted-foreground",
                     )}
                     dir="ltr"
                     title={stage.date}
@@ -263,7 +263,7 @@ export function BatchJourneyTimeline({
                   <div
                     className={cn(
                       "h-1 rounded-full",
-                      isDark ? "bg-slate-700" : "bg-slate-200",
+                      "bg-muted",
                     )}
                   >
                     <div
@@ -288,7 +288,7 @@ export function BatchJourneyTimeline({
         <p
           className={cn(
             "mt-2 text-center text-[11px] font-medium",
-            isDark ? "text-slate-400" : "text-slate-500",
+            "text-muted-foreground",
           )}
         >
           {pick({

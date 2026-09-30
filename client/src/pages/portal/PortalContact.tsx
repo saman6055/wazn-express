@@ -58,7 +58,7 @@ export default function PortalContact() {
         )
       : c.href;
 
-  const card = isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-white";
+  const card = "border-border bg-card";
 
   /** The address row shows the translated address, not a stored literal. */
   const valueOf = (c: ContactChannel) => (c.id === "address" ? label(CONTACT_ADDRESS) : c.value);

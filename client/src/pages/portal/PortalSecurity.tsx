@@ -115,7 +115,7 @@ export default function PortalSecurity() {
   return (
     <PortalLayout>
       <div
-        className={cn("min-h-screen", isDark ? "bg-slate-950" : "bg-slate-50 dark:bg-slate-950/40")}
+        className={cn("min-h-screen", "bg-muted")}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -149,20 +149,20 @@ export default function PortalSecurity() {
             onSubmit={handleSubmit}
             className={cn(
               "rounded-3xl p-5 shadow-sm ring-1",
-              isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-slate-100",
+              "bg-card ring-border",
             )}
           >
             <div className="flex items-center gap-2.5 mb-5">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-cyan-400 to-blue-600 flex items-center justify-center text-white shrink-0">
                 <KeyRound className="w-4.5 h-4.5" />
               </div>
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+              <h2 className={cn("font-bold", "text-foreground")}>
                 {pick({ ku: "گۆڕینی وشەی نهێنی", en: "Change Password", ar: "تغيير كلمة المرور", zh: "修改密码" })}
               </h2>
             </div>
 
             {/* Current password */}
-            <label className={cn("text-xs font-semibold mb-1.5 block", isDark ? "text-slate-400" : "text-slate-500")}>
+            <label className={cn("text-xs font-semibold mb-1.5 block", "text-muted-foreground")}>
               {pick({ ku: "وشەی نهێنی ئێستا", en: "Current password", ar: "كلمة المرور الحالية", zh: "当前密码" })}
             </label>
             <div className="relative mb-4">
@@ -177,7 +177,7 @@ export default function PortalSecurity() {
               <button
                 type="button"
                 onClick={() => setShowCurrent((v) => !v)} aria-label={pick(showCurrent ? { ku: "شاردنەوەی وشەی نهێنی", en: "Hide password", ar: "إخفاء كلمة المرور", zh: "隐藏密码" } : { ku: "پیشاندانی وشەی نهێنی", en: "Show password", ar: "إظهار كلمة المرور", zh: "显示密码" })}
-                className={cn("tap-44 absolute top-1/2 -translate-y-1/2 end-3", isDark ? "text-slate-400" : "text-slate-500")}
+                className={cn("tap-44 absolute top-1/2 -translate-y-1/2 end-3", "text-muted-foreground")}
                 tabIndex={-1}
               >
                 {showCurrent ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -185,7 +185,7 @@ export default function PortalSecurity() {
             </div>
 
             {/* New password */}
-            <label className={cn("text-xs font-semibold mb-1.5 block", isDark ? "text-slate-400" : "text-slate-500")}>
+            <label className={cn("text-xs font-semibold mb-1.5 block", "text-muted-foreground")}>
               {pick({ ku: "وشەی نهێنی نوێ", en: "New password", ar: "كلمة المرور الجديدة", zh: "新密码" })}
             </label>
             <div className="relative mb-2">
@@ -200,7 +200,7 @@ export default function PortalSecurity() {
               <button
                 type="button"
                 onClick={() => setShowNew((v) => !v)} aria-label={pick(showNew ? { ku: "شاردنەوەی وشەی نهێنی", en: "Hide password", ar: "إخفاء كلمة المرور", zh: "隐藏密码" } : { ku: "پیشاندانی وشەی نهێنی", en: "Show password", ar: "إظهار كلمة المرور", zh: "显示密码" })}
-                className={cn("tap-44 absolute top-1/2 -translate-y-1/2 end-3", isDark ? "text-slate-400" : "text-slate-500")}
+                className={cn("tap-44 absolute top-1/2 -translate-y-1/2 end-3", "text-muted-foreground")}
                 tabIndex={-1}
               >
                 {showNew ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
@@ -216,13 +216,13 @@ export default function PortalSecurity() {
                       key={i}
                       className={cn(
                         "h-1.5 flex-1 rounded-full transition-colors",
-                        i < strength ? strengthColor : isDark ? "bg-slate-700" : "bg-slate-200",
+                        i < strength ? strengthColor : "bg-muted",
                       )}
                     />
                   ))}
                 </div>
                 <div className="flex items-center justify-between">
-                  <span className={cn("text-xs font-medium", isDark ? "text-slate-400" : "text-slate-500")}>
+                  <span className={cn("text-xs font-medium", "text-muted-foreground")}>
                     {pick({ ku: "هێزی وشەی نهێنی", en: "Password strength", ar: "قوة كلمة المرور", zh: "密码强度" })}
                   </span>
                   <span className={cn(
@@ -241,7 +241,7 @@ export default function PortalSecurity() {
             )}
 
             {/* Confirm password */}
-            <label className={cn("text-xs font-semibold mb-1.5 block", isDark ? "text-slate-400" : "text-slate-500")}>
+            <label className={cn("text-xs font-semibold mb-1.5 block", "text-muted-foreground")}>
               {pick({ ku: "دووبارەکردنەوەی وشەی نهێنی نوێ", en: "Confirm new password", ar: "تأكيد كلمة المرور الجديدة", zh: "确认新密码" })}
             </label>
             <div className="relative mb-2">
@@ -285,13 +285,13 @@ export default function PortalSecurity() {
           {/* Safety tips */}
           <div className={cn(
             "rounded-3xl p-5 ring-1",
-            isDark ? "bg-slate-900 ring-white/5" : "bg-white ring-slate-100",
+            "bg-card ring-border",
           )}>
             <div className="flex items-center gap-2.5 mb-4">
               <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-600 flex items-center justify-center text-white shrink-0">
                 <ShieldCheck className="w-4.5 h-4.5" />
               </div>
-              <h2 className={cn("font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+              <h2 className={cn("font-bold", "text-foreground")}>
                 {pick({ ku: "ڕێنماییەکانی ئەمنیەت", en: "Safety tips", ar: "نصائح الأمان", zh: "安全提示" })}
               </h2>
             </div>
@@ -299,7 +299,7 @@ export default function PortalSecurity() {
               {tips.map((tip, i) => (
                 <li key={i} className="flex items-start gap-2.5">
                   <CheckCircle2 className="w-4.5 h-4.5 text-emerald-500 dark:text-emerald-400 shrink-0 mt-0.5" />
-                  <span className={cn("text-sm", isDark ? "text-slate-300" : "text-slate-600")}>
+                  <span className={cn("text-sm", "text-muted-foreground")}>
                     {pick(tip)}
                   </span>
                 </li>

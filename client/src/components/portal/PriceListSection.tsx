@@ -259,14 +259,14 @@ function ServiceCard({
         <div className="flex-1 min-w-0">
           <h3 className={cn(
             "text-base font-bold truncate",
-            isDark ? "text-white" : "text-slate-900 dark:text-slate-200",
+            "text-foreground",
           )}>
             {name}
           </h3>
           {description && (
             <p className={cn(
               "text-xs mt-1 line-clamp-2",
-              isDark ? "text-slate-400" : "text-slate-500",
+              "text-muted-foreground",
             )}>
               {description}
             </p>
@@ -276,7 +276,7 @@ function ServiceCard({
 
       <div className={cn(
         "flex items-baseline gap-1.5 pt-3 mt-3 border-t",
-        isDark ? "border-slate-700" : "border-slate-100 dark:border-slate-800/60",
+        "border-border",
       )}>
         {isYuan ? (
           <span className="inline-flex items-center gap-1 text-sm font-bold text-orange-500 dark:text-orange-400">
@@ -287,13 +287,13 @@ function ServiceCard({
           <>
             <span className={cn(
               "text-2xl font-black tracking-tight",
-              isDark ? "text-white" : "text-slate-900 dark:text-slate-200",
+              "text-foreground",
             )}>
               ${price.toFixed(2)}
             </span>
             <span className={cn(
               "text-[11px] font-medium",
-              isDark ? "text-slate-400" : "text-slate-500",
+              "text-muted-foreground",
             )}>
               {priceLabel}
             </span>
@@ -306,7 +306,7 @@ function ServiceCard({
         ) : (
           <span className={cn(
             "text-xs italic",
-            isDark ? "text-slate-400" : "text-slate-500",
+            "text-muted-foreground",
           )}>
             {t("priceList.contactForQuote")}
           </span>
@@ -415,14 +415,14 @@ function PriceCalculator({
       ?? (SHIPPING_TYPE_NAMES[r.shippingType] ? pickLang(lang, SHIPPING_TYPE_NAMES[r.shippingType]) : r.shippingType);
 
   // Muted label color — flips for the violet (embedded) card so text stays legible.
-  const muted = violet ? "text-purple-100/80" : isDark ? "text-slate-400" : "text-slate-500";
+  const muted = violet ? "text-purple-100/80" : "text-muted-foreground";
   /** The tint behind each of the two ways of answering. */
   const panelCls = violet
     ? "bg-white/10 border border-white/15"
     : isDark
       ? "bg-slate-900/60 border border-slate-700"
       : "bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-700";
-  const strong = violet ? "text-purple-50" : isDark ? "text-slate-300" : "text-slate-600";
+  const strong = violet ? "text-purple-50" : "text-muted-foreground";
   const accent = violet ? "text-amber-200" : "text-amber-500";
   const inputCls = violet ? "bg-white/15 border-white/25 text-white placeholder:text-white/50" : (isDark ? "bg-slate-900 border-slate-600" : "");
 
@@ -436,7 +436,7 @@ function PriceCalculator({
         placeholder="0"
         className={cn("pe-9 font-mono font-bold text-center", inputCls)}
       />
-      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[11px] font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>
+      <span className={cn("absolute end-2 top-1/2 -translate-y-1/2 text-[11px] font-semibold", violet ? "text-white/70" : "text-muted-foreground")}>
         {label}
       </span>
     </div>
@@ -447,14 +447,14 @@ function PriceCalculator({
       "rounded-2xl p-4 sm:p-5",
       violet
         ? "bg-gradient-to-br from-violet-600 via-purple-700 to-fuchsia-700 text-white shadow-lg"
-        : cn("mt-4 border", isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60 shadow-sm"),
+        : cn("mt-4 border", "bg-card border-border shadow-sm"),
     )}>
       <div className="flex items-center gap-2 mb-3">
         <div className={cn("p-2 rounded-xl text-white shadow-md", violet ? "bg-white/20 backdrop-blur-sm" : "bg-gradient-to-br from-emerald-500 to-teal-600")}>
           <Calculator className="w-4 h-4" />
         </div>
         <div>
-          <h3 className={cn("text-sm font-bold", violet ? "text-white" : isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
+          <h3 className={cn("text-sm font-bold", violet ? "text-white" : "text-foreground")}>
             {pickLang(lang, { ku: "حیسابکەری نرخ", en: "Price calculator", ar: "حاسبة السعر", zh: "价格计算器" })}
           </h3>
           <p className={cn("text-[11px]", muted)}>
@@ -474,10 +474,15 @@ function PriceCalculator({
               className={cn(
                 "px-3.5 py-2 rounded-full text-xs font-bold transition-colors",
                 violet
-                  ? (active ? "bg-white text-purple-700 dark:text-purple-300 shadow-sm" : "bg-white/15 text-white hover:bg-white/25")
+                  /* On the violet banner the chosen pill is white in BOTH
+                     modes — it sits on brand colour, not on the page — so it
+                     says so, and its text stays the dark purple that reads on
+                     white. It used to lighten its own text in dark mode,
+                     which put pale purple on a white pill. */
+                  ? (active ? "bg-white dark:bg-white text-purple-700 dark:text-purple-700 shadow-sm" : "bg-white/15 text-white hover:bg-white/25")
                   : active
                     ? "bg-emerald-600 text-white shadow-sm"
-                    : isDark ? "bg-slate-700 text-slate-300 hover:bg-slate-600" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600 hover:bg-slate-200",
+                    : "bg-muted text-muted-foreground hover:bg-muted/70",
               )}
             >
               {typeLabel(r)}
@@ -512,16 +517,16 @@ function PriceCalculator({
                 placeholder="0.25"
                 className={cn("pe-10 font-mono font-bold text-lg", inputCls)}
               />
-              <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>m³</span>
+              <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : "text-muted-foreground")}>m³</span>
             </div>
           </div>
 
           <div className="flex items-center gap-3">
-            <span className={cn("h-px flex-1", violet ? "bg-white/20" : isDark ? "bg-slate-700" : "bg-slate-200")} />
+            <span className={cn("h-px flex-1", violet ? "bg-white/20" : "bg-muted")} />
             <span className={cn("text-[11px] font-bold uppercase tracking-wide", muted)}>
               {pickLang(lang, { ku: "یان", en: "or", ar: "أو", zh: "或" })}
             </span>
-            <span className={cn("h-px flex-1", violet ? "bg-white/20" : isDark ? "bg-slate-700" : "bg-slate-200")} />
+            <span className={cn("h-px flex-1", violet ? "bg-white/20" : "bg-muted")} />
           </div>
 
           <div className={cn("rounded-xl p-3", panelCls)}>
@@ -579,7 +584,7 @@ function PriceCalculator({
                 placeholder="1.0"
                 className={cn("pe-10 font-mono font-bold text-lg", inputCls)}
               />
-              <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : isDark ? "text-slate-400" : "text-slate-500")}>kg</span>
+              <span className={cn("absolute end-3 top-1/2 -translate-y-1/2 text-xs font-semibold", violet ? "text-white/70" : "text-muted-foreground")}>kg</span>
             </div>
           </div>
 
@@ -677,7 +682,7 @@ function PriceCalculator({
               )}
             </div>
             <div className="text-end shrink-0">
-              <div className={cn("text-3xl font-black tabular-nums", violet ? "text-white" : isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
+              <div className={cn("text-3xl font-black tabular-nums", violet ? "text-white" : "text-foreground")}>
                 ${total.toFixed(2)}
               </div>
               {showIqd && iqdTotal !== null && (
@@ -795,11 +800,11 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
         <div className={cn("p-1.5 rounded-lg bg-gradient-to-br text-white shadow-sm", m.chipBg)}>
           <m.icon className="w-4 h-4" />
         </div>
-        <span className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-800 dark:text-slate-200")}>
+        <span className={cn("text-sm font-bold", "text-foreground")}>
           {pickLang(lang, m.title)}
         </span>
       </div>
-      <p className={cn("text-xs leading-relaxed mb-2.5", isDark ? "text-slate-400" : "text-slate-600")}>
+      <p className={cn("text-xs leading-relaxed mb-2.5", "text-muted-foreground")}>
         {pickLang(lang, m.desc)}
       </p>
       <div className="flex flex-wrap gap-1.5">
@@ -837,7 +842,7 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
   return (
     <div className={cn(
       "mt-4 rounded-2xl border p-4 sm:p-5",
-      isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60 shadow-sm",
+      "bg-card border-border shadow-sm",
     )}>
       {/* Tap-to-expand header */}
       <button
@@ -849,11 +854,11 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
           <Info className="w-4 h-4" />
         </div>
         <div className="flex-1 min-w-0">
-          <h3 className={cn("text-sm font-bold", isDark ? "text-white" : "text-slate-900 dark:text-slate-200")}>
+          <h3 className={cn("text-sm font-bold", "text-foreground")}>
             {pickLang(lang, { ku: "زانیاری زیاتر لەسەر ڕێگاکانی گواستنەوە", en: "More about the shipping methods", ar: "معلومات أكثر عن طرق الشحن", zh: "关于运输方式的更多信息" })}
           </h3>
           {!open && (
-            <p className={cn("text-[11px]", isDark ? "text-slate-400" : "text-slate-500")}>
+            <p className={cn("text-[11px]", "text-muted-foreground")}>
               {pickLang(lang, { ku: "کرتە بکە بۆ بینینی وردەکارییەکان", en: "Tap to see the details", ar: "اضغط لعرض التفاصيل", zh: "点击查看详情" })}
             </p>
           )}
@@ -861,7 +866,7 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
         <ChevronDown className={cn(
           "w-5 h-5 shrink-0 transition-transform duration-300",
           open && "rotate-180",
-          isDark ? "text-slate-400" : "text-slate-500",
+          "text-muted-foreground",
         )} />
       </button>
 
@@ -1075,7 +1080,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
           {tabDefs.length > 1 && (
             <div className={cn(
               "flex gap-1 px-1.5 pt-1.5 rounded-t-xl overflow-hidden",
-              isDark ? "bg-slate-800" : "bg-slate-200",
+              "bg-muted",
             )}>
               {tabDefs.map((d) => {
                 const isActive = d.key === activeTabKey;
@@ -1109,7 +1114,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
             </div>
           )}
 
-          <div className={tabDefs.length > 1 ? cn("p-3.5 mb-4 rounded-b-xl", isDark ? "bg-slate-900" : "bg-white") : undefined}>
+          <div className={tabDefs.length > 1 ? cn("p-3.5 mb-4 rounded-b-xl", "bg-card") : undefined}>
             {/* "What is this section?" — only after the ⓘ on the active tab is tapped. */}
             {infoOpen && (
               <div className={cn(
@@ -1121,7 +1126,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
                 </div>
                 <div className="flex-1 min-w-0 pe-5">
                   <h4 className={cn("text-sm font-bold", isDark ? "text-white" : "text-[#0F2854]")}>{tabInfo[activeTabKey].title}</h4>
-                  <p className={cn("text-xs mt-0.5 leading-relaxed", isDark ? "text-slate-300" : "text-slate-600")}>{tabInfo[activeTabKey].desc}</p>
+                  <p className={cn("text-xs mt-0.5 leading-relaxed", "text-muted-foreground")}>{tabInfo[activeTabKey].desc}</p>
                   <span className={cn("inline-block mt-2 rounded-lg px-2.5 py-1 text-[11px] font-medium", isDark ? "bg-slate-700 text-[#BDE8F5]" : "bg-[#1C4D8D]/10 text-[#1C4D8D]")}>
                     {tabInfo[activeTabKey].example}
                   </span>
@@ -1166,7 +1171,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
             <div className="space-y-6">
               {canShipping && (
                 <div>
-                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
+                  <div className={cn("flex items-center gap-2 mb-3 px-1", "text-foreground")}>
                     <Plane className="w-4 h-4" />
                     <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.shipping")}</h3>
                   </div>
@@ -1180,7 +1185,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
               )}
               {canServices && (
                 <div>
-                  <div className={cn("flex items-center gap-2 mb-3 px-1", isDark ? "text-slate-300" : "text-slate-700 dark:text-slate-300")}>
+                  <div className={cn("flex items-center gap-2 mb-3 px-1", "text-foreground")}>
                     <Wrench className="w-4 h-4" />
                     <h3 className="text-sm font-bold uppercase tracking-wider">{t("priceList.services")}</h3>
                   </div>
