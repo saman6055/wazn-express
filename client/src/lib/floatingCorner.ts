@@ -65,6 +65,39 @@ const ROW_BOTTOM = "bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4"
 export const CORNER_PANEL =
   "fixed bottom-[calc(9rem+env(safe-area-inset-bottom))] md:bottom-20 right-4 md:right-24 z-40";
 
+/**
+ * Room to leave at the bottom-right of anything that reaches the foot of the
+ * window, so it does not end up underneath these buttons.
+ *
+ * The owner, 2026-09-30, of the weight box on Quick Register's form bar:
+ * «کەوتوونەتە سەر یەک». These float above everything at z-40 and
+ * cannot be scrolled out of the way, so what is underneath moves — not the
+ * buttons.
+ *
+ * Desktop only, and one figure for all of it. Two measurements decided both
+ * halves of that:
+ *
+ * — One figure, because the buttons are placed from the window's edge and a
+ *   bar from the content's, and the gap between the two moves with the width:
+ *   the same lamp intruded 41px past the bar at 1340px and 93px at 827px. A
+ *   reserve cut to one width left three pixels at the other. 8rem clears the
+ *   furthest slot at any of them.
+ *
+ * — Desktop only, because on a phone the row already sits above the tab bar
+ *   (ROW_BOTTOM) and therefore above the form bar, with nothing to reserve.
+ *   Reserving anyway made the bar's two buttons wrap onto a second line, and
+ *   a bar 120px tall reached up into the very buttons the reserve was for.
+ *
+ * Physical `pr`, deliberately: the corner is a physical corner in both
+ * languages (the note at the top of this file), so the room kept for it is
+ * physical too.
+ *
+ * It lives here because the number is a measurement of the slots above: one
+ * module knows where the corner is, and whatever must keep clear of it asks
+ * that module instead of guessing a figure of its own.
+ */
+export const CORNER_CLEARANCE = "md:pr-32";
+
 /** Which slot each button holds. Named, so a reader can see the row. */
 export const CORNER = {
   /** The office's own messages — the owner asked for this one in the corner. */

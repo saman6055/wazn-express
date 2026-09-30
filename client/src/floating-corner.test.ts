@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { CORNER, CORNER_PANEL, cornerSlot } from "@/lib/floatingCorner";
+import { CORNER, CORNER_CLEARANCE, CORNER_PANEL, cornerSlot } from "@/lib/floatingCorner";
 
 const ROOT = path.resolve(__dirname, "..", "..", "client", "src");
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
@@ -55,5 +55,30 @@ describe("the bottom-right corner", () => {
     // buttons' tops, so it cannot cover the neighbour it opened beside.
     expect(CORNER_PANEL).toContain("bottom-20");
     expect(cornerSlot(0)).toContain("bottom-4");
+  });
+
+  /**
+   * The owner, 2026-09-30, of the weight box on Quick Register's form bar
+   * and the tips lamp: «کەوتوونەتە سەر یەک».
+   */
+  it("keeps room for itself on anything that reaches the foot of the window", () => {
+    // Physical, because the corner is physical in both languages.
+    expect(CORNER_CLEARANCE).toContain("pr-");
+    expect(CORNER_CLEARANCE).not.toContain("pe-");
+
+    /*
+     * From `md` only. On a phone the row already sits above the tab bar, so
+     * there is nothing to reserve — and reserving anyway wrapped the bar's
+     * two buttons onto a second line, which made the bar tall enough to
+     * reach up into the very buttons the reserve was for. Measured at 375px:
+     * one row, 68px, with 12px between its top and the buttons' bottoms.
+     */
+    expect(CORNER_CLEARANCE.startsWith("md:")).toBe(true);
+
+    // And the bar asks this module rather than guessing a figure of its own.
+    const bar = read("components/forms/sticky-form-bar.tsx");
+    expect(bar).toContain('import { CORNER_CLEARANCE } from "@/lib/floatingCorner";');
+    expect(bar).toContain("CORNER_CLEARANCE)}");
+    expect(bar).not.toMatch(/\bpr-\d/);
   });
 });

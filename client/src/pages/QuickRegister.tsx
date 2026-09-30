@@ -381,8 +381,9 @@ export default function QuickRegister() {
           if (silent) {
             // A tracking the system has never seen is the ordinary case here
             // — the parcel is new. No alert while somebody is still at the
-            // keyboard, but the kilos are still the next thing.
-            setTimeout(() => focusWeight(), 100);
+            // keyboard, and the caret goes to the customer, not the kilos:
+            // nobody owns this parcel yet.
+            if (!customerId && !isUnclaimed) setTimeout(() => focusCustomer(), 100);
             return;
           }
           // Not a toast. On a warehouse screen at arm's length a notice in
@@ -404,7 +405,9 @@ export default function QuickRegister() {
             }),
             detail: trackingNumber,
           });
-          setTimeout(() => focusWeight(), 100);
+          // Same rule when the alert was shown: the customer first, unless
+          // this parcel already has one from the parcel before it.
+          setTimeout(() => (customerId || isUnclaimed ? focusWeight() : focusCustomer()), 100);
         }
       }
     } catch (error: any) {
@@ -653,6 +656,25 @@ export default function QuickRegister() {
     window.setTimeout(() => setWeightGlow(false), 1800);
   }, []);
 
+  /**
+   * And when it goes there.
+   *
+   * The owner, 2026-09-29: «ئەگەر تراک داخڵ کرا و کڕین بە تێچوو بوو یان
+   * پاکێجی تەواو، یەکسەر ئەبێ ماوس بچێتە ناو کێش. ئەگەر ئەوانیش نەبوون، دوای
+   * دیاری کردنی کۆدی کڕیار ئەبێ ماوس یەکسەر بچێتە لای کێش.»
+   *
+   * Which is one rule: **the kilos are next once it is known whose parcel
+   * this is.** A tracking that finds an order answers that in the same breath
+   * — the customer comes with it, locked — so the caret carries straight on.
+   * A tracking nobody has seen before does not, and the weight of a parcel
+   * with no owner is a number that will have to be found again later, so the
+   * caret stops at the customer box and waits there.
+   */
+  const focusCustomer = useCallback(() => {
+    customerInputRef.current?.focus();
+    customerInputRef.current?.select();
+  }, []);
+
   const estimatedPrice = hasMeasure && estimate ? estimate.amountUsd : 0;
 
   /**
@@ -726,6 +748,8 @@ export default function QuickRegister() {
     setShowCustomerDropdown(false);
     setIsUnclaimed(false);
     setHighlightedCustomerIndex(-1);
+    // Whose it is, is now known — so the kilos are next.
+    setTimeout(() => focusWeight(), 50);
   };
   
   const toggleUnclaimed = () => {
@@ -733,6 +757,8 @@ export default function QuickRegister() {
     if (!isUnclaimed) {
       setCustomerId(null);
       setCustomerSearch("");
+      // "No owner" is an answer to the same question, deliberately given.
+      setTimeout(() => focusWeight(), 50);
     }
   };
   
