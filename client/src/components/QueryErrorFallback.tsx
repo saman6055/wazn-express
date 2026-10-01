@@ -95,16 +95,26 @@ export function QueryErrorFallback({
               <RotateCcw size={16} />
               {t("common.tryAgain")}
             </button>
-            <Link href={homePath()}>
-              <a
-                className={cn(
-                  "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
-                  "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80"
-                )}
-              >
+            {/*
+              One anchor, not an anchor inside an anchor.
+
+              This wrapped its own <a> in wouter's <Link>, which renders an <a>
+              of its own — illegal HTML, and React tears the tree down over it
+              with "removeChild: the node to be removed is not a child of this
+              node". So the screen that exists to report a failure failed
+              itself, and the customer saw a blank error instead of the
+              failure and its Try again button (seen on the portal, 2026-10-01,
+              behind a 503).
+            */}
+            <Link
+              href={homePath()}
+              className={cn(
+                "inline-flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium",
+                "bg-secondary text-secondary-foreground border border-border hover:bg-secondary/80"
+              )}
+            >
                 <Home size={16} />
-                {t("common.goHome")}
-              </a>
+              {t("common.goHome")}
             </Link>
             <button
               type="button"

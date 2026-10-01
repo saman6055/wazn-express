@@ -108,7 +108,13 @@ describe("the wiring", () => {
     const src = read("components/QueryErrorFallback.tsx");
     expect(src).not.toContain('dir="rtl"');
     expect(src).toContain("dir={direction}");
-    expect(src).toContain("<Link href={homePath()}>");
+    // One anchor, not an anchor inside an anchor. wouter's Link renders its
+    // own <a>, so wrapping another one made illegal HTML and React tore the
+    // tree down over it — "removeChild: the node to be removed is not a child
+    // of this node" — on the very screen whose job is to report a failure
+    // (seen on the portal behind a 503, 2026-10-01).
+    expect(src).toContain("href={homePath()}");
+    expect(src).not.toMatch(/<Link[^>]*>\s*<a\b/);
     expect(src).toMatch(/technical && \(\s*<div className="w-full max-h-32/);
   });
 

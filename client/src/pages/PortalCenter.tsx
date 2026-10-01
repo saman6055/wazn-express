@@ -1351,8 +1351,7 @@ function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
   const debouncedSearch = useDebouncedValue(search, 300);
   const [focused, setFocused] = useState(false);
   const [customer, setCustomer] = useState<{ id: number; name: string; code: string; mobile: string } | null>(null);
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
+  const [draft, setDraft] = useState<NotifDraft>(emptyNotifDraft);
   const [withPush, setWithPush] = useState(true);
   // Empty search returns the most recently active customers, so the picker
   // opens with a browsable list on focus instead of looking dead.
@@ -1364,7 +1363,7 @@ function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
   const send = trpc.portalCenter.sendNotificationToCustomer.useMutation({
     onSuccess: () => {
       toast.success(p({ ku: "نۆتیفیکەیشن نێردرا", en: "Notification sent", ar: "أُرسل الإشعار", zh: "通知已发送" }));
-      setTitle(""); setMessage("");
+      setDraft(emptyNotifDraft());
     },
     onError: (e) => toast.error(e.message),
   });
@@ -1421,18 +1420,15 @@ function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
           </div>
         )}
 
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
-          placeholder={p({ ku: "ناونیشان", en: "Title", ar: "العنوان", zh: "标题" })} />
-        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={1000}
-          placeholder={p({ ku: "دەقی پەیام", en: "Message text", ar: "نص الرسالة", zh: "消息内容" })} />
+        <NotificationText p={p} value={draft} onChange={setDraft} />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Switch checked={withPush} onCheckedChange={setWithPush} />
             <Label className="text-xs text-muted-foreground">{p({ ku: "پوشیش بنێرە (مۆبایل)", en: "Also send push", ar: "أرسل push أيضًا", zh: "同时发送推送" })}</Label>
           </div>
           <Button
-            onClick={() => customer && send.mutate({ customerId: customer.id, title: title.trim(), message: message.trim(), withPush })}
-            disabled={!customer || !title.trim() || !message.trim() || send.isPending}
+            onClick={() => customer && send.mutate({ customerId: customer.id, ...notifPayload(draft), withPush })}
+            disabled={!customer || !notifReady(draft) || send.isPending}
             className="bg-indigo-600 hover:bg-indigo-700 text-white"
           >
             {send.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Send className="h-4 w-4 me-2" />}
@@ -1444,14 +1440,128 @@ function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
   );
 }
 
+/** The four languages a customer may be reading the portal in. */
+const NOTIF_LANGS = [
+  { id: "ku", label: "کوردی" },
+  { id: "en", label: "English" },
+  { id: "ar", label: "عربي" },
+  { id: "zh", label: "中文" },
+] as const;
+type NotifLang = (typeof NOTIF_LANGS)[number]["id"];
+type NotifDraft = Record<NotifLang, { title: string; message: string }>;
+
+const emptyNotifDraft = (): NotifDraft => ({
+  ku: { title: "", message: "" },
+  en: { title: "", message: "" },
+  ar: { title: "", message: "" },
+  zh: { title: "", message: "" },
+});
+
+/**
+ * What goes on the wire.
+ *
+ * Kurdish is the office's language and what most customers read, so it is the
+ * one that must be written and the one everything else falls back to. English
+ * takes the base field when it is given, because that is what a reader of any
+ * other language gets.
+ */
+function notifPayload(d: NotifDraft) {
+  const base = d.en.title.trim() ? d.en : d.ku;
+  return {
+    title: base.title.trim(),
+    message: base.message.trim(),
+    titleKu: d.ku.title.trim() || undefined,
+    messageKu: d.ku.message.trim() || undefined,
+    titleAr: d.ar.title.trim() || undefined,
+    messageAr: d.ar.message.trim() || undefined,
+    titleZh: d.zh.title.trim() || undefined,
+    messageZh: d.zh.message.trim() || undefined,
+  };
+}
+
+const notifReady = (d: NotifDraft) => Boolean(d.ku.title.trim() && d.ku.message.trim());
+
+/**
+ * A notification written in each language it will be read in.
+ *
+ * One text used to be copied into every language field, so an announcement
+ * typed in Arabic reached a customer reading Kurdish in Arabic — the owner saw
+ * exactly that on 2026-09-30. Four boxes at once would be eight fields for a
+ * message that is usually one line, so there is one pair and a row of
+ * languages above it; a filled language carries a dot, so what has been
+ * written is visible without clicking through them.
+ */
+function NotificationText({ p, value, onChange }: {
+  p: (v: L) => string;
+  value: NotifDraft;
+  onChange: (d: NotifDraft) => void;
+}) {
+  const [lang, setLang] = useState<NotifLang>("ku");
+  const current = value[lang];
+  const set = (field: "title" | "message", text: string) =>
+    onChange({ ...value, [lang]: { ...current, [field]: text } });
+
+  return (
+    <div className="space-y-2">
+      <div className="flex flex-wrap items-center gap-1.5">
+        {NOTIF_LANGS.map((l) => {
+          const written = Boolean(value[l.id].title.trim() || value[l.id].message.trim());
+          return (
+            <button
+              key={l.id}
+              type="button"
+              onClick={() => setLang(l.id)}
+              className={cn(
+                "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-semibold transition",
+                lang === l.id ? "border-primary bg-primary/10 text-primary" : "hover:bg-muted",
+              )}
+            >
+              {l.label}
+              <span className={cn("h-1.5 w-1.5 rounded-full", written ? "bg-emerald-500" : "bg-muted-foreground/30")} />
+            </button>
+          );
+        })}
+        {lang === "ku" ? (
+          <span className="text-[11px] text-muted-foreground">
+            {p({ ku: "پێویستە", en: "Required", ar: "مطلوب", zh: "必填" })}
+          </span>
+        ) : (
+          <span className="text-[11px] text-muted-foreground">
+            {p({
+              ku: "نەنووسرا؟ کوردییەکە نیشان دەدرێت",
+              en: "Left blank? The Kurdish one is shown",
+              ar: "تُرك فارغًا؟ يُعرض النص الكردي",
+              zh: "留空？将显示库尔德语",
+            })}
+          </span>
+        )}
+      </div>
+      <Input
+        value={current.title}
+        onChange={(e) => set("title", e.target.value)}
+        maxLength={200}
+        dir={lang === "en" ? "ltr" : undefined}
+        placeholder={p({ ku: "ناونیشان", en: "Title", ar: "العنوان", zh: "标题" })}
+      />
+      <Textarea
+        value={current.message}
+        onChange={(e) => set("message", e.target.value)}
+        rows={3}
+        maxLength={1000}
+        dir={lang === "en" ? "ltr" : undefined}
+        placeholder={p({ ku: "دەقی پەیام", en: "Message text", ar: "نص الرسالة", zh: "消息内容" })}
+      />
+    </div>
+  );
+}
+
 function BroadcastCard({ p }: { p: (v: L) => string }) {
-  const [title, setTitle] = useState("");
-  const [message, setMessage] = useState("");
+  const [draft, setDraft] = useState<NotifDraft>(emptyNotifDraft);
   const [withPush, setWithPush] = useState(false);
   const send = trpc.portalCenter.broadcastNotification.useMutation({
     onSuccess: (r) => {
       toast.success(p({ ku: `نێردرا بۆ ${r.sent} موشتەری`, en: `Sent to ${r.sent} customers`, ar: `أُرسل إلى ${r.sent} عميلًا`, zh: `已发送给 ${r.sent} 位客户` }));
-      setTitle(""); setMessage("");
+      setDraft(emptyNotifDraft());
     },
     onError: (e) => toast.error(e.message),
   });
@@ -1462,10 +1572,7 @@ function BroadcastCard({ p }: { p: (v: L) => string }) {
         <h3 className="font-bold flex items-center gap-2"><Megaphone className="h-4 w-4 text-amber-500 dark:text-amber-400" />
           {p({ ku: "نۆتیفیکەیشنی گشتی — بۆ هەموو موشتەرە چالاکەکان", en: "Broadcast — all active customers", ar: "بث — لجميع العملاء النشطين", zh: "广播 — 所有活跃客户" })}
         </h3>
-        <Input value={title} onChange={(e) => setTitle(e.target.value)} maxLength={200}
-          placeholder={p({ ku: "ناونیشان", en: "Title", ar: "العنوان", zh: "标题" })} />
-        <Textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={3} maxLength={1000}
-          placeholder={p({ ku: "دەقی پەیام", en: "Message text", ar: "نص الرسالة", zh: "消息内容" })} />
+        <NotificationText p={p} value={draft} onChange={setDraft} />
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Switch checked={withPush} onCheckedChange={setWithPush} />
@@ -1473,12 +1580,12 @@ function BroadcastCard({ p }: { p: (v: L) => string }) {
           </div>
           <Button
             onClick={async () => {
-              if (!title.trim() || !message.trim()) return;
+              if (!notifReady(draft)) return;
               if (await confirmAction(p({ ku: "دڵنیایت؟ بۆ هەموو موشتەرە چالاکەکان دەنێردرێت.", en: "Sure? This goes to ALL active customers.", ar: "متأكد؟ سيُرسل لجميع العملاء النشطين.", zh: "确定吗？将发送给所有活跃客户。" }))) {
-                send.mutate({ title: title.trim(), message: message.trim(), withPush });
+                send.mutate({ ...notifPayload(draft), withPush });
               }
             }}
-            disabled={!title.trim() || !message.trim() || send.isPending}
+            disabled={!notifReady(draft) || send.isPending}
             className="bg-amber-600 hover:bg-amber-700 text-white"
           >
             {send.isPending ? <Loader2 className="h-4 w-4 me-2 animate-spin" /> : <Megaphone className="h-4 w-4 me-2" />}

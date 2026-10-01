@@ -699,9 +699,12 @@ export default function PortalHome() {
               className={cn("block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]", card)}
             >
               <Package className={cn("mx-auto h-5 w-5", "text-blue-600 dark:text-blue-300")} />
-              <p className={cn("mt-1 text-2xl font-bold tabular-nums", "text-foreground")}>
+              {/* A div, not a p: the skeleton inside is a div, and a div
+                  inside a p is illegal HTML the browser silently unnests —
+                  which then costs React the tree it thought it had. */}
+              <div className={cn("mt-1 text-2xl font-bold tabular-nums", "text-foreground")}>
                 {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.registered} />}
-              </p>
+              </div>
               <p className={cn("mt-0.5 text-[11px] leading-tight", "text-muted-foreground")}>
                 {pickLang(language, SEARCH_TAB_LABEL.registered)}
               </p>
@@ -715,9 +718,9 @@ export default function PortalHome() {
               )}
             >
               <Plane className={cn("mx-auto h-5 w-5", "text-sky-600 dark:text-sky-400")} />
-              <p className={cn("mt-1 text-2xl font-bold tabular-nums", "text-sky-600 dark:text-sky-400")}>
+              <div className={cn("mt-1 text-2xl font-bold tabular-nums", "text-sky-600 dark:text-sky-400")}>
                 {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.onTheWay} />}
-              </p>
+              </div>
               <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-sky-300" : "text-sky-700 dark:text-sky-300")}>
                 {pickLang(language, SEARCH_TAB_LABEL.onTheWay)}
                 {nextEtaDays !== null && (
@@ -736,9 +739,9 @@ export default function PortalHome() {
               )}
             >
               <CheckCircle className={cn("mx-auto h-5 w-5", "text-emerald-600 dark:text-emerald-400")} />
-              <p className={cn("mt-1 text-2xl font-bold tabular-nums", "text-emerald-600 dark:text-emerald-400")}>
+              <div className={cn("mt-1 text-2xl font-bold tabular-nums", "text-emerald-600 dark:text-emerald-400")}>
                 {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.arrived} />}
-              </p>
+              </div>
               <p className={cn("mt-0.5 text-[11px] leading-tight", "text-emerald-700 dark:text-emerald-300")}>
                 {pickLang(language, SEARCH_TAB_LABEL.arrived)}
               </p>

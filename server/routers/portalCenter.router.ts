@@ -18,16 +18,46 @@ import { DECLARED_LINK_REFUSAL_MESSAGE } from "@shared/declaredLink";
 
 const ANNOUNCEMENT_KEY = "portal_announcement";
 
-// A localized notification body: the admin types one text; we mirror it into
-// every language field so it displays regardless of the viewer's locale.
+/**
+ * A notification, in the languages it will be read in.
+ *
+ * This took one text and copied it into every language field, so whatever it
+ * was written in was what every customer saw. The owner, 2026-09-30, reading
+ * his own portal in Kurdish: «ئەوە زمانی کوردییە، کەچی شتێکی عەرەبی نیشان
+ * داوە» — an announcement someone had typed in Arabic, shown word for word to
+ * a customer who had chosen Kurdish.
+ *
+ * Each language can now be written. What is not written falls back to the
+ * base text, which is what the mirroring did and is still better than a blank
+ * line: the other callers here — a reply from support, an alert — pass one
+ * text and carry on exactly as before.
+ */
 const notifTextInput = z.object({
+  /** The fallback, and what a reader of any other language sees. */
   title: z.string().min(1).max(200),
   message: z.string().min(1).max(1000),
+  titleKu: z.string().max(200).optional(),
+  messageKu: z.string().max(1000).optional(),
+  titleAr: z.string().max(200).optional(),
+  messageAr: z.string().max(1000).optional(),
+  titleZh: z.string().max(200).optional(),
+  messageZh: z.string().max(1000).optional(),
 });
-function buildNotif(input: { title: string; message: string }, extra: Record<string, unknown>) {
+
+type NotifText = z.infer<typeof notifTextInput>;
+
+function buildNotif(input: NotifText, extra: Record<string, unknown>) {
+  /** Written in this language, or the base text — never an empty line. */
+  const or = (written: string | undefined, base: string) => (written?.trim() ? written.trim() : base);
   return {
-    title: input.title, titleKu: input.title, titleAr: input.title,
-    message: input.message, messageKu: input.message, messageAr: input.message,
+    title: input.title,
+    titleKu: or(input.titleKu, input.title),
+    titleAr: or(input.titleAr, input.title),
+    titleZh: or(input.titleZh, input.title),
+    message: input.message,
+    messageKu: or(input.messageKu, input.message),
+    messageAr: or(input.messageAr, input.message),
+    messageZh: or(input.messageZh, input.message),
     ...extra,
   } as any;
 }
