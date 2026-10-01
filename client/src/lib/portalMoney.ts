@@ -58,13 +58,22 @@ export function balanceState(balanceUsd: number | null | undefined): BalanceStat
   return "settled";
 }
 
-/** What each state is called, in the reader's language. */
+/**
+ * What each state is called, in the reader's language.
+ *
+ * Debt and credit are read after the amount — "$34.24 قەرزارت",
+ * "$34.24 پارەت لای ئێمەیە" — so the screen puts the figure in front of them.
+ * The credit line used to say «ڕەسیدت بە ساڵبە»: accountant's words, which
+ * the owner himself had to ask the meaning of twice (2026-10-01). Neither
+ * "balance" nor "negative" appears now; each line says who owes whom and
+ * what happens next.
+ */
 export const BALANCE_WORDING: Record<BalanceState, { ku: string; en: string; ar: string; zh: string }> = {
   debt: {
-    ku: "قەرزت هەیە",
-    en: "You have an outstanding balance",
-    ar: "لديك رصيد مستحق",
-    zh: "您有未结余额",
+    ku: "قەرزارت — ئەم بڕە دەبێت بدەیت",
+    en: "owed by you — please pay this amount",
+    ar: "عليك — هذا المبلغ مطلوب سداده",
+    zh: "为您的欠款——请支付该金额",
   },
   settled: {
     ku: "هیچ قەرزێکت نییە",
@@ -74,12 +83,12 @@ export const BALANCE_WORDING: Record<BalanceState, { ku: string; en: string; ar:
   },
   credit: {
     // Said as plainly as possible: this is the customer's own money, held by
-    // us, and it comes off their next invoice. A customer who does not know
-    // it exists never asks for it.
-    ku: "ڕەسیدت بە ساڵبە — ئەم بڕە پارەیەی تۆ لای ئێمەیە",
-    en: "Your balance is in credit — this money of yours is held with us",
-    ar: "رصيدك دائن — هذا المبلغ لك محفوظ لدينا",
-    zh: "您的余额为贷方——这笔款项属于您，由我们保管",
+    // us, and it comes off their next parcel — which the till now really does
+    // (accountCover). A customer who does not know it exists never asks for it.
+    ku: "پارەت لای ئێمەیە — لە پاکەتی داهاتووت کەم دەکرێتەوە",
+    en: "in credit with us — it comes off your next parcel",
+    ar: "لك عندنا — يُخصم من طردك القادم",
+    zh: "是您存放在我们这里的款项——将从您的下一个包裹中扣除",
   },
 };
 
@@ -405,7 +414,7 @@ function renderLedgerRef(
  * Note this is deliberately NOT the sign of the balance. A positive balance
  * means the customer owes us and a negative one means we owe them, which is
  * the ordinary receivables convention and is correct — but the balance says
- * so in words ("قەرزت هەیە"), so nothing has to be inferred from a sign.
+ * so in words ("قەرزارت"), so nothing has to be inferred from a sign.
  */
 export function txSign(transactionType: string | null | undefined): "+" | "-" {
   return isCreditTx(transactionType) ? "+" : "-";

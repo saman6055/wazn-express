@@ -304,7 +304,21 @@ describe("the three states a balance can be in", () => {
   it("tells a customer in credit that the money is theirs", () => {
     // Not "no debt" — the point is that they can spend it.
     expect(BALANCE_WORDING.credit.en.toLowerCase()).toContain("credit");
-    expect(BALANCE_WORDING.credit.ku).toContain("ساڵب");
+    expect(BALANCE_WORDING.credit.ku).toContain("پارەت لای ئێمەیە");
+  });
+
+  it("uses no accountant's words — the owner had to ask what they meant", () => {
+    // «ڕەسیدت بە ساڵبە» (2026-10-01): neither "balance" nor "negative".
+    for (const state of ["debt", "settled", "credit"] as const) {
+      expect(BALANCE_WORDING[state].ku).not.toContain("ساڵب");
+      expect(BALANCE_WORDING[state].ku).not.toContain("ڕەسید");
+    }
+    expect(BALANCE_WORDING.debt.ku).toContain("قەرزارت");
+  });
+
+  it("reads after the amount, which the money page puts in front", () => {
+    const page = fs.readFileSync(path.resolve(__dirname, "../pages/portal/PortalFinancial.tsx"), "utf8");
+    expect(page).toMatch(/balanceKind !== "settled" && \(\s*<><bdi dir="ltr" className="font-mono">\{formatCurrency\(Math\.abs\(balance\)\)\}<\/bdi>/);
   });
 });
 

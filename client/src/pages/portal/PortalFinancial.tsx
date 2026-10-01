@@ -445,6 +445,9 @@ const { t, language } = useLanguage();
                     ? "text-sky-600 dark:text-sky-300"
                     : "text-emerald-600 dark:text-emerald-300"
               )}>
+                {balanceKind !== "settled" && (
+                  <><bdi dir="ltr" className="font-mono">{formatCurrency(Math.abs(balance))}</bdi>{" "}</>
+                )}
                 {pickLang(language, BALANCE_WORDING[balanceKind])}
               </span>
             </div>
