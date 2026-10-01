@@ -25,7 +25,8 @@ import { useOrderNumberCheck } from "@/hooks/useOrderNumberCheck";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { customerCodeOnly } from "@shared/customerCode";
-import { readableError, editableSnapshot, advancePayload, numericPayload } from "@/lib/commissionEditUtils";
+import { readableError, editableSnapshot, hasUnsavedWork, advancePayload, numericPayload } from "@/lib/commissionEditUtils";
+import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import PlatformSelect, { LAST_PLATFORM_KEY, LAST_SHIPPING_TYPE_KEY } from "@/components/PlatformSelect";
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
@@ -188,6 +189,33 @@ export default function CommissionForm() {
   // Snapshot of the order as it was loaded — the baseline for "did anything
   // actually change?" on save.
   const originalSnapshot = useRef<string | null>(null);
+
+  /**
+   * Back does not throw the order away.
+   *
+   * The owner, 2026-10-01: «بە یەک جار دەستپێکەوتن نەڕواتە دەرەوە، بە دوو جار
+   * بێت و پەیامی ئاگاداری دەرچوونیش بێت». On a phone Back is a swipe from the
+   * edge of the screen, and this form holds a customer, an order number, a
+   * photograph and a set of prices — none of it recoverable.
+   *
+   * The same hook the portal's tracking screen uses: while there is work
+   * here, one extra step sits on the history, Back takes that step instead of
+   * the page, and the question decides.
+   */
+  useLeaveGuard(
+    hasUnsavedWork(formData, productImages, originalSnapshot.current),
+    () =>
+      confirmAction({
+        message: pickLang(language, {
+          ku: "دڵنیایت دەتەوێت دەرچیت؟ ئەوەی نووسیوتە پاشەکەوت نەکراوە.",
+          en: "Leave this form? What you have filled in is not saved.",
+          ar: "هل تريد الخروج؟ ما أدخلته لم يُحفظ.",
+          zh: "要离开吗？您填写的内容尚未保存。",
+        }),
+        confirmLabel: pickLang(language, { ku: "دەرچوون", en: "Leave", ar: "خروج", zh: "离开" }),
+        cancelLabel: pickLang(language, { ku: "مانەوە", en: "Stay", ar: "البقاء", zh: "留下" }),
+      }),
+  );
   // Images are stored as base64 data URIs, so re-posting them on every save
   // sends the whole picture back for no reason — a payload big enough to be
   // refused before it reaches the server. Only send them when they changed.

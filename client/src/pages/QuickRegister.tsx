@@ -14,6 +14,7 @@ import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { Link, useLocation } from "wouter";
 import { confirmAction } from "@/components/ConfirmDialog";
+import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
@@ -674,6 +675,37 @@ export default function QuickRegister() {
     customerInputRef.current?.focus();
     customerInputRef.current?.select();
   }, []);
+
+  /**
+   * Leaving does not throw the parcel away.
+   *
+   * The owner, 2026-10-01: «لە سیستەم، لە ئەپی مۆبایل، کاتێ چوویتە ناو تراک
+   * تۆمارکردن، دوگمەی گەڕانەوە … بنووسرێ دڵنیایت دەتەوێ دەرچیت؟ ئەگەر دەستی
+   * بەر دوگمەی تریش کەوت لە بێ ئاگایی، دیسان بڵێت.»
+   *
+   * A scanned tracking, a weight read off the scales, three sides measured
+   * and a photograph of the carton — one accidental swipe and all of it is
+   * typed again. Both ways out are held: Back, and the tab bar underneath.
+   *
+   * Not the warehouse, the shipping type or the batch: those stay from the
+   * parcel before and a screen nobody has touched lets Back straight through.
+   */
+  const hasParcelInProgress = Boolean(
+    trackingNumber.trim() || weightKg.trim() || lengthCm.trim() || widthCm.trim() ||
+    heightCm.trim() || directCbm.trim() || photos.length > 0 || customerId || isUnclaimed,
+  );
+  useLeaveGuard(hasParcelInProgress, () =>
+    confirmAction({
+      message: pickLang(language, {
+        ku: "دڵنیایت دەتەوێت دەرچیت؟ ئەم پاکێتە هێشتا تۆمار نەکراوە.",
+        en: "Leave this screen? This parcel has not been registered yet.",
+        ar: "هل تريد الخروج؟ لم يُسجَّل هذا الطرد بعد.",
+        zh: "要离开吗？这件包裹尚未登记。",
+      }),
+      confirmLabel: pickLang(language, { ku: "دەرچوون", en: "Leave", ar: "خروج", zh: "离开" }),
+      cancelLabel: pickLang(language, { ku: "مانەوە", en: "Stay", ar: "البقاء", zh: "留下" }),
+    }),
+  );
 
   const estimatedPrice = hasMeasure && estimate ? estimate.amountUsd : 0;
 

@@ -56,6 +56,42 @@ export function numericPayload(raw: string | null | undefined): string | undefin
   return Number.isFinite(Number(value)) ? value : undefined;
 }
 
+/**
+ * Is there anything in this form that leaving would lose?
+ *
+ * The owner, 2026-10-01, of the two order forms on a phone: «بە دوگمەی
+ * گەڕانەوەی مۆبایل، بە یەک جار دەستپێکەوتن نەڕواتە دەرەوە» — once somebody
+ * has started, one press of Back must not take it all away.
+ *
+ * Editing an order and writing a new one are different questions, so this
+ * asks the right one:
+ *
+ *  - editing: has anything moved from what was loaded? The snapshot below
+ *    already answers that, and is what the "nothing changed" check uses;
+ *  - writing: has anything been typed that a person actually fills in?
+ *    Deliberately not the platform or the shipping type — those come back
+ *    from the last order on their own (PlatformSelect's LAST_* keys), and a
+ *    form nobody has touched must let Back straight through.
+ *
+ * `quantity` is out for the same reason: it opens at 1.
+ */
+export function hasUnsavedWork(
+  f: { [k: string]: unknown },
+  images: string[],
+  original: string | null,
+): boolean {
+  if (original !== null) return editableSnapshot(f, images) !== original;
+  if (images.length > 0) return true;
+  const typed = [
+    f.customerId, f.supplierId, f.orderNumber, f.trackingNumber, f.productLink,
+    f.productDescription, f.color, f.size, f.productType,
+    f.itemPriceUsd, f.sellPriceUsd, f.commissionFeeUsd,
+    f.purchasePriceUsd, f.sellingPriceUsd, f.advancePaidUsd,
+    f.notes, f.weightKg, f.dimensionLength, f.dimensionWidth, f.dimensionHeight, f.volumeCbm,
+  ];
+  return typed.some((v) => typeof v === "string" && v.trim() !== "");
+}
+
 export function editableSnapshot(
   f: { [k: string]: unknown },
   images: string[],
