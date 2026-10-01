@@ -29,6 +29,7 @@ import {
   ROUNDING_VARIANCE_REASON,
   accountCover,
   unbilledOnReceiptUsd,
+  unbackedOnReceiptUsd,
   boxDiscountUsd,
   allocateBoxDiscount,
   type ParcelIntent,
@@ -1042,6 +1043,8 @@ export async function createBoxSettlement(
     toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
     correctionUsd: totals.correctionUsd,
     discountUsd: totals.discountUsd,
+    // Goods with no charge anywhere are always paid for (see accountCover).
+    unbackedUsd: unbackedOnReceiptUsd(parcels, totals.lines),
   });
   const cashDueUsd = cover.cashDueUsd;
 

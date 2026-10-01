@@ -37,6 +37,7 @@ describe("the account covers what it already settled, at every door", () => {
     const src = read("server/db/boxSettlement.db.ts");
     expect(src).toContain("balanceUsd: view.accountBalanceUsd");
     expect(src).toContain("toChargeUsd: unbilledOnReceiptUsd(parcels, intents)");
+    expect(src).toContain("unbackedUsd: unbackedOnReceiptUsd(parcels, totals.lines)");
     expect(src).toContain("dueUsd: cashDueUsd.toFixed(2)");
     // The payment recorded is what was handed over against the cash due,
     // never the box's own due.
@@ -50,6 +51,7 @@ describe("the account covers what it already settled, at every door", () => {
     const src = read(file);
     expect(src).toContain("balanceUsd: data?.accountBalanceUsd ?? 0");
     expect(src).toContain("cover.coveredUsd > 0");
+    expect(src).toContain("unbackedUsd: unbackedOnReceiptUsd(parcels, totals.lines)");
     const afterCover = src.slice(src.indexOf("const cashDue = cover.cashDueUsd;"));
     expect(afterCover.length).toBeGreaterThan(1000);
     expect(afterCover, "nothing after the cover may ask for the box's own due").not.toContain("totals.dueUsd");

@@ -19,7 +19,7 @@ import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
 import {
-  settlementTotals, differenceOf, roundingToleranceUsd, accountCover, unbilledOnReceiptUsd,
+  settlementTotals, differenceOf, roundingToleranceUsd, accountCover, unbilledOnReceiptUsd, unbackedOnReceiptUsd,
   iqdToUsd, usdToIqd, allocateBoxDiscount,
   type ParcelIntent,
 } from "@shared/boxSettlement";
@@ -116,6 +116,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
       toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
       correctionUsd: totals.correctionUsd,
       discountUsd: totals.discountUsd,
+      unbackedUsd: unbackedOnReceiptUsd(parcels, totals.lines),
     }),
     [totals, data?.accountBalanceUsd, parcels, intents],
   );

@@ -26,7 +26,7 @@ import { fmtAmount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { fmtDateTime } from "@/lib/numericDate";
 import {
   settlementTotals, differenceOf, boxDiscountUsd, allocateBoxDiscount,
-  accountCover, unbilledOnReceiptUsd, roundingToleranceUsd,
+  accountCover, unbilledOnReceiptUsd, unbackedOnReceiptUsd, roundingToleranceUsd,
   iqdToUsd, usdToIqd,
   DISCOUNT_REASON_LABELS,
   type ParcelIntent, type BoxDiscount, type DiscountReason,
@@ -220,6 +220,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
       toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
       correctionUsd: totals.correctionUsd,
       discountUsd: totals.discountUsd,
+      unbackedUsd: unbackedOnReceiptUsd(parcels, totals.lines),
     }),
     [totals, data?.accountBalanceUsd, parcels, intents],
   );

@@ -5,6 +5,7 @@ import {
   roundingToleranceUsd,
   accountCover,
   unbilledOnReceiptUsd,
+  unbackedOnReceiptUsd,
   ROUNDING_TOLERANCE_CAP_USD,
   outstandingOf,
   iqdToUsd,
@@ -443,5 +444,36 @@ describe("the box never asks for more than the account owes", () => {
     ];
     expect(unbilledOnReceiptUsd(parcels)).toBe(7);
     expect(unbilledOnReceiptUsd(parcels, [{ lineId: 5, held: true }])).toBe(5);
+  });
+});
+
+/**
+ * The account can only have "already settled" a debt it was told about.
+ * Found in the real ledger, 2026-10-02: boxes were receipted for goods with
+ * no charge anywhere. Under the cover rule alone the till would have read
+ * the account's zero as "paid" and asked for nothing.
+ */
+describe("goods with no charge anywhere are always paid for", () => {
+  it("asks for them in full even when the account owes nothing", () => {
+    expect(accountCover({ dueUsd: 5.42, balanceUsd: 0, unbackedUsd: 5.42 })).toEqual({ cashDueUsd: 5.42, coveredUsd: 0 });
+    expect(accountCover({ dueUsd: 5.42, balanceUsd: -100, unbackedUsd: 5.42 }), "nor does a credit pay for them")
+      .toEqual({ cashDueUsd: 5.42, coveredUsd: 0 });
+  });
+
+  it("covers only the part the account really settled", () => {
+    // 30 of charged parcels the account already cleared, 12 of unbilled goods.
+    expect(accountCover({ dueUsd: 42, balanceUsd: 0, unbackedUsd: 12 })).toEqual({ cashDueUsd: 12, coveredUsd: 30 });
+  });
+
+  it("counts an order's carton or a parcel-less item, never a parcel the till bills itself", () => {
+    const parcels = [
+      { lineId: 1, packageId: 10, notChargedYet: true },                    // till charges it → backed
+      { lineId: 2, packageId: 11, notChargedYet: true, fromOrder: true },   // order never billed
+      { lineId: 3, packageId: null, notChargedYet: true },                  // no parcel behind it
+      { lineId: 4, packageId: 12, notChargedYet: false, fromOrder: true },  // billed on the order
+      { lineId: 5, packageId: 13, notChargedYet: true, fromOrder: true },   // held: not on this receipt
+    ];
+    const lines = [1, 2, 3, 4, 5].map((lineId) => ({ lineId, paidUsd: 10, held: lineId === 5 }));
+    expect(unbackedOnReceiptUsd(parcels, lines)).toBe(20);
   });
 });

@@ -438,12 +438,24 @@ export function accountCover(args: {
   correctionUsd?: number;
   /** Discounts this receipt will post. */
   discountUsd?: number;
+  /**
+   * Part of the due that has NO charge on the account and that this receipt
+   * will not post either — an order's carton whose goods were never billed
+   * (unbackedOnReceiptUsd). Always asked for in full: the account cannot
+   * have "already settled" a debt it was never told about, and reading its
+   * zero as "paid" would hand the goods over for nothing. Taking the money
+   * leaves a credit, which is the visible sign that goods are unbilled
+   * (Repairs → arrived goods not on the account).
+   */
+  unbackedUsd?: number;
 }): AccountCover {
   const due = round2(Math.max(0, args.dueUsd));
+  const unbacked = round2(Math.min(due, Math.max(0, args.unbackedUsd ?? 0)));
+  const backedDue = round2(due - unbacked);
   const willOwe = round2(
     args.balanceUsd + (args.toChargeUsd ?? 0) + (args.correctionUsd ?? 0) - (args.discountUsd ?? 0),
   );
-  const cashDueUsd = round2(Math.min(due, Math.max(0, willOwe)));
+  const cashDueUsd = round2(unbacked + Math.min(backedDue, Math.max(0, willOwe)));
   const coveredUsd = round2(due - cashDueUsd);
   // A cent of drift between the two views is not "already paid".
   if (coveredUsd <= 0.01) return { cashDueUsd: due, coveredUsd: 0 };
@@ -471,4 +483,25 @@ export function unbilledOnReceiptUsd(
       .filter((p) => p.packageId !== null && !p.fromOrder && p.notChargedYet && p.chargedUsd > 0 && !held.has(p.lineId))
       .reduce((sum, p) => sum + p.chargedUsd, 0),
   );
+}
+
+/**
+ * What this receipt asks for on lines the account has never been charged
+ * for and that the till will not charge either: an order's carton (its
+ * money lives on the order) or an item with no parcel behind it. See
+ * `unbackedUsd` on accountCover.
+ */
+export function unbackedOnReceiptUsd(
+  parcels: ReadonlyArray<{
+    lineId: number;
+    packageId: number | null;
+    fromOrder?: boolean;
+    notChargedYet?: boolean;
+  }>,
+  lines: ReadonlyArray<{ lineId: number; paidUsd: number; held: boolean }>,
+): number {
+  const unbacked = new Set(
+    parcels.filter((p) => p.notChargedYet && (p.fromOrder || p.packageId === null)).map((p) => p.lineId),
+  );
+  return round2(lines.filter((l) => !l.held && unbacked.has(l.lineId)).reduce((sum, l) => sum + l.paidUsd, 0));
 }
