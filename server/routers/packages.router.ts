@@ -1808,8 +1808,18 @@ export const packagesRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Package not found" });
         }
         
-        await db.deletePackage(input.id);
-        
+        // The parcel's charge leaves the account with it, in one transaction;
+        // a parcel already paid on a box receipt is refused (db/parcelDeletion).
+        let removed;
+        try {
+          removed = await db.deleteParcelWithItsCharges(input.id, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: err instanceof Error ? err.message : String(err),
+          });
+        }
+
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -1817,8 +1827,9 @@ export const packagesRouter = router({
           entityType: "package",
           entityId: input.id,
           oldValues: pkg,
+          newValues: removed,
         });
-        return { success: true };
+        return { success: true, ...removed };
       }),
     verifyQr: staffProcedure
       .input(z.object({
