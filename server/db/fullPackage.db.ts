@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { orderProfitUsd } from "@shared/orderProfit";
 import { appLogger } from '../utils/logger';
 import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
@@ -175,9 +176,9 @@ export async function createFullPackageOrder(data: InsertFullPackageOrder): Prom
     const sellingPrice = parseFloat(data.sellingPriceUsd as string) || 0;
     profit = ((sellingPrice - purchasePrice) * quantity) - shippingCost;
   } else if (orderType === 'commission') {
-    // Commission: profit = commissionFee - shippingCost
-    const commissionFee = parseFloat(data.commissionFeeUsd as string || "0") || 0;
-    profit = commissionFee - shippingCost;
+    // The fee is per unit, like the charge (commissionGoodsTotal) — one rule
+    // in shared/orderProfit. It used to be stored for a single unit.
+    profit = orderProfitUsd({ orderType, quantity, commissionFeeUsd: data.commissionFeeUsd as string, shippingCostUsd: shippingCost });
   }
 
   const result = await db.insert(fullPackageOrders).values({
@@ -843,9 +844,9 @@ export async function updateFullPackageOrder(id: number, data: Partial<InsertFul
       const sellingPrice = parseFloat(data.sellingPriceUsd as string ?? existing.sellingPriceUsd ?? "0") || 0;
       profit = ((sellingPrice - purchasePrice) * quantity) - shippingCost;
     } else if (orderType === 'commission') {
-      // Commission: profit = commissionFee - shippingCost
+      // Per unit, like the charge — shared/orderProfit.
       const commissionFee = parseFloat(data.commissionFeeUsd as string ?? existing.commissionFeeUsd ?? "0") || 0;
-      profit = commissionFee - shippingCost;
+      profit = orderProfitUsd({ orderType, quantity, commissionFeeUsd: commissionFee, shippingCostUsd: shippingCost });
     }
     
     data.profitUsd = profit.toFixed(2);

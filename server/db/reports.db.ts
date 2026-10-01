@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { ORDER_PROFIT_SQL, LIVE_SALE_SQL, orderProfitUsd, isLiveSale } from "@shared/orderProfit";
 import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
@@ -134,7 +135,7 @@ export async function getFullPackageProfitBySupplier(startDate?: Date, endDate?:
   const db = await getDb();
   if (!db) return [];
   
-  const conditions = [eq(fullPackageOrders.status, "delivered")];
+  const conditions = [eq(fullPackageOrders.status, "delivered"), sql.raw("deletedAt IS NULL")];
   if (startDate) conditions.push(gte(fullPackageOrders.createdAt, startDate));
   if (endDate) conditions.push(lte(fullPackageOrders.createdAt, endDate));
   
@@ -143,7 +144,7 @@ export async function getFullPackageProfitBySupplier(startDate?: Date, endDate?:
     totalOrders: sql<number>`COUNT(*)`,
     totalRevenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
     totalCost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity + COALESCE(shippingCostUsd, 0)), 0)`,
-    totalProfit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
+    totalProfit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
   }).from(fullPackageOrders)
     .where(and(...conditions))
     .groupBy(fullPackageOrders.supplierId);
@@ -153,7 +154,7 @@ export async function getFullPackageProfitByCustomer(startDate?: Date, endDate?:
   const db = await getDb();
   if (!db) return [];
   
-  const conditions = [eq(fullPackageOrders.status, "delivered")];
+  const conditions = [eq(fullPackageOrders.status, "delivered"), sql.raw("deletedAt IS NULL")];
   if (startDate) conditions.push(gte(fullPackageOrders.createdAt, startDate));
   if (endDate) conditions.push(lte(fullPackageOrders.createdAt, endDate));
   
@@ -162,7 +163,7 @@ export async function getFullPackageProfitByCustomer(startDate?: Date, endDate?:
     totalOrders: sql<number>`COUNT(*)`,
     totalRevenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
     totalCost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity + COALESCE(shippingCostUsd, 0)), 0)`,
-    totalProfit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
+    totalProfit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
   }).from(fullPackageOrders)
     .where(and(...conditions))
     .groupBy(fullPackageOrders.customerId);
@@ -228,7 +229,7 @@ export async function getFullPackageStats() {
     returned: sql<number>`SUM(CASE WHEN status = 'returned' OR isReturned = true THEN 1 ELSE 0 END)`,
     todayOrders: sql<number>`SUM(CASE WHEN DATE(createdAt) = CURDATE() THEN 1 ELSE 0 END)`,
     thisWeekOrders: sql<number>`SUM(CASE WHEN createdAt >= ${weekAgo} THEN 1 ELSE 0 END)`,
-    totalProfit: sql<number>`COALESCE(SUM(CASE WHEN status = 'delivered' THEN profitUsd ELSE 0 END), 0)`,
+    totalProfit: sql<number>`COALESCE(SUM(CASE WHEN status = 'delivered' THEN ${sql.raw(ORDER_PROFIT_SQL)} ELSE 0 END), 0)`,
     totalRevenue: sql<number>`COALESCE(SUM(CASE WHEN status = 'delivered' THEN totalCostUsd ELSE 0 END), 0)`,
     // Legacy order types
     resale: sql<number>`SUM(CASE WHEN orderType = 'resale' THEN 1 ELSE 0 END)`,
@@ -261,17 +262,19 @@ export async function getProfitReport(startDate: Date, endDate: Date) {
   
   // Full package profit
   const fullPackageProfit = await db.select({
-    total: sql<number>`COALESCE(SUM(profitUsd), 0)`,
+    total: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
   }).from(fullPackageOrders)
     .where(and(
       eq(fullPackageOrders.status, "delivered"),
+      sql.raw("deletedAt IS NULL"),
       gte(fullPackageOrders.createdAt, startDate),
       lte(fullPackageOrders.createdAt, endDate)
     ));
   
   // Total payments received - using paymentRecords table
   const totalPayments = await db.select({
-    total: sql<number>`COALESCE(SUM(amount), 0)`,
+    // `amount` never existed on this table; and money handed back is not received.
+    total: sql<number>`COALESCE(SUM(CAST(${paymentRecords.amountUsd} AS DECIMAL(12,2)) - CAST(COALESCE(${paymentRecords.reversedAmountUsd}, 0) AS DECIMAL(12,2))), 0)`,
   }).from(paymentRecords)
     .where(and(
       gte(paymentRecords.createdAt, startDate),
@@ -511,7 +514,7 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
     try {
       const startDateStr = startDate.toISOString().slice(0, 10);
       const revenueResult = await db.execute(
-        sql`SELECT DATE(createdAt) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2))), 0) as revenue 
+        sql`SELECT DATE(createdAt) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2)) - CAST(COALESCE(reversedAmountUsd, 0) AS DECIMAL(12,2))), 0) as revenue 
             FROM paymentRecords 
             WHERE createdAt >= ${startDateStr} 
             GROUP BY DATE(createdAt) 
@@ -598,7 +601,7 @@ export async function getDashboardProfitLossChart(days: number = 30): Promise<{ 
     let revenueData: { date: string; revenue: string }[] = [];
     try {
       const revenueResult = await db.execute(
-        sql`SELECT DATE(createdAt) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2))), 0) as revenue 
+        sql`SELECT DATE(createdAt) as date, COALESCE(SUM(CAST(amountUsd AS DECIMAL(12,2)) - CAST(COALESCE(reversedAmountUsd, 0) AS DECIMAL(12,2))), 0) as revenue 
             FROM paymentRecords 
             WHERE createdAt >= ${startDateStr} 
             GROUP BY DATE(createdAt) 
@@ -1695,7 +1698,7 @@ export async function getFullPackageProfitReport(filters?: {
     purchasePriceUsd: fullPackageOrders.purchasePriceUsd,
     sellingPriceUsd: fullPackageOrders.sellingPriceUsd,
     shippingCostUsd: fullPackageOrders.shippingCostUsd,
-    profitUsd: fullPackageOrders.profitUsd,
+    commissionFeeUsd: fullPackageOrders.commissionFeeUsd,
     quantity: fullPackageOrders.quantity,
     status: fullPackageOrders.status,
     deliveredDate: fullPackageOrders.deliveredDate,
@@ -1711,7 +1714,7 @@ export async function getFullPackageProfitReport(filters?: {
     const purchasePrice = parseFloat(order.purchasePriceUsd || '0');
     const sellingPrice = parseFloat(order.sellingPriceUsd || '0');
     const shippingCost = parseFloat(order.shippingCostUsd || '0');
-    const profit = parseFloat(order.profitUsd || '0');
+    const profit = orderProfitUsd(order);
     const profitMargin = sellingPrice > 0 ? (profit / sellingPrice) * 100 : 0;
     
     return {
@@ -1769,7 +1772,7 @@ export async function getMonthlyProfitReport(year: number, month?: number): Prom
     fullPackage: { count: number; revenue: number; cost: number; shipping: number; profit: number };
     purchaseRequest: { count: number; revenue: number; cost: number; shipping: number; profit: number };
     commission: { count: number; revenue: number; cost: number; shipping: number; profit: number };
-    packages: { count: number; revenue: number };
+    packages: { count: number; revenue: number; profit: number };
     total: { revenue: number; cost: number; shipping: number; profit: number };
     comparison?: { profitChange: number; profitChangePercent: number };
   }>;
@@ -1803,10 +1806,11 @@ export async function getMonthlyProfitReport(year: number, month?: number): Prom
       revenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
       cost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity), 0)`,
       shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
-      profit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
+      profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
     }).from(fullPackageOrders)
       .where(and(
         eq(fullPackageOrders.orderType, 'full_package'),
+        sql.raw(LIVE_SALE_SQL),
         gte(fullPackageOrders.createdAt, startDate),
         lte(fullPackageOrders.createdAt, endDate)
       ));
@@ -1817,10 +1821,11 @@ export async function getMonthlyProfitReport(year: number, month?: number): Prom
       revenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
       cost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity), 0)`,
       shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
-      profit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
+      profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
     }).from(fullPackageOrders)
       .where(and(
         eq(fullPackageOrders.orderType, 'purchase_request'),
+        sql.raw(LIVE_SALE_SQL),
         gte(fullPackageOrders.createdAt, startDate),
         lte(fullPackageOrders.createdAt, endDate)
       ));
@@ -1833,10 +1838,11 @@ export async function getMonthlyProfitReport(year: number, month?: number): Prom
       revenue: sql<number>`COALESCE(SUM((itemPriceUsd + commissionFeeUsd) * quantity), 0)`,
       cost: sql<number>`COALESCE(SUM(itemPriceUsd * quantity), 0)`,
       shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
-      profit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
+      profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
     }).from(fullPackageOrders)
       .where(and(
         eq(fullPackageOrders.orderType, 'commission'),
+        sql.raw(LIVE_SALE_SQL),
         gte(fullPackageOrders.createdAt, startDate),
         lte(fullPackageOrders.createdAt, endDate)
       ));
@@ -1879,13 +1885,16 @@ export async function getMonthlyProfitReport(year: number, month?: number): Prom
     const pkgs = {
       count: Number(pkgDeliveries[0]?.count || 0),
       revenue: Number(pkgDeliveries[0]?.revenue || 0),
+      // Freight less the carrier's cost for the batches it travelled in.
+      // The whole freight used to be added to profit as if it cost nothing.
+      profit: await getPackageNetProfitFromBatches(db, startDate, endDate),
     };
     
     const total = {
       revenue: fullPackage.revenue + purchaseRequest.revenue + commission.revenue + pkgs.revenue,
       cost: fullPackage.cost + purchaseRequest.cost + commission.cost,
       shipping: fullPackage.shipping + purchaseRequest.shipping + commission.shipping,
-      profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.revenue,
+      profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit,
     };
     
     months.push({
@@ -1961,10 +1970,10 @@ export async function getProfitByOrderType(startDate?: Date, endDate?: Date): Pr
   if (endDate) dateConditions.push(lte(fullPackageOrders.createdAt, endDate));
   
   const getOrderStats = async (orderType: 'full_package' | 'purchase_request' | 'commission') => {
-    const conditions = [eq(fullPackageOrders.orderType, orderType), ...dateConditions];
+    const conditions = [eq(fullPackageOrders.orderType, orderType), sql.raw(LIVE_SALE_SQL), ...dateConditions];
     const result = await db.select({
       count: sql<number>`COUNT(*)`,
-      totalProfit: sql<number>`COALESCE(SUM(profitUsd), 0)`,
+      totalProfit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
     }).from(fullPackageOrders)
       .where(and(...conditions));
     
@@ -2030,10 +2039,17 @@ async function getPackageNetProfitFromBatches(
   const batchCosts = await db
     .select({
       id: batches.id,
+      // The same order as resolveBatchCost (shared/batchCost): a per-unit
+      // rate wins; otherwise the carrier's one figure for the shipment IS
+      // the cost. Reading the rate alone made a batch recorded only by its
+      // total cost nothing, and its whole freight looked like profit.
       totalCost: sql<number>`COALESCE(
-        CASE WHEN ${batches.shippingType} = 'sea'
-        THEN CAST(${batches.chargedCbm} AS DECIMAL(12,2)) * CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2))
-        ELSE CAST(${batches.chargedWeightKg} AS DECIMAL(12,2)) * CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2))
+        CASE
+          WHEN ${batches.shippingType} = 'sea' AND CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2)) > 0
+            THEN CAST(COALESCE(${batches.chargedCbm}, 0) AS DECIMAL(12,4)) * CAST(${batches.costPerCbm} AS DECIMAL(12,2))
+          WHEN ${batches.shippingType} <> 'sea' AND CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2)) > 0
+            THEN CAST(COALESCE(${batches.chargedWeightKg}, 0) AS DECIMAL(12,2)) * CAST(${batches.costPerKg} AS DECIMAL(12,2))
+          ELSE CAST(COALESCE(${batches.shippingCost}, 0) AS DECIMAL(12,2))
         END, 0
       )`,
     })
@@ -2093,17 +2109,19 @@ export async function getAggregatedProfitAndExpenses(
     : new Date(year, 11, 31, 23, 59, 59);
 
   const [fpResult, commResult, pkgResult, pkgNetResult, svcResult, expSumResult, expByCatResult] = await Promise.all([
-    db.select({ total: sql<number>`COALESCE(SUM(profitUsd), 0)` })
+    db.select({ total: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)` })
       .from(fullPackageOrders)
       .where(and(
         eq(fullPackageOrders.orderType, 'full_package'),
+        sql.raw(LIVE_SALE_SQL),
         gte(fullPackageOrders.createdAt, startDate),
         lte(fullPackageOrders.createdAt, endDate)
       )),
-    db.select({ total: sql<number>`COALESCE(SUM(profitUsd), 0)` })
+    db.select({ total: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)` })
       .from(fullPackageOrders)
       .where(and(
         eq(fullPackageOrders.orderType, 'commission'),
+        sql.raw(LIVE_SALE_SQL),
         gte(fullPackageOrders.createdAt, startDate),
         lte(fullPackageOrders.createdAt, endDate)
       )),
@@ -2437,18 +2455,24 @@ export async function getFullPackageProfitBreakdown(startDate: Date, endDate: Da
     const fpOrders = await db.select().from(fullPackageOrders).where(and(gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate), eq(fullPackageOrders.orderType, 'full_package')));
     const fullPackageData = { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: fpOrders.length };
     for (const order of fpOrders) {
-      const selling = Number(order.sellingPriceUsd || 0);
-      const purchase = Number(order.purchasePriceUsd || 0);
+      // Prices are per unit; cancelled, deleted and unaccepted quotes are not
+      // sales (shared/orderProfit). Neither was accounted for here.
+      if (!isLiveSale(order)) { fullPackageData.count -= 1; continue; }
+      const quantity = Math.max(1, Number(order.quantity || 1));
       const shipping = Number(order.shippingCostUsd || 0);
-      fullPackageData.revenue += selling;
-      fullPackageData.cost += purchase;
+      fullPackageData.revenue += Number(order.sellingPriceUsd || 0) * quantity;
+      fullPackageData.cost += Number(order.purchasePriceUsd || 0) * quantity;
       fullPackageData.shippingCost += shipping;
-      fullPackageData.profit += (selling - purchase - shipping);
+      fullPackageData.profit += orderProfitUsd(order);
     }
     const commOrders = await db.select().from(fullPackageOrders).where(and(gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate), eq(fullPackageOrders.orderType, 'commission')));
     const commissionData = { totalCommission: 0, count: commOrders.length };
     for (const order of commOrders) {
-      commissionData.totalCommission += Number(order.commissionFeeUsd || order.commissionAmount || 0);
+      if (!isLiveSale(order)) { commissionData.count -= 1; continue; }
+      const quantity = Math.max(1, Number(order.quantity || 1));
+      commissionData.totalCommission += order.commissionFeeUsd
+        ? Number(order.commissionFeeUsd) * quantity
+        : Number(order.commissionAmount || 0);
     }
     return { fullPackage: fullPackageData, commission: commissionData };
   } catch (err) {
@@ -2551,11 +2575,13 @@ export async function getActivityStats(startDate: Date, endDate: Date) {
     packagesDelivered = Number(pkgResult[0]?.count || 0);
   } catch { /* ignore */ }
   try {
-    const fpResult = await db.select({ count: sql<number>`COUNT(*)` }).from(fullPackageOrders).where(and(eq(fullPackageOrders.orderType, 'full_package'), gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate)));
+    const fpResult = await db.select({ count: sql<number>`COUNT(*)` }).from(fullPackageOrders).where(and(eq(fullPackageOrders.orderType, 'full_package'),
+        sql.raw(LIVE_SALE_SQL), gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate)));
     fullPackagesSold = Number(fpResult[0]?.count || 0);
   } catch { /* ignore */ }
   try {
-    const commResult = await db.select({ count: sql<number>`COUNT(*)` }).from(fullPackageOrders).where(and(eq(fullPackageOrders.orderType, 'commission'), gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate)));
+    const commResult = await db.select({ count: sql<number>`COUNT(*)` }).from(fullPackageOrders).where(and(eq(fullPackageOrders.orderType, 'commission'),
+        sql.raw(LIVE_SALE_SQL), gte(fullPackageOrders.createdAt, startDate), lte(fullPackageOrders.createdAt, endDate)));
     commissionOrders = Number(commResult[0]?.count || 0);
   } catch { /* ignore */ }
   try {
