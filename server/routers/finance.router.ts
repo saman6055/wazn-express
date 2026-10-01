@@ -544,6 +544,12 @@ export const ledgerRouter = router({
       return db.getLedgerReconciliation();
     }),
 
+    customersInCredit: adminProcedure.query(async () => {
+      // Read only: every account the books say we owe, with the likeliest
+      // reason (db/creditCustomers.db). Nothing moves because it was opened.
+      return db.findCustomersInCredit();
+    }),
+
     /**
      * Goods a customer already has, that their account was never told about.
      *

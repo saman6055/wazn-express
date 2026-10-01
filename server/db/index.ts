@@ -28,6 +28,7 @@ export * from './tasks.db';
 export * from './staffChat.db';
 export * from './orderCharging.db';
 export * from './ledgerReconciliation.db';
+export * from './creditCustomers.db';
 export * from './shareLinks.db';
 export * from './batchCharging.db';
 export * from './batchCloseCheck.db';
