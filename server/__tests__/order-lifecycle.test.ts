@@ -101,24 +101,20 @@ describe.skipIf(!hasDb())(
       );
 
       expect(reversalTransaction.transactionType).toBe("ADJUSTMENT_CREDIT");
-      expect(parseFloat(reversalTransaction.amountUsd ?? "0")).toBeCloseTo(200, 2);
+      // The reversal undoes what the charge STANDS AT — 150 after the
+      // correction — not its first amount.
+      expect(parseFloat(reversalTransaction.amountUsd ?? "0")).toBeCloseTo(150, 2);
 
       const afterReversal = await db.getCustomerBalance(customerId);
-      // Net effect: +200 (DEBIT) − 50 (adjust) − 200 (reversal) = −50 from initial.
-      // Wait — the reversal is of the ORIGINAL DEBIT amount (200), NOT of the
-      // currently-owed amount. That's intentional: it undoes the original
-      // charge in full, and the earlier adjustment stays on the record.
-      // Net balance = initial + 200 − 50 − 200 = initial − 50.
+      // +200 (DEBIT) − 50 (price corrected down) − 150 (reversal) = initial.
       //
-      // Is this the right invariant? Yes — because the customer RECEIVED the
-      // $50 discount earlier, they still "owe" negative-$50 after full
-      // reversal. An operator who wants the balance to land at exactly
-      // `initial` should first adjust back to 200, then reverse — or use a
-      // higher-level "cancel entirely" helper that combines both in one go.
-      //
-      // For Plan v3, the guarantee is "ledger = sum of live charges minus
-      // reversals" — and that's exactly what we see here.
-      expect(afterReversal).toBeCloseTo(initial - 50, 2);
+      // This used to assert `initial − 50`, and called it intentional: the
+      // reversal handed back the whole first amount, so an order corrected
+      // down and then deleted left the customer $50 in credit that nobody
+      // had paid. A price correction is not a discount the customer keeps
+      // after the order is gone. Owner, 2026-10-01: no customer has credit.
+      // Fixed 2026-10-02 (effectiveChargeUsd in finance.db).
+      expect(afterReversal).toBeCloseTo(initial, 2);
 
       // --------------------------------------------------------
       // 4. Invoice should now be cancelled.

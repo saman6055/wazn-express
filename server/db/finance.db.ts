@@ -1458,6 +1458,47 @@ async function _lockAccount(tx: DbTx, accountId: number): Promise<CustomerAccoun
 }
 
 /**
+ * What a charge stands at now: its first amount, plus and minus every
+ * correction posted against it since, less a reversal if there was one.
+ *
+ * Both functions below used to measure from the charge's FIRST amount. So a
+ * price corrected twice went wrong on the second correction — $100 → $80
+ * posted −20, then $80 → $90 posted another −10 (90 − 100) and the charge
+ * stood at $70 — and an order corrected down and then cancelled handed back
+ * the whole first amount, leaving a credit nobody had paid for. Found
+ * 2026-10-02 while tracing why 75 accounts stood in credit.
+ *
+ * The corrections are found by the markers these same functions write into
+ * the description — `[ADJ:<number>]`, `[REV:<number>]` — so nothing new is
+ * stored and every row already in the ledger is read correctly.
+ */
+export async function effectiveChargeUsd(
+  tx: DbTx,
+  original: Pick<LedgerTransaction, "accountId" | "transactionNumber" | "amountUsd">,
+): Promise<number> {
+  const rows = await tx
+    .select({
+      transactionType: ledgerTransactions.transactionType,
+      amountUsd: ledgerTransactions.amountUsd,
+    })
+    .from(ledgerTransactions)
+    .where(and(
+      eq(ledgerTransactions.accountId, original.accountId),
+      inArray(ledgerTransactions.transactionType, ['ADJUSTMENT_DEBIT', 'ADJUSTMENT_CREDIT']),
+      or(
+        like(ledgerTransactions.description, `%[ADJ:${original.transactionNumber}]%`),
+        like(ledgerTransactions.description, `%[REV:${original.transactionNumber}]%`),
+      ),
+    ));
+  let cents = Math.round(parseFloat(original.amountUsd || '0') * 100);
+  for (const row of rows) {
+    const amount = Math.round(parseFloat(row.amountUsd || '0') * 100);
+    cents += row.transactionType === 'ADJUSTMENT_DEBIT' ? amount : -amount;
+  }
+  return cents / 100;
+}
+
+/**
  * Fully reverse an original DEBIT charge.
  *
  * - Creates an `ADJUSTMENT_CREDIT` of equal size so the ledger ALWAYS
@@ -1496,9 +1537,8 @@ export async function reverseCharge(
       );
     }
 
-    const amountUsd = parseFloat(original.amountUsd || '0');
-    if (amountUsd <= 0) {
-      throw new Error(`reverseCharge: original transaction amount is ${amountUsd}, nothing to reverse`);
+    if (parseFloat(original.amountUsd || '0') <= 0) {
+      throw new Error(`reverseCharge: original transaction amount is ${original.amountUsd}, nothing to reverse`);
     }
 
     // 2. Idempotency — if we already created a reversal for this txn, return it.
@@ -1523,6 +1563,11 @@ export async function reverseCharge(
     const account = await _lockAccount(tx, original.accountId);
     const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
     const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
+    // What is still standing after earlier corrections — never the first
+    // amount (see effectiveChargeUsd). A charge already corrected to nothing
+    // still gets its marker row, at zero, so the reversal stays idempotent
+    // and the statement says the charge was cancelled.
+    const amountUsd = Math.max(0, await effectiveChargeUsd(tx, original));
     // ADJUSTMENT_CREDIT decreases balance (undoes the original DEBIT).
     const newBalanceUsd = currentBalanceUsd - amountUsd;
 
@@ -1646,9 +1691,13 @@ export async function reverseCharge(
 /**
  * Adjust an existing DEBIT charge to a new target amount.
  *
- * - If `newAmountUsd > originalAmount` → emits an `ADJUSTMENT_DEBIT` for the
+ * `newAmountUsd` is the total the charge should stand at afterwards. It is
+ * compared with what the charge stands at NOW (effectiveChargeUsd), so a
+ * second or third correction moves the balance by its own difference only.
+ *
+ * - If `newAmountUsd > current` → emits an `ADJUSTMENT_DEBIT` for the
  *   delta (balance increases).
- * - If `newAmountUsd < originalAmount` → emits an `ADJUSTMENT_CREDIT` for
+ * - If `newAmountUsd < current` → emits an `ADJUSTMENT_CREDIT` for
  *   the delta (balance decreases).
  * - If they match (within 1 cent) → no-op, returns null.
  *
@@ -1688,7 +1737,9 @@ export async function adjustCharge(
       );
     }
 
-    const originalAmount = parseFloat(original.amountUsd || '0');
+    // "original" here means what the charge stands at before this call:
+    // its first amount with every earlier correction applied.
+    const originalAmount = await effectiveChargeUsd(tx, original);
     const delta = newAmountUsd - originalAmount;
 
     // No-op when the change is within 1 cent (float tolerance + user saved
