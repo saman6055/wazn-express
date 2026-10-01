@@ -593,6 +593,30 @@ export const ledgerRouter = router({
       return db.getLedgerReconciliation();
     }),
 
+    /**
+     * The credit that the bulk box receipts of 2026-09-10 created
+     * (shared/bulkReceiptCredit). The list is read only; the correction posts
+     * one ADJUSTMENT_DEBIT per customer named, recomputed on the server, and
+     * an account already corrected is skipped.
+     */
+    bulkReceiptCredits: adminProcedure.query(async () => {
+      return db.findBulkReceiptCredits();
+    }),
+    correctBulkReceiptCredits: adminProcedure
+      .input(z.object({ customerIds: z.array(z.number().int().positive()).min(1).max(500) }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.correctBulkReceiptCredits(input.customerIds, ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "correct_bulk_receipt_credits",
+          entityType: "customer_account",
+          entityId: 0,
+          newValues: { corrected: result.corrected, amountUsd: result.amountUsd, skipped: result.skipped.length },
+        });
+        return result;
+      }),
+
     customersInCredit: adminProcedure.query(async () => {
       // Read only: every account the books say we owe, with the likeliest
       // reason (db/creditCustomers.db). Nothing moves because it was opened.

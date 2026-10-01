@@ -23,6 +23,7 @@ import { ActivityLogTab } from "@/components/admin/ActivityLogTab";
 import { EntryChargeBackfillSection } from "@/components/admin/EntryChargeBackfillSection";
 import { UnbilledGoodsSection } from "@/components/admin/UnbilledGoodsSection";
 import { CreditCustomersSection } from "@/components/admin/CreditCustomersSection";
+import { BulkReceiptCreditSection } from "@/components/admin/BulkReceiptCreditSection";
 import { LedgerReconciliationSection } from "@/components/admin/LedgerReconciliationSection";
 import { pickLang } from "@/lib/lang";
 
@@ -194,6 +195,7 @@ export default function DataManagement() {
 
           <TabsContent value="repairs" className="space-y-6">
             <LedgerReconciliationSection language={language} />
+            <BulkReceiptCreditSection language={language} />
             <CreditCustomersSection language={language} />
             <UnbilledGoodsSection language={language} />
             <EntryChargeBackfillSection language={language} />
