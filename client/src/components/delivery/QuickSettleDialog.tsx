@@ -19,7 +19,8 @@ import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
 import {
-  settlementTotals, differenceOf, roundingToleranceUsd, iqdToUsd, usdToIqd, allocateBoxDiscount,
+  settlementTotals, differenceOf, roundingToleranceUsd, accountCover, unbilledOnReceiptUsd,
+  iqdToUsd, usdToIqd, allocateBoxDiscount,
   type ParcelIntent,
 } from "@shared/boxSettlement";
 import { pledgeFloors, reasonText } from "@shared/pledgedDiscount";
@@ -105,6 +106,21 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   );
   const totals = useMemo(() => settlementTotals(parcels, intents), [parcels, intents]);
 
+  // The box may not ask for more than the account still owes: whatever the
+  // account already settled closes these parcels with no money taken. The
+  // server applies the same rule (shared accountCover).
+  const cover = useMemo(
+    () => accountCover({
+      dueUsd: totals.dueUsd,
+      balanceUsd: data?.accountBalanceUsd ?? 0,
+      toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
+      correctionUsd: totals.correctionUsd,
+      discountUsd: totals.discountUsd,
+    }),
+    [totals, data?.accountBalanceUsd, parcels, intents],
+  );
+  const cashDue = cover.cashDueUsd;
+
   /** What the receipt promised, in the words it promised them in. */
   /** Receipts still standing on this box — a reversed one took nothing. */
   const undo = trpc.deliveryBox.reverseSettlement.useMutation({
@@ -157,12 +173,12 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const rateNum = Number(rate) || 0;
   const nothingEntered = !iqd && !usd;
   const paid = nothingEntered
-    ? totals.dueUsd
+    ? cashDue
     : Math.round((iqdToUsd(Number(iqd) || 0, rateNum) + (Number(usd) || 0)) * 100) / 100;
   // Same tolerance the server applies: dinars were rounded on the receipt,
   // so a few cents either way is the rounding, not a shortfall.
   const tolerance = Number(iqd) > 0 ? roundingToleranceUsd(rateNum) : 0;
-  const difference = differenceOf(totals.dueUsd, paid, treatShortAs, tolerance);
+  const difference = differenceOf(cashDue, paid, treatShortAs, tolerance);
   const needsReason = difference.reasonRequired && !reason.trim();
 
   const settle = trpc.deliveryBox.settle.useMutation({
@@ -225,7 +241,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
       boxDiscountReason: floors.boxUsd > 0 ? (boxReason?.reason ?? "other") : undefined,
       boxDiscountNote: floors.boxUsd > 0 ? (boxReason?.note ?? undefined) : undefined,
       amountIqd: Number(iqd) || undefined,
-      amountUsd: nothingEntered ? totals.dueUsd : (Number(usd) || undefined),
+      amountUsd: nothingEntered ? cashDue : (Number(usd) || undefined),
       exchangeRate: rateNum || undefined,
       treatShortAs,
       differenceReason: reason || undefined,
@@ -343,11 +359,23 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                   {code.name ? ` · ${code.name}` : ""}
                 </p>
                 <p className="mt-1 font-mono text-4xl font-semibold tabular-nums" data-testid="quick-due">
-                  {fmtUsd(totals.dueUsd)}
+                  {fmtUsd(cashDue)}
                 </p>
                 {rateNum > 0 && (
                   <p className="mt-1 font-mono text-sm text-muted-foreground" dir="ltr">
-                    {fmtNumber(usdToIqd(totals.dueUsd, rateNum), 0)} IQD
+                    {fmtNumber(usdToIqd(cashDue, rateNum), 0)} IQD
+                  </p>
+                )}
+{cover.coveredUsd > 0 && (
+                  <p className="mt-3 rounded-md border border-blue-300 bg-blue-50/60 p-2 text-start text-xs text-blue-800 dark:border-blue-800 dark:bg-blue-950/30 dark:text-blue-300"
+                     data-testid="quick-covered">
+                    {t({
+                      ku: "ئەم بڕە پێشتر لەسەر حیسابی کڕیار دراوە — دووبارە وەرناگیرێت:",
+                      en: "Already settled on the customer's account — not taken again:",
+                      ar: "سبق تسديد هذا المبلغ على حساب العميل — لا يؤخذ مرة أخرى:",
+                      zh: "该金额已在客户账户上结清——不再重复收取：",
+                    })}
+                    {" "}<bdi dir="ltr" className="font-mono">{fmtUsd(cover.coveredUsd)}</bdi>
                   </p>
                 )}
                 {promised.length > 0 && (
@@ -391,7 +419,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                   </span>
                   <GroupedNumberInput
                 value={iqd} onValueChange={setIqd} className="h-10"
-                placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
+                placeholder={rateNum > 0 ? String(usdToIqd(cashDue, rateNum)) : ""}
                 data-testid="quick-iqd"
                   />
                 </label>

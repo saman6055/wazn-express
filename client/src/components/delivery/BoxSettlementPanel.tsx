@@ -26,6 +26,7 @@ import { fmtAmount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { fmtDateTime } from "@/lib/numericDate";
 import {
   settlementTotals, differenceOf, boxDiscountUsd, allocateBoxDiscount,
+  accountCover, unbilledOnReceiptUsd, roundingToleranceUsd,
   iqdToUsd, usdToIqd,
   DISCOUNT_REASON_LABELS,
   type ParcelIntent, type BoxDiscount, type DiscountReason,
@@ -209,6 +210,21 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
 
   const totals = useMemo(() => settlementTotals(parcels, intents), [parcels, intents]);
 
+  // The box may not ask for more than the account still owes: whatever the
+  // account already settled closes these parcels with no money taken. The
+  // server applies the same rule (shared accountCover).
+  const cover = useMemo(
+    () => accountCover({
+      dueUsd: totals.dueUsd,
+      balanceUsd: data?.accountBalanceUsd ?? 0,
+      toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
+      correctionUsd: totals.correctionUsd,
+      discountUsd: totals.discountUsd,
+    }),
+    [totals, data?.accountBalanceUsd, parcels, intents],
+  );
+  const cashDue = cover.cashDueUsd;
+
   const rateNum = Number(rate) || 0;
   const paidUsd = useMemo(
     () => Math.round((iqdToUsd(Number(iqd) || 0, rateNum) + (Number(usd) || 0)) * 100) / 100,
@@ -216,10 +232,12 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
   );
   // Nothing typed yet means the customer is paying in full — the ordinary day.
   const nothingEntered = !iqd && !usd;
-  const effectivePaid = nothingEntered ? totals.dueUsd : paidUsd;
+  const effectivePaid = nothingEntered ? cashDue : paidUsd;
   const difference = useMemo(
-    () => differenceOf(totals.dueUsd, effectivePaid, treatShortAs),
-    [totals.dueUsd, effectivePaid, treatShortAs],
+    // Same dinar-rounding tolerance as the server and the quick window.
+    () => differenceOf(cashDue, effectivePaid, treatShortAs,
+      Number(iqd) > 0 ? roundingToleranceUsd(rateNum) : 0),
+    [cashDue, effectivePaid, treatShortAs, iqd, rateNum],
   );
 
   const settle = trpc.deliveryBox.settle.useMutation({
@@ -349,7 +367,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
       boxDiscountReason: boxCut > 0 ? discountReason : undefined,
       boxDiscountNote: discountNote || undefined,
       amountIqd: Number(iqd) || undefined,
-      amountUsd: nothingEntered ? totals.dueUsd : (Number(usd) || undefined),
+      amountUsd: nothingEntered ? cashDue : (Number(usd) || undefined),
       exchangeRate: rateNum || undefined,
       treatShortAs,
       differenceReason: differenceReason || undefined,
@@ -676,9 +694,13 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
                 <Row label={t({ ku: "تەحدید کراو", en: "Set aside", ar: "مستبعد", zh: "已搁置" })}
                      value={`−${fmtAmount(totals.heldUsd)}`} tone="red" />
               )}
+              {cover.coveredUsd > 0 && (
+                <Row label={t({ ku: "پێشتر لەسەر حیساب دراوە", en: "Already settled on the account", ar: "سبق تسديده على الحساب", zh: "已在账户上结清" })}
+                     value={`−${fmtAmount(cover.coveredUsd)}`} tone="blue" />
+              )}
               <div className="flex items-baseline justify-between border-t pt-1.5 font-semibold">
                 <span>{t({ ku: "پێویستە بدرێت", en: "Due", ar: "المطلوب", zh: "应付" })}</span>
-                <span className="font-mono tabular-nums" data-testid="settle-due">{money(totals.dueUsd)}</span>
+                <span className="font-mono tabular-nums" data-testid="settle-due">{money(cashDue)}</span>
               </div>
             </div>
 
@@ -689,7 +711,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
               <label className="space-y-1 block">
                 <span className="text-xs text-muted-foreground">{t({ ku: "بە دینار", en: "In dinars", ar: "بالدينار", zh: "第纳尔" })}</span>
                 <GroupedNumberInput value={iqd} onValueChange={setIqd} className="h-9"
-                  placeholder={rateNum > 0 ? String(usdToIqd(totals.dueUsd, rateNum)) : ""}
+                  placeholder={rateNum > 0 ? String(usdToIqd(cashDue, rateNum)) : ""}
                   data-testid="settle-iqd" />
               </label>
               <label className="space-y-1 block">
@@ -764,7 +786,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
             >
               {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
               {t({ ku: "پێداچوونەوە و واصڵکردن", en: "Review and take payment", ar: "مراجعة واستلام", zh: "复核并收款" })}
-              {" — "}{money(totals.dueUsd)}
+              {" — "}{money(cashDue)}
             </Button>
             <span className="text-xs text-muted-foreground">
               {t({
@@ -797,7 +819,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
               <Row label={t({ ku: "داشکاندن", en: "Discount", ar: "الخصم", zh: "折扣" })}
                    value={money(totals.discountUsd)} tone="amber" />
             )}
-            <Row label={t({ ku: "پێویستە بدرێت", en: "Due", ar: "المطلوب", zh: "应付" })} value={money(totals.dueUsd)} />
+            <Row label={t({ ku: "پێویستە بدرێت", en: "Due", ar: "المطلوب", zh: "应付" })} value={money(cashDue)} />
             <Row label={t({ ku: "وەرگیراو", en: "Received", ar: "المستلم", zh: "已收" })} value={money(effectivePaid)} />
             {difference.kind !== "none" && (
               <Row

@@ -36,14 +36,14 @@ describe("the ordinary day is one press", () => {
     // operator type 900 to say "he gave me 900" is the fuss the owner
     // objected to.
     expect(panel).toContain("const nothingEntered = !iqd && !usd");
-    expect(panel).toContain("nothingEntered ? totals.dueUsd : paidUsd");
+    expect(panel).toContain("nothingEntered ? cashDue : paidUsd");
   });
 
   it("sends the full amount when nothing was typed", () => {
     // The screen showing "paid in full" and the mutation sending zero would
     // be the worst possible version of this.
     const submit = slice(panel, "const submit = () =>", "};", "submit");
-    expect(submit).toContain("nothingEntered ? totals.dueUsd");
+    expect(submit).toContain("nothingEntered ? cashDue");
   });
 
   it("pre-fills the dollar rate from the last receipt", () => {
@@ -60,7 +60,7 @@ describe("the ordinary day is one press", () => {
 
   it("shows the amount on the button, so it is read before it is pressed", () => {
     const button = slice(panel, 'data-testid="settle-open-confirm"', "</Button>", "settle button");
-    expect(button).toContain("money(totals.dueUsd)");
+    expect(button).toContain("money(cashDue)");
   });
 });
 
@@ -228,8 +228,8 @@ describe("taking the money is one press from the list", () => {
   it("fills the amount in before anything is typed", () => {
     // The customer paid what was asked. Typing 900 to say so is the fuss.
     expect(quick).toContain("const nothingEntered = !iqd && !usd");
-    expect(quick).toContain("? totals.dueUsd");
-    expect(quick).toContain("nothingEntered ? totals.dueUsd : (Number(usd) || undefined)");
+    expect(quick).toContain("? cashDue");
+    expect(quick).toContain("nothingEntered ? cashDue : (Number(usd) || undefined)");
   });
 
   it("shows what is owed, large, before asking anything", () => {

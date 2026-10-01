@@ -26,6 +26,8 @@ import {
   differenceOf,
   roundingToleranceUsd,
   ROUNDING_VARIANCE_REASON,
+  accountCover,
+  unbilledOnReceiptUsd,
   boxDiscountUsd,
   allocateBoxDiscount,
   type ParcelIntent,
@@ -873,6 +875,9 @@ export interface CreateSettlementInput {
   replacesSettlementId?: number;
 }
 
+/** Written on a receipt whose parcels the account had already settled. */
+export const COVERED_BY_ACCOUNT_NOTE = "پێشتر لەسەر حیساب دراوە";
+
 /**
  * Take the money.
  *
@@ -889,7 +894,7 @@ export interface CreateSettlementInput {
 export async function createBoxSettlement(
   input: CreateSettlementInput,
   userId: number,
-): Promise<{ settlementId: number; settlementNumber: string; paidUsd: number; differenceKind: string }> {
+): Promise<{ settlementId: number; settlementNumber: string; paidUsd: number; differenceKind: string; coveredUsd: number }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -1019,9 +1024,24 @@ export async function createBoxSettlement(
   // «جیاوازی خڕکردنەوەی دراو», over is taken as paid in full. Dollars alone
   // are exact and get no tolerance.
   const tolerance = iqd > 0 ? roundingToleranceUsd(rate) : 0;
-  const difference = differenceOf(totals.dueUsd, handedOverUsd, input.treatShortAs ?? "debt", tolerance);
+
+  // The account is the one ledger: the box may not ask for more than the
+  // account will owe once this receipt's own entries are on it. Whatever the
+  // account already settled — by hand, from the payments page, as credit —
+  // closes these parcels with no money taken (owner, 2026-10-01; see
+  // accountCover). Without this the same debt was receipted twice.
+  const cover = accountCover({
+    dueUsd: totals.dueUsd,
+    balanceUsd: view.accountBalanceUsd,
+    toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
+    correctionUsd: totals.correctionUsd,
+    discountUsd: totals.discountUsd,
+  });
+  const cashDueUsd = cover.cashDueUsd;
+
+  const difference = differenceOf(cashDueUsd, handedOverUsd, input.treatShortAs ?? "debt", tolerance);
   const isRounding = difference.roundingUsd !== undefined;
-  const paidUsd = isRounding && difference.roundingUsd! > 0 ? totals.dueUsd : handedOverUsd;
+  const paidUsd = isRounding && difference.roundingUsd! > 0 ? cashDueUsd : handedOverUsd;
   const differenceReason = isRounding
     ? `${ROUNDING_VARIANCE_REASON} (${difference.roundingUsd! > 0 ? "+" : "−"}$${Math.abs(difference.roundingUsd!).toFixed(2)})`
     : input.differenceReason;
@@ -1212,7 +1232,8 @@ export async function createBoxSettlement(
       boxId: input.boxId,
       customerId: customer.id,
       settlementNumber,
-      dueUsd: totals.dueUsd.toFixed(2),
+      // What was asked for in money. The parcels' own due is on the lines.
+      dueUsd: cashDueUsd.toFixed(2),
       paidUsd: paidUsd.toFixed(2),
       discountUsd: discountTotal.toFixed(2),
       amountIqd: String(Math.round(iqd)),
@@ -1223,7 +1244,9 @@ export async function createBoxSettlement(
       paymentMethod: input.paymentMethod ?? "CASH",
       ledgerTransactionId,
       paymentRecordId,
-      notes: input.notes ?? null,
+      notes: cover.coveredUsd > 0
+        ? `${input.notes ? input.notes + " — " : ""}$${cover.coveredUsd.toFixed(2)} ${COVERED_BY_ACCOUNT_NOTE}`
+        : (input.notes ?? null),
       replacesSettlementId: input.replacesSettlementId ?? null,
       createdById: userId,
       createdAt: now,
@@ -1266,8 +1289,11 @@ export async function createBoxSettlement(
         ));
     }
 
-    return { settlementId, settlementNumber, paidUsd, differenceKind: difference.kind, discountTotal };
+    return { settlementId, settlementNumber, paidUsd, differenceKind: difference.kind, discountTotal, coveredUsd: cover.coveredUsd };
   }).then(async (result) => {
+    // Nothing was handed over: there is no payment to thank anybody for.
+    if (!(result.paidUsd > 0)) return result;
+
     /**
      * Tell the customer their money arrived.
      *

@@ -400,3 +400,75 @@ export function boxPaidState(
   // looking part-paid forever.
   return paid + 0.005 >= worth ? "paid" : "partly";
 }
+
+/**
+ * What the account says, against what the box says.
+ *
+ * The box decides "owed" parcel by parcel: charged, less forgiven, less what
+ * earlier receipts paid on that parcel. The account decides it as one
+ * balance. They are the same number until money moves on the account without
+ * naming a parcel — a balance adjusted by hand, a payment taken from the
+ * payments page, an overpayment left as credit. After that the box still
+ * reads unpaid, and receipting it took the same money a second time and
+ * left the customer in credit for it (AZ173, 2026-10-01: $54.50 zeroed by
+ * hand on 14/08, then four old boxes receipted for the same $54.50).
+ *
+ * Owner, 2026-10-01: the system must not let one thing be receipted twice.
+ * The account is the one ledger, so the box may never ask for more than the
+ * account will owe once this receipt's own charges, corrections and
+ * discounts are on it. The part the account has already settled is
+ * `coveredUsd`: those parcels are closed by this receipt with no money
+ * taken, and only `cashDueUsd` is asked for.
+ */
+export interface AccountCover {
+  /** What to take from the customer now. Never more than the box's due. */
+  cashDueUsd: number;
+  /** Part of the box's due the account had already settled. */
+  coveredUsd: number;
+}
+
+export function accountCover(args: {
+  /** The box's own due, after discounts and corrections (settlementTotals). */
+  dueUsd: number;
+  /** The account now. Positive is debt, negative is credit. */
+  balanceUsd: number;
+  /** Charges this receipt will post for parcels never billed. */
+  toChargeUsd?: number;
+  /** Price corrections this receipt will post, signed. */
+  correctionUsd?: number;
+  /** Discounts this receipt will post. */
+  discountUsd?: number;
+}): AccountCover {
+  const due = round2(Math.max(0, args.dueUsd));
+  const willOwe = round2(
+    args.balanceUsd + (args.toChargeUsd ?? 0) + (args.correctionUsd ?? 0) - (args.discountUsd ?? 0),
+  );
+  const cashDueUsd = round2(Math.min(due, Math.max(0, willOwe)));
+  const coveredUsd = round2(due - cashDueUsd);
+  // A cent of drift between the two views is not "already paid".
+  if (coveredUsd <= 0.01) return { cashDueUsd: due, coveredUsd: 0 };
+  return { cashDueUsd, coveredUsd };
+}
+
+/**
+ * The charges a receipt will post itself: ordinary parcels on it that the
+ * account has never been billed for. Orders are billed by the order flow and
+ * held parcels are not on the receipt — the same test the till applies.
+ */
+export function unbilledOnReceiptUsd(
+  parcels: ReadonlyArray<{
+    lineId: number;
+    packageId: number | null;
+    fromOrder?: boolean;
+    notChargedYet?: boolean;
+    chargedUsd: number;
+  }>,
+  intents: ReadonlyArray<{ lineId: number; held?: boolean }> = [],
+): number {
+  const held = new Set(intents.filter((i) => i.held).map((i) => i.lineId));
+  return round2(
+    parcels
+      .filter((p) => p.packageId !== null && !p.fromOrder && p.notChargedYet && p.chargedUsd > 0 && !held.has(p.lineId))
+      .reduce((sum, p) => sum + p.chargedUsd, 0),
+  );
+}

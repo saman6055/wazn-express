@@ -3,6 +3,8 @@ import {
   settlementTotals,
   differenceOf,
   roundingToleranceUsd,
+  accountCover,
+  unbilledOnReceiptUsd,
   ROUNDING_TOLERANCE_CAP_USD,
   outstandingOf,
   iqdToUsd,
@@ -383,5 +385,63 @@ describe("paid, by what the payment screen decided", () => {
     expect(boxPaidState(190, "200.00", false)).toBe("partly");
     expect(boxPaidState(200, "200.00", false)).toBe("paid");
     expect(boxPaidState(0, "200.00", null)).toBe("unpaid");
+  });
+});
+
+/**
+ * Owner, 2026-10-01: one thing is never receipted twice. AZ173's first seven
+ * parcels ($54.50) were zeroed on the account by hand on 14/08, and on 10/09
+ * their four boxes were receipted for the same $54.50 — which left the
+ * customer in credit for money nobody had handed over.
+ */
+describe("the box never asks for more than the account owes", () => {
+  it("asks for everything on the ordinary day", () => {
+    expect(accountCover({ dueUsd: 22.55, balanceUsd: 22.55 })).toEqual({ cashDueUsd: 22.55, coveredUsd: 0 });
+    // Other debts on the account are not this box's business.
+    expect(accountCover({ dueUsd: 22.55, balanceUsd: 300 })).toEqual({ cashDueUsd: 22.55, coveredUsd: 0 });
+  });
+
+  it("replays AZ173's four old boxes: only what the account still owed is taken", () => {
+    // The account stood at 7.00 when the first old box came to the till.
+    let balance = 7.0;
+    let taken = 0;
+    for (const due of [22.55, 0.66, 9.68, 21.61]) {
+      const c = accountCover({ dueUsd: due, balanceUsd: balance });
+      expect(c.cashDueUsd + c.coveredUsd).toBeCloseTo(due, 2);
+      taken += c.cashDueUsd;
+      balance -= c.cashDueUsd;
+    }
+    expect(taken, "not 54.50 a second time").toBe(7);
+    expect(balance, "and nobody ends in credit").toBe(0);
+  });
+
+  it("spends a credit the customer already holds instead of leaving it there", () => {
+    expect(accountCover({ dueUsd: 30, balanceUsd: -20, toChargeUsd: 30 })).toEqual({ cashDueUsd: 10, coveredUsd: 20 });
+    expect(accountCover({ dueUsd: 30, balanceUsd: -50, toChargeUsd: 30 })).toEqual({ cashDueUsd: 0, coveredUsd: 30 });
+  });
+
+  it("counts what this receipt posts itself: charges, corrections, discounts", () => {
+    // Never billed: the charge lands with the receipt, so the money is due.
+    expect(accountCover({ dueUsd: 13.26, balanceUsd: 0, toChargeUsd: 13.26 })).toEqual({ cashDueUsd: 13.26, coveredUsd: 0 });
+    // Charged 50, discount 5 on this receipt: due is 45 and the account will owe 45.
+    expect(accountCover({ dueUsd: 45, balanceUsd: 50, discountUsd: 5 })).toEqual({ cashDueUsd: 45, coveredUsd: 0 });
+    // Corrected up by 2 on this receipt.
+    expect(accountCover({ dueUsd: 52, balanceUsd: 50, correctionUsd: 2 })).toEqual({ cashDueUsd: 52, coveredUsd: 0 });
+  });
+
+  it("does not call a cent of drift 'already paid'", () => {
+    expect(accountCover({ dueUsd: 22.55, balanceUsd: 22.54 })).toEqual({ cashDueUsd: 22.55, coveredUsd: 0 });
+  });
+
+  it("knows which parcels the receipt will bill itself", () => {
+    const parcels = [
+      { lineId: 1, packageId: 10, notChargedYet: true, chargedUsd: 5 },
+      { lineId: 2, packageId: 11, notChargedYet: false, chargedUsd: 7 },
+      { lineId: 3, packageId: 12, notChargedYet: true, fromOrder: true, chargedUsd: 9 },
+      { lineId: 4, packageId: null, notChargedYet: true, chargedUsd: 11 },
+      { lineId: 5, packageId: 13, notChargedYet: true, chargedUsd: 2 },
+    ];
+    expect(unbilledOnReceiptUsd(parcels)).toBe(7);
+    expect(unbilledOnReceiptUsd(parcels, [{ lineId: 5, held: true }])).toBe(5);
   });
 });
