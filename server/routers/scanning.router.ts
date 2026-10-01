@@ -1157,9 +1157,15 @@ export const deliveryBoxRouter = router({
       ]).optional(),
       notes: z.string().max(2000).optional(),
       replacesSettlementId: z.number().optional(),
+      /** An admin's yes to an overpayment left on the account as credit. */
+      approveCredit: z.boolean().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      const result = await db.createBoxSettlement(input, ctx.user.id);
+      const { approveCredit, ...settlement } = input;
+      const result = await db.createBoxSettlement(
+        { ...settlement, credit: { role: ctx.user.role, approved: approveCredit } },
+        ctx.user.id,
+      );
       // The owner's rule: a box paid for in full is finished — delivered,
       // closed and archived — at once. Runs after the payment is committed
       // and never throws: a failure to finish is reported, not a failed payment.

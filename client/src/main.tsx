@@ -20,6 +20,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { LANG_HEADER } from "@shared/errorMessages";
 import { networkFault, storedLanguage } from "./lib/networkFault";
+import { creditApprovalLink } from "./lib/creditApprovalLink";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
 import App from "./App";
@@ -201,6 +202,8 @@ try {
 
 const trpcClient = trpc.createClient({
   links: [
+    // Before the request leaves: an admin's yes to a credit (creditApprovalLink).
+    creditApprovalLink,
     httpBatchLink({
       url: "/api/trpc",
       transformer: superjson,

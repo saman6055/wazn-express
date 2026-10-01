@@ -1,4 +1,5 @@
 import { TRPCError } from "@trpc/server";
+import { guardAgainstCredit } from "../lib/creditGuard";
 import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
@@ -153,12 +154,33 @@ export const ledgerRouter = router({
         notes: z.string().max(1000).optional(),
         receiptNumber: z.string().max(100).optional(),
         cashAccountId: idSchema.optional(),
+        /** An admin's yes to an entry that leaves the account in credit. */
+        approveCredit: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if ((input.amountUsd ?? 0) <= 0 && (input.amountIqd ?? 0) <= 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
             message: "Payment amount must be greater than zero",
+          });
+        }
+        // No account goes below zero unasked (shared/creditGuard).
+        const paidInto = await db.getOrCreateCustomerAccount(input.customerId, input.customerCode);
+        const approvedCreditUsd = guardAgainstCredit({
+          customerCode: input.customerCode,
+          balanceUsd: Number(paidInto.currentBalanceUsd ?? 0),
+          loweredByUsd: input.amountUsd ?? 0,
+          role: ctx.user.role,
+          approved: input.approveCredit,
+        });
+        if (approvedCreditUsd > 0) {
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "approve_customer_credit",
+            entityType: "customer_account",
+            entityId: input.customerId,
+            newValues: { door: "payment", amountUsd: input.amountUsd, creditUsd: approvedCreditUsd },
           });
         }
         const cashDescription = input.notes
@@ -413,6 +435,8 @@ export const ledgerRouter = router({
         direction: z.enum(['debit', 'credit']),
         amountUsd: amountSchema,
         reason: z.string().min(5).max(500),
+        /** An admin's yes to an entry that leaves the account in credit. */
+        approveCredit: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         if (input.amountUsd <= 0) {
@@ -431,6 +455,31 @@ export const ledgerRouter = router({
         const customer = await db.getCustomerById(input.customerId);
         if (!customer) {
           throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار", { bin: true }) });
+        }
+
+        // Lowering a balance by hand is how AZ173's debt was cleared twice.
+        // It may not take the account below zero unasked (shared/creditGuard).
+        if (input.direction === "credit") {
+          const lowered = await db.getOrCreateCustomerAccount(
+            input.customerId, customer.customerCode || `C${input.customerId}`,
+          );
+          const approvedCreditUsd = guardAgainstCredit({
+            customerCode: customer.customerCode || `C${input.customerId}`,
+            balanceUsd: Number(lowered.currentBalanceUsd ?? 0),
+            loweredByUsd: input.amountUsd,
+            role: ctx.user.role,
+            approved: input.approveCredit,
+          });
+          if (approvedCreditUsd > 0) {
+            await db.createAuditLog({
+              userId: ctx.user.id,
+              userRole: ctx.user.role,
+              action: "approve_customer_credit",
+              entityType: "customer_account",
+              entityId: input.customerId,
+              newValues: { door: "adjustment", amountUsd: input.amountUsd, creditUsd: approvedCreditUsd },
+            });
+          }
         }
 
         const result = await db.adjustCustomerBalance(

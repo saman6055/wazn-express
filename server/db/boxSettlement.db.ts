@@ -21,6 +21,7 @@ import { recordPaymentReceived, adjustCharge, recordPackageChargeWithoutInvoice 
 import { createCustomerNotification } from "./portal.db";
 import { markLinkedOrdersCharged } from "./packages.db";
 import { notifyPaymentReceived } from "../services/customerWhatsApp.service";
+import { guardAgainstCredit } from "../lib/creditGuard";
 import {
   settlementTotals,
   differenceOf,
@@ -873,6 +874,11 @@ export interface CreateSettlementInput {
   notes?: string;
   /** Set when this settlement replaces one being corrected. */
   replacesSettlementId?: number;
+  /**
+   * Who is at the till, and whether they said yes to leaving the account in
+   * credit. Filled by the router; absent means nobody may (shared/creditGuard).
+   */
+  credit?: { role: string | null | undefined; approved?: boolean };
 }
 
 /** Written on a receipt whose parcels the account had already settled. */
@@ -1045,6 +1051,22 @@ export async function createBoxSettlement(
   const differenceReason = isRounding
     ? `${ROUNDING_VARIANCE_REASON} (${difference.roundingUsd! > 0 ? "+" : "−"}$${Math.abs(difference.roundingUsd!).toFixed(2)})`
     : input.differenceReason;
+  // More was handed over than is owed: the rest would sit on the account as
+  // credit. Nobody prepays here, so it is stopped unless an admin says yes.
+  const approvedCreditUsd = difference.kind === "credit"
+    ? guardAgainstCredit({
+        customerCode: customer.customerCode ?? String(customer.id),
+        balanceUsd: cashDueUsd,
+        loweredByUsd: handedOverUsd,
+        role: input.credit?.role,
+        approved: input.credit?.approved,
+      })
+    : 0;
+  if (approvedCreditUsd > 0) {
+    appLogger.info("[BoxSettlement] admin approved a credit at the till", {
+      boxId: input.boxId, customerId: customer.id, creditUsd: approvedCreditUsd, userId,
+    });
+  }
   if (difference.reasonRequired && !(input.differenceReason ?? "").trim()) {
     throw new Error(withFix(
       "پارەی وەرگیراو لەگەڵ پارەی پێویست یەک ناگرێتەوە، و هۆکارەکە نەنووسراوە — ئەم جیاوازییە دەبێتە قەرز یان داشکاندن لەسەر کڕیار.",

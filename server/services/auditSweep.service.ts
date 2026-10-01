@@ -348,6 +348,18 @@ const QUERIES: Record<CheckId, string> = {
                  - CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(14,2)))) > 0.01
     ORDER BY id DESC
     LIMIT ${SAMPLE_LIMIT}`,
+
+  /*
+   * Owner, 2026-10-01: no customer has credit. Largest first; the whole
+   * list is under Finance, this is the bell.
+   */
+  customer_in_credit: `
+    SELECT a.id, a.accountNumber, a.customerId,
+           ROUND(-CAST(a.currentBalanceUsd AS DECIMAL(14,2)), 2) AS creditUsd
+    FROM customerAccounts a
+    WHERE CAST(a.currentBalanceUsd AS DECIMAL(14,2)) < -0.01
+    ORDER BY CAST(a.currentBalanceUsd AS DECIMAL(14,2)) ASC
+    LIMIT ${SAMPLE_LIMIT}`,
 };
 
 /**

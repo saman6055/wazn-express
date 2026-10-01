@@ -56,7 +56,8 @@ export type CheckId =
   | "rounding_cent_debt"
   | "payment_without_ledger"
   | "arrived_goods_unbilled"
-  | "commission_profit_one_unit";
+  | "commission_profit_one_unit"
+  | "customer_in_credit";
 
 export interface CheckDefinition {
   id: CheckId;
@@ -495,6 +496,23 @@ export const CHECKS: readonly CheckDefinition[] = [
       en: "A multi-unit order: the customer was charged commission × quantity, but the recorded profit is one unit's. Profit reports read lower than the truth.",
       ar: "طلب متعدد الوحدات: حوسب العميل على العمولة × الكمية، لكن الربح المسجَّل لوحدة واحدة. تقارير الربح أقل من الحقيقة.",
       zh: "多件订单：向客户收取了 佣金 × 数量，但记录的利润只有一件的。利润报表低于实际。",
+    },
+  },
+  {
+    id: "customer_in_credit",
+    severity: "critical",
+    path: "/finance",
+    title: {
+      ku: "کڕیار کە کریدیتی هەیە",
+      en: "Customers in credit",
+      ar: "عملاء لهم رصيد دائن",
+      zh: "有贷方余额的客户",
+    },
+    meaning: {
+      ku: "حیسابی ئەم کڕیارە دەڵێت پارەی لای ئێمەیە. کەس پارەی پێشەکی نادات، بۆیە ئەمە زۆربەی جار قەرزێکە کە دوو جار کەم کراوەتەوە، یان پارەی کاڵایەک کە هێشتا نەخراوەتە سەر حیساب. لە بەشی دارایی «کڕیارانی کریدیتدار» ببینە.",
+      en: "This account says we hold the customer's money. Nobody prepays, so it is usually a debt cleared twice, or money for goods not yet put on the account. See customers in credit under Finance.",
+      ar: "هذا الحساب يقول إن للعميل مالاً عندنا. لا أحد يدفع مقدماً، فهو غالباً دين سُدِّد مرتين أو ثمن بضاعة لم تُقيَّد بعد. راجع العملاء الدائنين في المالية.",
+      zh: "该账户显示我们持有客户的钱。没有人预付，所以这通常是同一笔欠款被冲减了两次，或是尚未入账商品的款项。请在财务中查看有贷方余额的客户。",
     },
   },
 ];

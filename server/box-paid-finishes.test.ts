@@ -26,7 +26,7 @@ const router = read("routers/scanning.router.ts");
 describe("a box paid for in full is finished", () => {
   it("settling finishes the box, after the payment is saved", () => {
     const body = between(router, "settle: staffProcedure", "reverseSettlement:");
-    const paid = body.indexOf("await db.createBoxSettlement(input, ctx.user.id)");
+    const paid = body.indexOf("await db.createBoxSettlement(");
     const finished = body.indexOf("await finishPaidBox(input.boxId, ctx.user.id)");
     expect(paid).toBeGreaterThan(-1);
     expect(finished, "the box must be finished only once the money is in").toBeGreaterThan(paid);
