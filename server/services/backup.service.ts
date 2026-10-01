@@ -68,7 +68,8 @@ async function createDatabaseBackup(options: BackupOptions) {
     const exportResult = await dbHelpers.exportAllData();
     
     if (!exportResult.success) {
-      throw new Error("Failed to export data from database");
+      // With the reason: "failed" alone was all twenty nights ever said.
+      throw new Error(`Failed to export data from database — ${exportResult.error ?? "no reason given"}`);
     }
 
     // Create backup JSON with metadata
@@ -79,6 +80,7 @@ async function createDatabaseBackup(options: BackupOptions) {
       backupType: options.backupType,
       totalRecords: exportResult.totalRecords,
       tableCount: exportResult.tableCount || Object.keys(exportResult.data).length,
+      skippedTables: exportResult.failures,
       tables: exportResult.data
     };
 
@@ -115,6 +117,11 @@ async function createDatabaseBackup(options: BackupOptions) {
         fileSize,
         recordsCount: exportResult.totalRecords,
         status: "completed",
+        // A table that could not be read is named on the backup itself, in
+        // red on the screen — the file exists, and it says what it lacks.
+        errorMessage: exportResult.failures.length > 0
+          ? `ناتەواو — ئەم خشتانە نەخوێنرانەوە و لە فایلەکەدا نین: ${exportResult.failures.map((f) => `${f.table} (${f.error})`).join(" · ")}`.slice(0, 1900)
+          : null,
         completedAt: new Date(),
       })
       .where(eq(backups.id, backupId));

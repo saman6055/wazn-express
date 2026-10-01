@@ -256,6 +256,9 @@ export function useDataManagement(dataCategories: DataCategory[]) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         toast.success(t("dataManagement.exportSuccess", { count: result.count }));
+      } else if (!result.success && (result as { error?: string }).error) {
+        // A table that could not be read is not "no data" — say why.
+        toast.error((result as { error?: string }).error!, { duration: 20000 });
       } else {
         toast.info(t("dataManagement.noDataToExport"));
       }
@@ -281,6 +284,15 @@ export function useDataManagement(dataCategories: DataCategory[]) {
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
         toast.success(t("dataManagement.exportAllSuccess", { count: result.totalRecords }));
+        // A table left out is said out loud, with the database's reason.
+        if (result.failures?.length) {
+          toast.warning(
+            `ناتەواو — ئەم خشتانە لە فایلەکەدا نین: ${result.failures.map((f) => `${f.table} (${f.error})`).join(" · ")}`,
+            { duration: 30000 },
+          );
+        }
+      } else if (!result.success && result.error) {
+        toast.error(result.error, { duration: 20000 });
       } else {
         toast.info(t("dataManagement.noDataToExport"));
       }

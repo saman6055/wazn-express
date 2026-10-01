@@ -72,7 +72,8 @@ import {
   chatMessages, InsertChatMessage, ChatMessage,
   backups, InsertBackup, Backup,
   expenseAlerts, InsertExpenseAlert, ExpenseAlert,
-  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog
+  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog,
+  boxSettlements, boxSettlementLines, deliveryBoxes, deliveryBoxItems,
 } from "../../drizzle/schema";
 
 // ============ USER OPERATIONS ============
@@ -1896,13 +1897,27 @@ export async function getDeletionLogs(options?: {
 // ============ DATA EXPORT ============
 
 // Export data for a specific category
-export async function exportCategoryData(category: string): Promise<{
+/**
+ * The names the export screen sends for two of its rows are its own count
+ * keys, not table names — so "ledger entries" and "full package orders"
+ * always came back "no data to export" and the two most important tables in
+ * the books could not be exported at all (found 2026-10-02).
+ */
+const EXPORT_CATEGORY_ALIAS: Record<string, string> = {
+  ledgerEntries: "ledgerTransactions",
+  fullPackages: "fullPackageOrders",
+};
+
+export async function exportCategoryData(requested: string): Promise<{
   success: boolean;
   data: Record<string, unknown>[];
   count: number;
+  /** Why it failed, in the database's own words. */
+  error?: string;
 }> {
   const db = await getDb();
-  if (!db) return { success: false, data: [], count: 0 };
+  if (!db) return { success: false, data: [], count: 0, error: "no database connection" };
+  const category = EXPORT_CATEGORY_ALIAS[requested] ?? requested;
 
   try {
     let data: Record<string, unknown>[] = [];
@@ -1950,15 +1965,36 @@ export async function exportCategoryData(category: string): Promise<{
       case 'customerAccounts':
         data = await db.select().from(customerAccounts);
         break;
+      case 'boxSettlements':
+        data = await db.select().from(boxSettlements);
+        break;
+      case 'boxSettlementLines':
+        data = await db.select().from(boxSettlementLines);
+        break;
+      case 'deliveryBoxes':
+        data = await db.select().from(deliveryBoxes);
+        break;
+      case 'deliveryBoxItems':
+        data = await db.select().from(deliveryBoxItems);
+        break;
       default:
-        return { success: false, data: [], count: 0 };
+        return { success: false, data: [], count: 0, error: `unknown category "${requested}"` };
     }
 
     return { success: true, data, count: data.length };
   } catch (error) {
-    appLogger.error('Error exporting category data', { error: error instanceof Error ? error.message : String(error) });
-    return { success: false, data: [], count: 0 };
+    const reason = exportFailureReason(error);
+    appLogger.error('Error exporting category data', { category, error: reason });
+    return { success: false, data: [], count: 0, error: reason };
   }
+}
+
+/** The database's own complaint, not drizzle's "Failed query: select …" wrapper. */
+function exportFailureReason(error: unknown): string {
+  const err = error as { cause?: { message?: string; code?: string }; message?: string; code?: string };
+  const code = err?.cause?.code ?? err?.code;
+  const message = err?.cause?.message ?? err?.message ?? String(error);
+  return `${code ? code + ": " : ""}${message}`.slice(0, 300);
 }
 
 // Export all data (for full backup) - COMPLETE DATABASE BACKUP
@@ -1967,10 +2003,25 @@ export async function exportAllData(): Promise<{
   data: Record<string, unknown[]>;
   totalRecords: number;
   tableCount: number;
+  /**
+   * Tables that could not be read, each with the database's reason. The
+   * export goes on without them.
+   *
+   * One unreadable table used to throw out of the whole export, so the
+   * nightly backup failed — every night from at least 2026-09-15 to
+   * 2026-10-01, twenty in a row, each recorded only as "Failed to export
+   * data from database". The business had no backup at all and nothing said
+   * which table or why. A backup missing one table, saying so in red, is
+   * worth incomparably more than no backup and no reason.
+   */
+  failures: Array<{ table: string; error: string }>;
+  /** Why nothing could be exported at all. */
+  error?: string;
 }> {
   const db = await getDb();
-  if (!db) return { success: false, data: {}, totalRecords: 0, tableCount: 0 };
+  if (!db) return { success: false, data: {}, totalRecords: 0, tableCount: 0, failures: [], error: "no database connection" };
   const database = db;
+  const failures: Array<{ table: string; error: string }> = [];
 
   // Helper function to safely query a table (returns empty array if table doesn't exist)
   // TODO: type this properly — Drizzle .from() accepts table refs; return type is table row[]
@@ -1990,7 +2041,11 @@ export async function exportAllData(): Promise<{
         appLogger.info(`[Backup] Table ${tableName} doesn't exist, skipping...`);
         return [];
       }
-      throw error;
+      // Named, kept, and the export carries on — see `failures` above.
+      const reason = exportFailureReason(error);
+      failures.push({ table: tableName, error: reason });
+      appLogger.error(`[Backup] Table ${tableName} could not be read`, { error: reason });
+      return [];
     }
   }
 
@@ -2272,13 +2327,13 @@ export async function exportAllData(): Promise<{
 
     appLogger.info(`[Backup] Complete! Exported ${tableCount} tables with ${totalRecords} total records`);
 
-    return { success: true, data, totalRecords, tableCount };
+    return { success: true, data, totalRecords, tableCount, failures };
   } catch (error: unknown) {
     const err = error as { message?: string; stack?: string };
     appLogger.error('[Backup] Error exporting all data', { error: error instanceof Error ? error.message : String(error) });
     appLogger.error('[Backup] Error message', { message: err?.message });
     appLogger.error('[Backup] Error stack', { stack: err?.stack });
-    return { success: false, data: {}, totalRecords: 0, tableCount: 0 };
+    return { success: false, data: {}, totalRecords: 0, tableCount: 0, failures, error: exportFailureReason(error) };
   }
 }
 
