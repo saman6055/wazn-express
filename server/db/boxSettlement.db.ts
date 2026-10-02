@@ -1745,3 +1745,33 @@ export async function getDiscountReport(
     return empty;
   }
 }
+
+/**
+ * The standing box receipt that took money for this order, if any.
+ *
+ * An order reaches a box either as itself (the line carries its id) or as a
+ * parcel linked to it (the line carries the parcel's id) — both are looked
+ * for. Used to refuse deleting an order whose money is still receipted.
+ */
+export async function standingReceiptForOrder(
+  orderId: number,
+): Promise<{ settlementNumber: string; boxCode: string | null } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const linked = await db.select({ id: packages.id }).from(packages).where(eq(packages.fullPackageOrderId, orderId));
+  const parcelIds = linked.map((p) => p.id);
+  const rows = await db
+    .select({ settlementNumber: boxSettlements.settlementNumber, boxCode: deliveryBoxes.boxCode })
+    .from(boxSettlementLines)
+    .innerJoin(boxSettlements, eq(boxSettlements.id, boxSettlementLines.settlementId))
+    .leftJoin(deliveryBoxes, eq(deliveryBoxes.id, boxSettlements.boxId))
+    .where(and(
+      eq(boxSettlements.status, "confirmed"),
+      sql`CAST(${boxSettlementLines.paidUsd} AS DECIMAL(12,2)) > 0`,
+      parcelIds.length > 0
+        ? or(eq(boxSettlementLines.fullPackageOrderId, orderId), inArray(boxSettlementLines.packageId, parcelIds))
+        : eq(boxSettlementLines.fullPackageOrderId, orderId),
+    ))
+    .limit(1);
+  return rows[0] ?? null;
+}

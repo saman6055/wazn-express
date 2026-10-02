@@ -1,4 +1,6 @@
 import { TRPCError } from "@trpc/server";
+import { undoCreditRefusal } from "../lib/creditGuard";
+import { mayApproveCredit } from "@shared/creditGuard";
 import { z } from "zod";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { thumbnailsFor } from "../services/orderThumbs.service";
@@ -639,6 +641,8 @@ export const fullPackageRouter = router({
         // Plan v3 — reason: required when any money-affecting field changes.
         // Embedded into the ledger adjustment description and the audit log.
         reason: z.string().optional(),
+        /** The main admin's yes that the money came out of the customer's own credit. */
+        approveCredit: z.boolean().optional(),
 
         // Customer reassignment — only allowed on a financially-clean,
         // unlinked order (see guard in handler). Optional so existing
@@ -904,6 +908,8 @@ export const fullPackageRouter = router({
               newChargeAmount,
               reason!,
               ctx.user.id,
+              undefined,
+              { allowCredit: mayApproveCredit(ctx.user.role) && input.approveCredit === true },
             );
             appLogger.info("[Order Edit] Adjusted ledger charge", {
               orderId: id,
@@ -914,6 +920,8 @@ export const fullPackageRouter = router({
               reason,
             });
           } catch (err) {
+            const refusal = undoCreditRefusal(err, ctx.user.role);
+            if (refusal) throw refusal;
             appLogger.error("[Order Edit] Failed to adjust ledger charge", {
               orderId: id,
               error: err instanceof Error ? err.message : String(err),
@@ -940,8 +948,12 @@ export const fullPackageRouter = router({
                 chargeToMove.transactionId,
                 `گواستنەوەی ئۆردەری ${existing.orderCode} بۆ کڕیارێکی تر | ${reason ?? "customer corrected"}`,
                 ctx.user.id,
+                undefined,
+                { allowCredit: mayApproveCredit(ctx.user.role) && input.approveCredit === true },
               );
             } catch (err) {
+              const refusal = undoCreditRefusal(err, ctx.user.role);
+              if (refusal) throw refusal;
               appLogger.error("[Order Edit] Failed to reverse charge for customer move", {
                 orderId: id, orderCode: existing.orderCode,
                 error: err instanceof Error ? err.message : String(err),
@@ -1367,6 +1379,8 @@ export const fullPackageRouter = router({
         reason: z.string().min(3, "هۆکار پێویستە (بەلایەنی کەم 3 پیت)"),
         refundAdvance: z.boolean().default(true),
         expectedVersion: z.number().optional(), // OCC from the delete dialog
+        /** The main admin's yes that the money came out of the customer's own credit. */
+        approveCredit: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         const existing = await db.getFullPackageOrderById(input.id);
@@ -1403,6 +1417,28 @@ export const fullPackageRouter = router({
         // soft-delete — the ledger for that order stays as-is (it was
         // already baked into the balance). Operators can manually adjust
         // if needed.
+        // An order whose money was taken on a box receipt is not deleted
+        // while that receipt stands: the debt would go and the payment stay,
+        // paying for something that no longer exists (owner, 2026-10-02).
+        const standing = await db.standingReceiptForOrder(input.id);
+        if (standing) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: withFix(
+              `ئەم ئۆردەرە ناسڕدرێتەوە: پارەکەی لە وەسڵی ${standing.settlementNumber} ـی بۆکسی ${standing.boxCode ?? ""} وەرگیراوە. سڕینەوەی ئۆردەرەکە پارەیەک بەجێ دەهێڵێت کە هیچ شتێکی لە پشت نییە.`,
+              [
+                `بۆکسی ${standing.boxCode ?? ""} بکەرەوە و وەسڵەکە هەڵبوەشێنەوە`,
+                "ئینجا بگەڕێوە و ئۆردەرەکە بسڕەوە — حیسابی کڕیار دەگەڕێتەوە سەر ئەوەی پێش ئۆردەرەکە بوو",
+              ],
+            ),
+          });
+        }
+
+        // The advance is undone in step 2 of this same act, so it is not a
+        // credit left behind; anything beyond it would be.
+        const advanceToUndo = input.refundAdvance ? parseFloat(String(existing.advancePaidUsd || '0')) || 0 : 0;
+        const allowCredit = mayApproveCredit(ctx.user.role) && input.approveCredit === true;
+
         let reversedChargeUsd = 0;
         if ((existing as any).chargeTransactionId) {
           try {
@@ -1410,6 +1446,8 @@ export const fullPackageRouter = router({
               (existing as any).chargeTransactionId,
               `سڕینەوەی ئۆردەری ${existing.orderCode} - ${existing.productName} | ${input.reason}`,
               ctx.user.id,
+              undefined,
+              { allowCredit, paymentBeingUndoneUsd: advanceToUndo },
             );
             reversedChargeUsd = parseFloat(result.reversalTransaction.amountUsd ?? '0');
             appLogger.info("[Order Delete] Reversed charge", {
@@ -1419,6 +1457,8 @@ export const fullPackageRouter = router({
               reason: input.reason,
             });
           } catch (err) {
+            const refusal = undoCreditRefusal(err, ctx.user.role);
+            if (refusal) throw refusal;
             const underlying = err instanceof Error ? err.message : String(err);
             appLogger.error("[Order Delete] Failed to reverse charge", {
               orderId: input.id,

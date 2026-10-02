@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { withFix } from "@shared/fixAdvice";
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { appLogger } from '../utils/logger';
 import { generateAccountNumber, generateTransactionNumber, generatePaymentNumber } from './utils.db';
@@ -1458,6 +1459,62 @@ async function _lockAccount(tx: DbTx, accountId: number): Promise<CustomerAccoun
 }
 
 /**
+ * Undoing something must put the account back where it was — never leave a
+ * credit behind.
+ *
+ * Owner, 2026-10-02: "everything done for a customer is done with the
+ * company's money. It makes no sense that deleting it turns into credit for
+ * a customer who officially had none." Deleting, cancelling or lowering the
+ * price of something takes its debt off the account. If the money for it
+ * was already taken, the receipt is still standing — and the account drops
+ * below zero for money nobody paid twice. The cure is to undo the receipt
+ * first; then removing the debt lands on zero.
+ *
+ * So every reversal and every lowering passes through here, and one that
+ * would leave the account further below zero than it found it is refused.
+ * It is the single choke point: order delete, price edit, moving an order
+ * to another customer, parcel delete, fee reversal — and any door added
+ * later — all call reverseCharge or adjustCharge.
+ *
+ * Two things may let it through:
+ *  - `paymentBeingUndoneUsd`: the caller is undoing the payment for the same
+ *    thing in the same act (an order's advance), so the pair nets out;
+ *  - `allowCredit`: the main admin said the money came out of the
+ *    customer's own official credit, so it goes back where it was.
+ */
+export class CreditWouldBeMadeError extends Error {
+  readonly creditUsd: number;
+  constructor(creditUsd: number) {
+    super(withFix(
+      `ئەم کارە ناکرێت: $${creditUsd.toFixed(2)} کریدیت بۆ کڕیار دروست دەکات، چونکە پارەی ئەم شتە پێشتر وەرگیراوە و وەسڵەکەی هێشتا ماوە. سڕینەوە و کەمکردنەوەی نرخ نابێت کریدیت دروست بکەن.`,
+      [
+        "یەکەم وەسڵی پارەکەی هەڵبوەشێنەوە: بۆکسەکە بکەرەوە ← وەسڵ ← هەڵوەشاندنەوە",
+        "ئینجا دووبارە ئەم کارە بکە — حیسابەکە دەبێتە سفر، نەک کریدیت",
+        "ئەگەر پارەکە لە کریدیتی ڕەسمیی کڕیارەوە ڕۆیشتبوو، داوا لە ئادمینی سەرەکی بکە",
+      ],
+    ));
+    this.name = "CreditWouldBeMadeError";
+    this.creditUsd = creditUsd;
+  }
+}
+
+export interface UndoOptions {
+  /** The main admin's yes: this money came out of the customer's own credit. */
+  allowCredit?: boolean;
+  /** A payment for the same thing the caller undoes in the same act. */
+  paymentBeingUndoneUsd?: number;
+}
+
+function refuseSilentCredit(balanceBeforeUsd: number, balanceAfterUsd: number, opts?: UndoOptions): void {
+  if (opts?.allowCredit) return;
+  const before = Math.round(balanceBeforeUsd * 100);
+  const after = Math.round((balanceAfterUsd + Math.max(0, opts?.paymentBeingUndoneUsd ?? 0)) * 100);
+  const madeCents = Math.max(0, -after) - Math.max(0, -before);
+  // A cent of rounding is not a credit.
+  if (madeCents > 1) throw new CreditWouldBeMadeError(madeCents / 100);
+}
+
+/**
  * What a charge stands at now: its first amount, plus and minus every
  * correction posted against it since, less a reversal if there was one.
  *
@@ -1513,6 +1570,7 @@ export async function reverseCharge(
   reason: string,
   createdById: number,
   existingTx?: DbTx,
+  opts?: UndoOptions,
 ): Promise<{ reversalTransaction: LedgerTransaction }> {
   if (!originalTransactionId || originalTransactionId <= 0) {
     throw new Error("reverseCharge: originalTransactionId is required");
@@ -1570,6 +1628,7 @@ export async function reverseCharge(
     const amountUsd = Math.max(0, await effectiveChargeUsd(tx, original));
     // ADJUSTMENT_CREDIT decreases balance (undoes the original DEBIT).
     const newBalanceUsd = currentBalanceUsd - amountUsd;
+    refuseSilentCredit(currentBalanceUsd, newBalanceUsd, opts);
 
     // 4. Write the reversal transaction.
     const description = `${reason} ${reversalMarker}`;
@@ -1712,6 +1771,7 @@ export async function adjustCharge(
   reason: string,
   createdById: number,
   existingTx?: DbTx,
+  opts?: UndoOptions,
 ): Promise<{ adjustmentTransaction: LedgerTransaction | null; deltaUsd: number }> {
   if (!originalTransactionId || originalTransactionId <= 0) {
     throw new Error("adjustCharge: originalTransactionId is required");
@@ -1760,6 +1820,8 @@ export async function adjustCharge(
       delta > 0 ? 'ADJUSTMENT_DEBIT' : 'ADJUSTMENT_CREDIT';
     const absoluteDelta = Math.abs(delta);
     const newBalanceUsd = currentBalanceUsd + delta; // + for DEBIT, − for CREDIT
+    // A price lowered below what was already paid would leave a credit.
+    if (delta < 0) refuseSilentCredit(currentBalanceUsd, newBalanceUsd, opts);
 
     const adjMarker = `[ADJ:${original.transactionNumber}]`;
     const description = `${reason} ${adjMarker}`;

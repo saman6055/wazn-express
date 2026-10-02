@@ -45,13 +45,13 @@ export const creditApprovalLink: TRPCLink<AppRouter> = () => ({ op, next }) =>
         const language = storedLanguage();
         void confirmAction({
           title: pickLang(language, {
-            ku: "پارەکە لە قەرزەکە زیاترە",
-            en: "More than the customer owes",
-            ar: "المبلغ أكثر مما على العميل",
-            zh: "金额超过客户欠款",
+            ku: "ئەم کارە کار لە کریدیتی کڕیار دەکات",
+            en: "This affects the customer's credit",
+            ar: "هذا يمسّ رصيد العميل الدائن",
+            zh: "此操作涉及客户贷方余额",
           }),
           message: message.slice(ASK_ADMIN_MARK.length),
-          confirmLabel: pickLang(language, { ku: "بەڵێ، کڕیار ئەم پارەیەی داوە", en: "Yes, the customer paid this", ar: "نعم، دفع العميل هذا", zh: "是，客户已付此款" }),
+          confirmLabel: pickLang(language, { ku: "بەڵێ، دڵنیام", en: "Yes, I am sure", ar: "نعم، متأكد", zh: "是，我确定" }),
           danger: true,
         }).then((yes) => {
           if (!yes) {
