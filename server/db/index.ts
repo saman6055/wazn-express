@@ -31,6 +31,7 @@ export * from './ledgerReconciliation.db';
 export * from './creditCustomers.db';
 export * from './parcelDeletion.db';
 export * from './bulkReceiptCredit.db';
+export * from './moneyFeed.db';
 export * from './shareLinks.db';
 export * from './batchCharging.db';
 export * from './batchCloseCheck.db';

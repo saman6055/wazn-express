@@ -9,7 +9,7 @@ import { buildBatchInvoice } from "@shared/batchInvoice";
 import { boxMoneyIn, buildBoxInvoice } from "@shared/boxInvoice";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
-import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { cacheGetOrSet, cacheInvalidate, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -616,6 +616,15 @@ export const ledgerRouter = router({
         });
         return result;
       }),
+
+    /**
+     * Every movement of money, newest first, for the main admin's bell
+     * (shared/moneyFeed). Read from the ledger itself, so no door can move
+     * money without appearing here. Read only.
+     */
+    moneyFeed: superAdminProcedure.query(async () => {
+      return db.getMoneyFeed();
+    }),
 
     /**
      * Remove the named customers' credit: exactly what each account holds,
