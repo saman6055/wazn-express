@@ -977,3 +977,38 @@ export const boxDiscountPledges = mysqlTable("boxDiscountPledges", {
 
 export type BoxDiscountPledge = typeof boxDiscountPledges.$inferSelect;
 export type InsertBoxDiscountPledge = typeof boxDiscountPledges.$inferInsert;
+
+/**
+ * The extra a customer handed over, waiting for the main admin.
+ *
+ * Owner, 2026-10-02: anyone may enter a payment larger than the debt, but
+ * the extra reaches the account only once the main admin confirms it. Until
+ * then it is one row here and nothing in the ledger. See shared/creditGuard
+ * and server/db/pendingCredits.db.ts.
+ */
+export const pendingCredits = mysqlTable("pendingCredits", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  amountUsd: decimal("amountUsd", { precision: 12, scale: 2 }).notNull(),
+  /** Where it was entered: a payment screen, or a box receipt. */
+  source: mysqlEnum("source", ["payment", "box"]).notNull(),
+  boxId: int("boxId"),
+  boxCode: varchar("boxCode", { length: 50 }),
+  paymentMethod: varchar("paymentMethod", { length: 30 }),
+  note: text("note"),
+
+  status: mysqlEnum("status", ["pending", "approved", "rejected"]).default("pending").notNull(),
+  requestedById: int("requestedById").notNull(),
+  decidedById: int("decidedById"),
+  decidedAt: timestamp("decidedAt"),
+  decisionReason: text("decisionReason"),
+  /** The payment the approval posted; null while waiting or when refused. */
+  ledgerTransactionId: int("ledgerTransactionId"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  statusIdx: index("idx_pending_credits_status").on(table.status),
+  customerIdx: index("idx_pending_credits_customer").on(table.customerId),
+}));
+
+export type PendingCredit = typeof pendingCredits.$inferSelect;
+export type InsertPendingCredit = typeof pendingCredits.$inferInsert;

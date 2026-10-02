@@ -1,17 +1,26 @@
 /**
- * No customer account goes below zero without an admin saying so.
+ * No customer account goes below zero until the main admin has said yes.
  *
  * Owner, 2026-10-01: "no customer has credit" — nobody prepays here. Yet 75
  * accounts stood in credit, $13,202 between them, and every one of those
  * credits was made by an ordinary entry that nothing questioned: a payment
  * larger than the debt, a balance lowered by hand, a box paid over its due.
- * A credit is almost always a mistake about which debt was being paid, and
- * it is invisible until somebody asks why the customer "has money with us".
  *
- * So the entry itself is stopped. Staff are refused, with the cause and the
- * cure. An admin is asked once, sees how far below zero the account would
- * go, and may say yes — a real overpayment does happen. The doors that can
- * lower a balance all ask the same question through here.
+ * Owner, 2026-10-02, once they were all back at zero: a credit is real only
+ * when somebody pays more than they owe — owes $200, hands over $300. The
+ * system must then say plainly that $100 becomes balance on the customer's
+ * account. Anyone at the till may enter it, "but it goes onto the account
+ * only once the main admin has confirmed it".
+ *
+ * So, at every door that takes money:
+ *  - the main admin (super_admin) is asked once and, on yes, the whole
+ *    amount is posted;
+ *  - everybody else is told that the extra will wait. On yes, what is owed
+ *    is posted now and the extra is held as a request (pendingCredits). The
+ *    account stops at zero. When the main admin confirms, the extra is
+ *    posted; if he refuses, nothing ever was.
+ * A balance lowered by hand is not "the customer paid more", so only the
+ * main admin may take an account below zero that way.
  */
 
 import { withFix } from "./fixAdvice";
@@ -20,7 +29,7 @@ import { withFix } from "./fixAdvice";
 export const CREDIT_SLACK_USD = 0.01;
 
 /**
- * Marks the one refusal an admin may answer "yes" to. The client's approval
+ * Marks the one refusal that is really a question. The client's approval
  * link looks for it, asks, and sends the same entry again with
  * `approveCredit: true`. It is stripped before anybody reads the message.
  */
@@ -38,27 +47,59 @@ export function creditAfter(balanceUsd: number, loweredByUsd: number): number {
   return after < -CREDIT_SLACK_USD ? round2(-after) : 0;
 }
 
+/** Only the main admin puts a credit on an account. */
 export function mayApproveCredit(role: string | null | undefined): boolean {
-  return role === "admin" || role === "super_admin";
+  return role === "super_admin";
+}
+
+/**
+ * What a door does with an entry that would leave a credit.
+ *
+ *  none     — it leaves none; carry on.
+ *  ask_main — ask the main admin; nothing is written yet.
+ *  post     — the main admin said yes: post all of it.
+ *  ask_hold — tell this person the extra will wait; nothing is written yet.
+ *  hold     — they said yes: post what is owed, hold the extra for the main admin.
+ *  refuse   — this door does not hold (a hand adjustment); only the main admin may.
+ */
+export type CreditVerdict = "none" | "ask_main" | "post" | "ask_hold" | "hold" | "refuse";
+
+export function creditVerdict(args: {
+  creditUsd: number;
+  role: string | null | undefined;
+  approved?: boolean;
+  /** False for doors where "the customer paid extra" is not what happened. */
+  canHold?: boolean;
+}): CreditVerdict {
+  if (!(args.creditUsd > 0)) return "none";
+  if (mayApproveCredit(args.role)) return args.approved ? "post" : "ask_main";
+  if (args.canHold === false) return "refuse";
+  return args.approved ? "hold" : "ask_hold";
 }
 
 const usd = (n: number) => `$${n.toFixed(2)}`;
 
-/** What ordinary staff are told. */
-export function creditRefusal(args: { customerCode: string; owesUsd: number; creditUsd: number }): string {
+interface CreditFacts {
+  customerCode: string;
+  owesUsd: number;
+  creditUsd: number;
+}
+
+/** A hand adjustment below zero, by anyone but the main admin. */
+export function creditRefusal(args: CreditFacts): string {
   const owes = Math.max(0, args.owesUsd);
   return withFix(
-    `ئەم تۆمارە سەیڤ ناکرێت: حیسابی ${args.customerCode} تەنها ${usd(owes)} قەرزارە، و ئەم بڕە ${usd(args.creditUsd)} کریدیتی بۆ دروست دەکات. لە سیستەمدا هیچ کڕیارێک نابێت کریدیتی هەبێت.`,
+    `ئەم تۆمارە سەیڤ ناکرێت: حیسابی ${args.customerCode} تەنها ${usd(owes)} قەرزارە، و ئەم بڕە ${usd(args.creditUsd)} کریدیتی بۆ دروست دەکات. تەنها ئادمینی سەرەکی دەتوانێت بە دەست حیسابێک بباتە ژێر سفر.`,
     [
       `بڕەکە بپشکنە — نابێت لە ${usd(owes)} زیاتر بێت`,
-      "دڵنیابە لەوەی ئەم پارەیە هی هەمان کڕیارە و پێشتر تۆمار نەکراوە",
-      "ئەگەر کڕیار بەڕاستی پارەی زیادەی داوە، داوا لە بەڕێوەبەر بکە تۆماری بکات",
+      "ئەگەر کڕیار بەڕاستی پارەی زیادەی داوە، وەک «پارەدان» تۆماری بکە، نەک وەک ڕاستکردنەوە — زیادەکە بۆ ئادمینی سەرەکی دەچێت",
+      "ئەگەر دەبێت هەر بە ڕاستکردنەوە بکرێت، داوا لە ئادمینی سەرەکی بکە",
     ],
   );
 }
 
-/** What an admin is asked. Carries the mark; the link strips it. */
-export function creditQuestion(args: { customerCode: string; owesUsd: number; creditUsd: number }): string {
+/** What the main admin is asked. Carries the mark; the link strips it. */
+export function creditQuestion(args: CreditFacts): string {
   const owes = Math.max(0, args.owesUsd);
   return (
     ASK_ADMIN_MARK +
@@ -66,4 +107,22 @@ export function creditQuestion(args: { customerCode: string; owesUsd: number; cr
     `${usd(args.creditUsd)} زیادەیە: دەبێتە باڵانس (کریدیت) و دەچێتە سەر حیسابی کڕیار.\n\n` +
     "دڵنیایت کڕیار بەڕاستی ئەم پارە زیادەیەی داوە؟ ئەگەر بەڵێ، تۆمار دەکرێت و ناوت وەک ڕەزامەندیدەر دەنووسرێت."
   );
+}
+
+/** What everybody else is asked: the extra will wait for the main admin. */
+export function creditHoldQuestion(args: CreditFacts): string {
+  const owes = Math.max(0, args.owesUsd);
+  return (
+    ASK_ADMIN_MARK +
+    `حیسابی ${args.customerCode} تەنها ${usd(owes)} قەرزارە.\n` +
+    `${usd(args.creditUsd)} زیادەیە.\n\n` +
+    (owes > 0 ? `${usd(owes)} ئێستا تۆمار دەکرێت و حیسابەکە دەبێتە سفر.\n` : "") +
+    `${usd(args.creditUsd)} زیادەکە نایەتە سەر حیسابی کڕیار تا ئادمینی سەرەکی پەسەندی نەکات. ئاگادارییەکەی ئێستا بۆی دەچێت.\n\n` +
+    "دڵنیایت کڕیار ئەم پارە زیادەیەی داوە؟"
+  );
+}
+
+/** Said to the person at the till after the extra was held. */
+export function creditHeldNotice(creditUsd: number): string {
+  return `${usd(creditUsd)} زیادەکە چاوەڕێی پەسەندکردنی ئادمینی سەرەکییە — هێشتا لەسەر حیسابی کڕیار نییە.`;
 }

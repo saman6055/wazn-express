@@ -172,3 +172,15 @@ export function unseenMovements(movements: readonly MoneyMovement[], seenId: num
 export function unseenCredit(movements: readonly MoneyMovement[], seenId: number): boolean {
   return movements.some((m) => m.id > seenId && m.creditCreatedUsd > 0.005);
 }
+
+/**
+ * Where a click on a line goes — to the thing itself (owner's standing
+ * rule: an alert opens the record, not a list). A box receipt opens its
+ * box; everything else opens the customer's own money page, where the row
+ * is on the statement.
+ */
+export function moneyLineHref(line: { kind: MoneyKind; boxId?: number | null; customerId: number | null }): string {
+  if (line.kind === "payment" && line.boxId) return `/customer-delivery-scanner?box=${line.boxId}`;
+  if (line.customerId) return `/finance/customer/${line.customerId}`;
+  return "/finance";
+}

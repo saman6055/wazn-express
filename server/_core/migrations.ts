@@ -1440,6 +1440,33 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "pendingCredits",
+    dependencies: ["customers", "users"],
+    // The extra a customer handed over, waiting for the main admin's yes
+    // (owner, 2026-10-02). Not money on any account until it is approved.
+    // See drizzle/schema/finance.schema.ts.
+    sql: `CREATE TABLE IF NOT EXISTS pendingCredits (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      amountUsd DECIMAL(12, 2) NOT NULL,
+      source ENUM('payment','box') NOT NULL,
+      boxId INT NULL,
+      boxCode VARCHAR(50) NULL,
+      paymentMethod VARCHAR(30) NULL,
+      note TEXT,
+      status ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending',
+      requestedById INT NOT NULL,
+      decidedById INT NULL,
+      decidedAt TIMESTAMP NULL,
+      decisionReason TEXT,
+      ledgerTransactionId INT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_pending_credits_status (status),
+      INDEX idx_pending_credits_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "expenseBudgets",
     dependencies: ["expenseCategories", "users"],
     // One row per category, plus at most one with categoryId NULL covering
@@ -2826,6 +2853,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.bsh_batch_id", sql: "CREATE INDEX idx_bsh_batch_id ON batchStatusHistory (batchId)" },
   { name: "idx.bsh_changed_at", sql: "CREATE INDEX idx_bsh_changed_at ON batchStatusHistory (changedAt)" },
   { name: "idx.box_discount_pledges_box", sql: "CREATE INDEX idx_box_discount_pledges_box ON boxDiscountPledges (boxId)" },
+  { name: "idx.pending_credits_status", sql: "CREATE INDEX idx_pending_credits_status ON pendingCredits (status)" },
+  { name: "idx.pending_credits_customer", sql: "CREATE INDEX idx_pending_credits_customer ON pendingCredits (customerId)" },
   { name: "idx.box_settlement_lines_package", sql: "CREATE INDEX idx_box_settlement_lines_package ON boxSettlementLines (packageId)" },
   { name: "idx.box_settlement_lines_settlement", sql: "CREATE INDEX idx_box_settlement_lines_settlement ON boxSettlementLines (settlementId)" },
   { name: "idx.box_settlements_box", sql: "CREATE INDEX idx_box_settlements_box ON boxSettlements (boxId)" },

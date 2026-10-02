@@ -154,7 +154,7 @@ export const ledgerRouter = router({
         notes: z.string().max(1000).optional(),
         receiptNumber: z.string().max(100).optional(),
         cashAccountId: idSchema.optional(),
-        /** An admin's yes to an entry that leaves the account in credit. */
+        /** The yes to an entry larger than the debt — see shared/creditGuard. */
         approveCredit: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
@@ -166,22 +166,43 @@ export const ledgerRouter = router({
         }
         // No account goes below zero unasked (shared/creditGuard).
         const paidInto = await db.getOrCreateCustomerAccount(input.customerId, input.customerCode);
-        const approvedCreditUsd = guardAgainstCredit({
+        const owedUsd = Math.max(0, Number(paidInto.currentBalanceUsd ?? 0));
+        const credit = guardAgainstCredit({
           customerCode: input.customerCode,
           balanceUsd: Number(paidInto.currentBalanceUsd ?? 0),
           loweredByUsd: input.amountUsd ?? 0,
           role: ctx.user.role,
           approved: input.approveCredit,
         });
-        if (approvedCreditUsd > 0) {
+        if (credit.creditUsd > 0) {
           await db.createAuditLog({
             userId: ctx.user.id,
             userRole: ctx.user.role,
-            action: "approve_customer_credit",
+            action: credit.action === "hold" ? "hold_customer_credit" : "approve_customer_credit",
             entityType: "customer_account",
             entityId: input.customerId,
-            newValues: { door: "payment", amountUsd: input.amountUsd, creditUsd: approvedCreditUsd },
+            newValues: { door: "payment", amountUsd: input.amountUsd, creditUsd: credit.creditUsd },
           });
+        }
+        // Not the main admin: what is owed is posted now, and the extra
+        // waits for his yes. The account stops at zero.
+        if (credit.action === "hold") {
+          const posted = owedUsd > 0.005
+            ? await db.recordPaymentReceived(
+                input.customerId, input.customerCode, owedUsd, 0, input.paymentMethod, ctx.user.id,
+                input.notes, input.receiptNumber, input.cashAccountId,
+                input.notes ? `پارەدانی کڕیار: ${input.customerCode} - ${input.notes}` : `پارەدانی کڕیار: ${input.customerCode}`,
+              )
+            : null;
+          await db.createPendingCredit({
+            customerId: input.customerId,
+            amountUsd: credit.creditUsd,
+            source: "payment",
+            paymentMethod: input.paymentMethod,
+            note: input.notes ?? null,
+            requestedById: ctx.user.id,
+          });
+          return { ...(posted ?? { transaction: null, payment: null }), heldCreditUsd: credit.creditUsd };
         }
         const cashDescription = input.notes
           ? `پارەدانی کڕیار: ${input.customerCode} - ${input.notes}`
@@ -198,7 +219,7 @@ export const ledgerRouter = router({
           input.cashAccountId,
           cashDescription
         );
-        return result;
+        return { ...result, heldCreditUsd: 0 };
       }),
     
     /**
@@ -463,12 +484,15 @@ export const ledgerRouter = router({
           const lowered = await db.getOrCreateCustomerAccount(
             input.customerId, customer.customerCode || `C${input.customerId}`,
           );
-          const approvedCreditUsd = guardAgainstCredit({
+          // Not "the customer paid extra": nothing to hold. Only the main
+          // admin takes an account below zero by hand.
+          const { creditUsd: approvedCreditUsd } = guardAgainstCredit({
             customerCode: customer.customerCode || `C${input.customerId}`,
             balanceUsd: Number(lowered.currentBalanceUsd ?? 0),
             loweredByUsd: input.amountUsd,
             role: ctx.user.role,
             approved: input.approveCredit,
+            canHold: false,
           });
           if (approvedCreditUsd > 0) {
             await db.createAuditLog({
@@ -615,6 +639,33 @@ export const ledgerRouter = router({
           newValues: { corrected: result.corrected, amountUsd: result.amountUsd, skipped: result.skipped.length },
         });
         return result;
+      }),
+
+    /**
+     * Extras waiting for the main admin (db/pendingCredits.db), and his
+     * answer. Approving posts the payment; refusing posts nothing.
+     */
+    pendingCredits: superAdminProcedure.query(async () => {
+      return db.listPendingCredits();
+    }),
+    decidePendingCredit: superAdminProcedure
+      .input(z.object({ id: idSchema, approve: z.boolean(), reason: z.string().max(500).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        let decision;
+        try {
+          decision = await db.decidePendingCredit(input.id, input.approve, ctx.user.id, input.reason);
+        } catch (err) {
+          throw new TRPCError({ code: "CONFLICT", message: err instanceof Error ? err.message : String(err) });
+        }
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: input.approve ? "approve_pending_credit" : "reject_pending_credit",
+          entityType: "customer_account",
+          entityId: decision.customerId,
+          newValues: { pendingCreditId: decision.id, amountUsd: decision.amountUsd, reason: input.reason ?? null },
+        });
+        return decision;
       }),
 
     /**

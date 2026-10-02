@@ -1,7 +1,8 @@
 import { TRPCClientError, type TRPCLink } from "@trpc/client";
 import { observable } from "@trpc/server/observable";
 import type { AppRouter } from "../../../server/routers";
-import { ASK_ADMIN_MARK } from "@shared/creditGuard";
+import { toast } from "sonner";
+import { ASK_ADMIN_MARK, creditHeldNotice } from "@shared/creditGuard";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { pickLang } from "@/lib/lang";
 import { storedLanguage } from "@/lib/networkFault";
@@ -21,8 +22,15 @@ import { storedLanguage } from "@/lib/networkFault";
  */
 export const creditApprovalLink: TRPCLink<AppRouter> = () => ({ op, next }) =>
   observable((observer) => {
+    // Told once, on whichever screen took the money: the extra was not
+    // posted — it is waiting for the main admin.
+    const passOn = (value: Parameters<typeof observer.next>[0]) => {
+      const held = Number((value as { result?: { data?: { heldCreditUsd?: number } } })?.result?.data?.heldCreditUsd ?? 0);
+      if (held > 0) toast.warning(creditHeldNotice(held), { duration: 20000 });
+      observer.next(value);
+    };
     let sub = next(op).subscribe({
-      next: (value) => observer.next(value),
+      next: passOn,
       complete: () => observer.complete(),
       error: (err) => {
         const message = String(err?.message ?? "");
@@ -37,13 +45,13 @@ export const creditApprovalLink: TRPCLink<AppRouter> = () => ({ op, next }) =>
         const language = storedLanguage();
         void confirmAction({
           title: pickLang(language, {
-            ku: "ئەم تۆمارە کریدیت بۆ کڕیار دروست دەکات",
-            en: "This entry leaves the customer in credit",
-            ar: "هذا القيد يترك للعميل رصيداً دائناً",
-            zh: "此记录会使客户产生贷方余额",
+            ku: "پارەکە لە قەرزەکە زیاترە",
+            en: "More than the customer owes",
+            ar: "المبلغ أكثر مما على العميل",
+            zh: "金额超过客户欠款",
           }),
           message: message.slice(ASK_ADMIN_MARK.length),
-          confirmLabel: pickLang(language, { ku: "بەڵێ، تۆماری بکە", en: "Yes, record it", ar: "نعم، سجّله", zh: "是，记录" }),
+          confirmLabel: pickLang(language, { ku: "بەڵێ، کڕیار ئەم پارەیەی داوە", en: "Yes, the customer paid this", ar: "نعم، دفع العميل هذا", zh: "是，客户已付此款" }),
           danger: true,
         }).then((yes) => {
           if (!yes) {
@@ -56,7 +64,7 @@ export const creditApprovalLink: TRPCLink<AppRouter> = () => ({ op, next }) =>
             return;
           }
           sub = next({ ...op, input: { ...(op.input as Record<string, unknown>), approveCredit: true } }).subscribe({
-            next: (value) => observer.next(value),
+            next: passOn,
             complete: () => observer.complete(),
             error: (again) => observer.error(again),
           });

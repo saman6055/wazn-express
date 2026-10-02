@@ -12,6 +12,7 @@ import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { RISK_CHIP, RISK_DOT } from "@/lib/riskStyle";
+import { MoneyBellSection, useMoneyBell } from "@/components/MoneyBell";
 import { RISK_LEVEL_LABEL, RISK_LEVELS, worstLevel } from "@shared/riskRules";
 import {
   AUDIT_ROLES,
@@ -117,7 +118,11 @@ export function RiskBell({ className }: { className?: string }) {
     (item) => canViewPath(riskGate(item.id)) && (!isAuditRisk(item.id) || AUDIT_ROLES.includes(role)),
   );
   const today = localDay(new Date());
-  const flashing = shouldFlash(items, seen, today);
+  // The money side, for the main admin only: what waits for his yes, and
+  // every movement since he last looked (components/MoneyBell).
+  const money = useMoneyBell(userId, role);
+  const flashing = shouldFlash(items, seen, today) || money.urgent;
+  const total = items.length + money.count;
   const worst = worstLevel(items.map((item) => item.level));
   const Arrow = isRTL ? ChevronLeft : ChevronRight;
   const signature = items.map((item) => `${item.id}:${item.level}:${item.count}`).join("|");
@@ -142,6 +147,8 @@ export function RiskBell({ className }: { className?: string }) {
 
   const onOpenChange = (next: boolean) => {
     setOpen(next);
+    if (next) money.onOpen();
+    else money.onClose();
     if (!next || items.length === 0) return;
     // Opened: these are seen for today, and the flashing stops.
     const mark = markSeen(items, today);
@@ -202,23 +209,23 @@ export function RiskBell({ className }: { className?: string }) {
           size="icon"
           className={cn("relative h-9 w-9 rounded-full", flashing && "bg-red-500/10", className)}
           title={bellLabel}
-          aria-label={items.length > 0 ? `${bellLabel} (${items.length})` : bellLabel}
+          aria-label={total > 0 ? `${bellLabel} (${total})` : bellLabel}
           data-flashing={flashing ? "true" : undefined}
         >
           {flashing && (
             <span className="pointer-events-none absolute inset-0 animate-ping rounded-full bg-red-500/40 motion-reduce:animate-none" />
           )}
           <Bell className={cn("relative h-5 w-5", flashing && "wazn-bell-ring text-red-600 dark:text-red-400")} />
-          {items.length > 0 && worst && (
+          {total > 0 && (
             <span
               dir="ltr"
               className={cn(
                 "absolute -top-1 -end-1 min-w-[1.25rem] rounded-full px-1 text-center text-[11px] font-bold leading-[1.25rem] text-white shadow-sm ring-2 ring-background",
-                BADGE[worst],
+                money.urgent ? BADGE.critical : worst ? BADGE[worst] : BADGE.notice,
                 flashing && "animate-pulse motion-reduce:animate-none",
               )}
             >
-              {items.length}
+              {total}
             </span>
           )}
         </Button>
@@ -260,7 +267,7 @@ export function RiskBell({ className }: { className?: string }) {
           )}
         </div>
 
-        {items.length === 0 ? (
+        {items.length === 0 && money.pending.length === 0 && money.lines.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
             <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
             <p className="text-sm font-medium">
@@ -271,6 +278,15 @@ export function RiskBell({ className }: { className?: string }) {
           </div>
         ) : (
           <div className="max-h-[65vh] overflow-y-auto">
+            <MoneyBellSection
+              money={money}
+              language={language}
+              onNavigate={(href) => {
+                setOpen(false);
+                money.onClose();
+                navigate(href);
+              }}
+            />
             {(["risks", "incomplete"] as const).map((group) => {
               const list = items.filter((item) => riskGroup(item.id) === group);
               if (list.length === 0) return null;

@@ -1,6 +1,6 @@
 import { desc, eq, inArray } from "drizzle-orm";
 import { getDb } from "./connection";
-import { customerAccounts, customers, ledgerTransactions, users } from "../../drizzle/schema";
+import { customerAccounts, customers, deliveryBoxes, ledgerTransactions, users } from "../../drizzle/schema";
 import { groupMovements, type MoneyMovement } from "@shared/moneyFeed";
 
 /**
@@ -16,6 +16,8 @@ export interface MoneyFeedLine extends MoneyMovement {
   customerCode: string;
   customerName: string;
   byName: string;
+  /** The box a receipt was for, so the line can open it. */
+  boxId: number | null;
 }
 
 /** How many of the newest ledger rows the feed looks at. */
@@ -64,6 +66,12 @@ export async function getMoneyFeed(): Promise<{ lines: MoneyFeedLine[]; newestId
     : [];
   const nameOf = new Map(staff.map((s) => [s.id, String(s.name ?? s.username ?? `#${s.id}`)]));
 
+  const boxCodes = Array.from(new Set(movements.map((m) => m.boxCode).filter((code): code is string => !!code)));
+  const boxes = boxCodes.length
+    ? await db.select({ id: deliveryBoxes.id, boxCode: deliveryBoxes.boxCode }).from(deliveryBoxes).where(inArray(deliveryBoxes.boxCode, boxCodes))
+    : [];
+  const boxIdOf = new Map(boxes.map((b) => [b.boxCode, b.id]));
+
   const lines = movements.map((m): MoneyFeedLine => {
     const owner = ownerOf.get(m.accountId);
     return {
@@ -72,6 +80,7 @@ export async function getMoneyFeed(): Promise<{ lines: MoneyFeedLine[]; newestId
       customerCode: String(owner?.customerCode ?? ""),
       customerName: String(owner?.customerName ?? ""),
       byName: m.createdById !== null ? nameOf.get(m.createdById) ?? `#${m.createdById}` : "—",
+      boxId: m.boxCode ? boxIdOf.get(m.boxCode) ?? null : null,
     };
   });
   return { lines, newestId: lines[0]?.id ?? 0 };

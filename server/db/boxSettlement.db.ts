@@ -22,6 +22,7 @@ import { createCustomerNotification } from "./portal.db";
 import { markLinkedOrdersCharged } from "./packages.db";
 import { notifyPaymentReceived } from "../services/customerWhatsApp.service";
 import { guardAgainstCredit } from "../lib/creditGuard";
+import { createPendingCredit } from "./pendingCredits.db";
 import {
   settlementTotals,
   differenceOf,
@@ -901,7 +902,7 @@ export const COVERED_BY_ACCOUNT_NOTE = "پێشتر لەسەر حیساب درا�
 export async function createBoxSettlement(
   input: CreateSettlementInput,
   userId: number,
-): Promise<{ settlementId: number; settlementNumber: string; paidUsd: number; differenceKind: string; coveredUsd: number }> {
+): Promise<{ settlementId: number; settlementNumber: string; paidUsd: number; differenceKind: string; coveredUsd: number; heldCreditUsd: number }> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
@@ -1048,15 +1049,11 @@ export async function createBoxSettlement(
   });
   const cashDueUsd = cover.cashDueUsd;
 
-  const difference = differenceOf(cashDueUsd, handedOverUsd, input.treatShortAs ?? "debt", tolerance);
-  const isRounding = difference.roundingUsd !== undefined;
-  const paidUsd = isRounding && difference.roundingUsd! > 0 ? cashDueUsd : handedOverUsd;
-  const differenceReason = isRounding
-    ? `${ROUNDING_VARIANCE_REASON} (${difference.roundingUsd! > 0 ? "+" : "−"}$${Math.abs(difference.roundingUsd!).toFixed(2)})`
-    : input.differenceReason;
-  // More was handed over than is owed: the rest would sit on the account as
-  // credit. Nobody prepays here, so it is stopped unless an admin says yes.
-  const approvedCreditUsd = difference.kind === "credit"
+  const asHandedOver = differenceOf(cashDueUsd, handedOverUsd, input.treatShortAs ?? "debt", tolerance);
+  // More was handed over than is owed. The main admin may put the extra on
+  // the account; for anyone else it is held until he confirms, and the
+  // receipt takes exactly what was due (owner, 2026-10-02; shared/creditGuard).
+  const credit = asHandedOver.kind === "credit"
     ? guardAgainstCredit({
         customerCode: customer.customerCode ?? String(customer.id),
         balanceUsd: cashDueUsd,
@@ -1064,10 +1061,19 @@ export async function createBoxSettlement(
         role: input.credit?.role,
         approved: input.credit?.approved,
       })
-    : 0;
-  if (approvedCreditUsd > 0) {
-    appLogger.info("[BoxSettlement] admin approved a credit at the till", {
-      boxId: input.boxId, customerId: customer.id, creditUsd: approvedCreditUsd, userId,
+    : { action: "post" as const, creditUsd: 0 };
+  const heldCreditUsd = credit.action === "hold" ? credit.creditUsd : 0;
+  const difference = heldCreditUsd > 0
+    ? { kind: "none" as const, amountUsd: 0, reasonRequired: false }
+    : asHandedOver;
+  const isRounding = difference.roundingUsd !== undefined;
+  const paidUsd = heldCreditUsd > 0 || (isRounding && difference.roundingUsd! > 0) ? cashDueUsd : handedOverUsd;
+  const differenceReason = isRounding
+    ? `${ROUNDING_VARIANCE_REASON} (${difference.roundingUsd! > 0 ? "+" : "−"}$${Math.abs(difference.roundingUsd!).toFixed(2)})`
+    : input.differenceReason;
+  if (credit.creditUsd > 0) {
+    appLogger.info("[BoxSettlement] more handed over than was due", {
+      boxId: input.boxId, customerId: customer.id, creditUsd: credit.creditUsd, action: credit.action, userId,
     });
   }
   if (difference.reasonRequired && !(input.differenceReason ?? "").trim()) {
@@ -1314,7 +1320,22 @@ export async function createBoxSettlement(
         ));
     }
 
-    return { settlementId, settlementNumber, paidUsd, differenceKind: difference.kind, discountTotal, coveredUsd: cover.coveredUsd };
+    // The extra waits for the main admin — in the same transaction as the
+    // receipt it came with, so neither exists without the other.
+    if (heldCreditUsd > 0) {
+      await createPendingCredit({
+        customerId: customer.id,
+        amountUsd: heldCreditUsd,
+        source: "box",
+        boxId: input.boxId,
+        boxCode: box.boxCode,
+        paymentMethod: input.paymentMethod ?? "CASH",
+        note: input.notes ?? null,
+        requestedById: userId,
+      }, tx);
+    }
+
+    return { settlementId, settlementNumber, paidUsd, differenceKind: difference.kind, discountTotal, coveredUsd: cover.coveredUsd, heldCreditUsd };
   }).then(async (result) => {
     // Nothing was handed over: there is no payment to thank anybody for.
     if (!(result.paidUsd > 0)) return result;
