@@ -1,4 +1,8 @@
+import { useState } from "react";
 import { Link } from "wouter";
+import { toast } from "sonner";
+import { Checkbox } from "@/components/ui/checkbox";
+import { confirmAction } from "@/components/ConfirmDialog";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -39,6 +43,49 @@ export function CreditCustomersSection({ language }: { language: string }) {
   const scan = trpc.ledger.customersInCredit.useQuery(undefined, { enabled: false, retry: false });
   const rows = scan.data ?? [];
   const total = rows.reduce((sum, r) => sum + r.creditUsd, 0);
+
+  // The owner may say of a credit "that is not real" and remove it. The
+  // server debits exactly what each account holds when it posts.
+  const utils = trpc.useUtils();
+  const [picked, setPicked] = useState<Set<number>>(new Set());
+  const pickedTotal = rows.filter((r) => picked.has(r.customerId)).reduce((sum, r) => sum + r.creditUsd, 0);
+  const allPicked = rows.length > 0 && picked.size === rows.length;
+  const zero = trpc.ledger.zeroCustomerCredits.useMutation({
+    onSuccess: (result) => {
+      setPicked(new Set());
+      void scan.refetch();
+      void utils.ledger.invalidate();
+      toast.success(
+        `${say({ ku: "سفر کرانەوە", en: "Zeroed", ar: "تم التصفير", zh: "已清零" })}: ${result.zeroed} · ${fmtUsd(result.amountUsd)}`,
+        { duration: 15000 },
+      );
+      if (result.skipped.length > 0) {
+        toast.warning(`${say({ ku: "پەڕێنران", en: "Skipped", ar: "تم التخطي", zh: "已跳过" })}: ${result.skipped.length} — ${result.skipped[0].reason}`, { duration: 20000 });
+      }
+    },
+    onError: (err) => toast.error(err.message, { duration: 20000 }),
+  });
+  const toggle = (id: number) =>
+    setPicked((old) => {
+      const next = new Set(old);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const applyZero = async () => {
+    const yes = await confirmAction({
+      title: say({ ku: "سفرکردنەوەی کریدیت", en: "Remove the credit", ar: "تصفير الرصيد الدائن", zh: "清除贷方余额" }),
+      message: say({
+        ku: `کریدیتی ${picked.size} کڕیار سفر دەکرێتەوە، بە کۆی ${fmtUsd(pickedTotal)}. واتە دەڵێیت ئەم کڕیارانە هیچ پارەیەکی زیادەیان نەداوە. بۆ هەر یەکێک ڕیزێکی نوێ بە هۆکارەوە دەنووسرێت.`,
+        en: `The credit of ${picked.size} customers will be removed, ${fmtUsd(pickedTotal)} in all — you are saying these customers paid nothing extra. Each gets one new ledger row with its reason.`,
+        ar: `سيُصفَّر رصيد ${picked.size} عميلاً بمجموع ${fmtUsd(pickedTotal)} — أي أنك تؤكد أن هؤلاء لم يدفعوا شيئاً زائداً. يُضاف لكل منهم قيد جديد بسببه.`,
+        zh: `将清除 ${picked.size} 位客户的贷方余额，共 ${fmtUsd(pickedTotal)}——即您确认这些客户没有多付款。每位客户新增一条带原因的流水。`,
+      }),
+      confirmLabel: say({ ku: "بەڵێ، سفریان بکەرەوە", en: "Yes, zero them", ar: "نعم، صفّرها", zh: "是，清零" }),
+      danger: true,
+    });
+    if (yes) zero.mutate({ customerIds: Array.from(picked) });
+  };
 
   return (
     <Card data-testid="credit-customers">
@@ -82,6 +129,13 @@ export function CreditCustomersSection({ language }: { language: string }) {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    <TableHead className="w-10">
+                      <Checkbox
+                        checked={allPicked}
+                        onCheckedChange={() => setPicked(allPicked ? new Set() : new Set(rows.map((r) => r.customerId)))}
+                        aria-label={say({ ku: "هەموویان", en: "All", ar: "الكل", zh: "全选" })}
+                      />
+                    </TableHead>
                     <TableHead>{say({ ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</TableHead>
                     <TableHead className="text-end">{say({ ku: "کریدیت", en: "Credit", ar: "الرصيد الدائن", zh: "贷方余额" })}</TableHead>
                     <TableHead className="text-end">{say({ ku: "بە دەست کەمکراوە", en: "Lowered by hand", ar: "خُفِّض يدوياً", zh: "手工冲减" })}</TableHead>
@@ -92,6 +146,9 @@ export function CreditCustomersSection({ language }: { language: string }) {
                 <TableBody>
                   {rows.map((r) => (
                     <TableRow key={r.customerId}>
+                      <TableCell>
+                        <Checkbox checked={picked.has(r.customerId)} onCheckedChange={() => toggle(r.customerId)} />
+                      </TableCell>
                       <TableCell>
                         <span className="flex items-center gap-1">
                           <Link href={`/customers/${r.customerId}`} className="font-mono text-primary hover:underline">
@@ -108,6 +165,15 @@ export function CreditCustomersSection({ language }: { language: string }) {
                   ))}
                 </TableBody>
               </Table>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <Button variant="destructive" onClick={() => void applyZero()} disabled={picked.size === 0 || zero.isPending} data-testid="credit-zero">
+                {zero.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+                {say({ ku: "کریدیتیان سفر بکەرەوە", en: "Zero their credit", ar: "صفّر أرصدتهم", zh: "清零其贷方余额" })}
+              </Button>
+              <span className="text-sm text-muted-foreground">
+                {picked.size} · <bdi dir="ltr">{fmtUsd(pickedTotal)}</bdi>
+              </span>
             </div>
           </>
         )}

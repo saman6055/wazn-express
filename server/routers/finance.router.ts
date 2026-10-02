@@ -617,6 +617,25 @@ export const ledgerRouter = router({
         return result;
       }),
 
+    /**
+     * Remove the named customers' credit: exactly what each account holds,
+     * read at the moment of posting (db/creditCustomers.db). Admin only.
+     */
+    zeroCustomerCredits: adminProcedure
+      .input(z.object({ customerIds: z.array(z.number().int().positive()).min(1).max(500) }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.zeroCustomerCredits(input.customerIds, ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "zero_customer_credits",
+          entityType: "customer_account",
+          entityId: 0,
+          newValues: { zeroed: result.zeroed, amountUsd: result.amountUsd, skipped: result.skipped.length, customerIds: input.customerIds },
+        });
+        return result;
+      }),
+
     customersInCredit: adminProcedure.query(async () => {
       // Read only: every account the books say we owe, with the likeliest
       // reason (db/creditCustomers.db). Nothing moves because it was opened.

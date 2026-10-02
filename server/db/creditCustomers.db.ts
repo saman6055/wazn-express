@@ -1,5 +1,7 @@
-import { sql } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { getDb } from "./connection";
+import { customerAccounts, customers } from "../../drizzle/schema";
+import { adjustCustomerBalance } from "./finance.db";
 
 /**
  * Every customer the books say we owe money to, and the likeliest reason.
@@ -99,4 +101,58 @@ export async function findCustomersInCredit(): Promise<CreditCustomerRow[]> {
     };
     return { ...base, likelyCause: likelyCreditCause(base) };
   });
+}
+
+/** Written on the correction, so the statement says why the credit went. */
+export const ZERO_CREDIT_REASON =
+  "سفرکردنەوەی کریدیت — کڕیار هیچ پارەیەکی زیادەی نەداوە (بڕیاری خاوەن)";
+
+export interface ZeroCreditResult {
+  zeroed: number;
+  amountUsd: number;
+  skipped: Array<{ customerId: number; reason: string }>;
+}
+
+/**
+ * Take the named customers' credit off their accounts.
+ *
+ * Owner, 2026-10-02, of the thirteen left after the 10 September repair:
+ * "every one of them is at zero — they paid for their boxes in full and none
+ * of them has any credit." A credit here is never money a customer handed
+ * over in advance, so the owner can say of an account "that is not real" and
+ * remove it.
+ *
+ * The amount is never taken from the screen: for each customer the account
+ * is read at the moment of posting and exactly its credit is debited, so the
+ * account lands on zero. One that is no longer in credit is skipped, which
+ * also makes a second press harmless. One ADJUSTMENT_DEBIT with its reason;
+ * nothing already in the ledger is edited or removed.
+ */
+export async function zeroCustomerCredits(customerIds: number[], userId: number): Promise<ZeroCreditResult> {
+  const result: ZeroCreditResult = { zeroed: 0, amountUsd: 0, skipped: [] };
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  let cents = 0;
+  for (const customerId of Array.from(new Set(customerIds))) {
+    const [row] = await db
+      .select({ balance: customerAccounts.currentBalanceUsd, customerCode: customers.customerCode })
+      .from(customerAccounts)
+      .innerJoin(customers, eq(customers.id, customerAccounts.customerId))
+      .where(eq(customerAccounts.customerId, customerId))
+      .limit(1);
+    const creditCents = row ? Math.round(-Number(row.balance ?? 0) * 100) : 0;
+    if (!row || creditCents <= 0) {
+      result.skipped.push({ customerId, reason: "not in credit" });
+      continue;
+    }
+    try {
+      await adjustCustomerBalance(customerId, String(row.customerCode ?? customerId), creditCents / 100, "debit", ZERO_CREDIT_REASON, userId);
+      result.zeroed += 1;
+      cents += creditCents;
+    } catch (err) {
+      result.skipped.push({ customerId, reason: err instanceof Error ? err.message : String(err) });
+    }
+  }
+  result.amountUsd = cents / 100;
+  return result;
 }
