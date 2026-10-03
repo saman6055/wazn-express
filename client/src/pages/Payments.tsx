@@ -33,14 +33,25 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   // 2026-09-11 — shared/financeAccess.ts).
   const { user } = useAuth();
   const seesHistory = canSeeAllAccounts(user?.role);
-  const { data: recentTransactions, refetch } = trpc.ledger.getRecentTransactions.useQuery(
-    { limit: 100 },
+  // The payments themselves, from the payment records. This read the last
+  // 100 ledger rows of every kind and kept the payments among them: on
+  // 2026-10-03 those 100 were all corrections and the page said "$0, no
+  // payments". The method was guessed from the words of the description too;
+  // a payment record carries its own method, its customer, and what of it was
+  // handed back.
+  const PAYMENTS_SHOWN = 300;
+  const { data: recentPayments, refetch } = trpc.ledger.getRecentPayments.useQuery(
+    { limit: PAYMENTS_SHOWN },
     { enabled: seesHistory },
   );
   const { data: customers } = trpc.customers.list.useQuery();
   
-  // Filter to get only payment transactions (CREDIT_PAYMENT type)
-  const payments = recentTransactions?.filter(t => t.transactionType === 'CREDIT_PAYMENT') || [];
+  // What was really received: the payment less anything handed back.
+  const netOf = (p: { amountUsd?: unknown; reversedAmountUsd?: unknown }) =>
+    Math.max(0, Number(p.amountUsd || 0) - Number(p.reversedAmountUsd || 0));
+  const methodOf = (p: { paymentMethod?: unknown }) => String(p.paymentMethod || "").toUpperCase();
+  const payments = recentPayments ?? [];
+  const oldestShown = payments.length > 0 ? payments[payments.length - 1].createdAt : null;
   
   const createMutation = trpc.ledger.recordPayment.useMutation({
     onSuccess: () => {
@@ -56,15 +67,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   const filteredPayments = payments?.filter(p => {
     const matchesSearch = !search || 
-      (p.description || '').toLowerCase().includes(search.toLowerCase()) ||
-      (p.transactionNumber || '').toLowerCase().includes(search.toLowerCase());
+      [p.paymentNumber, p.notes, p.customerName, p.customerCode]
+        .some((v) => String(v || "").toLowerCase().includes(search.toLowerCase()));
     return matchesSearch;
   });
 
-  const totalPayments = payments?.reduce((sum, p) => sum + Math.abs(Number(p.amountUsd || 0)), 0) || 0;
-  const cashPayments = payments?.filter(p => (p.description || '').toLowerCase().includes('cash')).reduce((sum, p) => sum + Math.abs(Number(p.amountUsd || 0)), 0) || 0;
-  const bankPayments = payments?.filter(p => (p.description || '').toLowerCase().includes('bank')).reduce((sum, p) => sum + Math.abs(Number(p.amountUsd || 0)), 0) || 0;
-  const cardPayments = payments?.filter(p => (p.description || '').toLowerCase().includes('card')).reduce((sum, p) => sum + Math.abs(Number(p.amountUsd || 0)), 0) || 0;
+  const sumOf = (rows: typeof payments) => rows.reduce((sum, p) => sum + netOf(p), 0);
+  const totalPayments = sumOf(payments);
+  const cashPayments = sumOf(payments.filter((p) => methodOf(p) === "CASH"));
+  const bankPayments = sumOf(payments.filter((p) => methodOf(p) === "BANK_TRANSFER"));
+  const cardPayments = sumOf(payments.filter((p) => methodOf(p) === "CARD"));
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -93,8 +105,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     });
   };
 
-  const getMethodIcon = (description: string) => {
-    const desc = (description || '').toLowerCase();
+  const getMethodIcon = (method: string) => {
+    const desc = (method || '').toLowerCase();
     if (desc.includes('cash')) return <Banknote className="h-4 w-4" />;
     if (desc.includes('bank')) return <Building className="h-4 w-4" />;
     if (desc.includes('card')) return <CreditCard className="h-4 w-4" />;
@@ -102,8 +114,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     return <DollarSign className="h-4 w-4" />;
   };
 
-  const getMethodColor = (description: string) => {
-    const desc = (description || '').toLowerCase();
+  const getMethodColor = (method: string) => {
+    const desc = (method || '').toLowerCase();
     if (desc.includes('cash')) return 'bg-green-100 text-green-700 dark:bg-green-950/30 dark:text-green-400';
     if (desc.includes('bank')) return 'bg-blue-100 text-blue-700 dark:bg-blue-950/30 dark:text-blue-400';
     if (desc.includes('card')) return 'bg-purple-100 text-purple-700 dark:bg-purple-950/30 dark:text-purple-400';
@@ -213,7 +225,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کۆی پارەدانەکان", en: "Total Payments", ar: "إجمالي المدفوعات", zh: "付款总额" })}</p>
+                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: `کۆی دوایین ${PAYMENTS_SHOWN} پارەدان`, en: `Last ${PAYMENTS_SHOWN} payments`, ar: `آخر ${PAYMENTS_SHOWN} دفعة`, zh: `最近 ${PAYMENTS_SHOWN} 笔付款` })}</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-300">{fmtUsd(totalPayments)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -268,8 +280,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           <CardHeader className="border-b bg-muted/30">
             <div className="flex items-center justify-between flex-wrap gap-4">
               <div>
-                <CardTitle>Payment History</CardTitle>
-                <CardDescription>Recent payment transactions</CardDescription>
+                <CardTitle>{pickLang(language, { ku: "مێژووی پارەدان", en: "Payment History", ar: "سجل المدفوعات", zh: "付款记录" })}</CardTitle>
+                <CardDescription>
+                  {pickLang(language, { ku: `دوایین ${PAYMENTS_SHOWN} پارەدان`, en: `The last ${PAYMENTS_SHOWN} payments`, ar: `آخر ${PAYMENTS_SHOWN} دفعة`, zh: `最近 ${PAYMENTS_SHOWN} 笔付款` })}
+                  {oldestShown ? <> · <bdi dir="ltr">{new Date(oldestShown).toLocaleDateString("en-GB")}</bdi> →</> : null}
+                </CardDescription>
               </div>
               <div className="flex items-center gap-3">
                 <div className="relative">
@@ -312,21 +327,30 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
-                          <Badge variant="outline" className={getMethodColor(payment.description || '')}>
-                            {getMethodIcon(payment.description || '')}
-                            <span className="ms-1">{payment.description || 'Payment'}</span>
+                          <Badge variant="outline" className={getMethodColor(methodOf(payment))}>
+                            {getMethodIcon(methodOf(payment))}
                           </Badge>
+                          <span className="min-w-0">
+                            <span className="block truncate font-medium">{payment.customerName || "-"}</span>
+                            <span className="block truncate text-xs text-muted-foreground">{payment.customerCode || ""}</span>
+                          </span>
                         </div>
                       </TableCell>
                       <TableCell>
                         <span className="text-muted-foreground">
-                          {payment.transactionNumber || '-'}
+                          <bdi dir="ltr">{payment.paymentNumber || '-'}</bdi>
+                          {payment.notes ? <span className="block text-xs"><bdi dir="ltr">{payment.notes}</bdi></span> : null}
                         </span>
                       </TableCell>
                       <TableCell className="text-right">
                         <span className="font-semibold text-green-600 dark:text-green-300">
-                          {fmtUsd(Math.abs(Number(payment.amountUsd || 0)))}
+                          {fmtUsd(netOf(payment))}
                         </span>
+                        {Number(payment.reversedAmountUsd || 0) > 0 ? (
+                          <span className="block text-xs text-muted-foreground line-through tabular-nums">
+                            {fmtUsd(Number(payment.amountUsd || 0))}
+                          </span>
+                        ) : null}
                       </TableCell>
                     </TableRow>
                   ))
