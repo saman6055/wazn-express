@@ -29,12 +29,23 @@ const num = (v: string | number | null | undefined): number => {
   return Number.isFinite(n) ? n : 0;
 };
 
+/**
+ * On a commission order `shippingCostUsd` is the freight the CUSTOMER was
+ * charged for it (read from the real ledger 2026-10-03: on 1,321 of 1,583
+ * orders it equals the freight debit to the cent). That is income, and its
+ * cost is the batch's — so it is never taken off the commission. Taking it
+ * off made 1,075 commission orders read as losses. The commission alone is
+ * the profit on the goods (owner's rule: sell − buy = commission).
+ *
+ * A full-package order's `shippingCostUsd` is our own cost of carrying what
+ * the customer bought at one agreed price, and is taken off.
+ */
 export function orderProfitUsd(order: OrderProfitInput): number {
   const quantity = Math.max(1, Math.trunc(num(order.quantity)) || 1);
   const shipping = num(order.shippingCostUsd);
   const profit = order.orderType === "commission"
     // The fee is per unit — and it IS the profit; the goods are passed on at cost.
-    ? num(order.commissionFeeUsd) * quantity - shipping
+    ? num(order.commissionFeeUsd) * quantity
     : (num(order.sellingPriceUsd) - num(order.purchasePriceUsd)) * quantity - shipping;
   return Math.round((profit + Number.EPSILON) * 100) / 100;
 }
@@ -44,7 +55,8 @@ export const ORDER_PROFIT_SQL = `(
   CASE WHEN orderType = 'commission'
     THEN COALESCE(commissionFeeUsd, 0) * GREATEST(COALESCE(quantity, 1), 1)
     ELSE (COALESCE(sellingPriceUsd, 0) - COALESCE(purchasePriceUsd, 0)) * GREATEST(COALESCE(quantity, 1), 1)
-  END - COALESCE(shippingCostUsd, 0))`;
+         - COALESCE(shippingCostUsd, 0)
+  END)`;
 
 /** Orders that are not sales: undone, or a quote nobody has accepted yet. */
 export const NOT_A_SALE_STATUSES = ["cancelled", "rejected", "refunded", "returned", "pending_quote", "quoted"] as const;

@@ -62,7 +62,11 @@ export function resolveBatchCost(inputs: BatchCostInputs): BatchCostResult {
   const rate = sea ? positive(inputs.costPerCbm) : positive(inputs.costPerKg);
   const total = positive(inputs.shippingCost);
 
-  if (rate > 0) {
+  // A rate needs its weight. With no billed base yet, rate × 0 said the
+  // batch cost nothing and every dollar of its freight looked like profit
+  // (found 2026-10-03 on AIR-2026-035, -043, -046, -047, -056, -059, -060
+  // and SEA-068: a rate, no weight, and the carrier's total sitting unused).
+  if (rate > 0 && base > 0) {
     return { totalCostUsd: rate * base, effectiveRate: rate, unit, source: "rate" };
   }
   if (total > 0) {
@@ -73,7 +77,9 @@ export function resolveBatchCost(inputs: BatchCostInputs): BatchCostResult {
       source: "total",
     };
   }
-  return { totalCostUsd: 0, effectiveRate: 0, unit, source: "none" };
+  // A rate is known but not yet what it multiplies: the cost is honestly
+  // not known yet, which "none" says.
+  return { totalCostUsd: 0, effectiveRate: rate, unit, source: "none" };
 }
 
 /**

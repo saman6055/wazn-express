@@ -381,7 +381,12 @@ async function runCheck(id: CheckId): Promise<CheckResult> {
     if (found.length === 0) return { id, status: "clean", count: 0 };
     return { id, status: "found", count: found.length, sample: found };
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error);
+    // drizzle wraps the database's complaint as "Failed query: <the SQL>",
+    // which hides the one line that says what is wrong. Two checks failed in
+    // production on 2026-10-03 showing only that. The cause comes first now.
+    const err = error as { cause?: { message?: string; code?: string }; message?: string };
+    const cause = err?.cause?.message ? `${err.cause.code ? err.cause.code + ": " : ""}${err.cause.message}` : null;
+    const message = cause ?? (error instanceof Error ? error.message : String(error));
     // Logged as well as returned: a check that has been failing for a week is
     // a bug in this file, and the report alone is easy to skim past.
     appLogger.warn(`Audit check failed: ${id}`, { error: message });

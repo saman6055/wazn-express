@@ -13,7 +13,10 @@ const read = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8");
  */
 describe("what one order earns", () => {
   it("a commission order earns its fee on every unit", () => {
-    expect(orderProfitUsd({ orderType: "commission", quantity: 5, commissionFeeUsd: "2", shippingCostUsd: "1" })).toBe(9);
+    expect(orderProfitUsd({ orderType: "commission", quantity: 5, commissionFeeUsd: "2" })).toBe(10);
+    // The freight the customer was charged is income, not a cost of the goods
+    // (on 1,321 real orders it equals the freight debit to the cent).
+    expect(orderProfitUsd({ orderType: "commission", quantity: 5, commissionFeeUsd: "2", shippingCostUsd: "3.85" })).toBe(10);
     expect(orderProfitUsd({ orderType: "commission", quantity: 1, commissionFeeUsd: 2 })).toBe(2);
     expect(orderProfitUsd({ orderType: "commission", commissionFeeUsd: 2 }), "no quantity means one").toBe(2);
   });
@@ -27,6 +30,8 @@ describe("what one order earns", () => {
     expect(ORDER_PROFIT_SQL).toContain("commissionFeeUsd, 0) * GREATEST(COALESCE(quantity, 1), 1)");
     expect(ORDER_PROFIT_SQL).toContain("(COALESCE(sellingPriceUsd, 0) - COALESCE(purchasePriceUsd, 0)) * GREATEST(COALESCE(quantity, 1), 1)");
     expect(ORDER_PROFIT_SQL).toContain("- COALESCE(shippingCostUsd, 0)");
+    // …and only on the full-package side.
+    expect(ORDER_PROFIT_SQL.indexOf("- COALESCE(shippingCostUsd, 0)")).toBeGreaterThan(ORDER_PROFIT_SQL.indexOf("ELSE"));
   });
 });
 

@@ -85,3 +85,18 @@ describe("deriveCostRate", () => {
     expect(deriveCostRate({ shippingType: "sea", shippingCost: "1800" })).toBeNull();
   });
 });
+
+describe("a rate without its weight", () => {
+  it("falls back to the carrier's total instead of costing nothing", () => {
+    // AIR-2026-035: 9.40/kg, no billed weight, $70.59 recorded.
+    const r = resolveBatchCost({ shippingType: "air_regular", costPerKg: "9.40", shippingCost: "70.59" });
+    expect(r.totalCostUsd).toBe(70.59);
+    expect(r.source).toBe("total");
+  });
+
+  it("says the cost is not known yet when there is no total either", () => {
+    const r = resolveBatchCost({ shippingType: "air_regular", costPerKg: "9.40" });
+    expect(r.totalCostUsd).toBe(0);
+    expect(r.source).toBe("none");
+  });
+});

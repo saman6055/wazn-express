@@ -2046,9 +2046,11 @@ async function getPackageNetProfitFromBatches(
       totalCost: sql<number>`COALESCE(
         CASE
           WHEN ${batches.shippingType} = 'sea' AND CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2)) > 0
-            THEN CAST(COALESCE(${batches.chargedCbm}, 0) AS DECIMAL(12,4)) * CAST(${batches.costPerCbm} AS DECIMAL(12,2))
+                AND CAST(COALESCE(${batches.chargedCbm}, 0) AS DECIMAL(12,4)) > 0
+            THEN CAST(${batches.chargedCbm} AS DECIMAL(12,4)) * CAST(${batches.costPerCbm} AS DECIMAL(12,2))
           WHEN ${batches.shippingType} <> 'sea' AND CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2)) > 0
-            THEN CAST(COALESCE(${batches.chargedWeightKg}, 0) AS DECIMAL(12,2)) * CAST(${batches.costPerKg} AS DECIMAL(12,2))
+                AND CAST(COALESCE(${batches.chargedWeightKg}, 0) AS DECIMAL(12,2)) > 0
+            THEN CAST(${batches.chargedWeightKg} AS DECIMAL(12,2)) * CAST(${batches.costPerKg} AS DECIMAL(12,2))
           ELSE CAST(COALESCE(${batches.shippingCost}, 0) AS DECIMAL(12,2))
         END, 0
       )`,
