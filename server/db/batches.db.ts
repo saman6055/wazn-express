@@ -12,7 +12,7 @@ import {
   type SearchableBatchField,
 } from '@shared/batchSearch';
 import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
-import { deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
+import { carrierCostBase, deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
 import { diffPriceFields, normalizePriceValue, PRICE_HISTORY_FIELDS } from '@shared/batchPriceHistory';
 import { createCustomerNotification } from './portal.db';
 import { getSetting, getVolumetricDivisor } from './settings.db';
@@ -1039,14 +1039,11 @@ export async function deriveBatchCostRateIfMissing(batchId: number): Promise<{
   let base: number;
   if (isSea) {
     const summedCbm = batchPackages.reduce((sum, pkg) => sum + (Number(pkg.volumeCbm) || 0), 0);
-    base = Number(batch.chargedCbm) || summedCbm;
+    base = carrierCostBase(batch.shippingType, batch, { weightKg: 0, cbm: summedCbm });
   } else {
-    const divisor = await getVolumetricDivisor();
-    const summedKg = batchPackages.reduce(
-      (sum, pkg) => sum + chargeableWeight(pkg, divisor).chargeableKg,
-      0
-    );
-    base = Number(batch.chargedWeightKg) || summedKg;
+    // The carrier's base, one rule for every screen (shared/batchCost).
+    const summedKg = batchPackages.reduce((sum, pkg) => sum + (Number(pkg.weightKg) || 0), 0);
+    base = carrierCostBase(batch.shippingType, batch, { weightKg: summedKg, cbm: 0 });
   }
 
   const rate = deriveCostRate({
@@ -1155,8 +1152,11 @@ export async function getBatchFinancialSummary(batchId: number) {
     costPerKg: batchData.costPerKg,
     costPerCbm: batchData.costPerCbm,
     shippingCost: batchData.shippingCost,
-    chargeableKg: totalChargeableWeight,
-    totalCbm: chargedCbm,
+    // What the carrier's rate multiplies — the one rule (shared/batchCost),
+    // the same the profit reports use. It used to be our parcels' volume
+    // weight here and the carrier's billed weight there.
+    chargeableKg: carrierCostBase(batchData.shippingType, batchData, { weightKg: packageTotalWeight, cbm: packageTotalCbm }),
+    totalCbm: carrierCostBase(batchData.shippingType, batchData, { weightKg: packageTotalWeight, cbm: packageTotalCbm }),
   });
   const totalCost = resolvedCost.totalCostUsd;
 

@@ -51,6 +51,42 @@ const positive = (value: string | number | null | undefined): number => {
   return Number.isFinite(n) && n > 0 ? n : 0;
 };
 
+/**
+ * What the carrier's rate multiplies — one answer for every screen.
+ *
+ * The weight (or volume) the carrier billed; failing that, the weight on its
+ * scale; failing that, what our own parcels weigh plain. Owner, 2026-10-04:
+ * the old batches were filled with a rate and the "actual weight" only, and
+ * every report still said they cost nothing, while the batch's own page
+ * multiplied the rate by our parcels' volume weight — two answers for one
+ * shipment. The carrier charges the plain weight (we charge the volume), so
+ * the last fallback is our parcels' plain weight, not their chargeable one.
+ */
+export function carrierCostBase(
+  shippingType: string | null | undefined,
+  batch: {
+    chargedWeightKg?: string | number | null;
+    actualWeightKg?: string | number | null;
+    chargedCbm?: string | number | null;
+    actualCbm?: string | number | null;
+  },
+  parcels: { weightKg: number; cbm: number },
+): number {
+  return isSeaCost(shippingType)
+    ? positive(batch.chargedCbm) || positive(batch.actualCbm) || Math.max(0, parcels.cbm)
+    : positive(batch.chargedWeightKg) || positive(batch.actualWeightKg) || Math.max(0, parcels.weightKg);
+}
+
+/** The same rule in SQL, for the reports that read many batches at once. */
+export const CARRIER_BASE_KG_SQL = `COALESCE(
+  NULLIF(CAST(COALESCE(batches.chargedWeightKg, 0) AS DECIMAL(12,2)), 0),
+  NULLIF(CAST(COALESCE(batches.actualWeightKg, 0) AS DECIMAL(12,2)), 0),
+  (SELECT COALESCE(SUM(CAST(COALESCE(p.weightKg, 0) AS DECIMAL(12,3))), 0) FROM packages p WHERE p.batchId = batches.id))`;
+export const CARRIER_BASE_CBM_SQL = `COALESCE(
+  NULLIF(CAST(COALESCE(batches.chargedCbm, 0) AS DECIMAL(12,4)), 0),
+  NULLIF(CAST(COALESCE(batches.actualCbm, 0) AS DECIMAL(12,4)), 0),
+  (SELECT COALESCE(SUM(CAST(COALESCE(p.volumeCbm, 0) AS DECIMAL(12,4))), 0) FROM packages p WHERE p.batchId = batches.id))`;
+
 export function isSeaCost(shippingType?: string | null): boolean {
   return shippingType === "sea";
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { deriveCostRate, resolveBatchCost } from "./batchCost";
+import { carrierCostBase, CARRIER_BASE_KG_SQL, CARRIER_BASE_CBM_SQL, deriveCostRate, resolveBatchCost } from "./batchCost";
 
 describe("resolveBatchCost", () => {
   it("an explicit per-unit rate wins, even when a total is also recorded", () => {
@@ -98,5 +98,28 @@ describe("a rate without its weight", () => {
     const r = resolveBatchCost({ shippingType: "air_regular", costPerKg: "9.40" });
     expect(r.totalCostUsd).toBe(0);
     expect(r.source).toBe("none");
+  });
+});
+
+
+/*
+ * Owner, 2026-10-04: the old batches were given a rate and the carrier's
+ * "actual weight" only — and the reports still said they cost nothing, while
+ * the batch's own page multiplied the rate by our parcels' volume weight.
+ * One rule now, in code and SQL alike (proved equal on a real MySQL).
+ */
+describe("what the carrier's rate multiplies", () => {
+  it("its billed weight, then its scale weight, then our parcels' plain weight", () => {
+    expect(carrierCostBase("air_regular", { chargedWeightKg: "20", actualWeightKg: "25" }, { weightKg: 99, cbm: 0 })).toBe(20);
+    expect(carrierCostBase("air_regular", { chargedWeightKg: null, actualWeightKg: "69.12" }, { weightKg: 60.4, cbm: 0 })).toBe(69.12);
+    expect(carrierCostBase("air_regular", {}, { weightKg: 13, cbm: 0 })).toBe(13);
+    expect(carrierCostBase("sea", { chargedCbm: "", actualCbm: "1.09" }, { weightKg: 0, cbm: 1.326 })).toBe(1.09);
+  });
+
+  it("the reports use the same order", () => {
+    for (const s of [CARRIER_BASE_KG_SQL, CARRIER_BASE_CBM_SQL]) {
+      expect(s.indexOf("charged")).toBeLessThan(s.indexOf("actual"));
+      expect(s.indexOf("actual")).toBeLessThan(s.indexOf("FROM packages"));
+    }
   });
 });

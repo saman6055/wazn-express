@@ -1,5 +1,6 @@
 import { getDb } from './connection';
 import { ORDER_PROFIT_SQL, LIVE_SALE_SQL, orderProfitUsd, isLiveSale } from "@shared/orderProfit";
+import { CARRIER_BASE_KG_SQL, CARRIER_BASE_CBM_SQL } from "@shared/batchCost";
 import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
@@ -2046,11 +2047,11 @@ async function getPackageNetProfitFromBatches(
       totalCost: sql<number>`COALESCE(
         CASE
           WHEN ${batches.shippingType} = 'sea' AND CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2)) > 0
-                AND CAST(COALESCE(${batches.chargedCbm}, 0) AS DECIMAL(12,4)) > 0
-            THEN CAST(${batches.chargedCbm} AS DECIMAL(12,4)) * CAST(${batches.costPerCbm} AS DECIMAL(12,2))
+                AND ${sql.raw(CARRIER_BASE_CBM_SQL)} > 0
+            THEN ${sql.raw(CARRIER_BASE_CBM_SQL)} * CAST(${batches.costPerCbm} AS DECIMAL(12,2))
           WHEN ${batches.shippingType} <> 'sea' AND CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2)) > 0
-                AND CAST(COALESCE(${batches.chargedWeightKg}, 0) AS DECIMAL(12,2)) > 0
-            THEN CAST(${batches.chargedWeightKg} AS DECIMAL(12,2)) * CAST(${batches.costPerKg} AS DECIMAL(12,2))
+                AND ${sql.raw(CARRIER_BASE_KG_SQL)} > 0
+            THEN ${sql.raw(CARRIER_BASE_KG_SQL)} * CAST(${batches.costPerKg} AS DECIMAL(12,2))
           ELSE CAST(COALESCE(${batches.shippingCost}, 0) AS DECIMAL(12,2))
         END, 0
       )`,
