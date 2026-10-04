@@ -69,6 +69,13 @@ describe("ordinary numbers are left alone", () => {
     )).toEqual([]);
   });
 
+  it("the carrier billing less than our parcels is normal, not asked (owner, 2026-10-04)", () => {
+    // AIR-2026-016: billed 1.18 kg, our parcels 1.94 kg — it charged the
+    // weight, we charged the volume.
+    expect(oddBatchNumbers({ shippingType: "air_regular", chargedWeightKg: "1.18" }, usual, { count: 11, weightKg: 1.94, cbm: 0 })).toEqual([]);
+    expect(oddBatchNumbers({ shippingType: "air_regular", chargedWeightKg: "35" }, usual, { count: 45, weightKg: 48.28, cbm: 0 })).toEqual([]);
+  });
+
   it("a blank is not known yet, never zero", () => {
     expect(oddBatchNumbers({ shippingType: "sea", costPerCbm: "", chargedCbm: null }, usual, { count: 1, weightKg: 0, cbm: 1 })).toEqual([]);
   });

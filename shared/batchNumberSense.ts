@@ -108,6 +108,12 @@ export function oddBatchNumbers(
   const out: OddNumber[] = [];
 
   // 1. What we pay for, against what is actually in the batch.
+  //
+  // Only "far more" is asked. The carrier billing LESS than our parcels add
+  // up to is normal (owner, 2026-10-04): it often charges the plain weight
+  // where we charge the customer the volume, so ours comes out higher — that
+  // is where the margin is, not a typo (AIR-2026-016: 1.18 kg billed for
+  // 1.94 kg of parcels).
   const have = parcels && parcels.count > 0 ? (sea ? parcels.cbm : parcels.weightKg) : 0;
   const slack = sea ? 0.5 : 5;
   const measures: Array<[string, string, number | null]> = sea
@@ -120,11 +126,6 @@ export function oddBatchNumbers(
         out.push({
           key: `${field}:above`,
           line: `${label} ${qty(value)} ${unit}ە، بەڵام پاکەتەکانی ئەم باچە هەموویان ${qty(have)} ${unit}ن (${(value / have).toFixed(0)} ئەوەندە).`,
-        });
-      } else if (value < have * 0.6) {
-        out.push({
-          key: `${field}:below`,
-          line: `${label} ${qty(value)} ${unit}ە، بەڵام پاکەتەکانی ئەم باچە ${qty(have)} ${unit}ن — کەمترە لەوەی تێیدایە.`,
         });
       }
     }
