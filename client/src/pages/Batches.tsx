@@ -45,6 +45,7 @@ import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch } from "@shared/batchDeletion";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
+import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
 import { isBatchEditLocked } from "@shared/batchPriceHistory";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -337,7 +338,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
    */
   const onCostAwareError = (retryApproved: () => void) => async (error: unknown) => {
     const err = error as { message?: string; data?: { code?: string } };
-    if (err.data?.code === "PRECONDITION_FAILED" && mayApproveCostBreach(userRole)) {
+    if (err.data?.code === "PRECONDITION_FAILED" && mayApproveCostBreach(userRole) && !isOddNumberQuestion(err.message)) {
       const ok = await confirmAction({
         title: pickLang(language, { ku: "تێچوو لە نرخی فرۆشتن کەمتر نییە", en: "Cost is not below the selling price", ar: "التكلفة ليست أقل من سعر البيع", zh: "成本不低于售价" }),
         message: err.message ?? "",
@@ -396,6 +397,36 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     },
     onError: onMutationErrorEarly,
   });
+
+  /**
+   * Save, answering the server's questions as they come: first "this number is
+   * not logical — are you sure?" (shared/batchNumberSense, anyone may say yes),
+   * then the admin's cost question. Each yes is sent again with its flag, and
+   * the flags already given are kept.
+   */
+  const saveAnswering = <P extends object>(
+    send: (payload: P, handlers: { onSuccess: (data: any) => void; onError: (e: unknown) => void }) => void,
+    payload: P,
+    onSuccess: (data: any) => void,
+  ) => {
+    send(payload, {
+      onSuccess,
+      onError: async (error: unknown) => {
+        const err = error as { message?: string; data?: { code?: string } };
+        if (err.data?.code === "PRECONDITION_FAILED" && isOddNumberQuestion(err.message)) {
+          const ok = await confirmAction({
+            title: pickLang(language, { ku: "ئەم ژمارەیە لۆجیکی نییە", en: "This number does not look right", ar: "هذا الرقم غير منطقي", zh: "这个数字不合逻辑" }),
+            message: oddNumberText(err.message ?? ""),
+            confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+            cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+          });
+          if (ok) saveAnswering(send, { ...payload, approveOddNumbers: true }, onSuccess);
+          return;
+        }
+        await onCostAwareError(() => saveAnswering(send, { ...payload, approveCostBreach: true }, onSuccess))(error);
+      },
+    });
+  };
 
   const resetForm = () => {
     setShippingType("");
@@ -502,12 +533,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       customerPricing: customerPricing.length > 0 ? customerPricing : undefined,
       notes: formData.get("notes") as string || undefined,
     };
-    createMutation.mutate(createPayload, {
-      onSuccess: onBatchCreateSuccess,
-      onError: onCostAwareError(() =>
-        createMutation.mutate({ ...createPayload, approveCostBreach: true },
-          { onSuccess: onBatchCreateSuccess, onError: onMutationError })),
-    });
+    saveAnswering(createMutation.mutate, createPayload, onBatchCreateSuccess);
   };
 
   // A delivered batch is settled — the server refuses edits, the form is
@@ -595,12 +621,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // somebody had deliberately erased kept coming back.
       notes: formData.get("notes") === null ? undefined : (formData.get("notes") as string),
     };
-    updateMutation.mutate(updatePayload, {
-      onSuccess: onBatchUpdateSuccess,
-      onError: onCostAwareError(() =>
-        updateMutation.mutate({ ...updatePayload, approveCostBreach: true },
-          { onSuccess: onBatchUpdateSuccess, onError: onMutationError })),
-    });
+    saveAnswering(updateMutation.mutate, updatePayload, onBatchUpdateSuccess);
   };
 
   const openEditDialog = (batch: any) => {

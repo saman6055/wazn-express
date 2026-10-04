@@ -1728,3 +1728,32 @@ export async function applyBatchCustomerAdjustment(args: {
 
   return result;
 }
+
+/**
+ * What a batch's parcels add up to — the yardstick for the weight or volume
+ * typed on the batch itself (shared/batchNumberSense). Sums only; the parcel
+ * rows carry photos and are never loaded for this.
+ */
+export async function batchParcelTotals(batchId: number): Promise<{ count: number; weightKg: number; cbm: number }> {
+  const db = await getDb();
+  if (!db) return { count: 0, weightKg: 0, cbm: 0 };
+  const [row] = await db.select({
+    count: sql<number>`COUNT(*)`,
+    weightKg: sql<number>`COALESCE(SUM(CAST(COALESCE(${packages.weightKg}, 0) AS DECIMAL(14,3))), 0)`,
+    cbm: sql<number>`COALESCE(SUM(CAST(COALESCE(${packages.volumeCbm}, 0) AS DECIMAL(14,4))), 0)`,
+  }).from(packages).where(eq(packages.batchId, batchId));
+  return { count: Number(row?.count ?? 0), weightKg: Number(row?.weightKg ?? 0), cbm: Number(row?.cbm ?? 0) };
+}
+
+/** The rates of every past batch, for "what is usual here" (shared/batchNumberSense). */
+export async function pastBatchRates() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({
+    shippingType: batches.shippingType,
+    costPerKg: batches.costPerKg,
+    costPerCbm: batches.costPerCbm,
+    pricePerKg: batches.pricePerKg,
+    pricePerCbm: batches.pricePerCbm,
+  }).from(batches).limit(5000);
+}

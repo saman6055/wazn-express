@@ -5,6 +5,7 @@ import { missingShippingNumber, type BatchAwaitingDetails } from "@shared/batchR
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { isBatchEditLocked } from "@shared/batchPriceHistory";
+import { newlyOdd, oddBatchNumbers, oddNumberQuestion, usualRates, type BatchNumbers } from "@shared/batchNumberSense";
 import { batchMissingSellingPrice } from "@shared/batchPricing";
 import { missingPieces } from "@shared/batchReminders";
 import { closeCheckWarns, type CloseCheckMoney } from "@shared/batchCloseCheck";
@@ -578,6 +579,30 @@ async function guardBatchCost(args: {
   return breaches;
 }
 
+/**
+ * A number on the batch that is not logical is asked about once before it is
+ * saved (owner, 2026-10-04, after SEA-125 carried 215 CBM for 1.63). A
+ * question, not a refusal — anyone may answer it with `approveOddNumbers`.
+ * Only what this save made odd is asked; the stored batch's old oddness is not.
+ */
+async function guardOddNumbers(args: {
+  next: BatchNumbers;
+  previous?: BatchNumbers;
+  batchId?: number;
+  approved?: boolean;
+}): Promise<void> {
+  if (args.approved) return;
+  const usual = usualRates(await db.pastBatchRates());
+  const parcels = args.batchId ? await db.batchParcelTotals(args.batchId) : null;
+  const odd = newlyOdd(
+    oddBatchNumbers(args.next, usual, parcels),
+    args.previous ? oddBatchNumbers(args.previous, usual, parcels) : null,
+  );
+  if (odd.length > 0) {
+    throw new TRPCError({ code: "PRECONDITION_FAILED", message: oddNumberQuestion(odd) });
+  }
+}
+
 export const batchesRouter = router({
     /**
      * Waybill prefix to airline, as this company's own paperwork has it.
@@ -1127,9 +1152,12 @@ export const batchesRouter = router({
         notes: z.string().max(2000).optional(),
         /** An admin's yes to saving at or below cost — see guardBatchCost. */
         approveCostBreach: z.boolean().optional(),
+        /** "Yes, these numbers are right" — see guardOddNumbers. */
+        approveOddNumbers: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { pricingTiers, customerPricing, approveCostBreach, ...batchData } = input;
+        const { pricingTiers, customerPricing, approveCostBreach, approveOddNumbers, ...batchData } = input;
+        await guardOddNumbers({ next: batchData, approved: approveOddNumbers });
         const approvedBreaches = await guardBatchCost({
           next: { ...batchData, customerPricing },
           role: ctx.user.role,
@@ -2177,9 +2205,11 @@ export const batchesRouter = router({
         notes: z.string().optional(),
         /** An admin's yes to saving at or below cost — see guardBatchCost. */
         approveCostBreach: z.boolean().optional(),
+        /** "Yes, these numbers are right" — see guardOddNumbers. */
+        approveOddNumbers: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, pricingTiers, customerPricing, approveCostBreach, ...data } = input;
+        const { id, pricingTiers, customerPricing, approveCostBreach, approveOddNumbers, ...data } = input;
 
         // A delivered batch is settled: weights final, cost derived, money
         // invoiced from them. The owner's rule — no field changes after
@@ -2202,6 +2232,25 @@ export const batchesRouter = router({
 
         // What the batch will hold after this save: a field left out keeps
         // its stored value, null clears it.
+        const after = <K extends keyof BatchNumbers>(k: K) =>
+          ((data as Record<string, unknown>)[k] !== undefined ? (data as Record<string, unknown>)[k] : (existing as Record<string, unknown>)[k]) as BatchNumbers[K];
+        await guardOddNumbers({
+          next: {
+            shippingType: existing.shippingType,
+            chargedWeightKg: after("chargedWeightKg"),
+            chargedCbm: after("chargedCbm"),
+            actualWeightKg: after("actualWeightKg"),
+            actualCbm: after("actualCbm"),
+            costPerKg: after("costPerKg"),
+            costPerCbm: after("costPerCbm"),
+            pricePerKg: after("pricePerKg"),
+            pricePerCbm: after("pricePerCbm"),
+            shippingCost: after("shippingCost"),
+          },
+          previous: existing as BatchNumbers,
+          batchId: id,
+          approved: approveOddNumbers,
+        });
         const storedPricing = await db.getBatchCustomerPricing(id);
         const approvedBreaches = await guardBatchCost({
           next: {

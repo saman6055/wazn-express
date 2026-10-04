@@ -92,7 +92,10 @@ describe("both doors ask the same question", () => {
 
   it("the batch form turns the admin question into a confirm and resends approved", () => {
     const src = read("client/src/pages/Batches.tsx");
-    expect(src).toContain('err.data?.code === "PRECONDITION_FAILED" && mayApproveCostBreach(userRole)');
-    expect(src.match(/approveCostBreach: true/g)?.length).toBe(2);
+    expect(src).toContain('err.data?.code === "PRECONDITION_FAILED" && mayApproveCostBreach(userRole) && !isOddNumberQuestion(err.message)');
+    // One save path for both doors answers the cost question (and the
+    // "not logical" one before it — shared/batchNumberSense).
+    expect(src).toContain("saveAnswering(send, { ...payload, approveCostBreach: true }, onSuccess)");
+    expect(src.match(/saveAnswering\((create|update)Mutation\.mutate, /g)?.length).toBe(2);
   });
 });
