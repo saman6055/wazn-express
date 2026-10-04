@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect, type ReactNode } from "react";
+import { offerPaymentWhatsApp } from "@/lib/paymentWhatsAppOffer";
 import { oddRate, oddRateQuestion } from "@shared/rateSense";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { trpc } from "@/lib/trpc";
@@ -248,6 +249,8 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
       toast.success(
         `${t({ ku: "واصڵ کرا", en: "Settled", ar: "تم الاستلام", zh: "已结清" })} — ${res.settlementNumber}`,
       );
+      // One tap to "your payment arrived" in the customer's chat (owner, 2026-10-04).
+      offerPaymentWhatsApp(res.whatsapp, { settlementNumber: res.settlementNumber, paidUsd: res.paidUsd }, t);
       if (res.boxFinished) {
         toast.success(t({ ku: "بۆکسەکە گەیەنرا، داخرا و چووە ئەرشیف", en: "Box delivered, closed and archived", ar: "تم تسليم الصندوق وإغلاقه وأرشفته", zh: "箱子已交付、关闭并归档" }));
       } else if (res.finishError) {

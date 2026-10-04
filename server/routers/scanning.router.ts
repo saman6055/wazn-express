@@ -1170,7 +1170,26 @@ export const deliveryBoxRouter = router({
       // closed and archived — at once. Runs after the payment is committed
       // and never throws: a failure to finish is reported, not a failed payment.
       const finish = await finishPaidBox(input.boxId, ctx.user.id);
-      return { ...result, boxFinished: finish.finished, finishError: finish.error };
+      // What the "your payment arrived" WhatsApp needs, as things stand after
+      // the receipt (shared/paymentWhatsApp, owner 2026-10-04). Read only;
+      // a failure here never fails the payment.
+      let whatsapp: { name: string; mobile: string | null; nationality: string | null; balanceUsd: number; boxCode: string; parcelCount: number } | null = null;
+      try {
+        const box = await db.getDeliveryBoxById(input.boxId);
+        const customer = box?.customerId ? await db.getCustomerById(box.customerId) : null;
+        const account = customer ? await db.getCustomerAccountByCustomerId(customer.id) : null;
+        if (box && customer) {
+          whatsapp = {
+            name: String(customer.fullName ?? customer.customerCode ?? ""),
+            mobile: (customer as { mobileNumber?: string | null }).mobileNumber ?? null,
+            nationality: (customer as { nationality?: string | null }).nationality ?? null,
+            balanceUsd: Number(account?.currentBalanceUsd ?? 0),
+            boxCode: box.boxCode,
+            parcelCount: Number(box.totalPackages ?? 0),
+          };
+        }
+      } catch { /* the message is a convenience; the payment stands */ }
+      return { ...result, boxFinished: finish.finished, finishError: finish.error, whatsapp };
     }),
 
   /**
