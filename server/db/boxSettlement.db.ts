@@ -1134,9 +1134,48 @@ export async function createBoxSettlement(
     if (breaches.length > 0) throw new Error(pledgeRefusal(breaches, "ku"));
   }
 
+  /*
+   * Nothing owed and nothing handed over: there is no receipt to write. On
+   * 2026-09-10 one box was receipted twenty-two times; every receipt after
+   * the first counted money that never came in. A box already settled says
+   * so instead (money handed over on a settled box still goes the credit
+   * way — held for the main admin's yes).
+   */
+  const confirmedBefore = view.settlements.filter((s) => s.status === "confirmed");
+  if (totals.dueUsd <= 0.005 && handedOverUsd <= 0.005 && toCharge.length === 0 && !input.replacesSettlementId) {
+    const last = confirmedBefore[0]?.settlementNumber;
+    throw new Error(withFix(
+      `بۆکسی ${box.boxCode} هیچ پارەیەکی لەسەر نەماوە${last ? ` — پێشتر بە وەسڵی ${last} واصڵ کراوە` : ""}. وەسڵێکی دیکە پارەیەک دەژمێرێت کە نەهاتووە.`,
+      [
+        "لیستەکە نوێ بکەرەوە — ئەم بۆکسە تەواو دراوە",
+        "ئەگەر وەسڵەکەی پێشوو هەڵەیە، لە شاشەی پارەدانی بۆکسەکە هەڵیبوەشێنەوە و دووبارە واصڵی بکە",
+      ],
+    ));
+  }
+
   const now = new Date();
 
   return await db.transaction(async (tx) => {
+    /*
+     * Two presses of the same button at the same moment both read "owed"
+     * before either wrote. The box row is locked here, and if a receipt was
+     * written for it since this one was read, this one stops.
+     */
+    await tx.select({ id: deliveryBoxes.id }).from(deliveryBoxes).where(eq(deliveryBoxes.id, input.boxId)).for("update").limit(1);
+    const [{ n: confirmedNow }] = await tx
+      .select({ n: sql<number>`COUNT(*)` })
+      .from(boxSettlements)
+      .where(and(eq(boxSettlements.boxId, input.boxId), eq(boxSettlements.status, "confirmed")));
+    if (Number(confirmedNow) > confirmedBefore.length) {
+      throw new Error(withFix(
+        `هەر ئێستا وەسڵێکی تر بۆ بۆکسی ${box.boxCode} نووسرا — ئەم وەسڵە نەنووسرا، بۆ ئەوەی هەمان پارە دوو جار نەژمێردرێت.`,
+        [
+          "پەنجەرەکە دابخە و بۆکسەکە نوێ بکەرەوە",
+          "ئەگەر هێشتا پارەی لەسەر ماوە، دووبارە واصڵی بکە",
+        ],
+      ));
+    }
+
     // 0. Charge what was never charged. Before the corrections, because a
     //    correction adjusts a charge and there has to be one to adjust.
     for (const parcel of toCharge) {

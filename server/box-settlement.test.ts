@@ -426,3 +426,23 @@ describe("money moving reaches the customer's notifications", () => {
     expect(after).toContain("catch (err)");
   });
 });
+
+/*
+ * 2026-09-10: one box was receipted twenty-two times. Proved on a real MySQL
+ * with the real till: an empty receipt on a paid box is refused, and two
+ * presses at the same instant write exactly one receipt.
+ */
+describe("a box is receipted once", () => {
+  const src = fs.readFileSync(path.resolve(__dirname, "db/boxSettlement.db.ts"), "utf8");
+  const create = src.slice(src.indexOf("export async function createBoxSettlement"), src.indexOf("async function postDiscountCredits"));
+
+  it("nothing owed and nothing handed over is no receipt", () => {
+    expect(create).toContain("if (totals.dueUsd <= 0.005 && handedOverUsd <= 0.005 && toCharge.length === 0 && !input.replacesSettlementId) {");
+  });
+
+  it("the box is locked, and a receipt written meanwhile stops this one", () => {
+    const tx = create.slice(create.indexOf("return await db.transaction("));
+    expect(tx.indexOf('.for("update")')).toBeGreaterThan(-1);
+    expect(tx.indexOf("if (Number(confirmedNow) > confirmedBefore.length) {")).toBeLessThan(tx.indexOf("recordPackageChargeWithoutInvoice("));
+  });
+});
