@@ -42,7 +42,7 @@ describe("the ordinary day is one press", () => {
   it("sends the full amount when nothing was typed", () => {
     // The screen showing "paid in full" and the mutation sending zero would
     // be the worst possible version of this.
-    const submit = slice(panel, "const submit = () =>", "};", "submit");
+    const submit = slice(panel, "const submit = async () =>", "};", "submit");
     expect(submit).toContain("nothingEntered ? cashDue");
   });
 

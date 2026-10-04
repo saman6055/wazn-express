@@ -130,7 +130,7 @@ describe("the payment screen", () => {
   });
 
   it("refuses to settle for less than was promised, and says how to fix it", () => {
-    const submit = slice(settle, "const submit = () => {", "settle.mutate({", "the submit guard");
+    const submit = slice(settle, "const submit = async () => {", "settle.mutate({", "the submit guard");
     expect(submit).toContain("if (breaches.length > 0)");
     expect(submit).toContain("message: pledgeRefusal(breaches,");
   });
@@ -165,7 +165,7 @@ describe("the one-press payment screen", () => {
   it("sends each promise on the thing it was promised on", () => {
     // A promise made on one parcel is not kept by a discount spread over
     // all of them — the receipt named that parcel.
-    const submit = slice(quick, "const submit = () => {", "const boxReason", "the quick submit");
+    const submit = slice(quick, "const submit = async () => {", "const boxReason", "the quick submit");
     expect(submit).toContain("const cut = floors.byLine.get(p.lineId) ?? 0;");
     expect(submit).toContain("boxDiscount: floors.boxUsd > 0 ? { mode: \"amount\" as const, value: floors.boxUsd } : undefined,");
     expect(submit).toContain("discountNote:");

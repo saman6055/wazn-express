@@ -1,4 +1,6 @@
 import { useEffect, useState } from "react";
+import { oddRate, oddRateQuestion } from "@shared/rateSense";
+import { confirmAction } from "@/components/ConfirmDialog";
 import { Printer, Send, Percent } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -364,8 +366,21 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const reasonMissing = cutUsd > 0 && !discountReason;
   const blocked = reasonMissing || noteMissing || belowPledge;
 
-  const confirm = () => {
+  const confirm = async () => {
     if (!request || blocked) return;
+    // The dinars printed are what the customer pays: a slipped digit in the
+    // rate prints the wrong amount (shared/rateSense).
+    const why = input ? oddRate(input.rate, offered) : null;
+    if (why) {
+      const sure = await confirmAction({
+        title: pickLang(language, { ku: "ئەم نرخی دۆلارە لۆجیکی نییە", en: "This dollar rate does not look right", ar: "سعر الدولار غير منطقي", zh: "美元汇率不合逻辑" }),
+        message: oddRateQuestion(why),
+        confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+        cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+      });
+      if (!sure) return;
+    }
+
     if (input) rememberChoice({ rate: input.rate, at: Date.now(), step, mode });
     const print = request.onConfirm;
     const given: ReceiptDiscount | null =

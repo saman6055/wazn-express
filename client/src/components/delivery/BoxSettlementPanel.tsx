@@ -1,4 +1,6 @@
 import { useMemo, useRef, useState, useEffect, type ReactNode } from "react";
+import { oddRate, oddRateQuestion } from "@shared/rateSense";
+import { confirmAction } from "@/components/ConfirmDialog";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import {
@@ -336,7 +338,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
     nameOf,
   );
 
-  const submit = () => {
+  const submit = async () => {
     // The paper in the customer's hand cannot be argued with from here.
     if (breaches.length > 0) {
       setConfirmOpen(false);
@@ -351,6 +353,17 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
         message: pledgeRefusal(breaches, language === "ku" ? "ku" : "en"),
       });
       return;
+    }
+    // A slipped digit in the rate credits the wrong dollars (shared/rateSense).
+    const why = Number(iqd) > 0 ? oddRate(rateNum, data?.lastExchangeRate) : null;
+    if (why) {
+      const sure = await confirmAction({
+        title: pickLang(language, { ku: "ئەم نرخی دۆلارە لۆجیکی نییە", en: "This dollar rate does not look right", ar: "سعر الدولار غير منطقي", zh: "美元汇率不合逻辑" }),
+        message: oddRateQuestion(why),
+        confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+        cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+      });
+      if (!sure) return;
     }
     settle.mutate({
       boxId,
