@@ -6,6 +6,8 @@ import {
   hoursSince,
   isAdmin,
   isSuperAdmin,
+  tiesQuestion,
+  isTiesQuestion,
 } from "./batchDeletion";
 
 const NOW = new Date("2026-08-13T12:00:00Z");
@@ -31,13 +33,22 @@ describe("money outranks everything", () => {
     }
   });
 
-  it("refuses a super admin too, on the first day", () => {
-    // This is not a permission problem. A bigger role does not make deleting
-    // an invoiced batch safe, so there is no point sending anyone to find one.
-    const verdict = ask({ role: "super_admin", createdAt: hoursAgo(0), ties: { ...NO_TIES, invoices: 1 } });
-    expect(verdict.allowed).toBe(false);
-    expect(verdict.refusal).toBe("has_financial_records");
-    expect(verdict.wouldSuperAdminHelp).toBe(false);
+  it("asks the main admin instead of refusing him (owner, 2026-10-04)", () => {
+    // AIR-2026-007, a test batch: five months old, delivered, nine invoices —
+    // and nobody could remove it.
+    const verdict = ask({ role: "super_admin", status: "closed", createdAt: hoursAgo(5000), ties: { ...NO_TIES, invoices: 9, deliveryBoxes: 1 } });
+    expect(verdict.allowed).toBe(true);
+    expect(verdict.asksAboutTies).toBe(true);
+    expect(ask({ role: "super_admin", createdAt: hoursAgo(5000) }).asksAboutTies, "nothing to ask about").toBe(false);
+  });
+
+  it("the question names what stays, and that the bin can bring it back", () => {
+    const q = tiesQuestion("AIR-2026-007", { invoices: 9, deliveryBoxes: 1, fullPackageOrders: 0 }, 8);
+    expect(isTiesQuestion(q)).toBe(true);
+    expect(q).toContain("9 پسوولە");
+    expect(q).toContain("1 بۆکسی گەیاندن");
+    expect(q).toContain("8 پاکەتی ناوی");
+    expect(q).toContain("سەتڵی خۆڵ");
   });
 
   it("counts every kind of tie", () => {
@@ -67,12 +78,10 @@ describe("the first day", () => {
     expect(verdict.wouldSuperAdminHelp).toBe(false);
   });
 
-  it("refuses a super admin too, once the day is up", () => {
-    // The rule is about the age of the record, not about who is asking. By
-    // day two the batch has been scanned into and worked from; deleting it is
-    // removing a record rather than correcting a mistake.
+  it("an admin is still held to the day; the main admin is not", () => {
     for (const age of [25, 30, 5000]) {
-      expect(ask({ role: "super_admin", createdAt: hoursAgo(age) }).allowed, `${age}h`).toBe(false);
+      expect(ask({ role: "admin", createdAt: hoursAgo(age) }).allowed, `${age}h`).toBe(false);
+      expect(ask({ role: "super_admin", createdAt: hoursAgo(age) }).allowed, `${age}h`).toBe(true);
     }
   });
 });
@@ -100,9 +109,10 @@ describe("a finished shipment is not a mistake", () => {
     // Customers were told about this shipment. Archiving hides it; deleting
     // would remove it.
     for (const status of ["delivered", "closed"]) {
-      const verdict = ask({ status, createdAt: hoursAgo(1), role: "super_admin" });
+      const verdict = ask({ status, createdAt: hoursAgo(1), role: "admin" });
       expect(verdict.allowed, status).toBe(false);
       expect(verdict.refusal, status).toBe("already_finished");
+      expect(ask({ status, createdAt: hoursAgo(1), role: "super_admin" }).allowed, `main admin, ${status}`).toBe(true);
     }
   });
 

@@ -2,7 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { missingShippingNumber, type BatchAwaitingDetails } from "@shared/batchReminders";
-import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
+import { canDeleteBatch, REFUSAL_MESSAGE, tiesQuestion } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { isBatchEditLocked, mayEditLockedBatch, sellingSideChanged } from "@shared/batchPriceHistory";
 import { newlyOdd, oddBatchNumbers, oddNumberQuestion, usualRates, type BatchNumbers } from "@shared/batchNumberSense";
@@ -1254,7 +1254,12 @@ export const batchesRouter = router({
      * never decremented when a package moves away.
      */
     delete: adminProcedure
-      .input(z.object({ id: idSchema, reason: z.string().max(500).optional() }))
+      .input(z.object({
+        id: idSchema,
+        reason: z.string().max(500).optional(),
+        /** The main admin's yes to deleting a batch money points at. */
+        confirmTies: z.boolean().optional(),
+      }))
       .mutation(async ({ input, ctx }) => {
         const batch = await db.getBatchById(input.id);
         if (!batch) {
@@ -1285,6 +1290,17 @@ export const batchesRouter = router({
             // send somebody hunting for a bigger role that cannot help.
             code: verdict.refusal === "not_permitted" ? "FORBIDDEN" : "CONFLICT",
             message: REFUSAL_MESSAGE[verdict.refusal!].ku,
+          });
+        }
+        // The main admin is asked, never refused, when money points at it.
+        if (verdict.asksAboutTies && !input.confirmTies) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: tiesQuestion(batch.batchCode, {
+              invoices: blockers.invoices,
+              deliveryBoxes: blockers.deliveryBoxes,
+              fullPackageOrders: blockers.fullPackageOrders,
+            }, blockers.packages),
           });
         }
 

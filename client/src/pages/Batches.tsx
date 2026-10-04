@@ -43,7 +43,7 @@ import {
 } from "@shared/listLinks";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
-import { canDeleteBatch } from "@shared/batchDeletion";
+import { canDeleteBatch, isTiesQuestion, BATCH_TIES_MARK } from "@shared/batchDeletion";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
@@ -1864,12 +1864,33 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   // the way is the whole point of asking.
                   e.preventDefault();
                   if (!deletingBatch) return;
-                  try {
-                    await deleteMutation.mutateAsync({ id: deletingBatch.id });
+                  const done = () => {
                     toast.success(t("batches.batchDeleted", { code: deletingBatch.batchCode }));
                     setDeletingBatch(null);
                     refreshBatchLists();
+                  };
+                  try {
+                    await deleteMutation.mutateAsync({ id: deletingBatch.id });
+                    done();
                   } catch (error: any) {
+                    // The main admin is asked, by name of what stays, when
+                    // money points at the batch (shared/batchDeletion).
+                    if (error?.data?.code === "PRECONDITION_FAILED" && isTiesQuestion(error?.message)) {
+                      const ok = await confirmAction({
+                        title: t("batches.deleteBatch"),
+                        message: String(error.message).slice(BATCH_TIES_MARK.length),
+                        confirmLabel: pickLang(language, { ku: "بەڵێ، بیسڕەوە", en: "Yes, delete it", ar: "نعم، احذفه", zh: "是，删除" }),
+                        danger: true,
+                      });
+                      if (!ok) return;
+                      try {
+                        await deleteMutation.mutateAsync({ id: deletingBatch.id, confirmTies: true });
+                        done();
+                      } catch (again: any) {
+                        toast.error(again?.message || t("common.error"));
+                      }
+                      return;
+                    }
                     toast.error(error?.message || t("common.error"));
                   }
                 }}

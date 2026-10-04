@@ -24,6 +24,13 @@
  *      released back to unassigned and survive the deletion — that is the
  *      whole case the feature exists for. They are counted here only so the
  *      warning can say how many are about to be released.
+ *
+ * The main admin stands outside all three (owner, 2026-10-04: "add the power
+ * to delete a batch for the main admin"). A test batch like AIR-2026-007 had
+ * lived for five months, delivered and invoiced, and nobody could remove it.
+ * He may delete any batch at any age; when money points at it he is asked
+ * once, with the invoices, boxes and orders named, and told they stay where
+ * they are. Every deletion goes to the recycle bin and can be restored.
  */
 
 /** How long a batch stays plainly undoable by an admin. */
@@ -53,6 +60,11 @@ export type DeletionRefusal =
 
 export interface DeletionVerdict {
   allowed: boolean;
+  /**
+   * Allowed for the main admin, but money points at the batch: ask him first,
+   * naming what stays (see tiesQuestion).
+   */
+  asksAboutTies?: boolean;
   /** Why not, when not. */
   refusal?: DeletionRefusal;
   /** True when a super admin could do what this caller cannot. */
@@ -94,6 +106,17 @@ export function canDeleteBatch(params: {
   const withinGrace = ageHours < DELETE_GRACE_HOURS;
 
   const base = { ageHours, withinGrace };
+
+  // 0. The main admin may delete any batch, at any age and in any state.
+  //    If money points at it he is asked first — never refused.
+  if (isSuperAdmin(params.role)) {
+    return {
+      ...base,
+      allowed: true,
+      asksAboutTies: financialTieCount(params.ties) > 0,
+      wouldSuperAdminHelp: false,
+    };
+  }
 
   // 1. Money first. A bigger role does not make this safe, so there is no
   //    point telling the caller to go and find a super admin.
@@ -147,3 +170,25 @@ export const REFUSAL_MESSAGE: Record<DeletionRefusal, { ku: string; en: string; 
     zh: "该批次已交付或已关闭 — 请归档而非删除",
   },
 };
+
+/** Marks the main admin's question so the form asks instead of failing. */
+export const BATCH_TIES_MARK = "[[batch-ties]]";
+
+/** The question put to the main admin before a batch with money on it goes. */
+export function tiesQuestion(batchCode: string, ties: FinancialTies, packages: number): string {
+  const lines = [
+    ties.invoices > 0 ? `• ${ties.invoices} پسوولە` : null,
+    ties.deliveryBoxes > 0 ? `• ${ties.deliveryBoxes} بۆکسی گەیاندن` : null,
+    ties.fullPackageOrders > 0 ? `• ${ties.fullPackageOrders} ئۆردەر` : null,
+  ].filter(Boolean).join("\n");
+  return (
+    `${BATCH_TIES_MARK}باچی ${batchCode} شتی پارەی پێوە بەستراوە:\n${lines}\n\n` +
+    "ئەگەر بیسڕیتەوە، ئەمانە وەک خۆیان دەمێننەوە — هیچ پسوولە، وەسڵ یان پارەیەک ناسڕدرێتەوە. " +
+    (packages > 0 ? `${packages} پاکەتی ناوی دەگەڕێنەوە بۆ «بێ باچ». ` : "") +
+    "باچەکە دەچێتە سەتڵی خۆڵ و دەتوانرێت بگەڕێندرێتەوە.\n\nدڵنیایت دەیسڕیتەوە؟"
+  );
+}
+
+export function isTiesQuestion(message: string | null | undefined): boolean {
+  return !!message && message.startsWith(BATCH_TIES_MARK);
+}
