@@ -30,3 +30,13 @@ describe("an order's freight is charged at the till when its carton is paid", ()
     expect(read("routers/batches.router.ts")).toContain("if (fpOrder.orderType === 'commission' && share > 0 && !fpOrder.isShippingCharged) {");
   });
 });
+
+describe("the credit question says when an extra is not an extra", () => {
+  it("both questions warn not to confirm a 'credit' on a box paid exactly", async () => {
+    const { creditQuestion, creditHoldQuestion, CREDIT_NOT_EXTRA_HINT } = await import("@shared/creditGuard");
+    const facts = { customerCode: "AZ274", owesUsd: 237.14, creditUsd: 12.1 } as never;
+    expect(creditQuestion(facts)).toContain(CREDIT_NOT_EXTRA_HINT);
+    expect(creditHoldQuestion(facts)).toContain(CREDIT_NOT_EXTRA_HINT);
+    expect(CREDIT_NOT_EXTRA_HINT).toContain("«بەڵێ» مەکە");
+  });
+});

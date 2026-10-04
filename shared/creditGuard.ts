@@ -99,13 +99,22 @@ export function creditRefusal(args: CreditFacts): string {
 }
 
 /** What the main admin is asked. Carries the mark; the link strips it. */
+/**
+ * Said under every credit question (owner, 2026-10-04, AZ274): a customer who
+ * paid exactly what the box asked has paid NO extra — a "credit" then means
+ * something in the box was never charged. Confirming it would hide that.
+ */
+export const CREDIT_NOT_EXTRA_HINT =
+  "⚠️ ئەگەر کڕیار تەنها ئەو بڕەی داوە کە بۆکسەکە داوای دەکات، «بەڵێ» مەکە: واتە شتێکی ناو بۆکسەکە حیساب نەکراوە، نەک پارەی زیادە. پاشگەزبەرەوە و ئادمینی سەرەکی ئاگادار بکە.";
+
 export function creditQuestion(args: CreditFacts): string {
   const owes = Math.max(0, args.owesUsd);
   return (
     ASK_ADMIN_MARK +
     `حیسابی ${args.customerCode} تەنها ${usd(owes)} قەرزارە.\n` +
     `${usd(args.creditUsd)} زیادەیە: دەبێتە باڵانس (کریدیت) و دەچێتە سەر حیسابی کڕیار.\n\n` +
-    "دڵنیایت کڕیار بەڕاستی ئەم پارە زیادەیەی داوە؟ ئەگەر بەڵێ، تۆمار دەکرێت و ناوت وەک ڕەزامەندیدەر دەنووسرێت."
+    "دڵنیایت کڕیار بەڕاستی ئەم پارە زیادەیەی داوە؟ ئەگەر بەڵێ، تۆمار دەکرێت و ناوت وەک ڕەزامەندیدەر دەنووسرێت.\n\n" +
+    CREDIT_NOT_EXTRA_HINT
   );
 }
 
@@ -118,7 +127,8 @@ export function creditHoldQuestion(args: CreditFacts): string {
     `${usd(args.creditUsd)} زیادەیە.\n\n` +
     (owes > 0 ? `${usd(owes)} ئێستا تۆمار دەکرێت و حیسابەکە دەبێتە سفر.\n` : "") +
     `${usd(args.creditUsd)} زیادەکە نایەتە سەر حیسابی کڕیار تا ئادمینی سەرەکی پەسەندی نەکات. ئاگادارییەکەی ئێستا بۆی دەچێت.\n\n` +
-    "دڵنیایت کڕیار ئەم پارە زیادەیەی داوە؟"
+    "دڵنیایت کڕیار ئەم پارە زیادەیەی داوە؟\n\n" +
+    CREDIT_NOT_EXTRA_HINT
   );
 }
 
