@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { carrierCostBase, CARRIER_BASE_KG_SQL, CARRIER_BASE_CBM_SQL, deriveCostRate, resolveBatchCost } from "./batchCost";
+import { carrierCostBase, carrierDifference, carrierBaseKgSql, CARRIER_BASE_CBM_SQL, deriveCostRate, resolveBatchCost } from "./batchCost";
 
 describe("resolveBatchCost", () => {
   it("an explicit per-unit rate wins, even when a total is also recorded", () => {
@@ -103,23 +103,34 @@ describe("a rate without its weight", () => {
 
 
 /*
- * Owner, 2026-10-04: the old batches were given a rate and the carrier's
- * "actual weight" only — and the reports still said they cost nothing, while
- * the batch's own page multiplied the rate by our parcels' volume weight.
- * One rule now, in code and SQL alike (proved equal on a real MySQL).
+ * Owner, 2026-10-04: "profit and loss on the basis of OUR weight — the weight
+ * and size measured tracking by tracking, the same the customer paid on. If
+ * the carrier's billed weight is there, cost is worked from that and compared
+ * with ours." The hand-typed "actual weight" is no longer part of it.
+ * Proved on a real MySQL: the SQL bills the same kilos as chargeableWeight.
  */
 describe("what the carrier's rate multiplies", () => {
-  it("its billed weight, then its scale weight, then our parcels' plain weight", () => {
-    expect(carrierCostBase("air_regular", { chargedWeightKg: "20", actualWeightKg: "25" }, { weightKg: 99, cbm: 0 })).toBe(20);
-    expect(carrierCostBase("air_regular", { chargedWeightKg: null, actualWeightKg: "69.12" }, { weightKg: 60.4, cbm: 0 })).toBe(69.12);
-    expect(carrierCostBase("air_regular", {}, { weightKg: 13, cbm: 0 })).toBe(13);
-    expect(carrierCostBase("sea", { chargedCbm: "", actualCbm: "1.09" }, { weightKg: 0, cbm: 1.326 })).toBe(1.09);
+  it("the carrier's billed weight, else ours as the customer was charged", () => {
+    expect(carrierCostBase("air_regular", { chargedWeightKg: "20" }, { billedKg: 99, cbm: 0 })).toBe(20);
+    expect(carrierCostBase("air_regular", { chargedWeightKg: null }, { billedKg: 69.1, cbm: 0 })).toBe(69.1);
+    expect(carrierCostBase("sea", { chargedCbm: "" }, { billedKg: 0, cbm: 1.326 })).toBe(1.326);
+    // The batch's typed "actual weight" is not read at all any more.
+    expect(carrierCostBase("air_regular", { chargedWeightKg: null, actualWeightKg: "88.89" } as never, { billedKg: 38.2, cbm: 0 })).toBe(38.2);
   });
 
-  it("the reports use the same order", () => {
-    for (const s of [CARRIER_BASE_KG_SQL, CARRIER_BASE_CBM_SQL]) {
-      expect(s.indexOf("charged")).toBeLessThan(s.indexOf("actual"));
-      expect(s.indexOf("actual")).toBeLessThan(s.indexOf("FROM packages"));
-    }
+  it("ours against the carrier's: fewer billed is extra profit, more is less", () => {
+    expect(carrierDifference("air_regular", { chargedWeightKg: "60", costPerKg: "8.8" }, { billedKg: 69.1, cbm: 0 }))
+      .toEqual({ ours: 69.1, carrier: 60, units: expect.closeTo(9.1, 5), usd: 80.08, unit: "kg" });
+    expect(carrierDifference("air_regular", { chargedWeightKg: "58", costPerKg: "8.8" }, { billedKg: 50, cbm: 0 })?.usd).toBe(-70.4);
+    expect(carrierDifference("air_regular", { chargedWeightKg: null, costPerKg: "8.8" }, { billedKg: 50, cbm: 0 }), "no carrier figure, nothing to compare").toBeNull();
+  });
+
+  it("the reports use the same order, with the divisor in force", () => {
+    const kg = carrierBaseKgSql(5000);
+    expect(kg.indexOf("chargedWeightKg")).toBeLessThan(kg.indexOf("FROM packages"));
+    expect(kg).toContain("GREATEST(");
+    expect(kg).toContain("/ 5000");
+    expect(kg).not.toContain("actualWeightKg");
+    expect(CARRIER_BASE_CBM_SQL).not.toContain("actualCbm");
   });
 });

@@ -107,7 +107,7 @@ export function BatchDeleteDialog({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2">
-            <AlertTriangle className="h-5 w-5 text-red-500" />
+            <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
             {L({ ku: `سڕینەوەی باچی ${batch?.batchCode ?? ""}`, en: `Delete batch ${batch?.batchCode ?? ""}`, ar: `حذف الدفعة ${batch?.batchCode ?? ""}`, zh: `删除批次 ${batch?.batchCode ?? ""}` })}
           </DialogTitle>
           <DialogDescription>
@@ -123,7 +123,7 @@ export function BatchDeleteDialog({
         {!facts ? (
           <div className="flex justify-center py-8">
             {factsQ.isError
-              ? <p className="text-sm text-red-600">{factsQ.error.message}</p>
+              ? <p className="text-sm text-red-600 dark:text-red-400">{factsQ.error.message}</p>
               : <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />}
           </div>
         ) : (
@@ -179,7 +179,7 @@ export function BatchDeleteDialog({
                     <li key={e.customerId} className="flex items-center justify-between gap-2 px-3 py-1.5">
                       <span>{e.code}</span>
                       <span className="tabular-nums" dir="ltr">
-                        {fmtUsd(e.beforeUsd)} → <b className={e.afterUsd < 0 ? "text-red-600" : ""}>{fmtUsd(e.afterUsd)}</b>
+                        {fmtUsd(e.beforeUsd)} → <b className={e.afterUsd < 0 ? "text-red-600 dark:text-red-400" : ""}>{fmtUsd(e.afterUsd)}</b>
                       </span>
                     </li>
                   ))}

@@ -12,7 +12,8 @@ import {
   type SearchableBatchField,
 } from '@shared/batchSearch';
 import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
-import { carrierCostBase, deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
+import { carrierCostBase, carrierDifference, deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
+import { batchMissingCost, batchMissingSellingPrice } from '@shared/batchPricing';
 import { diffPriceFields, normalizePriceValue, PRICE_HISTORY_FIELDS } from '@shared/batchPriceHistory';
 import { createCustomerNotification } from './portal.db';
 import { getSetting, getVolumetricDivisor } from './settings.db';
@@ -1039,11 +1040,13 @@ export async function deriveBatchCostRateIfMissing(batchId: number): Promise<{
   let base: number;
   if (isSea) {
     const summedCbm = batchPackages.reduce((sum, pkg) => sum + (Number(pkg.volumeCbm) || 0), 0);
-    base = carrierCostBase(batch.shippingType, batch, { weightKg: 0, cbm: summedCbm });
+    base = carrierCostBase(batch.shippingType, batch, { billedKg: 0, cbm: summedCbm });
   } else {
-    // The carrier's base, one rule for every screen (shared/batchCost).
-    const summedKg = batchPackages.reduce((sum, pkg) => sum + (Number(pkg.weightKg) || 0), 0);
-    base = carrierCostBase(batch.shippingType, batch, { weightKg: summedKg, cbm: 0 });
+    // The carrier's billed weight, else ours as the customer was charged on —
+    // one rule for every screen (shared/batchCost).
+    const divisor = await getVolumetricDivisor();
+    const billedKg = batchPackages.reduce((sum, pkg) => sum + chargeableWeight(pkg, divisor).chargeableKg, 0);
+    base = carrierCostBase(batch.shippingType, batch, { billedKg, cbm: 0 });
   }
 
   const rate = deriveCostRate({
@@ -1155,8 +1158,8 @@ export async function getBatchFinancialSummary(batchId: number) {
     // What the carrier's rate multiplies — the one rule (shared/batchCost),
     // the same the profit reports use. It used to be our parcels' volume
     // weight here and the carrier's billed weight there.
-    chargeableKg: carrierCostBase(batchData.shippingType, batchData, { weightKg: packageTotalWeight, cbm: packageTotalCbm }),
-    totalCbm: carrierCostBase(batchData.shippingType, batchData, { weightKg: packageTotalWeight, cbm: packageTotalCbm }),
+    chargeableKg: carrierCostBase(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm }),
+    totalCbm: carrierCostBase(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm }),
   });
   const totalCost = resolvedCost.totalCostUsd;
 
@@ -1238,6 +1241,12 @@ export async function getBatchFinancialSummary(batchId: number) {
 
   const totalRevenue = Object.values(customerBreakdown)
     .reduce((sum, c) => sum + c.revenue, 0);
+  /** Profit waits while either number is missing; the screen asks for it in red. */
+  const waitingFor = batchMissingCost(batchData)
+    ? ("cost" as const)
+    : batchMissingSellingPrice(batchData, { hasTiers: !!batchData.useTieredPricing }) && totalRevenue <= 0
+      ? ("price" as const)
+      : null;
   
   return {
     batchId,
@@ -1261,8 +1270,18 @@ export async function getBatchFinancialSummary(batchId: number) {
     effectiveCostRate: resolvedCost.effectiveRate,
     shippingCostTotal: Number(batchData.shippingCost) || 0,
     totalRevenue,
-    profit: totalRevenue - totalCost,
-    profitMargin: totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue * 100) : 0,
+    // While it waits, no profit and no loss is reported — not the whole
+    // freight as profit (owner, 2026-10-04).
+    profit: waitingFor ? 0 : totalRevenue - totalCost,
+    profitMargin: !waitingFor && totalRevenue > 0 ? ((totalRevenue - totalCost) / totalRevenue * 100) : 0,
+    /**
+     * Our weight, counted from the parcels — the same the customers were
+     * charged on — and the carrier's against it (owner, 2026-10-04).
+     */
+    ourBilledKg: totalChargeableWeight,
+    ourCbm: packageTotalCbm,
+    carrierDifference: carrierDifference(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm }),
+    waitingFor,
     totalPackages: batchPackages.length,
     customerBreakdown: Object.values(customerBreakdown)
   };

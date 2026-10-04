@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { ORDER_PROFIT_SQL, LIVE_SALE_SQL, orderProfitUsd, isLiveSale } from "@shared/orderProfit";
-import { CARRIER_BASE_KG_SQL, CARRIER_BASE_CBM_SQL } from "@shared/batchCost";
+import { carrierBaseKgSql, CARRIER_BASE_CBM_SQL } from "@shared/batchCost";
+import { getVolumetricDivisor } from "./settings.db";
 import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
@@ -2037,9 +2038,20 @@ async function getPackageNetProfitFromBatches(
     .from(packages)
     .where(inArray(packages.batchId, batchIds))
     .groupBy(packages.batchId);
+  // Our billed weight is counted with the divisor in force, the same as the
+  // customer was charged on (shared/batchCost carrierBaseKgSql).
+  const CARRIER_BASE_KG_SQL = carrierBaseKgSql(await getVolumetricDivisor());
   const batchCosts = await db
     .select({
       id: batches.id,
+      // Nothing says what it cost — no rate and no carrier total. Its profit
+      // waits for the cost (owner, 2026-10-04) instead of counting the whole
+      // freight as profit.
+      waitingForCost: sql<number>`CASE
+        WHEN CAST(COALESCE(${batches.shippingCost}, 0) AS DECIMAL(12,2)) > 0 THEN 0
+        WHEN ${batches.shippingType} = 'sea' AND CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2)) > 0 THEN 0
+        WHEN ${batches.shippingType} <> 'sea' AND CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2)) > 0 THEN 0
+        ELSE 1 END`,
       // The same order as resolveBatchCost (shared/batchCost): a per-unit
       // rate wins; otherwise the carrier's one figure for the shipment IS
       // the cost. Reading the rate alone made a batch recorded only by its
@@ -2064,12 +2076,18 @@ async function getPackageNetProfitFromBatches(
   const totalRevenueByBatch = new Map<number, number>();
   for (const r of batchTotals) if (r.batchId != null) totalRevenueByBatch.set(r.batchId, Number(r.totalRevenue ?? 0));
   const costByBatch = new Map<number, number>();
-  for (const r of batchCosts) costByBatch.set(r.id, Number(r.totalCost ?? 0));
+  const waitingForCost = new Set<number>();
+  for (const r of batchCosts) {
+    costByBatch.set(r.id, Number(r.totalCost ?? 0));
+    if (Number(r.waitingForCost) === 1) waitingForCost.add(r.id);
+  }
 
   let netProfit = 0;
   for (const batchId of batchIds) {
     const revenueInPeriod = revenueByBatch.get(batchId) ?? 0;
     const totalBatchRevenue = totalRevenueByBatch.get(batchId) ?? 0;
+    // Waiting for its cost or for its selling price: no profit, no loss yet.
+    if (waitingForCost.has(batchId) || totalBatchRevenue <= 0) continue;
     const totalBatchCost = costByBatch.get(batchId) ?? 0;
     const allocatedCost = totalBatchRevenue > 0 ? totalBatchCost * (revenueInPeriod / totalBatchRevenue) : 0;
     netProfit += revenueInPeriod - allocatedCost;

@@ -58,6 +58,7 @@ import { STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
 import { generateBatchLabelsHtml, openBatchLabelPrintWindow } from "@/lib/batchLabelPrintUtils";
 import { BatchPrintBoxesSection } from "@/components/delivery/BatchPrintBoxesSection";
+import { BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
 
 function DownloadPDFButton({ batchId }: { batchId: number }) {
   const { language } = useTranslation();
@@ -941,6 +942,8 @@ export default function BatchFinancialReport() {
   return (
     <DashboardLayout>
       <div className="p-6 space-y-6">
+        <BatchWaitingFor waitingFor={financial.waitingFor} />
+        <CarrierDifferenceLine difference={financial.carrierDifference ?? null} />
         {/* Header with gradient background */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-emerald-600 via-emerald-500 to-teal-500 p-6 text-white">
           <div className="absolute inset-0 bg-black/10" />

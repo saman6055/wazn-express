@@ -48,6 +48,7 @@ import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { pickLang } from "@/lib/lang";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { STATUS_LABEL, type BatchStatus } from "@/lib/shipmentFilters";
+import { BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
 
 // Format currency helper
 function formatCurrency(amount: number | null | undefined): string {
@@ -195,6 +196,8 @@ export default function BatchFinancialReportFull() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <BatchWaitingFor waitingFor={financial.waitingFor} />
+        <CarrierDifferenceLine difference={financial.carrierDifference ?? null} />
         {/* Professional Header */}
         <div className={`relative overflow-hidden rounded-2xl p-8 text-white ${
           batch.shippingType === 'sea' 

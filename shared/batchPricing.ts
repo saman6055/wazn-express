@@ -40,6 +40,22 @@ export function batchSellsBy(shippingType?: string | null): "cbm" | "kg" {
  * sources that do not live on the batch row. Passing neither is the
  * pessimistic reading, which is the right default for a warning.
  */
+/**
+ * True when nothing on this batch says what it cost: no per-unit rate and no
+ * carrier total. Owner, 2026-10-04: such a batch keeps taking weight and
+ * trackings as before, asks for the cost in red, and its profit waits — a
+ * cost of nothing is not a free shipment.
+ */
+export function batchMissingCost(batch: {
+  shippingType?: string | null;
+  costPerKg?: string | number | null;
+  costPerCbm?: string | number | null;
+  shippingCost?: string | number | null;
+}): boolean {
+  const rate = batchSellsBy(batch.shippingType) === "cbm" ? batch.costPerCbm : batch.costPerKg;
+  return !positive(rate) && !positive(batch.shippingCost);
+}
+
 export function batchMissingSellingPrice(
   batch: BatchPricingFacts,
   options: { hasTiers?: boolean; hasCustomerPricing?: boolean } = {},

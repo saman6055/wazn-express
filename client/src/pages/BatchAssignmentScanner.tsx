@@ -17,7 +17,8 @@ import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
-import { batchMissingSellingPrice } from "@shared/batchPricing";
+import { batchMissingCost, batchMissingSellingPrice } from "@shared/batchPricing";
+import { pickLang } from "@/lib/lang";
 import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
 import { ScannedList, type ScannedItem } from "@/components/scanner/ScannedList";
@@ -49,7 +50,8 @@ export default function BatchAssignmentScanner() {
   const systemAlert = useSystemAlert();
   /** Batches already warned about, so the warning is said once, not per parcel. */
   const pricelessBatchWarned = useRef<Set<number>>(new Set());
-  const { t } = useTranslation();
+  const costlessBatchWarned = useRef<Set<number>>(new Set());
+  const { t, language } = useTranslation();
   const [, setLocation] = useLocation();
 
   // Core state.
@@ -223,6 +225,22 @@ export default function BatchAssignmentScanner() {
             kind: "warning",
             title: t("scan.batchHasNoPrice"),
             message: t("scan.batchHasNoPriceDesc"),
+            detail: batch.batchCode,
+          });
+        }
+        // And its cost (owner, 2026-10-04): the parcel goes in all the same;
+        // the batch's profit waits until the cost is written.
+        if (batch && !costlessBatchWarned.current.has(batch.id) && batchMissingCost(batch)) {
+          costlessBatchWarned.current.add(batch.id);
+          systemAlert({
+            kind: "warning",
+            title: pickLang(language, { ku: "ئەم باچە نرخی تێچووی نییە", en: "This batch has no cost", ar: "هذه الدفعة بلا تكلفة", zh: "该批次无成本" }),
+            message: pickLang(language, {
+              ku: "پاکەتەکە زیاد کرا. تێچووی هەر کیلۆ/CBM یان کۆی پسوولەی کۆمپانیای گواستنەوە بۆ باچەکە بنووسە — تا ئەو کاتە قازانجی باچەکە چاوەڕێ دەکات.",
+              en: "The parcel was added. Enter the batch's cost per kg/CBM or the carrier's invoice total — its profit waits until then.",
+              ar: "أُضيف الطرد. أدخل تكلفة الدفعة — ربحها ينتظر حتى ذلك.",
+              zh: "包裹已添加。请输入批次成本——利润将等待。",
+            }),
             detail: batch.batchCode,
           });
         }

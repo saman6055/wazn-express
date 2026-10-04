@@ -13,7 +13,7 @@ import { OrderNumbers } from "@/components/OrderNumbers";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
-import { batchMissingSellingPrice } from "@shared/batchPricing";
+import { batchMissingCost, batchMissingSellingPrice } from "@shared/batchPricing";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { customerCodeOnly } from "@shared/customerCode";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
@@ -45,6 +45,7 @@ import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch, isTiesQuestion, isSuperAdmin, BATCH_TIES_MARK } from "@shared/batchDeletion";
 import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
+import { BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
@@ -553,6 +554,22 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
    * The five money fields, old → new, who and when — shown as a small box
    * under the cost section of the edit dialog. Fetched only while it's open.
    */
+  /*
+   * Our weight is counted from the batch's own parcels — the same the
+   * customers were charged on — and never typed (owner, 2026-10-04). The
+   * edit dialog shows it, and the carrier's billed weight against it.
+   */
+  const editFinancialQ = trpc.batches.getFinancialSummary.useQuery(
+    { batchId: editingBatch?.id ?? 0 },
+    { enabled: isEditOpen && !!editingBatch?.id },
+  );
+  const ourWeightLine = (sea: boolean) => {
+    const f = editFinancialQ.data;
+    if (!f) return "…";
+    return sea
+      ? `${Number(f.ourCbm || 0).toFixed(4)} CBM · ${f.totalPackages} ${pickLang(language, { ku: "تراک", en: "trackings", ar: "تتبع", zh: "单号" })}`
+      : `${Number(f.ourBilledKg || 0).toFixed(2)} kg · ${f.totalPackages} ${pickLang(language, { ku: "تراک", en: "trackings", ar: "تتبع", zh: "单号" })}`;
+  };
   const priceHistoryQuery = trpc.batches.priceHistory.useQuery(
     { batchId: editingBatch?.id ?? 0 },
     { enabled: isEditOpen && !!editingBatch?.id },
@@ -1033,13 +1050,17 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               {shippingType !== "sea" && (
                                 <div className="grid gap-2">
                                   <Label>{t("batches.actualWeight")}</Label>
-                                  <Input name="actualWeightKg" type="number" step="0.01" placeholder="e.g., 17.00" />
+                                  <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                                    {pickLang(language, { ku: "خۆکار — لە کێش و قەبارەی ئەو تراکانەوە دەژمێردرێت کە دەخرێنە ناو باچەکە", en: "Automatic — counted from the weight and size of the trackings put in the batch", ar: "تلقائي — يُحسب من وزن وحجم الطرود في الدفعة", zh: "自动 — 由放入批次的包裹重量和尺寸计算" })}
+                                  </p>
                                 </div>
                               )}
                               {shippingType === "sea" && (
                                 <div className="grid gap-2">
                                   <Label>{t("batches.actualCbm")}</Label>
-                                  <Input name="actualCbm" type="number" step="0.0001" placeholder="e.g., 18.0000" />
+                                  <p className="rounded-md border bg-muted/40 px-3 py-2 text-xs text-muted-foreground">
+                                    {pickLang(language, { ku: "خۆکار — لە قەبارەی ئەو تراکانەوە دەژمێردرێت کە دەخرێنە ناو باچەکە", en: "Automatic — counted from the volume of the trackings put in the batch", ar: "تلقائي — يُحسب من حجم الطرود في الدفعة", zh: "自动 — 由放入批次的包裹体积计算" })}
+                                  </p>
                                 </div>
                               )}
                             </div>
@@ -1549,8 +1570,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             tell apart at a glance — an unpriced one charges
                             nobody until its price is typed in. */}
                         {batchMissingSellingPrice(batch, { hasTiers: !!batch.useTieredPricing, hasCustomerPricing: !!(batch as any).hasCustomerPricing }) && (
-                          <Badge variant="outline" className="ms-1 shrink-0 border-amber-300 bg-amber-50 text-[10px] font-medium text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300">
-                            {pickLang(language, { ku: "بێ نرخی گواستنەوە", en: "No shipping price", ar: "بدون سعر شحن", zh: "无运费" })}
+                          <Badge variant="outline" className="ms-1 shrink-0 border-red-300 bg-red-50 text-[10px] font-semibold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
+                            {pickLang(language, { ku: "بێ نرخی فرۆشتن — چاوەڕێی نرخە", en: "No selling price — waiting", ar: "بدون سعر بيع — بالانتظار", zh: "无售价 — 待定" })}
+                          </Badge>
+                        )}
+                        {/* The cost too (owner, 2026-10-04): weight and
+                            trackings go in as before, the cost is asked for
+                            in red, and the batch's profit waits for it. */}
+                        {batchMissingCost(batch) && (
+                          <Badge variant="outline" className="ms-1 shrink-0 border-red-300 bg-red-50 text-[10px] font-semibold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300" data-testid="batch-missing-cost">
+                            {pickLang(language, { ku: "بێ نرخی تێچوو — چاوەڕێی نرخە", en: "No cost — waiting", ar: "بدون تكلفة — بالانتظار", zh: "无成本 — 待定" })}
                           </Badge>
                         )}
                       </div>
@@ -2022,6 +2051,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </DialogHeader>
             {financialSummary && (
               <div className="space-y-6">
+                <BatchWaitingFor waitingFor={financialSummary.waitingFor} />
+                <CarrierDifferenceLine difference={financialSummary.carrierDifference ?? null} />
                 {/* Batch Info Header */}
                 <div className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
                   <div className="flex items-center gap-4">
@@ -2485,14 +2516,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <div className="grid grid-cols-2 gap-4">
                           {editingBatch.shippingType !== "sea" && (
                             <div className="grid gap-2">
-                              <Label>{t("batches.actualWeight")}</Label>
-                              <Input name="actualWeightKg" type="number" step="0.01" defaultValue={editingBatch.actualWeightKg || ""} />
+                              <Label>{pickLang(language, { ku: "کێشی خۆمان (خۆکار)", en: "Our weight (automatic)", ar: "وزننا (تلقائي)", zh: "我方重量（自动）" })}</Label>
+                              <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-semibold tabular-nums" dir="ltr" data-testid="our-weight">{ourWeightLine(false)}</p>
                             </div>
                           )}
                           {editingBatch.shippingType === "sea" && (
                             <div className="grid gap-2">
-                              <Label>{t("batches.actualCbm")}</Label>
-                              <Input name="actualCbm" type="number" step="0.0001" defaultValue={editingBatch.actualCbm || ""} />
+                              <Label>{pickLang(language, { ku: "قەبارەی خۆمان (خۆکار)", en: "Our volume (automatic)", ar: "حجمنا (تلقائي)", zh: "我方体积（自动）" })}</Label>
+                              <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-semibold tabular-nums" dir="ltr">{ourWeightLine(true)}</p>
                             </div>
                           )}
                         </div>
@@ -2510,17 +2541,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <div className="grid grid-cols-2 gap-4">
                           {editingBatch.shippingType !== "sea" && (
                             <div className="grid gap-2">
-                              <Label>{t("batches.chargedWeight")}</Label>
+                              <Label>{pickLang(language, { ku: "کێشی کۆمپانیای گواستنەوە (لە پسوولەکەیان)", en: "Carrier's billed weight (from its invoice)", ar: "وزن شركة الشحن (من فاتورتها)", zh: "承运商计费重量（发票）" })}</Label>
                               <Input name="chargedWeightKg" type="number" step="0.01" defaultValue={editingBatch.chargedWeightKg || ""} />
                             </div>
                           )}
                           {editingBatch.shippingType === "sea" && (
                             <div className="grid gap-2">
-                              <Label>{t("batches.chargedCbm")}</Label>
+                              <Label>{pickLang(language, { ku: "قەبارەی کۆمپانیای گواستنەوە (لە پسوولەکەیان)", en: "Carrier's billed volume (from its invoice)", ar: "حجم شركة الشحن (من فاتورتها)", zh: "承运商计费体积（发票）" })}</Label>
                               <Input name="chargedCbm" type="number" step="0.0001" defaultValue={editingBatch.chargedCbm || ""} />
                             </div>
                           )}
                         </div>
+                        <CarrierDifferenceLine difference={editFinancialQ.data?.carrierDifference ?? null} />
                       </CardContent>
                     </Card>
                     

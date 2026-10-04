@@ -54,38 +54,69 @@ const positive = (value: string | number | null | undefined): number => {
 /**
  * What the carrier's rate multiplies — one answer for every screen.
  *
- * The weight (or volume) the carrier billed; failing that, the weight on its
- * scale; failing that, what our own parcels weigh plain. Owner, 2026-10-04:
- * the old batches were filled with a rate and the "actual weight" only, and
- * every report still said they cost nothing, while the batch's own page
- * multiplied the rate by our parcels' volume weight — two answers for one
- * shipment. The carrier charges the plain weight (we charge the volume), so
- * the last fallback is our parcels' plain weight, not their chargeable one.
+ * Owner, 2026-10-04: "profit and loss on the basis of OUR weight — the weight
+ * and size measured tracking by tracking at registration, the same weight the
+ * customer paid on. If the carrier's billed weight is there, cost is worked
+ * from that and compared with ours; if not, cost and sale both stand on ours."
+ *
+ *   1. the weight (or volume) the carrier billed — typed from its invoice;
+ *   2. otherwise OUR billed weight: the sum, parcel by parcel, of what we
+ *      charged the customer on (scale weight or volume weight, whichever is
+ *      more; for sea, the volume).
+ *
+ * The batch's hand-typed "actual weight" is no longer part of it: our weight
+ * is counted from the parcels themselves, so it cannot be mistyped and moves
+ * by itself as trackings come and go.
  */
 export function carrierCostBase(
   shippingType: string | null | undefined,
-  batch: {
-    chargedWeightKg?: string | number | null;
-    actualWeightKg?: string | number | null;
-    chargedCbm?: string | number | null;
-    actualCbm?: string | number | null;
-  },
-  parcels: { weightKg: number; cbm: number },
+  batch: { chargedWeightKg?: string | number | null; chargedCbm?: string | number | null },
+  ours: { billedKg: number; cbm: number },
 ): number {
   return isSeaCost(shippingType)
-    ? positive(batch.chargedCbm) || positive(batch.actualCbm) || Math.max(0, parcels.cbm)
-    : positive(batch.chargedWeightKg) || positive(batch.actualWeightKg) || Math.max(0, parcels.weightKg);
+    ? positive(batch.chargedCbm) || Math.max(0, ours.cbm)
+    : positive(batch.chargedWeightKg) || Math.max(0, ours.billedKg);
 }
 
-/** The same rule in SQL, for the reports that read many batches at once. */
-export const CARRIER_BASE_KG_SQL = `COALESCE(
+/**
+ * Ours against the carrier's, for the line under the cost: positive when the
+ * carrier billed less than we charged on — that is extra profit — negative
+ * when it billed more. Null until both are known and there is a rate.
+ */
+export function carrierDifference(
+  shippingType: string | null | undefined,
+  batch: { chargedWeightKg?: string | number | null; chargedCbm?: string | number | null; costPerKg?: string | number | null; costPerCbm?: string | number | null; shippingCost?: string | number | null },
+  ours: { billedKg: number; cbm: number },
+): { ours: number; carrier: number; units: number; usd: number; unit: "kg" | "cbm" } | null {
+  const sea = isSeaCost(shippingType);
+  const carrier = positive(sea ? batch.chargedCbm : batch.chargedWeightKg);
+  const own = sea ? ours.cbm : ours.billedKg;
+  if (!(carrier > 0) || !(own > 0)) return null;
+  const rate = positive(sea ? batch.costPerCbm : batch.costPerKg) || positive(batch.shippingCost) / carrier;
+  if (!(rate > 0)) return null;
+  const units = own - carrier;
+  return { ours: own, carrier, units, usd: Math.round(units * rate * 100) / 100, unit: sea ? "cbm" : "kg" };
+}
+
+/** Each parcel's volume, as the SQL reads it: the volume given, else its three sides. */
+const PARCEL_CBM_SQL = `COALESCE(NULLIF(CAST(COALESCE(p.volumeCbm, 0) AS DECIMAL(12,6)), 0),
+  CAST(COALESCE(p.lengthCm, 0) AS DECIMAL(12,2)) * CAST(COALESCE(p.widthCm, 0) AS DECIMAL(12,2)) * CAST(COALESCE(p.heightCm, 0) AS DECIMAL(12,2)) / 1000000)`;
+
+/**
+ * The same rule in SQL, for the reports that read many batches at once.
+ * `divisor` is the volumetric divisor in force (settings), so the SQL and
+ * shared/chargeableWeight bill the same kilo.
+ */
+export function carrierBaseKgSql(divisor: number): string {
+  const d = divisor > 0 ? Math.round(divisor) : 6000;
+  return `COALESCE(
   NULLIF(CAST(COALESCE(batches.chargedWeightKg, 0) AS DECIMAL(12,2)), 0),
-  NULLIF(CAST(COALESCE(batches.actualWeightKg, 0) AS DECIMAL(12,2)), 0),
-  (SELECT COALESCE(SUM(CAST(COALESCE(p.weightKg, 0) AS DECIMAL(12,3))), 0) FROM packages p WHERE p.batchId = batches.id))`;
+  (SELECT COALESCE(SUM(GREATEST(CAST(COALESCE(p.weightKg, 0) AS DECIMAL(12,3)), (${PARCEL_CBM_SQL}) * 1000000 / ${d})), 0)
+     FROM packages p WHERE p.batchId = batches.id))`;
+}
 export const CARRIER_BASE_CBM_SQL = `COALESCE(
   NULLIF(CAST(COALESCE(batches.chargedCbm, 0) AS DECIMAL(12,4)), 0),
-  NULLIF(CAST(COALESCE(batches.actualCbm, 0) AS DECIMAL(12,4)), 0),
-  (SELECT COALESCE(SUM(CAST(COALESCE(p.volumeCbm, 0) AS DECIMAL(12,4))), 0) FROM packages p WHERE p.batchId = batches.id))`;
+  (SELECT COALESCE(SUM(${PARCEL_CBM_SQL}), 0) FROM packages p WHERE p.batchId = batches.id))`;
 
 export function isSeaCost(shippingType?: string | null): boolean {
   return shippingType === "sea";
