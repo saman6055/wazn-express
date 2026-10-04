@@ -77,7 +77,9 @@ export function UnbilledGoodsSection({ language }: { language: string }) {
     });
   };
 
-  const allPicked = rows.length > 0 && picked.size === rows.length;
+  // Paid at the till already: shown, never billable from here.
+  const billable = rows.filter((r) => !r.paidOnReceipt);
+  const allPicked = billable.length > 0 && picked.size === billable.length;
 
   return (
     <Card>
@@ -145,7 +147,7 @@ export function UnbilledGoodsSection({ language }: { language: string }) {
                       <Checkbox
                         checked={allPicked}
                         onCheckedChange={() =>
-                          setPicked(allPicked ? new Set() : new Set(rows.map((r) => r.orderId)))
+                          setPicked(allPicked ? new Set() : new Set(billable.map((r) => r.orderId)))
                         }
                         aria-label={say({ ku: "هەموو", en: "All", ar: "الكل", zh: "全部" })}
                         data-testid="unbilled-all"
@@ -167,6 +169,7 @@ export function UnbilledGoodsSection({ language }: { language: string }) {
                       <TableCell>
                         <Checkbox
                           checked={picked.has(r.orderId)}
+                          disabled={!!r.paidOnReceipt}
                           onCheckedChange={() => toggle(r.orderId)}
                           aria-label={r.orderCode}
                         />
@@ -194,6 +197,12 @@ export function UnbilledGoodsSection({ language }: { language: string }) {
                         {r.boxCode && (
                           <span className="ms-1 font-mono">
                             <bdi dir="ltr">{r.boxCode}</bdi>
+                          </span>
+                        )}
+                        {r.paidOnReceipt && (
+                          <span className="mt-0.5 block font-semibold text-emerald-700 dark:text-emerald-300" data-testid="unbilled-paid-at-till">
+                            {say({ ku: "پارەکەی لە وەسڵ وەرگیراوە — حیساب ناکرێت", en: "Paid at the till — not billed", ar: "دُفع عند الصندوق — لا يُحتسب", zh: "已在柜台付款 — 不计费" })}{" "}
+                            <bdi dir="ltr">{r.paidOnReceipt}</bdi>
                           </span>
                         )}
                       </TableCell>

@@ -230,6 +230,6 @@ describe("checks that join text across tables name one collation", () => {
   });
 
   it("tracking numbers are compared under one collation", () => {
-    expect(block("arrived_goods_unbilled").match(/COLLATE utf8mb4_unicode_ci/g)?.length).toBe(8);
+    expect(block("arrived_goods_unbilled").match(/COLLATE utf8mb4_unicode_ci/g)?.length).toBe(10);
   });
 });

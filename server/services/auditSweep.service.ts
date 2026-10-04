@@ -336,6 +336,13 @@ const QUERIES: Record<CheckId, string> = {
              OR i.trackingNumber COLLATE utf8mb4_unicode_ci IN (SELECT t.trackingNumber COLLATE utf8mb4_unicode_ci FROM fullPackageOrderTrackings t
                                      WHERE t.fullPackageOrderId = o.id))
       )
+      -- Paid at the till already (its box carries a receipt that took money):
+      -- not a debt to chase — billing it would charge the customer twice.
+      AND NOT EXISTS (
+        SELECT 1 FROM deliveryBoxItems i2
+        JOIN boxSettlements s ON s.boxId = i2.boxId AND s.status = 'confirmed' AND CAST(s.paidUsd AS DECIMAL(12,2)) > 0
+        WHERE i2.trackingNumber COLLATE utf8mb4_unicode_ci = o.trackingNumber COLLATE utf8mb4_unicode_ci
+      )
     ORDER BY o.createdAt ASC
     LIMIT ${SAMPLE_LIMIT}`,
 

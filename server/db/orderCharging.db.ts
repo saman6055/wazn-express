@@ -2,7 +2,7 @@ import { and, eq, inArray, isNull, ne, or } from "drizzle-orm";
 import { getDb } from "./connection";
 import {
   customers,
-  deliveryBoxes,
+  deliveryBoxes, boxSettlements,
   deliveryBoxItems,
   fullPackageOrders,
   fullPackageOrderTrackings,
@@ -213,6 +213,13 @@ export interface UnbilledOrder {
   boxCode: string | null;
   trackingNumber: string | null;
   createdAt: Date | string | null;
+  /**
+   * The receipt that already took money at the till for the box these goods
+   * are in. Billing such an order now would charge the customer a second
+   * time for what they paid (2026-10-04: $250.62 of the twenty), so it is
+   * shown and never billed from here.
+   */
+  paidOnReceipt: string | null;
 }
 
 /**
@@ -299,6 +306,17 @@ export async function findUnbilledArrivedOrders(): Promise<UnbilledOrder[]> {
         .where(inArray(deliveryBoxItems.trackingNumber, allTrackings))
     : [];
   const boxOf = new Map(inBox.map((r) => [clean(r.trackingNumber), r.boxCode]));
+  // Boxes the till already took money for.
+  const boxCodes = Array.from(new Set(inBox.map((r) => r.boxCode).filter(Boolean)));
+  const receipts = boxCodes.length
+    ? await db
+        .select({ boxCode: deliveryBoxes.boxCode, number: boxSettlements.settlementNumber, paidUsd: boxSettlements.paidUsd })
+        .from(boxSettlements)
+        .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, boxSettlements.boxId))
+        .where(and(inArray(deliveryBoxes.boxCode, boxCodes), eq(boxSettlements.status, "confirmed")))
+    : [];
+  const receiptOf = new Map<string, string>();
+  for (const r of receipts) if (Number(r.paidUsd ?? 0) > 0 && !receiptOf.has(r.boxCode)) receiptOf.set(r.boxCode, r.number);
 
   const arrived = allTrackings.length
     ? await db
@@ -342,6 +360,7 @@ export async function findUnbilledArrivedOrders(): Promise<UnbilledOrder[]> {
       boxCode: boxTracking ? (boxOf.get(boxTracking) ?? null) : null,
       trackingNumber: boxTracking ?? deliveredTracking ?? trackings[0] ?? null,
       createdAt: o.createdAt ?? null,
+      paidOnReceipt: boxTracking ? (receiptOf.get(boxOf.get(boxTracking) ?? "") ?? null) : null,
     });
   }
 
@@ -380,10 +399,23 @@ export async function billUnbilledOrders(
       isNull(fullPackageOrders.deletedAt),
     ));
 
+  // Never an order whose box the till already took money for: that would
+  // charge the customer twice for what they paid.
+  const paidAtTill = new Map(
+    (await findUnbilledArrivedOrders())
+      .filter((r) => r.paidOnReceipt)
+      .map((r) => [r.orderId, r.paidOnReceipt as string]),
+  );
+
   const { chargeOrderAtCreation } = await import("./fullPackage.db");
   let charged = 0;
   let amountUsd = 0;
   for (const order of rows) {
+    const receipt = paidAtTill.get(Number(order.id));
+    if (receipt) {
+      skipped.push({ orderCode: String(order.orderCode ?? order.id), reason: `paid_at_till:${receipt}` });
+      continue;
+    }
     const result = await chargeOrderAtCreation(order as never, userId);
     if (result.charged) {
       charged += 1;
