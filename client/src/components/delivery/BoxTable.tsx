@@ -202,6 +202,11 @@ export function BoxTable({
       customerCode: customer?.customerCode,
       parcelCount: box.totalPackages,
       totalUsd: receiptAmountUsd(box),
+      // A discount is a promise the till keeps (shared/pledgedDiscount), and
+      // from this list it would be neither written down nor printed — the
+      // field took the number and dropped it. It is given from the box
+      // itself, where it is recorded before the paper comes out.
+      canDiscount: false,
       onConfirm: (dinar) => void printReceiptNow(box, lang, dinar),
     });
   };

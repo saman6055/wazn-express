@@ -272,7 +272,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // Read, not fetched twice: the settlement panel below runs the same query,
   // and TanStack hands both the one result. What the paper says and what the
   // screen says come from the same place.
-  const { data: settlementView } = trpc.deliveryBox.settlementView.useQuery({ boxId });
+  const { data: settlementView, isError: settlementViewFailed } = trpc.deliveryBox.settlementView.useQuery({ boxId });
 
   // Mutations
   const addItem = trpc.deliveryBox.addItem.useMutation({
@@ -484,6 +484,30 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // render that has it call a different number of hooks, React throws, and a
   // box that is not already loaded cannot be opened.
   const [receiptRequest, setReceiptRequest] = useState<ReceiptDinarRequest | null>(null);
+  /**
+   * A print asked for before the box's money had loaded. The window is built
+   * from that data — what is owed, the parcels, the discounts promised — and
+   * opened a second too early it decided nothing was owed and left the
+   * discount out (owner, 2026-10-04: "the discount and its reason are gone").
+   * So the request waits here and opens the moment the data is in.
+   */
+  const [pendingPrint, setPendingPrint] = useState<
+    | { lang: Language; output: (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => Promise<void>; action: "print" | "send" }
+    | null
+  >(null);
+  // The print that waited for the box's money opens as soon as it is in.
+  // Above the early return below, like every hook here (hooks-before-early-
+  // return); the opener itself is defined further down, so it is reached
+  // through a ref.
+  const askBeforePrintingRef = useRef<
+    ((lang: Language, output: (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => Promise<void>, action?: "print" | "send") => void) | null
+  >(null);
+  useEffect(() => {
+    if (!pendingPrint || (!settlementView && !settlementViewFailed)) return;
+    const { lang, output, action } = pendingPrint;
+    setPendingPrint(null);
+    askBeforePrintingRef.current?.(lang, output, action);
+  }, [pendingPrint, settlementView, settlementViewFailed]);
 
   if (!box) {
     return (
@@ -710,6 +734,12 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   ) => {
     // Ready before the print button is pressed, so the window opens at once.
     void loadLocale(lang);
+    // Not yet known what is owed: wait for it rather than guess "nothing".
+    // If it cannot be read at all, the window opens as before.
+    if (!settlementView && !settlementViewFailed) {
+      setPendingPrint({ lang, output, action });
+      return;
+    }
     setReceiptRequest({
       boxCode: box.boxCode,
       customerName: customer?.fullName,
@@ -848,6 +878,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       setSharing(false);
     }
   };
+
+  askBeforePrintingRef.current = askBeforePrinting;
 
   const handlePrintReceipt = (lang: Language) => askBeforePrinting(lang, printReceiptNow);
   /**

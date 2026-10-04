@@ -243,3 +243,25 @@ describe("and the server does not take the screen's word for it", () => {
     expect(write).not.toContain(".delete(");
   });
 });
+
+/*
+ * Owner, 2026-10-04: "the discount and its reason are gone from the window."
+ * The window is built from the box's money; opened before that had loaded it
+ * decided nothing was owed and left the discount out. And from the boxes list
+ * the field was shown but what was typed in it was neither recorded nor printed.
+ */
+describe("the discount is there whenever it can be kept", () => {
+  const panel = fs.readFileSync(path.resolve(__dirname, "components/delivery/BoxDetailPanel.tsx"), "utf8");
+  const table = fs.readFileSync(path.resolve(__dirname, "components/delivery/BoxTable.tsx"), "utf8");
+
+  it("a print asked for before the box's money loaded waits for it", () => {
+    expect(panel).toContain("if (!settlementView && !settlementViewFailed) {\n      setPendingPrint({ lang, output, action });");
+    expect(panel).toContain("askBeforePrintingRef.current?.(lang, output, action);");
+    // The waiting hook sits above the box's early return.
+    expect(panel.indexOf("askBeforePrintingRef.current?.(")).toBeLessThan(panel.indexOf("  if (!box) {"));
+  });
+
+  it("the list does not offer a discount it would drop", () => {
+    expect(table).toContain("canDiscount: false,");
+  });
+});
