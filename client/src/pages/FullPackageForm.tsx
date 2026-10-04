@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
+import { oddOrderNumbers, oddOrderQuestion } from "@shared/orderNumberSense";
 import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orderTrackingSanity";
 import { platformFromOrderNumber } from "@shared/orderNumberPlatform";
 import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
@@ -546,6 +547,20 @@ export default function FullPackageForm() {
     // Sends the same fields the previous edit screen sent. Advance payment is
     // intentionally omitted: the server treats a present `advancePaidUsd` as
     // intent and would move money on the customer ledger.
+    // A slipped digit in a price is asked about once before it is saved
+    // (shared/orderNumberSense, owner 2026-10-04). Never a refusal.
+    const oddNumbers = oddOrderNumbers({ orderType: "full_package", quantity: formData.quantity, purchasePriceUsd: formData.purchasePriceUsd, sellingPriceUsd: formData.sellingPriceUsd });
+    if (oddNumbers.length > 0) {
+      const sure = await confirmAction({
+        title: pickLang(language, { ku: "ئەم ژمارەیە لۆجیکی نییە", en: "This number does not look right", ar: "هذا الرقم غير منطقي", zh: "这个数字不合逻辑" }),
+        message: oddOrderQuestion(oddNumbers),
+        confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+        cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+      });
+      if (!sure) return;
+    }
+
+
     if (isEditMode) {
       if (
         originalSnapshot.current !== null &&

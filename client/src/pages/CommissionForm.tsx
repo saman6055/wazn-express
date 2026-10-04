@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
+import { oddOrderNumbers, oddOrderQuestion } from "@shared/orderNumberSense";
 import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orderTrackingSanity";
 import { platformFromOrderNumber } from "@shared/orderNumberPlatform";
 import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
@@ -685,6 +686,20 @@ export default function CommissionForm() {
     // Nothing actually edited — say so and go back rather than writing a
     // no-op update, which would bump the order's version and log a change
     // that never happened.
+    // A slipped digit in a price is asked about once before it is saved
+    // (shared/orderNumberSense, owner 2026-10-04). Never a refusal.
+    const oddNumbers = oddOrderNumbers({ orderType: "commission", quantity: formData.quantity, itemPriceUsd: formData.itemPriceUsd, commissionFeeUsd: formData.commissionFeeUsd });
+    if (oddNumbers.length > 0) {
+      const sure = await confirmAction({
+        title: pickLang(language, { ku: "ئەم ژمارەیە لۆجیکی نییە", en: "This number does not look right", ar: "هذا الرقم غير منطقي", zh: "这个数字不合逻辑" }),
+        message: oddOrderQuestion(oddNumbers),
+        confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+        cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+      });
+      if (!sure) return;
+    }
+
+
     if (isEditMode) {
       if (
         originalSnapshot.current !== null &&
