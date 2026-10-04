@@ -43,6 +43,7 @@ describe("our weight, the carrier's, and a batch that waits", () => {
     const db = fs.readFileSync(path.resolve(__dirname, "..", "..", "server/db/batches.db.ts"), "utf8");
     expect(db).toContain("profit: waitingFor ? 0 : totalRevenue - totalCost,");
     const reports = fs.readFileSync(path.resolve(__dirname, "..", "..", "server/db/reports.db.ts"), "utf8");
-    expect(reports).toContain("if (waitingForCost.has(batchId) || totalBatchRevenue <= 0) continue;");
+    expect(reports).toContain("const waiting = waitingForCost.has(batchId) || totalBatchRevenue <= 0;");
+    expect(reports).toContain("rows.filter((r) => !r.waiting)");
   });
 });

@@ -1766,6 +1766,119 @@ export async function getFullPackageProfitReport(filters?: {
 }
 
 // Get monthly profit report with all order types
+/**
+ * Profit for any period by the one rule — orders by shared/orderProfit,
+ * parcel freight less its batch's cost (getBatchProfitRowsInPeriod). The
+ * monthly report reads it month by month; the expenses page reads it for its
+ * own window, so both say the same profit (2026-10-04: the expenses page had
+ * shown a revenue table's total as "gross profit").
+ */
+export async function getProfitForPeriod(startDate: Date, endDate: Date) {
+  const db = await getDb();
+  if (!db) {
+    const zero = { count: 0, revenue: 0, cost: 0, shipping: 0, profit: 0 };
+    return { fullPackage: zero, purchaseRequest: zero, commission: zero, pkgs: { count: 0, revenue: 0, profit: 0 }, total: { revenue: 0, cost: 0, shipping: 0, profit: 0 } };
+  }
+  // Full Package orders
+  const fpOrders = await db.select({
+    count: sql<number>`COUNT(*)`,
+    revenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
+    cost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity), 0)`,
+    shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
+    profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
+  }).from(fullPackageOrders)
+    .where(and(
+      eq(fullPackageOrders.orderType, 'full_package'),
+      sql.raw(LIVE_SALE_SQL),
+      gte(fullPackageOrders.createdAt, startDate),
+      lte(fullPackageOrders.createdAt, endDate)
+    ));
+  
+  // Purchase Request orders
+  const prOrders = await db.select({
+    count: sql<number>`COUNT(*)`,
+    revenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
+    cost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity), 0)`,
+    shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
+    profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
+  }).from(fullPackageOrders)
+    .where(and(
+      eq(fullPackageOrders.orderType, 'purchase_request'),
+      sql.raw(LIVE_SALE_SQL),
+      gte(fullPackageOrders.createdAt, startDate),
+      lte(fullPackageOrders.createdAt, endDate)
+    ));
+  
+  // Commission orders
+  const commOrders = await db.select({
+    count: sql<number>`COUNT(*)`,
+    // Item price and commission are both PER UNIT — multiply by quantity,
+    // matching commissionGoodsTotal in fullPackage.db.ts.
+    revenue: sql<number>`COALESCE(SUM((itemPriceUsd + commissionFeeUsd) * quantity), 0)`,
+    cost: sql<number>`COALESCE(SUM(itemPriceUsd * quantity), 0)`,
+    shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
+    profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
+  }).from(fullPackageOrders)
+    .where(and(
+      eq(fullPackageOrders.orderType, 'commission'),
+      sql.raw(LIVE_SALE_SQL),
+      gte(fullPackageOrders.createdAt, startDate),
+      lte(fullPackageOrders.createdAt, endDate)
+    ));
+  
+  // Package deliveries
+  const pkgDeliveries = await db.select({
+    count: sql<number>`COUNT(*)`,
+    revenue: sql<number>`COALESCE(SUM(calculatedCostUsd), 0)`,
+  }).from(packages)
+    .where(and(
+      eq(packages.isCharged, true),
+      gte(packages.deliveredAt, startDate),
+      lte(packages.deliveredAt, endDate)
+    ));
+  
+  const fullPackage = {
+    count: Number(fpOrders[0]?.count || 0),
+    revenue: Number(fpOrders[0]?.revenue || 0),
+    cost: Number(fpOrders[0]?.cost || 0),
+    shipping: Number(fpOrders[0]?.shipping || 0),
+    profit: Number(fpOrders[0]?.profit || 0),
+  };
+  
+  const purchaseRequest = {
+    count: Number(prOrders[0]?.count || 0),
+    revenue: Number(prOrders[0]?.revenue || 0),
+    cost: Number(prOrders[0]?.cost || 0),
+    shipping: Number(prOrders[0]?.shipping || 0),
+    profit: Number(prOrders[0]?.profit || 0),
+  };
+  
+  const commission = {
+    count: Number(commOrders[0]?.count || 0),
+    revenue: Number(commOrders[0]?.revenue || 0),
+    cost: Number(commOrders[0]?.cost || 0),
+    shipping: Number(commOrders[0]?.shipping || 0),
+    profit: Number(commOrders[0]?.profit || 0),
+  };
+  
+  const pkgs = {
+    count: Number(pkgDeliveries[0]?.count || 0),
+    revenue: Number(pkgDeliveries[0]?.revenue || 0),
+    // Freight less the carrier's cost for the batches it travelled in.
+    // The whole freight used to be added to profit as if it cost nothing.
+    profit: await getPackageNetProfitFromBatches(db, startDate, endDate),
+  };
+  
+  const total = {
+    revenue: fullPackage.revenue + purchaseRequest.revenue + commission.revenue + pkgs.revenue,
+    cost: fullPackage.cost + purchaseRequest.cost + commission.cost,
+    shipping: fullPackage.shipping + purchaseRequest.shipping + commission.shipping,
+    profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit,
+  };
+  
+  return { fullPackage, purchaseRequest, commission, pkgs, total };
+}
+
 export async function getMonthlyProfitReport(year: number, month?: number): Promise<{
   months: Array<{
     year: number;
@@ -1802,102 +1915,7 @@ export async function getMonthlyProfitReport(year: number, month?: number): Prom
     const startDate = new Date(year, m - 1, 1);
     const endDate = new Date(year, m, 0, 23, 59, 59);
     
-    // Full Package orders
-    const fpOrders = await db.select({
-      count: sql<number>`COUNT(*)`,
-      revenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
-      cost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity), 0)`,
-      shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
-      profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
-    }).from(fullPackageOrders)
-      .where(and(
-        eq(fullPackageOrders.orderType, 'full_package'),
-        sql.raw(LIVE_SALE_SQL),
-        gte(fullPackageOrders.createdAt, startDate),
-        lte(fullPackageOrders.createdAt, endDate)
-      ));
-    
-    // Purchase Request orders
-    const prOrders = await db.select({
-      count: sql<number>`COUNT(*)`,
-      revenue: sql<number>`COALESCE(SUM(sellingPriceUsd * quantity), 0)`,
-      cost: sql<number>`COALESCE(SUM(purchasePriceUsd * quantity), 0)`,
-      shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
-      profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
-    }).from(fullPackageOrders)
-      .where(and(
-        eq(fullPackageOrders.orderType, 'purchase_request'),
-        sql.raw(LIVE_SALE_SQL),
-        gte(fullPackageOrders.createdAt, startDate),
-        lte(fullPackageOrders.createdAt, endDate)
-      ));
-    
-    // Commission orders
-    const commOrders = await db.select({
-      count: sql<number>`COUNT(*)`,
-      // Item price and commission are both PER UNIT — multiply by quantity,
-      // matching commissionGoodsTotal in fullPackage.db.ts.
-      revenue: sql<number>`COALESCE(SUM((itemPriceUsd + commissionFeeUsd) * quantity), 0)`,
-      cost: sql<number>`COALESCE(SUM(itemPriceUsd * quantity), 0)`,
-      shipping: sql<number>`COALESCE(SUM(shippingCostUsd), 0)`,
-      profit: sql<number>`COALESCE(SUM(${sql.raw(ORDER_PROFIT_SQL)}), 0)`,
-    }).from(fullPackageOrders)
-      .where(and(
-        eq(fullPackageOrders.orderType, 'commission'),
-        sql.raw(LIVE_SALE_SQL),
-        gte(fullPackageOrders.createdAt, startDate),
-        lte(fullPackageOrders.createdAt, endDate)
-      ));
-    
-    // Package deliveries
-    const pkgDeliveries = await db.select({
-      count: sql<number>`COUNT(*)`,
-      revenue: sql<number>`COALESCE(SUM(calculatedCostUsd), 0)`,
-    }).from(packages)
-      .where(and(
-        eq(packages.isCharged, true),
-        gte(packages.deliveredAt, startDate),
-        lte(packages.deliveredAt, endDate)
-      ));
-    
-    const fullPackage = {
-      count: Number(fpOrders[0]?.count || 0),
-      revenue: Number(fpOrders[0]?.revenue || 0),
-      cost: Number(fpOrders[0]?.cost || 0),
-      shipping: Number(fpOrders[0]?.shipping || 0),
-      profit: Number(fpOrders[0]?.profit || 0),
-    };
-    
-    const purchaseRequest = {
-      count: Number(prOrders[0]?.count || 0),
-      revenue: Number(prOrders[0]?.revenue || 0),
-      cost: Number(prOrders[0]?.cost || 0),
-      shipping: Number(prOrders[0]?.shipping || 0),
-      profit: Number(prOrders[0]?.profit || 0),
-    };
-    
-    const commission = {
-      count: Number(commOrders[0]?.count || 0),
-      revenue: Number(commOrders[0]?.revenue || 0),
-      cost: Number(commOrders[0]?.cost || 0),
-      shipping: Number(commOrders[0]?.shipping || 0),
-      profit: Number(commOrders[0]?.profit || 0),
-    };
-    
-    const pkgs = {
-      count: Number(pkgDeliveries[0]?.count || 0),
-      revenue: Number(pkgDeliveries[0]?.revenue || 0),
-      // Freight less the carrier's cost for the batches it travelled in.
-      // The whole freight used to be added to profit as if it cost nothing.
-      profit: await getPackageNetProfitFromBatches(db, startDate, endDate),
-    };
-    
-    const total = {
-      revenue: fullPackage.revenue + purchaseRequest.revenue + commission.revenue + pkgs.revenue,
-      cost: fullPackage.cost + purchaseRequest.cost + commission.cost,
-      shipping: fullPackage.shipping + purchaseRequest.shipping + commission.shipping,
-      profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit,
-    };
+    const { fullPackage, purchaseRequest, commission, pkgs, total } = await getProfitForPeriod(startDate, endDate);
     
     months.push({
       year,
@@ -2006,17 +2024,36 @@ export async function getProfitByOrderType(startDate?: Date, endDate?: Date): Pr
   };
 }
 
-/** Net profit from batches: for packages delivered in period, revenue minus allocated batch cost */
-async function getPackageNetProfitFromBatches(
+/** One batch's share of a period: parcels delivered in it, and its cost by the same share. */
+export interface BatchProfitInPeriod {
+  batchId: number;
+  shippingType: string;
+  parcelsInPeriod: number;
+  revenueInPeriod: number;
+  allocatedCost: number;
+  /** No cost recorded, or nothing priced: no profit and no loss yet. */
+  waiting: boolean;
+}
+
+/**
+ * The one rule for a batch's profit in a period (owner, 2026-09-29: cost in
+ * the month the goods are delivered; 2026-10-04: on our own weight, waiting
+ * while a price is missing). Every page that reports batch profit reads it —
+ * the profit report and the company dashboard used to disagree because the
+ * dashboard took batches by the month they were CREATED and their cost from
+ * the recorded total only.
+ */
+export async function getBatchProfitRowsInPeriod(
   db: Awaited<ReturnType<typeof getDb>>,
   startDate: Date,
-  endDate: Date
-): Promise<number> {
-  if (!db) return 0;
+  endDate: Date,
+): Promise<BatchProfitInPeriod[]> {
+  if (!db) return [];
   const pkgInPeriod = await db
     .select({
       batchId: packages.batchId,
       revenueInPeriod: sql<number>`COALESCE(SUM(${packages.calculatedCostUsd}), 0)`,
+      parcels: sql<number>`COUNT(*)`,
     })
     .from(packages)
     .where(and(
@@ -2026,9 +2063,9 @@ async function getPackageNetProfitFromBatches(
       isNotNull(packages.batchId)
     ))
     .groupBy(packages.batchId);
-  if (pkgInPeriod.length === 0) return 0;
+  if (pkgInPeriod.length === 0) return [];
   const batchIds = pkgInPeriod.map((r) => r.batchId).filter((id): id is number => id != null);
-  if (batchIds.length === 0) return 0;
+  if (batchIds.length === 0) return [];
 
   const batchTotals = await db
     .select({
@@ -2044,6 +2081,7 @@ async function getPackageNetProfitFromBatches(
   const batchCosts = await db
     .select({
       id: batches.id,
+      shippingType: batches.shippingType,
       // Nothing says what it cost — no rate and no carrier total. Its profit
       // waits for the cost (owner, 2026-10-04) instead of counting the whole
       // freight as profit.
@@ -2082,17 +2120,35 @@ async function getPackageNetProfitFromBatches(
     if (Number(r.waitingForCost) === 1) waitingForCost.add(r.id);
   }
 
-  let netProfit = 0;
-  for (const batchId of batchIds) {
+  const typeOf = new Map(batchCosts.map((r) => [r.id, String(r.shippingType ?? "air_regular")]));
+  const parcelsOf = new Map(pkgInPeriod.map((r) => [Number(r.batchId), Number(r.parcels ?? 0)]));
+
+  return batchIds.map((batchId) => {
     const revenueInPeriod = revenueByBatch.get(batchId) ?? 0;
     const totalBatchRevenue = totalRevenueByBatch.get(batchId) ?? 0;
     // Waiting for its cost or for its selling price: no profit, no loss yet.
-    if (waitingForCost.has(batchId) || totalBatchRevenue <= 0) continue;
+    const waiting = waitingForCost.has(batchId) || totalBatchRevenue <= 0;
     const totalBatchCost = costByBatch.get(batchId) ?? 0;
-    const allocatedCost = totalBatchRevenue > 0 ? totalBatchCost * (revenueInPeriod / totalBatchRevenue) : 0;
-    netProfit += revenueInPeriod - allocatedCost;
-  }
-  return netProfit;
+    const allocatedCost = !waiting && totalBatchRevenue > 0 ? totalBatchCost * (revenueInPeriod / totalBatchRevenue) : 0;
+    return {
+      batchId,
+      shippingType: typeOf.get(batchId) ?? "air_regular",
+      parcelsInPeriod: parcelsOf.get(batchId) ?? 0,
+      revenueInPeriod,
+      allocatedCost,
+      waiting,
+    };
+  });
+}
+
+/** Net profit from batches in a period — the sum of the one rule's rows. */
+async function getPackageNetProfitFromBatches(
+  db: Awaited<ReturnType<typeof getDb>>,
+  startDate: Date,
+  endDate: Date,
+): Promise<number> {
+  const rows = await getBatchProfitRowsInPeriod(db, startDate, endDate);
+  return rows.filter((r) => !r.waiting).reduce((sum, r) => sum + r.revenueInPeriod - r.allocatedCost, 0);
 }
 
 /** Aggregated profit from all sources + company expenses for summary/expense tab */
@@ -2413,58 +2469,48 @@ export async function checkExpenseThresholds(newExpenseAmount: number, newExpens
 // ============ COMPREHENSIVE P&L DASHBOARD FUNCTIONS ============
 
 export async function getBatchProfitByShippingType(startDate: Date, endDate: Date) {
-  const emptyResult = { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 } };
+  const fresh = () => ({ revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0, waitingBatches: 0 });
+  const result: Record<string, ReturnType<typeof fresh>> = { air_regular: fresh(), air_irregular: fresh(), sea: fresh() };
   const db = await getDb();
-  if (!db) return emptyResult;
+  if (!db) return result;
   try {
-    // Try fetching with typed columns first, fall back to raw SQL if schema mismatch
-    let batchList: { id: number; shippingType: string | null; shippingCost: string | null; totalWeight: string | null }[];
-    try {
-      batchList = (await db.select({ id: batches.id, shippingType: batches.shippingType, shippingCost: batches.shippingCost, actualWeightKg: batches.actualWeightKg, chargedWeightKg: batches.chargedWeightKg, totalWeight: batches.totalWeight, actualCbm: batches.actualCbm, chargedCbm: batches.chargedCbm }).from(batches).where(and(gte(batches.createdAt, startDate), lte(batches.createdAt, endDate)))) as any;
-    } catch {
-      // Fallback: minimal columns that should always exist
-      const [rows] = (await db.execute(sql`SELECT id, shippingType, shippingCost, totalWeight FROM batches WHERE createdAt >= ${startDate} AND createdAt <= ${endDate}`)) as unknown as [any[]];
-      batchList = (rows ?? []).map((r: any) => ({ id: Number(r.id), shippingType: r.shippingType, shippingCost: r.shippingCost, totalWeight: r.totalWeight }));
-    }
-    const result: Record<string, { revenue: number; cost: number; profit: number; count: number; totalWeight: number; totalCbm: number; batchCount: number }> = {
-      air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
-      air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
-      sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 },
-    };
-    if (batchList.length === 0) return result;
-    const batchIds = batchList.map(b => b.id);
-    let allPackages: { batchId: number | null; calculatedCostUsd: string | null }[];
-    try {
-      allPackages = await db.select({ batchId: packages.batchId, calculatedCostUsd: packages.calculatedCostUsd }).from(packages).where(inArray(packages.batchId, batchIds));
-    } catch {
-      // Fallback: raw SQL
-      const [pkgRows] = (await db.execute(sql`SELECT batchId, calculatedCostUsd FROM packages WHERE batchId IN (${sql.raw(batchIds.join(','))})`)) as unknown as [any[]];
-      allPackages = (pkgRows ?? []).map((r: any) => ({ batchId: r.batchId != null ? Number(r.batchId) : null, calculatedCostUsd: r.calculatedCostUsd != null ? String(r.calculatedCostUsd) : null }));
-    }
-    const packagesByBatch = new Map<number, { calculatedCostUsd: string | null }[]>();
-    for (const pkg of allPackages) {
-      if (pkg.batchId == null) continue;
-      if (!packagesByBatch.has(pkg.batchId)) packagesByBatch.set(pkg.batchId, []);
-      packagesByBatch.get(pkg.batchId)!.push({ calculatedCostUsd: pkg.calculatedCostUsd });
-    }
-    for (const batch of batchList) {
-      const type = (batch as any).shippingType || 'air_regular';
-      if (!result[type]) continue;
-      result[type].batchCount++;
-      result[type].cost += Number((batch as any).shippingCost || 0);
-      result[type].totalWeight += Number((batch as any).actualWeightKg || (batch as any).chargedWeightKg || (batch as any).totalWeight || 0);
-      result[type].totalCbm += Number((batch as any).actualCbm || (batch as any).chargedCbm || 0);
-      const batchPackages = packagesByBatch.get(batch.id) ?? [];
-      for (const pkg of batchPackages) {
-        result[type].count++;
-        result[type].revenue += Number(pkg.calculatedCostUsd || 0);
+    // The one rule (getBatchProfitRowsInPeriod): the goods delivered in the
+    // period, and the batch's cost by the same share — the month the goods
+    // reach the customers, not the month the batch was opened. It used to
+    // take batches by creation month and their cost from the recorded total
+    // only, so a sea batch opened this month showed as a loss of its whole
+    // cost with nothing sold (2026-10-03).
+    const rows = await getBatchProfitRowsInPeriod(db, startDate, endDate);
+    const ids = rows.map((r) => r.batchId);
+    const measures = ids.length
+      ? await db
+          .select({ id: batches.id, chargedWeightKg: batches.chargedWeightKg, chargedCbm: batches.chargedCbm })
+          .from(batches)
+          .where(inArray(batches.id, ids))
+      : [];
+    for (const r of rows) {
+      const bucket = result[r.shippingType] ?? result.air_regular;
+      bucket.batchCount++;
+      if (r.waiting) {
+        bucket.waitingBatches++;
+        continue;
       }
-      result[type].profit = result[type].revenue - result[type].cost;
+      bucket.count += r.parcelsInPeriod;
+      bucket.revenue += r.revenueInPeriod;
+      bucket.cost += r.allocatedCost;
+      const m = measures.find((x) => x.id === r.batchId);
+      bucket.totalWeight += Number(m?.chargedWeightKg ?? 0);
+      bucket.totalCbm += Number(m?.chargedCbm ?? 0);
+    }
+    for (const bucket of Object.values(result)) {
+      bucket.revenue = Math.round(bucket.revenue * 100) / 100;
+      bucket.cost = Math.round(bucket.cost * 100) / 100;
+      bucket.profit = Math.round((bucket.revenue - bucket.cost) * 100) / 100;
     }
     return result;
   } catch (err) {
     appLogger.error("getBatchProfitByShippingType failed", { error: err instanceof Error ? err.message : String(err) });
-    return emptyResult;
+    return result;
   }
 }
 
@@ -2569,20 +2615,20 @@ export async function getMonthlyTrendData(startDate: Date, endDate: Date) {
   }
   const results: { month: string; revenue: number; expenses: number; netProfit: number }[] = [];
   for (const m of months) {
-    let revenue = 0, expenseTotal = 0;
+    // The month's profit by the one rule, less the month's expenses. It used
+    // to take every charge of the month as revenue and subtract only the
+    // expenses — calling the whole turnover profit.
+    let revenue = 0, profit = 0, expenseTotal = 0;
     try {
-      const txResult = await db.select({ amount: sql<number>`SUM(${ledgerTransactions.amountUsd})` }).from(ledgerTransactions).where(and(gte(ledgerTransactions.createdAt, m.startDate), lte(ledgerTransactions.createdAt, m.endDate), sql`${ledgerTransactions.transactionType} LIKE 'DEBIT_%'`));
-      revenue += Number(txResult[0]?.amount || 0);
-    } catch { /* ignore */ }
-    try {
-      const revResult = await db.select({ amount: sql<number>`SUM(${revenueRecords.amountUsd})` }).from(revenueRecords).where(and(gte(revenueRecords.createdAt, m.startDate), lte(revenueRecords.createdAt, m.endDate), eq(revenueRecords.status, 'confirmed')));
-      if (revenue === 0) revenue += Number(revResult[0]?.amount || 0);
+      const p = await getProfitForPeriod(m.startDate, m.endDate);
+      revenue = p.total.revenue;
+      profit = p.total.profit;
     } catch { /* ignore */ }
     try {
       const expResult = await db.select({ amount: sql<number>`SUM(${expenses.amountUsd})` }).from(expenses).where(and(gte(expenses.expenseDate, m.startDate), lte(expenses.expenseDate, m.endDate)));
       expenseTotal = Number(expResult[0]?.amount || 0);
     } catch { /* ignore */ }
-    results.push({ month: m.month, revenue, expenses: expenseTotal, netProfit: revenue - expenseTotal });
+    results.push({ month: m.month, revenue, expenses: expenseTotal, netProfit: Math.round((profit - expenseTotal) * 100) / 100 });
   }
   return results;
 }
@@ -2640,7 +2686,7 @@ const EMPTY_DASHBOARD_STATS = {
 
 export async function getComprehensiveDashboardStats(startDate: Date, endDate: Date) {
   // Each sub-query is individually wrapped so ONE failure doesn't zero-out the entire dashboard
-  const defaultBatchProfit = { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0 } };
+  const defaultBatchProfit = { air_regular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0, waitingBatches: 0 }, air_irregular: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0, waitingBatches: 0 }, sea: { revenue: 0, cost: 0, profit: 0, count: 0, totalWeight: 0, totalCbm: 0, batchCount: 0, waitingBatches: 0 } };
   const defaultFpProfit = { fullPackage: { revenue: 0, cost: 0, shippingCost: 0, profit: 0, count: 0 }, commission: { totalCommission: 0, count: 0 } };
   const defaultServiceProfit = { revenue: 0, cost: 0, profit: 0, count: 0, byType: [] as { typeId: number; typeName: string; revenue: number; cost: number; profit: number; count: number }[] };
   const defaultExpenseBreakdown = { categories: [] as { id: number; nameEn: string; nameKu: string; icon: string; color: string; amount: number; count: number; percentage: number }[], total: 0 };
@@ -2656,7 +2702,15 @@ export async function getComprehensiveDashboardStats(startDate: Date, endDate: D
 
   const [batchProfit, fpProfit, serviceProfit, expenseBreakdown, monthlyTrend, activity, deliveryBoxProfit] = await Promise.all([
     safeCall(() => getBatchProfitByShippingType(startDate, endDate), defaultBatchProfit, "batchProfit"),
-    safeCall(() => getFullPackageProfitBreakdown(startDate, endDate), defaultFpProfit, "fullPackageProfit"),
+    // Orders by the one rule (getProfitForPeriod), mapped to the shape the
+    // dashboard draws — it used to keep a calculation of its own.
+    safeCall(async () => {
+      const p = await getProfitForPeriod(startDate, endDate);
+      return {
+        fullPackage: { revenue: p.fullPackage.revenue, cost: p.fullPackage.cost, shippingCost: p.fullPackage.shipping, profit: p.fullPackage.profit + p.purchaseRequest.profit, count: p.fullPackage.count + p.purchaseRequest.count },
+        commission: { totalCommission: p.commission.profit, count: p.commission.count },
+      };
+    }, defaultFpProfit, "fullPackageProfit"),
     safeCall(() => getServiceProfitBreakdown(startDate, endDate), defaultServiceProfit, "serviceProfit"),
     safeCall(() => getExpenseBreakdownDetailed(startDate, endDate), defaultExpenseBreakdown, "expenseBreakdown"),
     safeCall(() => getMonthlyTrendData(startDate, endDate), [] as { month: string; revenue: number; expenses: number; netProfit: number }[], "monthlyTrend"),

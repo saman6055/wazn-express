@@ -100,51 +100,39 @@ export default function MonthlyProfitReport() {
   const [selectedYear, setSelectedYear] = useState(currentYear);
   const years = Array.from({ length: 5 }, (_, i) => currentYear - i);
   
-  // Fetch full package orders for the selected year
-  const startDate = new Date(selectedYear, 0, 1);
-  const endDate = new Date(selectedYear, 11, 31, 23, 59, 59);
-  
-  const { data: fpOrders, isLoading } = trpc.fullPackage.list.useQuery({
-    startDate,
-    endDate,
-  });
-  
-  // Calculate monthly data
+  /*
+   * The one profit rule, from the server (shared/orderProfit) — the same the
+   * main profit report uses. This page used to read the first page of orders
+   * (300) and their stored profit, cancelled ones included, so its year said
+   * $1,026 while the profit report said something else (2026-10-03).
+   */
+  const { data: report, isLoading } = trpc.fullPackage.getMonthlyProfitReport.useQuery({ year: selectedYear });
+
   const monthlyData = useMemo(() => {
-    const data = Array.from({ length: 12 }, (_, month) => ({
-      month,
-      monthName: (monthNames[language] ?? monthNames.en)[month],
-      full_package: { count: 0, profit: 0, revenue: 0, cost: 0 },
-      commission: { count: 0, profit: 0, revenue: 0, cost: 0 },
-      total: { count: 0, profit: 0, revenue: 0, cost: 0 },
-    }));
-    
-    if (!fpOrders) return data;
-    
-    fpOrders.forEach((order: any) => {
-      const date = new Date(order.createdAt);
-      const month = date.getMonth();
-      const orderType = order.orderType as keyof typeof orderTypeConfig;
-      
-      if (data[month] && data[month][orderType]) {
-        const profit = parseFloat(order.profitUsd || "0");
-        const revenue = parseFloat(order.sellingPriceUsd || "0");
-        const cost = parseFloat(order.totalCostUsd || "0");
-        
-        data[month][orderType].count++;
-        data[month][orderType].profit += profit;
-        data[month][orderType].revenue += revenue;
-        data[month][orderType].cost += cost;
-        
-        data[month].total.count++;
-        data[month].total.profit += profit;
-        data[month].total.revenue += revenue;
-        data[month].total.cost += cost;
-      }
+    const pick = (x: { count?: number; revenue?: number; cost?: number; shipping?: number; profit?: number } | undefined) => ({
+      count: Number(x?.count ?? 0),
+      profit: Number(x?.profit ?? 0),
+      revenue: Number(x?.revenue ?? 0),
+      cost: Number(x?.cost ?? 0) + Number(x?.shipping ?? 0),
     });
-    
-    return data;
-  }, [fpOrders, language]);
+    return Array.from({ length: 12 }, (_, month) => {
+      const m = report?.months?.[month];
+      const full_package = pick(m?.fullPackage);
+      const commission = pick(m?.commission);
+      return {
+        month,
+        monthName: (monthNames[language] ?? monthNames.en)[month],
+        full_package,
+        commission,
+        total: {
+          count: full_package.count + commission.count,
+          profit: full_package.profit + commission.profit,
+          revenue: full_package.revenue + commission.revenue,
+          cost: full_package.cost + commission.cost,
+        },
+      };
+    });
+  }, [report, language]);
   
   // Calculate yearly totals
   const yearlyTotals = useMemo(() => {

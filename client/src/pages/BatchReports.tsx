@@ -1,4 +1,6 @@
 import { toCsv, downloadText } from "@/lib/csv";
+import { carrierCostBase, resolveBatchCost } from "@shared/batchCost";
+import { batchMissingCost, batchMissingSellingPrice } from "@shared/batchPricing";
 import { escapeHtml } from "@/lib/html";
 import { statusTone, TONE_BG, TONE_TEXT } from "@/lib/statusTone";
 import { fmtDate, fmtDateTime, fmtMonth } from "@/lib/numericDate";
@@ -133,7 +135,9 @@ export default function BatchReports() {
   const [showComparison, setShowComparison] = useState(false);
 
   // Fetch data
-  const { data: batchesResponse, isLoading } = trpc.batches.list.useQuery();
+  // The whole fleet, not the list page's first page of newest batches —
+  // a report that silently dropped the older ones would total the wrong year.
+  const { data: batchesResponse, isLoading } = trpc.batches.list.useQuery({ page: 1, pageSize: 100 });
   const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
   const { data: packages } = trpc.packages.list.useQuery({ pageSize: 10000 });
   const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
@@ -168,20 +172,32 @@ export default function BatchReports() {
         totalCbm += Number(pkg.volumeCbm) || 0;
       }
 
-      // Calculate cost and revenue
-      const costPerKg = Number(batch.costPerKg) || 0;
-      const costPerCbm = Number(batch.costPerCbm) || 0;
-      
-      let totalCost = 0;
-      if (batch.shippingType === 'sea') {
-        totalCost = totalCbm * costPerCbm;
-      } else {
-        totalCost = totalChargeableWeight * costPerKg;
-      }
+      // The one rule every page uses (shared/batchCost, owner 2026-10-04):
+      // the carrier's billed weight from its invoice, else ours as the
+      // customers were charged; the rate × that, else the carrier's total.
+      // This page used to multiply the rate by our weight only, and ignore a
+      // recorded total — a third answer for the same shipment.
+      const ours = { billedKg: totalChargeableWeight, cbm: totalCbm };
+      const base = carrierCostBase(batch.shippingType, batch, ours);
+      const resolved = resolveBatchCost({
+        shippingType: batch.shippingType,
+        costPerKg: batch.costPerKg,
+        costPerCbm: batch.costPerCbm,
+        shippingCost: (batch as { shippingCost?: string | null }).shippingCost,
+        chargeableKg: base,
+        totalCbm: base,
+      });
 
       const totalRevenue = batchPackages.reduce((sum, pkg) => sum + (Number(pkg.calculatedCostUsd) || 0), 0);
-      const profit = totalRevenue - totalCost;
-      const profitMargin = totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
+      // A batch with no cost or no price waits for it — no profit, no loss.
+      const waitingFor = batchMissingCost(batch as never)
+        ? ("cost" as const)
+        : totalRevenue <= 0 && batchMissingSellingPrice(batch as never, { hasTiers: !!batch.useTieredPricing })
+          ? ("price" as const)
+          : null;
+      const totalCost = waitingFor ? 0 : resolved.totalCostUsd;
+      const profit = waitingFor ? 0 : totalRevenue - totalCost;
+      const profitMargin = !waitingFor && totalRevenue > 0 ? (profit / totalRevenue) * 100 : 0;
 
       return {
         ...batch,
@@ -192,7 +208,8 @@ export default function BatchReports() {
         totalCost,
         totalRevenue,
         profit,
-        profitMargin
+        profitMargin,
+        waitingFor,
       };
     });
   }, [batches, packages, divisor]);
@@ -976,7 +993,13 @@ export default function BatchReports() {
                             {formatCurrency(batch.totalRevenue)}
                           </TableCell>
                           <TableCell className={`font-bold ${isProfitable ? 'text-emerald-600' : 'text-red-600'}`}>
-                            {isProfitable ? '+' : ''}{formatCurrency(batch.profit)}
+                            {batch.waitingFor ? (
+                              <span className="text-xs font-semibold text-red-600 dark:text-red-400" data-testid="report-waiting">
+                                {batch.waitingFor === "cost"
+                                  ? pickLang(language, { ku: "چاوەڕێی نرخی تێچوو", en: "Waiting for cost", ar: "بانتظار التكلفة", zh: "待成本" })
+                                  : pickLang(language, { ku: "چاوەڕێی نرخی فرۆشتن", en: "Waiting for price", ar: "بانتظار السعر", zh: "待售价" })}
+                              </span>
+                            ) : (<>{isProfitable ? '+' : ''}{formatCurrency(batch.profit)}</>)}
                           </TableCell>
                           <TableCell>
                             <Badge 

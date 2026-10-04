@@ -1033,9 +1033,11 @@ export const expensesRouter = router({
             db.getExpensesDailyTotals(previousStart, previousEnd),
             db.getExpensesByVendor(startDate, endDate, 5),
             db.getExpensesPaymentSplit(startDate, endDate),
-            // Revenue and cost for the same window, so the share of profit is
-            // a share of *this* period's profit and not of the year's.
-            db.calculateProfitLoss(startDate, endDate),
+            // Profit for the same window by the one rule every report uses
+            // (reports.db getProfitForPeriod). This read a revenue table's
+            // total as "gross profit" — $2,374.80 for October while the
+            // company dashboard said −$715.90 (2026-10-03).
+            db.getProfitForPeriod(startDate, endDate),
             db.getExpenseBudgetStatus(monthStart, monthEnd, endDate),
           ]);
 
@@ -1051,8 +1053,9 @@ export const expensesRouter = router({
           byVendor,
           paymentSplit,
           profit: {
-            grossProfit: profitLoss.grossProfit,
-            netProfit: profitLoss.netProfit,
+            // Before the company's expenses, and after them.
+            grossProfit: Math.round(profitLoss.total.profit * 100) / 100,
+            netProfit: Math.round((profitLoss.total.profit - Number(current.totalAmount || 0)) * 100) / 100,
             // Deliberately the expenses figure this screen owns, so the panel
             // sums to the card above it. calculateProfitLoss counts costs the
             // expenses table knows nothing about, and mixing the two would

@@ -57,9 +57,12 @@ describe("the expenses report compares against something", () => {
     expect(calls, "the two windows are not summed by the same function").toBe(2);
   });
 
-  it("takes revenue from the finance report rather than recomputing it", () => {
+  it("takes profit from the one rule every report uses, not a revenue table", () => {
+    // 2026-10-04: calculateProfitLoss read the revenue records' total as
+    // "gross profit" — $2,374.80 for October beside a dashboard at −$715.90.
     expect(getDashboard(), "profit must come from the shared calculation")
-      .toContain("db.calculateProfitLoss(startDate, endDate)");
+      .toContain("db.getProfitForPeriod(startDate, endDate)");
+    expect(getDashboard()).not.toContain("db.calculateProfitLoss(startDate, endDate)");
   });
 
   it("subtracts the expenses figure the screen itself shows", () => {
