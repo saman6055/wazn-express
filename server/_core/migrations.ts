@@ -2684,6 +2684,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // 64KB ceiling, so MySQL rejected the whole write with "Data too long" and
   // adding a picture to an order simply never saved.
   { name: "fullPackageOrders.productImage.mediumtext", sql: "ALTER TABLE fullPackageOrders MODIFY COLUMN productImage MEDIUMTEXT" },
+  // The commission fee is per unit; a fee recorded for a whole order (May–July
+  // 2026) is stored per unit by the repair in db/commissionFeeRepair, which
+  // needs four places to be exact. Widening keeps every existing value.
+  { name: "fullPackageOrders.commissionFeeUsd.4dp", sql: "ALTER TABLE fullPackageOrders MODIFY COLUMN commissionFeeUsd DECIMAL(12,4) NULL" },
   // One platform list for the whole system: the customer portal's pre-declare
   // form now picks from the same productAttributes rows the order forms use,
   // so a shop the admin adds is available everywhere instead of only on orders.

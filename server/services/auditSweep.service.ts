@@ -340,21 +340,22 @@ const QUERIES: Record<CheckId, string> = {
     LIMIT ${SAMPLE_LIMIT}`,
 
   /*
-   * The charge is commission × quantity (commissionGoodsTotal); the stored
-   * profit was written as commission − shipping, for one unit.
+   * The charge is commission × quantity (commissionGoodsTotal), and that is
+   * the profit — the freight the customer pays is income, not taken off it
+   * (shared/orderProfit, 2026-10-03). A stored profit that disagrees is a
+   * row written by an older rule, or a fee written for the whole order
+   * (repair: db/commissionFeeRepair).
    */
   commission_profit_one_unit: `
-    SELECT id, orderCode, quantity, commissionFeeUsd, shippingCostUsd, profitUsd,
-           ROUND(CAST(commissionFeeUsd AS DECIMAL(14,2)) * quantity
-                 - CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(14,2)), 2) AS shouldBe
+    SELECT id, orderCode, quantity, commissionFeeUsd, profitUsd,
+           ROUND(CAST(commissionFeeUsd AS DECIMAL(14,4)) * quantity, 2) AS shouldBe
     FROM fullPackageOrders
     WHERE orderType = 'commission'
       AND deletedAt IS NULL
       AND quantity > 1
-      AND CAST(COALESCE(commissionFeeUsd, 0) AS DECIMAL(14,2)) > 0
+      AND CAST(COALESCE(commissionFeeUsd, 0) AS DECIMAL(14,4)) > 0
       AND ABS(CAST(COALESCE(profitUsd, 0) AS DECIMAL(14,2))
-              - (CAST(commissionFeeUsd AS DECIMAL(14,2)) * quantity
-                 - CAST(COALESCE(shippingCostUsd, 0) AS DECIMAL(14,2)))) > 0.01
+              - CAST(commissionFeeUsd AS DECIMAL(14,4)) * quantity) > 0.01
     ORDER BY id DESC
     LIMIT ${SAMPLE_LIMIT}`,
 

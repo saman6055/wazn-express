@@ -642,6 +642,20 @@ export const ledgerRouter = router({
       }),
 
     /**
+     * Commission orders whose fee was stored for the whole order, not per
+     * unit (db/commissionFeeRepair). The list reads; the fix touches only the
+     * order's fee and stored profit — no account moves.
+     */
+    commissionFeeAsTotal: superAdminProcedure.query(async () => {
+      return db.findCommissionFeeStoredAsTotal();
+    }),
+    fixCommissionFeeAsTotal: superAdminProcedure
+      .input(z.object({ orderIds: z.array(z.number().int().positive()).min(1).max(1000) }))
+      .mutation(async ({ input, ctx }) => {
+        return db.fixCommissionFeeStoredAsTotal(input.orderIds, { id: ctx.user.id, role: ctx.user.role });
+      }),
+
+    /**
      * Extras waiting for the main admin (db/pendingCredits.db), and his
      * answer. Approving posts the payment; refusing posts nothing.
      */

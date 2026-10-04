@@ -658,7 +658,7 @@ export default function BulkOrderForm() {
                         </div>
                         <div className="col-span-2">
                           <Input
-                            placeholder={pickLang(language, { ku: "عمولە ($)", en: "Commission ($)", ar: "العمولة ($)", zh: "佣金 ($)" })}
+                            placeholder={pickLang(language, { ku: "عمولە بۆ یەک دانە ($)", en: "Commission per unit ($)", ar: "العمولة للوحدة ($)", zh: "单件佣金 ($)" })}
                             value={item.commissionFeeUsd}
                             onChange={e => updateItem(item.id, "commissionFeeUsd", e.target.value)}
                             className="h-9 text-sm"

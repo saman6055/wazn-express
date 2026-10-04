@@ -37,3 +37,4 @@ export * from './shareLinks.db';
 export * from './batchCharging.db';
 export * from './batchCloseCheck.db';
 export * from './batchCleanup.db';
+export * from './commissionFeeRepair.db';

@@ -24,6 +24,7 @@ import { EntryChargeBackfillSection } from "@/components/admin/EntryChargeBackfi
 import { UnbilledGoodsSection } from "@/components/admin/UnbilledGoodsSection";
 import { CreditCustomersSection } from "@/components/admin/CreditCustomersSection";
 import { BulkReceiptCreditSection } from "@/components/admin/BulkReceiptCreditSection";
+import { CommissionFeeRepairSection } from "@/components/admin/CommissionFeeRepairSection";
 import { LedgerReconciliationSection } from "@/components/admin/LedgerReconciliationSection";
 import { pickLang } from "@/lib/lang";
 
@@ -196,6 +197,7 @@ export default function DataManagement() {
           <TabsContent value="repairs" className="space-y-6">
             <LedgerReconciliationSection language={language} />
             <BulkReceiptCreditSection language={language} />
+            <CommissionFeeRepairSection language={language} />
             <CreditCustomersSection language={language} />
             <UnbilledGoodsSection language={language} />
             <EntryChargeBackfillSection language={language} />

@@ -68,7 +68,9 @@ export const fullPackageOrders = mysqlTable("fullPackageOrders", {
   // Pricing - For Commission Purchase (customer knows the price)
   itemPriceUsd: decimal("itemPriceUsd", { precision: 10, scale: 2 }), // Actual item price (customer knows)
   itemPriceCny: decimal("itemPriceCny", { precision: 10, scale: 2 }), // Item price in CNY
-  commissionFeeUsd: decimal("commissionFeeUsd", { precision: 10, scale: 2 }), // Commission fee for purchasing service
+  // Per unit. Four places, so a fee recorded for a whole order can be stored
+  // per unit exactly ($11.05 over 20 units is $0.5525 — 2026-10-04).
+  commissionFeeUsd: decimal("commissionFeeUsd", { precision: 12, scale: 4 }), // Commission fee for purchasing service, per unit
   totalPrepaidUsd: decimal("totalPrepaidUsd", { precision: 10, scale: 2 }), // Total prepaid by customer (item + commission)
   
   // Prepaid tracking
