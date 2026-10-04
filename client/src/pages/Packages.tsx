@@ -1,4 +1,6 @@
 import { toCsv, downloadText } from "@/lib/csv";
+import { confirmAction } from "@/components/ConfirmDialog";
+import { oddParcelNumbers, oddParcelQuestion } from "@shared/parcelNumberSense";
 import { statusChip, statusDot } from "@/lib/statusTone";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -1103,8 +1105,20 @@ const [, setLocation] = useLocation();
     setShowEditDialog(true);
   };
 
-  const handleEditSave = () => {
+  const handleEditSave = async () => {
     if (!selectedPackage) return;
+    // A slipped digit is asked about once before it is saved
+    // (shared/parcelNumberSense, owner 2026-10-04).
+    const odd = oddParcelNumbers({ weightKg: editWeightKg, lengthCm: editLengthCm, widthCm: editWidthCm, heightCm: editHeightCm, volumeCbm: editCbm > 0 ? editCbm : null });
+    if (odd.length > 0) {
+      const sure = await confirmAction({
+        title: pickLang(language, { ku: "ئەم ژمارەیە لۆجیکی نییە", en: "This number does not look right", ar: "هذا الرقم غير منطقي", zh: "这个数字不合逻辑" }),
+        message: oddParcelQuestion(odd),
+        confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+        cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+      });
+      if (!sure) return;
+    }
     updatePackageMutation.mutate(
       {
         id: selectedPackage.id,
