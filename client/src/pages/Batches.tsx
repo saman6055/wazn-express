@@ -95,6 +95,9 @@ interface CustomerPricing {
   notes?: string;
 }
 
+/** Where the batch search waits while a batch's own page is open. */
+const BATCH_SEARCH_KEY = "wazn.batches.search";
+
 export default function Batches() {
     const { t, language } = useTranslation();
 const [isCreateOpen, setIsCreateOpen] = useState(false);
@@ -744,8 +747,22 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
    * list rows don't carry. Debounced so typing (or a barcode scanner) does
    * not fire a query per keystroke.
    */
-  const [searchText, setSearchText] = useState("");
-  const [debouncedSearch, setDebouncedSearch] = useState("");
+  /*
+   * The search outlives a visit to a batch's own pages (owner, 2026-10-04:
+   * "I find a batch, open its financial analysis, come back — and the search
+   * is gone, I have to search again"). Kept for this tab only; cleared by the
+   * x in the box like any search.
+   */
+  const [searchText, setSearchText] = useState(() => {
+    try { return sessionStorage.getItem(BATCH_SEARCH_KEY) ?? ""; } catch { return ""; }
+  });
+  useEffect(() => {
+    try {
+      if (searchText) sessionStorage.setItem(BATCH_SEARCH_KEY, searchText);
+      else sessionStorage.removeItem(BATCH_SEARCH_KEY);
+    } catch { /* private window: the search simply is not remembered */ }
+  }, [searchText]);
+  const [debouncedSearch, setDebouncedSearch] = useState(() => searchText.trim());
   useEffect(() => {
     const handle = setTimeout(() => setDebouncedSearch(searchText.trim()), 300);
     return () => clearTimeout(handle);
