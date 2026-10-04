@@ -5,6 +5,7 @@ import {
 } from "../../drizzle/schema";
 import { reverseCharge } from "./finance.db";
 import { withFix } from "@shared/fixAdvice";
+import { isOrderChargeText } from "@shared/batchCleanup";
 
 /**
  * Delete a parcel and take its money off the account with it.
@@ -92,7 +93,10 @@ export async function deleteParcelWithItsCharges(
             inArray(ledgerTransactions.transactionType, [...CHARGE_TYPES]),
           ));
         for (const charge of charges) {
-          if (String(charge.description ?? "").trimStart().startsWith(ORDER_FREIGHT_PREFIX)) continue;
+          // An order's freight, posted under the order's id — which can be
+          // this parcel's id too. Older rows say «کڕین بە عمولە», newer ones
+          // «کڕین بە تێچوو»; both name the order (shared/batchCleanup).
+          if (isOrderChargeText(charge.description) || String(charge.description ?? "").trimStart().startsWith(ORDER_FREIGHT_PREFIX)) continue;
           const { reversalTransaction } = await reverseCharge(
             charge.id,
             `سڕینەوەی پاکەت ${pkg.trackingNumber ?? pkg.packageCode ?? packageId}`,

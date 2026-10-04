@@ -19,7 +19,8 @@ import {
 } from "@shared/batchCostGuard";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
-import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
+import { planCleanup, cleanupRefusal } from "@shared/batchCleanup";
 import * as db from "../db";
 import { notifyBatchStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema } from "./schemas";
@@ -1339,6 +1340,122 @@ export const batchesRouter = router({
           // leaving the operator wondering where thirty-seven of them went.
           releasedPackages: releasedPackageIds.length,
         };
+      }),
+
+    /**
+     * Everything tied to a batch, with what each tick would do to every
+     * customer's account (owner, 2026-10-04 — shared/batchCleanup). Read only.
+     */
+    cleanupFacts: superAdminProcedure
+      .input(z.object({ id: idSchema }))
+      .query(async ({ input }) => {
+        const facts = await db.getBatchCleanupFacts(input.id);
+        if (!facts) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچەکە", { bin: true }) });
+        return facts;
+      }),
+
+    /**
+     * Delete a batch with what the main admin ticked: receipts undone, parcels
+     * deleted with their charges, boxes deleted, invoices cancelled — in that
+     * order, each through the door that already does it — then the batch to
+     * the bin. Checked as a whole first: if any tick is refused, nothing moves.
+     */
+    deleteWithTies: superAdminProcedure
+      .input(z.object({
+        id: idSchema,
+        receiptIds: z.array(z.number().int().positive()).max(500).default([]),
+        parcelIds: z.array(z.number().int().positive()).max(5000).default([]),
+        boxIds: z.array(z.number().int().positive()).max(500).default([]),
+        invoiceIds: z.array(z.number().int().positive()).max(500).default([]),
+        reason: z.string().trim().max(500).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const facts = await db.getBatchCleanupFacts(input.id);
+        if (!facts) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچەکە", { bin: true }) });
+        const plan = planCleanup(facts, input);
+        if (plan.problems.length > 0) {
+          throw new TRPCError({ code: "CONFLICT", message: cleanupRefusal(plan.problems) });
+        }
+        const batch = await db.getBatchById(input.id);
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("باچەکە", { bin: true }) });
+
+        const why = input.reason || `سڕینەوەی باچی ${batch.batchCode}`;
+        const done: string[] = [];
+        const step = async (label: string, work: () => Promise<unknown>) => {
+          try {
+            await work();
+            done.push(label);
+          } catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            throw new TRPCError({
+              code: "CONFLICT",
+              message: withFix(
+                `سڕینەوەی باچی ${batch.batchCode} لە نیوەدا وەستا — «${label}» نەکرا: ${message}` +
+                  (done.length ? `\nئەوەی کرا: ${done.join("، ")}` : "\nهیچ شتێک نەگۆڕا."),
+                [
+                  "پەنجەرەی سڕینەوە دووبارە بکەرەوە — ئەوەی کراوە لە لیستەکەدا نامێنێت",
+                  "هۆکاری سەرەوە چاک بکە و دووبارە هەوڵ بدەرەوە",
+                ],
+              ),
+            });
+          }
+        };
+
+        for (const id of input.receiptIds) {
+          const r = facts.receipts.find((x) => x.id === id)!;
+          await step(`هەڵوەشاندنەوەی وەسڵی ${r.number}`, () => db.reverseBoxSettlement(id, why, ctx.user.id));
+        }
+        for (const id of input.parcelIds) {
+          const p = facts.parcels.find((x) => x.id === id)!;
+          await step(`سڕینەوەی پاکەتی ${p.code}`, async () => {
+            const old = await db.getPackageById(id);
+            const removed = await db.deleteParcelWithItsCharges(id, ctx.user.id);
+            await db.createAuditLog({
+              userId: ctx.user.id, userRole: ctx.user.role, action: "delete_package",
+              entityType: "package", entityId: id, oldValues: old, newValues: { ...removed, with: batch.batchCode },
+            });
+          });
+        }
+        for (const id of input.boxIds) {
+          const b = facts.boxes.find((x) => x.id === id)!;
+          await step(`سڕینەوەی بۆکسی ${b.code}`, async () => {
+            const box = await db.getDeliveryBoxById(id);
+            if (!box) return;
+            const items = await db.getBoxItems(id);
+            await db.recordDeletion({
+              entityType: "delivery_box", entityId: id, label: box.boxCode,
+              snapshot: { ...box, items } as unknown as Record<string, unknown>,
+              deletedById: ctx.user.id, deletedByName: ctx.user.name ?? null, deletionReason: why,
+            });
+            await db.createAuditLog({
+              userId: ctx.user.id, userRole: ctx.user.role, action: "delete_delivery_box",
+              entityType: "delivery_box", entityId: id, oldValues: box,
+            });
+            await db.deleteDeliveryBoxWithItems(id);
+          });
+        }
+        for (const id of input.invoiceIds) {
+          const inv = facts.invoices.find((x) => x.id === id)!;
+          await step(`هەڵوەشاندنەوەی پسوولەی ${inv.number}`, () =>
+            db.cancelInvoiceForCleanup(id, `هەڵوەشێنرایەوە لەگەڵ سڕینەوەی باچی ${batch.batchCode} — ${why}`));
+        }
+
+        await step(`سڕینەوەی باچی ${batch.batchCode}`, async () => {
+          const releasedPackageIds = await db.releasePackagesFromBatch(input.id);
+          await db.recordDeletion({
+            entityType: "batch", entityId: batch.id, label: batch.batchCode,
+            snapshot: { ...batch, releasedPackageIds } as unknown as Record<string, unknown>,
+            deletedById: ctx.user.id, deletedByName: ctx.user.name ?? null, deletionReason: why,
+          });
+          await db.createAuditLog({
+            userId: ctx.user.id, userRole: ctx.user.role, action: "delete_batch",
+            entityType: "batch", entityId: batch.id, oldValues: batch,
+            newValues: { receipts: input.receiptIds, parcels: input.parcelIds, boxes: input.boxIds, invoices: input.invoiceIds },
+          });
+          await db.deleteBatch(input.id);
+        });
+
+        return { success: true, batchCode: batch.batchCode, done, effects: plan.effects };
       }),
 
     updateStatus: staffProcedure

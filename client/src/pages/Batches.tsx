@@ -43,7 +43,8 @@ import {
 } from "@shared/listLinks";
 import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
-import { canDeleteBatch, isTiesQuestion, BATCH_TIES_MARK } from "@shared/batchDeletion";
+import { canDeleteBatch, isTiesQuestion, isSuperAdmin, BATCH_TIES_MARK } from "@shared/batchDeletion";
+import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
@@ -1837,7 +1838,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </CardContent>
         </Card>
 
-        <AlertDialog open={!!deletingBatch} onOpenChange={(open) => !open && setDeletingBatch(null)}>
+        {/* The main admin deletes with what hangs from it, ticked one by one
+            (owner, 2026-10-04 — shared/batchCleanup); everyone else keeps the
+            plain confirm below. */}
+        <BatchDeleteDialog
+          batch={isSuperAdmin(userRole) && deletingBatch ? deletingBatch : null}
+          onClose={() => setDeletingBatch(null)}
+          onDeleted={() => {
+            setDeletingBatch(null);
+            refreshBatchLists();
+          }}
+        />
+        <AlertDialog open={!!deletingBatch && !isSuperAdmin(userRole)} onOpenChange={(open) => !open && setDeletingBatch(null)}>
           <AlertDialogContent>
             <AlertDialogHeader>
               <AlertDialogTitle className="flex items-center gap-2">
