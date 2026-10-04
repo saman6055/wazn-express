@@ -76,6 +76,14 @@ export const ledgerRouter = router({
       .query(async () => {
         return db.getAllCustomerAccountsWithInfo();
       }),
+
+    /**
+     * How old each debt is: the date of the oldest charge still unpaid, not
+     * of the last movement (shared/debtAge, 2026-10-04). Read only.
+     */
+    debtAges: accountantProcedure.query(async () => {
+      return db.getDebtAges();
+    }),
     
     // Get customer account by customer ID
     getAccountByCustomer: staffProcedure

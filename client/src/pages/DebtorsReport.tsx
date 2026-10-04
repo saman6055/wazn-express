@@ -1,4 +1,5 @@
 import { useEffect, useState, useMemo } from "react";
+import { daysSince } from "@shared/debtAge";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -73,6 +74,14 @@ const [searchTerm, setSearchTerm] = useState("");
   const [sortBy, setSortBy] = useState<'balance' | 'days'>('balance');
   
   const { data: accounts, isLoading } = trpc.ledger.getAllAccounts.useQuery();
+  // The age of a debt is its oldest unpaid charge (shared/debtAge). Measured
+  // from the last movement, every account read "0–30 days" after the credit
+  // clean-up touched them all (2026-10-03), debts from May among them.
+  const { data: debtAges } = trpc.ledger.debtAges.useQuery();
+  const oldestOf = useMemo(
+    () => new Map((debtAges ?? []).map((d) => [d.accountId, d.oldestUnpaidAt])),
+    [debtAges],
+  );
   
   // Calculate aging for each account
   const debtorAccounts = useMemo(() => {
@@ -88,7 +97,10 @@ const [searchTerm, setSearchTerm] = useState("");
         // week sat in "90+" (owner spotted the empty column, 2026-09-22).
         const lastActivity = acc.lastTransactionAt ?? acc.lastTransactionDate ?? null;
         const lastActivityDate = lastActivity ? new Date(lastActivity) : new Date(acc.createdAt);
-        const daysSinceActivity = Math.floor((Date.now() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
+        const owedSince = oldestOf.get(acc.id) ?? null;
+        const daysSinceActivity = owedSince
+          ? (daysSince(owedSince) ?? 0)
+          : Math.floor((Date.now() - lastActivityDate.getTime()) / (1000 * 60 * 60 * 24));
         
         let agingCategory: '0-30' | '30-60' | '60-90' | '90+';
         if (daysSinceActivity <= 30) agingCategory = '0-30';
@@ -104,11 +116,12 @@ const [searchTerm, setSearchTerm] = useState("");
           customerName: acc.customer?.fullName ?? null,
           customerMobile: acc.customer?.mobileNumber ?? null,
           lastActivity,
+          owedSince,
           daysSinceActivity,
           agingCategory,
         };
       });
-  }, [accounts]);
+  }, [accounts, oldestOf]);
   
   // Filter and sort
   const filteredDebtors = useMemo(() => {
