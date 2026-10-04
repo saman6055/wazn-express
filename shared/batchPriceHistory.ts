@@ -66,3 +66,44 @@ export function diffPriceFields(
 export function isBatchEditLocked(status: string | null | undefined): boolean {
   return status === "delivered" || status === "closed";
 }
+
+/**
+ * The main admin may still correct a delivered batch, whenever he wants
+ * (owner, 2026-10-04). Moving the status back to edit it was the only way,
+ * and that told every customer in it "your goods have arrived" again and
+ * showed their parcels as "in customs". His edit leaves the status alone.
+ */
+export function mayEditLockedBatch(role: string | null | undefined): boolean {
+  return role === "super_admin";
+}
+
+/**
+ * What stays fixed even for him: the selling side. The customers were
+ * charged from it at delivery, and changing it on the batch would not change
+ * a single charge — the batch would show one price and the accounts another.
+ * A customer's price is corrected with the per-customer adjustment, which
+ * posts the difference.
+ */
+export interface SellingSide {
+  pricePerKg?: string | number | null;
+  pricePerCbm?: string | number | null;
+  useTieredPricing?: boolean | null;
+}
+
+const sameAmount = (a: string | number | null | undefined, b: string | number | null | undefined) => {
+  const x = a === null || a === undefined || a === "" ? 0 : Number(a);
+  const y = b === null || b === undefined || b === "" ? 0 : Number(b);
+  return Math.abs(x - y) < 0.005;
+};
+
+/** True when this save would change what the customers were charged from. */
+export function sellingSideChanged(
+  next: SellingSide & { pricingTiers?: unknown; customerPricing?: unknown },
+  stored: SellingSide,
+): boolean {
+  if (next.pricingTiers !== undefined || next.customerPricing !== undefined) return true;
+  if (next.pricePerKg !== undefined && !sameAmount(next.pricePerKg, stored.pricePerKg)) return true;
+  if (next.pricePerCbm !== undefined && !sameAmount(next.pricePerCbm, stored.pricePerCbm)) return true;
+  if (next.useTieredPricing !== undefined && !!next.useTieredPricing !== !!stored.useTieredPricing) return true;
+  return false;
+}

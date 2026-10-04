@@ -101,7 +101,20 @@ describe("a delivered batch is settled", () => {
     expect(page).toContain("<fieldset disabled={editLocked}");
     // Belt to the server's suspenders: a locked batch never even sends.
     const handleEdit = slice(page, "const handleEdit", "const openEditDialog");
-    expect(handleEdit).toContain("if (isBatchEditLocked(editingBatch.status)) return;");
+    expect(handleEdit).toContain("if (editLocked) return;");
+    expect(page).toContain("const editLocked = deliveredBatch && !mayEditLockedBatch(userRole);");
+  });
+
+  it("the main admin corrects a delivered batch without moving its status", () => {
+    const router = read("server/routers/batches.router.ts");
+    const update = slice(router, "update: staffProcedure", "priceHistory: staffProcedure");
+    expect(update).toContain("if (isBatchEditLocked(existing.status) && !mayEditLockedBatch(ctx.user.role)) {");
+    // …but never the selling side the customers were charged from.
+    expect(update).toContain("sellingSideChanged({ ...data, pricingTiers, customerPricing }, existing)");
+    expect(update.indexOf("sellingSideChanged(")).toBeLessThan(update.indexOf("updateBatch("));
+    const page = read("client/src/pages/Batches.tsx");
+    expect(page).toContain("<fieldset disabled={sellingLocked}");
+    expect(page).toContain("useTieredPricing: sellingLocked ? undefined : useTieredPricing,");
   });
 
   it("status moves stay possible — the lock is on the edit, not the journey", () => {

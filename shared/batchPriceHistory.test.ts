@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   diffPriceFields,
   isBatchEditLocked,
+  mayEditLockedBatch,
+  sellingSideChanged,
   normalizePriceValue,
 } from "./batchPriceHistory";
 
@@ -72,5 +74,28 @@ describe("isBatchEditLocked", () => {
     expect(isBatchEditLocked("preparing")).toBe(false);
     expect(isBatchEditLocked(null)).toBe(false);
     expect(isBatchEditLocked(undefined)).toBe(false);
+  });
+});
+
+
+/*
+ * Owner, 2026-10-04: "the main admin must have the power to edit whenever he
+ * wants." Before this, the only way was to move a delivered batch's status
+ * back, which told every customer in it "your goods have arrived" again.
+ */
+describe("the main admin may correct a delivered batch", () => {
+  it("only the main admin", () => {
+    expect(mayEditLockedBatch("super_admin")).toBe(true);
+    for (const role of ["admin", "accountant", "employee", null]) expect(mayEditLockedBatch(role)).toBe(false);
+  });
+
+  it("cost, weights and details are his to fix; the selling side stays as charged", () => {
+    const stored = { pricePerKg: "11.00", pricePerCbm: null, useTieredPricing: false };
+    expect(sellingSideChanged({}, stored)).toBe(false);
+    expect(sellingSideChanged({ pricePerKg: "11" }, stored), "the same price is not a change").toBe(false);
+    expect(sellingSideChanged({ pricePerKg: "12" }, stored)).toBe(true);
+    expect(sellingSideChanged({ pricePerCbm: "300" }, stored)).toBe(true);
+    expect(sellingSideChanged({ useTieredPricing: true }, stored)).toBe(true);
+    expect(sellingSideChanged({ customerPricing: [] }, stored), "a customer's agreed price is the selling side").toBe(true);
   });
 });

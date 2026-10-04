@@ -46,7 +46,7 @@ import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch } from "@shared/batchDeletion";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
-import { isBatchEditLocked } from "@shared/batchPriceHistory";
+import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -538,7 +538,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
   // A delivered batch is settled — the server refuses edits, the form is
   // read-only, and the save button is gone. The owner's rule (Sep 2026).
-  const editLocked = !!editingBatch && isBatchEditLocked(editingBatch.status);
+  const deliveredBatch = !!editingBatch && isBatchEditLocked(editingBatch.status);
+  // The main admin may still correct a delivered batch, without moving its
+  // status; everyone else sees it read-only. The selling side stays as the
+  // customers were charged, even for him (shared/batchPriceHistory).
+  const editLocked = deliveredBatch && !mayEditLockedBatch(userRole);
+  const sellingLocked = deliveredBatch;
 
   /**
    * The five money fields, old → new, who and when — shown as a small box
@@ -564,7 +569,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     e.preventDefault();
     if (!editingBatch) return;
     // Belt to the server's suspenders: a locked batch never even sends.
-    if (isBatchEditLocked(editingBatch.status)) return;
+    if (editLocked) return;
 
     const formData = new FormData(e.currentTarget);
 
@@ -612,9 +617,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // have actually loaded. The server replaces the whole list on every
       // update, so a save racing the load used to overwrite somebody's
       // negotiated prices with an empty array. undefined = leave untouched.
-      useTieredPricing: useTieredPricing,
-      pricingTiers: tiersLoaded ? pricingTiers : undefined,
-      customerPricing: customerPricingLoaded ? customerPricing : undefined,
+      // A delivered batch keeps the selling side it charged from: nothing
+      // of it is sent (its inputs are disabled, so the prices are not either).
+      useTieredPricing: sellingLocked ? undefined : useTieredPricing,
+      pricingTiers: !sellingLocked && tiersLoaded ? pricingTiers : undefined,
+      customerPricing: !sellingLocked && customerPricingLoaded ? customerPricing : undefined,
       // "" is a decision (the note was deleted on purpose) and must clear;
       // null means the field never reached the form, and must not touch
       // what is stored. `|| undefined` treated both as "keep", so a note
@@ -2286,6 +2293,19 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </span>
                   </div>
                 )}
+                {deliveredBatch && !editLocked && (
+                  <div className="mb-3 flex items-start gap-2 rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sm text-sky-800 dark:border-sky-500/40 dark:bg-sky-500/10 dark:text-sky-300">
+                    <Lock className="mt-0.5 h-4 w-4 shrink-0" />
+                    <span>
+                      {pickLang(language, {
+                        ku: "ئەم باچە گەیشتووە — وەک ئادمینی سەرەکی دەتوانیت تێچوو و کێش و زانیاری ڕاست بکەیتەوە. دۆخی باچ ناگۆڕێت و هیچ نامەیەک بۆ کڕیار ناچێت. نرخی فرۆشتن قفڵە، چونکە کڕیارەکان لەسەری حیساب کراون.",
+                        en: "This batch is delivered — as the main admin you may correct cost, weights and details. Its status stays and no customer is messaged. Selling prices stay locked: the customers were charged from them.",
+                        ar: "هذه الدفعة سُلِّمت — بصفتك المدير الرئيسي يمكنك تصحيح التكلفة والأوزان والتفاصيل. تبقى الحالة كما هي ولا تُرسل رسالة للعملاء. أسعار البيع مقفلة لأن العملاء حوسبوا عليها.",
+                        zh: "该批次已送达——作为主管理员，您可以更正成本、重量和信息。状态不变，不会通知客户。售价保持锁定，因为客户已按此计费。",
+                      })}
+                    </span>
+                  </div>
+                )}
                 <Tabs defaultValue="basic" className="w-full">
                   <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="basic">{t("batches.basicInfo")}</TabsTrigger>
@@ -2546,6 +2566,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   
                   {/* Tab 3: Selling Price */}
                   <TabsContent value="pricing" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
+                    <fieldset disabled={sellingLocked} className="min-w-0 border-0 p-0 m-0 space-y-4">
                     {/* Tiered pricing toggle */}
                     {(editingBatch.shippingType === "sea" || editingBatch.shippingType === "air_irregular") && (
                       <div className="flex items-center justify-between p-4 border rounded-lg bg-muted/30">
@@ -2645,6 +2666,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardContent>
                       </Card>
                     )}
+                    </fieldset>
                   </TabsContent>
                   </fieldset>
                 </Tabs>

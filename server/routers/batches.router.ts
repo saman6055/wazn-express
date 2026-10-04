@@ -4,7 +4,7 @@ import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { missingShippingNumber, type BatchAwaitingDetails } from "@shared/batchReminders";
 import { canDeleteBatch, REFUSAL_MESSAGE } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
-import { isBatchEditLocked } from "@shared/batchPriceHistory";
+import { isBatchEditLocked, mayEditLockedBatch, sellingSideChanged } from "@shared/batchPriceHistory";
 import { newlyOdd, oddBatchNumbers, oddNumberQuestion, usualRates, type BatchNumbers } from "@shared/batchNumberSense";
 import { batchMissingSellingPrice } from "@shared/batchPricing";
 import { missingPieces } from "@shared/batchReminders";
@@ -2217,7 +2217,7 @@ export const batchesRouter = router({
         // moving the status back on purpose.
         const existing = await db.getBatchById(id);
         if (!existing) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
-        if (isBatchEditLocked(existing.status)) {
+        if (isBatchEditLocked(existing.status) && !mayEditLockedBatch(ctx.user.role)) {
           throw new TRPCError({
             code: "FORBIDDEN",
             message: withFix(
@@ -2225,8 +2225,30 @@ export const batchesRouter = router({
           [
             "ئەگەر پاکەتێکی تاک هەڵەیە، لە پاکەتەکەوە چاکی بکەرەوە",
             "ئەگەر نرخ هەڵەیە، لە شاشەی پارەدانی بۆکسەکەوە بە هۆکارەوە ڕاستی بکەرەوە",
+            "ئەگەر تێچوو یان کێشی کۆمپانیای گواستنەوە هەڵەیە، ئادمینی سەرەکی دەتوانێت ڕاستی بکاتەوە",
           ],
         ),
+          });
+        }
+        // The main admin edits a delivered batch without moving its status
+        // (no "arrived" message to the customers again). The selling side
+        // stays as charged — see sellingSideChanged.
+        if (isBatchEditLocked(existing.status)
+            && sellingSideChanged({ ...data, pricingTiers, customerPricing }, existing)) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: withFix(
+              "نرخی فرۆشتنی باچێکی گەیشتوو ناگۆڕدرێت — کڕیارەکان لەسەر ئەم نرخە حیساب کراون، و گۆڕینی لێرە هیچ پارەیەک ناگۆڕێت.",
+              [
+                "نرخی فرۆشتن وەک خۆی بهێڵەرەوە و تەنها تێچوو و کێش ڕاست بکەرەوە",
+                "بۆ گۆڕینی پارەی کڕیارێک، لە لیستی کڕیارانی باچەکە «ڕاستکردنەوە» بەکاربهێنە",
+              ],
+            ),
+          });
+        }
+        if (isBatchEditLocked(existing.status)) {
+          appLogger.info("[Batch] main admin corrected a delivered batch", {
+            batchId: id, batchCode: existing.batchCode, userId: ctx.user.id,
           });
         }
 
