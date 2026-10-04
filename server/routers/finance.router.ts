@@ -654,6 +654,19 @@ export const ledgerRouter = router({
      * unit (db/commissionFeeRepair). The list reads; the fix touches only the
      * order's fee and stored profit — no account moves.
      */
+    /**
+     * The receipts 10 September wrote more than once (db/duplicateReceipts):
+     * listed, and voided by status only — no account moves.
+     */
+    duplicateReceipts: superAdminProcedure.query(async () => {
+      return db.findDuplicateReceipts();
+    }),
+    voidDuplicateReceipts: superAdminProcedure
+      .input(z.object({ settlementIds: z.array(z.number().int().positive()).min(1).max(1000) }))
+      .mutation(async ({ input, ctx }) => {
+        return db.voidDuplicateReceipts(input.settlementIds, { id: ctx.user.id, role: ctx.user.role });
+      }),
+
     commissionFeeAsTotal: superAdminProcedure.query(async () => {
       return db.findCommissionFeeStoredAsTotal();
     }),

@@ -25,6 +25,7 @@ import { UnbilledGoodsSection } from "@/components/admin/UnbilledGoodsSection";
 import { CreditCustomersSection } from "@/components/admin/CreditCustomersSection";
 import { BulkReceiptCreditSection } from "@/components/admin/BulkReceiptCreditSection";
 import { CommissionFeeRepairSection } from "@/components/admin/CommissionFeeRepairSection";
+import { DuplicateReceiptsSection } from "@/components/admin/DuplicateReceiptsSection";
 import { LedgerReconciliationSection } from "@/components/admin/LedgerReconciliationSection";
 import { pickLang } from "@/lib/lang";
 
@@ -198,6 +199,7 @@ export default function DataManagement() {
             <LedgerReconciliationSection language={language} />
             <BulkReceiptCreditSection language={language} />
             <CommissionFeeRepairSection language={language} />
+            <DuplicateReceiptsSection language={language} />
             <CreditCustomersSection language={language} />
             <UnbilledGoodsSection language={language} />
             <EntryChargeBackfillSection language={language} />

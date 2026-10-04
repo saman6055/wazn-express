@@ -39,3 +39,4 @@ export * from './batchCloseCheck.db';
 export * from './batchCleanup.db';
 export * from './commissionFeeRepair.db';
 export * from './debtAge.db';
+export * from './duplicateReceipts.db';
