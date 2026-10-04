@@ -139,15 +139,15 @@ export function BatchDeleteDialog({
               </div>
             )}
 
-            {section(L({ ku: "وەسڵەکان — هەڵدەوەشێنرێنەوە، پارەکە دەگەڕێتەوە سەر حیسابی کڕیار", en: "Receipts — undone, the money goes back on the account", ar: "الإيصالات — تُلغى ويعود المبلغ على الحساب", zh: "收据 — 撤销，金额回到账户" }),
+            {section(L({ ku: "وەسڵەکان — هەڵدەوەشێنرێنەوە: ئەو پارەدانە لادەچێت و قەرزی کڕیار دەگەڕێتەوە بۆ پێش وەسڵەکە (هیچ پارەیەک نادرێتەوە)", en: "Receipts — undone: the payment is removed and the debt returns to what it was before it (no money is paid out)", ar: "الإيصالات — تُلغى: تُزال الدفعة ويعود الدين كما كان (لا يُدفع أي مبلغ)", zh: "收据 — 撤销：删除该付款，欠款恢复到收据之前（不退任何钱）" }),
               facts.receipts.map((r) => row("receiptIds", r.id, r.eligible,
                 <><bdi dir="ltr">{r.number}</bdi> · <bdi dir="ltr">{r.boxCode}</bdi> · {codeOf(r.customerId)}</>,
-                <>+{fmtUsd(r.putBackUsd)}</>, r.why)), facts.receipts.length)}
+                <>{L({ ku: "قەرز", en: "debt", ar: "دين", zh: "欠款" })} +{fmtUsd(r.putBackUsd)}</>, r.why)), facts.receipts.length)}
 
             {section(L({ ku: "پاکەتەکان — دەسڕدرێنەوە، قەرزەکەیان لە حیساب لادەچێت", en: "Parcels — deleted, their charges come off the account", ar: "الطرود — تُحذف وتُزال رسومها", zh: "包裹 — 删除，费用从账户扣除" }),
               facts.parcels.map((p) => row("parcelIds", p.id, p.eligible,
                 <><bdi dir="ltr">{p.code}</bdi>{p.tracking ? <> · <bdi dir="ltr">{p.tracking}</bdi></> : null} · {codeOf(p.customerId)} · <bdi dir="ltr">{p.weightKg} kg</bdi></>,
-                <>{p.chargedUsd > 0 ? `−${fmtUsd(p.chargedUsd)}` : L({ ku: "قەرزی نییە", en: "no charge", ar: "بلا رسوم", zh: "无费用" })}</>, p.why)), facts.parcels.length)}
+                <>{p.chargedUsd > 0 ? `${L({ ku: "قەرز", en: "debt", ar: "دين", zh: "欠款" })} −${fmtUsd(p.chargedUsd)}` : L({ ku: "قەرزی نییە", en: "no charge", ar: "بلا رسوم", zh: "无费用" })}</>, p.why)), facts.parcels.length)}
 
             {section(L({ ku: "بۆکسەکان — دەسڕدرێنەوە (دەچنە سەتڵی خۆڵ)", en: "Boxes — deleted (to the recycle bin)", ar: "الصناديق — تُحذف (إلى السلة)", zh: "箱子 — 删除（进回收站）" }),
               facts.boxes.map((b) => row("boxIds", b.id, b.eligible,
