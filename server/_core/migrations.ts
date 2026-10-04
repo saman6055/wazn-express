@@ -1336,6 +1336,8 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       reversalReason TEXT,
       replacesSettlementId INT NULL,
       notes TEXT,
+      whatsappSentAt TIMESTAMP NULL,
+      whatsappSentById INT NULL,
       createdById INT NOT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_box_settlements_box (boxId),
@@ -2687,6 +2689,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // The commission fee is per unit; a fee recorded for a whole order (May–July
   // 2026) is stored per unit by the repair in db/commissionFeeRepair, which
   // needs four places to be exact. Widening keeps every existing value.
+  // "Your payment arrived" sent on WhatsApp, and by whom (2026-10-04).
+  { name: "boxSettlements.whatsappSentAt", sql: "ALTER TABLE boxSettlements ADD COLUMN whatsappSentAt TIMESTAMP NULL" },
+  { name: "boxSettlements.whatsappSentById", sql: "ALTER TABLE boxSettlements ADD COLUMN whatsappSentById INT NULL" },
   { name: "fullPackageOrders.commissionFeeUsd.4dp", sql: "ALTER TABLE fullPackageOrders MODIFY COLUMN commissionFeeUsd DECIMAL(12,4) NULL" },
   // One platform list for the whole system: the customer portal's pre-declare
   // form now picks from the same productAttributes rows the order forms use,

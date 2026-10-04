@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -59,6 +59,8 @@ export interface RiskFacts {
   unclaimed: number;
   /** Delivery boxes nothing was ever put in (shared/emptyBox). */
   emptyBoxes: number;
+  /** Receipts whose "your payment arrived" was not sent on WhatsApp yet. */
+  whatsappUnsent?: number;
 }
 
 /**
@@ -73,6 +75,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "orders-no-tracking": trackingAlertsHref({ days: "7+" }),
   unclaimed: "/packages/unclaimed",
   "empty-boxes": "/customer-delivery-scanner?empty=1",
+  "whatsapp-unsent": "/customer-delivery-scanner?whatsapp=unsent",
 };
 
 /** The page whose permission decides who is told. */
@@ -83,6 +86,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "orders-no-tracking": "/tracking-alerts",
   unclaimed: "/packages/unclaimed",
   "empty-boxes": "/customer-delivery-scanner",
+  "whatsapp-unsent": "/customer-delivery-scanner",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -116,7 +120,7 @@ export function riskGate(id: RiskId): string {
 export type RiskGroup = "risks" | "incomplete";
 
 export function riskGroup(id: RiskId): RiskGroup {
-  return isAuditRisk(id) || id === "empty-boxes" ? "incomplete" : "risks";
+  return isAuditRisk(id) || id === "empty-boxes" || id === "whatsapp-unsent" ? "incomplete" : "risks";
 }
 
 const SEVERITY_LEVEL: Record<CheckSeverity, RiskLevel> = { critical: "critical", warning: "high", info: "notice" };
@@ -184,6 +188,10 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   }
   // Owner, 2026-09-17: an empty box should be flagged so it can be deleted. A
   // notice — it costs nothing while it waits, so it never flashes.
+  // The customer was told in the portal but not on WhatsApp (owner, 2026-10-04).
+  if ((facts.whatsappUnsent ?? 0) > 0) {
+    items.push({ id: "whatsapp-unsent", level: "notice", count: facts.whatsappUnsent ?? 0 });
+  }
   if (facts.emptyBoxes > 0) {
     items.push({ id: "empty-boxes", level: "notice", count: facts.emptyBoxes });
   }
@@ -285,6 +293,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
       return {
         title: { ku: `${n} پاکەتی بێخاوەن`, en: `${n} unclaimed parcel(s)`, ar: `${n} طرد بلا صاحب`, zh: `${n} 个无主包裹` },
         detail: null,
+      };
+    case "whatsapp-unsent":
+      return {
+        title: { ku: `${n} وەسڵ هێشتا بە واتسئەپ نەنێردراوە`, en: `${n} receipt(s) not sent on WhatsApp`, ar: `${n} إيصال لم يُرسل عبر واتساب`, zh: `${n} 张收据未通过 WhatsApp 发送` },
+        detail: {
+          ku: "کڕیار ئاگادار نەکراوەتەوە کە پارەکەی گەیشت — کلیک بکە و بنێرە",
+          en: "the customer was not told the payment arrived — click and send",
+          ar: "لم يُبلَّغ العميل بوصول دفعته — اضغط وأرسل",
+          zh: "客户未被告知已收款 — 点击发送",
+        },
       };
     case "empty-boxes":
       return {

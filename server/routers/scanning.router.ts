@@ -1213,6 +1213,29 @@ export const deliveryBoxRouter = router({
       return box ? { id: box.id, boxCode: box.boxCode } : null;
     }),
 
+  /**
+   * "Your payment arrived" for a receipt, as the account stands now — so a
+   * message not sent at the till can be sent later (owner, 2026-10-04).
+   */
+  paymentWhatsAppFacts: staffProcedure
+    .input(z.object({ settlementId: z.number().int().positive() }))
+    .query(async ({ input }) => {
+      return db.getPaymentWhatsAppFacts(input.settlementId);
+    }),
+
+  /** Receipts not sent on WhatsApp yet — what the bell's line opens. */
+  unsentPaymentWhatsApp: staffProcedure.query(async () => {
+    return db.listUnsentPaymentWhatsApp();
+  }),
+
+  /** The customer was told on WhatsApp: the receipt stops saying "not sent yet". */
+  markPaymentWhatsAppSent: staffProcedure
+    .input(z.object({ settlementId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await db.markPaymentWhatsAppSent(input.settlementId, ctx.user.id);
+      return { success: true };
+    }),
+
   reverseSettlement: staffProcedure
     .input(z.object({
       settlementId: z.number(),

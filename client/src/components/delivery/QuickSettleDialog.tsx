@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
+import { useSendPaymentWhatsApp } from "@/hooks/useSendPaymentWhatsApp";
 import { offerPaymentWhatsApp } from "@/lib/paymentWhatsAppOffer";
 import { oddRate, oddRateQuestion } from "@shared/rateSense";
 import { confirmAction } from "@/components/ConfirmDialog";
@@ -185,13 +186,16 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const difference = differenceOf(cashDue, paid, treatShortAs, tolerance);
   const needsReason = difference.reasonRequired && !reason.trim();
 
+  // Marks the receipt sent, so the bell stops asking (owner, 2026-10-04).
+  const paymentWhatsApp = useSendPaymentWhatsApp(t);
   const settle = trpc.deliveryBox.settle.useMutation({
     onSuccess: (res) => {
       toast.success(
         `${t({ ku: "واصڵ کرا", en: "Settled", ar: "تم الاستلام", zh: "已结清" })} — ${res.settlementNumber}`,
       );
       // One tap to "your payment arrived" in the customer's chat (owner, 2026-10-04).
-      offerPaymentWhatsApp(res.whatsapp, { settlementNumber: res.settlementNumber, paidUsd: res.paidUsd }, t);
+      offerPaymentWhatsApp(res.whatsapp, { settlementNumber: res.settlementNumber, paidUsd: res.paidUsd }, t,
+        () => paymentWhatsApp.markSent(res.settlementId));
       if (res.boxFinished) {
         toast.success(t({ ku: "بۆکسەکە گەیەنرا، داخرا و چووە ئەرشیف", en: "Box delivered, closed and archived", ar: "تم تسليم الصندوق وإغلاقه وأرشفته", zh: "箱子已交付、关闭并归档" }));
       } else if (res.finishError) {

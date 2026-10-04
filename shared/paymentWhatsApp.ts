@@ -24,6 +24,9 @@ export interface PaymentMessageFacts {
 
 export const PORTAL_ADDRESS = "waznexpress.com/portal";
 
+/** Receipts from this moment on are expected to be sent (earlier ones never were). */
+export const PAYMENT_WHATSAPP_SINCE = new Date("2026-10-04T17:00:00Z");
+
 const money = (n: number) => `$${(Number.isFinite(n) ? n : 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
 export function paymentWhatsAppMessage(lang: ReceiptLanguage, f: PaymentMessageFacts): string {

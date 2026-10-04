@@ -833,6 +833,13 @@ export const boxSettlements = mysqlTable("boxSettlements", {
   reversalReason: text("reversalReason"),
   /** Set on the replacement, pointing at the settlement it corrects. */
   replacesSettlementId: int("replacesSettlementId"),
+  /**
+   * When "your payment arrived" was sent on WhatsApp, and by whom (owner,
+   * 2026-10-04). Empty means the customer has not been told on WhatsApp yet
+   * — the portal is told at once regardless.
+   */
+  whatsappSentAt: timestamp("whatsappSentAt"),
+  whatsappSentById: int("whatsappSentById"),
 
   notes: text("notes"),
   createdById: int("createdById").notNull(),

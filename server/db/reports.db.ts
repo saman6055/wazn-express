@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { listUnsentPaymentWhatsApp } from "./paymentWhatsApp.db";
 import { ORDER_PROFIT_SQL, LIVE_SALE_SQL, orderProfitUsd, isLiveSale } from "@shared/orderProfit";
 import { carrierBaseKgSql, CARRIER_BASE_CBM_SQL } from "@shared/batchCost";
 import { getVolumetricDivisor } from "./settings.db";
@@ -958,13 +959,14 @@ export async function getRiskItems(): Promise<RiskItem[]> {
       return fallback;
     }
   };
-  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes] = await Promise.all([
+  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes, whatsappUnsent] = await Promise.all([
     settle('stale depot', () => getStaleDepotPackages(), []),
     settle('volumetric', () => getVolumetricParcels({ pendingOnly: true }), []),
     settle('debt over limit', countDebtorsOverLimit, 0),
     settle('orders without tracking', countOrdersWithoutTracking, { total: 0, aging: 0 }),
     settle('unclaimed', countUnclaimedPackages, 0),
     settle('empty boxes', countEmptyBoxes, 0),
+    settle('whatsapp unsent', async () => (await listUnsentPaymentWhatsApp()).length, 0),
   ]);
   return buildRiskItems({
     staleDepotDays: stale.map((p) => p.daysInDepot),
@@ -973,6 +975,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     ordersWithoutTracking: noTracking.aging,
     unclaimed,
     emptyBoxes,
+    whatsappUnsent,
   });
 }
 

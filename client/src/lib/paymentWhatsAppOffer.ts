@@ -20,6 +20,8 @@ export function offerPaymentWhatsApp(
   facts: PaymentWhatsAppFacts | null | undefined,
   receipt: { settlementNumber: string; paidUsd: number },
   say: (w: { ku: string; en: string; ar: string; zh: string }) => string,
+  /** Called once the chat is open: marks the receipt sent. */
+  onSent?: () => void,
 ): void {
   if (!facts || !(receipt.paidUsd > 0)) return;
   const number = whatsappNumber(facts.mobile);
@@ -45,7 +47,10 @@ export function offerPaymentWhatsApp(
     duration: 60_000,
     action: {
       label: say({ ku: "📲 ناردن بۆ واتسئەپ", en: "📲 Send on WhatsApp", ar: "📲 إرسال واتساب", zh: "📲 发送 WhatsApp" }),
-      onClick: () => window.open(whatsappChatUrl(number, message), "_blank", "noopener"),
+      onClick: () => {
+        window.open(whatsappChatUrl(number, message), "_blank", "noopener");
+        onSent?.();
+      },
     },
   });
 }
