@@ -1080,6 +1080,34 @@ export function computeOrderChargeAmount(order: {
  * still see and fix; an order refused at save is a customer standing at a
  * counter while somebody retypes it.
  */
+/**
+ * Claim an order for charging: one conditional update that only one caller
+ * can win. The box door and the batch's delivery can reach the same order at
+ * the same moment, and both used to charge it — fifteen orders carry two
+ * identical charges from May to July (2026-10-04). True = this caller charges.
+ */
+export async function claimOrderForCharge(orderId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const claim = await db.update(fullPackageOrders)
+    .set({ isCharged: true })
+    .where(and(
+      eq(fullPackageOrders.id, orderId),
+      eq(fullPackageOrders.isCharged, false),
+      isNull(fullPackageOrders.chargeTransactionId),
+    ));
+  return Number((claim as any)?.[0]?.affectedRows ?? 0) > 0;
+}
+
+/** The charge did not happen after all: the next door may try. */
+export async function releaseOrderClaim(orderId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) return;
+  await db.update(fullPackageOrders)
+    .set({ isCharged: false })
+    .where(and(eq(fullPackageOrders.id, orderId), isNull(fullPackageOrders.chargeTransactionId)));
+}
+
 export async function chargeOrderAtCreation(
   order: FullPackageOrder,
   userId: number,
@@ -1095,9 +1123,24 @@ export async function chargeOrderAtCreation(
   const amount = computeOrderChargeAmount(order);
   if (!(amount > 0)) return { charged: false, amount: 0, reason: 'no_price' };
 
+  /*
+   * Claim the order before charging it. The flag above was read from a copy
+   * that may already be stale: the box door and the batch's delivery can
+   * reach the same order at the same moment, and both used to charge it —
+   * fifteen orders carry two identical charges from May to July. One
+   * conditional update decides who charges; the other walks away.
+   */
+  if (!(await claimOrderForCharge(order.id))) {
+    return { charged: false, amount: 0, reason: 'already_charged' };
+  }
+  const release = () => releaseOrderClaim(order.id);
+
   try {
     const customer = await getCustomerById(order.customerId);
-    if (!customer) return { charged: false, amount, reason: 'no_customer' };
+    if (!customer) {
+      await release();
+      return { charged: false, amount, reason: 'no_customer' };
+    }
 
     const qty = order.quantity ?? 1;
     const chargeType = order.orderType === 'commission' ? 'COMMISSION' : 'FULL_PACKAGE';
@@ -1123,6 +1166,8 @@ export async function chargeOrderAtCreation(
     });
     return { charged: true, amount };
   } catch (e) {
+    // Not charged after all: let the next door try.
+    await release().catch(() => undefined);
     appLogger.error('[OrderCharge] failed to charge at creation', {
       orderId: order.id, orderCode: order.orderCode, amount,
       error: e instanceof Error ? e.message : String(e),

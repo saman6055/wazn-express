@@ -209,12 +209,24 @@ async function emitFpInvoices(
 
       for (const { order, chargeAmount, shippingShare } of fpItems) {
         try {
-          const txn = await db.applyChargeToInvoice(
-            customerId, customer.customerCode, 'FULL_PACKAGE',
-            order.id, chargeAmount,
-            `پاکێجی تەواو ${order.orderCode} - ${order.productName} - گەیاندن`,
-            ctx.user.id, invoice.id,
-          );
+          // Claimed first, so a box door charging this order at the same
+          // moment cannot charge it too (db/fullPackage claimOrderForCharge).
+          if (!(await db.claimOrderForCharge(order.id))) {
+            appLogger.info("[BatchDelivered FP] order already being charged elsewhere — skipped", { orderCode: order.orderCode });
+            continue;
+          }
+          let txn;
+          try {
+            txn = await db.applyChargeToInvoice(
+              customerId, customer.customerCode, 'FULL_PACKAGE',
+              order.id, chargeAmount,
+              `پاکێجی تەواو ${order.orderCode} - ${order.productName} - گەیاندن`,
+              ctx.user.id, invoice.id,
+            );
+          } catch (chargeErr) {
+            await db.releaseOrderClaim(order.id);
+            throw chargeErr;
+          }
           await db.updateFullPackageOrder(order.id, {
             // status changes are tracked, but we DO NOT pass userId here so
             // updateFullPackageOrder's legacy charge gate stays inert.
@@ -481,13 +493,24 @@ async function emitCmInvoices(
             continue;
           }
 
-          // Fresh order: full charge + shipping
-          const mainTxn = await db.applyChargeToInvoice(
+          // Fresh order: full charge + shipping — claimed first, so a box
+          // door charging the same order at this moment cannot charge it too.
+          if (!(await db.claimOrderForCharge(order.id))) {
+            appLogger.info("[BatchDelivered CM] order already being charged elsewhere — skipped", { orderCode: order.orderCode });
+            continue;
+          }
+          let mainTxn;
+          try {
+            mainTxn = await db.applyChargeToInvoice(
             customerId, customer.customerCode, 'COMMISSION',
             order.id, chargeAmount,
             `کڕین بە تێچوو ${order.orderCode} - ${order.productName} (کاڵا + عمولە)`,
             ctx.user.id, invoice.id,
           );
+          } catch (chargeErr) {
+            await db.releaseOrderClaim(order.id);
+            throw chargeErr;
+          }
 
           if (shippingShare > 0) {
             await db.applyChargeToInvoice(
