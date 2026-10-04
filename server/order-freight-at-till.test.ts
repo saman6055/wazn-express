@@ -40,3 +40,17 @@ describe("the credit question says when an extra is not an extra", () => {
     expect(CREDIT_NOT_EXTRA_HINT).toContain("«بەڵێ» مەکە");
   });
 });
+
+/*
+ * A parcel with no price because its batch has none would leave the till at
+ * $0 — the goods handed over free. Proved on a real MySQL: refused with the
+ * parcel and batch named; held back, the rest of the box is paid and the
+ * unpriced parcel stays uncharged, waiting for its price.
+ */
+describe("a parcel waiting for its batch's price is not handed over for nothing", () => {
+  it("the receipt refuses it, naming the cure", () => {
+    const settle = read("db/boxSettlement.db.ts");
+    expect(settle).toContain("batchMissingSellingPrice(b, { hasTiers: !!b.useTieredPricing })");
+    expect(settle).toContain("یان ئەم پاکەتانە «تەحدید» بکە (بمێننەوە) و پاکەتەکانی تر واصڵ بکە");
+  });
+});

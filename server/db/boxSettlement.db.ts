@@ -1,4 +1,5 @@
 import { eq, ne, and, or, desc, inArray, isNull, sql, gte, lte } from "drizzle-orm";
+import { batchMissingSellingPrice } from "@shared/batchPricing";
 import { SETTLED_SLACK_USD } from "@shared/archive";
 import { generateTransactionNumber } from "./utils.db";
 import { getDb } from "./connection";
@@ -996,6 +997,46 @@ export async function createBoxSettlement(
    */
   const settling = (p: BoxParcelView) =>
     !input.lines.find((l) => l.lineId === p.lineId)?.held && p.chargedUsd > 0;
+
+  /*
+   * A parcel with no price, because its batch has none yet, would leave the
+   * till at $0.00 — the goods handed over for nothing (owner, 2026-10-04:
+   * "a batch with no selling price waits for its price"). It is refused with
+   * the cure; the rest of the box can still be paid by holding these.
+   */
+  const unpriced = parcels.filter((p) =>
+    p.packageId !== null && !p.fromOrder && !(p.chargedUsd > 0) &&
+    !input.lines.find((l) => l.lineId === p.lineId)?.held &&
+    requested.has(p.lineId));
+  if (unpriced.length > 0) {
+    const pkgRows = await db
+      .select({ id: packages.id, batchId: packages.batchId })
+      .from(packages)
+      .where(inArray(packages.id, unpriced.map((p) => p.packageId!)));
+    const batchIds = Array.from(new Set(pkgRows.map((r) => r.batchId).filter((id): id is number => !!id)));
+    const batchRows = batchIds.length
+      ? await db
+          .select({ id: batches.id, code: batches.batchCode, shippingType: batches.shippingType, pricePerKg: batches.pricePerKg, pricePerCbm: batches.pricePerCbm, useTieredPricing: batches.useTieredPricing })
+          .from(batches)
+          .where(inArray(batches.id, batchIds))
+      : [];
+    const waiting = batchRows.filter((b) => batchMissingSellingPrice(b, { hasTiers: !!b.useTieredPricing }));
+    if (waiting.length > 0) {
+      const codes = waiting.map((b) => b.code).join("، ");
+      const trackings = unpriced
+        .filter((p) => waiting.some((b) => b.id === pkgRows.find((r) => r.id === p.packageId)?.batchId))
+        .map((p) => p.trackingNumber ?? p.packageCode ?? `#${p.lineId}`);
+      if (trackings.length > 0) {
+        throw new Error(withFix(
+          `ئەم پاکەتانە نرخیان نییە، چونکە باچی ${codes} هێشتا نرخی فرۆشتنی نییە: ${trackings.join("، ")} — بەم شێوەیە بە خۆڕایی دەدرێن.`,
+          [
+            `نرخی فرۆشتن بۆ باچی ${codes} بنووسە، ئینجا دووبارە واصڵ بکە`,
+            "یان ئەم پاکەتانە «تەحدید» بکە (بمێننەوە) و پاکەتەکانی تر واصڵ بکە",
+          ],
+        ));
+      }
+    }
+  }
 
   const toCharge = parcels.filter((p) => p.packageId !== null && !p.fromOrder && p.notChargedYet && settling(p));
 
