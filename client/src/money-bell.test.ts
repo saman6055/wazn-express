@@ -46,3 +46,28 @@ describe("the money bell", () => {
     expect(bell).toContain("<CopyButton value={code} />");
   });
 });
+
+/*
+ * Owner, 2026-10-04: "the money notifications are many — put them in a tab of
+ * their own inside the bell, so my focus on the others is not lost."
+ */
+describe("money has its own tab in the bell", () => {
+  const bell = read("components/RiskBell.tsx");
+
+  it("two tabs for the main admin, each with its own count", () => {
+    expect(bell).toContain('data-testid={`bell-tab-${key}`}');
+    expect(bell).toContain('["alerts", L({ ku: "ئاگادارییەکان"');
+    expect(bell).toContain('["money", L({ ku: "جووڵەکانی پارە"');
+    expect(bell).toContain("const showTabs = money.enabled;");
+  });
+
+  it("money lines are not shown in the alerts tab", () => {
+    const alerts = bell.slice(bell.indexOf(') : items.length === 0 ? ('));
+    expect(alerts).not.toContain("<MoneyBellSection");
+  });
+
+  it("money counts as looked at only when its tab is in front", () => {
+    expect(bell).toContain('if (open && shownTab === "money") {\n      money.onOpen();');
+    expect(bell).not.toContain("if (next) money.onOpen();");
+  });
+});

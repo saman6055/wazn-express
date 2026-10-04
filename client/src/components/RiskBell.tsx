@@ -86,6 +86,9 @@ const GROUP_TITLE: Record<RiskGroup, Words> = {
  * Everybody is told about the pages they may open, and nothing more: the
  * server filters, and so does this.
  */
+type BellTab = "alerts" | "money";
+const tabKey = (userId: number) => `wazn.bell.tab.${userId}`;
+
 export function RiskBell({ className }: { className?: string }) {
   const { user } = useAuth();
   const { language } = useLanguage();
@@ -121,6 +124,37 @@ export function RiskBell({ className }: { className?: string }) {
   // The money side, for the main admin only: what waits for his yes, and
   // every movement since he last looked (components/MoneyBell).
   const money = useMoneyBell(userId, role);
+  /*
+   * Money has its own tab (owner, 2026-10-04): "the money notifications are
+   * many — put them in a tab of their own, so my focus on the others is not
+   * lost." The last tab he chose is the one the bell opens on.
+   */
+  const [tab, setTab] = useState<BellTab>(() => {
+    try {
+      return localStorage.getItem(tabKey(userId)) === "money" ? "money" : "alerts";
+    } catch {
+      return "alerts";
+    }
+  });
+  const showTabs = money.enabled;
+  const shownTab: BellTab = showTabs ? tab : "alerts";
+  const chooseTab = (next: BellTab) => {
+    setTab(next);
+    try {
+      localStorage.setItem(tabKey(userId), next);
+    } catch {
+      /* kept for this visit only */
+    }
+  };
+  // Money lines count as looked at only when their tab is actually in front.
+  useEffect(() => {
+    if (open && shownTab === "money") {
+      money.onOpen();
+      return () => money.onClose();
+    }
+    return undefined;
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, shownTab]);
   const flashing = shouldFlash(items, seen, today) || money.urgent;
   const total = items.length + money.count;
   const worst = worstLevel(items.map((item) => item.level));
@@ -147,8 +181,6 @@ export function RiskBell({ className }: { className?: string }) {
 
   const onOpenChange = (next: boolean) => {
     setOpen(next);
-    if (next) money.onOpen();
-    else money.onClose();
     if (!next || items.length === 0) return;
     // Opened: these are seen for today, and the flashing stops.
     const mark = markSeen(items, today);
@@ -267,7 +299,62 @@ export function RiskBell({ className }: { className?: string }) {
           )}
         </div>
 
-        {items.length === 0 && money.pending.length === 0 && money.lines.length === 0 ? (
+        {showTabs && (
+          <div className="grid grid-cols-2 gap-1 border-b p-1.5" role="tablist">
+            {([
+              ["alerts", L({ ku: "ئاگادارییەکان", en: "Alerts", ar: "التنبيهات", zh: "提醒" }), items.length],
+              ["money", L({ ku: "جووڵەکانی پارە", en: "Money", ar: "حركات المال", zh: "资金" }), money.count],
+            ] as const).map(([key, label, n]) => (
+              <button
+                key={key}
+                type="button"
+                role="tab"
+                aria-selected={shownTab === key}
+                data-testid={`bell-tab-${key}`}
+                onClick={() => chooseTab(key)}
+                className={cn(
+                  "flex min-h-9 items-center justify-center gap-1.5 rounded-md px-2 text-xs font-semibold transition-colors",
+                  shownTab === key ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
+                )}
+              >
+                {label}
+                {n > 0 && (
+                  <span
+                    dir="ltr"
+                    className={cn(
+                      "min-w-[1.1rem] rounded-full px-1 text-[10px] leading-[1.1rem]",
+                      key === "money" && money.urgent ? "bg-red-600 text-white" : shownTab === key ? "bg-primary-foreground/20" : "bg-muted",
+                    )}
+                  >
+                    {n}
+                  </span>
+                )}
+              </button>
+            ))}
+          </div>
+        )}
+
+        {shownTab === "money" ? (
+          <div className="max-h-[65vh] overflow-y-auto">
+            {money.pending.length === 0 && money.lines.length === 0 ? (
+              <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
+                <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
+                <p className="text-sm font-medium">
+                  {L({ ku: "هیچ جووڵەیەکی پارە نییە", en: "No money movements", ar: "لا توجد حركات مالية", zh: "没有资金变动" })}
+                </p>
+              </div>
+            ) : (
+              <MoneyBellSection
+                money={money}
+                language={language}
+                onNavigate={(href) => {
+                  setOpen(false);
+                  navigate(href);
+                }}
+              />
+            )}
+          </div>
+        ) : items.length === 0 ? (
           <div className="flex flex-col items-center gap-2 px-4 py-6 text-center">
             <CheckCircle2 className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
             <p className="text-sm font-medium">
@@ -278,15 +365,6 @@ export function RiskBell({ className }: { className?: string }) {
           </div>
         ) : (
           <div className="max-h-[65vh] overflow-y-auto">
-            <MoneyBellSection
-              money={money}
-              language={language}
-              onNavigate={(href) => {
-                setOpen(false);
-                money.onClose();
-                navigate(href);
-              }}
-            />
             {(["risks", "incomplete"] as const).map((group) => {
               const list = items.filter((item) => riskGroup(item.id) === group);
               if (list.length === 0) return null;
