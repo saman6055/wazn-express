@@ -281,15 +281,20 @@ const QUERIES: Record<CheckId, string> = {
     ORDER BY s.createdAt DESC
     LIMIT ${SAMPLE_LIMIT}`,
 
+  /*
+   * The two tables were created with different collations in production, so
+   * the UNION refused to merge their text columns (ER_CANT_AGGREGATE_NCOLLATIONS,
+   * 2026-10-04). Every text column names one collation.
+   */
   payment_without_ledger: `
-    SELECT 'payment' AS what, p.id, p.paymentNumber AS number, p.accountId AS owner,
+    SELECT 'payment' COLLATE utf8mb4_unicode_ci AS what, p.id, p.paymentNumber COLLATE utf8mb4_unicode_ci AS number, p.accountId AS owner,
            p.amountUsd, p.createdAt
     FROM paymentRecords p
     WHERE p.transactionId IS NULL
       AND p.paymentStatus IN ('pending','confirmed')
       AND CAST(p.amountUsd AS DECIMAL(12,2)) > 0
     UNION ALL
-    SELECT 'box_receipt' AS what, s.id, s.settlementNumber AS number, s.customerId AS owner,
+    SELECT 'box_receipt' COLLATE utf8mb4_unicode_ci AS what, s.id, s.settlementNumber COLLATE utf8mb4_unicode_ci AS number, s.customerId AS owner,
            s.paidUsd AS amountUsd, s.createdAt
     FROM boxSettlements s
     WHERE s.status = 'confirmed'
@@ -302,6 +307,10 @@ const QUERIES: Record<CheckId, string> = {
    * (db/orderCharging): its tracking is in a box, its parcel is delivered, or
    * the order itself is delivered. Quotes are not debts; a price of zero is
    * the zero_price_sale check's business.
+   *
+   * Tracking numbers are compared under one collation: the order tables and
+   * the parcel tables were created with different ones in production
+   * (ER_CANT_AGGREGATE_2COLLATIONS, 2026-10-04).
    */
   arrived_goods_unbilled: `
     SELECT o.id, o.orderCode, o.orderType, o.customerId, o.status, o.createdAt
@@ -318,13 +327,13 @@ const QUERIES: Record<CheckId, string> = {
         OR EXISTS (
           SELECT 1 FROM packages p
           WHERE p.status = 'delivered'
-            AND (p.trackingNumber = o.trackingNumber
-                 OR p.trackingNumber IN (SELECT t.trackingNumber FROM fullPackageOrderTrackings t
+            AND (p.trackingNumber COLLATE utf8mb4_unicode_ci = o.trackingNumber COLLATE utf8mb4_unicode_ci
+                 OR p.trackingNumber COLLATE utf8mb4_unicode_ci IN (SELECT t.trackingNumber COLLATE utf8mb4_unicode_ci FROM fullPackageOrderTrackings t
                                          WHERE t.fullPackageOrderId = o.id)))
         OR EXISTS (
           SELECT 1 FROM deliveryBoxItems i
-          WHERE i.trackingNumber = o.trackingNumber
-             OR i.trackingNumber IN (SELECT t.trackingNumber FROM fullPackageOrderTrackings t
+          WHERE i.trackingNumber COLLATE utf8mb4_unicode_ci = o.trackingNumber COLLATE utf8mb4_unicode_ci
+             OR i.trackingNumber COLLATE utf8mb4_unicode_ci IN (SELECT t.trackingNumber COLLATE utf8mb4_unicode_ci FROM fullPackageOrderTrackings t
                                      WHERE t.fullPackageOrderId = o.id))
       )
     ORDER BY o.createdAt ASC

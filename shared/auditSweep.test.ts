@@ -210,3 +210,26 @@ describe("the catalogue and the queries stay in step", () => {
     expect(uncapped.map((b) => b.slice(0, b.indexOf(":"))), "no LIMIT on this query").toEqual([]);
   });
 });
+
+/*
+ * Production's tables were created under two collations. A UNION or an "="
+ * across them fails with ER_CANT_AGGREGATE_*COLLATIONS and the check reads
+ * "failed" forever (2026-10-04). Proved on a real MySQL with the two
+ * collations mixed both ways.
+ */
+describe("checks that join text across tables name one collation", () => {
+  const service = fs.readFileSync(path.join(__dirname, "..", "server/services/auditSweep.service.ts"), "utf8");
+  const block = (id: string) => {
+    const start = service.indexOf(`  ${id}: \``);
+    expect(start, `${id} not found`).toBeGreaterThan(-1);
+    return service.slice(start, service.indexOf("`,", start));
+  };
+
+  it("payments and box receipts merge their text under one collation", () => {
+    expect(block("payment_without_ledger").match(/COLLATE utf8mb4_unicode_ci/g)?.length).toBe(4);
+  });
+
+  it("tracking numbers are compared under one collation", () => {
+    expect(block("arrived_goods_unbilled").match(/COLLATE utf8mb4_unicode_ci/g)?.length).toBe(8);
+  });
+});
