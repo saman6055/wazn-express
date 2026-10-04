@@ -137,6 +137,18 @@ export interface BoxParcelView {
   fromOrder: boolean;
   /** The advance paid on the order(s), already counted in settledUsd. */
   advanceUsd: number;
+  /**
+   * An order's freight the account has not been charged yet, included in
+   * chargedUsd. A commission order's goods are charged at entry and its
+   * freight at batch delivery — but its carton can be in a box and paid for
+   * before the batch is marked delivered. The receipt charges it, and marks
+   * the order so the batch never charges it again (2026-10-04, AZ274:
+   * $220 of goods charged, the $12.10 freight not, and paying the box in
+   * full looked like $12.10 of credit).
+   */
+  pendingFreightUsd: number;
+  /** The order that freight is for. */
+  freightOrder: { id: number; orderCode: string } | null;
 }
 
 export interface BoxSettlementView {
@@ -349,6 +361,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
           paidFromBalanceUsd: fullPackageOrders.paidFromBalanceUsd,
           isPrepaid: fullPackageOrders.isPrepaid,
           deletedAt: fullPackageOrders.deletedAt,
+          isShippingCharged: fullPackageOrders.isShippingCharged,
         })
         .from(fullPackageOrders)
         .where(inArray(fullPackageOrders.id, cartonOrderIds))
@@ -406,6 +419,8 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
       const boxId = Number(r.item.boxId);
       const fromOrder = r.item.itemType !== "regular" || orderId !== null;
       let orderMoney: { chargedUsd: number; advanceUsd: number; onAccount: boolean } | null = null;
+      let pendingFreightUsd = 0;
+      let freightOrder: { id: number; orderCode: string } | null = null;
       if (fromOrder) {
         const tracking = r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null;
         const candidates = orderId !== null
@@ -430,6 +445,14 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
             advanceCents += Math.round(orderAdvancePaidUsd(o as unknown as AdvanceSource) * 100);
           }
           orderMoney = { chargedUsd: chargedCents / 100, advanceUsd: advanceCents / 100, onAccount };
+          // One commission order in this carton, its goods on the account,
+          // its freight not yet: the carton's own freight is due now.
+          const only = mine.length === 1 ? mine[0] : null;
+          const freight = Number(r.pkg?.calculatedCostUsd ?? 0);
+          if (only && onAccount && only.orderType === "commission" && !only.isShippingCharged && freight > 0) {
+            pendingFreightUsd = round2(freight);
+            freightOrder = { id: Number(only.id), orderCode: String(only.orderCode) };
+          }
         }
       }
       /**
@@ -444,7 +467,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
        */
       const chargedUsd = round2(
         orderMoney
-          ? (orderMoney.onAccount ? orderMoney.chargedUsd : Number(r.item.calculatedCostUsd || 0))
+          ? (orderMoney.onAccount ? orderMoney.chargedUsd + pendingFreightUsd : Number(r.item.calculatedCostUsd || 0))
           : fromLedger !== undefined ? fromLedger : Number(r.item.calculatedCostUsd || 0),
       );
       const discountedUsd = round2(discounted.get(key) ?? 0);
@@ -471,6 +494,8 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
         notChargedYet: orderMoney ? !orderMoney.onAccount : !seenAnyCharge.has(key),
         fromOrder,
         advanceUsd,
+        pendingFreightUsd,
+        freightOrder,
       };
     });
 
@@ -1198,6 +1223,29 @@ export async function createBoxSettlement(
     // line above stops one of them and this stops the other.
     if (toCharge.length > 0) {
       await markLinkedOrdersCharged(toCharge.map((p) => p.packageId!), tx);
+    }
+
+    // 0b. An order's freight not yet charged (see pendingFreightUsd): charged
+    //     here, under the order like batch delivery charges it, and the order
+    //     marked so the batch never charges it again.
+    for (const parcel of parcels) {
+      if (!(parcel.pendingFreightUsd > 0) || !parcel.freightOrder || !settling(parcel)) continue;
+      await recordPackageChargeWithoutInvoice(
+        customer.id,
+        customer.customerCode ?? String(customer.id),
+        parcel.freightOrder.id,
+        parcel.pendingFreightUsd,
+        `کڕین بە تێچوو ${parcel.freightOrder.orderCode} - کرێی گواستنەوە (${box.boxCode})`,
+        userId,
+        undefined,
+        tx,
+      );
+      await tx.update(fullPackageOrders).set({
+        isShippingCharged: true,
+        shippingChargedAt: new Date(),
+        shippingChargedUsd: parcel.pendingFreightUsd.toFixed(2),
+        shippingCostUsd: parcel.pendingFreightUsd.toFixed(2),
+      }).where(eq(fullPackageOrders.id, parcel.freightOrder.id));
     }
 
     // 1. Corrections change the price, so they go in before anything is paid.

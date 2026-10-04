@@ -474,6 +474,8 @@ export function unbilledOnReceiptUsd(
     fromOrder?: boolean;
     notChargedYet?: boolean;
     chargedUsd: number;
+    /** An order's freight the receipt charges (BoxParcelView.pendingFreightUsd). */
+    pendingFreightUsd?: number;
   }>,
   intents: ReadonlyArray<{ lineId: number; held?: boolean }> = [],
 ): number {
@@ -481,7 +483,10 @@ export function unbilledOnReceiptUsd(
   return round2(
     parcels
       .filter((p) => p.packageId !== null && !p.fromOrder && p.notChargedYet && p.chargedUsd > 0 && !held.has(p.lineId))
-      .reduce((sum, p) => sum + p.chargedUsd, 0),
+      .reduce((sum, p) => sum + p.chargedUsd, 0)
+    + parcels
+      .filter((p) => (p.pendingFreightUsd ?? 0) > 0 && !held.has(p.lineId))
+      .reduce((sum, p) => sum + (p.pendingFreightUsd ?? 0), 0),
   );
 }
 
