@@ -108,3 +108,49 @@ describe("the last payment's rate", () => {
     expect(readRoot("server/routers/scanning.router.ts")).toContain("return db.getLastSettlementRate();");
   });
 });
+
+/**
+ * How much is in the box, said before the receipt is printed.
+ *
+ * The owner, 2026-10-05: «لە پێش چاپی وەسڵ زۆر گرنگە کۆی کێش یان CBM، یان ئەگەر
+ * هەردووکی هەبوو هەردووکی، نیشان بدات». The window named the box, the customer
+ * and the money; the person holding the box could not see what it weighed
+ * without closing the window again.
+ */
+describe("the window says what is in the box", () => {
+  it("one sum of what the parcels physically are, shared by both ways in", async () => {
+    const { boxPhysicalTotals } = await import("./lib/deliveryBoxPrintUtils");
+    // An air box: the kilos.
+    expect(boxPhysicalTotals({ totalWeightKg: "0" }, [{ weightKg: "2.500" }, { weightKg: "1.5" }])).toEqual({ kg: 4, cbm: 0 });
+    // A sea box that was also weighed: both, because both are recorded.
+    expect(boxPhysicalTotals({ totalWeightKg: null }, [{ weightKg: "20", volumeCbm: "0.500000" }, { weightKg: null, volumeCbm: "0.25" }]))
+      .toEqual({ kg: 20, cbm: 0.75 });
+    // Parcels with no weight of their own: the weight recorded on the box.
+    expect(boxPhysicalTotals({ totalWeightKg: "12.40" }, [{ weightKg: null }, { weightKg: "0" }])).toEqual({ kg: 12.4, cbm: 0 });
+    // Nothing recorded anywhere is nothing — never a number made up.
+    expect(boxPhysicalTotals({ totalWeightKg: null }, [])).toEqual({ kg: 0, cbm: 0 });
+    expect(boxPhysicalTotals({ totalWeightKg: "abc" }, [{ weightKg: "-3", volumeCbm: "x" }])).toEqual({ kg: 0, cbm: 0 });
+  });
+
+  it("both screens hand it to the window", () => {
+    expect(panel).toContain("measures: boxPhysicalTotals(box, items),");
+    expect(table).toContain("measures: boxPhysicalTotals(box, box.items || []),");
+  });
+
+  it("the window shows the kilos, the cubic metres, or both — and no row for nothing", () => {
+    expect(dialog).toContain('data-testid="receipt-measures"');
+    expect(dialog).toContain("measures.kg > 0 && measures.cbm > 0 ? TXT.totalBoth : measures.cbm > 0 ? TXT.totalVolume : TXT.totalWeight");
+    expect(dialog).toContain("measures.kg > 0 ? `${measures.kg.toFixed(2)} kg` : null,");
+    expect(dialog).toContain("measures.cbm > 0 ? `${measures.cbm.toFixed(3)} CBM` : null,");
+    // Nothing recorded: the row is left out rather than printed as 0.00 kg.
+    expect(dialog).toContain("request?.measures && (request.measures.kg > 0 || request.measures.cbm > 0) ? request.measures : null");
+  });
+
+  it("the figures are drawn left to right, above the money", () => {
+    const row = dialog.indexOf('data-testid="receipt-measures"');
+    const total = dialog.indexOf("{L(TXT.totalUsd)}");
+    expect(row).toBeGreaterThan(-1);
+    expect(total).toBeGreaterThan(row);
+    expect(dialog.slice(row, total)).toContain('<bdi dir="ltr"');
+  });
+});

@@ -42,7 +42,7 @@ import {
 import { isEmptyBox } from "@shared/emptyBox";
 import type { ReceiptDinarInput } from "@shared/receiptDinar";
 import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
-import { printBoxLabel, printBoxReceipt, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals } from "@/lib/deliveryBoxPrintUtils";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -201,6 +201,7 @@ export function BoxTable({
       customerName: customer?.fullName,
       customerCode: customer?.customerCode,
       parcelCount: box.totalPackages,
+      measures: boxPhysicalTotals(box, box.items || []),
       totalUsd: receiptAmountUsd(box),
       // A discount is a promise the till keeps (shared/pledgedDiscount), and
       // from this list it would be neither written down nor printed — the

@@ -305,6 +305,37 @@ function measureTotals(box: BoxForPrint, items: BoxItemForPrint[]): MeasureTotal
 }
 
 /**
+ * What is physically in the box: every kilo and every cubic metre recorded
+ * on its parcels.
+ *
+ * For the window before printing (owner, 2026-10-05: «لە پێش چاپی وەسڵ زۆر
+ * گرنگە کۆی کێش یان CBM، یان ئەگەر هەردووکی هەبوو هەردووکی، نیشان بدات»).
+ * Not the same question as `measureTotals` above: that one decides what the
+ * PAPER bills each row in, and puts a row in one unit only. This one answers
+ * the person holding the box — how heavy is it, how much room does it take —
+ * so a sea carton that was also weighed counts in both, and nothing is left
+ * out. A box whose parcels carry no weight of their own falls back to the
+ * weight recorded on the box, as the receipt does.
+ */
+export function boxPhysicalTotals(
+  box: Pick<BoxForPrint, "totalWeightKg">,
+  items: ReadonlyArray<Pick<BoxItemForPrint, "weightKg" | "volumeCbm">>,
+): { kg: number; cbm: number } {
+  const positive = (v: unknown): number => {
+    const n = Number(v);
+    return Number.isFinite(n) && n > 0 ? n : 0;
+  };
+  let kg = 0;
+  let cbm = 0;
+  for (const item of items) {
+    kg += positive(item.weightKg);
+    cbm += positive(item.volumeCbm);
+  }
+  if (!(kg > 0)) kg = positive(box.totalWeightKg);
+  return { kg, cbm };
+}
+
+/**
  * The measurement lines to print, as label/value pairs.
  *
  * One line for a box sold in one unit — and no money on it, because the

@@ -72,6 +72,12 @@ export interface ReceiptDinarRequest {
   customerCode?: string | null;
   parcelCount: number;
   /**
+   * What is in the box, in kilos and in cubic metres (boxPhysicalTotals).
+   * Shown above the total: whichever of the two is recorded, and both when
+   * both are (owner, 2026-10-05).
+   */
+  measures?: { kg: number; cbm: number } | null;
+  /**
    * The dollar figure the receipt asks for BEFORE anything given here:
    * receiptAmountUsd(box, settlement).
    */
@@ -173,6 +179,9 @@ const TXT = {
   send: { ku: "ناردن", en: "Send", ar: "إرسال", zh: "发送" },
   parcels: (n: number): Words => ({ ku: `${n} پاکەت`, en: `${n} parcel(s)`, ar: `${n} طرد`, zh: `${n} 件包裹` }),
   totalUsd: { ku: "کۆی گشتی بە دۆلار", en: "Total in dollars", ar: "المجموع بالدولار", zh: "美元合计" },
+  totalWeight: { ku: "کۆی کێش", en: "Total weight", ar: "الوزن الكلي", zh: "总重量" },
+  totalVolume: { ku: "کۆی قەبارە", en: "Total volume", ar: "الحجم الكلي", zh: "总体积" },
+  totalBoth: { ku: "کۆی کێش و قەبارە", en: "Total weight and volume", ar: "الوزن والحجم الكلي", zh: "总重量与体积" },
   rate: { ku: "نرخی دۆلاری ئەمڕۆ", en: "Today's dollar rate", ar: "سعر الدولار اليوم", zh: "今日美元汇率" },
   perDollar: { ku: "دینار بۆ هەر دۆلارێک", en: "dinars per dollar", ar: "دينار لكل دولار", zh: "第纳尔/美元" },
   rateOffered: {
@@ -341,6 +350,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
    */
   const canDiscount = request?.canDiscount !== false;
   const grossUsd = request?.totalUsd ?? 0;
+  // Nothing recorded in either unit: no row, rather than "0.00 kg".
+  const measures = request?.measures && (request.measures.kg > 0 || request.measures.cbm > 0) ? request.measures : null;
   const cutUsd = canDiscount ? Math.max(0, Math.min(grossUsd, Number(discount) || 0)) : 0;
   const netUsd = Math.round(Math.max(0, grossUsd - cutUsd) * 100) / 100;
 
@@ -425,6 +436,21 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
         </DialogHeader>
 
         <div className="space-y-4">
+          {/* How much is in the box, before what it costs: the kilos, the
+              cubic metres, or both when both are recorded. */}
+          {measures && (
+            <div className="flex items-center justify-between rounded-lg border px-3 py-2" data-testid="receipt-measures">
+              <span className="text-sm">
+                {L(measures.kg > 0 && measures.cbm > 0 ? TXT.totalBoth : measures.cbm > 0 ? TXT.totalVolume : TXT.totalWeight)}
+              </span>
+              <bdi dir="ltr" className="font-mono text-base font-semibold tabular-nums">
+                {[
+                  measures.kg > 0 ? `${measures.kg.toFixed(2)} kg` : null,
+                  measures.cbm > 0 ? `${measures.cbm.toFixed(3)} CBM` : null,
+                ].filter(Boolean).join(" · ")}
+              </bdi>
+            </div>
+          )}
           <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
             <span className="text-sm">{L(TXT.totalUsd)}</span>
             <bdi dir="ltr" className="font-mono text-base font-semibold">${(request?.totalUsd ?? 0).toFixed(2)}</bdi>

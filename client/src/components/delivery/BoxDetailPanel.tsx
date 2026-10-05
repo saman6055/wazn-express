@@ -151,7 +151,7 @@ const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 // slower, so it never auto-fires — Enter still submits it explicitly.
 const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
-import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd, boxPhysicalTotals } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
 import { pledgeLabel } from "@shared/pledgedDiscount";
@@ -745,6 +745,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       customerName: customer?.fullName,
       customerCode: customer?.customerCode,
       parcelCount: box.totalPackages ?? items.length,
+      measures: boxPhysicalTotals(box, items),
       totalUsd: receiptAmountUsd(box, settlementForPrint),
       /**
        * A discount may be given on the whole total or on one tracking
