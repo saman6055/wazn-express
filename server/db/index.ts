@@ -42,3 +42,4 @@ export * from './commissionFeeRepair.db';
 export * from './debtAge.db';
 export * from './duplicateReceipts.db';
 export * from './paymentWhatsApp.db';
+export * from './workingCapital.db';

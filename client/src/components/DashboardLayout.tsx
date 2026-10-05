@@ -51,6 +51,7 @@ import {
   Landmark,
   Vault,
   Scale,
+  Coins,
   Activity,
   AlertTriangle,
   Ban,
@@ -460,6 +461,8 @@ function DashboardLayoutContent({
         color: "rose",
         items: [
           { icon: BarChart3, label: t("nav.companyDashboard") || "داشبۆردی کۆمپانیا", path: "/finance/company-dashboard" },
+          // The main admin's alone: the server refuses anyone else (ledger.workingCapital).
+          ...(isSuperAdmin ? [{ icon: Coins, label: pickLang(language, { ku: "سەرمایەی کار", en: "Working capital", ar: "رأس المال العامل", zh: "营运资金" }), path: "/finance/working-capital" }] : []),
           { icon: Scale, label: t("nav.balanceSheet") || "تەرازوی دارایی", path: "/finance/balance-sheet" },
           { icon: Landmark, label: t("nav.bankAccounts") || "هەژمارە بانکییەکان", path: "/finance/bank-accounts" },
           { icon: Receipt, label: t("nav.expenses") || "خەرجییەکان", path: "/company/expenses" },

@@ -741,6 +741,8 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/finance/debt-reminders": "debt_reminders",
   "/finance/company-dashboard": "company_dashboard",
   "/finance/balance-sheet": "balance_sheet",
+  // Main admin only on the server (ledger.workingCapital); the same door as the balance sheet here.
+  "/finance/working-capital": "balance_sheet",
   "/finance/bank-accounts": "bank_accounts",
   "/company/expenses": "expenses",
   "/company/expense-alerts": "expense_alerts",

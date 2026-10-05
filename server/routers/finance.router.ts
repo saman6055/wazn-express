@@ -84,6 +84,17 @@ export const ledgerRouter = router({
     debtAges: accountantProcedure.query(async () => {
       return db.getDebtAges();
     }),
+
+    /** Where the company's money is, read from the records (shared/workingCapital). */
+    workingCapital: superAdminProcedure.query(async () => {
+      return db.getWorkingCapital();
+    }),
+    /** A count of the money against the books — kept as "last check", added to nothing. */
+    checkWorkingCapital: superAdminProcedure
+      .input(z.object({ haveUsd: z.number().min(0).max(10_000_000), oweUsd: z.number().min(0).max(10_000_000) }))
+      .mutation(async ({ input, ctx }) => {
+        return db.recordWorkingCapitalCheck(input.haveUsd, input.oweUsd, ctx.user.id);
+      }),
     
     // Get customer account by customer ID
     getAccountByCustomer: staffProcedure
