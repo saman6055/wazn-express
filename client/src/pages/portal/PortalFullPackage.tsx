@@ -1241,6 +1241,7 @@ export default function PortalFullPackage() {
                   type="button"
                   aria-label={pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
                   onClick={() => setShowDetailDialog(false)}
+                  data-mouse-close
                   className="tap-44 absolute top-4 end-4 w-8 h-8 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center text-white hover:bg-white/30 transition-colors"
                 >
                   <X className="w-5 h-5" />

@@ -1,5 +1,5 @@
 import type { ReactNode } from "react";
-import { Boxes, Calendar, Copy, Hash, MapPin, Plane, Receipt, Ruler, Scale, Ship, ShoppingBag, Truck, type LucideIcon } from "lucide-react";
+import { Boxes, Calendar, Copy, Hash, MapPin, Plane, Receipt, Ruler, Scale, Ship, ShoppingBag, Truck, X, type LucideIcon } from "lucide-react";
 import { travelModeOf } from "@/lib/travelMode";
 import { toast } from "sonner";
 import { Drawer, DrawerContent, DrawerDescription, DrawerTitle } from "@/components/ui/drawer";
@@ -243,6 +243,19 @@ export default function PortalSearchDetail({
               className="relative tap-44 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition active:scale-95 dark:bg-slate-800 dark:text-slate-300"
             >
               <Copy className="h-4 w-4" />
+            </button>
+            {/* The way out that is not a swipe, a tap past the edge or a key:
+                on a computer with a mouse none of those is something a
+                person would think to try. */}
+            <button
+              type="button"
+              onClick={onRequestClose}
+              aria-label={L({ ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
+              className="relative tap-44 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-slate-100 text-slate-600 transition active:scale-95 dark:bg-slate-800 dark:text-slate-300"
+              data-mouse-close
+              data-testid="portal-detail-close"
+            >
+              <X className="h-4 w-4" />
             </button>
           </div>
 

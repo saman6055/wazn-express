@@ -11,6 +11,7 @@ import {
   Volume2,
   VolumeX,
   Zap,
+  X,
 } from "lucide-react";
 import { soundManager } from "@/lib/soundManager";
 import { cn } from "@/lib/utils";
@@ -253,13 +254,30 @@ export function ScanInput({
               labels.inputPlaceholder ||
               "Tracking number..."
             }
-            className="pl-10 pr-20 h-14 text-lg font-mono"
+            className="pl-10 pr-28 h-14 text-lg font-mono"
             // Not disabled while a scan is in flight. A disabled input loses
             // focus, nothing gives it back, and the operator has to put the
             // gun down and click the box between every parcel.
             disabled={disabled}
             autoFocus={autoFocus}
           />
+          {/* Esc empties the box; so does this, for a hand on the mouse. */}
+          {trackingNumber && (
+            <button
+              type="button"
+              onClick={() => {
+                setTrackingNumber("");
+                inputRef.current?.focus();
+              }}
+              className="absolute right-16 top-1/2 grid h-8 w-8 -translate-y-1/2 place-items-center rounded-full text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+              aria-label="Clear (Esc)"
+              title="Esc"
+              data-mouse-close
+              data-testid="scan-clear"
+            >
+              <X className="h-4 w-4" />
+            </button>
+          )}
           <Button
             type="button"
             onClick={handleSubmit}

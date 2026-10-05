@@ -339,9 +339,18 @@ export function TaskComposerProvider({ children }: { children: ReactNode }) {
               {L(TASK_WORDS.add)}
             </Button>
             <span className="text-[11px] text-muted-foreground">Enter</span>
-            <span className={cn("ms-auto text-[11px] text-muted-foreground")}>
-              Esc
-            </span>
+            {/* A button, not a hint: this window has no X, and with a task
+                half typed a click outside does not close it either. */}
+            <button
+              type="button"
+              onClick={() => setOpen(false)}
+              className={cn("tap-44 relative ms-auto inline-flex items-center gap-1.5 rounded-md px-2 py-1 text-[11px] text-muted-foreground transition-colors hover:bg-muted hover:text-foreground")}
+              data-mouse-close
+              data-testid="task-close"
+            >
+              {L(TASK_WORDS.close)}
+              <kbd className="rounded border px-1 font-mono text-[10px]">Esc</kbd>
+            </button>
           </div>
         </DialogContent>
       </Dialog>

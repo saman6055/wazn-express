@@ -607,7 +607,19 @@ export function CommandPalette({ open, onOpenChange, destinations = [] }: Comman
           <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-t px-3 py-2 text-[11px] text-muted-foreground">
             <span className="inline-flex items-center gap-1"><Kbd>↑</Kbd><Kbd>↓</Kbd> {say(T.hintMove)}</span>
             <span className="inline-flex items-center gap-1"><Kbd>Enter</Kbd> {say(T.hintRun)}</span>
-            <span className="inline-flex items-center gap-1"><Kbd>Esc</Kbd> {say(T.hintClose)}</span>
+            {/* The hint is the button (owner, 2026-10-05: wherever Esc goes
+                back, a press of the mouse must too). This window has no X,
+                and once something is typed in it a click outside no longer
+                closes it — so Esc was the only way out, said in grey text. */}
+            <button
+              type="button"
+              onClick={() => onOpenChange(false)}
+              className="tap-44 relative inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-foreground transition-colors hover:bg-muted"
+              data-mouse-close
+              data-testid="hub-close"
+            >
+              <Kbd>Esc</Kbd> {say(T.hintClose)}
+            </button>
             <span className="ms-auto inline-flex items-center gap-1" dir="ltr"><Kbd>Ctrl</Kbd><Kbd>K</Kbd></span>
           </div>
         </Command>
