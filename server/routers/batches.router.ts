@@ -2593,7 +2593,9 @@ export const batchesRouter = router({
           arrivalDate: batch.actualArrival ? new Date(batch.actualArrival).toLocaleDateString("en-GB") : undefined,
           actualVolume: summary.shippingType === 'sea' ? summary.actualCbm : summary.actualWeight,
           chargedVolume: summary.shippingType === 'sea' ? summary.chargedCbm : summary.chargedWeight,
-          costPerUnit: summary.shippingType === 'sea' ? summary.costPerCbm : summary.costPerKg,
+          // The real cost per unit by the one rule (shared/batchCost): the
+          // carrier's total over what it billed, else the typed rate.
+          costPerUnit: Math.round(summary.effectiveCostRate * 100) / 100,
           totalCost: summary.totalCost,
           totalRevenue: summary.totalRevenue,
           profit: summary.profit,

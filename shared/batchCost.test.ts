@@ -1,18 +1,35 @@
 import { describe, expect, it } from "vitest";
-import { carrierCostBase, carrierDifference, carrierBaseKgSql, CARRIER_BASE_CBM_SQL, deriveCostRate, resolveBatchCost } from "./batchCost";
+import {
+  batchCostWorking, carrierCostBase, carrierDifference, carrierBaseKgSql, CARRIER_BASE_CBM_SQL, deriveCostRate,
+  resolveBatchCost,
+} from "./batchCost";
 
 describe("resolveBatchCost", () => {
-  it("an explicit per-unit rate wins, even when a total is also recorded", () => {
+  /*
+   * Turned round on 2026-10-05. This test used to say "an explicit per-unit
+   * rate wins, even when a total is also recorded". The owner: «ئەگەر هەم
+   * نرخی کیلۆ و هەم کۆی پسووڵە نووسرابن، کۆی پسووڵە وەرگرێ، ئەوەی تر پشتگوێ
+   * بخات». The rate is what the carrier quoted; the invoice is what it was
+   * paid, extras and all.
+   */
+  it("the carrier's total wins, even when a per-unit rate is also recorded", () => {
     const r = resolveBatchCost({
       shippingType: "air_regular",
       costPerKg: "7.00",
-      shippingCost: "9999",
-      chargeableKg: 100,
+      shippingCost: "2400",
+      chargeableKg: 300,
     });
-    expect(r).toEqual({ totalCostUsd: 700, effectiveRate: 7, unit: "kg", source: "rate" });
+    // Quoted at $7, paid $2,400 on 300 kg: the real cost of a kilo is $8,
+    // and the $300 the rate hid is cost again, not profit.
+    expect(r).toEqual({ totalCostUsd: 2400, effectiveRate: 8, unit: "kg", source: "total", ignoredRate: 7 });
   });
 
-  it("falls back to the carrier's total and divides it over the base", () => {
+  it("a rate alone is still the cost, times what the carrier billed", () => {
+    const r = resolveBatchCost({ shippingType: "air_regular", costPerKg: "7.00", chargeableKg: 100 });
+    expect(r).toEqual({ totalCostUsd: 700, effectiveRate: 7, unit: "kg", source: "rate", ignoredRate: 0 });
+  });
+
+  it("a total alone is the cost, divided over the base", () => {
     const r = resolveBatchCost({
       shippingType: "air_regular",
       shippingCost: "2000",
@@ -48,6 +65,7 @@ describe("resolveBatchCost", () => {
       effectiveRate: 0,
       unit: "cbm",
       source: "none",
+      ignoredRate: 0,
     });
   });
 
@@ -69,7 +87,9 @@ describe("deriveCostRate", () => {
     ).toBe(16.95);
   });
 
-  it("derives nothing when a rate is already set", () => {
+  it("derives nothing when a rate is already set — a typed figure is never written over", () => {
+    // The total now decides the cost even beside a rate, so "the total
+    // decided" no longer means the rate box is empty. It is asked outright.
     expect(
       deriveCostRate({
         shippingType: "air_regular",
@@ -125,6 +145,12 @@ describe("what the carrier's rate multiplies", () => {
     expect(carrierDifference("air_regular", { chargedWeightKg: null, costPerKg: "8.8" }, { billedKg: 50, cbm: 0 }), "no carrier figure, nothing to compare").toBeNull();
   });
 
+  it("is valued at the real rate when the carrier's total is recorded", () => {
+    // $600 on 60 kg billed is $10 a kilo, whatever was quoted: the 9.1 kg we
+    // charged on and the carrier did not are worth $91.00, not 9.1 x 8.8.
+    expect(carrierDifference("air_regular", { chargedWeightKg: "60", costPerKg: "8.8", shippingCost: "600" }, { billedKg: 69.1, cbm: 0 })?.usd).toBe(91);
+  });
+
   it("the reports use the same order, with the divisor in force", () => {
     const kg = carrierBaseKgSql(5000);
     expect(kg.indexOf("chargedWeightKg")).toBeLessThan(kg.indexOf("FROM packages"));
@@ -132,5 +158,58 @@ describe("what the carrier's rate multiplies", () => {
     expect(kg).toContain("/ 5000");
     expect(kg).not.toContain("actualWeightKg");
     expect(CARRIER_BASE_CBM_SQL).not.toContain("actualCbm");
+  });
+});
+
+/*
+ * The owner, 2026-10-05: the system must show the real cost of a kilo. One
+ * explanation for every screen; the words and the arithmetic apart, because
+ * a Kurdish line reorders numbers around a division sign.
+ */
+describe("how a batch's cost is explained", () => {
+  it("the invoice over the kilos, and the rate that did not count", () => {
+    const cost = resolveBatchCost({ shippingType: "air_regular", costPerKg: "7", shippingCost: "2400", chargeableKg: 300 });
+    const working = batchCostWorking(cost, 300);
+    expect(working.math).toBe("$2400.00 ÷ 300.00 kg = $8.00/kg");
+    expect(working.ignored).toBe("$7.00/kg");
+    expect(working.label.ku).toBe("کۆی پسووڵەی کارگۆ");
+  });
+
+  it("says nothing about a typed rate that agrees with the invoice", () => {
+    // What deriveBatchCostRateIfMissing writes at delivery: the same figure.
+    const cost = resolveBatchCost({ shippingType: "air_regular", costPerKg: "8.00", shippingCost: "2400", chargeableKg: 300 });
+    expect(batchCostWorking(cost, 300).ignored).toBeNull();
+  });
+
+  it("a rate alone: the kilos times the rate", () => {
+    const cost = resolveBatchCost({ shippingType: "air_regular", costPerKg: "7", chargeableKg: 300 });
+    const working = batchCostWorking(cost, 300);
+    expect(working.math).toBe("300.00 kg × $7.00/kg = $2100.00");
+    expect(working.ignored).toBeNull();
+  });
+
+  it("sea is explained in cubic metres", () => {
+    const cost = resolveBatchCost({ shippingType: "sea", shippingCost: "1800", totalCbm: 5 });
+    expect(batchCostWorking(cost, 5).math).toBe("$1800.00 ÷ 5.000 CBM = $360.00/CBM");
+  });
+
+  it("an invoice with no weight yet shows the invoice and waits for the rate", () => {
+    const cost = resolveBatchCost({ shippingType: "air_regular", shippingCost: "2000" });
+    const working = batchCostWorking(cost, 0);
+    expect(working.math).toBe("$2000.00");
+    expect(working.label.en).toContain("shows once there is a weight");
+  });
+
+  it("no cost at all is said, not shown as zero", () => {
+    const working = batchCostWorking(resolveBatchCost({ shippingType: "air_regular" }), 0);
+    expect(working.math).toBeNull();
+    expect(working.label.ku).toBe("تێچوو تۆمار نەکراوە");
+  });
+
+  it("the arithmetic carries no Kurdish, so it can be drawn left to right whole", () => {
+    const cost = resolveBatchCost({ shippingType: "air_regular", costPerKg: "7", shippingCost: "2400", chargeableKg: 300 });
+    const working = batchCostWorking(cost, 300);
+    expect(working.math).not.toMatch(/[\u0600-\u06FF]/);
+    expect(working.ignored).not.toMatch(/[\u0600-\u06FF]/);
   });
 });

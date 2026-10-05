@@ -45,7 +45,7 @@ import { batchesAwaitingShippingNumber } from "@shared/batchReminders";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch, isTiesQuestion, isSuperAdmin, BATCH_TIES_MARK } from "@shared/batchDeletion";
 import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
-import { BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
+import { BatchCostWorkingLine, BatchRealCostPreview, BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
@@ -563,6 +563,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     { batchId: editingBatch?.id ?? 0 },
     { enabled: isEditOpen && !!editingBatch?.id },
   );
+  /*
+   * What is in the cost boxes right now, before any save — so the carrier's
+   * total shows what it comes to per kilo while it is being typed (owner,
+   * 2026-10-05). `undefined` means "not touched": the saved figure stands.
+   * Forgotten whenever another batch is opened.
+   */
+  const [costDraft, setCostDraft] = useState<{ total?: string; rate?: string; carrier?: string }>({});
+  useEffect(() => {
+    setCostDraft({});
+  }, [editingBatch?.id, isEditOpen]);
   const ourWeightLine = (sea: boolean) => {
     const f = editFinancialQ.data;
     if (!f) return "…";
@@ -1014,6 +1024,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                           <Input name="shippingCost" type="number" step="0.01" className="pl-7" placeholder={t('batches.totalAmountToCompany')} />
                         </div>
+                        <p className="text-xs text-muted-foreground">
+                          {pickLang(language, {
+                            ku: "هەموو ئەو پارەیەی بە کۆمپانیای گواستنەوە دەدرێت — کرێ و خزمەتگوزاریی زیادە پێکەوە. کە نووسرا، تێچووی باچ هەر ئەمەیە؛ نرخی یەکە حیساب ناکرێت. دەتوانیت دواتریش بینووسیت، کە پسووڵەکە گەیشت.",
+                            en: "Everything paid to the carrier — freight and extra services together. Once filled in it IS the batch's cost; a per-unit rate is not counted. It can be entered later, when the invoice arrives.",
+                            ar: "كل ما يُدفع لشركة الشحن — الأجرة والخدمات الإضافية معاً. متى كُتب فهو تكلفة الدفعة؛ سعر الوحدة لا يُحتسب. يمكن إدخاله لاحقاً عند وصول الفاتورة.",
+                            zh: "付给承运商的全部款项 — 运费与附加服务合计。填写后它就是该批次的成本；单价不计入。可在账单到达后再填写。",
+                          })}
+                        </p>
                       </div>
                     )}
                     
@@ -2082,19 +2100,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </CardHeader>
                     <CardContent>
                       <p className="text-2xl font-bold text-red-700 dark:text-red-300">${financialSummary.totalCost.toFixed(2)}</p>
-                      {/* Where the figure came from — a rate, the carrier's
-                          recorded total, or nothing. A 0 with no source used
-                          to read as "free shipment". */}
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {financialSummary.costSource === "none"
-                          ? pickLang(language, { ku: "تێچوو تۆمار نەکراوە", en: "No cost recorded", ar: "لم تُسجَّل التكلفة", zh: "未记录成本" })
-                          : financialSummary.costSource === "total"
-                            ? `${pickLang(language, { ku: "کۆی تۆمارکراو", en: "Recorded total", ar: "الإجمالي المسجَّل", zh: "记录的总额" })} ≈ $${financialSummary.effectiveCostRate.toFixed(2)}/${financialSummary.shippingType === 'sea' ? 'CBM' : 'kg'}`
-                            : financialSummary.shippingType === 'sea'
-                              ? `${financialSummary.chargedCbm} CBM × $${financialSummary.costPerCbm}`
-                              : `${financialSummary.chargedWeight} kg × $${financialSummary.costPerKg}`
-                        }
-                      </p>
+                      {/* Where the figure came from — the carrier's invoice
+                          over what it billed, a rate times it, or nothing —
+                          and with it the real cost of a kilo (owner,
+                          2026-10-05). A 0 with no source used to read as
+                          "free shipment". */}
+                      <BatchCostWorkingLine working={financialSummary.costWorking} className="mt-1" />
                     </CardContent>
                   </Card>
                   <Card className="border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100 dark:to-green-900/40">
@@ -2542,13 +2553,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           {editingBatch.shippingType !== "sea" && (
                             <div className="grid gap-2">
                               <Label>{pickLang(language, { ku: "کێشی کۆمپانیای گواستنەوە (لە پسوولەکەیان)", en: "Carrier's billed weight (from its invoice)", ar: "وزن شركة الشحن (من فاتورتها)", zh: "承运商计费重量（发票）" })}</Label>
-                              <Input name="chargedWeightKg" type="number" step="0.01" defaultValue={editingBatch.chargedWeightKg || ""} />
+                              <Input name="chargedWeightKg" type="number" step="0.01" defaultValue={editingBatch.chargedWeightKg || ""} onChange={(e) => setCostDraft((d) => ({ ...d, carrier: e.target.value }))} />
                             </div>
                           )}
                           {editingBatch.shippingType === "sea" && (
                             <div className="grid gap-2">
                               <Label>{pickLang(language, { ku: "قەبارەی کۆمپانیای گواستنەوە (لە پسوولەکەیان)", en: "Carrier's billed volume (from its invoice)", ar: "حجم شركة الشحن (من فاتورتها)", zh: "承运商计费体积（发票）" })}</Label>
-                              <Input name="chargedCbm" type="number" step="0.0001" defaultValue={editingBatch.chargedCbm || ""} />
+                              <Input name="chargedCbm" type="number" step="0.0001" defaultValue={editingBatch.chargedCbm || ""} onChange={(e) => setCostDraft((d) => ({ ...d, carrier: e.target.value }))} />
                             </div>
                           )}
                         </div>
@@ -2570,7 +2581,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <Label>{t("batches.costPerKg")}</Label>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                <Input name="costPerKg" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.costPerKg || ""} />
+                                <Input name="costPerKg" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.costPerKg || ""} onChange={(e) => setCostDraft((d) => ({ ...d, rate: e.target.value }))} />
                               </div>
                             </>
                           ) : (
@@ -2578,29 +2589,36 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <Label>{t("batches.costPerCbm")}</Label>
                               <div className="relative">
                                 <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                                <Input name="costPerCbm" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.costPerCbm || ""} />
+                                <Input name="costPerCbm" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.costPerCbm || ""} onChange={(e) => setCostDraft((d) => ({ ...d, rate: e.target.value }))} />
                               </div>
                             </>
                           )}
-                          {/* The carrier's one figure for the whole shipment.
-                              It usually arrives AFTER the batch exists, and
-                              the create form was the only place it could be
-                              typed. Leave the per-unit blank and this total
-                              is divided over the kilos when the batch is
-                              delivered. */}
+                          {/* The carrier's one figure for the whole shipment —
+                              the freight and every extra service on the same
+                              invoice. It usually arrives AFTER the batch
+                              exists. Once it is here it IS the cost: the rate
+                              above is what was quoted, this is what was paid
+                              (owner, 2026-10-05). */}
                           <Label className="mt-2">{t("batches.totalShippingCost")}</Label>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                            <Input name="shippingCost" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.shippingCost || ""} placeholder={t("batches.totalAmountToCompany")} />
+                            <Input name="shippingCost" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.shippingCost || ""} placeholder={t("batches.totalAmountToCompany")} onChange={(e) => setCostDraft((d) => ({ ...d, total: e.target.value }))} data-testid="batch-total-cost" />
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {pickLang(language, {
-                              ku: "ئەگەر تێچووی یەکە بەتاڵ بێت، لە کاتی گەیشتندا ئەم کۆیە دابەش دەکرێت بەسەر کێش/CBM و تێچووی یەکە خۆی تۆمار دەبێت.",
-                              en: "If the per-unit cost is blank, this total is divided over the weight/CBM at delivery and the per-unit cost fills itself in.",
-                              ar: "إذا تُركت تكلفة الوحدة فارغة، يُقسَّم هذا الإجمالي على الوزن/الحجم عند التسليم وتُسجَّل تكلفة الوحدة تلقائياً.",
-                              zh: "若单价成本留空，送达时系统会将此总额除以重量/体积并自动填入单价成本。",
+                              ku: "هەموو ئەو پارەیەی بە کۆمپانیای گواستنەوە دراوە — کرێ و خزمەتگوزاریی زیادە پێکەوە. کە ئەمە نووسرا، تێچووی باچ هەر ئەمەیە و تێچووی ڕاستەقینەی هەر یەکە لێرەوە دەردەچێت؛ نرخی یەکەی سەرەوە حیساب ناکرێت.",
+                              en: "Everything paid to the carrier — freight and extra services together. Once this is filled in it IS the batch's cost and the real cost per unit comes from it; the per-unit rate above is not counted.",
+                              ar: "كل ما دُفع لشركة الشحن — الأجرة والخدمات الإضافية معاً. متى كُتب هذا فهو تكلفة الدفعة، ومنه تُحسب التكلفة الحقيقية للوحدة؛ سعر الوحدة أعلاه لا يُحتسب.",
+                              zh: "付给承运商的全部款项 — 运费与附加服务合计。填写后它就是该批次的成本，真实单位成本由它算出；上面的单价不计入。",
                             })}
                           </p>
+                          <BatchRealCostPreview
+                            shippingType={editingBatch.shippingType}
+                            total={costDraft.total ?? editingBatch.shippingCost}
+                            typedRate={costDraft.rate ?? (editingBatch.shippingType === "sea" ? editingBatch.costPerCbm : editingBatch.costPerKg)}
+                            carrierBilled={costDraft.carrier ?? (editingBatch.shippingType === "sea" ? editingBatch.chargedCbm : editingBatch.chargedWeightKg)}
+                            ours={editFinancialQ.data ? { billedKg: Number(editFinancialQ.data.ourBilledKg) || 0, cbm: Number(editFinancialQ.data.ourCbm) || 0 } : null}
+                          />
                         </div>
                       </CardContent>
                     </Card>

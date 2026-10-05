@@ -1,5 +1,6 @@
 import { fmtDate } from "@/lib/numericDate";
 import { useParams, Link } from "wouter";
+import { BatchCostWorkingLine } from "@/components/batches/BatchCostNotes";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -275,13 +276,11 @@ export default function BatchFinancialReportFull() {
             </CardHeader>
             <CardContent>
               <div className="text-4xl font-bold text-red-600 dark:text-red-300">{formatCurrency(financial.totalCost)}</div>
-              <p className="text-sm text-red-600/70 dark:text-red-300 mt-3 flex items-center gap-2">
-                <Calculator className="h-4 w-4" />
-                {batch.shippingType === 'sea' 
-                  ? `${financial.chargedCbm || 0} CBM × $${financial.costPerCbm || 0}`
-                  : `${(financial.totalChargeableWeight || totalChargeableWeight).toFixed(2)} kg × $${financial.costPerKg || 0}`
-                }
-              </p>
+              {/* How it was worked out, by the one rule (shared/batchCost). */}
+              <div className="mt-3 flex items-start gap-2 text-red-600/70 dark:text-red-300">
+                <Calculator className="mt-0.5 h-4 w-4 shrink-0" />
+                <BatchCostWorkingLine working={financial.costWorking} className="text-sm text-red-600/80 dark:text-red-300" />
+              </div>
             </CardContent>
           </Card>
           
@@ -432,8 +431,8 @@ export default function BatchFinancialReportFull() {
                     <p className="text-red-600/70 dark:text-red-300 text-sm">{pickLang(language, { ku: `نرخی هەر ${unit}`, en: `Price per ${unit}`, ar: `سعر كل ${unit}`, zh: `每 ${unit} 价格` })}</p>
                   </div>
                 </div>
-                <span className="font-bold text-2xl text-red-700 dark:text-red-300">
-                  ${batch.shippingType === 'sea' ? financial.costPerCbm : financial.costPerKg}/{unit}
+                <span className="font-bold text-2xl text-red-700 dark:text-red-300" dir="ltr" data-testid="batch-real-cost-rate">
+                  ${Number(financial.effectiveCostRate || 0).toFixed(2)}/{unit}
                 </span>
               </div>
               

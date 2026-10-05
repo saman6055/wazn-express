@@ -4,6 +4,7 @@ import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useEffect } from "react";
 import { useParams, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
+import { BatchCostWorkingLine } from "@/components/batches/BatchCostNotes";
 import type { CompanyInfo } from "@/hooks/useCompanyInfo";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
@@ -1062,10 +1063,16 @@ export default function BatchFinancialReport() {
                   </div>
                   <span className="font-medium text-red-800 dark:text-red-200">{pickLang(language, { ku: "نرخی کڕین", en: "Cost price", ar: "سعر الشراء", zh: "成本价" })}</span>
                 </div>
-                <span className="font-bold text-lg tabular-nums text-red-700 dark:text-red-300">
-                  ${batch.shippingType === 'sea' ? financial.costPerCbm : financial.costPerKg}/{unit}
+                {/* The real cost per unit: the carrier's total over what it
+                    billed, or the typed rate when no total was recorded
+                    (shared/batchCost, owner 2026-10-05). */}
+                <span className="font-bold text-lg tabular-nums text-red-700 dark:text-red-300" dir="ltr" data-testid="batch-real-cost-rate">
+                  ${Number(financial.effectiveCostRate || 0).toFixed(2)}/{unit}
                 </span>
               </div>
+              {/* How that figure was reached — and a typed rate that did
+                  not count, named. */}
+              <BatchCostWorkingLine working={financial.costWorking} className="px-1" />
               <div className="flex justify-between items-center p-4 bg-green-50/80 dark:bg-green-950/80 border border-green-200/50 dark:border-green-800/60 rounded-xl">
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-green-200/80 dark:bg-green-900/80 rounded-xl">

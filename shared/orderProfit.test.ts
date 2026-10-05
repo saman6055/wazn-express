@@ -68,7 +68,13 @@ describe("every profit report uses the one rule", () => {
   it("parcel freight is profit only after the batch's cost, total or per unit", () => {
     expect(reports).toContain("profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit,");
     expect(reports).not.toContain("commission.profit + pkgs.revenue,");
-    expect(reports).toContain("ELSE CAST(COALESCE(${batches.shippingCost}, 0) AS DECIMAL(12,2))");
+    // The batch's cost used to be worked out here in SQL, with the total as
+    // the fallback. It is asked of the one rule now (shared/batchCost through
+    // getBatchCostsByRule) — the total first, since 2026-10-05 — so a batch
+    // recorded only by its total is still a cost, and the SQL copy is gone.
+    expect(reports).toContain("const costsByRule = await getBatchCostsByRule(batchIds);");
+    expect(reports).toContain("costByBatch.set(r.id, costsByRule.get(r.id)?.totalCostUsd ?? 0);");
+    expect(reports).not.toContain("ELSE CAST(COALESCE(${batches.shippingCost}, 0) AS DECIMAL(12,2))");
   });
 
   it("money received is net of what was handed back, and reads a real column", () => {

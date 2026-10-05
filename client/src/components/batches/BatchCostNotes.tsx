@@ -2,6 +2,10 @@ import { AlertTriangle, TrendingDown, TrendingUp } from "lucide-react";
 import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { cn } from "@/lib/utils";
+import {
+  batchCostWorking, carrierCostBase, resolveBatchCost, IGNORED_RATE_WORDS, type BatchCostWorking,
+} from "@shared/batchCost";
 
 /**
  * Two small notes that sit wherever a batch's profit is shown (owner,
@@ -70,5 +74,93 @@ export function BatchWaitingFor({ waitingFor }: { waitingFor: "cost" | "price" |
             })}
       </span>
     </div>
+  );
+}
+
+/**
+ * How a batch's cost was worked out — and so the real cost of a kilo.
+ *
+ * The owner, 2026-10-05: «کۆی ئەو بڕە پارەی داومانە بە شەریکەی نەقل … ئەبێ ئەوە
+ * ڕاستی بێت، و سیستەم تێچووی ڕاستەقینەی هەر کیلۆیەک نیشان بدات». The carrier's
+ * invoice over what it billed, drawn as the sum it is; and when a rate was
+ * typed beside the invoice, that rate named and struck through, so the two
+ * figures on a batch never disagree in silence.
+ *
+ * The arithmetic sits in its own left-to-right span: inside a Kurdish line
+ * the numbers would change places around the ÷ and the =.
+ */
+export function BatchCostWorkingLine({
+  working,
+  className,
+}: {
+  working: BatchCostWorking | null | undefined;
+  className?: string;
+}) {
+  const { language } = useTranslation();
+  if (!working) return null;
+  return (
+    <p
+      // Its own direction, said outright: the batch dialog's tabs are a
+      // left-to-right island (Radix sets it), and inherited from there this
+      // line started from the wrong edge with its words in the wrong order.
+      dir={language === "en" || language === "zh" ? "ltr" : "rtl"}
+      className={cn("flex flex-wrap items-baseline gap-x-1.5 gap-y-0.5 text-xs text-muted-foreground", className)}
+      data-testid="batch-cost-working"
+    >
+      <span>{pickLang(language, working.label)}{working.math ? ":" : ""}</span>
+      {working.math && (
+        <bdi dir="ltr" className="font-mono tabular-nums text-foreground">{working.math}</bdi>
+      )}
+      {working.ignored && (
+        <span className="basis-full text-amber-700 dark:text-amber-300" data-testid="batch-cost-ignored-rate">
+          {pickLang(language, IGNORED_RATE_WORDS)}{" "}
+          <bdi dir="ltr" className="font-mono tabular-nums line-through">{working.ignored}</bdi>
+        </span>
+      )}
+    </p>
+  );
+}
+
+/**
+ * While the carrier's total is being typed: what it comes to per kilo.
+ *
+ * The same rule and the same line as after the save, worked from what is in
+ * the boxes now — the total typed, the carrier's billed weight typed beside
+ * it, and our own weight when the carrier's is blank. Nothing is shown until
+ * there is a total: a per-unit rate on its own needs no explaining.
+ */
+export function BatchRealCostPreview({
+  shippingType,
+  total,
+  typedRate,
+  carrierBilled,
+  ours,
+}: {
+  shippingType: string | null | undefined;
+  total: string | number | null | undefined;
+  typedRate: string | number | null | undefined;
+  carrierBilled: string | number | null | undefined;
+  ours: { billedKg: number; cbm: number } | null;
+}) {
+  const sea = shippingType === "sea";
+  const base = carrierCostBase(
+    shippingType,
+    sea ? { chargedCbm: carrierBilled } : { chargedWeightKg: carrierBilled },
+    ours ?? { billedKg: 0, cbm: 0 },
+  );
+  const cost = resolveBatchCost({
+    shippingType,
+    costPerKg: sea ? null : typedRate,
+    costPerCbm: sea ? typedRate : null,
+    shippingCost: total,
+    chargeableKg: base,
+    totalCbm: base,
+  });
+  if (cost.source !== "total") return null;
+  return (
+    <BatchCostWorkingLine
+      working={batchCostWorking(cost, base)}
+      className="rounded-md border border-emerald-500/40 bg-emerald-50/60 px-3 py-2 dark:bg-emerald-950/20"
+    />
   );
 }

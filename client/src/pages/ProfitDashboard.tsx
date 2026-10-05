@@ -38,6 +38,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Link } from "wouter";
+import { resolveBatchCost } from "@shared/batchCost";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 
@@ -233,11 +234,17 @@ const [timeRange, setTimeRange] = useState("all");
         ? Number(b.chargedCbm || 0)
         : Number(b.chargedWeightKg || b.totalWeight || 0);
 
-      const costPerUnit = batch.shippingType === "sea"
-        ? Number(b.costPerCbm || 0)
-        : Number(b.costPerKg || 0);
-
-      const cost = chargedVolume * costPerUnit;
+      // The one rule (shared/batchCost, owner 2026-10-05): the carrier's
+      // total when one is recorded, else its rate × what it billed. This
+      // page multiplied the typed rate and never looked at a total.
+      const cost = resolveBatchCost({
+        shippingType: batch.shippingType,
+        costPerKg: b.costPerKg,
+        costPerCbm: b.costPerCbm,
+        shippingCost: b.shippingCost,
+        chargeableKg: chargedVolume,
+        totalCbm: chargedVolume,
+      }).totalCostUsd;
 
       // Estimate revenue (this would come from actual package data in production)
       const sellingPrice = batch.shippingType === "sea"

@@ -167,7 +167,7 @@ export function oddBatchNumbers(
     if (Math.abs(product - total) > Math.max(20, total * 0.25)) {
       out.push({
         key: "rateTimesBase:total",
-        line: `تێچووی هەر ${unit} × ${unit}ی حسابکراو = ${usd(product)}، بەڵام کۆی کرێی گەیاندن ${usd(total)} نووسراوە.`,
+        line: `تێچووی هەر ${unit} × ${unit}ی حسابکراو = ${usd(product)}، بەڵام کۆی کرێی گەیاندن ${usd(total)} نووسراوە — کۆی پسووڵە (${usd(total)}) وەک تێچووی باچ حیساب دەکرێت.`,
       });
     }
   }

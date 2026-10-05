@@ -12,7 +12,7 @@ import {
   type SearchableBatchField,
 } from '@shared/batchSearch';
 import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
-import { carrierCostBase, carrierDifference, deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
+import { batchCostWorking, carrierBaseKgSql, CARRIER_BASE_CBM_SQL, carrierCostBase, carrierDifference, deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
 import { batchMissingCost, batchMissingSellingPrice } from '@shared/batchPricing';
 import { diffPriceFields, normalizePriceValue, PRICE_HISTORY_FIELDS } from '@shared/batchPriceHistory';
 import { createCustomerNotification } from './portal.db';
@@ -1010,6 +1010,64 @@ export async function getCustomerPriceInBatch(batchId: number, customerId: numbe
  * (chargedWeightKg / chargedCbm — it is literally what the total was priced
  * on) and falls back to the parcels' own chargeable sum.
  */
+/**
+ * Each batch's cost by the one rule, for readers that need many at once.
+ *
+ * The profit report had the rule written out a second time in SQL, and the
+ * self-order report read the typed per-unit rate and nothing else — so a
+ * batch recorded by its total cost nothing there, and a batch carrying both
+ * figures was costed by the one the owner said to ignore. One query for the
+ * facts, and the same function every screen uses for the answer.
+ */
+export async function getBatchCostsByRule(batchIds: number[]): Promise<Map<number, {
+  shippingType: string;
+  totalCostUsd: number;
+  /** The real cost per kg / CBM; 0 while it cannot be known. */
+  effectiveRate: number;
+  unit: "kg" | "cbm";
+  source: BatchCostSource;
+}>> {
+  const out = new Map<number, { shippingType: string; totalCostUsd: number; effectiveRate: number; unit: "kg" | "cbm"; source: BatchCostSource }>();
+  const db = await getDb();
+  const ids = Array.from(new Set(batchIds.filter((id) => Number.isFinite(id))));
+  if (!db || ids.length === 0) return out;
+
+  // Our billed weight is counted with the divisor in force, the same as the
+  // customer was charged on.
+  const baseKgSql = carrierBaseKgSql(await getVolumetricDivisor());
+  const rows = await db
+    .select({
+      id: batches.id,
+      shippingType: batches.shippingType,
+      costPerKg: batches.costPerKg,
+      costPerCbm: batches.costPerCbm,
+      shippingCost: batches.shippingCost,
+      baseKg: sql<number>`${sql.raw(baseKgSql)}`,
+      baseCbm: sql<number>`${sql.raw(CARRIER_BASE_CBM_SQL)}`,
+    })
+    .from(batches)
+    .where(inArray(batches.id, ids));
+
+  for (const row of rows) {
+    const cost = resolveBatchCost({
+      shippingType: row.shippingType,
+      costPerKg: row.costPerKg,
+      costPerCbm: row.costPerCbm,
+      shippingCost: row.shippingCost,
+      chargeableKg: Number(row.baseKg) || 0,
+      totalCbm: Number(row.baseCbm) || 0,
+    });
+    out.set(row.id, {
+      shippingType: String(row.shippingType ?? "air_regular"),
+      totalCostUsd: cost.totalCostUsd,
+      effectiveRate: cost.effectiveRate,
+      unit: cost.unit,
+      source: cost.source,
+    });
+  }
+  return out;
+}
+
 export async function deriveBatchCostRateIfMissing(batchId: number): Promise<{
   derived: boolean;
   rate?: number;
@@ -1146,20 +1204,21 @@ export async function getBatchFinancialSummary(batchId: number) {
   const chargedCbm = Number(batchData.chargedCbm) || packageTotalCbm;
   
   // What the shipment cost the company. One shared rule (@shared/batchCost):
-  // an explicit per-unit rate × the billed base, else the carrier's recorded
-  // total as-is — a batch known only by its total used to report zero cost
-  // and a fantasy profit. `costSource` is returned so the screen can say
-  // which of the two (or neither) the figure came from.
+  // the carrier's recorded total as-is, else a per-unit rate × the billed
+  // base. `costSource` is returned so the screen can say which of the two
+  // (or neither) the figure came from.
+  //
+  // What the rate multiplies, or the total is divided over — the one rule
+  // (shared/batchCost), the same the profit reports use. It used to be our
+  // parcels' volume weight here and the carrier's billed weight there.
+  const costBase = carrierCostBase(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm });
   const resolvedCost = resolveBatchCost({
     shippingType: batchData.shippingType,
     costPerKg: batchData.costPerKg,
     costPerCbm: batchData.costPerCbm,
     shippingCost: batchData.shippingCost,
-    // What the carrier's rate multiplies — the one rule (shared/batchCost),
-    // the same the profit reports use. It used to be our parcels' volume
-    // weight here and the carrier's billed weight there.
-    chargeableKg: carrierCostBase(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm }),
-    totalCbm: carrierCostBase(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm }),
+    chargeableKg: costBase,
+    totalCbm: costBase,
   });
   const totalCost = resolvedCost.totalCostUsd;
 
@@ -1267,7 +1326,16 @@ export async function getBatchFinancialSummary(batchId: number) {
     // per-unit derived), or "none" (nothing recorded — 0 is an absence, not
     // a free shipment).
     costSource: resolvedCost.source as BatchCostSource,
+    // The REAL cost per unit: the carrier's total over what it billed, or
+    // the typed rate when no total was recorded (owner, 2026-10-05).
     effectiveCostRate: resolvedCost.effectiveRate,
+    // What that rate multiplies or the total is divided over.
+    costBase,
+    // A typed rate that did not count because the total decided — shown,
+    // never hidden, so the two figures on a batch cannot quietly disagree.
+    ignoredCostRate: resolvedCost.ignoredRate,
+    // The same figures as one explanation, for every screen to draw alike.
+    costWorking: batchCostWorking(resolvedCost, costBase),
     shippingCostTotal: Number(batchData.shippingCost) || 0,
     totalRevenue,
     // While it waits, no profit and no loss is reported — not the whole

@@ -11,13 +11,25 @@
  *
  * One rule, asked by everything that needs a cost:
  *
- *   1. An explicit per-unit rate wins. It is the more deliberate entry, and
- *      once the total has been divided (see `deriveCostRate`) both are set
- *      and agree.
- *   2. Otherwise the recorded total IS the cost, and the per-unit rate is
- *      derived from it when the billed base is known.
+ *   1. The carrier's total wins. It is the money that actually left the
+ *      company — the freight and every extra service on the same invoice —
+ *      and the real cost of a kilo is that total divided over the billed
+ *      base. A per-unit rate typed beside it is not read.
+ *   2. No total recorded: the per-unit rate × the billed base.
  *   3. Neither recorded — the cost is honestly zero, and `source` says so,
  *      so a screen can show "تێچوو تۆمار نەکراوە" instead of a confident 0.
+ *
+ * It was the other way round until 2026-10-05: the rate won, "the more
+ * deliberate entry". The owner, that day: «ئەگەر هەم نرخی کیلۆ و هەم کۆی
+ * پسووڵە نووسرابن، کۆی پسووڵە وەرگرێ، ئەوەی تر پشتگوێ بخات — دەقیقتر ئەبێ».
+ * A rate is what the carrier quoted; the invoice is what the carrier was
+ * paid, and it carries the charges no quote has in it. With the rate
+ * winning, a $2,400 invoice on 300 kg quoted at $7 was costed at $2,100 and
+ * $300 of real cost appeared in every report as profit.
+ *
+ * The typed rate is never overwritten — the result says what it was
+ * (`ignoredRate`) so the screen can show both and nobody has to wonder
+ * which one counted.
  *
  * Air batches divide over chargeable kilograms, sea over CBM — the same
  * bases the customer side already bills in.
@@ -40,10 +52,15 @@ export interface BatchCostInputs {
 
 export interface BatchCostResult {
   totalCostUsd: number;
-  /** Cost per kg (air) or per CBM (sea). 0 when it cannot be known yet. */
+  /** The REAL cost per kg (air) or per CBM (sea). 0 when it cannot be known yet. */
   effectiveRate: number;
   unit: "kg" | "cbm";
   source: BatchCostSource;
+  /**
+   * A per-unit rate somebody typed that was NOT used, because the carrier's
+   * total decided. 0 when no rate was typed or the rate is what was used.
+   */
+  ignoredRate: number;
 }
 
 const positive = (value: string | number | null | undefined): number => {
@@ -92,7 +109,9 @@ export function carrierDifference(
   const carrier = positive(sea ? batch.chargedCbm : batch.chargedWeightKg);
   const own = sea ? ours.cbm : ours.billedKg;
   if (!(carrier > 0) || !(own > 0)) return null;
-  const rate = positive(sea ? batch.costPerCbm : batch.costPerKg) || positive(batch.shippingCost) / carrier;
+  // The same order as resolveBatchCost: the carrier's total over what it
+  // billed is the real rate; a typed rate only when there is no total.
+  const rate = positive(batch.shippingCost) / carrier || positive(sea ? batch.costPerCbm : batch.costPerKg);
   if (!(rate > 0)) return null;
   const units = own - carrier;
   return { ours: own, carrier, units, usd: Math.round(units * rate * 100) / 100, unit: sea ? "cbm" : "kg" };
@@ -129,24 +148,27 @@ export function resolveBatchCost(inputs: BatchCostInputs): BatchCostResult {
   const rate = sea ? positive(inputs.costPerCbm) : positive(inputs.costPerKg);
   const total = positive(inputs.shippingCost);
 
-  // A rate needs its weight. With no billed base yet, rate × 0 said the
-  // batch cost nothing and every dollar of its freight looked like profit
-  // (found 2026-10-03 on AIR-2026-035, -043, -046, -047, -056, -059, -060
-  // and SEA-068: a rate, no weight, and the carrier's total sitting unused).
-  if (rate > 0 && base > 0) {
-    return { totalCostUsd: rate * base, effectiveRate: rate, unit, source: "rate" };
-  }
+  // 1. What the carrier was paid. With no billed base yet the total is still
+  //    the true cost — the per-unit rate just waits for the weights.
   if (total > 0) {
     return {
       totalCostUsd: total,
       effectiveRate: base > 0 ? total / base : 0,
       unit,
       source: "total",
+      ignoredRate: rate,
     };
+  }
+  // 2. A quoted rate needs its weight. With no billed base yet, rate × 0
+  //    said the batch cost nothing and every dollar of its freight looked
+  //    like profit (found 2026-10-03 on AIR-2026-035, -043, -046, -047,
+  //    -056, -059, -060 and SEA-068).
+  if (rate > 0 && base > 0) {
+    return { totalCostUsd: rate * base, effectiveRate: rate, unit, source: "rate", ignoredRate: 0 };
   }
   // A rate is known but not yet what it multiplies: the cost is honestly
   // not known yet, which "none" says.
-  return { totalCostUsd: 0, effectiveRate: rate, unit, source: "none" };
+  return { totalCostUsd: 0, effectiveRate: rate, unit, source: "none", ignoredRate: 0 };
 }
 
 /**
@@ -158,9 +180,97 @@ export function resolveBatchCost(inputs: BatchCostInputs): BatchCostResult {
  * recorded, or the base is still zero. Rounded to cents because the column
  * holds two decimals; the total itself stays the exact figure, so reports
  * that want the true cost read the total, not rate × base.
+ *
+ * "A rate is already set" is asked outright. A total now decides the cost
+ * even beside a typed rate, so "the total decided" no longer means the rate
+ * box is empty — and a figure somebody typed is never written over.
  */
 export function deriveCostRate(inputs: BatchCostInputs): number | null {
+  const typed = isSeaCost(inputs.shippingType) ? positive(inputs.costPerCbm) : positive(inputs.costPerKg);
+  if (typed > 0) return null;
   const resolved = resolveBatchCost(inputs);
   if (resolved.source !== "total" || resolved.effectiveRate <= 0) return null;
   return Math.round(resolved.effectiveRate * 100) / 100;
+}
+
+export interface BatchCostWords {
+  ku: string;
+  en: string;
+  ar: string;
+  zh: string;
+}
+
+export interface BatchCostWorking {
+  /** What decided the cost, in words. */
+  label: BatchCostWords;
+  /** The arithmetic, to be drawn left to right. Null when there is none. */
+  math: string | null;
+  /** A typed per-unit rate that did not count ("$7.00/kg"). Null when none. */
+  ignored: string | null;
+}
+
+/** Said before a typed rate that did not count. */
+export const IGNORED_RATE_WORDS: BatchCostWords = {
+  ku: "نرخی نووسراو حیساب نەکرا:",
+  en: "typed rate, not counted:",
+  ar: "السعر المكتوب لم يُحتسب:",
+  zh: "填写的单价未计入：",
+};
+
+const money = (n: number): string => `$${n.toFixed(2)}`;
+const measure = (n: number, unit: "kg" | "cbm"): string =>
+  unit === "cbm" ? `${n.toFixed(3)} CBM` : `${n.toFixed(2)} kg`;
+
+/**
+ * Where the cost came from, as the arithmetic that produced it.
+ *
+ * One answer for every screen that shows a batch's cost, so the figure
+ * explains itself the same way everywhere: the invoice divided over the
+ * kilos, or the rate times them. When a rate was typed beside a total it is
+ * named as not counted — otherwise the two numbers on the batch disagree and
+ * nothing says which one the profit was worked from.
+ *
+ * The words and the arithmetic come apart on purpose. A line of Kurdish with
+ * "$2,400.00 ÷ 300.00 kg = $8.00/kg" inside it is reordered by the screen —
+ * the numbers change places around the signs — so the arithmetic is handed
+ * over whole, to be drawn left to right in its own span.
+ *
+ * `base` is what the rate multiplies or the total is divided over
+ * (carrierCostBase).
+ */
+export function batchCostWorking(cost: BatchCostResult, base: number): BatchCostWorking {
+  const unit = cost.unit === "cbm" ? "CBM" : "kg";
+  if (cost.source === "none") {
+    return {
+      label: { ku: "تێچوو تۆمار نەکراوە", en: "No cost recorded", ar: "لم تُسجَّل التكلفة", zh: "未记录成本" },
+      math: null,
+      ignored: null,
+    };
+  }
+  if (cost.source === "rate") {
+    return {
+      label: { ku: "نرخی یەکە × کێشی حیسابکراو", en: "Rate × billed weight", ar: "سعر الوحدة × الوزن المحتسب", zh: "单价 × 计费重量" },
+      math: `${measure(base, cost.unit)} × ${money(cost.effectiveRate)}/${unit} = ${money(cost.totalCostUsd)}`,
+      ignored: null,
+    };
+  }
+  if (!(cost.effectiveRate > 0)) {
+    return {
+      label: {
+        ku: "کۆی پسووڵەی کارگۆ — تێچووی هەر یەکە کاتێک دەردەکەوێت کە کێش هەبێت",
+        en: "Carrier's invoice — the cost per unit shows once there is a weight",
+        ar: "فاتورة الناقل — تظهر تكلفة الوحدة عند توفر الوزن",
+        zh: "承运商账单 — 有重量后显示单位成本",
+      },
+      math: money(cost.totalCostUsd),
+      ignored: null,
+    };
+  }
+  return {
+    label: { ku: "کۆی پسووڵەی کارگۆ", en: "Carrier's invoice", ar: "فاتورة الناقل", zh: "承运商账单" },
+    math: `${money(cost.totalCostUsd)} ÷ ${measure(base, cost.unit)} = ${money(cost.effectiveRate)}/${unit}`,
+    ignored: cost.ignoredRate > 0 && Math.abs(cost.ignoredRate - cost.effectiveRate) >= 0.005
+      ? `${money(cost.ignoredRate)}/${unit}`
+      : null,
+  };
 }

@@ -1,8 +1,7 @@
 import { getDb } from './connection';
 import { listUnsentPaymentWhatsApp } from "./paymentWhatsApp.db";
 import { ORDER_PROFIT_SQL, LIVE_SALE_SQL, orderProfitUsd, isLiveSale } from "@shared/orderProfit";
-import { carrierBaseKgSql, CARRIER_BASE_CBM_SQL } from "@shared/batchCost";
-import { getVolumetricDivisor } from "./settings.db";
+import { getBatchCostsByRule } from "./batches.db";
 import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
 import { appLogger } from '../utils/logger';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
@@ -1228,8 +1227,13 @@ export async function getWeeklyHighlights(): Promise<{
 // are created or stored changes.
 //
 // Revenue = the shipping charge billed (calculatedCostUsd).
-// Cost    = chargeable measure × the batch's OWN cost rate (costPerKg /
-//           costPerCbm). Packages not yet in a batch contribute 0 cost.
+// Cost    = the parcel's measure × its batch's REAL cost per unit — the
+//           carrier's total over what it billed, or the typed rate when no
+//           total was recorded (shared/batchCost, owner 2026-10-05). It used
+//           to read the typed rate and nothing else: a batch recorded by its
+//           total cost nothing here, and one carrying both figures was
+//           costed by the one that does not count. Packages not yet in a
+//           batch contribute 0 cost.
 // Profit  = revenue − cost.
 type SelfOrderRow = {
   id: number;
@@ -1247,11 +1251,10 @@ type SelfOrderRow = {
   createdAt: Date;
 };
 
-function computePkgCost(shippingType: string, weightKg: unknown, volumeCbm: unknown, costPerKg: unknown, costPerCbm: unknown): number {
-  if (shippingType === 'sea') {
-    return (parseFloat(String(volumeCbm ?? 0)) || 0) * (parseFloat(String(costPerCbm ?? 0)) || 0);
-  }
-  return (parseFloat(String(weightKg ?? 0)) || 0) * (parseFloat(String(costPerKg ?? 0)) || 0);
+function computePkgCost(weightKg: unknown, volumeCbm: unknown, batchCost: { effectiveRate: number; unit: "kg" | "cbm" } | undefined): number {
+  if (!batchCost || !(batchCost.effectiveRate > 0)) return 0;
+  const measure = batchCost.unit === "cbm" ? volumeCbm : weightKg;
+  return (parseFloat(String(measure ?? 0)) || 0) * batchCost.effectiveRate;
 }
 
 export async function getSelfOrderReport(days?: number): Promise<{
@@ -1300,16 +1303,18 @@ export async function getSelfOrderReport(days?: number): Promise<{
       weightKg: packages.weightKg,
       volumeCbm: packages.volumeCbm,
       calculatedCostUsd: packages.calculatedCostUsd,
-      costPerKg: batches.costPerKg,
-      costPerCbm: batches.costPerCbm,
+      batchId: packages.batchId,
       status: packages.status,
       createdAt: packages.createdAt,
     })
       .from(packages)
       .leftJoin(customers, eq(packages.customerId, customers.id))
-      .leftJoin(batches, eq(packages.batchId, batches.id))
       .where(where)
       .orderBy(desc(packages.createdAt));
+    // Each batch's real cost per unit, asked once for all of them.
+    const batchCosts = await getBatchCostsByRule(
+      rows.map((r) => r.batchId).filter((id): id is number => id != null),
+    );
 
     const byType: Record<string, { count: number; revenueUsd: number }> = {
       air_regular: { count: 0, revenueUsd: 0 },
@@ -1322,7 +1327,7 @@ export async function getSelfOrderReport(days?: number): Promise<{
 
     for (const r of rows) {
       const rev = parseFloat(String(r.calculatedCostUsd ?? 0)) || 0;
-      const cost = computePkgCost(r.shippingType, r.weightKg, r.volumeCbm, r.costPerKg, r.costPerCbm);
+      const cost = computePkgCost(r.weightKg, r.volumeCbm, r.batchId != null ? batchCosts.get(r.batchId) : undefined);
       revenueUsd += rev;
       costUsd += cost;
       if (byType[r.shippingType]) { byType[r.shippingType].count += 1; byType[r.shippingType].revenueUsd += rev; }
@@ -2078,9 +2083,6 @@ export async function getBatchProfitRowsInPeriod(
     .from(packages)
     .where(inArray(packages.batchId, batchIds))
     .groupBy(packages.batchId);
-  // Our billed weight is counted with the divisor in force, the same as the
-  // customer was charged on (shared/batchCost carrierBaseKgSql).
-  const CARRIER_BASE_KG_SQL = carrierBaseKgSql(await getVolumetricDivisor());
   const batchCosts = await db
     .select({
       id: batches.id,
@@ -2093,24 +2095,16 @@ export async function getBatchProfitRowsInPeriod(
         WHEN ${batches.shippingType} = 'sea' AND CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2)) > 0 THEN 0
         WHEN ${batches.shippingType} <> 'sea' AND CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2)) > 0 THEN 0
         ELSE 1 END`,
-      // The same order as resolveBatchCost (shared/batchCost): a per-unit
-      // rate wins; otherwise the carrier's one figure for the shipment IS
-      // the cost. Reading the rate alone made a batch recorded only by its
-      // total cost nothing, and its whole freight looked like profit.
-      totalCost: sql<number>`COALESCE(
-        CASE
-          WHEN ${batches.shippingType} = 'sea' AND CAST(COALESCE(${batches.costPerCbm}, 0) AS DECIMAL(12,2)) > 0
-                AND ${sql.raw(CARRIER_BASE_CBM_SQL)} > 0
-            THEN ${sql.raw(CARRIER_BASE_CBM_SQL)} * CAST(${batches.costPerCbm} AS DECIMAL(12,2))
-          WHEN ${batches.shippingType} <> 'sea' AND CAST(COALESCE(${batches.costPerKg}, 0) AS DECIMAL(12,2)) > 0
-                AND ${sql.raw(CARRIER_BASE_KG_SQL)} > 0
-            THEN ${sql.raw(CARRIER_BASE_KG_SQL)} * CAST(${batches.costPerKg} AS DECIMAL(12,2))
-          ELSE CAST(COALESCE(${batches.shippingCost}, 0) AS DECIMAL(12,2))
-        END, 0
-      )`,
     })
     .from(batches)
     .where(inArray(batches.id, batchIds));
+  // What each batch cost, by the one rule every screen reads (shared/
+  // batchCost through getBatchCostsByRule): the carrier's total when one is
+  // recorded, else its rate × the billed base. The rule used to be written
+  // out again here in SQL, in the old order — a typed rate first — so when
+  // the owner turned it round (2026-10-05) this report would have gone on
+  // costing batches by the figure he said to ignore.
+  const costsByRule = await getBatchCostsByRule(batchIds);
 
   const revenueByBatch = new Map<number, number>();
   for (const r of pkgInPeriod) if (r.batchId != null) revenueByBatch.set(r.batchId, Number(r.revenueInPeriod ?? 0));
@@ -2119,7 +2113,7 @@ export async function getBatchProfitRowsInPeriod(
   const costByBatch = new Map<number, number>();
   const waitingForCost = new Set<number>();
   for (const r of batchCosts) {
-    costByBatch.set(r.id, Number(r.totalCost ?? 0));
+    costByBatch.set(r.id, costsByRule.get(r.id)?.totalCostUsd ?? 0);
     if (Number(r.waitingForCost) === 1) waitingForCost.add(r.id);
   }
 
