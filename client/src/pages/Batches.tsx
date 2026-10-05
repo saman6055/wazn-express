@@ -46,6 +46,7 @@ import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch, isTiesQuestion, isSuperAdmin, BATCH_TIES_MARK } from "@shared/batchDeletion";
 import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
 import { BatchCostWorkingLine, BatchRealCostPreview, BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
+import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
@@ -1695,8 +1696,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <span className="font-medium text-green-600 dark:text-green-300">{formatPrice(batch)}</span>
                     </TableCell>
                     <TableCell className="text-center font-mono tabular-nums" dir="ltr">{batch.packageCount ?? 0}</TableCell>
-                    <TableCell className="text-center font-mono tabular-nums whitespace-nowrap" dir="ltr">
-                      {batch.departureDate ? new Date(batch.departureDate).toLocaleDateString("en-GB") : "-"}
+                    <TableCell className="text-center whitespace-nowrap">
+                      <div className="flex flex-col items-center gap-1">
+                        <span className="font-mono tabular-nums" dir="ltr">
+                          {batch.departureDate ? new Date(batch.departureDate).toLocaleDateString("en-GB") : "-"}
+                        </span>
+                        {/* How long it took — or has taken so far (owner,
+                            2026-10-05). Under the date it is counted from. */}
+                        <BatchDurationChip batch={batch as never} />
+                      </div>
                     </TableCell>
                     {/* Status and its alert in one column — the two badges
                         are one piece of news and were always read together. */}
@@ -2508,6 +2516,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <Input name="estimatedArrival" type="date" defaultValue={editingBatch.estimatedArrival ? new Date(editingBatch.estimatedArrival).toISOString().split('T')[0] : ""} />
                       </div>
                     </div>
+                    {/* The two dates as one figure, with the days it took to
+                        fill — worked out from what is saved. */}
+                    <BatchDurationChip batch={editingBatch as never} detailed />
                     <div className="grid gap-2">
                       <Label>{t("batches.notes")}</Label>
                       <Input name="notes" defaultValue={editingBatch.notes || ""} />

@@ -4,6 +4,7 @@ import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { missingShippingNumber, type BatchAwaitingDetails } from "@shared/batchReminders";
 import { canDeleteBatch, REFUSAL_MESSAGE, tiesQuestion } from "@shared/batchDeletion";
 import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
+import { batchJourneyDates } from "@shared/batchDuration";
 import { isBatchEditLocked, mayEditLockedBatch, sellingSideChanged } from "@shared/batchPriceHistory";
 import { newlyOdd, oddBatchNumbers, oddNumberQuestion, usualRates, type BatchNumbers } from "@shared/batchNumberSense";
 import { batchMissingSellingPrice } from "@shared/batchPricing";
@@ -645,10 +646,15 @@ export const batchesRouter = router({
         const result = await db.getAllBatches({ page: input?.page, pageSize: input?.pageSize });
         const batchIds = result.data.map((b) => b.id);
         const pricingByBatch = batchIds.length > 0 ? await db.getBatchCustomerPricingForBatches(batchIds) : new Map<number, { customerId: number; pricePerKg?: string; pricePerCbm?: string }[]>();
+        // When each one left and arrived, for the duration on the row
+        // (shared/batchDuration): one grouped read of the status history for
+        // the whole page, never one per batch.
+        const reached = await db.getBatchStatusTimestamps(batchIds);
         const batchesWithPricingInfo = result.data.map((batch) => {
           const customerPricing = pricingByBatch.get(batch.id) ?? [];
           return {
             ...batch,
+            ...batchJourneyDates(batch, reached.get(batch.id)),
             hasCustomerPricing: customerPricing.length > 0,
             customerPricingCount: customerPricing.length,
           };
@@ -676,10 +682,12 @@ export const batchesRouter = router({
         const pricingByBatch = ids.length > 0
           ? await db.getBatchCustomerPricingForBatches(ids)
           : new Map<number, unknown[]>();
+        const reached = await db.getBatchStatusTimestamps(ids);
         return rows.map((batch) => {
           const customerPricing = pricingByBatch.get(batch.id) ?? [];
           return {
             ...batch,
+            ...batchJourneyDates(batch, reached.get(batch.id)),
             hasCustomerPricing: customerPricing.length > 0,
             customerPricingCount: customerPricing.length,
           };
