@@ -60,7 +60,9 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
     moves.filter((m) => m.partnerId === partnerId && m.type === type).reduce((s, m) => s + num(m.usd), 0);
 
   return {
-    capitalUsd: partnerRows.reduce((s, p) => s + num(p.initialCapital) + sumOf(p.id, "capital_contribution"), 0),
+    // Corrections count: a contribution entered under the wrong partner is
+    // undone by a negative adjustment (shared/partnerLedger), never deleted.
+    capitalUsd: partnerRows.reduce((s, p) => s + num(p.initialCapital) + sumOf(p.id, "capital_contribution") + sumOf(p.id, "adjustment"), 0),
     profitUsd: num(profit.total.profit),
     expensesUsd: num(spent?.usd),
     withdrawals: partnerRows

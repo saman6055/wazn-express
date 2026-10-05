@@ -112,6 +112,10 @@ describe("nothing is typed into the sum", () => {
     expect(facts).toContain("COALESCE(${fullPackageOrders.isCharged}, 0) = 0");
   });
 
+  it("capital counts corrections, so a contribution put under the wrong partner nets out", () => {
+    expect(facts).toContain('sumOf(p.id, "capital_contribution") + sumOf(p.id, "adjustment")');
+  });
+
   it("only the main admin reads it or records a count", () => {
     expect(router).toContain("workingCapital: superAdminProcedure.query");
     expect(router).toContain("checkWorkingCapital: superAdminProcedure");
