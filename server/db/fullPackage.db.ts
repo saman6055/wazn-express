@@ -1705,6 +1705,40 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
   const db = await getDb();
   if (!db) return null;
 
+  /*
+   * Is there already a parcel under this tracking? Asked first.
+   *
+   * It used to be asked last, after the orders — and an order was an answer
+   * that ended the search. So a tracking that belonged to a commission or
+   * full-package order came back as "found: the order", with nothing said
+   * about its carton having been registered already. The operator weighed it,
+   * measured it, photographed it and pressed Enter, and only then was told.
+   * The owner, 2026-10-05: «کە تراک سکان کرا، ئەگەر داخڵ کرابوو یەکسەر
+   * بنووسێ داخڵ کراوە — نەک لە ئاخر هەنگاو بڵێ دووبارەیە».
+   *
+   * The save refuses on exactly this question (getPackageByTrackingNumber in
+   * packages.register), so the scan now opens with it: one rule, asked at the
+   * moment the answer is worth something.
+   */
+  const registered = await db.select({
+    package: packages,
+    customer: customers
+  })
+    .from(packages)
+    .leftJoin(customers, eq(packages.customerId, customers.id))
+    .where(eq(packages.trackingNumber, trackingNumber))
+    .limit(1);
+
+  if (registered.length > 0) {
+    return {
+      found: true,
+      source: "package" as const,
+      order: null,
+      customer: registered[0].customer,
+      package: registered[0].package
+    };
+  }
+
   // Check in fullPackageOrders (single tracking field).
   // leftJoin users purely to surface the name of the staff member who
   // created the order (display-only; no effect on any lookup logic).
@@ -1748,26 +1782,6 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
       customer: order[0].customer,
       createdByName: order[0].creatorName ?? null,
       package: null
-    };
-  }
-  
-  // Then check in packages table - use customers table
-  const pkg = await db.select({
-    package: packages,
-    customer: customers
-  })
-    .from(packages)
-    .leftJoin(customers, eq(packages.customerId, customers.id))
-    .where(eq(packages.trackingNumber, trackingNumber))
-    .limit(1);
-  
-  if (pkg.length > 0) {
-    return {
-      found: true,
-      source: "package" as const,
-      order: null,
-      customer: pkg[0].customer,
-      package: pkg[0].package
     };
   }
   

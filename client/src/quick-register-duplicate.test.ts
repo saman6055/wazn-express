@@ -65,3 +65,42 @@ describe("the tracking box", () => {
     expect(alert).toContain('kind: "warning"');
   });
 });
+
+/**
+ * "Already registered", said at the scan (owner, 2026-10-05).
+ *
+ * «کە تراک سکان کرا، ئەگەر داخڵ کرابوو یەکسەر بنووسێ داخڵ کراوە — نەک لە ئاخر
+ * هەنگاو بڵێ دووبارەیە.» The warning above existed, and still a tracking that
+ * belonged to a commission or full-package order was refused only at the
+ * save: the lookup asked about orders first, and an order was an answer that
+ * ended it — nothing ever looked at whether that order's carton was already
+ * in.
+ */
+describe("the scan asks what the save asks, and asks it first", () => {
+  const lookup = fs
+    .readFileSync(path.join(__dirname, "..", "..", "server", "db", "fullPackage.db.ts"), "utf8")
+    .replace(/\r\n/g, "\n");
+  const start = lookup.indexOf("export async function searchTrackingInAllOrderTypes");
+  const body = lookup.slice(start, lookup.indexOf("\nexport ", start + 20));
+
+  it("looks for a parcel under the tracking before it looks for an order", () => {
+    expect(start).toBeGreaterThan(-1);
+    const parcel = body.indexOf(".from(packages)");
+    const order = body.indexOf(".from(fullPackageOrders)");
+    expect(parcel).toBeGreaterThan(-1);
+    expect(order).toBeGreaterThan(-1);
+    expect(parcel).toBeLessThan(order);
+  });
+
+  it("asks it once — a second, later copy is how the two answers drifted apart", () => {
+    expect((body.match(/\.from\(packages\)/g) ?? []).length).toBe(1);
+    expect(body).toContain('source: "package" as const');
+  });
+
+  it("is the same question the register refuses on", () => {
+    const router = fs
+      .readFileSync(path.join(__dirname, "..", "..", "server", "routers", "packages.router.ts"), "utf8");
+    expect(router).toContain("const existing = await db.getPackageByTrackingNumber(input.trackingNumber.trim());");
+    expect(body).toContain("eq(packages.trackingNumber, trackingNumber)");
+  });
+});
