@@ -166,6 +166,14 @@ export const scanningRouter = router({
         return db.getArrivalChecksForBatches(input.batchIds);
       }),
 
+    /**
+     * Every batch an arrival check was done on, whatever its status now, with
+     * how many of its parcels turned up — the way back to a finished check
+     * (owner, 2026-10-05). The detail of one is its manifest set against
+     * `arrivalChecks` above (shared/arrivalCheck).
+     */
+    arrivalCheckedBatches: staffProcedure.query(async () => db.getArrivalCheckedBatches()),
+
     // Register a new scan
     registerScan: staffProcedure
       .input(z.object({

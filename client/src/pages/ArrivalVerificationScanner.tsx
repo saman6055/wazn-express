@@ -24,6 +24,8 @@ import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
+import { ArrivalCheckHistory, type CheckedBatch } from "@/components/scanner/ArrivalCheckHistory";
+import { isFullyArrived } from "@shared/arrivalCheck";
 
 // ==================== TYPES ====================
 interface VerifiedPackage {
@@ -111,6 +113,9 @@ export default function ArrivalVerificationScanner() {
   const announcedBatches = useRef<Set<number>>(new Set());
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [verifiedPackages, setVerifiedPackages] = useState<VerifiedPackage[]>([]);
+  /** The same list, readable from a load that finishes after it changed. */
+  const verifiedRef = useRef<VerifiedPackage[]>(verifiedPackages);
+  verifiedRef.current = verifiedPackages;
   const [batchPackages, setBatchPackages] = useState<Map<number, BatchPackage[]>>(new Map());
 
   // Dialogs
@@ -159,7 +164,24 @@ export default function ArrivalVerificationScanner() {
 
   // Queries
   const { data: batchesRaw, refetch: refetchBatches } = trpc.batches.list.useQuery();
-  const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
+  /*
+   * Batches opened again from the list of earlier checks (owner, 2026-10-05).
+   *
+   * The list below offers batches still on the road. One whose check is
+   * being carried on may have been marked as arrived since — or be older
+   * than the page of batches this screen loads — so it is kept here and
+   * joined on, and the scanner treats it like any other it can select.
+   */
+  const [reopened, setReopened] = useState<CheckedBatch[]>([]);
+  const listedBatches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
+  const batches = useMemo(() => {
+    if (!listedBatches) return listedBatches;
+    const known = new Set((listedBatches as any[]).map((b) => b.id));
+    const extra = reopened
+      .filter((b) => !known.has(b.batchId))
+      .map((b) => ({ id: b.batchId, batchCode: b.batchCode, shippingType: b.shippingType, status: b.status }));
+    return extra.length > 0 ? [...(listedBatches as any[]), ...extra] : listedBatches;
+  }, [listedBatches, reopened]);
   const trpcUtils = trpc.useUtils();
   // Writes the arrival scan. See the call site for why this screen needs it.
   const recordArrival = trpc.scanning.registerScan.useMutation();
@@ -224,8 +246,9 @@ export default function ArrivalVerificationScanner() {
   // Get batches that are in transit (ready for arrival verification)
   const availableBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter((b: any) => b.status === "in_transit" || b.status === "preparing");
-  }, [batches]);
+    const again = new Set(reopened.map((b) => b.batchId));
+    return batches.filter((b: any) => b.status === "in_transit" || b.status === "preparing" || again.has(b.id));
+  }, [batches, reopened]);
   
   // Selected batches info
   const selectedBatches = useMemo(() => {
@@ -364,7 +387,11 @@ export default function ArrivalVerificationScanner() {
             weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
             cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
             hasCompleteData: !!(pkg.weightKg || pkg.volumeCbm),
-            verified: verifiedPackages.some(v => v.id === pkg.id),
+            // The list as it is NOW, not as it was when this load began.
+            // The earlier checks are often back before the manifest is; read
+            // from the render that started the load, every parcel of a batch
+            // checked days ago came up as missing and stayed that way.
+            verified: verifiedRef.current.some(v => v.id === pkg.id),
           }));
           newBatchPackages.set(batchId, batchPkgs);
         } catch (error) {
@@ -419,6 +446,16 @@ export default function ArrivalVerificationScanner() {
     }
   }, [verificationStats.isComplete, verificationStats.totalExpected]);
   
+  /** Carry on a check from the list of earlier ones. */
+  const continueCheck = (batch: CheckedBatch) => {
+    setReopened((prev) => (prev.some((b) => b.batchId === batch.batchId) ? prev : [...prev, batch]));
+    // Already complete: opening it is a look, not a second finish to announce
+    // — and the announcement takes a batch back out of the selection.
+    if (isFullyArrived(batch)) announcedBatches.current.add(batch.batchId);
+    setSelectedBatchIds((ids) => (ids.includes(batch.batchId) ? ids : [...ids, batch.batchId]));
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
   // Handle batch selection
   const toggleBatchSelection = (batchId: number) => {
     setSelectedBatchIds(prev => {
@@ -960,6 +997,10 @@ export default function ArrivalVerificationScanner() {
                   </Tabs>
                 </Card>
               )}
+
+              {/* The checks already done, whatever became of their batch,
+                  and the way back into each one (owner, 2026-10-05). */}
+              <ArrivalCheckHistory onContinue={continueCheck} />
             </div>
             
             {/* Sidebar - Stats & Info */}

@@ -907,3 +907,87 @@ export async function getArrivalChecksForBatches(batchIds: number[]) {
   }
   return Array.from(first.values());
 }
+
+export interface ArrivalCheckedBatch {
+  batchId: number;
+  batchCode: string;
+  shippingType: string;
+  status: string;
+  /** Parcels on the batch now. */
+  totalParcels: number;
+  /** Of those, the ones somebody checked in at the bench. */
+  arrived: number;
+  lastCheckedAt: Date | null;
+}
+
+/**
+ * The batches an arrival check was done on, and what each one found.
+ *
+ * The owner, 2026-10-05: the detail of what arrived and what did not must
+ * stay somewhere it can be gone back to. It was always stored — one
+ * `received_local` scan per parcel — but the arrival screen offers only
+ * batches still on the road, so a finished check had no door left to it.
+ * This is the list behind that door: every batch with at least one arrival
+ * scan, whatever its status now, newest check first.
+ *
+ * Counted from the scans, with the same meaning as getArrivalChecksForBatches
+ * above — a parcel once, however many times it was scanned — and against the
+ * parcels the batch holds NOW, so a parcel moved to another shipment is
+ * counted there and not here. Three grouped reads; never one per batch.
+ */
+export async function getArrivalCheckedBatches(limit = 60): Promise<ArrivalCheckedBatch[]> {
+  const db = await getDb();
+  if (!db) return [];
+
+  const lastScan = sql<Date>`MAX(${packageScans.scannedAt})`;
+  const checked = await db
+    .select({
+      batchId: packages.batchId,
+      arrived: sql<number>`COUNT(DISTINCT ${packageScans.packageId})`,
+      lastCheckedAt: lastScan,
+    })
+    .from(packageScans)
+    .innerJoin(packages, eq(packages.id, packageScans.packageId))
+    .where(and(
+      eq(packageScans.scanType, "received_local"),
+      isNotNull(packages.batchId),
+    ))
+    .groupBy(packages.batchId)
+    .orderBy(desc(lastScan))
+    .limit(Math.min(200, Math.max(1, limit)));
+
+  const ids = checked.map((row) => Number(row.batchId)).filter((id) => id > 0);
+  if (ids.length === 0) return [];
+
+  const totals = await db
+    .select({ batchId: packages.batchId, total: sql<number>`COUNT(*)` })
+    .from(packages)
+    .where(inArray(packages.batchId, ids))
+    .groupBy(packages.batchId);
+  const totalOf = new Map(totals.map((row) => [Number(row.batchId), Number(row.total) || 0]));
+
+  const info = await db
+    .select({ id: batches.id, batchCode: batches.batchCode, shippingType: batches.shippingType, status: batches.status })
+    .from(batches)
+    .where(inArray(batches.id, ids));
+  const infoOf = new Map(info.map((row) => [Number(row.id), row]));
+
+  const out: ArrivalCheckedBatch[] = [];
+  for (const row of checked) {
+    const batchId = Number(row.batchId);
+    const batch = infoOf.get(batchId);
+    // A scan whose batch has since been deleted has nothing to open.
+    if (!batch) continue;
+    const at = row.lastCheckedAt ? new Date(row.lastCheckedAt) : null;
+    out.push({
+      batchId,
+      batchCode: String(batch.batchCode ?? `#${batchId}`),
+      shippingType: String(batch.shippingType ?? ""),
+      status: String(batch.status ?? ""),
+      totalParcels: totalOf.get(batchId) ?? 0,
+      arrived: Number(row.arrived) || 0,
+      lastCheckedAt: at && !Number.isNaN(at.getTime()) ? at : null,
+    });
+  }
+  return out;
+}
