@@ -238,6 +238,43 @@ describe("the whole job on one screen", () => {
   });
 });
 
+/**
+ * What the scanned order shows (owner, 2026-10-05) — inside the frames that
+ * were already there: «پێکهاتەی تۆماری خێرا زۆر ڕێکە، شکل و شێوەی دەستکاری
+ * مەکە».
+ */
+describe("the scanned order, at a glance", () => {
+  it("the photograph is shown whole, and a click still opens it", () => {
+    // It was made to fill a wide, short box, so a tall product photo showed
+    // as one blurred stripe of itself.
+    const card = page.slice(at("وێنەی داواکاری"), at("وێنەی گەیشتن"));
+    expect(card).toContain('fit="contain"');
+    const stack = fs.readFileSync(path.join(__dirname, "components", "PhotoStack.tsx"), "utf8");
+    expect(stack).toContain('fit === "contain" ? "object-contain" : "object-cover"');
+    // The default stays a cropped square: every row thumbnail relies on it.
+    expect(stack).toContain('fit = "cover"');
+  });
+
+  it("says how many pieces the tracking carries, across every order sharing it", () => {
+    expect(page).toContain("trackingOrders.reduce((sum, o) => sum + (Number(o.quantity) || 1), 0)");
+    expect(page).toContain('data-testid="qr-tracking-pieces"');
+    expect(page).toContain("{trackingPieces > 1 && (");
+  });
+
+  it("does not claim a count it cannot know", () => {
+    // An order sent in several cartons has its pieces spread over them, and
+    // nothing recorded says how many are in this one.
+    expect(page).toContain("trackingCartons > 1");
+    expect(page).toContain("پارچە لە ${trackingCartons} کارتۆن");
+  });
+
+  it("names the shop and the shop's own order number beside it", () => {
+    const header = page.slice(at('data-testid="qr-tracking-pieces"'), at("The paperwork, folded."));
+    expect(header).toContain("<PlatformChip key={name} platform={name}");
+    expect(header).toContain("<OrderNumbers numbers={trackingOrderNumbers}");
+  });
+});
+
 describe("the cubic metre", () => {
   it("sits under the three sides and says what it does", () => {
     expect(page).toContain('data-testid="quick-register-direct-cbm"');

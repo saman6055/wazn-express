@@ -159,10 +159,21 @@ export function PhotoStack({
   className,
   fallback = null,
   showCount = true,
+  fit = "cover",
 }: {
   photos: (string | null | undefined)[];
   /** Size and shape of the thumbnail, e.g. "h-9 w-9 rounded-lg". */
   className?: string;
+  /**
+   * How the photograph sits in its box.
+   *
+   * "cover" fills a small square and crops what does not fit, which is right
+   * for a thumbnail in a row. "contain" shows all of it, for a box that is
+   * there to be looked at: cropped into a wide, short frame a tall product
+   * photo became one blurred stripe of itself (Quick Register, 2026-10-05 —
+   * «وێنە بە زووم کراوی و سەقەتی نیشان ئەدات»).
+   */
+  fit?: "cover" | "contain";
   /** Rendered when there is nothing to show. */
   fallback?: React.ReactNode;
   showCount?: boolean;
@@ -204,7 +215,10 @@ export function PhotoStack({
           loading="lazy"
           decoding="async"
           onError={() => setBroken(true)}
-          className="h-full w-full rounded-[inherit] object-cover"
+          className={cn(
+            "h-full w-full rounded-[inherit]",
+            fit === "contain" ? "object-contain" : "object-cover",
+          )}
         />
         {showCount && list.length > 1 && (
           <span

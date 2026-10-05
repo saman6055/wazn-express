@@ -708,6 +708,34 @@ export default function QuickRegister() {
     }),
   );
 
+  /**
+   * What one tracking carries.
+   *
+   * The owner, 2026-10-05: «کاتێ یەک تراک زیاتر لە یەک پارچە بوو، نیشان بدات
+   * ئەو تراکە چەند پارچەی تێدایە، ئۆردەر نەمبەری پلاتفۆرم و پلاتفۆرمەکەشی».
+   * The person holding the carton is counting what comes out of it; the
+   * number to count to was in the order, behind a fold, and only for one
+   * order even when several had been sent under the same tracking.
+   *
+   * Summed across every order sharing the tracking. One exception said
+   * honestly: an order sent in several cartons has its pieces spread over
+   * them, and nothing recorded says how many are in this one — so that case
+   * reads "N pieces in M cartons", never "this tracking carries N".
+   */
+  const trackingOrders = (expandedLookup?.orders ?? []).map((o) => o.order);
+  const trackingPieces = trackingOrders.length > 0
+    ? trackingOrders.reduce((sum, o) => sum + (Number(o.quantity) || 1), 0)
+    : Number(foundOrder?.order?.quantity) || 0;
+  const trackingCartons = trackingOrders.length === 1 ? (expandedLookup?.orders?.[0]?.trackings?.length ?? 1) : 1;
+  const trackingOrderNumbers: (string | null | undefined)[] = trackingOrders.length > 0
+    ? trackingOrders.map((o) => o.orderNumber)
+    : [foundOrder?.order?.orderNumber];
+  const trackingPlatforms = Array.from(new Set(
+    (trackingOrders.length > 0 ? trackingOrders.map((o) => o.platform) : [foundOrder?.order?.platform])
+      .map((p) => String(p ?? "").trim())
+      .filter(Boolean),
+  ));
+
   const estimatedPrice = hasMeasure && estimate ? estimate.amountUsd : 0;
 
   /**
@@ -1605,8 +1633,39 @@ export default function QuickRegister() {
                             blank rather than shown as a dash: an empty field
                             here is normal, and four "—" would crowd out the
                             two that are filled in. */}
-                        {(foundOrder.order.size || foundOrder.order.color || (foundOrder.order.quantity ?? 0) > 1) && (
+                        {(foundOrder.order.size || foundOrder.order.color || trackingPieces > 1
+                          || trackingPlatforms.length > 0 || trackingOrderNumbers.some(Boolean)) && (
                           <div className="flex items-center gap-1.5 flex-wrap mt-2">
+                            {/* How many pieces to count out of this carton —
+                                first, because it is the one the hands need. */}
+                            {trackingPieces > 1 && (
+                              <span
+                                className="inline-flex items-center gap-1 text-xs font-bold rounded-lg border border-amber-300 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/40 text-amber-800 dark:text-amber-200 px-2 py-1"
+                                data-testid="qr-tracking-pieces"
+                              >
+                                <Layers className="h-3.5 w-3.5" />
+                                {trackingCartons > 1
+                                  ? pickLang(language, {
+                                      ku: `${trackingPieces} پارچە لە ${trackingCartons} کارتۆن`,
+                                      en: `${trackingPieces} pieces in ${trackingCartons} cartons`,
+                                      ar: `${trackingPieces} قطعة في ${trackingCartons} كراتين`,
+                                      zh: `${trackingPieces} 件，分 ${trackingCartons} 箱`,
+                                    })
+                                  : pickLang(language, {
+                                      ku: `ئەم تراکە ${trackingPieces} پارچەی تێدایە${trackingOrders.length > 1 ? ` — ${trackingOrders.length} ئۆردەر` : ""}`,
+                                      en: `This tracking carries ${trackingPieces} pieces${trackingOrders.length > 1 ? ` — ${trackingOrders.length} orders` : ""}`,
+                                      ar: `هذا التتبع يحمل ${trackingPieces} قطعة${trackingOrders.length > 1 ? ` — ${trackingOrders.length} طلبات` : ""}`,
+                                      zh: `此运单含 ${trackingPieces} 件${trackingOrders.length > 1 ? ` — ${trackingOrders.length} 张订单` : ""}`,
+                                    })}
+                              </span>
+                            )}
+                            {/* Which shop, and the shop's own number for it:
+                                what the customer is asked about at the
+                                counter. */}
+                            {trackingPlatforms.map((name) => (
+                              <PlatformChip key={name} platform={name} size="xs" />
+                            ))}
+                            <OrderNumbers numbers={trackingOrderNumbers} className="text-xs" />
                             {foundOrder.order.size && (
                               <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
                                 <Ruler className="h-3.5 w-3.5 text-muted-foreground" />
@@ -1619,13 +1678,6 @@ export default function QuickRegister() {
                                 <Palette className="h-3.5 w-3.5 text-muted-foreground" />
                                 {pickLang(language, { ku: "ڕەنگ", en: "Colour", ar: "اللون", zh: "颜色" })}:
                                 <b className="font-bold">{foundOrder.order.color}</b>
-                              </span>
-                            )}
-                            {(foundOrder.order.quantity ?? 0) > 1 && (
-                              <span className="inline-flex items-center gap-1 text-xs font-medium rounded-lg border border-indigo-200 dark:border-indigo-900/50 bg-white/70 dark:bg-card/40 px-2 py-1">
-                                <Layers className="h-3.5 w-3.5 text-muted-foreground" />
-                                {pickLang(language, { ku: "دانە", en: "Qty", ar: "الكمية", zh: "数量" })}:
-                                <b className="font-bold">{foundOrder.order.quantity}</b>
                               </span>
                             )}
                           </div>
@@ -2452,9 +2504,16 @@ export default function QuickRegister() {
                       <p className="mb-1.5 text-[10px] font-medium text-muted-foreground">
                         {pickLang(language, { ku: "وێنەی داواکاری", en: "Order photo", ar: "صورة الطلب", zh: "订单图片" })}
                       </p>
+                      {/* All of the photograph, not a slice of it. This box
+                          was wide and short and the picture was made to fill
+                          it, so a tall product photo showed as one blurred
+                          stripe (owner, 2026-10-05). It is shown whole now,
+                          on a quiet ground, and a click still opens it full
+                          size. */}
                       <PhotoStack
                         photos={[foundOrder.order.productImage, ...(foundOrder.order.productImages ?? [])]}
-                        className="h-24 w-full rounded-lg border-2 border-indigo-200 dark:border-indigo-800 shadow-sm"
+                        fit="contain"
+                        className="h-44 w-full rounded-lg border-2 border-indigo-200 dark:border-indigo-800 bg-muted/40 shadow-sm"
                         fallback={
                           <div className="flex h-24 w-full items-center justify-center rounded-lg border-2 border-dashed border-indigo-200 dark:border-indigo-900/60 bg-indigo-50/60 dark:bg-indigo-950/20">
                             <Package className="h-7 w-7 text-indigo-300 dark:text-indigo-700" />
