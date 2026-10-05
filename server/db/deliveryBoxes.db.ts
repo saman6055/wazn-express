@@ -583,6 +583,13 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
   orderNote: string | null;
   /** The platform order numbers staff check with the customer by (owner, 2026-09-17). */
   orderNumbers: string[];
+  /**
+   * Some order stands behind this item — it was scanned as one, or an order
+   * claims its tracking number. False is a parcel the box asks only freight
+   * for (shared/boxShippingOnly, owner 2026-10-05). An order need not carry a
+   * platform order number, so `orderNumbers` cannot answer this.
+   */
+  hasOrder: boolean;
   // Product photo resolved from the linked commission/full-package order
   // (productImage / first of productImages) or, for regular packages, the
   // first package photo. null when the source order/package has no image.
@@ -792,9 +799,14 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
       null;
 
     // Direct FP-order scan path — single order owns the item, no sibling sum.
+    // Both routes to an order, as everywhere else in this function.
+    const hasOrder =
+      Boolean(item.fullPackageOrderId) ||
+      Boolean(item.trackingNumber && (fpsByTracking.get(item.trackingNumber) || []).length > 0);
+
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, orderNumbers, orderNote };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, hasOrder, orderNumbers, orderNote };
     }
 
     // Tracking-based path — sum every linked order's advance, but skip
@@ -802,10 +814,10 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
       const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
-      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, orderNumbers, orderNote };
+      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, hasOrder, orderNumbers, orderNote };
     }
 
-    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, orderNumbers, orderNote };
+    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, hasOrder, orderNumbers, orderNote };
   });
 }
 

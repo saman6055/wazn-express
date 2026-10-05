@@ -52,6 +52,7 @@ import {
   Trash2,
   Package,
   Loader2,
+  AlertTriangle,
   Hash,
   Weight,
   DollarSign,
@@ -155,6 +156,8 @@ import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceipt
 import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
 import { pledgeLabel } from "@shared/pledgedDiscount";
+import { shippingOnlyAmongOrders, shippingOnlyNotice, SHIPPING_ONLY_CHIP } from "@shared/boxShippingOnly";
+import { parcelListHref } from "@shared/parcelSource";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 
@@ -536,6 +539,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // Sea (دەریایی) batches are billed by CBM, not weight — the measurement
   // column/total switch to CBM to match the printed invoice.
   const isSea = (box as any).shippingType === "sea";
+  // Parcels asking only their freight in a box that also holds orders
+  // (shared/boxShippingOnly). Plain values, not hooks: this sits below the
+  // early return for a box that has not loaded.
+  const shippingOnly = shippingOnlyAmongOrders(items as any[]);
+  const shippingOnlyIds = new Set<number>(shippingOnly.map((i: any) => i.id));
   const totalWeight = items.reduce((sum: number, i: any) => sum + Number(i.weightKg || 0), 0);
   const totalCbm = items.reduce((sum: number, i: any) => sum + Number(i.volumeCbm || 0), 0);
   const totalItemValue = items.reduce((sum: number, i: any) => sum + Number(i.calculatedCostUsd || 0), 0);
@@ -965,6 +973,36 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           </div>
         )}
 
+        {/* A parcel asking only its freight, in a box of orders: its order
+            may have been forgotten, and then its goods are owed by nobody
+            (owner, 2026-10-05). A notice, never a refusal — and each parcel
+            it names can be copied and opened, like every alert. */}
+        {shippingOnly.length > 0 && (
+          <div
+            className="flex items-start gap-2 rounded-lg border border-amber-500/50 bg-amber-50/70 px-3 py-2 text-sm text-amber-900 dark:bg-amber-950/20 dark:text-amber-200"
+            data-testid="box-shipping-only"
+          >
+            <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+            <div className="min-w-0 space-y-1.5">
+              <p className="font-semibold">{pickLang(language, shippingOnlyNotice(shippingOnly.length).title)}</p>
+              <p className="text-xs leading-relaxed">{pickLang(language, shippingOnlyNotice(shippingOnly.length).body)}</p>
+              <div className="flex flex-wrap gap-1.5">
+                {shippingOnly.map((item: any) => {
+                  const name = item.trackingNumber || item.packageCode || `#${item.id}`;
+                  return (
+                    <span key={item.id} className="inline-flex items-center gap-1 rounded-md border border-amber-500/40 bg-background/70 px-1.5 py-0.5 font-mono text-xs" dir="ltr">
+                      <a href={parcelListHref(name)} className="underline-offset-2 hover:underline" title={pickLang(language, { ku: "پاکەتەکە بکەرەوە", en: "Open the parcel", ar: "افتح الطرد", zh: "打开包裹" })}>
+                        {name}
+                      </a>
+                      <CopyButton value={name} label={copyLabel} />
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Items Table — Rich detail per item type */}
         {items.length > 0 ? (
           <div className="rounded-lg border">
@@ -1008,6 +1046,17 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                       <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", ITEM_TYPE_STYLES[item.itemType] || ITEM_TYPE_STYLES.regular)}>
                         {t(ITEM_TYPE_KEYS[item.itemType] || ITEM_TYPE_KEYS.regular)}
                       </span>
+                      {/* The same parcels the notice above names, marked
+                          where they sit in the list. */}
+                      {shippingOnlyIds.has(item.id) && (
+                        <span
+                          className="mt-1 flex w-fit items-center gap-1 rounded-full border border-amber-500/50 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-800 dark:bg-amber-950/30 dark:text-amber-200"
+                          data-testid="box-shipping-only-row"
+                        >
+                          <AlertTriangle className="h-3 w-3" />
+                          {pickLang(language, SHIPPING_ONLY_CHIP)}
+                        </span>
+                      )}
                     </TableCell>
                     {/* Tracking Number + copy */}
                     <TableCell className="font-mono text-xs" dir="ltr">
