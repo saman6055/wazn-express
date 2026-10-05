@@ -4,6 +4,8 @@ import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orde
 import { platformFromOrderNumber } from "@shared/orderNumberPlatform";
 import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
 import { useLocation, useParams } from "wouter";
+import { LastOrderStrip } from "@/components/forms/LastOrderStrip";
+import { orderFormExit } from "@shared/lastEntry";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -55,7 +57,23 @@ const Section = ({ icon: Icon, title, hint, accent = "amber", children }: { icon
   </section>
 );
 
+/**
+ * A fresh form for every order.
+ *
+ * The router keeps ONE instance of this screen for "new" and for ":id/edit" —
+ * they are the same component in the same place, so it re-renders instead of
+ * remounting. Going from an edit straight back to the entry form (which "my
+ * last order" now does) would therefore leave the edited order's fields, its
+ * photographs and its "already loaded" marks sitting in the form for a NEW
+ * order: saved without looking, that is a second copy of the order just
+ * corrected. Keyed by the order, each one starts clean.
+ */
 export default function CommissionForm() {
+  const { id } = useParams<{ id?: string }>();
+  return <CommissionFormScreen key={id ?? "new"} />;
+}
+
+function CommissionFormScreen() {
   const [, setLocation] = useLocation();
   const { t, language } = useTranslation();
   const utils = trpc.useUtils();
@@ -68,6 +86,9 @@ export default function CommissionForm() {
   const { id: routeId } = useParams<{ id?: string }>();
   const orderId = routeId ? Number(routeId) : null;
   const isEditMode = !!orderId && Number.isFinite(orderId);
+  // Where this form goes when it is left: the list — or, for an edit opened
+  // from "my last order", back to the entry form (shared/lastEntry).
+  const exitPath = orderFormExit("commission", isEditMode, typeof window === "undefined" ? "" : window.location.search);
 
   const { data: existingOrder, isLoading: orderLoading } = trpc.fullPackage.getById.useQuery(
     { id: orderId as number },
@@ -297,10 +318,12 @@ export default function CommissionForm() {
       toast.success(pickLang(language, { ku: "گۆڕانکارییەکان خەزن کران ✓", en: "Changes saved ✓", ar: "تم حفظ التعديلات ✓", zh: "更改已保存 ✓" }));
       utils.fullPackage.list.invalidate();
       utils.fullPackage.getById.invalidate({ id: orderId as number });
+      utils.fullPackage.lastCreatedByMe.invalidate();
       // Back to the list, not the order page: an edit is usually one of
       // several being worked through, so the list is where the operator
-      // continues from. Save, cancel and no-change all land here.
-      setLocation("/commission");
+      // continues from. Save, cancel and no-change all land here — unless
+      // the edit was opened from the entry form, which is where it returns.
+      setLocation(exitPath);
     },
     onError: (error) => {
       // Prefer the first field-level validation message; otherwise fall back to
@@ -324,6 +347,8 @@ export default function CommissionForm() {
     onSuccess: () => {
       toast.success(pickLang(language, { ku: "ئۆردەری کڕین بە تێچوو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن", en: "Commission purchase order created successfully — fields are ready for the next order", ar: "تم إنشاء طلب الشراء بالعمولة بنجاح — الحقول جاهزة للطلب التالي", zh: "代购订单创建成功 — 字段已为下一个订单准备就绪" }));
       utils.fullPackage.list.invalidate();
+      // The strip above the form names the order just saved.
+      utils.fullPackage.lastCreatedByMe.invalidate();
       const keepCustomerId = formData.customerId;
       if (keepCustomerId) {
         localStorage.setItem("wazn-last-commission-customer", keepCustomerId);
@@ -711,7 +736,7 @@ export default function CommissionForm() {
           ar: "لم يتغيّر شيء — بقي الطلب كما هو",
           zh: "没有任何更改 — 订单保持原样",
         }));
-        setLocation("/commission");
+        setLocation(exitPath);
         return;
       }
       if (moneyChangeDetected && editReason.trim().length < 3) {
@@ -810,7 +835,7 @@ export default function CommissionForm() {
       <div className="max-w-4xl mx-auto space-y-3">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => setLocation("/commission")}>
+          <Button variant="ghost" size="icon" onClick={() => setLocation(exitPath)}>
             <ArrowRight className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
@@ -855,6 +880,9 @@ export default function CommissionForm() {
             </Button>
           )}
         </div>
+
+        {/* The order just entered, and the way back to it (owner, 2026-10-05). */}
+        {!isEditMode && <LastOrderStrip orderType="commission" />}
 
         {/* Wait for the order before showing a form full of empty fields —
             the old screen rendered blank selects while the query was in flight. */}
@@ -1749,7 +1777,7 @@ export default function CommissionForm() {
 
           {/* Submit */}
           <StickyFormBar>
-            <Button type="button" variant="outline" onClick={() => setLocation("/commission")}>
+            <Button type="button" variant="outline" onClick={() => setLocation(exitPath)}>
               {t("common.cancel") || pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button
@@ -1798,7 +1826,7 @@ export default function CommissionForm() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => setLocation("/commission")}>
+              <AlertDialogCancel onClick={() => setLocation(exitPath)}>
                 {pickLang(language, { ku: "کانسڵ — خەزن مەکە", en: "Cancel — don't save", ar: "إلغاء — لا تحفظ", zh: "取消 — 不保存" })}
               </AlertDialogCancel>
               <AlertDialogAction onClick={submitEdit} className="bg-purple-600 hover:bg-purple-700">

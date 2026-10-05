@@ -217,6 +217,16 @@ export const fullPackageRouter = router({
       .query(async ({ input }) => {
         return db.getFullPackageOrderById(input.id);
       }),
+
+    /**
+     * The caller's own last order of one kind — what the entry form offers
+     * to go back to when something in it was typed wrong (owner, 2026-10-05).
+     * It opens in the ordinary edit form, so every money rule an edit has is
+     * the rule here too.
+     */
+    lastCreatedByMe: staffProcedure
+      .input(z.object({ orderType: z.enum(["commission", "full_package"]) }))
+      .query(async ({ input, ctx }) => db.getLastOrderCreatedBy(ctx.user.id, input.orderType)),
     
     /**
      * Is this order number already on another order?

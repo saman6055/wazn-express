@@ -30,6 +30,7 @@ export * from './orderCharging.db';
 export * from './ledgerReconciliation.db';
 export * from './creditCustomers.db';
 export * from './parcelDeletion.db';
+export * from './parcelCorrection.db';
 export * from './bulkReceiptCredit.db';
 export * from './moneyFeed.db';
 export * from './pendingCredits.db';

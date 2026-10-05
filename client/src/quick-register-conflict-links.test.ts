@@ -26,8 +26,12 @@ const page = read("pages/QuickRegister.tsx");
 const alert = read("components/SystemAlert.tsx");
 
 describe("the lookup asks the server", () => {
-  it("both lookups are told not to answer from memory", () => {
-    expect((page.match(/staleTime: 0 \}/g) ?? []).length).toBe(2);
+  it("every lookup is told not to answer from memory", () => {
+    // Three now: the tracking, its orders, and — since 2026-10-05 — the last
+    // registration opened for correction, which must be the parcel as the
+    // server holds it this second, not as the screen remembers it.
+    expect((page.match(/staleTime: 0 \}/g) ?? []).length).toBe(3);
+    expect(page).toContain("await trpcUtils.packages.lastRegisteredByMe.fetch(undefined, { staleTime: 0 });");
     expect(page).toContain("await trpcUtils.scanning.searchTrackingAllTypes.fetch(\n        { trackingNumber: currentTracking.trim() },\n        { staleTime: 0 },\n      );");
     expect(page).toContain("await trpcUtils.packages.lookupTrackingExpanded.fetch(\n              { trackingNumber: currentTracking.trim() },\n              { staleTime: 0 },\n            );");
   });

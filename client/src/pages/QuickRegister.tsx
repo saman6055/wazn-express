@@ -8,7 +8,7 @@ import { trpc } from "@/lib/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { toast } from "sonner";
-import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers } from "lucide-react";
+import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers, PencilLine } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { PlatformChip } from "@/components/PlatformChip";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -16,6 +16,7 @@ import { Link, useLocation } from "wouter";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { oddParcelNumbers, oddParcelQuestion } from "@shared/parcelNumberSense";
 import { useLeaveGuard } from "@/hooks/useLeaveGuard";
+import { isRecentEntry } from "@shared/lastEntry";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
@@ -132,6 +133,43 @@ export default function QuickRegister() {
   // Reset per package so each new registration gets its own reminder.
   const confirmNoBatchRef = useRef(false);
 
+  /**
+   * The last registration, back in the form to be put right.
+   *
+   * The owner, 2026-10-05: «ئەگەر هەڵەت لە کێش یا قیاس یا لە شتێ کرد، خۆشە
+   * ڕیتێرنی دوایین ئۆردەری تۆمار کراو هەبێ، ئەو کات دەستکاری بکەیت». The
+   * weight is read off the scales and typed with a carton in the other hand;
+   * 15 for 1.5 is one slipped key, and until now the cure was an admin, a
+   * deletion and a second registration under a new code.
+   *
+   * So the banner that names the last registration can hand it back. The same
+   * form, the same boxes — nothing new to learn — and the save goes to the
+   * correction instead of the register: the same parcel, the same code, and
+   * on the customer's account only the difference (server/lib/
+   * correctRegisteredParcel). Only the last one, and only the caller's own.
+   *
+   * While it is open the tracking is not for changing (a scanner read it),
+   * and the warehouse, the shipping type and the batch belong to the parcel,
+   * not to the next one — they are put back as they were when it closes.
+   */
+  const [correcting, setCorrecting] = useState<{
+    id: number;
+    packageCode: string;
+    orderLinked: boolean;
+    /** As they were when it was opened, to tell whether they changed. */
+    photos: string[];
+  } | null>(null);
+  const [openingCorrection, setOpeningCorrection] = useState(false);
+  /** The form as it stood, so closing a correction hands the screen back. */
+  const beforeCorrectionRef = useRef<{
+    batchId: string;
+    shippingType: "air_regular" | "air_irregular" | "sea";
+    originWarehouseId: number | null;
+    customerId: number | null;
+    customerSearch: string;
+    isUnclaimed: boolean;
+  } | null>(null);
+
   // Queries — handle errors so one failed API doesn't block the form
   const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
   const { data: batchesRaw, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
@@ -178,6 +216,9 @@ export default function QuickRegister() {
    */
   const handleTrackingSearch = async (opts?: { silent?: boolean }) => {
     const silent = opts?.silent === true;
+    // The parcel in the form is the one being corrected: looking its tracking
+    // up would only "find" the parcel itself and call it a duplicate.
+    if (correcting) return;
     const currentTracking = trackingRef.current?.value || trackingNumber;
     if (currentTracking.trim().length < 1) return;
 
@@ -692,12 +733,22 @@ export default function QuickRegister() {
    * parcel before and a screen nobody has touched lets Back straight through.
    */
   const hasParcelInProgress = Boolean(
+    correcting ||
     trackingNumber.trim() || weightKg.trim() || lengthCm.trim() || widthCm.trim() ||
     heightCm.trim() || directCbm.trim() || photos.length > 0 || customerId || isUnclaimed,
   );
   useLeaveGuard(hasParcelInProgress, () =>
     confirmAction({
-      message: pickLang(language, {
+      // What would be lost is said as it is: a correction left half way is
+      // not "a parcel not registered yet" — the parcel is in, and wrong.
+      message: correcting
+        ? pickLang(language, {
+            ku: "دڵنیایت دەتەوێت دەرچیت؟ چاککردنەوەکە هێشتا پاشەکەوت نەکراوە — پاکەتەکە وەک خۆی دەمێنێتەوە.",
+            en: "Leave this screen? The correction has not been saved — the parcel stays as it was.",
+            ar: "هل تريد الخروج؟ لم يُحفظ التصحيح بعد — يبقى الطرد كما كان.",
+            zh: "要离开吗？更正尚未保存 — 包裹保持原样。",
+          })
+        : pickLang(language, {
         ku: "دڵنیایت دەتەوێت دەرچیت؟ ئەم پاکێتە هێشتا تۆمار نەکراوە.",
         en: "Leave this screen? This parcel has not been registered yet.",
         ar: "هل تريد الخروج؟ لم يُسجَّل هذا الطرد بعد.",
@@ -737,6 +788,9 @@ export default function QuickRegister() {
   ));
 
   const estimatedPrice = hasMeasure && estimate ? estimate.amountUsd : 0;
+
+  /** The parcel being corrected belongs to an order's customer, by contract. */
+  const ownerFollowsOrder = Boolean(correcting?.orderLinked);
 
   /**
    * What the bottom bar says beside the weight — and it says nothing it does
@@ -781,6 +835,9 @@ export default function QuickRegister() {
   // scanner sends its trailing Enter) via the input's onKeyDown handler, or when
   // the Search button is clicked.
   const handleTrackingChange = (value: string) => {
+    // The tracking of a parcel being corrected was read by a scanner and is
+    // not for changing here.
+    if (correcting) return;
     setTrackingNumber(value);
     setFoundOrder(null);
     if (searchTimeout) {
@@ -848,6 +905,33 @@ export default function QuickRegister() {
   
   // State for last registered package
   const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null; orderNumber?: string | null } | null>(null);
+
+  /**
+   * The banner survives a reload.
+   *
+   * A phone puts the app to sleep and wakes it as a fresh page; the banner was
+   * only ever in memory, so the one registration somebody wanted to go back
+   * to was the one the screen had just forgotten. Asked once, and only a
+   * registration from this working day is offered — last week's parcel is not
+   * "the last thing I did".
+   */
+  const { data: myLastRegistration } = trpc.packages.lastRegisteredByMe.useQuery(undefined, {
+    staleTime: Infinity,
+    refetchOnWindowFocus: false,
+  });
+  useEffect(() => {
+    if (!myLastRegistration || !isRecentEntry(myLastRegistration.registeredAt)) return;
+    const when = new Date(myLastRegistration.registeredAt as string | Date);
+    setLastRegistered((prev) => prev ?? {
+      packageCode: myLastRegistration.packageCode,
+      trackingNumber: myLastRegistration.trackingNumber ?? "",
+      customerName: myLastRegistration.customerCode || myLastRegistration.customerName || t("quickRegister.unclaimed"),
+      time: when,
+    });
+    // Only when the answer arrives: the banner belongs to whatever was
+    // registered since, once anything has been.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [myLastRegistration]);
   
   /**
    * Take this tracking off an order that should not carry it.
@@ -936,6 +1020,171 @@ export default function QuickRegister() {
     },
   });
   
+  /** Hand the screen back as it was before the correction was opened. */
+  const closeCorrection = (keepCustomer: boolean) => {
+    const was = beforeCorrectionRef.current;
+    beforeCorrectionRef.current = null;
+    setCorrecting(null);
+    resetForm();
+    if (!was) return;
+    setBatchId(was.batchId);
+    setShippingType(was.shippingType);
+    setOriginWarehouseId(was.originWarehouseId);
+    // After a save the parcel's owner stays in the box, as after any
+    // registration; after a cancel the box goes back to who was in it.
+    if (!keepCustomer) {
+      setCustomerId(was.customerId);
+      setCustomerSearch(was.customerSearch);
+      setIsUnclaimed(was.isUnclaimed);
+    }
+  };
+
+  const correctMutation = trpc.packages.correctLastRegistration.useMutation({
+    meta: { skipGlobalToast: true },
+    onSuccess: (data) => {
+      soundManager.playSuccess();
+      setLastRegistered((prev) => ({
+        ...(prev ?? { time: new Date() }),
+        packageCode: data.packageCode,
+        trackingNumber: data.trackingNumber ?? "",
+        customerName: isUnclaimed ? t("quickRegister.unclaimed") : (customerSearch || t("quickRegister.unclaimed")),
+      }));
+      // What the account said, what it says now, and that only the
+      // difference was written — long enough on screen to be read.
+      toast.success(
+        <div className="flex items-start gap-3" data-testid="qr-correction-done">
+          <CheckCircle2 className="mt-0.5 h-5 w-5 shrink-0 text-green-600 dark:text-green-300" />
+          <div>
+            <div className="font-mono text-sm font-bold">{data.packageCode}</div>
+            <div className="text-sm leading-relaxed">{pickLang(language, data.words)}</div>
+          </div>
+        </div>,
+        { duration: 12000 },
+      );
+      closeCorrection(true);
+      trpcUtils.packages.stats.invalidate();
+      trpcUtils.packages.lastRegisteredByMe.invalidate();
+      trpcUtils.scanning.customerOrderProgress.invalidate();
+    },
+    onError: (error) => {
+      soundManager.playError();
+      // A refusal here carries its cure in numbered steps; a toast in the
+      // corner is not where anybody reads four lines.
+      systemAlert({
+        kind: "warning",
+        title: pickLang(language, { ku: "چاک نەکرایەوە", en: "Not corrected", ar: "لم يُصحَّح", zh: "未更正" }),
+        message: error.message,
+        detail: correcting?.packageCode,
+      });
+    },
+  });
+
+  /** Put the last registration back into the form. */
+  const openCorrection = async () => {
+    if (correcting || openingCorrection) return;
+    setOpeningCorrection(true);
+    try {
+      // Asked afresh: what is corrected is what the server holds now.
+      const last = await trpcUtils.packages.lastRegisteredByMe.fetch(undefined, { staleTime: 0 });
+      if (!last) {
+        toast.info(pickLang(language, {
+          ku: "هیچ تۆمارێکت نییە بۆ چاککردنەوە",
+          en: "You have no registration to correct",
+          ar: "لا يوجد تسجيل لتصحيحه",
+          zh: "没有可更正的登记",
+        }));
+        return;
+      }
+      if (last.blocked) {
+        systemAlert({
+          kind: "warning",
+          title: pickLang(language, { ku: "لێرە چاک ناکرێتەوە", en: "It cannot be corrected here", ar: "لا يمكن تصحيحه هنا", zh: "无法在此更正" }),
+          message: last.blocked,
+          detail: last.packageCode,
+          openHref: parcelListHref(last.packageCode),
+          openLabel: pickLang(language, { ku: "پاکەتەکە بکەرەوە", en: "Open the parcel", ar: "افتح الطرد", zh: "打开包裹" }),
+        });
+        return;
+      }
+
+      beforeCorrectionRef.current = { batchId, shippingType, originWarehouseId, customerId, customerSearch, isUnclaimed };
+      if (searchTimeout) {
+        clearTimeout(searchTimeout);
+        setSearchTimeout(null);
+      }
+      searchVersionRef.current++;
+      setFoundOrder(null);
+      setExpandedLookup(null);
+      setDeclaredMatch(null);
+      setIsSearching(false);
+      setShowCustomerDropdown(false);
+
+      setTrackingNumber(last.trackingNumber ?? "");
+      setCustomerId(last.customerId);
+      setCustomerSearch(last.customerCode || last.customerName || "");
+      setIsUnclaimed(last.isUnclaimed);
+      setWeightKg(last.weightKg);
+      setLengthCm(last.lengthCm);
+      setWidthCm(last.widthCm);
+      setHeightCm(last.heightCm);
+      setDirectCbm(last.typedCbm);
+      setDescription(last.description);
+      setCategoryId(last.categoryId ? String(last.categoryId) : "");
+      setPhotos(last.photos);
+      setShippingType(last.shippingType as "air_regular" | "air_irregular" | "sea");
+      setBatchId(last.batchId ? String(last.batchId) : "");
+      setOriginWarehouseId(last.originWarehouseId);
+      setLastRegistered((prev) => ({
+        ...(prev ?? { time: last.registeredAt ? new Date(last.registeredAt) : new Date() }),
+        packageCode: last.packageCode,
+        trackingNumber: last.trackingNumber ?? "",
+        customerName: last.customerCode || last.customerName || t("quickRegister.unclaimed"),
+      }));
+      setCorrecting({ id: last.id, packageCode: last.packageCode, orderLinked: last.orderLinked, photos: last.photos });
+      // The weight is what is usually wrong, so that is where the caret goes.
+      setTimeout(() => focusWeight(), 80);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setOpeningCorrection(false);
+    }
+  };
+
+  /** Save the correction: the form is the whole truth, as on a registration. */
+  const submitCorrection = async () => {
+    if (!correcting || correctMutation.isPending) return;
+    if (!customerId && !isUnclaimed) {
+      soundManager.playError();
+      toast.error(t("quickRegister.pleaseSelectCustomerOrUnclaimed"));
+      return;
+    }
+    const odd = oddParcelNumbers({ weightKg, lengthCm, widthCm, heightCm, volumeCbm: directCbm });
+    if (odd.length > 0) {
+      const sure = await confirmAction({
+        title: pickLang(language, { ku: "ئەم ژمارەیە لۆجیکی نییە", en: "This number does not look right", ar: "هذا الرقم غير منطقي", zh: "这个数字不合逻辑" }),
+        message: oddParcelQuestion(odd),
+        confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+        cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+      });
+      if (!sure) return;
+    }
+    const photosChanged =
+      photos.length !== correcting.photos.length || photos.some((url, i) => url !== correcting.photos[i]);
+    correctMutation.mutate({
+      id: correcting.id,
+      customerId: isUnclaimed ? null : customerId,
+      isUnclaimed,
+      weightKg,
+      lengthCm,
+      widthCm,
+      heightCm,
+      volumeCbm: directCbm,
+      description,
+      categoryId: categoryId ? parseInt(categoryId) : null,
+      ...(photosChanged ? { photos } : {}),
+    });
+  };
+
   const resetForm = () => {
     if (searchTimeout) {
       clearTimeout(searchTimeout);
@@ -961,6 +1210,12 @@ export default function QuickRegister() {
 
   // Clear ALL form fields including sticky ones
   const clearAllForm = () => {
+    // While a correction is open, "clear" means "leave it as it was": an
+    // emptied form saved as the correction would blank a real parcel.
+    if (correcting) {
+      closeCorrection(false);
+      return;
+    }
     if (searchTimeout) {
       clearTimeout(searchTimeout);
       setSearchTimeout(null);
@@ -991,6 +1246,12 @@ export default function QuickRegister() {
   
   const handleSubmit = async (e?: React.FormEvent) => {
     if (e) e.preventDefault();
+
+    // A correction is open: Enter saves the correction, never a registration.
+    if (correcting) {
+      await submitCorrection();
+      return;
+    }
     
     // Require tracking number - cannot register without it
     if (!trackingNumber.trim()) {
@@ -1143,8 +1404,13 @@ export default function QuickRegister() {
 
         {/* Professional Header with Stats */}
         <div className="mb-4">
-          {/* Top Bar with Title and Stats */}
-          <div className="relative overflow-hidden rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 px-4 py-2.5 shadow-md ring-1 ring-white/10 text-white">
+          {/* Top Bar with Title and Stats.
+              Clipped, not hidden: the glow below hangs 64px past the end of
+              this card, and a box that merely hides its overflow can still be
+              scrolled to it. Focusing the button at the end of the banner did
+              exactly that — the whole header slid 64px sideways and cut its
+              own title off. A clipped box cannot scroll at all. */}
+          <div className="relative overflow-clip rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 px-4 py-2.5 shadow-md ring-1 ring-white/10 text-white">
             <div className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
             <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" />
             <div className="relative flex items-center justify-between flex-wrap gap-4">
@@ -1184,13 +1450,32 @@ export default function QuickRegister() {
               </div>
             </div>
 
-            {/* Last Registered Package — richer, wraps cleanly, never overflows */}
+            {/* Last Registered Package — richer, wraps cleanly, never overflows.
+                The same strip, in amber, while that registration is open for
+                correction: it is the one place on the screen that already
+                names the parcel, so it is where the screen says what is
+                being changed. */}
             {lastRegistered && (
-              <div className="mt-3 rounded-xl border border-emerald-200/70 dark:border-emerald-900/50 bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20 px-4 py-3">
+              <div
+                className={cn(
+                  "mt-3 rounded-xl border px-4 py-3",
+                  correcting
+                    ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40"
+                    : "border-emerald-200/70 dark:border-emerald-900/50 bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20",
+                )}
+                data-testid="qr-last-registered"
+              >
                 <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-sm">
-                  <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
-                    <CheckCircle2 className="h-4 w-4 shrink-0" /> {t("quickRegister.lastRegistered")}
-                  </span>
+                  {correcting ? (
+                    <span className="inline-flex items-center gap-1.5 font-bold text-amber-800 dark:text-amber-200" data-testid="qr-correcting">
+                      <PencilLine className="h-4 w-4 shrink-0" />
+                      {pickLang(language, { ku: "چاککردنەوەی دوایین تۆمار", en: "Correcting the last registration", ar: "تصحيح آخر تسجيل", zh: "正在更正上一条登记" })}
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1.5 font-semibold text-emerald-700 dark:text-emerald-400">
+                      <CheckCircle2 className="h-4 w-4 shrink-0" /> {t("quickRegister.lastRegistered")}
+                    </span>
+                  )}
                   <span className="font-mono font-bold text-foreground">{lastRegistered.packageCode}</span>
                   {lastRegistered.trackingNumber && (
                     <span className="inline-flex min-w-0 items-center gap-1 text-muted-foreground">
@@ -1225,6 +1510,35 @@ export default function QuickRegister() {
                       </span>
                     </>
                   )}
+                  {/* The way back to it. Dark on the pale strip, because the
+                      header behind is orange and white text would vanish. */}
+                  {correcting ? (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={() => closeCorrection(false)}
+                      disabled={correctMutation.isPending}
+                      className="ms-auto h-8 gap-1.5 border-amber-400 bg-white/80 text-amber-900 hover:bg-white dark:border-amber-600 dark:bg-amber-950/60 dark:text-amber-100 dark:hover:bg-amber-900/60"
+                      data-testid="qr-correction-cancel"
+                    >
+                      <X className="h-3.5 w-3.5" />
+                      {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "تراجع", zh: "取消" })}
+                    </Button>
+                  ) : (
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="outline"
+                      onClick={openCorrection}
+                      disabled={openingCorrection}
+                      className="ms-auto h-8 gap-1.5 border-emerald-300 bg-white/80 text-emerald-800 hover:bg-white dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+                      data-testid="qr-correct-last"
+                    >
+                      {openingCorrection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PencilLine className="h-3.5 w-3.5" />}
+                      {pickLang(language, { ku: "هەڵەیە؟ چاکی بکەرەوە", en: "Wrong? Correct it", ar: "خطأ؟ صحّحه", zh: "有误？更正" })}
+                    </Button>
+                  )}
                 </div>
               </div>
             )}
@@ -1235,10 +1549,15 @@ export default function QuickRegister() {
           {/* Two-column layout: all fields on the left, the summary as a
               sticky sidebar on the right — keeps the whole form on one
               screen (no downward scrolling), like before. */}
-        {/* Quick access: register a prohibited item (goes to its own fast flow) */}
-        <button
-          type="button"
-          onClick={() => setLocation("/packages/prohibited-register")}
+        {/* Quick access: register a prohibited item (goes to its own fast flow).
+            A link, not a button that navigates. The leave guard holds every
+            link on the page while a parcel is half entered; a button calling
+            the router directly walked straight past it — the widest target
+            on the screen, one row above the tracking box, and the one way
+            off the page that never asked (found 2026-10-05, by pressing it
+            by accident with a correction open). */}
+        <Link
+          href="/packages/prohibited-register"
           className="mb-2 w-full flex items-center justify-between gap-2 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
         >
           <span className="flex items-center gap-2.5 text-xs font-medium text-red-700 dark:text-red-300">
@@ -1246,7 +1565,7 @@ export default function QuickRegister() {
             {pickLang(language, { ku: "کەلوپەلی قەدەغە؟ لێرەوە تۆماری بکە", en: "Prohibited item? Register it here", ar: "بضاعة ممنوعة؟ سجّلها من هنا", zh: "违禁物品？在此登记" })}
           </span>
           <ChevronDown className="h-4 w-4 -rotate-90 rtl:rotate-90 text-red-400" />
-        </button>
+        </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
             {/* Fields column */}
@@ -1287,6 +1606,7 @@ export default function QuickRegister() {
                             ref={trackingRef}
                             placeholder={t("quickRegister.trackingPlaceholder")}
                             value={trackingNumber}
+                            readOnly={!!correcting}
                             onChange={(e) => handleTrackingChange(e.target.value)}
                             onKeyDown={(e) => {
                               // Barcode scanners send Enter at the end of the
@@ -1302,6 +1622,12 @@ export default function QuickRegister() {
                               if (e.key === 'Enter') {
                                 e.preventDefault();
                                 e.stopPropagation();
+                                // A correction is open: Enter here is the
+                                // same Enter as anywhere else on the form.
+                                if (correcting) {
+                                  void handleSubmit();
+                                  return;
+                                }
                                 if (searchTimeout) {
                                   clearTimeout(searchTimeout);
                                   setSearchTimeout(null);
@@ -1309,14 +1635,14 @@ export default function QuickRegister() {
                                 handleTrackingSearch();
                               }
                             }}
-                            className="font-mono text-base h-11 flex-1"
+                            className={cn("font-mono text-base h-11 flex-1", correcting && "bg-muted text-muted-foreground")}
                             autoFocus
                           />
                           <Button
                             type="button"
                             size="lg"
                             onClick={() => handleTrackingSearch()}
-                            disabled={trackingNumber.trim().length < 1 || isSearching}
+                            disabled={trackingNumber.trim().length < 1 || isSearching || !!correcting}
                             className="h-11 px-3 bg-amber-500 hover:bg-amber-600 text-white"
                           >
                             {isSearching ? <Loader2 className="h-5 w-5 animate-spin" /> : <Search className="h-5 w-5" />}
@@ -1344,7 +1670,7 @@ export default function QuickRegister() {
                               }}
                               onFocus={() => setShowCustomerDropdown(true)}
                               onKeyDown={handleCustomerKeyDown}
-                              disabled={isUnclaimed || (foundOrder?.customer != null)}
+                              disabled={isUnclaimed || (foundOrder?.customer != null) || ownerFollowsOrder}
                               className="text-base h-12"
                             />
                             {showCustomerDropdown && filteredCustomers.length > 0 && !isUnclaimed && !foundOrder?.customer && (
@@ -1379,7 +1705,7 @@ export default function QuickRegister() {
                             size="lg"
                             variant={isUnclaimed ? "default" : "outline"}
                             onClick={toggleUnclaimed}
-                            disabled={foundOrder?.customer != null}
+                            disabled={foundOrder?.customer != null || ownerFollowsOrder}
                             aria-pressed={isUnclaimed}
                             data-testid="qr-unclaimed"
                             className={cn(
@@ -1404,8 +1730,8 @@ export default function QuickRegister() {
                           </Button>
                         </div>
                         {(customerId || isUnclaimed) && (() => {
-                          const lockedByOrder = foundOrder?.customer != null
-                            && (foundOrder.source === 'full_package' || foundOrder.source === 'commission');
+                          const lockedByOrder = ownerFollowsOrder || (foundOrder?.customer != null
+                            && (foundOrder.source === 'full_package' || foundOrder.source === 'commission'));
                           return (
                             <div className={cn("mt-3 p-2 rounded-lg text-sm flex items-center gap-2",
                               isUnclaimed ? "bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60" : "bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border border-green-200 dark:border-green-800/60"
@@ -1827,7 +2153,7 @@ export default function QuickRegister() {
                     Owner, 2026-09-23: after Enter the customer's data stays
                     here — how many pieces are left — until the next tracking
                     is typed. The screen then belongs to that parcel again. */}
-                {!foundOrder?.found && lastRegistered && customerId && (
+                {!foundOrder?.found && lastRegistered && customerId && !correcting && (
                   <Card className="md:col-span-5 border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/25 rounded-2xl shadow-sm">
                     <CardContent className="p-3 space-y-2">
                       <div className="flex flex-wrap items-center gap-2 text-sm">
@@ -2351,7 +2677,7 @@ export default function QuickRegister() {
                       <Select
                         value={originWarehouseId != null ? String(originWarehouseId) : ""}
                         onValueChange={(v) => setOriginWarehouseId(v ? parseInt(v, 10) : null)}
-                        disabled={!warehouses?.length}
+                        disabled={!warehouses?.length || !!correcting}
                       >
                         <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                           <SelectValue placeholder={t("quickRegister.warehousePlaceholder")} />
@@ -2374,7 +2700,7 @@ export default function QuickRegister() {
                         <Package className="h-3.5 w-3.5 shrink-0" />
                         <span className="truncate">{pickLang(language, { ku: "گواستنەوە", en: "Shipping", ar: "الشحن", zh: "运输" })}</span>
                       </div>
-                      <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }}>
+                      <Select value={shippingType} onValueChange={(v) => { setShippingType(v as any); setBatchId(""); }} disabled={!!correcting}>
                         <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                           <SelectValue />
                         </SelectTrigger>
@@ -2452,6 +2778,7 @@ export default function QuickRegister() {
                   {/* Batch */}
                   <Select
                     value={batchId}
+                    disabled={!!correcting}
                     onValueChange={(v) => {
                       setBatchId(v);
                       // Picking a real batch clears any pending "no batch"
@@ -2701,18 +3028,23 @@ export default function QuickRegister() {
                         ? "bg-muted text-muted-foreground cursor-not-allowed"
                         : "bg-primary text-primary-foreground hover:bg-primary/90"
                     )}
-                    disabled={registerMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
+                    disabled={registerMutation.isPending || correctMutation.isPending || !trackingNumber.trim() || foundOrder?.source === "package" || expandedLookup?.flags?.customerMismatch === true}
+                    data-testid="qr-submit"
                   >
-                    {registerMutation.isPending ? (
+                    {registerMutation.isPending || correctMutation.isPending ? (
                       <Loader2 className="h-5 w-5 animate-spin ms-1.5" />
                     ) : foundOrder?.source === "package" ? (
                       <AlertTriangle className="h-6 w-6 ms-2 text-yellow-600 dark:text-yellow-300" />
                     ) : expandedLookup?.flags?.customerMismatch ? (
                       <AlertTriangle className="h-6 w-6 ms-2 text-rose-600 dark:text-rose-300" />
+                    ) : correcting ? (
+                      <PencilLine className="h-5 w-5 ms-1.5" />
                     ) : (
                       <Plus className="h-5 w-5 ms-1.5" />
                     )}
-                    {foundOrder?.source === "package"
+                    {correcting
+                      ? pickLang(language, { ku: "پاشەکەوتی چاککردنەوە", en: "Save the correction", ar: "حفظ التصحيح", zh: "保存更正" })
+                      : foundOrder?.source === "package"
                       ? t("quickRegister.btnDuplicate")
                       : expandedLookup?.flags?.customerMismatch
                         ? t("quickRegister.btnCustomerIssue")

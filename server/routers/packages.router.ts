@@ -17,6 +17,7 @@ import { assessVolumetric } from "@shared/volumetricAlert";
 import { affectsCost } from "@shared/parcelCost";
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
+import { correctLastRegistration, lastRegistrationView } from "../lib/correctRegisteredParcel";
 
 export const packagesRouter = router({
     list: staffProcedure
@@ -971,6 +972,39 @@ export const packagesRouter = router({
 
         return pkg;
       }),
+    /**
+     * The caller's own last registration, as the register screen needs it to
+     * put the parcel back into its form (owner, 2026-10-05: «ڕیتێرنی دوایین
+     * ئۆردەری تۆمار کراو»). Null when this person has registered nothing.
+     */
+    lastRegisteredByMe: staffProcedure
+      .query(async ({ ctx }) => lastRegistrationView(ctx.user.id)),
+    /**
+     * Put that registration right: the same parcel, the same code, and on the
+     * customer's account only the difference (lib/correctRegisteredParcel).
+     * Only the caller's own last registration — every other parcel is
+     * corrected from the parcel list.
+     */
+    correctLastRegistration: staffProcedure
+      .input(z.object({
+        id: idSchema,
+        customerId: idSchema.nullish(),
+        isUnclaimed: z.boolean().optional(),
+        weightKg: z.string().max(50).optional(),
+        lengthCm: z.string().max(50).optional(),
+        widthCm: z.string().max(50).optional(),
+        heightCm: z.string().max(50).optional(),
+        volumeCbm: z.string().max(50).optional(),
+        description: z.string().max(1000).optional(),
+        categoryId: idSchema.nullish(),
+        // Sent only when the photographs changed; absent leaves them alone.
+        photos: z.array(z.string().max(2048)).optional(),
+        // The main admin's yes to a lowering that leaves a credit; the
+        // client's approval link sends the same correction again with it.
+        approveCredit: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) =>
+        correctLastRegistration({ id: ctx.user.id, name: ctx.user.name, role: ctx.user.role }, input)),
     /**
      * The figure the register screen quotes before Save.
      *

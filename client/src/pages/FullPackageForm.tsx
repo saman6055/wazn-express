@@ -4,6 +4,8 @@ import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orde
 import { platformFromOrderNumber } from "@shared/orderNumberPlatform";
 import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
 import { useLocation, useParams } from "wouter";
+import { LastOrderStrip } from "@/components/forms/LastOrderStrip";
+import { orderFormExit } from "@shared/lastEntry";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
@@ -84,7 +86,23 @@ const Section = ({ icon: Icon, title, hint, accent = "emerald", children }: { ic
   </section>
 );
 
+/**
+ * A fresh form for every order.
+ *
+ * The router keeps ONE instance of this screen for "new" and for ":id/edit" —
+ * they are the same component in the same place, so it re-renders instead of
+ * remounting. Going from an edit straight back to the entry form (which "my
+ * last order" now does) would therefore leave the edited order's fields, its
+ * photographs and its "already loaded" marks sitting in the form for a NEW
+ * order: saved without looking, that is a second copy of the order just
+ * corrected. Keyed by the order, each one starts clean.
+ */
 export default function FullPackageForm() {
+  const { id } = useParams<{ id?: string }>();
+  return <FullPackageFormScreen key={id ?? "new"} />;
+}
+
+function FullPackageFormScreen() {
   const [, navigate] = useLocation();
   const { t, language } = useTranslation();
 
@@ -98,6 +116,9 @@ export default function FullPackageForm() {
   const { id: routeId } = useParams<{ id?: string }>();
   const orderId = routeId ? Number(routeId) : null;
   const isEditMode = !!orderId && Number.isFinite(orderId);
+  // Where this form goes when it is left: the list — or, for an edit opened
+  // from "my last order", back to the entry form (shared/lastEntry).
+  const exitPath = orderFormExit("full_package", isEditMode, typeof window === "undefined" ? "" : window.location.search);
 
   const { data: existingOrder, isLoading: orderLoading } = trpc.fullPackage.getById.useQuery(
     { id: orderId as number },
@@ -289,10 +310,12 @@ export default function FullPackageForm() {
       toast.success(pickLang(language, { ku: "گۆڕانکارییەکان خەزن کران ✓", en: "Changes saved ✓", ar: "تم حفظ التعديلات ✓", zh: "更改已保存 ✓" }));
       utils.fullPackage.list.invalidate();
       utils.fullPackage.getById.invalidate({ id: orderId as number });
+      utils.fullPackage.lastCreatedByMe.invalidate();
       // Back to the list, not the order page: an edit is usually one of
       // several being worked through, so the list is where the operator
-      // continues from. Save, cancel and no-change all land here.
-      navigate("/full-package");
+      // continues from. Save, cancel and no-change all land here — unless
+      // the edit was opened from the entry form, which is where it returns.
+      navigate(exitPath);
     },
     onError: (error) => {
       const fallback = pickLang(language, { ku: "نوێکردنەوەی ئۆردەر سەرکەوتوو نەبوو", en: "Failed to update order", ar: "فشل تحديث الطلب", zh: "更新订单失败" });
@@ -307,6 +330,8 @@ export default function FullPackageForm() {
     onSuccess: () => {
       toast.success(pickLang(language, { ku: "ئۆردەری پاکێجی تەواو بە سەرکەوتوویی داخڵ کرا — خانەکان بۆ ئۆردەری دواتر ئامادەن", en: "Full package order created successfully — fields are ready for the next order", ar: "تم إنشاء طلب الحزمة الكاملة بنجاح — الحقول جاهزة للطلب التالي", zh: "完整套餐订单创建成功 — 字段已为下一个订单准备就绪" }));
       utils.fullPackage.list.invalidate();
+      // The strip above the form names the order just saved.
+      utils.fullPackage.lastCreatedByMe.invalidate();
       const keepCustomerId = formData.customerId;
       if (keepCustomerId) {
         localStorage.setItem("wazn-last-commission-customer", keepCustomerId);
@@ -572,7 +597,7 @@ export default function FullPackageForm() {
           ar: "لم يتغيّر شيء — بقي الطلب كما هو",
           zh: "没有任何更改 — 订单保持原样",
         }));
-        navigate("/full-package");
+        navigate(exitPath);
         return;
       }
       if (moneyChangeDetected && editReason.trim().length < 3) {
@@ -726,7 +751,7 @@ export default function FullPackageForm() {
       <div className="max-w-4xl mx-auto space-y-3">
         {/* Header */}
         <div className="flex items-center gap-3">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/full-package")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate(exitPath)}>
             <ArrowRight className="h-4 w-4" />
           </Button>
           <div className="flex items-center gap-3">
@@ -772,6 +797,9 @@ export default function FullPackageForm() {
             </Button>
           )}
         </div>
+
+        {/* The order just entered, and the way back to it (owner, 2026-10-05). */}
+        {!isEditMode && <LastOrderStrip orderType="full_package" />}
 
         {/* Wait for the order before showing a form full of empty fields. */}
         {isEditMode && orderLoading && (
@@ -1628,7 +1656,7 @@ export default function FullPackageForm() {
 
           {/* Submit */}
           <StickyFormBar>
-            <Button type="button" variant="outline" onClick={() => navigate("/full-package")}>
+            <Button type="button" variant="outline" onClick={() => navigate(exitPath)}>
               {t("common.cancel") || pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
             <Button
@@ -1677,7 +1705,7 @@ export default function FullPackageForm() {
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel onClick={() => navigate("/full-package")}>
+              <AlertDialogCancel onClick={() => navigate(exitPath)}>
                 {pickLang(language, { ku: "کانسڵ — خەزن مەکە", en: "Cancel — don't save", ar: "إلغاء — لا تحفظ", zh: "取消 — 不保存" })}
               </AlertDialogCancel>
               <AlertDialogAction onClick={submitEdit} className="bg-purple-600 hover:bg-purple-700">

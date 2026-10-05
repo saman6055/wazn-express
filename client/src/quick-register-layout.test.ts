@@ -82,7 +82,8 @@ describe("what sits where", () => {
   it("the boxes are the size of what goes in them", () => {
     // Owner, 2026-09-23: the tracking, the weight and the centimetre row were
     // all far longer than the numbers they hold.
-    expect(page).toContain('className="font-mono text-base h-11 flex-1"');
+    // Greyed while a correction is open (2026-10-05) — the size is the same.
+    expect(page).toContain('className={cn("font-mono text-base h-11 flex-1", correcting && "bg-muted text-muted-foreground")}');
     // The customer takes the whole row since the weight moved to the bar.
     expect(page).toContain('md:col-span-5 border bg-card');  // customer
     expect(page).not.toContain('md:col-span-2 border bg-card');  // the old weight box
@@ -128,9 +129,12 @@ describe("what sits where", () => {
 
 describe("after Enter", () => {
   it("the customer stays, with what is still coming, until the next tracking", () => {
-    expect(page).toContain("{!foundOrder?.found && lastRegistered && customerId && (");
+    // `!correcting` since 2026-10-05: while the last registration is open for
+    // correction this card would say "registered ✓" beside the very form
+    // that is changing it.
+    expect(page).toContain("{!foundOrder?.found && lastRegistered && customerId && !correcting && (");
     const card = page.slice(
-      at("{!foundOrder?.found && lastRegistered && customerId && ("),
+      at("{!foundOrder?.found && lastRegistered && customerId && !correcting && ("),
       at('{/* Row 2.5: Dimensions'),
     );
     expect(card).toContain("lastRegistered.packageCode");

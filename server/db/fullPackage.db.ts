@@ -313,6 +313,50 @@ export async function backfillTrackingsFromJson(): Promise<{
   return { ordersScanned: candidates.length, ordersTouched, trackingsInserted, errors };
 }
 
+/**
+ * The last order this person entered, of one kind.
+ *
+ * What "my last order" on the entry forms opens (owner, 2026-10-05: «ڕیتێرن
+ * لە کڕین بە تێچوو، لە پاکێجی تەواویش هەبێ، زۆر گرنگە»). The few fields the
+ * strip shows, not the row: an order row carries prices and photographs, and
+ * this is asked every time an entry form opens.
+ *
+ * A deleted order is not offered — there is nothing to correct in the bin.
+ */
+export async function getLastOrderCreatedBy(
+  userId: number,
+  orderType: "commission" | "full_package",
+): Promise<{
+  id: number;
+  orderCode: string;
+  orderNumber: string | null;
+  productName: string | null;
+  customerCode: string | null;
+  createdAt: Date | null;
+} | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({
+      id: fullPackageOrders.id,
+      orderCode: fullPackageOrders.orderCode,
+      orderNumber: fullPackageOrders.orderNumber,
+      productName: fullPackageOrders.productName,
+      customerCode: customers.customerCode,
+      createdAt: fullPackageOrders.createdAt,
+    })
+    .from(fullPackageOrders)
+    .leftJoin(customers, eq(fullPackageOrders.customerId, customers.id))
+    .where(and(
+      eq(fullPackageOrders.createdById, userId),
+      eq(fullPackageOrders.orderType, orderType),
+      isNull(fullPackageOrders.deletedAt),
+    ))
+    .orderBy(desc(fullPackageOrders.id))
+    .limit(1);
+  return row ?? null;
+}
+
 export async function getFullPackageOrderById(id: number) {
   const db = await getDb();
   if (!db) return undefined;

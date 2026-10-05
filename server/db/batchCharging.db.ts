@@ -1,6 +1,6 @@
 import { and, eq } from "drizzle-orm";
 import { getDb } from "./connection";
-import { packages } from "../../drizzle/schema";
+import { packages, fullPackageOrders, fullPackageOrderTrackings, type Package } from "../../drizzle/schema";
 import { getBatchById, getBatchRateForCustomer } from "./batches.db";
 import { getCustomerById } from "./customers.db";
 import { updatePackage } from "./packages.db";
@@ -8,6 +8,7 @@ import { recordPackageChargeWithoutInvoice, createRevenueRecord } from "./financ
 import { createInvoice } from "./invoices.db";
 import { getVolumetricDivisor } from "./settings.db";
 import { selfOrderConditions } from "./selfOrder.filter";
+import { isSelfOrder } from "../lib/selfOrder";
 import { batchChargesOnPricing } from "../lib/chargePolicy";
 import { chargeableWeight } from "@shared/chargeableWeight";
 import { appLogger } from "../utils/logger";
@@ -34,6 +35,122 @@ import { appLogger } from "../utils/logger";
  * chargeable-weight rule with the configured divisor — the same answers the
  * register screen quotes and the invoice at delivery would have used.
  */
+/**
+ * One parcel's shipping, to the cent: what the batch sells, times the rate.
+ *
+ * Sea sells the cubic metres outright; air sells the greater of the scale and
+ * the volumetric weight. The line below is the one the charge has always been
+ * worked out with - lifted out so that a correction to a parcel asks the same
+ * line what the parcel SHOULD have been charged, instead of keeping a copy
+ * that could round a cent differently one day.
+ */
+export function parcelShippingCharge(
+  pkg: Pick<Package, "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm">,
+  isSea: boolean,
+  rate: number,
+  divisor: number,
+): { quantity: number; amount: number } {
+  const quantity = isSea
+    ? Number(pkg.volumeCbm ?? 0) || 0
+    : chargeableWeight(pkg, divisor).chargeableKg;
+  const amount = Math.round(quantity * rate * 100) / 100;
+  return { quantity, amount };
+}
+
+/**
+ * The line a parcel's shipping is written on its invoice with.
+ *
+ * Once, because a correction rewrites the same line with the corrected
+ * figures and the two must read alike on paper.
+ */
+export function parcelInvoiceLine(
+  name: string,
+  isSea: boolean,
+  rate: number,
+  quantity: number,
+  amount: number,
+): { description: string; quantity: number; unitPrice: number; total: number } {
+  const unitLabel = isSea ? "m³" : "kg";
+  return {
+    description: `پاکەت ${name}\nنرخ: ${quantity.toFixed(isSea ? 3 : 2)} ${unitLabel} × $${rate.toFixed(2)}/${unitLabel} = $${amount.toFixed(2)}`,
+    quantity: 1,
+    unitPrice: amount,
+    total: amount,
+  };
+}
+
+/**
+ * Does any order claim this tracking number?
+ *
+ * The question selfOrderConditions asks in SQL, for one parcel in hand. Both
+ * places an order can record a tracking are read.
+ */
+export async function orderClaimsTracking(trackingNumber: string | null | undefined): Promise<boolean> {
+  const db = await getDb();
+  if (!db || !trackingNumber) return false;
+  const [direct] = await db.select({ id: fullPackageOrders.id }).from(fullPackageOrders)
+    .where(eq(fullPackageOrders.trackingNumber, trackingNumber)).limit(1);
+  if (direct) return true;
+  const [listed] = await db.select({ id: fullPackageOrderTrackings.id }).from(fullPackageOrderTrackings)
+    .where(eq(fullPackageOrderTrackings.trackingNumber, trackingNumber)).limit(1);
+  return Boolean(listed);
+}
+
+export interface ShippingChargeDue {
+  /** True when chargeBatchShippingIfDue would post a charge for this parcel now. */
+  due: boolean;
+  amount: number;
+  rate: number;
+  quantity: number;
+  unit: "kg" | "cbm";
+  batchCode: string | null;
+}
+
+/**
+ * The charge this parcel would be given right now - asked, not given.
+ *
+ * The same gates as chargeBatchShippingIfDue, in the same order: a batch born
+ * under the charge-on-pricing rule and carrying a price, a self-order parcel
+ * with an owner, that owner's rate, and an amount above zero. Nothing is
+ * written. A correction uses it to learn what a parcel's charge should stand
+ * at after its weight or its owner was put right.
+ */
+export async function shippingChargeDueNow(
+  pkg: Pick<
+    Package,
+    | "batchId" | "customerId" | "isUnclaimed" | "fullPackageOrderId" | "trackingNumber" | "registeredAt"
+    | "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm"
+  >,
+): Promise<ShippingChargeDue> {
+  const none: ShippingChargeDue = { due: false, amount: 0, rate: 0, quantity: 0, unit: "kg", batchCode: null };
+  const db = await getDb();
+  if (!db || !pkg.batchId) return none;
+
+  const batch = await getBatchById(pkg.batchId);
+  if (!batch) return none;
+  const isSea = batch.shippingType === "sea";
+  const unit: "kg" | "cbm" = isSea ? "cbm" : "kg";
+  const facts = { ...none, unit, batchCode: batch.batchCode ?? null };
+  if (!batchChargesOnPricing(batch)) return facts;
+
+  const hasClaimingOrder = await orderClaimsTracking(pkg.trackingNumber);
+  const selfOrder = Boolean(pkg.trackingNumber) && isSelfOrder({
+    fullPackageOrderId: pkg.fullPackageOrderId ?? null,
+    hasClaimingOrder,
+    customerId: pkg.customerId ?? null,
+    isUnclaimed: Boolean(pkg.isUnclaimed),
+    registeredAt: pkg.registeredAt ?? null,
+  });
+  if (!selfOrder) return facts;
+
+  const { rate } = await getBatchRateForCustomer(pkg.batchId, pkg.customerId!, { unit });
+  if (!(rate > 0)) return facts;
+
+  const divisor = await getVolumetricDivisor();
+  const { quantity, amount } = parcelShippingCharge(pkg, isSea, rate, divisor);
+  return { ...facts, due: amount > 0, amount, rate, quantity };
+}
+
 export async function chargeBatchShippingIfDue(
   batchId: number,
   actorId: number,
@@ -74,13 +191,7 @@ export async function chargeBatchShippingIfDue(
       if (!(rate > 0)) continue;
 
       const priced = parcels
-        .map(pkg => {
-          const quantity = isSea
-            ? Number(pkg.volumeCbm ?? 0) || 0
-            : chargeableWeight(pkg, divisor).chargeableKg;
-          const amount = Math.round(quantity * rate * 100) / 100;
-          return { pkg, quantity, amount };
-        })
+        .map(pkg => ({ pkg, ...parcelShippingCharge(pkg, isSea, rate, divisor) }))
         .filter(p => p.amount > 0);
       if (priced.length === 0) continue;
 
@@ -97,12 +208,8 @@ export async function chargeBatchShippingIfDue(
         totalUsd: total.toFixed(2),
         status: "issued",
         issuedAt: new Date(),
-        lineItems: priced.map(p => ({
-          description: `پاکەت ${p.pkg.trackingNumber || p.pkg.packageCode}\nنرخ: ${p.quantity.toFixed(isSea ? 3 : 2)} ${unitLabel} × $${rate.toFixed(2)}/${unitLabel} = $${p.amount.toFixed(2)}`,
-          quantity: 1,
-          unitPrice: p.amount,
-          total: p.amount,
-        })),
+        lineItems: priced.map(p =>
+          parcelInvoiceLine(p.pkg.trackingNumber || p.pkg.packageCode, isSea, rate, p.quantity, p.amount)),
         notes: [
           `پسووڵەی باچ ${batch.batchCode}`,
           `نووسراوە لە کاتی دانانی نرخی گواستنەوە`,
