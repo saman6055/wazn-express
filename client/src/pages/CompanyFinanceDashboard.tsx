@@ -506,7 +506,7 @@ export default function CompanyFinanceDashboard() {
                 ))}
                 {data.capital && (
                   <>
-                    <Row label={L({ ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" })} href="/finance/working-capital" linkWords={see}>
+                    <Row label={L({ ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" })} href="/finance/goods-on-road" linkWords={see}>
                       <Money value={data.capital.goodsOnRoadUsd} />
                     </Row>
                     <Row

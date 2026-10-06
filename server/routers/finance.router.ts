@@ -110,6 +110,25 @@ export const ledgerRouter = router({
         return db.saveFixedCosts(input.costs, ctx.user.id);
       }),
 
+    /** Every order not yet finished — the list behind "goods on the road" (shared/goodsOnRoad). */
+    goodsOnRoad: accountantProcedure.query(async () => {
+      return db.listGoodsOnRoad();
+    }),
+    /**
+     * The goods are with the customer: put them on the account, and — when
+     * they were paid for long ago — straight off again with a line saying so.
+     * The main admin's alone; the refusal carries its own cure.
+     */
+    closeOrderOnRoad: superAdminProcedure
+      .input(z.object({ orderId: z.number().int().positive(), paid: z.enum(["before", "no"]) }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.closeOrderOnRoad(input.orderId, input.paid, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+
     /** Where the company's money is, read from the records (shared/workingCapital). */
     workingCapital: superAdminProcedure.query(async () => {
       return db.getWorkingCapital();

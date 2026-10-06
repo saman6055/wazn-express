@@ -155,6 +155,7 @@ export default function WorkingCapital() {
                     <span className="flex flex-wrap items-center gap-x-2">
                       <Ship className="h-4 w-4 shrink-0" />
                       {L({ ku: `کاڵای ڕێگا — ${f.goodsOnRoadCount} داواکاری`, en: `Goods on the road — ${f.goodsOnRoadCount} orders`, ar: `بضائع في الطريق — ${f.goodsOnRoadCount}`, zh: `在途货物 — ${f.goodsOnRoadCount}` })}
+                      <Link href="/finance/goods-on-road" className="text-xs text-primary underline">{L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}</Link>
                       <span className="text-xs text-muted-foreground">
                         {L({ ku: "کڕدراوە، هێشتا لەسەر کڕیار نەنووسراوە · تێچووی کڕین", en: "bought, not yet on the customer · cost", ar: "مشتراة، لم تُقيَّد بعد · التكلفة", zh: "已购，未记账 · 成本" })}{" "}
                         <Money value={f.goodsOnRoadCostUsd} />
