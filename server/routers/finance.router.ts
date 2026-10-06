@@ -129,6 +129,43 @@ export const ledgerRouter = router({
         }
       }),
 
+    // ── Cautions and the blacklist (shared/customerStanding) ─────────────
+    /** Shown wherever something is about to be done for a customer, so every member of staff may read it. */
+    customerStanding: staffProcedure
+      .input(z.object({ customerId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        return db.getCustomerStanding(input.customerId);
+      }),
+    customerStandingByCode: staffProcedure
+      .input(z.object({ code: z.string().min(1).max(100) }))
+      .query(async ({ input }) => {
+        return db.getCustomerStandingByCode(input.code);
+      }),
+    flaggedCustomers: staffProcedure.query(async () => {
+      return db.listFlaggedCustomers();
+    }),
+    /**
+     * A caution or a block is an admin's; taking a customer off the blacklist
+     * is the main admin's alone and needs the condition written.
+     */
+    setCustomerStanding: adminProcedure
+      .input(z.object({
+        customerId: z.number().int().positive(),
+        event: z.enum(["caution", "blocked", "cleared"]),
+        reason: z.enum(["refuses_goods", "pays_late", "fake", "rude", "wastes_time", "low_value", "other"]).optional(),
+        text: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (input.event === "cleared" && ctx.user.role !== "super_admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: withFix("تەنها ئادمینی سەرەکی دەتوانێت کڕیار لە لیستی ڕەش یان ئاگاداری دەربکات.", ["داوا لە ئادمینی سەرەکی بکە"]) });
+        }
+        try {
+          return await db.recordCustomerStanding(input, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+
     // ── Refused goods: the company's own stock (shared/refusedGoods) ──────
     companyStock: accountantProcedure.query(async () => {
       return db.listCompanyStock();

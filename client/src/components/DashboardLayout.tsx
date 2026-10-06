@@ -350,6 +350,7 @@ function DashboardLayoutContent({
       items: [
         { icon: LayoutDashboard, label: t("nav.dashboard") || "داشبۆرد", path: "/dashboard" },
         { icon: Users, label: t("nav.customers") || "کڕیارەکان", path: "/customers" },
+        { icon: Ban, label: pickLang(language, { ku: "لیستی ڕەش", en: "Blacklist", ar: "القائمة السوداء", zh: "黑名单" }), path: "/customers/standing" },
         { icon: MessageCircle, label: t("nav.customerMessages") || "پەیامەکانی کڕیار", path: "/customer-messages", badge: unreadMsgCount },
       ]
     });

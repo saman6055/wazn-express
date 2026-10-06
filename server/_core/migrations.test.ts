@@ -28,7 +28,8 @@ describe("Migration System", () => {
       // 92 was dailySnapshots. 91 was customerFeatures.
       // 104 since companyStock — refused goods, the company's own until
       // they are sold or written off (shared/refusedGoods).
-      expect(TABLE_DEFINITIONS.length).toBe(104);
+      // 105 since customerStanding — cautions and the blacklist.
+      expect(TABLE_DEFINITIONS.length).toBe(105);
     });
     
     it("should have unique table names", () => {

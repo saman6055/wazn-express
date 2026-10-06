@@ -1,4 +1,5 @@
 ﻿import DashboardLayout from "@/components/DashboardLayout";
+import { RefusalWarning } from "@/components/RefusalWarning";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -2012,6 +2013,8 @@ export default function QuickRegister() {
                       </div>
                     </div>
 
+                    {/* A caution or the blacklist on this customer: said here, and it stops nothing — an arrived parcel is still registered. */}
+                    <RefusalWarning customerId={customerId} buying={false} />
                     {/*
                       The paperwork, folded.
 

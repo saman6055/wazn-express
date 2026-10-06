@@ -157,6 +157,12 @@ export async function createFullPackageOrder(data: InsertFullPackageOrder): Prom
   if (!db) throw new Error("Database not available");
   await ensureFullPackageColumns(db);
 
+  // Nothing new is bought for a customer on the blacklist — checked here
+  // because every door that makes an order comes through this function
+  // (shared/customerStanding). Imported here: that module is small, but this
+  // one is reached from everywhere and a cycle would surface as a missing export.
+  await (await import("./customerStanding.db")).assertMayOrderFor(data.customerId);
+
   // UNIFIED FINANCIAL MODEL:
   // Full Package & Purchase Request: Customer pays sellingPriceUsd (final price) only
   // Shipping cost is OUR cost, deducted from profit, NOT charged to customer

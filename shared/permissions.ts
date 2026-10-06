@@ -717,6 +717,7 @@ export function isValidSubPermission(moduleName: string, permissionKey: string):
 export const PATH_TO_MODULE: Record<string, string> = {
   "/dashboard": "dashboard",
   "/customers": "customers",
+  "/customers/standing": "customers",
   "/packages/all": "packages",
   "/packages/quick-register": "quick_register",
   "/packages/bulk-register": "bulk_register",

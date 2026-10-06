@@ -1472,6 +1472,23 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "customerStanding",
+    dependencies: ["customers", "users"],
+    // Cautions and the blacklist, one row per note, block and release
+    // (owner, 2026-10-07). See shared/customerStanding.
+    sql: `CREATE TABLE IF NOT EXISTS customerStanding (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      event ENUM('caution','blocked','cleared') NOT NULL,
+      reason ENUM('refuses_goods','pays_late','fake','rude','wastes_time','low_value','other') NULL,
+      text TEXT,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_customer_standing_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "companyStock",
     dependencies: ["customers", "users"],
     // Refused goods, the company's own until sold or written off (owner,
@@ -2901,6 +2918,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.box_discount_pledges_box", sql: "CREATE INDEX idx_box_discount_pledges_box ON boxDiscountPledges (boxId)" },
   { name: "idx.pending_credits_status", sql: "CREATE INDEX idx_pending_credits_status ON pendingCredits (status)" },
   { name: "idx.pending_credits_customer", sql: "CREATE INDEX idx_pending_credits_customer ON pendingCredits (customerId)" },
+  { name: "idx.customer_standing_customer", sql: "CREATE INDEX idx_customer_standing_customer ON customerStanding (customerId)" },
   { name: "companyStock.trackingNumber", sql: "ALTER TABLE companyStock ADD COLUMN trackingNumber VARCHAR(100) NULL" },
   { name: "idx.company_stock_status", sql: "CREATE INDEX idx_company_stock_status ON companyStock (status)" },
   { name: "idx.company_stock_customer", sql: "CREATE INDEX idx_company_stock_customer ON companyStock (customerId)" },

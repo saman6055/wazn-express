@@ -219,3 +219,25 @@ export type InsertCustomerCodePrefix = typeof customerCodePrefixes.$inferInsert;
 
 
 // ============ EXPENSE ALERTS (Automatic Notification System) ============
+
+// ============ CUSTOMER STANDING — cautions and the blacklist ============
+/**
+ * Every note, block and release on a customer, one row each
+ * (shared/customerStanding). The standing is whatever the last row says;
+ * nothing here is edited or deleted, so the office can always see how a
+ * customer came to be where they are.
+ */
+export const customerStanding = mysqlTable("customerStanding", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  event: mysqlEnum("event", ["caution", "blocked", "cleared"]).notNull(),
+  reason: mysqlEnum("reason", ["refuses_goods", "pays_late", "fake", "rude", "wastes_time", "low_value", "other"]),
+  /** What happened — or, on a release, the condition they come back on. */
+  text: text("text"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  customerIdx: index("idx_customer_standing_customer").on(table.customerId),
+}));
+
+export type CustomerStandingRow = typeof customerStanding.$inferSelect;
