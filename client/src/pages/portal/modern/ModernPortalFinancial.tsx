@@ -184,11 +184,10 @@ export default function ModernPortalFinancial() {
               },
               {
                 icon: CreditCard,
-                // Was labelled "Balance", next to a hero card also labelled
-                // "Balance" showing a different number. This one is the credit
-                // limit and always was.
-                label: pickLang(language, { ku: "سنووری قەرز", en: "Credit limit", ar: "حد الائتمان", zh: "信用额度" }),
-                value: formatCurrency(summary?.creditLimitUsd ?? 0),
+                // Never the ceiling on what they may owe (owner, 2026-10-06): shown, it reads
+                // as an allowance to owe. That figure is the office's.
+                label: pickLang(language, { ku: "پاکەتی وەرگیراو", en: "Parcels received", ar: "الطرود المستلمة", zh: "已收包裹" }),
+                value: String(Number(summary?.totalPackages ?? 0)),
                 color: "text-sky-600 dark:text-sky-400",
                 bg: isDark ? "bg-sky-500/10" : "bg-sky-50 dark:bg-sky-950/40",
                 iconBg: isDark ? "bg-sky-500/20" : "bg-sky-100 dark:bg-sky-950/40",

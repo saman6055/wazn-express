@@ -552,7 +552,13 @@ export async function getSelfOrderPackagesByCustomer(customerId: number) {
     .limit(200);
 }
 
-// Get customer financial summary
+/**
+ * What the customer's own portal is told about their account.
+ *
+ * The credit limit is deliberately not here (owner, 2026-10-06): a customer
+ * who sees a limit reads it as an allowance and pays late. It stays the
+ * office's figure, so it is not sent at all rather than sent and hidden.
+ */
 export async function getCustomerFinancialSummary(customerId: number) {
   const db = await getDb();
   if (!db) return null;
@@ -562,7 +568,6 @@ export async function getCustomerFinancialSummary(customerId: number) {
     return {
       balanceUsd: 0,
       balanceIqd: 0,
-      creditLimitUsd: 0,
       totalPackages: 0,
       totalPaid: 0,
       discountsUsd: 0,
@@ -589,7 +594,6 @@ export async function getCustomerFinancialSummary(customerId: number) {
   return {
     balanceUsd: Number(account.currentBalanceUsd) || 0,
     balanceIqd: Number(account.currentBalanceIqd) || 0,
-    creditLimitUsd: Number(account.creditLimitUsd) || 0,
     totalPackages: packageCount[0]?.count || 0,
     totalPaid: statement.paymentsUsd,
     discountsUsd: statement.discountsUsd,

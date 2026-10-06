@@ -155,10 +155,10 @@ export default function Skin3PortalFinancial() {
     },
     {
       icon: FileText,
-      // Was a second copy of "total paid" under a different word. The credit
-      // limit is the one number on this screen the customer could not see.
-      label: pickLang(language, { ku: "سنووری قەرز", en: "Credit limit", ar: "حد الائتمان", zh: "信用额度" }),
-      value: formatCurrency(summary?.creditLimitUsd ?? 0),
+      // Never the ceiling on what they may owe (owner, 2026-10-06): shown, it reads as an
+      // allowance to owe. That figure is the office's.
+      label: pickLang(language, { ku: "پاکەتی وەرگیراو", en: "Parcels received", ar: "الطرود المستلمة", zh: "已收包裹" }),
+      value: String(Number(summary?.totalPackages ?? 0)),
       accent: "text-indigo-600 dark:text-indigo-400",
       bg: isDark ? "bg-indigo-500/15" : "bg-indigo-50 dark:bg-indigo-950/40",
     },

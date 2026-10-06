@@ -49,7 +49,8 @@ describe("Customer Portal API", () => {
       if (summary) {
         // Check for the actual field names used in the function
         expect(summary).toHaveProperty("balanceUsd");
-        expect(summary).toHaveProperty("creditLimitUsd");
+        // The limit is the office's figure and is never sent to the portal.
+        expect(summary).not.toHaveProperty("creditLimitUsd");
         // totalPaidUsd may not exist if no payments made
       }
     });

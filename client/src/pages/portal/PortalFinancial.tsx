@@ -460,13 +460,15 @@ const { t, language } = useLanguage();
           )}>
             <div className={cn("p-4 text-center border-r", "border-border")}>
               <p className={cn("text-xs mb-1", "text-muted-foreground")}>
-                {pickLang(language, { ku: "سنووری قەرز", en: "Credit Limit", ar: "حد الائتمان", zh: "信用额度" })}
+                {/* Never the ceiling on what they may owe (owner, 2026-10-06): shown, it reads as an
+                    allowance to owe. That figure is the office's. */}
+                {pickLang(language, { ku: "پاکەتی وەرگیراو", en: "Parcels received", ar: "الطرود المستلمة", zh: "已收包裹" })}
               </p>
               {summaryLoading ? (
                 <Skeleton className="h-6 w-16 mx-auto" />
               ) : (
                 <p className={cn("text-lg font-bold", "text-foreground")}>
-                  {formatCurrency(summary?.creditLimitUsd || 0)}
+                  {Number(summary?.totalPackages ?? 0)}
                 </p>
               )}
             </div>
