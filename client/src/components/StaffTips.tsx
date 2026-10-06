@@ -4,7 +4,7 @@ import { useLocation } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { Lightbulb, X, ChevronDown, ChevronUp } from "lucide-react";
-import { STAFF_TIPS, MOTIVATION_MESSAGES, type TipLang } from "@/constants/staffTips";
+import { tipsFor, MOTIVATION_MESSAGES, type TipLang } from "@/constants/staffTips";
 import { dueSlot, msUntilNextCheck, pruneKeys, slotKey } from "@/lib/tipSchedule";
 
 // A "tip of the day" card that teaches good system use, plus a
@@ -132,6 +132,9 @@ export function StaffTips() {
   const [location] = useLocation();
   const lang: TipLang = (["ku", "en", "ar", "zh"].includes(language) ? language : "ku") as TipLang;
   const labels = UI[lang];
+  // The China warehouse's tips in Chinese, the office's in every other
+  // language (constants/staffTips says why).
+  const tips = useMemo(() => tipsFor(lang), [lang]);
 
   // Only on staff pages (auth.me is staff-only, so user is null on the portal /
   // login / landing — but guard the path too for the rare staff-on-portal case).
@@ -231,7 +234,7 @@ export function StaffTips() {
     return () => window.clearTimeout(timer);
   }, [user, lang]);
 
-  if (!onStaffArea || STAFF_TIPS.length === 0) {
+  if (!onStaffArea || tips.length === 0) {
     return motivation ? <MotivationOverlay text={motivation} isRTL={isRTL} tapClose={labels.tapClose} onClose={() => setMotivation(null)} /> : null;
   }
 
@@ -257,7 +260,7 @@ export function StaffTips() {
     );
   }
 
-  const tip = STAFF_TIPS[((index % STAFF_TIPS.length) + STAFF_TIPS.length) % STAFF_TIPS.length];
+  const tip = tips[((index % tips.length) + tips.length) % tips.length];
   const short = tip.short[lang] || tip.short.ku;
   const detail = tip.detail ? (tip.detail[lang] || tip.detail.ku) : undefined;
   const example = tip.example ? (tip.example[lang] || tip.example.ku) : undefined;

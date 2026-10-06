@@ -5,8 +5,24 @@
 export type TipLang = "ku" | "en" | "ar" | "zh";
 export type Localized = Record<TipLang, string>;
 
+/**
+ * Who a tip is for.
+ *
+ * Owner, 2026-10-06, about Ako in the China warehouse: the tips should be the
+ * ones for HIS work - «کە سیستەم بووە زمانی چینی، یانی لە چین و مەخزەنی چین کاری
+ * پێدەکرێ». A tip about delivery boxes, receipts or a customer's debt is the
+ * Iraq office's work and teaches the warehouse nothing; a tip about scanning a
+ * carton in means nothing at the counter in Iraq.
+ *
+ * So the language says where the screen is: Chinese is the China warehouse,
+ * every other language is the office. A tip with no audience is for both.
+ */
+export type TipAudience = "china" | "office";
+
 export interface StaffTip {
   id: string;
+  /** Absent: for everybody. */
+  audience?: TipAudience;
   short: Localized;
   detail?: Localized;
   example?: Localized;
@@ -19,7 +35,194 @@ export interface MotivationMessage {
 }
 
 export const STAFF_TIPS: StaffTip[] = [
-  { id: "tip-1",
+  // ── the China warehouse (owner, 2026-10-06) ─────────────────────────────
+  // In the order the work is done: a carton arrives, is weighed and measured,
+  // goes into a batch, and the batch leaves. cn-14 is the owner's own words:
+  // «جاروبار لەناو باچ پاکەتی تۆمارنەکراو هەیە … کارتۆنی بێ تۆمار کێشەیە».
+  // cn-7's 30 cm is where measuring starts to matter by the system's own
+  // rule (shared/chargeableWeight): a 30 cm cube already counts as 4.5 kg.
+  { id: "cn-1", audience: "china",
+    short: {
+      ku: "هەر کارتۆنێک گەیشتە مەخزەن، هەمان ڕۆژ لە «تۆماری خێرا» سکانی بکە — کڕیار و ئۆفیس تەنها ئەو کاتە دەزانن گەیشتووە.",
+      en: "Scan every carton in Quick Register the day it reaches the warehouse — only then do the customer and the office know it has arrived.",
+      ar: "امسح كل كرتون في «تسجيل سريع» في يوم وصوله إلى المخزن — عندها فقط يعرف العميل والمكتب أنه وصل.",
+      zh: "每个纸箱到仓当天就在「快速登记」里扫描——只有这样，客户和办公室才知道货已到。" } },
+  { id: "cn-2", audience: "china",
+    short: {
+      ku: "تراکینگ بە سکانەر سکان بکە، بە دەست مەینووسە — یەک ژمارەی هەڵە واتە پاکەتێک کە نادۆزرێتەوە.",
+      en: "Scan the tracking number with the scanner, don't type it — one wrong digit is a parcel nobody can find.",
+      ar: "امسح رقم التتبّع بالماسح ولا تكتبه يدوياً — رقم واحد خاطئ يعني طرداً لا يمكن العثور عليه.",
+      zh: "物流单号请用扫码枪扫描，不要手输——错一位数字，包裹就找不到了。" } },
+  { id: "cn-3", audience: "china",
+    short: {
+      ku: "ژمارەی ئۆردەر تراکینگ نییە — لە خانەی تراکینگ تەنها ژمارەی بارنامەی کۆمپانیای گەیاندن بنووسە.",
+      en: "An order number is not a tracking number — only the courier's waybill number goes in the tracking box.",
+      ar: "رقم الطلب ليس رقم تتبّع — في خانة التتبّع اكتب رقم بوليصة شركة الشحن فقط.",
+      zh: "订单号不是物流单号——「物流单号」一栏只填快递公司的快递单号。" },
+    detail: {
+      ku: "ژمارەی ئۆردەر هی پلاتفۆرمەکەیە (تاوباو، 1688، پیندۆدۆ) و ژمارەی بارنامە هی کۆمپانیای گەیاندنە. سیستەم پاکەت بە ژمارەی بارنامە دەناسێتەوە؛ ئەگەر ژمارەی ئۆردەر لە جێی ئەو بنووسیت، پاکەتەکە بە ئۆردەرەکەیەوە نابەسترێت و بێ خاوەن دەمێنێتەوە. کاتێک ژمارەیەک لە ژمارەی ئۆردەر دەچێت سیستەم ئاگادارت دەکاتەوە — پەیامەکە بخوێنەوە.",
+      en: "The order number belongs to the platform (Taobao, 1688, Pinduoduo); the waybill number belongs to the courier. The system recognises a parcel by its waybill. If you enter the order number instead, the parcel is not matched to its order and stays without an owner. The system warns you when a number looks like an order number — read the message.",
+      ar: "رقم الطلب يخصّ المنصّة (تاوباو، 1688، بيندودو)، ورقم البوليصة يخصّ شركة الشحن. النظام يتعرّف على الطرد برقم البوليصة؛ إذا كتبت رقم الطلب مكانه فلن يُربط الطرد بطلبه ويبقى بلا مالك. النظام ينبّهك عندما يشبه الرقم رقم طلب — اقرأ الرسالة.",
+      zh: "订单号属于平台（淘宝、1688、拼多多），物流单号属于快递公司。系统靠物流单号识别包裹；如果把订单号填进去，包裹就匹配不到订单，变成无主包裹。当填入的号码像订单号时系统会提醒——请看清提示。" },
+    example: {
+      ku: "لەسەر کارتۆنەکە دوو ژمارە هەیە: ژمارەی ئۆردەر 5127741900660014414 و ژمارەی بارنامە 79031223032683. ئەوەی دووەم سکان بکە.",
+      en: "The carton carries two numbers: order no. 5127741900660014414 and waybill no. 79031223032683. Scan the second one.",
+      ar: "على الكرتون رقمان: رقم الطلب 5127741900660014414 ورقم البوليصة 79031223032683. امسح الثاني.",
+      zh: "箱上有两个号码：订单号 5127741900660014414，物流单号 79031223032683。请扫第二个。" } },
+  { id: "cn-4", audience: "china",
+    short: {
+      ku: "ئەگەر سیستەم گوتی «ئەم پاکێجە پێشتر تۆمار کراوە»، دووبارە تۆماری مەکە — دووبارە تۆمارکردن واتە دوو جار پارە لە کڕیار وەرگرتن.",
+      en: "If the system says \"This parcel is already registered\", do not register it again — a second registration charges the customer twice.",
+      ar: "إذا قال النظام «هذا الطرد مسجل مسبقاً» فلا تسجّله مرة أخرى — التسجيل الثاني يعني تحميل العميل مرتين.",
+      zh: "系统提示「该包裹已登记」时，不要再次登记——重复登记等于向客户收两次钱。" } },
+  { id: "cn-5", audience: "china",
+    short: {
+      ku: "وێنەی ئۆردەر و ژمارەی پارچە لەسەر شاشە لەگەڵ ناو کارتۆنەکە بەراورد بکە — ئەگەر کەم یان جیاواز بوو، پێش خستنە ناو باچ ئۆفیس ئاگادار بکە.",
+      en: "Compare the order photo and the piece count on screen with what is inside the carton — if something is missing or different, tell the office before it goes into a batch.",
+      ar: "قارن صورة الطلب وعدد القطع على الشاشة بما في داخل الكرتون — إن كان ناقصاً أو مختلفاً فأبلغ المكتب قبل وضعه في دفعة.",
+      zh: "把屏幕上的订单图片和件数与箱内实物核对——如有缺少或不符，先通知办公室，再装入批次。" },
+    detail: {
+      ku: "دوای سکان، تۆماری خێرا وێنەی ئۆردەر، ژمارەی پارچە، پلاتفۆرم و ژمارەی ئۆردەر نیشان دەدات. فرۆشیار جاروبار کاڵای هەڵە یان کەمتر دەنێرێت. ئەگەر لێرە بیدۆزیتەوە، دەتوانرێت لەگەڵ فرۆشیار چارەسەر بکرێت؛ کە گەیشتە عێراق، ئیتر درەنگە.",
+      en: "After the scan, Quick Register shows the order's photo, piece count, platform and order number. Sellers sometimes send the wrong item or fewer pieces. Found here, it can still be settled with the seller; once it reaches Iraq it is too late.",
+      ar: "بعد المسح يعرض «تسجيل سريع» صورة الطلب وعدد القطع والمنصّة ورقم الطلب. أحياناً يرسل البائع بضاعة خاطئة أو أقل. إن اكتُشف هنا أمكن حلّه مع البائع؛ وإن وصل إلى العراق فقد فات الأوان.",
+      zh: "扫描后，「快速登记」会显示订单图片、件数、平台和订单号。卖家有时会发错货或少发。在这里发现还能找卖家处理；到了伊拉克就来不及了。" } },
+  { id: "cn-6", audience: "china",
+    short: {
+      ku: "کێش بە خاڵ بنووسە (1.5 نەک 15) و پێش Enter سەیری تەرازووەکە بکەرەوە — نرخی کڕیار لەم ژمارەیە دەردەچێت.",
+      en: "Type the weight with its decimal point (1.5, not 15) and look at the scale again before Enter — the customer's price comes straight from this number.",
+      ar: "اكتب الوزن بالفاصلة العشرية (1.5 وليس 15) وانظر إلى الميزان مرة أخرى قبل Enter — سعر العميل يُحسب من هذا الرقم مباشرة.",
+      zh: "重量要带小数点（1.5，不是 15），按 Enter 前再看一眼秤——客户的运费直接由这个数字算出。" },
+    detail: {
+      ku: "پاکەتێک کە دەخرێتە باچێکی نرخدار، هەر ئەو کاتە پارەکەی دەچێتە سەر حیسابی کڕیار. یەک خاڵی لەبیرچوو نرخەکە دە هێندە دەکات، و کڕیار لە پۆرتاڵەکەی دەیبینێت. ئەگەر ژمارەیەک زۆر گەورە یان زۆر بچووک بوو، سیستەم دەپرسێت «ئەم ژمارەیە لۆجیکی نییە» — بە پەلە «بەڵێ» مەکە.",
+      en: "A parcel put into a priced batch is charged to the customer's account at that moment. One missing point makes the price ten times bigger, and the customer sees it in their portal. When a number is far too big or too small the system asks \"This number does not look right\" — do not answer yes in a hurry.",
+      ar: "الطرد الذي يدخل دفعة مسعّرة يُقيَّد ثمنه على حساب العميل في تلك اللحظة. فاصلة واحدة منسية تجعل السعر عشرة أضعاف، والعميل يراه في بوابته. عندما يكون الرقم كبيراً جداً أو صغيراً جداً يسأل النظام «هذا الرقم غير منطقي» — لا تُجب بنعم على عجل.",
+      zh: "包裹放入已定价的批次时，运费当即记到客户账上。少一个小数点，价格就变成十倍，客户在自己的门户里马上看得到。数字过大或过小时系统会问「这个数字不合逻辑」——不要匆忙点「是」。" },
+    example: {
+      ku: "تەرازوو 1.5 kg نیشان دەدات، بە \u2066$11\u2069 بۆ کیلۆ. ڕاست: \u2066$16.50\u2069. ئەگەر 15 بنووسیت: \u2066$165\u2069.",
+      en: "The scale shows 1.5 kg at $11 per kg. Right: $16.50. Typed as 15: $165.",
+      ar: "الميزان يُظهر 1.5 kg بسعر \u2066$11\u2069 للكيلو. الصحيح: \u2066$16.50\u2069. وإن كتبت 15: \u2066$165\u2069.",
+      zh: "秤显示 1.5 kg，每公斤 $11。正确：$16.50。如果输成 15：$165。" } },
+  { id: "cn-7", audience: "china",
+    short: {
+      ku: "بۆ ئاسمانی: هەر کارتۆنێک لایەکی 30 cm یان زیاتر بێت، یان بۆ قەبارەکەی سووک بێت، درێژی و پانی و بەرزییەکەی بپێوە.",
+      en: "For air: measure the length, width and height of any carton with a side of 30 cm or more, or one that is light for its size.",
+      ar: "للشحن الجوي: قِس طول وعرض وارتفاع أي كرتون أحد أضلاعه 30 cm أو أكثر، أو كان خفيفاً بالنسبة لحجمه.",
+      zh: "空运：凡是有一边达到 30 cm 或以上的纸箱，或体积大而重量轻的纸箱，都要量长、宽、高。" },
+    detail: {
+      ku: "کۆمپانیای فڕۆکە پارە بۆ شوێن وەردەگرێت، نەک تەنها بۆ کێش. سیستەم خۆی کێشی تەرازوو و کێشی قەبارەیی بەراورد دەکات و گەورەترەکەیان وەردەگرێت — بەڵام تەنها ئەگەر سێ قیاسەکەت نووسیبێت. ئەگەر نەیپێویت، کارتۆنێکی گەورە و سووک بە کێشی تەرازوو حساب دەکرێت و جیاوازییەکە زیانی کۆمپانیایە. ئەگەر گومانت هەبوو، بیپێوە — 10 چرکە دەخایەنێت.",
+      en: "The airline charges for space, not only for weight. The system compares the scale weight with the volumetric weight by itself and takes the larger — but only when the three sides are entered. Unmeasured, a big light carton is charged by the scale and the difference is the company's loss. If in doubt, measure — it takes 10 seconds.",
+      ar: "شركة الطيران تتقاضى ثمن المساحة لا الوزن فقط. النظام يقارن وزن الميزان بالوزن الحجمي تلقائياً ويأخذ الأكبر — لكن فقط إذا أُدخلت الأضلاع الثلاثة. من دون قياس يُحسب الكرتون الكبير الخفيف بوزن الميزان والفرق خسارة على الشركة. إن شككت فقِس — يستغرق 10 ثوانٍ.",
+      zh: "航空公司按占用空间收费，不只按重量。系统会自动比较实重和体积重，取较大者——但前提是三边尺寸都已填写。不量尺寸，大而轻的纸箱就只按实重计费，差额由公司承担。拿不准就量——只要 10 秒。" },
+    example: {
+      ku: "کارتۆنێکی 40 × 40 × 40 cm کە کێشی 3 kg ـە، بە قەبارە نزیکەی 10.7 kg حساب دەکرێت. بە \u2066$11\u2069 بۆ کیلۆ: بێ پێوان \u2066$33\u2069، بە پێوان نزیکەی \u2066$117\u2069.",
+      en: "A 40 × 40 × 40 cm carton weighing 3 kg counts as about 10.7 kg by volume. At $11 per kg: unmeasured $33, measured about $117.",
+      ar: "كرتون 40 × 40 × 40 cm وزنه 3 kg يُحسب حجمياً بنحو 10.7 kg. بسعر \u2066$11\u2069 للكيلو: من دون قياس \u2066$33\u2069، ومع القياس نحو \u2066$117\u2069.",
+      zh: "一个 40 × 40 × 40 cm、实重 3 kg 的纸箱，体积重约 10.7 kg。按每公斤 $11：不量是 $33，量了约 $117。" } },
+  { id: "cn-8", audience: "china",
+    short: {
+      ku: "بۆ دەریایی: سێ قیاسەکە یان CBM هەرگیز بە بەتاڵی مەهێڵە — نرخی دەریایی بە قەبارەیە، نەک بە کیلۆ.",
+      en: "For sea: never leave the three sides or the CBM empty — sea freight is priced by volume, not by the kilo.",
+      ar: "للشحن البحري: لا تترك الأضلاع الثلاثة أو الـ CBM فارغة أبداً — البحري يُسعَّر بالحجم لا بالكيلو.",
+      zh: "海运：三边尺寸或 CBM 绝不能留空——海运按体积计费，不按公斤。" },
+    detail: {
+      ku: "پاکەتێکی دەریایی کە قەبارەی نییە، نرخەکەی سفر دەردەچێت و هیچ پارەیەک ناچێتە سەر حیسابی کڕیار تا کەسێک چاکی نەکاتەوە. ئەگەر فرۆشیار CBM ـی لەسەر کارتۆن نووسیوە، دەتوانیت ڕاستەوخۆ ئەوە بنووسیت.",
+      en: "A sea parcel with no volume comes to a price of zero, and nothing is charged to the customer until somebody fixes it. If the supplier wrote the CBM on the carton, you can enter that directly.",
+      ar: "الطرد البحري بلا حجم يخرج سعره صفراً ولا يُقيَّد شيء على العميل حتى يُصحَّح. إذا كتب المورّد الـ CBM على الكرتون فيمكنك إدخاله مباشرة.",
+      zh: "没有体积的海运包裹，运费算出来是零，在有人更正之前不会向客户计费。如果供应商已在箱上写明 CBM，可以直接填入。" } },
+  { id: "cn-9", audience: "china",
+    short: {
+      ku: "هەڵەت لە دوایین تۆمار کرد؟ دوگمەی «هەڵەیە؟ چاکی بکەرەوە» لێبدە — مەیسڕەوە و دووبارە تۆماری مەکە.",
+      en: "Made a mistake in the last registration? Press \"Wrong? Correct it\" — do not delete it and register it again.",
+      ar: "أخطأت في آخر تسجيل؟ اضغط «خطأ؟ صحّحه» — لا تحذفه وتسجّله من جديد.",
+      zh: "刚登记的那一件填错了？点「有误？更正」——不要删除后重新登记。" },
+    detail: {
+      ku: "دوگمەکە لە تۆماری خێرا، لەسەر ئەو بانەرەیە کە دوایین تۆمارت نیشان دەدات. هەمان پاکەت و هەمان کۆد دەمێنێت و قەرزی کڕیاریش لەگەڵی ڕاست دەبێتەوە. بۆ پاکەتێکی کۆنتر، لە «هەموو پاکەتەکان» دەستکاری بکە.",
+      en: "The button is in Quick Register, on the banner that shows your last registration. The same parcel keeps its code, and the customer's debt is corrected with it. For an older parcel, edit it in All Packages.",
+      ar: "الزر في «تسجيل سريع» على الشريط الذي يعرض آخر تسجيل لك. يبقى الطرد نفسه برمزه، ويُصحَّح دين العميل معه. للطرد الأقدم عدّله من «جميع الطرود».",
+      zh: "按钮在「快速登记」里显示你最近一次登记的横幅上。包裹和编号保持不变，客户的欠款也随之更正。更早的包裹请到「所有包裹」里修改。" } },
+  { id: "cn-10", audience: "china",
+    short: {
+      ku: "خاوەنی کارتۆنەکە نازانیت؟ بە «تۆماری پاکەتی بێ ناو» تۆماری بکە و وێنەی لەیبڵەکەی بگرە — بە گومان مەیدە بە کڕیارێک.",
+      en: "Don't know whose carton it is? Use \"Register a nameless parcel\" and photograph its label — never give it to a customer on a guess.",
+      ar: "لا تعرف صاحب الكرتون؟ استخدم «تسجيل طرد بلا اسم» وصوّر الملصق — لا تنسبه إلى عميل بالتخمين.",
+      zh: "不知道纸箱是谁的？用「登记无主包裹」登记，并拍下面单——不要凭猜测记到某位客户名下。" },
+    detail: {
+      ku: "پاکەتی بێ خاوەن هیچ پارەیەکی لەسەر نانووسرێت تا خاوەنەکەی دیاری نەکرێت، بۆیە هیچ زیانێکی نییە. بەڵام پاکەتێک کە بە هەڵە دراوە بە کڕیارێک، قەرز دەخاتە سەر کەسێکی بێ تاوان. هەر ناو، ژمارەی مۆبایل یان کۆدێک لەسەر لەیبڵەکە هەبوو لە وەسف بینووسە؛ ئۆفیس بەوە خاوەنەکەی دەدۆزێتەوە.",
+      en: "An unclaimed parcel is charged to nobody until its owner is set, so nothing is lost. A parcel given to the wrong customer puts a debt on someone who owes nothing. Write any name, phone number or code from the label in the description; the office finds the owner from that.",
+      ar: "الطرد بلا مالك لا يُقيَّد عليه شيء حتى يُحدَّد صاحبه، فلا خسارة فيه. أما الطرد المنسوب خطأً إلى عميل فيضع ديناً على من لا ذنب له. اكتب في الوصف أي اسم أو رقم هاتف أو رمز على الملصق؛ المكتب يجد صاحبه من ذلك.",
+      zh: "无主包裹在确定货主前不会向任何人计费，所以没有损失。而记错客户的包裹，会让无关的人背上欠款。面单上的姓名、电话或任何代码都写进描述里，办公室靠这些找货主。" } },
+  { id: "cn-11", audience: "china",
+    short: {
+      ku: "کاڵای قەدەغە مەخە ناو باچ — لە «کەلوپەلی قەدەغە؟ لێرەوە تۆماری بکە» تۆماری بکە تا کڕیار ئاگادار بێت.",
+      en: "Never put a prohibited item into a batch — register it under \"Prohibited item? Register it here\" so the customer is told.",
+      ar: "لا تضع بضاعة ممنوعة في دفعة — سجّلها من «بضاعة ممنوعة؟ سجّلها من هنا» ليُبلَّغ العميل.",
+      zh: "违禁物品不要装入批次——在「违禁物品？在此登记」里登记，系统会通知客户。" } },
+  { id: "cn-12", audience: "china",
+    short: {
+      ku: "وێنەیەکی ڕوون لە کارتۆن و لەیبڵەکەی بگرە — کاتی ناکۆکی لەگەڵ کڕیار، تەنها بەڵگەمانە.",
+      en: "Take one clear photo of the carton with its label — in a dispute with a customer it is the only proof we have.",
+      ar: "التقط صورة واضحة للكرتون مع ملصقه — عند الخلاف مع العميل هي دليلنا الوحيد.",
+      zh: "给纸箱连同面单拍一张清晰的照片——与客户有争议时，这是我们唯一的凭证。" } },
+  { id: "cn-13", audience: "china",
+    short: {
+      ku: "بارکۆدی تراکینگ لەسەر کارتۆن مەشارەوە و مەیدڕێنە — لە عێراق بەو بارکۆدە «پشکنینی گەیشتن» دەکرێت.",
+      en: "Never cover or tear the tracking barcode on a carton — in Iraq the arrival check scans that barcode.",
+      ar: "لا تغطِّ باركود التتبّع على الكرتون ولا تمزّقه — في العراق يُجرى «فحص الوصول» بمسح ذلك الباركود.",
+      zh: "不要遮盖或撕掉箱上的快递面单条码——到伊拉克后的到货核对要扫这个条码。" },
+    detail: {
+      ku: "ئەگەر چەند پاکەتێک دەخەیتە ناو یەک کارتۆنی گەورە، تراکینگی هەر یەکێکیان لە دەرەوەی کارتۆنەکە بنووسە یان لەیبڵەکانیان لێ بدە. کارتۆنێک کە بارکۆدی نییە، لە عێراق وەک «نەگەیشتوو» دەمێنێتەوە هەرچەندە گەیشتووە.",
+      en: "When several parcels go into one large carton, write each tracking number on the outside or stick their labels on it. A carton with no barcode stays listed as \"not arrived\" in Iraq even though it is there.",
+      ar: "إذا وضعت عدة طرود في كرتون واحد كبير فاكتب رقم تتبّع كلٍّ منها على الخارج أو ألصق ملصقاتها عليه. الكرتون بلا باركود يبقى في العراق «غير واصل» مع أنه وصل.",
+      zh: "把几个包裹装进一个大箱时，把每个物流单号写在箱外，或把它们的面单贴上去。没有条码的箱子，即使到了伊拉克也会一直显示「未到」。" } },
+  { id: "cn-14", audience: "china",
+    short: {
+      ku: "جاروبار کارتۆنێکی تۆمارنەکراو دەکەوێتە ناو باچ — تکایە پێش ئەوەی باچ بڕوات دووبارە بیپشکنە. کارتۆنی بێ تۆمار کێشەیە.",
+      en: "Now and then an unregistered carton ends up in a batch — please double-check before the batch leaves. A carton with no registration is a problem.",
+      ar: "أحياناً يدخل كرتون غير مسجّل في الدفعة — يرجى التحقق مرتين قبل خروج الدفعة. الكرتون بلا تسجيل مشكلة.",
+      zh: "有时会有未登记的纸箱混进批次——发货前请再核对一遍。没有登记的纸箱是个大问题。" },
+    detail: {
+      ku: "کارتۆنێک کە لە سیستەمدا نییە، لە عێراق خاوەنی نییە: کەس نازانێت هی کێیە، پارەی لەسەر نانووسرێت و کڕیارەکەی هەر چاوەڕێیە. کاتی بارکردن، هەموو کارتۆنێک لە «خستنە ناو باچ» سکان بکە. ئەگەر سیستەم گوتی پاکەت نەدۆزرایەوە، ئەو کارتۆنە تۆمار نەکراوە: سەرەتا لە «تۆماری خێرا» تۆماری بکە، ئینجا بیخە ناو باچ. لە کۆتاییدا ژمارەی کارتۆنەکانی سەر زەوی لەگەڵ ژمارەی پاکەتەکانی باچەکە لە سیستەم بەراورد بکە.",
+      en: "A carton that is not in the system has no owner in Iraq: nobody knows whose it is, nothing is charged for it, and its customer keeps waiting. When loading, scan every carton in Batch Assignment. If the system says the package was not found, that carton was never registered: register it in Quick Register first, then put it in the batch. At the end, compare the number of cartons on the floor with the number of parcels the batch shows in the system.",
+      ar: "الكرتون غير الموجود في النظام لا صاحب له في العراق: لا أحد يعرف لمن هو، ولا يُقيَّد عليه مبلغ، وعميله يبقى منتظراً. عند التحميل امسح كل كرتون في «إضافة إلى الدفعة». إذا قال النظام إن الطرد غير موجود فهذا الكرتون لم يُسجَّل: سجّله أولاً في «تسجيل سريع» ثم ضعه في الدفعة. وفي النهاية قارن عدد الكراتين على الأرض بعدد طرود الدفعة في النظام.",
+      zh: "系统里没有的纸箱，到了伊拉克就是无主货：没人知道是谁的，无法计费，客户还在一直等。装货时，每个纸箱都要在「批次分配」里扫一遍。如果系统提示找不到包裹，说明这箱没有登记：先到「快速登记」登记，再放入批次。最后，把地上的箱数和系统里该批次的包裹数对一遍。" },
+    example: {
+      ku: "لەسەر زەوی 48 کارتۆن هەیە و باچەکە لە سیستەم 47 پاکەت نیشان دەدات: یەکێکیان تۆمار نەکراوە. پێش ڕۆیشتنی باچ بیدۆزەرەوە.",
+      en: "There are 48 cartons on the floor and the batch shows 47 parcels in the system: one of them is not registered. Find it before the batch leaves.",
+      ar: "على الأرض 48 كرتوناً والدفعة تُظهر 47 طرداً في النظام: أحدها غير مسجّل. اعثر عليه قبل خروج الدفعة.",
+      zh: "地上有 48 箱，系统里该批次显示 47 个包裹：有一箱没登记。发货前把它找出来。" } },
+  { id: "cn-15", audience: "china",
+    short: {
+      ku: "پێش داخستنی باچ، هیچ پاکەتێک بێ کێش، بێ قیاس یان بێ خاوەن نەمێنێت — لە «تۆمارەکان» بیانپشکنە.",
+      en: "Before closing a batch, leave no parcel without weight, without size or without an owner — check them in Registrations.",
+      ar: "قبل إغلاق الدفعة لا تترك طرداً بلا وزن أو بلا قياس أو بلا مالك — راجعها في «التسجيلات».",
+      zh: "关闭批次前，不要留下没有重量、没有尺寸或没有货主的包裹——在「登记记录」里逐一检查。" } },
+  { id: "cn-16", audience: "china",
+    short: {
+      ku: "پاکەتی دەریایی مەخە باچی ئاسمانی، و بە پێچەوانەوە — پێش سکان لە «خستنە ناو باچ» ناوی باچەکە بخوێنەوە.",
+      en: "Never put a sea parcel into an air batch, or the other way round — read the batch's name in Batch Assignment before you scan.",
+      ar: "لا تضع طرداً بحرياً في دفعة جوية ولا العكس — اقرأ اسم الدفعة في «إضافة إلى الدفعة» قبل المسح.",
+      zh: "海运包裹不要放进空运批次，反之亦然——在「批次分配」里扫描前先看清批次名称。" } },
+  { id: "cn-17", audience: "china",
+    short: {
+      ku: "ئەو ڕۆژەی باچ دەڕوات، ژمارەی بارنامە و ڕێکەوتی ڕۆیشتن لە باچەکە بنووسە — کاتی گەیشتن بۆ کڕیار لەوەوە دەژمێردرێت.",
+      en: "The day a batch leaves, enter its waybill number and departure date on the batch — the customer's arrival date is counted from it.",
+      ar: "في يوم خروج الدفعة أدخل رقم بوليصة الشحن وتاريخ المغادرة في الدفعة — موعد الوصول للعميل يُحسب منه.",
+      zh: "批次发出当天，就在批次里填上提单号和发出日期——客户看到的预计到达日期由此算出。" } },
+  { id: "cn-18", audience: "china",
+    short: {
+      ku: "هەموو بەیانییەک «نەگەیشتووەکان» بپشکنە — ئۆردەری کڕدراو کە کارتۆنەکەی درەنگ کەوتووە، بە تراکینگەکەی بەدوایدا بچۆ.",
+      en: "Check \"Not yet arrived\" every morning — chase by tracking number any bought order whose carton is late.",
+      ar: "راجع «لم تصل بعد» كل صباح — وتابع برقم التتبّع أي طلب مُشترى تأخر كرتونه.",
+      zh: "每天早上查看「尚未到达」——已下单但纸箱迟迟未到的，按物流单号去追。" } },
+  { id: "cn-19", audience: "china",
+    short: {
+      ku: "شتێکت لە ئۆفیس دەوێت یان کێشەیەک هەیە؟ لە ناو سیستەم بە چاتی ستاف یان تاسک (Alt+T) بینووسە — تا لەبیر نەچێت و شوێنەواری بمێنێت.",
+      en: "Need something from the office, or found a problem? Write it inside the system — staff chat or a task (Alt+T) — so it is not forgotten and leaves a trace.",
+      ar: "تحتاج شيئاً من المكتب أو وجدت مشكلة؟ اكتبها داخل النظام — محادثة الموظفين أو مهمة (Alt+T) — حتى لا تُنسى ويبقى لها أثر.",
+      zh: "需要办公室协助，或发现了问题？请在系统里写下来——员工聊天或任务（Alt+T）——这样不会被遗忘，也留有记录。" } },
+
+  // ── everybody, and the Iraq office ───────────────────────────────────────
+  { id: "tip-1", audience: "office",
     short: {
       ku: "هەمیشە لە کاتی تۆمارکردنی ئۆردەری نوێ ئاگاداربە — لەسەر موشتەری هەڵە تۆماری مەکە.",
       en: "When registering a new order, double-check the customer — never enter it on the wrong one.",
@@ -35,7 +238,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You have two customers: AZ001 \"Akam\" and AZ010 \"Ako\". Before saving, make sure code AZ001 is selected, not AZ010 by mistake.",
       ar: "لديك عميلان: AZ001 «أكام» و AZ010 «أكو». قبل الحفظ تأكّد أن الرمز AZ001 مُختار، لا AZ010 بالخطأ.",
       zh: "你有两位客户：AZ001「阿卡姆」和 AZ010「阿科」。保存前确认所选编号是 AZ001，而非误选 AZ010。" } },
-  { id: "tip-2",
+  { id: "tip-2", audience: "office",
     short: {
       ku: "پێش پاشەکەوتکردن، دووجار کۆد و ناوی موشتەری بپشکنە.",
       en: "Before saving, re-check the customer's code and name twice.",
@@ -51,7 +254,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "The list shows AZ001 \"Akam Mohammed\". Before saving, confirm the code is AZ001 and the name is \"Akam Mohammed\", not \"Akam Ahmed\".",
       ar: "تُظهِر القائمة AZ001 «أكام محمد». قبل الحفظ تأكّد أن الرمز AZ001 والاسم «أكام محمد»، لا «أكام أحمد».",
       zh: "列表显示 AZ001「阿卡姆·穆罕默德」。保存前确认编号是 AZ001、姓名是「阿卡姆·穆罕默德」，而非「阿卡姆·艾哈迈德」。" } },
-  { id: "tip-3",
+  { id: "tip-3", audience: "office",
     short: {
       ku: "ئەگەر تراکینگ ئامادە بوو، لە کاتی تۆمارکردنەوە داخڵی بکە — دواتر کاتت کەم دەکاتەوە.",
       en: "If the tracking number is ready, enter it while registering — it saves time later.",
@@ -67,7 +270,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer AZ001 gave you tracking YT7612345678 → enter it in the same registration form, not later.",
       ar: "أعطاك العميل AZ001 رقم التتبّع YT7612345678 → أدخِله في نفس نموذج التسجيل، لا لاحقاً.",
       zh: "客户 AZ001 给了你运单号 YT7612345678 → 在同一登记表单中录入，而非稍后补录。" } },
-  { id: "tip-4",
+  { id: "tip-4", audience: "office",
     short: {
       ku: "جۆری کاڵا و عەدەد بە وردی پڕبکەرەوە — کاریگەری ڕاستەوخۆی لەسەر نرخ هەیە.",
       en: "Fill in the product type and quantity carefully — they directly affect the price.",
@@ -83,7 +286,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "The customer ships 3 phones but you enter 1 → the price is calculated for 1, and the company loses the profit on 2.",
       ar: "يشحن العميل 3 هواتف لكنك تُدخِل 1 → يُحتسَب السعر لقطعة واحدة وتخسر الشركة ربح القطعتين.",
       zh: "客户寄了 3 部手机但你录入 1 → 按 1 件计价，公司损失了 2 件的利润。" } },
-  { id: "tip-5",
+  { id: "tip-5", audience: "office",
     short: {
       ku: "وێنەی کاڵا زیاد بکە — لە کاتی گەیاندندا ناسینەوەی پاکەت ئاسانتر دەکات.",
       en: "Add a product photo — it makes the package easier to identify at delivery.",
@@ -99,7 +302,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's package has a photo of a pair of shoes → at delivery you quickly match it to the order without opening it.",
       ar: "طرد AZ001 يحمل صورة لزوج أحذية → عند التسليم تطابقه بسرعة مع الطلب دون فتحه.",
       zh: "AZ001 的包裹有一张鞋子的照片 → 交付时无需打开即可快速与订单匹配。" } },
-  { id: "tip-6",
+  { id: "tip-6", audience: "office",
     short: {
       ku: "ئۆردەر نەمبەری دووبارە داخڵ مەکە — هەر ئۆردەرێک ئۆردەر نەمبەرێکی ناوازەی هەیە.",
       en: "Don't reuse an order number — each order has a unique one.",
@@ -115,7 +318,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's order has number ORD-1042. For the same customer's next order, use ORD-1043, not ORD-1042 again.",
       ar: "طلب AZ001 يحمل الرقم ORD-1042. لطلب العميل التالي استخدم ORD-1043، لا ORD-1042 مجدداً.",
       zh: "AZ001 的订单编号为 ORD-1042。该客户的下一个订单应使用 ORD-1043，而非再次使用 ORD-1042。" } },
-  { id: "tip-7",
+  { id: "tip-7", audience: "office",
     short: {
       ku: "ئۆردەری بێ تراکینگ زۆر مەهێڵەرەوە — لە «ئاگاداری تراکینگ» بەردەوام بیانپشکنە.",
       en: "Don't leave orders without tracking for long — check them in \"Tracking alerts\".",
@@ -131,7 +334,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's order has been without tracking for three days and shows up in \"Tracking alerts\" → contact the customer and get the number.",
       ar: "طلب AZ001 بلا تتبّع منذ ثلاثة أيام ويظهر في «تنبيهات التتبّع» → تواصل مع العميل واحصل على الرقم.",
       zh: "AZ001 的订单已三天没有运单号，出现在「追踪提醒」中 → 联系客户并取得编号。" } },
-  { id: "tip-8",
+  { id: "tip-8", audience: "office",
     short: {
       ku: "پێش داخستنی بۆکس، دووبارە هەموو پاکەتەکان سکان بکە تاکو هیچ پاکێجێک لە یاد نەچێت.",
       en: "Before sealing a box, re-scan every package so none is forgotten.",
@@ -147,7 +350,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You have 12 packages in hand but the system shows only 11 scanned → one was missed; find it and scan it before sealing.",
       ar: "لديك 12 طرداً لكن النظام يُظهِر 11 ممسوحاً فقط → نُسي واحد؛ جِده وامسَحه قبل الإغلاق.",
       zh: "你手上有 12 个包裹，但系统只显示 11 个已扫描 → 漏了一个；封箱前找到并扫描它。" } },
-  { id: "tip-9",
+  { id: "tip-9", audience: "office",
     short: {
       ku: "نرخی گواستنەوەی بۆکس پشکنین بکە پێش ناردن — دوای ناردن گۆڕینی ئاستەمە.",
       en: "Check the box's shipping price before sending — it's hard to change afterwards.",
@@ -163,7 +366,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "A box holds 10 kg at $7/kg → shipping should be $70. Before sending, confirm it's $70, not $60 due to a weight error.",
       ar: "صندوق يحوي 10 kg بسعر 7$/kg → يجب أن يكون الشحن 70$. قبل الإرسال تأكّد أنه 70$، لا 60$ بسبب خطأ في الوزن.",
       zh: "一个箱子装 10 kg、每 kg 7 美元 → 运费应为 70 美元。发货前确认是 70 美元，而非因重量错误变成 60 美元。" } },
-  { id: "tip-10",
+  { id: "tip-10", audience: "office",
     short: {
       ku: "پاکەتە بێخاوەنەکان زوو خاوەنیان بدۆزەرەوە — درەنگکەوتن دەبێتە کێشە.",
       en: "Find owners for unclaimed packages quickly — delays cause problems.",
@@ -179,7 +382,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "A package arrived with tracking YT7600001111 but is unclaimed → search the system; it turns out to be AZ001's and link it at once.",
       ar: "وصل طرد برقم التتبّع YT7600001111 لكنه بلا صاحب → ابحث في النظام؛ يتبيّن أنه لـ AZ001 فاربطه فوراً.",
       zh: "一个运单号为 YT7600001111 的包裹到货但无主 → 在系统中搜索；发现属于 AZ001，立即关联。" } },
-  { id: "tip-11",
+  { id: "tip-11", audience: "office",
     short: {
       ku: "ژمارەی مۆبایلی کڕیار بە دروستی تۆمار بکە — بۆ ئاگادارکردنەوەکان گرنگە.",
       en: "Record the customer's phone number correctly — it matters for notifications.",
@@ -195,7 +398,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer AZ001's number is 0750 123 4567. If you mistype it as 0750 123 4576, the messages go to the wrong person.",
       ar: "رقم العميل AZ001 هو 0750 123 4567. إذا كتبته خطأً 0750 123 4576، تذهب الرسائل للشخص الخطأ.",
       zh: "客户 AZ001 的号码是 0750 123 4567。若误输为 0750 123 4576，信息会发给错误的人。" } },
-  { id: "tip-12",
+  { id: "tip-12", audience: "office",
     short: {
       ku: "جۆری خزمەتی کڕیار دیاری بکە (پاکێجی تەواو / کرین بە تێچوو / سێلف ئۆردەر) بۆ فلتەری خێراتر.",
       en: "Set the customer's service types (full package / cost purchase / self order) for faster filtering.",
@@ -211,7 +414,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer AZ001 uses both \"full package\" and \"self order\" → select both; later they appear in the \"self order\" filter.",
       ar: "العميل AZ001 يستخدم «الطرد الكامل» و«الطلب الذاتي» معاً → اختَر كليهما؛ لاحقاً يظهر في تصفية «الطلب الذاتي».",
       zh: "客户 AZ001 同时使用「完整包裹」和「自购订单」 → 两者都选中；日后在「自购订单」筛选中会出现。" } },
-  { id: "tip-13",
+  { id: "tip-13", audience: "office",
     short: {
       ku: "زانیاریی کڕیار تەواو پڕبکەرەوە — داتای ناتەواو دواتر دەبێتە کێشە.",
       en: "Fill in the customer's details completely — incomplete data causes problems later.",
@@ -227,7 +430,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You left AZ001's city blank → at delivery you don't know which city to send to and waste a lot of time.",
       ar: "تركت مدينة AZ001 فارغة → عند التسليم لا تعرف لأي مدينة تُرسِل وتُهدر وقتاً كثيراً.",
       zh: "你把 AZ001 的城市留空了 → 交付时不知道该送往哪个城市，浪费大量时间。" } },
-  { id: "tip-14",
+  { id: "tip-14", audience: "office",
     short: {
       ku: "پێش گۆڕینی نرخی ئۆردەری چارجکراو، دڵنیابە — کاریگەری لەسەر والێتی کڕیار هەیە.",
       en: "Before changing the price of a charged order, be sure — it affects the customer's wallet.",
@@ -243,7 +446,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "An order was charged at $50. If you make it $60, the system bills the extra $10 to the customer and asks for a reason.",
       ar: "طلب حُصّل بمبلغ 50$. إذا جعلته 60$، يحتسب النظام 10$ الإضافية على العميل ويطلب سبباً.",
       zh: "某订单已按 50 美元计费。若改为 60 美元，系统会向客户收取额外的 10 美元并要求填写原因。" } },
-  { id: "tip-15",
+  { id: "tip-15", audience: "office",
     short: {
       ku: "پارەی پێشەکی بە وردی تۆمار بکە — دواتر چارەسەری ئاستەمە.",
       en: "Record advance payments carefully — they're hard to fix later.",
@@ -259,7 +462,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer AZ001 pays a $30 advance → record exactly $30 on AZ001; if you mistype $300, the balance is wrong.",
       ar: "يدفع العميل AZ001 دفعة مقدّمة 30$ → سجّل 30$ بالضبط على AZ001؛ إذا كتبت 300$ خطأً، يصبح الرصيد خاطئاً.",
       zh: "客户 AZ001 预付 30 美元 → 在 AZ001 名下准确登记 30 美元；若误输 300 美元，余额就会出错。" } },
-  { id: "tip-16",
+  { id: "tip-16", audience: "office",
     short: {
       ku: "کڕیارە قەرزدارەکان لە داشبۆرد چاودێری بکە.",
       en: "Keep an eye on debtor customers from the dashboard.",
@@ -275,7 +478,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "On the dashboard you see AZ001 has a −$420 balance → contact them to settle the debt before it grows.",
       ar: "في لوحة التحكم ترى أن رصيد AZ001 هو −420$ → تواصل معه لتسوية الدين قبل أن يكبر.",
       zh: "在仪表板上你看到 AZ001 余额为 −420 美元 → 联系他在欠款增大前结清。" } },
-  { id: "tip-17",
+  { id: "tip-17", audience: "office",
     short: {
       ku: "ئۆردەری گەورە (زیاتر لە $1000) چاوت لەسەر بێت.",
       en: "Keep an eye on large orders (over $1000).",
@@ -291,7 +494,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's $1,250 order appears on the dashboard → re-check the price, weight, and customer before charging.",
       ar: "يظهر طلب AZ001 بقيمة 1,250$ في لوحة التحكم → أعِد التحقق من السعر والوزن والعميل قبل التحصيل.",
       zh: "AZ001 价值 1,250 美元的订单出现在仪表板上 → 计费前复核价格、重量和客户。" } },
-  { id: "tip-18",
+  { id: "tip-18", audience: "office",
     short: {
       ku: "قازانج و خەرجیی ڕۆژانە لە داشبۆرد بپشکنە.",
       en: "Review daily profit and expenses on the dashboard.",
@@ -307,7 +510,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Today's profit is $320 and expenses $400 → the dashboard shows an $80 loss; find out why.",
       ar: "ربح اليوم 320$ والمصاريف 400$ → تُظهِر لوحة التحكم خسارة 80$؛ ابحث عن السبب.",
       zh: "今天利润 320 美元、支出 400 美元 → 仪表板显示亏损 80 美元；查明原因。" } },
-  { id: "tip-19",
+  { id: "tip-19", audience: "office",
     short: {
       ku: "پێش ناردن، دڵنیابە پاکەتەکان لە باچی دروستدان.",
       en: "Before shipping, make sure the packages are in the correct batch.",
@@ -323,7 +526,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's package goes by air but is wrongly in the sea batch → move it to the air batch before shipping.",
       ar: "طرد AZ001 يُشحَن جوّاً لكنه خطأً في دفعة بحرية → انقله إلى الدفعة الجوّية قبل الشحن.",
       zh: "AZ001 的包裹走空运，却被误放在海运批次中 → 发货前将其移至空运批次。" } },
-  { id: "tip-20",
+  { id: "tip-20", audience: "office",
     short: {
       ku: "نرخی هەر باچێک (تێچوو/نرخ) بە وردی دابنێ — قازانج لێوەی دەردەچێت.",
       en: "Set each batch's rates (cost/price) carefully — profit is derived from them.",
@@ -339,7 +542,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Air: cost $4/kg, price $7/kg → $3 profit per kg.",
       ar: "جوّي: التكلفة 4$/kg، السعر 7$/kg → ربح 3$ لكل kg.",
       zh: "空运：成本 4 美元/kg，售价 7 美元/kg → 每 kg 利润 3 美元。" } },
-  { id: "tip-21",
+  { id: "tip-21", audience: "office",
     short: {
       ku: "خێراییی باچەکان (چەند ڕۆژ گەیشتوون) بەراورد بکە بۆ باشترکردنی خزمەت.",
       en: "Compare batch speeds (days to arrive) to improve service.",
@@ -515,7 +718,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You notice AZ001's package weight was logged as 2 kg instead of 5 kg → fix it right away, before the box is sent.",
       ar: "تلاحظ أن وزن طرد AZ001 سُجّل 2 kg بدل 5 kg → صحّحه فوراً قبل إرسال الصندوق.",
       zh: "你发现 AZ001 的包裹重量被误录为 2 kg 而非 5 kg → 在箱子发出前立即纠正。" } },
-  { id: "tip-32",
+  { id: "tip-32", audience: "office",
     short: {
       ku: "کێشی پاکەت بە دروستی بنووسە — نرخ ڕاستەوخۆ لەسەری دەردەچێت.",
       en: "Enter the package weight accurately — the price depends on it directly.",
@@ -531,7 +734,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "The rate is $7/kg. AZ001's package weighs 3 kg on the scale → enter 3 kg; if you mistype 2 kg, the company loses $7.",
       ar: "السعر 7$/kg. طرد AZ001 يزن 3 kg على الميزان → أدخِل 3 kg؛ إذا كتبت 2 kg خطأً، تخسر الشركة 7$.",
       zh: "费率为 7 美元/kg。AZ001 的包裹在秤上重 3 kg → 录入 3 kg；若误输 2 kg，公司损失 7 美元。" } },
-  { id: "tip-33",
+  { id: "tip-33", audience: "office",
     short: {
       ku: "بۆ ئاسمانی، قەبارە داخڵ بکە — کێشی قەبارەیی لەوانەیە لە کێشی ڕاستەقینە زیاتر بێت و نرخ بەو حساب بکرێت.",
       en: "For air freight, enter dimensions — volumetric weight may exceed actual weight and set the price.",
@@ -547,7 +750,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "A package is 2 kg but 40×30×20 cm. Volumetric = (40×30×20)÷6000 = 4 kg → priced at 4 kg, not 2 kg.",
       ar: "طرد وزنه 2 kg لكن أبعاده 40×30×20 سم. الحجمي = (40×30×20)÷6000 = 4 kg → يُسعّر على 4 kg لا 2 kg.",
       zh: "某包裹重 2 kg，但尺寸为 40×30×20 厘米。体积重 = (40×30×20)÷6000 = 4 kg → 按 4 kg 计价，而非 2 kg。" } },
-  { id: "tip-34",
+  { id: "tip-34", audience: "office",
     short: {
       ku: "بۆ دەریایی، حەجم (CBM) گرنگە نەک کێش — بە وردی داخڵی بکە.",
       en: "For sea freight, volume (CBM) matters, not weight — enter it accurately.",
@@ -595,7 +798,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's carton holds three orders and weighs 6 kg at $7/kg → the shipping fee is $42 for the whole carton, not three times.",
       ar: "كرتونة AZ001 تحوي ثلاثة طلبات وتزن 6 kg بسعر 7$/kg → أجرة الشحن 42$ للكرتونة كاملة، لا ثلاث مرّات.",
       zh: "AZ001 的纸箱装有三个订单、重 6 kg、每 kg 7 美元 → 整箱运费为 42 美元，而非收三次。" } },
-  { id: "tip-37",
+  { id: "tip-37", audience: "office",
     short: {
       ku: "دوای داخستنی بۆکس، ئەگەر هەڵە هەبوو دەتوانیت بیکەیتەوە و چاکی بکەیت — بەس پێش ناردن.",
       en: "After sealing a box, if there's a mistake you can reopen and fix it — but only before sending.",
@@ -611,7 +814,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You sealed a box but forgot a package → reopen it, add the package, seal again.",
       ar: "أغلقت صندوقاً لكنك نسيت طرداً → أعِد فتحه، أضِف الطرد، أغلقه مجدداً.",
       zh: "你封了箱却忘了一个包裹 → 重新打开，加入包裹，再封箱。" } },
-  { id: "tip-38",
+  { id: "tip-38", audience: "office",
     short: {
       ku: "لە کردنەوەی بۆکس، خانەی سکان فۆکەسی لەسەر دەمێنێتەوە — بەردەوام سکان بکە بەبێ کلیک.",
       en: "When a box is open, the scan field keeps focus — keep scanning without clicking.",
@@ -627,7 +830,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You have 15 packages to scan → scan them one after another; you don't need to click the field between each scan.",
       ar: "لديك 15 طرداً لمسحها → امسَحها واحداً تلو الآخر؛ لا تحتاج للنقر على الحقل بين كل مسح.",
       zh: "你有 15 个包裹要扫描 → 一个接一个地扫；每次扫描之间无需点击扫描框。" } },
-  { id: "tip-39",
+  { id: "tip-39", audience: "office",
     short: {
       ku: "پاکەتی نوێ بۆ باچ زیادبوو دوای دروستکردنی بۆکس؟ «نوێکردنەوەی بۆکس» بەکاربهێنە.",
       en: "New package added to the batch after the box was made? Use \"Refresh box\".",
@@ -643,7 +846,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You made a box for the air batch, then AZ001's package was added to that batch → click \"Refresh box\" so the package appears.",
       ar: "أنشأت صندوقاً للدفعة الجوّية، ثم أُضيف طرد AZ001 لنفس الدفعة → انقر «تحديث الصندوق» ليظهر الطرد.",
       zh: "你为空运批次建了箱，之后 AZ001 的包裹被加入该批次 → 点击「刷新箱子」让该包裹显示。" } },
-  { id: "tip-40",
+  { id: "tip-40", audience: "office",
     short: {
       ku: "بۆکسی خاڵی مەنێرە — سەرەتا پاکەت زیاد بکە.",
       en: "Don't send an empty box — add packages first.",
@@ -659,7 +862,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You created a box but haven't scanned any package yet → scan AZ001's package first, then send.",
       ar: "أنشأت صندوقاً لكنك لم تمسَح أي طرد بعد → امسَح طرد AZ001 أولاً، ثم أرسِل.",
       zh: "你建了箱却还没扫描任何包裹 → 先扫描 AZ001 的包裹，再发送。" } },
-  { id: "tip-41",
+  { id: "tip-41", audience: "office",
     short: {
       ku: "ئۆردەری چارجکراو کڕیارەکەی ناگۆڕێت — سەرەتا چارجەکە بگەڕێنەوە.",
       en: "A charged order's customer can't be changed — reverse the charge first.",
@@ -675,7 +878,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "$50 was taken from AZ001. You can't switch directly to AZ002 — first refund $50 to AZ001, then change the customer.",
       ar: "خُصِم 50$ من AZ001. لا يمكنك التحويل مباشرةً إلى AZ002 — أعِد 50$ إلى AZ001 أولاً، ثم غيّر العميل.",
       zh: "已从 AZ001 扣款 50 美元。不能直接改为 AZ002——请先退还 AZ001 50 美元，再更改客户。" } },
-  { id: "tip-42",
+  { id: "tip-42", audience: "office",
     short: {
       ku: "لە گۆڕینی نرخی ئۆردەری چارجکراو، سیستەم هۆکارت لێ دەخوازێت — ئەمە بۆ تۆماری مێژووە.",
       en: "When changing the price of a charged order, the system asks for a reason — for the audit trail.",
@@ -691,7 +894,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You lower the price from $50 to $45 → write a reason: \"Discount for the customer\".",
       ar: "تخفض السعر من 50$ إلى 45$ → اكتب سبباً: «خصم للعميل».",
       zh: "你将价格从 50 美元降到 45 美元 → 填写原因：「给客户的折扣」。" } },
-  { id: "tip-43",
+  { id: "tip-43", audience: "office",
     short: {
       ku: "سنووری قەرزی (creditLimit) هەر کڕیارێک دابنێ — کاتێ تێپەڕی، لە داشبۆرد ئاگادار دەبیتەوە.",
       en: "Set each customer's credit limit — you'll be alerted on the dashboard when it's exceeded.",
@@ -707,7 +910,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's limit = $500. If their debt becomes $620 → it shows as a red alert on the dashboard.",
       ar: "حدّ AZ001 = 500$. إذا أصبح دينه 620$ → يظهر كتنبيه أحمر في لوحة التحكم.",
       zh: "AZ001 的额度 = 500 美元。若其欠款达到 620 美元 → 仪表板会显示红色提醒。" } },
-  { id: "tip-44",
+  { id: "tip-44", audience: "office",
     short: {
       ku: "پارەی پێشەکی دەگەڕێتەوە کاتێ ئۆردەر دەسڕیتەوە — بەڵام پێش سڕینەوە دڵنیابە.",
       en: "An advance payment is refunded when an order is deleted — but be sure before deleting.",
@@ -723,7 +926,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's order has a $30 advance. If you delete it, $30 returns to AZ001's balance → but be sure you really mean to delete it.",
       ar: "طلب AZ001 له دفعة مقدّمة 30$. إذا حذفته، تعود 30$ لرصيد AZ001 → لكن تأكّد أنك تقصد حذفه فعلاً.",
       zh: "AZ001 的订单有 30 美元预付款。若删除它，30 美元退回 AZ001 的余额 → 但请确认你确实要删除。" } },
-  { id: "tip-45",
+  { id: "tip-45", audience: "office",
     short: {
       ku: "لە کرین بە تێچوو، نرخی کاڵا و عمولە جیان — هەردووکی بە دروستی داخڵ بکە.",
       en: "In cost purchase, the item price and the commission are separate — enter both correctly.",
@@ -739,7 +942,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Item price $80, commission $10 → the customer pays $90, the company's profit is $10.",
       ar: "سعر السلعة 80$، العمولة 10$ → يدفع العميل 90$، وربح الشركة 10$.",
       zh: "商品价格 80 美元，佣金 10 美元 → 客户支付 90 美元，公司利润 10 美元。" } },
-  { id: "tip-46",
+  { id: "tip-46", audience: "office",
     short: {
       ku: "لە پاکێجی تەواو، نرخی کڕین و نرخی فرۆشتن جیان — قازانج جیاوازییەکەیانە.",
       en: "In full package, the purchase price and selling price are separate — profit is the difference.",
@@ -755,7 +958,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Purchase $60, selling $85 → profit $25.",
       ar: "الشراء 60$، البيع 85$ → الربح 25$.",
       zh: "采购价 60 美元，售价 85 美元 → 利润 25 美元。" } },
-  { id: "tip-47",
+  { id: "tip-47", audience: "office",
     short: {
       ku: "نرخی ¥ (RMB) ڕۆژانە نوێ بکەرەوە — هەڵەی نرخ قازانج کەم دەکات.",
       en: "Update the ¥ (RMB) rate daily — a wrong rate eats into profit.",
@@ -771,7 +974,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Today $1 = ¥7.2. If you use yesterday's rate (¥7.0) for a ¥720 item, the cost is wrongly computed as $102.86 instead of $100.",
       ar: "اليوم 1$ = 7.2¥. إذا استخدمت سعر الأمس (7.0¥) لسلعة بـ720¥، تُحتسَب التكلفة خطأً 102.86$ بدل 100$.",
       zh: "今天 1 美元 = 7.2 人民币。若对一件 720 人民币的商品使用昨天的汇率（7.0），成本会被错算为 102.86 美元，而非 100 美元。" } },
-  { id: "tip-48",
+  { id: "tip-48", audience: "office",
     short: {
       ku: "پەیامی «ئۆردەرەکە لەلایەن کەسێکی دیکەوە گۆڕدراوە» بینیت؟ پەڕەکە نوێ بکەرەوە پێش هەوڵی دووبارە — داتای کۆن مەنووسەرەوە.",
       en: "See \"This order was changed by someone else\"? Reload the page before retrying — don't overwrite the newer data.",
@@ -787,7 +990,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You changed the price, but a colleague changed the status at the same moment → on save, the message appears. Reload, see your colleague's change, then set the price.",
       ar: "غيّرت السعر، لكن زميلاً غيّر الحالة في اللحظة نفسها → عند الحفظ تظهر الرسالة. أعِد التحميل، شاهد تغيير زميلك، ثم اضبط السعر.",
       zh: "你改了价格，但同事在同一时刻改了状态 → 保存时出现提示。刷新后看到同事的更改，再设置价格。" } },
-  { id: "tip-49",
+  { id: "tip-49", audience: "office",
     short: {
       ku: "هەموو گۆڕانکارییەک لە مێژووی ئۆردەردا تۆمار دەبێت — کێ، کەی، چی گۆڕی.",
       en: "Every change is recorded in the order's history — who, when, and what changed.",
@@ -803,7 +1006,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's order had its price changed. The history shows: \"Akam, 2026/06/30, price $50 → $45\".",
       ar: "طلب AZ001 تغيّر سعره. يُظهِر السجل: «أكام، 2026/06/30، السعر 50$ ← 45$».",
       zh: "AZ001 的订单价格被更改。历史记录显示：「阿卡姆，2026/06/30，价格 50 美元 → 45 美元」。" } },
-  { id: "tip-50",
+  { id: "tip-50", audience: "office",
     short: {
       ku: "سڕینەوەی ئۆردەر «نەرمە» (دەگەڕێتەوە) — بەڵام هەر وردبە.",
       en: "Order deletion is \"soft\" (recoverable) — but stay careful anyway.",
@@ -819,7 +1022,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You deleted AZ001's order by mistake → don't panic, you can restore it; but it's better not to err in the first place.",
       ar: "حذفت طلب AZ001 بالخطأ → لا تقلق، يمكنك استرجاعه؛ لكن الأفضل ألّا تُخطئ من الأساس.",
       zh: "你误删了 AZ001 的订单 → 不必惊慌，可以恢复；但最好一开始就不出错。" } },
-  { id: "tip-51",
+  { id: "tip-51", audience: "office",
     short: {
       ku: "دۆخی ئۆردەر بە دروستی نوێ بکەرەوە — کڕیار بەپێی دۆخ ئاگادار دەبێتەوە.",
       en: "Keep the order status up to date — the customer is notified based on it.",
@@ -835,7 +1038,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "AZ001's package arrives at the Erbil warehouse → set the status to \"arrived at warehouse\"; the customer immediately gets a notification.",
       ar: "يصل طرد AZ001 إلى مخزن أربيل → اضبط الحالة على «وصل المخزن»؛ يتلقّى العميل إشعاراً فوراً.",
       zh: "AZ001 的包裹到达埃尔比勒仓库 → 将状态设为「到达仓库」；客户立即收到通知。" } },
-  { id: "tip-52",
+  { id: "tip-52", audience: "office",
     short: {
       ku: "بەشی «مەشاکل» لە داشبۆرد ڕۆژانە بپشکنە — بێ تراکینگ، قەرز، ئۆردەری گەورە.",
       en: "Check the dashboard's \"Problems\" section daily — no tracking, debt, large orders.",
@@ -851,7 +1054,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "In the morning you open \"Problems\" and see: 3 orders without tracking, customer AZ001 in debt, and 1 order of $1,300 → handle them one by one.",
       ar: "صباحاً تفتح «المشاكل» وترى: 3 طلبات بلا تتبّع، العميل AZ001 مدين، وطلب واحد بقيمة 1,300$ → عالِجها واحدة تلو الأخرى.",
       zh: "早上你打开「问题」区，看到：3 个无运单号的订单、客户 AZ001 欠款、1 个 1,300 美元的订单 → 逐一处理。" } },
-  { id: "tip-53",
+  { id: "tip-53", audience: "office",
     short: {
       ku: "بەشی «سەرکەوتنەکانی ئەم هەفتەیە» — بزانە کام کڕیار ئاکتیفترینە و قازانجت چۆنە.",
       en: "Check \"Wins this week\" — see your most active customer and how profit is doing.",
@@ -867,7 +1070,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "This week \"Wins\" shows: most active customer AZ001 with 22 orders, weekly profit $1,840 → you see which customer matters most.",
       ar: "هذا الأسبوع تُظهِر «الإنجازات»: أنشط عميل AZ001 بـ22 طلباً، وربح الأسبوع 1,840$ → تعرف أي عميل هو الأهم.",
       zh: "本周「成绩」显示：最活跃客户 AZ001 共 22 个订单，周利润 1,840 美元 → 你能看出哪位客户最重要。" } },
-  { id: "tip-54",
+  { id: "tip-54", audience: "office",
     short: {
       ku: "خێراییی باچەکان (چەند ڕۆژ گەیشتوون) بەراورد بکە.",
       en: "Compare batch speeds (days to arrive).",
@@ -883,7 +1086,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "This month there were three sea batches: 28 days, 35 days, 30 days → the 35-day batch lagged; ask why.",
       ar: "هذا الشهر كانت هناك ثلاث دفعات بحرية: 28 يوماً، 35 يوماً، 30 يوماً → الدفعة ذات الـ35 يوماً تأخّرت؛ اسأل عن السبب.",
       zh: "本月有三个海运批次：28 天、35 天、30 天 → 35 天的批次落后了；查问原因。" } },
-  { id: "tip-55",
+  { id: "tip-55", audience: "office",
     short: {
       ku: "کڕیارێک زۆر ئۆردەر دەکات؟ یەکجار هەڵیبژێرە و هەمووی پشتەوەپشت داخڵ بکە — فۆرم دوای سەیڤ دانەخراوە.",
       en: "Customer with many orders? Pick them once and enter all back-to-back — the form stays open after saving.",
@@ -899,7 +1102,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer AZ001 has 5 orders → select AZ001 once, save the first order, the form stays open, and enter the other four quickly.",
       ar: "العميل AZ001 لديه 5 طلبات → اختَر AZ001 مرّة، احفظ الطلب الأول، يبقى النموذج مفتوحاً، وأدخِل الأربعة الأخرى بسرعة.",
       zh: "客户 AZ001 有 5 个订单 → 选定 AZ001 一次，保存第一个订单，表单保持打开，再快速录入其余四个。" } },
-  { id: "tip-56",
+  { id: "tip-56", audience: "office",
     short: {
       ku: "وێنەی کاڵای لەبیرکراو دەکرێت دواتر لە ئیدیتدا زیاد بکرێت.",
       en: "A forgotten product photo can be added later in edit mode.",
@@ -915,7 +1118,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You registered AZ001's order without a photo → later open it in edit, upload the product photo, and save.",
       ar: "سجّلت طلب AZ001 بلا صورة → افتحه لاحقاً في التعديل، ارفع صورة المنتج، واحفظ.",
       zh: "你登记 AZ001 的订单时没加照片 → 稍后在编辑中打开，上传商品照片并保存。" } },
-  { id: "tip-57",
+  { id: "tip-57", audience: "office",
     short: {
       ku: "تراکینگ نەمبەری هەڵە = نەدۆزینەوەی پاکەت — بە وردی داخڵی بکە.",
       en: "A wrong tracking number = a package that can't be found — enter it carefully.",
@@ -947,7 +1150,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "On the new-order form, \"Customer *\" and \"Product type *\" are empty → fill them; otherwise it won't save and warns you.",
       ar: "في نموذج الطلب الجديد، «العميل *» و«نوع المنتج *» فارغان → املأهما؛ وإلّا لن يُحفَظ ويُنبّهك.",
       zh: "在新订单表单中，「客户 *」和「商品类型 *」为空 → 请填写；否则无法保存并会提示你。" } },
-  { id: "tip-59",
+  { id: "tip-59", audience: "office",
     short: {
       ku: "کاتێک موشتەری داوای بابەتێکی نوێ دەکات کە زانیاریمان لەسەری نییە، پێش وەڵامدانەوە چێکی بکەرەوە کە دێت یان نا.",
       en: "When a customer asks about an item we have no information on, check whether it can ship before you answer.",
@@ -963,7 +1166,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "A customer asks about shipping a laptop battery → don't say yes right away; check first, then answer.",
       ar: "يسأل العميل عن شحن بطارية لابتوب → لا تقل نعم فوراً؛ تحقّق أولاً ثم أجب.",
       zh: "客户问笔记本电池能否运输 → 不要立刻答应；先核实，再回复。" } },
-  { id: "tip-60",
+  { id: "tip-60", audience: "office",
     short: {
       ku: "لەگەڵ موشتەری نرخ مەبڕەوە — بە تایبەتی لە دەریایی، لەبەر گۆڕانی نرخ و دواکەوتن.",
       en: "Don't commit to a fixed price with the customer — especially for sea freight, where rates and timing shift.",
@@ -979,7 +1182,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer asks the sea-freight price → say it's about this much per CBM today, but it can change by shipping time.",
       ar: "يسأل العميل عن سعر الشحن البحري → قل إنه نحو هذا المبلغ لكل CBM اليوم، لكنه قد يتغيّر حتى موعد الشحن.",
       zh: "客户询问海运价格 → 回答今天每 CBM 大约这个价，但到发货时可能变化。" } },
-  { id: "tip-61",
+  { id: "tip-61", audience: "office",
     short: {
       ku: "موشتەری فێری ئەوە مەکە کە بەبێ پارەی پێشەکی بۆی دەکڕدرێت — پێشەکی سیستەمە و دەبێت بدرێت.",
       en: "Don't teach customers that we'll buy without a deposit — the advance is policy and must be paid.",
@@ -995,7 +1198,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer asks you to buy without a deposit just this once → politely say the advance is required for everyone.",
       ar: "يطلب العميل الشراء بلا دفعة هذه المرة فقط → قل بلطف إن الدفعة مطلوبة من الجميع.",
       zh: "客户请求这次先不收订金 → 礼貌说明预付款对所有人都是必需的。" } },
-  { id: "tip-62",
+  { id: "tip-62", audience: "office",
     short: {
       ku: "فوول پاکێج و کڕین بە تێچوو بۆ ئەدرێسی ئاکۆ بنێرە.",
       en: "Send full-package and commission orders to Ako's address.",
@@ -1011,7 +1214,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "You register a full-package order → use Ako's address at purchase time, not the general address.",
       ar: "تسجّل طلب حزمة كاملة → استخدم عنوان «أكو» عند الشراء، لا العنوان العام.",
       zh: "登记全包订单时 → 下单请使用 Ako 的地址，而非通用地址。" } },
-  { id: "tip-63",
+  { id: "tip-63", audience: "office",
     short: {
       ku: "باشترین شێواز ئەوەیە ئۆردەر هەر لەگەڵ کڕین داخڵی سیستەم بکرێت، نەک کەڵەکە بێت.",
       en: "The best habit is entering an order into the system as you buy it, not letting them pile up.",
@@ -1043,7 +1246,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "A customer reports a package hasn't arrived → note it with their code immediately, don't rely on memory.",
       ar: "يبلّغ عميل أن طرده لم يصل → دوّنها فوراً مع رمزه، ولا تعتمد على الذاكرة.",
       zh: "客户反映包裹未送达 → 立即连同其客户编号记下，不要依赖记忆。" } },
-  { id: "tip-65",
+  { id: "tip-65", audience: "office",
     short: {
       ku: "موشتەری ڕابهێنە کە بەردەوام سەردانی پۆرتاڵی خۆی بکات و پرسیارەکانی لەوێ ئاراستە بکات.",
       en: "Train customers to check their own portal regularly and ask their questions there.",
@@ -1059,7 +1262,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer asks where their package is → answer, then add that they can see this any time in their portal.",
       ar: "يسأل العميل عن مكان طرده → أجبه ثم أضف أنه يمكنه رؤية ذلك في بوابته في أي وقت.",
       zh: "客户询问包裹位置 → 回答后补充：随时可在自己的门户查看。" } },
-  { id: "tip-66",
+  { id: "tip-66", audience: "office",
     short: {
       ku: "بەریدەکانی ناوخۆ لەگەڵ کۆمپانیاکانی ناوخۆ چێک بکەرەوە و لە گەیشتن و نەگەیشتنیان ئاگادار بە.",
       en: "Follow up local deliveries with the local companies and stay on top of what did and didn't arrive.",
@@ -1075,7 +1278,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Five packages went to Sulaymaniyah → ask the company a day later which ones were delivered.",
       ar: "أُرسلت خمسة طرود إلى السليمانية → اسأل الشركة بعد يوم أيّها سُلّم.",
       zh: "五个包裹发往苏莱曼尼亚 → 一天后询问该公司哪些已送达。" } },
-  { id: "tip-67",
+  { id: "tip-67", audience: "office",
     short: {
       ku: "هەمیشە بە موشتەری بڵێ کێش و CBM دوای گەیشتن بە مەخزەنی ئێمە دیاری دەکرێت.",
       en: "Always tell the customer that weight and CBM are set once the goods reach our warehouse.",
@@ -1091,7 +1294,7 @@ export const STAFF_TIPS: StaffTip[] = [
       en: "Customer says the seller quoted five kilos → reply that we weigh it at the warehouse and the final price is set then.",
       ar: "يقول العميل إن البائع ذكر خمسة كيلوغرامات → أجب أننا نزنه في المستودع وحينها يتحدّد السعر النهائي.",
       zh: "客户说卖家称是五公斤 → 回答我们会在仓库称重，届时才确定最终价格。" } },
-  { id: "tip-68",
+  { id: "tip-68", audience: "office",
     short: {
       ku: "بۆ ئۆردەری زۆر و گەورە، پێش کڕین و ناردن ئاگاداری ئێمە بکەرەوە.",
       en: "For large or bulk orders, tell us before buying and shipping.",
@@ -1108,6 +1311,17 @@ export const STAFF_TIPS: StaffTip[] = [
       ar: "يريد عميل شراء مئتي قطعة → أبلِغنا قبل الشراء لنستعد.",
       zh: "客户想买两百件 → 请在采购前告知我们以便安排。" } },
 ];
+
+/**
+ * The tips this screen should cycle through.
+ *
+ * Chinese is the China warehouse: its own tips, and the ones for everybody.
+ * Every other language is the office: its tips, and the ones for everybody.
+ */
+export function tipsFor(lang: TipLang): StaffTip[] {
+  const here: TipAudience = lang === "zh" ? "china" : "office";
+  return STAFF_TIPS.filter((tip) => !tip.audience || tip.audience === here);
+}
 
 export const MOTIVATION_MESSAGES: MotivationMessage[] = [
   { id: "mot-1", text: { ku: "هەر بژی {name}، کارەکانت شایەنی نرخاندنە — دەستەکانت خۆش بێ! 🌟", en: "Well done, {name}! Your work is truly appreciated — keep it up! 🌟", ar: "أحسنت يا {name}! عملك يستحق التقدير — واصِل التميّز! 🌟", zh: "{name}，干得好！你的工作值得赞赏——继续加油！🌟" } },
