@@ -356,6 +356,17 @@ export default function CompanyFinanceDashboard() {
                 >
                   <Money value={data.profit.ordersUsd} signed />
                 </Row>
+                {data.profit.stockUsd !== 0 && (
+                  <Row
+                    tone={data.profit.stockUsd < 0 ? "bad" : "good"}
+                    label={L({ ku: "کاڵای ڕەتکراوە", en: "Refused goods", ar: "بضائع مرفوضة", zh: "拒收货物" })}
+                    note={L({ ku: "فرۆشتن، فڕێدان و قەرەبوو", en: "sold, written off, kept", ar: "بيع وشطب وتعويض", zh: "售出、核销、保留" })}
+                    href="/finance/company-stock"
+                    linkWords={L({ ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" })}
+                  >
+                    <Money value={data.profit.stockUsd} signed />
+                  </Row>
+                )}
                 <Row
                   tone="bad"
                   label={L({ ku: "مەسارف", en: "Expenses", ar: "المصاريف", zh: "费用" })}
@@ -509,6 +520,11 @@ export default function CompanyFinanceDashboard() {
                     <Row label={L({ ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" })} href="/finance/goods-on-road" linkWords={see}>
                       <Money value={data.capital.goodsOnRoadUsd} />
                     </Row>
+                    {data.capital.stockCount > 0 && (
+                      <Row label={L({ ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" })} note={L({ ku: `${data.capital.stockCount} دانە`, en: `${data.capital.stockCount}`, ar: `${data.capital.stockCount}`, zh: `${data.capital.stockCount}` })} href="/finance/company-stock" linkWords={see}>
+                        <Money value={data.capital.stockUsd} />
+                      </Row>
+                    )}
                     <Row
                       tone={data.capital.netCashUsd < 0 ? "bad" : undefined}
                       label={L({ ku: "نەقدی پاک", en: "Net cash", ar: "صافي النقد", zh: "净现金" })}

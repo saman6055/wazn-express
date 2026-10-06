@@ -129,6 +129,79 @@ export const ledgerRouter = router({
         }
       }),
 
+    // ── Refused goods: the company's own stock (shared/refusedGoods) ──────
+    companyStock: accountantProcedure.query(async () => {
+      return db.listCompanyStock();
+    }),
+    /** How often this customer has refused goods — shown where their next order is typed. */
+    customerRefusals: staffProcedure
+      .input(z.object({ customerId: z.number().int().positive() }))
+      .query(async ({ input }) => {
+        return db.countCustomerRefusals(input.customerId);
+      }),
+    /** What a refusal would do, before anything is done. */
+    previewRefusal: superAdminProcedure
+      .input(z.object({ orderId: z.number().int().positive().optional(), orderCode: z.string().max(60).optional(), refuseQuantity: z.number().int().positive().default(1) }))
+      .query(async ({ input }) => {
+        try {
+          if (input.orderId) return await db.previewRefusal(input.orderId, input.refuseQuantity);
+          const found = input.orderCode ? await db.findOrderForRefusal(input.orderCode) : null;
+          return found ? await db.previewRefusal(found.orderId, input.refuseQuantity) : null;
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+    /** Every step of these moves money or goods, so each is the main admin's and each refusal says its cure. */
+    refuseGoods: superAdminProcedure
+      .input(z.object({
+        orderId: z.number().int().positive(),
+        refuseQuantity: z.number().int().positive(),
+        reason: z.enum(["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"]),
+        keepUsd: z.number().min(0).max(1_000_000),
+        note: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.refuseOrderGoods(input, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+    sellStock: superAdminProcedure
+      .input(z.object({ stockId: z.number().int().positive(), priceUsd: z.number().min(0).max(1_000_000), customerCode: z.string().max(60).optional(), note: z.string().max(1000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          let customerId: number | null = null;
+          const code = (input.customerCode ?? "").trim();
+          if (code) {
+            const buyer = await db.getCustomerByCode(code);
+            if (!buyer) throw new Error(withFix(`کڕیارێک بە کۆدی ${code} نەدۆزرایەوە.`, ["کۆدەکە دووبارە بنووسە، بۆ نموونە AZ018", "یان خانەکە بەتاڵ بهێڵەوە بۆ فرۆشتنی نەقد"]));
+            customerId = buyer.id;
+          }
+          return await db.sellCompanyStock({ stockId: input.stockId, priceUsd: input.priceUsd, customerId, note: input.note }, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+    writeOffStock: superAdminProcedure
+      .input(z.object({ stockId: z.number().int().positive(), note: z.string().min(1).max(1000) }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.writeOffCompanyStock(input, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+    listStockInStore: superAdminProcedure
+      .input(z.object({ stockId: z.number().int().positive(), priceUsd: z.number().positive().max(1_000_000) }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.listStockInStore(input, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+
     /** Where the company's money is, read from the records (shared/workingCapital). */
     workingCapital: superAdminProcedure.query(async () => {
       return db.getWorkingCapital();

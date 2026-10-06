@@ -46,3 +46,4 @@ export * from './boxReminder.db';
 export * from './workingCapital.db';
 export * from './financePulse.db';
 export * from './goodsOnRoad.db';
+export * from './refusedGoods.db';

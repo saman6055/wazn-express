@@ -1,4 +1,5 @@
 ﻿import { useState, useEffect, useRef, useMemo } from "react";
+import { RefusalWarning } from "@/components/RefusalWarning";
 import { oddOrderNumbers, oddOrderQuestion } from "@shared/orderNumberSense";
 import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orderTrackingSanity";
 import { platformFromOrderNumber } from "@shared/orderNumberPlatform";
@@ -866,6 +867,8 @@ function CommissionFormScreen() {
               )}
             </div>
           </div>
+          {/* A customer who refused goods before: take the money first (shared/refusedGoods). */}
+          <RefusalWarning customerId={Number(formData.customerId) || null} />
           {/* Quick switch — what's typed goes along, the money starts over. */}
           {!isEditMode && (
             <Button

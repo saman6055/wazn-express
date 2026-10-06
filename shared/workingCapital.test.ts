@@ -27,6 +27,8 @@ const OCT5: WorkingCapitalFacts = {
   goodsOnRoadUsd: 5841.78,
   goodsOnRoadCostUsd: 4966.02,
   goodsOnRoadCount: 119,
+  stockUsd: 0,
+  stockCount: 0,
 };
 
 describe("the picture", () => {
@@ -39,7 +41,7 @@ describe("the picture", () => {
 
   it("always adds back up to what the company should hold", () => {
     const w = workingCapital(OCT5);
-    const placed = OCT5.debtUsd + OCT5.goodsOnRoadUsd + w.netCashUsd - OCT5.creditUsd;
+    const placed = OCT5.debtUsd + OCT5.goodsOnRoadUsd + OCT5.stockUsd + w.netCashUsd - OCT5.creditUsd;
     expect(Math.round(placed * 100) / 100).toBe(w.shouldHoldUsd);
   });
 
@@ -66,6 +68,13 @@ describe("the picture", () => {
 
   it("goes negative when the company owes, rather than hiding it", () => {
     expect(workingCapital({ ...OCT5, debtUsd: 27000 }).netCashUsd).toBeLessThan(0);
+  });
+
+  it("refused goods on our hands are money that has not come back", () => {
+    const before = workingCapital(OCT5);
+    const after = workingCapital({ ...OCT5, stockUsd: 22, stockCount: 1 });
+    expect(after.shouldHoldUsd).toBe(before.shouldHoldUsd);
+    expect(after.netCashUsd).toBe(Math.round((before.netCashUsd - 22) * 100) / 100);
   });
 
   it("money a customer left with us is cash in hand that is not ours", () => {

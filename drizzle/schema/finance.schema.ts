@@ -1019,3 +1019,56 @@ export const pendingCredits = mysqlTable("pendingCredits", {
 
 export type PendingCredit = typeof pendingCredits.$inferSelect;
 export type InsertPendingCredit = typeof pendingCredits.$inferInsert;
+
+// ============ COMPANY STOCK — refused goods (کاڵای ماوە) ============
+/**
+ * Goods a customer refused, or the office ordered by mistake: bought with the
+ * company's money and now the company's own (shared/refusedGoods).
+ *
+ * Until this table the only thing an unwanted order could do was be cancelled
+ * — which took the charge off the customer and made the goods, and what they
+ * cost, vanish from the books (owner, 2026-10-07: "they have no place in the
+ * system, yet they are a loss until they are sold cheaper or not at all").
+ *
+ * A row is an asset at what the goods cost until it ends one of two ways:
+ * sold (the price less the cost is a profit or a loss) or written off (the
+ * cost is the loss). Nothing here is ever deleted.
+ */
+export const companyStock = mysqlTable("companyStock", {
+  id: int("id").autoincrement().primaryKey(),
+  /** The order the goods came from, and its code as it read that day. */
+  orderId: int("orderId"),
+  orderCode: varchar("orderCode", { length: 50 }),
+  /** Who refused them. */
+  customerId: int("customerId"),
+  productName: varchar("productName", { length: 500 }),
+  productImage: text("productImage"),
+  quantity: int("quantity").notNull(),
+  /** What the company paid for them — the figure the asset stands at. */
+  costUsd: decimal("costUsd", { precision: 12, scale: 2 }).notNull(),
+  /** What was taken off the customer's account for them. */
+  refusedSellUsd: decimal("refusedSellUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  /** The customer's money the company kept against the loss. Income, the day of the refusal. */
+  keptUsd: decimal("keptUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  reason: mysqlEnum("reason", ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"]).notNull(),
+  /** Whose side it happened on — what the loss report groups by. */
+  fault: mysqlEnum("fault", ["customer", "office"]).notNull(),
+  note: text("note"),
+  status: mysqlEnum("status", ["held", "sold", "written_off"]).default("held").notNull(),
+  soldPriceUsd: decimal("soldPriceUsd", { precision: 12, scale: 2 }),
+  /** Set when it was sold on account to a customer; null is a cash sale. */
+  soldToCustomerId: int("soldToCustomerId"),
+  closedAt: timestamp("closedAt"),
+  closedById: int("closedById"),
+  closeNote: text("closeNote"),
+  /** The Wazn Store product it was listed as, if it was. */
+  storeProductId: int("storeProductId"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  statusIdx: index("idx_company_stock_status").on(table.status),
+  customerIdx: index("idx_company_stock_customer").on(table.customerId),
+}));
+
+export type CompanyStock = typeof companyStock.$inferSelect;
+export type InsertCompanyStock = typeof companyStock.$inferInsert;

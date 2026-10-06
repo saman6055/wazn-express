@@ -189,6 +189,9 @@ export default function GoodsOnRoad() {
                             <Link href={`/full-package/${r.orderId}`}>
                               <Button size="sm" variant="ghost" className="h-8">{L({ ku: "داواکارییەکە بکەوە", en: "Open the order", ar: "افتح الطلب", zh: "打开订单" })}</Button>
                             </Link>
+                            <Link href={`/finance/company-stock?order=${encodeURIComponent(r.orderCode)}`}>
+                              <Button size="sm" variant="ghost" className="h-8">{L({ ku: "ڕەتکرایەوە", en: "It was refused", ar: "رُفض", zh: "被拒收" })}</Button>
+                            </Link>
                           </div>
                         )}
 

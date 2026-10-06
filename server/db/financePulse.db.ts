@@ -309,7 +309,9 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
 
   const freightProfitUsd = num(profit.pkgs.profit);
   const ordersProfitUsd = num(profit.fullPackage.profit) + num(profit.purchaseRequest.profit) + num(profit.commission.profit);
-  const workProfitUsd = cents(freightProfitUsd + ordersProfitUsd);
+  // Refused goods: money kept and how each piece ended (shared/refusedGoods).
+  const stockProfitUsd = num(profit.stock.profitUsd);
+  const workProfitUsd = cents(freightProfitUsd + ordersProfitUsd + stockProfitUsd);
 
   return {
     period,
@@ -319,6 +321,7 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
       parcels: Number(profit.pkgs.count) || 0,
       ordersUsd: cents(ordersProfitUsd),
       orders: (Number(profit.fullPackage.count) || 0) + (Number(profit.purchaseRequest.count) || 0) + (Number(profit.commission.count) || 0),
+      stockUsd: cents(stockProfitUsd),
       workUsd: workProfitUsd,
       expensesUsd: spent.usd,
       expenseCount: spent.count,
@@ -336,6 +339,8 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
           shouldHoldUsd: capital.shouldHoldUsd,
           debtUsd: capital.facts.debtUsd,
           goodsOnRoadUsd: capital.facts.goodsOnRoadUsd,
+          stockUsd: capital.facts.stockUsd,
+          stockCount: capital.facts.stockCount,
           netCashUsd: capital.netCashUsd,
           /** How many days of running costs the cash in hand would pay. */
           cashDays: pulseNow.pulse.needDailyUsd > 0 ? Math.floor(Math.max(0, capital.netCashUsd) / pulseNow.pulse.needDailyUsd) : null,

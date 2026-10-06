@@ -76,7 +76,7 @@ export default function WorkingCapital() {
   };
 
   const f = data?.facts;
-  const holding = f && data ? f.debtUsd + f.goodsOnRoadUsd + data.netCashUsd - f.creditUsd : 0;
+  const holding = f && data ? f.debtUsd + f.goodsOnRoadUsd + f.stockUsd + data.netCashUsd - f.creditUsd : 0;
   const preview = data && have.trim() !== "" && Number.isFinite(Number(have))
     ? cashCheck(data.netCashUsd, Number(have), Number(owe) || 0)
     : null;
@@ -165,6 +165,19 @@ export default function WorkingCapital() {
                 >
                   <Money value={f.goodsOnRoadUsd} />
                 </Line>
+                {f.stockCount > 0 && (
+                  <Line
+                    label={
+                      <span className="flex flex-wrap items-center gap-x-2">
+                        {L({ ku: `کاڵای ماوە — ${f.stockCount} دانە`, en: `Company stock — ${f.stockCount}`, ar: `مخزون الشركة — ${f.stockCount}`, zh: `公司库存 — ${f.stockCount}` })}
+                        <span className="text-xs text-muted-foreground">{L({ ku: "ڕەتکراوەتەوە، هێشتا نەفرۆشراوە", en: "refused, not yet sold", ar: "مرفوضة، لم تُبع بعد", zh: "被拒收，尚未售出" })}</span>
+                        <Link href="/finance/company-stock" className="text-xs text-primary underline">{L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}</Link>
+                      </span>
+                    }
+                  >
+                    <Money value={f.stockUsd} />
+                  </Line>
+                )}
                 {f.creditUsd > 0 && (
                   <Line tone="bad" label={L({ ku: "پارەی کڕیاران لای ئێمە", en: "Customers' money with us", ar: "أموال العملاء عندنا", zh: "客户预存款" })}>
                     <Money value={-f.creditUsd} />

@@ -1472,6 +1472,39 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "companyStock",
+    dependencies: ["customers", "users"],
+    // Refused goods, the company's own until sold or written off (owner,
+    // 2026-10-07). See drizzle/schema/finance.schema.ts and shared/refusedGoods.
+    sql: `CREATE TABLE IF NOT EXISTS companyStock (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      orderId INT NULL,
+      orderCode VARCHAR(50) NULL,
+      customerId INT NULL,
+      productName VARCHAR(500) NULL,
+      productImage TEXT,
+      quantity INT NOT NULL,
+      costUsd DECIMAL(12, 2) NOT NULL,
+      refusedSellUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      keptUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','other') NOT NULL,
+      fault ENUM('customer','office') NOT NULL,
+      note TEXT,
+      status ENUM('held','sold','written_off') NOT NULL DEFAULT 'held',
+      soldPriceUsd DECIMAL(12, 2) NULL,
+      soldToCustomerId INT NULL,
+      closedAt TIMESTAMP NULL,
+      closedById INT NULL,
+      closeNote TEXT,
+      storeProductId INT NULL,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_company_stock_status (status),
+      INDEX idx_company_stock_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "expenseBudgets",
     dependencies: ["expenseCategories", "users"],
     // One row per category, plus at most one with categoryId NULL covering
@@ -2867,6 +2900,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.box_discount_pledges_box", sql: "CREATE INDEX idx_box_discount_pledges_box ON boxDiscountPledges (boxId)" },
   { name: "idx.pending_credits_status", sql: "CREATE INDEX idx_pending_credits_status ON pendingCredits (status)" },
   { name: "idx.pending_credits_customer", sql: "CREATE INDEX idx_pending_credits_customer ON pendingCredits (customerId)" },
+  { name: "idx.company_stock_status", sql: "CREATE INDEX idx_company_stock_status ON companyStock (status)" },
+  { name: "idx.company_stock_customer", sql: "CREATE INDEX idx_company_stock_customer ON companyStock (customerId)" },
   { name: "idx.box_settlement_lines_package", sql: "CREATE INDEX idx_box_settlement_lines_package ON boxSettlementLines (packageId)" },
   { name: "idx.box_settlement_lines_settlement", sql: "CREATE INDEX idx_box_settlement_lines_settlement ON boxSettlementLines (settlementId)" },
   { name: "idx.box_settlements_box", sql: "CREATE INDEX idx_box_settlements_box ON boxSettlements (boxId)" },

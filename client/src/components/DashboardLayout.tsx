@@ -52,6 +52,7 @@ import {
   Vault,
   Scale,
   Coins,
+  PackageX,
   Ship,
   Activity,
   AlertTriangle,
@@ -466,6 +467,7 @@ function DashboardLayoutContent({
           // The main admin's alone: the server refuses anyone else (ledger.workingCapital).
           ...(isSuperAdmin ? [{ icon: Coins, label: pickLang(language, { ku: "سەرمایەی کار", en: "Working capital", ar: "رأس المال العامل", zh: "营运资金" }), path: "/finance/working-capital" }] : []),
           { icon: Ship, label: pickLang(language, { ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" }), path: "/finance/goods-on-road" },
+          { icon: PackageX, label: pickLang(language, { ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" }), path: "/finance/company-stock" },
           { icon: Scale, label: t("nav.balanceSheet") || "تەرازوی دارایی", path: "/finance/balance-sheet" },
           { icon: Landmark, label: t("nav.bankAccounts") || "هەژمارە بانکییەکان", path: "/finance/bank-accounts" },
           { icon: Receipt, label: t("nav.expenses") || "خەرجییەکان", path: "/company/expenses" },

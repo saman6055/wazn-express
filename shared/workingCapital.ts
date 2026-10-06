@@ -13,6 +13,7 @@
  *
  *   should hold = capital brought in + work profit − expenses − withdrawals
  *   net cash    = should hold − customers' debt − goods on the road
+ *                 − refused goods still on our hands
  *                 + what customers have left with us
  *
  * "Net" because it is cash less what is owed to carriers: a batch's cost
@@ -45,6 +46,12 @@ export interface WorkingCapitalFacts {
   goodsOnRoadUsd: number;
   goodsOnRoadCostUsd: number;
   goodsOnRoadCount: number;
+  /**
+   * Refused goods still on our hands, at what they cost (shared/refusedGoods).
+   * Money that left as cash and has not come back in any form yet.
+   */
+  stockUsd: number;
+  stockCount: number;
 }
 
 export interface WorkingCapital {
@@ -60,7 +67,7 @@ const cents = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 10
 export function workingCapital(f: WorkingCapitalFacts): WorkingCapital {
   const withdrawalsUsd = cents(f.withdrawals.reduce((sum, w) => sum + (Number(w.usd) || 0), 0));
   const shouldHoldUsd = cents(f.capitalUsd + f.profitUsd - f.expensesUsd - withdrawalsUsd);
-  const netCashUsd = cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadUsd + f.creditUsd);
+  const netCashUsd = cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadUsd - f.stockUsd + f.creditUsd);
   return { withdrawalsUsd, shouldHoldUsd, netCashUsd };
 }
 

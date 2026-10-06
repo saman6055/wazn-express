@@ -14,6 +14,7 @@ import {
 } from "@shared/workingCapital";
 import { getFinancialSummary } from "./finance.db";
 import { getProfitForPeriod } from "./reports.db";
+import { getStockHeld } from "./refusedGoods.db";
 import { getSetting, setSetting } from "./settings.db";
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
@@ -27,11 +28,12 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
     capitalUsd: 0, profitUsd: 0, expensesUsd: 0, withdrawals: [],
     debtUsd: 0, debtors: 0, creditUsd: 0,
     goodsOnRoadUsd: 0, goodsOnRoadCostUsd: 0, goodsOnRoadCount: 0,
+    stockUsd: 0, stockCount: 0,
   };
   const db = await getDb();
   if (!db) return empty;
 
-  const [partnerRows, moves, [spent], [goods], ledger, profit] = await Promise.all([
+  const [partnerRows, moves, [spent], [goods], ledger, profit, stock] = await Promise.all([
     db.select({ id: partners.id, name: partners.name, nameKu: partners.nameKu, initialCapital: partners.initialCapital }).from(partners),
     db
       .select({
@@ -56,6 +58,7 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
     // A day past now: a row stamped by a database on local time must not
     // fall outside "all time".
     getProfitForPeriod(new Date("2000-01-01T00:00:00Z"), new Date(Date.now() + 86_400_000)),
+    getStockHeld(),
   ]);
 
   const sumOf = (partnerId: number, type: string) =>
@@ -76,6 +79,8 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
     goodsOnRoadUsd: num(goods?.sell),
     goodsOnRoadCostUsd: num(goods?.cost),
     goodsOnRoadCount: Number(goods?.count) || 0,
+    stockUsd: stock.usd,
+    stockCount: stock.count,
   };
 }
 
