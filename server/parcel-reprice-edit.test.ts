@@ -70,3 +70,35 @@ describe("the screen", () => {
     expect(handler).toContain("refetch();");
   });
 });
+
+/*
+ * 2026-10-05: the first of the three refusals is gone. A parcel already on
+ * its owner's account is handed to the correction (lib/correctRegisteredParcel),
+ * which moves the parcel and its debt together or says why it could not.
+ */
+describe("a parcel already on the account is handed to the correction", () => {
+  it("before the old rule is asked, and its answer is the one sent back", () => {
+    const door = update.indexOf("const onAccount = await correctChargedParcelOnEdit(");
+    const rule = update.indexOf("pricing = repriceReport({");
+    const wins = update.indexOf("if (onAccount) pricing = onAccount;");
+    expect(door).toBeGreaterThan(-1);
+    expect(rule).toBeGreaterThan(door);
+    expect(wins).toBeGreaterThan(rule);
+    expect(wins).toBeLessThan(update.indexOf("if (shouldStoreNewPrice(pricing) && priced?.costUsd) {"));
+  });
+
+  it("the edit's own figures are what it is handed", () => {
+    for (const f of ["customerId", "weightKg", "lengthCm", "widthCm", "heightCm", "volumeCbm", "batchId"]) {
+      expect(update, f).toContain(`${f}: updateData.${f},`);
+    }
+  });
+
+  it("the screen reads an edit the debt could not follow in a window, not a toast", () => {
+    const page = readRoot("client/src/pages/Packages.tsx");
+    const handler = page.slice(page.indexOf("const onPackageUpdateSuccess"), page.indexOf("const onDeleteSuccess"));
+    expect(handler.length).toBeGreaterThan(200);
+    expect(handler).toContain('else if (result!.pricing!.outcome === "held") systemAlert({');
+    // And a refusal that comes with numbered steps is read the same way.
+    expect(page).toContain("systemAlert({ kind: \"warning\", title: t(\"common.error\"), message: error.message })");
+  });
+});

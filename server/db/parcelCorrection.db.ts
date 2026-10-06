@@ -6,14 +6,15 @@ import {
   type InsertPackage, type LedgerTransaction, type Package,
 } from "../../drizzle/schema";
 import {
-  adjustCharge, reverseCharge, effectiveChargeUsd, updateDailyFinancialSummary, type UndoOptions,
+  adjustCharge, restateCharge, chargeHasCorrections, reverseCharge, effectiveChargeUsd,
+  updateDailyFinancialSummary, type UndoOptions,
 } from "./finance.db";
 import { parcelOwnCharges, parcelReceipt, PARCEL_CHARGE_TYPES } from "./parcelDeletion.db";
 import {
   orderClaimsTracking, parcelInvoiceLine, shippingChargeDueNow, type ShippingChargeDue,
 } from "./batchCharging.db";
 import { withFix } from "@shared/fixAdvice";
-import { ownerChanged } from "@shared/parcelCorrection";
+import { ownerChanged, type ParcelMoneyHold } from "@shared/parcelCorrection";
 import { appLogger } from "../utils/logger";
 
 /**
@@ -21,21 +22,28 @@ import { appLogger } from "../utils/logger";
  *
  * The owner, 2026-10-05: «کاتێ لە تۆماری خێرا ئۆردەرێ تۆمار دەکەی، ئەگەر هەڵەت
  * لە کێش یا قیاس یا لە شتێ کرد، ڕیتێرنی دوایین تۆمار هەبێ … بەس دەقیق بێت».
- * And, asked how: the same parcel is corrected — the same code — and only the
- * difference in the money is written.
+ * And, asked how: the same parcel is corrected — the same code.
  *
  * A parcel registered into a priced batch owes its shipping from that moment
  * (2026-09-09), so a weight typed wrong is a debt written wrong. Editing the
- * parcel does not move a debt — deliberately (2026-09-21) — which left the
+ * parcel did not move a debt — deliberately (2026-09-21) — which left the
  * counter one cure: have an admin delete the parcel and register it again,
  * under a new code.
  *
- * This is the deliberate door. In one transaction:
+ * The first answer wrote the difference as a line of its own. He refused that
+ * the day he saw it on an account ($165.00, and under it -$148.50): «تەنها نرخ
+ * و کیلۆ ئەپدەیت ببێتەوە … ئەوە قەبوڵ کراو نییە». A slip at the scales is not
+ * something that happened to the customer's account.
+ *
+ * This is the deliberate door - for Quick Register's last registration and
+ * for the parcel list alike. In one transaction:
  *
  *  - the facts on the row are replaced by the corrected ones;
- *  - the same owner, and still something to charge: the parcel's charge is
- *    moved to the right figure by the DIFFERENCE alone (adjustCharge), and
- *    the invoice and the revenue record written with it follow;
+ *  - the same owner, and still something to charge: the parcel's charge now
+ *    reads the right figure (restateCharge) - one line, nothing beside it -
+ *    and the invoice and the revenue record written with it follow. A charge
+ *    that already carries a correction line of its own goes on being
+ *    corrected by a line (adjustCharge);
  *  - a different owner, or nothing left to charge: the charge comes off whole
  *    (reverseCharge) and the parcel is marked uncharged, so its batch charges
  *    it again — to whoever owns it now — by the rule it always has.
@@ -47,6 +55,21 @@ import { appLogger } from "../utils/logger";
  * Refused, with the cure: a parcel paid on a box receipt, a parcel already in
  * a delivery box, and a parcel whose money is not where it should be.
  */
+
+/**
+ * The account is not as it should be for this parcel - two charges where one
+ * belongs, or "charged" with no charge to be found.
+ *
+ * Told apart from every other failure because the two doors answer it
+ * differently: Quick Register refuses the correction, the parcel list still
+ * saves the edit and says why the debt did not follow.
+ */
+export class ParcelAccountError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ParcelAccountError";
+  }
+}
 
 /** The row as it should read after the correction. */
 export interface ParcelCorrectionFacts {
@@ -69,12 +92,19 @@ export interface ParcelCorrectionFacts {
 export type ParcelCorrectionMoney =
   /** Nothing on any account moved. */
   | "none"
-  /** The same charge, moved by the difference. */
+  /** The same charge, now reading the right figure. */
+  | "restated"
+  /** The same charge, moved by a line for the difference. */
   | "adjusted"
   /** The charge came off whole; nothing is due for the parcel as it now reads. */
   | "reversed"
   /** The charge came off the owner it was wrongly given to. */
   | "moved";
+
+/** The ledger's own switches, and who is asking - kept with the record of a restated charge. */
+export interface CorrectionOptions extends UndoOptions {
+  actorRole?: string | null;
+}
 
 export interface ParcelCorrectionResult {
   money: ParcelCorrectionMoney;
@@ -162,21 +192,21 @@ export async function ordersBehindParcel(
   }));
 }
 
-/** The receipt, the box, or nothing: why a parcel cannot be corrected here. */
-export async function parcelCorrectionRefusal(packageId: number, name: string): Promise<string | null> {
+/**
+ * The receipt, the box, or nothing: where a parcel's money is once it has
+ * left the parcel's own hands.
+ *
+ * Asked by both doors. Quick Register refuses a correction outright
+ * (parcelCorrectionRefusal below); the parcel list saves the edit and leaves
+ * the account alone, saying where the price is put right instead.
+ */
+export async function parcelMoneyHold(packageId: number): Promise<ParcelMoneyHold | null> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
 
   const receipt = await parcelReceipt(packageId);
   if (receipt) {
-    return withFix(
-      `پاکەتی ${name} لێرە چاک ناکرێتەوە: پارەکەی لە وەسڵی ${receipt.settlementNumber} ـی بۆکسی ${receipt.boxCode ?? ""} وەرگیراوە. گۆڕینی کێش یان خاوەنەکەی ئێستا، پارەی وەرگیراو و قەرزی سەر حیساب لێک جیا دەکاتەوە.`,
-      [
-        `بۆکسی ${receipt.boxCode ?? ""} بکەرەوە و وەسڵەکە هەڵبوەشێنەوە`,
-        "ئینجا پاکەتەکە چاک بکەرەوە",
-        "دواتر دووبارە واصڵی بکەرەوە بە بڕە ڕاستەکە",
-      ],
-    );
+    return { kind: "receipt", settlementNumber: receipt.settlementNumber, boxCode: receipt.boxCode ?? null };
   }
 
   const [boxed] = await db
@@ -185,11 +215,31 @@ export async function parcelCorrectionRefusal(packageId: number, name: string): 
     .leftJoin(deliveryBoxes, eq(deliveryBoxes.id, deliveryBoxItems.boxId))
     .where(eq(deliveryBoxItems.packageId, packageId))
     .limit(1);
-  if (boxed) {
+  if (boxed) return { kind: "box", boxCode: boxed.boxCode ?? null };
+
+  return null;
+}
+
+/** The receipt, the box, or nothing: why a parcel cannot be corrected here. */
+export async function parcelCorrectionRefusal(packageId: number, name: string): Promise<string | null> {
+  const hold = await parcelMoneyHold(packageId);
+
+  if (hold?.kind === "receipt") {
     return withFix(
-      `پاکەتی ${name} لێرە چاک ناکرێتەوە: خراوەتە ناو بۆکسی ${boxed.boxCode ?? ""}، و بۆکس کێش و نرخی پاکەتەکەی لای خۆی نووسیوە. گۆڕینی لێرە، بۆکسەکە بە ژمارە کۆنەکەوە بەجێ دەهێڵێت.`,
+      `پاکەتی ${name} لێرە چاک ناکرێتەوە: پارەکەی لە وەسڵی ${hold.settlementNumber} ـی بۆکسی ${hold.boxCode ?? ""} وەرگیراوە. گۆڕینی کێش یان خاوەنەکەی ئێستا، پارەی وەرگیراو و قەرزی سەر حیساب لێک جیا دەکاتەوە.`,
       [
-        `بۆکسی ${boxed.boxCode ?? ""} بکەرەوە و پاکەتەکەی لێ دەربهێنە`,
+        `بۆکسی ${hold.boxCode ?? ""} بکەرەوە و وەسڵەکە هەڵبوەشێنەوە`,
+        "ئینجا پاکەتەکە چاک بکەرەوە",
+        "دواتر دووبارە واصڵی بکەرەوە بە بڕە ڕاستەکە",
+      ],
+    );
+  }
+
+  if (hold?.kind === "box") {
+    return withFix(
+      `پاکەتی ${name} لێرە چاک ناکرێتەوە: خراوەتە ناو بۆکسی ${hold.boxCode ?? ""}، و بۆکس کێش و نرخی پاکەتەکەی لای خۆی نووسیوە. گۆڕینی لێرە، بۆکسەکە بە ژمارە کۆنەکەوە بەجێ دەهێڵێت.`,
+      [
+        `بۆکسی ${hold.boxCode ?? ""} بکەرەوە و پاکەتەکەی لێ دەربهێنە`,
         "ئینجا پاکەتەکە چاک بکەرەوە و بیخەرەوە ناو بۆکسەکە",
         "یان لە شاشەی پارەدانی بۆکس، نرخەکەی بە «ڕاستکردنەوە» چاک بکە",
       ],
@@ -320,9 +370,9 @@ export async function applyParcelCorrection(
   packageId: number,
   userId: number,
   facts: ParcelCorrectionFacts,
-  /** Why, in the words the customer's statement and the bell will show. */
+  /** Why, in the words the record of the change and the bell will show. */
   reason: string,
-  opts?: UndoOptions,
+  opts?: CorrectionOptions,
 ): Promise<ParcelCorrectionResult> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
@@ -389,8 +439,8 @@ export async function applyParcelCorrection(
     }
 
     if (standing.length > 1) {
-      throw new Error(withFix(
-        `پاکەتی ${name} لێرە چاک ناکرێتەوە: ${standing.length} بارکردنی لەسەر حیسابی کڕیار هەیە، نەک یەک. چاککردنەوەی یەکێکیان ئەوی تر بە هەڵە بەجێ دەهێڵێت.`,
+      throw new ParcelAccountError(withFix(
+        `قەرزی پاکەتی ${name} ڕاست ناکرێتەوە: ${standing.length} بارکردنی لەسەر حیسابی کڕیار هەیە، نەک یەک. ڕاستکردنەوەی یەکێکیان ئەوی تر بە هەڵە بەجێ دەهێڵێت.`,
         [
           "ئادمینی سەرەکی ئاگادار بکە — ئەمە دوو جار حیسابکردنە و دەبێت یەکێکیان هەڵبوەشێتەوە",
           "دوای ئەوە پاکەتەکە چاک بکەرەوە",
@@ -398,8 +448,8 @@ export async function applyParcelCorrection(
       ));
     }
     if (standing.length === 0 && row.isCharged && !orderLinked) {
-      throw new Error(withFix(
-        `پاکەتی ${name} لێرە چاک ناکرێتەوە: وەک «حیسابکراو» نیشانە کراوە، بەڵام بارکردنەکەی لەسەر حیسابی خاوەنەکەی نییە. گۆڕینی ئێستا پارەیەک دەجووڵێنێت کە نازانرێت لە کوێیە.`,
+      throw new ParcelAccountError(withFix(
+        `قەرزی پاکەتی ${name} ڕاست ناکرێتەوە: وەک «حیسابکراو» نیشانە کراوە، بەڵام بارکردنەکەی لەسەر حیسابی خاوەنەکەی نییە. گۆڕینی ئێستا پارەیەک دەجووڵێنێت کە نازانرێت لە کوێیە.`,
         [
           "لە «هەموو پاکەتەکان» پاکەتەکە بکەرەوە و سەیری خاوەنەکەی بکە — لەوانەیە دوای حیسابکردن گۆڕدرابێت",
           "ئادمینی سەرەکی ئاگادار بکە بۆ ئەوەی بارکردنەکە بدۆزێتەوە و ڕاستی بکاتەوە",
@@ -417,10 +467,21 @@ export async function applyParcelCorrection(
       const { charge, usd } = standing[0];
       wasUsd = usd;
       if (!newOwner && due.due) {
-        // The same owner, a different figure: the difference, and only that.
-        const { adjustmentTransaction } = await adjustCharge(charge.id, due.amount, reason, userId, tx, opts);
-        if (adjustmentTransaction) {
-          money = "adjusted";
+        // The same owner, a different figure: the charge itself now reads
+        // it. Only a charge that already carries a correction line of its
+        // own is given another - its rows tell a story a rewrite would break.
+        const lined = await chargeHasCorrections(tx, charge);
+        const changed = lined
+          ? Boolean((await adjustCharge(charge.id, due.amount, reason, userId, tx, opts)).adjustmentTransaction)
+          : (await restateCharge(
+              charge.id,
+              due.amount,
+              { reason, actorId: userId, actorRole: opts?.actorRole ?? null, subject: name },
+              tx,
+              opts,
+            )).restated;
+        if (changed) {
+          money = lined ? "adjusted" : "restated";
           nowUsd = due.amount;
           await invoiceFollows(tx, charge, name, due);
           revenue = await revenueFollows(tx, packageId, due.amount);

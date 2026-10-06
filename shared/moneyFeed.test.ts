@@ -1,5 +1,8 @@
 import { describe, it, expect } from "vitest";
-import { groupMovements, moneyKind, unseenMovements, unseenCredit, MONEY_KIND_LABEL, type LedgerRowForFeed } from "./moneyFeed";
+import {
+  groupMovements, moneyKind, unseenMovements, unseenCredit, MONEY_KIND_LABEL, type LedgerRowForFeed,
+  CHARGE_RESTATED_ACTION, restatedCharge, unseenRestated, type RestatedRecord,
+} from "./moneyFeed";
 
 let nextId = 1;
 const row = (over: Partial<LedgerRowForFeed> = {}): LedgerRowForFeed => ({
@@ -110,5 +113,71 @@ describe("a credit being made is said out loud", () => {
     expect(unseenMovements(m, 2)).toBe(1);
     expect(unseenCredit(m, 1)).toBe(true);
     expect(unseenCredit(m, 2)).toBe(false);
+  });
+});
+
+/*
+ * Owner, 2026-10-05: a parcel weighed wrong is put right on its own line, not
+ * with a second one. So that movement writes no ledger row - and the bell,
+ * which reads rows, would miss it. The record kept with the change is read
+ * instead.
+ */
+describe("a charge put right in place leaves a record, not a row", () => {
+  const record = (over: Partial<RestatedRecord> = {}): RestatedRecord => ({
+    id: 7,
+    userId: 11,
+    entityCode: "ZZT-1",
+    oldValues: { amountUsd: 165 },
+    newValues: { amountUsd: 16.5 },
+    metadata: { accountId: 3, balanceBeforeUsd: 165, balanceAfterUsd: 16.5 },
+    description: "note",
+    createdAt: "2026-10-05T10:00:00.000Z",
+    ...over,
+  });
+
+  it("reads what it was and what it is", () => {
+    expect(restatedCharge(record())).toEqual({
+      id: 7, accountId: 3, subject: "ZZT-1", wasUsd: 165, nowUsd: 16.5, direction: -1,
+      balanceAfterUsd: 16.5, creditCreatedUsd: 0, createdById: 11,
+      at: "2026-10-05T10:00:00.000Z", note: "note",
+    });
+  });
+
+  it("a raising points the other way", () => {
+    const up = restatedCharge(record({ oldValues: { amountUsd: 16.5 }, newValues: { amountUsd: 22 } }));
+    expect(up?.direction).toBe(1);
+  });
+
+  it("says when it left the account below zero", () => {
+    const made = restatedCharge(record({ metadata: { accountId: 3, balanceBeforeUsd: 0, balanceAfterUsd: -148.5 } }));
+    expect(made?.creditCreatedUsd).toBe(148.5);
+    // Further below zero than it found it - not the whole of what was there.
+    const deeper = restatedCharge(record({ metadata: { accountId: 3, balanceBeforeUsd: -10, balanceAfterUsd: -30 } }));
+    expect(deeper?.creditCreatedUsd).toBe(20);
+  });
+
+  it("reads a JSON column that came back as text", () => {
+    const fromText = restatedCharge(record({
+      oldValues: '{"amountUsd":165}',
+      newValues: '{"amountUsd":"16.50"}',
+      metadata: '{"accountId":3}',
+    }));
+    expect(fromText).toMatchObject({ wasUsd: 165, nowUsd: 16.5, accountId: 3, balanceAfterUsd: null, creditCreatedUsd: 0 });
+  });
+
+  it("shows nothing for a record that does not say the figures", () => {
+    expect(restatedCharge(record({ oldValues: null }))).toBeNull();
+    expect(restatedCharge(record({ newValues: "not json" }))).toBeNull();
+    expect(restatedCharge(record({ newValues: {} }))).toBeNull();
+  });
+
+  it("counts the ones not looked at yet", () => {
+    expect(unseenRestated([{ id: 9 }, { id: 7 }, { id: 3 }], 7)).toBe(1);
+    expect(unseenRestated([{ id: 9 }, { id: 7 }], 0)).toBe(2);
+    expect(unseenRestated([], 0)).toBe(0);
+  });
+
+  it("is kept under a name that must not change: records already written carry it", () => {
+    expect(CHARGE_RESTATED_ACTION).toBe("restate_charge");
   });
 });

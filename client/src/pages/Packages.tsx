@@ -62,6 +62,7 @@ import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeable
 import { billingUnit } from "@shared/batchRate";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { repriceIsGood, repriceWords, type RepriceReport } from "@shared/parcelReprice";
+import { useSystemAlert } from "@/components/SystemAlert";
 import { readPackagesLink } from "@shared/listLinks";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel";
@@ -485,6 +486,7 @@ const shortCustomerCode = (code?: string | null) => (code ?? "").split("(")[0]!.
 export default function Packages() {
     const { t, language } = useTranslation();
   const isMobile = useIsMobile();
+  const systemAlert = useSystemAlert();
 const [, setLocation] = useLocation();
   // Deep link: /packages/all?search=PKG-XYZ opens the table already looking
   // for that parcel. Anything that used to link to /packages/:id — which has
@@ -718,6 +720,14 @@ const [, setLocation] = useLocation();
     if (words) {
       const sentence = pickLang(language, words);
       if (repriceIsGood(result!.pricing!)) toast.success(sentence, { duration: 6000 });
+      // Saved, but the debt could not follow: the reason comes with numbered
+      // steps, and a toast in the corner is not where anybody reads those.
+      else if (result!.pricing!.outcome === "held") systemAlert({
+        kind: "warning",
+        title: pickLang(language, { ku: "پاشەکەوت کرا — قەرز نەگۆڕا", en: "Saved — the debt did not move", ar: "تم الحفظ — الدين لم يتغيّر", zh: "已保存 — 欠款未变动" }),
+        message: sentence,
+        detail: selectedPackage?.trackingNumber || selectedPackage?.packageCode || undefined,
+      });
       else toast.warning(sentence, { duration: 12000 });
     }
     setShowEditDialog(false);
@@ -731,7 +741,11 @@ const [, setLocation] = useLocation();
     setSelectedPackage(null);
     refetch();
   };
-  const onMutationError = (error: { message: string }) => toast.error(error.message);
+  const onMutationError = (error: { message: string }) => {
+    // A refusal with its cure in numbered steps is read in a window, not a toast.
+    if (error.message.includes("\n")) systemAlert({ kind: "warning", title: t("common.error"), message: error.message });
+    else toast.error(error.message);
+  };
 
   const onStatusChange = useCallback(
     (pkg: Package, newStatus: string) => {

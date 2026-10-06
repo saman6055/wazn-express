@@ -71,3 +71,32 @@ describe("money has its own tab in the bell", () => {
     expect(bell).not.toContain("if (next) money.onOpen();");
   });
 });
+
+/*
+ * Owner, 2026-10-05: a parcel typed wrong is put right on its one line. The
+ * customer's page then says nothing of it - so the main admin's bell does.
+ */
+describe("a parcel price put right shows in the bell", () => {
+  const bell = read("components/MoneyBell.tsx");
+
+  it("is listed in a section of its own, above the movements", () => {
+    const section = bell.indexOf('data-testid="money-bell-restated"');
+    expect(section).toBeGreaterThan(-1);
+    expect(section).toBeLessThan(bell.indexOf('data-testid="money-bell-feed"'));
+  });
+
+  it("counts towards the badge until it is looked at, by a marker of its own", () => {
+    expect(bell).toContain("unseenMovements(lines, seenId) + unseenRestated(restated, seenRestatedId)");
+    expect(bell).toContain("wazn-money-bell-restated-seen:");
+    expect(bell).toContain("localStorage.setItem(seenRestatedKey(userId), String(newestRestated));");
+  });
+
+  it("names the parcel and the customer, both copyable, and opens the customer's account", () => {
+    expect(bell).toContain("<CopyButton value={line.subject} />");
+    expect(bell).toContain('onNavigate(moneyLineHref({ kind: "correction_down", customerId: line.customerId }))');
+  });
+
+  it("the two figures sit together in a left-to-right island", () => {
+    expect(bell).toContain("{fmtUsd(line.wasUsd)} {RESTATED_ARROW} {fmtUsd(line.nowUsd)}");
+  });
+});

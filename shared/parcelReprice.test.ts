@@ -98,3 +98,32 @@ describe("the sentence the person reads", () => {
     }
   });
 });
+
+/*
+ * Owner, 2026-10-05: «ئەوەش بە هەمان شێوە ئەپدەیت ببێتەوە». A parcel already
+ * on its owner's account is handed to the correction, and the report comes
+ * back from there with its own sentence.
+ */
+describe("a parcel already on the account", () => {
+  const said = { ku: "کوردی", en: "English", ar: "عربي", zh: "中文" };
+
+  it("the correction's own sentence is the one shown", () => {
+    expect(repriceWords({ outcome: "account", wasUsd: 165, nowUsd: 16.5, said })).toBe(said);
+    expect(repriceWords({ outcome: "held", wasUsd: null, nowUsd: null, said })).toBe(said);
+  });
+
+  it("the account put right is good news; an edit the debt could not follow is not", () => {
+    expect(repriceIsGood({ outcome: "account", wasUsd: 165, nowUsd: 16.5, said })).toBe(true);
+    expect(repriceIsGood({ outcome: "held", wasUsd: null, nowUsd: null, said })).toBe(false);
+  });
+
+  it("neither rewrites the stored price here - the correction wrote it, or nothing should", () => {
+    expect(shouldStoreNewPrice({ outcome: "account", wasUsd: 165, nowUsd: 16.5 })).toBe(false);
+    expect(shouldStoreNewPrice({ outcome: "held", wasUsd: null, nowUsd: null })).toBe(false);
+  });
+
+  it("says nothing when there is no sentence to say", () => {
+    expect(repriceWords({ outcome: "account", wasUsd: null, nowUsd: null })).toBeNull();
+    expect(repriceWords({ outcome: "untouched", wasUsd: null, nowUsd: null })).toBeNull();
+  });
+});

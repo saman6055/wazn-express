@@ -8,11 +8,21 @@
  * the money is written. And only the last one: «بۆ ئەوانی تر ئەتوانی لە هەموو
  * پاکەتەکان دەستکاری بکەیت».
  *
+ * Shown the same day what "only the difference" looks like on a customer's
+ * account - the $165.00 that was wrong, and under it a line of -$148.50 - he
+ * refused it: «تەنها نرخ و کیلۆ ئەپدەیت ببێتەوە … نرخی پێشوو لەگەڵ ئیزافەی نوێ
+ * بە جیا بچنە ناو بەشی ژمێریاری، ئەوە قەبوڵ کراو نییە». So the parcel's one line
+ * now reads the right figure and nothing is written beside it, and the parcel
+ * list corrects a charged parcel the same way: «ئەوەش بە هەمان شێوە ئەپدەیت
+ * ببێتەوە، بەبێ ڕیکۆردی نرخ و کێشی کۆن».
+ *
  * The parts with no database in them live here: which figures are stored,
  * what goes back into the form, whether the price is touched at all, the line
  * the customer's statement will carry and the sentence the screen says. The
  * money itself is moved in server/db/parcelCorrection.db.ts.
  */
+
+import { withFix } from "./fixAdvice";
 
 export interface ParcelMeasures {
   weightKg?: string | number | null;
@@ -121,11 +131,13 @@ export function moneyFactsChanged(
 }
 
 /**
- * What was corrected, in a line short enough for an account statement.
+ * What was corrected, in one short line.
  *
- * It is written beside the difference on the customer's account and shown in
- * the main admin's bell, so it says the thing that explains the money: the
- * weight that was, and the weight that is.
+ * It is kept with the record of the change and shown in the main admin's
+ * bell, so it says the thing that explains the money: the weight that was,
+ * and the weight that is. It reaches the customer's statement only when a
+ * line has to be written there after all - a charge moved to another owner,
+ * or one that already carried a correction line of its own.
  *
  * In words — «لە 15 بۆ 1.5» — and never with an arrow. In a right-to-left
  * line the two numbers change places and the arrow does not turn round, so
@@ -166,7 +178,9 @@ export function correctionNote(
 export type CorrectionMoney =
   /** Nothing on any account moved. */
   | "none"
-  /** The same charge, moved by the difference. */
+  /** The same charge, now reading the right figure. No line of its own. */
+  | "restated"
+  /** The same charge, moved by a line for the difference - one that already carried such a line. */
   | "adjusted"
   /** The charge came off whole; nothing is due as the parcel now reads. */
   | "reversed"
@@ -203,12 +217,21 @@ const usd = (amount: number): string => `$${Math.abs(amount).toFixed(2)}`;
 const rtl = (amount: number): string => `\u2066${usd(amount)}\u2069`;
 
 /**
- * One sentence for the person who made the correction: what the account said,
- * what it says now, and that only the difference was written. Digits stay
- * 0-9 and the figures read the same in every language.
+ * One sentence for the person who made the correction: what the account said
+ * for the parcel and what it says now. Digits stay 0-9 and the figures read
+ * the same in every language.
  */
 export function correctionWords(outcome: CorrectionOutcome): CorrectionWords {
   const { money, wasUsd, nowUsd, chargedUsd, priceUsd } = outcome;
+
+  if (money === "restated") {
+    return {
+      ku: `چاک کرایەوە. قەرزی ئەم پاکەتە لەسەر حیسابی کڕیار ${rtl(wasUsd)} بوو، ئێستا ${rtl(nowUsd)} ـە.`,
+      en: `Corrected. The account said ${usd(wasUsd)} for this parcel and now says ${usd(nowUsd)}.`,
+      ar: `تم التصحيح. كان على حساب الزبون لهذا الطرد ${rtl(wasUsd)} وأصبح ${rtl(nowUsd)}.`,
+      zh: `已更正。该包裹在客户账上原为 ${usd(wasUsd)}，现为 ${usd(nowUsd)}。`,
+    };
+  }
 
   if (money === "adjusted") {
     const diff = Math.round((nowUsd - wasUsd) * 100) / 100;
@@ -275,4 +298,171 @@ export function correctionWords(outcome: CorrectionOutcome): CorrectionWords {
         ar: "تم التصحيح. لم يتحرك أي مبلغ على أي حساب.",
         zh: "已更正。账上没有任何变动。",
       };
+}
+
+/**
+ * Why a charged parcel's money cannot follow a correction, when it cannot.
+ *
+ * Before a parcel is put into a delivery box, its debt follows its weight.
+ * Once it is in a box the box's payment screen is where its price is put
+ * right, and once its money has been taken the receipt is undone first - the
+ * rules the till has always worked by. An order's carton carries no charge of
+ * its own, and a parcel moved to another batch keeps the debt it had.
+ */
+export type ParcelMoneyHold =
+  /** Its money was taken on a box receipt. */
+  | { kind: "receipt"; settlementNumber: string; boxCode: string | null }
+  /** It sits in a delivery box. */
+  | { kind: "box"; boxCode: string | null }
+  /** It travels for an order; the money is on the order. */
+  | { kind: "order"; orderCodes: readonly string[] }
+  /** The same edit moves it to another batch. */
+  | { kind: "batch" }
+  /** The account is not as it should be; the server says how, in its own words. */
+  | { kind: "account"; said: string };
+
+/**
+ * What the parcel list says when it saved an edit and left the account alone.
+ *
+ * The edit IS saved - the weight on the parcel is right from now on - so the
+ * sentence starts by saying so, then says why the debt did not move with it
+ * and the steps that do move it.
+ */
+export function editHoldWords(hold: ParcelMoneyHold): CorrectionWords {
+  if (hold.kind === "receipt") {
+    const box = hold.boxCode ?? "";
+    return {
+      ku: withFix(
+        `پاشەکەوت کرا، بەڵام قەرزی سەر حیساب نەگۆڕا: پارەی ئەم پاکەتە پێشتر لە وەسڵی ${hold.settlementNumber} ـی بۆکسی ${box} وەرگیراوە.`,
+        [
+          `بۆکسی ${box} بکەرەوە و وەسڵەکە هەڵبوەشێنەوە`,
+          "لە شاشەی پارەدانی بۆکس، نرخی پاکەتەکە بە «ڕاستکردنەوە» چاک بکە",
+          "دووبارە وەسڵی بکەرەوە بە بڕە ڕاستەکە",
+        ],
+      ),
+      en: withFix(
+        `Saved, but the account was not touched: this parcel's money was already taken on receipt ${hold.settlementNumber} of box ${box}.`,
+        [
+          `Open box ${box} and undo the receipt`,
+          'On the box\'s payment screen, put the parcel\'s price right with "Correct"',
+          "Take the money again at the right figure",
+        ],
+        "en",
+      ),
+      ar: withFix(
+        `تم الحفظ، لكن الحساب لم يتغيّر: مبلغ هذا الطرد استُلم سابقاً بالوصل ${hold.settlementNumber} للصندوق ${box}.`,
+        [
+          `افتح الصندوق ${box} وألغِ الوصل`,
+          "في شاشة دفع الصندوق صحّح سعر الطرد بزر «تصحيح»",
+          "استلم المبلغ من جديد بالرقم الصحيح",
+        ],
+        "ar",
+      ),
+      zh: withFix(
+        `已保存，但账户未变动：该包裹的款项已在箱 ${box} 的收据 ${hold.settlementNumber} 上收取。`,
+        [
+          `打开箱 ${box} 并撤销收据`,
+          "在该箱的付款界面用「更正」改正包裹价格",
+          "按正确金额重新收款",
+        ],
+        "zh",
+      ),
+    };
+  }
+
+  if (hold.kind === "box") {
+    const box = hold.boxCode ?? "";
+    return {
+      ku: withFix(
+        `پاشەکەوت کرا، بەڵام قەرزی سەر حیساب نەگۆڕا: پاکەتەکە لە ناو بۆکسی ${box} دایە، و نرخی پاکەتی ناو بۆکس لە شاشەی پارەدانی بۆکس چاک دەکرێت.`,
+        [
+          `بۆکسی ${box} بکەرەوە`,
+          "لە شاشەی پارەدان، نرخی ئەم پاکەتە بە «ڕاستکردنەوە» چاک بکە",
+        ],
+      ),
+      en: withFix(
+        `Saved, but the account was not touched: the parcel is in box ${box}, and the price of a parcel in a box is put right on the box's payment screen.`,
+        [`Open box ${box}`, 'On its payment screen, put this parcel\'s price right with "Correct"'],
+        "en",
+      ),
+      ar: withFix(
+        `تم الحفظ، لكن الحساب لم يتغيّر: الطرد داخل الصندوق ${box}، وسعر الطرد داخل الصندوق يُصحَّح من شاشة دفع الصندوق.`,
+        [`افتح الصندوق ${box}`, "في شاشة الدفع صحّح سعر هذا الطرد بزر «تصحيح»"],
+        "ar",
+      ),
+      zh: withFix(
+        `已保存，但账户未变动：包裹在箱 ${box} 内，箱内包裹的价格在该箱的付款界面更正。`,
+        [`打开箱 ${box}`, "在付款界面用「更正」改正该包裹的价格"],
+        "zh",
+      ),
+    };
+  }
+
+  if (hold.kind === "order") {
+    const codes = hold.orderCodes.join(", ");
+    return {
+      ku: withFix(
+        `پاشەکەوت کرا، بەڵام هیچ قەرزێک نەگۆڕا: ئەم پاکەتە هی ئۆردەری ${codes} ـە، و کرێی گواستنەوەکەی لەسەر ئۆردەرەکە نووسراوە، نەک لەسەر پاکەتەکە.`,
+        ["ئۆردەرەکە بکەرەوە و کرێی گواستنەوەکەی لەوێ ڕاست بکەرەوە"],
+      ),
+      en: withFix(
+        `Saved, but no debt moved: this parcel belongs to order ${codes}, and its freight is charged on the order, not on the parcel.`,
+        ["Open the order and put its freight right there"],
+        "en",
+      ),
+      ar: withFix(
+        `تم الحفظ، لكن لم يتغيّر أي دين: هذا الطرد تابع للطلب ${codes}، وأجرة شحنه مقيّدة على الطلب لا على الطرد.`,
+        ["افتح الطلب وصحّح أجرة الشحن هناك"],
+        "ar",
+      ),
+      zh: withFix(
+        `已保存，但欠款未变动：该包裹属于订单 ${codes}，运费记在订单上，而不是包裹上。`,
+        ["打开订单，在那里更正运费"],
+        "zh",
+      ),
+    };
+  }
+
+  if (hold.kind === "batch") {
+    return {
+      ku: withFix(
+        "پاشەکەوت کرا، بەڵام قەرزی سەر حیساب نەگۆڕا: باچی پاکەتەکە گۆڕدرا، و قەرزەکەی بە نرخی باچی پێشوو لەسەر حیساب ماوەتەوە.",
+        [
+          "ئەگەر بە هەڵە گوازراوەتەوە، بیگەڕێنەوە باچەکەی پێشووی",
+          "ئەگەر دەبێت لە باچی نوێ بێت و نرخەکەی جیاوازە: ئادمین پاکەتەکە بسڕێتەوە — قەرزەکەی لەگەڵی لادەچێت — و لە باچی نوێ دووبارە تۆماری بکاتەوە",
+        ],
+      ),
+      en: withFix(
+        "Saved, but the account was not touched: the parcel's batch was changed, and its debt stays on the account at the old batch's price.",
+        [
+          "If it was moved by mistake, move it back to its batch",
+          "If it belongs in the new batch at a different price: an admin deletes the parcel - its debt goes with it - and registers it again in the new batch",
+        ],
+        "en",
+      ),
+      ar: withFix(
+        "تم الحفظ، لكن الحساب لم يتغيّر: تغيّرت دفعة الطرد، وبقي دينه على الحساب بسعر الدفعة السابقة.",
+        [
+          "إن نُقل بالخطأ فأعده إلى دفعته السابقة",
+          "إن كان يجب أن يكون في الدفعة الجديدة بسعر مختلف: يحذف المدير الطرد — فيزول دينه معه — ويسجّله من جديد في الدفعة الجديدة",
+        ],
+        "ar",
+      ),
+      zh: withFix(
+        "已保存，但账户未变动：包裹的批次已更改，其欠款仍按原批次的价格留在账上。",
+        [
+          "如果是误移，请移回原批次",
+          "如果确应在新批次且价格不同：由管理员删除该包裹（欠款随之撤销），再在新批次重新登记",
+        ],
+        "zh",
+      ),
+    };
+  }
+
+  return {
+    ku: `پاشەکەوت کرا، بەڵام قەرزی سەر حیساب نەگۆڕا.\n\n${hold.said}`,
+    en: `Saved, but the account was not touched.\n\n${hold.said}`,
+    ar: `تم الحفظ، لكن الحساب لم يتغيّر.\n\n${hold.said}`,
+    zh: `已保存，但账户未变动。\n\n${hold.said}`,
+  };
 }

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import {
-  correctionNote, correctionWords, measuresChanged, moneyFactsChanged, ownerChanged, plainNumber,
-  storedMeasure, storedVolumeCbm, typedCbmOf,
+  correctionNote, correctionWords, editHoldWords, measuresChanged, moneyFactsChanged, ownerChanged, plainNumber,
+  storedMeasure, storedVolumeCbm, typedCbmOf, type ParcelMoneyHold,
 } from "./parcelCorrection";
 import { isRecentEntry, lastOrderEditHref, orderFormExit, LAST_ENTRY_WINDOW_MS } from "./lastEntry";
 
@@ -150,6 +150,7 @@ describe("the sentence on the screen", () => {
 
   it("every outcome speaks all four languages", () => {
     const outcomes = [
+      { money: "restated", wasUsd: 10, nowUsd: 5, chargedUsd: 0, priceUsd: 5 },
       { money: "adjusted", wasUsd: 10, nowUsd: 5, chargedUsd: 0, priceUsd: 5 },
       { money: "moved", wasUsd: 10, nowUsd: 0, chargedUsd: 10, priceUsd: 10 },
       { money: "moved", wasUsd: 10, nowUsd: 0, chargedUsd: 0, priceUsd: null },
@@ -198,5 +199,78 @@ describe("the last thing I entered", () => {
     expect(orderFormExit("full_package", true, "?then=list")).toBe("/full-package");
     // The mark means nothing on the entry form itself.
     expect(orderFormExit("commission", false, "?then=new")).toBe("/commission");
+  });
+});
+
+/*
+ * Owner, 2026-10-05, shown "$165.00, and under it -$148.50": «نرخی پێشوو لەگەڵ
+ * ئیزافەی نوێ بە جیا بچنە ناو بەشی ژمێریاری، ئەوە قەبوڵ کراو نییە».
+ */
+describe("one parcel, one line", () => {
+  it("says what the account said and what it says now - and nothing about a difference", () => {
+    const words = correctionWords({ money: "restated", wasUsd: 165, nowUsd: 16.5, chargedUsd: 0, priceUsd: 16.5 });
+    expect(words.en).toBe("Corrected. The account said $165.00 for this parcel and now says $16.50.");
+    expect(words.ku).toContain("\u2066$165.00\u2069");
+    expect(words.ku).toContain("\u2066$16.50\u2069");
+    expect(words.ar).toContain("\u2066$16.50\u2069");
+    for (const lang of ["ku", "en", "ar", "zh"] as const) {
+      expect(words[lang], lang).not.toMatch(/difference|جیاوازی|الفرق|差额/);
+      expect(words[lang], lang).not.toContain("148.50");
+    }
+  });
+});
+
+describe("what the parcel list says when the debt could not follow", () => {
+  const holds: ParcelMoneyHold[] = [
+    { kind: "receipt", settlementNumber: "RCP-20261005-0001", boxCode: "BOX-20261005-001" },
+    { kind: "box", boxCode: "BOX-20261005-001" },
+    { kind: "order", orderCodes: ["CM-AAAA", "CM-BBBB"] },
+    { kind: "batch" },
+    { kind: "account", said: "the server's own words" },
+  ];
+
+  it("always starts by saying the edit was saved", () => {
+    for (const hold of holds) {
+      const words = editHoldWords(hold);
+      expect(words.ku.startsWith("پاشەکەوت کرا"), hold.kind).toBe(true);
+      expect(words.en.startsWith("Saved"), hold.kind).toBe(true);
+      expect(words.ar.startsWith("تم الحفظ"), hold.kind).toBe(true);
+      expect(words.zh.startsWith("已保存"), hold.kind).toBe(true);
+    }
+  });
+
+  it("names the receipt, the box and the order", () => {
+    const receipt = editHoldWords(holds[0]);
+    const box = editHoldWords(holds[1]);
+    const order = editHoldWords(holds[2]);
+    for (const lang of ["ku", "en", "ar", "zh"] as const) {
+      expect(receipt[lang], lang).toContain("RCP-20261005-0001");
+      expect(receipt[lang], lang).toContain("BOX-20261005-001");
+      expect(box[lang], lang).toContain("BOX-20261005-001");
+      expect(order[lang], lang).toContain("CM-AAAA, CM-BBBB");
+    }
+  });
+
+  it("gives the steps, numbered, in the reader's own language", () => {
+    const box = editHoldWords(holds[1]);
+    expect(box.ku).toContain("چۆن چارەسەری بکەیت:");
+    expect(box.en).toContain("How to fix it:");
+    for (const lang of ["ku", "en", "ar", "zh"] as const) expect(box[lang], lang).toContain("\n1. ");
+    // The till's own button, by the name it has on the screen.
+    expect(box.ku).toContain("«ڕاستکردنەوە»");
+  });
+
+  it("passes the server's own words on when the account is not right", () => {
+    const words = editHoldWords(holds[4]);
+    for (const lang of ["ku", "en", "ar", "zh"] as const) expect(words[lang], lang).toContain("the server's own words");
+  });
+
+  it("keeps digits 0-9 in every language", () => {
+    for (const hold of holds) {
+      const words = editHoldWords(hold);
+      for (const lang of ["ku", "en", "ar", "zh"] as const) {
+        expect(words[lang], `${hold.kind} ${lang}`).not.toMatch(/[\u0660-\u0669\u06F0-\u06F9]/);
+      }
+    }
   });
 });

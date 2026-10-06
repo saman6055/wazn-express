@@ -145,8 +145,9 @@ export default function QuickRegister() {
    * So the banner that names the last registration can hand it back. The same
    * form, the same boxes — nothing new to learn — and the save goes to the
    * correction instead of the register: the same parcel, the same code, and
-   * on the customer's account only the difference (server/lib/
-   * correctRegisteredParcel). Only the last one, and only the caller's own.
+   * its one line on the customer's account reading the right figure
+   * (server/lib/correctRegisteredParcel). Only the last one, and only the
+   * caller's own.
    *
    * While it is open the tracking is not for changing (a scanner read it),
    * and the warehouse, the shipping type and the batch belong to the parcel,

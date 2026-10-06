@@ -17,7 +17,7 @@ import { assessVolumetric } from "@shared/volumetricAlert";
 import { affectsCost } from "@shared/parcelCost";
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
-import { correctLastRegistration, lastRegistrationView } from "../lib/correctRegisteredParcel";
+import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView } from "../lib/correctRegisteredParcel";
 
 export const packagesRouter = router({
     list: staffProcedure
@@ -1725,9 +1725,11 @@ export const packagesRouter = router({
         categoryId: z.number().nullable().optional(),
         volumeCbm: z.string().optional(),
         photos: z.array(z.string()).optional(),
+        /** The main admin's yes to a lowering that leaves a credit (lib/creditGuard). */
+        approveCredit: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, volumeCbm: inputVolumeCbm, photos, ...data } = input;
+        const { id, volumeCbm: inputVolumeCbm, photos, approveCredit, ...data } = input;
         
         // Calculate volume if dimensions provided, or use direct input
         const updateData: Partial<InsertPackage> = { ...data };
@@ -1768,17 +1770,42 @@ export const packagesRouter = router({
          *
          *  - Only when a fact behind the price changed. Fixing a description
          *    must not quietly reprice a parcel.
-         *  - Never after the customer has been charged. That figure is on an
-         *    invoice in somebody's hands; it is corrected deliberately, not
-         *    as a side effect of an edit.
+         *  - A parcel already on its owner's account is not repriced here:
+         *    it is handed to the correction, which moves the parcel and its
+         *    debt together or says why it could not (owner, 2026-10-05).
          *  - Never write zero over a real price. A rate that has gone missing
          *    means "not known", and blanking a good figure is worse than
          *    leaving it.
          */
         let pricing: RepriceReport = { outcome: "untouched", wasUsd: null, nowUsd: null };
+        let before: Record<string, unknown> | undefined;
         if (affectsCost(data as Record<string, unknown>)) {
           const pkg = await db.getPackageById(id);
           if (pkg) {
+            // On its owner's account already: its debt follows the corrected
+            // figures, by the one function Quick Register's correction uses.
+            // Null for a parcel with no charge to follow.
+            const onAccount = await correctChargedParcelOnEdit(
+              { id: ctx.user.id, name: ctx.user.name, role: ctx.user.role },
+              pkg,
+              {
+                customerId: updateData.customerId,
+                weightKg: updateData.weightKg,
+                lengthCm: updateData.lengthCm,
+                widthCm: updateData.widthCm,
+                heightCm: updateData.heightCm,
+                volumeCbm: updateData.volumeCbm,
+                batchId: updateData.batchId,
+                description: updateData.description,
+                categoryId: updateData.categoryId,
+                approveCredit,
+              },
+            );
+            before = {
+              customerId: pkg.customerId, weightKg: pkg.weightKg, lengthCm: pkg.lengthCm, widthCm: pkg.widthCm,
+              heightCm: pkg.heightCm, volumeCbm: pkg.volumeCbm, batchId: pkg.batchId,
+              calculatedCostUsd: pkg.calculatedCostUsd, isCharged: pkg.isCharged,
+            };
             // Asked only when it can be answered: an unclaimed or an already
             // charged parcel is decided without going near the pricing tables.
             const priced = pkg.isUnclaimed || pkg.isCharged
@@ -1803,6 +1830,7 @@ export const packagesRouter = router({
               wasUsd: pkg.calculatedCostUsd,
               resolvedUsd: priced?.costUsd,
             });
+            if (onAccount) pricing = onAccount;
             if (shouldStoreNewPrice(pricing) && priced?.costUsd) {
               updateData.calculatedCostUsd = priced.costUsd;
               if (priced.pricingRuleId) updateData.appliedPricingRuleId = priced.pricingRuleId;
@@ -1827,7 +1855,8 @@ export const packagesRouter = router({
           action: "update_package",
           entityType: "package",
           entityId: id,
-          newValues: data,
+          oldValues: before,
+          newValues: { ...data, price: pricing.outcome, wasUsd: pricing.wasUsd, nowUsd: pricing.nowUsd },
         });
         // What the correction did to the price, in the words the screen
         // shows — an edit that changes nothing must never do it silently

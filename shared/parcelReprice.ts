@@ -23,6 +23,14 @@
  * and the screen shows the same sentence.
  *
  * Pure: no database, no money. It decides what happened, not what is owed.
+ *
+ * 2026-10-05: the first of the three is no longer refused. The owner, told
+ * that an edit changed a charged parcel's weight and left its debt standing:
+ * «ئەوەش بە هەمان شێوە ئەپدەیت ببێتەوە». A parcel that is on its owner's
+ * account is now handed to the correction (server/lib/correctRegisteredParcel)
+ * and the report comes back from there, with its own sentence: `account`
+ * when the debt followed, `held` when the edit was saved and the debt could
+ * not follow - paid on a receipt, in a delivery box, an order's carton.
  */
 
 export type RepriceOutcome =
@@ -34,8 +42,12 @@ export type RepriceOutcome =
   | "no_rate"
   /** No owner yet: claiming the parcel is what prices it. */
   | "unclaimed"
-  /** Already on the customer's account; an edit does not move a debt. */
+  /** Already on the customer's account, and nothing was asked of it. */
   | "charged"
+  /** On the customer's account, and the account was put right with the parcel. */
+  | "account"
+  /** On the customer's account; the edit was saved and the account left alone. */
+  | "held"
   /** Nothing behind the price moved, so nothing was asked. */
   | "untouched";
 
@@ -45,6 +57,12 @@ export interface RepriceReport {
   wasUsd: number | null;
   /** What it is priced at after it — the same figure unless `repriced`. */
   nowUsd: number | null;
+  /**
+   * The sentence, when the one who decided has to say it: the correction
+   * knows whether a charge was restated, moved to another owner or left
+   * where it was, and this rule does not.
+   */
+  said?: RepriceWords;
 }
 
 export interface RepriceFacts {
@@ -93,7 +111,7 @@ export function shouldStoreNewPrice(report: RepriceReport): boolean {
 
 /** How loudly the screen says it: a correction that worked, or one that did not. */
 export function repriceIsGood(report: RepriceReport): boolean {
-  return report.outcome === "repriced" || report.outcome === "unchanged";
+  return report.outcome === "repriced" || report.outcome === "unchanged" || report.outcome === "account";
 }
 
 export interface RepriceWords {
@@ -110,6 +128,7 @@ const usd = (amount: number | null): string => (amount === null ? "—" : `$${am
  * the figures are written the same way in every language.
  */
 export function repriceWords(report: RepriceReport): RepriceWords | null {
+  if (report.said) return report.said;
   const was = usd(report.wasUsd);
   const now = usd(report.nowUsd);
 

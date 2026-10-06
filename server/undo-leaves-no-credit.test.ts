@@ -99,3 +99,19 @@ describe("the order doors", () => {
     expect(fn).toContain('eq(boxSettlements.status, "confirmed")');
   });
 });
+
+describe("a charge lowered in place is still a lowering", () => {
+  it("is checked at the ledger like every other one", () => {
+    expect(body(read("server/db/finance.db.ts"), "restateCharge"))
+      .toContain("if (deltaCents < 0) refuseSilentCredit(currentBalanceUsd, newBalanceUsd, opts);");
+  });
+
+  it("before anything is written", () => {
+    const fn = body(read("server/db/finance.db.ts"), "restateCharge");
+    const guard = fn.indexOf("refuseSilentCredit(currentBalanceUsd, newBalanceUsd, opts);");
+    expect(guard).toBeGreaterThan(-1);
+    for (const write of ["await tx.update(ledgerTransactions)", "await tx.update(customerAccounts)", "await tx.insert(auditLogs)"]) {
+      expect(fn.indexOf(write), write).toBeGreaterThan(guard);
+    }
+  });
+});

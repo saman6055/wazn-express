@@ -13,6 +13,13 @@
  * movement that some screen forgot to announce. A door added next year is
  * in the feed the day it ships.
  *
+ * One movement writes no row: a parcel weighed or typed wrong, put right. The
+ * owner would not have the customer's page say it twice (2026-10-05), so the
+ * charge itself is rewritten and the record of it is kept in the audit log
+ * instead. Those records are read here beside the rows (restatedCharge
+ * below), so the rule that started this file still holds: one cent more or
+ * less, and the main admin knows.
+ *
  * Two things are done to the raw rows:
  *  - rows written together are shown together. Pricing a batch charges a
  *    hundred parcels in a second; a hundred lines would bury the one that
@@ -21,6 +28,16 @@
  *  - a movement that leaves the account further below zero than it found it
  *    says so, in red, with the amount: that is a credit being made.
  */
+
+/**
+ * The name a charge put right in place is kept under in the audit log.
+ *
+ * Such a correction writes no ledger row - the charge itself is rewritten
+ * (restateCharge in server/db/finance.db.ts) - so the feed, which reads
+ * ledger rows, would never see it. The record written with it carries this
+ * name, and the bell reads those records beside the ledger.
+ */
+export const CHARGE_RESTATED_ACTION = "restate_charge";
 
 export type MoneyKind =
   | "payment"
@@ -183,4 +200,87 @@ export function moneyLineHref(line: { kind: MoneyKind; boxId?: number | null; cu
   if (line.kind === "payment" && line.boxId) return `/customer-delivery-scanner?box=${line.boxId}`;
   if (line.customerId) return `/finance/customer/${line.customerId}`;
   return "/finance";
+}
+
+/** The record a restated charge leaves behind (an audit log row), as read. */
+export interface RestatedRecord {
+  id: number;
+  userId: number | null;
+  entityCode: string | null;
+  oldValues: unknown;
+  newValues: unknown;
+  metadata: unknown;
+  description: string | null;
+  createdAt: Date | string;
+}
+
+/** A charge put right in place, as the main admin reads it. */
+export interface RestatedCharge {
+  /** The record's own id - the "seen up to" marker for these lines. */
+  id: number;
+  accountId: number | null;
+  /** What the charge is for: the tracking number. */
+  subject: string;
+  wasUsd: number;
+  nowUsd: number;
+  /** Raised what the customer owes (+1) or lowered it (-1). */
+  direction: 1 | -1;
+  /** What the account stood at afterwards; null when the record does not say. */
+  balanceAfterUsd: number | null;
+  /** How much further below zero this left the account. 0 when none. */
+  creditCreatedUsd: number;
+  createdById: number | null;
+  at: string;
+  /** What was corrected, in words. */
+  note: string | null;
+}
+
+/** A JSON column comes back parsed from one driver and as text from another. */
+const asObject = (value: unknown): Record<string, unknown> => {
+  if (value && typeof value === "object") return value as Record<string, unknown>;
+  if (typeof value === "string") {
+    try {
+      const parsed: unknown = JSON.parse(value);
+      return parsed && typeof parsed === "object" ? (parsed as Record<string, unknown>) : {};
+    } catch {
+      return {};
+    }
+  }
+  return {};
+};
+
+const amount = (v: unknown): number | null => {
+  const n = typeof v === "number" ? v : Number(v);
+  return v !== null && v !== undefined && v !== "" && Number.isFinite(n) ? n : null;
+};
+
+/**
+ * One record, shaped for the bell. Null for a record that does not say what
+ * the charge was and what it became - there is nothing to show for it.
+ */
+export function restatedCharge(record: RestatedRecord): RestatedCharge | null {
+  const was = amount(asObject(record.oldValues).amountUsd);
+  const now = amount(asObject(record.newValues).amountUsd);
+  if (was === null || now === null) return null;
+  const meta = asObject(record.metadata);
+  const before = amount(meta.balanceBeforeUsd);
+  const after = amount(meta.balanceAfterUsd);
+  return {
+    id: record.id,
+    accountId: amount(meta.accountId),
+    subject: String(record.entityCode ?? ""),
+    wasUsd: cents(was) / 100,
+    nowUsd: cents(now) / 100,
+    direction: now >= was ? 1 : -1,
+    balanceAfterUsd: after,
+    creditCreatedUsd: before !== null && after !== null ? creditMade(cents(before), cents(after)) : 0,
+    createdById: record.userId ?? null,
+    at: iso(record.createdAt),
+    note: record.description,
+  };
+}
+
+/** How many restated charges are newer than the last one the reader looked at. */
+export function unseenRestated(lines: readonly { id: number }[], seenId: number): number {
+  return lines.filter((line) => line.id > seenId).length;
 }

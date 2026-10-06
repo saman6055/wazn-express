@@ -79,6 +79,7 @@ import {
 import { boxSettlements } from "../../drizzle/schema";
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from "@shared/ledgerTypes";
 import { buildAccountStatement, balanceDriftUsd, type AccountStatement } from "@shared/accountStatement";
+import { CHARGE_RESTATED_ACTION } from "@shared/moneyFeed";
 
 // ============ LEDGER OPERATIONS ============
 
@@ -1760,10 +1761,13 @@ export async function reverseCharge(
  *   the delta (balance decreases).
  * - If they match (within 1 cent) → no-op, returns null.
  *
- * The original transaction row is NEVER mutated; the ledger is append-only,
- * so every historical balance remains reconstructable. This is what makes
- * price edits drift-free: you can always sum all transactions for an
- * account and arrive at the exact current balance.
+ * The original transaction row is not touched here: the correction is a row
+ * of its own, so the statement shows both the figure that was and what was
+ * done about it. You can always sum all transactions for an account and
+ * arrive at the exact current balance.
+ *
+ * One kind of mistake is deliberately NOT corrected this way - a parcel
+ * weighed or typed wrong at the counter. See restateCharge below.
  */
 export async function adjustCharge(
   originalTransactionId: number,
@@ -1867,6 +1871,203 @@ export async function adjustCharge(
       delta, adjustmentType,
     });
     return { adjustmentTransaction, deltaUsd: delta };
+  };
+
+  if (existingTx) return run(existingTx);
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  return db.transaction(run);
+}
+
+/**
+ * Has anything been posted against this charge - a correction of its own, or
+ * its reversal? Read from the markers adjustCharge and reverseCharge write.
+ */
+export async function chargeHasCorrections(
+  tx: DbTx,
+  original: Pick<LedgerTransaction, "accountId" | "transactionNumber">,
+): Promise<boolean> {
+  const [row] = await tx
+    .select({ id: ledgerTransactions.id })
+    .from(ledgerTransactions)
+    .where(and(
+      eq(ledgerTransactions.accountId, original.accountId),
+      inArray(ledgerTransactions.transactionType, ['ADJUSTMENT_DEBIT', 'ADJUSTMENT_CREDIT']),
+      or(
+        like(ledgerTransactions.description, `%[ADJ:${original.transactionNumber}]%`),
+        like(ledgerTransactions.description, `%[REV:${original.transactionNumber}]%`),
+      ),
+    ))
+    .limit(1);
+  return Boolean(row);
+}
+
+export interface ChargeRestatementTrace {
+  /** Why, in words. Kept with the record of the change - never on the statement. */
+  reason: string;
+  actorId: number;
+  actorRole?: string | null;
+  /** What the charge is for, as a person names it: the tracking number. */
+  subject?: string | null;
+}
+
+export interface ChargeRestatement {
+  /** False when the charge already stood at that figure and nothing was written. */
+  restated: boolean;
+  wasUsd: number;
+  nowUsd: number;
+  deltaUsd: number;
+}
+
+/**
+ * Put a charge right where it stands: the figure itself is corrected, and no
+ * second line is written beside it.
+ *
+ * Owner, 2026-10-05, shown a wrong weight corrected by a line of its own
+ * (+$165.00 for the parcel, then -$148.50 for the correction): «کاتێ ڕیتێرن
+ * دەکەی تەنها نرخ و کیلۆ ئەپدەیت ببێتەوە. پێویست ناکات گۆڕانکاری ببێتە تۆمار و
+ * نرخی پێشوو لەگەڵ ئیزافەی نوێ بە جیا بچنە ناو بەشی ژمێریاری — ئەوە قەبوڵ کراو
+ * نییە». A finger slipping at the scales is not something that happened to
+ * the customer's account; their statement should read as if the parcel had
+ * been weighed right the first time.
+ *
+ * So this is the one place a ledger row's amount is rewritten, and it is kept
+ * narrow on purpose:
+ *
+ *  - only a charge nothing has been posted against. One that already carries
+ *    a correction or a reversal of its own is corrected the old way
+ *    (adjustCharge): its rows already tell a story this would contradict;
+ *  - the account moves by the same difference, and so does the balance
+ *    "before" and "after" that every later row of that account carries. The
+ *    statement, the bell and the printed account read those figures, and
+ *    they must go on adding up from the top of the page to the bottom;
+ *  - a lowering that would leave the account in credit is refused exactly as
+ *    adjustCharge refuses it. The money was taken: the receipt is undone
+ *    first, or the main admin says yes;
+ *  - what it was, what it is now, who changed it and why are written to the
+ *    audit log in the same transaction. The account shows one figure; that
+ *    it was changed is kept where the main admin's bell reads it. Nothing
+ *    moves money silently (2026-10-02) - it only stops being written twice
+ *    on the customer's page.
+ *
+ * `newAmountUsd` is what the charge should stand at, and must be more than
+ * zero: a charge that is no longer owed at all is reversed, not restated.
+ * The invoice and the revenue record written with the charge are the
+ * caller's to bring along (applyParcelCorrection does both).
+ */
+export async function restateCharge(
+  originalTransactionId: number,
+  newAmountUsd: number,
+  trace: ChargeRestatementTrace,
+  existingTx?: DbTx,
+  opts?: UndoOptions,
+): Promise<ChargeRestatement> {
+  if (!originalTransactionId || originalTransactionId <= 0) {
+    throw new Error("restateCharge: originalTransactionId is required");
+  }
+  if (!(newAmountUsd > 0)) {
+    throw new Error("restateCharge: a charge that is no longer owed is reversed, not restated");
+  }
+  if (!trace.reason || trace.reason.trim().length < 3) {
+    throw new Error("restateCharge: reason (min 3 chars) is required for the record of the change");
+  }
+
+  const run = async (tx: DbTx): Promise<ChargeRestatement> => {
+    const [original] = await tx.select().from(ledgerTransactions)
+      .where(eq(ledgerTransactions.id, originalTransactionId))
+      .limit(1);
+    if (!original) {
+      throw new Error(`restateCharge: transaction ${originalTransactionId} not found`);
+    }
+    if (!(DEBIT_CHARGE_TYPES as readonly string[]).includes(original.transactionType)) {
+      throw new Error(
+        `restateCharge: transaction ${originalTransactionId} is type ` +
+        `${original.transactionType}, which cannot be restated.`,
+      );
+    }
+
+    // The account first: nothing else may be posted to it while the rows
+    // after this one are being moved.
+    const account = await _lockAccount(tx, original.accountId);
+
+    if (await chargeHasCorrections(tx, original)) {
+      throw new Error(
+        `restateCharge: transaction ${originalTransactionId} already carries a correction ` +
+        `or a reversal of its own; it is corrected by adjustCharge.`,
+      );
+    }
+
+    const wasCents = Math.round(parseFloat(original.amountUsd || '0') * 100);
+    const nowCents = Math.round(newAmountUsd * 100);
+    const deltaCents = nowCents - wasCents;
+    if (deltaCents === 0) {
+      return { restated: false, wasUsd: wasCents / 100, nowUsd: wasCents / 100, deltaUsd: 0 };
+    }
+
+    const currentBalanceUsd = parseFloat(account.currentBalanceUsd || '0');
+    const newBalanceUsd = (Math.round(currentBalanceUsd * 100) + deltaCents) / 100;
+    // A charge lowered below what was already paid would leave a credit.
+    if (deltaCents < 0) refuseSilentCredit(currentBalanceUsd, newBalanceUsd, opts);
+
+    const by = sql`CAST(${(deltaCents / 100).toFixed(2)} AS DECIMAL(12,2))`;
+
+    // 1. The charge itself now reads the right figure.
+    await tx.update(ledgerTransactions).set({
+      amountUsd: (nowCents / 100).toFixed(2),
+      balanceAfterUsd: sql`${ledgerTransactions.balanceAfterUsd} + ${by}`,
+    }).where(eq(ledgerTransactions.id, original.id));
+
+    // 2. Every row posted to the account since then says what the balance
+    //    was before it and after it. Both move by the same difference, so
+    //    the statement still adds up line by line.
+    await tx.update(ledgerTransactions).set({
+      balanceBeforeUsd: sql`${ledgerTransactions.balanceBeforeUsd} + ${by}`,
+      balanceAfterUsd: sql`${ledgerTransactions.balanceAfterUsd} + ${by}`,
+    }).where(and(
+      eq(ledgerTransactions.accountId, original.accountId),
+      gt(ledgerTransactions.id, original.id),
+    ));
+
+    // 3. The account (row still locked).
+    await tx.update(customerAccounts).set({
+      currentBalanceUsd: newBalanceUsd.toFixed(2),
+    }).where(eq(customerAccounts.id, account.id));
+
+    // 4. The record of it, saved with the change or not at all.
+    await tx.insert(auditLogs).values({
+      userId: trace.actorId,
+      userRole: trace.actorRole ?? null,
+      action: CHARGE_RESTATED_ACTION,
+      actionLabel: "نرخی سەر حیساب ڕاست کرایەوە",
+      category: 'finance',
+      entityType: original.referenceType === 'package' ? 'package' : 'ledger_transaction',
+      entityId: original.referenceId ?? original.id,
+      entityCode: trace.subject ?? null,
+      oldValues: { amountUsd: wasCents / 100 },
+      newValues: { amountUsd: nowCents / 100 },
+      changedFields: ['amountUsd'],
+      description: trace.reason,
+      metadata: {
+        ledgerTransactionId: original.id,
+        transactionNumber: original.transactionNumber,
+        accountId: original.accountId,
+        referenceType: original.referenceType,
+        referenceId: original.referenceId,
+        balanceBeforeUsd: currentBalanceUsd,
+        balanceAfterUsd: newBalanceUsd,
+      },
+    });
+
+    appLogger.info('[restateCharge] Charge restated in place', {
+      originalTransactionId, wasUsd: wasCents / 100, nowUsd: nowCents / 100,
+      accountId: account.id, actorId: trace.actorId,
+    });
+    return {
+      restated: true,
+      wasUsd: wasCents / 100,
+      nowUsd: nowCents / 100,
+      deltaUsd: deltaCents / 100,
+    };
   };
 
   if (existingTx) return run(existingTx);

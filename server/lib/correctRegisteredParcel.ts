@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import * as db from "../db";
+import type { Package } from "../../drizzle/schema";
 import { resolveParcelCost } from "../services/parcelPricing.service";
 import { undoCreditRefusal } from "./creditGuard";
 import { mayApproveCredit } from "@shared/creditGuard";
@@ -7,19 +8,26 @@ import { withFix } from "@shared/fixAdvice";
 import { isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
 import {
-  correctionNote, correctionWords, measuresChanged, moneyFactsChanged, ownerChanged, plainNumber,
-  storedMeasure, storedVolumeCbm, typedCbmOf, type CorrectionMoney, type CorrectionWords,
+  correctionNote, correctionWords, editHoldWords, measuresChanged, moneyFactsChanged, ownerChanged, plainNumber,
+  storedMeasure, storedVolumeCbm, typedCbmOf,
+  type CorrectionMoney, type CorrectionWords, type ParcelMoneyHold,
 } from "@shared/parcelCorrection";
+import type { RepriceReport } from "@shared/parcelReprice";
 import { appLogger } from "../utils/logger";
 
 /**
- * The last registration, put right from Quick Register (owner, 2026-10-05).
+ * A registered parcel put right, and its money with it (owner, 2026-10-05).
  *
- * The rule is in shared/parcelCorrection.ts and the money is moved in
- * server/db/parcelCorrection.db.ts. This is the order they are done in:
+ * Two doors, one rule. Quick Register corrects the caller's own last
+ * registration without leaving the screen; the parcel list corrects any
+ * parcel. Both end in the same place - server/db/parcelCorrection.db.ts -
+ * where the parcel's one line on the account is made to read the right
+ * figure. The parts with no database in them are in shared/parcelCorrection.ts.
  *
- *  1. it must be the caller's own last registration — every other parcel is
- *     corrected from the parcel list;
+ * The order things are done in:
+ *
+ *  1. the door's own gate - Quick Register: it must be the caller's last
+ *     registration; the parcel list: the parcel must be on an account at all;
  *  2. the corrected facts are read the way registration reads them;
  *  3. the price is asked for again only if a fact behind it moved;
  *  4. the row and the account are changed together, or not at all;
@@ -133,6 +141,116 @@ export interface CorrectionReply {
 const refuse = (code: "NOT_FOUND" | "CONFLICT" | "BAD_REQUEST", cause: string, steps: string[]): TRPCError =>
   new TRPCError({ code, message: withFix(cause, steps) });
 
+/** The facts a parcel's price rests on, as a door hands them over. */
+interface PricedFacts {
+  customerId: number | null;
+  isUnclaimed: boolean;
+  weightKg: string | null;
+  lengthCm: string | null;
+  widthCm: string | null;
+  heightCm: string | null;
+  volumeCbm: string | null;
+}
+
+/** The rest of the row a correction writes: nothing here is behind the price. */
+interface ParcelDetails {
+  description: string | null;
+  categoryId: number | null;
+  /** Undefined leaves the photographs as they are. */
+  photos?: string[];
+}
+
+interface MoneyMoved {
+  moved: Awaited<ReturnType<typeof db.applyParcelCorrection>>;
+  calculatedCostUsd: string | null;
+  chargedUsd: number;
+}
+
+const positive = (v: unknown): number | null => {
+  const x = parseFloat(String(v ?? ""));
+  return Number.isFinite(x) && x > 0 ? x : null;
+};
+
+/**
+ * The money, the same way for both doors (steps 3 to 5 above).
+ *
+ * The stored price is asked for again, the row and the account are changed
+ * together or not at all, and a parcel left uncharged is offered to its
+ * batch. A lowering that would leave a credit comes back as the main admin's
+ * question - or, for everybody else, as a refusal that says the cure.
+ * Anything else the ledger refuses is thrown on as it is, for the door to
+ * say in its own way.
+ */
+async function moveParcelMoney(
+  actor: CorrectionActor,
+  pkg: Package,
+  name: string,
+  after: PricedFacts,
+  details: ParcelDetails,
+  approveCredit: boolean | undefined,
+): Promise<MoneyMoved> {
+  // 3. Registration stores no price for a parcel nobody owns.
+  let calculatedCostUsd: string | null = null;
+  let appliedPricingRuleId: number | null = null;
+  if (!after.isUnclaimed) {
+    const priced = await resolveParcelCost({
+      customerId: after.customerId,
+      batchId: pkg.batchId,
+      originWarehouseId: pkg.originWarehouseId,
+      shippingType: pkg.shippingType,
+      weightKg: after.weightKg,
+      lengthCm: after.lengthCm,
+      widthCm: after.widthCm,
+      heightCm: after.heightCm,
+      volumeCbm: after.volumeCbm,
+    });
+    calculatedCostUsd = priced.costUsd ?? null;
+    appliedPricingRuleId = priced.pricingRuleId ?? null;
+  }
+
+  const facts = { ...after, ...details, calculatedCostUsd, appliedPricingRuleId };
+
+  const ownerBefore = pkg.customerId ? await db.getCustomerById(pkg.customerId) : null;
+  const ownerAfter = after.customerId ? await db.getCustomerById(after.customerId) : null;
+  const reason = correctionNote(name, pkg, after, {
+    before: ownerBefore?.customerCode ?? null,
+    after: ownerAfter?.customerCode ?? null,
+  });
+
+  // 4. The row and the account, together or not at all.
+  let moved: MoneyMoved["moved"];
+  try {
+    moved = await db.applyParcelCorrection(pkg.id, actor.id, facts, reason, {
+      allowCredit: mayApproveCredit(actor.role) && approveCredit === true,
+      actorRole: actor.role ?? null,
+    });
+  } catch (err) {
+    const credit = undoCreditRefusal(err, actor.role);
+    if (credit) throw credit;
+    throw err;
+  }
+
+  // 5. Uncharged now, and something is due: offered to its batch, as a
+  //    registration is. The same call, with the same safety — a failure here
+  //    leaves the parcel uncharged and logged, and the next parcel registered
+  //    into the batch charges it.
+  let chargedUsd = 0;
+  if (moved.chargeAfter && pkg.batchId) {
+    try {
+      const due = await db.shippingChargeDueNow({ ...pkg, ...after });
+      await db.chargeBatchShippingIfDue(pkg.batchId, actor.id);
+      const now = await db.getPackageById(pkg.id);
+      if (now?.isCharged) chargedUsd = due.amount;
+    } catch (err) {
+      appLogger.error("[ParcelCorrection] charge after correction failed", {
+        packageId: pkg.id, batchId: pkg.batchId, error: err instanceof Error ? err.message : String(err),
+      });
+    }
+  }
+
+  return { moved, calculatedCostUsd, chargedUsd };
+}
+
 export async function correctLastRegistration(actor: CorrectionActor, input: CorrectionInput): Promise<CorrectionReply> {
   const pkg = await db.getPackageById(input.id);
   if (!pkg) {
@@ -205,7 +323,7 @@ export async function correctLastRegistration(actor: CorrectionActor, input: Cor
     heightCm: storedMeasure(input.heightCm),
     volumeCbm: storedVolumeCbm(input.volumeCbm, input.lengthCm, input.widthCm, input.heightCm),
   };
-  const after = { ...measures, customerId, isUnclaimed };
+  const after: PricedFacts = { ...measures, customerId, isUnclaimed };
 
   // 3. The price is asked for again only if a fact behind it moved.
   const repriced = moneyFactsChanged(pkg, after);
@@ -230,73 +348,23 @@ export async function correctLastRegistration(actor: CorrectionActor, input: Cor
     if (blocked) throw new TRPCError({ code: "CONFLICT", message: blocked });
   }
 
-  let calculatedCostUsd = pkg.calculatedCostUsd ?? null;
-  let appliedPricingRuleId = pkg.appliedPricingRuleId ?? null;
-  if (repriced) {
-    if (isUnclaimed) {
-      // Registration stores no price for a parcel nobody owns.
-      calculatedCostUsd = null;
-      appliedPricingRuleId = null;
-    } else {
-      const priced = await resolveParcelCost({
-        customerId,
-        batchId: pkg.batchId,
-        originWarehouseId: pkg.originWarehouseId,
-        shippingType: pkg.shippingType,
-        ...measures,
-      });
-      calculatedCostUsd = priced.costUsd ?? null;
-      appliedPricingRuleId = priced.pricingRuleId ?? null;
-    }
-  }
-
-  const facts = {
-    ...after,
+  const details: ParcelDetails = {
     description: (input.description ?? "").trim() || null,
     categoryId: input.categoryId ?? null,
     photos: input.photos === undefined ? undefined : input.photos,
-    calculatedCostUsd,
-    appliedPricingRuleId,
   };
 
-  const before = pkg.customerId ? await db.getCustomerById(pkg.customerId) : null;
-  const reason = correctionNote(name, pkg, measures, {
-    before: before?.customerCode ?? null,
-    after: customer?.customerCode ?? null,
-  });
-
-  // 4. The row and the account, together or not at all.
-  let moved: Awaited<ReturnType<typeof db.applyParcelCorrection>>;
+  // 3 to 5. A photograph or a description alone never reads the account.
+  let done: MoneyMoved;
   try {
-    moved = repriced
-      ? await db.applyParcelCorrection(pkg.id, actor.id, facts, reason, {
-          allowCredit: mayApproveCredit(actor.role) && input.approveCredit === true,
-        })
-      : await db.applyParcelDetails(pkg.id, facts);
+    done = repriced
+      ? await moveParcelMoney(actor, pkg, name, after, details, input.approveCredit)
+      : { moved: await db.applyParcelDetails(pkg.id, details), calculatedCostUsd: pkg.calculatedCostUsd ?? null, chargedUsd: 0 };
   } catch (err) {
-    const credit = undoCreditRefusal(err, actor.role);
-    if (credit) throw credit;
     if (err instanceof TRPCError) throw err;
     throw new TRPCError({ code: "CONFLICT", message: err instanceof Error ? err.message : String(err) });
   }
-
-  // 5. Uncharged now, and something is due: offered to its batch, as a
-  //    registration is. The same call, with the same safety — a failure here
-  //    leaves the parcel uncharged and logged, and the next parcel registered
-  //    into the batch charges it.
-  let chargedUsd = 0;
-  if (moved.chargeAfter && pkg.batchId) {
-    try {
-      const due = await db.shippingChargeDueNow({ ...pkg, ...after });
-      await db.chargeBatchShippingIfDue(pkg.batchId, actor.id);
-      const now = await db.getPackageById(pkg.id);
-      if (now?.isCharged) chargedUsd = due.amount;
-    } catch (err) {
-      appLogger.error("[ParcelCorrection] charge after correction failed", {
-        packageId: pkg.id, batchId: pkg.batchId, error: err instanceof Error ? err.message : String(err),
-      });
-    }
-  }
+  const { moved, calculatedCostUsd, chargedUsd } = done;
 
   // Billed on its size now, by a margin worth telling the customer about —
   // raised as a registration raises it, and never allowed to undo the save.
@@ -341,20 +409,115 @@ export async function correctLastRegistration(actor: CorrectionActor, input: Cor
       description: pkg.description, categoryId: pkg.categoryId,
     },
     newValues: {
-      ...after, calculatedCostUsd, description: facts.description, categoryId: facts.categoryId,
+      ...after, calculatedCostUsd, description: details.description, categoryId: details.categoryId,
       photosChanged: input.photos !== undefined,
       money: moved.money, wasUsd: moved.wasUsd, nowUsd: moved.nowUsd, chargedUsd,
     },
   });
 
-  const price = parseFloat(String(calculatedCostUsd ?? ""));
-  const priceUsd = Number.isFinite(price) && price > 0 ? price : null;
-  const outcome = { money: moved.money, wasUsd: moved.wasUsd, nowUsd: moved.nowUsd, chargedUsd, priceUsd };
+  const outcome = { money: moved.money, wasUsd: moved.wasUsd, nowUsd: moved.nowUsd, chargedUsd, priceUsd: positive(calculatedCostUsd) };
   return {
     packageId: pkg.id,
     packageCode: pkg.packageCode,
     trackingNumber: pkg.trackingNumber ?? null,
     ...outcome,
     words: correctionWords(outcome),
+  };
+}
+
+/** What the parcel list's edit sends that bears on a charged parcel's money. */
+export interface ChargedParcelEdit {
+  customerId?: number | null;
+  weightKg?: string | null;
+  lengthCm?: string | null;
+  widthCm?: string | null;
+  heightCm?: string | null;
+  volumeCbm?: string | null;
+  /** Undefined when the edit does not mention the batch; null takes the parcel out of it. */
+  batchId?: number | null;
+  description?: string | null;
+  categoryId?: number | null;
+  approveCredit?: boolean;
+}
+
+/** A charged parcel saved with nothing behind its price changed: nothing to say. */
+const QUIET: RepriceReport = { outcome: "untouched", wasUsd: null, nowUsd: null };
+
+const held = (hold: ParcelMoneyHold): RepriceReport =>
+  ({ outcome: "held", wasUsd: null, nowUsd: null, said: editHoldWords(hold) });
+
+/**
+ * The parcel list's edit, for a parcel that is already on its owner's account.
+ *
+ * Owner, 2026-10-05, told that this edit changed a charged parcel's weight
+ * and left its debt where it was: «ئەوەش بە هەمان شێوە ئەپدەیت ببێتەوە، بەبێ
+ * ڕیکۆردی نرخ و کێشی کۆن». So a weight or a size corrected here moves the
+ * parcel's debt with it, by the function Quick Register's correction uses.
+ *
+ * Returns null for a parcel with no charge to follow - never charged, or
+ * nobody's - which the edit reprices the way it always has. Otherwise it
+ * returns what happened to the account, in the report the screen already
+ * shows:
+ *
+ *  - nothing behind the price moved: nothing, and nothing is said. The dialog
+ *    sends every field on every save, so "sent" is not "changed" - the
+ *    figures are compared with the row;
+ *  - the money is no longer the parcel's to move - paid on a receipt, sitting
+ *    in a delivery box, an order's carton, or moved to another batch by the
+ *    same edit: the edit is saved as it always was, the account is left
+ *    alone, and the sentence says where the price is put right instead;
+ *  - otherwise the row and the account are corrected together.
+ *
+ * A lowering that would leave a credit is refused whole - nothing is saved -
+ * and the main admin is asked, exactly as in Quick Register.
+ */
+export async function correctChargedParcelOnEdit(
+  actor: CorrectionActor,
+  pkg: Package,
+  edit: ChargedParcelEdit,
+): Promise<RepriceReport | null> {
+  if (!pkg.isCharged || pkg.isUnclaimed) return null;
+
+  const after: PricedFacts = {
+    customerId: edit.customerId ?? pkg.customerId ?? null,
+    isUnclaimed: false,
+    weightKg: edit.weightKg ?? pkg.weightKg ?? null,
+    lengthCm: edit.lengthCm ?? pkg.lengthCm ?? null,
+    widthCm: edit.widthCm ?? pkg.widthCm ?? null,
+    heightCm: edit.heightCm ?? pkg.heightCm ?? null,
+    volumeCbm: edit.volumeCbm ?? pkg.volumeCbm ?? null,
+  };
+  const batchMoved = edit.batchId !== undefined && (edit.batchId ?? null) !== (pkg.batchId ?? null);
+  if (!batchMoved && !moneyFactsChanged(pkg, after)) return QUIET;
+
+  if (batchMoved) return held({ kind: "batch" });
+  const orders = await db.ordersBehindParcel(pkg);
+  if (orders.length > 0) return held({ kind: "order", orderCodes: orders.map((o) => o.orderCode) });
+  const hold = await db.parcelMoneyHold(pkg.id);
+  if (hold) return held(hold);
+
+  const name = pkg.trackingNumber || pkg.packageCode || String(pkg.id);
+  let done: MoneyMoved;
+  try {
+    done = await moveParcelMoney(actor, pkg, name, after, {
+      description: edit.description !== undefined ? edit.description : pkg.description ?? null,
+      categoryId: edit.categoryId !== undefined ? edit.categoryId : pkg.categoryId ?? null,
+    }, edit.approveCredit);
+  } catch (err) {
+    // The credit question, or its refusal: nothing was saved.
+    if (err instanceof TRPCError) throw err;
+    // The account is not as it should be: the edit is still saved, and the
+    // person is told what stands in the way.
+    if (err instanceof db.ParcelAccountError) return held({ kind: "account", said: err.message });
+    throw new TRPCError({ code: "CONFLICT", message: err instanceof Error ? err.message : String(err) });
+  }
+
+  const { moved, calculatedCostUsd, chargedUsd } = done;
+  const outcome = { money: moved.money, wasUsd: moved.wasUsd, nowUsd: moved.nowUsd, chargedUsd, priceUsd: positive(calculatedCostUsd) };
+  return {
+    outcome: "account",
+    wasUsd: moved.wasUsd > 0 ? moved.wasUsd : null,
+    nowUsd: moved.nowUsd > 0 ? moved.nowUsd : chargedUsd > 0 ? chargedUsd : null,
+    said: correctionWords(outcome),
   };
 }
