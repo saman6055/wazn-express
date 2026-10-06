@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -61,6 +61,12 @@ export interface RiskFacts {
   emptyBoxes: number;
   /** Receipts whose "your payment arrived" was not sent on WhatsApp yet. */
   whatsappUnsent?: number;
+  /** The month is forecast to end this many dollars short of its costs (shared/financePulse). */
+  lossForecastUsd?: number;
+  /** Orders entered in the last seven days, when two weeks running are under half the usual. */
+  ordersSlowThisWeek?: number | null;
+  /** Dollars partners took out in 30 days beyond what the company made. */
+  partnerOverdrawUsd?: number;
 }
 
 /**
@@ -76,6 +82,9 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   unclaimed: "/packages/unclaimed",
   "empty-boxes": "/customer-delivery-scanner?empty=1",
   "whatsapp-unsent": "/customer-delivery-scanner?whatsapp=unsent",
+  "loss-forecast": "/finance/company-dashboard?focus=pulse",
+  "orders-slow": "/finance/company-dashboard?focus=pulse",
+  "partner-overdraw": "/finance/company-dashboard?focus=pulse",
 };
 
 /** The page whose permission decides who is told. */
@@ -87,6 +96,9 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   unclaimed: "/packages/unclaimed",
   "empty-boxes": "/customer-delivery-scanner",
   "whatsapp-unsent": "/customer-delivery-scanner",
+  "loss-forecast": "/finance/company-dashboard",
+  "orders-slow": "/finance/company-dashboard",
+  "partner-overdraw": "/finance/company-dashboard",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -185,6 +197,18 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   }
   if (facts.unclaimed > 0) {
     items.push({ id: "unclaimed", level: "notice", count: facts.unclaimed });
+  }
+  // Owner, 2026-10-07: a danger bell that foresees a loss. Only the red
+  // reading reaches the bell — a slow week inside a covered month stays on
+  // the dashboard. The count is dollars, so the line can say how much.
+  if ((facts.lossForecastUsd ?? 0) > 0) {
+    items.push({ id: "loss-forecast", level: "critical", count: Math.round(facts.lossForecastUsd ?? 0) });
+  }
+  if ((facts.partnerOverdrawUsd ?? 0) > 0) {
+    items.push({ id: "partner-overdraw", level: "high", count: Math.round(facts.partnerOverdrawUsd ?? 0) });
+  }
+  if (facts.ordersSlowThisWeek != null) {
+    items.push({ id: "orders-slow", level: "high", count: Math.max(0, Math.round(facts.ordersSlowThisWeek)) });
   }
   // Owner, 2026-09-17: an empty box should be flagged so it can be deleted. A
   // notice — it costs nothing while it waits, so it never flashes.
@@ -302,6 +326,36 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "the customer was not told the payment arrived — click and send",
           ar: "لم يُبلَّغ العميل بوصول دفعته — اضغط وأرسل",
           zh: "客户未被告知已收款 — 点击发送",
+        },
+      };
+    case "loss-forecast":
+      return {
+        title: { ku: `مەترسیی زەرەر — قازانج $${n} لە مەسارف کەمترە`, en: `Loss ahead — profit is $${n} short of the costs`, ar: `خطر خسارة — الربح أقل من المصاريف بـ $${n}`, zh: `亏损预警 — 利润比费用少 $${n}` },
+        detail: {
+          ku: "بە تێکڕای ڕۆژانی ڕابردوو ژمێردراوە، نەک یەک ڕۆژ — کلیک بکە بۆ وردەکاری",
+          en: "counted on the average of recent days, not one day — click for the detail",
+          ar: "محسوب على متوسط الأيام الأخيرة — اضغط للتفاصيل",
+          zh: "按近期日均计算 — 点击查看详情",
+        },
+      };
+    case "partner-overdraw":
+      return {
+        title: { ku: `بردنی شەریکەکان $${n} لە قازانجی پاک زیاترە`, en: `Partners took out $${n} more than the company made`, ar: `سحوبات الشركاء تزيد $${n} عن صافي الربح`, zh: `合伙人提款比净利润多 $${n}` },
+        detail: {
+          ku: "لە 30 ڕۆژی ڕابردوودا — ئەو بڕە لە سەرمایە ڕۆیشتووە",
+          en: "over the last 30 days — that much came out of capital",
+          ar: "خلال آخر 30 يوماً — خرج هذا المبلغ من رأس المال",
+          zh: "最近 30 天 — 这部分出自本金",
+        },
+      };
+    case "orders-slow":
+      return {
+        title: { ku: `ئۆردەر کەم بووەتەوە — ئەم هەفتەیە تەنها ${n}`, en: `Orders are slowing — only ${n} this week`, ar: `الطلبات تتراجع — ${n} فقط هذا الأسبوع`, zh: `订单减少 — 本周仅 ${n}` },
+        detail: {
+          ku: "دوو هەفتە لەسەر یەک لە نیوەی ئاسایی کەمترە — قازانجی مانگی داهاتوو کەم دەبێت",
+          en: "two weeks running under half the usual — next month's profit will be lower",
+          ar: "أسبوعان متتاليان أقل من نصف المعتاد",
+          zh: "连续两周低于平时一半",
         },
       };
     case "empty-boxes":

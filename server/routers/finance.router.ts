@@ -85,6 +85,31 @@ export const ledgerRouter = router({
       return db.getDebtAges();
     }),
 
+    /**
+     * The finance dashboard: every figure with the list it came from. Where
+     * the capital is belongs to the main admin alone, so it is left out for
+     * anyone else rather than sent and hidden.
+     */
+    financeDashboard: accountantProcedure
+      .input(z.object({ period: z.enum(["month", "lastMonth", "year"]).default("month") }).optional())
+      .query(async ({ input, ctx }) => {
+        return db.getFinanceDashboard(input?.period ?? "month", ctx.user.role === "super_admin");
+      }),
+    /** The running costs the loss warning is measured against — the main admin's list. */
+    saveFixedCosts: superAdminProcedure
+      .input(z.object({
+        costs: z.array(z.object({
+          name: z.string().min(1).max(80),
+          amount: z.number().positive().max(1_000_000_000),
+          currency: z.enum(["USD", "IQD", "RMB"]),
+          rate: z.number().positive().max(1_000_000),
+          per: z.enum(["month", "day"]),
+        })).max(40),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.saveFixedCosts(input.costs, ctx.user.id);
+      }),
+
     /** Where the company's money is, read from the records (shared/workingCapital). */
     workingCapital: superAdminProcedure.query(async () => {
       return db.getWorkingCapital();
