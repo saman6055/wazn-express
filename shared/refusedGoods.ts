@@ -19,11 +19,15 @@
  *      gives it.
  *   3. The pieces become the company's own stock, at what they cost.
  *
- * It is not a loss yet. It ends as one of two things: sold (price less cost,
- * a profit or a loss) or written off (the cost is the loss).
+ * And it is a LOSS from that day. The owner, the same evening: "it must not
+ * stay on the bad or refusing customer's account — it comes onto the
+ * company's own loss"; goods sitting in the store are "dead goods that have
+ * taken money". So the cost leaves profit the day of the refusal, and
+ * whatever a later sale brings back comes off that loss the day it is sold.
+ * A write-off changes nothing more: the cost was already counted.
  *
- * The books stay whole through every step — see `stockEffect`, which
- * shared/workingCapital and the profit rule both read.
+ * It is found by its tracking number both times — when it is refused and
+ * when it is sold — and a sale ends it for good.
  */
 
 export const REFUSAL_REASONS = ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"] as const;
@@ -140,7 +144,16 @@ export function stockResultUsd(row: StockRow): number {
   return cents(row.keptUsd + stockOutcomeUsd(row));
 }
 
-/** Goods still on our hands are money that is stuck, valued at what they cost. */
+/**
+ * What a piece has cost the company so far: its cost, less the customer's
+ * money that was kept, less what a sale brought back. Never below nothing on
+ * a held piece — it is the figure shown in red beside it.
+ */
+export function stockLossSoFarUsd(row: StockRow): number {
+  return cents(row.costUsd - row.keptUsd - (row.status === "sold" ? (row.soldPriceUsd ?? 0) : 0));
+}
+
+/** Goods still on our hands, at what they cost — shown beside the totals, already counted as a loss. */
 export function stockHeldUsd(rows: readonly StockRow[]): number {
   return cents(rows.filter((r) => r.status === "held").reduce((s, r) => s + r.costUsd, 0));
 }

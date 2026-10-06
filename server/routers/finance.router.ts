@@ -139,14 +139,18 @@ export const ledgerRouter = router({
       .query(async ({ input }) => {
         return db.countCustomerRefusals(input.customerId);
       }),
+    /** Find the order by what is in the office's hand: a tracking number or the order's code. */
+    searchRefusal: superAdminProcedure
+      .input(z.object({ query: z.string().min(1).max(120) }))
+      .query(async ({ input }) => {
+        return db.searchOrdersForRefusal(input.query);
+      }),
     /** What a refusal would do, before anything is done. */
     previewRefusal: superAdminProcedure
-      .input(z.object({ orderId: z.number().int().positive().optional(), orderCode: z.string().max(60).optional(), refuseQuantity: z.number().int().positive().default(1) }))
+      .input(z.object({ orderId: z.number().int().positive(), refuseQuantity: z.number().int().positive().default(1) }))
       .query(async ({ input }) => {
         try {
-          if (input.orderId) return await db.previewRefusal(input.orderId, input.refuseQuantity);
-          const found = input.orderCode ? await db.findOrderForRefusal(input.orderCode) : null;
-          return found ? await db.previewRefusal(found.orderId, input.refuseQuantity) : null;
+          return await db.previewRefusal(input.orderId, input.refuseQuantity);
         } catch (err) {
           throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
         }
@@ -159,6 +163,7 @@ export const ledgerRouter = router({
         reason: z.enum(["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"]),
         keepUsd: z.number().min(0).max(1_000_000),
         note: z.string().max(1000).optional(),
+        trackingNumber: z.string().max(100).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         try {

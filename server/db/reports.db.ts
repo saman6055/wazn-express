@@ -1794,7 +1794,7 @@ export async function getProfitForPeriod(startDate: Date, endDate: Date) {
   const db = await getDb();
   if (!db) {
     const zero = { count: 0, revenue: 0, cost: 0, shipping: 0, profit: 0 };
-    return { fullPackage: zero, purchaseRequest: zero, commission: zero, pkgs: { count: 0, revenue: 0, profit: 0 }, stock: { keptUsd: 0, outcomeUsd: 0, profitUsd: 0, closed: 0 }, total: { revenue: 0, cost: 0, shipping: 0, profit: 0 } };
+    return { fullPackage: zero, purchaseRequest: zero, commission: zero, pkgs: { count: 0, revenue: 0, profit: 0 }, stock: { lostUsd: 0, keptUsd: 0, recoveredUsd: 0, profitUsd: 0 }, total: { revenue: 0, cost: 0, shipping: 0, profit: 0 } };
   }
   // Full Package orders
   const fpOrders = await db.select({
@@ -1886,10 +1886,10 @@ export async function getProfitForPeriod(startDate: Date, endDate: Date) {
     profit: await getPackageNetProfitFromBatches(db, startDate, endDate),
   };
   
-  // Refused goods (shared/refusedGoods): the customer's money the company
-  // kept, the day of the refusal, and how each piece ended, the day it was
-  // sold or written off. A refused order is no longer a sale, so its margin
-  // has already left the lines above; this is the other half of that story.
+  // Refused goods (shared/refusedGoods): a loss of what they cost the day
+  // they are refused, less the customer's money the company kept; whatever a
+  // sale brings back, the day it is sold. A refused order is no longer a
+  // sale, so its margin has already left the lines above.
   // Imported here, not at the top: that module reaches back through finance.db.
   const stock = await (await import('./refusedGoods.db')).getStockProfitBetween(startDate, endDate);
 

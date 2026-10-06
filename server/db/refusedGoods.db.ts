@@ -1,6 +1,6 @@
-import { and, desc, eq, gte, lte, sql } from "drizzle-orm";
+import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { companyStock, customerAccounts, fullPackageOrders, storeProducts } from "../../drizzle/schema";
+import { companyStock, customerAccounts, fullPackageOrders, fullPackageOrderTrackings, packages, storeProducts } from "../../drizzle/schema";
 import { customers, users } from "../../drizzle/schema/users.schema";
 import { isLiveSale } from "@shared/orderProfit";
 import { withFix } from "@shared/fixAdvice";
@@ -76,13 +76,47 @@ export async function previewRefusal(orderId: number, refuseQuantity: number) {
   };
 }
 
-export async function findOrderForRefusal(orderCode: string) {
+/**
+ * Find the order behind what the office has in its hand: a tracking number,
+ * or the order's own code (owner, 2026-10-07: "I search by the tracking — the
+ * system must find it"). One carton can carry several orders, so this returns
+ * every live one and the office picks. `plainParcel` says the tracking is
+ * known but belongs to a customer's own parcel, which has no buying cost to
+ * put in stock.
+ */
+export async function searchOrdersForRefusal(query: string) {
   const db = await getDb();
-  if (!db) return null;
-  const code = orderCode.trim();
-  if (!code) return null;
-  const [row] = await db.select({ id: fullPackageOrders.id }).from(fullPackageOrders).where(eq(fullPackageOrders.orderCode, code)).limit(1);
-  return row ? previewRefusal(Number(row.id), 1) : null;
+  const q = query.trim();
+  if (!db || !q) return { orders: [], plainParcel: false, allEnded: false };
+  const [byCode, byOwnTracking, byList, byParcel] = await Promise.all([
+    db.select({ id: fullPackageOrders.id }).from(fullPackageOrders).where(eq(fullPackageOrders.orderCode, q)),
+    db.select({ id: fullPackageOrders.id }).from(fullPackageOrders).where(or(eq(fullPackageOrders.trackingNumber, q), eq(fullPackageOrders.supplierTrackingNumber, q))),
+    db.select({ id: fullPackageOrderTrackings.fullPackageOrderId }).from(fullPackageOrderTrackings).where(eq(fullPackageOrderTrackings.trackingNumber, q)),
+    db.select({ id: packages.id, orderId: packages.fullPackageOrderId }).from(packages).where(eq(packages.trackingNumber, q)),
+  ]);
+  const ids = Array.from(new Set([...byCode, ...byOwnTracking, ...byList].map((r) => Number(r.id)).concat(byParcel.map((r) => Number(r.orderId))).filter((id) => id > 0)));
+  if (ids.length === 0) return { orders: [], plainParcel: byParcel.length > 0, allEnded: false };
+  const rows = await db
+    .select({
+      orderId: fullPackageOrders.id,
+      orderCode: fullPackageOrders.orderCode,
+      productName: fullPackageOrders.productName,
+      quantity: fullPackageOrders.quantity,
+      status: fullPackageOrders.status,
+      deletedAt: fullPackageOrders.deletedAt,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+    })
+    .from(fullPackageOrders)
+    .leftJoin(customers, eq(customers.id, fullPackageOrders.customerId))
+    .where(inArray(fullPackageOrders.id, ids));
+  const live = rows.filter((r) => isLiveSale(r));
+  return {
+    orders: live.map((r) => ({ orderId: Number(r.orderId), orderCode: r.orderCode, productName: r.productName, quantity: r.quantity ?? 1, status: String(r.status), customerCode: r.customerCode, customerName: r.customerName })),
+    plainParcel: false,
+    /** Found, but every one of them is already cancelled or refused. */
+    allEnded: rows.length > 0 && live.length === 0,
+  };
 }
 
 /**
@@ -91,7 +125,7 @@ export async function findOrderForRefusal(orderCode: string) {
  * company's stock at what they cost. Each step is a line somebody can read.
  */
 export async function refuseOrderGoods(
-  input: { orderId: number; refuseQuantity: number; reason: RefusalReason; keepUsd: number; note?: string },
+  input: { orderId: number; refuseQuantity: number; reason: RefusalReason; keepUsd: number; note?: string; trackingNumber?: string },
   userId: number,
 ) {
   const { db, order, customer, balanceUsd } = await loadForRefusal(input.orderId);
@@ -140,6 +174,7 @@ export async function refuseOrderGoods(
   const [inserted] = await db.insert(companyStock).values({
     orderId: order.id,
     orderCode: order.orderCode,
+    trackingNumber: (input.trackingNumber ?? "").trim() || order.trackingNumber || null,
     customerId: order.customerId,
     productName: order.productName,
     productImage: order.productImage,
@@ -164,6 +199,7 @@ export async function listCompanyStock(now: Date = new Date()) {
       id: companyStock.id,
       orderId: companyStock.orderId,
       orderCode: companyStock.orderCode,
+      trackingNumber: companyStock.trackingNumber,
       customerId: companyStock.customerId,
       customerCode: customers.customerCode,
       customerName: customers.fullName,
@@ -279,29 +315,37 @@ export async function listStockInStore(input: { stockId: number; priceUsd: numbe
 }
 
 /**
- * What refused goods did to profit in a window: money kept on the day of the
- * refusal, and how each piece ended on the day it was closed. Read by the one
+ * What refused goods did to profit in a window (owner, 2026-10-07: goods
+ * nobody took are a LOSS from the day they are refused — "dead goods that
+ * have taken money" — off the refusing customer's account and onto the
+ * company's own loss; whatever a sale brings back comes off that loss).
+ *
+ *   the day of the refusal:  − what the goods cost  + the customer's money kept
+ *   the day of the sale:     + the price it sold for
+ *
+ * A write-off adds nothing: the cost was already counted. Read by the one
  * profit rule (reports.db getProfitForPeriod).
  */
-export async function getStockProfitBetween(start: Date, end: Date): Promise<{ keptUsd: number; outcomeUsd: number; profitUsd: number; closed: number }> {
+export async function getStockProfitBetween(start: Date, end: Date): Promise<{ lostUsd: number; keptUsd: number; recoveredUsd: number; profitUsd: number }> {
   const db = await getDb();
-  if (!db) return { keptUsd: 0, outcomeUsd: 0, profitUsd: 0, closed: 0 };
-  const [[kept], [closed]] = await Promise.all([
-    db.select({ usd: sql<string>`COALESCE(SUM(${companyStock.keptUsd}), 0)` }).from(companyStock).where(and(gte(companyStock.createdAt, start), lte(companyStock.createdAt, end))),
+  if (!db) return { lostUsd: 0, keptUsd: 0, recoveredUsd: 0, profitUsd: 0 };
+  const [[refused], [sold]] = await Promise.all([
     db
-      .select({
-        usd: sql<string>`COALESCE(SUM(CASE WHEN ${companyStock.status} = 'sold' THEN COALESCE(${companyStock.soldPriceUsd}, 0) - ${companyStock.costUsd} ELSE -${companyStock.costUsd} END), 0)`,
-        n: sql<number>`COUNT(*)`,
-      })
+      .select({ cost: sql<string>`COALESCE(SUM(${companyStock.costUsd}), 0)`, kept: sql<string>`COALESCE(SUM(${companyStock.keptUsd}), 0)` })
       .from(companyStock)
-      .where(and(sql`${companyStock.status} <> 'held'`, gte(companyStock.closedAt, start), lte(companyStock.closedAt, end))),
+      .where(and(gte(companyStock.createdAt, start), lte(companyStock.createdAt, end))),
+    db
+      .select({ usd: sql<string>`COALESCE(SUM(COALESCE(${companyStock.soldPriceUsd}, 0)), 0)` })
+      .from(companyStock)
+      .where(and(eq(companyStock.status, "sold"), gte(companyStock.closedAt, start), lte(companyStock.closedAt, end))),
   ]);
-  const keptUsd = num(kept?.usd);
-  const outcomeUsd = num(closed?.usd);
-  return { keptUsd, outcomeUsd, profitUsd: cents(keptUsd + outcomeUsd), closed: Number(closed?.n) || 0 };
+  const lostUsd = num(refused?.cost);
+  const keptUsd = num(refused?.kept);
+  const recoveredUsd = num(sold?.usd);
+  return { lostUsd, keptUsd, recoveredUsd, profitUsd: cents(keptUsd + recoveredUsd - lostUsd) };
 }
 
-/** Goods still on our hands, at what they cost — the working-capital page's line. */
+/** Goods still on our hands and what they cost — shown, already counted as a loss. */
 export async function getStockHeld(): Promise<{ usd: number; count: number; old: number }> {
   const db = await getDb();
   if (!db) return { usd: 0, count: 0, old: 0 };

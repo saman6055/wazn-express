@@ -76,7 +76,7 @@ export default function WorkingCapital() {
   };
 
   const f = data?.facts;
-  const holding = f && data ? f.debtUsd + f.goodsOnRoadUsd + f.stockUsd + data.netCashUsd - f.creditUsd : 0;
+  const holding = f && data ? f.debtUsd + f.goodsOnRoadUsd + data.netCashUsd - f.creditUsd : 0;
   const preview = data && have.trim() !== "" && Number.isFinite(Number(have))
     ? cashCheck(data.netCashUsd, Number(have), Number(owe) || 0)
     : null;
@@ -165,19 +165,6 @@ export default function WorkingCapital() {
                 >
                   <Money value={f.goodsOnRoadUsd} />
                 </Line>
-                {f.stockCount > 0 && (
-                  <Line
-                    label={
-                      <span className="flex flex-wrap items-center gap-x-2">
-                        {L({ ku: `کاڵای ماوە — ${f.stockCount} دانە`, en: `Company stock — ${f.stockCount}`, ar: `مخزون الشركة — ${f.stockCount}`, zh: `公司库存 — ${f.stockCount}` })}
-                        <span className="text-xs text-muted-foreground">{L({ ku: "ڕەتکراوەتەوە، هێشتا نەفرۆشراوە", en: "refused, not yet sold", ar: "مرفوضة، لم تُبع بعد", zh: "被拒收，尚未售出" })}</span>
-                        <Link href="/finance/company-stock" className="text-xs text-primary underline">{L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}</Link>
-                      </span>
-                    }
-                  >
-                    <Money value={f.stockUsd} />
-                  </Line>
-                )}
                 {f.creditUsd > 0 && (
                   <Line tone="bad" label={L({ ku: "پارەی کڕیاران لای ئێمە", en: "Customers' money with us", ar: "أموال العملاء عندنا", zh: "客户预存款" })}>
                     <Money value={-f.creditUsd} />
@@ -200,6 +187,16 @@ export default function WorkingCapital() {
                   <span>{L({ ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}</span>
                   <Money value={holding} />
                 </div>
+                {f.stockCount > 0 && (
+                  <div className="mt-2 flex items-center justify-between gap-3 border-t pt-2 text-red-700 dark:text-red-400">
+                    <span className="flex flex-wrap items-center gap-x-2">
+                      {L({ ku: `کاڵای خەسارە — ${f.stockCount} دانە`, en: `Loss goods — ${f.stockCount}`, ar: `بضائع خاسرة — ${f.stockCount}`, zh: `亏损货物 — ${f.stockCount}` })}
+                      <span className="text-xs text-muted-foreground">{L({ ku: "ڕەتکراوەتەوە و نەفرۆشراوە · وەک خەسارە ژمێردراوە، لە کۆکەدا نییە", en: "refused and unsold · already counted as a loss, not in the total", ar: "مرفوضة ولم تُبع · محسوبة كخسارة", zh: "被拒收未售出 · 已计为亏损" })}</span>
+                      <Link href="/finance/company-stock" className="text-xs text-primary underline">{L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}</Link>
+                    </span>
+                    <Money value={f.stockUsd} />
+                  </div>
+                )}
               </CardContent>
             </Card>
 

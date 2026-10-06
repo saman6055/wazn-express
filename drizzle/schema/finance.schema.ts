@@ -1039,6 +1039,8 @@ export const companyStock = mysqlTable("companyStock", {
   /** The order the goods came from, and its code as it read that day. */
   orderId: int("orderId"),
   orderCode: varchar("orderCode", { length: 50 }),
+  /** The tracking it is found by — when it is refused, and again when it is sold. */
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
   /** Who refused them. */
   customerId: int("customerId"),
   productName: varchar("productName", { length: 500 }),

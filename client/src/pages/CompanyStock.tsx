@@ -18,6 +18,7 @@ import {
   REFUSAL_REASONS,
   REFUSAL_REASON_WORDS,
   STOCK_OLD_DAYS,
+  stockLossSoFarUsd,
   stockOutcomeUsd,
   stockResultUsd,
   suggestKeep,
@@ -41,9 +42,19 @@ function RefuseForm({ L, initialCode }: { L: (w: Words) => string; initialCode: 
   const [keep, setKeep] = useState<boolean | null>(null);
   const [note, setNote] = useState("");
   const [fault, setFault] = useState("");
+  const [picked, setPicked] = useState<number | null>(null);
   const quantity = Math.max(1, Math.round(Number(qty)) || 1);
-  const preview = trpc.ledger.previewRefusal.useQuery({ orderCode: asked, refuseQuantity: quantity }, { enabled: asked.trim().length > 0, retry: false });
-  const p = preview.data ?? null;
+  // Found by what is in the office's hand — a tracking number, or the order's code.
+  const found = trpc.ledger.searchRefusal.useQuery({ query: asked }, { enabled: asked.trim().length > 0, retry: false });
+  const candidates = found.data?.orders ?? [];
+  // One carton can carry several orders: with one match it is taken, with more the office picks.
+  const orderId = picked ?? (candidates.length === 1 ? candidates[0].orderId : null);
+  const preview = trpc.ledger.previewRefusal.useQuery({ orderId: orderId ?? 0, refuseQuantity: quantity }, { enabled: orderId != null, retry: false });
+  const p = orderId != null ? preview.data ?? null : null;
+  const ask = (value: string) => {
+    setPicked(null);
+    setAsked(value.trim());
+  };
 
   const refuse = trpc.ledger.refuseGoods.useMutation({
     onSuccess: (res) => {
@@ -52,6 +63,7 @@ function RefuseForm({ L, initialCode }: { L: (w: Words) => string; initialCode: 
       void utils.ledger.workingCapital.invalidate();
       void utils.ledger.financeDashboard.invalidate();
       setAsked("");
+      setPicked(null);
       setCode("");
       setReason("");
       setKeep(null);
@@ -69,7 +81,15 @@ function RefuseForm({ L, initialCode }: { L: (w: Words) => string; initialCode: 
     if (reason === "other" && !note.trim()) return setFault(L({ ku: "لە خانەی تێبینی بنووسە بۆچی", en: "Write why in the note", ar: "اكتب السبب في الملاحظة", zh: "请在备注中写明原因" }));
     if (p.plan.keepableUsd > 0 && keep === null) return setFault(L({ ku: "بڵێ پارەکەی کڕیار دەگەڕێتەوە یان نا", en: "Say whether the customer's money goes back", ar: "حدّد هل يُعاد مال العميل", zh: "请说明是否退还客户的钱" }));
     setFault("");
-    refuse.mutate({ orderId: p.orderId, refuseQuantity: quantity, reason, keepUsd: keep ? p.plan.keepableUsd : 0, note: note.trim() || undefined });
+    refuse.mutate({
+      orderId: p.orderId,
+      refuseQuantity: quantity,
+      reason,
+      keepUsd: keep ? p.plan.keepableUsd : 0,
+      note: note.trim() || undefined,
+      // What it was found by is what it will be found by again when it is sold.
+      trackingNumber: asked && asked !== p.orderCode ? asked : undefined,
+    });
   };
 
   return (
@@ -79,13 +99,42 @@ function RefuseForm({ L, initialCode }: { L: (w: Words) => string; initialCode: 
       </CardHeader>
       <CardContent className="space-y-3 text-sm">
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-          <Input dir="ltr" value={code} onChange={(e) => setCode(e.target.value)} placeholder="CM-MS0BZDDQ" onKeyDown={(e) => { if (e.key === "Enter") setAsked(code.trim()); }} />
-          <Button variant="outline" onClick={() => setAsked(code.trim())}>{L({ ku: "داواکارییەکە بدۆزەوە", en: "Find the order", ar: "ابحث عن الطلب", zh: "查找订单" })}</Button>
+          <Input dir="ltr" value={code} onChange={(e) => setCode(e.target.value)} placeholder={L({ ku: "تراک یان کۆدی داواکاری", en: "Tracking number or order code", ar: "رقم التتبع أو رمز الطلب", zh: "运单号或订单编号" })} onKeyDown={(e) => { if (e.key === "Enter") ask(code); }} data-testid="refusal-search" />
+          <Button variant="outline" onClick={() => ask(code)}>{L({ ku: "بیدۆزەوە", en: "Find it", ar: "ابحث", zh: "查找" })}</Button>
         </div>
-        {preview.isFetching && <Skeleton className="h-24 w-full" />}
+        {(found.isFetching || preview.isFetching) && <Skeleton className="h-24 w-full" />}
         {preview.error && <p className="whitespace-pre-line text-red-700 dark:text-red-400">{preview.error.message}</p>}
-        {asked && !preview.isFetching && !preview.error && !p && (
-          <p className="text-red-700 dark:text-red-400">{L({ ku: "داواکارییەک بەم کۆدە نەدۆزرایەوە.", en: "No order with this code.", ar: "لا يوجد طلب بهذا الرمز.", zh: "没有此编号的订单。" })}</p>
+        {asked && !found.isFetching && found.data && candidates.length === 0 && (
+          <p className="text-red-700 dark:text-red-400">
+            {found.data.plainParcel
+              ? L({
+                  ku: "ئەم تراکە هی پاکەتی خودی کڕیارە و داواکاریی کڕینی لەسەر نییە، بۆیە تێچووی کڕینی نییە تا ببێتە کاڵای شەریکە.",
+                  en: "This tracking is the customer's own parcel with no purchase order behind it, so there is no buying cost to put in stock.",
+                  ar: "هذا الرقم لطرد العميل نفسه ولا يوجد طلب شراء خلفه.",
+                  zh: "此运单是客户自己的包裹，没有采购订单，因此没有可入库的采购成本。",
+                })
+              : found.data.allEnded
+                ? L({ ku: "ئەم داواکارییە پێشتر هەڵوەشێنراوەتەوە یان ڕەت کراوەتەوە. لە لیستی خوارەوە بە هەمان تراک بیدۆزەوە.", en: "This order was already cancelled or refused. Find it in the list below by the same tracking.", ar: "هذا الطلب أُلغي أو رُفض سابقاً. ابحث عنه في القائمة أدناه.", zh: "该订单已取消或已拒收。请在下方列表中用同一运单号查找。" })
+                : L({ ku: "هیچ داواکارییەک بەم تراک یان کۆدە نەدۆزرایەوە.", en: "No order with this tracking or code.", ar: "لا يوجد طلب بهذا الرقم أو الرمز.", zh: "没有此运单号或编号的订单。" })}
+          </p>
+        )}
+        {candidates.length > 1 && (
+          <div className="space-y-1 rounded-lg border p-2" data-testid="refusal-candidates">
+            <div className="px-1 text-xs text-muted-foreground">
+              {L({ ku: `ئەم تراکە ${candidates.length} داواکاریی تێدایە — یەکێکیان هەڵبژێرە`, en: `This tracking carries ${candidates.length} orders — pick one`, ar: `هذا الرقم يحمل ${candidates.length} طلبات — اختر واحداً`, zh: `此运单包含 ${candidates.length} 个订单 — 请选择` })}
+            </div>
+            {candidates.map((c) => (
+              <button
+                key={c.orderId}
+                type="button"
+                onClick={() => setPicked(c.orderId)}
+                className={cn("flex w-full flex-wrap items-center justify-between gap-2 rounded-md px-2 py-1.5 text-start hover:bg-muted", orderId === c.orderId && "bg-muted")}
+              >
+                <span>{c.productName ?? "—"} × <bdi dir="ltr">{c.quantity}</bdi></span>
+                <span className="text-xs text-muted-foreground">{c.customerName ?? c.customerCode} · <bdi dir="ltr">{c.orderCode}</bdi></span>
+              </button>
+            ))}
+          </div>
         )}
         {p && (
           <>
@@ -164,7 +213,14 @@ export default function CompanyStock() {
   const search = useSearch();
   const utils = trpc.useUtils();
   const { data, isLoading } = trpc.ledger.companyStock.useQuery();
-  const rows = data ?? [];
+  const all = data ?? [];
+  const [find, setFind] = useState("");
+  // Found again by the same tracking it was refused by — or by code, product or customer.
+  const rows = useMemo(() => {
+    const q = find.trim().toLowerCase();
+    if (!q) return all;
+    return all.filter((r) => [r.trackingNumber, r.orderCode, r.productName, r.customerName, r.customerCode].some((v) => String(v ?? "").toLowerCase().includes(q)));
+  }, [all, find]);
   const held = rows.filter((r) => r.status === "held");
   const closed = rows.filter((r) => r.status !== "held");
   const [acting, setActing] = useState<{ id: number; kind: "sell" | "writeOff" | "store" } | null>(null);
@@ -194,6 +250,7 @@ export default function CompanyStock() {
     return { customer: by("customer"), office: by("office") };
   }, [rows]);
   const heldCost = held.reduce((s, r) => s + r.costUsd, 0);
+  const lossSoFar = rows.reduce((s, r) => s + stockLossSoFarUsd(r), 0);
 
   return (
     <DashboardLayout>
@@ -222,8 +279,9 @@ export default function CompanyStock() {
                 <div className="text-2xl font-semibold"><bdi dir="ltr">{held.length}</bdi></div>
               </div>
               <div className="rounded-lg bg-muted/50 p-4">
-                <div className="text-xs text-muted-foreground">{L({ ku: "پارەی گیرخواردوو (تێچوو)", en: "Money stuck (cost)", ar: "مال عالق (التكلفة)", zh: "占用资金（成本）" })}</div>
-                <div className="text-2xl font-semibold"><Money value={heldCost} /></div>
+                <div className="text-xs text-muted-foreground">{L({ ku: "خەسارەی تا ئێستا", en: "Loss so far", ar: "الخسارة حتى الآن", zh: "迄今亏损" })}</div>
+                <div className={cn("text-2xl font-semibold", lossSoFar > 0 ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400")}><Money value={-lossSoFar} signed /></div>
+                <div className="text-xs text-muted-foreground">{L({ ku: "لەوە، هێشتا لە دەستماندایە", en: "of it, still on our hands", ar: "منها، ما زال في حوزتنا", zh: "其中仍在手" })} <Money value={heldCost} /></div>
               </div>
               <div className="rounded-lg bg-muted/50 p-4">
                 <div className="text-xs text-muted-foreground">{L({ ku: `زیاتر لە ${STOCK_OLD_DAYS} ڕۆژ ماوەتەوە`, en: `Held over ${STOCK_OLD_DAYS} days`, ar: `أكثر من ${STOCK_OLD_DAYS} يوماً`, zh: `超过 ${STOCK_OLD_DAYS} 天` })}</div>
@@ -231,8 +289,16 @@ export default function CompanyStock() {
               </div>
             </div>
 
+            <Input
+              dir="ltr"
+              value={find}
+              onChange={(e) => setFind(e.target.value)}
+              placeholder={L({ ku: "بە تراک، کۆد، کاڵا یان کڕیار بگەڕێ", en: "Search by tracking, code, product or customer", ar: "ابحث بالتتبع أو الرمز أو المنتج أو العميل", zh: "按运单号、编号、商品或客户搜索" })}
+              data-testid="stock-search"
+            />
+
             <Card>
-              <CardHeader className="pb-2"><CardTitle className="text-base">{L({ ku: "لە دەستماندایە", en: "On our hands", ar: "في حوزتنا", zh: "在手" })}</CardTitle></CardHeader>
+              <CardHeader className="pb-2"><CardTitle className="text-base">{L({ ku: "کاڵای خەسارە — لە دەستماندایە", en: "Loss goods — on our hands", ar: "بضائع خاسرة — في حوزتنا", zh: "亏损货物 — 在手" })}</CardTitle></CardHeader>
               <CardContent className="text-sm">
                 {held.length === 0 ? (
                   <p className="py-2 text-muted-foreground">{L({ ku: "هیچ کاڵایەک نەماوەتەوە.", en: "Nothing is held.", ar: "لا شيء في الحوزة.", zh: "没有库存。" })}</p>
@@ -244,6 +310,7 @@ export default function CompanyStock() {
                           <span className="min-w-0 flex-1">
                             <span className="block font-medium">{r.productName ?? "—"} × <bdi dir="ltr">{r.quantity}</bdi></span>
                             <span className="block text-xs text-muted-foreground">
+                              {r.trackingNumber ? <><bdi dir="ltr" className="font-medium text-foreground">{r.trackingNumber}</bdi> · </> : null}
                               {r.orderId ? <Link href={`/full-package/${r.orderId}`} className="underline"><bdi dir="ltr">{r.orderCode}</bdi></Link> : <bdi dir="ltr">{r.orderCode}</bdi>} ·{" "}
                               {r.customerId ? <Link href={`/finance/customer/${r.customerId}`} className="underline">{r.customerName ?? r.customerCode}</Link> : "—"} ·{" "}
                               {L(REFUSAL_REASON_WORDS[r.reason])}{r.note ? ` — ${r.note}` : ""} ·{" "}
@@ -254,8 +321,8 @@ export default function CompanyStock() {
                             </span>
                           </span>
                           <span className="shrink-0 text-end">
-                            <Money value={r.costUsd} className="font-medium" />
-                            <span className="block text-xs text-muted-foreground">{L({ ku: "تێچوو", en: "cost", ar: "التكلفة", zh: "成本" })}</span>
+                            <Money value={-stockLossSoFarUsd(r)} signed className={cn("font-medium", stockLossSoFarUsd(r) > 0 && "text-red-700 dark:text-red-400")} />
+                            <span className="block text-xs text-muted-foreground">{L({ ku: "تێچوو", en: "cost", ar: "التكلفة", zh: "成本" })} <Money value={r.costUsd} /></span>
                           </span>
                         </div>
                         {isMainAdmin && acting?.id !== r.id && (
@@ -280,8 +347,9 @@ export default function CompanyStock() {
                                   <Input dir="ltr" value={buyer} onChange={(e) => setBuyer(e.target.value)} placeholder="AZ018" />
                                 </label>
                                 {price.trim() !== "" && Number.isFinite(Number(price)) && (
-                                  <p className={cn(Number(price) < r.costUsd ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400")}>
-                                    {Number(price) < r.costUsd ? L({ ku: "خەسارە", en: "Loss", ar: "خسارة", zh: "亏损" }) : L({ ku: "قازانج", en: "Profit", ar: "ربح", zh: "盈利" })}: <Money value={Math.abs(Number(price) - r.costUsd)} />
+                                  <p className={cn(Number(price) + r.keptUsd < r.costUsd ? "text-red-700 dark:text-red-400" : "text-emerald-700 dark:text-emerald-400")}>
+                                    {L({ ku: "دەگەڕێتەوە", en: "Comes back", ar: "يعود", zh: "收回" })} <Money value={Number(price)} /> ·{" "}
+                                    {Number(price) + r.keptUsd < r.costUsd ? L({ ku: "خەسارەی کۆتایی", en: "final loss", ar: "الخسارة النهائية", zh: "最终亏损" }) : L({ ku: "قازانجی کۆتایی", en: "final profit", ar: "الربح النهائي", zh: "最终盈利" })}: <Money value={Math.abs(Number(price) + r.keptUsd - r.costUsd)} />
                                   </p>
                                 )}
                               </>
@@ -342,7 +410,7 @@ export default function CompanyStock() {
                         <span className="min-w-0 flex-1">
                           <span className="block font-medium">{r.productName ?? "—"} × <bdi dir="ltr">{r.quantity}</bdi></span>
                           <span className="block text-xs text-muted-foreground">
-                            <bdi dir="ltr">{r.orderCode}</bdi> · {L(REFUSAL_REASON_WORDS[r.reason])} ·{" "}
+                            {r.trackingNumber ? <><bdi dir="ltr">{r.trackingNumber}</bdi> · </> : null}<bdi dir="ltr">{r.orderCode}</bdi> · {L(REFUSAL_REASON_WORDS[r.reason])} ·{" "}
                             {r.status === "sold" ? <>{L({ ku: "فرۆشرا بە", en: "sold for", ar: "بِيع بـ", zh: "售价" })} <Money value={r.soldPriceUsd ?? 0} /></> : L({ ku: "فڕێ درا", en: "written off", ar: "شُطب", zh: "已核销" })} ·{" "}
                             {L({ ku: "تێچوو", en: "cost", ar: "التكلفة", zh: "成本" })} <Money value={r.costUsd} />
                             {r.closeNote ? ` — ${r.closeNote}` : ""}

@@ -8,6 +8,7 @@ import {
   clampKeep,
   planRefusal,
   stockHeldUsd,
+  stockLossSoFarUsd,
   stockOutcomeUsd,
   stockResultUsd,
   suggestKeep,
@@ -113,25 +114,60 @@ describe("the books still close", () => {
     stockUsd: 0, stockCount: 0,
   };
 
-  it("a refusal moves value from debt to stock and leaves cash where it was", () => {
+  it("a refusal is a loss that day: off the customer, off profit, and cash where it was", () => {
     const before = workingCapital(base);
-    // Two of five refused: $24 off the debt, the $4 margin out of profit, $20 into stock.
-    const after = workingCapital({ ...base, profitUsd: 32, debtUsd: 136, stockUsd: 20, stockCount: 1 });
+    // Two of five refused: $24 off the debt; the $4 margin and the $20 cost out of profit.
+    const after = workingCapital({ ...base, profitUsd: 12, debtUsd: 136, stockUsd: 20, stockCount: 1 });
     expect(after.netCashUsd).toBe(before.netCashUsd);
+    expect(after.shouldHoldUsd).toBe(before.shouldHoldUsd - 24);
   });
 
-  it("a cash sale brings in exactly its price", () => {
-    const withStock = workingCapital({ ...base, profitUsd: 32, debtUsd: 136, stockUsd: 20, stockCount: 1 });
-    // Sold for $15: stock out at $20, profit −$5.
+  it("a cash sale brings in exactly its price, and takes that much off the loss", () => {
+    const refused = workingCapital({ ...base, profitUsd: 12, debtUsd: 136, stockUsd: 20, stockCount: 1 });
     const sold = workingCapital({ ...base, profitUsd: 27, debtUsd: 136, stockUsd: 0, stockCount: 0 });
-    expect(Math.round((sold.netCashUsd - withStock.netCashUsd) * 100) / 100).toBe(15);
+    expect(Math.round((sold.netCashUsd - refused.netCashUsd) * 100) / 100).toBe(15);
   });
 
-  it("the profit rule and the capital rule both read the stock", () => {
-    expect(root("server/db/reports.db.ts")).toContain("getStockProfitBetween(startDate, endDate)");
+  it("what a piece has cost so far: cost, less what was kept, less what a sale brought back", () => {
+    const row = { status: "held" as const, costUsd: 22, keptUsd: 0, soldPriceUsd: null };
+    expect(stockLossSoFarUsd(row)).toBe(22);
+    expect(stockLossSoFarUsd({ ...row, keptUsd: 10 })).toBe(12);
+    expect(stockLossSoFarUsd({ ...row, keptUsd: 10, status: "sold", soldPriceUsd: 15 })).toBe(-3);
+    expect(stockLossSoFarUsd({ ...row, status: "written_off" })).toBe(22);
+  });
+
+  it("the profit rule counts the cost on the day of refusal and the price on the day of sale", () => {
+    const db = root("server/db/refusedGoods.db.ts");
+    const fn = db.slice(db.indexOf("export async function getStockProfitBetween"), db.indexOf("/** Goods still on our hands and what they cost"));
+    expect(fn.length).toBeGreaterThan(600);
+    expect(fn).toContain("gte(companyStock.createdAt, start)");
+    expect(fn).toContain('eq(companyStock.status, "sold"), gte(companyStock.closedAt, start)');
+    expect(fn).toContain("cents(keptUsd + recoveredUsd - lostUsd)");
     expect(root("server/db/reports.db.ts")).toContain("pkgs.profit + stock.profitUsd");
+  });
+
+  it("stock is shown and not summed, so nothing is counted twice", () => {
+    expect(root("shared/workingCapital.ts")).toContain("cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadUsd + f.creditUsd)");
     expect(root("server/db/workingCapital.db.ts")).toContain("getStockHeld()");
-    expect(root("shared/workingCapital.ts")).toContain("- f.stockUsd + f.creditUsd");
+  });
+});
+
+describe("found by its tracking, both times", () => {
+  const db = root("server/db/refusedGoods.db.ts");
+  const page = root("client/src/pages/CompanyStock.tsx");
+
+  it("the search reads the order's code, its own trackings, its list of trackings and its parcel", () => {
+    const fn = db.slice(db.indexOf("export async function searchOrdersForRefusal"), db.indexOf("export async function refuseOrderGoods"));
+    for (const piece of ["fullPackageOrders.orderCode, q", "fullPackageOrders.trackingNumber, q", "fullPackageOrders.supplierTrackingNumber, q", "fullPackageOrderTrackings.trackingNumber, q", "packages.trackingNumber, q"]) {
+      expect(fn, piece).toContain(piece);
+    }
+    expect(fn).toContain("isLiveSale(r)");
+  });
+
+  it("the tracking stays on the stock, and the stock list is searched by it", () => {
+    expect(db).toContain('trackingNumber: (input.trackingNumber ?? "").trim() || order.trackingNumber || null');
+    expect(page).toContain("r.trackingNumber");
+    expect(page).toContain('data-testid="stock-search"');
   });
 });
 

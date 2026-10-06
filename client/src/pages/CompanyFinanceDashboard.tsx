@@ -360,7 +360,7 @@ export default function CompanyFinanceDashboard() {
                   <Row
                     tone={data.profit.stockUsd < 0 ? "bad" : "good"}
                     label={L({ ku: "کاڵای ڕەتکراوە", en: "Refused goods", ar: "بضائع مرفوضة", zh: "拒收货物" })}
-                    note={L({ ku: "فرۆشتن، فڕێدان و قەرەبوو", en: "sold, written off, kept", ar: "بيع وشطب وتعويض", zh: "售出、核销、保留" })}
+                    note={L({ ku: "تێچوویان خەسارەیە؛ فرۆشتن و قەرەبوو لێی کەم دەکاتەوە", en: "their cost is a loss; sales and kept money come off it", ar: "تكلفتها خسارة؛ البيع والتعويض يخففانها", zh: "成本计为亏损；售出与保留款冲减" })}
                     href="/finance/company-stock"
                     linkWords={L({ ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" })}
                   >
@@ -521,7 +521,7 @@ export default function CompanyFinanceDashboard() {
                       <Money value={data.capital.goodsOnRoadUsd} />
                     </Row>
                     {data.capital.stockCount > 0 && (
-                      <Row label={L({ ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" })} note={L({ ku: `${data.capital.stockCount} دانە`, en: `${data.capital.stockCount}`, ar: `${data.capital.stockCount}`, zh: `${data.capital.stockCount}` })} href="/finance/company-stock" linkWords={see}>
+                      <Row tone="bad" label={L({ ku: "کاڵای خەسارە (لە کۆکەدا نییە)", en: "Loss goods (not in the total)", ar: "بضائع خاسرة (خارج المجموع)", zh: "亏损货物（不计入合计）" })} note={L({ ku: `${data.capital.stockCount} دانە`, en: `${data.capital.stockCount}`, ar: `${data.capital.stockCount}`, zh: `${data.capital.stockCount}` })} href="/finance/company-stock" linkWords={see}>
                         <Money value={data.capital.stockUsd} />
                       </Row>
                     )}
