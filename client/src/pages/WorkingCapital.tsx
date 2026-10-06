@@ -189,6 +189,35 @@ export default function WorkingCapital() {
               </CardContent>
             </Card>
 
+            <Card data-testid="money-received">
+              <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">
+                <CardTitle className="text-base">{L({ ku: "پارەی هاتوو", en: "Money received", ar: "المبالغ المستلمة", zh: "已收款项" })}</CardTitle>
+                <Link href="/payments" className="text-xs text-primary underline">{L({ ku: "هەموو وەسڵەکان", en: "All receipts", ar: "كل الإيصالات", zh: "全部收据" })}</Link>
+              </CardHeader>
+              <CardContent className="text-sm">
+                {([
+                  ["today", { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" }],
+                  ["week", { ku: "ئەم هەفتەیە (لە شەممەوە)", en: "This week (from Saturday)", ar: "هذا الأسبوع (من السبت)", zh: "本周（周六起）" }],
+                  ["month", { ku: "ئەم مانگە", en: "This month", ar: "هذا الشهر", zh: "本月" }],
+                ] as const).map(([key, words]) => (
+                  <Line
+                    key={key}
+                    tone={data.received[key].usd > 0 ? "good" : "quiet"}
+                    label={
+                      <span className="flex flex-wrap items-center gap-x-2">
+                        {L(words)}
+                        <span className="text-xs text-muted-foreground">
+                          {L({ ku: `${data.received[key].count} وەسڵ`, en: `${data.received[key].count} receipts`, ar: `${data.received[key].count} إيصال`, zh: `${data.received[key].count} 张` })}
+                        </span>
+                      </span>
+                    }
+                  >
+                    <Money value={data.received[key].usd} />
+                  </Line>
+                ))}
+              </CardContent>
+            </Card>
+
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base">{L({ ku: "چۆن گەیشتینە ئێرە", en: "How we got here", ar: "كيف وصلنا", zh: "如何得出" })}</CardTitle>

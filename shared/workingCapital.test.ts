@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { cashCheck, parseStoredCashCheck, workingCapital, type WorkingCapitalFacts } from "./workingCapital";
+import { cashCheck, parseStoredCashCheck, receivedWindows, workingCapital, type WorkingCapitalFacts } from "./workingCapital";
 
 /**
  * Working capital is derived, never typed (owner, 2026-10-05: "money does not
@@ -132,5 +132,40 @@ describe("nothing is typed into the sum", () => {
     const menu = root("client/src/components/DashboardLayout.tsx");
     expect(menu).toContain('...(isSuperAdmin ? [{ icon: Coins');
     expect(root("client/src/App.tsx")).toContain('path="/finance/working-capital"');
+  });
+});
+
+describe("money received is counted on the office's clock", () => {
+  it("a day begins at midnight in Baghdad, three hours before UTC's", () => {
+    // Tuesday 6 October 2026, 00:30 in Erbil = Monday 21:30 UTC.
+    const w = receivedWindows(new Date("2026-10-05T21:30:00Z"));
+    expect(w.today.toISOString()).toBe("2026-10-05T21:00:00.000Z");
+    expect(w.month.toISOString()).toBe("2026-09-30T21:00:00.000Z");
+  });
+
+  it("a week begins on Saturday", () => {
+    // Tuesday 6 October → Saturday 3 October.
+    expect(receivedWindows(new Date("2026-10-06T09:00:00Z")).week.toISOString()).toBe("2026-10-02T21:00:00.000Z");
+    // On a Saturday the week is that day.
+    const sat = receivedWindows(new Date("2026-10-03T09:00:00Z"));
+    expect(sat.week.toISOString()).toBe(sat.today.toISOString());
+    // On a Friday it is six days back.
+    expect(receivedWindows(new Date("2026-10-09T09:00:00Z")).week.toISOString()).toBe("2026-10-02T21:00:00.000Z");
+  });
+
+  it("a week can reach back before the month, so the read starts at the earlier of the two", () => {
+    const w = receivedWindows(new Date("2026-10-01T09:00:00Z"));
+    expect(w.week < w.month).toBe(true);
+    const db = root("server/db/workingCapital.db.ts");
+    expect(db).toContain("const earliest = w.week < w.month ? w.week : w.month;");
+  });
+
+  it("is net of what was undone, and is shown with a way to every receipt", () => {
+    const db = root("server/db/workingCapital.db.ts");
+    expect(db).toContain("reversedAmountUsd");
+    const page = root("client/src/pages/WorkingCapital.tsx");
+    expect(page).toContain('data-testid="money-received"');
+    expect(page).toContain('href="/payments"');
+    expect(root("client/src/components/DashboardLayout.tsx")).toContain('path: "/payments"');
   });
 });

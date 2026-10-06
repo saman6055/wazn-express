@@ -1,12 +1,14 @@
 import { and, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { expenses, fullPackageOrders, partners, partnerTransactions } from "../../drizzle/schema";
+import { expenses, fullPackageOrders, partners, partnerTransactions, paymentRecords } from "../../drizzle/schema";
 import { LIVE_SALE_SQL } from "@shared/orderProfit";
 import {
   WORKING_CAPITAL_CHECK_KEY,
   cashCheck,
   parseStoredCashCheck,
+  receivedWindows,
   workingCapital,
+  type MoneyReceived,
   type StoredCashCheck,
   type WorkingCapitalFacts,
 } from "@shared/workingCapital";
@@ -77,10 +79,38 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
   };
 }
 
+/**
+ * Money customers paid — today, this week, this month — less whatever was
+ * undone of it (the same net the payments page shows). One read: the month
+ * holds the week and the week holds the day, except in a month's first days,
+ * when the week reaches back before it.
+ */
+export async function getMoneyReceived(now: Date = new Date()): Promise<{ today: MoneyReceived; week: MoneyReceived; month: MoneyReceived }> {
+  const none = { count: 0, usd: 0 };
+  const db = await getDb();
+  if (!db) return { today: none, week: none, month: none };
+  const w = receivedWindows(now);
+  const earliest = w.week < w.month ? w.week : w.month;
+  const net = sql`GREATEST(COALESCE(${paymentRecords.amountUsd}, 0) - COALESCE(${paymentRecords.reversedAmountUsd}, 0), 0)`;
+  const since = (from: Date) => ({
+    count: sql<number>`COALESCE(SUM(CASE WHEN ${paymentRecords.createdAt} >= ${from} AND ${net} > 0 THEN 1 ELSE 0 END), 0)`,
+    usd: sql<string>`COALESCE(SUM(CASE WHEN ${paymentRecords.createdAt} >= ${from} THEN ${net} ELSE 0 END), 0)`,
+  });
+  const t = since(w.today), k = since(w.week), m = since(w.month);
+  const [row] = await db
+    .select({ tc: t.count, tu: t.usd, kc: k.count, ku: k.usd, mc: m.count, mu: m.usd })
+    .from(paymentRecords)
+    .where(sql`${paymentRecords.createdAt} >= ${earliest}`);
+  return {
+    today: { count: Number(row?.tc) || 0, usd: num(row?.tu) },
+    week: { count: Number(row?.kc) || 0, usd: num(row?.ku) },
+    month: { count: Number(row?.mc) || 0, usd: num(row?.mu) },
+  };
+}
+
 export async function getWorkingCapital() {
-  const facts = await getWorkingCapitalFacts();
-  const lastCheck = parseStoredCashCheck(await getSetting(WORKING_CAPITAL_CHECK_KEY));
-  return { facts, ...workingCapital(facts), lastCheck };
+  const [facts, received, check] = await Promise.all([getWorkingCapitalFacts(), getMoneyReceived(), getSetting(WORKING_CAPITAL_CHECK_KEY)]);
+  return { facts, ...workingCapital(facts), received, lastCheck: parseStoredCashCheck(check) };
 }
 
 /**

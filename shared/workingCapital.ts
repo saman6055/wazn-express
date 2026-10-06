@@ -107,3 +107,32 @@ export function parseStoredCashCheck(raw: string | null | undefined): StoredCash
     return null;
   }
 }
+
+/**
+ * "Today", "this week" and "this month" as the office reads them: Baghdad's
+ * clock (UTC+3, no daylight saving) and a week that begins on Saturday. Money
+ * received at 01:00 in Erbil belongs to that day, not to the one before.
+ */
+const BAGHDAD_OFFSET_MS = 3 * 3_600_000;
+
+export interface ReceivedWindows {
+  today: Date;
+  week: Date;
+  month: Date;
+}
+
+export function receivedWindows(now: Date = new Date()): ReceivedWindows {
+  const local = new Date(now.getTime() + BAGHDAD_OFFSET_MS);
+  const y = local.getUTCFullYear();
+  const m = local.getUTCMonth();
+  const d = local.getUTCDate();
+  const startOf = (yy: number, mm: number, dd: number) => new Date(Date.UTC(yy, mm, dd) - BAGHDAD_OFFSET_MS);
+  // getUTCDay: Sunday 0 … Saturday 6. Days since the last Saturday:
+  const sinceSaturday = (local.getUTCDay() + 1) % 7;
+  return { today: startOf(y, m, d), week: startOf(y, m, d - sinceSaturday), month: startOf(y, m, 1) };
+}
+
+export interface MoneyReceived {
+  count: number;
+  usd: number;
+}

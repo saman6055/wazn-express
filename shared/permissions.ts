@@ -736,6 +736,7 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/scan-dashboard": "scan_dashboard",
   "/scan-reports": "scan_reports",
   "/finance": "finance_management",
+  "/payments": "finance_management",
   "/invoices": "invoices",
   "/finance/debtors": "debtors_report",
   "/finance/debt-reminders": "debt_reminders",

@@ -446,6 +446,7 @@ function DashboardLayoutContent({
         items: [
           { icon: Wallet, label: t("nav.financeManagement") || "بەڕێوەبردنی دارایی", path: "/finance" },
           { icon: Receipt, label: t("nav.invoices") || "پسووڵەکان", path: "/invoices" },
+          { icon: Banknote, label: pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款" }), path: "/payments" },
           { icon: Users, label: t("nav.debtorsReport") || "ڕاپۆرتی قەرزداران", path: "/finance/debtors" },
           { icon: Clock, label: t("nav.debtReminders") || "بیرهێنەرەوەی قەرز", path: "/finance/debt-reminders" },
         ]
