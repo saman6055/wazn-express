@@ -1,5 +1,6 @@
 import { useState, useCallback, useMemo, useEffect } from "react";
 import { UnsentPaymentWhatsAppAlert } from "@/components/delivery/UnsentPaymentWhatsApp";
+import { UnpaidBoxesAlert } from "@/components/delivery/UnpaidBoxes";
 import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -336,6 +337,7 @@ export default function CustomerDeliveryScanner() {
 
             {/* Empty boxes, flagged — and deletable where they are seen. */}
             <EmptyBoxesAlert canDelete={canDeleteBoxes} />
+            <UnpaidBoxesAlert />
             <UnsentPaymentWhatsAppAlert />
 
             {/* Table */}

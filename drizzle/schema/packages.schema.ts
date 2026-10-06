@@ -375,6 +375,13 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
   // field would erase that difference.
   customerConfirmedAt: timestamp("customerConfirmedAt"),
 
+  // Handed over and not paid (shared/boxReminder): the last time an admin
+  // said "no, this has not been paid" — which is what sends the customer the
+  // gentle reminder — who said it, and how many times it has been said.
+  unpaidConfirmedAt: timestamp("unpaidConfirmedAt"),
+  unpaidConfirmedById: int("unpaidConfirmedById"),
+  paymentReminderCount: int("paymentReminderCount").default(0).notNull(),
+
   // کاتەکان
   sealedAt: timestamp("sealedAt"),
   inTransitAt: timestamp("inTransitAt"),

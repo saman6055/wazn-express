@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -67,6 +67,8 @@ export interface RiskFacts {
   ordersSlowThisWeek?: number | null;
   /** Dollars partners took out in 30 days beyond what the company made. */
   partnerOverdrawUsd?: number;
+  /** Boxes handed over 3+ days ago, still owed, that the office has not looked at (shared/boxReminder). */
+  boxesUnpaid?: number;
 }
 
 /**
@@ -85,6 +87,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "loss-forecast": "/finance/company-dashboard?focus=pulse",
   "orders-slow": "/finance/company-dashboard?focus=pulse",
   "partner-overdraw": "/finance/company-dashboard?focus=pulse",
+  "boxes-unpaid": "/customer-delivery-scanner?unpaid=1",
 };
 
 /** The page whose permission decides who is told. */
@@ -99,6 +102,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "loss-forecast": "/finance/company-dashboard",
   "orders-slow": "/finance/company-dashboard",
   "partner-overdraw": "/finance/company-dashboard",
+  "boxes-unpaid": "/customer-delivery-scanner",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -132,7 +136,7 @@ export function riskGate(id: RiskId): string {
 export type RiskGroup = "risks" | "incomplete";
 
 export function riskGroup(id: RiskId): RiskGroup {
-  return isAuditRisk(id) || id === "empty-boxes" || id === "whatsapp-unsent" ? "incomplete" : "risks";
+  return isAuditRisk(id) || id === "empty-boxes" || id === "whatsapp-unsent" || id === "boxes-unpaid" ? "incomplete" : "risks";
 }
 
 const SEVERITY_LEVEL: Record<CheckSeverity, RiskLevel> = { critical: "critical", warning: "high", info: "notice" };
@@ -209,6 +213,11 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   }
   if (facts.ordersSlowThisWeek != null) {
     items.push({ id: "orders-slow", level: "high", count: Math.max(0, Math.round(facts.ordersSlowThisWeek)) });
+  }
+  // Owner, 2026-10-07: every day the office is shown which boxes' money has
+  // not come — it may have been paid and not receipted.
+  if ((facts.boxesUnpaid ?? 0) > 0) {
+    items.push({ id: "boxes-unpaid", level: "high", count: facts.boxesUnpaid ?? 0 });
   }
   // Owner, 2026-09-17: an empty box should be flagged so it can be deleted. A
   // notice — it costs nothing while it waits, so it never flashes.
@@ -326,6 +335,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "the customer was not told the payment arrived — click and send",
           ar: "لم يُبلَّغ العميل بوصول دفعته — اضغط وأرسل",
           zh: "客户未被告知已收款 — 点击发送",
+        },
+      };
+    case "boxes-unpaid":
+      return {
+        title: { ku: `${n} بۆکس دراوەتە دەست و پارەی نەهاتووە`, en: `${n} box(es) handed over and not paid`, ar: `${n} صندوق سُلِّم ولم يُدفع`, zh: `${n} 个箱子已交付未付款` },
+        detail: {
+          ku: "دڵنیا بکەوە: واسڵی بکە، یان بڵێ نەیداوە بۆ ئەوەی کڕیار بە نەرمی وەبیر بهێنرێتەوە",
+          en: "confirm each: receipt it, or say it is unpaid so the customer is gently reminded",
+          ar: "تأكد: أصدر الإيصال، أو أكّد عدم الدفع ليُذكَّر العميل بلطف",
+          zh: "请确认：开收据，或确认未付以温和提醒客户",
         },
       };
     case "loss-forecast":

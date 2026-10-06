@@ -32,6 +32,7 @@ import {
 } from "@shared/financePulse";
 import { cacheGetOrSet, cacheInvalidate } from "./cache";
 import { getDebtAges } from "./debtAge.db";
+import { countBoxesAwaitingOffice } from "./boxReminder.db";
 import { getFinancialSummary } from "./finance.db";
 import { findUnbilledArrivedOrders } from "./orderCharging.db";
 import { listUnsentPaymentWhatsApp } from "./paymentWhatsApp.db";
@@ -299,10 +300,11 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
     settle(() => arrivedBatchesWithoutCost(db), 0),
     settle(() => lossBatches(db, bounds.start, end), []),
   ]);
-  const [stuck, top, capital] = await Promise.all([
+  const [stuck, top, capital, boxesUnpaid] = await Promise.all([
     settle(() => oldDebt(db, now), { usd: 0, count: 0 }),
     settle(() => topDebtors(db, ledger.totalDebtUsd), []),
     mainAdmin ? settle(() => getWorkingCapital(), null) : Promise.resolve(null),
+    settle(() => countBoxesAwaitingOffice(), 0),
   ]);
 
   const freightProfitUsd = num(profit.pkgs.profit);
@@ -327,7 +329,7 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
     partnersTookOutUsd: tookOut,
     debt: { usd: ledger.totalDebtUsd, debtors: Number(ledger.debtorsCount) || 0, old: stuck, top },
     pulse: pulseNow,
-    waiting: { batchesWithoutCost: noCost, unbilledArrived: unbilled, whatsappUnsent: unsent, oldDebtors: stuck.count },
+    waiting: { boxesUnpaid, batchesWithoutCost: noCost, unbilledArrived: unbilled, whatsappUnsent: unsent, oldDebtors: stuck.count },
     lossBatches: losers,
     capital: capital
       ? {

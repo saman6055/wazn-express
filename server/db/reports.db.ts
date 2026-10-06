@@ -958,7 +958,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
       return fallback;
     }
   };
-  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes, whatsappUnsent, finance] = await Promise.all([
+  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes, whatsappUnsent, finance, boxesUnpaid] = await Promise.all([
     settle('stale depot', () => getStaleDepotPackages(), []),
     settle('volumetric', () => getVolumetricParcels({ pendingOnly: true }), []),
     settle('debt over limit', countDebtorsOverLimit, 0),
@@ -968,6 +968,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     settle('whatsapp unsent', async () => (await listUnsentPaymentWhatsApp()).length, 0),
     // Imported here, not at the top: financePulse.db reads this file's profit rule.
     settle('finance pulse', async () => (await import('./financePulse.db')).getFinancePulseRisks(), { lossForecastUsd: 0, ordersThisWeek: 0, ordersSlow: false, partnerOverdrawUsd: 0 }),
+    settle('boxes unpaid', async () => (await import('./boxReminder.db')).countBoxesAwaitingOffice(), 0),
   ]);
   return buildRiskItems({
     staleDepotDays: stale.map((p) => p.daysInDepot),
@@ -980,6 +981,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     lossForecastUsd: finance.lossForecastUsd,
     ordersSlowThisWeek: finance.ordersSlow ? finance.ordersThisWeek : null,
     partnerOverdrawUsd: finance.partnerOverdrawUsd,
+    boxesUnpaid,
   });
 }
 

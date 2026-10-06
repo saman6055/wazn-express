@@ -1080,6 +1080,23 @@ export const deliveryBoxRouter = router({
     return db.getEmptyBoxes();
   }),
 
+  // Handed over three days ago and still owed (shared/boxReminder): the office
+  // looks first, because the money may be in the drawer waiting for a receipt.
+  awaitingPayment: staffProcedure.query(async () => {
+    return db.listBoxesAwaitingPayment();
+  }),
+  // "No, it has not been paid" — the only thing that sends the customer the
+  // gentle reminder. The refusal carries its own cure, so it is passed on as said.
+  confirmUnpaid: staffProcedure
+    .input(z.object({ boxId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        return await db.confirmBoxUnpaid(input.boxId, ctx.user.id);
+      } catch (err) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+      }
+    }),
+
   /* ── money coming back through the box ──────────────────────────── */
 
   /**

@@ -1252,6 +1252,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       sealedById INT NULL,
       deliveredById INT NULL,
       customerConfirmedAt TIMESTAMP NULL,
+      unpaidConfirmedAt TIMESTAMP NULL,
+      unpaidConfirmedById INT NULL,
+      paymentReminderCount INT NOT NULL DEFAULT 0,
       sealedAt TIMESTAMP NULL,
       inTransitAt TIMESTAMP NULL,
       deliveredAt TIMESTAMP NULL,
@@ -2919,6 +2922,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // deliveredById so a staff handover with a signature stays distinguishable
   // from the customer's own word.
   { name: "deliveryBoxes.customerConfirmedAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN customerConfirmedAt TIMESTAMP NULL" },
+  { name: "deliveryBoxes.unpaidConfirmedAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN unpaidConfirmedAt TIMESTAMP NULL" },
+  { name: "deliveryBoxes.unpaidConfirmedById", sql: "ALTER TABLE deliveryBoxes ADD COLUMN unpaidConfirmedById INT NULL" },
+  { name: "deliveryBoxes.paymentReminderCount", sql: "ALTER TABLE deliveryBoxes ADD COLUMN paymentReminderCount INT NOT NULL DEFAULT 0" },
   // Greetings: the day and month a customer chooses to share, and the last
   // milestone they were congratulated for. All three are optional and all
   // three default to nothing being known.
