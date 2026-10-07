@@ -232,3 +232,32 @@ describe("a correction never goes below what is really still owed", () => {
     expect(db).toContain('eq(boxSettlements.status, "confirmed")');
   });
 });
+
+describe("a parcel of its own that an order claims afterwards", () => {
+  // Owner, 2026-10-07: "if a parcel is entered as a self order and then
+  // recorded under buy-at-cost - is it counted twice?" Never twice (proven on
+  // real MySQL); but the till asked for the freight alone and the goods stayed
+  // on the account as a debt no box collected.
+  const till = root("server/db/boxSettlement.db.ts");
+
+  it("the till asks every item with no order named whether an order claims its tracking", () => {
+    const from = till.indexOf("const cartonTrackings = ");
+    const block = till.slice(from, from + 260);
+    expect(block.length).toBeGreaterThan(200);
+    expect(block.replace(/\s+/g, " ")).toContain("new Set( items .filter((r) => !r.item.fullPackageOrderId)");
+  });
+
+  it("only when the order's goods are on the account, so nothing is asked twice", () => {
+    expect(till).toContain("const claimedParcel = !linkedCarton && mine.some((o) => orderSeen.has(`${account}|${o.id}`));");
+    expect(till).toContain("const fromOrder = linkedCarton || claimedParcel;");
+  });
+
+  it("the parcel's own freight is counted once: added to the goods, never charged again as the order's", () => {
+    expect(till).toContain("orderMoney.chargedUsd + pendingFreightUsd + ownChargedUsd");
+    expect(till).toContain("freight > 0 && !(ownChargedUsd > 0)");
+  });
+
+  it("a tracking is matched whatever its case", () => {
+    expect(till).toContain('(t.trackingNumber ?? "").trim().toLowerCase() === trackingKey');
+  });
+});

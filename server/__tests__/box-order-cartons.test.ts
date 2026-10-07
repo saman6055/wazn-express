@@ -33,7 +33,9 @@ describe("an order carton reads its order", () => {
   const sums = slice(settle, "async function parcelsForItems", "export async function getBoxesPaidInFull");
 
   it("knows a carton when it sees one", () => {
-    expect(sums).toContain('const fromOrder = r.item.itemType !== "regular" || orderId !== null;');
+    expect(sums).toContain('const linkedCarton = r.item.itemType !== "regular" || orderId !== null;');
+    // …or a parcel of its own that an order claimed afterwards (2026-10-07).
+    expect(sums).toContain("const fromOrder = linkedCarton || claimedParcel;");
   });
 
   it("finds its orders the way the receipt does: named on the item, or on its tracking", () => {

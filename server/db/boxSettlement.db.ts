@@ -373,9 +373,22 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
    * customer's orders on its tracking number, the receipt's own rule — and
    * each order counts once per box, however many cartons it arrived in.
    */
+  /**
+   * And a parcel registered on its own that an order claimed afterwards.
+   *
+   * Owner, 2026-10-07: "if a parcel is entered as a self order and then
+   * recorded under buy-at-cost — does it stay a self order, is it counted
+   * twice?" Proven on real MySQL: it is never charged twice, but where the
+   * parcel's freight was already on the account the link is refused
+   * (orderBacklink, finance_closed), the box item stays "regular", and the
+   * till asked for the freight alone — the goods left with the customer and
+   * stayed on the account as a debt no box would ever collect. The self-order
+   * rule already asks the right question — does any order claim this
+   * tracking? — so the till asks it too, for every item with no order named.
+   */
   const orderItems = items.filter((r) => r.item.itemType !== "regular" || !!r.item.fullPackageOrderId);
   const cartonTrackings = Array.from(new Set(
-    orderItems
+    items
       .filter((r) => !r.item.fullPackageOrderId)
       .map((r) => r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null)
       .filter((t): t is string => !!t),
@@ -460,19 +473,28 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
       const fromLedger = charged.get(key);
 
       const boxId = Number(r.item.boxId);
-      const fromOrder = r.item.itemType !== "regular" || orderId !== null;
+      const linkedCarton = r.item.itemType !== "regular" || orderId !== null;
       let orderMoney: { chargedUsd: number; advanceUsd: number; onAccount: boolean } | null = null;
       let pendingFreightUsd = 0;
       let freightOrder: { id: number; orderCode: string } | null = null;
+      // The database matches a tracking whatever its case; so must this.
+      const tracking = r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null;
+      const trackingKey = (tracking ?? "").trim().toLowerCase();
+      const candidates = orderId !== null
+        ? [orderId]
+        : Array.from(new Set(onTracking.filter((t) => trackingKey && (t.trackingNumber ?? "").trim().toLowerCase() === trackingKey).map((t) => Number(t.orderId))));
+      const mine = candidates
+        .map((id) => orderById.get(id))
+        .filter((o): o is NonNullable<typeof o> =>
+          !!o && Number(o.customerId) === customerOfBox.get(boxId) && (orderId !== null || !o.deletedAt));
+      // A parcel of its own that an order now claims, the order's goods on
+      // the account: the box asks for the goods with it. An order not yet on
+      // the account leaves the parcel as it was — nothing is asked twice.
+      const claimedParcel = !linkedCarton && mine.some((o) => orderSeen.has(`${account}|${o.id}`));
+      // What the parcel itself already stands at on the account (its freight).
+      const ownChargedUsd = claimedParcel && seenAnyCharge.has(key) ? Math.max(0, fromLedger ?? 0) : 0;
+      const fromOrder = linkedCarton || claimedParcel;
       if (fromOrder) {
-        const tracking = r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null;
-        const candidates = orderId !== null
-          ? [orderId]
-          : Array.from(new Set(onTracking.filter((t) => tracking && t.trackingNumber === tracking).map((t) => Number(t.orderId))));
-        const mine = candidates
-          .map((id) => orderById.get(id))
-          .filter((o): o is NonNullable<typeof o> =>
-            !!o && Number(o.customerId) === customerOfBox.get(boxId) && (orderId !== null || !o.deletedAt));
         if (mine.length > 0) {
           let chargedCents = 0;
           let advanceCents = 0;
@@ -492,7 +514,8 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
           // its freight not yet: the carton's own freight is due now.
           const only = mine.length === 1 ? mine[0] : null;
           const freight = Number(r.pkg?.calculatedCostUsd ?? 0);
-          if (only && onAccount && only.orderType === "commission" && !only.isShippingCharged && freight > 0) {
+          // Never when the parcel carried its own freight onto the account already.
+          if (only && onAccount && only.orderType === "commission" && !only.isShippingCharged && freight > 0 && !(ownChargedUsd > 0)) {
             pendingFreightUsd = round2(freight);
             freightOrder = { id: Number(only.id), orderCode: String(only.orderCode) };
           }
@@ -510,7 +533,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
        */
       const chargedUsd = round2(
         orderMoney
-          ? (orderMoney.onAccount ? orderMoney.chargedUsd + pendingFreightUsd : Number(r.item.calculatedCostUsd || 0))
+          ? (orderMoney.onAccount ? orderMoney.chargedUsd + pendingFreightUsd + ownChargedUsd : Number(r.item.calculatedCostUsd || 0))
           : fromLedger !== undefined ? fromLedger : Number(r.item.calculatedCostUsd || 0),
       );
       const discountedUsd = round2(discounted.get(key) ?? 0);
