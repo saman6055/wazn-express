@@ -1,6 +1,5 @@
 import type { ReactNode } from "react";
 import { cn } from "@/lib/utils";
-import { CORNER_CLEARANCE } from "@/lib/floatingCorner";
 
 export interface StickyFormBarProps {
   children: ReactNode;
@@ -12,10 +11,11 @@ export interface StickyFormBarProps {
  * form. Right-aligned (logical end) action area, top border, blurred card
  * background, above content and hidden on print.
  *
- * It keeps out of the bottom-right corner, because the chat bubble and the
- * tips lamp live there and float above everything (lib/floatingCorner). Left
- * to itself the bar ran under them, and on Quick Register — where the weight
- * box is the first thing on it — the two landed on top of each other.
+ * It has its whole width again. It used to keep 8rem of its end clear for
+ * the chat bubble and the tips lamp, which floated over the bottom corner and
+ * landed on Quick Register's weight box; they are in the menu rail's foot
+ * now and no longer reach here (lib/floatingCorner). The panel either of
+ * them opens stands above this bar, not on it.
  */
 export function StickyFormBar({ children, className }: StickyFormBarProps) {
   return (
@@ -27,7 +27,7 @@ export function StickyFormBar({ children, className }: StickyFormBarProps) {
         className
       )}
     >
-      <div className={cn("flex flex-wrap items-center justify-end gap-2 px-4 py-3", CORNER_CLEARANCE)}>
+      <div className="flex flex-wrap items-center justify-end gap-2 px-4 py-3">
         {children}
       </div>
     </div>

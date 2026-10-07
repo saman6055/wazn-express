@@ -64,13 +64,17 @@ describe("the bubble in the corner", () => {
     expect(ui).toContain("if (newest <= lastSeen) return;");
   });
 
-  it("opens where he asked, and gets out of the way when printing", () => {
-    // The corner, and which slot of it, comes from lib/floatingCorner: the
-    // owner asked for the right-hand side, clear of the sidebar rail.
-    expect(ui).toContain("cornerSlot(CORNER.chat)");
+  it("is drawn where the layout keeps a place for it, and gets out of the way when printing", () => {
+    // Not over the page since 2026-10-07 (client/src/lib/floatingCorner): the
+    // foot of the menu rail on a desktop - still the right-hand corner he
+    // asked for - and beside the bells on a phone.
+    expect(ui).toContain("createPortal(");
+    expect(ui).not.toContain("cornerSlot");
     expect(ui).toContain("print:hidden");
     const layout = read("client/src/components/DashboardLayout.tsx");
-    expect(layout).toContain("{!fullScreen && <StaffChat />}");
+    expect(layout).toContain(
+      '{!fullScreen && <StaffChat slot={isMobile ? barChatSlot : railChatSlot} placement={isMobile ? "bar" : "rail"} />}',
+    );
   });
 
   it("sends on Enter and keeps Shift+Enter for a new line", () => {

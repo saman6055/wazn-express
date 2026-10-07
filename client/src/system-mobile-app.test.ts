@@ -56,9 +56,17 @@ describe("the office on a phone", () => {
     expect(currentItem(groups, "/elsewhere")).toBeNull();
   });
 
-  it("the corner buttons sit above the tab bar on a phone", () => {
+  it("nothing floats above the tab bar: messages are in the top bar, the lamp in «زیاتر»", () => {
+    // They stood over the list's first column until the owner, 2026-10-07
+    // (lib/floatingCorner; the whole rule is in floating-corner.test).
+    const layout = read("components/DashboardLayout.tsx");
+    expect(layout).toContain('<span ref={setBarChatSlot} className="contents" />');
+    const shell = read("components/mobile/MobileAppShell.tsx");
+    expect(shell).toContain('data-testid="mobile-more-tips"');
+    expect(shell).toContain('data-testid="mobile-tab-more-lamp"');
+    // The panel either of them opens still stands clear of the tab bar.
     const corner = read("lib/floatingCorner.ts");
-    expect(corner).toContain("bottom-[calc(5rem+env(safe-area-inset-bottom))] md:bottom-4");
+    expect(corner).toContain("bottom-[calc(9rem+env(safe-area-inset-bottom))] md:bottom-20");
   });
 });
 

@@ -1,12 +1,13 @@
 import { useCallback, useMemo, useRef, useState, type ReactNode } from "react";
 import {
-  BarChart3, Boxes, ChevronLeft, ChevronRight, Home, LayoutGrid, LogOut, Moon, Package, Receipt, ScanLine, Search,
+  BarChart3, Boxes, ChevronLeft, ChevronRight, Home, LayoutGrid, Lightbulb, LogOut, Moon, Package, Receipt, ScanLine, Search,
   ShoppingCart, Sun, Layers, Users, Wallet, X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { useBackCloses } from "@/hooks/useBackCloses";
+import { TIP_WORD } from "@/lib/tipsLamp";
 import CompanyLogo from "@/components/CompanyLogo";
 import { SYSTEM_TITLE } from "@shared/appVariant";
 
@@ -18,13 +19,18 @@ import { SYSTEM_TITLE } from "@shared/appVariant";
  * and the desktop tool strip:
  *
  *  - MobileTopBar: the page's own name with a back arrow, or «سیستەم» on a
- *    tab's home; search, the two bells.
+ *    tab's home; search, messages, the two bells.
  *  - MobileTabBar: five places a thumb reaches — home, parcels, a raised
  *    scan button in the middle, batches, and «زیاتر».
  *  - the scan sheet: every scanning screen the person may open, big tiles.
  *  - the «زیاتر» sheet: every section of the menu as a grid of tiles,
- *    grouped as the menu groups them, with a filter on top, and the person's
- *    own corner (name, dark mode, sign out).
+ *    grouped as the menu groups them, with a filter on top, the person's
+ *    own corner (name, dark mode, sign out) and the tips lamp.
+ *
+ * Nothing floats over the page here. The chat bubble and the lamp did, above
+ * the tab bar, until the owner, 2026-10-07: «دەکەونە سەر نووسین و شت لە
+ * سیستەمدا» (lib/floatingCorner). A phone has no rail to keep them in, so
+ * messages went up beside the bells and the lamp into «زیاتر».
  *
  * The menu itself is the one the desktop uses, already filtered by
  * permission — nothing here decides who sees what.
@@ -61,6 +67,7 @@ const W = {
   dark: { ku: "دۆخی تاریک", en: "Dark mode", ar: "الوضع الداكن", zh: "深色模式" },
   light: { ku: "دۆخی ڕووناک", en: "Light mode", ar: "الوضع الفاتح", zh: "浅色模式" },
   signOut: { ku: "چوونەدەرەوە", en: "Sign out", ar: "تسجيل الخروج", zh: "退出" },
+  tipsHint: { ku: "ئامۆژگارییەک نیشان بدە", en: "Show me a tip", ar: "أرني نصيحة", zh: "看一条提示" },
 } satisfies Record<string, Words>;
 
 /** The tabs, in the order a thumb meets them. The middle one is the scan button. */
@@ -117,7 +124,7 @@ export function MobileTopBar({
   isRTL: boolean;
   onBack: () => void;
   onSearch: () => void;
-  /** The risk bell and the task bell, as the layout already builds them. */
+  /** Messages, the task bell and the risk bell, as the layout already builds them. */
   bells: ReactNode;
 }) {
   const L = (w: Words) => pickLang(language, w);
@@ -225,8 +232,13 @@ export function MobileTabBar({
               className="flex flex-col items-center justify-center gap-0.5 active:scale-95"
               data-testid={`mobile-tab-${t.key}`}
             >
-              <span className={cn("grid h-8 w-12 place-items-center rounded-full transition-colors", active && "bg-primary/12 text-primary")}>
+              <span className={cn("relative grid h-8 w-12 place-items-center rounded-full transition-colors", active && "bg-primary/12 text-primary")}>
                 <t.icon className={cn("h-5 w-5", active ? "text-primary" : "text-muted-foreground")} strokeWidth={active ? 2.4 : 2} />
+                {/* The lamp lives in here. Its own amber and no number: it
+                    marks a place, it does not count anything. */}
+                {t.key === "more" && (
+                  <span className="absolute end-2 top-1 h-2 w-2 rounded-full bg-amber-500" aria-hidden="true" data-testid="mobile-tab-more-lamp" />
+                )}
               </span>
               <span className={cn("text-[11px] font-semibold", active ? "text-primary" : "text-muted-foreground")}>{L(t.words)}</span>
             </button>
@@ -322,6 +334,7 @@ export function MobileMoreSheet({
   isDark,
   onToggleTheme,
   onSignOut,
+  onTips,
   onNavigate,
   onClose,
 }: {
@@ -333,6 +346,8 @@ export function MobileMoreSheet({
   isDark: boolean;
   onToggleTheme: () => void;
   onSignOut: () => void;
+  /** The lamp was pressed: the layout puts the sheet away and asks for a tip. */
+  onTips: () => void;
   onNavigate: (path: string) => void;
   onClose: () => void;
 }) {
@@ -377,6 +392,23 @@ export function MobileMoreSheet({
           <LogOut className="h-5 w-5" />
         </button>
       </div>
+
+      {/* The tips lamp. A name beside it, not the bare icon it was in the
+          corner: an icon alone tells nobody anything (owner, 2026-09-17). */}
+      <button
+        type="button"
+        onClick={onTips}
+        className="mb-3 flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-3 text-start active:bg-muted"
+        data-testid="mobile-more-tips"
+      >
+        <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-amber-500 text-white">
+          <Lightbulb className="h-5 w-5" />
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block font-bold">{L(TIP_WORD)}</span>
+          <span className="block text-xs text-muted-foreground">{L(W.tipsHint)}</span>
+        </span>
+      </button>
 
       <label className="mb-3 flex h-11 items-center gap-2 rounded-xl border border-border bg-card px-3">
         <Search className="h-4 w-4 shrink-0 text-muted-foreground" />

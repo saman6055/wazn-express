@@ -61,11 +61,6 @@ describe("floating elements follow the reading direction", () => {
       const side = classes.match(/(?:^|\s)(left|right)-([\w./[\]-]+)(?=\s|$)/);
       if (!side) continue;
 
-      // The two corner buttons are placed by hand, through one module, on
-      // the side the owner asked for and clear of the rail. Everything else
-      // still follows the language.
-      if (file === "lib/floatingCorner.ts") continue;
-
       // Both edges pinned — a full-width bar has no side to get wrong.
       if (/(?:^|\s)left-\S+/.test(classes) && /(?:^|\s)right-\S+/.test(classes)) continue;
       // Centred, and moved back by half its own width.
@@ -80,24 +75,28 @@ describe("floating elements follow the reading direction", () => {
     ).toEqual([]);
   });
 
-  it("keeps the corner buttons off the sidebar, on the side the owner asked for", () => {
+  it("opens the chat's and the lamp's panel on the rail's side, through one module", () => {
     /*
-     * This used to insist on `end-4` for the tip card: the corner away from
-     * the sidebar in either language.
+     * Three rules in a row, each for a reason that still holds.
      *
-     * The owner overruled it on 2026-09-27 — «من وتم شوێنی نامە
-     * ناردن لەلای دەستی ڕاست دروست بکە نەک چەپ» — because a corner
-     * is a place a thumb goes to, not a reading direction. The reason the
-     * old rule existed is still honoured: the row starts clear of the 80px
-     * rail from `md` up, so nothing lands on the sidebar in either
-     * language (lib/floatingCorner).
+     * `end-4`, at first: the corner away from the sidebar in either language.
      *
-     * The rule below still holds for everything else: only these two
-     * buttons and their panels are placed by hand, and they are placed
-     * through that one module.
+     * Physical `right-*` from 2026-09-27 — «من وتم شوێنی نامە ناردن لەلای دەستی
+     * ڕاست دروست بکە نەک چەپ» — because a corner is a place a thumb goes to,
+     * not a reading direction. That was the one exception this file allowed.
+     *
+     * `start`, from 2026-10-07, when the two buttons left the page for the
+     * foot of the menu rail («دەکەونە سەر نووسین و شت لە سیستەمدا»). With the
+     * buttons in the rail, their panel belongs beside the rail: the right in
+     * Kurdish, which is still the side he asked for, and the left in English
+     * or Chinese, next to the button that was pressed. So the exception is
+     * gone, and nothing is pinned to a physical side any more.
      */
+    const corner = fs.readFileSync(path.join(SRC, "lib/floatingCorner.ts"), "utf8");
+    expect(corner).toContain("start-4 md:start-24 z-40");
+    expect(corner).not.toMatch(/(?:left|right)-\d/);
     const tips = fs.readFileSync(path.join(SRC, "components/StaffTips.tsx"), "utf8");
-    expect(tips).toContain("cornerSlot(CORNER.tips)");
+    expect(tips).toContain("${CORNER_PANEL}");
     expect(tips).not.toContain("fixed bottom-4 end-4");
     expect(tips).not.toContain("bottom-4 left-4");
   });

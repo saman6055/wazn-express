@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { ArrowRight, Copy, FileText, Loader2, MessageCircle, Monitor, Paperclip, Send, Trash2, X } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -6,7 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
-import { CORNER, CORNER_PANEL, cornerSlot } from "@/lib/floatingCorner";
+import { CORNER_PANEL } from "@/lib/floatingCorner";
 import { soundManager } from "@/lib/soundManager";
 import { fmtWhen } from "@/lib/numericDate";
 import { Textarea } from "@/components/ui/textarea";
@@ -18,7 +19,7 @@ import { confirmDanger } from "@/components/ConfirmDialog";
 import { isNotificationEnabled, showNotification } from "@/lib/pushNotifications";
 
 /**
- * The office talking to itself, in the corner of every screen.
+ * The office talking to itself, one press away on every screen.
  *
  * The owner, 2026-09-26: «گرنگە پەیام ناردن هەبێ لە نێوان ئادمینەکان، چات
  * کردن هەبێ وەکو مەسنجەر، کە چاتی نوێ هات دەنگی بێت وەکو نۆتفکەیشن، بەشێکی
@@ -38,6 +39,13 @@ import { isNotificationEnabled, showNotification } from "@/lib/pushNotifications
  * message appearing is the confirmation — and a way to send a file, a
  * screenshot, or a picture pasted with Ctrl+V. One component for every
  * member of staff, whatever their role: everybody gets the same chat.
+ *
+ * 2026-10-07: the bubble no longer floats over the page - it stood on the
+ * first column of every list («دەکەونە سەر نووسین و شت لە سیستەمدا»). The
+ * layout keeps a place for it in its own furniture and hands that place in
+ * as `slot`: the foot of the menu rail on a desktop, beside the bells on a
+ * phone (lib/floatingCorner). The button is drawn into it from here, so the
+ * unread count, the flash and the panel stay one component with one inbox.
  */
 
 type Words = { ku: string; en: string; ar: string; zh: string };
@@ -83,7 +91,18 @@ type Pending = { blob: Blob; name: string; type: string; preview: string | null 
 const chimedKey = (userId: number) => `wazn-chat-chimed:${userId}`;
 
 
-export function StaffChat() {
+/** Where the layout keeps the button: the foot of the rail, or the phone's top bar. */
+export type ChatPlacement = "rail" | "bar";
+
+const TRIGGER: Record<ChatPlacement, { hit: string; disc: string; icon: string; badge: string }> = {
+  // The rail's own icons are 44px; this is a disc among their squares.
+  rail: { hit: "h-11 w-11", disc: "h-11 w-11 shadow-sm", icon: "h-5 w-5", badge: "-top-0.5 -end-0.5" },
+  // The top bar's buttons are drawn 40px, and take a thumb's 44 (tap-44);
+  // the disc inside is the size of a bell.
+  bar: { hit: "h-10 w-10 tap-44", disc: "h-8 w-8", icon: "h-[18px] w-[18px]", badge: "top-0 end-0" },
+};
+
+export function StaffChat({ slot, placement }: { slot: HTMLElement | null; placement: ChatPlacement }) {
   const { language } = useTranslation();
   const { user } = useAuth();
   const L = (w: Words) => pickLang(language, w);
@@ -167,8 +186,8 @@ export function StaffChat() {
    *
    * The owner, 2026-09-28: «ئەو کەسەی نامەی بۆ دەچێت بە
    * نۆتفیکەیشن بنووسێ نامەت بۆ هات». A sound alone says something
-   * happened somewhere; it does not say who wants you, and a badge on a
-   * bubble in the corner is missed by somebody typing into a form. So the
+   * happened somewhere; it does not say who wants you, and a badge on the
+   * bubble is missed by somebody typing into a form. So the
    * note now comes with a line naming the sender, and one tap on it opens
    * that conversation.
    *
@@ -303,28 +322,46 @@ export function StaffChat() {
     }
   };
 
+  const look = TRIGGER[placement];
+
   return (
     <>
-      {/* The bubble, in the corner he pointed at. */}
-      <button
-        type="button"
-        onClick={() => setOpen((o) => !o)}
-        className={cn(
-          cornerSlot(CORNER.chat),
-          "grid h-12 w-12 place-items-center rounded-full bg-primary text-primary-foreground shadow-lg transition hover:brightness-110 active:scale-95 print:hidden",
-          flash && "ring-4 ring-primary/40 animate-pulse",
+      {/* The bubble, drawn into the place the layout keeps for it - never
+          over the page. */}
+      {slot &&
+        createPortal(
+          <button
+            type="button"
+            onClick={() => setOpen((o) => !o)}
+            className={cn("relative grid shrink-0 place-items-center rounded-full transition active:scale-95 print:hidden", look.hit)}
+            title={L(WORDS.title)}
+            aria-label={L(WORDS.title)}
+            aria-expanded={open}
+            data-testid="staff-chat-bubble"
+            data-placement={placement}
+          >
+            <span
+              className={cn(
+                "grid place-items-center rounded-full bg-primary text-primary-foreground transition hover:brightness-110",
+                look.disc,
+                flash && "ring-4 ring-primary/40 animate-pulse",
+              )}
+            >
+              <MessageCircle className={look.icon} />
+            </span>
+            {unread > 0 && (
+              <span
+                className={cn(
+                  "absolute inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white",
+                  look.badge,
+                )}
+              >
+                {unread}
+              </span>
+            )}
+          </button>,
+          slot,
         )}
-        title={L(WORDS.title)}
-        aria-label={L(WORDS.title)}
-        data-testid="staff-chat-bubble"
-      >
-        <MessageCircle className="h-5 w-5" />
-        {unread > 0 && (
-          <span className="absolute -top-0.5 -end-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-red-600 px-1 text-[11px] font-bold text-white">
-            {unread}
-          </span>
-        )}
-      </button>
 
       {open && (
         <div

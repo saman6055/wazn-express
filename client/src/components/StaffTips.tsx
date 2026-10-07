@@ -1,5 +1,6 @@
 import { useEffect, useState, useRef, useCallback, useMemo } from "react";
-import { CORNER, CORNER_PANEL, cornerSlot } from "@/lib/floatingCorner";
+import { CORNER_PANEL } from "@/lib/floatingCorner";
+import { onTipAsked } from "@/lib/tipsLamp";
 import { useLocation } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -10,10 +11,10 @@ import { dueSlot, msUntilNextCheck, pruneKeys, slotKey } from "@/lib/tipSchedule
 // A "tip of the day" card that teaches good system use, plus a
 // delightful, one-time motivation celebration 10 minutes into the session.
 //
-// It sits in the bottom corner the reader's language ends at — `end-4`, not
-// `left-4`. The sidebar follows the reading direction too, so a hardcoded
-// left put the card underneath the sidebar the moment anyone switched to
-// English, where it was clipped by the screen edge.
+// The card opens beside the menu rail, on the rail's own side
+// (lib/floatingCorner): the right in Kurdish, the left in English. A
+// hardcoded side once put it underneath the rail the moment anyone switched
+// language, where it was clipped by the screen edge.
 //
 // Timing: TWO a day, at fixed hours — see lib/tipSchedule.
 //
@@ -23,7 +24,10 @@ import { dueSlot, msUntilNextCheck, pruneKeys, slotKey } from "@/lib/tipSchedule
 // it without reading. Fixed hours are predictable: having read the morning
 // one, staff know there is nothing more until the afternoon.
 //
-// The lightbulb button stays, so anyone who wants a tip can still ask for one.
+// Anyone who wants a tip can still ask for one - but the lamp that asks is
+// not drawn here any more. It floated over the corner of every page and
+// covered the lists (owner, 2026-10-07); it is in the foot of the menu rail
+// now, and in «زیاتر» on a phone, and this card hears it through lib/tipsLamp.
 const TIP_INDEX_KEY = "wazn-tip-index";
 // Which of today's two slots have already been shown.
 const TIP_SHOWN_KEY = "wazn-tip-shown";
@@ -167,6 +171,9 @@ export function StaffTips() {
     setOpen(true);
   }, []);
 
+  // A lamp somewhere in the layout was pressed.
+  useEffect(() => onTipAsked(showNextTip), [showNextTip]);
+
   // The two slots. Checked on the turn of each minute so a tip appears at
   // its hour while somebody is working, rather than only on the next reload.
   useEffect(() => {
@@ -240,25 +247,9 @@ export function StaffTips() {
 
   const overlay = motivation ? <MotivationOverlay text={motivation} isRTL={isRTL} tapClose={labels.tapClose} onClose={() => setMotivation(null)} /> : null;
 
-  // Card closed → leave a small lightbulb button so a tip is always one click
-  // away (and the feature stays discoverable).
-  if (!open) {
-    return (
-      <>
-        {overlay}
-        <button
-          onClick={() => {
-            showNextTip();
-          }}
-          title={labels.tip}
-          aria-label={labels.tip}
-          className={`${cornerSlot(CORNER.tips)} flex h-11 w-11 items-center justify-center rounded-full bg-amber-500 text-white shadow-lg transition-colors hover:bg-amber-600`}
-        >
-          <Lightbulb className="h-5 w-5" />
-        </button>
-      </>
-    );
-  }
+  // Card closed: nothing of the tips is on the page. The lamp that asks for
+  // one is part of the layout, not a button floating here.
+  if (!open) return overlay;
 
   const tip = tips[((index % tips.length) + tips.length) % tips.length];
   const short = tip.short[lang] || tip.short.ku;

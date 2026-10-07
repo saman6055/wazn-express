@@ -74,12 +74,12 @@ describe("a screen fits the phone it is opened on", () => {
   });
 
   it("keeps the office's own furniture out of the way of a thumb", () => {
-    // The chat bubble and the task list sit where a thumb reaches, and
-    // neither is printed.
+    // The chat's button is not over the page at all since 2026-10-07: on a
+    // phone it is drawn beside the bells, a thumb's 44px to press
+    // (lib/floatingCorner). Its panel never asks for more than the screen has.
     const chat = fs.readFileSync(path.join(ROOT, "components/chat/StaffChat.tsx"), "utf8");
-    // The corner is handed out by lib/floatingCorner since 2026-09-27, so
-    // the bubble and the lamp cannot stand on each other.
-    expect(chat).toContain("cornerSlot(CORNER.chat)");
+    expect(chat).toContain('bar: { hit: "h-10 w-10 tap-44"');
+    expect(chat).not.toContain("cornerSlot");
     expect(chat).toContain("max-w-[calc(100vw-2rem)]");
   });
 });

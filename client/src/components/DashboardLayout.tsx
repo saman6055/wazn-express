@@ -102,6 +102,8 @@ import { ShortcutsOverlay } from "./ShortcutsOverlay";
 import { RiskBell } from "./RiskBell";
 import { TaskBell } from "@/components/tasks/TaskBell";
 import { StaffChat } from "@/components/chat/StaffChat";
+import { TipsLamp } from "@/components/TipsLamp";
+import { askForTip } from "@/lib/tipsLamp";
 import { MobileMoreSheet, MobileScanSheet, MobileTabBar, MobileTopBar, useMobileSheet } from "@/components/mobile/MobileAppShell";
 import { useBackCloses } from "@/hooks/useBackCloses";
 import { useRecentlyViewed } from "@/hooks/useRecentlyViewed";
@@ -196,6 +198,11 @@ function DashboardLayoutContent({
   const company = useCompanyInfo();
   useDynamicFavicon();
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  // The two places the chat draws its button into: the foot of the rail on a
+  // desktop, beside the bells on a phone (lib/floatingCorner). State rather
+  // than a ref, so the chat is drawn again once its place exists.
+  const [railChatSlot, setRailChatSlot] = useState<HTMLElement | null>(null);
+  const [barChatSlot, setBarChatSlot] = useState<HTMLElement | null>(null);
 
   /**
    * Full screen: hide the chrome and give the page the whole window.
@@ -690,7 +697,7 @@ function DashboardLayoutContent({
     <div className={cn("min-h-screen bg-gray-50 dark:bg-gray-900", isRTL && "rtl")}>
       {/* The phone: an app's own top bar (owner, 2026-09-27 — «وەکو ئەپی
           پۆرتال بێت»). The page's name and a back arrow, or «سیستەم» on a
-          tab's home; search and the two bells. components/mobile. */}
+          tab's home; search, messages and the two bells. components/mobile. */}
       {isMobile && (
         <MobileTopBar
           groups={menuGroups}
@@ -701,6 +708,9 @@ function DashboardLayoutContent({
           onSearch={() => setCmdOpen(true)}
           bells={
             <>
+              {/* Messages: a phone has no rail, so the chat draws its
+                  button here, beside the bells (owner, 2026-10-07). */}
+              <span ref={setBarChatSlot} className="contents" />
               <TaskBell className="h-10 w-10" />
               <RiskBell className="h-10 w-10" />
             </>
@@ -893,6 +903,25 @@ function DashboardLayoutContent({
             );
           })}
         </div>
+        )}
+
+        {/*
+          * The foot of the rail: the tips lamp and the office's messages.
+          *
+          * They floated over the bottom corner of every page until the owner,
+          * 2026-10-07: «زۆر بەکەڵکن بەڵام جێگا دەگرن، دەکەونە سەر نووسین و شت لە
+          * سیستەمدا». Here they are still in the corner he chose and stand
+          * on nothing (lib/floatingCorner). The chat draws its own button
+          * into the slot, so its count and its panel stay one component.
+          */}
+        {compact && (
+          <div
+            className="flex shrink-0 flex-col items-center gap-2 border-t border-gray-200 py-3 dark:border-gray-700"
+            data-testid="rail-foot"
+          >
+            <TipsLamp />
+            <span ref={setRailChatSlot} className="contents" />
+          </div>
         )}
 
         {/* Language switcher + user profile moved to the top bar (top-left in
@@ -1191,11 +1220,12 @@ function DashboardLayoutContent({
       </main>
 
       {/*
-        * The office talking to itself, in the corner the owner pointed at
-        * (2026-09-26). Hidden in full screen, where the point is that there
-        * is nothing on the screen but the work.
+        * The office talking to itself (owner, 2026-09-26). Its button is
+        * drawn into the foot of the rail, or beside the bells on a phone -
+        * not over the page. Hidden in full screen, where the point is that
+        * there is nothing on the screen but the work.
         */}
-      {!fullScreen && <StaffChat />}
+      {!fullScreen && <StaffChat slot={isMobile ? barChatSlot : railChatSlot} placement={isMobile ? "bar" : "rail"} />}
 
       {/* The one control left on screen in full screen. Without it the only
           way back is a keyboard shortcut nobody was told about. */}
@@ -1281,6 +1311,11 @@ function DashboardLayoutContent({
               onSignOut={async () => {
                 await logout();
                 window.location.replace(getLoginUrl());
+              }}
+              onTips={() => {
+                // The sheet is above the tip card: put it away first.
+                mobileSheet.setSheet(null);
+                askForTip();
               }}
               onNavigate={mobileSheet.go}
               onClose={() => mobileSheet.setSheet(null)}
