@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { doubleChargeReason, falseDebt, planCorrection, twiceCharged, type DoubleChargeLine } from "./boxPaidStillOwed";
+import { doubleChargeReason, falseDebt, planCorrection, stillOwed, twiceCharged, type AccountRow, type DoubleChargeLine, type SettledFacts } from "./boxPaidStillOwed";
 import { buildRiskItems, riskPath, type RiskFacts } from "./riskBell";
 
 /**
@@ -157,5 +157,78 @@ describe("a box made again is the same goods", () => {
 
   it("an old receipt never becomes a credit on the new box", () => {
     expect(till).toContain("Math.min(elsewhereUsd, Math.max(0, round2(chargedUsd - discountedUsd - settledHereUsd)))");
+  });
+});
+
+describe("a correction never goes below what is really still owed", () => {
+  // Owner, 2026-10-08, on the nine debtors: "Zainab has boxes not receipted
+  // yet — check twice." Her double lines came to $11,493 on a balance of
+  // $4,471; "never more than the balance" would have wiped two open boxes and
+  // the goods on the road with them.
+  const row = (id: number, type: string, usd: number, description: string, referenceId: number | null = null, balanceAfterUsd = 1): AccountRow =>
+    ({ id, transactionNumber: `T${id}`, transactionType: type, amountUsd: usd, balanceAfterUsd, description, referenceId });
+  const facts = (over: Partial<SettledFacts> = {}): SettledFacts => ({
+    receiptedBoxCodes: new Set(["BOX-20260901-001"]),
+    receiptedPackageIds: new Set([50]),
+    receiptedOrderIds: new Set(),
+    receiptedTrackings: new Set(["yt100"]),
+    orders: [
+      { id: 1, chargeTransactionId: 10, trackings: ["YT100"] }, // in the receipted box, typed in capitals on the order
+      { id: 2, chargeTransactionId: 12, trackings: ["sf200"] }, // still on the road
+    ],
+    isOrderText: (d) => d.includes("CM-"),
+    ...over,
+  });
+
+  it("goods in a receipted box are settled; goods on the road are owed", () => {
+    const rows = [
+      row(10, "DEBIT_COMMISSION", 100, "CM-AAAAA1", 1),
+      row(11, "DEBIT_PACKAGE", 20, "CM-AAAAA1 freight", 1),
+      row(12, "DEBIT_COMMISSION", 300, "CM-BBBBB2", 2),
+      row(13, "DEBIT_PACKAGE", 120, "BOX-20260901-001 — yt100", 50),
+      row(14, "CREDIT_PAYMENT", 120, "BOX-20260901-001"),
+    ];
+    expect(stillOwed(rows, facts())).toBe(300);
+    // $120 was written twice, the balance is $420: exactly $120 comes off, the $300 on the road stays.
+    expect(falseDebt(120, 420, 300)).toBe(120);
+  });
+
+  it("more written twice than is owed: only the part above what is still owed comes off", () => {
+    expect(falseDebt(11493.1, 4471.33, 2178.03)).toBe(2293.3);
+    expect(falseDebt(843.21, 762.07, 0)).toBe(762.07);
+    expect(falseDebt(500, 300, 300)).toBe(0);
+    expect(falseDebt(500, 300, 900)).toBe(0);
+  });
+
+  it("an account put to nothing by hand owes nothing for what stood before", () => {
+    const rows = [
+      row(1, "DEBIT_COMMISSION", 80, "CM-OLDOLD", 9),
+      row(2, "ADJUSTMENT_CREDIT", 80, "[ڕێکخستنی دەستی] حیسابی پێشوو", null, 0),
+      row(3, "DEBIT_COMMISSION", 300, "CM-BBBBB2", 2),
+    ];
+    expect(stillOwed(rows, facts())).toBe(300);
+  });
+
+  it("a charge already taken back does not count, and a parcel in a receipted box is paid", () => {
+    const rows = [
+      row(1, "DEBIT_COMMISSION", 300, "CM-BBBBB2", 2),
+      row(2, "ADJUSTMENT_CREDIT", 300, "back [REV:T1]"),
+      row(3, "DEBIT_PACKAGE", 15, "parcel", 50),
+      row(4, "DEBIT_PACKAGE", 9, "parcel", 51),
+      row(5, "DEBIT_PACKAGE", 4.5, "نرخی گەیاندنی بۆکس BOX-20260901-001", 0),
+    ];
+    expect(stillOwed(rows, facts())).toBe(9);
+  });
+
+  it("money taken without a box receipt pays the open goods first", () => {
+    const rows = [row(1, "DEBIT_COMMISSION", 300, "CM-BBBBB2", 2), row(2, "CREDIT_PAYMENT", 100, "Payment received")];
+    expect(stillOwed(rows, facts())).toBe(200);
+  });
+
+  it("the finder weighs every customer by it, and matches a tracking whatever its case", () => {
+    const db = root("server/db/boxPaidStillOwed.db.ts");
+    expect(db).toContain("falseDebt(twiceUsd, balanceUsd, stillOwedUsd)");
+    expect(db).toContain("trackingKey(o.tracking) === trackingKey(tracking)");
+    expect(db).toContain('eq(boxSettlements.status, "confirmed")');
   });
 });

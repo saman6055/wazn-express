@@ -1,6 +1,6 @@
 import { and, eq, inArray, like } from "drizzle-orm";
 import { getDb } from "./connection";
-import { customerAccounts, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages } from "../../drizzle/schema";
+import { boxSettlements, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages } from "../../drizzle/schema";
 import { customers } from "../../drizzle/schema/users.schema";
 import { isOrderChargeText } from "@shared/batchCleanup";
 import { withFix } from "@shared/fixAdvice";
@@ -8,7 +8,10 @@ import {
   doubleChargeReason,
   falseDebt,
   planCorrection,
+  stillOwed,
+  trackingKey,
   twiceCharged,
+  type AccountRow,
   type DoubleChargeCustomer,
   type DoubleChargeLine,
 } from "@shared/boxPaidStillOwed";
@@ -125,7 +128,8 @@ export async function findBoxDoubleCharges(onlyCustomerId?: number): Promise<Dou
     const boxChargeUsd = await standsAt({ id: Number(row.id), accountId: Number(row.accountId), transactionNumber: row.transactionNumber, amountUsd: row.amountUsd });
     if (boxChargeUsd <= 0.005) continue;
     const tracking = match[2];
-    const mine = orders.filter((o) => o.tracking === tracking && o.customerId === row.customerId);
+    // The database matches a tracking whatever its case; so must this.
+    const mine = orders.filter((o) => trackingKey(o.tracking) === trackingKey(tracking) && o.customerId === row.customerId);
     const charges: DoubleChargeLine["orderCharges"] = [];
     const seenOrders = new Set<number>();
     for (const order of mine) {
@@ -155,15 +159,82 @@ export async function findBoxDoubleCharges(onlyCustomerId?: number): Promise<Dou
     .leftJoin(customerAccounts, eq(customerAccounts.customerId, customers.id))
     .where(inArray(customers.id, ids));
 
-  return ids
-    .map((customerId) => {
-      const lines = byCustomer.get(customerId)!;
-      const who = people.find((p) => Number(p.id) === customerId);
-      const twiceUsd = cents(lines.reduce((s, l) => s + l.twiceUsd, 0));
-      const balanceUsd = num(who?.balance);
-      return { customerId, customerCode: who?.customerCode ?? null, customerName: who?.fullName ?? null, balanceUsd, lines, twiceUsd, falseDebtUsd: falseDebt(twiceUsd, balanceUsd) };
-    })
+  const out: DoubleChargeCustomer[] = [];
+  for (const customerId of ids) {
+    const lines = byCustomer.get(customerId)!;
+    const who = people.find((p) => Number(p.id) === customerId);
+    const twiceUsd = cents(lines.reduce((s, l) => s + l.twiceUsd, 0));
+    const balanceUsd = num(who?.balance);
+    // Only an account that owes is weighed: the rest have nothing to take off.
+    const stillOwedUsd = balanceUsd > 0.005 ? await stillOwedByCustomer(customerId) : 0;
+    out.push({ customerId, customerCode: who?.customerCode ?? null, customerName: who?.fullName ?? null, balanceUsd, lines, twiceUsd, stillOwedUsd, falseDebtUsd: falseDebt(twiceUsd, balanceUsd, stillOwedUsd) });
+  }
+  return out
     .sort((a, b) => b.falseDebtUsd - a.falseDebtUsd || b.twiceUsd - a.twiceUsd);
+}
+
+/**
+ * What one customer really still owes (shared/boxPaidStillOwed → stillOwed):
+ * the charges that stand on goods no receipted box holds. The account's rows,
+ * the boxes whose receipt stands, and the orders with every tracking they go
+ * by are gathered here; the rule itself is the shared one.
+ */
+export async function stillOwedByCustomer(customerId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [account] = await db.select({ id: customerAccounts.id }).from(customerAccounts).where(eq(customerAccounts.customerId, customerId)).limit(1);
+  if (!account) return 0;
+
+  const ledger = await db
+    .select({ id: ledgerTransactions.id, transactionNumber: ledgerTransactions.transactionNumber, transactionType: ledgerTransactions.transactionType, amountUsd: ledgerTransactions.amountUsd, balanceAfterUsd: ledgerTransactions.balanceAfterUsd, description: ledgerTransactions.description, referenceId: ledgerTransactions.referenceId })
+    .from(ledgerTransactions)
+    .where(eq(ledgerTransactions.accountId, account.id));
+  const rows: AccountRow[] = ledger
+    .map((r) => ({ id: Number(r.id), transactionNumber: r.transactionNumber, transactionType: String(r.transactionType), amountUsd: num(r.amountUsd), balanceAfterUsd: num(r.balanceAfterUsd), description: String(r.description ?? ""), referenceId: r.referenceId == null ? null : Number(r.referenceId) }))
+    .sort((a, b) => a.id - b.id);
+
+  // Everything inside a box whose receipt stands.
+  const inBoxes = await db
+    .select({ boxCode: deliveryBoxes.boxCode, packageId: deliveryBoxItems.packageId, orderId: deliveryBoxItems.fullPackageOrderId, tracking: packages.trackingNumber, parcelOrderId: packages.fullPackageOrderId })
+    .from(boxSettlements)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, boxSettlements.boxId))
+    .leftJoin(deliveryBoxItems, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
+    .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
+    .where(and(eq(deliveryBoxes.customerId, customerId), eq(boxSettlements.status, "confirmed")));
+  const receiptedBoxCodes = new Set<string>();
+  const receiptedPackageIds = new Set<number>();
+  const receiptedOrderIds = new Set<number>();
+  const receiptedTrackings = new Set<string>();
+  for (const b of inBoxes) {
+    receiptedBoxCodes.add(b.boxCode);
+    if (b.packageId != null) receiptedPackageIds.add(Number(b.packageId));
+    if (b.orderId != null) receiptedOrderIds.add(Number(b.orderId));
+    if (b.parcelOrderId != null) receiptedOrderIds.add(Number(b.parcelOrderId));
+    if (b.tracking) receiptedTrackings.add(trackingKey(b.tracking));
+  }
+  // A box line is written only by a receipt: the tracking it names was paid,
+  // even where the box itself was later deleted and made again.
+  for (const r of rows) {
+    const line = BOX_LINE.exec(r.description);
+    if (line) receiptedTrackings.add(trackingKey(line[2]));
+  }
+
+  const own = await db
+    .select({ id: fullPackageOrders.id, chargeTransactionId: fullPackageOrders.chargeTransactionId, tracking: fullPackageOrders.trackingNumber })
+    .from(fullPackageOrders)
+    .where(eq(fullPackageOrders.customerId, customerId));
+  const listed = own.length === 0 ? [] : await db
+    .select({ orderId: fullPackageOrderTrackings.fullPackageOrderId, tracking: fullPackageOrderTrackings.trackingNumber })
+    .from(fullPackageOrderTrackings)
+    .innerJoin(fullPackageOrders, eq(fullPackageOrders.id, fullPackageOrderTrackings.fullPackageOrderId))
+    .where(eq(fullPackageOrders.customerId, customerId));
+  const orders = own.map((o) => ({
+    id: Number(o.id),
+    chargeTransactionId: o.chargeTransactionId == null ? null : Number(o.chargeTransactionId),
+    trackings: [o.tracking, ...listed.filter((l) => Number(l.orderId) === Number(o.id)).map((l) => l.tracking)].filter((t): t is string => !!t),
+  }));
+
+  return cents(stillOwed(rows, { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, orders, isOrderText: isOrderChargeText }));
 }
 
 /**
