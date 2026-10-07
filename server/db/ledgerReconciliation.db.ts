@@ -102,7 +102,7 @@ export async function getLedgerReconciliation(): Promise<LedgerReconciliation> {
         SELECT 1 FROM ledgerTransactions t2
          WHERE t2.accountId = a.id AND t2.transactionType = 'DEBIT_PACKAGE'
            AND t2.referenceType = 'package' AND t2.referenceId = i.packageId
-           AND t2.description LIKE CONCAT(b.boxCode, ' —%')
+           AND t2.description COLLATE utf8mb4_unicode_ci LIKE CONCAT(b.boxCode COLLATE utf8mb4_unicode_ci, ' —%')
       )
     ORDER BY i.id
   `);
@@ -130,7 +130,7 @@ export async function getLedgerReconciliation(): Promise<LedgerReconciliation> {
           JOIN customerAccounts a ON a.customerId = o.customerId
           JOIN ledgerTransactions t ON t.accountId = a.id AND t.referenceId = o.id
                AND (t.referenceType IN ('full_package', 'commission', 'purchase_request')
-                    OR (t.referenceType = 'package' AND t.description LIKE CONCAT('%', o.orderCode, '%')))
+                    OR (t.referenceType = 'package' AND t.description COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', o.orderCode COLLATE utf8mb4_unicode_ci, '%')))
          WHERE o.id IN (${sql.join(orderIds.map((id) => sql`${id}`), sql`, `)})
          GROUP BY o.id
       `);
@@ -238,7 +238,7 @@ export async function getLedgerReconciliation(): Promise<LedgerReconciliation> {
      WHERE t.referenceType = 'package'
        AND t.transactionType IN ('DEBIT_PACKAGE', 'ADJUSTMENT_DEBIT', 'ADJUSTMENT_CREDIT')
        AND ownParcel.id IS NULL
-       AND t.description LIKE CONCAT('%', o.orderCode, '%')
+       AND t.description COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', o.orderCode COLLATE utf8mb4_unicode_ci, '%')
      ORDER BY t.id
   `);
   const freightCollisions: FreightCollisionRow[] = collisionRows.map((r) => ({

@@ -75,3 +75,19 @@ describe("a carton charged twice", () => {
     expect(cartonOverchargeUsd(50, 0)).toBe(0);
   });
 });
+
+describe("the report opens on the live database", () => {
+  // 2026-10-07: the report failed on production with "Illegal mix of
+  // collations (utf8mb4_0900_ai_ci) and (utf8mb4_unicode_ci) for operation
+  // 'like'" - a ledger text compared with an order's code, each table made
+  // under a different default. Proven on real MySQL: naming one collation on
+  // both sides is the cure.
+  it("every text compared across two tables names its collation on both sides", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const src = fs.readFileSync(path.resolve(__dirname, "..", "db", "ledgerReconciliation.db.ts"), "utf8");
+    const likes = src.split("\n").filter((line) => line.includes("LIKE CONCAT("));
+    expect(likes.length).toBe(3);
+    for (const line of likes) expect(line.match(/COLLATE utf8mb4_unicode_ci/g)?.length, line.trim()).toBe(2);
+  });
+});
