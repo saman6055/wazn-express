@@ -55,7 +55,7 @@ describe("an order carton reads its order", () => {
 
   it("takes off the advance, by the shared rule the receipt uses", () => {
     expect(sums).toContain("orderAdvancePaidUsd(o as unknown as AdvanceSource)");
-    expect(sums).toContain("const settledUsd = round2((settledByItem.get(Number(r.item.id)) ?? 0) + advanceUsd);");
+    expect(sums).toContain("const settledHereUsd = round2((settledByItem.get(Number(r.item.id)) ?? 0) + advanceUsd);");
   });
 });
 

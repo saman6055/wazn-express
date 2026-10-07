@@ -135,3 +135,27 @@ describe("it cannot happen again, and cannot stay hidden", () => {
     expect(root("client/src/App.tsx")).toContain('path="/finance/box-double-charges"');
   });
 });
+
+describe("a box made again is the same goods", () => {
+  // Owner, 2026-10-08: "sometimes a box is made, deleted, and made again for
+  // the very same things — the system must not count them twice."
+  const till = root("server/db/boxSettlement.db.ts");
+
+  it("what a receipt paid for a parcel counts wherever that parcel is boxed now", () => {
+    expect(till).toContain("const paidElsewhereByPackage = new Map<number, number>();");
+    expect(till).toContain("const paidElsewhereByOrder = new Map<number, number>();");
+    expect(till).toContain("inArray(boxSettlementLines.packageId, pkgIdsHere)");
+  });
+
+  it("only from receipts that still stand, and never this box's own lines twice", () => {
+    const from = till.indexOf("const paidElsewhere = ");
+    const block = till.slice(from, till.indexOf("const paidElsewhereByPackage"));
+    expect(block.length).toBeGreaterThan(400);
+    expect(block).toContain('eq(boxSettlements.status, "confirmed")');
+    expect(block).toContain("NOT IN (");
+  });
+
+  it("an old receipt never becomes a credit on the new box", () => {
+    expect(till).toContain("Math.min(elsewhereUsd, Math.max(0, round2(chargedUsd - discountedUsd - settledHereUsd)))");
+  });
+});

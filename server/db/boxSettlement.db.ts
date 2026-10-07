@@ -315,6 +315,48 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
   const settledByItem = new Map(settledRows.map((r) => [Number(r.boxItemId), Number(r.paid || 0)]));
 
   /**
+   * What the same goods were already paid in ANOTHER box.
+   *
+   * A box is sometimes made, deleted, and made again for the same parcels
+   * (owner, 2026-10-08: "the system must not count them twice"). The second
+   * box holds new items, and paid-per-item above knows nothing of the first
+   * box's receipt — so goods paid for in full were offered at the till again,
+   * and their customer shown as owing for a box they had settled. A receipt
+   * is for the goods, not for the cardboard: what a confirmed receipt paid
+   * for this parcel, or this order, counts wherever the goods are boxed now.
+   */
+  const pkgIdsHere = Array.from(new Set(items.map((r) => Number(r.item.packageId ?? r.pkg?.id ?? 0)).filter((id) => id > 0)));
+  const orderIdsHere = Array.from(new Set(items.map((r) => Number(r.item.fullPackageOrderId ?? 0)).filter((id) => id > 0)));
+  const paidElsewhere = pkgIdsHere.length + orderIdsHere.length > 0
+    ? await db
+        .select({
+          packageId: boxSettlementLines.packageId,
+          fullPackageOrderId: boxSettlementLines.fullPackageOrderId,
+          paid: sql<string>`SUM(${boxSettlementLines.paidUsd})`,
+        })
+        .from(boxSettlementLines)
+        .innerJoin(boxSettlements, eq(boxSettlements.id, boxSettlementLines.settlementId))
+        .where(and(
+          eq(boxSettlements.status, "confirmed"),
+          itemIds.length > 0 ? sql`(${boxSettlementLines.boxItemId} IS NULL OR ${boxSettlementLines.boxItemId} NOT IN (${sql.join(itemIds.map((id) => sql`${id}`), sql`, `)}))` : sql`1 = 1`,
+          or(
+            pkgIdsHere.length > 0 ? inArray(boxSettlementLines.packageId, pkgIdsHere) : sql`1 = 0`,
+            orderIdsHere.length > 0 ? inArray(boxSettlementLines.fullPackageOrderId, orderIdsHere) : sql`1 = 0`,
+          ),
+        ))
+        .groupBy(boxSettlementLines.packageId, boxSettlementLines.fullPackageOrderId)
+    : [];
+  const paidElsewhereByPackage = new Map<number, number>();
+  const paidElsewhereByOrder = new Map<number, number>();
+  for (const row of paidElsewhere) {
+    const paid = Number(row.paid || 0);
+    if (!(paid > 0)) continue;
+    // A line names its parcel when it has one; an order carton names the order.
+    if (row.packageId) paidElsewhereByPackage.set(Number(row.packageId), round2((paidElsewhereByPackage.get(Number(row.packageId)) ?? 0) + paid));
+    else if (row.fullPackageOrderId) paidElsewhereByOrder.set(Number(row.fullPackageOrderId), round2((paidElsewhereByOrder.get(Number(row.fullPackageOrderId)) ?? 0) + paid));
+  }
+
+  /**
    * Order cartons: a commission or full-package order in the box.
    *
    * Their money lives on the order, not on the parcel they travelled in. A
@@ -474,7 +516,14 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
       const discountedUsd = round2(discounted.get(key) ?? 0);
       const advanceUsd = round2(orderMoney?.advanceUsd ?? 0);
       // An advance is money already paid for these goods, so it counts as paid.
-      const settledUsd = round2((settledByItem.get(Number(r.item.id)) ?? 0) + advanceUsd);
+      const settledHereUsd = round2((settledByItem.get(Number(r.item.id)) ?? 0) + advanceUsd);
+      // Paid for in a box that was since deleted or made again — counted, and
+      // never beyond what is still owed here, so an old receipt cannot turn
+      // into a credit on the new box.
+      const elsewhereUsd = packageId
+        ? (paidElsewhereByPackage.get(Number(packageId)) ?? 0)
+        : (orderId ? (paidElsewhereByOrder.get(Number(orderId)) ?? 0) : 0);
+      const settledUsd = round2(settledHereUsd + Math.min(elsewhereUsd, Math.max(0, round2(chargedUsd - discountedUsd - settledHereUsd))));
       return {
         lineId: Number(r.item.id),
         packageId,
