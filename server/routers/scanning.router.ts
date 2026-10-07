@@ -11,6 +11,8 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { DISCOUNT_REASONS } from "@shared/boxSettlement";
+import { PAID_WINDOWS, paidWindowStart, withoutMoney } from "@shared/boxOverview";
+import { canSeeAllAccounts } from "@shared/financeAccess";
 import { notifyPackageStatusChange } from "../services/notification.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
@@ -1064,15 +1066,29 @@ export const deliveryBoxRouter = router({
       manualOnly: z.boolean().optional(),
       archive: z.enum(["exclude", "only"]).optional(),
       segment: z.enum(["new", "old", "handed"]).optional(),
+      // Boxes receipted today / this week / ever - the cards above the list.
+      // The window is named, never dated, so the server's clock decides it.
+      paidWindow: z.enum(PAID_WINDOWS).optional(),
     }).optional())
     .query(async ({ input }) => {
+      const { paidWindow, ...filters } = input ?? ({} as NonNullable<typeof input>);
       return db.getAllDeliveryBoxes({
-        ...input,
+        ...filters,
         startDate: input?.startDate ? new Date(input.startDate) : undefined,
         endDate: input?.endDate ? new Date(input.endDate) : undefined,
         batchId: input?.manualOnly ? null : input?.batchId,
+        paidSince: paidWindow ? paidWindowStart(paidWindow) : undefined,
       });
     }),
+
+  // The figures above the list (shared/boxOverview): what is not paid yet and
+  // the money taken today, this week and ever. Read only. Every account's
+  // money is for the people who answer for the books (shared/financeAccess);
+  // anybody else gets the counts and the links, and no dollars.
+  overview: staffProcedure.query(async ({ ctx }) => {
+    const overview = await db.getBoxOverview();
+    return canSeeAllAccounts(ctx.user.role) ? overview : withoutMoney(overview);
+  }),
 
   // Boxes nothing was ever put in (shared/emptyBox) — flagged above the list
   // and in the bell, so they can be cleared away (owner, 2026-09-17).

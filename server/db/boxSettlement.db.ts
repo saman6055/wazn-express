@@ -548,6 +548,42 @@ export async function getBoxesPaidInFull(boxIds: number[]): Promise<Set<number>>
 }
 
 /**
+ * What the payment screen says each of these boxes still owes.
+ *
+ * The screen's own sums once more (parcelsForItems), for any number of boxes
+ * in the same three queries: each item's charged - forgiven - paid, never
+ * below zero, added up per box in whole cents. The box list carries it on
+ * every row and the figures above the list are added up from it, so opening
+ * the boxes one by one and adding their payment screens comes to the same
+ * total. A box with nothing in it owes nothing. The courier's delivery fee is
+ * not in it: it is not on the parcels (shared/deliveryFee).
+ */
+export async function getBoxesOutstanding(boxIds: number[]): Promise<Map<number, number>> {
+  const owed = new Map<number, number>();
+  const ids = Array.from(new Set(boxIds.map(Number))).filter((id) => id > 0);
+  if (ids.length === 0) return owed;
+  for (const id of ids) owed.set(id, 0);
+  const db = await getDb();
+  if (!db) return owed;
+
+  const items = await db
+    .select({ item: deliveryBoxItems, pkg: packages })
+    .from(deliveryBoxItems)
+    .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
+    .where(inArray(deliveryBoxItems.boxId, ids));
+  const parcels = await parcelsForItems(db, items);
+
+  const cents = new Map<number, number>();
+  items.forEach((r, i) => {
+    const boxId = Number(r.item.boxId);
+    const line = Math.max(0, Math.round((Number(parcels[i].outstandingUsd) || 0) * 100));
+    cents.set(boxId, (cents.get(boxId) ?? 0) + line);
+  });
+  cents.forEach((total, boxId) => owed.set(boxId, total / 100));
+  return owed;
+}
+
+/**
  * Has this parcel already been paid for, in some other box?
  *
  * The owner's rule (Sep 2026): once a box's money is in, nothing inside it

@@ -42,8 +42,20 @@ describe("the delivery fee is not our money, for now", () => {
     expect(paid).toBeNull();
   });
 
-  it("is not in the delivery page's money total", () => {
-    expect(read("client/src/components/delivery/DeliveryStats.tsx")).toContain("ourDeliveryFee(b.deliveryChargeUsd)");
+  it("is not in the delivery page's money totals", () => {
+    // The figures above the box list are added up from what each parcel
+    // still owes on the payment screen (getBoxesOutstanding). The courier's
+    // fee is on the box, never on a parcel, so it cannot get into them - and
+    // neither the sum nor the cards read the box's fee or its item total.
+    const till = read("server/db/boxSettlement.db.ts");
+    const at = till.indexOf("export async function getBoxesOutstanding(");
+    expect(at).toBeGreaterThan(-1);
+    const owed = till.slice(at, till.indexOf("\n}\n", at));
+    expect(owed).toContain("parcels[i].outstandingUsd");
+    expect(owed).not.toContain("deliveryChargeUsd");
+    const cards = read("client/src/components/delivery/DeliveryStats.tsx");
+    expect(cards).not.toContain("deliveryChargeUsd");
+    expect(cards).not.toContain("totalValueUsd");
   });
 
   it("is not on the box invoice, for staff or the customer", () => {

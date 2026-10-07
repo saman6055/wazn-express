@@ -4,7 +4,7 @@ import { UnpaidBoxesAlert } from "@/components/delivery/UnpaidBoxes";
 import { useSearch } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
-import { Package, Plus, Archive, Users, Percent, X, Search } from "lucide-react";
+import { Package, Plus, Archive, Users, Percent, X, Search, Banknote } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { PageHeader } from "@/components/layout/PageHeader";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -16,7 +16,8 @@ import { fmtUsd } from "@/lib/portalFormat";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { Button } from "@/components/ui/button";
 import { exportToExcel } from "@/components/ExportUtils";
-import { DeliveryStats } from "@/components/delivery/DeliveryStats";
+import { DeliveryStats, paidWindowTitle } from "@/components/delivery/DeliveryStats";
+import type { PaidWindow } from "@shared/boxOverview";
 import { BoxFilters, type FilterState } from "@/components/delivery/BoxFilters";
 import { BoxTable } from "@/components/delivery/BoxTable";
 import { BoxDetailPanel } from "@/components/delivery/BoxDetailPanel";
@@ -64,6 +65,15 @@ export default function CustomerDeliveryScanner() {
   const [view, setView] = useState<BoxView>("unpaid");
 
   /**
+   * The list narrowed to boxes receipted today, this week or ever - set by
+   * the "received" cards above it (owner, 2026-10-07: pressing the figure
+   * must show what it is made of). Like the customer drill it sees past the
+   * chips: a box part-paid today is still on the unpaid list, and it is one
+   * of the boxes the card counted.
+   */
+  const [paidWindow, setPaidWindow] = useState<PaidWindow | null>(null);
+
+  /**
    * /customer-delivery-scanner?box=<id> opens that box (owner, 2026-09-18: a
    * box code in the Portal Center's ratings opens the box itself). The id
    * leaves the address once used, so a refresh does not open it again.
@@ -107,10 +117,12 @@ export default function CustomerDeliveryScanner() {
       offset: currentPage * PAGE_SIZE,
     };
     if (drilledCustomerId) params.customerId = drilledCustomerId;
+    if (paidWindow) params.paidWindow = paidWindow;
     // The server leaves the archive out, so a page is a full page: when a
     // box is paid it leaves and the next one moves up into its place. A
-    // drilled customer sees everything of theirs, archived or not.
-    if (!drilledCustomerId) {
+    // drilled customer sees everything of theirs, archived or not - and so
+    // does a "received" card, which counts every box with a receipt.
+    if (!drilledCustomerId && !paidWindow) {
       params.archive = view === "paid" ? "only" : "exclude";
       if (view === "new" || view === "old" || view === "handed") params.segment = view;
     }
@@ -124,7 +136,7 @@ export default function CustomerDeliveryScanner() {
       params.endDate = new Date(filters.endDate + "T23:59:59").toISOString();
     }
     return params;
-  }, [filters, currentPage, drilledCustomerId, view]);
+  }, [filters, currentPage, drilledCustomerId, view, paidWindow]);
 
   // Queries
   const { data: customersData } = trpc.customers.list.useQuery();
@@ -133,8 +145,16 @@ export default function CustomerDeliveryScanner() {
   const {
     data: boxesData,
     isLoading: boxesLoading,
-    refetch: refetchBoxes,
+    refetch: refetchListOnly,
   } = trpc.deliveryBox.list.useQuery(queryParams);
+  // The figures above the list: every box, not the page (shared/boxOverview).
+  const overviewQuery = trpc.deliveryBox.overview.useQuery(undefined, { staleTime: 30_000 });
+  const refetchOverview = overviewQuery.refetch;
+  /** Whatever changes the list changes the figures above it. */
+  const refetchBoxes = useCallback(() => {
+    void refetchOverview();
+    return refetchListOnly();
+  }, [refetchListOnly, refetchOverview]);
 
   /** A search spans every box, so the screen says so — see the note below. */
   const isSearching = Boolean(filters.search && filters.search.trim());
@@ -164,8 +184,30 @@ export default function CustomerDeliveryScanner() {
    * Drilling into a code always starts at the first page. Staying on page
    * three of the old list would show an empty table and read as "no boxes".
    */
+  /** A card was pressed: the list it counted comes into view. */
+  const showList = useCallback(() => {
+    setCurrentPage(0);
+    window.setTimeout(() => {
+      document.getElementById("box-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+    }, 0);
+  }, []);
+
+  const handleShowUnpaid = useCallback(() => {
+    setPaidWindow(null);
+    setDrilledCustomerId(null);
+    setView("unpaid");
+    showList();
+  }, [showList]);
+
+  const handleShowPaid = useCallback((window: PaidWindow) => {
+    setDrilledCustomerId(null);
+    setPaidWindow(window);
+    showList();
+  }, [showList]);
+
   const handleDrillToCustomer = useCallback((customerId: number | null) => {
     setDrilledCustomerId(customerId);
+    setPaidWindow(null);
     setCurrentPage(0);
     // A drilled customer sees everything of theirs, archived or not; the
     // chips start again from the unpaid list when the drill is cleared.
@@ -237,7 +279,14 @@ export default function CustomerDeliveryScanner() {
         />
 
         {/* Stats */}
-        <DeliveryStats boxes={boxes} isLoading={boxesLoading} />
+        <DeliveryStats
+          overview={overviewQuery.data}
+          isLoading={overviewQuery.isLoading}
+          activeWindow={paidWindow}
+          onShowUnpaid={handleShowUnpaid}
+          onOpenBox={handleBoxSelect}
+          onShowPaid={handleShowPaid}
+        />
 
         {/* The open box, back on the page where it was. The window it moved
             into was worse: narrower, and it hid the list behind it. */}
@@ -250,7 +299,7 @@ export default function CustomerDeliveryScanner() {
         )}
 
         {/* Boxes Card */}
-        <Card>
+        <Card id="box-list" className="scroll-mt-20">
           <CardContent className="space-y-4 pt-6">
             {/* Filters + Create Button Row */}
             <div className="flex flex-wrap items-center gap-3">
@@ -308,9 +357,26 @@ export default function CustomerDeliveryScanner() {
               </div>
             )}
 
+            {/* The list narrowed by a "received" card - said, with the way out
+                beside it: a filter with no visible handle is one somebody
+                forgets is on. */}
+            {paidWindow && (
+              <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm dark:border-emerald-900 dark:bg-emerald-950/40" data-testid="paid-window-banner">
+                <Banknote className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
+                <span className="font-medium">{L(paidWindowTitle(paidWindow))}</span>
+                <span className="text-muted-foreground" dir="ltr">{totalBoxes}</span>
+                <Button variant="ghost" size="sm" className="ms-auto h-7"
+                        onClick={() => { setPaidWindow(null); setCurrentPage(0); }}
+                        data-testid="clear-paid-window">
+                  <X className="h-4 w-4 me-1" />
+                  {L({ ku: "هەموو بۆکسەکان", en: "All boxes", ar: "كل الصناديق", zh: "全部箱子" })}
+                </Button>
+              </div>
+            )}
+
             {/* The chips: unpaid, new, old, handed over unpaid, paid. Each is a
                 server-side slice, so every page stays a full page. */}
-            {!drilledCustomerId && (
+            {!drilledCustomerId && !paidWindow && (
               <BoxSegmentBar
                 value={view}
                 counts={segmentCounts}

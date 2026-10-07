@@ -93,8 +93,9 @@ describe("pressing a code shows that customer and nothing else", () => {
 
   it("includes their finished boxes, which they may be asking about", () => {
     // A drilled customer's list asks for everything of theirs: the archive
-    // split (and the chips) apply only to the whole list.
-    const split = slice(page, "if (!drilledCustomerId) {", "}", "archive split");
+    // split (and the chips) apply only to the whole list. A "received" card
+    // above the list is the same: it counts every box with a receipt.
+    const split = slice(page, "if (!drilledCustomerId && !paidWindow) {", "}", "archive split");
     expect(split).toContain("params.archive =");
   });
 
@@ -102,7 +103,8 @@ describe("pressing a code shows that customer and nothing else", () => {
     // The query params memo has to depend on it, or the table keeps showing
     // the previous customer's boxes.
     // The archive switch too: the server splits current from archived now.
-    expect(page).toContain("[filters, currentPage, drilledCustomerId, view]");
+    // And the window of a "received" card, which narrows the same list.
+    expect(page).toContain("[filters, currentPage, drilledCustomerId, view, paidWindow]");
   });
 
   it("offers a way back that is visible while the filter is on", () => {

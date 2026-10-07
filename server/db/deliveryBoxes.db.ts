@@ -8,7 +8,7 @@ import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
 import { markLinkedOrdersDelivered } from "./packages.db";
 import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 import { boxSettlements, boxSettlementLines } from "../../drizzle/schema/finance.schema";
-import { getBoxesPaidInFull } from "./boxSettlement.db";
+import { getBoxesOutstanding, getBoxesPaidInFull } from "./boxSettlement.db";
 import { archiveCutoff, SETTLED_SLACK_USD } from "@shared/archive";
 import { boxOldCutoff } from "@shared/boxAging";
 
@@ -208,6 +208,18 @@ export async function getBoxesSettlementCleared(boxIds: number[]): Promise<Map<n
   return out;
 }
 
+/**
+ * A box with a standing receipt written at or after this moment.
+ *
+ * The one condition behind "received today / this week / ever" on top of the
+ * delivery page: the list filters on it and the count on the card is counted
+ * with it, so a card that says 3 boxes opens a list of 3. A receipt that was
+ * undone is not standing and does not count.
+ */
+export function receiptSinceSql(start: Date) {
+  return sql`EXISTS (SELECT 1 FROM ${boxSettlements} WHERE ${boxSettlements.boxId} = ${deliveryBoxes.id} AND ${boxSettlements.status} = 'confirmed' AND ${boxSettlements.createdAt} >= ${start})`;
+}
+
 /** The counts on the chips above the box list. */
 export interface BoxSegmentCounts {
   unpaid: number;
@@ -232,9 +244,16 @@ export async function getAllDeliveryBoxes(filters?: {
   /** A slice of the unpaid list (archive "exclude" only): opened within the
    *  red badge's five days, opened before them, or handed over. */
   segment?: "new" | "old" | "handed";
+  /** Only boxes with a standing receipt written since this moment (receiptSinceSql). */
+  paidSince?: Date;
 }): Promise<{
   // Omit: a list never carries the signature or the delivery photograph.
-  boxes: (Omit<DeliveryBox, "signature" | "deliveryPhoto"> & { shippingType: string | null; settlementCleared?: boolean | null })[];
+  boxes: (Omit<DeliveryBox, "signature" | "deliveryPhoto"> & {
+    shippingType: string | null;
+    settlementCleared?: boolean | null;
+    /** What the payment screen says the box still owes (getBoxesOutstanding). */
+    outstandingUsd?: number;
+  })[];
   total: number;
   archivedTotal?: number;
   segmentCounts?: BoxSegmentCounts;
@@ -268,6 +287,7 @@ export async function getAllDeliveryBoxes(filters?: {
       )
     )`);
   }
+  if (filters?.paidSince) conditions.push(receiptSinceSql(filters.paidSince));
   if (filters?.startDate) conditions.push(gte(deliveryBoxes.createdAt, filters.startDate));
   if (filters?.endDate) conditions.push(lte(deliveryBoxes.createdAt, filters.endDate));
   // batchId: explicit null means "manual boxes only"; a number means specific batch; undefined means don't filter
@@ -428,9 +448,13 @@ export async function getAllDeliveryBoxes(filters?: {
   const discountByBox = new Map(settleRows.map(r => [Number(r.boxId), Number(r.discount || 0)]));
 
   const clearedByBox = await getBoxesSettlementCleared(boxes.filter(b => settledByBox.has(b.id)).map(b => b.id));
+  // What each box still owes, by the payment screen's own sums - so a row,
+  // the box opened, and the figure above the list all say the same amount.
+  const owedByBox = await getBoxesOutstanding(boxes.map(b => b.id));
 
   const boxesWithType = boxes.map(b => ({
     ...b,
+    outstandingUsd: owedByBox.get(b.id) ?? 0,
     settledUsd: settledByBox.get(b.id) ?? 0,
     /** The payment screen's verdict; null when no payment is on record. */
     settlementCleared: settledByBox.has(b.id) ? (clearedByBox.get(b.id) ?? false) : null,

@@ -384,6 +384,19 @@ export function BoxTable({
                 </TableCell>
                 <TableCell className="text-end font-mono text-sm">
                   {fmtUsd(Number(box.totalValueUsd || 0))}
+                  {/* What the payment screen says is still owed, or what was
+                      taken - the figures the cards above the list add up. Said
+                      only when it is not the value already on the line above,
+                      and in a line that never widens the column (w-0). */}
+                  {Number(box.outstandingUsd || 0) > 0.005 && Math.abs(Number(box.outstandingUsd) - Number(box.totalValueUsd || 0)) > 0.005 ? (
+                    <span className="block w-0 min-w-full whitespace-normal text-xs text-red-600 dark:text-red-400" data-testid="box-row-owed">
+                      {pickLang(language, { ku: "ماوە", en: "owed", ar: "المتبقي", zh: "未付" })} <bdi dir="ltr">{fmtUsd(Number(box.outstandingUsd))}</bdi>
+                    </span>
+                  ) : Number(box.outstandingUsd || 0) <= 0.005 && Number(box.settledUsd || 0) > 0.005 && Math.abs(Number(box.settledUsd) - Number(box.totalValueUsd || 0)) > 0.005 ? (
+                    <span className="block w-0 min-w-full whitespace-normal text-xs text-emerald-600 dark:text-emerald-400" data-testid="box-row-taken">
+                      {pickLang(language, { ku: "وەرگیراو", en: "taken", ar: "المستلم", zh: "已收" })} <bdi dir="ltr">{fmtUsd(Number(box.settledUsd))}</bdi>
+                    </span>
+                  ) : null}
                 </TableCell>
                 <TableCell className="text-end font-mono text-sm">
                   {fmtUsd(Number(box.deliveryChargeUsd || 0))}
