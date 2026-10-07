@@ -197,6 +197,7 @@ export const ledgerRouter = router({
       .input(z.object({
         orderId: z.number().int().positive(),
         refuseQuantity: z.number().int().positive(),
+        // The reasons an order is refused for; a parcel has its own door (abandonParcel).
         reason: z.enum(["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"]),
         keepUsd: z.number().min(0).max(1_000_000),
         note: z.string().max(1000).optional(),
@@ -209,6 +210,20 @@ export const ledgerRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
         }
       }),
+    /** A parcel the company only carried — left behind by its customer, or ownerless — taken into stock. */
+    abandonParcel: superAdminProcedure
+      .input(z.object({ packageId: z.number().int().positive(), keepUsd: z.number().min(0).max(1_000_000), note: z.string().max(1000).optional() }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.abandonParcel(input, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+    /** Ownerless parcels still waiting: how many, and what carrying them cost. */
+    ownerlessFreight: accountantProcedure.query(async () => {
+      return db.getOwnerlessFreight();
+    }),
     sellStock: superAdminProcedure
       .input(z.object({ stockId: z.number().int().positive(), priceUsd: z.number().min(0).max(1_000_000), customerCode: z.string().max(60).optional(), note: z.string().max(1000).optional() }))
       .mutation(async ({ input, ctx }) => {

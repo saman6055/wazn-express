@@ -1,13 +1,16 @@
 import { and, desc, eq, gte, inArray, lte, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
 import { companyStock, customerAccounts, fullPackageOrders, fullPackageOrderTrackings, packages, storeProducts } from "../../drizzle/schema";
+import { batches } from "../../drizzle/schema/batches.schema";
 import { customers, users } from "../../drizzle/schema/users.schema";
 import { isLiveSale } from "@shared/orderProfit";
 import { withFix } from "@shared/fixAdvice";
 import {
   REFUSAL_FAULT,
   STOCK_OLD_DAYS,
+  abandonLedgerReason,
   clampKeep,
+  parcelFreightCostUsd,
   keptLedgerReason,
   planRefusal,
   refusalLedgerReason,
@@ -17,6 +20,9 @@ import {
 import { appLogger } from "../utils/logger";
 import { getCustomerById } from "./customers.db";
 import { adjustCharge, adjustCustomerBalance, reverseCharge } from "./finance.db";
+import { getBatchCostsByRule } from "./batches.db";
+import { parcelOwnCharges, parcelReceipt } from "./parcelDeletion.db";
+import { getVolumetricDivisor } from "./settings.db";
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
 const cents = (n: number) => Math.round(n * 100) / 100;
@@ -87,7 +93,7 @@ export async function previewRefusal(orderId: number, refuseQuantity: number) {
 export async function searchOrdersForRefusal(query: string) {
   const db = await getDb();
   const q = query.trim();
-  if (!db || !q) return { orders: [], plainParcel: false, allEnded: false };
+  if (!db || !q) return { orders: [], parcels: [], plainParcel: false, allEnded: false };
   const [byCode, byOwnTracking, byList, byParcel] = await Promise.all([
     db.select({ id: fullPackageOrders.id }).from(fullPackageOrders).where(eq(fullPackageOrders.orderCode, q)),
     db.select({ id: fullPackageOrders.id }).from(fullPackageOrders).where(or(eq(fullPackageOrders.trackingNumber, q), eq(fullPackageOrders.supplierTrackingNumber, q))),
@@ -95,7 +101,15 @@ export async function searchOrdersForRefusal(query: string) {
     db.select({ id: packages.id, orderId: packages.fullPackageOrderId }).from(packages).where(eq(packages.trackingNumber, q)),
   ]);
   const ids = Array.from(new Set([...byCode, ...byOwnTracking, ...byList].map((r) => Number(r.id)).concat(byParcel.map((r) => Number(r.orderId))).filter((id) => id > 0)));
-  if (ids.length === 0) return { orders: [], plainParcel: byParcel.length > 0, allEnded: false };
+  // A parcel with no order behind it: the company only carried it. It can
+  // still be left behind, or have no owner at all.
+  const plainIds = byParcel.filter((r) => !(Number(r.orderId) > 0)).map((r) => Number(r.id));
+  const parcels = [];
+  for (const id of plainIds) {
+    const view = await previewParcelAbandon(id).catch(() => null);
+    if (view) parcels.push(view);
+  }
+  if (ids.length === 0) return { orders: [], parcels, plainParcel: byParcel.length > 0 && parcels.length === 0, allEnded: false };
   const rows = await db
     .select({
       orderId: fullPackageOrders.id,
@@ -113,10 +127,168 @@ export async function searchOrdersForRefusal(query: string) {
   const live = rows.filter((r) => isLiveSale(r));
   return {
     orders: live.map((r) => ({ orderId: Number(r.orderId), orderCode: r.orderCode, productName: r.productName, quantity: r.quantity ?? 1, status: String(r.status), customerCode: r.customerCode, customerName: r.customerName })),
+    parcels,
     plainParcel: false,
     /** Found, but every one of them is already cancelled or refused. */
     allEnded: rows.length > 0 && live.length === 0,
   };
+}
+
+// ---------------------------------------------------------------------------
+// A parcel the company only carried: left behind, or with no owner
+// ---------------------------------------------------------------------------
+
+async function loadParcelForAbandon(packageId: number) {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [pkg] = await db.select().from(packages).where(eq(packages.id, packageId)).limit(1);
+  if (!pkg) throw new Error(withFix("ئەم پاکەتە نەدۆزرایەوە.", ["تراکەکە دووبارە بنووسە"]));
+  if (Number(pkg.fullPackageOrderId) > 0) {
+    throw new Error(withFix("ئەم پاکەتە داواکاریی کڕینی لەسەرە.", ["بە هەمان تراک بگەڕێ و داواکارییەکە ڕەت بکەوە، نەک پاکەتەکە"]));
+  }
+  if (pkg.status === "returned" || pkg.status === "cancelled") {
+    throw new Error(withFix("ئەم پاکەتە پێشتر گەڕێنراوەتەوە یان هەڵوەشێنراوەتەوە.", ["لە لیستی خوارەوە بە هەمان تراک بیدۆزەوە"]));
+  }
+  const [already] = await db.select({ id: companyStock.id }).from(companyStock).where(eq(companyStock.packageId, packageId)).limit(1);
+  if (already) throw new Error(withFix("ئەم پاکەتە پێشتر خراوەتە ناو کاڵای ماوە.", ["لە لیستی خوارەوە بە هەمان تراک بیدۆزەوە"]));
+
+  const ownerless = Boolean(pkg.isUnclaimed) || !pkg.customerId;
+  const customer = !ownerless && pkg.customerId ? await getCustomerById(pkg.customerId) : null;
+  const [account] = customer
+    ? await db.select({ id: customerAccounts.id, balance: customerAccounts.currentBalanceUsd }).from(customerAccounts).where(eq(customerAccounts.customerId, customer.id)).limit(1)
+    : [];
+  const charges = account ? await parcelOwnCharges(db, { id: Number(account.id) }, packageId) : [];
+
+  // What carrying it cost: the batch's real rate on this parcel's own weight or volume.
+  let freightCostUsd = 0;
+  if (pkg.batchId) {
+    const cost = (await getBatchCostsByRule([Number(pkg.batchId)])).get(Number(pkg.batchId));
+    if (cost) {
+      freightCostUsd = parcelFreightCostUsd({
+        unit: cost.unit,
+        ratePerUnit: cost.effectiveRate,
+        weightKg: num(pkg.weightKg),
+        lengthCm: num(pkg.lengthCm),
+        widthCm: num(pkg.widthCm),
+        heightCm: num(pkg.heightCm),
+        volumeCbm: num(pkg.volumeCbm),
+        divisor: await getVolumetricDivisor(),
+      });
+    }
+  }
+  const [batch] = pkg.batchId ? await db.select({ code: batches.batchCode }).from(batches).where(eq(batches.id, Number(pkg.batchId))).limit(1) : [];
+  return { db, pkg, ownerless, customer: customer ?? null, account: account ?? null, charges, freightCostUsd, batchCode: batch?.code ?? null };
+}
+
+/** What leaving this parcel behind would do, before anything is done. Read only. */
+export async function previewParcelAbandon(packageId: number) {
+  const { pkg, ownerless, customer, account, charges, freightCostUsd, batchCode } = await loadParcelForAbandon(packageId);
+  // What the customer is charged for it now: the charges standing on the account, net of anything already undone.
+  const chargedUsd = pkg.isCharged ? cents(num(pkg.calculatedCostUsd)) : 0;
+  const balanceUsd = num(account?.balance);
+  const takenOffUsd = charges.length > 0 ? chargedUsd : 0;
+  const balanceAfterUsd = cents(balanceUsd - takenOffUsd);
+  return {
+    packageId: Number(pkg.id),
+    trackingNumber: pkg.trackingNumber,
+    description: pkg.description,
+    ownerless,
+    customerId: customer?.id ?? null,
+    customerCode: customer?.customerCode ?? null,
+    customerName: customer?.fullName ?? null,
+    batchCode,
+    weightKg: num(pkg.weightKg),
+    freightCostUsd,
+    takenOffUsd,
+    balanceUsd,
+    balanceAfterUsd,
+    keepableUsd: cents(Math.max(0, -balanceAfterUsd)),
+  };
+}
+
+/**
+ * A parcel the company only carried becomes the company's own: the freight
+ * comes off the customer who will not take it (an ownerless one was never on
+ * anybody's account), and the parcel goes into stock at no buying cost — what
+ * is lost is the freight, which its batch's cost already carries, so it is
+ * shown here and never taken out of profit a second time.
+ */
+export async function abandonParcel(input: { packageId: number; keepUsd: number; note?: string }, userId: number) {
+  const { db, pkg, ownerless, customer, account, charges, freightCostUsd } = await loadParcelForAbandon(input.packageId);
+  const paid = await parcelReceipt(input.packageId);
+  if (paid) {
+    throw new Error(withFix(
+      `ئەم پاکەتە پارەکەی لە وەسڵی ${paid.settlementNumber} وەرگیراوە، بۆیە هیچ خەسارەیەکی لەسەر نییە.`,
+      ["ئەگەر کڕیار کاڵاکەی ناوێت و پارەکەی داوە، هیچ کارێک پێویست نییە", `ئەگەر دەبێت پارەکەی بگەڕێتەوە، یەکەم جار وەسڵەکە لە بۆکسی ${paid.boxCode ?? ""} هەڵبوەشێنەوە`],
+    ));
+  }
+  const tracking = pkg.trackingNumber ?? `#${pkg.id}`;
+  const why = abandonLedgerReason(tracking);
+
+  let takenOffUsd = 0;
+  for (const charge of charges) {
+    const { reversalTransaction } = await reverseCharge(charge.id, why, userId, undefined, { allowCredit: true });
+    takenOffUsd = cents(takenOffUsd + num(reversalTransaction.amountUsd));
+  }
+
+  let keptUsd = 0;
+  if (customer && account) {
+    const [after] = await db.select({ balance: customerAccounts.currentBalanceUsd }).from(customerAccounts).where(eq(customerAccounts.id, Number(account.id))).limit(1);
+    const keepable = cents(Math.max(0, -num(after?.balance)));
+    keptUsd = cents(Math.min(keepable, Math.max(0, Number(input.keepUsd) || 0)));
+    if (keptUsd > 0) await adjustCustomerBalance(customer.id, customer.customerCode, keptUsd, "debit", keptLedgerReason(tracking), userId);
+  }
+
+  // No longer a parcel anybody is charged for. Its price is cleared as well as
+  // its charge: the batch's profit shares the carrier's cost out by each
+  // parcel's price, so a parcel left with a price would take its share of the
+  // cost away with it and the loss would never show. At nothing, the whole
+  // cost of the batch falls on the parcels that were paid for — which is the
+  // loss, in the batch's own figures. (What it was charged stays on the stock
+  // row and in the ledger.)
+  await db.update(packages).set({ isCharged: false, status: "returned", calculatedCostUsd: "0" }).where(eq(packages.id, Number(pkg.id)));
+
+  const reason: RefusalReason = ownerless ? "ownerless" : "abandoned";
+  const [inserted] = await db.insert(companyStock).values({
+    packageId: Number(pkg.id),
+    trackingNumber: pkg.trackingNumber,
+    customerId: customer?.id ?? null,
+    productName: (pkg.description ?? "").trim().slice(0, 480) || "پاکەت",
+    quantity: 1,
+    costUsd: "0.00",
+    freightCostUsd: freightCostUsd.toFixed(2),
+    refusedSellUsd: takenOffUsd.toFixed(2),
+    keptUsd: keptUsd.toFixed(2),
+    reason,
+    fault: REFUSAL_FAULT[reason],
+    note: (input.note ?? "").trim() || null,
+    createdById: userId,
+  });
+  appLogger.info("[RefusedGoods] parcel left behind", { packageId: pkg.id, tracking, ownerless, takenOffUsd, keptUsd, freightCostUsd, userId });
+  return { stockId: Number(inserted.insertId), trackingNumber: tracking, ownerless, takenOffUsd, keptUsd, freightCostUsd };
+}
+
+/** Ownerless parcels still waiting for somebody: how many, and what carrying them cost. */
+export async function getOwnerlessFreight(): Promise<{ count: number; freightCostUsd: number; unknownCost: number }> {
+  const db = await getDb();
+  if (!db) return { count: 0, freightCostUsd: 0, unknownCost: 0 };
+  const rows = await db
+    .select({ id: packages.id, batchId: packages.batchId, weightKg: packages.weightKg, lengthCm: packages.lengthCm, widthCm: packages.widthCm, heightCm: packages.heightCm, volumeCbm: packages.volumeCbm })
+    .from(packages)
+    .where(and(eq(packages.isUnclaimed, true), sql`${packages.status} NOT IN ('returned', 'cancelled')`))
+    .limit(2000);
+  if (rows.length === 0) return { count: 0, freightCostUsd: 0, unknownCost: 0 };
+  const costs = await getBatchCostsByRule(Array.from(new Set(rows.map((r) => Number(r.batchId)).filter((id) => id > 0))));
+  const divisor = await getVolumetricDivisor();
+  let total = 0;
+  let unknown = 0;
+  for (const r of rows) {
+    const cost = r.batchId ? costs.get(Number(r.batchId)) : undefined;
+    const usd = cost ? parcelFreightCostUsd({ unit: cost.unit, ratePerUnit: cost.effectiveRate, weightKg: num(r.weightKg), lengthCm: num(r.lengthCm), widthCm: num(r.widthCm), heightCm: num(r.heightCm), volumeCbm: num(r.volumeCbm), divisor }) : 0;
+    if (usd > 0) total += usd;
+    else unknown += 1;
+  }
+  return { count: rows.length, freightCostUsd: cents(total), unknownCost: unknown };
 }
 
 /**
@@ -206,7 +378,9 @@ export async function listCompanyStock(now: Date = new Date()) {
       productName: companyStock.productName,
       productImage: companyStock.productImage,
       quantity: companyStock.quantity,
+      packageId: companyStock.packageId,
       costUsd: companyStock.costUsd,
+      freightCostUsd: companyStock.freightCostUsd,
       refusedSellUsd: companyStock.refusedSellUsd,
       keptUsd: companyStock.keptUsd,
       reason: companyStock.reason,
@@ -231,6 +405,7 @@ export async function listCompanyStock(now: Date = new Date()) {
     return {
       ...r,
       costUsd: num(r.costUsd),
+      freightCostUsd: num(r.freightCostUsd),
       refusedSellUsd: num(r.refusedSellUsd),
       keptUsd: num(r.keptUsd),
       soldPriceUsd: r.soldPriceUsd == null ? null : num(r.soldPriceUsd),

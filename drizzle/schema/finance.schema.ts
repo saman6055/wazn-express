@@ -1039,6 +1039,8 @@ export const companyStock = mysqlTable("companyStock", {
   /** The order the goods came from, and its code as it read that day. */
   orderId: int("orderId"),
   orderCode: varchar("orderCode", { length: 50 }),
+  /** Set instead of an order when it is a parcel the company only carried: left behind, or ownerless. */
+  packageId: int("packageId"),
   /** The tracking it is found by — when it is refused, and again when it is sold. */
   trackingNumber: varchar("trackingNumber", { length: 100 }),
   /** Who refused them. */
@@ -1048,13 +1050,18 @@ export const companyStock = mysqlTable("companyStock", {
   quantity: int("quantity").notNull(),
   /** What the company paid for them — the figure the asset stands at. */
   costUsd: decimal("costUsd", { precision: 12, scale: 2 }).notNull(),
+  /**
+   * What carrying it cost the company. Shown, and counted in "loss so far" —
+   * but never taken out of profit here: it is already inside its batch's cost.
+   */
+  freightCostUsd: decimal("freightCostUsd", { precision: 12, scale: 2 }).default("0").notNull(),
   /** What was taken off the customer's account for them. */
   refusedSellUsd: decimal("refusedSellUsd", { precision: 12, scale: 2 }).default("0").notNull(),
   /** The customer's money the company kept against the loss. Income, the day of the refusal. */
   keptUsd: decimal("keptUsd", { precision: 12, scale: 2 }).default("0").notNull(),
-  reason: mysqlEnum("reason", ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"]).notNull(),
+  reason: mysqlEnum("reason", ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "abandoned", "ownerless", "other"]).notNull(),
   /** Whose side it happened on — what the loss report groups by. */
-  fault: mysqlEnum("fault", ["customer", "office"]).notNull(),
+  fault: mysqlEnum("fault", ["customer", "office", "nobody"]).notNull(),
   note: text("note"),
   status: mysqlEnum("status", ["held", "sold", "written_off"]).default("held").notNull(),
   soldPriceUsd: decimal("soldPriceUsd", { precision: 12, scale: 2 }),

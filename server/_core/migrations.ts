@@ -1497,16 +1497,18 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       id INT AUTO_INCREMENT PRIMARY KEY,
       orderId INT NULL,
       orderCode VARCHAR(50) NULL,
+      packageId INT NULL,
       trackingNumber VARCHAR(100) NULL,
       customerId INT NULL,
       productName VARCHAR(500) NULL,
       productImage TEXT,
       quantity INT NOT NULL,
       costUsd DECIMAL(12, 2) NOT NULL,
+      freightCostUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       refusedSellUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       keptUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
-      reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','other') NOT NULL,
-      fault ENUM('customer','office') NOT NULL,
+      reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','abandoned','ownerless','other') NOT NULL,
+      fault ENUM('customer','office','nobody') NOT NULL,
       note TEXT,
       status ENUM('held','sold','written_off') NOT NULL DEFAULT 'held',
       soldPriceUsd DECIMAL(12, 2) NULL,
@@ -2919,6 +2921,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.pending_credits_status", sql: "CREATE INDEX idx_pending_credits_status ON pendingCredits (status)" },
   { name: "idx.pending_credits_customer", sql: "CREATE INDEX idx_pending_credits_customer ON pendingCredits (customerId)" },
   { name: "idx.customer_standing_customer", sql: "CREATE INDEX idx_customer_standing_customer ON customerStanding (customerId)" },
+  { name: "companyStock.packageId", sql: "ALTER TABLE companyStock ADD COLUMN packageId INT NULL" },
+  { name: "companyStock.freightCostUsd", sql: "ALTER TABLE companyStock ADD COLUMN freightCostUsd DECIMAL(12, 2) NOT NULL DEFAULT 0" },
   { name: "companyStock.trackingNumber", sql: "ALTER TABLE companyStock ADD COLUMN trackingNumber VARCHAR(100) NULL" },
   { name: "idx.company_stock_status", sql: "CREATE INDEX idx_company_stock_status ON companyStock (status)" },
   { name: "idx.company_stock_customer", sql: "CREATE INDEX idx_company_stock_customer ON companyStock (customerId)" },
@@ -3151,6 +3155,17 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
         `WHERE NOT EXISTS (SELECT 1 FROM (SELECT nameEn FROM expenseCategories) c WHERE c.nameEn = ${q(en)})`,
     };
   })),
+
+  // companyStock learned two more reasons and a third side when parcels the
+  // company only carried were given a place in it (shared/refusedGoods).
+  {
+    name: "companyStock.reason.parcels",
+    sql: "ALTER TABLE companyStock MODIFY COLUMN reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','abandoned','ownerless','other') NOT NULL",
+  },
+  {
+    name: "companyStock.fault.nobody",
+    sql: "ALTER TABLE companyStock MODIFY COLUMN fault ENUM('customer','office','nobody') NOT NULL",
+  },
 
   {
     name: "batches.status.at_depot",

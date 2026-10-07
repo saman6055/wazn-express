@@ -30,9 +30,22 @@
  * when it is sold — and a sale ends it for good.
  */
 
-export const REFUSAL_REASONS = ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"] as const;
+export const REFUSAL_REASONS = ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "abandoned", "ownerless", "other"] as const;
 export type RefusalReason = (typeof REFUSAL_REASONS)[number];
-export type RefusalFault = "customer" | "office";
+export type RefusalFault = "customer" | "office" | "nobody";
+
+/**
+ * The reasons an ORDER is refused for, and the two a PARCEL ends up here by.
+ *
+ * A parcel is different: the company did not buy it, it only carried it
+ * (owner, 2026-10-08: "the freight is a lot beside what the parcel itself is
+ * worth, so the customer does not come for it and does not want it" — and
+ * "some parcels, you do not know whose they are at all; the cost of carrying
+ * them is a loss until the owner appears, and sometimes there never is one").
+ * So a parcel has no buying cost: what is lost is the freight.
+ */
+export const ORDER_REFUSAL_REASONS = ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "other"] as const satisfies readonly RefusalReason[];
+export const PARCEL_REASONS = ["abandoned", "ownerless"] as const satisfies readonly RefusalReason[];
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -44,6 +57,8 @@ export const REFUSAL_REASON_WORDS: Record<RefusalReason, Words> = {
   changed_mind: { ku: "کڕیار نایەوێت", en: "The customer no longer wants it", ar: "العميل لم يعد يريده", zh: "客户不要了" },
   office_mistake: { ku: "ئادمین بە هەڵە داوای کردووە", en: "Ordered by the office by mistake", ar: "طلبه المكتب بالخطأ", zh: "办公室误订" },
   office_duplicate: { ku: "ئادمین دوو جار داوای کردووە", en: "Ordered twice by the office", ar: "طلبه المكتب مرتين", zh: "办公室重复下单" },
+  abandoned: { ku: "کرێی گواستنەوەی زۆرە، کڕیار پاکەتەکەی بەجێ هێشت", en: "The freight was too much; the customer left the parcel", ar: "أجرة الشحن مرتفعة، ترك العميل الطرد", zh: "运费过高，客户弃货" },
+  ownerless: { ku: "پاکەتی بێ خاوەن", en: "A parcel with no owner", ar: "طرد بلا صاحب", zh: "无主包裹" },
   other: { ku: "هۆکارێکی تر — بینووسە", en: "Another reason — write it", ar: "سبب آخر — اكتبه", zh: "其他 — 请写明" },
 };
 
@@ -56,6 +71,8 @@ export const REFUSAL_FAULT: Record<RefusalReason, RefusalFault> = {
   no_answer: "customer",
   partial: "customer",
   changed_mind: "customer",
+  abandoned: "customer",
+  ownerless: "nobody",
   other: "customer",
 };
 
@@ -127,6 +144,8 @@ export interface StockRow {
   costUsd: number;
   keptUsd: number;
   soldPriceUsd: number | null;
+  /** What carrying it cost — a parcel's whole loss, and part of an order's story. */
+  freightCostUsd?: number | null;
 }
 
 /** How it ended: nothing yet, a profit, or a loss. Kept money is not in this figure. */
@@ -150,7 +169,20 @@ export function stockResultUsd(row: StockRow): number {
  * a held piece — it is the figure shown in red beside it.
  */
 export function stockLossSoFarUsd(row: StockRow): number {
-  return cents(row.costUsd - row.keptUsd - (row.status === "sold" ? (row.soldPriceUsd ?? 0) : 0));
+  return cents(row.costUsd + (Number(row.freightCostUsd) || 0) - row.keptUsd - (row.status === "sold" ? (row.soldPriceUsd ?? 0) : 0));
+}
+
+/**
+ * What carrying one parcel cost: the batch's real rate (shared/batchCost)
+ * times the weight or volume the carrier is paid on. Zero while the batch
+ * has no cost recorded — an unknown is not shown as a figure.
+ */
+export function parcelFreightCostUsd(facts: { unit: "kg" | "cbm"; ratePerUnit: number; weightKg: number; lengthCm: number; widthCm: number; heightCm: number; volumeCbm: number; divisor: number }): number {
+  const cm3 = Math.max(0, facts.lengthCm) * Math.max(0, facts.widthCm) * Math.max(0, facts.heightCm);
+  if (!(facts.ratePerUnit > 0)) return 0;
+  if (facts.unit === "cbm") return cents(facts.ratePerUnit * (facts.volumeCbm > 0 ? facts.volumeCbm : cm3 / 1_000_000));
+  const divisor = facts.divisor > 0 ? facts.divisor : 6000;
+  return cents(facts.ratePerUnit * Math.max(Math.max(0, facts.weightKg), cm3 / divisor));
 }
 
 /** Goods still on our hands, at what they cost — shown beside the totals, already counted as a loss. */
@@ -163,6 +195,10 @@ export const STOCK_OLD_DAYS = 60;
 
 export function refusalLedgerReason(orderCode: string, reason: RefusalReason, quantity: number): string {
   return `کاڵا ڕەتکرایەوە — ${REFUSAL_REASON_WORDS[reason].ku} (${orderCode}، ${quantity} دانە)`;
+}
+
+export function abandonLedgerReason(tracking: string): string {
+  return `پاکەت بەجێ هێڵرا — کڕیار وەریناگرێت، کرێی گواستنەوەکەی لەسەری لابرا (${tracking})`;
 }
 
 export function keptLedgerReason(orderCode: string): string {

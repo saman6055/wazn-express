@@ -2,10 +2,13 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 import {
+  ORDER_REFUSAL_REASONS,
+  PARCEL_REASONS,
   REFUSAL_FAULT,
   REFUSAL_REASONS,
   REFUSAL_REASON_WORDS,
   clampKeep,
+  parcelFreightCostUsd,
   planRefusal,
   stockHeldUsd,
   stockLossSoFarUsd,
@@ -64,7 +67,7 @@ describe("whose side, and the money that follows", () => {
   it("every reason has words and a side", () => {
     for (const r of REFUSAL_REASONS) {
       expect(REFUSAL_REASON_WORDS[r].ku.length).toBeGreaterThan(3);
-      expect(["customer", "office"]).toContain(REFUSAL_FAULT[r]);
+      expect(["customer", "office", "nobody"]).toContain(REFUSAL_FAULT[r]);
     }
   });
 
@@ -225,5 +228,57 @@ describe("told where it matters", () => {
     expect(root("client/src/App.tsx")).toContain('path="/finance/company-stock"');
     expect(root("client/src/pages/WorkingCapital.tsx")).toContain('href="/finance/company-stock"');
     expect(root("client/src/pages/CompanyFinanceDashboard.tsx")).toContain('href="/finance/company-stock"');
+  });
+});
+
+describe("a parcel the company only carried", () => {
+  const db = root("server/db/refusedGoods.db.ts");
+  const abandon = db.slice(db.indexOf("export async function abandonParcel"), db.indexOf("/** Ownerless parcels still waiting for somebody"));
+
+  it("has its own two reasons, and an order's form never offers them", () => {
+    expect([...PARCEL_REASONS]).toEqual(["abandoned", "ownerless"]);
+    for (const r of PARCEL_REASONS) expect(ORDER_REFUSAL_REASONS as readonly string[]).not.toContain(r);
+    expect(REFUSAL_FAULT.abandoned).toBe("customer");
+    expect(REFUSAL_FAULT.ownerless).toBe("nobody");
+    expect(root("client/src/pages/CompanyStock.tsx")).toContain("{ORDER_REFUSAL_REASONS.map((r) => (");
+  });
+
+  it("what carrying it cost is the batch's rate on its own weight or volume", () => {
+    const air = { unit: "kg" as const, ratePerUnit: 6, weightKg: 4, lengthCm: 0, widthCm: 0, heightCm: 0, volumeCbm: 0, divisor: 6000 };
+    expect(parcelFreightCostUsd(air)).toBe(24);
+    // Bulky and light: the carrier is paid on the volume.
+    expect(parcelFreightCostUsd({ ...air, weightKg: 1, lengthCm: 60, widthCm: 50, heightCm: 40 })).toBe(120);
+    expect(parcelFreightCostUsd({ ...air, unit: "cbm", ratePerUnit: 200, volumeCbm: 0.12 })).toBe(24);
+    // A batch with no cost yet says nothing rather than a made-up figure.
+    expect(parcelFreightCostUsd({ ...air, ratePerUnit: 0 })).toBe(0);
+  });
+
+  it("goes into stock with no buying cost, its freight beside it", () => {
+    expect(abandon.length).toBeGreaterThan(1500);
+    expect(abandon).toContain('costUsd: "0.00"');
+    expect(abandon).toContain("freightCostUsd: freightCostUsd.toFixed(2)");
+    expect(abandon).toContain("packageId: Number(pkg.id)");
+  });
+
+  it("the freight is counted once: in its batch, never again from the stock", () => {
+    // The batch shares its cost out by each parcel's price, so the price is cleared with the charge.
+    expect(abandon).toContain('set({ isCharged: false, status: "returned", calculatedCostUsd: "0" })');
+    const profit = db.slice(db.indexOf("export async function getStockProfitBetween"), db.indexOf("/** Goods still on our hands and what they cost"));
+    expect(profit).not.toContain("freightCostUsd");
+  });
+
+  it("one already paid for on a receipt is not a loss and is refused", () => {
+    expect(abandon).toContain("parcelReceipt(input.packageId)");
+    expect(abandon.indexOf("parcelReceipt(input.packageId)")).toBeLessThan(abandon.indexOf("reverseCharge(charge.id"));
+  });
+
+  it("a parcel with an order behind it goes through the order's door", () => {
+    expect(db).toContain("if (Number(pkg.fullPackageOrderId) > 0)");
+  });
+
+  it("ownerless parcels still waiting are counted with what carrying them cost", () => {
+    expect(db).toContain("export async function getOwnerlessFreight");
+    expect(root("client/src/pages/CompanyStock.tsx")).toContain('data-testid="ownerless-freight"');
+    expect(root("server/routers/finance.router.ts")).toContain("abandonParcel: superAdminProcedure");
   });
 });
