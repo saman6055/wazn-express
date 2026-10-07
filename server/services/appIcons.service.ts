@@ -155,6 +155,8 @@ export function buildManifest(
       : "International Shipping & Logistics from China to Iraq",
     start_url: "/",
     display: "standalone",
+    // Said out loud: the installed app turns with the tablet (owner, 2026-10-07).
+    orientation: "any",
     background_color: system ? "#0f172a" : "#1e293b",
     theme_color: system ? "#0f172a" : "#1e293b",
     scope: "/",

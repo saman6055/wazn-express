@@ -13,9 +13,16 @@ describe("the page on a phone", () => {
     expect(viewport).not.toMatch(/user-scalable\s*=\s*no|maximum-scale/);
   });
 
-  it("the installed app turns with the phone", () => {
-    expect(read("../public/manifest.json")).not.toContain('"orientation"');
-    expect(read("../../server/services/appIcons.service.ts")).not.toMatch(/orientation:\s*"portrait/);
+  it("the installed app turns with the phone, and with a tablet", () => {
+    // It was locked upright until 2026-09-11. Leaving the word out was enough
+    // for a phone; the owner, 2026-10-07, of a 10-inch iPad: it stands
+    // upright only, let it lie on its side too. So both manifests now say it
+    // out loud - and an app installed under the old lock must be installed
+    // again to learn it.
+    expect(read("../public/manifest.json")).toContain('"orientation": "any"');
+    const served = read("../../server/services/appIcons.service.ts");
+    expect(served).toContain('orientation: "any",');
+    for (const src of [read("../public/manifest.json"), served]) expect(src).not.toMatch(/portrait|landscape/);
   });
 
   it("the status-bar spacer stays put and the bars stick below it", () => {

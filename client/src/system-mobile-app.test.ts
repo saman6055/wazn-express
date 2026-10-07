@@ -116,8 +116,10 @@ describe("tested against a real database, 2026-09-28 (phase 4)", () => {
     // Rows of buttons and tab lists wrap instead of being cut.
     expect(block).toContain('main [data-slot="tabs-list"]');
     expect(block).toContain("main .grid > * {\n    min-width: 0;");
-    // Wide tables scroll inside themselves below lg instead.
-    expect(read("components/ui/table.tsx")).toContain("md:[--tbl-sticky-top:44px] max-lg:overflow-x-auto");
+    // Wide tables scroll inside themselves below xl instead - a tablet on
+    // its side is 1024-1194px wide (owner, 2026-10-07). The header's 44px
+    // offset is for the page-sticky case only, or it covers the first row.
+    expect(read("components/ui/table.tsx")).toContain('? "xl:[--tbl-sticky-top:44px] max-xl:overflow-x-auto"');
   });
 
   it("the batch-number buttons on the dashboard and batches page wrap, touch screens too", () => {
