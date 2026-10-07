@@ -1,17 +1,20 @@
-import { and, eq, inArray, like } from "drizzle-orm";
+import { and, eq, inArray, like, ne, sql } from "drizzle-orm";
 import { getDb } from "./connection";
 import { boxSettlements, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages } from "../../drizzle/schema";
 import { customers } from "../../drizzle/schema/users.schema";
 import { isOrderChargeText } from "@shared/batchCleanup";
 import { withFix } from "@shared/fixAdvice";
 import {
+  OWED_VERDICTS,
   doubleChargeReason,
+  explainDebt,
   falseDebt,
   planCorrection,
   stillOwed,
   trackingKey,
   twiceCharged,
   type AccountRow,
+  type ChargeVerdict,
   type DoubleChargeCustomer,
   type DoubleChargeLine,
 } from "@shared/boxPaidStillOwed";
@@ -174,16 +177,15 @@ export async function findBoxDoubleCharges(onlyCustomerId?: number): Promise<Dou
 }
 
 /**
- * What one customer really still owes (shared/boxPaidStillOwed → stillOwed):
- * the charges that stand on goods no receipted box holds. The account's rows,
- * the boxes whose receipt stands, and the orders with every tracking they go
- * by are gathered here; the rule itself is the shared one.
+ * Everything the shared rule needs to explain one account: its ledger rows,
+ * the boxes whose receipt stands and those still waiting for one, and the
+ * orders with every tracking they go by. Read only.
  */
-export async function stillOwedByCustomer(customerId: number): Promise<number> {
+async function gatherAccount(customerId: number) {
   const db = await getDb();
-  if (!db) return 0;
-  const [account] = await db.select({ id: customerAccounts.id }).from(customerAccounts).where(eq(customerAccounts.customerId, customerId)).limit(1);
-  if (!account) return 0;
+  if (!db) return null;
+  const [account] = await db.select({ id: customerAccounts.id, balance: customerAccounts.currentBalanceUsd }).from(customerAccounts).where(eq(customerAccounts.customerId, customerId)).limit(1);
+  if (!account) return null;
 
   const ledger = await db
     .select({ id: ledgerTransactions.id, transactionNumber: ledgerTransactions.transactionNumber, transactionType: ledgerTransactions.transactionType, amountUsd: ledgerTransactions.amountUsd, balanceAfterUsd: ledgerTransactions.balanceAfterUsd, description: ledgerTransactions.description, referenceId: ledgerTransactions.referenceId })
@@ -193,24 +195,45 @@ export async function stillOwedByCustomer(customerId: number): Promise<number> {
     .map((r) => ({ id: Number(r.id), transactionNumber: r.transactionNumber, transactionType: String(r.transactionType), amountUsd: num(r.amountUsd), balanceAfterUsd: num(r.balanceAfterUsd), description: String(r.description ?? ""), referenceId: r.referenceId == null ? null : Number(r.referenceId) }))
     .sort((a, b) => a.id - b.id);
 
-  // Everything inside a box whose receipt stands.
-  const inBoxes = await db
-    .select({ boxCode: deliveryBoxes.boxCode, packageId: deliveryBoxItems.packageId, orderId: deliveryBoxItems.fullPackageOrderId, tracking: packages.trackingNumber, parcelOrderId: packages.fullPackageOrderId })
-    .from(boxSettlements)
-    .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, boxSettlements.boxId))
+  // Every live box of the customer, each thing inside it, and whether a receipt stands.
+  const boxRows = await db
+    .select({ boxId: deliveryBoxes.id, boxCode: deliveryBoxes.boxCode, packageId: deliveryBoxItems.packageId, orderId: deliveryBoxItems.fullPackageOrderId, tracking: packages.trackingNumber, parcelOrderId: packages.fullPackageOrderId })
+    .from(deliveryBoxes)
     .leftJoin(deliveryBoxItems, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
     .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
-    .where(and(eq(deliveryBoxes.customerId, customerId), eq(boxSettlements.status, "confirmed")));
+    .where(and(eq(deliveryBoxes.customerId, customerId), ne(deliveryBoxes.status, "cancelled")));
+  const receiptRows = await db
+    .select({ boxId: boxSettlements.boxId })
+    .from(boxSettlements)
+    .where(and(eq(boxSettlements.customerId, customerId), eq(boxSettlements.status, "confirmed")));
+  const receiptedBoxIds = new Set(receiptRows.map((r) => Number(r.boxId)));
+
   const receiptedBoxCodes = new Set<string>();
   const receiptedPackageIds = new Set<number>();
   const receiptedOrderIds = new Set<number>();
   const receiptedTrackings = new Set<string>();
-  for (const b of inBoxes) {
-    receiptedBoxCodes.add(b.boxCode);
-    if (b.packageId != null) receiptedPackageIds.add(Number(b.packageId));
-    if (b.orderId != null) receiptedOrderIds.add(Number(b.orderId));
-    if (b.parcelOrderId != null) receiptedOrderIds.add(Number(b.parcelOrderId));
-    if (b.tracking) receiptedTrackings.add(trackingKey(b.tracking));
+  const openPackageIds = new Set<number>();
+  const openOrderIds = new Set<number>();
+  const openTrackings = new Set<string>();
+  /** Where a thing sits: the box that holds it, a receipted one winning. */
+  const boxOf = new Map<string, { boxId: number; boxCode: string; receipted: boolean }>();
+  const boxByCode = new Map<string, number>();
+  const place = (key: string, box: { boxId: number; boxCode: string; receipted: boolean }) => {
+    const had = boxOf.get(key);
+    if (!had || (box.receipted && !had.receipted)) boxOf.set(key, box);
+  };
+  for (const b of boxRows) {
+    const receipted = receiptedBoxIds.has(Number(b.boxId));
+    const box = { boxId: Number(b.boxId), boxCode: b.boxCode, receipted };
+    boxByCode.set(b.boxCode, box.boxId);
+    if (receipted) receiptedBoxCodes.add(b.boxCode);
+    const P = receipted ? receiptedPackageIds : openPackageIds;
+    const O = receipted ? receiptedOrderIds : openOrderIds;
+    const T = receipted ? receiptedTrackings : openTrackings;
+    if (b.packageId != null) { P.add(Number(b.packageId)); place(`p${b.packageId}`, box); }
+    if (b.orderId != null) { O.add(Number(b.orderId)); place(`o${b.orderId}`, box); }
+    if (b.parcelOrderId != null) { O.add(Number(b.parcelOrderId)); place(`o${b.parcelOrderId}`, box); }
+    if (b.tracking) { T.add(trackingKey(b.tracking)); place(`t${trackingKey(b.tracking)}`, box); }
   }
   // A box line is written only by a receipt: the tracking it names was paid,
   // even where the box itself was later deleted and made again.
@@ -220,7 +243,12 @@ export async function stillOwedByCustomer(customerId: number): Promise<number> {
   }
 
   const own = await db
-    .select({ id: fullPackageOrders.id, chargeTransactionId: fullPackageOrders.chargeTransactionId, tracking: fullPackageOrders.trackingNumber })
+    .select({
+      id: fullPackageOrders.id, chargeTransactionId: fullPackageOrders.chargeTransactionId, tracking: fullPackageOrders.trackingNumber,
+      status: fullPackageOrders.status, orderType: fullPackageOrders.orderType, orderCode: fullPackageOrders.orderCode,
+      orderNumber: fullPackageOrders.orderNumber, productName: fullPackageOrders.productName,
+      hasImage: sql<number>`(${fullPackageOrders.productImage} IS NOT NULL AND ${fullPackageOrders.productImage} <> '')`,
+    })
     .from(fullPackageOrders)
     .where(eq(fullPackageOrders.customerId, customerId));
   const listed = own.length === 0 ? [] : await db
@@ -232,9 +260,141 @@ export async function stillOwedByCustomer(customerId: number): Promise<number> {
     id: Number(o.id),
     chargeTransactionId: o.chargeTransactionId == null ? null : Number(o.chargeTransactionId),
     trackings: [o.tracking, ...listed.filter((l) => Number(l.orderId) === Number(o.id)).map((l) => l.tracking)].filter((t): t is string => !!t),
+    status: String(o.status ?? ""),
+    orderType: String(o.orderType ?? ""),
+    orderCode: o.orderCode,
+    orderNumber: (o.orderNumber ?? "").trim() || null,
+    productName: o.productName,
+    hasImage: Boolean(Number(o.hasImage)),
   }));
 
-  return cents(stillOwed(rows, { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, orders, isOrderText: isOrderChargeText }));
+  const parcels = await db
+    .select({ id: packages.id, tracking: packages.trackingNumber, description: packages.description })
+    .from(packages)
+    .where(eq(packages.customerId, customerId));
+
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText };
+  return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
+}
+
+/** What one customer really still owes (shared/boxPaidStillOwed → stillOwed). */
+export async function stillOwedByCustomer(customerId: number): Promise<number> {
+  const got = await gatherAccount(customerId);
+  return got ? cents(stillOwed(got.rows, got.facts)) : 0;
+}
+
+/** What a ledger row is about: the goods, where they are, and the door to them. */
+export interface LedgerSubject {
+  verdict: ChargeVerdict | null;
+  orderId: number | null;
+  orderType: string | null;
+  orderCode: string | null;
+  orderNumber: string | null;
+  productName: string | null;
+  hasImage: boolean;
+  orderStatus: string | null;
+  packageId: number | null;
+  tracking: string | null;
+  boxId: number | null;
+  boxCode: string | null;
+}
+
+export interface OwedItem extends LedgerSubject {
+  key: string;
+  usd: number;
+  chargeIds: number[];
+}
+
+/**
+ * The customer's debt, explained — for the finance profile.
+ *
+ * Owner, 2026-10-08: "the profile is very confused. A transaction's detail
+ * has no tracking, no platform order number, no photo of the order, no link
+ * to it." So every ledger row is given its subject here, and the debt is
+ * broken into the four places goods can be: on the road, arrived and not
+ * boxed, in a box not receipted, and the customer's own parcels waiting for
+ * a box. The verdicts are the shared rule's; nothing is decided here.
+ */
+export async function explainCustomerDebt(customerId: number): Promise<{
+  balanceUsd: number;
+  stillOwedUsd: number;
+  /** Shown as owed but not owed: what the correction page would take off. */
+  falseDebtUsd: number;
+  /** On the account, and neither goods still owed nor a double charge. */
+  unexplainedUsd: number;
+  owedUsd: Record<"road" | "arrived" | "openBox" | "parcel", number>;
+  paidOnAccountUsd: number;
+  items: OwedItem[];
+  subjects: Record<number, LedgerSubject>;
+}> {
+  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, items: [], subjects: {} };
+  const got = await gatherAccount(customerId);
+  if (!got) return empty;
+  const explained = explainDebt(got.rows, got.facts);
+
+  const orderById = new Map(got.orders.map((o) => [o.id, o]));
+  const orderByTracking = new Map<string, (typeof got.orders)[number]>();
+  for (const o of got.orders) for (const t of o.trackings) if (!orderByTracking.has(trackingKey(t))) orderByTracking.set(trackingKey(t), o);
+  const parcelById = new Map(got.parcels.map((p) => [Number(p.id), p]));
+
+  const subjectOf = (c: { orderId: number | null; packageId: number | null; boxCode: string | null; tracking: string | null }, verdict: ChargeVerdict | null): LedgerSubject => {
+    const parcel = c.packageId != null ? parcelById.get(c.packageId) : undefined;
+    const tracking = c.tracking ?? parcel?.tracking ?? null;
+    const order = (c.orderId != null ? orderById.get(c.orderId) : undefined) ?? (tracking ? orderByTracking.get(trackingKey(tracking)) : undefined);
+    const shownTracking = tracking ?? order?.trackings[0] ?? null;
+    const box =
+      (c.packageId != null ? got.boxOf.get(`p${c.packageId}`) : undefined) ??
+      (order ? got.boxOf.get(`o${order.id}`) : undefined) ??
+      (shownTracking ? got.boxOf.get(`t${trackingKey(shownTracking)}`) : undefined);
+    const boxCode = c.boxCode ?? box?.boxCode ?? null;
+    return {
+      verdict,
+      orderId: order?.id ?? null,
+      orderType: order?.orderType ?? null,
+      orderCode: order?.orderCode ?? null,
+      orderNumber: order?.orderNumber ?? null,
+      productName: order?.productName ?? parcel?.description ?? null,
+      hasImage: order?.hasImage ?? false,
+      orderStatus: order?.status ?? null,
+      packageId: c.packageId,
+      tracking: shownTracking,
+      boxId: (boxCode ? got.boxByCode.get(boxCode) : undefined) ?? box?.boxId ?? null,
+      boxCode,
+    };
+  };
+
+  const subjects: Record<number, LedgerSubject> = {};
+  const items = new Map<string, OwedItem>();
+  for (const c of explained.charges) {
+    const subject = subjectOf(c, c.verdict);
+    subjects[c.id] = subject;
+    if (!(OWED_VERDICTS as readonly string[]).includes(c.verdict)) continue;
+    const key = subject.orderId != null ? `o${subject.orderId}` : c.packageId != null ? `p${c.packageId}` : `r${c.id}`;
+    const item = items.get(key) ?? { ...subject, key, usd: 0, chargeIds: [] };
+    item.usd = cents(item.usd + c.standsUsd);
+    item.chargeIds.push(c.id);
+    items.set(key, item);
+  }
+  // A payment or a correction that names a box opens that box.
+  for (const r of got.rows) {
+    if (subjects[r.id]) continue;
+    const named = /(BOX-\d{8}-\d+)/.exec(r.description);
+    if (named) subjects[r.id] = subjectOf({ orderId: null, packageId: null, boxCode: named[1], tracking: null }, null);
+  }
+
+  const stillOwedUsd = cents(explained.stillOwedUsd);
+  const [double] = got.balanceUsd > 0.005 ? await findBoxDoubleCharges(customerId) : [];
+  const falseDebtUsd = double?.falseDebtUsd ?? 0;
+  return {
+    balanceUsd: got.balanceUsd,
+    stillOwedUsd,
+    falseDebtUsd,
+    unexplainedUsd: cents(got.balanceUsd - stillOwedUsd - falseDebtUsd),
+    owedUsd: explained.owedUsd,
+    paidOnAccountUsd: explained.paidOnAccountUsd,
+    items: Array.from(items.values()).sort((a, b) => b.usd - a.usd),
+    subjects,
+  };
 }
 
 /**

@@ -13,6 +13,7 @@ import { csvAmount, downloadText, toCsv } from "@/lib/csv";
 import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
+import { CustomerDebtExplained, LedgerSubjectCard, LedgerSubjectLine, useDebtExplained } from "@/components/customers/CustomerDebtExplained";
 import { AccountStatementSummary } from "@/components/finance/AccountStatementSummary";
 import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
 import {
@@ -190,6 +191,9 @@ export default function CustomerFinance() {
   // (shared/accountStatement.ts) — the figures the portal and the statement
   // PDF show too. "Paid" is money received net of reversals; discounts and
   // hand adjustments have their own lines instead of hiding inside it.
+  // What every ledger row is about: its tracking, order number, photo, box.
+  const { data: debtExplained } = useDebtExplained(customerId);
+  const subjectOf = (txn: { id: number }) => debtExplained?.subjects?.[txn.id] ?? null;
   const { data: statementData } = trpc.ledger.getAccountStatement.useQuery(
     { customerId },
     { enabled: !!account?.id }
@@ -1601,6 +1605,9 @@ export default function CustomerFinance() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.25 }}
             >
+              <div className="mb-6">
+                <CustomerDebtExplained customerId={customerId} />
+              </div>
               <CustomerPendingOrdersSection customerId={customerId} />
             </motion.div>
 
@@ -1863,8 +1870,9 @@ export default function CustomerFinance() {
                                       <TableCell className="font-semibold">
                                         {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
                                       </TableCell>
-                                      <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
-                                        {txn.description || '-'}
+                                      <TableCell className="max-w-[320px] text-muted-foreground text-sm">
+                                        <div className="truncate" title={txn.description || ''}>{txn.description || '-'}</div>
+                                        <LedgerSubjectLine subject={subjectOf(txn)} />
                                       </TableCell>
                                       <TableCell className="text-muted-foreground text-sm">
                                         {fmtDate(new Date(txn.createdAt))}
@@ -1923,8 +1931,9 @@ export default function CustomerFinance() {
                                       <TableCell className="font-semibold">
                                         {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
                                       </TableCell>
-                                      <TableCell className="max-w-[200px] truncate text-muted-foreground text-sm">
-                                        {txn.description || '-'}
+                                      <TableCell className="max-w-[320px] text-muted-foreground text-sm">
+                                        <div className="truncate" title={txn.description || ''}>{txn.description || '-'}</div>
+                                        <LedgerSubjectLine subject={subjectOf(txn)} />
                                       </TableCell>
                                       <TableCell className="text-muted-foreground text-sm">
                                         {fmtDate(new Date(txn.createdAt))}
@@ -2067,8 +2076,9 @@ export default function CustomerFinance() {
                                         <TableCell className="font-medium text-sm">
                                           {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
                                         </TableCell>
-                                        <TableCell className="max-w-[240px] truncate text-muted-foreground text-xs">
-                                          {txn.description || '-'}
+                                        <TableCell className="max-w-[320px] text-muted-foreground text-xs">
+                                          <div className="truncate" title={txn.description || ''}>{txn.description || '-'}</div>
+                                          <LedgerSubjectLine subject={subjectOf(txn)} />
                                         </TableCell>
                                         <TableCell className="text-muted-foreground text-xs">
                                           {fmtDate(new Date(txn.createdAt))}
@@ -2717,6 +2727,7 @@ export default function CustomerFinance() {
                   <span className="text-muted-foreground">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span>
                   <span className="font-semibold">{fmtDateTime(new Date(selectedTransaction.createdAt))}</span>
                 </div>
+                <LedgerSubjectCard subject={subjectOf(selectedTransaction)} />
                 {selectedTransaction.description && (
                   <div className="py-2">
                     <span className="text-muted-foreground block mb-1">{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</span>

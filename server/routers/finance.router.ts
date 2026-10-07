@@ -819,6 +819,14 @@ export const ledgerRouter = router({
         return db.getAccountStatementForCustomer(input.customerId);
       }),
 
+    // The debt explained for the finance profile: where each owed thing is,
+    // and what every ledger row is about (server/db/boxPaidStillOwed.db.ts).
+    debtExplained: staffProcedure
+      .input(z.object({ customerId: idSchema }))
+      .query(async ({ input }) => {
+        return db.explainCustomerDebt(input.customerId);
+      }),
+
     // Every customer at once: which accounts are wrong, why, and by how much.
     // Read only — nothing moves because the report was opened; each finding
     // is for the owner to decide on (server/db/ledgerReconciliation.db.ts).

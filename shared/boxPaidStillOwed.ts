@@ -92,9 +92,13 @@ export interface SettledFacts {
   receiptedOrderIds: Set<number>;
   /** Lower case: the same tracking is typed «YT76…» on the order and «yt76…» on the parcel. */
   receiptedTrackings: Set<string>;
-  orders: Array<{ id: number; chargeTransactionId: number | null; trackings: string[] }>;
+  orders: Array<{ id: number; chargeTransactionId: number | null; trackings: string[]; status?: string | null }>;
   /** The rule that tells an order's charge from a parcel's by its text. */
   isOrderText: (description: string) => boolean;
+  /** Goods sitting in a box no receipt has been written for yet. */
+  openPackageIds?: Set<number>;
+  openOrderIds?: Set<number>;
+  openTrackings?: Set<string>;
 }
 
 const BOX_LINE_TEXT = /^(BOX-[\w-]+)\s+—\s+(\S+)/;
@@ -104,7 +108,44 @@ const MARK = /\[(?:REV|ADJ):([^\]]+)\]/;
 const ORDER_TYPES = new Set(["DEBIT_COMMISSION", "DEBIT_FULL_PACKAGE", "DEBIT_PURCHASE_REQUEST"]);
 export const trackingKey = (t: string | null | undefined) => String(t ?? "").trim().toLowerCase();
 
-export function stillOwed(rows: AccountRow[], facts: SettledFacts): number {
+/** An order that has reached Iraq: its goods are here, whether boxed or not. */
+export const ARRIVED_ORDER_STATUSES = ["arrived", "ready_for_delivery", "delivered"] as const;
+
+/**
+ * Where one charge stands, in the owner's own words:
+ *   paid      — its goods are in a box that was receipted
+ *   settled   — the account was put to nothing by hand after it
+ *   road      — an order not yet arrived
+ *   arrived   — an order that arrived and sits in no box
+ *   openBox   — in a box not receipted yet
+ *   parcel    — the customer's own parcel, arrived, in no box
+ *   back      — taken back by a correction; nothing stands
+ */
+export type ChargeVerdict = "paid" | "settled" | "road" | "arrived" | "openBox" | "parcel" | "back";
+export const OWED_VERDICTS: readonly ChargeVerdict[] = ["road", "arrived", "openBox", "parcel"];
+
+export interface ExplainedCharge {
+  id: number;
+  standsUsd: number;
+  verdict: ChargeVerdict;
+  /** The order this row is a charge of, when it is one. */
+  orderId: number | null;
+  /** The parcel, when the row is a parcel's own. */
+  packageId: number | null;
+  /** The box and tracking a box line names. */
+  boxCode: string | null;
+  tracking: string | null;
+}
+
+export interface ExplainedDebt {
+  charges: ExplainedCharge[];
+  owedUsd: Record<"road" | "arrived" | "openBox" | "parcel", number>;
+  /** Money taken without a box receipt since the last zeroing: it pays the open goods first. */
+  paidOnAccountUsd: number;
+  stillOwedUsd: number;
+}
+
+export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedDebt {
   const byNumber = new Map(rows.map((r) => [r.transactionNumber, r]));
   // What each charge stands at, after the corrections that name it.
   const stands = new Map<number, number>();
@@ -125,34 +166,62 @@ export function stillOwed(rows: AccountRow[], facts: SettledFacts): number {
 
   const orderById = new Map(facts.orders.map((o) => [o.id, o]));
   const orderByCharge = new Map(facts.orders.filter((o) => o.chargeTransactionId).map((o) => [o.chargeTransactionId!, o]));
-  const receipted = (r: AccountRow): boolean => {
-    if (BOX_LINE_TEXT.test(r.description)) return true; // written by a receipt, paid by it
-    const isOrder = ORDER_TYPES.has(r.transactionType) || (r.transactionType === "DEBIT_PACKAGE" && facts.isOrderText(r.description));
-    if (isOrder) {
-      const order = orderByCharge.get(r.id) ?? (r.referenceId == null ? undefined : orderById.get(r.referenceId));
-      if (!order) return false;
-      return facts.receiptedOrderIds.has(order.id) || order.trackings.some((t) => facts.receiptedTrackings.has(trackingKey(t)));
-    }
-    if (r.referenceId != null && facts.receiptedPackageIds.has(r.referenceId)) return true;
-    // A box's own line that is not a tracking's (its delivery): settled with its box.
-    const box = BOX_NAMED.exec(r.description);
-    return !!box && facts.receiptedBoxCodes.has(box[1]);
-  };
+  const arrived = new Set<string>(ARRIVED_ORDER_STATUSES);
 
-  let open = 0;
+  const charges: ExplainedCharge[] = [];
+  const owed = { road: 0, arrived: 0, openBox: 0, parcel: 0 };
   let paidOnAccount = 0;
   for (const r of rows) {
-    if (r.id <= zeroedAt) continue;
     if (r.transactionType === "CREDIT_PAYMENT") {
       // Money taken without a box receipt pays the oldest open goods.
-      if (!/^\s*BOX-/.test(r.description)) paidOnAccount += Math.round(r.amountUsd * 100);
+      if (r.id > zeroedAt && !/^\s*BOX-/.test(r.description)) paidOnAccount += Math.round(r.amountUsd * 100);
       continue;
     }
+    if (!r.transactionType.startsWith("DEBIT_")) continue;
     const cents = stands.get(r.id) ?? 0;
-    if (cents <= 0 || receipted(r)) continue;
-    open += cents;
+    const line = BOX_LINE_TEXT.exec(r.description);
+    const isOrder = !line && (ORDER_TYPES.has(r.transactionType) || (r.transactionType === "DEBIT_PACKAGE" && facts.isOrderText(r.description)));
+    const order = isOrder ? orderByCharge.get(r.id) ?? (r.referenceId == null ? undefined : orderById.get(r.referenceId)) : undefined;
+    const named = BOX_NAMED.exec(r.description);
+    const out: ExplainedCharge = {
+      id: r.id,
+      standsUsd: Math.max(0, cents) / 100,
+      verdict: "paid",
+      orderId: order?.id ?? null,
+      packageId: !isOrder && r.transactionType === "DEBIT_PACKAGE" && r.referenceId ? r.referenceId : null,
+      boxCode: line ? line[1] : named ? named[1] : null,
+      tracking: line ? line[2] : null,
+    };
+    charges.push(out);
+
+    if (cents <= 0) { out.verdict = "back"; continue; }
+    if (line) continue; // written by a receipt, paid by it
+    let verdict: ChargeVerdict;
+    if (isOrder) {
+      if (!order) verdict = "road"; // an order we cannot find is never called paid
+      else if (facts.receiptedOrderIds.has(order.id) || order.trackings.some((t) => facts.receiptedTrackings.has(trackingKey(t)))) verdict = "paid";
+      else if (facts.openOrderIds?.has(order.id) || order.trackings.some((t) => facts.openTrackings?.has(trackingKey(t)))) verdict = "openBox";
+      else verdict = arrived.has(String(order.status ?? "")) ? "arrived" : "road";
+    } else if (r.referenceId != null && facts.receiptedPackageIds.has(r.referenceId)) verdict = "paid";
+    else if (named && facts.receiptedBoxCodes.has(named[1])) verdict = "paid"; // a box's own line (its delivery): settled with its box
+    else if ((r.referenceId != null && facts.openPackageIds?.has(r.referenceId)) || named) verdict = "openBox";
+    else verdict = "parcel";
+
+    if (verdict !== "paid" && r.id <= zeroedAt) verdict = "settled";
+    out.verdict = verdict;
+    if (verdict === "road" || verdict === "arrived" || verdict === "openBox" || verdict === "parcel") owed[verdict] += cents;
   }
-  return Math.max(0, open - paidOnAccount) / 100;
+  const open = owed.road + owed.arrived + owed.openBox + owed.parcel;
+  return {
+    charges,
+    owedUsd: { road: owed.road / 100, arrived: owed.arrived / 100, openBox: owed.openBox / 100, parcel: owed.parcel / 100 },
+    paidOnAccountUsd: paidOnAccount / 100,
+    stillOwedUsd: Math.max(0, open - paidOnAccount) / 100,
+  };
+}
+
+export function stillOwed(rows: AccountRow[], facts: SettledFacts): number {
+  return explainDebt(rows, facts).stillOwedUsd;
 }
 
 /**
