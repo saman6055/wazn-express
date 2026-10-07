@@ -49,3 +49,4 @@ export * from './financePulse.db';
 export * from './goodsOnRoad.db';
 export * from './refusedGoods.db';
 export * from './customerStanding.db';
+export * from './boxPaidStillOwed.db';

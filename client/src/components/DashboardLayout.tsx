@@ -52,6 +52,7 @@ import {
   Vault,
   Scale,
   Coins,
+  ShieldAlert,
   PackageX,
   Ship,
   Activity,
@@ -451,6 +452,7 @@ function DashboardLayoutContent({
           { icon: Receipt, label: t("nav.invoices") || "پسووڵەکان", path: "/invoices" },
           { icon: Banknote, label: pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款" }), path: "/payments" },
           { icon: Users, label: t("nav.debtorsReport") || "ڕاپۆرتی قەرزداران", path: "/finance/debtors" },
+          { icon: ShieldAlert, label: pickLang(language, { ku: "بۆکسی واسڵکراو، قەرزی ماوە", en: "Box receipted, debt shown", ar: "صندوق مُسدَّد ودين ظاهر", zh: "已收款仍欠款" }), path: "/finance/box-double-charges" },
           { icon: Clock, label: t("nav.debtReminders") || "بیرهێنەرەوەی قەرز", path: "/finance/debt-reminders" },
         ]
       });

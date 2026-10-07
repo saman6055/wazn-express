@@ -129,6 +129,22 @@ export const ledgerRouter = router({
         }
       }),
 
+    // ── A receipted box is settled (shared/boxPaidStillOwed) ─────────────
+    /** Every customer still shown owing for goods in a box they paid — with the two charges beside each other. */
+    boxDoubleCharges: accountantProcedure.query(async () => {
+      return db.findBoxDoubleCharges();
+    }),
+    /** Take the second charge off one customer. The main admin's; it makes no credit. */
+    correctBoxDoubleCharge: superAdminProcedure
+      .input(z.object({ customerId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.correctBoxDoubleCharge(input.customerId, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+
     // ── Cautions and the blacklist (shared/customerStanding) ─────────────
     /** Shown wherever something is about to be done for a customer, so every member of staff may read it. */
     customerStanding: staffProcedure

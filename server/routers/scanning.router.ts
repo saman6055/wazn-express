@@ -1207,6 +1207,9 @@ export const deliveryBoxRouter = router({
         { ...settlement, credit: { role: ctx.user.role, approved: approveCredit } },
         ctx.user.id,
       );
+      // A receipted box is settled (shared/boxPaidStillOwed): the check that
+      // nobody is left owing for what a receipt paid is asked again at once.
+      db.boxReceiptWritten();
       // The owner's rule: a box paid for in full is finished — delivered,
       // closed and archived — at once. Runs after the payment is committed
       // and never throws: a failure to finish is reported, not a failed payment.

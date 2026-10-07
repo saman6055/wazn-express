@@ -213,6 +213,7 @@ export default function CompanyFinanceDashboard() {
   const level = p?.pulse.level ?? "ok";
   const waiting = data
     ? [
+        { n: data.waiting.boxPaidOwed, icon: TriangleAlert, href: "/finance/box-double-charges", words: { ku: "کڕیار بۆ بۆکسێکی واسڵکراو وەک قەرزار دەردەکەون", en: "customers shown owing for a box they paid", ar: "عملاء يظهرون مدينين بصندوق سدّدوه", zh: "客户因已付款箱子仍显示欠款" } },
         { n: data.waiting.boxesUnpaid, icon: Clock, href: "/customer-delivery-scanner?unpaid=1", words: { ku: "بۆکس دراوەتە دەست و پارەی نەهاتووە", en: "boxes handed over and not paid", ar: "صناديق سُلّمت ولم تُدفع", zh: "箱子已交付未付款" } },
         { n: data.waiting.batchesWithoutCost, icon: TriangleAlert, href: "/batches", words: { ku: "باچی گەیشتوو نرخی تێچوویان نییە", en: "arrived batches have no cost", ar: "شحنات وصلت بلا تكلفة", zh: "已到批次无成本" } },
         { n: data.waiting.unbilledArrived, icon: TriangleAlert, href: "/settings/data-management", words: { ku: "کاڵای گەیشتوو لەسەر کڕیار نەنووسراوە", en: "arrived goods not on the customer's account", ar: "بضائع وصلت لم تُقيَّد على العميل", zh: "已到货物未记账" } },

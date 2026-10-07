@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -71,6 +71,8 @@ export interface RiskFacts {
   boxesUnpaid?: number;
   /** Refused goods held longer than STOCK_OLD_DAYS (shared/refusedGoods). */
   stockOld?: number;
+  /** Customers shown owing for goods in a box that was receipted (shared/boxPaidStillOwed). */
+  boxPaidOwed?: number;
 }
 
 /**
@@ -91,6 +93,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "partner-overdraw": "/finance/company-dashboard?focus=pulse",
   "boxes-unpaid": "/customer-delivery-scanner?unpaid=1",
   "stock-old": "/finance/company-stock",
+  "box-paid-owed": "/finance/box-double-charges",
 };
 
 /** The page whose permission decides who is told. */
@@ -107,6 +110,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "partner-overdraw": "/finance/company-dashboard",
   "boxes-unpaid": "/customer-delivery-scanner",
   "stock-old": "/finance/company-stock",
+  "box-paid-owed": "/finance/box-double-charges",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -217,6 +221,11 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   }
   if (facts.ordersSlowThisWeek != null) {
     items.push({ id: "orders-slow", level: "high", count: Math.max(0, Math.round(facts.ordersSlowThisWeek)) });
+  }
+  // Owner, 2026-10-08: a receipted box is settled — nobody may be shown owing
+  // for its trackings. Critical: it is a debt that is not one.
+  if ((facts.boxPaidOwed ?? 0) > 0) {
+    items.push({ id: "box-paid-owed", level: "critical", count: facts.boxPaidOwed ?? 0 });
   }
   // Owner, 2026-10-07: every day the office is shown which boxes' money has
   // not come — it may have been paid and not receipted.
@@ -343,6 +352,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "the customer was not told the payment arrived — click and send",
           ar: "لم يُبلَّغ العميل بوصول دفعته — اضغط وأرسل",
           zh: "客户未被告知已收款 — 点击发送",
+        },
+      };
+    case "box-paid-owed":
+      return {
+        title: { ku: `${n} کڕیار بۆ بۆکسێکی واسڵکراو وەک قەرزار دەردەکەون`, en: `${n} customer(s) shown owing for a box they paid`, ar: `${n} عميل يظهر مديناً بصندوق سدّده`, zh: `${n} 位客户因已付款的箱子仍显示欠款` },
+        detail: {
+          ku: "هەمان کاڵا دوو جار لەسەریان نووسراوە — بەڵگەکە ببینە و ڕاستی بکەوە",
+          en: "the same goods were written on their account twice — see the proof and put it right",
+          ar: "قُيّدت البضاعة نفسها مرتين — اعرض الدليل وصحّح",
+          zh: "同一货物被记账两次 — 查看依据并更正",
         },
       };
     case "stock-old":
