@@ -13,6 +13,7 @@ import { csvAmount, downloadText, toCsv } from "@/lib/csv";
 import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
+import { foldedCorrectionIds } from "@shared/ledgerFold";
 import { CustomerDebtExplained, LedgerSubjectCard, LedgerSubjectLine, useDebtExplained } from "@/components/customers/CustomerDebtExplained";
 import { AccountStatementSummary } from "@/components/finance/AccountStatementSummary";
 import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
@@ -130,6 +131,9 @@ export default function CustomerFinance() {
   const [receiptNumber, setReceiptNumber] = useState("");
   const [paymentCashAccountId, setPaymentCashAccountId] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  // A cancelled charge and its correction are kept, and folded out of the
+  // everyday view (shared/ledgerFold) until asked for.
+  const [showCorrections, setShowCorrections] = useState(false);
 
   // Which batch's invoice is open, and the two queries behind it. Nothing is
   // fetched until a batch is chosen.
@@ -484,6 +488,15 @@ export default function CustomerFinance() {
     return txn.transactionType === typeFilter;
   });
 
+  // What the table draws: the same rows, without the cancelled charges and
+  // the corrections that cancelled them — unless they are asked for. The
+  // exports below keep every row.
+  const foldedIds = useMemo(() => foldedCorrectionIds(transactions ?? []), [transactions]);
+  const foldedCount = (filteredTransactions ?? []).filter((txn) => foldedIds.has(txn.id)).length;
+  const viewTransactions = showCorrections
+    ? filteredTransactions
+    : filteredTransactions?.filter((txn) => !foldedIds.has(txn.id));
+
   // Map invoiceId → { invoiceNumber, batchId } for the grouped header. Only
   // a display lookup; ledger integrity does not depend on this query.
   const invoiceMap = useMemo(() => {
@@ -523,7 +536,7 @@ export default function CustomerFinance() {
       };
 
   const ledgerGroups = useMemo<LedgerGroup[]>(() => {
-    const txns = filteredTransactions ?? [];
+    const txns = viewTransactions ?? [];
     const byInvoice = new Map<number, LedgerTxn[]>();
     const order: Array<{ kind: 'standalone'; row: LedgerTxn } | { kind: 'invoice'; invoiceId: number }> = [];
 
@@ -563,7 +576,7 @@ export default function CustomerFinance() {
         latestCreatedAt: head?.createdAt ? new Date(head.createdAt) : new Date(),
       };
     });
-  }, [filteredTransactions, invoiceMap]);
+  }, [viewTransactions, invoiceMap]);
 
   const toggleInvoiceGroup = (invoiceId: number) => {
     setExpandedInvoices(prev => {
@@ -1779,6 +1792,21 @@ export default function CustomerFinance() {
                               </SelectContent>
                             </Select>
                           </div>
+                          {foldedCount > 0 && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              data-testid="ledger-show-corrections"
+                              aria-pressed={showCorrections}
+                              onClick={() => setShowCorrections((v) => !v)}
+                              className="rounded-xl"
+                            >
+                              {showCorrections
+                                ? pickLang(language, { ku: "ڕاستکردنەوەکان بشارەوە", en: "Hide corrections", ar: "إخفاء التصحيحات", zh: "隐藏更正" })
+                                : pickLang(language, { ku: "ڕاستکردنەوەکان نیشان بدە", en: "Show corrections", ar: "إظهار التصحيحات", zh: "显示更正" })}
+                              <Badge variant="secondary" className="ms-2">{foldedCount}</Badge>
+                            </Button>
+                          )}
                           {/* Export Buttons */}
                           <div className="flex items-center gap-1">
                             <Button
