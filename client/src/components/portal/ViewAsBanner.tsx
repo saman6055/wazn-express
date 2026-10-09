@@ -4,7 +4,7 @@ import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { VIEW_AS_WORDS } from "@shared/viewAsCustomer";
-import { VIEW_AS_TOKEN_KEY } from "@/main";
+import { VIEW_AS_TOKEN_KEY } from "@/lib/viewAsToken";
 
 /**
  * The bar that says whose portal this is, and whose eyes are on it.

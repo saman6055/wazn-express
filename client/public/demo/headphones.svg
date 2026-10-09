@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Sample product: headphones">
+  <rect width="400" height="400" fill="#ecfeff"/>
+  <path d="M100 230v-30a100 100 0 0 1 200 0v30" fill="none" stroke="#155e75" stroke-width="20" stroke-linecap="round"/>
+  <rect x="76" y="214" width="56" height="96" rx="22" fill="#0891b2"/>
+  <rect x="268" y="214" width="56" height="96" rx="22" fill="#0891b2"/>
+</svg>

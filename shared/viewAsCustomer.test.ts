@@ -115,7 +115,10 @@ describe("a look lives in one tab", () => {
 
   it("keeps the token to that tab, and off the address bar", () => {
     const main = read("client/src/main.tsx");
-    expect(main).toContain('export const VIEW_AS_TOKEN_KEY = "wazn-view-as";');
+    // The key has its own file: a component importing the entry runs the
+    // entry twice under the dev server and mounts the app twice.
+    expect(fs.readFileSync(path.resolve(__dirname, "../client/src/lib/viewAsToken.ts"), "utf8")).toContain('export const VIEW_AS_TOKEN_KEY = "wazn-view-as";');
+    expect(main).toContain('import { VIEW_AS_TOKEN_KEY } from "./lib/viewAsToken";');
     expect(main).toContain("sessionStorage.setItem(VIEW_AS_TOKEN_KEY, handed)");
     // A token left in a shared link is a session shared with it.
     expect(main).toContain('params.delete("viewas")');

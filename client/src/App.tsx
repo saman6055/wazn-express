@@ -19,6 +19,7 @@ import { OfflineProvider } from "./contexts/OfflineContext";
 import { PortalHistoryProvider } from "./contexts/PortalHistoryContext";
 import { FastEntry } from "./components/FastEntry";
 
+import { PortalDemoBanner } from "./components/portal/PortalDemoBanner";
 // Lazy: StaffTips drags a large tips-content module; keep it out of the entry chunk.
 const StaffTips = lazy(() => import("./components/StaffTips").then((m) => ({ default: m.StaffTips })));
 
@@ -443,6 +444,10 @@ function App() {
                     bar all open the same window — so it wraps everything
                     (owner, 2026-09-25). */}
                 <TaskComposerProvider>
+                {/* The portal's demo says what it is above every one of its
+                    screens - here, because the home page draws its own
+                    chrome and no layout is common to them all (lib/portalDemo). */}
+                <PortalDemoBanner />
                 <RouteErrorBoundary>
                   <PortalHistoryProvider>
                     <Router />

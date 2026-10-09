@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { trpc } from "@/lib/trpc";
-import { Phone, Lock, Loader2 } from "lucide-react";
+import { Phone, Lock, Loader2, Sparkles } from "lucide-react";
+import { enterPortalDemo, forgetPortalDemo, PORTAL_DEMO_WORDS } from "@/lib/portalDemo";
 import CompanyLogo from "@/components/CompanyLogo";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -21,6 +22,9 @@ export default function CustomerLogin() {
 const [, setLocation] = useLocation();
   const [mobileNumber, setMobileNumber] = useState("");
   const [password, setPassword] = useState("");
+
+  // Whoever is at this door is not in the demo any more.
+  useEffect(() => forgetPortalDemo(), []);
 
   const invalidPhoneMsg = () =>
     pickLang(language, {
@@ -161,6 +165,24 @@ const [, setLocation] = useLocation();
             </div>
           </CardContent>
         </Card>
+
+        {/* The portal, for somebody with no account yet (owner, 2026-10-09):
+            the real pages with sample data - what they would be signing up
+            for (lib/portalDemo). */}
+        <button
+          type="button"
+          onClick={enterPortalDemo}
+          className="mt-4 flex w-full items-center gap-3 rounded-xl border border-white/20 bg-white/10 p-3 text-start text-white transition-colors hover:bg-white/20"
+          data-testid="portal-demo-open"
+        >
+          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-indigo-500">
+            <Sparkles className="h-5 w-5" />
+          </span>
+          <span className="min-w-0 flex-1">
+            <span className="block font-bold">{pickLang(language, PORTAL_DEMO_WORDS.open)}</span>
+            <span className="block text-xs text-slate-300">{pickLang(language, PORTAL_DEMO_WORDS.openHint)}</span>
+          </span>
+        </button>
 
         {/* Staff login link */}
         <div className="mt-6 text-center">

@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 400" role="img" aria-label="Sample product: sports shoes">
+  <rect width="400" height="400" fill="#eef2ff"/>
+  <path d="M70 250c0-16 10-26 26-28l44-8 40-52c6-8 18-10 26-4l14 12 58 44c30 10 52 22 52 44v12H70z" fill="#4f46e5"/>
+  <path d="M70 262h260v14c0 8-6 14-14 14H84c-8 0-14-6-14-14z" fill="#1e1b4b"/>
+  <path d="M176 176l20 16M160 196l22 16M146 214l22 14" stroke="#eef2ff" stroke-width="8" stroke-linecap="round"/>
+</svg>

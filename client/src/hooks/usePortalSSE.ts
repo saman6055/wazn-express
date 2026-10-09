@@ -1,4 +1,5 @@
 import { useEffect, useRef, useCallback } from "react";
+import { isPortalDemo } from "@/lib/portalDemo";
 
 export type PortalSSEEvent =
   | { type: "package_status"; packageId: number; status: string; trackingNumber?: string }
@@ -75,7 +76,8 @@ export function usePortalSSE(options: {
   }, []);
 
   useEffect(() => {
-    if (!enabled) return;
+    // A demo has no session, so there is no live channel to open (lib/portalDemo).
+    if (!enabled || isPortalDemo()) return;
     let reopenTimer: ReturnType<typeof setTimeout> | null = null;
 
     const open = () => {

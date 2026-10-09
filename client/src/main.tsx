@@ -20,6 +20,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, TRPCClientError } from "@trpc/client";
 import { LANG_HEADER } from "@shared/errorMessages";
 import { networkFault, storedLanguage } from "./lib/networkFault";
+import { demoFetch, isPortalDemo, readPortalDemoLink } from "./lib/portalDemo";
+import { VIEW_AS_TOKEN_KEY } from "./lib/viewAsToken";
 import { creditApprovalLink } from "./lib/creditApprovalLink";
 import { createRoot } from "react-dom/client";
 import superjson from "superjson";
@@ -158,6 +160,9 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
     (error instanceof TRPCClientError && error.data?.code === "UNAUTHORIZED");
 
   if (!isExplicitUnauth && !isSessionInvalid) return;
+  // A demo has no session to lose; sending the visitor to the login page
+  // would end the tour over one question the recording did not hold.
+  if (isPortalDemo()) return;
 
   window.location.href = getLoginUrl();
 };
@@ -185,7 +190,6 @@ queryClient.getMutationCache().subscribe(event => {
  * straight away: a token in a link that gets shared is a session that gets
  * shared with it.
  */
-export const VIEW_AS_TOKEN_KEY = "wazn-view-as";
 
 try {
   const params = new URLSearchParams(window.location.search);
@@ -199,6 +203,9 @@ try {
 } catch {
   /* no storage, no look: the tab falls back to whatever the cookie says */
 }
+
+// A demo link (`/portal?demo=1`) starts the portal's demo for this tab.
+readPortalDemoLink();
 
 const trpcClient = trpc.createClient({
   links: [
@@ -242,7 +249,11 @@ const trpcClient = trpc.createClient({
         };
       },
       async fetch(input, init) {
+        const real = (i: RequestInfo | URL, o?: RequestInit) => globalThis.fetch(i, { ...(o ?? {}), credentials: "include" });
         try {
+          // The portal's demo is answered from a recording, not from the
+          // server: a visitor has no session to ask with (lib/portalDemo).
+          if (isPortalDemo()) return await demoFetch(input as RequestInfo | URL, init as RequestInit | undefined, real);
           return await globalThis.fetch(input, {
             ...(init ?? {}),
             credentials: "include",
