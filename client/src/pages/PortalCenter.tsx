@@ -2058,10 +2058,10 @@ function CustomerSecurityCard({ p, customerId }: { p: (v: L) => string; customer
             </p>
             <p className="leading-snug opacity-80">
               {p({
-                ku: "دوای پێنج هەوڵی هەڵە خۆکارانە دادەخرێت. تا ئەو کاتە وشەی نهێنی هەرچی بێت ڕەت دەکرێتەوە.",
-                en: "Five wrong attempts shut it automatically. Until it lifts, any password is refused.",
-                ar: "خمس محاولات خاطئة تغلقه تلقائياً. حتى ينتهي، تُرفض أي كلمة مرور.",
-                zh: "五次错误尝试后自动锁定。解锁前任何密码都会被拒绝。",
+                ku: "دوای 30 هەوڵی هەڵە لە یەک کاتژمێردا بۆ 5 خولەک دادەخرێت. تا ئەو کاتە وشەی نهێنی هەرچی بێت ڕەت دەکرێتەوە.",
+                en: "Thirty wrong attempts in an hour shut it for 5 minutes. Until it lifts, any password is refused.",
+                ar: "30 محاولة خاطئة خلال ساعة تغلقه 5 دقائق. حتى ينتهي، تُرفض أي كلمة مرور.",
+                zh: "一小时内 30 次错误尝试后锁定 5 分钟。解锁前任何密码都会被拒绝。",
               })}
             </p>
             <Button size="sm" variant="outline" className="h-8 gap-1.5 text-xs"

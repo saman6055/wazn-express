@@ -8,9 +8,9 @@ import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { adminProcedure } from "../middleware/auth";
 import * as db from "../db";
 import {
+  CUSTOMER_LOCK,
   LOCKED_MESSAGE,
   LOCK_MINUTES,
-  MAX_LOGIN_ATTEMPTS,
   lockState,
   registerFailure,
 } from "@shared/loginLockout";
@@ -142,8 +142,10 @@ export const authRouter = router({
       }
 
       /**
-       * Five wrong passwords and the account stops answering for a quarter of
-       * an hour.
+       * Thirty wrong passwords inside an hour and the account stops answering
+       * for five minutes (CUSTOMER_LOCK). It was five and fifteen until the
+       * owner, 2026-10-09: a customer must get in easily, and five slips
+       * must not turn them away. A person never reaches thirty.
        *
        * The per-IP limiter above cannot see the attack this is for: one
        * account, tried from a hundred addresses, each of them well under the
@@ -169,11 +171,10 @@ export const authRouter = router({
 
       const isValid = await bcrypt.compare(input.password, customer.passwordHash);
       if (!isValid) {
-        const after = registerFailure({
-          failedAttempts: customer.failedLoginAttempts,
-          lastFailedAt: customer.lastFailedLoginAt,
-          now,
-        });
+        const after = registerFailure(
+          { failedAttempts: customer.failedLoginAttempts, lastFailedAt: customer.lastFailedLoginAt, now },
+          CUSTOMER_LOCK,
+        );
         // Awaited, not fired and forgotten: a counter that loses races is a
         // counter an attacker can outrun.
         await db.recordFailedCustomerLogin(customer.id, after.failedAttempts, now, after.lockedUntil);
@@ -182,8 +183,8 @@ export const authRouter = router({
           action: after.justLocked ? "login_locked" : "login_failed",
           category: "auth",
           detail: after.justLocked
-            ? `Locked for ${LOCK_MINUTES} minutes after ${after.failedAttempts} failed attempts`
-            : `Failed attempt ${after.failedAttempts} of ${MAX_LOGIN_ATTEMPTS}`,
+            ? `Locked for ${CUSTOMER_LOCK.lockMinutes} minutes after ${after.failedAttempts} failed attempts`
+            : `Failed attempt ${after.failedAttempts} of ${CUSTOMER_LOCK.maxAttempts}`,
           ipAddress: (ctx.req.ip || "").slice(0, 64) || null,
           userAgent: (ctx.req.headers["user-agent"] || "").slice(0, 400) || null,
         });

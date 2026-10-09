@@ -23,6 +23,32 @@ export const MAX_LOGIN_ATTEMPTS = 5;
 export const LOCK_MINUTES = 15;
 
 /**
+ * A customer's own door is far more forgiving than the office's.
+ *
+ * The owner, 2026-10-09: «لە پۆرتال موشتەری بتوانێ بە ئاسانی داخل بێت، نەک 5
+ * جار هەوڵی دا هەڵە بوو لێنەگەڕێ چیتر هەوڵ بداتەوە». Five tries is a fair
+ * limit for staff, who type the same password every morning; a customer
+ * opens the portal once a fortnight, on a phone, with a password somebody at
+ * the counter gave them, and five slips is an ordinary evening. Shut out for
+ * a quarter of an hour, they ring the office or give up.
+ *
+ * So a person is never stopped: thirty wrong tries inside an hour is not
+ * somebody remembering a password. What that still stops is a script working
+ * through a list against one account, and even then only for five minutes at
+ * a time. The office's five-and-fifteen above is untouched.
+ */
+export const CUSTOMER_LOCK: LockRule = { maxAttempts: 30, lockMinutes: 5 };
+
+/** The office's rule, as a rule. */
+export const STAFF_LOCK: LockRule = { maxAttempts: MAX_LOGIN_ATTEMPTS, lockMinutes: LOCK_MINUTES };
+
+/** How many wrong tries shut a door, and for how long. */
+export interface LockRule {
+  maxAttempts: number;
+  lockMinutes: number;
+}
+
+/**
  * How long a run of failures stays "the same run".
  *
  * Without this, four wrong tries in January and one in March would lock the
@@ -82,17 +108,17 @@ export interface AfterFailure {
  * old news, and holding them against somebody who mistypes once a month is
  * not protection, it is an obstacle.
  */
-export function registerFailure(input: LockInput): AfterFailure {
+export function registerFailure(input: LockInput, rule: LockRule = STAFF_LOCK): AfterFailure {
   const now = input.now.getTime();
   const last = time(input.lastFailedAt);
   const stale = last === null || now - last > ATTEMPT_WINDOW_MINUTES * MINUTE;
 
   const failedAttempts = stale ? 1 : Math.max(0, Number(input.failedAttempts) || 0) + 1;
 
-  if (failedAttempts >= MAX_LOGIN_ATTEMPTS) {
+  if (failedAttempts >= rule.maxAttempts) {
     return {
       failedAttempts,
-      lockedUntil: new Date(now + LOCK_MINUTES * MINUTE),
+      lockedUntil: new Date(now + rule.lockMinutes * MINUTE),
       justLocked: true,
     };
   }

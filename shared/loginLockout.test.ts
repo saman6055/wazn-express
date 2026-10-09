@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
+import fs from "fs";
+import path from "path";
 import {
   ATTEMPT_WINDOW_MINUTES,
+  CUSTOMER_LOCK,
   LOCKED_MESSAGE,
   LOCK_MINUTES,
   MAX_LOGIN_ATTEMPTS,
@@ -83,6 +86,53 @@ describe("counting wrong passwords", () => {
       });
       expect(after.failedAttempts, String(bad)).toBe(1);
     }
+  });
+});
+
+/**
+ * The owner, 2026-10-09: a customer must get into the portal easily - five
+ * wrong tries must not turn them away. Staff keep five and fifteen.
+ */
+describe("a customer's door forgives a bad evening", () => {
+  const tries = (n: number) => {
+    let attempts = 0;
+    let last = registerFailure({ now: NOW }, CUSTOMER_LOCK);
+    for (let i = 1; i <= n; i++) {
+      last = registerFailure({ failedAttempts: attempts, lastFailedAt: new Date(NOW.getTime() - mins(1)), now: NOW }, CUSTOMER_LOCK);
+      attempts = last.failedAttempts;
+    }
+    return last;
+  };
+
+  it("five wrong tries shut nothing - nor ten, nor twenty-nine", () => {
+    for (const n of [5, 10, 29]) {
+      const after = tries(n);
+      expect(after.justLocked, `${n} tries`).toBe(false);
+      expect(after.lockedUntil, `${n} tries`).toBeNull();
+    }
+  });
+
+  it("the thirtieth in an hour is a script, and it waits five minutes", () => {
+    const after = tries(30);
+    expect(after.justLocked).toBe(true);
+    expect(after.lockedUntil?.getTime()).toBe(NOW.getTime() + mins(5));
+    expect(CUSTOMER_LOCK).toEqual({ maxAttempts: 30, lockMinutes: 5 });
+  });
+
+  it("the office's own rule did not move", () => {
+    expect([MAX_LOGIN_ATTEMPTS, LOCK_MINUTES]).toEqual([5, 15]);
+    const after = registerFailure({ failedAttempts: 4, lastFailedAt: new Date(NOW.getTime() - mins(1)), now: NOW });
+    expect(after.justLocked).toBe(true);
+  });
+
+  it("the portal's login is the one that uses it", () => {
+    const router = fs.readFileSync(path.resolve(__dirname, "../server/routers/auth.router.ts"), "utf8").replace(/\r\n/g, "\n");
+    const a = router.indexOf("customerLogin:");
+    const b = router.indexOf("staffLogin:");
+    expect(a).toBeGreaterThan(-1);
+    expect(b).toBeGreaterThan(a);
+    expect(router.slice(a, b)).toContain("CUSTOMER_LOCK,\n        );");
+    expect(router.slice(b)).not.toContain("CUSTOMER_LOCK");
   });
 });
 
