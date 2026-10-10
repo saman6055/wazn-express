@@ -50,3 +50,4 @@ export * from './goodsOnRoad.db';
 export * from './refusedGoods.db';
 export * from './customerStanding.db';
 export * from './boxPaidStillOwed.db';
+export * from './boxDoubleChargeAll.db';

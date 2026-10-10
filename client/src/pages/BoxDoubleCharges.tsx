@@ -12,6 +12,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
 import { cn } from "@/lib/utils";
+import { seenList } from "@shared/boxDoubleChargeAll";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -36,6 +37,8 @@ export default function BoxDoubleCharges() {
   const { data, isLoading } = trpc.ledger.boxDoubleCharges.useQuery();
   const [open, setOpen] = useState<number | null>(null);
   const [asking, setAsking] = useState<number | null>(null);
+  // Every false debt at one yes (owner, 2026-10-10) - to the list on screen.
+  const [askingAll, setAskingAll] = useState(false);
   const rows = data ?? [];
   const owing = rows.filter((r) => r.falseDebtUsd > 0.005);
   const settled = rows.filter((r) => r.falseDebtUsd <= 0.005);
@@ -51,6 +54,27 @@ export default function BoxDoubleCharges() {
       toast.success(L({ ku: `${fmtUsd(res.removedUsd)} لەسەری لابرا — حیسابی ئێستا ${fmtUsd(res.balanceUsd)}`, en: `${fmtUsd(res.removedUsd)} taken off — balance now ${fmtUsd(res.balanceUsd)}`, ar: `خُصم ${fmtUsd(res.removedUsd)} — الرصيد الآن ${fmtUsd(res.balanceUsd)}`, zh: `已减去 ${fmtUsd(res.removedUsd)} — 现余额 ${fmtUsd(res.balanceUsd)}` }));
     },
     onError: (e) => toast.error(e.message, { duration: 20_000 }),
+  });
+
+  const refresh = () => {
+    void utils.ledger.boxDoubleCharges.invalidate();
+    void utils.ledger.financeDashboard.invalidate();
+    void utils.ledger.workingCapital.invalidate();
+    void utils.dashboard.risks.invalidate();
+  };
+  const fixAll = trpc.ledger.correctAllBoxDoubleCharges.useMutation({
+    onSuccess: (res) => {
+      refresh();
+      setAskingAll(false);
+      toast.success(L({
+        ku: `${res.corrected} کڕیار ڕاست کرانەوە — ${fmtUsd(res.removedUsd)} قەرزی درۆ لابرا`,
+        en: `${res.corrected} customers put right — ${fmtUsd(res.removedUsd)} of false debt taken off`,
+        ar: `تم تصحيح ${res.corrected} عميلاً — خُصم ${fmtUsd(res.removedUsd)} من الدين غير الصحيح`,
+        zh: `已更正 ${res.corrected} 位客户 — 减去虚假欠款 ${fmtUsd(res.removedUsd)}`,
+      }), { duration: 15_000 });
+      for (const f of res.failed) toast.error(`${f.customerCode ?? f.customerId}: ${f.message}`, { duration: 30_000 });
+    },
+    onError: (e) => { refresh(); toast.error(e.message, { duration: 20_000 }); },
   });
 
   return (
@@ -82,6 +106,48 @@ export default function BoxDoubleCharges() {
                 <div className={cn("text-2xl font-semibold", total > 0 && "text-red-700 dark:text-red-400")}><Money value={total} /></div>
               </div>
             </div>
+
+            {isMainAdmin && owing.length > 1 && !askingAll && (
+              <div className="flex justify-end">
+                <Button data-testid="double-charge-all" onClick={() => setAskingAll(true)}>
+                  {L({ ku: `هەمووی ڕاست بکەوە (${owing.length})`, en: `Put all right (${owing.length})`, ar: `صحّح الكل (${owing.length})`, zh: `全部更正 (${owing.length})` })}
+                </Button>
+              </div>
+            )}
+            {askingAll && (
+              <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" data-testid="double-charge-all-confirm">
+                <p className="font-medium">
+                  {L({
+                    ku: `${fmtUsd(total)} قەرزی درۆ لەسەر ${owing.length} کڕیار لادەبرێت. هیچ پارەدانێک دەستی لێ نادرێت و هیچ کرێدیتێک دروست نابێت. ئەوەی بەڕاستی قەرزە لەسەر هەر کەسێک دەمێنێتەوە.`,
+                    en: `${fmtUsd(total)} of false debt comes off ${owing.length} customers. No payment is touched and no credit is made. What each really owes stays on the account.`,
+                    ar: `يُخصم ${fmtUsd(total)} من الدين غير الصحيح عن ${owing.length} عميلاً. لا تُمس أي دفعة ولا يُنشأ رصيد دائن.`,
+                    zh: `将从 ${owing.length} 位客户账上减去虚假欠款 ${fmtUsd(total)}。不动任何付款，也不产生贷方余额。`,
+                  })}
+                </p>
+                <ul className="max-h-72 divide-y divide-amber-300/60 overflow-y-auto rounded-md border border-amber-300/60 bg-background/60 text-foreground dark:divide-amber-500/30 dark:border-amber-500/30" data-testid="double-charge-all-list">
+                  <li className="grid grid-cols-[1fr_auto_auto] gap-x-3 px-3 py-1.5 text-xs text-muted-foreground">
+                    <span>{L({ ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</span>
+                    <span className="text-end">{L({ ku: "لادەبرێت", en: "Comes off", ar: "يُخصم", zh: "减去" })}</span>
+                    <span className="w-20 text-end">{L({ ku: "دەمێنێت", en: "Stays", ar: "يبقى", zh: "剩余" })}</span>
+                  </li>
+                  {owing.map((c) => (
+                    <li key={c.customerId} className="grid grid-cols-[1fr_auto_auto] items-center gap-x-3 px-3 py-1.5">
+                      <span className="min-w-0 truncate"><bdi dir="ltr">{c.customerCode}</bdi></span>
+                      <Money value={c.falseDebtUsd} className="text-end font-medium text-red-700 dark:text-red-400" />
+                      <Money value={c.balanceUsd - c.falseDebtUsd} className="w-20 text-end" />
+                    </li>
+                  ))}
+                </ul>
+                <div className="flex flex-wrap justify-end gap-2">
+                  <Button size="sm" variant="ghost" disabled={fixAll.isPending} onClick={() => setAskingAll(false)}>{L({ ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}</Button>
+                  <Button size="sm" disabled={fixAll.isPending} data-testid="double-charge-all-yes" onClick={() => fixAll.mutate(seenList(owing))}>
+                    {fixAll.isPending
+                      ? L({ ku: "ڕاست دەکرێنەوە…", en: "Putting right…", ar: "جارٍ التصحيح…", zh: "更正中…" })
+                      : L({ ku: `بەڵێ، هەر ${owing.length} کەسەکە ڕاست بکەوە`, en: `Yes, put all ${owing.length} right`, ar: `نعم، صحّح الجميع (${owing.length})`, zh: `是，全部更正 (${owing.length})` })}
+                  </Button>
+                </div>
+              </div>
+            )}
 
             {owing.length === 0 ? (
               <Card><CardContent className="py-6 text-sm text-muted-foreground">{L({ ku: "هیچ کڕیارێک بۆ بۆکسێکی واسڵکراو قەرزار نییە.", en: "Nobody owes for a box that was receipted.", ar: "لا أحد مدين بصندوق تم تسديده.", zh: "没有人因已收款的箱子而欠款。" })}</CardContent></Card>

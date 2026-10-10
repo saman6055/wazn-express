@@ -144,6 +144,20 @@ export const ledgerRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
         }
       }),
+    /**
+     * All of them at one yes - to the list the main admin saw, and only that
+     * list: the count and the total come back with the press and are checked
+     * to the cent before anything moves (shared/boxDoubleChargeAll).
+     */
+    correctAllBoxDoubleCharges: superAdminProcedure
+      .input(z.object({ customers: z.number().int().positive().max(5000), totalUsd: z.number().positive().max(10_000_000) }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.correctAllBoxDoubleCharges(input, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
 
     // ── Cautions and the blacklist (shared/customerStanding) ─────────────
     /** Shown wherever something is about to be done for a customer, so every member of staff may read it. */
