@@ -40,8 +40,12 @@ describe("the figures at the top", () => {
     expect(page).toContain("<Drill href={preferredShippingHref}>");
   });
 
-  it("the money opens the account it was counted from, on this same page", () => {
-    expect((page.match(/<Drill onClick=\{\(\) => setTab\("finance"\)\}>/g) ?? []).length).toBe(2);
+  it("the money opens the account it was counted from", () => {
+    // The balance opens the account page itself, at the card that says what
+    // the debt is made of (owner, 2026-10-10; customer-account-links.test).
+    // What was spent still opens the finance tab on this page.
+    expect(page).toContain('<Drill href={accountHref} onClick={() => setTab("finance")}>');
+    expect((page.match(/<Drill onClick=\{\(\) => setTab\("finance"\)\}>/g) ?? []).length).toBe(1);
     expect(page).toContain("<Tabs value={tab} onValueChange={setTab}");
   });
 

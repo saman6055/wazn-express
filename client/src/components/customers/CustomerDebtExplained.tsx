@@ -14,7 +14,7 @@
  * (LedgerSubjectCard). The verdicts are the server's, from the one shared
  * rule (shared/boxPaidStillOwed → explainDebt); nothing is decided here.
  */
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { Link } from "wouter";
 import { AlertTriangle, Boxes, CheckCircle2, Package, PackageCheck, Truck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -215,6 +215,9 @@ export function LedgerSubjectCard({ subject }: { subject?: LedgerSubject | null 
   );
 }
 
+/** The address of the card on the account page: a balance pressed anywhere lands on it. */
+export const DEBT_ANCHOR = "#debt";
+
 /** The hook the page shares with the rows below: one request, one answer. */
 export function useDebtExplained(customerId: number) {
   return trpc.ledger.debtExplained.useQuery({ customerId }, { enabled: customerId > 0, staleTime: 30_000 });
@@ -231,13 +234,29 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
     return out;
   }, [data]);
 
+  /*
+   * Somebody who pressed a balance came for this card (`#debt`): bring it
+   * to them once it has something to say. Before the early returns - a hook
+   * under one of them breaks the page.
+   */
+  const ready = !isLoading && !!data;
+  useEffect(() => {
+    if (!ready || window.location.hash !== DEBT_ANCHOR) return;
+    // More than once: the page above the card is still arriving, and each
+    // part that lands pushes the card further down.
+    const go = () => document.getElementById(DEBT_ANCHOR.slice(1))?.scrollIntoView({ block: "start" });
+    go();
+    const timers = [350, 1200].map((ms) => window.setTimeout(go, ms));
+    return () => timers.forEach((t) => window.clearTimeout(t));
+  }, [ready]);
+
   if (isLoading) return <Skeleton className="h-40 w-full rounded-xl" />;
   if (!data || (data.balanceUsd <= 0.005 && data.items.length === 0)) return null;
 
   const shown = open ?? BUCKETS.find((b) => byBucket[b].length > 0) ?? null;
 
   return (
-    <Card className="border-0 shadow-lg" data-testid="debt-explained">
+    <Card id={DEBT_ANCHOR.slice(1)} className="scroll-mt-16 border-0 shadow-lg" data-testid="debt-explained">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">
           {pickLang(language, { ku: "ئەم قەرزە بۆ چییە؟", en: "What is this debt for?", ar: "عن ماذا هذا الدين؟", zh: "这笔欠款是什么？" })}

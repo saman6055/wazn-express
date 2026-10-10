@@ -1,10 +1,13 @@
 import type React from "react";
+import { Link } from "wouter";
 import { cn } from "@/lib/utils";
 import { useTranslation } from "@/contexts/LanguageContext";
 
 interface CustomerSummaryHeaderProps {
   totalOrders?: number;
   balance?: number;
+  /** Where the balance was counted from: its chip opens it (the customer's account). */
+  balanceHref?: string;
   currency?: string;
   lastActivity?: string;
   createdAt?: string;
@@ -22,11 +25,13 @@ interface Chip {
   label: string;
   value: React.ReactNode;
   valueClassName?: string;
+  href?: string;
 }
 
 export function CustomerSummaryHeader({
   totalOrders,
   balance,
+  balanceHref,
   currency = "USD",
   lastActivity,
   createdAt,
@@ -55,6 +60,7 @@ export function CustomerSummaryHeader({
         : credit
           ? "text-green-600 dark:text-green-400"
           : undefined,
+      href: balanceHref,
     });
   }
 
@@ -86,17 +92,27 @@ export function CustomerSummaryHeader({
 
   return (
     <div className="flex flex-wrap gap-3">
-      {chips.map((chip, i) => (
-        <div
-          key={i}
-          className="flex flex-col gap-0.5 rounded-xl border border-border bg-card px-4 py-2.5 shadow-sm"
-        >
-          <span className="text-xs font-medium text-muted-foreground">{chip.label}</span>
-          <span className={cn("text-base font-bold leading-tight", chip.valueClassName)}>
-            {chip.value}
-          </span>
-        </div>
-      ))}
+      {chips.map((chip, i) => {
+        const body = (
+          <>
+            <span className="text-xs font-medium text-muted-foreground">{chip.label}</span>
+            <span className={cn("text-base font-bold leading-tight", chip.valueClassName)}>
+              {chip.value}
+            </span>
+          </>
+        );
+        const box = "flex flex-col gap-0.5 rounded-xl border border-border bg-card px-4 py-2.5 shadow-sm";
+        // A figure that stands for records opens them (owner, 2026-09-22).
+        return chip.href ? (
+          <Link key={i} href={chip.href} className={cn(box, "transition hover:ring-2 hover:ring-primary/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary")} data-testid="summary-balance-link">
+            {body}
+          </Link>
+        ) : (
+          <div key={i} className={box}>
+            {body}
+          </div>
+        );
+      })}
     </div>
   );
 }

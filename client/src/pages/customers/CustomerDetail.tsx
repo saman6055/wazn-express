@@ -33,6 +33,8 @@ import { useMemo, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { IRAQI_CITIES } from "../../../../shared/iraqi-cities";
 import { Link, useLocation, useParams } from "wouter";
+import { usePermissions } from "@/hooks/usePermissions";
+import { DEBT_ANCHOR } from "@/components/customers/CustomerDebtExplained";
 import { packagesHref } from "@shared/listLinks";
 import { customerCodeOnly } from "@shared/customerCode";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -141,6 +143,18 @@ export default function CustomerDetail() {
    */
   const code = customerCodeOnly(customer?.customerCode);
   const [tab, setTab] = useState("packages");
+  /*
+   * The balance opens the account itself - every charge and payment, and
+   * the card that says what the debt is made of, down to each parcel.
+   *
+   * The owner, 2026-10-10, looking at «باڵانس $147.37» here: «کە کلیک لەسەر
+   * باڵانس دەکەم وردەکاری تەواوم بداتێ - ئەو قەرزە چۆن چۆنی چێ بووە، هی چی و
+   * چییە». It used to switch to the finance tab further down this page, which
+   * holds a short list and none of that. Somebody who may not open the
+   * finance pages still gets the tab.
+   */
+  const { canViewPath } = usePermissions();
+  const accountHref = customerId && canViewPath(`/finance/customer/${customerId}`) ? `/finance/customer/${customerId}${DEBT_ANCHOR}` : undefined;
   const parcelsHref = (link: Parameters<typeof packagesHref>[0] = {}) =>
     code ? packagesHref({ search: code, ...link }) : undefined;
   const preferredShippingHref =
@@ -285,6 +299,7 @@ export default function CustomerDetail() {
         <CustomerSummaryHeader
           totalOrders={totalPackages}
           balance={balance ?? undefined}
+          balanceHref={accountHref}
           currency="USD"
           lastActivity={lastActivity}
           createdAt={(() => {
@@ -298,7 +313,7 @@ export default function CustomerDetail() {
 
           <div className="lg:col-span-2 space-y-6">
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              <Drill onClick={() => setTab("finance")}>
+              <Drill href={accountHref} onClick={() => setTab("finance")}>
                 <Card className="border-0 shadow-lg">
                   <CardContent className="p-4">
                     <div className="flex items-center justify-between">

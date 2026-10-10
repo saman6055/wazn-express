@@ -25,6 +25,7 @@ import {
 import { useState, useRef, useMemo, useEffect } from "react";
 import { toast } from "sonner";
 import { useLocation } from "wouter";
+import { usePermissions } from "@/hooks/usePermissions";
 import { IRAQI_GOVERNORATES, IRAQI_CITIES } from "../../../shared/iraqi-cities";
 import { CUSTOMER_CODE_PREFIXES } from "../../../shared/types";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -127,6 +128,9 @@ const [, setLocation] = useLocation();
   const [deleteCustomerId, setDeleteCustomerId] = useState<number | null>(null);
   const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
   const { user } = useAuth();
+  // The account, for whoever may open the finance pages; the profile otherwise.
+  const { canViewPath } = usePermissions();
+  const accountPath = (id: number) => (canViewPath(`/finance/customer/${id}`) ? `/finance/customer/${id}` : `/customers/${id}`);
   const isSuperAdmin = user?.role === "super_admin";
   const [isFiltersOpen, setIsFiltersOpen] = useState(false);
 
@@ -1264,7 +1268,25 @@ const [, setLocation] = useLocation();
               </TableHeader>
               <TableBody>
                 {customerPage.pageRows.map((customer) => (
-                  <TableRow key={customer.id} className="hover:bg-muted/50">
+                  <TableRow
+                    key={customer.id}
+                    className="cursor-pointer hover:bg-muted/50"
+                    data-testid="customer-row"
+                    title={pickLang(language, { ku: "کردنەوەی حیسابەکەی", en: "Open their account", ar: "فتح حسابه", zh: "打开账户" })}
+                    /*
+                     * A press on the row opens the customer's account - the
+                     * owner, 2026-10-10: «کە کلیکم لەسەر کرد یەکسەر داخلی
+                     * حسابات بێ». The row did nothing before; only the eye
+                     * did, and it opens the profile, which it still does. A
+                     * press on a button, a link or a copy control inside the
+                     * row is that control's own.
+                     */
+                    onClick={(e) => {
+                      if ((e.target as HTMLElement).closest("button, a, input, [role='menuitem'], [role='dialog']")) return;
+                      if (window.getSelection()?.toString()) return;
+                      setLocation(accountPath(customer.id));
+                    }}
+                  >
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <InitialsAvatar name={customer.fullName ?? ""} size={40} className="ring-2 ring-primary/10" />
