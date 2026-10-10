@@ -254,3 +254,104 @@ export function planCorrection(customer: Pick<DoubleChargeCustomer, "lines" | "f
 export function doubleChargeReason(trackingNumber: string, boxCode: string | null): string {
   return `ڕاستکردنەوەی دووجار نووسین — ئەم کاڵایە لە بۆکسی ${boxCode ?? "?"} واسڵ کراوە و پارەکەی دراوە (${trackingNumber})`;
 }
+
+// ───────────────────────── every figure, peeled ─────────────────────────
+
+/**
+ * The owner, 2026-10-10, on the card that explains a debt: "whatever I press
+ * here should give me the complete, exact detail - any number I want, peeled
+ * for me like an onion, so I know how it came about."
+ *
+ * So each figure on the card is given the lines it was added up from, and
+ * each of those is a row of the customer's own account - nothing is worked
+ * out a second time here. A figure and the lines under it must come to the
+ * same cent, or the screen says so.
+ */
+
+/** One row of the account, as a line under a figure: what it added or took off. */
+export interface StoryLine {
+  id: number;
+  transactionNumber: string;
+  /** When it was written, as the account has it. */
+  at: string | null;
+  /** The charge itself, something added to it afterwards, or something taken off it. */
+  kind: "charge" | "raised" | "takenOff";
+  description: string;
+  /** Signed: what this row did to the figure. */
+  usd: number;
+}
+
+const toCents = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100);
+
+/**
+ * How one owed thing came to its amount: its charge row or rows, and every
+ * correction that names one of them. Added up, the lines are what the charge
+ * stands at.
+ */
+export function chargeStory(rows: Array<AccountRow & { createdAt?: string | null }>, chargeIds: number[]): StoryLine[] {
+  const wanted = new Set(chargeIds);
+  const numberOf = new Map<string, number>();
+  for (const r of rows) if (wanted.has(r.id)) numberOf.set(r.transactionNumber, r.id);
+  const out: StoryLine[] = [];
+  for (const r of rows) {
+    if (wanted.has(r.id)) {
+      out.push({ id: r.id, transactionNumber: r.transactionNumber, at: r.createdAt ?? null, kind: "charge", description: r.description, usd: toCents(r.amountUsd) / 100 });
+      continue;
+    }
+    if (!r.transactionType.startsWith("ADJUSTMENT_")) continue;
+    const named = MARK.exec(r.description);
+    if (!named || !numberOf.has(named[1])) continue;
+    const up = r.transactionType === "ADJUSTMENT_DEBIT";
+    out.push({ id: r.id, transactionNumber: r.transactionNumber, at: r.createdAt ?? null, kind: up ? "raised" : "takenOff", description: r.description, usd: (up ? 1 : -1) * toCents(r.amountUsd) / 100 });
+  }
+  return out;
+}
+
+/** What the lines under a figure come to. */
+export function storyTotal(lines: StoryLine[]): number {
+  return lines.reduce((sum, l) => sum + toCents(l.usd), 0) / 100;
+}
+
+/**
+ * The whole account in five sums, which together are the balance: everything
+ * charged, what was added to charges afterwards, what was taken off them,
+ * what was paid, and any other credit. `differenceUsd` is what the balance on
+ * the account says beyond those - nothing, on an account whose rows are whole.
+ */
+export interface AccountSums {
+  chargedUsd: number;
+  chargedCount: number;
+  raisedUsd: number;
+  takenOffUsd: number;
+  paidUsd: number;
+  paidCount: number;
+  otherCreditUsd: number;
+  computedUsd: number;
+  differenceUsd: number;
+  rows: number;
+}
+
+export function accountSums(rows: AccountRow[], balanceUsd: number): AccountSums {
+  let charged = 0, raised = 0, takenOff = 0, paid = 0, other = 0, chargedCount = 0, paidCount = 0;
+  for (const r of rows) {
+    const c = toCents(r.amountUsd);
+    if (r.transactionType.startsWith("DEBIT_")) { charged += c; chargedCount += 1; }
+    else if (r.transactionType === "ADJUSTMENT_DEBIT") raised += c;
+    else if (r.transactionType === "ADJUSTMENT_CREDIT") takenOff += c;
+    else if (r.transactionType === "CREDIT_PAYMENT") { paid += c; paidCount += 1; }
+    else if (r.transactionType.startsWith("CREDIT_")) other += c;
+  }
+  const computed = charged + raised - takenOff - paid - other;
+  return {
+    chargedUsd: charged / 100,
+    chargedCount,
+    raisedUsd: raised / 100,
+    takenOffUsd: takenOff / 100,
+    paidUsd: paid / 100,
+    paidCount,
+    otherCreditUsd: other / 100,
+    computedUsd: computed / 100,
+    differenceUsd: (toCents(balanceUsd) - computed) / 100,
+    rows: rows.length,
+  };
+}

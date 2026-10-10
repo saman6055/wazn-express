@@ -21,7 +21,10 @@ describe("the profile opens with what the debt is for", () => {
   it("the card sits above the ledger", () => {
     const card = page.indexOf("<CustomerDebtExplained customerId={customerId} />");
     expect(card).toBeGreaterThan(-1);
-    expect(card).toBeLessThan(page.indexOf('<Tabs defaultValue="transactions">'));
+    // The ledger's tabs carry the address "see every row" leads to (DebtPeel).
+    const ledger = page.indexOf('<Tabs defaultValue="transactions" id={ACCOUNT_LINES_ANCHOR}');
+    expect(ledger).toBeGreaterThan(-1);
+    expect(card).toBeLessThan(ledger);
   });
 
   it("every ledger row carries its subject: flat rows, grouped rows, and the detail", () => {
@@ -88,5 +91,45 @@ describe("one rule behind the profile and the correction page", () => {
     const at = router.indexOf("debtExplained: staffProcedure");
     expect(at).toBeGreaterThan(-1);
     expect(router.slice(at, at + 220)).toContain(".query(");
+  });
+});
+
+/**
+ * The owner, 2026-10-10: "whatever I press here should give me the complete,
+ * exact detail - any number, peeled like an onion". Every figure on the card
+ * opens the rows it was added up from (components/customers/DebtPeel; the
+ * sums are in shared/debtPeel.test).
+ */
+describe("every figure on the card opens", () => {
+  const card = fs.readFileSync(path.resolve(__dirname, "components/customers/CustomerDebtExplained.tsx"), "utf8").replace(/\r\n/g, "\n");
+  const peel = fs.readFileSync(path.resolve(__dirname, "components/customers/DebtPeel.tsx"), "utf8").replace(/\r\n/g, "\n");
+  const server = fs.readFileSync(path.resolve(__dirname, "../../server/db/boxPaidStillOwed.db.ts"), "utf8").replace(/\r\n/g, "\n");
+
+  it("really owed, written twice and what the account shows are each a row that opens", () => {
+    for (const id of ["debt-still-owed-row", "debt-false-row", "debt-account-row"]) expect(card, id).toContain(`testId="${id}"`);
+    expect(card).toContain("<OwedSumPanel");
+    expect(card).toContain("<DoublePanel lines={data.double.lines} twiceUsd={data.double.twiceUsd} falseDebtUsd={data.falseDebtUsd} />");
+    expect(card).toContain("<AccountSumsPanel sums={data.sums}");
+  });
+
+  it("each owed thing shows the rows of the account behind its amount", () => {
+    expect(card).toContain('data-testid="debt-item-story"');
+    expect(card).toContain("{storyOf === item.key && <StoryLines lines={item.story} figureUsd={item.usd} />}");
+  });
+
+  it("the lines are the account's own rows - the server sends them, nothing is priced on the screen", () => {
+    expect(server).toContain("story: chargeStory(got.rows, item.chargeIds)");
+    expect(server).toContain("sums: accountSums(got.rows, got.balanceUsd),");
+    expect(peel).not.toMatch(/\.reduce\([^)]*amountUsd/);
+  });
+
+  it("a list that does not come to its figure says so", () => {
+    expect(peel).toContain('data-testid="peel-mismatch"');
+    expect(peel.split("<Mismatch ").length - 1).toBeGreaterThanOrEqual(3);
+  });
+
+  it("the state for it is declared before the early returns", () => {
+    expect(card.indexOf("const [peel, setPeel]")).toBeLessThan(card.indexOf('if (isLoading) return <Skeleton'));
+    expect(card.indexOf("const [storyOf, setStoryOf]")).toBeLessThan(card.indexOf('if (isLoading) return <Skeleton'));
   });
 });

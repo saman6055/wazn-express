@@ -14,6 +14,7 @@ import { fmtKg, fmtUsd } from "@/lib/portalFormat";
 import DashboardLayout from "@/components/DashboardLayout";
 import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPendingOrdersSection";
 import { foldedCorrectionIds } from "@shared/ledgerFold";
+import { ACCOUNT_LINES_ANCHOR } from "@/components/customers/DebtPeel";
 import { CustomerDebtExplained, LedgerSubjectCard, LedgerSubjectLine, useDebtExplained } from "@/components/customers/CustomerDebtExplained";
 import { AccountStatementSummary } from "@/components/finance/AccountStatementSummary";
 import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
@@ -1630,7 +1631,8 @@ export default function CustomerFinance() {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
             >
-              <Tabs defaultValue="transactions">
+              {/* The rows themselves: where "see every row" on the debt card leads (DebtPeel). */}
+              <Tabs defaultValue="transactions" id={ACCOUNT_LINES_ANCHOR} className="scroll-mt-16">
                 <TabsList className="bg-muted/50 p-1 rounded-xl">
                   <TabsTrigger value="transactions" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "هەموو مامەڵەکان", en: "All transactions", ar: "جميع المعاملات", zh: "全部交易" })}

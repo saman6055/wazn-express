@@ -16,7 +16,7 @@
  */
 import { useMemo, useState, useEffect } from "react";
 import { Link } from "wouter";
-import { AlertTriangle, Boxes, CheckCircle2, Package, PackageCheck, Truck } from "lucide-react";
+import { AlertTriangle, Boxes, CheckCircle2, ChevronDown, ChevronUp, Package, PackageCheck, Truck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -28,6 +28,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { OrderThumb, OrderThumbs } from "@/components/orders/OrderThumb";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
+import { AccountSumsPanel, DoublePanel, OwedSumPanel, PeelRow, StoryLines } from "@/components/customers/DebtPeel";
 
 export interface LedgerSubject {
   verdict: string | null;
@@ -227,6 +228,10 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
   const { language } = useTranslation();
   const { data, isLoading } = useDebtExplained(customerId);
   const [open, setOpen] = useState<Bucket | null>(null);
+  // Which figure is peeled open, and which thing's own rows are shown (DebtPeel).
+  const [peel, setPeel] = useState<"owed" | "double" | "account" | null>(null);
+  const [storyOf, setStoryOf] = useState<string | null>(null);
+  const togglePeel = (which: "owed" | "double" | "account") => setPeel((p) => (p === which ? null : which));
 
   const byBucket = useMemo(() => {
     const out: Record<Bucket, NonNullable<typeof data>["items"]> = { road: [], openBox: [], arrived: [], parcel: [] };
@@ -309,22 +314,39 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
               <span className="font-medium whitespace-nowrap text-emerald-700 dark:text-emerald-300" dir="ltr">−{fmtUsd(data.paidOnAccountUsd)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between gap-2 px-3 py-2">
-            <span className="font-medium">{pickLang(language, { ku: "قەرزی ڕاستەقینە", en: "Really owed", ar: "الدين الحقيقي", zh: "实际欠款" })}</span>
-            <span className="font-semibold whitespace-nowrap" dir="ltr" data-testid="debt-still-owed">{fmtUsd(data.stillOwedUsd)}</span>
-          </div>
+          {/* Each of these opens: the figure on the row is what the lines under it come to. */}
+          <PeelRow
+            testId="debt-still-owed-row"
+            open={peel === "owed"}
+            onToggle={() => togglePeel("owed")}
+            tone="strong"
+            label={pickLang(language, { ku: "قەرزی ڕاستەقینە", en: "Really owed", ar: "الدين الحقيقي", zh: "实际欠款" })}
+            amount={<span data-testid="debt-still-owed">{fmtUsd(data.stillOwedUsd)}</span>}
+          >
+            <OwedSumPanel
+              parts={BUCKETS.map((b) => ({ key: b, label: pickLang(language, BUCKET_TEXT[b]), usd: data.owedUsd[b], count: byBucket[b].length }))}
+              paidOnAccountUsd={data.paidOnAccountUsd}
+              stillOwedUsd={data.stillOwedUsd}
+              onPick={(key) => setOpen(key as Bucket)}
+            />
+          </PeelRow>
           {data.falseDebtUsd > 0.005 && (
-            <div className="flex flex-wrap items-center justify-between gap-2 px-3 py-2 bg-red-50 dark:bg-red-950/30" data-testid="debt-false">
-              <span className="inline-flex items-center gap-2 text-red-700 dark:text-red-300">
-                <AlertTriangle className="h-4 w-4 shrink-0" />
-                {pickLang(language, { ku: "دووجار نووسراوە — قەرز نییە", en: "Written twice — not owed", ar: "مكتوب مرتين — ليس ديناً", zh: "重复记账 — 非欠款" })}
-              </span>
-              <span className="inline-flex items-center gap-3">
-                <span className="font-semibold whitespace-nowrap text-red-700 dark:text-red-300" dir="ltr">{fmtUsd(data.falseDebtUsd)}</span>
-                <Link href="/finance/box-double-charges" className="underline text-xs">
-                  {pickLang(language, { ku: "بەڵگە و ڕاستکردنەوە", en: "Proof and correction", ar: "الدليل والتصحيح", zh: "凭据与更正" })}
-                </Link>
-              </span>
+            <div data-testid="debt-false">
+              <PeelRow
+                testId="debt-false-row"
+                open={peel === "double"}
+                onToggle={() => togglePeel("double")}
+                tone="red"
+                label={
+                  <>
+                    <AlertTriangle className="h-4 w-4 shrink-0" />
+                    {pickLang(language, { ku: "دووجار نووسراوە — قەرز نییە", en: "Written twice — not owed", ar: "مكتوب مرتين — ليس ديناً", zh: "重复记账 — 非欠款" })}
+                  </>
+                }
+                amount={fmtUsd(data.falseDebtUsd)}
+              >
+                <DoublePanel lines={data.double.lines} twiceUsd={data.double.twiceUsd} falseDebtUsd={data.falseDebtUsd} />
+              </PeelRow>
             </div>
           )}
           {Math.abs(data.unexplainedUsd) > 0.5 && (
@@ -333,10 +355,16 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
               <span className="font-medium whitespace-nowrap" dir="ltr">{fmtUsd(data.unexplainedUsd)}</span>
             </div>
           )}
-          <div className="flex items-center justify-between gap-2 px-3 py-2">
-            <span className="text-muted-foreground">{pickLang(language, { ku: "ئەوەی سیستەم نیشانی دەدات", en: "What the account shows", ar: "ما يظهره الحساب", zh: "账户显示" })}</span>
-            <span className="font-medium whitespace-nowrap" dir="ltr">{fmtUsd(data.balanceUsd)}</span>
-          </div>
+          <PeelRow
+            testId="debt-account-row"
+            open={peel === "account"}
+            onToggle={() => togglePeel("account")}
+            tone="muted"
+            label={pickLang(language, { ku: "ئەوەی سیستەم نیشانی دەدات", en: "What the account shows", ar: "ما يظهره الحساب", zh: "账户显示" })}
+            amount={fmtUsd(data.balanceUsd)}
+          >
+            <AccountSumsPanel sums={data.sums} balanceUsd={data.balanceUsd} stillOwedUsd={data.stillOwedUsd} falseDebtUsd={data.falseDebtUsd} unexplainedUsd={data.unexplainedUsd} />
+          </PeelRow>
         </div>
 
         {shown && byBucket[shown].length > 0 && (
@@ -368,6 +396,18 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
                         <p className="text-xs text-muted-foreground"><bdi dir="ltr" className="font-mono">{item.orderCode}</bdi></p>
                       )}
                       <LedgerSubjectLine subject={{ ...item, verdict: null }} />
+                      {/* The rows of the account this amount is added up from. */}
+                      <button
+                        type="button"
+                        onClick={() => setStoryOf((k) => (k === item.key ? null : item.key))}
+                        aria-expanded={storyOf === item.key}
+                        className="inline-flex min-h-8 items-center gap-1 text-xs font-medium text-primary hover:underline"
+                        data-testid="debt-item-story"
+                      >
+                        {storyOf === item.key ? <ChevronUp className="h-3.5 w-3.5" /> : <ChevronDown className="h-3.5 w-3.5" />}
+                        {pickLang(language, { ku: "چۆن ئەم بڕەیە؟", en: "How is it this amount?", ar: "كيف هذا المبلغ؟", zh: "金额怎么来的？" })}
+                      </button>
+                      {storyOf === item.key && <StoryLines lines={item.story} figureUsd={item.usd} />}
                     </div>
                   </li>
                 );

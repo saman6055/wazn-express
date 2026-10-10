@@ -6,6 +6,8 @@ import { isOrderChargeText } from "@shared/batchCleanup";
 import { withFix } from "@shared/fixAdvice";
 import {
   OWED_VERDICTS,
+  accountSums,
+  chargeStory,
   doubleChargeReason,
   explainDebt,
   falseDebt,
@@ -14,9 +16,11 @@ import {
   trackingKey,
   twiceCharged,
   type AccountRow,
+  type AccountSums,
   type ChargeVerdict,
   type DoubleChargeCustomer,
   type DoubleChargeLine,
+  type StoryLine,
 } from "@shared/boxPaidStillOwed";
 import { appLogger } from "../utils/logger";
 import { cacheGetOrSet, cacheInvalidate } from "./cache";
@@ -188,11 +192,11 @@ async function gatherAccount(customerId: number) {
   if (!account) return null;
 
   const ledger = await db
-    .select({ id: ledgerTransactions.id, transactionNumber: ledgerTransactions.transactionNumber, transactionType: ledgerTransactions.transactionType, amountUsd: ledgerTransactions.amountUsd, balanceAfterUsd: ledgerTransactions.balanceAfterUsd, description: ledgerTransactions.description, referenceId: ledgerTransactions.referenceId })
+    .select({ id: ledgerTransactions.id, transactionNumber: ledgerTransactions.transactionNumber, transactionType: ledgerTransactions.transactionType, amountUsd: ledgerTransactions.amountUsd, balanceAfterUsd: ledgerTransactions.balanceAfterUsd, description: ledgerTransactions.description, referenceId: ledgerTransactions.referenceId, createdAt: ledgerTransactions.createdAt })
     .from(ledgerTransactions)
     .where(eq(ledgerTransactions.accountId, account.id));
-  const rows: AccountRow[] = ledger
-    .map((r) => ({ id: Number(r.id), transactionNumber: r.transactionNumber, transactionType: String(r.transactionType), amountUsd: num(r.amountUsd), balanceAfterUsd: num(r.balanceAfterUsd), description: String(r.description ?? ""), referenceId: r.referenceId == null ? null : Number(r.referenceId) }))
+  const rows: Array<AccountRow & { createdAt: string | null }> = ledger
+    .map((r) => ({ createdAt: r.createdAt ? new Date(r.createdAt).toISOString() : null, id: Number(r.id), transactionNumber: r.transactionNumber, transactionType: String(r.transactionType), amountUsd: num(r.amountUsd), balanceAfterUsd: num(r.balanceAfterUsd), description: String(r.description ?? ""), referenceId: r.referenceId == null ? null : Number(r.referenceId) }))
     .sort((a, b) => a.id - b.id);
 
   // Every live box of the customer, each thing inside it, and whether a receipt stands.
@@ -303,6 +307,20 @@ export interface OwedItem extends LedgerSubject {
   key: string;
   usd: number;
   chargeIds: number[];
+  /** The rows of the account this amount was added up from (shared chargeStory). */
+  story: StoryLine[];
+}
+
+/** One tracking written on the account twice, for the card's own list. */
+export interface DoubleLine {
+  tracking: string;
+  boxCode: string | null;
+  boxId: number | null;
+  boxChargeUsd: number;
+  boxChargedAt: string | null;
+  orderCharges: Array<{ id: number; usd: number; description: string; orderCode: string | null }>;
+  orderChargedUsd: number;
+  twiceUsd: number;
 }
 
 /**
@@ -326,8 +344,12 @@ export async function explainCustomerDebt(customerId: number): Promise<{
   paidOnAccountUsd: number;
   items: OwedItem[];
   subjects: Record<number, LedgerSubject>;
+  /** The lines behind "written twice", and what they come to before the cap. */
+  double: { lines: DoubleLine[]; twiceUsd: number };
+  /** The whole account in five sums that make the balance. */
+  sums: AccountSums;
 }> {
-  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, items: [], subjects: {} };
+  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, items: [], subjects: {}, double: { lines: [], twiceUsd: 0 }, sums: accountSums([], 0) };
   const got = await gatherAccount(customerId);
   if (!got) return empty;
   const explained = explainDebt(got.rows, got.facts);
@@ -370,7 +392,7 @@ export async function explainCustomerDebt(customerId: number): Promise<{
     subjects[c.id] = subject;
     if (!(OWED_VERDICTS as readonly string[]).includes(c.verdict)) continue;
     const key = subject.orderId != null ? `o${subject.orderId}` : c.packageId != null ? `p${c.packageId}` : `r${c.id}`;
-    const item = items.get(key) ?? { ...subject, key, usd: 0, chargeIds: [] };
+    const item = items.get(key) ?? { ...subject, key, usd: 0, chargeIds: [], story: [] };
     item.usd = cents(item.usd + c.standsUsd);
     item.chargeIds.push(c.id);
     items.set(key, item);
@@ -392,8 +414,24 @@ export async function explainCustomerDebt(customerId: number): Promise<{
     unexplainedUsd: cents(got.balanceUsd - stillOwedUsd - falseDebtUsd),
     owedUsd: explained.owedUsd,
     paidOnAccountUsd: explained.paidOnAccountUsd,
-    items: Array.from(items.values()).sort((a, b) => b.usd - a.usd),
+    items: Array.from(items.values())
+      .map((item) => ({ ...item, story: chargeStory(got.rows, item.chargeIds) }))
+      .sort((a, b) => b.usd - a.usd),
     subjects,
+    double: {
+      twiceUsd: double?.twiceUsd ?? 0,
+      lines: (double?.lines ?? []).map((l) => ({
+        tracking: l.trackingNumber,
+        boxCode: l.boxCode,
+        boxId: (l.boxCode ? got.boxByCode.get(l.boxCode) : undefined) ?? null,
+        boxChargeUsd: l.boxChargeUsd,
+        boxChargedAt: l.boxChargedAt ? new Date(l.boxChargedAt).toISOString() : null,
+        orderCharges: l.orderCharges,
+        orderChargedUsd: l.orderChargedUsd,
+        twiceUsd: l.twiceUsd,
+      })),
+    },
+    sums: accountSums(got.rows, got.balanceUsd),
   };
 }
 
