@@ -68,6 +68,13 @@ describe("the page shows the whole list before the yes", () => {
     expect(page).toContain("{isMainAdmin && owing.length > 1 && !askingAll && (");
   });
 
+  it("an emptied list closes the question: nobody is asked to put 0 customers right", () => {
+    // 2026-10-11: the list emptied while the question stood open, the yes was
+    // pressed again and the server's refusal came back as raw validation text.
+    expect(page).toContain("{askingAll && owing.length > 0 && (");
+    expect(page).toContain("disabled={fixAll.isPending || owing.length === 0}");
+  });
+
   it("a failure is shown, never swallowed", () => {
     expect(page).toContain("for (const f of res.failed) toast.error(");
   });

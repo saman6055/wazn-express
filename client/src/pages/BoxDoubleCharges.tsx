@@ -114,7 +114,8 @@ export default function BoxDoubleCharges() {
                 </Button>
               </div>
             )}
-            {askingAll && (
+            {/* Only while there is something to take off: an emptied list closes it. */}
+            {askingAll && owing.length > 0 && (
               <div className="space-y-3 rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" data-testid="double-charge-all-confirm">
                 <p className="font-medium">
                   {L({
@@ -140,7 +141,7 @@ export default function BoxDoubleCharges() {
                 </ul>
                 <div className="flex flex-wrap justify-end gap-2">
                   <Button size="sm" variant="ghost" disabled={fixAll.isPending} onClick={() => setAskingAll(false)}>{L({ ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}</Button>
-                  <Button size="sm" disabled={fixAll.isPending} data-testid="double-charge-all-yes" onClick={() => fixAll.mutate(seenList(owing))}>
+                  <Button size="sm" disabled={fixAll.isPending || owing.length === 0} data-testid="double-charge-all-yes" onClick={() => fixAll.mutate(seenList(owing))}>
                     {fixAll.isPending
                       ? L({ ku: "ڕاست دەکرێنەوە…", en: "Putting right…", ar: "جارٍ التصحيح…", zh: "更正中…" })
                       : L({ ku: `بەڵێ، هەر ${owing.length} کەسەکە ڕاست بکەوە`, en: `Yes, put all ${owing.length} right`, ar: `نعم، صحّح الجميع (${owing.length})`, zh: `是，全部更正 (${owing.length})` })}
