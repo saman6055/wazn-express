@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { paidBeforeReason, roadAgeKey, roadByAge, roadTotals, type RoadRow } from "./goodsOnRoad";
+import { paidBeforeReason, roadAgeKey, roadByAge, roadTotals, withCustomer, type RoadRow } from "./goodsOnRoad";
 
 /**
  * Goods on the road, one by one (owner, 2026-10-07) — and closing one never
@@ -72,6 +72,38 @@ describe("closing an order asks whether it was paid", () => {
   it("only the main admin can close one", () => {
     expect(root("server/routers/finance.router.ts")).toContain("closeOrderOnRoad: superAdminProcedure");
     expect(page).toContain("isMainAdmin && !r.onAccount");
+  });
+});
+
+describe("goods still on the road are put on the account, not closed", () => {
+  // Owner, 2026-10-11: five sea orders, $3,104.51, entered before orders were
+  // charged at entry and not arrived. "Arrived and with the customer" was the
+  // only door, and it would have called them delivered.
+  const db = root("server/db/goodsOnRoad.db.ts");
+  const page = root("client/src/pages/GoodsOnRoad.tsx");
+
+  it("only an answer that says the goods are with the customer closes the order", () => {
+    expect(withCustomer("before")).toBe(true);
+    expect(withCustomer("no")).toBe(true);
+    expect(withCustomer("road")).toBe(false);
+  });
+
+  it("the status is left alone, and the charge is the same one door", () => {
+    const close = db.slice(db.indexOf("export async function closeOrderOnRoad"));
+    const guard = close.indexOf("if (withCustomer(paid)) {");
+    expect(guard).toBeGreaterThan(-1);
+    expect(close.slice(guard, guard + 220)).toContain('.set({ status: "delivered", deliveredDate: new Date() })');
+    expect(close.indexOf("chargeOrderAtCreation(order, userId)")).toBeLessThan(guard);
+  });
+
+  it("it is asked for by its own button and says the status will not change", () => {
+    expect(page).toContain('data-testid="road-put-on-account"');
+    expect(page).toContain('close.mutate({ orderId: r.orderId, paid: "road" })');
+    expect(page).toContain("دۆخی داواکارییەکە ناگۆڕێت");
+  });
+
+  it("the paid-or-not question is never shown for it", () => {
+    expect(page).toContain('closing?.row.orderId === r.orderId && closing.paid !== "road" && (');
   });
 });
 

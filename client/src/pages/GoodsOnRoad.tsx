@@ -62,7 +62,9 @@ export default function GoodsOnRoad() {
       void utils.ledger.financeDashboard.invalidate();
       setClosing(null);
       toast.success(
-        vars.paid === "before"
+        vars.paid === "road"
+          ? L({ ku: `${res.orderCode} خرایە سەر حیسابی کڕیار — هێشتا لە ڕێگایە`, en: `${res.orderCode} is on the customer's account — still on the road`, ar: `قُيِّد ${res.orderCode} على العميل — ما زال في الطريق`, zh: `${res.orderCode} 已记入客户账户 — 仍在途` })
+          : vars.paid === "before"
           ? L({ ku: `${res.orderCode} داخرا — حیسابی کڕیار نەگۆڕا`, en: `${res.orderCode} closed — the customer's balance did not move`, ar: `أُغلق ${res.orderCode} — لم يتغير رصيد العميل`, zh: `${res.orderCode} 已关闭 — 客户余额未变` })
           : L({ ku: `${res.orderCode} لەسەر کڕیار نووسرا`, en: `${res.orderCode} is on the customer's account`, ar: `قُيِّد ${res.orderCode} على العميل`, zh: `${res.orderCode} 已记入客户账户` }),
       );
@@ -186,6 +188,9 @@ export default function GoodsOnRoad() {
                             <Button size="sm" variant="outline" className="h-8" onClick={() => setClosing({ row: r, paid: null })}>
                               {L({ ku: "گەیشتووە و دراوەتە کڕیار", en: "Arrived and with the customer", ar: "وصل وهو مع العميل", zh: "已到并已交给客户" })}
                             </Button>
+                            <Button size="sm" variant="outline" className="h-8" data-testid="road-put-on-account" onClick={() => setClosing({ row: r, paid: "road" })}>
+                              {L({ ku: "هێشتا لە ڕێگایە — بیخە سەر حیساب", en: "Still on the road — put it on the account", ar: "ما زال في الطريق — قيّده على الحساب", zh: "仍在途 — 记入账户" })}
+                            </Button>
                             <Link href={`/full-package/${r.orderId}`}>
                               <Button size="sm" variant="ghost" className="h-8">{L({ ku: "داواکارییەکە بکەوە", en: "Open the order", ar: "افتح الطلب", zh: "打开订单" })}</Button>
                             </Link>
@@ -195,7 +200,26 @@ export default function GoodsOnRoad() {
                           </div>
                         )}
 
-                        {closing?.row.orderId === r.orderId && (
+                        {closing?.row.orderId === r.orderId && closing.paid === "road" && (
+                          <div className="mt-2 space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" data-testid="road-order">
+                            <p className="text-sm">
+                              {L({
+                                ku: `${fmtUsd(r.sellUsd)} دەبێتە قەرز لەسەر ${r.customerName ?? r.customerCode ?? ""}، وەک هەر داواکارییەکی نوێ. دۆخی داواکارییەکە ناگۆڕێت: هێشتا لە ڕێگایە. ئەگەر کڕیار پێشەکیی داوە، دوای ئەمە لە حیسابەکەیدا وەک پارەدان تۆماری بکە.`,
+                                en: `${fmtUsd(r.sellUsd)} becomes a debt on ${r.customerName ?? r.customerCode ?? ""}, like any order entered now. The order's status does not change: it is still on the road. If the customer paid an advance, record it as a payment on the account afterwards.`,
+                                ar: `يصبح ${fmtUsd(r.sellUsd)} ديناً على ${r.customerName ?? r.customerCode ?? ""} كأي طلب جديد. حالة الطلب لا تتغير: ما زال في الطريق. إن دفع العميل مقدماً فسجّله كدفعة على الحساب بعد ذلك.`,
+                                zh: `${fmtUsd(r.sellUsd)} 将成为 ${r.customerName ?? r.customerCode ?? ""} 的欠款，与新订单相同。订单状态不变：仍在途。如客户付过定金，之后请在账户上登记为付款。`,
+                              })}
+                            </p>
+                            <div className="flex flex-wrap justify-end gap-2">
+                              <Button size="sm" variant="ghost" onClick={() => setClosing(null)}>{L({ ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}</Button>
+                              <Button size="sm" disabled={close.isPending} data-testid="road-order-yes" onClick={() => close.mutate({ orderId: r.orderId, paid: "road" })}>
+                                {L({ ku: "بەڵێ، بیخە سەر حیساب", en: "Yes, put it on the account", ar: "نعم، قيّده", zh: "是，记入账户" })}
+                              </Button>
+                            </div>
+                          </div>
+                        )}
+
+                        {closing?.row.orderId === r.orderId && closing.paid !== "road" && (
                           <div className="mt-2 space-y-2 rounded-lg border border-amber-300 bg-amber-50 p-3 text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" data-testid="close-order">
                             <div className="font-medium">
                               {L({ ku: "پارەکەی دراوە؟", en: "Was it paid?", ar: "هل دُفع؟", zh: "是否已付款？" })}{" "}

@@ -120,7 +120,7 @@ export const ledgerRouter = router({
      * The main admin's alone; the refusal carries its own cure.
      */
     closeOrderOnRoad: superAdminProcedure
-      .input(z.object({ orderId: z.number().int().positive(), paid: z.enum(["before", "no"]) }))
+      .input(z.object({ orderId: z.number().int().positive(), paid: z.enum(["before", "no", "road"]) }))
       .mutation(async ({ input, ctx }) => {
         try {
           return await db.closeOrderOnRoad(input.orderId, input.paid, ctx.user.id);

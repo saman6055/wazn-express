@@ -18,9 +18,22 @@
  *   not paid     — the goods go on the account and stay: a debt.
  *
  * Not knowing is not an answer the system gives for him: nothing is changed.
+ *
+ * And a third thing, which is not a closing at all (owner, 2026-10-11, of
+ * five sea orders worth $3,104.51 that a customer had paid an advance on):
+ * goods STILL on the road, entered before orders were charged at entry, that
+ * should simply be on the customer's account like every order entered since.
+ *
+ *   still on the road — the goods go on the account and stay: a debt. The
+ *                  order's status is left exactly as it is; it has not arrived.
  */
 
-export type RoadPaid = "before" | "no";
+export type RoadPaid = "before" | "no" | "road";
+
+/** Does this answer say the goods are with the customer? Only then is the order closed as delivered. */
+export function withCustomer(paid: RoadPaid): boolean {
+  return paid !== "road";
+}
 
 /** How long an order has been open, in the buckets the page totals by. */
 export const ROAD_AGE_BUCKETS = [

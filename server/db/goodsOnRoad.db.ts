@@ -4,7 +4,7 @@ import { fullPackageOrders } from "../../drizzle/schema";
 import { customers } from "../../drizzle/schema/users.schema";
 import { LIVE_SALE_SQL, isLiveSale } from "@shared/orderProfit";
 import { withFix } from "@shared/fixAdvice";
-import { paidBeforeReason, type RoadPaid, type RoadRow } from "@shared/goodsOnRoad";
+import { paidBeforeReason, withCustomer, type RoadPaid, type RoadRow } from "@shared/goodsOnRoad";
 import { appLogger } from "../utils/logger";
 import { getCustomerById } from "./customers.db";
 import { adjustCustomerBalance } from "./finance.db";
@@ -127,10 +127,13 @@ export async function closeOrderOnRoad(orderId: number, paid: RoadPaid, userId: 
     }
   }
 
-  await db
-    .update(fullPackageOrders)
-    .set({ status: "delivered", deliveredDate: new Date() })
-    .where(eq(fullPackageOrders.id, orderId));
-  appLogger.info("[GoodsOnRoad] order closed as with the customer", { orderId, orderCode: order.orderCode, paid, amount: charge.amount, userId });
+  // Goods still on the road are only put on the account: where they are has not changed.
+  if (withCustomer(paid)) {
+    await db
+      .update(fullPackageOrders)
+      .set({ status: "delivered", deliveredDate: new Date() })
+      .where(eq(fullPackageOrders.id, orderId));
+  }
+  appLogger.info(withCustomer(paid) ? "[GoodsOnRoad] order closed as with the customer" : "[GoodsOnRoad] order put on the account, still on the road", { orderId, orderCode: order.orderCode, paid, amount: charge.amount, userId });
   return { orderCode: order.orderCode, amountUsd: charge.amount, balanceUsd };
 }
