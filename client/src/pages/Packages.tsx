@@ -12,6 +12,7 @@ import { OrderNumbers } from "@/components/OrderNumbers";
 import { ZoomImage } from "@/components/ZoomImage";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
+import { TrackingOnAnOrder } from "@/components/packages/TrackingOnAnOrder";
 import { Badge } from "@/components/ui/badge";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
@@ -1742,6 +1743,8 @@ const [, setLocation] = useLocation();
                 {isLoadingPackages ? (
                   <TableSkeleton rows={4} cols={2} />
                 ) : routedPackages.length === 0 ? (
+                  <>
+                  <TrackingOnAnOrder search={searchInput} />
                   <EmptyState
                     icon={<Package />}
                     title={t("packages.noPackages") || "هیچ پاکەتێک نییە"}
@@ -1755,6 +1758,7 @@ const [, setLocation] = useLocation();
                       ) : undefined
                     }
                   />
+                  </>
                 ) : (
                   routedPackages.map((pkg) => (
                     <PackageMobileCard
@@ -1822,6 +1826,7 @@ const [, setLocation] = useLocation();
                 {!isLoadingPackages && routedPackages.length === 0 && (
                   <TableRow>
                     <TableCell colSpan={12} className="p-4">
+                      <TrackingOnAnOrder search={searchInput} />
                       <EmptyState
                         icon={<Package />}
                         title={t("packages.noPackages") || "هیچ پاکەتێک نییە"}

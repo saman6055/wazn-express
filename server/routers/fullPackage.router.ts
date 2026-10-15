@@ -219,6 +219,15 @@ export const fullPackageRouter = router({
       }),
 
     /**
+     * The orders that carry one tracking - asked by the parcels list when it
+     * finds no parcel, so a tracking whose carton never reached the
+     * warehouse still leads to its order (server/db/ordersByTracking.db.ts).
+     */
+    ordersByTracking: staffProcedure
+      .input(z.object({ tracking: z.string().trim().min(1).max(100) }))
+      .query(async ({ input }) => db.findOrdersByTracking(input.tracking)),
+
+    /**
      * The caller's own last order of one kind — what the entry form offers
      * to go back to when something in it was typed wrong (owner, 2026-10-05).
      * It opens in the ordinary edit form, so every money rule an edit has is
