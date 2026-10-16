@@ -7,6 +7,7 @@ import { pickLang } from "@/lib/lang";
 import { orderStageOf } from "@/lib/shipmentFilters";
 import { fmtDate } from "@/lib/numericDate";
 import { useClientPagination } from "@/hooks/useClientPagination";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ListPager } from "@/components/ListPager";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -46,7 +47,25 @@ export default function UnifiedOrdersDashboard() {
 
 
   // Fetch data
-  const { data: fullPackageOrders } = trpc.fullPackage.list.useQuery();
+  const { data: recentOrders } = trpc.fullPackage.list.useQuery();
+  /*
+   * A search asks the server, across every order ever entered.
+   *
+   * Owner, 2026-10-16: "is there anywhere with a general search for orders -
+   * shouldn't it show every order, full package and buy-at-cost?" The box
+   * promised name, code and tracking but looked only at the newest orders
+   * the page had loaded, by name and by the order's first tracking. So a
+   * six-month-old order was never found. The server's search covers the
+   * order code, every tracking an order keeps, the platform order number,
+   * the product and the customer's name, code and phone, over all orders.
+   */
+  const searchTerm = useDebouncedValue(searchQuery.trim(), 300);
+  const searching = searchTerm.length >= 3;
+  const { data: foundOrders } = trpc.fullPackage.list.useQuery(
+    { search: searchTerm },
+    { enabled: searching },
+  );
+  const fullPackageOrders = searching ? foundOrders : recentOrders;
 
   // Combine all orders (purchase requests removed)
   // Built once per fetch, not once per render: the charts below memoize on it.
@@ -58,9 +77,12 @@ export default function UnifiedOrdersDashboard() {
   // Filter orders
   const filteredOrders = allOrders.filter(order => {
     const matchesTab = activeTab === "all" || order.type === activeTab;
-    const matchesSearch = !searchQuery || 
-      order.productName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      order.trackingNumber?.toLowerCase().includes(searchQuery.toLowerCase());
+    // A search of three letters or more was already answered by the server.
+    const q = searchQuery.trim().toLowerCase();
+    const matchesSearch = !q || searching ||
+      order.productName?.toLowerCase().includes(q) ||
+      order.orderCode?.toLowerCase().includes(q) ||
+      order.trackingNumber?.toLowerCase().includes(q);
     const matchesStatus = statusFilter === "all" || order.status === statusFilter;
     return matchesTab && matchesSearch && matchesStatus;
   });
@@ -420,7 +442,8 @@ export default function UnifiedOrdersDashboard() {
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder={pickLang(language, { ku: 'گەڕان بە ناو، کۆد، تراکینگ...', en: 'Search by name, code, tracking...', ar: 'البحث بالاسم، الرمز، التتبع...', zh: '按名称、编码、追踪号搜索...' })}
+                  placeholder={pickLang(language, { ku: 'تراکینگ، کۆد، ئۆردەر نەمبەر، کڕیار...', en: 'Tracking, code, order no., customer...', ar: 'التتبع، الرمز، رقم الطلب، العميل...', zh: '运单、编码、订单号、客户...' })}
+                  data-testid="unified-orders-search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   className="w-64 pl-10"
