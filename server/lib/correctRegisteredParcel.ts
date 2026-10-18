@@ -208,6 +208,7 @@ async function moveParcelMoney(
   let appliedPricingRuleId: number | null = null;
   if (!after.isUnclaimed) {
     const priced = await resolveParcelCost({
+      packageId: pkg.id,
       customerId: after.customerId,
       batchId: pkg.batchId,
       originWarehouseId: pkg.originWarehouseId,
@@ -259,6 +260,14 @@ async function moveParcelMoney(
       appLogger.error("[ParcelCorrection] charge after correction failed", {
         packageId: pkg.id, batchId: pkg.batchId, error: err instanceof Error ? err.message : String(err),
       });
+    }
+  }
+
+  // 6. The owner's other parcels in the batch, to their new total - and the
+  //    owner's before it, when it moved (server/db/smallParcelRebalance).
+  if (pkg.batchId) {
+    for (const owner of Array.from(new Set([after.customerId, pkg.customerId]))) {
+      if (owner) await db.rebalanceSmallParcels(pkg.batchId, owner, actor, pkg.id);
     }
   }
 

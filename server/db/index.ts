@@ -36,6 +36,8 @@ export * from './moneyFeed.db';
 export * from './pendingCredits.db';
 export * from './shareLinks.db';
 export * from './batchCharging.db';
+export * from './smallParcel.db';
+export * from './smallParcelRebalance.db';
 export * from './batchCloseCheck.db';
 export * from './batchCleanup.db';
 export * from './commissionFeeRepair.db';

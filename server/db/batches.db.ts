@@ -1,4 +1,5 @@
-import { smallParcelExtraPercent } from "@shared/parcelCost";
+import { smallParcelPrice } from "@shared/parcelCost";
+import { smallParcelRuleOn } from "./smallParcel.db";
 import { getDb } from './connection';
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { generateTransactionNumber } from "./utils.db";
@@ -210,7 +211,7 @@ const BATCH_LIST_COLUMNS = {
   costPerCbm: batches.costPerCbm,
   pricePerKg: batches.pricePerKg,
   pricePerCbm: batches.pricePerCbm,
-  smallParcelSurchargePercent: batches.smallParcelSurchargePercent,
+  smallParcelRule: batches.smallParcelRule,
   useTieredPricing: batches.useTieredPricing,
   /**
    * The edit dialog is filled from a row of THIS query, not from a fresh
@@ -1241,7 +1242,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     : Number(batchData.pricePerKg) || 0;
   const isFinalized = batchData.status === 'delivered' || batchData.status === 'closed';
 
-  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; extraCbm?: number }> = {};
+  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; vols?: number[] }> = {};
 
   for (const pkg of batchPackages) {
     if (!pkg.customerId) continue;
@@ -1264,9 +1265,8 @@ export async function getBatchFinancialSummary(batchId: number) {
     customerBreakdown[pkg.customerId].weight += actualKg;
     customerBreakdown[pkg.customerId].chargeableWeight += chargeableKg;
     customerBreakdown[pkg.customerId].cbm += Number(pkg.volumeCbm) || 0;
-    // A small sea parcel's extra, as the cubic metres it is paid as (shared/parcelCost).
-    const extraPct = isSea ? smallParcelExtraPercent(pkg.volumeCbm, batchData.smallParcelSurchargePercent) : 0;
-    if (extraPct > 0) customerBreakdown[pkg.customerId].extraCbm = (customerBreakdown[pkg.customerId].extraCbm ?? 0) + (Number(pkg.volumeCbm) || 0) * extraPct / 100;
+    // Each parcel's volume, for the small-parcel rule below (shared/parcelCost).
+    (customerBreakdown[pkg.customerId].vols ??= []).push(Number(pkg.volumeCbm) || 0);
     // Stored revenue accumulator — only consulted when the batch is finalized.
     customerBreakdown[pkg.customerId].revenue += Number(pkg.calculatedCostUsd) || 0;
   }
@@ -1299,7 +1299,11 @@ export async function getBatchFinancialSummary(batchId: number) {
         batchPricePerCbm: unit === 'cbm' ? batchDefaultRate : null,
       });
 
-      customerEntry.revenue = rate * (customerTotal + (unit === 'cbm' ? customerEntry.extraCbm ?? 0 : 0));
+      // A small sea customer: each parcel priced under the rule, on the customer's whole share.
+      const ruleOn = unit === 'cbm' && smallParcelRuleOn(batchData);
+      customerEntry.revenue = ruleOn
+        ? (customerEntry.vols ?? []).reduce((sum, v) => sum + smallParcelPrice(rate * v, { on: true, customerTotalCbm: customerEntry.cbm }), 0)
+        : rate * customerTotal;
     }
   }
 
@@ -1847,6 +1851,6 @@ export async function pastBatchRates() {
     costPerCbm: batches.costPerCbm,
     pricePerKg: batches.pricePerKg,
     pricePerCbm: batches.pricePerCbm,
-  smallParcelSurchargePercent: batches.smallParcelSurchargePercent,
+  smallParcelRule: batches.smallParcelRule,
   }).from(batches).limit(5000);
 }

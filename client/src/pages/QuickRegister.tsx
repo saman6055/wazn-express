@@ -823,9 +823,9 @@ export default function QuickRegister() {
    * on the bar, in the weight box or in the billed chip beside it. Printing
    * it again is how a bar of four facts became a bar of seven.
    */
-  // With the small-parcel extra when the batch adds one (shared/parcelCost).
+  // With the small-parcel extra when the rule adds one, or its $5 least (shared/parcelCost).
   const priceWorking = estimate?.rate && estimatedPrice > 0
-    ? `× ${Number(estimate.rate).toFixed(2)}${estimate.smallParcelPercent ? ` +${estimate.smallParcelPercent}%` : ""}`
+    ? `× ${Number(estimate.rate).toFixed(2)}${estimate.smallParcelMinimum ? " (min $5)" : estimate.smallParcelPercent ? ` +${estimate.smallParcelPercent}%` : ""}`
     : null;
   
   const [, setLocation] = useLocation();

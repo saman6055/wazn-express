@@ -51,7 +51,8 @@ describe("the price, as approving a claim sets it", () => {
     const link = slice(lib, "resolveParcelCost({", "});");
     expect(keysOf(link)).toEqual(keysOf(claim));
     expect(keysOf(link)).toEqual(
-      ["batchId", "customerId", "heightCm", "lengthCm", "originWarehouseId", "shippingType", "volumeCbm", "weightKg", "widthCm"],
+      // packageId: an existing parcel is not counted twice in its owner's small-parcel total.
+      ["batchId", "customerId", "heightCm", "lengthCm", "originWarehouseId", "packageId", "shippingType", "volumeCbm", "weightKg", "widthCm"],
     );
     expect(lib).toContain("if (!pkg || pkg.isCharged) return;");
   });

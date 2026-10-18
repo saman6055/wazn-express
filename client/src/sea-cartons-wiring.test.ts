@@ -46,25 +46,40 @@ describe("the server multiplies, and prices with the extra, in one place each", 
     expect(read("server/lib/correctRegisteredParcel.ts")).toContain("const cartons = cartonVolume(input);");
   });
 
-  it("every path that prices a sea parcel adds the batch's extra", () => {
-    expect(read("server/services/parcelPricing.service.ts")).toContain("smallParcelExtraPercent(measure.volumeCbm, batch.smallParcelSurchargePercent)");
+  it("every path that prices a sea parcel asks the one rule, on the customer's whole share", () => {
+    expect(read("server/services/parcelPricing.service.ts")).toContain("await smallParcelRuleFor(batch, facts.customerId, { id: facts.packageId, volumeCbm: measure.volumeCbm })");
     const charging = read("server/db/batchCharging.db.ts");
-    expect(charging.split("batch.smallParcelSurchargePercent)").length - 1).toBe(2);
-    expect(read("server/db/deliveryBoxes.db.ts")).toContain("withSmallParcelExtra(pkgCbm * batchPricePerCbm, pkgCbm, batchRow.smallParcelSurchargePercent)");
-    expect(read("server/routers/packages.router.ts").split("withSmallParcelExtra(pricePerUnit * parseFloat(pkg.volumeCbm)").length - 1).toBe(2);
+    expect(charging).toContain("parcelShippingCharge(pkg, isSea, rate, divisor, smallParcel)");
+    expect(charging).toContain("customerTotalCbm: await customerSeaCbmInBatch(batchId, customerId)");
+    expect(read("server/db/deliveryBoxes.db.ts")).toContain("smallParcelPrice(pkgCbm * batchPricePerCbm, await smallParcelRuleFor(batchRow, pkg.customerId, pkg))");
+    expect(read("server/routers/packages.router.ts").split("smallParcelPrice(pricePerUnit * parseFloat(pkg.volumeCbm)").length - 1).toBe(2);
+    expect(read("server/db/batches.db.ts")).toContain("smallParcelPrice(rate * v, { on: true, customerTotalCbm: customerEntry.cbm })");
+  });
+
+  it("the earlier parcels are put right as the customer's total moves", () => {
+    // After a charge, after a correction, and when the batch's box changes.
+    expect(read("server/db/batchCharging.db.ts")).toContain("await rebalanceSmallParcels(batchId, customerId, { id: actorId });");
+    expect(read("server/lib/correctRegisteredParcel.ts")).toContain("await db.rebalanceSmallParcels(pkg.batchId, owner, actor, pkg.id);");
+    expect(read("server/routers/batches.router.ts")).toContain("await db.rebalanceSmallParcels(id, customerId, { id: ctx.user.id, role: ctx.user.role });");
+    // Through the one correction there is, never forcing a credit.
+    const rebalance = read("server/db/smallParcelRebalance.db.ts");
+    expect(rebalance).toContain("await applyParcelCorrection(");
+    expect(rebalance).toContain("{ allowCredit: false, actorRole: actor.role ?? null }");
   });
 
   it("both fields reach the database through the startup patches", () => {
     const m = read("server/_core/migrations.ts");
     expect(m).toContain('"ALTER TABLE packages ADD COLUMN cartonCount INT NULL"');
-    expect(m).toContain('"ALTER TABLE batches ADD COLUMN smallParcelSurchargePercent DECIMAL(5,2) NULL"');
+    expect(m).toContain('"ALTER TABLE batches ADD COLUMN smallParcelRule BOOLEAN NULL"');
   });
 
-  it("the batch list carries the percent to the edit form", () => {
-    expect(read("server/db/batches.db.ts")).toContain("smallParcelSurchargePercent: batches.smallParcelSurchargePercent,");
+  it("the batch form has one box, ticked on a new batch, and the list carries it to the edit form", () => {
+    expect(read("server/db/batches.db.ts")).toContain("smallParcelRule: batches.smallParcelRule,");
     const form = read("client/src/pages/Batches.tsx");
-    expect(form).toContain("<SmallParcelPercentField defaultValue={editingBatch.smallParcelSurchargePercent} />");
-    expect(form).toContain('smallParcelSurchargePercent: clearable("smallParcelSurchargePercent")');
+    expect(form).toContain("<SmallParcelRuleField defaultChecked />");
+    expect(form).toContain("<SmallParcelRuleField defaultChecked={Boolean(editingBatch.smallParcelRule)} />");
+    expect(form.split('smallParcelRule: formData.has("smallParcelRuleShown") ? formData.get("smallParcelRule") === "on" : undefined').length - 1).toBe(2);
+    expect(form).not.toContain("SmallParcelPercentField");
   });
 });
 

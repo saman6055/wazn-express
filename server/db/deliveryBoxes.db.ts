@@ -1,4 +1,5 @@
-import { withSmallParcelExtra } from "@shared/parcelCost";
+import { smallParcelPrice } from "@shared/parcelCost";
+import { smallParcelRuleFor } from "./smallParcel.db";
 import { and, desc, eq, getTableColumns, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { withFix } from "@shared/fixAdvice";
 import { getDb } from "./connection";
@@ -1187,8 +1188,8 @@ async function buildBoxItemValuesFromPackage(
   let freshShippingCost = 0;
   if (batchIsSea && batchPricePerCbm > 0) {
     const pkgCbm = parseFloat((pkg as any).volumeCbm?.toString() || '0') || 0;
-    // A small sea parcel pays the batch's extra (shared/parcelCost).
-    freshShippingCost = withSmallParcelExtra(pkgCbm * batchPricePerCbm, pkgCbm, batchRow.smallParcelSurchargePercent);
+    // A small sea customer pays the rule's extra (shared/parcelCost).
+    freshShippingCost = smallParcelPrice(pkgCbm * batchPricePerCbm, await smallParcelRuleFor(batchRow, pkg.customerId, pkg));
   } else if (batchPricePerKg > 0) {
     freshShippingCost = chargeableKgNum * batchPricePerKg;
   }

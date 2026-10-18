@@ -41,10 +41,10 @@ export interface ParcelCostInput {
   /** The install's air divisor. Defaults to IATA's 6000. */
   divisor?: number;
   /**
-   * The batch's extra for a small sea parcel, in percent (smallParcelExtra).
-   * Only a cbm rate reads it, and only below SMALL_PARCEL_CBM.
+   * The small sea parcel rule for this parcel's owner in its batch
+   * (smallParcelPrice). Only a cbm rate reads it.
    */
-  smallParcelPercent?: number | string | null;
+  smallParcel?: SmallParcelRule | null;
 }
 
 export interface ParcelCost {
@@ -75,7 +75,7 @@ export function parcelCost(input: ParcelCostInput): ParcelCost {
   if (input.unit === "cbm") {
     const cbm = num(input.volumeCbm);
     const base = rate > 0 ? rate * cbm : 0;
-    return { amountUsd: withSmallParcelExtra(base, cbm, input.smallParcelPercent), quantity: cbm, billedOnVolume: true };
+    return { amountUsd: smallParcelPrice(base, input.smallParcel), quantity: cbm, billedOnVolume: true };
   }
 
   // Air sells the space a parcel occupies, so the greater of the two weights
@@ -125,29 +125,49 @@ export function affectsCost(changed: Record<string, unknown>): boolean {
 // ───────────────────────── small sea parcels, and cartons ─────────────────────────
 
 /**
- * A small sea parcel pays more than its share of a cubic metre.
+ * A small sea customer pays more than their share of a cubic metre - worked
+ * out by the system, not typed.
  *
- * The owner, 2026-10-18: «بۆ ئەوانەی بارەکانیان لە خوار 0.25 سی بی ئێمە
- * ئۆپشنێک هەبێ کەوا نرخ بە سەدا لەسەریان زیاد بکەم … چونکە بەریدی بچووک ناکرێ
- * حسابی مەتری بۆ بکرێت، بەریدی بچووک کێشە و کولفەی زیاترە». Each batch says
- * how much (1 to 100 percent, nothing when empty); a parcel whose whole volume
- * - every carton of its tracking - is under a quarter of a cubic metre pays
- * the batch's rate plus that much.
+ * The owner, 2026-10-18: «بەریدی بچووک کێشە و کولفەی زیاترە», and then: the
+ * percent should follow the size - the smaller, the more; nearer 0.25 m³,
+ * the less - set by the system itself, with only a box he can untick to take
+ * it off; a tiny parcel worth $1-2 pays at least $5. And, asked whether five
+ * small cartons of one person are five small parcels: no - «زۆر بیرۆکەیەکی
+ * دادپەروەرانەیە» - what is measured is everything that person has in the
+ * batch, and the earlier cartons are put right as later ones arrive.
+ *
+ * So, for one customer in one sea batch whose rule is on:
+ *
+ *   percent  = 100 × (0.25 − all their m³) / 0.25, under 0.25 m³; else 0
+ *   a parcel = its m³ × the rate × (1 + percent), and never under $5
+ *
+ * The line fades to nothing at 0.25 and never tops 100%, so a customer with
+ * more always pays more in all: total = rate × (2T − 4T²) only rises up to
+ * T = 0.25. A straight line above 100% would make 0.10 m³ dearer than 0.25.
  */
 export const SMALL_PARCEL_CBM = 0.25;
+export const SMALL_PARCEL_MIN_USD = 5;
 
-/** The percent that applies to a parcel of this volume: the batch's, or 0. */
-export function smallParcelExtraPercent(cbm: number | string | null | undefined, percent: number | string | null | undefined): number {
-  const volume = num(cbm);
-  const p = Math.min(100, num(percent));
-  return volume > 0 && volume < SMALL_PARCEL_CBM ? p : 0;
+export interface SmallParcelRule {
+  /** The batch's box is ticked, and the batch is sea. */
+  on: boolean;
+  /** Everything this customer has in the batch, this parcel included. */
+  customerTotalCbm: number;
 }
 
-/** A price with the small-parcel extra on it, to the cent. */
-export function withSmallParcelExtra(amountUsd: number, cbm: number | string | null | undefined, percent: number | string | null | undefined): number {
-  if (!(amountUsd > 0)) return 0;
-  const p = smallParcelExtraPercent(cbm, percent);
-  return p > 0 ? Math.round(amountUsd * (100 + p)) / 100 : amountUsd;
+/** The percent for a customer with this much in the batch: 100 at nothing, 0 from 0.25 up. */
+export function smallParcelAutoPercent(customerTotalCbm: number | string | null | undefined): number {
+  const t = num(customerTotalCbm);
+  return t > 0 && t < SMALL_PARCEL_CBM ? (100 * (SMALL_PARCEL_CBM - t)) / SMALL_PARCEL_CBM : 0;
+}
+
+/** A sea parcel's price under the rule, to the cent; the price as it was when the rule is off. */
+export function smallParcelPrice(baseUsd: number, rule: SmallParcelRule | null | undefined): number {
+  if (!(baseUsd > 0)) return 0;
+  if (!rule?.on) return baseUsd;
+  const p = smallParcelAutoPercent(rule.customerTotalCbm);
+  const priced = Math.round(baseUsd * (100 + p)) / 100;
+  return Math.max(priced, SMALL_PARCEL_MIN_USD);
 }
 
 /**

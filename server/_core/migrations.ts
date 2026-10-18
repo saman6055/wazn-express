@@ -3199,6 +3199,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // adds nothing.
   { name: "packages.cartonCount", sql: "ALTER TABLE packages ADD COLUMN cartonCount INT NULL" },
   { name: "batches.smallParcelSurchargePercent", sql: "ALTER TABLE batches ADD COLUMN smallParcelSurchargePercent DECIMAL(5,2) NULL" },
+  { name: "batches.smallParcelRule", sql: "ALTER TABLE batches ADD COLUMN smallParcelRule BOOLEAN NULL" },
 
   // A message either of the two can take back out of the conversation. Struck
   // out, not erased — see the schema note beside these columns.

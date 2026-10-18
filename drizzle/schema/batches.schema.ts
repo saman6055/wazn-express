@@ -70,8 +70,13 @@ export const batches = mysqlTable("batches", {
   // Selling price fields - default price per batch
   pricePerKg: decimal("pricePerKg", { precision: 10, scale: 2 }), // Default selling price per KG (for air_regular)
   pricePerCbm: decimal("pricePerCbm", { precision: 10, scale: 2 }), // Default selling price per CBM
-  // Percent added to a sea parcel under 0.25 m³ (shared/parcelCost: smallParcelExtra). Owner, 2026-10-18.
+  // Unused since the rule became automatic (2026-10-18, same day it was added):
+  // kept so the column a deploy already made has a name. Nothing reads it.
   smallParcelSurchargePercent: decimal("smallParcelSurchargePercent", { precision: 5, scale: 2 }),
+  // The small sea parcel rule (shared/parcelCost: smallParcelPrice) is on for
+  // this batch. Ticked by default on a new sea batch; empty on the batches
+  // made before it, which therefore stay as they were priced.
+  smallParcelRule: boolean("smallParcelRule"),
   
   // Tiered pricing flag
   useTieredPricing: boolean("useTieredPricing").default(false).notNull(), // True for air_irregular and sea

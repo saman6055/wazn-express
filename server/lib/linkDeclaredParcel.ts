@@ -51,6 +51,7 @@ export async function priceClaimedParcel(packageId: number): Promise<void> {
   const pkg = await db.getPackageById(packageId);
   if (!pkg || pkg.isCharged) return;
   const priced = await resolveParcelCost({
+    packageId: pkg.id,
     customerId: pkg.customerId,
     batchId: pkg.batchId,
     originWarehouseId: pkg.originWarehouseId,

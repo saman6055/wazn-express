@@ -14,7 +14,7 @@ import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
-import { affectsCost, cartonCountOf, cartonVolume, MAX_CARTONS, withSmallParcelExtra } from "@shared/parcelCost";
+import { affectsCost, cartonCountOf, cartonVolume, MAX_CARTONS, smallParcelPrice } from "@shared/parcelCost";
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
 import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView } from "../lib/correctRegisteredParcel";
@@ -1066,6 +1066,7 @@ export const packagesRouter = router({
           // when it was added - so the counter can show both.
           volumeCbm: volumeCbm ? Number(volumeCbm) : null,
           smallParcelPercent: priced.smallParcelPercent ?? 0,
+          smallParcelMinimum: priced.smallParcelMinimum ?? false,
         };
       }),
     // Get unclaimed packages
@@ -1130,6 +1131,7 @@ export const packagesRouter = router({
         const pkg = await db.getPackageById(request.packageId);
         if (pkg && !pkg.isCharged) {
           const priced = await resolveParcelCost({
+            packageId: pkg.id,
             customerId: pkg.customerId,
             batchId: pkg.batchId,
             originWarehouseId: pkg.originWarehouseId,
@@ -1536,8 +1538,8 @@ export const packagesRouter = router({
                 // Calculate charge based on unit
                 if (pricePerUnit > 0) {
                   if (unit === 'cbm' && pkg.volumeCbm) {
-                    // A small sea parcel pays the batch's extra (shared/parcelCost).
-                    chargeAmount = withSmallParcelExtra(pricePerUnit * parseFloat(pkg.volumeCbm), pkg.volumeCbm, batch.smallParcelSurchargePercent);
+                    // A small sea customer pays the rule's extra (shared/parcelCost).
+                    chargeAmount = smallParcelPrice(pricePerUnit * parseFloat(pkg.volumeCbm), await db.smallParcelRuleFor(batch, pkg.customerId, pkg));
                   } else if (unit === 'kg') {
                     // Use chargeable weight (max of actual weight and volumetric weight)
                     const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
@@ -1632,14 +1634,14 @@ export const packagesRouter = router({
                     // Calculate shipping cost based on pricing rules
                     let pricePerUnit = 0;
                     let unit: 'kg' | 'cbm' = 'kg';
-                    let smallParcelPercent: string | null = null;
+                    let smallParcel: Awaited<ReturnType<typeof db.smallParcelRuleFor>> = null;
                     
                     // Try batch-based pricing first
                     if (pkg.batchId) {
                       const batch = await db.getBatchById(pkg.batchId);
                       if (batch) {
                         unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
-                        smallParcelPercent = batch.smallParcelSurchargePercent ?? null;
+                        smallParcel = await db.smallParcelRuleFor(batch, pkg.customerId, pkg);
                         if (pkg.customerId) {
                           // Same order as the invoice — this figure feeds the
                           // Full Package profit, so a rate that disagreed with
@@ -1678,7 +1680,7 @@ export const packagesRouter = router({
                     // Calculate shipping cost
                     if (pricePerUnit > 0) {
                       if (unit === 'cbm' && pkg.volumeCbm) {
-                        shippingCost = withSmallParcelExtra(pricePerUnit * parseFloat(pkg.volumeCbm), pkg.volumeCbm, smallParcelPercent);
+                        shippingCost = smallParcelPrice(pricePerUnit * parseFloat(pkg.volumeCbm), smallParcel);
                       } else if (unit === 'kg') {
                         // Use chargeable weight (max of actual weight and volumetric weight)
                         const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
@@ -1845,6 +1847,7 @@ export const packagesRouter = router({
                   widthCm: updateData.widthCm ?? pkg.widthCm,
                   heightCm: updateData.heightCm ?? pkg.heightCm,
                   volumeCbm: updateData.volumeCbm ?? pkg.volumeCbm,
+                  packageId: pkg.id,
                 });
             pricing = repriceReport({
               isUnclaimed: pkg.isUnclaimed,
