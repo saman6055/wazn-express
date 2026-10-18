@@ -129,7 +129,7 @@ export function affectsCost(changed: Record<string, unknown>): boolean {
  * out by the system, not typed.
  *
  * The owner, 2026-10-18: «بەریدی بچووک کێشە و کولفەی زیاترە», and then: the
- * percent should follow the size - the smaller, the more; nearer 0.25 m³,
+ * percent should follow the size - the smaller, the more; nearer the line,
  * the less - set by the system itself, with only a box he can untick to take
  * it off; a tiny parcel worth $1-2 pays at least $5. And, asked whether five
  * small cartons of one person are five small parcels: no - «زۆر بیرۆکەیەکی
@@ -138,14 +138,15 @@ export function affectsCost(changed: Record<string, unknown>): boolean {
  *
  * So, for one customer in one sea batch whose rule is on:
  *
- *   percent  = 100 × (0.25 − all their m³) / 0.25, under 0.25 m³; else 0
+ *   percent  = 100 × (0.20 − all their m³) / 0.20, under 0.20 m³; else 0
  *   a parcel = its m³ × the rate × (1 + percent), and never under $5
  *
- * The line fades to nothing at 0.25 and never tops 100%, so a customer with
- * more always pays more in all: total = rate × (2T − 4T²) only rises up to
- * T = 0.25. A straight line above 100% would make 0.10 m³ dearer than 0.25.
+ * The line was first drawn at 0.25; the owner moved it to 0.20 the same day
+ * («لە 0.20 باشترە»). It fades to nothing at the line and never tops 100%,
+ * so a customer with more always pays more in all: total = rate × (2T − 5T²)
+ * only rises up to T = 0.20. A straight line above 100% would not.
  */
-export const SMALL_PARCEL_CBM = 0.25;
+export const SMALL_PARCEL_CBM = 0.2;
 export const SMALL_PARCEL_MIN_USD = 5;
 
 export interface SmallParcelRule {
@@ -155,7 +156,7 @@ export interface SmallParcelRule {
   customerTotalCbm: number;
 }
 
-/** The percent for a customer with this much in the batch: 100 at nothing, 0 from 0.25 up. */
+/** The percent for a customer with this much in the batch: 100 at nothing, 0 from the line (SMALL_PARCEL_CBM) up. */
 export function smallParcelAutoPercent(customerTotalCbm: number | string | null | undefined): number {
   const t = num(customerTotalCbm);
   return t > 0 && t < SMALL_PARCEL_CBM ? (100 * (SMALL_PARCEL_CBM - t)) / SMALL_PARCEL_CBM : 0;

@@ -56,18 +56,20 @@ describe("cartons of one size", () => {
 
 /**
  * The rule became automatic the same day (owner, 2026-10-18): the percent
- * follows the size - 100% at nothing, none from 0.25 m³ - measured on
+ * follows the size - 100% at nothing, none from the line (0.20 m³ since the
+ * owner moved it from 0.25 the same day) - measured on
  * everything the customer has in the batch, with a $5 least per tracking;
  * the batch only says on or off.
  */
 describe("small sea customers: the system sets the percent", () => {
   const on = (t: number) => ({ on: true, customerTotalCbm: t });
 
-  it("follows the size: the smaller, the more; none from 0.25", () => {
-    expect(SMALL_PARCEL_CBM).toBe(0.25);
-    expect(smallParcelAutoPercent(0.05)).toBeCloseTo(80, 6);
-    expect(smallParcelAutoPercent(0.1)).toBeCloseTo(60, 6);
-    expect(smallParcelAutoPercent(0.24)).toBeCloseTo(4, 6);
+  it("follows the size: the smaller, the more; none from 0.20", () => {
+    expect(SMALL_PARCEL_CBM).toBe(0.2);
+    expect(smallParcelAutoPercent(0.05)).toBeCloseTo(75, 6);
+    expect(smallParcelAutoPercent(0.1)).toBeCloseTo(50, 6);
+    expect(smallParcelAutoPercent(0.19)).toBeCloseTo(5, 6);
+    expect(smallParcelAutoPercent(0.2)).toBe(0);
     expect(smallParcelAutoPercent(0.25)).toBe(0);
     expect(smallParcelAutoPercent(0.3)).toBe(0);
   });
@@ -75,15 +77,15 @@ describe("small sea customers: the system sets the percent", () => {
   it("the table he was shown, at $350", () => {
     const row = (v: number) => smallParcelPrice(350 * v, on(v)).toFixed(2);
     expect(row(0.005)).toBe("5.00"); // the least
-    expect(row(0.03)).toBe("19.74");
-    expect(row(0.06)).toBe("36.96");
-    expect(row(0.1)).toBe("56.00");
-    expect(row(0.18)).toBe("80.64");
-    expect(row(0.24)).toBe("87.36");
-    expect(row(0.25)).toBe("87.50");
+    expect(row(0.03)).toBe("19.43");
+    expect(row(0.06)).toBe("35.70");
+    expect(row(0.1)).toBe("52.50");
+    expect(row(0.15)).toBe("65.63");
+    expect(row(0.19)).toBe("69.83");
+    expect(row(0.2)).toBe("70.00");
   });
 
-  it("a customer with more always pays more in all: no step at 0.25", () => {
+  it("a customer with more always pays more in all: no step at the line", () => {
     let last = 0;
     for (let t = 0.001; t <= 0.4; t += 0.001) {
       const paid = smallParcelPrice(350 * t, on(t));
@@ -99,8 +101,8 @@ describe("small sea customers: the system sets the percent", () => {
   });
 
   it("while they arrive: 0.06, then 0.18, then 0.30 in the batch", () => {
-    expect(smallParcelPrice(350 * 0.06, on(0.06)).toFixed(2)).toBe("36.96");
-    expect(smallParcelPrice(350 * 0.06, on(0.18)).toFixed(2)).toBe("26.88");
+    expect(smallParcelPrice(350 * 0.06, on(0.06)).toFixed(2)).toBe("35.70");
+    expect(smallParcelPrice(350 * 0.06, on(0.18)).toFixed(2)).toBe("23.10");
     expect(smallParcelPrice(350 * 0.06, on(0.3)).toFixed(2)).toBe("21.00");
   });
 
@@ -115,7 +117,7 @@ describe("small sea customers: the system sets the percent", () => {
   });
 
   it("reaches the price through parcelCost, and never a weight", () => {
-    expect(parcelCost({ rate: 350, unit: "cbm", volumeCbm: "0.1286", smallParcel: on(0.1286) }).amountUsd.toFixed(2)).toBe("66.87"); // +48.6%
+    expect(parcelCost({ rate: 350, unit: "cbm", volumeCbm: "0.1286", smallParcel: on(0.1286) }).amountUsd.toFixed(2)).toBe("61.08"); // +35.7%
     const air = { rate: 11, unit: "kg" as const, weightKg: "2", lengthCm: "10", widthCm: "10", heightCm: "10" };
     expect(parcelCost({ ...air, smallParcel: on(0.01) }).amountUsd).toBe(parcelCost(air).amountUsd);
     expect(parcelCost({ rate: 350, unit: "cbm", volumeCbm: null, smallParcel: on(0.1) }).amountUsd).toBe(0);

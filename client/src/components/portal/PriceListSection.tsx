@@ -678,10 +678,10 @@ function PriceCalculator({
                             zh: `极小件：最低 $${SMALL_PARCEL_MIN_USD}。`,
                           })
                         : pickLang(lang, {
-                            ku: `بارێکی بچووکە (کەمتر لە ${SMALL_PARCEL_CBM} m³): \u2066+${seaSmallPct}%\u2069 زیاد دەکرێت.`,
-                            en: `A small parcel (under ${SMALL_PARCEL_CBM} m³): \u2066+${seaSmallPct}%\u2069 is added.`,
-                            ar: `طرد صغير (أقل من ${SMALL_PARCEL_CBM} م³): تُضاف \u2066+${seaSmallPct}%\u2069.`,
-                            zh: `小件（小于 ${SMALL_PARCEL_CBM} m³）：加收 ${seaSmallPct}%。`,
+                            ku: `بارێکی بچووکە (کەمتر لە ${SMALL_PARCEL_CBM.toFixed(2)} m³): \u2066+${seaSmallPct}%\u2069 زیاد دەکرێت.`,
+                            en: `A small parcel (under ${SMALL_PARCEL_CBM.toFixed(2)} m³): \u2066+${seaSmallPct}%\u2069 is added.`,
+                            ar: `طرد صغير (أقل من ${SMALL_PARCEL_CBM.toFixed(2)} م³): تُضاف \u2066+${seaSmallPct}%\u2069.`,
+                            zh: `小件（小于 ${SMALL_PARCEL_CBM.toFixed(2)} m³）：加收 ${seaSmallPct}%。`,
                           })}
                       <span className={cn("block font-normal", muted)}>
                         {pickLang(lang, {

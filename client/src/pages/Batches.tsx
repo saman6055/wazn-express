@@ -3040,10 +3040,10 @@ function SmallParcelRuleField({ defaultChecked }: { defaultChecked?: boolean }) 
           </span>
           <span className="block text-xs text-muted-foreground">
             {pickLang(language, {
-              ku: "کڕیارێک کە کۆی بارەکانی لەم باچەدا کەمترە لە 0.25 m³: هەرچی بچووکتر زیادەکەی زیاترە (تا 100%)، و هیچ تراکینگێک کەمتر لە $5 نادات. سیستەم خۆی دەیژمێرێت.",
-              en: "A customer with under 0.25 m³ in this batch in all: the smaller, the more is added (up to 100%), and no tracking pays under $5. The system works it out.",
-              ar: "عميل مجموع بضاعته في هذه الدفعة أقل من 0.25 م³: كلما صغر زادت الإضافة (حتى 100%)، ولا يقل أي رقم تتبع عن 5$. يحسبها النظام تلقائياً.",
-              zh: "客户在本批次的总体积小于 0.25 m³ 时：越小加收越多（最多 100%），每个运单不低于 $5。系统自动计算。",
+              ku: "کڕیارێک کە کۆی بارەکانی لەم باچەدا کەمترە لە 0.20 m³: هەرچی بچووکتر زیادەکەی زیاترە (تا 100%)، و هیچ تراکینگێک کەمتر لە $5 نادات. سیستەم خۆی دەیژمێرێت.",
+              en: "A customer with under 0.20 m³ in this batch in all: the smaller, the more is added (up to 100%), and no tracking pays under $5. The system works it out.",
+              ar: "عميل مجموع بضاعته في هذه الدفعة أقل من 0.20 م³: كلما صغر زادت الإضافة (حتى 100%)، ولا يقل أي رقم تتبع عن 5$. يحسبها النظام تلقائياً.",
+              zh: "客户在本批次的总体积小于 0.20 m³ 时：越小加收越多（最多 100%），每个运单不低于 $5。系统自动计算。",
             })}
           </span>
         </span>

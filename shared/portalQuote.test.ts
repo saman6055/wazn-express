@@ -27,13 +27,13 @@ describe("a quote, as the invoice charges it", () => {
   });
 
   it("sea: the volume, from the sizes or typed", () => {
-    expect(round(quoteShipping({ shippingType: "sea", pricePerUnit: 180, lengthCm: 60, widthCm: 40, heightCm: 40 }).total)).toBe(27.92); // 0.096 m³ alone: +61.6%
+    expect(round(quoteShipping({ shippingType: "sea", pricePerUnit: 180, lengthCm: 60, widthCm: 40, heightCm: 40 }).total)).toBe(26.27); // 0.096 m³ alone: +52%
     expect(round(quoteShipping({ shippingType: "sea", pricePerUnit: 180, cbm: 0.5 }).total)).toBe(90);
   });
 
   it("no minimum kg; a small sea parcel pays the office's small-parcel extra", () => {
     expect(quoteShipping({ shippingType: "air_regular", pricePerUnit: 10, weightKg: 0.4 }).total).toBe(4);
-    expect(round(quoteShipping({ shippingType: "sea", pricePerUnit: 100, cbm: 0.1 }).total)).toBe(16);
+    expect(round(quoteShipping({ shippingType: "sea", pricePerUnit: 100, cbm: 0.1 }).total)).toBe(15);
     expect(round(quoteShipping({ shippingType: "sea", pricePerUnit: 100, cbm: 0.01 }).total)).toBe(5);
   });
 

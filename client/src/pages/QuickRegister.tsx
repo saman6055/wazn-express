@@ -2909,10 +2909,10 @@ export default function QuickRegister() {
                       )}
                       data-testid="qr-small-parcel-rule"
                       title={pickLang(language, {
-                        ku: "کڕیارێک کە کۆی بارەکانی لەم باچەدا کەمترە لە 0.25 m³: هەرچی بچووکتر زیادەکەی زیاترە، و هیچ تراکینگێک کەمتر لە $5 نادات.",
-                        en: "A customer with under 0.25 m³ in this batch in all: the smaller, the more is added; no tracking pays under $5.",
-                        ar: "عميل مجموعه في الدفعة أقل من 0.25 م³: كلما صغر زادت الإضافة؛ ولا يقل أي رقم تتبع عن 5$.",
-                        zh: "客户在本批次合计小于 0.25 m³：越小加收越多；每个运单不低于 $5。",
+                        ku: "کڕیارێک کە کۆی بارەکانی لەم باچەدا کەمترە لە 0.20 m³: هەرچی بچووکتر زیادەکەی زیاترە، و هیچ تراکینگێک کەمتر لە $5 نادات.",
+                        en: "A customer with under 0.20 m³ in this batch in all: the smaller, the more is added; no tracking pays under $5.",
+                        ar: "عميل مجموعه في الدفعة أقل من 0.20 م³: كلما صغر زادت الإضافة؛ ولا يقل أي رقم تتبع عن 5$.",
+                        zh: "客户在本批次合计小于 0.20 m³：越小加收越多；每个运单不低于 $5。",
                       })}
                     >
                       <input
