@@ -24,10 +24,14 @@ export async function generateBoxCode(): Promise<string> {
 
   if (db) {
     try {
-      const [result] = await db.select({ count: sql<number>`COUNT(*)` })
+      // The highest number today, not how many there are: once a box of the
+      // day was deleted, the count fell on a number still taken and every new
+      // box that day was refused as a duplicate (2026-10-18: 001 and 003 left,
+      // so the count said 003).
+      const [result] = await db.select({ last: sql<number>`COALESCE(MAX(CAST(SUBSTRING(boxCode, ${prefix.length + 1}) AS UNSIGNED)), 0)` })
         .from(deliveryBoxes)
         .where(sql`boxCode LIKE ${prefix + '%'}`);
-      const seq = (result?.count || 0) + 1;
+      const seq = Number(result?.last || 0) + 1;
       return `${prefix}${String(seq).padStart(3, '0')}`;
     } catch {
       return `${prefix}${Date.now().toString(36).slice(-3).toUpperCase()}`;
