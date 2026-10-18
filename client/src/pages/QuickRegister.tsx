@@ -827,6 +827,57 @@ export default function QuickRegister() {
   const priceWorking = estimate?.rate && estimatedPrice > 0
     ? `× ${Number(estimate.rate).toFixed(2)}${estimate.smallParcelMinimum ? " (min $5)" : estimate.smallParcelPercent ? ` +${estimate.smallParcelPercent}%` : ""}`
     : null;
+
+  /**
+   * The small sea parcel rule, seen and switched where the parcel is entered
+   * (owner, 2026-10-18: «ئەبێ لە تۆماری خێرا هەبێ پێش تۆمار کردن»). The box is
+   * the batch's own - the same one as on the batch form - and the bar says
+   * why a price did or did not rise: the customer's whole share of the batch.
+   */
+  const selectedSeaBatch = shippingType === "sea"
+    ? (filteredBatches.find((b: any) => String(b.id) === batchId) as { id: number; smallParcelRule?: boolean | null } | undefined)
+    : undefined;
+  const smallRuleOn = Boolean(selectedSeaBatch?.smallParcelRule);
+  const mayToggleSmallRule = user?.role === "admin" || user?.role === "super_admin";
+  const smallRuleMutation = trpc.batches.update.useMutation({
+    onSuccess: async (_d, vars) => {
+      await trpcUtils.batches.list.invalidate();
+      await trpcUtils.packages.estimateCost.invalidate();
+      toast.success(vars.smallParcelRule
+        ? pickLang(language, { ku: "زیادەی بەریدی بچووک کرایەوە", en: "Small-parcel extra is on", ar: "تم تفعيل إضافة الطرود الصغيرة", zh: "小件加收已开启" })
+        : pickLang(language, { ku: "زیادەی بەریدی بچووک کوژایەوە", en: "Small-parcel extra is off", ar: "تم إيقاف إضافة الطرود الصغيرة", zh: "小件加收已关闭" }));
+    },
+  });
+  const toggleSmallRule = async (next: boolean) => {
+    if (!selectedSeaBatch) return;
+    const sure = await confirmAction({
+      title: next
+        ? pickLang(language, { ku: "زیادەی بەریدی بچووک بکرێتەوە؟", en: "Turn the small-parcel extra on?", ar: "تفعيل إضافة الطرود الصغيرة؟", zh: "开启小件加收？" })
+        : pickLang(language, { ku: "زیادەی بەریدی بچووک بکوژێتەوە؟", en: "Turn the small-parcel extra off?", ar: "إيقاف إضافة الطرود الصغيرة؟", zh: "关闭小件加收？" }),
+      message: pickLang(language, {
+        ku: "بۆ هەموو ئەم باچەیە: نرخی بەریدە بچووکەکانی هەموو کڕیارەکانی ئەم باچە دەگۆڕێن (ئەوانەی وەسڵ کراون وەک خۆیان دەمێننەوە). دڵنیایت؟",
+        en: "For the whole batch: the small parcels of every customer in it are repriced (receipted ones stay as they are). Sure?",
+        ar: "للدفعة كلها: يُعاد تسعير الطرود الصغيرة لكل عملائها (المُستلمة تبقى كما هي). متأكد؟",
+        zh: "适用于整个批次：所有客户的小件将重新计价（已开收据的不变）。确定吗？",
+      }),
+      confirmLabel: pickLang(language, { ku: "بەڵێ", en: "Yes", ar: "نعم", zh: "确定" }),
+      cancelLabel: pickLang(language, { ku: "نەخێر", en: "No", ar: "لا", zh: "取消" }),
+    });
+    if (sure) smallRuleMutation.mutate({ id: selectedSeaBatch.id, smallParcelRule: next });
+  };
+  /** One short reason on the bar, only for a sea parcel in a batch. */
+  const smallRuleReason = !selectedSeaBatch || !(estimatedPrice > 0)
+    ? null
+    : smallRuleOn && estimate?.smallParcelCustomerCbm != null
+      ? pickLang(language, {
+          ku: `کۆی کڕیار لەم باچەدا: ${Number(estimate.smallParcelCustomerCbm).toFixed(3)} m³`,
+          en: `Customer's total in this batch: ${Number(estimate.smallParcelCustomerCbm).toFixed(3)} m³`,
+          ar: `مجموع العميل في الدفعة: ${Number(estimate.smallParcelCustomerCbm).toFixed(3)} م³`,
+          zh: `客户本批次合计：${Number(estimate.smallParcelCustomerCbm).toFixed(3)} m³`,
+        })
+      : !smallRuleOn
+        ? pickLang(language, { ku: "زیادەی بەریدی بچووک کوژاوەیە", en: "Small-parcel extra is off", ar: "إضافة الطرود الصغيرة متوقفة", zh: "小件加收已关闭" })
+        : null;
   
   const [, setLocation] = useLocation();
   const [returnToScanner, setReturnToScanner] = useState<string | null>(null);
@@ -2850,6 +2901,37 @@ export default function QuickRegister() {
                       ))}
                     </SelectContent>
                   </Select>
+                  {selectedSeaBatch && (
+                    <label
+                      className={cn(
+                        "mt-2 flex items-center gap-2 rounded-lg border px-2.5 py-2 text-xs",
+                        mayToggleSmallRule ? "cursor-pointer" : "opacity-80",
+                      )}
+                      data-testid="qr-small-parcel-rule"
+                      title={pickLang(language, {
+                        ku: "کڕیارێک کە کۆی بارەکانی لەم باچەدا کەمترە لە 0.25 m³: هەرچی بچووکتر زیادەکەی زیاترە، و هیچ تراکینگێک کەمتر لە $5 نادات.",
+                        en: "A customer with under 0.25 m³ in this batch in all: the smaller, the more is added; no tracking pays under $5.",
+                        ar: "عميل مجموعه في الدفعة أقل من 0.25 م³: كلما صغر زادت الإضافة؛ ولا يقل أي رقم تتبع عن 5$.",
+                        zh: "客户在本批次合计小于 0.25 m³：越小加收越多；每个运单不低于 $5。",
+                      })}
+                    >
+                      <input
+                        type="checkbox"
+                        className="h-4 w-4 shrink-0 accent-primary"
+                        checked={smallRuleOn}
+                        disabled={!mayToggleSmallRule || smallRuleMutation.isPending || !!correcting}
+                        onChange={(e) => void toggleSmallRule(e.target.checked)}
+                        data-testid="qr-small-parcel-rule-box"
+                      />
+                      <span className="min-w-0 font-medium">
+                        {pickLang(language, { ku: "زیادەی بەریدی بچووک", en: "Small-parcel extra", ar: "إضافة الطرود الصغيرة", zh: "小件加收" })}
+                        <span className="ms-1 text-[10px] font-normal text-muted-foreground">
+                          {pickLang(language, { ku: "(بۆ هەموو ئەم باچە)", en: "(the whole batch)", ar: "(للدفعة كلها)", zh: "（整个批次）" })}
+                        </span>
+                      </span>
+                      {smallRuleMutation.isPending && <Loader2 className="ms-auto h-3.5 w-3.5 animate-spin" />}
+                    </label>
+                  )}
                 </CardContent>
               </Card>
 
@@ -3050,6 +3132,9 @@ export default function QuickRegister() {
                   <span className="text-xl font-bold text-primary" dir="ltr">${estimatedPrice.toFixed(2)}</span>
                   {priceWorking && (
                     <span className="font-mono text-[11px] text-muted-foreground" dir="ltr">{priceWorking}</span>
+                  )}
+                  {smallRuleReason && (
+                    <span className="text-[10px] text-muted-foreground" data-testid="qr-bar-small-reason">· {smallRuleReason}</span>
                   )}
                 </span>
               ) : hasMeasure ? (

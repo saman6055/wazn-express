@@ -1067,6 +1067,8 @@ export const packagesRouter = router({
           volumeCbm: volumeCbm ? Number(volumeCbm) : null,
           smallParcelPercent: priced.smallParcelPercent ?? 0,
           smallParcelMinimum: priced.smallParcelMinimum ?? false,
+          // Why: the customer's whole share of the batch the rule measured.
+          smallParcelCustomerCbm: priced.smallParcelCustomerCbm ?? null,
         };
       }),
     // Get unclaimed packages

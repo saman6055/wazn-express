@@ -57,6 +57,8 @@ export interface ResolvedParcelCost {
   smallParcelPercent?: number;
   /** The $5 minimum set this price. */
   smallParcelMinimum?: boolean;
+  /** Under the rule: everything the customer has in the batch, this parcel counted (m³). */
+  smallParcelCustomerCbm?: number | null;
 }
 
 /** The install's air divisor, or IATA's. Read once per call, not per parcel. */
@@ -123,6 +125,7 @@ export async function resolveParcelCost(
             billedOnVolume,
             smallParcelPercent,
             smallParcelMinimum,
+            smallParcelCustomerCbm: smallParcel ? smallParcel.customerTotalCbm : null,
           };
         }
       }

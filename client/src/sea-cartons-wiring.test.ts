@@ -93,3 +93,20 @@ describe("the box and the receipt say how many cartons", () => {
     expect(read("client/src/lib/deliveryBoxPrintUtils.ts")).toContain("`${cartonVolumeText(item.volumeCbm, item.cartonCount)} CBM`");
   });
 });
+
+/**
+ * Owner, 2026-10-18: «ئەبێ لە تۆماری خێرا هەبێ پێش تۆمار کردن» - the batch's
+ * small-parcel box on Quick Register itself, and the bar saying why.
+ */
+describe("Quick Register shows and switches the small-parcel rule", () => {
+  const page = read("client/src/pages/QuickRegister.tsx");
+  it("the batch's own box, under the batch, asked before it changes", () => {
+    expect(page).toContain('data-testid="qr-small-parcel-rule-box"');
+    expect(page).toContain("smallRuleMutation.mutate({ id: selectedSeaBatch.id, smallParcelRule: next })");
+    expect(page).toContain("const sure = await confirmAction({");
+  });
+  it("the bar names the customer's whole share of the batch", () => {
+    expect(page).toContain("estimate.smallParcelCustomerCbm");
+    expect(read("server/routers/packages.router.ts")).toContain("smallParcelCustomerCbm: priced.smallParcelCustomerCbm ?? null,");
+  });
+});
