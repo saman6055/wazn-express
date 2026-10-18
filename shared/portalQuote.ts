@@ -1,4 +1,5 @@
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "./chargeableWeight";
+import { smallParcelPrice } from "./parcelCost";
 
 /**
  * A shipping quote, worked the way the customer's calculator in the portal
@@ -9,7 +10,8 @@ import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "./chargeableWeight
  *   • Air: the larger of the scale and L×W×H ÷ divisor (shared
  *     chargeableWeight), times the rate per kg.
  *   • Sea: the volume, L×W×H ÷ 1,000,000 or typed directly, times the rate
- *     per m³.
+ *     per m³ - with the small-parcel rule (shared/parcelCost), quoted for a
+ *     parcel that comes alone (owner, 2026-10-18).
  *
  * Nothing else. The minimum kg and the sea surcharge in the calculator
  * settings are applied by no charge on the server, so a quote that used them
@@ -54,7 +56,7 @@ export function quoteShipping(
 
   if (input.shippingType === "sea") {
     const cbm = n(input.cbm) > 0 ? n(input.cbm) : L > 0 && W > 0 && H > 0 ? (L * W * H) / 1_000_000 : 0;
-    return { unit: "cbm", actualKg: n(input.weightKg), volumetricKg: 0, chargeableKg: 0, billedOnVolume: false, cbm, total: cbm * price };
+    return { unit: "cbm", actualKg: n(input.weightKg), volumetricKg: 0, chargeableKg: 0, billedOnVolume: false, cbm, total: smallParcelPrice(cbm * price, { on: true, customerTotalCbm: cbm }) };
   }
 
   const air = chargeableWeight({ weightKg: n(input.weightKg), lengthCm: L, widthCm: W, heightCm: H }, n(divisor) || DEFAULT_VOLUMETRIC_DIVISOR);

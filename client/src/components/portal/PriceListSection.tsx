@@ -7,6 +7,7 @@ import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { SMALL_PARCEL_CBM, SMALL_PARCEL_MIN_USD, smallParcelAutoPercent, smallParcelPrice } from "@shared/parcelCost";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -325,8 +326,8 @@ function ServiceCard({
 // charging rules:
 //   • Air (regular & irregular): chargeable kg = max(actual, volumetric),
 //     volumetric = L×W×H (cm) / 6000 (an 18×18×18 carton ≈ 1 kg), min 1 kg.
-//   • Sea: CBM = L×W×H / 1,000,000 (or entered directly). ≥ 0.25 CBM is
-//     charged CBM × rate; below 0.25 CBM the rate carries a +25% surcharge.
+//   • Sea: CBM = L×W×H / 1,000,000 (or entered directly) × rate, with the
+//     small-parcel rule (shared/parcelCost) as for a parcel that comes alone.
 // Estimates only — the disclaimer below the card still applies.
 // All ratios are admin-tunable from Portal Center → Prices (calc settings).
 // ---------------------------------------------------------------------------
@@ -404,7 +405,14 @@ function PriceCalculator({
 
   // ---- Sea: billed on volume outright, exactly as portal.db computes it ----
   const cbm = num(cbmDirect) > 0 ? num(cbmDirect) : volCm3 > 0 ? volCm3 / 1_000_000 : 0;
-  const seaTotal = cbm > 0 ? cbm * price : 0;
+  // A small sea parcel pays the same extra the office charges (owner,
+  // 2026-10-18: the customer should know it before sending). The calculator
+  // knows one parcel only, so it is quoted as one that comes alone - the most
+  // it can be; more goods in the same batch only lower it.
+  const seaPlain = cbm > 0 ? cbm * price : 0;
+  const seaTotal = smallParcelPrice(seaPlain, { on: true, customerTotalCbm: cbm });
+  const seaSmallPct = seaPlain > 0 ? Math.round(smallParcelAutoPercent(cbm)) : 0;
+  const seaAtMinimum = seaPlain > 0 && cbm < SMALL_PARCEL_CBM && Math.abs(seaTotal - SMALL_PARCEL_MIN_USD) < 0.005;
 
   const total = isSea ? seaTotal : airChargeable * price;
   const iqdTotal = iqdRate && total > 0 ? total * iqdRate : null;
@@ -660,6 +668,31 @@ function PriceCalculator({
                       ? pickLang(lang, { ku: "ئەوەی خۆت نووسیوتە", en: "As you entered it", ar: "كما أدخلته", zh: "按您输入的数值" })
                       : pickLang(lang, { ku: "لە ڕەهەندەکانتەوە دەرهێنراوە", en: "Worked out from your dimensions", ar: "محسوب من أبعادك", zh: "根据您的尺寸算出" })}
                   </div>
+                  {(seaSmallPct > 0 || seaAtMinimum) && (
+                    <div className={cn("text-[11px] font-semibold leading-snug", accent)} data-testid="calc-small-parcel">
+                      {seaAtMinimum
+                        ? pickLang(lang, {
+                            ku: `بارێکی زۆر بچووکە: کەمترین نرخ $${SMALL_PARCEL_MIN_USD}ـە.`,
+                            en: `A very small parcel: the least is $${SMALL_PARCEL_MIN_USD}.`,
+                            ar: `طرد صغير جداً: أقل سعر ${SMALL_PARCEL_MIN_USD}$.`,
+                            zh: `极小件：最低 $${SMALL_PARCEL_MIN_USD}。`,
+                          })
+                        : pickLang(lang, {
+                            ku: `بارێکی بچووکە (کەمتر لە ${SMALL_PARCEL_CBM} m³): \u2066+${seaSmallPct}%\u2069 زیاد دەکرێت.`,
+                            en: `A small parcel (under ${SMALL_PARCEL_CBM} m³): \u2066+${seaSmallPct}%\u2069 is added.`,
+                            ar: `طرد صغير (أقل من ${SMALL_PARCEL_CBM} م³): تُضاف \u2066+${seaSmallPct}%\u2069.`,
+                            zh: `小件（小于 ${SMALL_PARCEL_CBM} m³）：加收 ${seaSmallPct}%。`,
+                          })}
+                      <span className={cn("block font-normal", muted)}>
+                        {pickLang(lang, {
+                          ku: "ئەگەر چەند بارت لە هەمان باردا بێت، هەمووی پێکەوە حیساب دەکرێت و زیادەکە کەمتر دەبێت یان نامێنێت.",
+                          en: "If you have more goods in the same shipment, they are counted together and the extra is less or none.",
+                          ar: "إذا كان لديك بضائع أخرى في نفس الشحنة، تُحسب معاً فتقل الإضافة أو تزول.",
+                          zh: "同一批次有多件货时合并计算，加收会减少或取消。",
+                        })}
+                      </span>
+                    </div>
+                  )}
                 </>
               ) : (
                 <>
