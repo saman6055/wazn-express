@@ -1,3 +1,4 @@
+import { cartonVolumeText } from "@shared/parcelCost";
 /**
  * Delivery Box Print Utilities
  * Professional label and receipt printing for delivery boxes.
@@ -40,6 +41,8 @@ export interface BoxItemForPrint {
   /** Volume in CBM for sea items (null for air). Shown in place of weight on
    *  sea-batch receipts/labels. */
   volumeCbm?: string | number | null;
+  /** Cartons of one size under the tracking: the row reads "4 × 0.129 = 0.514 CBM". */
+  cartonCount?: number | null;
   /** This package's own shipping type. Lets a single row print CBM even when
    *  it sits in a mixed box. Falls back to the box unit when absent. */
   shippingType?: string | null;
@@ -140,7 +143,9 @@ function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
   if (item.itemType === "full_package") return "—";
   const sea = item.shippingType ? item.shippingType === "sea" : isSeaBox(box);
   return sea
-    ? `${formatNum(item.volumeCbm, 3)} CBM`
+    ? (Number(item.cartonCount) > 1
+        ? `${cartonVolumeText(item.volumeCbm, item.cartonCount)} CBM`
+        : `${formatNum(item.volumeCbm, 3)} CBM`)
     : `${formatNum(item.weightKg)} kg`;
 }
 

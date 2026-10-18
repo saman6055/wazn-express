@@ -20,6 +20,7 @@ import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import { isRecentEntry } from "@shared/lastEntry";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { cartonCountOf, MAX_CARTONS } from "@shared/parcelCost";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
@@ -103,6 +104,8 @@ export default function QuickRegister() {
   const [lengthCm, setLengthCm] = useState("");
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
+  // Sea: how many cartons of the size above (owner, 2026-10-17). One means one.
+  const [cartonCount, setCartonCount] = useState("1");
   const [batchId, setBatchId] = useState<string>("");
   const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
   const [isUnclaimed, setIsUnclaimed] = useState(false);
@@ -160,6 +163,8 @@ export default function QuickRegister() {
     orderLinked: boolean;
     /** As they were when it was opened, to tell whether they changed. */
     photos: string[];
+    /** How many cartons it was registered as (sea). */
+    cartonCount?: number;
   } | null>(null);
   const [openingCorrection, setOpeningCorrection] = useState(false);
   /** The form as it stood, so closing a correction hands the screen back. */
@@ -531,6 +536,12 @@ export default function QuickRegister() {
     if (Number.isFinite(typed) && typed > 0) return typed;
     return calculatedCbm;
   }, [calculatedCbm, directCbm]);
+
+  /** Sea only: the cartons of that size, and all of them together. */
+  const cartons = shippingType === "sea" ? cartonCountOf(cartonCount) : 1;
+  const totalCbm = cbm * cartons;
+  /** Sent only when there is more than one carton - one carton is what every form already means. */
+  const cartonsSent = cartons > 1 ? cartons : undefined;
   
   // The same rule the server prices with: a volume given stands for the
   // sides, and one cubic metre is 1,000,000 cm³ (@shared/chargeableWeight).
@@ -666,7 +677,8 @@ export default function QuickRegister() {
     widthCm: widthCm || undefined,
     heightCm: heightCm || undefined,
     volumeCbm: directCbm || undefined,
-  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm]);
+    cartonCount: cartonsSent,
+  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm, cartonsSent]);
 
   // A keystroke in the weight field should not fire a request per digit.
   const [debouncedFacts, setDebouncedFacts] = useState(estimateFacts);
@@ -811,8 +823,9 @@ export default function QuickRegister() {
    * on the bar, in the weight box or in the billed chip beside it. Printing
    * it again is how a bar of four facts became a bar of seven.
    */
+  // With the small-parcel extra when the batch adds one (shared/parcelCost).
   const priceWorking = estimate?.rate && estimatedPrice > 0
-    ? `× ${Number(estimate.rate).toFixed(2)}`
+    ? `× ${Number(estimate.rate).toFixed(2)}${estimate.smallParcelPercent ? ` +${estimate.smallParcelPercent}%` : ""}`
     : null;
   
   const [, setLocation] = useLocation();
@@ -1130,6 +1143,7 @@ export default function QuickRegister() {
       setWidthCm(last.widthCm);
       setHeightCm(last.heightCm);
       setDirectCbm(last.typedCbm);
+      setCartonCount(String(last.cartonCount ?? 1));
       setDescription(last.description);
       setCategoryId(last.categoryId ? String(last.categoryId) : "");
       setPhotos(last.photos);
@@ -1142,7 +1156,7 @@ export default function QuickRegister() {
         trackingNumber: last.trackingNumber ?? "",
         customerName: last.customerCode || last.customerName || t("quickRegister.unclaimed"),
       }));
-      setCorrecting({ id: last.id, packageCode: last.packageCode, orderLinked: last.orderLinked, photos: last.photos });
+      setCorrecting({ id: last.id, packageCode: last.packageCode, orderLinked: last.orderLinked, photos: last.photos, cartonCount: last.cartonCount ?? 1 });
       // The weight is what is usually wrong, so that is where the caret goes.
       setTimeout(() => focusWeight(), 80);
     } catch (error) {
@@ -1181,6 +1195,8 @@ export default function QuickRegister() {
       widthCm,
       heightCm,
       volumeCbm: directCbm,
+      // One carton now, where there were several: say so, or the count stays.
+      cartonCount: cartonsSent ?? ((correcting.cartonCount ?? 1) > 1 ? 1 : undefined),
       description,
       categoryId: categoryId ? parseInt(categoryId) : null,
       ...(photosChanged ? { photos } : {}),
@@ -1202,6 +1218,7 @@ export default function QuickRegister() {
     setLengthCm("");
     setWidthCm("");
     setHeightCm("");
+    setCartonCount("1");
     setCategoryId("");
     setDescription("");
     setDirectCbm("");
@@ -1233,6 +1250,7 @@ export default function QuickRegister() {
     setLengthCm("");
     setWidthCm("");
     setHeightCm("");
+    setCartonCount("1");
     setBatchId("");
     setOriginWarehouseId(warehouses?.[0]?.id ?? null);
     setShippingType("air_regular");
@@ -1314,6 +1332,7 @@ export default function QuickRegister() {
       widthCm: widthCm || undefined,
       heightCm: heightCm || undefined,
       volumeCbm: directCbm || undefined,
+      cartonCount: cartonsSent,
       shippingType,
       description: description || undefined,
       batchId: batchId && batchId !== "none" ? parseInt(batchId) : undefined,
@@ -2397,7 +2416,7 @@ export default function QuickRegister() {
                       </div>
                       <span className="text-base font-bold text-cyan-700 dark:text-cyan-400">{t("quickRegister.stepDimensionsSea")}</span>
                     </div>
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                    <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                       <div className="space-y-1">
                         <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.length")}</Label>
                         <div className="relative" dir="ltr">
@@ -2450,16 +2469,45 @@ export default function QuickRegister() {
                           />
                         </div>
                       </div>
+                      {/* Cartons of this one size under the tracking (owner,
+                          2026-10-17): the size is typed once. */}
+                      <div className="space-y-1">
+                        <Label htmlFor="qr-carton-count" className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">
+                          {pickLang(language, { ku: "عەدەد (کارتۆن)", en: "Cartons", ar: "عدد الكراتين", zh: "箱数" })}
+                        </Label>
+                        <div className="relative" dir="ltr">
+                          <Input
+                            id="qr-carton-count"
+                            type="number"
+                            min={1}
+                            max={MAX_CARTONS}
+                            step={1}
+                            inputMode="numeric"
+                            value={cartonCount}
+                            onChange={(e) => setCartonCount(e.target.value)}
+                            onBlur={() => setCartonCount(String(cartonCountOf(cartonCount)))}
+                            className="h-11 text-base font-mono font-bold text-center"
+                            data-testid="qr-carton-count"
+                          />
+                        </div>
+                      </div>
                     </div>
                     {/* CBM Result */}
                     <div className="mt-4 p-4 bg-cyan-50 dark:bg-cyan-950/30 rounded-xl border border-cyan-200 dark:border-cyan-900/50">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <Ship className="h-5 w-5 text-cyan-600 dark:text-cyan-400" />
-                          <span className="text-sm text-cyan-700 dark:text-cyan-300">{t("quickRegister.fromDimensions")}: <strong>{calculatedCbm.toFixed(4)} m³</strong></span>
+                          {cartons > 1 ? (
+                            <span className="text-sm text-cyan-700 dark:text-cyan-300" data-testid="qr-carton-sum">
+                              {pickLang(language, { ku: "هەر کارتۆنێک", en: "Each carton", ar: "كل كرتونة", zh: "每箱" })}{" "}
+                              <strong><bdi dir="ltr">{cbm.toFixed(4)} m³ × {cartons}</bdi></strong>
+                            </span>
+                          ) : (
+                            <span className="text-sm text-cyan-700 dark:text-cyan-300">{t("quickRegister.fromDimensions")}: <strong>{calculatedCbm.toFixed(4)} m³</strong></span>
+                          )}
                         </div>
                         <div className="p-3 bg-card rounded-lg shadow-sm border">
-                          <span className="font-bold text-xl text-cyan-800 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
+                          <span className="font-bold text-xl text-cyan-800 dark:text-cyan-300">{totalCbm.toFixed(4)} m³</span>
                         </div>
                       </div>
                     </div>
@@ -2630,7 +2678,7 @@ export default function QuickRegister() {
                     {shippingType === "sea" && cbm > 0 && (
                       <div className="flex flex-col gap-1 py-2.5 px-3 bg-cyan-50 dark:bg-cyan-950/30 rounded-xl border border-cyan-200 dark:border-cyan-900/50 min-w-0">
                         <span className="text-xs text-cyan-700 dark:text-cyan-400">CBM</span>
-                        <span className="font-mono font-bold text-cyan-900 dark:text-cyan-300">{cbm.toFixed(4)} m³</span>
+                        <span className="font-mono font-bold text-cyan-900 dark:text-cyan-300">{totalCbm.toFixed(4)} m³</span>
                       </div>
                     )}
 
@@ -2970,7 +3018,7 @@ export default function QuickRegister() {
                   <span className="text-[11px] text-muted-foreground">
                     {pickLang(language, { ku: "قەبارە", en: "Volume", ar: "الحجم", zh: "体积" })}
                   </span>
-                  <span className="font-mono text-sm font-bold" dir="ltr">{cbm.toFixed(3)}</span>
+                  <span className="font-mono text-sm font-bold" dir="ltr">{totalCbm.toFixed(3)}</span>
                   <span className="text-[10px] text-muted-foreground">
                     {pickLang(language, { ku: "م³", en: "m³", ar: "م³", zh: "m³" })}
                   </span>

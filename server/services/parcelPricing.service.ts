@@ -1,6 +1,7 @@
 import * as db from "../db";
 import { billingUnit } from "@shared/batchRate";
 import { parcelCost, type ParcelCostInput } from "@shared/parcelCost";
+import { smallParcelExtraPercent } from "@shared/parcelCost";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 
 /**
@@ -49,6 +50,8 @@ export interface ResolvedParcelCost {
   /** Set only when the route rule decided it, for the audit column. */
   pricingRuleId?: number;
   billedOnVolume: boolean;
+  /** The batch's small-parcel percent when it was added to this price, else 0. */
+  smallParcelPercent?: number;
 }
 
 /** The install's air divisor, or IATA's. Read once per call, not per parcel. */
@@ -97,7 +100,9 @@ export async function resolveParcelCost(
       const batchUnit = billingUnit(batch.shippingType);
       const resolved = await db.getBatchRateForCustomer(facts.batchId, facts.customerId, { unit: batchUnit });
       if (resolved.rate > 0) {
-        const { amountUsd, billedOnVolume } = parcelCost({ ...measure, unit: batchUnit, rate: resolved.rate });
+        // A small sea parcel pays the batch's extra on top (shared/parcelCost).
+        const smallParcelPercent = batchUnit === "cbm" ? smallParcelExtraPercent(measure.volumeCbm, batch.smallParcelSurchargePercent) : 0;
+        const { amountUsd, billedOnVolume } = parcelCost({ ...measure, unit: batchUnit, rate: resolved.rate, smallParcelPercent });
         if (amountUsd > 0) {
           return {
             amountUsd,
@@ -106,6 +111,7 @@ export async function resolveParcelCost(
             unit: batchUnit,
             source: "batch",
             billedOnVolume,
+            smallParcelPercent,
           };
         }
       }

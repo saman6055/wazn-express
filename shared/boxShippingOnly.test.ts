@@ -82,7 +82,7 @@ describe("the box shows it, and only shows it", () => {
     expect(db).toContain("hasOrder: boolean;");
     expect(db).toContain("Boolean(item.trackingNumber && (fpsByTracking.get(item.trackingNumber) || []).length > 0);");
     // Every way an item is returned carries the answer.
-    expect(db.split("shippingType, hasOrder, orderNumbers, orderNote }").length - 1).toBe(3);
+    expect(db.split("shippingType, cartonCount, hasOrder, orderNumbers, orderNote }").length - 1).toBe(3);
   });
 
   it("the panel names the parcels, each one copyable and openable", () => {

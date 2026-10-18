@@ -1,3 +1,4 @@
+import { smallParcelExtraPercent } from "@shared/parcelCost";
 import { getDb } from './connection';
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { generateTransactionNumber } from "./utils.db";
@@ -209,6 +210,7 @@ const BATCH_LIST_COLUMNS = {
   costPerCbm: batches.costPerCbm,
   pricePerKg: batches.pricePerKg,
   pricePerCbm: batches.pricePerCbm,
+  smallParcelSurchargePercent: batches.smallParcelSurchargePercent,
   useTieredPricing: batches.useTieredPricing,
   /**
    * The edit dialog is filled from a row of THIS query, not from a fresh
@@ -1239,7 +1241,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     : Number(batchData.pricePerKg) || 0;
   const isFinalized = batchData.status === 'delivered' || batchData.status === 'closed';
 
-  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number }> = {};
+  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; extraCbm?: number }> = {};
 
   for (const pkg of batchPackages) {
     if (!pkg.customerId) continue;
@@ -1262,6 +1264,9 @@ export async function getBatchFinancialSummary(batchId: number) {
     customerBreakdown[pkg.customerId].weight += actualKg;
     customerBreakdown[pkg.customerId].chargeableWeight += chargeableKg;
     customerBreakdown[pkg.customerId].cbm += Number(pkg.volumeCbm) || 0;
+    // A small sea parcel's extra, as the cubic metres it is paid as (shared/parcelCost).
+    const extraPct = isSea ? smallParcelExtraPercent(pkg.volumeCbm, batchData.smallParcelSurchargePercent) : 0;
+    if (extraPct > 0) customerBreakdown[pkg.customerId].extraCbm = (customerBreakdown[pkg.customerId].extraCbm ?? 0) + (Number(pkg.volumeCbm) || 0) * extraPct / 100;
     // Stored revenue accumulator — only consulted when the batch is finalized.
     customerBreakdown[pkg.customerId].revenue += Number(pkg.calculatedCostUsd) || 0;
   }
@@ -1294,7 +1299,7 @@ export async function getBatchFinancialSummary(batchId: number) {
         batchPricePerCbm: unit === 'cbm' ? batchDefaultRate : null,
       });
 
-      customerEntry.revenue = rate * customerTotal;
+      customerEntry.revenue = rate * (customerTotal + (unit === 'cbm' ? customerEntry.extraCbm ?? 0 : 0));
     }
   }
 
@@ -1842,5 +1847,6 @@ export async function pastBatchRates() {
     costPerCbm: batches.costPerCbm,
     pricePerKg: batches.pricePerKg,
     pricePerCbm: batches.pricePerCbm,
+  smallParcelSurchargePercent: batches.smallParcelSurchargePercent,
   }).from(batches).limit(5000);
 }

@@ -184,7 +184,8 @@ describe("the whole job on one screen", () => {
     // The rate behind the price — the multiplier, not the number it
     // multiplies, which is in the weight box beside it.
     expect(bar).toContain("{priceWorking}");
-    expect(page).toContain("`× ${Number(estimate.rate).toFixed(2)}`");
+    // With the small-parcel extra beside the rate when a sea batch adds one.
+    expect(page).toContain("`× ${Number(estimate.rate).toFixed(2)}${estimate.smallParcelPercent ? ` +${estimate.smallParcelPercent}%` : \"\"}`");
   });
 
   it("the bar shouts when a parcel has no owner", () => {

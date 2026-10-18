@@ -11,6 +11,7 @@ import { selfOrderConditions } from "./selfOrder.filter";
 import { isSelfOrder } from "../lib/selfOrder";
 import { batchChargesOnPricing } from "../lib/chargePolicy";
 import { chargeableWeight } from "@shared/chargeableWeight";
+import { withSmallParcelExtra } from "@shared/parcelCost";
 import { appLogger } from "../utils/logger";
 
 /**
@@ -49,11 +50,14 @@ export function parcelShippingCharge(
   isSea: boolean,
   rate: number,
   divisor: number,
+  /** The batch's small-parcel percent (shared/parcelCost); sea only. */
+  smallParcelPercent: number | string | null = 0,
 ): { quantity: number; amount: number } {
   const quantity = isSea
     ? Number(pkg.volumeCbm ?? 0) || 0
     : chargeableWeight(pkg, divisor).chargeableKg;
-  const amount = Math.round(quantity * rate * 100) / 100;
+  const base = Math.round(quantity * rate * 100) / 100;
+  const amount = isSea ? withSmallParcelExtra(base, quantity, smallParcelPercent) : base;
   return { quantity, amount };
 }
 
@@ -147,7 +151,7 @@ export async function shippingChargeDueNow(
   if (!(rate > 0)) return facts;
 
   const divisor = await getVolumetricDivisor();
-  const { quantity, amount } = parcelShippingCharge(pkg, isSea, rate, divisor);
+  const { quantity, amount } = parcelShippingCharge(pkg, isSea, rate, divisor, batch.smallParcelSurchargePercent);
   return { ...facts, due: amount > 0, amount, rate, quantity };
 }
 
@@ -191,7 +195,7 @@ export async function chargeBatchShippingIfDue(
       if (!(rate > 0)) continue;
 
       const priced = parcels
-        .map(pkg => ({ pkg, ...parcelShippingCharge(pkg, isSea, rate, divisor) }))
+        .map(pkg => ({ pkg, ...parcelShippingCharge(pkg, isSea, rate, divisor, batch.smallParcelSurchargePercent) }))
         .filter(p => p.amount > 0);
       if (priced.length === 0) continue;
 

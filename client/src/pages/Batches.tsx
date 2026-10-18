@@ -532,6 +532,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Selling price
       pricePerKg: formData.get("pricePerKg") as string || undefined,
       pricePerCbm: formData.get("pricePerCbm") as string || undefined,
+      smallParcelSurchargePercent: (formData.get("smallParcelSurchargePercent") as string | null) || undefined,
       // Tiered pricing
       useTieredPricing: useTieredPricing,
       pricingTiers: useTieredPricing ? pricingTiers : undefined,
@@ -645,6 +646,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Selling price
       pricePerKg: formData.get("pricePerKg") as string || undefined,
       pricePerCbm: formData.get("pricePerCbm") as string || undefined,
+      // Emptied on purpose takes the extra off; absent (an air batch) leaves it.
+      smallParcelSurchargePercent: clearable("smallParcelSurchargePercent"),
       // Tiered pricing / customer pricing: sent ONLY once the stored lists
       // have actually loaded. The server replaces the whole list on every
       // update, so a save racing the load used to overwrite somebody's
@@ -1192,6 +1195,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                       <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                       <Input name="pricePerCbm" type="number" step="0.01" className="pl-7" placeholder="e.g., 150.00" />
                                     </div>
+                                    <SmallParcelPercentField />
                                   </>
                                 )}
                               </div>
@@ -2716,6 +2720,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
                                   <Input name="pricePerCbm" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.pricePerCbm || ""} />
                                 </div>
+                                <SmallParcelPercentField defaultValue={editingBatch.smallParcelSurchargePercent} />
                               </>
                             )}
                           </div>
@@ -3001,5 +3006,50 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         </Dialog>
       </div>
     </DashboardLayout>
+  );
+}
+
+/**
+ * A sea batch's extra for small parcels (owner, 2026-10-18): «بۆ ئەوانەی
+ * بارەکانیان لە خوار 0.25 سی بی ئێمە … سەتا یەک هەتا سەتا سەت لەسەر نرخی باچ
+ * زیاتر بکەم». Empty means none. Applied by the server, once, in
+ * shared/parcelCost - this only asks for the figure.
+ */
+function SmallParcelPercentField({ defaultValue }: { defaultValue?: string | number | null }) {
+  const { language } = useTranslation();
+  return (
+    <div className="mt-3 space-y-1" data-testid="batch-small-parcel-percent">
+      <Label htmlFor="smallParcelSurchargePercent">
+        {pickLang(language, {
+          ku: "بەریدی بچووک (کەمتر لە 0.25 m³)",
+          en: "Small parcels (under 0.25 m³)",
+          ar: "الطرود الصغيرة (أقل من 0.25 م³)",
+          zh: "小件（小于 0.25 m³）",
+        })}
+      </Label>
+      <div className="relative" dir="ltr">
+        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">+</span>
+        <Input
+          id="smallParcelSurchargePercent"
+          name="smallParcelSurchargePercent"
+          type="number"
+          min={0}
+          max={100}
+          step="1"
+          className="pl-7 pr-8"
+          placeholder="0"
+          defaultValue={defaultValue == null || Number(defaultValue) === 0 ? "" : String(Number(defaultValue))}
+        />
+        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground">%</span>
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {pickLang(language, {
+          ku: "لەسەر نرخی باچ زیاد دەکرێت بۆ هەر تراکینگێک کە کۆی CBMەکەی کەمترە لە 0.25. بەتاڵ = هیچ.",
+          en: "Added to the batch rate for any tracking whose total CBM is under 0.25. Empty = none.",
+          ar: "يُضاف إلى سعر الدفعة لكل رقم تتبع مجموع حجمه أقل من 0.25. فارغ = لا شيء.",
+          zh: "总体积小于 0.25 m³ 的运单在批次价上加收此比例。留空 = 不加。",
+        })}
+      </p>
+    </div>
   );
 }

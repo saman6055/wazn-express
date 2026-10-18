@@ -3193,6 +3193,13 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "batches.shipmentTrackings", sql: "ALTER TABLE batches ADD COLUMN shipmentTrackings JSON NULL" },
   { name: "batches.cartonCount", sql: "ALTER TABLE batches ADD COLUMN cartonCount INT NULL" },
 
+  // Sea, owner 2026-10-17/18: how many cartons of one size a parcel is, and the
+  // percent a batch adds to a parcel under 0.25 m³ (shared/parcelCost).
+  // Additive and nullable: a parcel with none is one carton, a batch with none
+  // adds nothing.
+  { name: "packages.cartonCount", sql: "ALTER TABLE packages ADD COLUMN cartonCount INT NULL" },
+  { name: "batches.smallParcelSurchargePercent", sql: "ALTER TABLE batches ADD COLUMN smallParcelSurchargePercent DECIMAL(5,2) NULL" },
+
   // A message either of the two can take back out of the conversation. Struck
   // out, not erased — see the schema note beside these columns.
   { name: "staffMessages.deletedAt", sql: "ALTER TABLE staffMessages ADD COLUMN deletedAt TIMESTAMP NULL" },

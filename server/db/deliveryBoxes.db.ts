@@ -1,3 +1,4 @@
+import { withSmallParcelExtra } from "@shared/parcelCost";
 import { and, desc, eq, getTableColumns, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { withFix } from "@shared/fixAdvice";
 import { getDb } from "./connection";
@@ -625,6 +626,8 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
   // source has no measurement.
   volumeCbm: string | null;
   shippingType: string | null;
+  /** Cartons of one size under the tracking (shared/parcelCost); null is one. */
+  cartonCount: number | null;
 };
 
 /**
@@ -783,20 +786,20 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
   // FP order → first FP order sharing the tracking. Sea packages carry the
   // meaningful number in `volumeCbm`; air packages leave it null and fall
   // back to `weightKg` on the receipt.
-  const measureFor = (item: typeof items[number]): { volumeCbm: string | null; shippingType: string | null } => {
+  const measureFor = (item: typeof items[number]): { volumeCbm: string | null; shippingType: string | null; cartonCount: number | null } => {
     if (item.packageId) {
       const p = pkgById.get(item.packageId);
-      if (p) return { volumeCbm: (p as any).volumeCbm ?? null, shippingType: (p as any).shippingType ?? null };
+      if (p) return { volumeCbm: (p as any).volumeCbm ?? null, shippingType: (p as any).shippingType ?? null, cartonCount: (p as any).cartonCount ?? null };
     }
     let fp = item.fullPackageOrderId ? fpById.get(item.fullPackageOrderId) : undefined;
     if (!fp && item.trackingNumber) fp = (fpsByTracking.get(item.trackingNumber) || [])[0];
-    if (fp) return { volumeCbm: (fp as any).volumeCbm ?? null, shippingType: (fp as any).shippingType ?? null };
-    return { volumeCbm: null, shippingType: null };
+    if (fp) return { volumeCbm: (fp as any).volumeCbm ?? null, shippingType: (fp as any).shippingType ?? null, cartonCount: null };
+    return { volumeCbm: null, shippingType: null, cartonCount: null };
   };
 
   return items.map((item): BoxItemWithAdvance => {
     const productImage = imageFor(item);
-    const { volumeCbm, shippingType } = measureFor(item);
+    const { volumeCbm, shippingType, cartonCount } = measureFor(item);
 
     // The platform order numbers beside the tracking (owner, 2026-09-17), by
     // both routes to an order, as the note below is.
@@ -830,7 +833,7 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
 
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, hasOrder, orderNumbers, orderNote };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, cartonCount, hasOrder, orderNumbers, orderNote };
     }
 
     // Tracking-based path — sum every linked order's advance, but skip
@@ -838,10 +841,10 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
       const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
-      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, hasOrder, orderNumbers, orderNote };
+      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, cartonCount, hasOrder, orderNumbers, orderNote };
     }
 
-    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, hasOrder, orderNumbers, orderNote };
+    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, cartonCount, hasOrder, orderNumbers, orderNote };
   });
 }
 
@@ -1184,7 +1187,8 @@ async function buildBoxItemValuesFromPackage(
   let freshShippingCost = 0;
   if (batchIsSea && batchPricePerCbm > 0) {
     const pkgCbm = parseFloat((pkg as any).volumeCbm?.toString() || '0') || 0;
-    freshShippingCost = pkgCbm * batchPricePerCbm;
+    // A small sea parcel pays the batch's extra (shared/parcelCost).
+    freshShippingCost = withSmallParcelExtra(pkgCbm * batchPricePerCbm, pkgCbm, batchRow.smallParcelSurchargePercent);
   } else if (batchPricePerKg > 0) {
     freshShippingCost = chargeableKgNum * batchPricePerKg;
   }

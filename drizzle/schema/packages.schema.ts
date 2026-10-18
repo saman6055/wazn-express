@@ -20,6 +20,9 @@ export const packages = mysqlTable("packages", {
   widthCm: decimal("widthCm", { precision: 10, scale: 2 }),
   heightCm: decimal("heightCm", { precision: 10, scale: 2 }),
   volumeCbm: decimal("volumeCbm", { precision: 10, scale: 6 }),
+  // Cartons of one size under this tracking: the sides are one carton's, the
+  // volume is all of them (shared/parcelCost: cartonVolume). Owner, 2026-10-17.
+  cartonCount: int("cartonCount"),
   shippingType: mysqlEnum("shippingType", ["air_regular", "air_irregular", "sea"]).notNull(),
   description: text("description"),
   photos: json("photos").$type<string[]>(),

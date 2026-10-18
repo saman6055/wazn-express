@@ -80,6 +80,8 @@ export interface ParcelCorrectionFacts {
   widthCm: string | null;
   heightCm: string | null;
   volumeCbm: string | null;
+  /** Cartons of one size; undefined leaves the count as it is (shared/parcelCost). */
+  cartonCount?: number | null;
   description: string | null;
   categoryId: number | null;
   /** Undefined leaves the photographs as they are. */
@@ -506,6 +508,7 @@ export async function applyParcelCorrection(
       widthCm: facts.widthCm,
       heightCm: facts.heightCm,
       volumeCbm: facts.volumeCbm,
+        ...(facts.cartonCount !== undefined ? { cartonCount: facts.cartonCount } : {}),
       description: facts.description,
       categoryId: facts.categoryId,
       calculatedCostUsd: facts.calculatedCostUsd,

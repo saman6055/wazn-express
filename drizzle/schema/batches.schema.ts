@@ -70,6 +70,8 @@ export const batches = mysqlTable("batches", {
   // Selling price fields - default price per batch
   pricePerKg: decimal("pricePerKg", { precision: 10, scale: 2 }), // Default selling price per KG (for air_regular)
   pricePerCbm: decimal("pricePerCbm", { precision: 10, scale: 2 }), // Default selling price per CBM
+  // Percent added to a sea parcel under 0.25 m³ (shared/parcelCost: smallParcelExtra). Owner, 2026-10-18.
+  smallParcelSurchargePercent: decimal("smallParcelSurchargePercent", { precision: 5, scale: 2 }),
   
   // Tiered pricing flag
   useTieredPricing: boolean("useTieredPricing").default(false).notNull(), // True for air_irregular and sea

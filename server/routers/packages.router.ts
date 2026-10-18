@@ -14,7 +14,7 @@ import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
-import { affectsCost } from "@shared/parcelCost";
+import { affectsCost, cartonCountOf, cartonVolume, MAX_CARTONS, withSmallParcelExtra } from "@shared/parcelCost";
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
 import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView } from "../lib/correctRegisteredParcel";
@@ -516,6 +516,9 @@ export const packagesRouter = router({
         widthCm: z.string().max(50).optional(),
         heightCm: z.string().max(50).optional(),
         volumeCbm: z.string().max(50).optional(), // Direct CBM input for sea shipping
+        // Cartons of one size: the sides and the volume above are ONE carton's
+        // when this is given (shared/parcelCost: cartonVolume).
+        cartonCount: z.number().int().min(1).max(MAX_CARTONS).optional(),
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
         description: z.string().max(1000).optional(),
         photos: z.array(z.string().max(2048)).optional(),
@@ -690,6 +693,9 @@ export const packagesRouter = router({
           const vol = (parseFloat(input.lengthCm) * parseFloat(input.widthCm) * parseFloat(input.heightCm)) / 1000000;
           volumeCbm = vol.toFixed(6);
         }
+        // Several cartons of that size: the volume is all of them.
+        const cartons = input.cartonCount ? cartonVolume(input) : null;
+        if (cartons && cartons.perCartonCbm > 0) volumeCbm = cartons.totalCbm.toFixed(6);
 
         // Air is billed on the greater of scale weight and volumetric weight;
         // sea on volume outright, so it never enters this comparison.
@@ -763,6 +769,7 @@ export const packagesRouter = router({
               widthCm: input.widthCm,
               heightCm: input.heightCm,
               volumeCbm,
+              cartonCount: cartons && cartons.count > 1 ? cartons.count : undefined,
               shippingType: input.shippingType,
               description: input.description,
               photos: input.photos,
@@ -995,6 +1002,7 @@ export const packagesRouter = router({
         widthCm: z.string().max(50).optional(),
         heightCm: z.string().max(50).optional(),
         volumeCbm: z.string().max(50).optional(),
+        cartonCount: z.number().int().min(1).max(MAX_CARTONS).optional(),
         description: z.string().max(1000).optional(),
         categoryId: idSchema.nullish(),
         // Sent only when the photographs changed; absent leaves them alone.
@@ -1025,6 +1033,7 @@ export const packagesRouter = router({
         widthCm: z.string().max(50).optional(),
         heightCm: z.string().max(50).optional(),
         volumeCbm: z.string().max(50).optional(),
+        cartonCount: z.number().int().min(1).max(MAX_CARTONS).optional(),
       }))
       .query(async ({ input }) => {
         // Sea with dimensions but no typed CBM: derive it exactly as the
@@ -1034,6 +1043,9 @@ export const packagesRouter = router({
           const vol = (parseFloat(input.lengthCm) * parseFloat(input.widthCm) * parseFloat(input.heightCm)) / 1000000;
           volumeCbm = vol.toFixed(6);
         }
+        // And several cartons, the same way the register counts them.
+        const cartons = input.cartonCount ? cartonVolume(input) : null;
+        if (cartons && cartons.perCartonCbm > 0) volumeCbm = cartons.totalCbm.toFixed(6);
         const priced = await resolveParcelCost({
           customerId: input.customerId,
           batchId: input.batchId,
@@ -1050,6 +1062,10 @@ export const packagesRouter = router({
           rate: priced.rate,
           unit: priced.unit,
           source: priced.source,
+          // The volume the price is for, and the batch's small-parcel extra
+          // when it was added - so the counter can show both.
+          volumeCbm: volumeCbm ? Number(volumeCbm) : null,
+          smallParcelPercent: priced.smallParcelPercent ?? 0,
         };
       }),
     // Get unclaimed packages
@@ -1520,7 +1536,8 @@ export const packagesRouter = router({
                 // Calculate charge based on unit
                 if (pricePerUnit > 0) {
                   if (unit === 'cbm' && pkg.volumeCbm) {
-                    chargeAmount = pricePerUnit * parseFloat(pkg.volumeCbm);
+                    // A small sea parcel pays the batch's extra (shared/parcelCost).
+                    chargeAmount = withSmallParcelExtra(pricePerUnit * parseFloat(pkg.volumeCbm), pkg.volumeCbm, batch.smallParcelSurchargePercent);
                   } else if (unit === 'kg') {
                     // Use chargeable weight (max of actual weight and volumetric weight)
                     const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
@@ -1615,12 +1632,14 @@ export const packagesRouter = router({
                     // Calculate shipping cost based on pricing rules
                     let pricePerUnit = 0;
                     let unit: 'kg' | 'cbm' = 'kg';
+                    let smallParcelPercent: string | null = null;
                     
                     // Try batch-based pricing first
                     if (pkg.batchId) {
                       const batch = await db.getBatchById(pkg.batchId);
                       if (batch) {
                         unit = batch.shippingType === 'sea' ? 'cbm' : 'kg';
+                        smallParcelPercent = batch.smallParcelSurchargePercent ?? null;
                         if (pkg.customerId) {
                           // Same order as the invoice — this figure feeds the
                           // Full Package profit, so a rate that disagreed with
@@ -1659,7 +1678,7 @@ export const packagesRouter = router({
                     // Calculate shipping cost
                     if (pricePerUnit > 0) {
                       if (unit === 'cbm' && pkg.volumeCbm) {
-                        shippingCost = pricePerUnit * parseFloat(pkg.volumeCbm);
+                        shippingCost = withSmallParcelExtra(pricePerUnit * parseFloat(pkg.volumeCbm), pkg.volumeCbm, smallParcelPercent);
                       } else if (unit === 'kg') {
                         // Use chargeable weight (max of actual weight and volumetric weight)
                         const actualKg = parseFloat(pkg.weightKg?.toString() || '0');
@@ -1737,7 +1756,10 @@ export const packagesRouter = router({
           updateData.volumeCbm = inputVolumeCbm;
         } else if (data.lengthCm && data.widthCm && data.heightCm) {
           const volumeCbm = (parseFloat(data.lengthCm) * parseFloat(data.widthCm) * parseFloat(data.heightCm)) / 1000000;
-          updateData.volumeCbm = volumeCbm.toFixed(6);
+          // The sides are one carton's; a parcel of several cartons is all of
+          // them (shared/parcelCost: cartonVolume).
+          const cartons = cartonCountOf((await db.getPackageById(id))?.cartonCount);
+          updateData.volumeCbm = (volumeCbm * cartons).toFixed(6);
         }
         
         // Handle photos

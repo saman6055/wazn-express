@@ -14,6 +14,14 @@ import {
 } from "@shared/parcelCorrection";
 import type { RepriceReport } from "@shared/parcelReprice";
 import { appLogger } from "../utils/logger";
+import { cartonCountOf, cartonVolume } from "@shared/parcelCost";
+
+/** A parcel as one of its cartons: the volume divided by the count. */
+function perCartonOf<T extends { volumeCbm?: unknown; cartonCount?: number | null }>(pkg: T): T {
+  const count = cartonCountOf(pkg.cartonCount);
+  const stored = Number(pkg.volumeCbm ?? 0) || 0;
+  return count > 1 && stored > 0 ? { ...pkg, volumeCbm: (stored / count).toFixed(6) } : pkg;
+}
 
 /**
  * A registered parcel put right, and its money with it (owner, 2026-10-05).
@@ -51,6 +59,8 @@ export interface CorrectionInput {
   heightCm?: string;
   /** The volume typed in, as on the register screen. Empty lets the sides decide. */
   volumeCbm?: string;
+  /** Cartons of one size: the sides and the typed volume are ONE carton's when given. */
+  cartonCount?: number;
   description?: string;
   categoryId?: number | null;
   /** Sent only when the photographs changed. */
@@ -73,6 +83,7 @@ export interface LastRegistrationView {
   heightCm: string;
   /** What belongs in the CBM box: empty when the sides produced the volume. */
   typedCbm: string;
+  cartonCount: number;
   description: string;
   categoryId: number | null;
   photos: string[];
@@ -110,7 +121,9 @@ export async function lastRegistrationView(userId: number): Promise<LastRegistra
     lengthCm: plainNumber(pkg.lengthCm, 2),
     widthCm: plainNumber(pkg.widthCm, 2),
     heightCm: plainNumber(pkg.heightCm, 2),
-    typedCbm: typedCbmOf(pkg),
+    // One carton's typed volume, beside how many there are: the form multiplies again.
+    typedCbm: typedCbmOf(perCartonOf(pkg)),
+    cartonCount: cartonCountOf(pkg.cartonCount),
     description: pkg.description ?? "",
     categoryId: pkg.categoryId ?? null,
     photos: await db.getPackagePhotos(pkg.id),
@@ -150,6 +163,7 @@ interface PricedFacts {
   widthCm: string | null;
   heightCm: string | null;
   volumeCbm: string | null;
+  cartonCount?: number | null;
 }
 
 /** The rest of the row a correction writes: nothing here is behind the price. */
@@ -322,7 +336,14 @@ export async function correctLastRegistration(actor: CorrectionActor, input: Cor
     widthCm: storedMeasure(input.widthCm),
     heightCm: storedMeasure(input.heightCm),
     volumeCbm: storedVolumeCbm(input.volumeCbm, input.lengthCm, input.widthCm, input.heightCm),
+    cartonCount: undefined as number | null | undefined,
   };
+  // Several cartons of that size: the volume is all of them (shared/parcelCost).
+  if (input.cartonCount) {
+    const cartons = cartonVolume(input);
+    if (cartons.perCartonCbm > 0) measures.volumeCbm = cartons.totalCbm.toFixed(6);
+    measures.cartonCount = cartons.count > 1 ? cartons.count : null;
+  }
   const after: PricedFacts = { ...measures, customerId, isUnclaimed };
 
   // 3. The price is asked for again only if a fact behind it moved.

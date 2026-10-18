@@ -628,6 +628,18 @@ async function guardOddNumbers(args: {
   }
 }
 
+/**
+ * The small-parcel extra a sea batch adds, in percent: 1 to 100, typed as a
+ * figure (owner, 2026-10-18). Empty is "none"; the refusal names the cure.
+ */
+const smallParcelPercentInput = z
+  .string()
+  .max(10)
+  .refine((v) => v.trim() === "" || (Number(v) >= 0 && Number(v) <= 100), {
+    message: "ڕێژەی بەریدی بچووک دەبێت ژمارەیەک بێت لە 0 تا 100. 1. ژمارەکە ڕاست بکەرەوە، 2. یان خانەکە بەتاڵ بکە بۆ «هیچ».",
+  })
+  .transform((v) => (v.trim() === "" || Number(v) === 0 ? null : Number(v).toFixed(2)));
+
 export const batchesRouter = router({
     /**
      * Waybill prefix to airline, as this company's own paperwork has it.
@@ -1167,6 +1179,8 @@ export const batchesRouter = router({
         // Selling price fields
         pricePerKg: z.string().max(50).optional(),
         pricePerCbm: z.string().max(50).optional(),
+        // Percent a sea parcel under 0.25 m³ pays on top (shared/parcelCost).
+        smallParcelSurchargePercent: smallParcelPercentInput.optional(),
         // Tiered pricing
         useTieredPricing: z.boolean().optional(),
         pricingTiers: z.array(z.object({
@@ -2352,6 +2366,8 @@ export const batchesRouter = router({
         // Selling price fields
         pricePerKg: z.string().optional(),
         pricePerCbm: z.string().optional(),
+        // null = taken off; undefined = untouched (shared/parcelCost).
+        smallParcelSurchargePercent: smallParcelPercentInput.nullable().optional(),
         // Tiered pricing
         useTieredPricing: z.boolean().optional(),
         pricingTiers: z.array(z.object({

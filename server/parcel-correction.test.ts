@@ -61,7 +61,7 @@ describe("one parcel's charge is worked out in one place", () => {
     const engineStart = charging.indexOf("export async function chargeBatchShippingIfDue(");
     expect(engineStart).toBeGreaterThan(-1);
     const engine = charging.slice(engineStart);
-    expect(engine).toContain("parcelShippingCharge(pkg, isSea, rate, divisor)");
+    expect(engine).toContain("parcelShippingCharge(pkg, isSea, rate, divisor, batch.smallParcelSurchargePercent)");
     // The arithmetic is not written out a second time in the engine.
     expect(engine).not.toContain("quantity * rate * 100");
   });
@@ -73,7 +73,7 @@ describe("one parcel's charge is worked out in one place", () => {
     expect(due).toContain("batchChargesOnPricing(batch)");
     expect(due).toContain("isSelfOrder({");
     expect(due).toContain("getBatchRateForCustomer(pkg.batchId, pkg.customerId!, { unit })");
-    expect(due).toContain("parcelShippingCharge(pkg, isSea, rate, divisor)");
+    expect(due).toContain("parcelShippingCharge(pkg, isSea, rate, divisor, batch.smallParcelSurchargePercent)");
     // Asked, not given: it writes nothing.
     expect(due).not.toMatch(/\.(insert|update|delete)\(/);
   });

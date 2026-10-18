@@ -1,4 +1,5 @@
 import { confirmAction } from "@/components/ConfirmDialog";
+import { cartonVolumeText } from "@shared/parcelCost";
 import { LanguageFlag } from "@/components/LanguageFlag";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useState, useRef, useEffect } from "react";
@@ -580,6 +581,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         itemType: i.itemType,
         weightKg: i.weightKg,
         volumeCbm: i.volumeCbm,
+        cartonCount: i.cartonCount ?? null,
         shippingType: i.shippingType,
         calculatedCostUsd: i.calculatedCostUsd,
         description: i.description,
@@ -625,6 +627,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         itemType: i.itemType,
         weightKg: i.weightKg,
         volumeCbm: i.volumeCbm,
+        cartonCount: i.cartonCount ?? null,
         shippingType: i.shippingType,
         calculatedCostUsd: i.calculatedCostUsd,
         description: i.description,
@@ -1121,7 +1124,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                     {/* Weight (kg) or volume (CBM) for sea batches */}
                     <TableCell className="text-end font-mono text-xs">
                       {isSea
-                        ? `${fmtNumber(Number(item.volumeCbm || 0), 3)} CBM`
+                        ? (Number(item.cartonCount) > 1
+                            ? <span data-testid="box-item-cartons">{cartonVolumeText(item.volumeCbm, item.cartonCount)} CBM</span>
+                            : `${fmtNumber(Number(item.volumeCbm || 0), 3)} CBM`)
                         : fmtKg(Number(item.weightKg || 0))}
                     </TableCell>
                     {/* Price */}
