@@ -581,6 +581,47 @@ export async function getPackagePhotos(id: number): Promise<string[]> {
   return [];
 }
 
+/**
+ * The pictures behind each parcel's square in the parcels list (owner,
+ * 2026-10-19: «لە هەموو پاکەتەکان وێنەش نیشان بدات»), in two steps so a
+ * page whose squares were already made reads no picture at all:
+ *
+ *   stamps  - which rows have a picture, and when each last changed;
+ *   sources - the pictures themselves, only for the rows asked again.
+ *
+ * The order's photo comes first, then the depot's (shared/parcelPhotos).
+ */
+export async function getPackageThumbStamps(ids: number[]) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return [];
+  return db
+    .select({
+      id: packages.id,
+      packageUpdatedAt: packages.updatedAt,
+      orderUpdatedAt: fullPackageOrders.updatedAt,
+      hasPhotos: sql<number>`(${packages.photos} IS NOT NULL AND JSON_LENGTH(${packages.photos}) > 0)`,
+      hasOrderImage: sql<number>`((${fullPackageOrders.productImage} IS NOT NULL AND ${fullPackageOrders.productImage} <> '') OR (${fullPackageOrders.productImages} IS NOT NULL AND JSON_LENGTH(${fullPackageOrders.productImages}) > 0))`,
+    })
+    .from(packages)
+    .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
+    .where(inArray(packages.id, ids));
+}
+
+export async function getPackageThumbSources(ids: number[]) {
+  const db = await getDb();
+  if (!db || ids.length === 0) return [];
+  return db
+    .select({
+      id: packages.id,
+      photos: packages.photos,
+      productImage: fullPackageOrders.productImage,
+      productImages: fullPackageOrders.productImages,
+    })
+    .from(packages)
+    .leftJoin(fullPackageOrders, eq(packages.fullPackageOrderId, fullPackageOrders.id))
+    .where(inArray(packages.id, ids));
+}
+
 export async function getRecentPackages(limit = 10) {
   const db = await getDb();
   if (!db) return [];

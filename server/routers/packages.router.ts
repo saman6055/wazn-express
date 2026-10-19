@@ -17,6 +17,8 @@ import { assessVolumetric } from "@shared/volumetricAlert";
 import { affectsCost, cartonCountOf, cartonVolume, MAX_CARTONS, smallParcelPrice } from "@shared/parcelCost";
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
+import { cachedThumbnail, thumbnailFor } from "../services/orderThumbs.service";
+import { customerPhotos } from "@shared/parcelPhotos";
 import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView } from "../lib/correctRegisteredParcel";
 
 export const packagesRouter = router({
@@ -178,6 +180,40 @@ export const packagesRouter = router({
       .input(z.object({ id: idSchema }))
       .query(async ({ input }) => {
         return db.getPackagePhotos(input.id);
+      }),
+    /**
+     * The small square on each row of the parcels list, for a page at once
+     * (owner, 2026-10-19). 96px, made once and remembered by the thumbnail
+     * service; the order's photo first, then the depot's.
+     */
+    thumbs: staffProcedure
+      .input(z.object({ ids: z.array(idSchema).max(300) }))
+      .query(async ({ input }) => {
+        const out: Record<number, string> = {};
+        const stamps = await db.getPackageThumbStamps(input.ids);
+        const keyOf = new Map<number, string>();
+        const misses: number[] = [];
+        for (const s of stamps) {
+          if (!Number(s.hasPhotos) && !Number(s.hasOrderImage)) continue;
+          const key = `pkg${s.id}:${s.packageUpdatedAt ? new Date(s.packageUpdatedAt).getTime() : 0}:${s.orderUpdatedAt ? new Date(s.orderUpdatedAt).getTime() : 0}`;
+          keyOf.set(s.id, key);
+          const made = cachedThumbnail(key);
+          if (made === undefined) misses.push(s.id);
+          else if (made) out[s.id] = made;
+        }
+        const json = (v: unknown): unknown => {
+          if (typeof v !== "string") return v;
+          try { return JSON.parse(v); } catch { return v; }
+        };
+        for (const row of await db.getPackageThumbSources(misses)) {
+          const first = customerPhotos({
+            order: [json(row.productImages), row.productImage],
+            warehouse: json(row.photos),
+          })[0];
+          const thumb = await thumbnailFor(keyOf.get(row.id)!, first);
+          if (thumb) out[row.id] = thumb;
+        }
+        return out;
       }),
     getByCode: staffProcedure
       .input(z.object({ code: packageCodeSchema }))

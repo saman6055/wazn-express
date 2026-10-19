@@ -114,6 +114,14 @@ export async function thumbnailsFor(rows: ThumbSource[]): Promise<Record<number,
   return out;
 }
 
+/**
+ * A thumbnail already made, without reading the picture again: undefined when
+ * none was made for this key, "" when the picture could not be used.
+ */
+export function cachedThumbnail(key: string): string | undefined {
+  return cache.get(key);
+}
+
 /** For the tests, and for a deploy that wants to start clean. */
 export function clearThumbnailCache(): void {
   cache.clear();

@@ -10,6 +10,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { ZoomImage } from "@/components/ZoomImage";
+import { ParcelThumb, ParcelThumbs } from "@/components/packages/ParcelThumb";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { TrackingOnAnOrder } from "@/components/packages/TrackingOnAnOrder";
@@ -190,6 +191,9 @@ const PackageTableRow = memo(function PackageTableRow({
 }: PackageRowProps) {
   return (
     <TableRow className="transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50">
+      <TableCell className="w-10 !px-1">
+        <ParcelThumb id={pkg.id} alt={pkg.trackingNumber ?? ""} />
+      </TableCell>
       <TableCell>
         {/* Ordered goods carry BOTH numbers: the system's (CM-…/FP-…) and
             the platform's own (the Taobao/1688 order id) — each with its
@@ -430,6 +434,7 @@ const PackageMobileCard = memo(function PackageMobileCard({
   return (
     <div className="rounded-2xl border border-border bg-card p-3 shadow-sm" data-testid="package-card">
       <div className="flex items-start gap-2">
+        <ParcelThumb id={pkg.id} alt={pkg.trackingNumber ?? ""} />
         <button type="button" onClick={() => onView(pkg)} className="min-w-0 flex-1 text-start">
           {pkg.trackingNumber ? (
             <span dir="ltr" className="block truncate font-mono text-[15px] font-bold">{pkg.trackingNumber}</span>
@@ -1737,6 +1742,8 @@ const [, setLocation] = useLocation();
             {filterChips.length > 0 && (
               <FilterChips chips={filterChips} onClearAll={clearAllFilters} className="mb-4" />
             )}
+            {/* The picture on each row, one request for the page (ParcelThumb). */}
+            <ParcelThumbs ids={routedPackages.map((p) => p.id)}>
             {/* On a phone: one card per parcel, the same pieces as the row. */}
             {isMobile ? (
               <div className="space-y-2" data-testid="package-cards">
@@ -1784,6 +1791,7 @@ const [, setLocation] = useLocation();
             <Table className="text-xs [&_th]:px-2 [&_th]:whitespace-nowrap [&_td]:px-2 [&_td]:py-2">
               <TableHeader>
                 <TableRow>
+                  <TableHead className="w-10 !px-1">{pickLang(language, { ku: "وێنە", en: "Photo", ar: "صورة", zh: "图片" })}</TableHead>
                   <TableHead>{pickLang(language, { ku: "ئۆردەر نەمبەر", en: "Order no.", ar: "رقم الطلب", zh: "订单号" })}</TableHead>
                   <TableHead>{t('packages.packageType')}</TableHead>
                   <TableHead>{t("customers.title")}</TableHead>
@@ -1801,7 +1809,7 @@ const [, setLocation] = useLocation();
               <TableBody>
                 {isLoadingPackages ? (
                   <TableRow>
-                    <TableCell colSpan={12} className="p-4">
+                    <TableCell colSpan={13} className="p-4">
                       <TableSkeleton rows={6} cols={6} />
                     </TableCell>
                   </TableRow>
@@ -1825,7 +1833,7 @@ const [, setLocation] = useLocation();
                 )}
                 {!isLoadingPackages && routedPackages.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={12} className="p-4">
+                    <TableCell colSpan={13} className="p-4">
                       <TrackingOnAnOrder search={searchInput} />
                       <EmptyState
                         icon={<Package />}
@@ -1855,6 +1863,7 @@ const [, setLocation] = useLocation();
               </TableBody>
             </Table>
             )}
+            </ParcelThumbs>
             
             {/* Pagination Controls */}
             {totalPages > 1 && (
