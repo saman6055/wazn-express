@@ -5962,6 +5962,8 @@
     "toastBoxReopened": "أُعيد فتح الصندوق — يمكنك تعديله الآن",
     "recipientName": "اسم المستلم",
     "advancePaid": "الدفعة المقدمة",
+    "paidEarlier": "مدفوع سابقاً",
+    "leftToPay": "المتبقي للدفع",
     "remainingDue": "المتبقي للدفع",
     "itemPriceLabel": "سعر السلعة",
     "shippingLabel": "أجور الشحن",

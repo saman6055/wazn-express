@@ -5962,6 +5962,8 @@
     "toastBoxReopened": "Box reopened — you can edit it now",
     "recipientName": "Recipient name",
     "advancePaid": "Advance Paid",
+    "paidEarlier": "Paid earlier",
+    "leftToPay": "Left to pay",
     "remainingDue": "Remaining Due",
     "itemPriceLabel": "Item Price",
     "shippingLabel": "Shipping",

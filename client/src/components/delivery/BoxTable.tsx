@@ -43,6 +43,7 @@ import { isEmptyBox } from "@shared/emptyBox";
 import type { ReceiptDinarInput } from "@shared/receiptDinar";
 import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
 import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines } from "@/lib/deliveryBoxPrintUtils";
+import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -191,7 +192,7 @@ export function BoxTable({
   // The box's own payment view, read when its receipt is printed: other costs
   // (customs and the like) are rows on the paper.
   const trpcUtils = trpc.useUtils();
-  const handlePrintReceipt = (box: DeliveryBox, lang: Language) => {
+  const handlePrintReceipt = async (box: DeliveryBox, lang: Language) => {
     if (box.settlementCleared === true) {
       void printReceiptNow(box, lang, null);
       return;
@@ -199,6 +200,9 @@ export function BoxTable({
     // Ready before the print button is pressed, so the window opens at once.
     void loadLocale(lang);
     const customer = getCustomer(box.customerId);
+    // Paid on an earlier receipt of this box: the window asks only what is left.
+    const view = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null);
+    const before = paidBeforeOnBox(view);
     setReceiptRequest({
       boxCode: box.boxCode,
       boxId: box.id,
@@ -207,6 +211,8 @@ export function BoxTable({
       parcelCount: box.totalPackages,
       measures: boxPhysicalTotals(box, box.items || []),
       totalUsd: receiptAmountUsd(box),
+      paidBeforeUsd: before.usd,
+      paidBeforeReceipt: before.receipt,
       // A discount is a promise the till keeps (shared/pledgedDiscount), and
       // from this list it would be neither written down nor printed — the
       // field took the number and dropped it. It is given from the box
@@ -250,7 +256,14 @@ export function BoxTable({
       createTranslator(lang),
       {
         direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, lang), dinar,
-        extras: receiptExtraLines((await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null))?.extras, lang),
+        ...(await (async () => {
+          const view = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null);
+          const before = paidBeforeOnBox(view);
+          return {
+            extras: receiptExtraLines(view?.extras, lang),
+            settlement: before.usd > 0 ? { paidBeforeUsd: before.usd, settlementNumber: before.receipt } : undefined,
+          };
+        })()),
       }
     );
   };

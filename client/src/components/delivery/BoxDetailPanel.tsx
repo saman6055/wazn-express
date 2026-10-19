@@ -154,6 +154,7 @@ const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
 import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines, receiptExtrasUsd } from "@/lib/deliveryBoxPrintUtils";
+import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
 import { pledgeLabel } from "@shared/pledgedDiscount";
@@ -679,6 +680,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       exchangeRate: Number(confirmed[0]?.exchangeRate ?? 0) || null,
       settlementNumber: confirmed[0]?.settlementNumber ?? null,
       debtUsd: sum((s) => (s.differenceKind === "debt" ? Number(s.differenceUsd || 0) : 0)),
+      // Paid on an earlier receipt, when this one is for what is left.
+      paidBeforeUsd: paidBeforeOnBox(settlementView).usd,
     };
   })();
 
@@ -761,6 +764,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       parcelCount: box.totalPackages ?? items.length,
       measures: boxPhysicalTotals(box, items),
       totalUsd: receiptAmountUsd(box, settlementForPrint),
+      paidBeforeUsd: paidBeforeOnBox(settlementView).usd,
+      paidBeforeReceipt: paidBeforeOnBox(settlementView).receipt,
       /**
        * A discount may be given on the whole total or on one tracking
        * (owner, 2026-09-24): "the customer said one parcel was broken, so I
@@ -860,7 +865,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     // because that is the number the customer is actually asked for
     // (owner, 2026-09-22).
     // The message quotes what the paper says, discount and all.
-    const totalUsd = Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang))) * 100) / 100;
+    const totalUsd = Math.max(0, Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang)) - paidBeforeOnBox(settlementView).usd) * 100) / 100);
     const figures = receiptDinar(totalUsd, dinar);
     const message = receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {
       boxCode: box.boxCode,

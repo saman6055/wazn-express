@@ -53,10 +53,11 @@ describe("the window before printing", () => {
 
   it("converts it with the very rate and rounding chosen above it", () => {
     const sums = slice(dialog, "const canDiscount =", "const parcels =", "the dialog's arithmetic");
-    expect(sums).toContain("receiptDinar(netUsd, input)");
+    // 2026-10-19 (AZ295): what an earlier receipt of the box paid comes off first (paidBeforeOnBox).
+    expect(sums).toContain("receiptDinar(leftUsd, input)");
     // The discount's own dinars are the difference between the two rounded
     // totals, so the lines on the paper add up by hand at any rounding.
-    expect(sums).toContain("roundDinars(grossUsd * input.rate, step, mode) - roundDinars(netUsd * input.rate, step, mode)");
+    expect(sums).toContain("roundDinars((grossUsd - paidBeforeUsd) * input.rate, step, mode) - roundDinars(leftUsd * input.rate, step, mode)");
   });
 
   it("opens at what an earlier printing promised and will not go below it", () => {
@@ -115,7 +116,8 @@ describe("the receipt", () => {
 
   it("quotes the discounted figure in the WhatsApp message too", () => {
     // …with the box's other costs (customs and the like), as the paper has them.
-    expect(boxPanel).toContain("const totalUsd = Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang))) * 100) / 100;");
+    // 2026-10-19 (AZ295): what an earlier receipt of the box paid comes off first (paidBeforeOnBox).
+    expect(boxPanel).toContain("const totalUsd = Math.max(0, Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang)) - paidBeforeOnBox(settlementView).usd) * 100) / 100);");
   });
 });
 

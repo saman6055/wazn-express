@@ -111,7 +111,9 @@ describe("the receipt in dinars", () => {
 
   it("counts its dinars from the very dollar figure it prints", () => {
     const receipt = between("export function buildBoxReceiptHtml", "export function downloadBoxReceiptPDF");
-    expect(receipt).toContain("const dinar = receiptDinar(afterDiscountNum, options?.dinar);");
+    // 2026-10-19 (AZ295): what an earlier receipt of the box paid comes off first (paidBeforeOnBox).
+    expect(receipt).toContain("const leftToPayNum = Math.round((afterDiscountNum - paidBeforeNum) * 100) / 100;");
+    expect(receipt).toContain("const dinar = receiptDinar(leftToPayNum, options?.dinar);");
     expect(receipt).toContain('${dinar ? dinarRowsHtml(dinar, t) : ""}');
   });
 

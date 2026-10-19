@@ -27,7 +27,9 @@ describe("the window", () => {
     // The discount comes off in dollars and what remains is converted once,
     // so the lines on the paper still add up by hand (owner, 2026-09-24).
     expect(dialog).toContain("const netUsd = Math.round(Math.max(0, grossUsd - cutUsd) * 100) / 100;");
-    expect(dialog).toContain("receiptDinar(netUsd, input)");
+    // 2026-10-19 (AZ295): what an earlier receipt of the box paid comes off first (paidBeforeOnBox).
+    expect(dialog).toContain("const leftUsd = Math.round((netUsd - paidBeforeUsd) * 100) / 100;");
+    expect(dialog).toContain("receiptDinar(leftUsd, input)");
     expect(dialog).toContain('from "@shared/receiptDinar"');
   });
 

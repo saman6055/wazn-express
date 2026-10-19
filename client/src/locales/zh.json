@@ -5970,6 +5970,8 @@
     "toastBoxReopened": "箱子已重新打开 — 现在可以编辑了",
     "recipientName": "收件人姓名",
     "advancePaid": "已付预付款",
+    "paidEarlier": "此前已付",
+    "leftToPay": "待付余额",
     "remainingDue": "应付余额",
     "itemPriceLabel": "商品价格",
     "shippingLabel": "运费",

@@ -91,6 +91,13 @@ export interface ReceiptDinarRequest {
    */
   totalUsd: number;
   /**
+   * Paid on earlier receipts of this box, when this one is for what is left;
+   * zero for a copy of a box paid in full (SettlementForPrint.paidBeforeUsd).
+   */
+  paidBeforeUsd?: number;
+  /** The last of those receipts, named beside the figure. */
+  paidBeforeReceipt?: string | null;
+  /**
    * The parcels a discount can be pointed at. Empty or absent leaves only
    * the box as a whole.
    */
@@ -402,14 +409,17 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const measures = request?.measures && (request.measures.kg > 0 || request.measures.cbm > 0) ? request.measures : null;
   const cutUsd = canDiscount ? Math.max(0, Math.min(grossUsd, Number(discount) || 0)) : 0;
   const netUsd = Math.round(Math.max(0, grossUsd - cutUsd) * 100) / 100;
+  // Paid on an earlier receipt of this box: off before the advance and the dinars.
+  const paidBeforeUsd = Math.min(netUsd, Math.max(0, Number(request?.paidBeforeUsd ?? 0)));
+  const leftUsd = Math.round((netUsd - paidBeforeUsd) * 100) / 100;
 
   const input: ReceiptDinarInput | null =
     Number(rate) > 0
       ? { rate: Number(rate), step, mode, advanceAmount: Number(advance) || null, advanceCurrency: currency }
       : null;
-  const figures = request ? receiptDinar(netUsd, input) : null;
+  const figures = request ? receiptDinar(leftUsd, input) : null;
   const cutIqd = input && cutUsd > 0
-    ? roundDinars(grossUsd * input.rate, step, mode) - roundDinars(netUsd * input.rate, step, mode)
+    ? roundDinars((grossUsd - paidBeforeUsd) * input.rate, step, mode) - roundDinars(leftUsd * input.rate, step, mode)
     : 0;
 
   const parcels = request?.parcels ?? [];
@@ -732,6 +742,12 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                 <>
                   {row(L(TXT.discount), `− $${cutUsd.toFixed(2)}`)}
                   {row(L(TXT.afterDiscount), `$${netUsd.toFixed(2)}`)}
+                </>
+              )}
+              {paidBeforeUsd > 0 && (
+                <>
+                  {row(`${t("delivery.paidEarlier")}${request?.paidBeforeReceipt ? ` (${request.paidBeforeReceipt})` : ""}`, `− $${paidBeforeUsd.toFixed(2)}`)}
+                  {row(t("delivery.leftToPay"), `$${leftUsd.toFixed(2)}`)}
                 </>
               )}
               {figures.advance?.currency === "USD" ? (

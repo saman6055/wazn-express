@@ -181,6 +181,37 @@ export interface SettlementForPrint {
   settlementNumber?: string | null;
   /** Short money that stayed owed after this receipt. */
   debtUsd?: number;
+  /**
+   * What earlier receipts on this box already paid, when this one is for
+   * what is left (owner, 2026-10-19, AZ295 BOX-20261001-001: the window asked
+   * $39.92 where $12.33 was owed - the $27.59 paid on 07/10 was not taken
+   * off). Zero when the box is paid in full and the paper is a copy.
+   */
+  paidBeforeUsd?: number;
+}
+
+/**
+ * What earlier receipts of this box already paid - one rule for the window,
+ * the paper and the WhatsApp message (SettlementForPrint.paidBeforeUsd).
+ *
+ * Only while the box still owes: then this receipt is for what is left. A
+ * box paid in full prints as a copy of the whole, as it always did. Counted
+ * from the receipts' own lines (settledUsd), never an order's advance - the
+ * advance is the account's, and the window takes it off on its own line.
+ */
+export function paidBeforeOnBox(
+  view: {
+    parcels: ReadonlyArray<{ settledUsd: number; advanceUsd?: number; outstandingUsd: number; notChargedYet?: boolean }>;
+    settlements: ReadonlyArray<{ status: string; settlementNumber: string | null }>;
+  } | null | undefined,
+): { usd: number; receipt: string | null } {
+  if (!view) return { usd: 0, receipt: null };
+  const confirmed = view.settlements.filter((s) => s.status === "confirmed");
+  if (confirmed.length === 0) return { usd: 0, receipt: null };
+  const stillOwes = view.parcels.some((p) => p.outstandingUsd > 0.004 || p.notChargedYet);
+  if (!stillOwes) return { usd: 0, receipt: null };
+  const cents = view.parcels.reduce((s, p) => s + Math.max(0, Math.round((Number(p.settledUsd) - Number(p.advanceUsd ?? 0)) * 100)), 0);
+  return { usd: cents / 100, receipt: confirmed[0]?.settlementNumber ?? null };
 }
 
 /**
@@ -789,10 +820,11 @@ export function buildBoxReceiptHtml(
   const discountNum = Number(settlement?.discountUsd || 0);
   const afterDiscountNum = Math.max(0, grandTotalNum - discountNum);
   const afterDiscount = afterDiscountNum.toFixed(2);
+  // Paid on an earlier receipt of this box: off before anything else is asked.
+  const paidBeforeNum = Math.min(afterDiscountNum, Math.max(0, Number(settlement?.paidBeforeUsd || 0)));
+  const leftToPayNum = Math.round((afterDiscountNum - paidBeforeNum) * 100) / 100;
   // Dinars, counted from the very figure this sheet asks for in dollars.
-  // No system advance comes off: a customer's credit is the account's
-  // business (owner, 2026-09-17).
-  const dinar = receiptDinar(afterDiscountNum, options?.dinar);
+  const dinar = receiptDinar(leftToPayNum, options?.dinar);
 
   const itemsRows = items.map((item, idx) => {
     const description = item.itemType === "commission"
@@ -1174,6 +1206,15 @@ export function buildBoxReceiptHtml(
         <div class="financial-row total">
           <span>${t("delivery.afterDiscount")}:</span>
           <span>$${afterDiscount}</span>
+        </div>` : ""}
+        ${paidBeforeNum > 0 ? `
+        <div class="financial-row">
+          <span>${t("delivery.paidEarlier")}${settlement?.settlementNumber ? ` (${escapeHtml(settlement.settlementNumber)})` : ""}:</span>
+          <span style="font-weight:600;" dir="ltr">\u2212 $${paidBeforeNum.toFixed(2)}</span>
+        </div>
+        <div class="financial-row total">
+          <span>${t("delivery.leftToPay")}:</span>
+          <span dir="ltr">$${leftToPayNum.toFixed(2)}</span>
         </div>` : ""}
         ${settlement?.amountIqd && settlement.exchangeRate ? `
         <div class="financial-row">
