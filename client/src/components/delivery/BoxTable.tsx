@@ -478,6 +478,11 @@ export function BoxTable({
                       <Trash2 className="h-4 w-4 me-1" />
                       {pickLang(language, { ku: "سڕینەوە", en: "Delete", ar: "حذف", zh: "删除" })}
                     </Button>
+                  ) : box.settlementCleared === true ? (
+                    // Paid in full: nothing left to take (owner, 2026-10-19).
+                    <span className="me-1 inline-flex h-8 items-center rounded-md bg-emerald-50 px-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" data-testid={`paid-${box.id}`}>
+                      ✓ {pickLang(language, { ku: "دراوە", en: "Paid", ar: "مدفوع", zh: "已付" })}
+                    </span>
                   ) : onTakePayment && (
                     <Button
                       variant="outline"

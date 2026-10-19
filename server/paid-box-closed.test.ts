@@ -41,3 +41,11 @@ describe("a paid box is closed", () => {
     expect(read("../client/src/components/delivery/QuickSettleDialog.tsx")).toContain("{isMainAdmin && <Button");
   });
 });
+
+describe("the box list offers no payment on a box paid in full", () => {
+  it("shows that it is paid instead (owner, 2026-10-19)", () => {
+    const table = read("../client/src/components/delivery/BoxTable.tsx");
+    expect(table).toContain(") : box.settlementCleared === true ? (");
+    expect(table.indexOf(") : box.settlementCleared === true ? (")).toBeLessThan(table.indexOf("onClick={() => onTakePayment(box.id)}"));
+  });
+});
