@@ -82,7 +82,8 @@ describe("the screens and the paper", () => {
     expect(print).toContain("+ receiptExtrasUsd(extraLines);");
     expect(print).toContain("${extraLines.map((line) =>");
     expect(root("client/src/components/delivery/BoxTable.tsx")).toContain("extras: receiptExtraLines(");
-    expect(root("client/src/components/delivery/BoxDetailPanel.tsx").split("extras: receiptExtraLines(settlementView?.extras, lang)").length - 1).toBe(3);
+    // Print, PDF, WhatsApp - and the copy kept in the box's history (2026-10-19).
+    expect(root("client/src/components/delivery/BoxDetailPanel.tsx").split("extras: receiptExtraLines(settlementView?.extras, lang)").length - 1).toBe(4);
     expect(root("client/src/components/delivery/ReceiptDinarDialog.tsx")).toContain("const grossUsd = Math.round(((request?.totalUsd ?? 0) + extrasUsd) * 100) / 100;");
   });
   it("the main admin is told, and can see them all", () => {

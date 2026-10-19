@@ -30,7 +30,8 @@ describe("Migration System", () => {
       // they are sold or written off (shared/refusedGoods).
       // 105 since customerStanding — cautions and the blacklist.
       // 106 since boxExtraCosts — customs and other costs on a box.
-      expect(TABLE_DEFINITIONS.length).toBe(106);
+      // 108 since deliveryCarriers and boxReceiptEvents (owner, 2026-10-19).
+      expect(TABLE_DEFINITIONS.length).toBe(108);
     });
     
     it("should have unique table names", () => {

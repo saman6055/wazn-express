@@ -171,6 +171,9 @@ import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceipt
 import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
+import { handoverProblem } from "@shared/boxHandover";
+import { BoxHandoverCard, type HandoverBox } from "@/components/delivery/BoxHandoverCard";
+import { CustomerBoxesPanel } from "@/components/delivery/CustomerBoxesPanel";
 import { pledgeLabel } from "@shared/pledgedDiscount";
 import { shippingOnlyAmongOrders, shippingOnlyNotice, SHIPPING_ONLY_CHIP } from "@shared/boxShippingOnly";
 import { parcelListHref } from "@shared/parcelSource";
@@ -350,6 +353,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       refetchBox();
     },
     onError: (err) => showFailure(err),
+  });
+
+  // Every receipt that leaves the building is kept, with its paper (owner, 2026-10-19).
+  const logReceipt = trpc.deliveryBox.logReceiptEvent.useMutation({
+    onSuccess: () => { void utils.deliveryBox.customerBoxes.invalidate(); },
   });
 
   const reopenBox = trpc.deliveryBox.reopen.useMutation({
@@ -730,6 +738,46 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     };
   };
 
+  /**
+   * The receipt as it left - figures and the paper itself - into the box's
+   * history (shared/boxHandover). Never stops the print: a failure to keep
+   * the copy is not a reason to keep the customer waiting.
+   */
+  const keepPaper = (action: "print" | "pdf" | "whatsapp", lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => {
+    try {
+      const [b, its, c] = buildReceiptPayload();
+      const discounted = receiptDiscount(lang, given);
+      const totalUsd = Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang))) * 100) / 100;
+      const before = paidBeforeOnBox(settlementView).usd;
+      const left = Math.max(0, Math.round((totalUsd - before) * 100) / 100);
+      const figures = receiptDinar(left, dinar);
+      const html = buildBoxReceiptHtml(b, its, c, createTranslator(lang), {
+        direction: getLanguageDirection(lang),
+        logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
+        company: companyContact(company, lang),
+        settlement: { ...settlementForPrint, ...discounted },
+        dinar,
+        extras: receiptExtraLines(settlementView?.extras, lang),
+      });
+      logReceipt.mutate({
+        boxId,
+        action,
+        totalUsd,
+        discountUsd: Number(discounted.discountUsd || 0),
+        discountReason: discounted.discountReason ?? null,
+        paidBeforeUsd: before,
+        advanceUsd: dinar?.advanceCurrency === "USD" ? Number(dinar.advanceAmount || 0) : 0,
+        dueUsd: figures?.dueUsd ?? left,
+        rate: dinar?.rate ?? null,
+        dueIqd: figures?.dueIqd ?? null,
+        language: lang,
+        html,
+      });
+    } catch {
+      /* the print itself already went out */
+    }
+  };
+
   const printReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => {
     // Locales load on demand now; fetch the chosen one before translating a
     // document that is about to be printed.
@@ -743,6 +791,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       dinar,
       extras: receiptExtraLines(settlementView?.extras, lang),
     });
+    keepPaper("print", lang, dinar, given);
   };
 
   const downloadReceiptNow = async (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => {
@@ -755,7 +804,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       settlement: { ...settlementForPrint, ...receiptDiscount(lang, given) },
       dinar,
       extras: receiptExtraLines(settlementView?.extras, lang),
-    });
+    });    keepPaper("pdf", lang, dinar, given);
   };
 
   /**
@@ -768,6 +817,21 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     output: (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => Promise<void>,
     action: "print" | "send" = "print",
   ) => {
+    // Nothing is printed or sent until it is said how the box reaches the
+    // customer (owner, 2026-10-19; shared/boxHandover).
+    // A box already handed over or paid in full has reached the customer:
+    // a copy of its receipt is never held up.
+    const reached = box.status === "delivered" || (hasLiveReceipt && settlementDueUsd <= 0);
+    const waiting = reached ? null : handoverProblem(box);
+    if (waiting) {
+      systemAlert({
+        kind: "error",
+        title: pickLang(language, { ku: "چاپ ڕاگیراوە", en: "Printing waits", ar: "الطباعة متوقفة", zh: "打印暂停" }),
+        message: pickLang(language, waiting),
+      });
+      document.querySelector('[data-testid="box-handover"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
+      return;
+    }
     // Ready before the print button is pressed, so the window opens at once.
     void loadLocale(lang);
     // Not yet known what is owed: wait for it rather than guess "nothing".
@@ -904,6 +968,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         message,
         chatUrl: number ? whatsappChatUrl(number, message) : null,
       });
+      if (outcome !== "failed") keepPaper("whatsapp", lang, dinar, given);
       if (outcome === "shared") {
         toast.success(pickLang(language, SHARE_WORDS.shared));
       } else if (outcome === "copied") {
@@ -966,6 +1031,14 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       </CardHeader>
 
       <CardContent className="space-y-4">
+        {/* How it reaches the customer, then the customer's boxes (owner, 2026-10-19). */}
+        <BoxHandoverCard
+          box={box as unknown as HandoverBox}
+          paid={hasLiveReceipt && settlementDueUsd <= 0}
+          onChanged={() => { void refetchBox(); void utils.deliveryBox.customerBoxes.invalidate(); }}
+        />
+        {box.customerId ? <CustomerBoxesPanel customerId={Number(box.customerId)} currentBoxId={box.id} /> : null}
+
         {isOpen && hasLiveReceipt && (
           <div className="rounded-lg border border-emerald-500/40 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" data-testid="box-paid-closed">
             🔒 {pickLang(language, REOPEN_WORDS.paidClosed)}

@@ -1255,6 +1255,10 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       unpaidConfirmedAt TIMESTAMP NULL,
       unpaidConfirmedById INT NULL,
       paymentReminderCount INT NOT NULL DEFAULT 0,
+      handoverMode ENUM('pickup','driver','courier') NULL,
+      carrierId INT NULL,
+      carrierName VARCHAR(120) NULL,
+      carrierTrackings TEXT NULL,
       sealedAt TIMESTAMP NULL,
       inTransitAt TIMESTAMP NULL,
       deliveredAt TIMESTAMP NULL,
@@ -1485,6 +1489,51 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdById INT NOT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_customer_standing_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "deliveryCarriers",
+    dependencies: ["users"],
+    // Our drivers and the delivery companies (owner, 2026-10-19). See
+    // drizzle/schema/packages.schema.ts and shared/boxHandover.
+    sql: `CREATE TABLE IF NOT EXISTS deliveryCarriers (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      kind ENUM('driver','courier') NOT NULL,
+      name VARCHAR(120) NOT NULL,
+      phone VARCHAR(30) NULL,
+      isActive BOOLEAN NOT NULL DEFAULT TRUE,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      removedAt TIMESTAMP NULL,
+      removedById INT NULL,
+      INDEX idx_delivery_carriers_kind (kind)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "boxReceiptEvents",
+    dependencies: ["deliveryBoxes", "customers", "users"],
+    // Every receipt printed, saved or sent (owner, 2026-10-19).
+    sql: `CREATE TABLE IF NOT EXISTS boxReceiptEvents (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      boxId INT NOT NULL,
+      customerId INT NOT NULL,
+      action ENUM('print','pdf','whatsapp') NOT NULL,
+      totalUsd DECIMAL(12, 2) NOT NULL,
+      discountUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      discountReason TEXT,
+      paidBeforeUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      advanceUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      dueUsd DECIMAL(12, 2) NULL,
+      rate DECIMAL(12, 2) NULL,
+      dueIqd DECIMAL(16, 0) NULL,
+      language VARCHAR(8) NULL,
+      html MEDIUMTEXT,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_box_receipt_events_box (boxId),
+      INDEX idx_box_receipt_events_customer (customerId)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -2953,6 +3002,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.box_extra_costs_box", sql: "CREATE INDEX idx_box_extra_costs_box ON boxExtraCosts (boxId)" },
   { name: "idx.box_extra_costs_package", sql: "CREATE INDEX idx_box_extra_costs_package ON boxExtraCosts (packageId)" },
   { name: "idx.box_extra_costs_customer", sql: "CREATE INDEX idx_box_extra_costs_customer ON boxExtraCosts (customerId)" },
+  { name: "idx.delivery_carriers_kind", sql: "CREATE INDEX idx_delivery_carriers_kind ON deliveryCarriers (kind)" },
+  { name: "idx.box_receipt_events_box", sql: "CREATE INDEX idx_box_receipt_events_box ON boxReceiptEvents (boxId)" },
+  { name: "idx.box_receipt_events_customer", sql: "CREATE INDEX idx_box_receipt_events_customer ON boxReceiptEvents (customerId)" },
   { name: "companyStock.packageId", sql: "ALTER TABLE companyStock ADD COLUMN packageId INT NULL" },
   { name: "companyStock.freightCostUsd", sql: "ALTER TABLE companyStock ADD COLUMN freightCostUsd DECIMAL(12, 2) NOT NULL DEFAULT 0" },
   { name: "companyStock.trackingNumber", sql: "ALTER TABLE companyStock ADD COLUMN trackingNumber VARCHAR(100) NULL" },
@@ -3016,6 +3068,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "deliveryBoxes.unpaidConfirmedAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN unpaidConfirmedAt TIMESTAMP NULL" },
   { name: "deliveryBoxes.unpaidConfirmedById", sql: "ALTER TABLE deliveryBoxes ADD COLUMN unpaidConfirmedById INT NULL" },
   { name: "deliveryBoxes.paymentReminderCount", sql: "ALTER TABLE deliveryBoxes ADD COLUMN paymentReminderCount INT NOT NULL DEFAULT 0" },
+  // How the box reaches the customer (owner, 2026-10-19; shared/boxHandover).
+  { name: "deliveryBoxes.handoverMode", sql: "ALTER TABLE deliveryBoxes ADD COLUMN handoverMode ENUM('pickup','driver','courier') NULL" },
+  { name: "deliveryBoxes.carrierId", sql: "ALTER TABLE deliveryBoxes ADD COLUMN carrierId INT NULL" },
+  { name: "deliveryBoxes.carrierName", sql: "ALTER TABLE deliveryBoxes ADD COLUMN carrierName VARCHAR(120) NULL" },
+  { name: "deliveryBoxes.carrierTrackings", sql: "ALTER TABLE deliveryBoxes ADD COLUMN carrierTrackings TEXT NULL" },
+  { name: "boxReceiptEvents.html.mediumtext", sql: "ALTER TABLE boxReceiptEvents MODIFY COLUMN html MEDIUMTEXT" },
   // Greetings: the day and month a customer chooses to share, and the last
   // milestone they were congratulated for. All three are optional and all
   // three default to nothing being known.

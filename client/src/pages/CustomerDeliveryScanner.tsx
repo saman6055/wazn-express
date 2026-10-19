@@ -90,6 +90,24 @@ export default function CustomerDeliveryScanner() {
   }, [search]);
 
   /*
+   * ?customer=ID shows that customer's boxes - every one, archived or not -
+   * the "all their boxes" link of the customer's boxes panel (2026-10-19).
+   */
+  useEffect(() => {
+    const asked = Number(new URLSearchParams(search).get("customer"));
+    if (!Number.isInteger(asked) || asked <= 0) return;
+    setDrilledCustomerId(asked);
+    setPaidWindow(null);
+    setCurrentPage(0);
+    setView("unpaid");
+    setActiveBoxId(null);
+    const rest = new URLSearchParams(search);
+    rest.delete("customer");
+    const query = rest.toString();
+    window.history.replaceState({}, "", window.location.pathname + (query ? `?${query}` : ""));
+  }, [search]);
+
+  /*
    * ?boxCode=BOX-... opens it too.
    *
    * A task written on a box carries its code, never its id — the code is

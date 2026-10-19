@@ -43,7 +43,10 @@ import { isEmptyBox } from "@shared/emptyBox";
 import type { ReceiptDinarInput } from "@shared/receiptDinar";
 import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
 import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines } from "@/lib/deliveryBoxPrintUtils";
+import { buildBoxReceiptHtml } from "@/lib/deliveryBoxPrintUtils";
 import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
+import { handoverProblem } from "@shared/boxHandover";
+import { toast } from "sonner";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -192,7 +195,18 @@ export function BoxTable({
   // The box's own payment view, read when its receipt is printed: other costs
   // (customs and the like) are rows on the paper.
   const trpcUtils = trpc.useUtils();
+  // Every receipt that leaves the building is kept, with its paper (owner, 2026-10-19).
+  const logReceipt = trpc.deliveryBox.logReceiptEvent.useMutation();
   const handlePrintReceipt = async (box: DeliveryBox, lang: Language) => {
+    // Nothing is printed until it is said how the box reaches the customer
+    // (owner, 2026-10-19; shared/boxHandover) - the box itself says it.
+    const reached = box.status === "delivered" || box.settlementCleared === true;
+    const waiting = reached ? null : handoverProblem(box as never);
+    if (waiting) {
+      toast.error(pickLang(language, waiting), { duration: 10_000 });
+      onBoxSelect?.(box.id);
+      return;
+    }
     if (box.settlementCleared === true) {
       void printReceiptNow(box, lang, null);
       return;
@@ -226,7 +240,7 @@ export function BoxTable({
     // Locales load on demand now; fetch the chosen one before translating.
     await loadLocale(lang);
     const customer = getCustomer(box.customerId);
-    printBoxReceipt(
+    const receiptArgs = [
       {
         boxCode: box.boxCode,
         status: box.status,
@@ -265,7 +279,24 @@ export function BoxTable({
           };
         })()),
       }
-    );
+    ] as const;
+    printBoxReceipt(...receiptArgs);
+    try {
+      const options = receiptArgs[4];
+      const totalUsd = Math.round(Number(receiptAmountUsd(box)) * 100) / 100;
+      logReceipt.mutate({
+        boxId: box.id,
+        action: "print",
+        totalUsd,
+        paidBeforeUsd: Number(options.settlement?.paidBeforeUsd ?? 0),
+        advanceUsd: dinar?.advanceCurrency === "USD" ? Number(dinar.advanceAmount || 0) : 0,
+        rate: dinar?.rate ?? null,
+        language: lang,
+        html: buildBoxReceiptHtml(...receiptArgs),
+      });
+    } catch {
+      /* the print itself already went out */
+    }
   };
 
   if (isLoading) {

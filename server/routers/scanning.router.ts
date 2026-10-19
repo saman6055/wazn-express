@@ -1335,6 +1335,74 @@ export const deliveryBoxRouter = router({
       return db.reverseBoxSettlement(input.settlementId, input.reason, ctx.user.id);
     }),
 
+  // ── How the box reaches the customer, and its receipts (shared/boxHandover) ──
+  carriers: staffProcedure
+    .input(z.object({ kind: z.enum(["driver", "courier"]) }))
+    .query(async ({ input, ctx }) => db.listCarriers(input.kind, ctx.user.id)),
+
+  addCarrier: staffProcedure
+    .input(z.object({ kind: z.enum(["driver", "courier"]), name: z.string().min(1).max(120), phone: z.string().max(30).optional() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const added = await db.addCarrier(input, ctx.user.id);
+        await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "add_delivery_carrier", entityType: "delivery_carrier", entityId: added.id, newValues: input });
+        return added;
+      } catch (err) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+      }
+    }),
+
+  /** Off the list - its name stays on every box it took. */
+  removeCarrier: staffProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      await db.removeCarrier(input.id, ctx.user.id);
+      await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "remove_delivery_carrier", entityType: "delivery_carrier", entityId: input.id });
+      return { success: true };
+    }),
+
+  setHandover: staffProcedure
+    .input(z.object({
+      boxId: z.number().int().positive(),
+      mode: z.enum(["pickup", "driver", "courier"]),
+      carrierId: z.number().int().positive().nullable().optional(),
+      trackings: z.array(z.string().max(100)).max(50).optional(),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        return await db.setBoxHandover(input, ctx.user.id);
+      } catch (err) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+      }
+    }),
+
+  /** Every receipt printed, saved or sent, with the paper (owner, 2026-10-19). */
+  logReceiptEvent: staffProcedure
+    .input(z.object({
+      boxId: z.number().int().positive(),
+      action: z.enum(["print", "pdf", "whatsapp"]),
+      totalUsd: z.number().min(0).max(10_000_000),
+      discountUsd: z.number().min(0).max(10_000_000).optional(),
+      discountReason: z.string().max(500).nullable().optional(),
+      paidBeforeUsd: z.number().min(0).max(10_000_000).optional(),
+      advanceUsd: z.number().min(0).max(10_000_000).optional(),
+      dueUsd: z.number().min(0).max(10_000_000).nullable().optional(),
+      rate: z.number().min(0).max(1_000_000).nullable().optional(),
+      dueIqd: z.number().min(0).max(100_000_000_000).nullable().optional(),
+      language: z.string().max(8).nullable().optional(),
+      html: z.string().max(5_000_000).nullable().optional(),
+    }))
+    .mutation(async ({ input, ctx }) => db.logReceiptEvent(input, ctx.user.id)),
+
+  receiptEventHtml: staffProcedure
+    .input(z.object({ id: z.number().int().positive() }))
+    .query(async ({ input }) => ({ html: await db.receiptEventHtml(input.id) })),
+
+  /** A customer's boxes at a glance: figures, every box, its receipts. */
+  customerBoxes: staffProcedure
+    .input(z.object({ customerId: z.number().int().positive() }))
+    .query(async ({ input }) => db.customerBoxesOverview(input.customerId)),
+
   /** How much has been given away, and on what grounds. */
   discountReport: staffProcedure
     .input(z.object({

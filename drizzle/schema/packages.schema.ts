@@ -385,6 +385,16 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
   unpaidConfirmedById: int("unpaidConfirmedById"),
   paymentReminderCount: int("paymentReminderCount").default(0).notNull(),
 
+  // How the box reaches the customer (owner, 2026-10-19; shared/boxHandover):
+  // the customer collects it, our driver takes it, or a delivery company does.
+  // Nothing is printed or sent until it is said. The carrier's name is kept
+  // on the box as it was, so a driver taken off the list still shows here.
+  handoverMode: mysqlEnum("handoverMode", ["pickup", "driver", "courier"]),
+  carrierId: int("carrierId"),
+  carrierName: varchar("carrierName", { length: 120 }),
+  /** The delivery company's own tracking numbers, one per carton (JSON array). */
+  carrierTrackings: text("carrierTrackings"),
+
   // کاتەکان
   sealedAt: timestamp("sealedAt"),
   inTransitAt: timestamp("inTransitAt"),
@@ -398,6 +408,59 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
 
 export type DeliveryBox = typeof deliveryBoxes.$inferSelect;
 export type InsertDeliveryBox = typeof deliveryBoxes.$inferInsert;
+
+/**
+ * Our drivers and the delivery companies (Hyper Post, Wasit, Prime...) a box
+ * can go out with (owner, 2026-10-19). Added and removed where the box is
+ * made; a removed one leaves the list but keeps its name on old boxes.
+ */
+export const deliveryCarriers = mysqlTable("deliveryCarriers", {
+  id: int("id").autoincrement().primaryKey(),
+  kind: mysqlEnum("kind", ["driver", "courier"]).notNull(),
+  name: varchar("name", { length: 120 }).notNull(),
+  phone: varchar("phone", { length: 30 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  removedAt: timestamp("removedAt"),
+  removedById: int("removedById"),
+}, (table) => ({
+  kindIdx: index("idx_delivery_carriers_kind").on(table.kind),
+}));
+
+export type DeliveryCarrier = typeof deliveryCarriers.$inferSelect;
+
+/**
+ * Every receipt that left the building (owner, 2026-10-19: "every receipt
+ * printed or sent must stay somewhere, so we know what was done and what
+ * discount was given"): who, when, how, the figures it carried, and the
+ * paper itself. Payments and their reversals are the receipts' own records
+ * (boxSettlements); this is what was printed, saved and sent.
+ */
+export const boxReceiptEvents = mysqlTable("boxReceiptEvents", {
+  id: int("id").autoincrement().primaryKey(),
+  boxId: int("boxId").notNull(),
+  customerId: int("customerId").notNull(),
+  action: mysqlEnum("action", ["print", "pdf", "whatsapp"]).notNull(),
+  totalUsd: decimal("totalUsd", { precision: 12, scale: 2 }).notNull(),
+  discountUsd: decimal("discountUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  discountReason: text("discountReason"),
+  paidBeforeUsd: decimal("paidBeforeUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  advanceUsd: decimal("advanceUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  dueUsd: decimal("dueUsd", { precision: 12, scale: 2 }),
+  rate: decimal("rate", { precision: 12, scale: 2 }),
+  dueIqd: decimal("dueIqd", { precision: 16, scale: 0 }),
+  language: varchar("language", { length: 8 }),
+  /** The paper as it was made, to open again; null when too large to keep. */
+  html: text("html"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  boxIdx: index("idx_box_receipt_events_box").on(table.boxId),
+  customerIdx: index("idx_box_receipt_events_customer").on(table.customerId),
+}));
+
+export type BoxReceiptEvent = typeof boxReceiptEvents.$inferSelect;
 
 // ئایتمەکانی بۆکسی گەیاندن — هەر پاکەتێک لە ناو بۆکسدا
 export const deliveryBoxItems = mysqlTable("deliveryBoxItems", {
