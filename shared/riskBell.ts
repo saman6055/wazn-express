@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -73,6 +73,8 @@ export interface RiskFacts {
   stockOld?: number;
   /** Customers shown owing for goods in a box that was receipted (shared/boxPaidStillOwed). */
   boxPaidOwed?: number;
+  /** Other costs written on boxes in the last day, by anybody (shared/extraCosts). */
+  extraCostsToday?: number;
 }
 
 /**
@@ -94,6 +96,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "boxes-unpaid": "/customer-delivery-scanner?unpaid=1",
   "stock-old": "/finance/company-stock",
   "box-paid-owed": "/finance/box-double-charges",
+  "extra-costs": "/finance/extra-costs",
 };
 
 /** The page whose permission decides who is told. */
@@ -111,6 +114,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "boxes-unpaid": "/customer-delivery-scanner",
   "stock-old": "/finance/company-stock",
   "box-paid-owed": "/finance/box-double-charges",
+  "extra-costs": "/finance/extra-costs",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -231,6 +235,11 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   // not come — it may have been paid and not receipted.
   if ((facts.boxesUnpaid ?? 0) > 0) {
     items.push({ id: "boxes-unpaid", level: "high", count: facts.boxesUnpaid ?? 0 });
+  }
+  // Owner, 2026-10-19: anybody may write another cost on a box, and the main
+  // admin is told of every one - who, how much, why.
+  if ((facts.extraCostsToday ?? 0) > 0) {
+    items.push({ id: "extra-costs", level: "notice", count: facts.extraCostsToday ?? 0 });
   }
   // Refused goods that have sat two months: sell them cheaper or write them off.
   if ((facts.stockOld ?? 0) > 0) {
@@ -362,6 +371,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "the same goods were written on their account twice — see the proof and put it right",
           ar: "قُيّدت البضاعة نفسها مرتين — اعرض الدليل وصحّح",
           zh: "同一货物被记账两次 — 查看依据并更正",
+        },
+      };
+    case "extra-costs":
+      return {
+        title: { ku: `${n} تێچووی تر لە 24 کاتژمێری ڕابردوودا نووسرا`, en: `${n} other cost(s) written in the last 24 hours`, ar: `${n} تكلفة أخرى سُجّلت خلال 24 ساعة`, zh: `过去 24 小时记录了 ${n} 笔其他费用` },
+        detail: {
+          ku: "کێ نووسیویەتی، چەند، و بۆچی — ببینە",
+          en: "who wrote them, how much, and why",
+          ar: "من سجّلها، وكم، ولماذا",
+          zh: "谁记录的、金额和原因",
         },
       };
     case "stock-old":

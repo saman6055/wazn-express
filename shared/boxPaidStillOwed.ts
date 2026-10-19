@@ -108,6 +108,12 @@ export interface SettledFacts {
    * false debt to take off.
    */
   reversedPaymentUsd?: Map<number, number>;
+  /**
+   * Other costs' prices on the ledger (shared/extraCosts), by their row, and
+   * where their money stands: taken by a receipt, asked for by a box not yet
+   * receipted, or written on a parcel not yet boxed.
+   */
+  extraCharges?: Map<number, "paid" | "openBox" | "parcel">;
 }
 
 const BOX_LINE_TEXT = /^(BOX-[\w-]+)\s+—\s+(\S+)/;
@@ -208,7 +214,9 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     if (cents <= 0) { out.verdict = "back"; continue; }
     if (line) continue; // written by a receipt, paid by it
     let verdict: ChargeVerdict;
-    if (isOrder) {
+    const extra = facts.extraCharges?.get(r.id);
+    if (extra) verdict = extra;
+    else if (isOrder) {
       if (!order) verdict = "road"; // an order we cannot find is never called paid
       else if (facts.receiptedOrderIds.has(order.id) || order.trackings.some((t) => facts.receiptedTrackings.has(trackingKey(t)))) verdict = "paid";
       else if (facts.openOrderIds?.has(order.id) || order.trackings.some((t) => facts.openTrackings?.has(trackingKey(t)))) verdict = "openBox";

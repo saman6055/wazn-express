@@ -1103,6 +1103,51 @@ export const deliveryBoxRouter = router({
   }),
   // "No, it has not been paid" — the only thing that sends the customer the
   // gentle reminder. The refusal carries its own cure, so it is passed on as said.
+  /* ── other costs on a box (shared/extraCosts, owner 2026-10-19) ───────
+   * Anybody may write one; the main admin is told of each in the bell and
+   * sees them all on /finance/extra-costs. The refusals carry their cure. */
+  extraCosts: staffProcedure
+    .input(z.object({ boxId: z.number().int().positive() }))
+    .query(async ({ input }) => (await db.extraCostsForBoxes([input.boxId])).get(input.boxId) ?? []),
+
+  addExtraCost: staffProcedure
+    .input(z.object({
+      boxId: z.number().int().positive().optional(),
+      packageId: z.number().int().positive().optional(),
+      reason: z.enum(["customs", "inspection", "repack", "china_service", "other"]),
+      note: z.string().max(500).optional(),
+      costUsd: z.number().min(0).max(100_000),
+      priceUsd: z.number().min(0).max(100_000),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        const row = await db.addExtraCost(input, ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id, userRole: ctx.user.role, action: "add_extra_cost",
+          entityType: "box_extra_cost", entityId: row.id,
+          newValues: { boxId: input.boxId, packageId: input.packageId, reason: input.reason, note: input.note, costUsd: input.costUsd, priceUsd: input.priceUsd },
+        });
+        return row;
+      } catch (err) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+      }
+    }),
+
+  removeExtraCost: staffProcedure
+    .input(z.object({ id: z.number().int().positive(), reason: z.string().max(500).optional() }))
+    .mutation(async ({ input, ctx }) => {
+      try {
+        await db.removeExtraCost(input.id, input.reason ?? "", ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id, userRole: ctx.user.role, action: "remove_extra_cost",
+          entityType: "box_extra_cost", entityId: input.id, newValues: { reason: input.reason },
+        });
+        return { ok: true as const };
+      } catch (err) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+      }
+    }),
+
   confirmUnpaid: staffProcedure
     .input(z.object({ boxId: z.number().int().positive() }))
     .mutation(async ({ input, ctx }) => {

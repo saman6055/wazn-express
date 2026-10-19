@@ -215,7 +215,9 @@ export async function finishPaidBox(boxId: number, userId: number): Promise<Fini
 
     const view = await db.getBoxSettlementView(boxId);
     const lines = view.parcels ?? [];
-    const paidInFull = lines.length > 0 && lines.every((p) => Number(p.outstandingUsd) <= SETTLED_SLACK_USD);
+    const paidInFull = lines.length > 0 && lines.every((p) => Number(p.outstandingUsd) <= SETTLED_SLACK_USD)
+      // Other costs still unpaid keep the box open (shared/extraCosts).
+      && Number(view.extrasDueUsd ?? 0) <= SETTLED_SLACK_USD;
     if (!paidInFull) return { finished: false, error: null };
 
     if (box.status === "delivered") return { finished: true, error: null };

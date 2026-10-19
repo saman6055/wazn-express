@@ -355,7 +355,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     if (!v || v.openChargesUsd === null || v.openChargesUsd === undefined) return 0;
     const totals = settlementTotals(v.parcels, []);
     return accountCover({
-      dueUsd: totals.dueUsd,
+      // Other costs no receipt has taken are asked for with the box.
+      dueUsd: totals.dueUsd + Number(v.extrasDueUsd ?? 0),
       balanceUsd: v.accountBalanceUsd,
       openUsd: v.openChargesUsd,
       toChargeUsd: unbilledOnReceiptUsd(v.parcels, []),
@@ -392,7 +393,10 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
    * can never leave the paper one thousand short.
    */
   const canDiscount = request?.canDiscount !== false;
-  const grossUsd = request?.totalUsd ?? 0;
+  // Other costs on the box (customs and the like) are on the paper as rows,
+  // so they are in what it asks for (shared/extraCosts).
+  const extrasUsd = Math.round((boxView.data?.extras ?? []).filter((e) => e.priceUsd > 0).reduce((s, e) => s + e.priceUsd * 100, 0)) / 100;
+  const grossUsd = Math.round(((request?.totalUsd ?? 0) + extrasUsd) * 100) / 100;
   // Nothing recorded in either unit: no row, rather than "0.00 kg".
   const measures = request?.measures && (request.measures.kg > 0 || request.measures.cbm > 0) ? request.measures : null;
   const cutUsd = canDiscount ? Math.max(0, Math.min(grossUsd, Number(discount) || 0)) : 0;
@@ -462,7 +466,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent dir={isRTL ? "rtl" : "ltr"} className="max-h-[90vh] overflow-y-auto sm:max-w-md">
+      <DialogContent dir={isRTL ? "rtl" : "ltr"} className="max-h-[92vh] overflow-y-auto sm:max-w-md lg:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             {sending ? <Send className="h-5 w-5 text-primary" /> : <Printer className="h-5 w-5 text-primary" />}
@@ -478,6 +482,13 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
           </DialogDescription>
         </DialogHeader>
 
+        {/*
+          * Two columns on a wide screen (owner, 2026-10-19: "it is very long,
+          * you have to scroll down"): the money and the rate on one side, the
+          * discount and the paper's own lines on the other, so the whole
+          * receipt is seen at once. One column on a phone, as before.
+          */}
+        <div className="space-y-4 lg:grid lg:grid-cols-2 lg:items-start lg:gap-6 lg:space-y-0">
         <div className="space-y-4">
           {/* How much is in the box, before what it costs: the kilos, the
               cubic metres, or both when both are recorded. */}
@@ -496,8 +507,13 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
           )}
           <div className="flex items-center justify-between rounded-lg bg-muted px-3 py-2">
             <span className="text-sm">{L(TXT.totalUsd)}</span>
-            <bdi dir="ltr" className="font-mono text-base font-semibold">${(request?.totalUsd ?? 0).toFixed(2)}</bdi>
+            <bdi dir="ltr" className="font-mono text-base font-semibold">${grossUsd.toFixed(2)}</bdi>
           </div>
+          {extrasUsd > 0 && (
+            <p className="-mt-2 px-1 text-xs text-muted-foreground" data-testid="receipt-extras">
+              {L({ ku: `لەوە $${extrasUsd.toFixed(2)} تێچووی ترە (گومرگ و هتد) — لەسەر وەسڵەکە ڕیز بە ڕیز دەنووسرێن.`, en: `$${extrasUsd.toFixed(2)} of it is other costs (customs etc.) — each is its own row on the paper.`, ar: `منها $${extrasUsd.toFixed(2)} تكاليف أخرى (جمرك وغيره) — كل منها سطر على الإيصال.`, zh: `其中 $${extrasUsd.toFixed(2)} 为其他费用（海关等）— 收据上逐行列出。` })}
+            </p>
+          )}
 
           <div className="space-y-1.5">
             <Label htmlFor="receipt-dinar-rate">{L(TXT.rate)}</Label>
@@ -592,6 +608,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
             <p className="text-xs text-muted-foreground">{mode === "down" ? L(TXT.noRemainderHint) : L(TXT.roundingHint)}</p>
           </div>
 
+        </div>
+        <div className="space-y-4">
           {/* ── the discount, and what it was given for ──────────────
               Owner, 2026-09-24: in dollars, in step with the rate above,
               on the whole total or on one tracking, with the reason — and
@@ -726,6 +744,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
               )}
             </div>
           )}
+        </div>
         </div>
 
         <DialogFooter className="flex-row gap-2 sm:gap-2">

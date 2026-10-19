@@ -1034,6 +1034,47 @@ export type InsertPendingCredit = typeof pendingCredits.$inferInsert;
  * sold (the price less the cost is a profit or a loss) or written off (the
  * cost is the loss). Nothing here is ever deleted.
  */
+/**
+ * Other costs on a box or a parcel (shared/extraCosts, owner 2026-10-19):
+ * customs, an inspection, a repack, a service in China, or other written
+ * out. The customer's price is a debt from the moment it is written
+ * (ledgerTransactionId); the company's cost comes off the profit with it.
+ * A receipt that takes the money marks the line (settlementId); undoing the
+ * receipt clears the mark.
+ */
+export const boxExtraCosts = mysqlTable("boxExtraCosts", {
+  id: int("id").autoincrement().primaryKey(),
+  customerId: int("customerId").notNull(),
+  /** The box it is on - or null while it waits on a parcel not yet boxed. */
+  boxId: int("boxId"),
+  /** The parcel it belongs to, when it is one parcel's and not the whole box's. */
+  packageId: int("packageId"),
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
+  reason: mysqlEnum("reason", ["customs", "inspection", "repack", "china_service", "other"]).notNull(),
+  note: text("note"),
+  /** What the company paid. */
+  costUsd: decimal("costUsd", { precision: 12, scale: 2 }).notNull(),
+  /** What the customer is charged; 0 when it stays on the company. */
+  priceUsd: decimal("priceUsd", { precision: 12, scale: 2 }).notNull(),
+  /** The customer's charge on the ledger, when there is a price. */
+  ledgerTransactionId: int("ledgerTransactionId"),
+  /** The receipt that took the money for it. */
+  settlementId: int("settlementId"),
+  status: mysqlEnum("status", ["active", "removed"]).default("active").notNull(),
+  removedAt: timestamp("removedAt"),
+  removedById: int("removedById"),
+  removeReason: text("removeReason"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  boxIdx: index("idx_box_extra_costs_box").on(table.boxId),
+  packageIdx: index("idx_box_extra_costs_package").on(table.packageId),
+  customerIdx: index("idx_box_extra_costs_customer").on(table.customerId),
+}));
+
+export type BoxExtraCost = typeof boxExtraCosts.$inferSelect;
+export type InsertBoxExtraCost = typeof boxExtraCosts.$inferInsert;
+
 export const companyStock = mysqlTable("companyStock", {
   id: int("id").autoincrement().primaryKey(),
   /** The order the goods came from, and its code as it read that day. */

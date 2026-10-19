@@ -42,7 +42,7 @@ import {
 import { isEmptyBox } from "@shared/emptyBox";
 import type { ReceiptDinarInput } from "@shared/receiptDinar";
 import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
-import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines } from "@/lib/deliveryBoxPrintUtils";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -188,6 +188,9 @@ export function BoxTable({
    * there is nothing left to convert.
    */
   const [receiptRequest, setReceiptRequest] = useState<ReceiptDinarRequest | null>(null);
+  // The box's own payment view, read when its receipt is printed: other costs
+  // (customs and the like) are rows on the paper.
+  const trpcUtils = trpc.useUtils();
   const handlePrintReceipt = (box: DeliveryBox, lang: Language) => {
     if (box.settlementCleared === true) {
       void printReceiptNow(box, lang, null);
@@ -245,7 +248,10 @@ export function BoxTable({
           }
         : null,
       createTranslator(lang),
-      { direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, lang), dinar }
+      {
+        direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, lang), dinar,
+        extras: receiptExtraLines((await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null))?.extras, lang),
+      }
     );
   };
 

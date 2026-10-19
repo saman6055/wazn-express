@@ -437,7 +437,8 @@ describe("a box is receipted once", () => {
   const create = src.slice(src.indexOf("export async function createBoxSettlement"), src.indexOf("async function postDiscountCredits"));
 
   it("nothing owed and nothing handed over is no receipt", () => {
-    expect(create).toContain("if (totals.dueUsd <= 0.005 && handedOverUsd <= 0.005 && toCharge.length === 0 && !input.replacesSettlementId) {");
+    // Other costs still unpaid on the box are something owed (shared/extraCosts).
+    expect(create).toContain("if (totals.dueUsd + extrasDueUsd <= 0.005 && handedOverUsd <= 0.005 && toCharge.length === 0 && !input.replacesSettlementId) {");
   });
 
   it("the box is locked, and a receipt written meanwhile stops this one", () => {

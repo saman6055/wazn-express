@@ -1489,6 +1489,35 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "boxExtraCosts",
+    dependencies: ["customers", "users"],
+    // Other costs on a box or a parcel (owner, 2026-10-19). See
+    // drizzle/schema/finance.schema.ts and shared/extraCosts.
+    sql: `CREATE TABLE IF NOT EXISTS boxExtraCosts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      customerId INT NOT NULL,
+      boxId INT NULL,
+      packageId INT NULL,
+      trackingNumber VARCHAR(100) NULL,
+      reason ENUM('customs','inspection','repack','china_service','other') NOT NULL,
+      note TEXT,
+      costUsd DECIMAL(12, 2) NOT NULL,
+      priceUsd DECIMAL(12, 2) NOT NULL,
+      ledgerTransactionId INT NULL,
+      settlementId INT NULL,
+      status ENUM('active','removed') NOT NULL DEFAULT 'active',
+      removedAt TIMESTAMP NULL,
+      removedById INT NULL,
+      removeReason TEXT,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_box_extra_costs_box (boxId),
+      INDEX idx_box_extra_costs_package (packageId),
+      INDEX idx_box_extra_costs_customer (customerId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "companyStock",
     dependencies: ["customers", "users"],
     // Refused goods, the company's own until sold or written off (owner,
@@ -2921,6 +2950,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.pending_credits_status", sql: "CREATE INDEX idx_pending_credits_status ON pendingCredits (status)" },
   { name: "idx.pending_credits_customer", sql: "CREATE INDEX idx_pending_credits_customer ON pendingCredits (customerId)" },
   { name: "idx.customer_standing_customer", sql: "CREATE INDEX idx_customer_standing_customer ON customerStanding (customerId)" },
+  { name: "idx.box_extra_costs_box", sql: "CREATE INDEX idx_box_extra_costs_box ON boxExtraCosts (boxId)" },
+  { name: "idx.box_extra_costs_package", sql: "CREATE INDEX idx_box_extra_costs_package ON boxExtraCosts (packageId)" },
+  { name: "idx.box_extra_costs_customer", sql: "CREATE INDEX idx_box_extra_costs_customer ON boxExtraCosts (customerId)" },
   { name: "companyStock.packageId", sql: "ALTER TABLE companyStock ADD COLUMN packageId INT NULL" },
   { name: "companyStock.freightCostUsd", sql: "ALTER TABLE companyStock ADD COLUMN freightCostUsd DECIMAL(12, 2) NOT NULL DEFAULT 0" },
   { name: "companyStock.trackingNumber", sql: "ALTER TABLE companyStock ADD COLUMN trackingNumber VARCHAR(100) NULL" },

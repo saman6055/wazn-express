@@ -153,7 +153,7 @@ const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 // slower, so it never auto-fires — Enter still submits it explicitly.
 const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
-import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd, boxPhysicalTotals } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines, receiptExtrasUsd } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
 import { pledgeLabel } from "@shared/pledgedDiscount";
@@ -718,6 +718,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       company: companyContact(company, lang),
       settlement: { ...settlementForPrint, ...receiptDiscount(lang, given) },
       dinar,
+      extras: receiptExtraLines(settlementView?.extras, lang),
     });
   };
 
@@ -730,6 +731,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       company: companyContact(company, lang),
       settlement: { ...settlementForPrint, ...receiptDiscount(lang, given) },
       dinar,
+      extras: receiptExtraLines(settlementView?.extras, lang),
     });
   };
 
@@ -850,6 +852,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       direction: getLanguageDirection(lang),
       logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)),
       company: companyContact(company, lang),
+      extras: receiptExtraLines(settlementView?.extras, lang),
       settlement: { ...settlementForPrint, ...discounted },
       dinar,
     });
@@ -857,7 +860,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     // because that is the number the customer is actually asked for
     // (owner, 2026-09-22).
     // The message quotes what the paper says, discount and all.
-    const totalUsd = receiptAmountUsd(box, discounted);
+    const totalUsd = Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang))) * 100) / 100;
     const figures = receiptDinar(totalUsd, dinar);
     const message = receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {
       boxCode: box.boxCode,

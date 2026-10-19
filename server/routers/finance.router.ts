@@ -159,6 +159,11 @@ export const ledgerRouter = router({
         }
       }),
 
+    /** Every other cost written on a box - the main admin's watch (shared/extraCosts). */
+    extraCosts: accountantProcedure
+      .input(z.object({ sinceDays: z.number().int().min(1).max(3650).default(90) }).optional())
+      .query(async ({ input }) => db.listExtraCosts({ sinceDays: input?.sinceDays ?? 90 })),
+
     // ── Cautions and the blacklist (shared/customerStanding) ─────────────
     /** Shown wherever something is about to be done for a customer, so every member of staff may read it. */
     customerStanding: staffProcedure

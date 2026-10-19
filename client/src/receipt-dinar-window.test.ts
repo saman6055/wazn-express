@@ -80,7 +80,7 @@ describe("every way into a receipt goes through it", () => {
   it("the box list's print", () => {
     expect(table).toContain("totalUsd: receiptAmountUsd(box)");
     expect(table).toContain("onConfirm: (dinar) => void printReceiptNow(box, lang, dinar)");
-    expect(table).toContain("company: companyContact(company, lang), dinar }");
+    expect(table).toContain("company: companyContact(company, lang), dinar,");
     expect(table).toContain("<ReceiptDinarDialog request={receiptRequest}");
   });
 

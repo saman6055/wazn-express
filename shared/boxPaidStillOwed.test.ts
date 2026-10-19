@@ -293,6 +293,6 @@ describe("a payment undone is not paid", () => {
   it("the finder reads what was given back from the payments themselves", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
-    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd };");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges };");
   });
 });

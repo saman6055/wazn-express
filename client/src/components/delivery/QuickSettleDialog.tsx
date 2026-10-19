@@ -115,7 +115,8 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   // server applies the same rule (shared accountCover).
   const cover = useMemo(
     () => accountCover({
-      dueUsd: totals.dueUsd,
+      // Other costs no receipt has taken are asked for with the box (shared/extraCosts).
+      dueUsd: totals.dueUsd + Number(data?.extrasDueUsd ?? 0),
       balanceUsd: data?.accountBalanceUsd ?? 0,
       // The till's own rule: an advance goes to the goods in this box.
       openUsd: data?.openChargesUsd ?? undefined,

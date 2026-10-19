@@ -288,7 +288,11 @@ async function gatherAccount(customerId: number) {
     reversedPaymentUsd.set(Number(r.transactionId), cents((reversedPaymentUsd.get(Number(r.transactionId)) ?? 0) + num(r.reversedUsd)));
   }
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd };
+  // Other costs' prices and where their money stands (shared/extraCosts).
+  const { extraChargeStates } = await import("./extraCosts.db");
+  const extraCharges = await extraChargeStates(customerId);
+
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 

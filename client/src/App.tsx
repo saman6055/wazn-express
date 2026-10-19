@@ -91,6 +91,7 @@ const DebtorsReport = lazy(() => import("./pages/DebtorsReport"));
 const WorkingCapital = lazy(() => import("./pages/WorkingCapital"));
 const GoodsOnRoad = lazy(() => import("./pages/GoodsOnRoad"));
 const CompanyStock = lazy(() => import("./pages/CompanyStock"));
+const ExtraCosts = lazy(() => import("./pages/ExtraCosts"));
 const BoxDoubleCharges = lazy(() => import("./pages/BoxDoubleCharges"));
 const CustomerStanding = lazy(() => import("./pages/CustomerStanding"));
 const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
@@ -285,6 +286,7 @@ function Router() {
         <Route path="/finance/working-capital" component={WorkingCapital} />
         <Route path="/finance/goods-on-road" component={GoodsOnRoad} />
         <Route path="/finance/company-stock" component={CompanyStock} />
+        <Route path="/finance/extra-costs" component={ExtraCosts} />
         <Route path="/finance/box-double-charges" component={BoxDoubleCharges} />
         <Route path="/customers/standing" component={CustomerStanding} />
         <Route path="/finance/bank-accounts" component={BankAccounts} />

@@ -1,4 +1,5 @@
 import { cartonVolumeText } from "@shared/parcelCost";
+import { EXTRA_COST_REASON_LABELS, type ExtraCostReason } from "@shared/extraCosts";
 /**
  * Delivery Box Print Utilities
  * Professional label and receipt printing for delivery boxes.
@@ -725,6 +726,33 @@ export function printBoxLabel(
 
 // ==================== RECEIPT TEMPLATE ====================
 
+/**
+ * Other costs as the receipt prints them (shared/extraCosts, owner
+ * 2026-10-19): each priced line by its reason and words. A cost kept by the
+ * company has no price and is not the customer's business.
+ */
+export interface ReceiptExtraLine {
+  label: string;
+  usd: number;
+}
+
+export function receiptExtraLines(
+  extras: ReadonlyArray<{ reason: ExtraCostReason; note: string | null; priceUsd: number; trackingNumber?: string | null }> | null | undefined,
+  lang: string,
+): ReceiptExtraLine[] {
+  const words = (lang === "ku" || lang === "en" || lang === "ar" || lang === "zh") ? lang : "ku";
+  return (extras ?? [])
+    .filter((e) => Number(e.priceUsd) > 0)
+    .map((e) => ({
+      label: `${EXTRA_COST_REASON_LABELS[e.reason][words]}${e.note ? ` — ${e.note}` : ""}${e.trackingNumber ? ` (${e.trackingNumber})` : ""}`,
+      usd: Math.round(Number(e.priceUsd) * 100) / 100,
+    }));
+}
+
+export function receiptExtrasUsd(lines: ReadonlyArray<ReceiptExtraLine> | null | undefined): number {
+  return Math.round((lines ?? []).reduce((s, l) => s + l.usd * 100, 0)) / 100;
+}
+
 export function buildBoxReceiptHtml(
   box: BoxForPrint,
   items: BoxItemForPrint[],
@@ -741,6 +769,8 @@ export function buildBoxReceiptHtml(
     /** The day's rate and any advance received by hand, given just before
      *  printing. Absent, the receipt prints without dinars. */
     dinar?: ReceiptDinarInput | null;
+    /** Other costs on the box - customs and the like - each its own row. */
+    extras?: ReceiptExtraLine[];
   },
 ): string {
   // Direction follows the chosen receipt language (rtl for ku/ar, ltr for
@@ -748,7 +778,9 @@ export function buildBoxReceiptHtml(
   const direction = options?.direction || 'rtl';
   const totalValue = formatNum(box.totalValueUsd);
   const deliveryCharge = formatNum(box.deliveryChargeUsd);
-  const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0);
+  // Other costs (customs and the like) are part of what the box asks for.
+  const extraLines = options?.extras ?? [];
+  const grandTotalNum = Number(box.totalValueUsd || 0) + Number(box.deliveryChargeUsd || 0) + receiptExtrasUsd(extraLines);
   const grandTotal = grandTotalNum.toFixed(2);
   // The discount comes off the grand total, so the figure the customer is
   // asked for is the one they agreed to — and the line above it says why it
@@ -1126,6 +1158,10 @@ export function buildBoxReceiptHtml(
           <span>${t("delivery.deliveryCharge")}:</span>
           <span style="font-weight:600; color:${PRIMARY_COLOR};">$${deliveryCharge}</span>
         </div>` : ""}
+        ${extraLines.map((line) => `<div class="financial-row">
+          <span>${escapeHtml(line.label)}:</span>
+          <span style="font-weight:600;" dir="ltr">$${line.usd.toFixed(2)}</span>
+        </div>`).join("")}
         <div class="financial-row${discountNum > 0 ? "" : " total"}">
           <span>${t("delivery.grandTotal")}:</span>
           <span${discountNum > 0 ? ' style="font-weight:600;"' : ""}>$${grandTotal}</span>
@@ -1235,6 +1271,7 @@ export function downloadBoxReceiptPDF(
     company?: CompanyContact;
     settlement?: SettlementForPrint;
     dinar?: ReceiptDinarInput | null;
+    extras?: ReceiptExtraLine[];
   },
 ): void {
   printBoxReceipt(box, items, customer, t, {
@@ -1247,5 +1284,6 @@ export function downloadBoxReceiptPDF(
     // paper would be the version somebody finds later.
     settlement: options?.settlement,
     dinar: options?.dinar,
+    extras: options?.extras,
   });
 }

@@ -958,7 +958,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
       return fallback;
     }
   };
-  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes, whatsappUnsent, finance, boxesUnpaid, stockOld, boxPaidOwed] = await Promise.all([
+  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes, whatsappUnsent, finance, boxesUnpaid, stockOld, boxPaidOwed, extraCostsToday] = await Promise.all([
     settle('stale depot', () => getStaleDepotPackages(), []),
     settle('volumetric', () => getVolumetricParcels({ pendingOnly: true }), []),
     settle('debt over limit', countDebtorsOverLimit, 0),
@@ -971,6 +971,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     settle('boxes unpaid', async () => (await import('./boxReminder.db')).countBoxesAwaitingOffice(), 0),
     settle('stock old', async () => (await (await import('./refusedGoods.db')).getStockHeld()).old, 0),
     settle('box paid still owed', async () => (await import('./boxPaidStillOwed.db')).countBoxDoubleCharges(), 0),
+    settle('extra costs', async () => (await import('./extraCosts.db')).countExtraCostsSince(24), 0),
   ]);
   return buildRiskItems({
     staleDepotDays: stale.map((p) => p.daysInDepot),
@@ -986,6 +987,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     boxesUnpaid,
     stockOld,
     boxPaidOwed,
+    extraCostsToday,
   });
 }
 
@@ -1796,7 +1798,7 @@ export async function getProfitForPeriod(startDate: Date, endDate: Date) {
   const db = await getDb();
   if (!db) {
     const zero = { count: 0, revenue: 0, cost: 0, shipping: 0, profit: 0 };
-    return { fullPackage: zero, purchaseRequest: zero, commission: zero, pkgs: { count: 0, revenue: 0, profit: 0 }, stock: { lostUsd: 0, keptUsd: 0, recoveredUsd: 0, profitUsd: 0 }, total: { revenue: 0, cost: 0, shipping: 0, profit: 0 } };
+    return { fullPackage: zero, purchaseRequest: zero, commission: zero, pkgs: { count: 0, revenue: 0, profit: 0 }, stock: { lostUsd: 0, keptUsd: 0, recoveredUsd: 0, profitUsd: 0 }, extra: { count: 0, priceUsd: 0, costUsd: 0, profitUsd: 0 }, total: { revenue: 0, cost: 0, shipping: 0, profit: 0 } };
   }
   // Full Package orders
   const fpOrders = await db.select({
@@ -1894,15 +1896,18 @@ export async function getProfitForPeriod(startDate: Date, endDate: Date) {
   // sale, so its margin has already left the lines above.
   // Imported here, not at the top: that module reaches back through finance.db.
   const stock = await (await import('./refusedGoods.db')).getStockProfitBetween(startDate, endDate);
+  // Other costs on boxes (shared/extraCosts): the price taken less the cost
+  // paid - nothing when passed on at cost, a loss when kept by the company.
+  const extra = await (await import('./extraCosts.db')).getExtraCostProfitBetween(startDate, endDate);
 
   const total = {
     revenue: fullPackage.revenue + purchaseRequest.revenue + commission.revenue + pkgs.revenue,
     cost: fullPackage.cost + purchaseRequest.cost + commission.cost,
     shipping: fullPackage.shipping + purchaseRequest.shipping + commission.shipping,
-    profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit + stock.profitUsd,
+    profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit + stock.profitUsd + extra.profitUsd,
   };
   
-  return { fullPackage, purchaseRequest, commission, pkgs, stock, total };
+  return { fullPackage, purchaseRequest, commission, pkgs, stock, extra, total };
 }
 
 export async function getMonthlyProfitReport(year: number, month?: number): Promise<{

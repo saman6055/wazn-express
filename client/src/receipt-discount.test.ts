@@ -114,7 +114,8 @@ describe("the receipt", () => {
   });
 
   it("quotes the discounted figure in the WhatsApp message too", () => {
-    expect(boxPanel).toContain("const totalUsd = receiptAmountUsd(box, discounted);");
+    // …with the box's other costs (customs and the like), as the paper has them.
+    expect(boxPanel).toContain("const totalUsd = Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang))) * 100) / 100;");
   });
 });
 

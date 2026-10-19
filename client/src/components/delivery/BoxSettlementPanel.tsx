@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
 import { SettlementLoadError, NothingToTake } from "@/components/delivery/SettlementStates";
+import { BoxExtraCosts } from "@/components/delivery/BoxExtraCosts";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { showErrorToast } from "@/lib/errorToast";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -220,7 +221,8 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
   // server applies the same rule (shared accountCover).
   const cover = useMemo(
     () => accountCover({
-      dueUsd: totals.dueUsd,
+      // Other costs no receipt has taken are asked for with the box (shared/extraCosts).
+      dueUsd: totals.dueUsd + Number(data?.extrasDueUsd ?? 0),
       balanceUsd: data?.accountBalanceUsd ?? 0,
       // The till's own rule: an advance goes to the goods in this box.
       openUsd: data?.openChargesUsd ?? undefined,
@@ -714,6 +716,8 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
           </div>
 
           <div className="min-w-0 space-y-3 lg:sticky lg:top-2 lg:self-start">
+          {/* ── other costs: customs and the like (owner, 2026-10-19) ── */}
+          <BoxExtraCosts boxId={boxId} extras={data?.extras ?? []} onChanged={() => void refetch()} />
           {/* ── totals and the money ─────────────────────────────────── */}
           <div className="grid gap-3 md:grid-cols-3 lg:grid-cols-1">
             <div className="rounded-lg border p-3 space-y-1.5">
@@ -732,6 +736,10 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
               {totals.heldUsd > 0 && (
                 <Row label={t({ ku: "تەحدید کراو", en: "Set aside", ar: "مستبعد", zh: "已搁置" })}
                      value={`−${fmtAmount(totals.heldUsd)}`} tone="red" />
+              )}
+              {Number(data?.extrasDueUsd ?? 0) > 0 && (
+                <Row label={t({ ku: "تێچووی تر", en: "Other costs", ar: "تكاليف أخرى", zh: "其他费用" })}
+                     value={`+${fmtAmount(Number(data?.extrasDueUsd ?? 0))}`} tone="blue" />
               )}
               {cover.coveredUsd > 0 && (
                 <Row label={t({ ku: "پێشتر لەسەر حیساب دراوە", en: "Already settled on the account", ar: "سبق تسديده على الحساب", zh: "已在账户上结清" })}

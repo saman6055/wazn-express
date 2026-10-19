@@ -18,6 +18,7 @@ import { customers, users } from "../../drizzle/schema/users.schema";
 import { batches } from "../../drizzle/schema/batches.schema";
 import type { BoxSettlement } from "../../drizzle/schema/finance.schema";
 import { appLogger } from "../utils/logger";
+import { clearExtraCostsSettlement, extraCostsForBoxes, markExtraCostsSettled, unpaidExtraCostsByBox, type ExtraCostRow } from "./extraCosts.db";
 import { recordPaymentReceived, adjustCharge, recordPackageChargeWithoutInvoice } from "./finance.db";
 import { createCustomerNotification } from "./portal.db";
 import { markLinkedOrdersCharged } from "./packages.db";
@@ -182,6 +183,13 @@ export interface BoxSettlementView {
    * the old rule then stands.
    */
   openChargesUsd: number | null;
+  /**
+   * Other costs on this box or a parcel in it (shared/extraCosts) - customs,
+   * an inspection... Their prices are on the account already; the box asks
+   * for the ones no receipt has taken (extrasDueUsd).
+   */
+  extras: ExtraCostRow[];
+  extrasDueUsd: number;
 }
 
 type SettlementDb = NonNullable<Awaited<ReturnType<typeof getDb>>>;
@@ -618,9 +626,12 @@ export async function getBoxesPaidInFull(boxIds: number[]): Promise<Set<number>>
     list.push(parcels[i]);
     byBox.set(boxId, list);
   });
+  // Other costs still unpaid keep a box open (shared/extraCosts).
+  const extrasOwed = await unpaidExtraCostsByBox(payingIds);
   byBox.forEach((lines, boxId) => {
     // Word for word the test finishPaidBox uses (server/lib/boxLifecycle.ts).
-    const paidInFull = lines.length > 0 && lines.every((p) => Number(p.outstandingUsd) <= SETTLED_SLACK_USD);
+    const paidInFull = lines.length > 0 && lines.every((p) => Number(p.outstandingUsd) <= SETTLED_SLACK_USD)
+      && (extrasOwed.get(boxId) ?? 0) <= SETTLED_SLACK_USD;
     if (paidInFull) paid.add(boxId);
   });
   return paid;
@@ -658,6 +669,9 @@ export async function getBoxesOutstanding(boxIds: number[]): Promise<Map<number,
     const line = Math.max(0, Math.round((Number(parcels[i].outstandingUsd) || 0) * 100));
     cents.set(boxId, (cents.get(boxId) ?? 0) + line);
   });
+  // Other costs no receipt has taken are owed with the box (shared/extraCosts).
+  const extras = await unpaidExtraCostsByBox(ids);
+  extras.forEach((usd, boxId) => cents.set(boxId, (cents.get(boxId) ?? 0) + Math.round(usd * 100)));
   cents.forEach((total, boxId) => owed.set(boxId, total / 100));
   return owed;
 }
@@ -794,7 +808,7 @@ export async function getLastSettlementRate(): Promise<{ rate: number; at: Date 
 export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
   const empty: BoxSettlementView = {
     box: null, customer: null, parcels: [], settlements: [], pledges: [],
-    lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null,
+    lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null, extras: [], extrasDueUsd: 0,
   };
   const db = await getDb();
   if (!db) return empty;
@@ -854,6 +868,11 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
     pledges: await getOpenPledges(boxId),
     lastExchangeRate: lastRate?.rate ?? null,
     accountBalanceUsd: Number(account?.balance ?? 0),
+    ...(await (async () => {
+      const extras = (await extraCostsForBoxes([boxId])).get(boxId) ?? [];
+      const due = extras.filter((e) => e.priceUsd > 0 && e.settlementId === null).reduce((s, e) => s + Math.round(e.priceUsd * 100), 0) / 100;
+      return { extras, extrasDueUsd: due };
+    })()),
     openChargesUsd: await (async () => {
       try {
         // Imported here: the debt rule's file reaches back into this side of the graph.
@@ -1229,8 +1248,12 @@ export async function createBoxSettlement(
   // account already settled — by hand, from the payments page, as credit —
   // closes these parcels with no money taken (owner, 2026-10-01; see
   // accountCover). Without this the same debt was receipted twice.
+  // Other costs on the box whose price no receipt has taken: on the account
+  // already, asked for with the box (shared/extraCosts).
+  const unpaidExtras = view.extras.filter((e) => e.priceUsd > 0 && e.settlementId === null);
+  const extrasDueUsd = round2(unpaidExtras.reduce((s, e) => s + e.priceUsd, 0));
   const cover = accountCover({
-    dueUsd: totals.dueUsd,
+    dueUsd: round2(totals.dueUsd + extrasDueUsd),
     balanceUsd: view.accountBalanceUsd,
     // An advance on the account goes to the goods in this box (owner, 2026-10-19).
     openUsd: view.openChargesUsd ?? undefined,
@@ -1335,7 +1358,7 @@ export async function createBoxSettlement(
    * way — held for the main admin's yes).
    */
   const confirmedBefore = view.settlements.filter((s) => s.status === "confirmed");
-  if (totals.dueUsd <= 0.005 && handedOverUsd <= 0.005 && toCharge.length === 0 && !input.replacesSettlementId) {
+  if (totals.dueUsd + extrasDueUsd <= 0.005 && handedOverUsd <= 0.005 && toCharge.length === 0 && !input.replacesSettlementId) {
     const last = confirmedBefore[0]?.settlementNumber;
     throw new Error(withFix(
       `بۆکسی ${box.boxCode} هیچ پارەیەکی لەسەر نەماوە${last ? ` — پێشتر بە وەسڵی ${last} واصڵ کراوە` : ""}. وەسڵێکی دیکە پارەیەک دەژمێرێت کە نەهاتووە.`,
@@ -1538,6 +1561,8 @@ export async function createBoxSettlement(
       createdAt: now,
     });
     const settlementId = Number(inserted[0].insertId);
+    // The other costs this receipt took the money for.
+    await markExtraCostsSettled(tx, unpaidExtras.map((e) => e.id), settlementId);
 
     for (const line of totals.lines) {
       const source = input.lines.find((l) => l.lineId === line.lineId);
@@ -1857,6 +1882,8 @@ export async function reverseBoxSettlement(
         reversalReason: reason.trim(),
       })
       .where(eq(boxSettlements.id, settlementId));
+    // The other costs it had taken are owed again.
+    await clearExtraCostsSettlement(tx, settlementId);
 
     /**
      * The promises this receipt had kept are open again.
