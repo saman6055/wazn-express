@@ -38,6 +38,7 @@ import {
   type ParcelIntent, type BoxDiscount, type DiscountReason,
 } from "@shared/boxSettlement";
 import { pledgeFloors, pledgeBreaches, pledgeRefusal, reasonText, wholeBoxName } from "@shared/pledgedDiscount";
+import { useAuth } from "@/_core/hooks/useAuth";
 
 /**
  * Taking the money, at the counter, with the parcels in front of both people.
@@ -85,6 +86,9 @@ const EmbeddedFrame = ({ children }: { children: ReactNode }) => (
 );
 
 export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
+  // Undoing a receipt takes the box back to before its payment: the main
+  // admin's alone (owner, 2026-10-19; the server refuses anybody else).
+  const isMainAdmin = useAuth().user?.role === "super_admin";
   const { language } = useTranslation();
   const systemAlert = useSystemAlert();
   const utils = trpc.useUtils();
@@ -701,7 +705,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
                     <Badge variant="destructive" className="ms-auto">
                       {t({ ku: "هەڵوەشێنراوەتەوە", en: "Reversed", ar: "ملغى", zh: "已撤销" })}
                     </Badge>
-                  ) : (
+                  ) : isMainAdmin && (
                     <Button variant="ghost" size="sm" className="ms-auto h-7"
                             onClick={() => setReversing(s.id)}
                             data-testid={`settlement-reverse-${s.id}`}>

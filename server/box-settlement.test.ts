@@ -290,9 +290,12 @@ describe("the procedures are mounted, and staff-only", () => {
   });
 
   it("lets nobody but staff near any of it", () => {
-    for (const proc of ["settlementView", "settle", "reverseSettlement", "discountReport"]) {
+    for (const proc of ["settlementView", "settle", "discountReport"]) {
       expect(router).toContain(`${proc}: staffProcedure`);
     }
+    // Undoing a receipt goes back to before the payment: the main admin's
+    // alone (owner, 2026-10-19; server/paid-box-closed.test.ts).
+    expect(router).toContain("reverseSettlement: superAdminProcedure");
   });
 });
 

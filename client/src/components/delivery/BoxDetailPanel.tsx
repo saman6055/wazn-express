@@ -86,6 +86,20 @@ const REOPEN_WORDS = {
     ar: "يعود الصندوق إلى مفتوح وتعود طرودُه من مسلَّم إلى جاهز. المال لا يُمسّ: ما دُفع يبقى مدفوعاً كرصيد على هذا الصندوق. لإعادة الدين، ألغِ الإيصال من شاشة الدفع.",
     zh: "箱子回到打开状态，包裹从已送达回到待送达。款项保持不变：已付仍为已付，作为该箱子的预付。若要恢复欠款，请在付款页面撤销收据。",
   },
+  /** A paid box: all the way back (owner, 2026-10-19). */
+  paidTitle: { ku: "گەڕاندنەوەی بۆکس بۆ پێش پارەدان", en: "Return the box to before its payment", ar: "إعادة الصندوق إلى ما قبل الدفع", zh: "将箱子退回到付款之前" },
+  paidBody: {
+    ku: "⚠️ ئەم بۆکسە پارەی بۆ دراوە. کردنەوەی هەموو شتێک دەگەڕێنێتەوە بۆ پێش پارەدان: وەسڵەکان هەڵدەوەشێنرێنەوە، پارەکە لە حیسابی کڕیار و لە سندوق لادەچێت، داشکانەکان و تێچووە ترەکانی سەر وەسڵ دەگەڕێنەوە، و بۆکسەکە دەبێتەوە «کراوە». تەنها کاتێک بیکە کە پارەدانەکە بە هەڵە کراوە.",
+    en: "⚠️ This box has been paid. Opening it takes everything back to before the payment: its receipts are undone, the money leaves the customer's account and the cash box, its discounts and other costs on the receipt come back, and the box is open again. Only do this when the payment was a mistake.",
+    ar: "⚠️ هذا الصندوق مدفوع. فتحه يعيد كل شيء إلى ما قبل الدفع: تُلغى الإيصالات، ويُزال المال من حساب الزبون ومن الصندوق النقدي، وتعود الخصومات والتكاليف الأخرى، ويعود الصندوق مفتوحاً. افعل ذلك فقط إذا كان الدفع خطأً.",
+    zh: "⚠️ 此箱已付款。打开它会让一切回到付款之前：收据被撤销，款项从客户账户和现金箱移除，折扣和其他费用恢复，箱子重新打开。仅在付款有误时才这样做。",
+  },
+  paidClosed: {
+    ku: "ئەم بۆکسە پارەی بۆ دراوە — داخراوە: هیچی ناخرێتە ناو و هیچی لێ دەرناهێنرێت. پاکەتی تر بخە بۆکسێکی نوێ.",
+    en: "This box has been paid — it is closed: nothing goes in and nothing comes out. Put further parcels in a new box.",
+    ar: "هذا الصندوق مدفوع — مغلق: لا يدخله شيء ولا يخرج منه شيء. ضع الطرود الأخرى في صندوق جديد.",
+    zh: "此箱已付款 — 已关闭：不能放入也不能取出。其他包裹请放入新箱子。",
+  },
   reason: { ku: "هۆکار (پێویستە)", en: "Reason (required)", ar: "السبب (مطلوب)", zh: "原因（必填）" },
   confirm: { ku: "بیکەرەوە", en: "Reopen", ar: "أعد الفتح", zh: "重新打开" },
   done: { ku: "بۆکسەکە کرایەوە", en: "The box is open again", ar: "أُعيد فتح الصندوق", zh: "箱子已重新打开" },
@@ -535,7 +549,13 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // A delivered box was handed over and charged — a record, not a mistake.
   const isDelivered = status === "delivered";
   /** A box that has gone out or been handed over: only an admin comes back. */
-  const canReopenFinished = isAdmin && (isInTransit || isDelivered || (isReady && !!(box as { isCharged?: boolean }).isCharged));
+  // A paid box is finished (owner, 2026-10-19): nothing in or out, and only
+  // the main admin takes it back to before its payment.
+  const hasLiveReceipt = (settlementView?.settlements ?? []).some((s) => s.status === "confirmed");
+  const isMainAdmin = user?.role === "super_admin";
+  const canReopenFinished = hasLiveReceipt
+    ? isMainAdmin
+    : isAdmin && (isInTransit || isDelivered || (isReady && !!(box as { isCharged?: boolean }).isCharged));
   const statusCfg = STATUS_CONFIG[status] || STATUS_CONFIG.open;
 
   // Sea (دەریایی) batches are billed by CBM, not weight — the measurement
@@ -946,8 +966,13 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       </CardHeader>
 
       <CardContent className="space-y-4">
-        {/* Scan Input (only when box is open) */}
-        {isOpen && (
+        {isOpen && hasLiveReceipt && (
+          <div className="rounded-lg border border-emerald-500/40 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" data-testid="box-paid-closed">
+            🔒 {pickLang(language, REOPEN_WORDS.paidClosed)}
+          </div>
+        )}
+        {/* Scan Input (only when box is open, and never once it is paid) */}
+        {isOpen && !hasLiveReceipt && (
           <div className="flex gap-2">
             <div className="relative flex-1">
               <ScanBarcode className="absolute top-1/2 -translate-y-1/2 start-3 h-4 w-4 text-muted-foreground" />
@@ -1263,7 +1288,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
 
           {/* Reopen a sealed (but not-yet-shipped) box so staff can add/remove
               packages or fix the shipping price, then re-seal. */}
-          {isReady && (
+          {isReady && !hasLiveReceipt && (
             <Button
               variant="outline"
               onClick={async () => {
@@ -1554,8 +1579,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       <AlertDialog open={reopenAsking} onOpenChange={setReopenAsking}>
         <AlertDialogContent dir={isRtl ? "rtl" : "ltr"}>
           <AlertDialogHeader>
-            <AlertDialogTitle>{pickLang(language, REOPEN_WORDS.title)}</AlertDialogTitle>
-            <AlertDialogDescription>{pickLang(language, REOPEN_WORDS.body)}</AlertDialogDescription>
+            <AlertDialogTitle>{pickLang(language, hasLiveReceipt ? REOPEN_WORDS.paidTitle : REOPEN_WORDS.title)}</AlertDialogTitle>
+            <AlertDialogDescription className={hasLiveReceipt ? "font-medium text-red-700 dark:text-red-300" : undefined}>
+              {pickLang(language, hasLiveReceipt ? REOPEN_WORDS.paidBody : REOPEN_WORDS.body)}
+            </AlertDialogDescription>
           </AlertDialogHeader>
           <div className="space-y-1.5">
             <label className="text-sm font-medium" htmlFor="reopen-reason">

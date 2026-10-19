@@ -7,7 +7,7 @@ import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
-import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { DISCOUNT_REASONS } from "@shared/boxSettlement";
@@ -1325,7 +1325,8 @@ export const deliveryBoxRouter = router({
       return { success: true };
     }),
 
-  reverseSettlement: staffProcedure
+  /** Back to before the payment - the main admin's alone (owner, 2026-10-19). */
+  reverseSettlement: superAdminProcedure
     .input(z.object({
       settlementId: z.number(),
       reason: z.string().min(3).max(500),
@@ -1778,6 +1779,53 @@ export const deliveryBoxRouter = router({
             ],
           ),
         });
+      }
+
+      /*
+       * A paid box (owner, 2026-10-19): finished. The one way back is the
+       * main admin's, with a reason, and it is all the way back - every
+       * receipt on it undone (the payment off the account and the cash box,
+       * its discount, its other costs), then the box opened. Opening it while
+       * the receipt stood is how a parcel got into a box "already paid".
+       */
+      const receipts = await db.liveReceiptsOfBox(input.id);
+      if (receipts.length > 0) {
+        if (ctx.user.role !== 'super_admin') {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: withFix(
+              `بۆکسی ${box.boxCode} پارەی بۆ دراوە (${receipts.map((r) => r.settlementNumber).join("، ")}) — گەڕاندنەوەی بۆ پێش پارەدان تەنها کاری ئادمینی سەرەکییە.`,
+              [
+                "ئەگەر پاکەتێکی تر هەیە، بۆکسێکی نوێ بۆ هەمان کڕیار دروست بکە",
+                "ئەگەر پارەدانەکە بە هەڵە کراوە، ئادمینی سەرەکی ئاگادار بکەرەوە، بە هۆکارەوە",
+              ],
+            ),
+          });
+        }
+        const why = (input.reason ?? "").trim();
+        if (why.length < 3) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix(
+              "گەڕاندنەوەی بۆکسێکی پارەدراو بۆ پێش پارەدان بەبێ هۆکار ناکرێت.",
+              ["لە خانەی هۆکار بنووسە بۆچی (نموونە: «پارەدان بە هەڵە کرا، پارە نەهاتبوو»)", "دووبارە «بیکەرەوە» لێبدە"],
+            ),
+          });
+        }
+        for (const r of receipts) {
+          await db.reverseBoxSettlement(r.id, `کردنەوەی بۆکس بۆ پێش پارەدان: ${why}`, ctx.user.id);
+        }
+        const back = await reopenDeliveredBox(input.id, ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "reopen_paid_box",
+          entityType: "delivery_box",
+          entityId: input.id,
+          oldValues: { status: box.status, receipts: receipts.map((r) => r.settlementNumber) },
+          newValues: { status: 'open', reason: why, receiptsUndone: receipts.length, parcelsSteppedBack: back.parcels },
+        });
+        return db.getDeliveryBoxById(input.id);
       }
 
       // The ordinary way back: a box sealed but not yet sent out, and not yet

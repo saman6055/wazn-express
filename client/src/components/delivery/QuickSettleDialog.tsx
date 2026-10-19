@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSendPaymentWhatsApp } from "@/hooks/useSendPaymentWhatsApp";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { offerPaymentWhatsApp } from "@/lib/paymentWhatsAppOffer";
 import { oddRate, oddRateQuestion } from "@shared/rateSense";
 import { confirmAction } from "@/components/ConfirmDialog";
@@ -52,6 +53,8 @@ interface Props {
 }
 
 export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
+  // Undoing a receipt is the main admin's alone (owner, 2026-10-19).
+  const isMainAdmin = useAuth().user?.role === "super_admin";
   const { language } = useTranslation();
   const systemAlert = useSystemAlert();
   const utils = trpc.useUtils();
@@ -354,7 +357,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                           <bdi dir="ltr" className="font-mono">{fmtUsd(Number(s.discountUsd || 0))}</bdi>
                         </span>
                       )}
-                      <Button
+                      {isMainAdmin && <Button
                         variant="ghost"
                         size="sm"
                         className="ms-auto h-6 px-2 text-xs text-red-600 hover:bg-red-100 dark:text-red-400 dark:hover:bg-red-950"
@@ -362,7 +365,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                         data-testid={`quick-undo-${s.id}`}
                       >
                         {t({ ku: "هەڵوەشاندنەوە", en: "Undo", ar: "إلغاء", zh: "撤销" })}
-                      </Button>
+                      </Button>}
                     </div>
                   ))}
                   <p className="mt-2 text-[11px] leading-relaxed text-amber-800/90 dark:text-amber-300/90">

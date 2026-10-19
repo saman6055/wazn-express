@@ -73,7 +73,8 @@ describe("the screen", () => {
 
   it("offers it only to an admin, and only on a box that has gone out", () => {
     expect(panel).toContain('const isAdmin = user?.role === "admin" || user?.role === "super_admin";');
-    expect(panel).toContain("const canReopenFinished = isAdmin && (isInTransit || isDelivered ||");
+    // A box with a receipt standing: the main admin only (owner, 2026-10-19).
+    expect(panel).toContain("const canReopenFinished = hasLiveReceipt\n    ? isMainAdmin\n    : isAdmin && (isInTransit || isDelivered ||");
   });
 
   it("says what will happen, and will not proceed without a reason", () => {

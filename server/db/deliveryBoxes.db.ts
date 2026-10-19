@@ -521,9 +521,48 @@ export async function markBoxDelivered(id: number, userId: number, signature?: s
 
 // ============ BOX ITEMS ============
 
+/**
+ * A paid box is finished (owner, 2026-10-19): "a box whose payment was taken
+ * is done - nothing is left in its life." Nothing goes in and nothing comes
+ * out while a receipt stands on it. AZ295 BOX-20261001-001: receipted on
+ * 07/10 (by mistake - no money came), a parcel added on 19/10, and the box
+ * then asked a price that no longer matched what was "paid".
+ *
+ * The one way back is the main admin's: «کردنەوەی بۆکس», with a reason,
+ * which undoes the receipts and returns the box to before the payment.
+ */
+export async function liveReceiptsOfBox(boxId: number): Promise<Array<{ id: number; settlementNumber: string }>> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ id: boxSettlements.id, settlementNumber: boxSettlements.settlementNumber })
+    .from(boxSettlements)
+    .where(and(eq(boxSettlements.boxId, boxId), eq(boxSettlements.status, "confirmed")))
+    .orderBy(desc(boxSettlements.id));
+  return rows.map((r) => ({ id: Number(r.id), settlementNumber: String(r.settlementNumber) }));
+}
+
+export async function refuseIfBoxPaid(boxId: number): Promise<void> {
+  const receipts = await liveReceiptsOfBox(boxId);
+  if (receipts.length === 0) return;
+  const [box] = (await (await getDb())!
+    .select({ boxCode: deliveryBoxes.boxCode })
+    .from(deliveryBoxes)
+    .where(eq(deliveryBoxes.id, boxId))
+    .limit(1));
+  throw new Error(withFix(
+    `بۆکسی ${box?.boxCode ?? boxId} پارەی بۆ دراوە (وەسڵی ${receipts.map((r) => r.settlementNumber).join("، ")}) — بۆکسێکی پارەدراو تەواوە: هیچی ناخرێتە ناو و هیچی لێ دەرناهێنرێت.`,
+    [
+      "پاکەتەکە بخە بۆکسێکی نوێ بۆ هەمان کڕیار",
+      "ئەگەر پارەدانەکە بە هەڵە کراوە: تەنها ئادمینی سەرەکی دەتوانێت بە «کردنەوەی بۆکس» و هۆکارێک بیگەڕێنێتەوە پێش پارەدان",
+    ],
+  ));
+}
+
 export async function addItemToBox(data: InsertDeliveryBoxItem): Promise<DeliveryBoxItem> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
+  await refuseIfBoxPaid(Number(data.boxId));
 
   const result = await db.insert(deliveryBoxItems).values(data);
   const insertId = Number(result[0].insertId);
@@ -561,6 +600,7 @@ export async function removeItemFromBox(itemId: number): Promise<void> {
 
   const [item] = await db.select().from(deliveryBoxItems).where(eq(deliveryBoxItems.id, itemId));
   if (!item) return;
+  await refuseIfBoxPaid(Number(item.boxId));
 
   await db.delete(deliveryBoxItems).where(eq(deliveryBoxItems.id, itemId));
   await recalculateBoxTotals(item.boxId);
@@ -1315,6 +1355,7 @@ export async function recomputeBoxItems(
 
   const [box] = await db.select().from(deliveryBoxes).where(eq(deliveryBoxes.id, boxId)).limit(1);
   if (!box) throw new Error("Box not found");
+  await refuseIfBoxPaid(boxId);
   if (box.status === 'delivered' || box.status === 'cancelled') {
     throw new Error(withFix(
       "ئەم بۆکسە گەیەنراوە یان هەڵوەشێنراوەتەوە — نوێکردنەوەی ناوەڕۆکی بۆکسێکی وا کێش و نرخێک دەگۆڕێت کە کڕیار پێشتر پێی ڕاگەیەنراوە.",
