@@ -150,7 +150,17 @@ export interface BoxParcelView {
    */
   pendingFreightUsd: number;
   /** The order that freight is for. */
-  freightOrder: { id: number; orderCode: string } | null;
+  freightOrder: {
+    id: number;
+    orderCode: string;
+    /**
+     * The other orders that came in the same carton. The carton has one
+     * freight; it is charged once under the first order, and these are
+     * marked so no other door charges it again (owner's AZ295, 2026-10-19).
+     */
+    alsoIds?: number[];
+    alsoCodes?: string[];
+  } | null;
 }
 
 export interface BoxSettlementView {
@@ -491,7 +501,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
       const linkedCarton = r.item.itemType !== "regular" || orderId !== null;
       let orderMoney: { chargedUsd: number; advanceUsd: number; onAccount: boolean } | null = null;
       let pendingFreightUsd = 0;
-      let freightOrder: { id: number; orderCode: string } | null = null;
+      let freightOrder: { id: number; orderCode: string; alsoIds?: number[]; alsoCodes?: string[] } | null = null;
       // The database matches a tracking whatever its case; so must this.
       const tracking = r.item.trackingNumber ?? r.pkg?.trackingNumber ?? null;
       const trackingKey = (tracking ?? "").trim().toLowerCase();
@@ -525,14 +535,25 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
             advanceCents += Math.round(orderAdvancePaidUsd(o as unknown as AdvanceSource) * 100);
           }
           orderMoney = { chargedUsd: chargedCents / 100, advanceUsd: advanceCents / 100, onAccount };
-          // One commission order in this carton, its goods on the account,
-          // its freight not yet: the carton's own freight is due now.
-          const only = mine.length === 1 ? mine[0] : null;
+          // Commission orders in this carton, their goods on the account, the
+          // carton's freight not yet: it is due now. One carton, one freight -
+          // and a carton holding two orders has it too. It used to be asked
+          // only when the carton held one order, so a carton of two was
+          // handed over with its goods paid and its freight never written
+          // (AZ295, BOX-20261001-001: $18.70 for CM-MU2GE1UX + CM-MU2GFW8Z).
+          const lead = mine.every((o) => o.orderType === "commission" && !o.isShippingCharged)
+            ? [...mine].sort((a, b) => Number(a.id) - Number(b.id))[0]
+            : null;
           const freight = Number(r.pkg?.calculatedCostUsd ?? 0);
           // Never when the parcel carried its own freight onto the account already.
-          if (only && onAccount && only.orderType === "commission" && !only.isShippingCharged && freight > 0 && !(ownChargedUsd > 0)) {
+          if (lead && onAccount && freight > 0 && !(ownChargedUsd > 0)) {
             pendingFreightUsd = round2(freight);
-            freightOrder = { id: Number(only.id), orderCode: String(only.orderCode) };
+            const others = mine.filter((o) => Number(o.id) !== Number(lead.id));
+            freightOrder = {
+              id: Number(lead.id),
+              orderCode: String(lead.orderCode),
+              ...(others.length > 0 ? { alsoIds: others.map((o) => Number(o.id)), alsoCodes: others.map((o) => String(o.orderCode)) } : {}),
+            };
           }
         }
       }
@@ -1426,7 +1447,7 @@ export async function createBoxSettlement(
         customer.customerCode ?? String(customer.id),
         parcel.freightOrder.id,
         parcel.pendingFreightUsd,
-        `کڕین بە تێچوو ${parcel.freightOrder.orderCode} - کرێی گواستنەوە (${box.boxCode})`,
+        `کڕین بە تێچوو ${[parcel.freightOrder.orderCode, ...(parcel.freightOrder.alsoCodes ?? [])].join(" + ")} - کرێی گواستنەوە (${box.boxCode})`,
         userId,
         undefined,
         tx,
@@ -1437,6 +1458,14 @@ export async function createBoxSettlement(
         shippingChargedUsd: parcel.pendingFreightUsd.toFixed(2),
         shippingCostUsd: parcel.pendingFreightUsd.toFixed(2),
       }).where(eq(fullPackageOrders.id, parcel.freightOrder.id));
+      // The carton's other orders: its freight is written, under the first.
+      if ((parcel.freightOrder.alsoIds ?? []).length > 0) {
+        await tx.update(fullPackageOrders).set({
+          isShippingCharged: true,
+          shippingChargedAt: new Date(),
+          shippingChargedUsd: "0.00",
+        }).where(inArray(fullPackageOrders.id, parcel.freightOrder.alsoIds!));
+      }
     }
 
     // 1. Corrections change the price, so they go in before anything is paid.

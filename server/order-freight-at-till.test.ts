@@ -25,8 +25,13 @@ describe("an order's freight is charged at the till when its carton is paid", ()
   it("the till posts it under the order and marks the order, so the batch skips it", () => {
     const settle = read("db/boxSettlement.db.ts");
     // …and never when the parcel carried its own freight onto the account already.
-    expect(settle).toContain("if (only && onAccount && only.orderType === \"commission\" && !only.isShippingCharged && freight > 0 && !(ownChargedUsd > 0)) {");
+    expect(settle).toContain("if (lead && onAccount && freight > 0 && !(ownChargedUsd > 0)) {");
     expect(settle).toContain("isShippingCharged: true,");
+    // 2026-10-19, AZ295 BOX-20261001-001: a carton holding two orders has its
+    // freight too - charged once under the first, the others marked.
+    expect(settle).toContain("const lead = mine.every((o) => o.orderType === \"commission\" && !o.isShippingCharged)");
+    expect(settle).toContain(".where(inArray(fullPackageOrders.id, parcel.freightOrder.alsoIds!));");
+    expect(settle).not.toContain("const only = mine.length === 1 ? mine[0] : null;");
     // The batch's delivery charges an order's freight only when it is not.
     expect(read("routers/batches.router.ts")).toContain("if (fpOrder.orderType === 'commission' && share > 0 && !fpOrder.isShippingCharged) {");
   });
