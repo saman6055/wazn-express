@@ -175,6 +175,13 @@ export interface BoxSettlementView {
   lastExchangeRate: number | null;
   /** What the customer's account stands at now. Negative means credit. */
   accountBalanceUsd: number;
+  /**
+   * Every charge on the account for goods not yet paid at a box, this box's
+   * own included - so the screen and the till know what advance is waiting
+   * for goods (shared accountCover, openUsd). Null when it could not be read:
+   * the old rule then stands.
+   */
+  openChargesUsd: number | null;
 }
 
 type SettlementDb = NonNullable<Awaited<ReturnType<typeof getDb>>>;
@@ -787,7 +794,7 @@ export async function getLastSettlementRate(): Promise<{ rate: number; at: Date 
 export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
   const empty: BoxSettlementView = {
     box: null, customer: null, parcels: [], settlements: [], pledges: [],
-    lastExchangeRate: null, accountBalanceUsd: 0,
+    lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null,
   };
   const db = await getDb();
   if (!db) return empty;
@@ -847,6 +854,16 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
     pledges: await getOpenPledges(boxId),
     lastExchangeRate: lastRate?.rate ?? null,
     accountBalanceUsd: Number(account?.balance ?? 0),
+    openChargesUsd: await (async () => {
+      try {
+        // Imported here: the debt rule's file reaches back into this side of the graph.
+        const { openChargesUsd } = await import("./boxPaidStillOwed.db");
+        return await openChargesUsd(Number(boxRow.customer?.id ?? boxRow.box.customerId));
+      } catch (err) {
+        appLogger.warn("[BoxSettlement] open charges not read; the advance is not set against the box", { boxId, error: err instanceof Error ? err.message : String(err) });
+        return null;
+      }
+    })(),
   };
 }
 
@@ -1215,6 +1232,8 @@ export async function createBoxSettlement(
   const cover = accountCover({
     dueUsd: totals.dueUsd,
     balanceUsd: view.accountBalanceUsd,
+    // An advance on the account goes to the goods in this box (owner, 2026-10-19).
+    openUsd: view.openChargesUsd ?? undefined,
     toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
     correctionUsd: totals.correctionUsd,
     discountUsd: totals.discountUsd,

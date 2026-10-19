@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { oddRate, oddRateQuestion } from "@shared/rateSense";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { Printer, Send, Percent } from "lucide-react";
@@ -36,6 +36,7 @@ import {
   type ReceiptDinarInput,
 } from "@shared/receiptDinar";
 import { DISCOUNT_REASON_LABELS, REASON_NEEDS_TEXT, type DiscountReason } from "@shared/boxSettlement";
+import { accountCover, settlementTotals, unbackedOnReceiptUsd, unbilledOnReceiptUsd } from "@shared/boxSettlement";
 import { pledgeFloors, type DiscountPledge } from "@shared/pledgedDiscount";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
@@ -68,6 +69,12 @@ export interface ReceiptDiscount {
 /** What the window needs to know about the receipt about to be printed. */
 export interface ReceiptDinarRequest {
   boxCode: string;
+  /**
+   * The box, so the window can read what money on the customer's account is
+   * waiting for these goods and take it off the paper by itself - the same
+   * figure the payment screen takes off (owner, 2026-10-19).
+   */
+  boxId?: number | null;
   customerName?: string | null;
   customerCode?: string | null;
   parcelCount: number;
@@ -288,6 +295,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const [rate, setRate] = useState("");
   const [rateTouched, setRateTouched] = useState(false);
   const [advance, setAdvance] = useState("");
+  // Typed by the person printing: the account's advance no longer fills it.
+  const [advanceTouched, setAdvanceTouched] = useState(false);
   const [currency, setCurrency] = useState<AdvanceCurrency>("IQD");
   const [step, setStep] = useState<DinarRoundStep>(DEFAULT_DINAR_ROUND_STEP);
   const [mode, setMode] = useState<DinarRoundMode>(DEFAULT_DINAR_ROUND_MODE);
@@ -307,6 +316,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     if (!request) return;
     const saved = recall();
     setAdvance("");
+    setAdvanceTouched(false);
     setCurrency("IQD");
     setRateTouched(false);
     setStep(isStep(saved.step) ? saved.step : DEFAULT_DINAR_ROUND_STEP);
@@ -327,6 +337,39 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   // The rate offered: this receipt's own if it has one, otherwise the newer
   // of the last one printed on this device and the last one a payment used —
   // until the person types their own.
+  /*
+   * Money on the account waiting for these goods - an advance, a credit.
+   *
+   * Owner, 2026-10-19: "when the receipt is made, the advance or the credit
+   * must come off by itself, and what is left becomes a debt on him." Read
+   * by the till's own rule (accountCover with the open charges), so the paper
+   * and the payment screen take off the same dollars. It fills the advance
+   * field in dollars; the person printing can still change it.
+   */
+  const boxView = trpc.deliveryBox.settlementView.useQuery(
+    { boxId: Number(request?.boxId ?? 0) },
+    { enabled: open && Number(request?.boxId ?? 0) > 0, staleTime: 30_000 },
+  );
+  const accountAdvanceUsd = useMemo(() => {
+    const v = boxView.data;
+    if (!v || v.openChargesUsd === null || v.openChargesUsd === undefined) return 0;
+    const totals = settlementTotals(v.parcels, []);
+    return accountCover({
+      dueUsd: totals.dueUsd,
+      balanceUsd: v.accountBalanceUsd,
+      openUsd: v.openChargesUsd,
+      toChargeUsd: unbilledOnReceiptUsd(v.parcels, []),
+      correctionUsd: totals.correctionUsd,
+      discountUsd: totals.discountUsd,
+      unbackedUsd: unbackedOnReceiptUsd(v.parcels, totals.lines),
+    }).coveredUsd;
+  }, [boxView.data]);
+  useEffect(() => {
+    if (!request || advanceTouched || !(accountAdvanceUsd > 0)) return;
+    setAdvance(accountAdvanceUsd.toFixed(2));
+    setCurrency("USD");
+  }, [request, advanceTouched, accountAdvanceUsd]);
+
   const ownRate = Number(request?.rate);
   const payment: DatedRate | null = lastPayment.data
     ? { rate: Number(lastPayment.data.rate), at: new Date(lastPayment.data.at).getTime() }
@@ -486,7 +529,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                 inputMode="decimal"
                 dir="ltr"
                 value={advance}
-                onValueChange={setAdvance}
+                onValueChange={(v) => { setAdvanceTouched(true); setAdvance(v); }}
                 placeholder="0"
                 className="h-10 flex-1"
                 data-testid="receipt-dinar-advance"
@@ -498,7 +541,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                     type="button"
                     role="radio"
                     aria-checked={currency === c}
-                    onClick={() => setCurrency(c)}
+                    onClick={() => { setAdvanceTouched(true); setCurrency(c); }}
                     className={cn(
                       "px-3 text-sm transition-colors",
                       currency === c ? "bg-primary text-primary-foreground" : "text-muted-foreground hover:bg-muted",
@@ -510,7 +553,18 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                 ))}
               </div>
             </div>
-            <p className="text-xs text-muted-foreground">{L(TXT.advanceHint)}</p>
+            {accountAdvanceUsd > 0 ? (
+              <p className="text-xs text-emerald-700 dark:text-emerald-300" data-testid="receipt-account-advance">
+                {L({
+                  ku: `$${accountAdvanceUsd.toFixed(2)} پێشەکی/کرێدیتی سەر حیسابی کڕیارە بۆ ئەم کاڵایانە — خۆکارانە دانرا، هەمان بڕ کە شاشەی پارەدان لێی کەم دەکاتەوە. ئەگەر پێشەکیی تری بە دەست داوە، بیگۆڕە.`,
+                  en: `$${accountAdvanceUsd.toFixed(2)} is advance/credit on the customer's account for these goods — filled in automatically, the same amount the payment screen takes off. Change it if more was handed over.`,
+                  ar: `$${accountAdvanceUsd.toFixed(2)} دفعة مقدمة/رصيد على حساب العميل لهذه البضائع — أُدخل تلقائياً، وهو نفس ما تخصمه شاشة الدفع. غيّره إن سُلّم مبلغ آخر.`,
+                  zh: `客户账户上有 $${accountAdvanceUsd.toFixed(2)} 预付款/余额用于这些货物 — 已自动填入，与付款界面扣除的金额相同。如另有现场预付请修改。`,
+                })}
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">{L(TXT.advanceHint)}</p>
+            )}
           </div>
 
           <div className="space-y-1.5">

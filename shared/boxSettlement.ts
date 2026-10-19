@@ -448,6 +448,19 @@ export function accountCover(args: {
    * (Repairs → arrived goods not on the account).
    */
   unbackedUsd?: number;
+  /**
+   * Every charge on the account for goods not yet paid at a box - this box's
+   * own included (shared/boxPaidStillOwed, explainDebt's owed charges).
+   *
+   * Owner, 2026-10-19, of a customer with a $1,633.99 advance, three sea
+   * cartons arriving and two still at sea: "whatever arrives must come off
+   * the credit - the credit goes to nothing or down by the box's price and
+   * the goods that arrived; what is left becomes a debt on him, paid when
+   * the box arrives." Read as one pool the account spent the advance on the
+   * goods still at sea first and asked $1,972.53 for a $2,203.31 box; the
+   * advance now goes to the goods in the box. Absent, the old rule stands.
+   */
+  openUsd?: number;
 }): AccountCover {
   const due = round2(Math.max(0, args.dueUsd));
   const unbacked = round2(Math.min(due, Math.max(0, args.unbackedUsd ?? 0)));
@@ -455,7 +468,15 @@ export function accountCover(args: {
   const willOwe = round2(
     args.balanceUsd + (args.toChargeUsd ?? 0) + (args.correctionUsd ?? 0) - (args.discountUsd ?? 0),
   );
-  const cashDueUsd = round2(unbacked + Math.min(backedDue, Math.max(0, willOwe)));
+  // The money on the account that no goods have taken yet: everything still
+  // owed for goods, less what the account says is owed.
+  const advance = args.openUsd === undefined ? null : round2(Math.max(0, args.openUsd - args.balanceUsd));
+  // Never more than the account will owe (no credit is ever made here), and,
+  // with an advance known, the box's own due less that advance.
+  const backedCash = advance === null
+    ? Math.min(backedDue, Math.max(0, willOwe))
+    : Math.min(backedDue, Math.max(0, willOwe), Math.max(0, round2(backedDue - advance)));
+  const cashDueUsd = round2(unbacked + backedCash);
   const coveredUsd = round2(due - cashDueUsd);
   // A cent of drift between the two views is not "already paid".
   if (coveredUsd <= 0.01) return { cashDueUsd: due, coveredUsd: 0 };

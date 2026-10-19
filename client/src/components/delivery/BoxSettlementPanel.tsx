@@ -222,6 +222,8 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
     () => accountCover({
       dueUsd: totals.dueUsd,
       balanceUsd: data?.accountBalanceUsd ?? 0,
+      // The till's own rule: an advance goes to the goods in this box.
+      openUsd: data?.openChargesUsd ?? undefined,
       toChargeUsd: unbilledOnReceiptUsd(parcels, intents),
       correctionUsd: totals.correctionUsd,
       discountUsd: totals.discountUsd,

@@ -198,6 +198,7 @@ export function BoxTable({
     const customer = getCustomer(box.customerId);
     setReceiptRequest({
       boxCode: box.boxCode,
+      boxId: box.id,
       customerName: customer?.fullName,
       customerCode: customer?.customerCode,
       parcelCount: box.totalPackages,

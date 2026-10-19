@@ -292,6 +292,19 @@ async function gatherAccount(customerId: number) {
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 
+/**
+ * Every charge on the account for goods no receipt has paid yet, before any
+ * money on the account is set against it (explainDebt's owed charges). The
+ * till sets this against the balance to see what advance is waiting for
+ * goods (shared/boxSettlement accountCover, openUsd).
+ */
+export async function openChargesUsd(customerId: number): Promise<number> {
+  const got = await gatherAccount(customerId);
+  if (!got) return 0;
+  const owed = explainDebt(got.rows, got.facts).owedUsd;
+  return cents(owed.road + owed.arrived + owed.openBox + owed.parcel);
+}
+
 /** What one customer really still owes (shared/boxPaidStillOwed → stillOwed). */
 export async function stillOwedByCustomer(customerId: number): Promise<number> {
   const got = await gatherAccount(customerId);
