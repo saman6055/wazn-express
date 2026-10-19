@@ -77,6 +77,16 @@ const CHARGE_TYPES = [
 const round2 = (n: number): number => Math.round((n + Number.EPSILON) * 100) / 100;
 
 /**
+ * The words every door writes on an order's freight: the till and the repair
+ * (postOrderFreight) and batch delivery (emitCmInvoices) - "کڕین بە تێچوو
+ * <order code> - کرێی گواستنەوە". A parcel's own charge never says it.
+ */
+export function isOrderFreightText(description: string | null | undefined): boolean {
+  const d = String(description ?? "");
+  return d.startsWith("کڕین بە تێچوو") && d.includes("کرێی گواستنەوە");
+}
+
+/**
  * RCP-20260828-0001.
  *
  * Sequential rather than the random suffix used elsewhere in this file: this
@@ -269,6 +279,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
           referenceId: ledgerTransactions.referenceId,
           transactionType: ledgerTransactions.transactionType,
           amountUsd: ledgerTransactions.amountUsd,
+          description: ledgerTransactions.description,
         })
         .from(ledgerTransactions)
         .where(and(
@@ -297,6 +308,10 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
     // Keyed by the account and both halves of the reference: package 9 and
     // order 9 are different debts, and one customer's 9 is not another's.
     const id = `${row.accountId}|${row.referenceType}:${row.referenceId}`;
+    // An order's freight is written as a package charge under the ORDER's id.
+    // The same customer can own a parcel with that number: it is not that
+    // parcel's charge. The order side reads it, by its order code (orderRows).
+    if (row.referenceType === "package" && isOrderFreightText(row.description)) continue;
     const amount = Number(row.amountUsd || 0);
     const type = String(row.transactionType);
     if ((CHARGE_TYPES as readonly string[]).includes(type) || type === "ADJUSTMENT_DEBIT") {
@@ -609,6 +624,52 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
     });
 
   return parcels;
+}
+
+/**
+ * A carton's freight, written under its order(s) - the one way the box writes
+ * it (owner, 2026-10-19: the box decides). The till uses it when a box is
+ * paid, and the repair of an old receipt (db/boxDecides) uses it for a box
+ * receipted before the till wrote anything. Every order in the carton is
+ * marked, so batch delivery - which charges an order's freight only while
+ * `isShippingCharged` is false - never writes it a second time.
+ */
+export async function postOrderFreight(
+  tx: any,
+  customer: { id: number; customerCode: string | null },
+  boxCode: string,
+  order: NonNullable<BoxParcelView["freightOrder"]>,
+  amountUsd: number,
+  userId: number,
+  note?: string,
+): Promise<void> {
+  const amount = round2(amountUsd);
+  if (amount > 0) {
+    await recordPackageChargeWithoutInvoice(
+      customer.id,
+      customer.customerCode ?? String(customer.id),
+      order.id,
+      amount,
+      `کڕین بە تێچوو ${[order.orderCode, ...(order.alsoCodes ?? [])].join(" + ")} - کرێی گواستنەوە (${boxCode})${note ? ` — ${note}` : ""}`,
+      userId,
+      undefined,
+      tx,
+    );
+  }
+  await tx.update(fullPackageOrders).set({
+    isShippingCharged: true,
+    shippingChargedAt: new Date(),
+    shippingChargedUsd: amount.toFixed(2),
+    shippingCostUsd: amount.toFixed(2),
+  }).where(eq(fullPackageOrders.id, order.id));
+  // The carton's other orders: its freight is written, under the first.
+  if ((order.alsoIds ?? []).length > 0) {
+    await tx.update(fullPackageOrders).set({
+      isShippingCharged: true,
+      shippingChargedAt: new Date(),
+      shippingChargedUsd: "0.00",
+    }).where(inArray(fullPackageOrders.id, order.alsoIds!));
+  }
 }
 
 /**
@@ -1442,30 +1503,7 @@ export async function createBoxSettlement(
     //     marked so the batch never charges it again.
     for (const parcel of parcels) {
       if (!(parcel.pendingFreightUsd > 0) || !parcel.freightOrder || !settling(parcel)) continue;
-      await recordPackageChargeWithoutInvoice(
-        customer.id,
-        customer.customerCode ?? String(customer.id),
-        parcel.freightOrder.id,
-        parcel.pendingFreightUsd,
-        `کڕین بە تێچوو ${[parcel.freightOrder.orderCode, ...(parcel.freightOrder.alsoCodes ?? [])].join(" + ")} - کرێی گواستنەوە (${box.boxCode})`,
-        userId,
-        undefined,
-        tx,
-      );
-      await tx.update(fullPackageOrders).set({
-        isShippingCharged: true,
-        shippingChargedAt: new Date(),
-        shippingChargedUsd: parcel.pendingFreightUsd.toFixed(2),
-        shippingCostUsd: parcel.pendingFreightUsd.toFixed(2),
-      }).where(eq(fullPackageOrders.id, parcel.freightOrder.id));
-      // The carton's other orders: its freight is written, under the first.
-      if ((parcel.freightOrder.alsoIds ?? []).length > 0) {
-        await tx.update(fullPackageOrders).set({
-          isShippingCharged: true,
-          shippingChargedAt: new Date(),
-          shippingChargedUsd: "0.00",
-        }).where(inArray(fullPackageOrders.id, parcel.freightOrder.alsoIds!));
-      }
+      await postOrderFreight(tx, customer, box.boxCode, parcel.freightOrder, parcel.pendingFreightUsd, userId);
     }
 
     // 1. Corrections change the price, so they go in before anything is paid.

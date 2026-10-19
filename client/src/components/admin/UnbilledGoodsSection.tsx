@@ -10,6 +10,8 @@ import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
 import { CopyButton } from "@/components/CopyButton";
 import { cn } from "@/lib/utils";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { confirmAction } from "@/components/ConfirmDialog";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -67,6 +69,43 @@ export function UnbilledGoodsSection({ language }: { language: string }) {
     },
     onError: (err) => toast.error(err.message),
   });
+
+  /*
+   * A box whose money was taken before the till wrote anything (owner,
+   * 2026-10-19: the box decides). Its goods are written through the box, at
+   * the receipt's own figures - never through the batch, never twice.
+   */
+  const { user } = useAuth();
+  const isMainAdmin = user?.role === "super_admin";
+  const throughBox = trpc.ledger.chargeReceiptedBox.useMutation({
+    onSuccess: (result) => {
+      void scan.refetch();
+      void utils.ledger.invalidate();
+      toast.success(
+        `${result.boxCode}: ${say({ ku: "نووسرا", en: "written", ar: "سُجّل", zh: "已记入" })} ${fmtUsd(result.totalUsd)}`,
+      );
+      if (result.left.length > 0) {
+        toast.warning(
+          `${say({ ku: "نەنووسران", en: "Not written", ar: "لم تُسجّل", zh: "未记入" })}: ` +
+            result.left.map((l) => l.tracking ?? "—").join(", "),
+        );
+      }
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  const writeThroughBox = async (boxCode: string, customerCode: string) => {
+    const ok = await confirmAction({
+      title: say({ ku: `نرخی بۆکسی ${boxCode} بنووسرێت؟`, en: `Write box ${boxCode}'s prices?`, ar: `تسجيل أسعار الصندوق ${boxCode}؟`, zh: `记入箱 ${boxCode} 的价格？` }),
+      message: say({
+        ku: `ئەم بۆکسە پارەکەی وەرگیراوە بەڵام نرخی کاڵا و کرێکەی هەرگیز لەسەر حیسابی ${customerCode} نەنووسراوە. بە نرخی سەر وەسڵەکە دەنووسرێت و نیشان دەکرێت، بۆیە داخستنی باچ دووبارەی ناکاتەوە. ئەگەر کریدیتی ئەم کڕیارە پێشتر بە دەست سفر کراوەتەوە، ئەو ڕێکخستنەش دەبێت لاببرێت.`,
+        en: `This box's money was taken but its goods and freight were never written on ${customerCode}'s account. They are written at the receipt's figures and marked, so closing the batch never writes them again. If this customer's credit was zeroed by hand, undo that adjustment too.`,
+        ar: `قُبض مال هذا الصندوق لكن سعر البضاعة والشحن لم يُسجَّل على حساب ${customerCode}. يُسجَّل بأرقام الإيصال ويُعلَّم، فلا يكرره إغلاق الدفعة. إن صُفّر رصيد الزبون يدوياً فيجب إلغاء ذلك أيضاً.`,
+        zh: `此箱已收款，但货物与运费从未记入 ${customerCode} 的账户。按收据金额记入并标记，关闭批次不会重复。若该客户余额曾被手动清零，也需撤销。`,
+      }),
+      confirmLabel: say({ ku: "بەڵێ، بینووسە", en: "Yes, write it", ar: "نعم، سجّل", zh: "是，记入" }),
+    });
+    if (ok) throughBox.mutate({ boxCode });
+  };
 
   const toggle = (id: number) => {
     setPicked((old) => {
@@ -200,10 +239,22 @@ export function UnbilledGoodsSection({ language }: { language: string }) {
                           </span>
                         )}
                         {r.paidOnReceipt && (
-                          <span className="mt-0.5 block font-semibold text-emerald-700 dark:text-emerald-300" data-testid="unbilled-paid-at-till">
-                            {say({ ku: "پارەکەی لە وەسڵ وەرگیراوە — حیساب ناکرێت", en: "Paid at the till — not billed", ar: "دُفع عند الصندوق — لا يُحتسب", zh: "已在柜台付款 — 不计费" })}{" "}
+                          <span className="mt-0.5 block font-semibold text-amber-700 dark:text-amber-300" data-testid="unbilled-paid-at-till">
+                            {say({ ku: "پارەکەی بە وەسڵ وەرگیراوە، نرخەکەی نەنووسراوە", en: "Receipted, its price never written", ar: "قُبض بإيصال ولم يُسجَّل سعره", zh: "已开收据，价格未记入" })}{" "}
                             <bdi dir="ltr">{r.paidOnReceipt}</bdi>
                           </span>
+                        )}
+                        {r.paidOnReceipt && r.boxCode && isMainAdmin && (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="mt-1 h-7 text-xs"
+                            disabled={throughBox.isPending}
+                            onClick={() => void writeThroughBox(r.boxCode!, r.customerCode)}
+                            data-testid="unbilled-through-box"
+                          >
+                            {say({ ku: "لە ڕێگەی بۆکسەکەوە بینووسە", en: "Write it through its box", ar: "سجّله عبر صندوقه", zh: "通过其箱子记入" })}
+                          </Button>
                         )}
                       </TableCell>
                       <TableCell className="text-end font-mono tabular-nums text-red-600 dark:text-red-400">

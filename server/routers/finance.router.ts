@@ -159,6 +159,32 @@ export const ledgerRouter = router({
         }
       }),
 
+    /**
+     * A box receipted before the till wrote anything: its goods and freight
+     * written now, through the box, at the receipt's own figures (db/boxDecides,
+     * owner 2026-10-19: the box decides). Main admin only; audited.
+     */
+    chargeReceiptedBox: superAdminProcedure
+      .input(z.object({ boxCode: z.string().min(3).max(60) }))
+      .mutation(async ({ input, ctx }) => {
+        const box = await db.getDeliveryBoxByCode(input.boxCode.trim());
+        if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
+        try {
+          const result = await db.chargeReceiptedBox(Number(box.id), ctx.user.id);
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "charge_receipted_box",
+            entityType: "delivery_box",
+            entityId: Number(box.id),
+            newValues: result as never,
+          });
+          return result;
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+
     /** Every other cost written on a box - the main admin's watch (shared/extraCosts). */
     extraCosts: accountantProcedure
       .input(z.object({ sinceDays: z.number().int().min(1).max(3650).default(90) }).optional())

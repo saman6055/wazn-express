@@ -30,7 +30,8 @@ describe("an order's freight is charged at the till when its carton is paid", ()
     // 2026-10-19, AZ295 BOX-20261001-001: a carton holding two orders has its
     // freight too - charged once under the first, the others marked.
     expect(settle).toContain("const lead = mine.every((o) => o.orderType === \"commission\" && !o.isShippingCharged)");
-    expect(settle).toContain(".where(inArray(fullPackageOrders.id, parcel.freightOrder.alsoIds!));");
+    expect(settle).toContain(".where(inArray(fullPackageOrders.id, order.alsoIds!));");
+    expect(settle).toContain("await postOrderFreight(tx, customer, box.boxCode, parcel.freightOrder, parcel.pendingFreightUsd, userId);");
     expect(settle).not.toContain("const only = mine.length === 1 ? mine[0] : null;");
     // The batch's delivery charges an order's freight only when it is not.
     expect(read("routers/batches.router.ts")).toContain("if (fpOrder.orderType === 'commission' && share > 0 && !fpOrder.isShippingCharged) {");
