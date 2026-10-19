@@ -38,6 +38,7 @@ import {
 import { DISCOUNT_REASON_LABELS, REASON_NEEDS_TEXT, type DiscountReason } from "@shared/boxSettlement";
 import { accountCover, settlementTotals, unbackedOnReceiptUsd, unbilledOnReceiptUsd } from "@shared/boxSettlement";
 import { pledgeFloors, type DiscountPledge } from "@shared/pledgedDiscount";
+import { BoxExtraCosts } from "@/components/delivery/BoxExtraCosts";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -610,6 +611,17 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
 
         </div>
         <div className="space-y-4">
+          {/* ── other costs: customs and the like, written here too ──
+              Owner, 2026-10-19: the paper is where he meets the $12 at
+              customs, so it is written where the paper is made. The same
+              lines as the payment screen; the total above follows them. */}
+          {Number(request?.boxId ?? 0) > 0 && (
+            <BoxExtraCosts
+              boxId={Number(request!.boxId)}
+              extras={boxView.data?.extras ?? []}
+              onChanged={() => void boxView.refetch()}
+            />
+          )}
           {/* ── the discount, and what it was given for ──────────────
               Owner, 2026-09-24: in dollars, in step with the rate above,
               on the whole total or on one tracking, with the reason — and

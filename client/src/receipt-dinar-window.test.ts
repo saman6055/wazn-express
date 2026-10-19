@@ -71,6 +71,8 @@ describe("every way into a receipt goes through it", () => {
     expect(panel).toContain("const handleDownloadReceiptPDF = (lang: Language) => askBeforePrinting(lang, downloadReceiptNow);");
     expect(panel).toContain("totalUsd: receiptAmountUsd(box, settlementForPrint)");
     expect(panel).toContain("<ReceiptDinarDialog request={receiptRequest}");
+    // Other costs are written where the paper is made too (owner, 2026-10-19).
+    expect(read("components/delivery/ReceiptDinarDialog.tsx")).toContain("onChanged={() => void boxView.refetch()}");
     // Every output carries the choice to the paper: print, PDF, and since
     // 2026-09-21 the copy sent to the customer's WhatsApp.
     expect(panel.match(/\n      dinar,\n/g)?.length).toBe(3);
