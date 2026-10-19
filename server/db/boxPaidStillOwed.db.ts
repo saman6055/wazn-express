@@ -1,6 +1,6 @@
 import { and, eq, inArray, like, ne, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { boxSettlements, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages } from "../../drizzle/schema";
+import { boxSettlements, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages, paymentRecords } from "../../drizzle/schema";
 import { customers } from "../../drizzle/schema/users.schema";
 import { isOrderChargeText } from "@shared/batchCleanup";
 import { withFix } from "@shared/fixAdvice";
@@ -277,7 +277,18 @@ async function gatherAccount(customerId: number) {
     .from(packages)
     .where(eq(packages.customerId, customerId));
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText };
+  // Payments given back or undone, by the ledger row of the payment.
+  const reversed = await db
+    .select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })
+    .from(paymentRecords)
+    .where(and(eq(paymentRecords.accountId, account.id), sql`CAST(${paymentRecords.reversedAmountUsd} AS DECIMAL(12,2)) > 0`));
+  const reversedPaymentUsd = new Map<number, number>();
+  for (const r of reversed) {
+    if (r.transactionId == null) continue;
+    reversedPaymentUsd.set(Number(r.transactionId), cents((reversedPaymentUsd.get(Number(r.transactionId)) ?? 0) + num(r.reversedUsd)));
+  }
+
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 

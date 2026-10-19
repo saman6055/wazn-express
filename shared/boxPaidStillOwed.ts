@@ -99,6 +99,15 @@ export interface SettledFacts {
   openPackageIds?: Set<number>;
   openOrderIds?: Set<number>;
   openTrackings?: Set<string>;
+  /**
+   * What of each payment was given back or undone, by the payment's ledger
+   * row. A reversal is written as a raise of the balance with its own reason
+   * and names no row, so without this a payment entered, reversed and entered
+   * again counted as paid twice: AZ018, 2026-10-19, $1,633.99 counted twice,
+   * "really owed" read $0.00 and $64 of settled goods was offered up as a
+   * false debt to take off.
+   */
+  reversedPaymentUsd?: Map<number, number>;
 }
 
 const BOX_LINE_TEXT = /^(BOX-[\w-]+)\s+—\s+(\S+)/;
@@ -174,7 +183,9 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
   for (const r of rows) {
     if (r.transactionType === "CREDIT_PAYMENT") {
       // Money taken without a box receipt pays the oldest open goods.
-      if (r.id > zeroedAt && !/^\s*BOX-/.test(r.description)) paidOnAccount += Math.round(r.amountUsd * 100);
+      // What was given back or undone of it is not paid.
+      const back = Math.round((facts.reversedPaymentUsd?.get(r.id) ?? 0) * 100);
+      if (r.id > zeroedAt && !/^\s*BOX-/.test(r.description)) paidOnAccount += Math.max(0, Math.round(r.amountUsd * 100) - back);
       continue;
     }
     if (!r.transactionType.startsWith("DEBIT_")) continue;

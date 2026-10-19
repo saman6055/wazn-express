@@ -96,7 +96,8 @@ describe("the correction touches only what it should", () => {
   });
 
   it("writes no payment, no manual credit and no new charge", () => {
-    for (const forbidden of ["recordPaymentReceived", "adjustCustomerBalance", "paymentRecords", "allowCredit: true", "db.insert("]) {
+    // paymentRecords is read (what was given back of a payment), never written.
+    for (const forbidden of ["recordPaymentReceived", "adjustCustomerBalance", "insert(paymentRecords)", "update(paymentRecords)", "allowCredit: true", "db.insert("]) {
       expect(db, forbidden).not.toContain(forbidden);
     }
   });
@@ -259,5 +260,39 @@ describe("a parcel of its own that an order claims afterwards", () => {
 
   it("a tracking is matched whatever its case", () => {
     expect(till).toContain('(t.trackingNumber ?? "").trim().toLowerCase() === trackingKey');
+  });
+});
+
+describe("a payment undone is not paid", () => {
+  // AZ018, 2026-10-19: $1,633.99 entered, reversed to fix its note, entered
+  // again. The reversal names no row, so the card counted $3,267.98 paid,
+  // read "really owed $0.00", and offered $64 of settled goods as false debt.
+  const row = (id: number, type: string, usd: number, description = "", referenceId: number | null = null, balanceAfterUsd = 1): AccountRow =>
+    ({ id, transactionNumber: `T${id}`, transactionType: type, amountUsd: usd, balanceAfterUsd, description, referenceId });
+  const facts = (reversed?: Map<number, number>): SettledFacts => ({
+    receiptedBoxCodes: new Set(), receiptedPackageIds: new Set(), receiptedOrderIds: new Set(), receiptedTrackings: new Set(),
+    orders: [{ id: 1, chargeTransactionId: 1, trackings: ["T1"] }],
+    isOrderText: () => false,
+    reversedPaymentUsd: reversed,
+  });
+  const rows = [
+    row(1, "DEBIT_COMMISSION", 3191.51, "goods", 1),
+    row(2, "CREDIT_PAYMENT", 1633.99, "advance"),
+    row(3, "ADJUSTMENT_DEBIT", 1633.99, "[هەڵە] note"),
+    row(4, "CREDIT_PAYMENT", 1633.99, "advance, again"),
+  ];
+
+  it("the undone one counts nothing; the one that stands counts once", () => {
+    expect(stillOwed(rows, facts(new Map([[2, 1633.99]])))).toBe(1557.52);
+  });
+
+  it("a part given back counts only what is left", () => {
+    expect(stillOwed(rows.slice(0, 2), facts(new Map([[2, 600]])))).toBe(2157.52);
+  });
+
+  it("the finder reads what was given back from the payments themselves", () => {
+    const db = root("server/db/boxPaidStillOwed.db.ts");
+    expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd };");
   });
 });
