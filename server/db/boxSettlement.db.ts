@@ -532,7 +532,10 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
       // the account leaves the parcel as it was — nothing is asked twice.
       const claimedParcel = !linkedCarton && mine.some((o) => orderSeen.has(`${account}|${o.id}`));
       // What the parcel itself already stands at on the account (its freight).
-      const ownChargedUsd = claimedParcel && seenAnyCharge.has(key) ? Math.max(0, fromLedger ?? 0) : 0;
+      // An order's carton too: its parcel can have been charged as a parcel
+      // before the order claimed it - that is its freight, written once
+      // (AZ295 773442848393635, 2026-10-19: $3.85 on 25/09, asked again).
+      const ownChargedUsd = (claimedParcel || (linkedCarton && packageId !== null)) && seenAnyCharge.has(key) ? Math.max(0, fromLedger ?? 0) : 0;
       const fromOrder = linkedCarton || claimedParcel;
       if (fromOrder) {
         if (mine.length > 0) {

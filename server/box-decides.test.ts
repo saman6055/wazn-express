@@ -54,6 +54,19 @@ describe("the box decides; the batch never writes what a box wrote", () => {
   });
 });
 
+/*
+ * AZ295 773442848393635, 2026-10-19: charged $3.85 as a parcel on 25/09,
+ * claimed by order CM-MU2GXSS2 and boxed; the till asked its freight again.
+ * Proved on real MySQL: old code wrote a second $3.85, this writes none.
+ */
+describe("a carton whose parcel was charged as a parcel is not charged again", () => {
+  it("its own parcel charge is its freight", () => {
+    expect(read("db/boxSettlement.db.ts")).toContain(
+      "const ownChargedUsd = (claimedParcel || (linkedCarton && packageId !== null)) && seenAnyCharge.has(key) ? Math.max(0, fromLedger ?? 0) : 0;",
+    );
+  });
+});
+
 describe("an order's freight is not a same-numbered parcel's charge", () => {
   it("knows the words every door writes on an order's freight", () => {
     expect(isOrderFreightText("کڕین بە تێچوو CM-MU2GE1UX + CM-MU2GFW8Z - کرێی گواستنەوە (BOX-20261001-001)")).toBe(true);
