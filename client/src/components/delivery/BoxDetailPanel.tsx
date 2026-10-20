@@ -69,6 +69,8 @@ import {
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
+import { BoxMissingParcels, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
 import { receiptLanguageFor, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber, type ReceiptLanguage } from "@shared/receiptWhatsApp";
@@ -276,6 +278,11 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const [reopenReason, setReopenReason] = useState("");
   const [reopenAsking, setReopenAsking] = useState(false);
   const scanInputRef = useRef<HTMLInputElement>(null);
+  // The parcels this box still waits for (BoxMissingParcels): each scan
+  // starts its minute again, and print / send wait while any is unexplained.
+  const [scanTick, setScanTick] = useState(0);
+  const [missingGate, setMissingGate] = useState(false);
+  const { data: missingNow } = trpc.deliveryBox.missingParcels.useQuery({ boxId }, { refetchInterval: 15000 });
   // Latest input value kept in a ref so submit reads the COMPLETE code even
   // when a scanner's trailing Enter fires before React re-renders (avoids the
   // classic stale-closure that drops the last char of a scan).
@@ -302,6 +309,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       toast.success(`${t("delivery.toastItemAdded")} ${data.item.trackingNumber}`);
       soundManager.playBeep();
       setScanInput("");
+      setScanTick((n) => n + 1);
       refetchBox();
       scanInputRef.current?.focus();
     },
@@ -832,6 +840,13 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       document.querySelector('[data-testid="box-handover"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
+    // Not while a parcel of this customer is unexplained (owner, 2026-10-20):
+    // scanned, or said not to have arrived - then the paper.
+    if (!reached && (missingNow?.length ?? 0) > 0) {
+      soundManager.playWarning();
+      setMissingGate(true);
+      return;
+    }
     // Ready before the print button is pressed, so the window opens at once.
     void loadLocale(lang);
     // Not yet known what is owed: wait for it rather than guess "nothing".
@@ -1044,6 +1059,30 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
             🔒 {pickLang(language, REOPEN_WORDS.paidClosed)}
           </div>
         )}
+        <BoxMissingParcels
+          boxId={box.id}
+          inBoxCount={items.length}
+          canScan={isOpen && !hasLiveReceipt}
+          remind
+          language={language}
+          scanTick={scanTick}
+          onScanNow={() => scanInputRef.current?.focus()}
+        />
+        <Dialog open={missingGate} onOpenChange={setMissingGate}>
+          <DialogContent className="max-w-lg" data-testid="box-missing-gate">
+            <DialogHeader>
+              <DialogTitle>{pickLang(language, MISSING_WORDS.gateTitle)}</DialogTitle>
+            </DialogHeader>
+            <BoxMissingParcels
+              boxId={box.id}
+              inBoxCount={items.length}
+              canScan={isOpen && !hasLiveReceipt}
+              language={language}
+              scanTick={scanTick}
+              onScanNow={() => { setMissingGate(false); setTimeout(() => scanInputRef.current?.focus(), 50); }}
+            />
+          </DialogContent>
+        </Dialog>
         {/* Scan Input (only when box is open, and never once it is paid) */}
         {isOpen && !hasLiveReceipt && (
           <div className="flex gap-2">

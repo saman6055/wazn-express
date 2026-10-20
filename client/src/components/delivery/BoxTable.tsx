@@ -207,6 +207,21 @@ export function BoxTable({
       onBoxSelect?.(box.id);
       return;
     }
+    // Not while a parcel of the customer is unexplained (owner, 2026-10-20):
+    // the box itself shows which, and what to do (BoxMissingParcels).
+    if (!reached) {
+      const missing = await trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id }).catch(() => []);
+      if (missing.length > 0) {
+        toast.error(pickLang(language, {
+          ku: `${missing.length} پاکێجی ئەم کڕیارە سکان نەکراوە - لە بۆکسەکەدا ڕوونی بکەرەوە، پاشان چاپ بکە`,
+          en: `${missing.length} parcel(s) of this customer not scanned - explain them in the box, then print`,
+          ar: `${missing.length} طرد لهذا العميل غير ممسوح - وضّحها في الصندوق ثم اطبع`,
+          zh: `该客户有 ${missing.length} 个包裹未扫描 - 请在箱子里说明后再打印`,
+        }), { duration: 10_000 });
+        onBoxSelect?.(box.id);
+        return;
+      }
+    }
     if (box.settlementCleared === true) {
       void printReceiptNow(box, lang, null);
       return;
