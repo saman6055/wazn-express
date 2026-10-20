@@ -201,7 +201,7 @@ async function gatherAccount(customerId: number) {
 
   // Every live box of the customer, each thing inside it, and whether a receipt stands.
   const boxRows = await db
-    .select({ boxId: deliveryBoxes.id, boxCode: deliveryBoxes.boxCode, packageId: deliveryBoxItems.packageId, orderId: deliveryBoxItems.fullPackageOrderId, tracking: packages.trackingNumber, parcelOrderId: packages.fullPackageOrderId })
+    .select({ boxId: deliveryBoxes.id, boxCode: deliveryBoxes.boxCode, status: deliveryBoxes.status, packageId: deliveryBoxItems.packageId, orderId: deliveryBoxItems.fullPackageOrderId, tracking: packages.trackingNumber, parcelOrderId: packages.fullPackageOrderId })
     .from(deliveryBoxes)
     .leftJoin(deliveryBoxItems, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
     .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
@@ -219,6 +219,10 @@ async function gatherAccount(customerId: number) {
   const openPackageIds = new Set<number>();
   const openOrderIds = new Set<number>();
   const openTrackings = new Set<string>();
+  /** In a box with no receipt that has not been handed over yet. */
+  const pendingPackageIds = new Set<number>();
+  const pendingOrderIds = new Set<number>();
+  const pendingTrackings = new Set<string>();
   /** Where a thing sits: the box that holds it, a receipted one winning. */
   const boxOf = new Map<string, { boxId: number; boxCode: string; receipted: boolean }>();
   const boxByCode = new Map<string, number>();
@@ -238,12 +242,25 @@ async function gatherAccount(customerId: number) {
     if (b.orderId != null) { O.add(Number(b.orderId)); place(`o${b.orderId}`, box); }
     if (b.parcelOrderId != null) { O.add(Number(b.parcelOrderId)); place(`o${b.parcelOrderId}`, box); }
     if (b.tracking) { T.add(trackingKey(b.tracking)); place(`t${trackingKey(b.tracking)}`, box); }
+    if (!receipted && b.status !== "delivered") {
+      if (b.packageId != null) pendingPackageIds.add(Number(b.packageId));
+      if (b.orderId != null) pendingOrderIds.add(Number(b.orderId));
+      if (b.parcelOrderId != null) pendingOrderIds.add(Number(b.parcelOrderId));
+      if (b.tracking) pendingTrackings.add(trackingKey(b.tracking));
+    }
   }
   // A box line is written only by a receipt: the tracking it names was paid,
   // even where the box itself was later deleted and made again.
+  // A box line taken back by the ledger's own correction ([REV:]) is no
+  // receipt (AZ001, 2026-10-20: a deleted box's lines, taken off).
+  const takenBack = new Set<string>();
+  for (const r of rows) {
+    const m = /\[REV:([^\]]+)\]/.exec(r.description);
+    if (m) takenBack.add(m[1]);
+  }
   for (const r of rows) {
     const line = BOX_LINE.exec(r.description);
-    if (line) receiptedTrackings.add(trackingKey(line[2]));
+    if (line && !takenBack.has(r.transactionNumber)) receiptedTrackings.add(trackingKey(line[2]));
   }
 
   const own = await db
@@ -294,19 +311,23 @@ async function gatherAccount(customerId: number) {
 
   // Account money each standing receipt used: what its lines were paid,
   // less the cash it took (shared/boxPaidStillOwed accountCovered).
-  const coveredRows = await db
-    .select({
-      createdAt: boxSettlements.createdAt,
-      paidUsd: boxSettlements.paidUsd,
-      linesPaid: sql<string>`(SELECT COALESCE(SUM(${boxSettlementLines.paidUsd}), 0) FROM ${boxSettlementLines} WHERE ${boxSettlementLines.settlementId} = ${boxSettlements.id})`,
-    })
+  const standing = await db
+    .select({ id: boxSettlements.id, createdAt: boxSettlements.createdAt, paidUsd: boxSettlements.paidUsd })
     .from(boxSettlements)
     .where(and(eq(boxSettlements.customerId, customerId), eq(boxSettlements.status, "confirmed")));
-  const accountCovered = coveredRows
-    .map((r) => ({ at: r.createdAt ? new Date(r.createdAt).toISOString() : null, usd: Math.max(0, cents(num(r.linesPaid) - num(r.paidUsd))) }))
+  const linesPaid = standing.length
+    ? await db
+        .select({ settlementId: boxSettlementLines.settlementId, paid: sql<string>`SUM(${boxSettlementLines.paidUsd})` })
+        .from(boxSettlementLines)
+        .where(inArray(boxSettlementLines.settlementId, standing.map((s) => Number(s.id))))
+        .groupBy(boxSettlementLines.settlementId)
+    : [];
+  const paidOnLines = new Map(linesPaid.map((l) => [Number(l.settlementId), num(l.paid)]));
+  const accountCovered = standing
+    .map((s) => ({ at: s.createdAt ? new Date(s.createdAt).toISOString() : null, usd: Math.max(0, cents((paidOnLines.get(Number(s.id)) ?? 0) - num(s.paidUsd))) }))
     .filter((r) => r.usd > 0.004);
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered };
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, pendingPackageIds, pendingOrderIds, pendingTrackings };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 

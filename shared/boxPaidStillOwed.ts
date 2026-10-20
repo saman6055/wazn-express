@@ -123,6 +123,10 @@ export interface SettledFacts {
    * cash - and the card still counted it as free money paying other goods.
    */
   accountCovered?: Array<{ at: string | null; usd: number }>;
+  /** Goods in a box with no receipt that has not been handed over yet. */
+  pendingPackageIds?: Set<number>;
+  pendingOrderIds?: Set<number>;
+  pendingTrackings?: Set<string>;
 }
 
 const BOX_LINE_TEXT = /^(BOX-[\w-]+)\s+—\s+(\S+)/;
@@ -240,7 +244,10 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     // still asks for: the box decides (owner, 2026-10-19). AZ001: $348.96 of
     // goods charged in July, swept by the 14/08 zeroing, in a box going out
     // unpaid on 20/10.
-    if (verdict !== "paid" && verdict !== "openBox" && r.id <= zeroedAt) verdict = "settled";
+    const pending = order
+      ? Boolean(facts.pendingOrderIds?.has(order.id) || order.trackings.some((t) => facts.pendingTrackings?.has(trackingKey(t))))
+      : Boolean(r.referenceId != null && facts.pendingPackageIds?.has(r.referenceId));
+    if (verdict !== "paid" && !(verdict === "openBox" && pending) && r.id <= zeroedAt) verdict = "settled";
     out.verdict = verdict;
     if (verdict === "road" || verdict === "arrived" || verdict === "openBox" || verdict === "parcel") owed[verdict] += cents;
   }

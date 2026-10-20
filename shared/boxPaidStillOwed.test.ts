@@ -227,8 +227,11 @@ describe("a correction never goes below what is really still owed", () => {
       row(2, "ADJUSTMENT_CREDIT", 80, "[ڕێکخستنی دەستی] حیسابی پێشوو", null, 0),
     ];
     // The order's goods are in a box going out unpaid: the box decides.
-    const open = facts({ orders: [{ id: 9, chargeTransactionId: 1, trackings: ["DPK317"] }], openTrackings: new Set(["dpk317"]) });
+    const open = facts({ orders: [{ id: 9, chargeTransactionId: 1, trackings: ["DPK317"] }], openTrackings: new Set(["dpk317"]), pendingTrackings: new Set(["dpk317"]) });
     expect(stillOwed(rows, open)).toBe(80);
+    // A box already handed over with no receipt is not "still asking": the zeroing settled it.
+    const handed = facts({ orders: [{ id: 9, chargeTransactionId: 1, trackings: ["DPK317"] }], openTrackings: new Set(["dpk317"]) });
+    expect(stillOwed(rows, handed)).toBe(0);
     expect(stillOwed(rows, facts({ orders: [{ id: 9, chargeTransactionId: 1, trackings: ["DPK317"] }] }))).toBe(0);
   });
 
@@ -315,6 +318,6 @@ describe("a payment undone is not paid", () => {
   it("the finder reads what was given back from the payments themselves", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
-    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered };");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, pendingPackageIds, pendingOrderIds, pendingTrackings };");
   });
 });
