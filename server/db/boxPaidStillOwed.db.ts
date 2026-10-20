@@ -260,7 +260,10 @@ async function gatherAccount(customerId: number) {
   }
   for (const r of rows) {
     const line = BOX_LINE.exec(r.description);
-    if (line && !takenBack.has(r.transactionNumber)) receiptedTrackings.add(trackingKey(line[2]));
+    // A box that still stands speaks for itself: with no receipt standing
+    // (its receipt undone - AZ002, 2026-10-20), its lines are no payment.
+    const boxStands = line ? boxByCode.has(line[1]) : false;
+    if (line && !takenBack.has(r.transactionNumber) && (!boxStands || receiptedBoxCodes.has(line[1]))) receiptedTrackings.add(trackingKey(line[2]));
   }
 
   const own = await db
