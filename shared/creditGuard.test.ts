@@ -98,7 +98,9 @@ describe("every door that takes money asks", () => {
   it("payment holds the extra; a hand adjustment cannot", () => {
     const src = read("server/routers/finance.router.ts");
     expect(src.match(/guardAgainstCredit\(\{/g)?.length).toBe(2);
-    expect(src.match(/approveCredit: z\.boolean\(\)\.optional\(\)/g)?.length).toBe(2);
+    // 3 since reverseChargeRows (2026-10-20): its yes goes to reverseCharge's
+    // own guard (allowCredit), main admin only.
+    expect(src.match(/approveCredit: z\.boolean\(\)\.optional\(\)/g)?.length).toBe(3);
     expect(src).toContain('if (credit.action === "hold") {');
     expect(src).toContain("await db.createPendingCredit({");
     expect(src).toContain("canHold: false,");

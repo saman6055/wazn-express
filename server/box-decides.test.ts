@@ -83,3 +83,14 @@ describe("an order's freight is not a same-numbered parcel's charge", () => {
     expect(read("db/boxSettlement.db.ts")).toContain("if (row.referenceType === \"package\" && isOrderFreightText(row.description)) continue;");
   });
 });
+
+describe("a named charge comes off only the main admin's way", () => {
+  it("only DEBIT rows of this customer, by the ledger's own correction, audited", () => {
+    const router = read("routers/finance.router.ts");
+    expect(router).toContain("reverseChargeRows: superAdminProcedure");
+    expect(router).toContain("if (!row || Number(row.accountId) !== Number(account.id)) {");
+    expect(router).toContain('if (!String(row.transactionType).startsWith("DEBIT_")) {');
+    expect(router).toContain("await db.reverseCharge(id, input.reason, ctx.user.id, undefined, input.approveCredit ? { allowCredit: true } : undefined);");
+    expect(router).toContain('action: "reverse_charge_rows",');
+  });
+});

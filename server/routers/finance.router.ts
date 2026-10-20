@@ -185,6 +185,51 @@ export const ledgerRouter = router({
         }
       }),
 
+    /**
+     * Take named charges off a customer's account - each by the ledger's own
+     * correction ([REV:]), with the reason, main admin only and audited
+     * (owner, 2026-10-20: a deleted box's charges, a parcel handed over
+     * unscanned that the company carries as a loss). Never a payment: only
+     * DEBIT_* rows on this customer's own account, and nothing made into
+     * credit unless he says so.
+     */
+    reverseChargeRows: superAdminProcedure
+      .input(z.object({
+        customerId: z.number().int().positive(),
+        transactionIds: z.array(z.number().int().positive()).min(1).max(50),
+        reason: z.string().min(5).max(500),
+        approveCredit: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const account = await db.getCustomerAccountByCustomerId(input.customerId);
+        if (!account) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("حیسابی کڕیار") });
+        const done: Array<{ id: number; amountUsd: number }> = [];
+        for (const id of Array.from(new Set(input.transactionIds))) {
+          const row = await db.getLedgerTransactionById(id);
+          if (!row || Number(row.accountId) !== Number(account.id)) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: withFix(`نووسینی ${id} هی ئەم کڕیارە نییە.`, ["ژمارەی نووسینەکە لە دەفتەری حیسابی کڕیارەکە بپشکنە"]) });
+          }
+          if (!String(row.transactionType).startsWith("DEBIT_")) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: withFix(`نووسینی ${id} قەرز نییە (${row.transactionType}) — تەنها قەرز بەم ڕێگایە لادەبرێت.`, ["پارەدان لە شاشەی پارەدانەوە هەڵدەوەشێنرێتەوە"]) });
+          }
+          try {
+            await db.reverseCharge(id, input.reason, ctx.user.id, undefined, input.approveCredit ? { allowCredit: true } : undefined);
+          } catch (err) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+          }
+          done.push({ id, amountUsd: Number(row.amountUsd) });
+        }
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "reverse_charge_rows",
+          entityType: "customer_account",
+          entityId: input.customerId,
+          newValues: { reason: input.reason, rows: done },
+        });
+        return { reversed: done.length, totalUsd: Math.round(done.reduce((s, r) => s + r.amountUsd, 0) * 100) / 100 };
+      }),
+
     /** Every other cost written on a box - the main admin's watch (shared/extraCosts). */
     extraCosts: accountantProcedure
       .input(z.object({ sinceDays: z.number().int().min(1).max(3650).default(90) }).optional())
