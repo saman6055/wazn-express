@@ -1,68 +1,37 @@
-import { useTranslation, type Language } from "@/contexts/LanguageContext";
-
-// Map the app language codes to BCP-47 locales for Intl.
-const LOCALE_MAP: Record<Language, string> = {
-  ku: "ckb-u-nu-latn",
-  en: "en",
-  ar: "ar-u-nu-latn",
-  zh: "zh",
-};
-
-const DIVISIONS: { amount: number; unit: Intl.RelativeTimeFormatUnit }[] = [
-  { amount: 60, unit: "second" },
-  { amount: 60, unit: "minute" },
-  { amount: 24, unit: "hour" },
-  { amount: 7, unit: "day" },
-  { amount: 4.34524, unit: "week" },
-  { amount: 12, unit: "month" },
-  { amount: Number.POSITIVE_INFINITY, unit: "year" },
-];
+/**
+ * When a row was made: the date in full, the time small beneath it.
+ *
+ * It used to say "last month", "last week", "3 days ago". The owner,
+ * 2026-10-20: «بەروار بە تەواوی بنووسرێت نەنووسرێت لاست ویک دەی مۆنس ...
+ * ئەگەر دیتیلی زیاتر ویست کاتیش نیشان بدات». So: 20/10/2026, and 14:05 under
+ * it - the same day-first date the other lists print, in Latin digits in
+ * every language, kept left-to-right inside a right-to-left row.
+ *
+ * The name stays so the lists that use it did not have to change.
+ */
 
 interface RelativeTimeProps {
   date: string | number | Date | null | undefined;
   className?: string;
 }
 
-export function RelativeTime({ date, className }: RelativeTimeProps) {
-  const { language } = useTranslation();
-  const locale = LOCALE_MAP[language] ?? "en";
+export function formatRowDate(d: Date): string {
+  return d.toLocaleDateString("en-GB", { day: "2-digit", month: "2-digit", year: "numeric" });
+}
 
+export function formatRowTime(d: Date): string {
+  return d.toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", hour12: false });
+}
+
+export function RelativeTime({ date, className }: RelativeTimeProps) {
   if (date == null) return null;
   const d = date instanceof Date ? date : new Date(date);
   if (isNaN(d.getTime())) return null;
 
-  let duration = (d.getTime() - Date.now()) / 1000;
-  let unit: Intl.RelativeTimeFormatUnit = "second";
-  for (const division of DIVISIONS) {
-    if (Math.abs(duration) < division.amount) {
-      unit = division.unit;
-      break;
-    }
-    duration /= division.amount;
-  }
-
-  let label: string;
-  try {
-    const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" });
-    label = rtf.format(Math.round(duration), unit);
-  } catch {
-    const rtf = new Intl.RelativeTimeFormat("en", { numeric: "auto" });
-    label = rtf.format(Math.round(duration), unit);
-  }
-
-  let title: string;
-  try {
-    title = new Intl.DateTimeFormat(locale, {
-      dateStyle: "medium",
-      timeStyle: "short",
-    }).format(d);
-  } catch {
-    title = d.toLocaleString("en-GB");
-  }
-
   return (
-    <span className={className} title={title}>
-      {label}
+    <span className={className} dir="ltr" data-testid="row-date">
+      <span className="block whitespace-nowrap tabular-nums">{formatRowDate(d)}</span>
+      <span className="block whitespace-nowrap text-[11px] tabular-nums opacity-70">{formatRowTime(d)}</span>
     </span>
   );
 }
