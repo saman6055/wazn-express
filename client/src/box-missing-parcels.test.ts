@@ -70,3 +70,21 @@ describe("a parcel is delivered by its box, not by its batch's arrival", () => {
     expect(read("server/services/auditSweep.service.ts")).toContain("WHERE p.status IN ('ready_for_delivery','out_for_delivery','delivered')");
   });
 });
+
+/** Owner, 2026-10-20: the ones from before, as a read-only list. */
+describe("parcels that went out without a box are listed, read only", () => {
+  it("delivered, in no box that was not cancelled, by parcel or by tracking", () => {
+    const db = read("server/db/boxMissing.db.ts");
+    const fn = db.slice(db.indexOf("export async function getParcelsDeliveredWithoutBox"));
+    expect(fn).toContain("WHERE p.status = 'delivered'");
+    expect(fn).toContain("x.status <> 'cancelled'");
+    expect(fn).toContain("WHERE i.packageId = p.id");
+    expect(fn).not.toMatch(/\b(UPDATE|INSERT|DELETE)\b/);
+  });
+
+  it("has its own page in the parcels menu", () => {
+    expect(read("client/src/App.tsx")).toContain('<Route path="/packages/without-box" component={DeliveredWithoutBox} />');
+    expect(read("client/src/components/DashboardLayout.tsx")).toContain('path: "/packages/without-box"');
+    expect(read("shared/permissions.ts")).toContain('"/packages/without-box": "packages",');
+  });
+});

@@ -719,6 +719,8 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/customers": "customers",
   "/customers/standing": "customers",
   "/packages/all": "packages",
+  // Read-only list of parcels that went out without a box (owner, 2026-10-20).
+  "/packages/without-box": "packages",
   "/packages/quick-register": "quick_register",
   "/packages/bulk-register": "bulk_register",
   "/batches": "batches",

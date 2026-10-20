@@ -215,6 +215,9 @@ export const packagesRouter = router({
         }
         return out;
       }),
+    /** Read only: parcels that went out delivered without ever being in a box (server/db/boxMissing.db.ts). */
+    deliveredWithoutBox: staffProcedure
+      .query(async () => db.getParcelsDeliveredWithoutBox()),
     getByCode: staffProcedure
       .input(z.object({ code: packageCodeSchema }))
       .query(async ({ input }) => {

@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, lte, ne, notInArray, or } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
 
@@ -157,4 +157,53 @@ export async function deliverParcelsOfOldBoxes(now: Date = new Date()): Promise<
       inArray(packages.id, inOldBoxes),
     ));
   return Number((result as unknown as [{ affectedRows?: number }])[0]?.affectedRows ?? 0);
+}
+
+export interface NeverBoxedParcel {
+  id: number;
+  packageCode: string;
+  trackingNumber: string | null;
+  customerId: number;
+  customerCode: string | null;
+  customerName: string | null;
+  batchId: number | null;
+  batchCode: string | null;
+  calculatedCostUsd: string | null;
+  isCharged: number;
+  orderCode: string | null;
+  deliveredAt: string | null;
+}
+
+/**
+ * Read only. The parcels that went out marked delivered without ever being
+ * in a box (owner, 2026-10-20: «ئەگەر تاکیدی لەسەری ئەوە بۆم دروست بکە») -
+ * Zainab's 79135534330219 and every one like it before the box learned to
+ * count. A parcel is in a box when a box that was not cancelled holds it, by
+ * the parcel or by its tracking. Nothing here changes anything.
+ */
+export async function getParcelsDeliveredWithoutBox(): Promise<NeverBoxedParcel[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [rows] = (await db.execute(sql`
+    SELECT p.id, p.packageCode, p.trackingNumber, p.customerId,
+           c.customerCode, c.fullName AS customerName,
+           p.batchId, b.batchCode, p.calculatedCostUsd, p.isCharged,
+           o.orderCode, p.deliveredAt
+    FROM packages p
+    JOIN customers c ON c.id = p.customerId
+    LEFT JOIN batches b ON b.id = p.batchId
+    LEFT JOIN fullPackageOrders o ON o.id = p.fullPackageOrderId
+    WHERE p.status = 'delivered'
+      AND p.isUnclaimed = 0
+      AND NOT EXISTS (
+        SELECT 1 FROM deliveryBoxItems i
+        JOIN deliveryBoxes x ON x.id = i.boxId AND x.status <> 'cancelled'
+        WHERE i.packageId = p.id
+           OR (p.trackingNumber IS NOT NULL AND p.trackingNumber <> ''
+               AND i.trackingNumber COLLATE utf8mb4_unicode_ci = p.trackingNumber COLLATE utf8mb4_unicode_ci)
+      )
+    ORDER BY p.id DESC
+    LIMIT 2000
+  `)) as unknown as [NeverBoxedParcel[]];
+  return rows ?? [];
 }
