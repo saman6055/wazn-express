@@ -1,6 +1,6 @@
 import { and, eq, inArray, like, ne, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { boxSettlements, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages, paymentRecords } from "../../drizzle/schema";
+import { boxSettlements, boxSettlementLines, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages, paymentRecords } from "../../drizzle/schema";
 import { customers } from "../../drizzle/schema/users.schema";
 import { isOrderChargeText } from "@shared/batchCleanup";
 import { withFix } from "@shared/fixAdvice";
@@ -292,7 +292,21 @@ async function gatherAccount(customerId: number) {
   const { extraChargeStates } = await import("./extraCosts.db");
   const extraCharges = await extraChargeStates(customerId);
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges };
+  // Account money each standing receipt used: what its lines were paid,
+  // less the cash it took (shared/boxPaidStillOwed accountCovered).
+  const coveredRows = await db
+    .select({
+      createdAt: boxSettlements.createdAt,
+      paidUsd: boxSettlements.paidUsd,
+      linesPaid: sql<string>`(SELECT COALESCE(SUM(${boxSettlementLines.paidUsd}), 0) FROM ${boxSettlementLines} WHERE ${boxSettlementLines.settlementId} = ${boxSettlements.id})`,
+    })
+    .from(boxSettlements)
+    .where(and(eq(boxSettlements.customerId, customerId), eq(boxSettlements.status, "confirmed")));
+  const accountCovered = coveredRows
+    .map((r) => ({ at: r.createdAt ? new Date(r.createdAt).toISOString() : null, usd: Math.max(0, cents(num(r.linesPaid) - num(r.paidUsd))) }))
+    .filter((r) => r.usd > 0.004);
+
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 

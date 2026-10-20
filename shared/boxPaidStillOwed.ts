@@ -83,6 +83,8 @@ export interface AccountRow {
   balanceAfterUsd: number;
   description: string;
   referenceId: number | null;
+  /** When it was written - read only to place receipts after a zeroing. */
+  createdAt?: string | null;
 }
 
 export interface SettledFacts {
@@ -114,6 +116,13 @@ export interface SettledFacts {
    * receipted, or written on a parcel not yet boxed.
    */
   extraCharges?: Map<number, "paid" | "openBox" | "parcel">;
+  /**
+   * Money already on the account that a box receipt used (its lines paid
+   * more than the cash it took), with when. AZ001, 2026-10-20: the $958.40
+   * paid on 18/08 was tied to BOX-20260815-002 by a receipt taking no new
+   * cash - and the card still counted it as free money paying other goods.
+   */
+  accountCovered?: Array<{ at: string | null; usd: number }>;
 }
 
 const BOX_LINE_TEXT = /^(BOX-[\w-]+)\s+—\s+(\S+)/;
@@ -166,6 +175,7 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
   const stands = new Map<number, number>();
   for (const r of rows) if (r.transactionType.startsWith("DEBIT_")) stands.set(r.id, Math.round(r.amountUsd * 100));
   let zeroedAt = 0;
+  let zeroedTime: string | null = null;
   for (const r of rows) {
     if (!r.transactionType.startsWith("ADJUSTMENT_")) continue;
     const named = MARK.exec(r.description);
@@ -175,7 +185,7 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
       stands.set(target.id, stands.get(target.id)! + (r.transactionType === "ADJUSTMENT_DEBIT" ? amount : -amount));
     } else if (r.transactionType === "ADJUSTMENT_CREDIT" && r.description.includes(MANUAL) && r.balanceAfterUsd <= 0.005) {
       // The account was put to nothing by hand: whatever stood before is settled.
-      zeroedAt = Math.max(zeroedAt, r.id);
+      if (r.id > zeroedAt) { zeroedAt = r.id; zeroedTime = r.createdAt ?? null; }
     }
   }
 
@@ -226,11 +236,20 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     else if ((r.referenceId != null && facts.openPackageIds?.has(r.referenceId)) || named) verdict = "openBox";
     else verdict = "parcel";
 
-    if (verdict !== "paid" && r.id <= zeroedAt) verdict = "settled";
+    // A zeroing by hand settles what stood before it - except goods a box
+    // still asks for: the box decides (owner, 2026-10-19). AZ001: $348.96 of
+    // goods charged in July, swept by the 14/08 zeroing, in a box going out
+    // unpaid on 20/10.
+    if (verdict !== "paid" && verdict !== "openBox" && r.id <= zeroedAt) verdict = "settled";
     out.verdict = verdict;
     if (verdict === "road" || verdict === "arrived" || verdict === "openBox" || verdict === "parcel") owed[verdict] += cents;
   }
   const open = owed.road + owed.arrived + owed.openBox + owed.parcel;
+  // Account money a receipt has used since the last zeroing pays no other goods.
+  const used = (facts.accountCovered ?? [])
+    .filter((c) => !zeroedTime || !c.at || c.at > zeroedTime)
+    .reduce((s, c) => s + Math.max(0, Math.round(c.usd * 100)), 0);
+  paidOnAccount = Math.max(0, paidOnAccount - used);
   return {
     charges,
     owedUsd: { road: owed.road / 100, arrived: owed.arrived / 100, openBox: owed.openBox / 100, parcel: owed.parcel / 100 },

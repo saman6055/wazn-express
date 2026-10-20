@@ -221,6 +221,28 @@ describe("a correction never goes below what is really still owed", () => {
     expect(stillOwed(rows, facts())).toBe(9);
   });
 
+  it("a zeroing by hand never settles goods a box still asks for (AZ001, 2026-10-20)", () => {
+    const rows = [
+      row(1, "DEBIT_COMMISSION", 80, "CM-OLDOLD", 9),
+      row(2, "ADJUSTMENT_CREDIT", 80, "[ڕێکخستنی دەستی] حیسابی پێشوو", null, 0),
+    ];
+    // The order's goods are in a box going out unpaid: the box decides.
+    const open = facts({ orders: [{ id: 9, chargeTransactionId: 1, trackings: ["DPK317"] }], openTrackings: new Set(["dpk317"]) });
+    expect(stillOwed(rows, open)).toBe(80);
+    expect(stillOwed(rows, facts({ orders: [{ id: 9, chargeTransactionId: 1, trackings: ["DPK317"] }] }))).toBe(0);
+  });
+
+  it("account money a receipt used pays nothing else (AZ001 $958.40, 2026-10-20)", () => {
+    const rows = [
+      { ...row(1, "DEBIT_COMMISSION", 300, "CM-BBBBB2", 2), createdAt: "2026-10-01T00:00:00.000Z" },
+      { ...row(2, "CREDIT_PAYMENT", 958.4, "Payment received"), createdAt: "2026-08-18T00:00:00.000Z" },
+    ];
+    // Before the box was tied to it, the payment pays the $300 on the road.
+    expect(stillOwed(rows, facts())).toBe(0);
+    // A receipt took $957.52 of it for its box: $0.88 is left to pay anything else.
+    expect(stillOwed(rows, facts({ accountCovered: [{ at: "2026-10-20T00:00:00.000Z", usd: 957.52 }] }))).toBe(299.12);
+  });
+
   it("money taken without a box receipt pays the open goods first", () => {
     const rows = [row(1, "DEBIT_COMMISSION", 300, "CM-BBBBB2", 2), row(2, "CREDIT_PAYMENT", 100, "Payment received")];
     expect(stillOwed(rows, facts())).toBe(200);
@@ -293,6 +315,6 @@ describe("a payment undone is not paid", () => {
   it("the finder reads what was given back from the payments themselves", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
-    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges };");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered };");
   });
 });
