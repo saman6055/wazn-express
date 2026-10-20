@@ -61,6 +61,9 @@ describe("one rule in every place money is asked for", () => {
   it("the open charges are the debt rule's own owed charges", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     const fn = db.slice(db.indexOf("export async function openChargesUsd"));
-    expect(fn).toContain("explainDebt(got.rows, got.facts).owedUsd");
+    expect(fn).toContain("const explained = explainDebt(got.rows, got.facts);");
+    expect(fn).toContain("const owed = explained.owedUsd;");
+    // And never more advance than money that came in (AZ225, 2026-10-20).
+    expect(fn).toContain("return Math.min(open, cents(got.balanceUsd + explained.paidOnAccountUsd));");
   });
 });

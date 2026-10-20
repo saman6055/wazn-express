@@ -321,3 +321,10 @@ describe("a payment undone is not paid", () => {
     expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, pendingPackageIds, pendingOrderIds, pendingTrackings };");
   });
 });
+
+describe("an advance is money that came in, never a gap in the books (AZ225, 2026-10-20)", () => {
+  it("the open goods the till reads are capped at the balance plus money paid without a receipt", () => {
+    const src = root("server/db/boxPaidStillOwed.db.ts");
+    expect(src).toContain("return Math.min(open, cents(got.balanceUsd + explained.paidOnAccountUsd));");
+  });
+});

@@ -343,8 +343,14 @@ async function gatherAccount(customerId: number) {
 export async function openChargesUsd(customerId: number): Promise<number> {
   const got = await gatherAccount(customerId);
   if (!got) return 0;
-  const owed = explainDebt(got.rows, got.facts).owedUsd;
-  return cents(owed.road + owed.arrived + owed.openBox + owed.parcel);
+  const explained = explainDebt(got.rows, got.facts);
+  const owed = explained.owedUsd;
+  const open = cents(owed.road + owed.arrived + owed.openBox + owed.parcel);
+  // The till reads an advance as open goods less the balance. An advance is
+  // money that came in: never more than what was paid without a receipt.
+  // A gap left in the books by old corrections is not money (AZ225,
+  // 2026-10-20: $29.70 of nothing offered as an advance against a new box).
+  return Math.min(open, cents(got.balanceUsd + explained.paidOnAccountUsd));
 }
 
 /** What one customer really still owes (shared/boxPaidStillOwed → stillOwed). */
