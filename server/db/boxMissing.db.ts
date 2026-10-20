@@ -1,4 +1,4 @@
-import { and, eq, inArray, isNotNull, ne, notInArray, or } from "drizzle-orm";
+import { and, eq, inArray, isNotNull, lte, ne, notInArray, or } from "drizzle-orm";
 import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
 
@@ -95,4 +95,66 @@ export async function markMissingParcelNotArrived(boxId: number, packageId: numb
     .set({ status: "in_transit" })
     .where(and(eq(packages.id, packageId), notInArray(packages.status, ["returned", "cancelled"])));
   return true;
+}
+
+/**
+ * A batch's arrival puts its parcels at the office, not in the customer's
+ * hands (owner, 2026-10-20). The batch's delivered flow still writes
+ * "delivered" first - its orders, charges and money are worked out exactly
+ * as before - and then this steps every parcel that is not in a handed-over
+ * box back to ready_for_delivery. Only the parcel rows move; no order, no
+ * charge, no ledger row. A parcel becomes delivered later through its box:
+ * handed over, paid in full, or three days after the box was made
+ * (deliverParcelsOfOldBoxes).
+ */
+export async function stepUnboxedBatchParcelsToArrived(batchId: number): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const handedOver = db
+    .select({ packageId: deliveryBoxItems.packageId })
+    .from(deliveryBoxItems)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
+    .where(and(eq(deliveryBoxes.status, "delivered"), isNotNull(deliveryBoxItems.packageId)));
+  const result = await db
+    .update(packages)
+    .set({ status: "ready_for_delivery", deliveredAt: null })
+    .where(and(
+      eq(packages.batchId, batchId),
+      eq(packages.status, "delivered"),
+      notInArray(packages.id, handedOver),
+    ));
+  return Number((result as unknown as [{ affectedRows?: number }])[0]?.affectedRows ?? 0);
+}
+
+/** Days a box may stand before its parcels count as delivered (owner, 2026-10-20). */
+export const BOX_DELIVERED_AFTER_DAYS = 3;
+
+/**
+ * «کاتێ بۆکس دروست کرا دوای 3 رۆژ ببێتە گەیەنرا ئەگەر بە مەنوەلی بۆی نەکرا»:
+ * the parcels inside a box made three days ago or more are delivered, if
+ * nobody marked them so by hand. Only parcels inside a box, never a missing
+ * one; only their status and date; the box, its orders and its money are
+ * left as they are.
+ */
+export async function deliverParcelsOfOldBoxes(now: Date = new Date()): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const cutoff = new Date(now.getTime() - BOX_DELIVERED_AFTER_DAYS * 24 * 60 * 60 * 1000);
+  const inOldBoxes = db
+    .select({ packageId: deliveryBoxItems.packageId })
+    .from(deliveryBoxItems)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxItems.boxId, deliveryBoxes.id))
+    .where(and(
+      ne(deliveryBoxes.status, "cancelled"),
+      lte(deliveryBoxes.createdAt, cutoff),
+      isNotNull(deliveryBoxItems.packageId),
+    ));
+  const result = await db
+    .update(packages)
+    .set({ status: "delivered", deliveredAt: now })
+    .where(and(
+      inArray(packages.status, ["ready_for_delivery", "out_for_delivery"]),
+      inArray(packages.id, inOldBoxes),
+    ));
+  return Number((result as unknown as [{ affectedRows?: number }])[0]?.affectedRows ?? 0);
 }

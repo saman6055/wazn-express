@@ -35,9 +35,38 @@ describe("a box knows the parcels it is still waiting for", () => {
 
   it("«نەگەیشتووە» moves only the parcel's status, never its order or money", () => {
     const db = read("server/db/boxMissing.db.ts");
-    const fn = db.slice(db.indexOf("export async function markMissingParcelNotArrived"));
+    const start = db.indexOf("export async function markMissingParcelNotArrived");
+    const fn = db.slice(start, db.indexOf("A batch's arrival puts its parcels", start));
+    expect(fn.length).toBeGreaterThan(100);
     expect(fn).toContain('.set({ status: "in_transit" })');
     expect(fn).not.toContain("updatePackage(");
     expect(fn).not.toContain("ledger");
+  });
+});
+
+/**
+ * Owner, 2026-10-20: arrived is not handed over. A parcel is delivered by its
+ * box - handed over, paid, or three days after the box was made.
+ */
+describe("a parcel is delivered by its box, not by its batch's arrival", () => {
+  it("the batch's flow steps unboxed parcels back to the office, after its money", () => {
+    const flow = read("server/routers/batches.router.ts");
+    const safety = flow.indexOf('appLogger.info("[BatchDelivered Phase3] Safety-net complete", { diag });');
+    const step = flow.indexOf("await db.stepUnboxedBatchParcelsToArrived(id);");
+    expect(safety).toBeGreaterThan(0);
+    expect(step).toBeGreaterThan(safety);
+  });
+
+  it("the three-day clock runs with the server, only on parcels inside a box", () => {
+    expect(read("server/_core/index.ts")).toContain("await scheduleBoxDeliveredAfterDays();");
+    const db = read("server/db/boxMissing.db.ts");
+    expect(db).toContain("export const BOX_DELIVERED_AFTER_DAYS = 3;");
+    const fn = db.slice(db.indexOf("export async function deliverParcelsOfOldBoxes"));
+    expect(fn).toContain("inArray(packages.id, inOldBoxes)");
+  });
+
+  it("the unbilled-goods checks count a parcel at the office as arrived", () => {
+    expect(read("server/db/orderCharging.db.ts")).toContain('inArray(packages.status, ["ready_for_delivery", "out_for_delivery", "delivered"])');
+    expect(read("server/services/auditSweep.service.ts")).toContain("WHERE p.status IN ('ready_for_delivery','out_for_delivery','delivered')");
   });
 });

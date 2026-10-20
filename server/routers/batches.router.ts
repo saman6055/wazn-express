@@ -2286,6 +2286,16 @@ export const batchesRouter = router({
 
           appLogger.info("[BatchDelivered Phase3] Safety-net complete", { diag });
 
+          // Arrived is not handed over (owner, 2026-10-20): every parcel not
+          // in a handed-over box goes back to "at the office". Orders and
+          // money above are untouched; the box makes a parcel delivered.
+          try {
+            const atOffice = await db.stepUnboxedBatchParcelsToArrived(id);
+            appLogger.info("[BatchDelivered] parcels at the office, not yet handed over", { batchId: id, atOffice });
+          } catch (e) {
+            appLogger.error("[BatchDelivered] could not step parcels back to at-the-office", { batchId: id, error: e instanceof Error ? e.message : String(e) });
+          }
+
           // Notify customers about delivery
           try {
             await notifyBatchStatusChange(id, "batch_arrived"); // Use arrived notification for now

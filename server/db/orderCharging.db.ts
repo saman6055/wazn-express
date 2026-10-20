@@ -324,7 +324,9 @@ export async function findUnbilledArrivedOrders(): Promise<UnbilledOrder[]> {
         .from(packages)
         .where(and(
           inArray(packages.trackingNumber, allTrackings),
-          eq(packages.status, "delivered"),
+          // Arrived at the office counts: since 2026-10-20 a batch's parcels
+          // wait there as ready_for_delivery until their box hands them over.
+          inArray(packages.status, ["ready_for_delivery", "out_for_delivery", "delivered"]),
         ))
     : [];
   const deliveredTrackings = new Set(arrived.map((r) => clean(r.trackingNumber)));

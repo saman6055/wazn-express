@@ -326,7 +326,7 @@ const QUERIES: Record<CheckId, string> = {
         o.status = 'delivered'
         OR EXISTS (
           SELECT 1 FROM packages p
-          WHERE p.status = 'delivered'
+          WHERE p.status IN ('ready_for_delivery','out_for_delivery','delivered')
             AND (p.trackingNumber COLLATE utf8mb4_unicode_ci = o.trackingNumber COLLATE utf8mb4_unicode_ci
                  OR p.trackingNumber COLLATE utf8mb4_unicode_ci IN (SELECT t.trackingNumber COLLATE utf8mb4_unicode_ci FROM fullPackageOrderTrackings t
                                          WHERE t.fullPackageOrderId = o.id)))

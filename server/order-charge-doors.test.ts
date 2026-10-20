@@ -83,7 +83,8 @@ describe("the ones that arrived before the doors existed", () => {
     // In a box, or delivered. Goods still in China are not billed by a
     // repair — charging at entry is the rule going forward.
     expect(finder).toContain('where = "box"');
-    expect(finder).toContain('eq(packages.status, "delivered")');
+    // At the office counts as arrived since 2026-10-20 (parcels wait there for their box).
+    expect(finder).toContain('inArray(packages.status, ["ready_for_delivery", "out_for_delivery", "delivered"])');
     expect(finder).toContain('ne(fullPackageOrders.orderType, "purchase_request")');
     // It reads. It must not write.
     expect(finder).not.toMatch(/\.insert\(|\.update\(|chargeOrderAtCreation\(/);

@@ -17,6 +17,7 @@ import { registerClientErrorsRoute } from "./clientErrorsRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
+import { scheduleBoxDeliveredAfterDays } from "../services/boxDeliveredAfterDays.service";
 import { startDailySnapshots } from "../services/dailyBrief.service";
 import { runMigration } from "../services/migration.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
@@ -189,6 +190,14 @@ async function startServer() {
     appLogger.info("Flight arrival watcher started");
   } catch (error) {
     appLogger.error("Failed to start tracking alert scheduler", { error: error instanceof Error ? error.message : String(error) });
+  }
+
+  // A box's parcels count as delivered three days after the box was made (owner, 2026-10-20).
+  try {
+    await scheduleBoxDeliveredAfterDays();
+    appLogger.info("Box three-day delivered scheduler started");
+  } catch (error) {
+    appLogger.error("Failed to start the box three-day scheduler", { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Start scheduled backups
