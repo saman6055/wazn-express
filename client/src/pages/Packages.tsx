@@ -11,6 +11,7 @@ import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { ZoomImage } from "@/components/ZoomImage";
 import { ParcelThumb, ParcelThumbs } from "@/components/packages/ParcelThumb";
+import { CountBadges } from "@/components/packages/CountBadges";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { TrackingOnAnOrder } from "@/components/packages/TrackingOnAnOrder";
@@ -249,9 +250,10 @@ const PackageTableRow = memo(function PackageTableRow({
       </TableCell>
       <TableCell className="font-mono text-sm">
         {pkg.trackingNumber ? (
-          <div className="flex items-center gap-1">
+          <div className="flex flex-wrap items-center gap-1">
             <span>{pkg.trackingNumber}</span>
             <CopyButton value={pkg.trackingNumber} label="کۆپی تراکینگ" />
+            <CountBadges cartons={(pkg as any).cartonCount} pieces={(pkg as any).orderQuantity} language={language} />
           </div>
         ) : (
           <Badge variant="outline" className="text-xs bg-red-50 dark:bg-red-950/40 text-red-700 dark:text-red-300 border-red-200 dark:border-red-800/60">
@@ -445,6 +447,7 @@ const PackageMobileCard = memo(function PackageMobileCard({
             </Badge>
           )}
           <span dir="ltr" className="mt-0.5 block truncate font-mono text-[11px] text-muted-foreground">{orderCode || pkg.packageCode}</span>
+          <CountBadges cartons={(pkg as any).cartonCount} pieces={(pkg as any).orderQuantity} language={language} />
         </button>
         {pkg.trackingNumber && <CopyButton value={pkg.trackingNumber} label="کۆپی تراکینگ" />}
         <PackageStatusMenu pkg={pkg} onStatusChange={onStatusChange} language={language} t={t} />

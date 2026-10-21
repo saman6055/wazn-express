@@ -454,6 +454,10 @@ export async function getAllPackages(options: {
        */
       hasPhotos: sql<boolean>`(${packages.photos} IS NOT NULL AND JSON_LENGTH(${packages.photos}) > 0)`,
       calculatedCostUsd: packages.calculatedCostUsd,
+      // How many cartons the tracking is, and how many pieces its order is
+      // (owner, 2026-10-21) - the row says «2 کارتۆن», «×3 پارچە».
+      cartonCount: packages.cartonCount,
+      orderQuantity: fullPackageOrders.quantity,
       status: packages.status,
       createdAt: packages.createdAt,
       updatedAt: packages.updatedAt,

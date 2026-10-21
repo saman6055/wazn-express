@@ -673,6 +673,8 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
   shippingType: string | null;
   /** Cartons of one size under the tracking (shared/parcelCost); null is one. */
   cartonCount: number | null;
+  /** Pieces its order is, when more than one (owner, 2026-10-21); else null. */
+  pieceCount: number | null;
 };
 
 /**
@@ -781,6 +783,19 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     const pkgs = await db.select().from(packages).where(inArray(packages.id, packageIds));
     for (const p of pkgs) pkgById.set(p.id, p);
   }
+  // The pieces of an order reached only through its parcel (no tracking on
+  // the order): read just the count, for «×3 پارچە» (owner, 2026-10-21).
+  const qtyByOrderId = new Map<number, number>();
+  {
+    const viaParcel = Array.from(new Set(
+      Array.from(pkgById.values()).map((p) => p.fullPackageOrderId).filter((id): id is number => !!id && !fpById.has(id)),
+    ));
+    if (viaParcel.length > 0) {
+      const rows = await db.select({ id: fullPackageOrders.id, quantity: fullPackageOrders.quantity })
+        .from(fullPackageOrders).where(inArray(fullPackageOrders.id, viaParcel));
+      for (const r of rows) qtyByOrderId.set(r.id, Number(r.quantity) || 1);
+    }
+  }
 
   // Resolve one product photo per item: FP-order image (commission /
   // full_package) wins, else the first regular-package photo, else null.
@@ -845,6 +860,17 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
   return items.map((item): BoxItemWithAdvance => {
     const productImage = imageFor(item);
     const { volumeCbm, shippingType, cartonCount } = measureFor(item);
+    // The order behind the line: how many pieces to count out of it.
+    const orderOf = item.fullPackageOrderId
+      ? fpById.get(item.fullPackageOrderId)
+      : (item.trackingNumber ? (fpsByTracking.get(item.trackingNumber) || [])[0] : undefined);
+    const viaParcelId = item.packageId ? pkgById.get(item.packageId)?.fullPackageOrderId : null;
+    const qty = Number(
+      (orderOf as { quantity?: number | null } | undefined)?.quantity
+        ?? (viaParcelId ? (fpById.get(viaParcelId)?.quantity ?? qtyByOrderId.get(viaParcelId)) : undefined)
+        ?? 1,
+    ) || 1;
+    const pieceCount = qty > 1 ? qty : null;
 
     // The platform order numbers beside the tracking (owner, 2026-09-17), by
     // both routes to an order, as the note below is.
@@ -878,7 +904,7 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
 
     if (item.fullPackageOrderId) {
       const fp = fpById.get(item.fullPackageOrderId);
-      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, cartonCount, hasOrder, orderNumbers, orderNote };
+      return { ...item, advanceAppliedUsd: fp ? advanceOnce(fp).toFixed(2) : '0', productImage, volumeCbm, shippingType, cartonCount, pieceCount, hasOrder, orderNumbers, orderNote };
     }
 
     // Tracking-based path — sum every linked order's advance, but skip
@@ -886,10 +912,10 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     if (item.trackingNumber) {
       const linked = fpsByTracking.get(item.trackingNumber) || [];
       const total = linked.reduce((s, fp) => s + advanceOnce(fp), 0);
-      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, cartonCount, hasOrder, orderNumbers, orderNote };
+      return { ...item, advanceAppliedUsd: total.toFixed(2), productImage, volumeCbm, shippingType, cartonCount, pieceCount, hasOrder, orderNumbers, orderNote };
     }
 
-    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, cartonCount, hasOrder, orderNumbers, orderNote };
+    return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, cartonCount, pieceCount, hasOrder, orderNumbers, orderNote };
   });
 }
 

@@ -70,6 +70,7 @@ import {
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { BoxMissingParcels, MissingList, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
+import { CountBadges } from "@/components/packages/CountBadges";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
@@ -1248,6 +1249,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                         "-"
                       )}
                       <OrderNumbers numbers={item.orderNumbers} className="flex font-sans" />
+                      <span className="mt-0.5 flex font-sans" dir={isRtl ? "rtl" : "ltr"}>
+                        <CountBadges cartons={item.cartonCount} pieces={item.pieceCount} language={language} />
+                      </span>
                     </TableCell>
                     {/* Details — varies by item type. Commission descriptions
                         are normalized so legacy 3-part breakdowns show in
@@ -1342,6 +1346,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               {t("delivery.packageCount")}
             </p>
             <p className="text-lg font-bold">{box.totalPackages || items.length}</p>
+            {/* All the cartons to count out (owner, 2026-10-21), when one
+                tracking is more than one. */}
+            {(() => {
+              const cartonsInBox = items.reduce((n: number, it: any) => n + (Math.floor(Number(it.cartonCount ?? 1)) || 1), 0);
+              return cartonsInBox > items.length ? (
+                <p className="text-xs font-semibold text-violet-700 dark:text-violet-300" data-testid="box-carton-total">
+                  {pickLang(language, { ku: `${cartonsInBox} کارتۆن`, en: `${cartonsInBox} cartons`, ar: `${cartonsInBox} كراتين`, zh: `${cartonsInBox} 箱` })}
+                </p>
+              ) : null;
+            })()}
           </div>
           <div className="rounded-lg bg-muted/50 p-3 text-center">
             <p className="text-xs text-muted-foreground flex items-center justify-center gap-1">
