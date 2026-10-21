@@ -33,7 +33,9 @@ import {
   Building2,
   DollarSign,
   FileText,
+  Plus,
 } from "lucide-react";
+import { pickLang } from "@/lib/lang";
 
 interface CreateBoxDialogProps {
   open: boolean;
@@ -42,6 +44,18 @@ interface CreateBoxDialogProps {
 }
 
 type DeliveryMethod = "warehouse_pickup" | "home_delivery" | "city_transfer";
+
+/**
+ * Who takes the box, asked while it is made (owner, 2026-10-21): home
+ * delivery names one of our drivers, a city transfer names the company
+ * (Hyper Post, Wasit, Prime...), both from the same list the box's
+ * «چۆن دەگاتە دەستی کڕیار؟» card keeps, and new ones are added right here.
+ */
+const HANDOVER_OF: Record<DeliveryMethod, "pickup" | "driver" | "courier"> = {
+  warehouse_pickup: "pickup",
+  home_delivery: "driver",
+  city_transfer: "courier",
+};
 
 export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxDialogProps) {
   const { t, language } = useTranslation();
@@ -59,6 +73,22 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxD
   const [deliveryCost, setDeliveryCost] = useState("0");
   const [deliveryCharge, setDeliveryCharge] = useState("0");
   const [notes, setNotes] = useState("");
+  const [carrierId, setCarrierId] = useState<number | null>(null);
+  const [newCarrierName, setNewCarrierName] = useState("");
+  const [newCarrierPhone, setNewCarrierPhone] = useState("");
+  const carrierKind = deliveryMethod === "home_delivery" ? "driver" : deliveryMethod === "city_transfer" ? "courier" : null;
+  const carriers = trpc.deliveryBox.carriers.useQuery({ kind: carrierKind ?? "driver" }, { enabled: open && carrierKind !== null });
+  const addCarrier = trpc.deliveryBox.addCarrier.useMutation({
+    onSuccess: (c) => {
+      setNewCarrierName("");
+      setNewCarrierPhone("");
+      setCarrierId(c.id);
+      void utils.deliveryBox.carriers.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  // Another way of delivery is another list.
+  useEffect(() => { setCarrierId(null); }, [deliveryMethod]);
 
   const dropdownRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -121,6 +151,9 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxD
       setDeliveryCost("0");
       setDeliveryCharge("0");
       setNotes("");
+      setCarrierId(null);
+      setNewCarrierName("");
+      setNewCarrierPhone("");
     }
   }, [open]);
 
@@ -149,7 +182,14 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxD
       toast.error(t("delivery.toastSelectCustomer"));
       return;
     }
+    if (carrierKind && !carrierId) {
+      toast.error(carrierKind === "driver"
+        ? pickLang(language, { ku: "شۆفێرەکە هەڵبژێرە، یان شۆفێرێکی نوێ زیاد بکە.", en: "Choose the driver, or add a new one.", ar: "اختر السائق، أو أضف سائقاً جديداً.", zh: "请选择司机，或添加新司机。" })
+        : pickLang(language, { ku: "کۆمپانیاکە هەڵبژێرە، یان کۆمپانیایەکی نوێ زیاد بکە.", en: "Choose the company, or add a new one.", ar: "اختر الشركة، أو أضف شركة جديدة.", zh: "请选择公司，或添加新公司。" }));
+      return;
+    }
     createBox.mutate({
+      handover: { mode: HANDOVER_OF[deliveryMethod], carrierId: carrierKind ? carrierId : null },
       customerId: selectedCustomerId,
       deliveryMethod,
       destinationCity: deliveryMethod === "city_transfer" ? destinationCity : undefined,
@@ -271,6 +311,67 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxD
               })}
             </div>
           </div>
+
+          {/* Who takes it: one of our drivers, or the company. */}
+          {carrierKind && (
+            <div className="space-y-2 rounded-xl border p-3" data-testid="create-box-carrier">
+              <Label className="flex items-center gap-1.5 text-xs">
+                <Truck className="h-3 w-3" />
+                {carrierKind === "driver"
+                  ? pickLang(language, { ku: "کام شۆفێر دەیبات؟", en: "Which driver takes it?", ar: "أي سائق يوصله؟", zh: "哪位司机送？" })
+                  : pickLang(language, { ku: "کام کۆمپانیا دەیبات؟", en: "Which company takes it?", ar: "أي شركة توصله؟", zh: "哪家公司送？" })}
+                <span className="text-red-600 dark:text-red-400">*</span>
+              </Label>
+              <div className="flex flex-wrap gap-1.5">
+                {(carriers.data ?? []).map((c) => (
+                  <button
+                    key={c.id}
+                    type="button"
+                    onClick={() => setCarrierId(c.id)}
+                    className={cn(
+                      "inline-flex min-h-[36px] items-center gap-1.5 rounded-lg border px-3 text-sm transition-colors",
+                      carrierId === c.id ? "border-2 border-primary bg-primary/10 font-medium text-primary" : "hover:bg-accent",
+                    )}
+                    data-testid={`create-carrier-${c.id}`}
+                  >
+                    {c.name}
+                    {c.phone ? <bdi dir="ltr" className="text-xs text-muted-foreground">{c.phone}</bdi> : null}
+                  </button>
+                ))}
+                {carriers.isLoading && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+                {carriers.data && carriers.data.length === 0 && (
+                  <span className="text-xs text-muted-foreground">
+                    {pickLang(language, { ku: "هێشتا هیچ ناوێک نییە - لە خوارەوە زیادی بکە.", en: "None yet - add one below.", ar: "لا يوجد بعد - أضف أدناه.", zh: "暂无 - 请在下方添加。" })}
+                  </span>
+                )}
+              </div>
+              <div className="flex flex-wrap items-center gap-2">
+                <Input
+                  value={newCarrierName}
+                  onChange={(e) => setNewCarrierName(e.target.value)}
+                  placeholder={carrierKind === "driver"
+                    ? pickLang(language, { ku: "ناوی شۆفێری نوێ", en: "New driver's name", ar: "اسم سائق جديد", zh: "新司机姓名" })
+                    : pickLang(language, { ku: "ناوی کۆمپانیای نوێ", en: "New company's name", ar: "اسم شركة جديدة", zh: "新公司名称" })}
+                  className="h-9 min-w-0 flex-1"
+                  data-testid="create-carrier-new-name"
+                />
+                {carrierKind === "driver" && (
+                  <Input value={newCarrierPhone} onChange={(e) => setNewCarrierPhone(e.target.value)} placeholder="07xx xxx xxxx" dir="ltr" className="h-9 w-36" />
+                )}
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="outline"
+                  disabled={addCarrier.isPending || newCarrierName.trim().length < 2}
+                  onClick={() => addCarrier.mutate({ kind: carrierKind, name: newCarrierName.trim(), phone: newCarrierPhone.trim() || undefined })}
+                  data-testid="create-carrier-add"
+                >
+                  <Plus className="me-1 h-3.5 w-3.5" />
+                  {pickLang(language, { ku: "زیادکردن", en: "Add", ar: "إضافة", zh: "添加" })}
+                </Button>
+              </div>
+            </div>
+          )}
 
           {/* Conditional delivery fields */}
           {showDeliveryFields && (

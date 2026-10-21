@@ -1019,12 +1019,28 @@ export const deliveryBoxRouter = router({
       deliveryCostUsd: z.string().default("0"),
       deliveryChargeUsd: z.string().default("0"),
       notes: z.string().max(2000).optional(),
+      // Who takes it, chosen while the box is made (owner, 2026-10-21): the
+      // same choice as the box's «چۆن دەگاتە دەستی کڕیار؟» card.
+      handover: z.object({
+        mode: z.enum(["pickup", "driver", "courier"]),
+        carrierId: z.number().int().positive().nullable().optional(),
+      }).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
-      return db.createDeliveryBox({
-        ...input,
+      const { handover, ...fields } = input;
+      const box = await db.createDeliveryBox({
+        ...fields,
         createdById: ctx.user.id,
       });
+      if (handover && box) {
+        try {
+          await db.setBoxHandover({ boxId: box.id, mode: handover.mode, carrierId: handover.carrierId ?? null, trackings: [] }, ctx.user.id);
+        } catch (err) {
+          // The box stands; its card asks again.
+          appLogger.warn("[DeliveryBox] handover chosen at creation not saved", { boxId: box.id, error: err instanceof Error ? err.message : String(err) });
+        }
+      }
+      return box;
     }),
 
   // Get box by ID with items
