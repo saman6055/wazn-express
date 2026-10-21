@@ -190,6 +190,19 @@ export function cartonCountOf(value: number | string | null | undefined): number
   return n >= 1 ? Math.min(n, MAX_CARTONS) : 1;
 }
 
+/**
+ * Whether the carton count multiplies the volume.
+ *
+ * Sea: yes - the sides are one carton's, the parcel is all of them, and it is
+ * sold by the cubic metre (owner, 2026-10-17). Air: the count is recorded and
+ * shown - the box and the parcel list say «2 کارتۆن» (owner, 2026-10-21) -
+ * but the weight and sides are priced exactly as they are typed, as before
+ * the field existed; an air price never moves because of the count.
+ */
+export function cartonsMultiplyVolume(shippingType: string | null | undefined): boolean {
+  return shippingType === "sea";
+}
+
 export function cartonVolume(input: {
   lengthCm?: string | number | null;
   widthCm?: string | number | null;

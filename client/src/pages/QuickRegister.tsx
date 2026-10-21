@@ -20,7 +20,7 @@ import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import { isRecentEntry } from "@shared/lastEntry";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
-import { cartonCountOf, MAX_CARTONS } from "@shared/parcelCost";
+import { cartonCountOf, cartonsMultiplyVolume, MAX_CARTONS } from "@shared/parcelCost";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
@@ -537,9 +537,14 @@ export default function QuickRegister() {
     return calculatedCbm;
   }, [calculatedCbm, directCbm]);
 
-  /** Sea only: the cartons of that size, and all of them together. */
-  const cartons = shippingType === "sea" ? cartonCountOf(cartonCount) : 1;
-  const totalCbm = cbm * cartons;
+  /**
+   * The cartons under the tracking. Sea: of that size, and all of them
+   * together are the volume. Air (owner, 2026-10-21): counted and recorded,
+   * the price stays the weight and sides as typed (shared/parcelCost:
+   * cartonsMultiplyVolume).
+   */
+  const cartons = cartonCountOf(cartonCount);
+  const totalCbm = cartonsMultiplyVolume(shippingType) ? cbm * cartons : cbm;
   /** Sent only when there is more than one carton - one carton is what every form already means. */
   const cartonsSent = cartons > 1 ? cartons : undefined;
   
@@ -2393,7 +2398,30 @@ export default function QuickRegister() {
                           />
                         </div>
                       </div>
-                      <p className="sm:col-span-3 self-center text-[11px] leading-relaxed text-muted-foreground">
+                      {/* How many cartons this tracking is (owner, 2026-10-21) -
+                          counted and shown in the box; the price stays the
+                          weight and sides as typed. */}
+                      <div className="space-y-1">
+                        <Label htmlFor="qr-carton-count-air" className="text-xs font-semibold text-violet-700 dark:text-violet-400">
+                          {pickLang(language, { ku: "عەدەد (کارتۆن)", en: "Cartons", ar: "عدد الكراتين", zh: "箱数" })}
+                        </Label>
+                        <div className="relative" dir="ltr">
+                          <Input
+                            id="qr-carton-count-air"
+                            type="number"
+                            min={1}
+                            max={MAX_CARTONS}
+                            step={1}
+                            inputMode="numeric"
+                            value={cartonCount}
+                            onChange={(e) => setCartonCount(e.target.value)}
+                            onBlur={() => setCartonCount(String(cartonCountOf(cartonCount)))}
+                            className={cn("h-11 text-base font-mono font-bold text-center", cartons > 1 && "border-violet-500 ring-1 ring-violet-400")}
+                            data-testid="qr-carton-count-air"
+                          />
+                        </div>
+                      </div>
+                      <p className="sm:col-span-2 self-center text-[11px] leading-relaxed text-muted-foreground">
                         {pickLang(language, {
                           ku: "ئەگەر CBM پڕ بکرێتەوە، پێویست ناکات درێژی/پانی/بەرزی بنووسیت.",
                           en: "Fill the CBM and the three sides are not needed.",

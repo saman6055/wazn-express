@@ -14,11 +14,12 @@ import {
 } from "@shared/parcelCorrection";
 import type { RepriceReport } from "@shared/parcelReprice";
 import { appLogger } from "../utils/logger";
-import { cartonCountOf, cartonVolume } from "@shared/parcelCost";
+import { cartonCountOf, cartonsMultiplyVolume, cartonVolume } from "@shared/parcelCost";
 
 /** A parcel as one of its cartons: the volume divided by the count. */
-function perCartonOf<T extends { volumeCbm?: unknown; cartonCount?: number | null }>(pkg: T): T {
-  const count = cartonCountOf(pkg.cartonCount);
+function perCartonOf<T extends { volumeCbm?: unknown; cartonCount?: number | null; shippingType?: string | null }>(pkg: T): T {
+  // Only sea stores all the cartons in the volume (shared/parcelCost).
+  const count = cartonsMultiplyVolume(pkg.shippingType) ? cartonCountOf(pkg.cartonCount) : 1;
   const stored = Number(pkg.volumeCbm ?? 0) || 0;
   return count > 1 && stored > 0 ? { ...pkg, volumeCbm: (stored / count).toFixed(6) } : pkg;
 }
@@ -350,7 +351,7 @@ export async function correctLastRegistration(actor: CorrectionActor, input: Cor
   // Several cartons of that size: the volume is all of them (shared/parcelCost).
   if (input.cartonCount) {
     const cartons = cartonVolume(input);
-    if (cartons.perCartonCbm > 0) measures.volumeCbm = cartons.totalCbm.toFixed(6);
+    if (cartons.perCartonCbm > 0 && cartonsMultiplyVolume(pkg.shippingType)) measures.volumeCbm = cartons.totalCbm.toFixed(6);
     measures.cartonCount = cartons.count > 1 ? cartons.count : null;
   }
   const after: PricedFacts = { ...measures, customerId, isUnclaimed };
