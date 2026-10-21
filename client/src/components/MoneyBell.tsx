@@ -13,6 +13,14 @@ import {
 } from "@shared/moneyFeed";
 import { customerCodeOnly } from "@shared/customerCode";
 
+/**
+ * The customer's first name beside the code (owner, 2026-10-21: «لە پاڵ کۆد
+ * ناوی یەکەمی کەسەکەش هەبێ وەبی کریارەکە بناسیتەوە»).
+ */
+function firstNameOf(name: string | null | undefined): string {
+  return String(name ?? "").trim().split(/\s+/)[0] ?? "";
+}
+
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** Per person, per browser: the newest movement they had seen. */
@@ -234,6 +242,7 @@ export function MoneyBellSection({
                       >
                         <bdi dir="ltr">{code}</bdi>
                       </button>
+                      {firstNameOf(p.customerName) && <span className="text-xs font-semibold" data-testid="money-first-name">{firstNameOf(p.customerName)}</span>}
                       <CopyButton value={code} />
                     </span>
                   </div>
@@ -308,6 +317,7 @@ export function MoneyBellSection({
                         >
                           <bdi dir="ltr">{code}</bdi>
                         </button>
+                        {firstNameOf(line.customerName) && <span className="ms-1 font-semibold text-foreground" data-testid="money-first-name">{firstNameOf(line.customerName)}</span>}
                         {code && <CopyButton value={code} />}
                         {line.balanceAfterUsd !== null && (
                           <span>
@@ -365,6 +375,7 @@ export function MoneyBellSection({
                       <span className="mt-0.5 block text-[11px] text-muted-foreground">
                         {credit && <>{L(MONEY_KIND_LABEL[line.kind])} · </>}
                         <bdi dir="ltr" className="font-mono">{code}</bdi>
+                        {firstNameOf(line.customerName) && <span className="ms-1 font-semibold text-foreground" data-testid="money-first-name">{firstNameOf(line.customerName)}</span>}
                         {line.boxCode && <> · <bdi dir="ltr" className="font-mono">{line.boxCode}</bdi></>}
                         {" · "}
                         {L({ ku: "باڵانس", en: "balance", ar: "الرصيد", zh: "余额" })}{" "}
