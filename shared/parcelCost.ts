@@ -191,16 +191,34 @@ export function cartonCountOf(value: number | string | null | undefined): number
 }
 
 /**
- * Whether the carton count multiplies the volume.
+ * Several cartons of one size under one tracking: the sides and the weight
+ * typed are ONE carton's, and the parcel is all of them.
  *
- * Sea: yes - the sides are one carton's, the parcel is all of them, and it is
- * sold by the cubic metre (owner, 2026-10-17). Air: the count is recorded and
- * shown - the box and the parcel list say «2 کارتۆن» (owner, 2026-10-21) -
- * but the weight and sides are priced exactly as they are typed, as before
- * the field existed; an air price never moves because of the count.
+ * The volume is always all of them (sea since 2026-10-17; air since the
+ * owner, 2026-10-21: «ئەبێ کە کرتە دوو دانە یا زیاتر کیلۆ و یا ئەگەر کێشی
+ * قەبارەیی بوو دووقاتی بکاتەوە نرخی گواستنەوەکەش دووقات ببتەوە»). On air the
+ * weight is all of them too, so the chargeable kilos - the greater of the
+ * scale and the volume - and the price follow the count. Sea is sold by the
+ * cubic metre; its weight stays as typed, as before.
+ *
+ * The totals are what is stored on the parcel, so every price, report, box
+ * and receipt that reads the parcel is right without being told.
  */
-export function cartonsMultiplyVolume(shippingType: string | null | undefined): boolean {
-  return shippingType === "sea";
+export function cartonsMultiplyWeight(shippingType: string | null | undefined): boolean {
+  return shippingType === "air_regular" || shippingType === "air_irregular";
+}
+
+/** One carton's typed weight, times the count on air; as typed otherwise (or for one carton). */
+export function cartonWeightTotal(
+  weightKg: string | number | null | undefined,
+  cartonCount: string | number | null | undefined,
+  shippingType: string | null | undefined,
+): string | undefined {
+  if (weightKg === null || weightKg === undefined || weightKg === "") return undefined;
+  const count = cartonCountOf(cartonCount);
+  const per = num(weightKg);
+  if (count <= 1 || !(per > 0) || !cartonsMultiplyWeight(shippingType)) return String(weightKg);
+  return (Math.round(per * count * 1000) / 1000).toFixed(3);
 }
 
 export function cartonVolume(input: {

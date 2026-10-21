@@ -20,7 +20,7 @@ import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import { isRecentEntry } from "@shared/lastEntry";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
 import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
-import { cartonCountOf, cartonsMultiplyVolume, MAX_CARTONS } from "@shared/parcelCost";
+import { cartonCountOf, cartonsMultiplyWeight, MAX_CARTONS } from "@shared/parcelCost";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
@@ -538,13 +538,14 @@ export default function QuickRegister() {
   }, [calculatedCbm, directCbm]);
 
   /**
-   * The cartons under the tracking. Sea: of that size, and all of them
-   * together are the volume. Air (owner, 2026-10-21): counted and recorded,
-   * the price stays the weight and sides as typed (shared/parcelCost:
-   * cartonsMultiplyVolume).
+   * The cartons under the tracking, of the one size typed: the parcel is all
+   * of them - the volume always, and on air the weight too, so the
+   * chargeable kilos and the price follow the count (owner, 2026-10-21;
+   * shared/parcelCost: cartonWeightTotal). The server stores the totals.
    */
   const cartons = cartonCountOf(cartonCount);
-  const totalCbm = cartonsMultiplyVolume(shippingType) ? cbm * cartons : cbm;
+  const totalCbm = cbm * cartons;
+  const airCartons = cartonsMultiplyWeight(shippingType) ? cartons : 1;
   /** Sent only when there is more than one carton - one carton is what every form already means. */
   const cartonsSent = cartons > 1 ? cartons : undefined;
   
@@ -2398,9 +2399,9 @@ export default function QuickRegister() {
                           />
                         </div>
                       </div>
-                      {/* How many cartons this tracking is (owner, 2026-10-21) -
-                          counted and shown in the box; the price stays the
-                          weight and sides as typed. */}
+                      {/* How many cartons this tracking is (owner, 2026-10-21):
+                          the weight and sides are one carton's, the parcel
+                          and its price are all of them. */}
                       <div className="space-y-1">
                         <Label htmlFor="qr-carton-count-air" className="text-xs font-semibold text-violet-700 dark:text-violet-400">
                           {pickLang(language, { ku: "عەدەد (کارتۆن)", en: "Cartons", ar: "عدد الكراتين", zh: "箱数" })}
@@ -2467,9 +2468,14 @@ export default function QuickRegister() {
                               "text-3xl font-black tabular-nums shrink-0",
                               byVolume ? "text-amber-700 dark:text-amber-300" : "text-foreground",
                             )} dir="ltr">
-                              {chargeableWeight.toFixed(2)} kg
+                              {(chargeableWeight * airCartons).toFixed(2)} kg
                             </span>
                           </div>
+                          {airCartons > 1 && chargeableWeight > 0 && (
+                            <p className="mt-1 font-mono text-xs font-semibold text-violet-700 dark:text-violet-300" dir="ltr" data-testid="qr-air-carton-sum">
+                              {airCartons} × {chargeableWeight.toFixed(2)} kg = {(chargeableWeight * airCartons).toFixed(2)} kg
+                            </p>
+                          )}
 
                           {byVolume && (
                             <p className="mt-2 font-mono text-xs text-amber-700 dark:text-amber-400" dir="ltr">
@@ -2750,7 +2756,7 @@ export default function QuickRegister() {
                     {(shippingType === "air_regular" || shippingType === "air_irregular") && chargeableWeight > 0 && (
                       <div className="flex flex-col gap-1 py-2.5 px-3 bg-amber-50 dark:bg-amber-950/30 rounded-xl border border-amber-200 dark:border-amber-900/50 min-w-0">
                         <span className="text-xs text-amber-700 dark:text-amber-400">{t("quickRegister.chargeableWeight")}</span>
-                        <span className="font-mono font-bold text-amber-900 dark:text-amber-300">{chargeableWeight.toFixed(2)} kg</span>
+                        <span className="font-mono font-bold text-amber-900 dark:text-amber-300">{(chargeableWeight * airCartons).toFixed(2)} kg</span>
                       </div>
                     )}
 

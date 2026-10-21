@@ -14,7 +14,7 @@ import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
-import { affectsCost, cartonCountOf, cartonsMultiplyVolume, cartonVolume, MAX_CARTONS, smallParcelPrice } from "@shared/parcelCost";
+import { affectsCost, cartonCountOf, cartonVolume, cartonWeightTotal, MAX_CARTONS, smallParcelPrice } from "@shared/parcelCost";
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
 import { cachedThumbnail, thumbnailFor } from "../services/orderThumbs.service";
@@ -732,10 +732,11 @@ export const packagesRouter = router({
           const vol = (parseFloat(input.lengthCm) * parseFloat(input.widthCm) * parseFloat(input.heightCm)) / 1000000;
           volumeCbm = vol.toFixed(6);
         }
-        // Several cartons of that size: on sea the volume is all of them; on
-        // air the count is only recorded (shared/parcelCost: cartonsMultiplyVolume).
+        // Several cartons of that size: the parcel is all of them - the volume
+        // always, the weight on air (shared/parcelCost: cartonWeightTotal).
         const cartons = input.cartonCount ? cartonVolume(input) : null;
-        if (cartons && cartons.perCartonCbm > 0 && cartonsMultiplyVolume(input.shippingType)) volumeCbm = cartons.totalCbm.toFixed(6);
+        if (cartons && cartons.perCartonCbm > 0 && cartons.count > 1) volumeCbm = cartons.totalCbm.toFixed(6);
+        const weightKg = cartonWeightTotal(input.weightKg, input.cartonCount, input.shippingType);
 
         // Air is billed on the greater of scale weight and volumetric weight;
         // sea on volume outright, so it never enters this comparison.
@@ -744,10 +745,11 @@ export const packagesRouter = router({
         const breakdown = isAirShipping(input.shippingType)
           ? chargeableWeight(
               {
-                weightKg: input.weightKg,
+                weightKg,
                 lengthCm: input.lengthCm,
                 widthCm: input.widthCm,
                 heightCm: input.heightCm,
+                volumeCbm,
               },
               divisor,
             )
@@ -770,7 +772,7 @@ export const packagesRouter = router({
           batchId: input.batchId,
           originWarehouseId: input.originWarehouseId,
           shippingType: input.shippingType,
-          weightKg: input.weightKg,
+          weightKg,
           lengthCm: input.lengthCm,
           widthCm: input.widthCm,
           heightCm: input.heightCm,
@@ -804,7 +806,7 @@ export const packagesRouter = router({
               originWarehouseId: input.originWarehouseId,
               qrCodeData: qrData,
               qrCodeSignature: qrSignature,
-              weightKg: input.weightKg,
+              weightKg,
               lengthCm: input.lengthCm,
               widthCm: input.widthCm,
               heightCm: input.heightCm,
@@ -1085,13 +1087,14 @@ export const packagesRouter = router({
         }
         // And several cartons, the same way the register counts them.
         const cartons = input.cartonCount ? cartonVolume(input) : null;
-        if (cartons && cartons.perCartonCbm > 0 && cartonsMultiplyVolume(input.shippingType)) volumeCbm = cartons.totalCbm.toFixed(6);
+        if (cartons && cartons.perCartonCbm > 0 && cartons.count > 1) volumeCbm = cartons.totalCbm.toFixed(6);
+        const weightKg = cartonWeightTotal(input.weightKg, input.cartonCount, input.shippingType);
         const priced = await resolveParcelCost({
           customerId: input.customerId,
           batchId: input.batchId,
           originWarehouseId: input.originWarehouseId,
           shippingType: input.shippingType,
-          weightKg: input.weightKg,
+          weightKg,
           lengthCm: input.lengthCm,
           widthCm: input.widthCm,
           heightCm: input.heightCm,
@@ -1803,7 +1806,7 @@ export const packagesRouter = router({
           // The sides are one carton's; a parcel of several cartons is all of
           // them (shared/parcelCost: cartonVolume).
           const stored = await db.getPackageById(id);
-          const cartons = cartonsMultiplyVolume(stored?.shippingType) ? cartonCountOf(stored?.cartonCount) : 1;
+          const cartons = cartonCountOf(stored?.cartonCount);
           updateData.volumeCbm = (volumeCbm * cartons).toFixed(6);
         }
         

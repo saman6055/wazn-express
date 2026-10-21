@@ -14,12 +14,12 @@ import {
 } from "@shared/parcelCorrection";
 import type { RepriceReport } from "@shared/parcelReprice";
 import { appLogger } from "../utils/logger";
-import { cartonCountOf, cartonsMultiplyVolume, cartonVolume } from "@shared/parcelCost";
+import { cartonCountOf, cartonsMultiplyWeight, cartonVolume, cartonWeightTotal } from "@shared/parcelCost";
 
 /** A parcel as one of its cartons: the volume divided by the count. */
 function perCartonOf<T extends { volumeCbm?: unknown; cartonCount?: number | null; shippingType?: string | null }>(pkg: T): T {
-  // Only sea stores all the cartons in the volume (shared/parcelCost).
-  const count = cartonsMultiplyVolume(pkg.shippingType) ? cartonCountOf(pkg.cartonCount) : 1;
+  // The volume stored is all the cartons (shared/parcelCost).
+  const count = cartonCountOf(pkg.cartonCount);
   const stored = Number(pkg.volumeCbm ?? 0) || 0;
   return count > 1 && stored > 0 ? { ...pkg, volumeCbm: (stored / count).toFixed(6) } : pkg;
 }
@@ -118,7 +118,13 @@ export async function lastRegistrationView(userId: number): Promise<LastRegistra
     customerCode: customer?.customerCode ?? null,
     customerName: customer?.fullName ?? null,
     isUnclaimed: Boolean(pkg.isUnclaimed),
-    weightKg: plainNumber(pkg.weightKg, 3),
+    // One carton's weight on air, beside the count: the form multiplies again.
+    weightKg: plainNumber(
+      cartonsMultiplyWeight(pkg.shippingType) && cartonCountOf(pkg.cartonCount) > 1 && Number(pkg.weightKg) > 0
+        ? (Number(pkg.weightKg) / cartonCountOf(pkg.cartonCount)).toFixed(3)
+        : pkg.weightKg,
+      3,
+    ),
     lengthCm: plainNumber(pkg.lengthCm, 2),
     widthCm: plainNumber(pkg.widthCm, 2),
     heightCm: plainNumber(pkg.heightCm, 2),
@@ -351,7 +357,9 @@ export async function correctLastRegistration(actor: CorrectionActor, input: Cor
   // Several cartons of that size: the volume is all of them (shared/parcelCost).
   if (input.cartonCount) {
     const cartons = cartonVolume(input);
-    if (cartons.perCartonCbm > 0 && cartonsMultiplyVolume(pkg.shippingType)) measures.volumeCbm = cartons.totalCbm.toFixed(6);
+    if (cartons.perCartonCbm > 0) measures.volumeCbm = cartons.totalCbm.toFixed(6);
+    // On air the weight typed is one carton's too.
+    if (measures.weightKg) measures.weightKg = cartonWeightTotal(measures.weightKg, cartons.count, pkg.shippingType) ?? measures.weightKg;
     measures.cartonCount = cartons.count > 1 ? cartons.count : null;
   }
   const after: PricedFacts = { ...measures, customerId, isUnclaimed };
