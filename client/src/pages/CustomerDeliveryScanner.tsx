@@ -13,7 +13,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
-import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { Button } from "@/components/ui/button";
 import { exportToExcel } from "@/components/ExportUtils";
 import { DeliveryStats, paidWindowTitle } from "@/components/delivery/DeliveryStats";
@@ -49,7 +48,6 @@ export default function CustomerDeliveryScanner() {
   const [codesOpen, setCodesOpen] = useState(false);
   const [reportOpen, setReportOpen] = useState(false);
   /** The box whose money is being taken, if any. */
-  const [payingBoxId, setPayingBoxId] = useState<number | null>(null);
   const [filters, setFilters] = useState<FilterState>({
     search: "",
     status: "all",
@@ -432,7 +430,6 @@ export default function CustomerDeliveryScanner() {
               pageSize={PAGE_SIZE}
               onPageChange={handlePageChange}
               onBoxSelect={handleBoxSelect}
-              onTakePayment={setPayingBoxId}
               onDeleteEmpty={canDeleteBoxes ? setDeletingBox : undefined}
               customers={customers as any}
               isLoading={boxesLoading}
@@ -471,12 +468,6 @@ export default function CustomerDeliveryScanner() {
           </DialogContent>
         </Dialog>
 
-        {/* Money for one box, in one press */}
-        <QuickSettleDialog
-          boxId={payingBoxId}
-          onOpenChange={(o) => !o && setPayingBoxId(null)}
-          onSettled={() => refetchBoxes()}
-        />
 
         {/* Create Dialog */}
         <CreateBoxDialog

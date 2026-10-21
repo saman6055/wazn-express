@@ -23,6 +23,8 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
+import { payeeCodeMatches } from "@shared/payeeCheck";
+import { PayeeConfirm, payeeButtonLabel } from "@/components/delivery/PayeeConfirm";
 import {
   settlementTotals, differenceOf, roundingToleranceUsd, accountCover, unbilledOnReceiptUsd, unbackedOnReceiptUsd,
   iqdToUsd, usdToIqd, allocateBoxDiscount,
@@ -60,6 +62,10 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const utils = trpc.useUtils();
 
   const [iqd, setIqd] = useState("");
+  // The digits of the customer's code, typed before the money is taken
+  // (owner, 2026-10-21; shared/payeeCheck). A new box starts empty.
+  const [payeeCode, setPayeeCode] = useState("");
+  useEffect(() => { setPayeeCode(""); }, [boxId]);
   const [rate, setRate] = useState("");
   const [usd, setUsd] = useState("");
   const [treatShortAs, setTreatShortAs] = useState<"debt" | "discount">("debt");
@@ -242,6 +248,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
     }
     settle.mutate({
       boxId,
+      confirmCustomerCode: payeeCode,
       /**
        * The promised discounts go with the payment — each on the thing it
        * was promised on, and with the reason it was given for.
@@ -279,6 +286,8 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const boxReason = pledges.filter((p) => p.lineId === null).sort((a, b) => b.usd - a.usd)[0] ?? null;
 
   const code = splitCustomerCode(data?.customer?.customerCode);
+  const payeeName = data?.customer?.fullName || code.name || code.code;
+  const payeeOk = payeeCodeMatches(data?.customer?.customerCode, payeeCode);
   // A failed load is not "nothing to pay": it says so, with its report.
   const nothingToPay = !isLoading && !error && parcels.length === 0;
 
@@ -302,6 +311,18 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             )}
           </DialogTitle>
         </DialogHeader>
+
+        {/* Whose money: large, flashing, and the code typed (owner, 2026-10-21). */}
+        {data?.customer && !isLoading && !error && !nothingToPay && (
+          <PayeeConfirm
+            customerName={data.customer.fullName}
+            customerCode={data.customer.customerCode}
+            boxCode={data.box?.boxCode}
+            value={payeeCode}
+            onChange={setPayeeCode}
+            language={language}
+          />
+        )}
 
         {isLoading ? (
           <div className="flex items-center justify-center gap-2 py-10 text-muted-foreground">
@@ -381,11 +402,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
 
               {/* Who, and how much. Nothing else above the fold. */}
               <div className="rounded-lg border p-4 text-center">
-                <p className="text-sm text-muted-foreground">
-                  <span className="font-mono" dir="ltr">{code.code}</span>
-                  {code.name ? ` · ${code.name}` : ""}
-                </p>
-                <p className="mt-1 font-mono text-4xl font-semibold tabular-nums" data-testid="quick-due">
+                <p className="font-mono text-4xl font-semibold tabular-nums" data-testid="quick-due">
                   {fmtUsd(cashDue)}
                 </p>
                 {rateNum > 0 && (
@@ -541,12 +558,11 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             </Button>
             <Button
               onClick={submit}
-              disabled={needsReason || settle.isPending}
+              disabled={needsReason || settle.isPending || !payeeOk}
               data-testid="quick-settle"
             >
               {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {t({ ku: "واصڵکردن", en: "Take payment", ar: "استلام", zh: "收款" })}
-              {" — "}{fmtUsd(paid)}
+              {payeeButtonLabel(language, payeeName, fmtUsd(paid))}
             </Button>
           </DialogFooter>
         )}
@@ -557,6 +573,9 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             <BoxSettlementPanel
               boxId={boxId}
               embedded
+              confirmCustomerCode={payeeCode}
+              payeeOk={payeeOk}
+              payeeName={payeeName}
               onSettled={() => { onOpenChange(false); onSettled?.(); }}
             />
           </div>

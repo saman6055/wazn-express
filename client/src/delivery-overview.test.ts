@@ -181,7 +181,8 @@ describe("a press opens the list the figure counted", () => {
     const fn = slice(page, "const refetchBoxes = useCallback(() => {", "}, [refetchListOnly, refetchOverview]);", "refetchBoxes");
     expect(fn).toContain("void refetchOverview();");
     expect(fn).toContain("return refetchListOnly();");
-    expect(page).toContain("onSettled={() => refetchBoxes()}");
+    // A payment (inside the box) refreshes the whole box router, figures too.
+    expect(read("client/src/components/delivery/QuickSettleDialog.tsx")).toContain("void utils.deliveryBox.invalidate();");
   });
 
   it("folds to a phone: two across, the first card two wide so no row is left with a gap", () => {

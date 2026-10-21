@@ -115,7 +115,6 @@ interface BoxTableProps {
   onPageChange: (page: number) => void;
   onBoxSelect: (boxId: number) => void;
   /** Take the money for this box, without opening it. */
-  onTakePayment?: (boxId: number) => void;
   /** Delete an empty box (shared/emptyBox). Passed only to someone who may delete. */
   onDeleteEmpty?: (box: { id: number; boxCode: string }) => void;
   customers: Customer[];
@@ -129,7 +128,6 @@ export function BoxTable({
   pageSize,
   onPageChange,
   onBoxSelect,
-  onTakePayment,
   onDeleteEmpty,
   customers,
   isLoading,
@@ -492,16 +490,20 @@ export function BoxTable({
                     <span className="me-1 inline-flex h-8 items-center rounded-md bg-emerald-50 px-2 text-xs font-medium text-emerald-700 dark:bg-emerald-950/30 dark:text-emerald-300" data-testid={`paid-${box.id}`}>
                       ✓ {pickLang(language, { ku: "دراوە", en: "Paid", ar: "مدفوع", zh: "已付" })}
                     </span>
-                  ) : onTakePayment && (
+                  ) : (
+                    // Money is taken inside the box only (owner, 2026-10-21):
+                    // a «پارەدان» on every row took one customer's money onto
+                    // the row above. The row opens the box, where the payment
+                    // window names the customer and asks their code.
                     <Button
                       variant="outline"
                       size="sm"
                       className="me-1 h-8"
-                      onClick={() => onTakePayment(box.id)}
-                      data-testid={`take-payment-${box.id}`}
+                      onClick={() => onBoxSelect(box.id)}
+                      data-testid={`open-box-${box.id}`}
                     >
                       <Wallet className="h-4 w-4 me-1" />
-                      {t("delivery.takePayment")}
+                      {pickLang(language, { ku: "کردنەوە و پارەدان", en: "Open to pay", ar: "فتح للدفع", zh: "打开收款" })}
                     </Button>
                   )}
                   <DropdownMenu>

@@ -213,16 +213,18 @@ describe("the full panel is the rare path, not the first thing seen", () => {
  * The ordinary path: a button on the box, a figure already filled in, and a
  * press.
  */
-describe("taking the money is one press from the list", () => {
-  it("puts a payment button on every box row", () => {
+describe("taking the money: from inside the box, in the small dialog", () => {
+  // Owner, 2026-10-21: a «پارەدان» on every row took one customer's money
+  // onto the row above. The row now opens the box; the box takes the money.
+  it("the box row opens the box instead of taking money", () => {
     const table = read("client/src/components/delivery/BoxTable.tsx");
-    expect(table).toContain('data-testid={`take-payment-${box.id}`}');
-    expect(table).toContain("onTakePayment(box.id)");
+    expect(table).toContain('data-testid={`open-box-${box.id}`}');
+    expect(table).not.toContain("onTakePayment");
+    expect(page).not.toContain("<QuickSettleDialog");
   });
 
-  it("opens the small dialog, not the whole panel", () => {
-    expect(page).toContain("<QuickSettleDialog");
-    expect(page).toContain("onTakePayment={setPayingBoxId}");
+  it("the box opens the small dialog, not the whole panel", () => {
+    expect(read("client/src/components/delivery/BoxDetailPanel.tsx")).toContain("<QuickSettleDialog");
   });
 
   it("fills the amount in before anything is typed", () => {

@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState, useEffect, type ReactNode } from "react";
+import { payeeButtonLabel } from "@/components/delivery/PayeeConfirm";
 import { PAYMENT_WHATSAPP_SINCE } from "@shared/paymentWhatsApp";
 import { useSendPaymentWhatsApp } from "@/hooks/useSendPaymentWhatsApp";
 import { offerPaymentWhatsApp } from "@/lib/paymentWhatsAppOffer";
@@ -73,6 +74,14 @@ interface Props {
    * the second of two headers above the second of two forms.
    */
   embedded?: boolean;
+  /**
+   * The customer's code digits typed in the payment window around it, and
+   * whether they are this customer's (shared/payeeCheck, owner 2026-10-21):
+   * until they are, nothing is taken.
+   */
+  confirmCustomerCode?: string;
+  payeeOk?: boolean;
+  payeeName?: string | null;
 }
 
 const CardFrame = ({ children }: { children: ReactNode }) => (
@@ -85,7 +94,7 @@ const EmbeddedFrame = ({ children }: { children: ReactNode }) => (
   <div className="space-y-4" data-testid="box-settlement">{children}</div>
 );
 
-export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
+export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomerCode, payeeOk, payeeName }: Props) {
   // Undoing a receipt takes the box back to before its payment: the main
   // admin's alone (owner, 2026-10-19; the server refuses anybody else).
   const isMainAdmin = useAuth().user?.role === "super_admin";
@@ -383,6 +392,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
     }
     settle.mutate({
       boxId,
+      confirmCustomerCode,
       lines: parcels.map((p) => ({
         lineId: p.lineId,
         held: p.lineId in held,
@@ -832,7 +842,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
           <div className="flex flex-wrap items-center gap-2">
             <Button
               onClick={() => setConfirmOpen(true)}
-              disabled={!canSettle || settle.isPending}
+              disabled={!canSettle || settle.isPending || payeeOk === false}
               data-testid="settle-open-confirm"
             >
               {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
@@ -888,9 +898,11 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded }: Props) {
             <Button variant="outline" onClick={() => setConfirmOpen(false)}>
               {t({ ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
             </Button>
-            <Button onClick={submit} disabled={settle.isPending} data-testid="settle-confirm">
+            <Button onClick={submit} disabled={settle.isPending || payeeOk === false} data-testid="settle-confirm">
               {settle.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
-              {t({ ku: "واصڵکردن", en: "Take payment", ar: "استلام", zh: "收款" })}
+              {payeeName
+                ? payeeButtonLabel(language, payeeName, money(cashDue))
+                : t({ ku: "واصڵکردن", en: "Take payment", ar: "استلام", zh: "收款" })}
             </Button>
           </DialogFooter>
         </DialogContent>
