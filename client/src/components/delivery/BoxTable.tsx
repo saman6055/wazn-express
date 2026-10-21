@@ -202,10 +202,10 @@ export function BoxTable({
     // «ئاگاداری...؟» (owner, 2026-10-20/21), so the paper is printed there.
     if (!reached) {
       const state = await trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id }).catch(() => null);
-      const left = state?.missing.length ?? 0;
+      const left = (state?.missing.length ?? 0) + (state?.earlier.length ?? 0);
       if (left > 0) {
         toast.warning(pickLang(language, {
-          ku: `${left} پاکێجی هەمان باچ لە بۆکسدا نییە - بۆکسەکە کرایەوە، لەوێ چاپی بکە`,
+          ku: `${left} پاکێجی ئەم کڕیارە لە هیچ بۆکسێکدا نییە - بۆکسەکە کرایەوە، لەوێ چاپی بکە`,
           en: `${left} parcel(s) of the same batch not in a box - the box is open, print from there`,
           ar: `${left} طرد من نفس الدفعة ليس في صندوق - فُتح الصندوق، اطبع من هناك`,
           zh: `同批次有 ${left} 个包裹不在箱中 - 已打开箱子，请在那里打印`,

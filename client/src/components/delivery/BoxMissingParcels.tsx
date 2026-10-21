@@ -34,6 +34,38 @@ export const MISSING_WORDS = {
   no: { ku: "نەخێر، دەگەڕێمەوە سکانی دەکەم", en: "No, I'll go back and scan", ar: "لا، سأعود وأمسح", zh: "不，我回去扫描" },
 };
 
+/** «لە باچی AIR-2026-070: 4 پاکێجی ئەم کڕیارە لە هیچ بۆکسێکدا نییە - بۆی نەچووە؟» */
+export function earlierLine(language: string, earlier: Array<{ batchCode?: string | null }>): string {
+  const codes = Array.from(new Set(earlier.map((e) => e.batchCode).filter((c): c is string => Boolean(c))));
+  const where = codes.join("، ");
+  const n = earlier.length;
+  return pickLang(language, {
+    ku: `لە باچی پێشوو${where ? ` (${where})` : ""}: ${n} پاکێجی ئەم کڕیارە لە هیچ بۆکسێکدا نییە - بۆی نەچووە؟`,
+    en: `From an earlier batch${where ? ` (${where})` : ""}: ${n} parcel(s) of this customer are in no box - not sent to them?`,
+    ar: `من دفعة سابقة${where ? ` (${where})` : ""}: ${n} طرد لهذا العميل ليس في أي صندوق - ألم يُرسل له؟`,
+    zh: `之前批次${where ? `（${where}）` : ""}：该客户有 ${n} 个包裹不在任何箱中 - 还没发给他吗？`,
+  });
+}
+
+/** The earlier batches' parcels, said apart from this batch's (owner, 2026-10-21). */
+export function EarlierWaiting({
+  earlier,
+  language,
+  onScanNow,
+}: {
+  earlier: Array<{ id: number; trackingNumber: string | null; packageCode: string; batchCode?: string | null }>;
+  language: string;
+  onScanNow?: () => void;
+}) {
+  if (earlier.length === 0) return null;
+  return (
+    <div className="space-y-2 rounded-lg border border-amber-500/60 bg-amber-50 p-2.5 dark:bg-amber-950/30" data-testid="box-earlier">
+      <p className="text-sm font-semibold text-amber-800 dark:text-amber-200">{earlierLine(language, earlier)}</p>
+      <MissingList missing={earlier} language={language} onScanNow={onScanNow} />
+    </div>
+  );
+}
+
 export function scannedLine(language: string, scanned: number, total: number) {
   return pickLang(language, {
     ku: `${scanned}/${total} سکان کرا`,
@@ -62,7 +94,7 @@ export function MissingList({
   language,
   onScanNow,
 }: {
-  missing: Array<{ id: number; trackingNumber: string | null; packageCode: string }>;
+  missing: Array<{ id: number; trackingNumber: string | null; packageCode: string; batchCode?: string | null }>;
   language: string;
   onScanNow?: () => void;
 }) {
@@ -75,6 +107,7 @@ export function MissingList({
             <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden="true" />
             <span dir="ltr" className="min-w-0 truncate font-mono text-sm font-semibold">{name}</span>
             <CopyButton value={name} />
+            {m.batchCode && <span dir="ltr" className="font-mono text-[11px] text-muted-foreground">{m.batchCode}</span>}
             {onScanNow && (
               <Button type="button" size="sm" variant="ghost" className="ms-auto h-7 gap-1 px-2 text-xs" onClick={onScanNow}>
                 <ScanBarcode className="h-3.5 w-3.5" />
@@ -127,6 +160,27 @@ export function BoxMissingParcels({
     return () => clearInterval(id);
   }, [canScan, scanTick, language]);
 
+  // The batch just finished: «✓ هەمووی داخل کرا», and the earlier batches'
+  // parcels said at once if any wait at the office (owner, 2026-10-21).
+  const wasLeft = useRef<number | null>(null);
+  const earlierCount = data?.earlier?.length ?? 0;
+  useEffect(() => {
+    if (!data) return;
+    const before = wasLeft.current;
+    wasLeft.current = left;
+    if (before === null || before === 0 || left !== 0 || data.total === 0) return;
+    if (earlierCount > 0) {
+      soundManager.playWarning();
+      toast.warning(
+        `${pickLang(language, { ku: "✓ هەموو پاکێجەکانی ئەم باچە داخل کران.", en: "✓ Every parcel of this batch is in.", ar: "✓ أُدخلت كل طرود هذه الدفعة.", zh: "✓ 本批次包裹已全部装箱。" })} ${earlierLine(language, data.earlier)}`,
+        { duration: 15000 },
+      );
+    } else {
+      soundManager.playSuccess();
+      toast.success(pickLang(language, { ku: "✓ هەموو پاکێجەکان داخل کران", en: "✓ Every parcel is in", ar: "✓ أُدخلت كل الطرود", zh: "✓ 包裹已全部装箱" }));
+    }
+  }, [data, left, earlierCount, language]);
+
   if (!data || data.total === 0) return null;
   const done = left === 0;
   const pct = Math.round((data.scanned / data.total) * 100);
@@ -166,6 +220,18 @@ export function BoxMissingParcels({
         <div className="mt-2.5">
           <MissingList missing={data.missing} language={language} onScanNow={canScan ? onScanNow : undefined} />
         </div>
+      )}
+      {done && (
+        <>
+          <p className="mt-2 text-sm font-semibold text-emerald-700 dark:text-emerald-300" data-testid="box-all-in">
+            {pickLang(language, { ku: "✓ هەموو پاکێجەکان داخل کران", en: "✓ Every parcel is in", ar: "✓ أُدخلت كل الطرود", zh: "✓ 包裹已全部装箱" })}
+          </p>
+          {data.earlier.length > 0 && (
+            <div className="mt-2.5">
+              <EarlierWaiting earlier={data.earlier} language={language} onScanNow={canScan ? onScanNow : undefined} />
+            </div>
+          )}
+        </>
       )}
     </div>
   );

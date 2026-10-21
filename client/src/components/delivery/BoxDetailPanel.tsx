@@ -69,7 +69,7 @@ import {
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
-import { BoxMissingParcels, MissingList, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
+import { BoxMissingParcels, EarlierWaiting, MissingList, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
 import { CountBadges } from "@/components/packages/CountBadges";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
@@ -846,7 +846,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     const reached = box.status === "delivered" || (hasLiveReceipt && settlementDueUsd <= 0);
     // A parcel of the same batch not in a box: «ئاگاداری...؟» first (owner,
     // 2026-10-20/21). Yes lets this one paper through; nothing is stored.
-    if (!reached && !missingAckRef.current && (missingNow?.missing.length ?? 0) > 0) {
+    // And the customer's parcels from earlier batches still at the office.
+    if (!reached && !missingAckRef.current && ((missingNow?.missing.length ?? 0) > 0 || (missingNow?.earlier.length ?? 0) > 0)) {
       soundManager.playWarning();
       afterMissingAckRef.current = () => askBeforePrinting(lang, output, action);
       setMissingGate(true);
@@ -1075,9 +1076,14 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         <Dialog open={missingGate} onOpenChange={setMissingGate}>
           <DialogContent className="max-w-lg" data-testid="box-missing-gate">
             <DialogHeader>
-              <DialogTitle className="leading-snug">{pickLang(language, MISSING_WORDS.question)}</DialogTitle>
+              <DialogTitle className="leading-snug">
+                {(missingNow?.missing.length ?? 0) > 0
+                  ? pickLang(language, MISSING_WORDS.question)
+                  : pickLang(language, { ku: "پاکێجی کۆنی ئەم کڕیارە لە ئۆفیس ماوە", en: "This customer has earlier parcels waiting", ar: "للعميل طرود سابقة منتظرة", zh: "该客户有之前的包裹待发" })}
+              </DialogTitle>
             </DialogHeader>
-            <MissingList missing={missingNow?.missing ?? []} language={language} />
+            {(missingNow?.missing.length ?? 0) > 0 && <MissingList missing={missingNow?.missing ?? []} language={language} />}
+            <EarlierWaiting earlier={missingNow?.earlier ?? []} language={language} />
             <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
               <Button
                 type="button"

@@ -1,6 +1,6 @@
-import { and, eq, inArray, isNotNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
+import { and, eq, gte, inArray, isNotNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
+import { batches, deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
 
 /**
  * What a box is still waiting for.
@@ -27,6 +27,8 @@ export interface MissingParcel {
   trackingNumber: string | null;
   batchId: number | null;
   status: string;
+  /** The batch it came in, for «لە باچی AIR-2026-070». */
+  batchCode?: string | null;
 }
 
 export interface BoxScanState {
@@ -36,12 +38,27 @@ export interface BoxScanState {
   scanned: number;
   /** The rest, by name. */
   missing: MissingParcel[];
+  /**
+   * The customer's parcels from EARLIER batches waiting at the office in no
+   * box (owner, 2026-10-21): «موشتەری 10 پاکەتی هەبووە لە باچی 4 دانەی
+   * هاتووە ... ئەگەر ئادمین چارە کۆنەکەی لە یاد چوو یەکسەر بەمە بەبیردێتەوە».
+   * Said when the batch is all scanned, and before the receipt goes out.
+   */
+  earlier: MissingParcel[];
 }
+
+/**
+ * How long an old-flow "delivered" parcel (before 2026-10-20 a batch's
+ * arrival wrote delivered on every parcel) is still taken as waiting at the
+ * office: long enough for a customer who asked to have it all sent together,
+ * short enough that the ones long gone home do not crowd the box.
+ */
+const EARLIER_DELIVERED_DAYS = 90;
 
 const ENDED = ["returned", "cancelled"] as const;
 
 export async function getBoxScanState(boxId: number): Promise<BoxScanState> {
-  const none: BoxScanState = { total: 0, scanned: 0, missing: [] };
+  const none: BoxScanState = { total: 0, scanned: 0, missing: [], earlier: [] };
   const db = await getDb();
   if (!db) return none;
   const [box] = await db
@@ -76,7 +93,8 @@ export async function getBoxScanState(boxId: number): Promise<BoxScanState> {
       ));
     for (const r of rows) if (r.batchId) batchIds.add(r.batchId);
   }
-  if (batchIds.size === 0) return none;
+  const earlier = await earlierWaiting(box.customerId, batchIds);
+  if (batchIds.size === 0) return { ...none, earlier };
 
   const candidates = await db
     .select({
@@ -93,8 +111,46 @@ export async function getBoxScanState(boxId: number): Promise<BoxScanState> {
       inArray(packages.batchId, Array.from(batchIds)),
       notInArray(packages.status, [...ENDED]),
     ));
-  if (candidates.length === 0) return none;
+  if (candidates.length === 0) return { ...none, earlier };
 
+  const missing = await notInAnyBox(candidates);
+  return { total: candidates.length, scanned: candidates.length - missing.length, missing, earlier };
+}
+
+/** The customer's parcels of other batches waiting at the office in no box. */
+async function earlierWaiting(customerId: number, exceptBatchIds: Set<number>): Promise<MissingParcel[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const since = new Date(Date.now() - EARLIER_DELIVERED_DAYS * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({
+      id: packages.id,
+      packageCode: packages.packageCode,
+      trackingNumber: packages.trackingNumber,
+      batchId: packages.batchId,
+      status: packages.status,
+      batchCode: batches.batchCode,
+    })
+    .from(packages)
+    .leftJoin(batches, eq(batches.id, packages.batchId))
+    .where(and(
+      eq(packages.customerId, customerId),
+      eq(packages.isUnclaimed, false),
+      isNotNull(packages.batchId),
+      ...(exceptBatchIds.size > 0 ? [notInArray(packages.batchId, Array.from(exceptBatchIds))] : []),
+      or(
+        inArray(packages.status, ["ready_for_delivery", "out_for_delivery"]),
+        and(eq(packages.status, "delivered"), gte(packages.deliveredAt, since)),
+      ),
+    ));
+  if (rows.length === 0) return [];
+  return notInAnyBox(rows);
+}
+
+/** Of these parcels, the ones no box holds (a box not cancelled; by parcel or tracking). */
+async function notInAnyBox<T extends { id: number; trackingNumber: string | null; status: unknown }>(candidates: T[]): Promise<Array<T & { status: string }>> {
+  const db = await getDb();
+  if (!db || candidates.length === 0) return [];
   const ids = candidates.map((c) => c.id);
   const trackings = candidates.map((c) => c.trackingNumber).filter((t): t is string => Boolean(t));
   const boxed = await db
@@ -110,10 +166,9 @@ export async function getBoxScanState(boxId: number): Promise<BoxScanState> {
     ));
   const boxedIds = new Set(boxed.map((b) => b.packageId).filter((x): x is number => x != null));
   const boxedTrackings = new Set(boxed.map((b) => b.trackingNumber).filter((x): x is string => Boolean(x)));
-  const missing = candidates
+  return candidates
     .filter((c) => !boxedIds.has(c.id) && !(c.trackingNumber && boxedTrackings.has(c.trackingNumber)))
     .map((c) => ({ ...c, status: String(c.status) }));
-  return { total: candidates.length, scanned: candidates.length - missing.length, missing };
 }
 
 /** The missing parcels alone. */

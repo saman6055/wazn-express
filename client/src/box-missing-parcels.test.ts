@@ -25,7 +25,7 @@ describe("a box knows how much of the customer's batch is in a box", () => {
     expect(fn).toContain("notInArray(packages.status, [...ENDED]),");
     expect(fn).toContain("for (const r of rows) if (r.batchId) batchIds.add(r.batchId);");
     expect(db).toContain('const ENDED = ["returned", "cancelled"] as const;');
-    expect(fn).toContain("return { total: candidates.length, scanned: candidates.length - missing.length, missing };");
+    expect(fn).toContain("return { total: candidates.length, scanned: candidates.length - missing.length, missing, earlier };");
   });
 
   it("the box screen shows scanned/total, the trackings, and the minute", () => {
@@ -37,7 +37,7 @@ describe("a box knows how much of the customer's batch is in a box", () => {
 
   it("print, send and PDF ask «ئاگاداری...؟» in the one step before the paper", () => {
     const gate = panel.slice(panel.indexOf("const askBeforePrinting = ("), panel.indexOf("// Ready before the print button is pressed"));
-    expect(gate).toContain("if (!reached && !missingAckRef.current && (missingNow?.missing.length ?? 0) > 0) {");
+    expect(gate).toContain("if (!reached && !missingAckRef.current && ((missingNow?.missing.length ?? 0) > 0 || (missingNow?.earlier.length ?? 0) > 0)) {");
     expect(panel).toContain('data-testid="box-missing-yes"');
     expect(panel).toContain('data-testid="box-missing-no"');
     expect(table).toContain("trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id })");
@@ -95,5 +95,32 @@ describe("parcels that went out without a box are listed, read only", () => {
     expect(read("client/src/App.tsx")).toContain('<Route path="/packages/without-box" component={DeliveredWithoutBox} />');
     expect(read("client/src/components/DashboardLayout.tsx")).toContain('path: "/packages/without-box"');
     expect(read("shared/permissions.ts")).toContain('"/packages/without-box": "packages",');
+  });
+});
+
+/**
+ * Owner, 2026-10-21: «لە باچی پێشوو ... ئۆندە پاکەتەی هەمان موشتەری لە ناو
+ * هیچ بۆکسێک نیە بۆی نەچووە؟» - said when this batch is all scanned, and
+ * before the receipt goes out; never mixed into this batch's count.
+ */
+describe("the customer's parcels from earlier batches, waiting at the office", () => {
+  const db = read("server/db/boxMissing.db.ts");
+  const card = read("client/src/components/delivery/BoxMissingParcels.tsx");
+  const panel = read("client/src/components/delivery/BoxDetailPanel.tsx");
+
+  it("other batches, at the office, in no box; an old-flow delivered one only recently", () => {
+    const fn = db.slice(db.indexOf("async function earlierWaiting"), db.indexOf("async function notInAnyBox"));
+    expect(fn).toContain("notInArray(packages.batchId, Array.from(exceptBatchIds))");
+    expect(fn).toContain('inArray(packages.status, ["ready_for_delivery", "out_for_delivery"]),');
+    expect(fn).toContain('and(eq(packages.status, "delivered"), gte(packages.deliveredAt, since)),');
+    expect(fn).toContain("return notInAnyBox(rows);");
+    expect(db).toContain("const EARLIER_DELIVERED_DAYS = 90;");
+  });
+
+  it("said when the batch is all in, and in the question before the paper", () => {
+    expect(card).toContain("if (before === null || before === 0 || left !== 0 || data.total === 0) return;");
+    expect(card).toContain("{data.earlier.length > 0 && (");
+    expect(panel).toContain("((missingNow?.missing.length ?? 0) > 0 || (missingNow?.earlier.length ?? 0) > 0)");
+    expect(panel).toContain("<EarlierWaiting earlier={missingNow?.earlier ?? []} language={language} />");
   });
 });
