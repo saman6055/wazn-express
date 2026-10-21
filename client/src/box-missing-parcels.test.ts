@@ -19,7 +19,11 @@ describe("a box knows how much of the customer's batch is in a box", () => {
 
   it("counts every parcel of the batch, wherever it is, but a returned or cancelled one", () => {
     const fn = db.slice(db.indexOf("export async function getBoxScanState"), db.indexOf("export async function getBoxMissingParcels"));
-    expect(fn).toContain("and(eq(packages.batchId, box.batchId), notInArray(packages.status, [...ENDED]))");
+    // Every batch the box draws from: its own and its parcels' (a hand-made
+    // box of seven parcels from two batches said 2/2, owner 2026-10-21).
+    expect(fn).toContain("inArray(packages.batchId, Array.from(batchIds)),");
+    expect(fn).toContain("notInArray(packages.status, [...ENDED]),");
+    expect(fn).toContain("for (const r of rows) if (r.batchId) batchIds.add(r.batchId);");
     expect(db).toContain('const ENDED = ["returned", "cancelled"] as const;');
     expect(fn).toContain("return { total: candidates.length, scanned: candidates.length - missing.length, missing };");
   });

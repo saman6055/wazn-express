@@ -9,9 +9,10 @@ import { deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema"
  * the customer and was billed by nobody (Zainab, 79135534330219, more than
  * once). And 2026-10-21, on the first version: «مەفرووز بوو لێرە بگۆتبایە
  * 10/3» - of the customer's 10 parcels in the batch, 3 scanned. So the box
- * counts EVERY parcel of its customer in its batch, wherever it is - at the
- * office or still on the road - except one returned or cancelled. A box made
- * by hand (no batch) waits for the customer's parcels at the office.
+ * counts EVERY parcel of its customer in its batches - its own, and every
+ * batch its parcels came in - wherever it is, at the office or still on the
+ * road, except one returned or cancelled. A box made by hand counts the
+ * batches of what is scanned into it.
  *
  * Scanned means in any box that was not cancelled - this one or another,
  * open or long delivered - by the parcel itself or by its tracking.
@@ -50,6 +51,33 @@ export async function getBoxScanState(boxId: number): Promise<BoxScanState> {
     .limit(1);
   if (!box || box.status === "cancelled") return none;
 
+  // The batches this box draws from: its own, and every batch its parcels
+  // came in - by the parcel or by its tracking. A box made by hand has no
+  // batch of its own, and its parcels may come from several (owner,
+  // 2026-10-21: BOX-20261021-017, seven parcels from two batches, said 2/2).
+  const items = await db
+    .select({ packageId: deliveryBoxItems.packageId, trackingNumber: deliveryBoxItems.trackingNumber })
+    .from(deliveryBoxItems)
+    .where(eq(deliveryBoxItems.boxId, boxId));
+  const itemIds = items.map((i) => i.packageId).filter((x): x is number => x != null);
+  const itemTrackings = items.map((i) => i.trackingNumber).filter((x): x is string => Boolean(x));
+  const batchIds = new Set<number>(box.batchId ? [box.batchId] : []);
+  if (itemIds.length > 0 || itemTrackings.length > 0) {
+    const rows = await db
+      .select({ batchId: packages.batchId })
+      .from(packages)
+      .where(and(
+        eq(packages.customerId, box.customerId),
+        isNotNull(packages.batchId),
+        or(
+          ...(itemIds.length > 0 ? [inArray(packages.id, itemIds)] : []),
+          ...(itemTrackings.length > 0 ? [inArray(packages.trackingNumber, itemTrackings)] : []),
+        ),
+      ));
+    for (const r of rows) if (r.batchId) batchIds.add(r.batchId);
+  }
+  if (batchIds.size === 0) return none;
+
   const candidates = await db
     .select({
       id: packages.id,
@@ -62,9 +90,8 @@ export async function getBoxScanState(boxId: number): Promise<BoxScanState> {
     .where(and(
       eq(packages.customerId, box.customerId),
       eq(packages.isUnclaimed, false),
-      box.batchId
-        ? and(eq(packages.batchId, box.batchId), notInArray(packages.status, [...ENDED]))
-        : and(isNotNull(packages.batchId), eq(packages.status, "ready_for_delivery")),
+      inArray(packages.batchId, Array.from(batchIds)),
+      notInArray(packages.status, [...ENDED]),
     ));
   if (candidates.length === 0) return none;
 
