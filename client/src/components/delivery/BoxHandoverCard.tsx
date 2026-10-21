@@ -9,7 +9,7 @@
  * until a way is chosen (handoverProblem).
  */
 import { useEffect, useState } from "react";
-import { Plus, X, Truck, Warehouse, CircleUser, Loader2 } from "lucide-react";
+import { Plus, X, Truck, Warehouse, CircleUser, Loader2, Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -46,6 +46,8 @@ export function BoxHandoverCard({ box, paid, onChanged }: { box: HandoverBox; pa
   const utils = trpc.useUtils();
   const mode = (box.handoverMode ?? null) as HandoverMode | null;
   const [picking, setPicking] = useState<HandoverMode | null>(mode);
+  // Chosen, it is one line (owner, 2026-10-21: the box was crowded); «گۆڕین» opens it.
+  const [editing, setEditing] = useState(false);
   const [newName, setNewName] = useState("");
   const [newPhone, setNewPhone] = useState("");
   const [trackings, setTrackings] = useState<string[]>(() => {
@@ -94,6 +96,31 @@ export function BoxHandoverCard({ box, paid, onChanged }: { box: HandoverBox; pa
   const problem = handoverProblem(box);
   const gone = box.status === "in_transit" || box.status === "delivered";
 
+  if (!problem && !editing && mode) {
+    const Icon = ICONS[mode];
+    const sent = parseCarrierTrackings(box.carrierTrackings);
+    return (
+      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-50/50 px-3 py-2 dark:bg-emerald-950/20" data-testid="box-handover">
+        <Icon className="h-4 w-4 shrink-0 text-emerald-700 dark:text-emerald-300" />
+        <span className="text-sm font-medium" data-testid="handover-line">
+          {L(HANDOVER_LABELS[mode])}{box.carrierName ? ` — ${box.carrierName}` : ""}
+        </span>
+        {sent.length > 0 && (
+          <bdi dir="ltr" className="font-mono text-xs text-muted-foreground">{sent.join(" · ")}</bdi>
+        )}
+        {mode !== "pickup" && gone && !paid && (
+          <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" data-testid="money-with">
+            {L(MONEY_WITH[mode])}{box.carrierName ? ` (${box.carrierName})` : ""}
+          </span>
+        )}
+        <Button type="button" size="sm" variant="ghost" className="ms-auto h-7 gap-1 px-2 text-xs" onClick={() => setEditing(true)} data-testid="handover-change">
+          <Pencil className="h-3.5 w-3.5" />
+          {L({ ku: "گۆڕین", en: "Change", ar: "تغيير", zh: "更改" })}
+        </Button>
+      </div>
+    );
+  }
+
   return (
     <div className={cn("space-y-3 rounded-lg border p-3", problem ? "border-red-500/50" : "border-emerald-500/40")} data-testid="box-handover">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -103,6 +130,11 @@ export function BoxHandoverCard({ box, paid, onChanged }: { box: HandoverBox; pa
           <span className="text-red-600 dark:text-red-400">*</span>
         </p>
         {save.isPending && <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />}
+        {editing && !problem && (
+          <Button type="button" size="sm" variant="ghost" className="h-7 px-2 text-xs" onClick={() => setEditing(false)} data-testid="handover-done">
+            {L({ ku: "تەواو", en: "Done", ar: "تم", zh: "完成" })}
+          </Button>
+        )}
         {mode && mode !== "pickup" && gone && !paid && (
           <span className="rounded-md bg-amber-100 px-2 py-0.5 text-xs text-amber-800 dark:bg-amber-950/40 dark:text-amber-200" data-testid="money-with">
             {L(MONEY_WITH[mode])}{box.carrierName ? ` (${box.carrierName})` : ""}

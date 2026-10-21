@@ -34,6 +34,8 @@ export function CustomerBoxesPanel({ customerId, currentBoxId }: { customerId: n
   const { data, isLoading } = trpc.deliveryBox.customerBoxes.useQuery({ customerId }, { enabled: customerId > 0 });
   const [open, setOpen] = useState<Set<number>>(() => new Set(currentBoxId ? [currentBoxId] : []));
   const [paperId, setPaperId] = useState<number | null>(null);
+  // Folded to one button (owner, 2026-10-21: «یەک دوگمە ... تەنها کاتێ کلیکت کرد ئێنجا نیشان بدات»).
+  const [shown, setShown] = useState(false);
   const paper = trpc.deliveryBox.receiptEventHtml.useQuery({ id: paperId ?? 0 }, { enabled: paperId !== null });
 
   // The paper opens in a window of its own, as it was printed.
@@ -56,6 +58,29 @@ export function CustomerBoxesPanel({ customerId, currentBoxId }: { customerId: n
     return next;
   });
 
+  if (!shown) {
+    return (
+      <button
+        type="button"
+        onClick={() => setShown(true)}
+        className="flex w-full flex-wrap items-center gap-2 rounded-lg border px-3 py-2 text-start text-sm hover:bg-muted/50"
+        data-testid="customer-boxes-button"
+      >
+        <History className="h-4 w-4 shrink-0" />
+        <span className="font-medium">
+          {L({ ku: "بۆکسەکانی ئەم کڕیارە", en: "This customer's boxes", ar: "صناديق هذا الزبون", zh: "该客户的箱子" })} ({t.boxes})
+        </span>
+        {t.owedUsd > 0 && (
+          <span className="text-xs font-semibold text-red-700 dark:text-red-400">
+            · {L({ ku: "ماوە", en: "Owed", ar: "متبقٍ", zh: "欠款" })} <bdi dir="ltr">{fmtUsd(t.owedUsd)}</bdi>
+          </span>
+        )}
+        {data.discounts.length > 0 && <AlertTriangle className="h-4 w-4 text-amber-600 dark:text-amber-400" />}
+        <ChevronDown className="ms-auto h-4 w-4" />
+      </button>
+    );
+  }
+
   return (
     <div className="space-y-3 rounded-lg border p-3" data-testid="customer-boxes">
       <div className="flex flex-wrap items-center justify-between gap-2">
@@ -63,6 +88,9 @@ export function CustomerBoxesPanel({ customerId, currentBoxId }: { customerId: n
           <History className="h-4 w-4" />
           {L({ ku: "بۆکسەکانی ئەم کڕیارە", en: "This customer's boxes", ar: "صناديق هذا الزبون", zh: "该客户的箱子" })}
         </p>
+        <button type="button" onClick={() => setShown(false)} className="ms-auto text-xs text-muted-foreground hover:underline" data-testid="customer-boxes-hide">
+          {L({ ku: "داخستن", en: "Hide", ar: "إخفاء", zh: "收起" })}
+        </button>
         <Link href={`/customer-delivery-scanner?customer=${customerId}`} className="flex items-center gap-1 text-sm text-primary underline-offset-2 hover:underline">
           {L({ ku: "هەموو بۆکسەکانی", en: "All their boxes", ar: "كل صناديقه", zh: "全部箱子" })}
           <ExternalLink className="h-3.5 w-3.5" />
