@@ -71,10 +71,11 @@ import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { BoxMissingParcels, EarlierWaiting, MissingList, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
 import { CountBadges } from "@/components/packages/CountBadges";
+import { ReceiptSendMenu } from "@/components/delivery/ReceiptSendMenu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
-import { receiptLanguageFor, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber, type ReceiptLanguage } from "@shared/receiptWhatsApp";
+import { receiptLanguageFor, receiptMessageDue, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber, type ReceiptLanguage } from "@shared/receiptWhatsApp";
 import { shareReceiptOnWhatsApp, type ReceiptShareDestination, type ReceiptShareFormat } from "@/lib/receiptShare";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
@@ -901,6 +902,17 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       // than going out with none (owner, 2026-09-22).
       rate: settlementForPrint?.exchangeRate ?? null,
       onConfirm: (dinar, given) => void printWithPledge(lang, dinar, given, output),
+      // Send from the same window, beside «چاپ» (owner, 2026-10-21): the
+      // same rate, advance and discount on the paper and in the message.
+      send: action === "print"
+        ? {
+            language: sendLanguage ?? receiptLanguageFor((customer as any)?.nationality),
+            onSend: (dinar, given, format, destination, sendLang) => {
+              setSendLanguage(sendLang);
+              void printWithPledge(sendLang as Language, dinar, given, (l, d, g) => shareReceiptNow(l, d, g, format, destination, sendLang));
+            },
+          }
+        : undefined,
     });
   };
 
@@ -955,6 +967,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     given: ReceiptDiscount | null,
     format: ReceiptShareFormat = "image",
     destination: ReceiptShareDestination = "whatsapp",
+    messageLanguage?: ReceiptLanguage,
   ) => {
     await loadLocale(lang);
     const [b, its, c] = buildReceiptPayload();
@@ -973,11 +986,18 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     // The message quotes what the paper says, discount and all.
     const totalUsd = Math.max(0, Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang)) - paidBeforeOnBox(settlementView).usd) * 100) / 100);
     const figures = receiptDinar(totalUsd, dinar);
-    const message = receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {
+    // And what the paper takes off by hand - an advance, or the customer's
+    // account money put against these goods - so the chat asks for the very
+    // figure printed as «المبلغ المستحق» (owner, 2026-10-21: $183.03 sent,
+    // $116.93 printed). In dollars when the advance was in dollars; in
+    // dinars only when it was in dinars, as the paper does.
+    const due = receiptMessageDue(totalUsd, figures);
+    const message = receiptWhatsAppMessage(messageLanguage ?? sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {
       boxCode: box.boxCode,
       parcelCount: box.totalPackages ?? items.length,
-      totalUsd,
-      totalIqd: figures?.totalIqd ?? null,
+      totalUsd: due.usd,
+      totalIqd: due.iqd,
+      customerName: customer?.fullName ?? null,
     });
     const number = whatsappNumber(customer?.mobileNumber);
     setSharing(true);
@@ -1018,7 +1038,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const handleSendOnWhatsApp = (format: ReceiptShareFormat, destination: ReceiptShareDestination = "whatsapp") =>
     askBeforePrinting(
       (sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) as Language,
-      (lang, dinar, given) => shareReceiptNow(lang, dinar, given, format, destination),
+      (lang, dinar, given) => shareReceiptNow(lang, dinar, given, format, destination, lang as ReceiptLanguage),
       "send",
     );
   const handleDownloadReceiptPDF = (lang: Language) => askBeforePrinting(lang, downloadReceiptNow);
@@ -1633,9 +1653,14 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
           </DropdownMenu>
 
           {/* Straight to the customer's WhatsApp: same receipt, their own
-              language, the share sheet doing the attaching (owner, 2026-09-21). */}
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
+              language, the share sheet doing the attaching (owner, 2026-09-21).
+              The same menu sits in the window before printing (ReceiptSendMenu). */}
+          <ReceiptSendMenu
+            uiLanguage={language}
+            sendLanguage={sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)}
+            onSendLanguage={setSendLanguage}
+            onPick={(format, destination) => handleSendOnWhatsApp(format, destination)}
+            trigger={
               <Button
                 variant="outline"
                 size="sm"
@@ -1646,67 +1671,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 {pickLang(language, { ku: "ناردنی وەسڵ", en: "Send receipt", ar: "إرسال الإيصال", zh: "发送收据" })}
                 <ChevronDown className="h-3 w-3 ms-1 opacity-60" />
               </Button>
-            </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-              <DropdownMenuLabel>
-                {pickLang(language, { ku: "ناردن بۆ وەتسئاپ", en: "Send on WhatsApp", ar: "إرسال عبر واتساب", zh: "通过 WhatsApp 发送" })}
-              </DropdownMenuLabel>
-              {/* The language the paper and the message will both be in. It
-                  comes from the customer's nationality; a customer created
-                  without one used to be written to in Kurdish with nobody the
-                  wiser (owner, 2026-09-24). */}
-              <div className="px-2 pb-1.5">
-                <p className="mb-1 text-[11px] text-muted-foreground">
-                  {pickLang(language, { ku: "زمانی وەسڵ و پەیام", en: "Receipt and message language", ar: "لغة الإيصال والرسالة", zh: "收据与消息语言" })}
-                </p>
-                <div className="grid grid-cols-3 gap-1">
-                  {(["ku", "ar", "en"] as const).map((code) => {
-                    const chosen = (sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) === code;
-                    return (
-                      <button
-                        key={code}
-                        type="button"
-                        onClick={(e) => { e.preventDefault(); setSendLanguage(code); }}
-                        className={cn(
-                          "rounded-md border px-2 py-1 text-xs font-medium transition-colors",
-                          chosen
-                            ? "border-emerald-400 bg-emerald-50 text-emerald-800 dark:border-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-200"
-                            : "border-transparent bg-muted/60 text-muted-foreground hover:bg-muted",
-                        )}
-                        data-testid={`receipt-language-${code}`}
-                      >
-                        {code === "ku" ? "کوردی" : code === "ar" ? "عربي" : "English"}
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => handleSendOnWhatsApp("image")}>
-                <ImageIcon className="h-4 w-4 me-2 opacity-70" />
-                {pickLang(language, { ku: "وەتسئاپ — وەک وێنە", en: "WhatsApp — as a picture", ar: "واتساب — كصورة", zh: "WhatsApp — 图片" })}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSendOnWhatsApp("pdf")}>
-                <FileDown className="h-4 w-4 me-2 opacity-70" />
-                {pickLang(language, { ku: "وەتسئاپ — وەک PDF", en: "WhatsApp — as a PDF", ar: "واتساب — كملف PDF", zh: "WhatsApp — PDF" })}
-              </DropdownMenuItem>
-              <DropdownMenuSeparator />
-              {/* For whatever else comes up: any app on the machine, or just
-                  the file (owner, 2026-09-21). */}
-              <DropdownMenuItem onClick={() => handleSendOnWhatsApp("image", "share")}>
-                <Share2 className="h-4 w-4 me-2 opacity-70" />
-                {pickLang(language, { ku: "شێر بۆ بەرنامەیەکی تر", en: "Share with another app", ar: "مشاركة مع تطبيق آخر", zh: "分享到其他应用" })}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSendOnWhatsApp("image", "save")}>
-                <Download className="h-4 w-4 me-2 opacity-70" />
-                {pickLang(language, { ku: "خەزنکردن — وێنە", en: "Save the picture", ar: "حفظ الصورة", zh: "保存图片" })}
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleSendOnWhatsApp("pdf", "save")}>
-                <Download className="h-4 w-4 me-2 opacity-70" />
-                {pickLang(language, { ku: "خەزنکردن — PDF", en: "Save the PDF", ar: "حفظ ملف PDF", zh: "保存 PDF" })}
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+            }
+          />
 
           {/* Download PDF — same language choice */}
           <DropdownMenu>

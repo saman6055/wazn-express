@@ -48,7 +48,13 @@ export function receiptLanguageFor(nationality?: string | null): ReceiptLanguage
 export interface ReceiptMessageFacts {
   boxCode: string;
   parcelCount: number;
-  totalUsd: number;
+  /**
+   * What the paper asks for in dollars - after the discount, what earlier
+   * receipts paid and an advance taken off in dollars (owner, 2026-10-21:
+   * the message said $183.03 where the paper said $116.93). Null when the
+   * paper asks in dinars only (an advance taken off in dinars).
+   */
+  totalUsd: number | null;
   /**
    * The same figure in dinars, when the counter priced it in dinars before
    * sending (owner, 2026-09-22: "the amount worked out in dinars is not
@@ -56,6 +62,8 @@ export interface ReceiptMessageFacts {
    * rate was given, and then the message says dollars only.
    */
   totalIqd?: number | null;
+  /** The customer's name, for the greeting (owner, 2026-10-21). */
+  customerName?: string | null;
 }
 
 const money = (amount: number): string => {
@@ -66,37 +74,68 @@ const money = (amount: number): string => {
 /**
  * The message that travels with the receipt.
  *
- * One paragraph: what it is, which box and how much, and a closing line that
- * promises nothing it cannot keep. Digits stay 0-9 in every language.
+ * A greeting by name, with good wishes - «پاش سەلام علیک بەریز فلان ناوی
+ * بنووسێت هیوادارم ساغ و سەلامەت بیت ... هەر چەندی ئەدەب زۆر بێ هەرکەمە»
+ * (owner, 2026-10-21) - then which box, how many parcels and the very figure
+ * the paper asks for, and a closing line that promises no date. Digits stay
+ * 0-9 in every language.
  */
 export function receiptWhatsAppMessage(lang: ReceiptLanguage, facts: ReceiptMessageFacts): string {
   const code = facts.boxCode;
   const parcels = Math.max(0, Math.round(Number(facts.parcelCount) || 0));
-  const total = money(facts.totalUsd);
+  const usd = facts.totalUsd === null ? null : money(facts.totalUsd);
   // Digits stay 0-9 and the thousands are grouped the way the receipt groups
   // them, so the chat and the paper read as the same figure.
   const iqd = Number(facts.totalIqd);
   const dinars = Number.isFinite(iqd) && iqd > 0 ? Math.round(iqd).toLocaleString("en-GB") : null;
+  const name = String(facts.customerName ?? "").trim();
 
   if (lang === "ar") {
-    const amount = dinars ? `${total} دولار (${dinars} دينار)` : `${total} دولار`;
+    const amount = usd !== null
+      ? (dinars ? `${usd} دولار (${dinars} دينار)` : `${usd} دولار`)
+      : `${dinars ?? "0"} دينار`;
     return (
-      `السلام عليكم. هذا إيصال أغراضك الواصلة — الصندوق ${code}، ${parcels} طرد، ${amount}. ` +
-      `إن شاء الله تصلكم في أنسب وقت. شكراً لثقتكم — وزن اكسبريس`
+      `السلام عليكم ورحمة الله وبركاته${name ? `، حضرة ${name} المحترم` : ""}.\n` +
+      `نتمنى أن تكونوا بخير وصحة وعافية. يسعدنا إبلاغكم بأن أغراضكم قد وصلت — الصندوق ${code}، ${parcels} طرد.\n` +
+      `المبلغ المستحق: ${amount}.\n` +
+      `إن شاء الله تصلكم في أنسب وقت. نشكركم جزيل الشكر على ثقتكم الغالية — وزن اكسبريس`
     );
   }
   if (lang === "en") {
-    const amount = dinars ? `$${total} (${dinars} IQD)` : `$${total}`;
+    const amount = usd !== null
+      ? (dinars ? `$${usd} (${dinars} IQD)` : `$${usd}`)
+      : `${dinars ?? "0"} IQD`;
     return (
-      `Hello. Here is the receipt for your arrived goods — box ${code}, ${parcels} parcel(s), ${amount}. ` +
-      `It will reach you at the most suitable time, God willing. Thank you — Wazn Express`
+      `Hello${name ? ` dear ${name}` : ""}, we hope you are well and in good health.\n` +
+      `We are glad to let you know your goods have arrived — box ${code}, ${parcels} parcel(s).\n` +
+      `Amount due: ${amount}.\n` +
+      `They will reach you at the most suitable time, God willing. Thank you very much for your trust — Wazn Express`
     );
   }
-  const amount = dinars ? `${total} دۆلار (${dinars} دینار)` : `${total} دۆلار`;
+  const amount = usd !== null
+    ? (dinars ? `${usd} دۆلار (${dinars} دینار)` : `${usd} دۆلار`)
+    : `${dinars ?? "0"} دینار`;
   return (
-    `سڵاوت لێبێت. ئەمە وەسڵی کەل و پەلە گەیشتووەکانتە — بۆکس ${code}، ${parcels} پاکەت، ${amount}. ` +
-    `ان شاءاللە لە گونجاوترین کاتدا دەگاتە دەستتان. سوپاس بۆ متمانەت — وەزن ئێکسپرێس`
+    `سڵاو و ڕێزێکی زۆر${name ? `، بەڕێز ${name}` : ""}.\n` +
+    `هیوادارین هەمیشە ساغ و سەلامەت بن. خۆشحاڵین پێتان ڕابگەیەنین کە کەل و پەلەکانتان گەیشتوون — بۆکس ${code}، ${parcels} پاکەت.\n` +
+    `بڕی داواکراو: ${amount}.\n` +
+    `ان شاءاللە لە گونجاوترین کاتدا دەگاتە دەستتان. زۆر سوپاس بۆ متمانە بەنرخەکەتان — وەزن ئێکسپرێس`
   );
+}
+
+/**
+ * What the receipt message asks for: the paper's own last figure
+ * (shared/receiptDinar). An advance in dollars leaves dollars due and their
+ * dinars; one in dinars leaves dinars only; none, the total and its dinars.
+ */
+export function receiptMessageDue(
+  leftToPayUsd: number,
+  figures: { advance: { currency: "IQD" | "USD" } | null; dueUsd: number | null; dueIqd: number; totalIqd: number } | null,
+): { usd: number | null; iqd: number | null } {
+  if (!figures) return { usd: leftToPayUsd, iqd: null };
+  if (figures.advance?.currency === "USD") return { usd: figures.dueUsd ?? leftToPayUsd, iqd: figures.dueIqd };
+  if (figures.advance) return { usd: null, iqd: figures.dueIqd };
+  return { usd: leftToPayUsd, iqd: figures.totalIqd };
 }
 
 /**

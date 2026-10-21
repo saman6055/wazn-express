@@ -91,3 +91,47 @@ describe("the number and the chat", () => {
     expect(decodeURIComponent(url.split("?text=")[1])).toBe("سڵاو — BOX-1 & $5");
   });
 });
+
+/**
+ * Owner, 2026-10-21: the chat said $183.03 (304,000) where the paper said
+ * $116.93 (197,000) - the advance on the paper was not taken off - and the
+ * greeting should name the customer with good wishes.
+ */
+describe("the message asks for the paper's own figure, by name", () => {
+  it("an advance in dollars: the dollars and dinars left, as on the paper", async () => {
+    const { receiptDinar } = await import("./receiptDinar");
+    const { receiptMessageDue } = await import("./receiptWhatsApp");
+    const figures = receiptDinar(183.03, { rate: 1685, step: 250, mode: "nearest", advanceAmount: 66.1, advanceCurrency: "USD" });
+    const due = receiptMessageDue(183.03, figures);
+    expect(due.usd).toBe(116.93);
+    expect(due.iqd).toBe(figures!.dueIqd);
+  });
+
+  it("an advance in dinars: dinars only, as on the paper; none: the total and its dinars", async () => {
+    const { receiptDinar } = await import("./receiptDinar");
+    const { receiptMessageDue } = await import("./receiptWhatsApp");
+    const inIqd = receiptDinar(100, { rate: 1500, step: 250, mode: "nearest", advanceAmount: 50000, advanceCurrency: "IQD" });
+    expect(receiptMessageDue(100, inIqd)).toEqual({ usd: null, iqd: 100000 });
+    const plain = receiptDinar(100, { rate: 1500, step: 250, mode: "nearest", advanceAmount: null, advanceCurrency: "IQD" });
+    expect(receiptMessageDue(100, plain)).toEqual({ usd: 100, iqd: 150000 });
+    expect(receiptMessageDue(100, null)).toEqual({ usd: 100, iqd: null });
+  });
+
+  it("greets the customer by name, with good wishes, in each language", () => {
+    const f = { boxCode: "BOX-20261021-023", parcelCount: 9, totalUsd: 116.93, totalIqd: 197000, customerName: "Hama Ali" };
+    const ar = receiptWhatsAppMessage("ar", f);
+    expect(ar).toContain("حضرة Hama Ali المحترم");
+    expect(ar).toContain("نتمنى أن تكونوا بخير");
+    expect(ar).toContain("116.93 دولار (197,000 دينار)");
+    expect(ar).not.toContain("183.03");
+    const ku = receiptWhatsAppMessage("ku", f);
+    expect(ku).toContain("بەڕێز Hama Ali");
+    expect(ku).toContain("ساغ و سەلامەت");
+    expect(ku).toContain("116.93 دۆلار (197,000 دینار)");
+    expect(receiptWhatsAppMessage("en", f)).toContain("dear Hama Ali");
+    // Dinars only when the paper asks in dinars only.
+    expect(receiptWhatsAppMessage("ku", { ...f, totalUsd: null })).toContain("بڕی داواکراو: 197,000 دینار.");
+    // No name: still polite, never "undefined".
+    expect(receiptWhatsAppMessage("ar", { ...f, customerName: null })).not.toContain("undefined");
+  });
+});

@@ -23,20 +23,23 @@ const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/
 
 describe("the language a receipt goes out in", () => {
   const panel = read("components/delivery/BoxDetailPanel.tsx");
+  // One menu for the box and for the window before printing (2026-10-21).
+  const menu = read("components/delivery/ReceiptSendMenu.tsx");
 
   it("is the customer's, and is shown before it is used", () => {
     expect(panel).toContain("const [sendLanguage, setSendLanguage] = useState<ReceiptLanguage | null>(null);");
-    expect(panel).toContain('data-testid={`receipt-language-${code}`}');
-    expect(panel).toContain('{pickLang(language, { ku: "زمانی وەسڵ و پەیام"');
+    expect(menu).toContain('data-testid={`receipt-language-${code}`}');
+    expect(menu).toContain('{L({ ku: "زمانی وەسڵ و پەیام"');
   });
 
   it("is the same for the paper and for the message", () => {
-    expect(panel).toContain("receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {");
+    expect(panel).toContain("receiptWhatsAppMessage(messageLanguage ?? sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {");
     expect(panel).toContain("(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) as Language,");
+    expect(panel).toContain("shareReceiptNow(lang, dinar, given, format, destination, lang as ReceiptLanguage)");
   });
 
   it("still follows the nationality until somebody says otherwise", () => {
-    expect(panel).toContain('const chosen = (sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) === code;');
+    expect(panel).toContain("sendLanguage={sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)}");
   });
 });
 

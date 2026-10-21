@@ -1,7 +1,10 @@
 import { useEffect, useMemo, useState } from "react";
 import { oddRate, oddRateQuestion } from "@shared/rateSense";
 import { confirmAction } from "@/components/ConfirmDialog";
-import { Printer, Send, Percent } from "lucide-react";
+import { Printer, Send, Percent, ChevronDown } from "lucide-react";
+import { ReceiptSendMenu } from "@/components/delivery/ReceiptSendMenu";
+import type { ReceiptLanguage } from "@shared/receiptWhatsApp";
+import type { ReceiptShareDestination, ReceiptShareFormat } from "@/lib/receiptShare";
 import { trpc } from "@/lib/trpc";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -133,6 +136,23 @@ export interface ReceiptDinarRequest {
    * was handed.
    */
   onConfirm: (dinar: ReceiptDinarInput | null, discount: ReceiptDiscount | null) => void;
+  /**
+   * Sending from this same window, beside «چاپ» (owner, 2026-10-21: «ناردن
+   * بە تەواوی وەکو ئەوەی ئێستا هەیە بیهێنە بۆ بەشی چاپ»): the rate, the
+   * advance and the discount given here go on the paper and in the message
+   * alike. Absent, the window only prints.
+   */
+  send?: {
+    /** The language the paper and the message start in (the customer's). */
+    language: ReceiptLanguage;
+    onSend: (
+      dinar: ReceiptDinarInput | null,
+      discount: ReceiptDiscount | null,
+      format: ReceiptShareFormat,
+      destination: ReceiptShareDestination,
+      language: ReceiptLanguage,
+    ) => void;
+  };
 }
 
 /**
@@ -293,6 +313,9 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const L = (words: Words) => pickLang(language, words);
   const open = !!request;
   const sending = request?.action === "send";
+  // The language the receipt is sent in from this window (ReceiptSendMenu).
+  const [sendLang, setSendLang] = useState<ReceiptLanguage>("ku");
+  useEffect(() => { if (request?.send) setSendLang(request.send.language); }, [request]);
 
   const lastPayment = trpc.deliveryBox.lastExchangeRate.useQuery(undefined, {
     enabled: open,
@@ -435,7 +458,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const reasonMissing = cutUsd > 0 && !discountReason;
   const blocked = reasonMissing || noteMissing || belowPledge;
 
-  const confirm = async () => {
+  /** Checked once, then printed - or sent with the same figures. */
+  const finish = async (then: (dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => void) => {
     if (!request || blocked) return;
     // The dinars printed are what the customer pays: a slipped digit in the
     // rate prints the wrong amount (shared/rateSense).
@@ -451,7 +475,6 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     }
 
     if (input) rememberChoice({ rate: input.rate, at: Date.now(), step, mode });
-    const print = request.onConfirm;
     const given: ReceiptDiscount | null =
       cutUsd > 0 && discountReason
         ? {
@@ -463,7 +486,13 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
           }
         : null;
     onClose();
-    print(input, given);
+    then(input, given);
+  };
+  const confirmPrint = () => finish((dinar, given) => request?.onConfirm(dinar, given));
+  const sendFromHere = (format: ReceiptShareFormat, destination: ReceiptShareDestination) => {
+    const send = request?.send;
+    if (!send) return;
+    void finish((dinar, given) => send.onSend(dinar, given, format, destination, sendLang));
   };
 
   const row = (label: string, value: string, strong = false) => (
@@ -776,10 +805,32 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
         </div>
 
         <DialogFooter className="flex-row gap-2 sm:gap-2">
-          <Button onClick={confirm} disabled={blocked} className="flex-1" data-testid="receipt-dinar-print">
+          <Button onClick={() => void confirmPrint()} disabled={blocked} className="flex-1" data-testid="receipt-dinar-print">
             {sending ? <Send className="me-1.5 h-4 w-4" /> : <Printer className="me-1.5 h-4 w-4" />}
             {L(sending ? TXT.send : TXT.print)}
           </Button>
+          {!sending && request?.send && (
+            <ReceiptSendMenu
+              uiLanguage={language}
+              sendLanguage={sendLang}
+              onSendLanguage={setSendLang}
+              onPick={sendFromHere}
+              align="center"
+              trigger={
+                <Button
+                  type="button"
+                  variant="outline"
+                  disabled={blocked}
+                  className="flex-1 border-emerald-300 text-emerald-700 hover:bg-emerald-50 hover:text-emerald-800 dark:border-emerald-800 dark:text-emerald-300"
+                  data-testid="receipt-dinar-send"
+                >
+                  <Send className="me-1.5 h-4 w-4" />
+                  {L(TXT.send)}
+                  <ChevronDown className="ms-1 h-3 w-3 opacity-60" />
+                </Button>
+              }
+            />
+          )}
           <Button variant="outline" onClick={onClose} className="flex-1">
             {L(TXT.cancel)}
           </Button>

@@ -106,17 +106,20 @@ describe("the button at the counter", () => {
     expect(panel).toContain("(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)) as Language,");
     // Since 2026-09-24 the guess can be overridden before sending; the paper
     // and the message still follow the same choice.
-    expect(panel).toContain("receiptWhatsAppMessage(sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {");
+    expect(panel).toContain("receiptWhatsAppMessage(messageLanguage ?? sendLanguage ?? receiptLanguageFor((customer as any)?.nationality), {");
     expect(panel).toContain("fileName: box.boxCode,");
   });
 
   it("offers it as a PDF to keep or as a picture that opens in the chat", () => {
     // The owner, after sending the first one: "as an image too, good quality".
-    expect(panel).toContain('handleSendOnWhatsApp("pdf")');
-    expect(panel).toContain('handleSendOnWhatsApp("image")');
-    expect(panel).toContain('handleSendOnWhatsApp("image", "share")');
-    expect(panel).toContain('handleSendOnWhatsApp("image", "save")');
-    expect(panel).toContain('handleSendOnWhatsApp("pdf", "save")');
+    // The menu is one component, on the box and in the window before printing.
+    const menu = read("components/delivery/ReceiptSendMenu.tsx");
+    expect(panel).toContain("onPick={(format, destination) => handleSendOnWhatsApp(format, destination)}");
+    expect(menu).toContain('onPick("pdf", "whatsapp")');
+    expect(menu).toContain('onPick("image", "whatsapp")');
+    expect(menu).toContain('onPick("image", "share")');
+    expect(menu).toContain('onPick("image", "save")');
+    expect(menu).toContain('onPick("pdf", "save")');
     expect(share).toContain('const SHARPNESS = { pdf: 2, image: 3 } as const;');
     expect(share).toContain('const asImage = request.format === "image";');
     expect(share).toContain('`${request.fileName}.jpg`');
@@ -132,7 +135,7 @@ describe("the button at the counter", () => {
     expect(dialog).toContain('const sending = request?.action === "send";');
     expect(dialog).toContain("{L(sending ? TXT.send : TXT.print)}");
     expect(dialog).toContain("{L(sending ? TXT.sendTitle : TXT.title)}");
-    expect(panel).toContain('(lang, dinar, given) => shareReceiptNow(lang, dinar, given, format, destination),');
+    expect(panel).toContain('(lang, dinar, given) => shareReceiptNow(lang, dinar, given, format, destination, lang as ReceiptLanguage),');
     expect(panel).toContain('"send",');
   });
 
@@ -140,10 +143,12 @@ describe("the button at the counter", () => {
     // Owner, 2026-09-22: "the amount worked out in dinars is not written in
     // the chat — it matters, put it there too."
     expect(panel).toContain("const figures = receiptDinar(totalUsd, dinar);");
-    expect(panel).toContain("totalIqd: figures?.totalIqd ?? null,");
+    // The paper's last figure, advance and all (shared/receiptWhatsApp: receiptMessageDue).
+    expect(panel).toContain("const due = receiptMessageDue(totalUsd, figures);");
+    expect(panel).toContain("totalIqd: due.iqd,");
     const shared = fs.readFileSync(path.resolve(SRC, "../..", "shared/receiptWhatsApp.ts"), "utf8");
     expect(shared).toContain("const dinars = Number.isFinite(iqd) && iqd > 0 ? Math.round(iqd).toLocaleString(\"en-GB\") : null;");
-    expect(shared).toContain("`${total} دۆلار (${dinars} دینار)`");
+    expect(shared).toContain("`${usd} دۆلار (${dinars} دینار)`");
   });
 
   it("asks the day's rate first, like every other way to a receipt", () => {
