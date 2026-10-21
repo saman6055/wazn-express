@@ -1070,6 +1070,15 @@ export const deliveryBoxRouter = router({
     .input(z.object({ boxId: z.number() }))
     .query(async ({ input }) => db.getBoxScanState(input.boxId)),
 
+  /**
+   * «بۆکس دروست بکە بۆی» on Quick Register (owner, 2026-10-21): the
+   * customer's box still being filled (no receipt printed or sent), and how
+   * the newest one went out, for a new box made the same way.
+   */
+  choiceForCustomer: staffProcedure
+    .input(z.object({ customerId: z.number().int().positive() }))
+    .query(async ({ input }) => db.boxChoiceForCustomer(input.customerId)),
+
   // Get open boxes (for current user or all)
   getOpenBoxes: staffProcedure
     .input(z.object({ myOnly: z.boolean().default(false) }).optional())

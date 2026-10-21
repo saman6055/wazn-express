@@ -30,6 +30,7 @@ import { useIsMobile } from "@/hooks/useMobile";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { PhotoStack } from "@/components/PhotoStack";
+import { BoxForParcel } from "@/components/delivery/BoxForParcel";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { CopyButton } from "@/components/CopyButton";
 
@@ -976,7 +977,7 @@ export default function QuickRegister() {
   };
   
   // State for last registered package
-  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null; orderNumber?: string | null } | null>(null);
+  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null; orderNumber?: string | null; customerId?: number | null } | null>(null);
 
   /**
    * The banner survives a reload.
@@ -999,6 +1000,7 @@ export default function QuickRegister() {
       trackingNumber: myLastRegistration.trackingNumber ?? "",
       customerName: myLastRegistration.customerCode || myLastRegistration.customerName || t("quickRegister.unclaimed"),
       time: when,
+      customerId: myLastRegistration.isUnclaimed ? null : (myLastRegistration.customerId ?? null),
     });
     // Only when the answer arrives: the banner belongs to whatever was
     // registered since, once anything has been.
@@ -1045,6 +1047,8 @@ export default function QuickRegister() {
         packageCode: data.packageCode,
         trackingNumber: trackingNumber,
         customerName: customerSearch || t("quickRegister.unclaimed"),
+        // For «بۆکس دروست بکە بۆی»: only a parcel with an owner goes in a box.
+        customerId: isUnclaimed ? null : (customerId ?? null),
         time: new Date(),
         enteredBy: ((user?.name as string) || "").trim() || undefined,
         orderDate: orderCreatedAt ? new Date(orderCreatedAt) : null,
@@ -1120,6 +1124,7 @@ export default function QuickRegister() {
         packageCode: data.packageCode,
         trackingNumber: data.trackingNumber ?? "",
         customerName: isUnclaimed ? t("quickRegister.unclaimed") : (customerSearch || t("quickRegister.unclaimed")),
+        customerId: isUnclaimed ? null : (customerId ?? null),
       }));
       // What the account said, what it says now, and that only the
       // difference was written — long enough on screen to be read.
@@ -1212,6 +1217,7 @@ export default function QuickRegister() {
         packageCode: last.packageCode,
         trackingNumber: last.trackingNumber ?? "",
         customerName: last.customerCode || last.customerName || t("quickRegister.unclaimed"),
+        customerId: last.isUnclaimed ? null : (last.customerId ?? null),
       }));
       setCorrecting({ id: last.id, packageCode: last.packageCode, orderLinked: last.orderLinked, photos: last.photos, cartonCount: last.cartonCount ?? 1 });
       // The weight is what is usually wrong, so that is where the caret goes.
@@ -1604,18 +1610,31 @@ export default function QuickRegister() {
                       {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "تراجع", zh: "取消" })}
                     </Button>
                   ) : (
+                    <>
+                    {/* Straight into the customer's box (owner, 2026-10-21). */}
+                    {lastRegistered.customerId && lastRegistered.trackingNumber ? (
+                      <span className="ms-auto">
+                        <BoxForParcel
+                          customerId={lastRegistered.customerId}
+                          customerName={lastRegistered.customerName}
+                          trackingNumber={lastRegistered.trackingNumber}
+                          language={language}
+                        />
+                      </span>
+                    ) : null}
                     <Button
                       type="button"
                       size="sm"
                       variant="outline"
                       onClick={openCorrection}
                       disabled={openingCorrection}
-                      className="ms-auto h-8 gap-1.5 border-emerald-300 bg-white/80 text-emerald-800 hover:bg-white dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+                      className={cn(lastRegistered.customerId && lastRegistered.trackingNumber ? "" : "ms-auto", "h-8 gap-1.5 border-emerald-300 bg-white/80 text-emerald-800 hover:bg-white dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/60")}
                       data-testid="qr-correct-last"
                     >
                       {openingCorrection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PencilLine className="h-3.5 w-3.5" />}
                       {pickLang(language, { ku: "هەڵەیە؟ چاکی بکەرەوە", en: "Wrong? Correct it", ar: "خطأ؟ صحّحه", zh: "有误？更正" })}
                     </Button>
+                    </>
                   )}
                 </div>
               </div>

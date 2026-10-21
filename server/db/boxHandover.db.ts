@@ -344,3 +344,75 @@ export async function customerBoxesOverview(customerId: number) {
     discounts: discounts.sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
   };
 }
+
+/**
+ * Where a parcel just registered should go (owner, 2026-10-21: «بۆکس دروست
+ * بکە بۆی» on Quick Register).
+ *
+ * open - the customer's box still being filled, by his own words: no
+ *        receipt printed or sent for it (no print, PDF or WhatsApp in its
+ *        history), not paid in full, still open (not sealed, cancelled or
+ *        handed over).
+ * last - how the customer's newest box went out, so a new one goes the same
+ *        way without a touch: the way, the driver or company, the delivery
+ *        cost and price, and where to.
+ */
+export async function boxChoiceForCustomer(customerId: number) {
+  const db = await need();
+  const boxes = await db
+    .select({
+      id: deliveryBoxes.id,
+      boxCode: deliveryBoxes.boxCode,
+      status: deliveryBoxes.status,
+      totalPackages: deliveryBoxes.totalPackages,
+      deliveryMethod: deliveryBoxes.deliveryMethod,
+      destinationCity: deliveryBoxes.destinationCity,
+      destinationAddress: deliveryBoxes.destinationAddress,
+      recipientName: deliveryBoxes.recipientName,
+      recipientPhone: deliveryBoxes.recipientPhone,
+      deliveryCostUsd: deliveryBoxes.deliveryCostUsd,
+      deliveryChargeUsd: deliveryBoxes.deliveryChargeUsd,
+      handoverMode: deliveryBoxes.handoverMode,
+      carrierId: deliveryBoxes.carrierId,
+      carrierName: deliveryBoxes.carrierName,
+      createdAt: deliveryBoxes.createdAt,
+    })
+    .from(deliveryBoxes)
+    .where(and(eq(deliveryBoxes.customerId, customerId), sql`${deliveryBoxes.status} <> 'cancelled'`))
+    .orderBy(desc(deliveryBoxes.id))
+    .limit(50);
+  if (boxes.length === 0) return { open: null, last: null };
+
+  const ids = boxes.map((b) => Number(b.id));
+  const [paidInFull, sent] = await Promise.all([
+    getBoxesPaidInFull(ids),
+    db.selectDistinct({ boxId: boxReceiptEvents.boxId }).from(boxReceiptEvents).where(inArray(boxReceiptEvents.boxId, ids)),
+  ]);
+  const paid = new Set(Array.from(paidInFull as Iterable<number>).map(Number));
+  const papered = new Set(sent.map((s) => Number(s.boxId)));
+  const open = boxes.find((b) =>
+    // "open": a sealed box takes no more parcels (deliveryBox.addItem).
+    b.status === "open" && !paid.has(Number(b.id)) && !papered.has(Number(b.id)),
+  ) ?? null;
+  const last = boxes[0];
+  return {
+    open: open && {
+      id: Number(open.id),
+      boxCode: open.boxCode,
+      totalPackages: Number(open.totalPackages ?? 0),
+      handoverMode: open.handoverMode ?? null,
+      carrierName: open.carrierName ?? null,
+    },
+    last: {
+      deliveryMethod: last.deliveryMethod,
+      destinationCity: last.destinationCity ?? null,
+      destinationAddress: last.destinationAddress ?? null,
+      recipientPhone: last.recipientPhone ?? null,
+      deliveryCostUsd: String(last.deliveryCostUsd ?? "0"),
+      deliveryChargeUsd: String(last.deliveryChargeUsd ?? "0"),
+      handoverMode: (last.handoverMode ?? null) as HandoverMode | null,
+      carrierId: last.carrierId == null ? null : Number(last.carrierId),
+      carrierName: last.carrierName ?? null,
+    },
+  };
+}
