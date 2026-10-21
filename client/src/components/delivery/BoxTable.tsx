@@ -207,16 +207,17 @@ export function BoxTable({
       onBoxSelect?.(box.id);
       return;
     }
-    // Not while a parcel of the customer is unexplained (owner, 2026-10-20):
-    // the box itself shows which, and what to do (BoxMissingParcels).
+    // A parcel of the same batch not in a box: the box itself asks
+    // «ئاگاداری...؟» (owner, 2026-10-20/21), so the paper is printed there.
     if (!reached) {
-      const missing = await trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id }).catch(() => []);
-      if (missing.length > 0) {
-        toast.error(pickLang(language, {
-          ku: `${missing.length} پاکێجی ئەم کڕیارە سکان نەکراوە - لە بۆکسەکەدا ڕوونی بکەرەوە، پاشان چاپ بکە`,
-          en: `${missing.length} parcel(s) of this customer not scanned - explain them in the box, then print`,
-          ar: `${missing.length} طرد لهذا العميل غير ممسوح - وضّحها في الصندوق ثم اطبع`,
-          zh: `该客户有 ${missing.length} 个包裹未扫描 - 请在箱子里说明后再打印`,
+      const state = await trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id }).catch(() => null);
+      const left = state?.missing.length ?? 0;
+      if (left > 0) {
+        toast.warning(pickLang(language, {
+          ku: `${left} پاکێجی هەمان باچ لە بۆکسدا نییە - بۆکسەکە کرایەوە، لەوێ چاپی بکە`,
+          en: `${left} parcel(s) of the same batch not in a box - the box is open, print from there`,
+          ar: `${left} طرد من نفس الدفعة ليس في صندوق - فُتح الصندوق، اطبع من هناك`,
+          zh: `同批次有 ${left} 个包裹不在箱中 - 已打开箱子，请在那里打印`,
         }), { duration: 10_000 });
         onBoxSelect?.(box.id);
         return;

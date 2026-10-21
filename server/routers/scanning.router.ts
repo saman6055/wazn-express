@@ -1044,34 +1044,13 @@ export const deliveryBoxRouter = router({
     }),
 
   /**
-   * The customer's parcels this box is still waiting for (owner, 2026-10-20:
-   * a parcel forgotten at the scanner went home unbilled). The box screen
-   * counts them down, and the receipt is not printed or sent while any is
-   * unexplained (server/db/boxMissing.db.ts).
+   * The customer's parcels in this box's batch: how many, how many scanned
+   * into a box, and the rest by name (server/db/boxMissing.db.ts). The box
+   * screen shows «3/10»; a receipt asks «ئاگاداری...؟» while any is out.
    */
   missingParcels: staffProcedure
     .input(z.object({ boxId: z.number() }))
-    .query(async ({ input }) => db.getBoxMissingParcels(input.boxId)),
-
-  /** «نەگەیشتووە»: only the parcel's own status goes back to in_transit; no money moves. */
-  markMissingNotArrived: staffProcedure
-    .input(z.object({ boxId: z.number(), packageId: z.number() }))
-    .mutation(async ({ input, ctx }) => {
-      const ok = await db.markMissingParcelNotArrived(input.boxId, input.packageId);
-      if (!ok) {
-        throw new TRPCError({
-          code: "BAD_REQUEST",
-          message: withFix("ئەم پاکێجە لە لیستی «ماوە»ی ئەم بۆکسەدا نییە.", [
-            "لاپەڕەکە نوێ بکەرەوە - لەوانەیە پێشتر سکان کرابێت یان ڕوون کرابێتەوە",
-          ]),
-        });
-      }
-      await db.createAuditLog({
-        userId: ctx.user.id, userRole: ctx.user.role, action: "box_parcel_not_arrived",
-        entityType: "package", entityId: input.packageId, newValues: { boxId: input.boxId, status: "in_transit" },
-      });
-      return { ok: true };
-    }),
+    .query(async ({ input }) => db.getBoxScanState(input.boxId)),
 
   // Get open boxes (for current user or all)
   getOpenBoxes: staffProcedure

@@ -69,7 +69,7 @@ import {
 } from "lucide-react";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
-import { BoxMissingParcels, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
+import { BoxMissingParcels, MissingList, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
@@ -224,6 +224,12 @@ interface BoxDetailPanelProps {
   customers: Customer[];
 }
 
+/** A box's items, the last scanned first; the list's order only, never the receipt's. */
+function newestFirst<T extends { id: number | string; scannedAt?: string | Date | null }>(items: T[]): T[] {
+  const at = (x: T) => (x.scannedAt ? new Date(x.scannedAt).getTime() : 0);
+  return [...items].sort((a, b) => at(b) - at(a) || Number(b.id) - Number(a.id));
+}
+
 export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProps) {
   const systemAlert = useSystemAlert();
   /**
@@ -281,7 +287,12 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // The parcels this box still waits for (BoxMissingParcels): each scan
   // starts its minute again, and print / send wait while any is unexplained.
   const [scanTick, setScanTick] = useState(0);
+  // The row just scanned, lit for a moment at the top of the list.
+  const [flashItemId, setFlashItemId] = useState<number | null>(null);
   const [missingGate, setMissingGate] = useState(false);
+  // «بەڵێ، ئاگادارم» lets the one print or send that asked go through.
+  const missingAckRef = useRef(false);
+  const afterMissingAckRef = useRef<(() => void) | null>(null);
   const { data: missingNow } = trpc.deliveryBox.missingParcels.useQuery({ boxId }, { refetchInterval: 15000 });
   // Latest input value kept in a ref so submit reads the COMPLETE code even
   // when a scanner's trailing Enter fires before React re-renders (avoids the
@@ -310,6 +321,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       soundManager.playBeep();
       setScanInput("");
       setScanTick((n) => n + 1);
+      if (data?.item?.id) {
+        setFlashItemId(Number(data.item.id));
+        setTimeout(() => setFlashItemId(null), 2500);
+      }
       refetchBox();
       scanInputRef.current?.focus();
     },
@@ -840,13 +855,15 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       document.querySelector('[data-testid="box-handover"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
       return;
     }
-    // Not while a parcel of this customer is unexplained (owner, 2026-10-20):
-    // scanned, or said not to have arrived - then the paper.
-    if (!reached && (missingNow?.length ?? 0) > 0) {
+    // A parcel of the same batch not in a box: «ئاگاداری...؟» first (owner,
+    // 2026-10-20/21). Yes lets this one paper through; nothing is stored.
+    if (!reached && !missingAckRef.current && (missingNow?.missing.length ?? 0) > 0) {
       soundManager.playWarning();
+      afterMissingAckRef.current = () => askBeforePrinting(lang, output, action);
       setMissingGate(true);
       return;
     }
+    missingAckRef.current = false;
     // Ready before the print button is pressed, so the window opens at once.
     void loadLocale(lang);
     // Not yet known what is owed: wait for it rather than guess "nothing".
@@ -1061,9 +1078,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         )}
         <BoxMissingParcels
           boxId={box.id}
-          inBoxCount={items.length}
           canScan={isOpen && !hasLiveReceipt}
-          remind
           language={language}
           scanTick={scanTick}
           onScanNow={() => scanInputRef.current?.focus()}
@@ -1071,16 +1086,36 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         <Dialog open={missingGate} onOpenChange={setMissingGate}>
           <DialogContent className="max-w-lg" data-testid="box-missing-gate">
             <DialogHeader>
-              <DialogTitle>{pickLang(language, MISSING_WORDS.gateTitle)}</DialogTitle>
+              <DialogTitle className="leading-snug">{pickLang(language, MISSING_WORDS.question)}</DialogTitle>
             </DialogHeader>
-            <BoxMissingParcels
-              boxId={box.id}
-              inBoxCount={items.length}
-              canScan={isOpen && !hasLiveReceipt}
-              language={language}
-              scanTick={scanTick}
-              onScanNow={() => { setMissingGate(false); setTimeout(() => scanInputRef.current?.focus(), 50); }}
-            />
+            <MissingList missing={missingNow?.missing ?? []} language={language} />
+            <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+              <Button
+                type="button"
+                variant="outline"
+                data-testid="box-missing-no"
+                onClick={() => {
+                  afterMissingAckRef.current = null;
+                  setMissingGate(false);
+                  setTimeout(() => scanInputRef.current?.focus(), 50);
+                }}
+              >
+                {pickLang(language, MISSING_WORDS.no)}
+              </Button>
+              <Button
+                type="button"
+                data-testid="box-missing-yes"
+                onClick={() => {
+                  missingAckRef.current = true;
+                  setMissingGate(false);
+                  const go = afterMissingAckRef.current;
+                  afterMissingAckRef.current = null;
+                  go?.();
+                }}
+              >
+                {pickLang(language, MISSING_WORDS.yes)}
+              </Button>
+            </div>
           </DialogContent>
         </Dialog>
         {/* Scan Input (only when box is open, and never once it is paid) */}
@@ -1170,9 +1205,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {items.map((item: any, idx: number) => (
-                  <TableRow key={item.id}>
-                    <TableCell className="text-muted-foreground text-xs">{idx + 1}</TableCell>
+                {/* The newest scan first (owner, 2026-10-21): with a hundred
+                    parcels the last one was below the fold. The number is
+                    still the order it was scanned in. */}
+                {newestFirst(items).map((item: any, idx: number, list: any[]) => (
+                  <TableRow
+                    key={item.id}
+                    data-testid="box-item-row"
+                    className={cn("transition-colors duration-700", flashItemId === Number(item.id) && "bg-emerald-100 dark:bg-emerald-900/40")}
+                  >
+                    <TableCell className="text-muted-foreground text-xs">{list.length - idx}</TableCell>
                     {/* Product photo (from the linked order / package). Click to
                         open full size in a new tab; placeholder when absent. */}
                     <TableCell>

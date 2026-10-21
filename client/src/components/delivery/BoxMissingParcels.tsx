@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { CheckCircle2, PackageX, ScanBarcode, Truck } from "lucide-react";
+import { CheckCircle2, PackageSearch, ScanBarcode } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { CopyButton } from "@/components/CopyButton";
@@ -9,33 +9,42 @@ import { soundManager } from "@/lib/soundManager";
 import { cn } from "@/lib/utils";
 
 /**
- * What this box is still waiting for.
+ * How much of the customer's batch is in a box.
  *
  * The owner, 2026-10-20: a parcel forgotten at the scanner went home with the
  * customer and nobody billed it (Zainab, 79135534330219, more than once).
- * So while a box is filled it counts down - «3 لە بۆکسدان · 2 ماوە» - and
- * names the trackings still out; a minute without a scan, with parcels left,
- * it says so again with a soft sound; and the receipt is not printed or sent
- * until each one is scanned or said not to have arrived (BoxDetailPanel,
- * BoxTable). The list is the server's (server/db/boxMissing.db.ts): every
- * parcel of the customer that reached the office in the box's batch and is
- * in no box at all, by parcel or by tracking.
+ * 2026-10-21: «لێرە بگۆتبایە 10/3» - so the box shows «3/10 سکان کرا» with
+ * the trackings still out, counts every scan, and after a minute without a
+ * scan with parcels left says so again with a soft sound. Before a receipt
+ * goes out the office is asked «ئاگاداری...؟» (MissingParcelsQuestion) -
+ * nothing is stored, nothing on a parcel changes. The numbers are the
+ * server's (server/db/boxMissing.db.ts): every parcel of the customer in the
+ * box's batch, scanned = in any box that was not cancelled.
  */
 
 export const MISSING_WORDS = {
-  allIn: { ku: "هەموو پاکێجەکان لە بۆکسدان", en: "Every parcel is in the box", ar: "كل الطرود في الصندوق", zh: "所有包裹都已装箱" },
   scanNow: { ku: "ئێستا سکانی دەکەم", en: "Scan it now", ar: "سأمسحه الآن", zh: "现在扫描" },
-  notArrived: { ku: "نەگەیشتووە", en: "Not arrived", ar: "لم يصل", zh: "未到达" },
-  gateTitle: { ku: "پاکێج ماوە - چاپ ڕاگیراوە", en: "Parcels left - printing waits", ar: "طرود متبقية - الطباعة متوقفة", zh: "还有包裹 - 暂停打印" },
+  question: {
+    ku: "ئاگاداری کە ئەم تراکانەی هەمان باچ لەناو بۆکس نین؟",
+    en: "Do you know these trackings of the same batch are not in a box?",
+    ar: "هل تعلم أن أرقام التتبع هذه من نفس الدفعة ليست في صندوق؟",
+    zh: "您知道同批次的这些运单不在箱子里吗？",
+  },
+  yes: { ku: "بەڵێ، ئاگادارم - بەردەوام بە", en: "Yes, I know - go on", ar: "نعم، أعلم - تابع", zh: "是的，我知道 - 继续" },
+  no: { ku: "نەخێر، دەگەڕێمەوە سکانی دەکەم", en: "No, I'll go back and scan", ar: "لا، سأعود وأمسح", zh: "不，我回去扫描" },
 };
 
-export function missingCountLine(language: string, inBox: number, left: number) {
+export function scannedLine(language: string, scanned: number, total: number) {
   return pickLang(language, {
-    ku: `${inBox} لە بۆکسدان ✓ · ${left} ماوە ✗`,
-    en: `${inBox} in the box ✓ · ${left} left ✗`,
-    ar: `${inBox} في الصندوق ✓ · ${left} متبقية ✗`,
-    zh: `已装 ${inBox} ✓ · 还剩 ${left} ✗`,
+    ku: `${scanned}/${total} سکان کرا`,
+    en: `${scanned}/${total} scanned`,
+    ar: `تم مسح ${scanned}/${total}`,
+    zh: `已扫描 ${scanned}/${total}`,
   });
+}
+
+function leftLine(language: string, left: number) {
+  return pickLang(language, { ku: `${left} ماوە`, en: `${left} left`, ar: `${left} متبقية`, zh: `还剩 ${left}` });
 }
 
 function stillLeftLine(language: string, left: number) {
@@ -47,46 +56,68 @@ function stillLeftLine(language: string, left: number) {
   });
 }
 
+/** The trackings still out, each with its copy. */
+export function MissingList({
+  missing,
+  language,
+  onScanNow,
+}: {
+  missing: Array<{ id: number; trackingNumber: string | null; packageCode: string }>;
+  language: string;
+  onScanNow?: () => void;
+}) {
+  return (
+    <ul className="max-h-56 divide-y divide-border/60 overflow-y-auto rounded-md border bg-background/80">
+      {missing.map((m) => {
+        const name = m.trackingNumber || m.packageCode;
+        return (
+          <li key={m.id} className="flex items-center gap-2 px-2.5 py-1.5" data-testid="box-missing-row">
+            <span className="h-2 w-2 shrink-0 rounded-full bg-red-500" aria-hidden="true" />
+            <span dir="ltr" className="min-w-0 truncate font-mono text-sm font-semibold">{name}</span>
+            <CopyButton value={name} />
+            {onScanNow && (
+              <Button type="button" size="sm" variant="ghost" className="ms-auto h-7 gap-1 px-2 text-xs" onClick={onScanNow}>
+                <ScanBarcode className="h-3.5 w-3.5" />
+                {pickLang(language, MISSING_WORDS.scanNow)}
+              </Button>
+            )}
+          </li>
+        );
+      })}
+    </ul>
+  );
+}
+
 export function BoxMissingParcels({
   boxId,
-  inBoxCount,
   canScan,
   language,
   scanTick,
-  remind,
   onScanNow,
   className,
 }: {
   boxId: number;
-  /** Parcels already in the box, for the count. */
-  inBoxCount: number;
-  /** The box takes parcels now (open, not paid). */
+  /** The box takes parcels now (open, not paid): the minute runs only then. */
   canScan: boolean;
   language: string;
-  /** Goes up on every scan into this box: the minute starts again. */
+  /** Goes up on every scan into this box: the count and the minute start again. */
   scanTick: number;
-  /** Speak up after a minute without a scan (the box screen, not the dialog). */
-  remind?: boolean;
   onScanNow?: () => void;
   className?: string;
 }) {
   const utils = trpc.useUtils();
-  const { data: missing } = trpc.deliveryBox.missingParcels.useQuery({ boxId }, { refetchInterval: 15000 });
-  const notArrived = trpc.deliveryBox.markMissingNotArrived.useMutation({
-    onSuccess: () => void utils.deliveryBox.missingParcels.invalidate({ boxId }),
-  });
+  const { data } = trpc.deliveryBox.missingParcels.useQuery({ boxId }, { refetchInterval: 15000 });
 
-  // A scan into the box changes what is missing.
   useEffect(() => {
     if (scanTick > 0) void utils.deliveryBox.missingParcels.invalidate({ boxId });
   }, [scanTick, boxId, utils]);
 
-  // A minute without a scan, parcels left: say it again, softly, each minute.
-  const left = missing?.length ?? 0;
+  // A minute without a scan, parcels left: said again, softly, each minute.
+  const left = data?.missing.length ?? 0;
   const leftRef = useRef(left);
   leftRef.current = left;
   useEffect(() => {
-    if (!remind || !canScan) return;
+    if (!canScan) return;
     const id = setInterval(() => {
       if (leftRef.current > 0) {
         soundManager.playWarning();
@@ -94,52 +125,48 @@ export function BoxMissingParcels({
       }
     }, 60_000);
     return () => clearInterval(id);
-  }, [remind, canScan, scanTick, language]);
+  }, [canScan, scanTick, language]);
 
-  if (!missing) return null;
-  if (left === 0) {
-    return inBoxCount > 0 ? (
-      <div className={cn("flex items-center gap-2 rounded-lg border border-emerald-500/40 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200", className)} data-testid="box-missing-none">
-        <CheckCircle2 className="h-4 w-4 shrink-0" />
-        {pickLang(language, MISSING_WORDS.allIn)} ({inBoxCount})
-      </div>
-    ) : null;
-  }
+  if (!data || data.total === 0) return null;
+  const done = left === 0;
+  const pct = Math.round((data.scanned / data.total) * 100);
 
   return (
-    <div className={cn("rounded-lg border-2 border-red-400/60 bg-red-50 p-3 dark:bg-red-950/30", className)} data-testid="box-missing">
-      <div className="mb-2 flex items-center gap-2 text-sm font-bold text-red-700 dark:text-red-300">
-        <PackageX className="h-4 w-4 shrink-0" />
-        <span>{missingCountLine(language, inBoxCount, left)}</span>
+    <div
+      className={cn(
+        "rounded-xl border p-3",
+        done ? "border-emerald-500/40 bg-emerald-50/70 dark:bg-emerald-950/20" : "border-amber-500/50 bg-amber-50/70 dark:bg-amber-950/20",
+        className,
+      )}
+      data-testid={done ? "box-missing-none" : "box-missing"}
+    >
+      <div className="flex items-center gap-3">
+        {done ? (
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-emerald-600 dark:text-emerald-400" />
+        ) : (
+          <PackageSearch className="h-5 w-5 shrink-0 text-amber-600 dark:text-amber-400" />
+        )}
+        <span className="text-lg font-bold tabular-nums" dir="ltr" data-testid="box-scan-count">
+          {data.scanned}/{data.total}
+        </span>
+        <span className="text-sm font-medium">{pickLang(language, { ku: "سکان کرا", en: "scanned", ar: "تم المسح", zh: "已扫描" })}</span>
+        {!done && (
+          <span className="ms-auto rounded-full bg-red-100 px-2 py-0.5 text-xs font-bold text-red-700 dark:bg-red-950/50 dark:text-red-300">
+            {leftLine(language, left)}
+          </span>
+        )}
       </div>
-      <ul className="space-y-1.5">
-        {missing.map((m) => (
-          <li key={m.id} className="flex flex-wrap items-center gap-2 rounded-md bg-background/70 px-2 py-1.5" data-testid="box-missing-row">
-            <span dir="ltr" className="font-mono text-sm font-semibold">✗ {m.trackingNumber || m.packageCode}</span>
-            <CopyButton value={m.trackingNumber || m.packageCode} />
-            <span className="ms-auto flex flex-wrap gap-1.5">
-              {canScan && onScanNow && (
-                <Button type="button" size="sm" variant="outline" className="h-7 gap-1 px-2 text-xs" onClick={onScanNow}>
-                  <ScanBarcode className="h-3.5 w-3.5" />
-                  {pickLang(language, MISSING_WORDS.scanNow)}
-                </Button>
-              )}
-              <Button
-                type="button"
-                size="sm"
-                variant="outline"
-                className="h-7 gap-1 px-2 text-xs"
-                disabled={notArrived.isPending}
-                onClick={() => notArrived.mutate({ boxId, packageId: m.id })}
-                data-testid="box-missing-not-arrived"
-              >
-                <Truck className="h-3.5 w-3.5" />
-                {pickLang(language, MISSING_WORDS.notArrived)}
-              </Button>
-            </span>
-          </li>
-        ))}
-      </ul>
+      <div className="mt-2 h-1.5 overflow-hidden rounded-full bg-muted" aria-hidden="true">
+        <div
+          className={cn("h-full rounded-full transition-all", done ? "bg-emerald-500" : "bg-amber-500")}
+          style={{ width: `${pct}%` }}
+        />
+      </div>
+      {!done && (
+        <div className="mt-2.5">
+          <MissingList missing={data.missing} language={language} onScanNow={canScan ? onScanNow : undefined} />
+        </div>
+      )}
     </div>
   );
 }

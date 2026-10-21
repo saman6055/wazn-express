@@ -5,42 +5,47 @@ import { describe, expect, it } from "vitest";
 const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
- * Owner, 2026-10-20: a parcel forgotten at the scanner went home unbilled
- * (Zainab, 79135534330219). The box counts what it still waits for, says so
- * after a minute without a scan, and no receipt is printed or sent while one
- * is unexplained.
+ * Owner, 2026-10-20/21: a parcel forgotten at the scanner went home unbilled
+ * (Zainab, 79135534330219). The box shows «3/10 سکان کرا» - every parcel of
+ * the customer in the batch - says so after a minute without a scan, shows
+ * the newest scan first, and asks «ئاگاداری...؟» before a receipt goes out.
+ * Nothing is stored and no parcel changes.
  */
-describe("a box knows the parcels it is still waiting for", () => {
+describe("a box knows how much of the customer's batch is in a box", () => {
   const panel = read("client/src/components/delivery/BoxDetailPanel.tsx");
   const table = read("client/src/components/delivery/BoxTable.tsx");
   const card = read("client/src/components/delivery/BoxMissingParcels.tsx");
+  const db = read("server/db/boxMissing.db.ts");
 
-  it("the box screen shows the count and the trackings, and the minute", () => {
+  it("counts every parcel of the batch, wherever it is, but a returned or cancelled one", () => {
+    const fn = db.slice(db.indexOf("export async function getBoxScanState"), db.indexOf("export async function getBoxMissingParcels"));
+    expect(fn).toContain("and(eq(packages.batchId, box.batchId), notInArray(packages.status, [...ENDED]))");
+    expect(db).toContain('const ENDED = ["returned", "cancelled"] as const;');
+    expect(fn).toContain("return { total: candidates.length, scanned: candidates.length - missing.length, missing };");
+  });
+
+  it("the box screen shows scanned/total, the trackings, and the minute", () => {
     expect(panel).toContain("<BoxMissingParcels");
-    expect(panel).toContain("setScanTick((n) => n + 1);");
+    expect(card).toContain("{data.scanned}/{data.total}");
     expect(card).toContain("}, 60_000);");
     expect(card).toContain("soundManager.playWarning();");
   });
 
-  it("print, send and PDF wait in the one step before the paper", () => {
+  it("print, send and PDF ask «ئاگاداری...؟» in the one step before the paper", () => {
     const gate = panel.slice(panel.indexOf("const askBeforePrinting = ("), panel.indexOf("// Ready before the print button is pressed"));
-    expect(gate).toContain("if (!reached && (missingNow?.length ?? 0) > 0) {");
-    expect(panel).toContain("const handleSendOnWhatsApp = (format: ReceiptShareFormat");
-    expect(panel).toContain("askBeforePrinting(lang, downloadReceiptNow)");
-  });
-
-  it("the box list's own print asks too", () => {
+    expect(gate).toContain("if (!reached && !missingAckRef.current && (missingNow?.missing.length ?? 0) > 0) {");
+    expect(panel).toContain('data-testid="box-missing-yes"');
+    expect(panel).toContain('data-testid="box-missing-no"');
     expect(table).toContain("trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id })");
   });
 
-  it("«نەگەیشتووە» moves only the parcel's status, never its order or money", () => {
-    const db = read("server/db/boxMissing.db.ts");
-    const start = db.indexOf("export async function markMissingParcelNotArrived");
-    const fn = db.slice(start, db.indexOf("A batch's arrival puts its parcels", start));
-    expect(fn.length).toBeGreaterThan(100);
-    expect(fn).toContain('.set({ status: "in_transit" })');
-    expect(fn).not.toContain("updatePackage(");
-    expect(fn).not.toContain("ledger");
+  it("nothing is stored: no «نەگەیشتووە», no parcel moved", () => {
+    expect(db).not.toContain("markMissingParcelNotArrived");
+    expect(read("server/routers/scanning.router.ts")).not.toContain("markMissingNotArrived");
+  });
+
+  it("the newest scan is first in the list", () => {
+    expect(panel).toContain("newestFirst(items).map(");
   });
 });
 
