@@ -165,11 +165,26 @@ export interface ExplainedCharge {
   tracking: string | null;
 }
 
+/**
+ * From when money taken without a receipt can be an advance (owner,
+ * 2026-10-21). Before the box till ran, the office took cash for boxes and
+ * wrote "Payment received" with no box named - that money paid old boxes,
+ * and the till must never hand it out again as credit on a new one (AZ217:
+ * $518.21 of 18/08 offered as $124.27 "advance"; AZ225 the same). The same
+ * date the books are kept by from (accrual, owner 2026-09-29).
+ */
+export const ADVANCE_SINCE = "2026-09-15T00:00:00.000Z";
+
 export interface ExplainedDebt {
   charges: ExplainedCharge[];
   owedUsd: Record<"road" | "arrived" | "openBox" | "parcel", number>;
   /** Money taken without a box receipt since the last zeroing: it pays the open goods first. */
   paidOnAccountUsd: number;
+  /**
+   * Of that, what may come off a box as an advance: taken since
+   * ADVANCE_SINCE and not yet used by a receipt.
+   */
+  advanceUsd: number;
   stillOwedUsd: number;
 }
 
@@ -200,12 +215,18 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
   const charges: ExplainedCharge[] = [];
   const owed = { road: 0, arrived: 0, openBox: 0, parcel: 0 };
   let paidOnAccount = 0;
+  let advance = 0;
   for (const r of rows) {
     if (r.transactionType === "CREDIT_PAYMENT") {
       // Money taken without a box receipt pays the oldest open goods.
       // What was given back or undone of it is not paid.
       const back = Math.round((facts.reversedPaymentUsd?.get(r.id) ?? 0) * 100);
-      if (r.id > zeroedAt && !/^\s*BOX-/.test(r.description)) paidOnAccount += Math.max(0, Math.round(r.amountUsd * 100) - back);
+      if (r.id > zeroedAt && !/^\s*BOX-/.test(r.description)) {
+        const cents = Math.max(0, Math.round(r.amountUsd * 100) - back);
+        paidOnAccount += cents;
+        // An advance only from the till's own time: older cash paid old boxes.
+        if (r.createdAt && r.createdAt >= ADVANCE_SINCE) advance += cents;
+      }
       continue;
     }
     if (!r.transactionType.startsWith("DEBIT_")) continue;
@@ -257,10 +278,15 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     .filter((c) => !zeroedTime || !c.at || c.at > zeroedTime)
     .reduce((s, c) => s + Math.max(0, Math.round(c.usd * 100)), 0);
   paidOnAccount = Math.max(0, paidOnAccount - used);
+  const usedSince = (facts.accountCovered ?? [])
+    .filter((c) => c.at && c.at >= ADVANCE_SINCE && (!zeroedTime || c.at > zeroedTime))
+    .reduce((s, c) => s + Math.max(0, Math.round(c.usd * 100)), 0);
+  advance = Math.max(0, Math.min(paidOnAccount, advance - usedSince));
   return {
     charges,
     owedUsd: { road: owed.road / 100, arrived: owed.arrived / 100, openBox: owed.openBox / 100, parcel: owed.parcel / 100 },
     paidOnAccountUsd: paidOnAccount / 100,
+    advanceUsd: advance / 100,
     stillOwedUsd: Math.max(0, open - paidOnAccount) / 100,
   };
 }

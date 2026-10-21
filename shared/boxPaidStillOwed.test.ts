@@ -322,9 +322,24 @@ describe("a payment undone is not paid", () => {
   });
 });
 
+describe("old cash never comes back as an advance (AZ217, 2026-10-21)", () => {
+  it("a payment before the till's time pays old boxes, never a new one", async () => {
+    const { explainDebt, ADVANCE_SINCE } = await import("./boxPaidStillOwed");
+    const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+    const rows = [
+      { id: 1, transactionNumber: "T1", transactionType: "CREDIT_PAYMENT", amountUsd: 518.21, balanceAfterUsd: -518.21, description: "Payment received", referenceId: null, createdAt: "2026-08-18T10:00:00.000Z" },
+      { id: 2, transactionNumber: "T2", transactionType: "CREDIT_PAYMENT", amountUsd: 100, balanceAfterUsd: -618.21, description: "پێشەکی", referenceId: null, createdAt: "2026-10-18T10:00:00.000Z" },
+    ];
+    const e = explainDebt(rows as never, base as never);
+    expect(ADVANCE_SINCE).toBe("2026-09-15T00:00:00.000Z");
+    expect(e.paidOnAccountUsd).toBe(618.21);
+    expect(e.advanceUsd).toBe(100);
+  });
+});
+
 describe("an advance is money that came in, never a gap in the books (AZ225, 2026-10-20)", () => {
   it("the open goods the till reads are capped at the balance plus money paid without a receipt", () => {
     const src = root("server/db/boxPaidStillOwed.db.ts");
-    expect(src).toContain("return Math.min(open, cents(got.balanceUsd + explained.paidOnAccountUsd));");
+    expect(src).toContain("return Math.min(open, cents(got.balanceUsd + explained.advanceUsd));");
   });
 });

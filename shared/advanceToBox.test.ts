@@ -64,6 +64,6 @@ describe("one rule in every place money is asked for", () => {
     expect(fn).toContain("const explained = explainDebt(got.rows, got.facts);");
     expect(fn).toContain("const owed = explained.owedUsd;");
     // And never more advance than money that came in (AZ225, 2026-10-20).
-    expect(fn).toContain("return Math.min(open, cents(got.balanceUsd + explained.paidOnAccountUsd));");
+    expect(fn).toContain("return Math.min(open, cents(got.balanceUsd + explained.advanceUsd));");
   });
 });

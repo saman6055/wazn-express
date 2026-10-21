@@ -350,7 +350,7 @@ export async function openChargesUsd(customerId: number): Promise<number> {
   // money that came in: never more than what was paid without a receipt.
   // A gap left in the books by old corrections is not money (AZ225,
   // 2026-10-20: $29.70 of nothing offered as an advance against a new box).
-  return Math.min(open, cents(got.balanceUsd + explained.paidOnAccountUsd));
+  return Math.min(open, cents(got.balanceUsd + explained.advanceUsd));
 }
 
 /** What one customer really still owes (shared/boxPaidStillOwed → stillOwed). */
