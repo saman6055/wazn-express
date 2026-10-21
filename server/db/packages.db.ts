@@ -360,11 +360,33 @@ export async function getAllPackages(options: {
      * Searching all parcels went from instant to a minute or never (owner,
      * 2026-09-21). Two small questions up front give the same answer.
      */
-    const matchingOrders = await db.select({ id: fullPackageOrders.id })
+    // By the shop's number and by the system's own (owner, 2026-10-21:
+    // «CM-MTVGC8UN» found nothing - the table shows that number, the search
+    // only knew the shop's).
+    const matchingOrders = await db.select({ id: fullPackageOrders.id, trackingNumber: fullPackageOrders.trackingNumber })
       .from(fullPackageOrders)
-      .where(and(like(fullPackageOrders.orderNumber, searchTerm), isNull(fullPackageOrders.deletedAt)))
+      .where(and(
+        or(
+          like(fullPackageOrders.orderNumber, searchTerm),
+          like(fullPackageOrders.orderCode, searchTerm),
+          like(fullPackageOrders.supplierOrderNumber, searchTerm),
+        ),
+        isNull(fullPackageOrders.deletedAt),
+      ))
       .limit(SEARCH_MATCH_LIMIT);
     const matchingOrderIds = matchingOrders.map((o) => o.id);
+    // And the parcels that reach such an order only through its tracking.
+    const orderTrackings = matchingOrderIds.length
+      ? Array.from(new Set([
+          ...matchingOrders.map((o) => o.trackingNumber).filter((t): t is string => Boolean(t)),
+          ...(await db.select({ t: fullPackageOrderTrackings.trackingNumber })
+            .from(fullPackageOrderTrackings)
+            .where(inArray(fullPackageOrderTrackings.fullPackageOrderId, matchingOrderIds))
+            .limit(SEARCH_MATCH_LIMIT))
+            .map((r) => r.t)
+            .filter((t): t is string => Boolean(t)),
+        ]))
+      : [];
     const linkedPackageIds = matchingOrderIds.length
       ? (await db.select({ packageId: packageOrderLinks.packageId })
           .from(packageOrderLinks)
@@ -384,6 +406,9 @@ export async function getAllPackages(options: {
     }
     if (linkedPackageIds.length > 0) {
       orConditions.push(inArray(packages.id, linkedPackageIds));
+    }
+    if (orderTrackings.length > 0) {
+      orConditions.push(inArray(packages.trackingNumber, orderTrackings));
     }
     if (matchingCustomerIds.length > 0) {
       orConditions.push(inArray(packages.customerId, matchingCustomerIds));

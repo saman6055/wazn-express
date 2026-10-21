@@ -26,15 +26,16 @@ describe("the parcel search", () => {
   it("asks about order numbers once, not once per parcel", () => {
     expect(search.length).toBeGreaterThan(500);
     expect(search, "an EXISTS here runs for every row of packages").not.toContain("EXISTS (");
-    expect(search).toContain("const matchingOrders = await db.select({ id: fullPackageOrders.id })");
+    expect(search).toContain("const matchingOrders = await db.select({ id: fullPackageOrders.id, trackingNumber: fullPackageOrders.trackingNumber })");
     expect(search).toContain("inArray(packages.fullPackageOrderId, matchingOrderIds)");
     expect(search).toContain("inArray(packages.id, linkedPackageIds)");
   });
 
   it("never builds an unbounded list out of a one-character search", () => {
     expect(source).toContain("const SEARCH_MATCH_LIMIT = 500;");
-    // Three now: the customer lookup was the one still uncapped (2026-09-25).
-    expect((search.match(/\.limit\(SEARCH_MATCH_LIMIT\)/g) ?? []).length).toBe(3);
+    // Three then: the customer lookup was the one still uncapped (2026-09-25);
+    // four since the order's trackings are asked too (2026-10-21).
+    expect((search.match(/\.limit\(SEARCH_MATCH_LIMIT\)/g) ?? []).length).toBe(4);
   });
 
   it("counts the matches and reads the page at the same time", () => {

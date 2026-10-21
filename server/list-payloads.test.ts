@@ -147,7 +147,8 @@ describe("the parcels list", () => {
 
   it("caps every lookup its search fans out to", () => {
     const search = slice(db, "if (search) {", "if (status && status !== 'all')", "the parcel search");
-    expect((search.match(/\.limit\(SEARCH_MATCH_LIMIT\)/g) ?? []).length).toBe(3);
+    // Four since 2026-10-21: the order's trackings, asked once too.
+    expect((search.match(/\.limit\(SEARCH_MATCH_LIMIT\)/g) ?? []).length).toBe(4);
   });
 });
 
