@@ -45,7 +45,6 @@ import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/deliv
 import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines } from "@/lib/deliveryBoxPrintUtils";
 import { buildBoxReceiptHtml } from "@/lib/deliveryBoxPrintUtils";
 import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
-import { handoverProblem } from "@shared/boxHandover";
 import { toast } from "sonner";
 import { boxUnpaidAlert } from "@/lib/boxAlert";
 import { pickLang } from "@/lib/lang";
@@ -198,15 +197,9 @@ export function BoxTable({
   // Every receipt that leaves the building is kept, with its paper (owner, 2026-10-19).
   const logReceipt = trpc.deliveryBox.logReceiptEvent.useMutation();
   const handlePrintReceipt = async (box: DeliveryBox, lang: Language) => {
-    // Nothing is printed until it is said how the box reaches the customer
-    // (owner, 2026-10-19; shared/boxHandover) - the box itself says it.
+    // How the box reaches the customer no longer holds the paper up (owner,
+    // 2026-10-21): it is chosen when the box is made.
     const reached = box.status === "delivered" || box.settlementCleared === true;
-    const waiting = reached ? null : handoverProblem(box as never);
-    if (waiting) {
-      toast.error(pickLang(language, waiting), { duration: 10_000 });
-      onBoxSelect?.(box.id);
-      return;
-    }
     // A parcel of the same batch not in a box: the box itself asks
     // «ئاگاداری...؟» (owner, 2026-10-20/21), so the paper is printed there.
     if (!reached) {

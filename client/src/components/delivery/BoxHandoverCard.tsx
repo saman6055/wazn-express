@@ -5,8 +5,9 @@
  * The customer collects it, our driver takes it, or a delivery company does.
  * Drivers and companies are added and removed right here; a removed one keeps
  * its name on the boxes it took. The company's tracking numbers are optional,
- * one per carton - they never hold the paper up. Nothing is printed or sent
- * until a way is chosen (handoverProblem).
+ * one per carton - they never hold the paper up. Since 2026-10-21 nothing
+ * here holds the paper up either: the way is chosen when the box is made
+ * (CreateBoxDialog), and this card keeps it on the box - who took it.
  */
 import { useEffect, useState } from "react";
 import { Plus, X, Truck, Warehouse, CircleUser, Loader2, Pencil } from "lucide-react";
@@ -122,7 +123,7 @@ export function BoxHandoverCard({ box, paid, onChanged }: { box: HandoverBox; pa
   }
 
   return (
-    <div className={cn("space-y-3 rounded-lg border p-3", problem ? "border-red-500/50" : "border-emerald-500/40")} data-testid="box-handover">
+    <div className={cn("space-y-3 rounded-lg border p-3", problem ? "border-amber-500/50" : "border-emerald-500/40")} data-testid="box-handover">
       <div className="flex flex-wrap items-center justify-between gap-2">
         <p className="flex items-center gap-1.5 text-sm font-medium">
           <Truck className="h-4 w-4" />
@@ -278,8 +279,8 @@ export function BoxHandoverCard({ box, paid, onChanged }: { box: HandoverBox; pa
       )}
 
       {problem ? (
-        <p className="text-sm text-red-700 dark:text-red-300" data-testid="handover-problem">
-          {L({ ku: "چاپ و ناردن ڕاگیراون: ", en: "Printing and sending wait: ", ar: "الطباعة والإرسال متوقفان: ", zh: "打印与发送暂停：" })}{L(problem)}
+        <p className="text-sm text-amber-700 dark:text-amber-300" data-testid="handover-problem">
+          {L(problem)}
         </p>
       ) : (
         <p className="text-sm text-emerald-700 dark:text-emerald-300">

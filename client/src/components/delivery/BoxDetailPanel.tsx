@@ -173,7 +173,6 @@ import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceipt
 import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
-import { handoverProblem } from "@shared/boxHandover";
 import { BoxHandoverCard, type HandoverBox } from "@/components/delivery/BoxHandoverCard";
 import { CustomerBoxesPanel } from "@/components/delivery/CustomerBoxesPanel";
 import { pledgeLabel } from "@shared/pledgedDiscount";
@@ -840,21 +839,10 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     output: (lang: Language, dinar: ReceiptDinarInput | null, given: ReceiptDiscount | null) => Promise<void>,
     action: "print" | "send" = "print",
   ) => {
-    // Nothing is printed or sent until it is said how the box reaches the
-    // customer (owner, 2026-10-19; shared/boxHandover).
-    // A box already handed over or paid in full has reached the customer:
-    // a copy of its receipt is never held up.
+    // How the box reaches the customer no longer holds the paper up (owner,
+    // 2026-10-21): it is chosen when the box is made. A box already handed
+    // over or paid in full has reached the customer: nothing is asked.
     const reached = box.status === "delivered" || (hasLiveReceipt && settlementDueUsd <= 0);
-    const waiting = reached ? null : handoverProblem(box);
-    if (waiting) {
-      systemAlert({
-        kind: "error",
-        title: pickLang(language, { ku: "چاپ ڕاگیراوە", en: "Printing waits", ar: "الطباعة متوقفة", zh: "打印暂停" }),
-        message: pickLang(language, waiting),
-      });
-      document.querySelector('[data-testid="box-handover"]')?.scrollIntoView({ behavior: "smooth", block: "center" });
-      return;
-    }
     // A parcel of the same batch not in a box: «ئاگاداری...؟» first (owner,
     // 2026-10-20/21). Yes lets this one paper through; nothing is stored.
     if (!reached && !missingAckRef.current && (missingNow?.missing.length ?? 0) > 0) {

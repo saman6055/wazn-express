@@ -40,3 +40,17 @@ describe("the driver or company is chosen while the box is made", () => {
     expect(router).toContain("await db.setBoxHandover({ boxId: box.id, mode: handover.mode, carrierId: handover.carrierId ?? null, trackings: [] }, ctx.user.id);");
   });
 });
+
+/** Owner, 2026-10-21: «قفلی سەر ناردن و پرێنت لابرە» - the way is chosen when the box is made. */
+describe("how the box reaches the customer no longer holds the paper up", () => {
+  it("neither the box nor the box list checks it before printing or sending", () => {
+    expect(read("client/src/components/delivery/BoxDetailPanel.tsx")).not.toContain("handoverProblem(");
+    expect(read("client/src/components/delivery/BoxTable.tsx")).not.toContain("handoverProblem(");
+  });
+
+  it("the card still keeps who took it, and says nothing is held up", () => {
+    const card = read("client/src/components/delivery/BoxHandoverCard.tsx");
+    expect(card).toContain('data-testid="handover-line"');
+    expect(card).not.toContain("چاپ و ناردن ڕاگیراون");
+  });
+});
