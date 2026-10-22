@@ -318,7 +318,29 @@ describe("a payment undone is not paid", () => {
   it("the finder reads what was given back from the payments themselves", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
-    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, pendingPackageIds, pendingOrderIds, pendingTrackings };");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, pendingPackageIds, pendingOrderIds, pendingTrackings };");
+  });
+});
+
+describe("old cash that is a later receipt's own money pays that box (AZ217, 2026-10-23)", () => {
+  const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+  const rows = [
+    { id: 1, transactionNumber: "T1", transactionType: "CREDIT_PAYMENT", amountUsd: 518.21, balanceAfterUsd: -518.21, description: "Payment received", referenceId: null, createdAt: "2026-08-18T10:00:00.000Z" },
+  ];
+  it("the same amount, a box made before it, receipted later: not free money", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const e = explainDebt(rows as never, { ...base, receipts: [{ usd: 518.21, at: "2026-09-10T19:00:00.000Z", boxAt: "2026-08-16T09:00:00.000Z" }] } as never);
+    expect(e.paidOnAccountUsd).toBe(0);
+  });
+  it("a different amount, or a box made after the cash: still pays open goods", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    expect(explainDebt(rows as never, { ...base, receipts: [{ usd: 500, at: "2026-09-10T19:00:00.000Z", boxAt: "2026-08-16T09:00:00.000Z" }] } as never).paidOnAccountUsd).toBe(518.21);
+    expect(explainDebt(rows as never, { ...base, receipts: [{ usd: 518.21, at: "2026-09-10T19:00:00.000Z", boxAt: "2026-08-20T09:00:00.000Z" }] } as never).paidOnAccountUsd).toBe(518.21);
+  });
+  it("one receipt answers for one payment only", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const two = [...rows, { ...rows[0], id: 2, transactionNumber: "T2", createdAt: "2026-08-19T10:00:00.000Z" }];
+    expect(explainDebt(two as never, { ...base, receipts: [{ usd: 518.21, at: "2026-09-10T19:00:00.000Z", boxAt: "2026-08-16T09:00:00.000Z" }] } as never).paidOnAccountUsd).toBe(518.21);
   });
 });
 

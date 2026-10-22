@@ -123,6 +123,14 @@ export interface SettledFacts {
    * cash - and the card still counted it as free money paying other goods.
    */
   accountCovered?: Array<{ at: string | null; usd: number }>;
+  /**
+   * Every standing box receipt: what it took, when, and when its box was made.
+   * Cash taken before the till's time with no box named, of the same amount
+   * as a later receipt of a box made before that cash, is that receipt's money
+   * written twice - it paid that box, never other goods (AZ217: $518.21 of
+   * 18/08 was BOX-20260816-001's, receipted again on 10/09).
+   */
+  receipts?: Array<{ usd: number; at: string | null; boxAt: string | null }>;
   /** Goods in a box with no receipt that has not been handed over yet. */
   pendingPackageIds?: Set<number>;
   pendingOrderIds?: Set<number>;
@@ -216,12 +224,24 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
   const owed = { road: 0, arrived: 0, openBox: 0, parcel: 0 };
   let paidOnAccount = 0;
   let advance = 0;
+  const receiptTaken = new Set<number>();
+  /** The old cash is a later receipt of an older box, written twice (facts.receipts). */
+  const isBoxReceiptMoney = (r: AccountRow, cents: number): boolean => {
+    if (!r.createdAt || r.createdAt >= ADVANCE_SINCE) return false;
+    const day = r.createdAt.slice(0, 10);
+    const i = (facts.receipts ?? []).findIndex((x, n) =>
+      !receiptTaken.has(n) && Math.round(x.usd * 100) === cents
+      && (!x.at || x.at >= r.createdAt!) && (!x.boxAt || x.boxAt.slice(0, 10) <= day));
+    if (i < 0) return false;
+    receiptTaken.add(i);
+    return true;
+  };
   for (const r of rows) {
     if (r.transactionType === "CREDIT_PAYMENT") {
       // Money taken without a box receipt pays the oldest open goods.
       // What was given back or undone of it is not paid.
       const back = Math.round((facts.reversedPaymentUsd?.get(r.id) ?? 0) * 100);
-      if (r.id > zeroedAt && !/^\s*BOX-/.test(r.description)) {
+      if (r.id > zeroedAt && !/^\s*BOX-/.test(r.description) && !isBoxReceiptMoney(r, Math.max(0, Math.round(r.amountUsd * 100) - back))) {
         const cents = Math.max(0, Math.round(r.amountUsd * 100) - back);
         paidOnAccount += cents;
         // An advance only from the till's own time: older cash paid old boxes.

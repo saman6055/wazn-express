@@ -315,8 +315,9 @@ async function gatherAccount(customerId: number) {
   // Account money each standing receipt used: what its lines were paid,
   // less the cash it took (shared/boxPaidStillOwed accountCovered).
   const standing = await db
-    .select({ id: boxSettlements.id, createdAt: boxSettlements.createdAt, paidUsd: boxSettlements.paidUsd })
+    .select({ id: boxSettlements.id, createdAt: boxSettlements.createdAt, paidUsd: boxSettlements.paidUsd, boxAt: deliveryBoxes.createdAt })
     .from(boxSettlements)
+    .leftJoin(deliveryBoxes, eq(deliveryBoxes.id, boxSettlements.boxId))
     .where(and(eq(boxSettlements.customerId, customerId), eq(boxSettlements.status, "confirmed")));
   const linesPaid = standing.length
     ? await db
@@ -329,8 +330,13 @@ async function gatherAccount(customerId: number) {
   const accountCovered = standing
     .map((s) => ({ at: s.createdAt ? new Date(s.createdAt).toISOString() : null, usd: Math.max(0, cents((paidOnLines.get(Number(s.id)) ?? 0) - num(s.paidUsd))) }))
     .filter((r) => r.usd > 0.004);
+  const receipts = standing.map((s) => ({
+    usd: num(s.paidUsd),
+    at: s.createdAt ? new Date(s.createdAt).toISOString() : null,
+    boxAt: s.boxAt ? new Date(s.boxAt).toISOString() : null,
+  }));
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, pendingPackageIds, pendingOrderIds, pendingTrackings };
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, pendingPackageIds, pendingOrderIds, pendingTrackings };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 
