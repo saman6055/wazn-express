@@ -41,6 +41,12 @@ interface CreateBoxDialogProps {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   onBoxCreated: (boxId: number) => void;
+  /**
+   * The customer already known - Quick Register's «بۆکس دروست بکە بۆی» for a
+   * customer with no box before (owner, 2026-10-22): the way, driver or
+   * company, price, phone and address are filled here first.
+   */
+  customer?: { id: number; name: string } | null;
 }
 
 type DeliveryMethod = "warehouse_pickup" | "home_delivery" | "city_transfer";
@@ -57,7 +63,7 @@ const HANDOVER_OF: Record<DeliveryMethod, "pickup" | "driver" | "courier"> = {
   city_transfer: "courier",
 };
 
-export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxDialogProps) {
+export function CreateBoxDialog({ open, onOpenChange, onBoxCreated, customer }: CreateBoxDialogProps) {
   const { t, language } = useTranslation();
   const isRtl = language === "ku" || language === "ar";
   const utils = trpc.useUtils();
@@ -126,6 +132,14 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxD
       }
     }
   }, [selectedCustomerId, deliveryMethod, selectedCustomer]);
+
+  // A customer already known is chosen when the window opens.
+  useEffect(() => {
+    if (open && customer) {
+      setSelectedCustomerId(customer.id);
+      setCustomerSearch(customer.name);
+    }
+  }, [open, customer?.id]);
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -235,7 +249,8 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated }: CreateBoxD
                   setShowDropdown(true);
                   if (!e.target.value) setSelectedCustomerId(null);
                 }}
-                onFocus={() => setShowDropdown(true)}
+                // A customer handed in is already chosen: the list opens only on typing.
+                onFocus={() => { if (!customer) setShowDropdown(true); }}
                 className="ps-9"
               />
             </div>

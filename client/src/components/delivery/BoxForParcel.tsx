@@ -8,6 +8,7 @@ import { useSystemAlert } from "@/components/SystemAlert";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { HANDOVER_LABELS, type HandoverMode } from "@shared/boxHandover";
+import { CreateBoxDialog } from "./CreateBoxDialog";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -21,6 +22,11 @@ type Words = { ku: string; en: string; ar: string; zh: string };
  * address - with no field to touch. ↑ ↓ choose, Enter goes on. The parcel is
  * put in, and the box opens on its scan field (server/db/boxHandover.db.ts:
  * boxChoiceForCustomer).
+ *
+ * A customer with no box before has no way to copy (owner, 2026-10-22): the
+ * full «بۆکس دروست بکە» window opens with the customer chosen, to fill the
+ * way, the driver or company, the price, phone and address; then the parcel
+ * goes in and the box opens the same way.
  */
 export function BoxForParcel({
   customerId,
@@ -40,12 +46,36 @@ export function BoxForParcel({
   const [open, setOpen] = useState(false);
   const [choice, setChoice] = useState<"open" | "new">("new");
   const [busy, setBusy] = useState(false);
+  const [filling, setFilling] = useState(false);
   const { data, isLoading } = trpc.deliveryBox.choiceForCustomer.useQuery({ customerId }, { enabled: open, staleTime: 0 });
   const create = trpc.deliveryBox.create.useMutation();
   const addItem = trpc.deliveryBox.addItem.useMutation();
 
   // The box still being filled is offered first, when there is one.
   useEffect(() => { if (data) setChoice(data.open ? "open" : "new"); }, [data]);
+  // Nothing open and nothing before: there is nothing to choose, only a box
+  // to describe - straight to the window that asks for it.
+  useEffect(() => {
+    if (open && data && !data.open && !data.last) { setOpen(false); setFilling(true); }
+  }, [open, data]);
+
+  /** The parcel into the box, then the box on its scan field. */
+  const putInAndOpen = async (boxId: number) => {
+    try {
+      await addItem.mutateAsync({ boxId, trackingNumber });
+    } catch (err: any) {
+      // The box is there either way; the refusal (already in a box, another
+      // customer's...) is read, and the box opens for the person to see.
+      systemAlert({
+        kind: "warning",
+        title: L({ ku: "پاکێجەکە نەخرایە بۆکسەکە", en: "The parcel was not put in the box", ar: "لم يُضف الطرد إلى الصندوق", zh: "包裹未放入箱子" }),
+        message: err?.message ?? String(err),
+      });
+    }
+    void utils.deliveryBox.invalidate();
+    setOpen(false);
+    setLocation(`/customer-delivery-scanner?box=${boxId}`);
+  };
 
   const way = (mode: HandoverMode | null | undefined, carrier: string | null | undefined) =>
     mode ? `${L(HANDOVER_LABELS[mode])}${carrier ? ` — ${carrier}` : ""}` : L({ ku: "شێوازی گەیاندن دیاری نەکراوە", en: "No way chosen yet", ar: "لم تُحدد طريقة التوصيل", zh: "未选择送货方式" });
@@ -57,6 +87,11 @@ export function BoxForParcel({
       let boxId: number;
       if (choice === "open" && data.open) {
         boxId = data.open.id;
+      } else if (!data.last) {
+        // No box before: its details are asked for first.
+        setOpen(false);
+        setFilling(true);
+        return;
       } else {
         const last = data.last;
         const made = await create.mutateAsync({
@@ -69,26 +104,13 @@ export function BoxForParcel({
           deliveryChargeUsd: last?.deliveryChargeUsd ?? "0",
           // The way the last box went; a first box (or one that went by
           // pickup) is collected by the customer.
-          handover: last?.handoverMode
+          handover: last.handoverMode
             ? { mode: last.handoverMode, carrierId: last.carrierId }
-            : (!last || last.deliveryMethod === "warehouse_pickup") ? { mode: "pickup" } : undefined,
+            : last.deliveryMethod === "warehouse_pickup" ? { mode: "pickup" } : undefined,
         });
         boxId = Number(made.id);
       }
-      try {
-        await addItem.mutateAsync({ boxId, trackingNumber });
-      } catch (err: any) {
-        // The box is there either way; the refusal (already in a box, another
-        // customer's...) is read, and the box opens for the person to see.
-        systemAlert({
-          kind: "warning",
-          title: L({ ku: "پاکێجەکە نەخرایە بۆکسەکە", en: "The parcel was not put in the box", ar: "لم يُضف الطرد إلى الصندوق", zh: "包裹未放入箱子" }),
-          message: err?.message ?? String(err),
-        });
-      }
-      void utils.deliveryBox.invalidate();
-      setOpen(false);
-      setLocation(`/customer-delivery-scanner?box=${boxId}`);
+      await putInAndOpen(boxId);
     } catch (err: any) {
       systemAlert({
         kind: "error",
@@ -173,7 +195,7 @@ export function BoxForParcel({
                       `${way(data.last.handoverMode, data.last.carrierName)} · $${Number(data.last.deliveryChargeUsd || 0).toFixed(2)}`,
                       L({ ku: "وەک دوایین بۆکسی ئەم کڕیارە", en: "As this customer's last box", ar: "كآخر صندوق لهذا العميل", zh: "同该客户上一个箱子" }),
                     ]
-                  : [L({ ku: "کڕیار خۆی دێت - یەکەم بۆکسی ئەم کڕیارە", en: "Customer collects - this customer's first box", ar: "يستلم بنفسه - أول صندوق لهذا العميل", zh: "客户自取 - 该客户的第一个箱子" })],
+                  : [L({ ku: "یەکەم بۆکسی ئەم کڕیارە - زانیارییەکانی پڕ دەکەیتەوە", en: "This customer's first box - you fill in its details", ar: "أول صندوق لهذا العميل - تملأ بياناته", zh: "该客户的第一个箱子 - 请填写信息" })],
               )}
               <p className="text-[11px] text-muted-foreground">
                 {L({ ku: "↑ ↓ هەڵبژاردن · Enter بەردەوام بە", en: "↑ ↓ to choose · Enter to go on", ar: "↑ ↓ للاختيار · Enter للمتابعة", zh: "↑ ↓ 选择 · Enter 继续" })}
@@ -191,6 +213,12 @@ export function BoxForParcel({
           </DialogFooter>
         </DialogContent>
       </Dialog>
+      <CreateBoxDialog
+        open={filling}
+        onOpenChange={setFilling}
+        customer={{ id: customerId, name: customerName }}
+        onBoxCreated={(boxId) => { void putInAndOpen(boxId); }}
+      />
     </>
   );
 }

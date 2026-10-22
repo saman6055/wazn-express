@@ -40,7 +40,7 @@ describe("«بۆکس دروست بکە بۆی» on Quick Register", () => {
   });
 
   it("a new box goes the way the last one did, and the parcel is put in, then the box opens", () => {
-    expect(button).toContain("handover: last?.handoverMode");
+    expect(button).toContain("handover: last.handoverMode");
     expect(button).toContain("deliveryChargeUsd: last?.deliveryChargeUsd ?? \"0\",");
     expect(button).toContain("await addItem.mutateAsync({ boxId, trackingNumber });");
     expect(button).toContain("setLocation(`/customer-delivery-scanner?box=${boxId}`);");
