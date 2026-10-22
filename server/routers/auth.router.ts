@@ -106,6 +106,7 @@ export const authRouter = router({
       isStaff: true,
     })
       .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
       .setExpirationTime("24h")
       .sign(secret);
     ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
@@ -222,6 +223,7 @@ export const authRouter = router({
         isCustomer: true,
       })
         .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
         // A year, not a week: the owner's rule is that a customer stays
         // signed in until they delete the app. The session also renews
         // itself on use (see renewCustomerSession in _core/context.ts), so
@@ -320,6 +322,7 @@ export const authRouter = router({
           isStaff: true,
         })
           .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
           .setExpirationTime("24h")
           .sign(secret);
         const cookieOptions = getSessionCookieOptions(ctx.req);

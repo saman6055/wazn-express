@@ -29,6 +29,9 @@ export const users = mysqlTable("users", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn").defaultNow().notNull(),
+  // A session minted before this moment is over. Stamped by a password
+  // change, so the old password's sessions end with it (shared/sessionEnds).
+  sessionsValidFrom: timestamp("sessionsValidFrom"),
 });
 
 export type User = typeof users.$inferSelect;
@@ -86,6 +89,8 @@ export const customers = mysqlTable("customers", {
   failedLoginAttempts: int("failedLoginAttempts").default(0).notNull(),
   lastFailedLoginAt: timestamp("lastFailedLoginAt"),
   lockedUntil: timestamp("lockedUntil"),
+  // A session minted before this moment is over (shared/sessionEnds).
+  sessionsValidFrom: timestamp("sessionsValidFrom"),
   email: varchar("email", { length: 320 }),
   country: varchar("country", { length: 100 }),
   city: varchar("city", { length: 100 }),

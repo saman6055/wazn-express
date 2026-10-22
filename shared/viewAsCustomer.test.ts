@@ -70,10 +70,14 @@ describe("looking at a customer's portal", () => {
   it("is short, and comes only from the signed session", () => {
     expect(VIEW_AS_MINUTES).toBeLessThanOrEqual(240);
     const ctx = read("server/_core/context.ts");
-    // Read off the cookie the request already verified — never off a header,
-    // a query string or the body, which the client controls.
+    // Read off the token the request was verified with — the same choice
+    // sdk makes between a look-only bearer and the cookie — never off a
+    // query string or the body, which the client controls. Read off the
+    // cookie alone, a look carried as a bearer beside an admin's cookie was
+    // taken for the customer themselves.
     expect(ctx).toContain("function readViewAs");
-    expect(ctx).toContain("parseCookieHeader(req.headers.cookie");
+    expect(ctx).toContain("sdk.sessionTokenFrom(req)");
+    expect(ctx).not.toMatch(/readViewAs[\s\S]{0,600}req\.query/);
     // A look never renews itself into a year-long session.
     expect(ctx).toContain("if (user?.isCustomer && !viewAs)");
   });

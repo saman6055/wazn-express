@@ -253,6 +253,9 @@ export async function updateCustomerPassword(
       // A staff reset deliberately clears it: the account is back on a
       // password we know, and saying otherwise would be worse than silence.
       passwordChangedAt: options.changedByCustomer ? new Date() : null,
+      // Every session opened with the old password ends now — the phone it
+      // was stolen from included (shared/sessionEnds).
+      sessionsValidFrom: new Date(),
       // The run of failures belonged to the password that is now gone.
       failedLoginAttempts: 0,
       lastFailedLoginAt: null,

@@ -51,7 +51,8 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdById INT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      lastSignedIn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      lastSignedIn TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      sessionsValidFrom TIMESTAMP NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -476,7 +477,8 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdById INT NOT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      lastSignedIn TIMESTAMP
+      lastSignedIn TIMESTAMP,
+      sessionsValidFrom TIMESTAMP NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -3113,6 +3115,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "customers.failedLoginAttempts", sql: "ALTER TABLE customers ADD COLUMN failedLoginAttempts INT NOT NULL DEFAULT 0" },
   { name: "customers.lastFailedLoginAt", sql: "ALTER TABLE customers ADD COLUMN lastFailedLoginAt TIMESTAMP NULL" },
   { name: "customers.lockedUntil", sql: "ALTER TABLE customers ADD COLUMN lockedUntil TIMESTAMP NULL" },
+  // A password change ends every session minted before it (shared/sessionEnds).
+  { name: "customers.sessionsValidFrom", sql: "ALTER TABLE customers ADD COLUMN sessionsValidFrom TIMESTAMP NULL" },
+  { name: "users.sessionsValidFrom", sql: "ALTER TABLE users ADD COLUMN sessionsValidFrom TIMESTAMP NULL" },
   { name: "batches.flightStatus", sql: "ALTER TABLE batches ADD COLUMN flightStatus VARCHAR(40) NULL" },
   { name: "batches.flightArrivedAt", sql: "ALTER TABLE batches ADD COLUMN flightArrivedAt TIMESTAMP NULL" },
 

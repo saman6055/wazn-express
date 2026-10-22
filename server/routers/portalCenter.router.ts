@@ -116,6 +116,7 @@ export const portalCenterRouter = router({
         viewAsName: ctx.user.name ?? "",
       })
         .setProtectedHeader({ alg: "HS256" })
+        .setIssuedAt()
         .setExpirationTime(`${VIEW_AS_MINUTES}m`)
         .sign(secret);
 

@@ -376,7 +376,8 @@ export async function createStaffUser(data: {
 export async function updateUserPassword(userId: number, passwordHash: string) {
   const db = await getDb();
   if (!db) return;
-  await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+  // The old password's sessions end with it (shared/sessionEnds).
+  await db.update(users).set({ passwordHash, sessionsValidFrom: new Date() }).where(eq(users.id, userId));
 }
 
 export async function updateUserStatus(userId: number, isActive: boolean) {

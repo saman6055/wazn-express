@@ -73,7 +73,12 @@ const RENEW_WHEN_REMAINING_MS = ONE_YEAR_MS - 7 * 24 * 60 * 60 * 1000;
  */
 function readViewAs(req: CreateExpressContextOptions["req"]): { by: number; name: string } | null {
   try {
-    const token = parseCookieHeader(req.headers.cookie ?? "")[COOKIE_NAME];
+    // The token the request was verified with — the same choice sdk makes
+    // between a look-only bearer and the cookie. Read off the cookie alone,
+    // a look carried as a bearer beside an admin's cookie was taken for the
+    // customer themselves: its writes went through, and its first request
+    // renewed it into a year-long customer cookie over the admin's own.
+    const token = sdk.sessionTokenFrom(req) ?? parseCookieHeader(req.headers.cookie ?? "")[COOKIE_NAME];
     if (!token) return null;
     const claims = decodeJwt(token) as { viewAs?: boolean; viewAsBy?: number; viewAsName?: string };
     if (!claims.viewAs || !claims.viewAsBy) return null;
@@ -103,6 +108,7 @@ async function renewCustomerSession(
       isCustomer: true,
     })
       .setProtectedHeader({ alg: "HS256" })
+      .setIssuedAt()
       .setExpirationTime("365d")
       .sign(secret);
     res.cookie(COOKIE_NAME, fresh, { ...getSessionCookieOptions(req), maxAge: ONE_YEAR_MS });

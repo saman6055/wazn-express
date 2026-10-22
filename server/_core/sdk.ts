@@ -1,5 +1,6 @@
 import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
+import { sessionEnded, SESSION_ENDED_MESSAGE } from "@shared/sessionEnds";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
@@ -216,7 +217,7 @@ class SDKServer {
 
   async verifySession(
     cookieValue: string | undefined | null
-  ): Promise<{ openId: string; appId: string; name: string; userId?: number; role?: string; customerCode?: string; customerId?: number; isCustomer?: boolean; isStaff?: boolean } | null> {
+  ): Promise<{ openId: string; appId: string; name: string; userId?: number; role?: string; customerCode?: string; customerId?: number; isCustomer?: boolean; isStaff?: boolean; issuedAt?: number } | null> {
     if (!cookieValue) {
       appLogger.warn("[Auth] Missing session token");
       return null;
@@ -227,7 +228,9 @@ class SDKServer {
       const { payload } = await jwtVerify(cookieValue, secretKey, {
         algorithms: ["HS256"],
       });
-      const { openId, appId, name, userId, role, customerCode, customerId, isCustomer, isStaff } = payload as Record<string, unknown>;
+      const { openId, appId, name, userId, role, customerCode, customerId, isCustomer, isStaff, iat } = payload as Record<string, unknown>;
+      // When the token was minted — what a password change is measured against.
+      const issuedAt = typeof iat === "number" ? iat : undefined;
 
       // For customer tokens from customers table
       if (customerId && isCustomer) {
@@ -239,6 +242,7 @@ class SDKServer {
           role: "customer",
           customerCode: customerCode as string,
           isCustomer: true,
+          issuedAt,
         };
       }
 
@@ -250,6 +254,7 @@ class SDKServer {
           name: name as string || "",
           userId: userId as number,
           role: role as string,
+          issuedAt,
         };
       }
 
@@ -309,7 +314,7 @@ class SDKServer {
    * Cookie first, deliberately. A browser that somehow sends both is a
    * browser, and its cookie is the one the server set.
    */
-  private sessionTokenFrom(req: Request): string | undefined {
+  sessionTokenFrom(req: Request): string | undefined {
     const fromCookie = this.parseCookies(req.headers.cookie).get(COOKIE_NAME);
 
     const header = (req.headers as Record<string, unknown>)["authorization"];
@@ -367,6 +372,11 @@ class SDKServer {
       if (!customer.isActive) {
         throw ForbiddenError("Customer account is not active");
       }
+      // A session opened with a password that has since been changed is
+      // over — the phone it was stolen from included (shared/sessionEnds).
+      if (sessionEnded(session.issuedAt, customer.sessionsValidFrom)) {
+        throw ForbiddenError(SESSION_ENDED_MESSAGE);
+      }
       // Return customer data with isCustomer flag for type checking
       return {
         ...customer,
@@ -388,6 +398,10 @@ class SDKServer {
       // effect on a session already open.
       if (!user.isActive) {
         throw ForbiddenError("Staff account is not active");
+      }
+      // The same rule for the office (shared/sessionEnds).
+      if (sessionEnded(session.issuedAt, user.sessionsValidFrom)) {
+        throw ForbiddenError(SESSION_ENDED_MESSAGE);
       }
       return {
         ...user,
@@ -419,6 +433,11 @@ class SDKServer {
 
     if (!user) {
       throw ForbiddenError("User not found");
+    }
+    // Switched off means switched off here too: this branch re-read the
+    // row like the two above and never asked.
+    if (!user.isActive) {
+      throw ForbiddenError("Staff account is not active");
     }
 
     await db.upsertUser({

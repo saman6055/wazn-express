@@ -23,7 +23,11 @@ const sdk = read("server/_core/sdk.ts");
 const authRouter = read("server/routers/auth.router.ts");
 
 describe("a session can arrive in a header", () => {
-  const reader = sdk.slice(sdk.indexOf("private sessionTokenFrom"), sdk.indexOf("async authenticateRequest"));
+  // Public since 2026-10-22: context.ts asks it which token the request was
+  // verified with, so a look-only bearer is read as the look it is.
+  const start = sdk.indexOf("sessionTokenFrom(req: Request)");
+  expect(start, "sessionTokenFrom not found in sdk.ts").toBeGreaterThan(-1);
+  const reader = sdk.slice(start, sdk.indexOf("async authenticateRequest"));
 
   it("reads Authorization: Bearer as well as the cookie", () => {
     expect(reader).toContain("authorization");
