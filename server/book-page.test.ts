@@ -67,6 +67,29 @@ describe("the book page", () => {
     expect(ar).toBeGreaterThan(40);
   });
 
+  it("has no id twice — a glyph and a section once shared one", () => {
+    const ids = [...html.matchAll(/\sid="([^"]+)"/g)].map((m) => m[1]);
+    const seen = new Set<string>();
+    const twice = ids.filter((id) => (seen.has(id) ? true : (seen.add(id), false)));
+    expect(twice, `duplicate id(s): ${twice.join(", ")}`).toEqual([]);
+  });
+
+  it("can put the portal on a phone's home screen", () => {
+    expect(html).toContain('<link rel="manifest" href="/manifest.json">');
+    expect(html).toMatch(/<section id="install"/);
+    const js = fs.readFileSync(path.join(BOOK, "book.js"), "utf8");
+    // Chrome hands the page a prompt; Safari never does and is told by hand.
+    expect(js).toContain("beforeinstallprompt");
+    expect(js).toContain("display-mode: standalone");
+    // and it will not offer at all without a worker that answers fetches
+    expect(js).toContain('navigator.serviceWorker.register("/sw.js")');
+    expect(fs.existsSync(path.resolve(BOOK, "..", "sw.js"))).toBe(true);
+  });
+
+  it("opens the portal demo, which needs no account", () => {
+    expect(html).toContain('href="/portal?demo=1"');
+  });
+
   it("carries a landscape picture for the WhatsApp preview", () => {
     expect(html).toMatch(/property="og:image" content="https:\/\/waznexpress\.com\/book\/assets\/share\.jpg"/);
     expect(fs.existsSync(path.join(BOOK, "assets", "share.jpg"))).toBe(true);

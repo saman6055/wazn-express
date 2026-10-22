@@ -13,6 +13,8 @@
 <meta property="og:image" content="https://waznexpress.com/book/assets/share.jpg">
 <meta property="og:url" content="https://waznexpress.com/book">
 <meta name="twitter:card" content="summary_large_image">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/icons/icon-192x192.png">
 <link rel="stylesheet" href="assets/fonts.css">
 <style>
 /* ══════════════════════════════════════════════════════════════
@@ -86,6 +88,23 @@ h1{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:30px;line
 section{padding:34px var(--pad);border-top:10px solid #F2F6F9}
 h2{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:23px;line-height:1.4;text-wrap:balance}
 .lead{color:var(--grey);margin-top:10px;font-size:16px}
+
+/* ───── put Wazn on the phone ─────
+   Four states, one at a time: idle (not a phone, or the browser never
+   offered), ready (Chrome handed us a prompt), ios (Safari has no prompt —
+   two taps by hand), done (already on the screen). book.js sets the state. */
+#install .w{display:none}
+#install[data-state="idle"] .w-idle,
+#install[data-state="ios"]  .w-ios,
+#install[data-state="done"] .w-done{display:block}
+#install[data-state="done"] .w-done{display:flex}
+#install[data-state="ready"] .w-ready{display:flex}
+#install[data-state="idle"] .btns,
+#install[data-state="ios"]  .btns,
+#install[data-state="done"] .btns{display:none}
+#install .done{align-items:center;gap:10px;margin-top:18px;
+  font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:17px;color:#0E9F6E}
+#install .done svg{width:22px;height:22px;flex:none}
 
 /* ───── two ways ───── */
 .way{border:1.5px solid var(--line);border-radius:18px;padding:20px;margin-top:18px;position:relative}
@@ -230,7 +249,9 @@ h2{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:23px;line
  <symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></symbol>
  <symbol id="insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.2" cy="6.8" r="1"/></symbol>
  <symbol id="dl" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 19.5h16"/></symbol>
- <symbol id="share" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3v13m0-13 4 4m-4-4-4 4"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 12v7.5h14V12"/></symbol>
+ <symbol id="to-home" viewBox="0 0 24 24"><rect fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" x="6.5" y="2.5" width="11" height="19" rx="2.6"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 7v7m0 0 3-3m-3 3-3-3M10 18.6h4"/></symbol>
+ <symbol id="tick" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" d="M20 6 9 17l-5-5"/></symbol>
+ <symbol id="share-out" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3v13m0-13 4 4m-4-4-4 4"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 12v7.5h14V12"/></symbol>
 </defs></svg>
 
 <header class="top">
@@ -255,10 +276,37 @@ h2{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:23px;line
   <div class="btns">
     <a class="btn wa" href="https://wa.me/9647709183535"><svg><use href="#wa"/></svg>
       <span class="ar">احچي وياّنا بالواتساب</span><span class="ku">بە واتسئەپ قسەمان لەگەڵ بکە</span></a>
-    <a class="btn cy" href="https://waznexpress.com">
-      <span class="ar">شوف بوابتك</span><span class="ku">پۆرتاڵەکەت ببینە</span></a>
+    <a class="btn cy" href="/portal?demo=1">
+      <span class="ar">شوف البوابة — عرض تجريبي</span><span class="ku">پۆرتاڵ ببینە — دیمۆ</span></a>
   </div>
 </div>
+
+<section id="install" data-state="idle">
+  <h2><span class="ar">حطّ وزن <span class="hl">على موبايلك</span></span>
+      <span class="ku">وەزن دابنێ <span class="hl">لەسەر مۆبایلەکەت</span></span></h2>
+  <p class="lead"><span class="ar">ينزّل بثانية وحدة، بلا متجر تطبيقات. بعدها البوابة والعرض التجريبي بضغطة وحدة.</span>
+     <span class="ku">بە یەک چرکە دادەبەزێت، بێ ستۆری ئەپ. دواتر پۆرتاڵ و دیمۆکە بە یەک دەستلێدان.</span></p>
+
+  <div class="btns">
+    <button class="btn cy w w-ready" type="button" id="install-go"><svg><use href="#to-home"/></svg>
+      <span class="ar">حطّه على الشاشة</span><span class="ku">بیخە سەر شاشەکە</span></button>
+  </div>
+
+  <div class="w w-ios note">
+    <span class="ar">بالآيفون: اضغط زرّ المشاركة بالأسفل، بعدين «Add to Home Screen».</span>
+    <span class="ku">لە ئایفۆن: دوگمەی هاوبەشکردن لە خوارەوە دابگرە، پاشان «Add to Home Screen».</span>
+  </div>
+
+  <div class="w w-idle note">
+    <span class="ar">افتح هاي الصفحة من موبايلك حتى تحطّه على الشاشة.</span>
+    <span class="ku">ئەم لاپەڕەیە لە مۆبایلەکەتەوە بکەرەوە بۆ دانانی لەسەر شاشە.</span>
+  </div>
+
+  <div class="w w-done done"><svg><use href="#tick"/></svg>
+    <span class="ar">وزن موجود على شاشتك.</span>
+    <span class="ku">وەزن لەسەر شاشەکەتە.</span>
+  </div>
+</section>
 
 <section>
   <h2><span class="ar">شلون <span class="hl">تشتري</span>؟</span><span class="ku">چۆن <span class="hl">بکڕیت</span>؟</span></h2>
@@ -432,7 +480,7 @@ h2{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:23px;line
       <span class="ar">نزّل الكتيّب — عربي</span><span class="ku">بووکلێت دابەزێنە — عەرەبی</span><em>PDF</em></a>
     <a class="btn" href="wazn-booklet-ku.pdf" download><svg><use href="#dl"/></svg>
       <span class="ar">نزّل الكتيّب — كردي</span><span class="ku">بووکلێت دابەزێنە — کوردی</span><em>PDF</em></a>
-    <button class="btn cy" type="button" id="share"><svg><use href="#share"/></svg>
+    <button class="btn cy" type="button" id="share"><svg><use href="#share-out"/></svg>
       <span class="ar">شارك الرابط</span><span class="ku">لینکەکە بنێرە</span></button>
   </div>
 </section>

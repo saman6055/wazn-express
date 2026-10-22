@@ -49,7 +49,51 @@
     }
   });
 
-  /* ── 3 · the text stays on the page ───────────────────────────────
+  /* ── 3 · put Wazn on the phone's home screen ──────────────────────
+     A link cannot install anything — only the browser can, and only on its
+     own terms. Chrome on Android hands the page a prompt to keep and fire
+     on a tap; Safari on iPhone never does, so there it is two taps by hand
+     and the card says which two. This page is on waznexpress.com, so what
+     installs is the portal itself, opening at the site root. */
+  var section = document.getElementById("install");
+
+  function state(s) { section.dataset.state = s; }
+
+  // Chrome will not offer to install a site whose worker has no fetch
+  // handler. The app registers /sw.js on its own pages; somebody who lands
+  // straight on /book has never met it, so register it here too.
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.register("/sw.js").catch(function () { /* not fatal */ });
+  }
+
+  var waiting = null;
+  window.addEventListener("beforeinstallprompt", function (e) {
+    e.preventDefault();          // keep it; we fire it on the tap instead
+    waiting = e;
+    state("ready");
+  });
+
+  document.getElementById("install-go").addEventListener("click", function () {
+    if (!waiting) return;
+    var prompt = waiting;
+    waiting = null;
+    prompt.prompt();
+    prompt.userChoice.then(function (choice) {
+      if (choice.outcome === "accepted") state("done");
+      else state("idle");        // they said no; don't nag with a dead button
+    });
+  });
+
+  window.addEventListener("appinstalled", function () { state("done"); });
+
+  var standalone = window.matchMedia("(display-mode: standalone)").matches ||
+                   window.navigator.standalone === true;
+  var iphone = /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+               (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  if (standalone) state("done");
+  else if (iphone) state("ios");
+
+  /* ── 4 · the text stays on the page ───────────────────────────────
      Casual copying is turned off: no selection, no long-press menu, no
      right-click, no drag, no Ctrl+C.  This stops a passer-by lifting the
      wording; it cannot stop a screenshot or "view source", and it is not
