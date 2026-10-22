@@ -1,0 +1,24 @@
+# What never belongs in the image, or in the build host's layer cache.
+# The Dockerfile copies the whole tree into the builder stage; without
+# this, a .env on the build host, every stored photo and every local
+# backup would be copied in with it.
+.env
+.env.*
+!.env.example
+.git
+.github
+node_modules
+dist
+uploads
+data
+reports
+brochure
+docs
+*.log
+*.md
+!README.md
+.vscode
+.idea
+coverage
+tmp
+temp

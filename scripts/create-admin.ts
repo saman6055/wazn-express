@@ -9,7 +9,13 @@ import { getDb } from "../server/db/connection";
 import { getUserByUsername, createStaffUser, updateUserPassword } from "../server/db/admin.db";
 
 const ADMIN_USERNAME = "admin";
-const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD || "admin123";
+const DEFAULT_PASSWORD = process.env.ADMIN_PASSWORD ?? "";
+if (DEFAULT_PASSWORD.length < 10) {
+  // No built-in password: the last one sat in a public repository for months.
+  console.error("Set ADMIN_PASSWORD (10+ characters) before running this script:");
+  console.error("  ADMIN_PASSWORD=your-long-password pnpm exec tsx scripts/create-admin.ts");
+  process.exit(1);
+}
 
 async function main() {
   const db = await getDb();
@@ -35,10 +41,6 @@ async function main() {
   }
 
   console.log(`   Username: ${ADMIN_USERNAME}`);
-  console.log(`   Password: ${DEFAULT_PASSWORD}`);
-  if (!process.env.ADMIN_PASSWORD) {
-    console.log(`   (To set a custom password: ADMIN_PASSWORD=yourpass pnpm exec tsx scripts/create-admin.ts)`);
-  }
   process.exit(0);
 }
 

@@ -7,7 +7,7 @@ const fs = require('fs');
 
 const BASE_URL = 'https://waznexpress.com';
 const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin123';
+const ADMIN_PASS = process.env.WAZN_ADMIN_PASS || '';
 const CSV_PATH = process.argv[2] || 'C:/Users/saman/Downloads/PART-2 _ Wazn Main System 2026 - Orders and Tracking_ Zainab.csv';
 
 function parseCSVLine(line) {

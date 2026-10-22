@@ -12,6 +12,9 @@ const REQUIRED = [
 
 const OPTIONAL = ["S3_BUCKET", "RESEND_API_KEY", "VAPID_PUBLIC_KEY", "VAPID_PRIVATE_KEY", "VAPID_SUBJECT"] as const;
 
+/** 32 characters of randomness: what HMAC-SHA256 wants, and far past guessing. */
+export const MIN_JWT_SECRET_LENGTH = 32;
+
 export type Config = {
   databaseUrl: string;
   jwtSecret: string;
@@ -40,6 +43,18 @@ function validate(): Config {
     throw new Error(
       `Missing required environment variables: ${missing.join(", ")}. ` +
         "Set them in .env or your deployment environment. Do not use hardcoded secrets."
+    );
+  }
+
+  // Every session is a token signed with this. A short one can be guessed
+  // offline from a single captured cookie, and then any session can be
+  // minted. Said loudly rather than refused: a refusal here is an outage.
+  if ((process.env.JWT_SECRET ?? "").trim().length < MIN_JWT_SECRET_LENGTH) {
+    console.warn(
+      `[config] JWT_SECRET is shorter than ${MIN_JWT_SECRET_LENGTH} characters. ` +
+        "Sessions are only as safe as this secret. Fix: generate a long one — " +
+        "node -e \"console.log(require('crypto').randomBytes(48).toString('base64'))\" — " +
+        "set it as JWT_SECRET in the deployment and redeploy (everyone signs in again once).",
     );
   }
 

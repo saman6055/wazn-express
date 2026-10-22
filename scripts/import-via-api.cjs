@@ -8,9 +8,9 @@ const fs = require('fs');
 
 const BASE_URL = 'https://waznexpress.com';
 const ADMIN_USER = 'admin';
-const ADMIN_PASS = 'admin123';
+const ADMIN_PASS = process.env.WAZN_ADMIN_PASS || '';
 const CSV_PATH = process.argv[2] || 'C:/Users/saman/Downloads/PART-2 _ Wazn Main System 2026 - Customer Info (1).csv';
-const CUSTOMER_PASSWORD = '12345678';
+const CUSTOMER_PASSWORD = process.env.WAZN_CUSTOMER_PASSWORD || '';
 
 // ============ City Parser ============
 const IRAQ_CITIES = {
@@ -156,7 +156,7 @@ async function main() {
     // Try alternative password
     console.log('   Trying alternative password...');
     const loginRes2 = await apiCall('POST', '/api/trpc/auth.staffLogin?batch=1', {
-      '0': { json: { identifier: ADMIN_USER, password: 'admin123' } }
+      '0': { json: { identifier: ADMIN_USER, password: process.env.WAZN_ADMIN_PASS_ALT || '' } }
     });
     if (!loginRes2.cookies) {
       console.error('Login failed with both passwords. Check admin credentials.');

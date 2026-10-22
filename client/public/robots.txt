@@ -1,0 +1,26 @@
+# Wazn Express — what a crawler may index.
+# The public pages (the site, the book, the shop, the blog) are open.
+# Everything a person signs in for is not a page for a search engine,
+# and the API and stored files are not pages at all.
+User-agent: *
+Disallow: /api/
+Disallow: /uploads/
+Disallow: /portal
+Disallow: /customer-login
+Disallow: /staff-login
+Disallow: /dashboard
+Disallow: /t/
+Disallow: /packages
+Disallow: /customers
+Disallow: /finance
+Disallow: /settings
+Disallow: /reports
+Disallow: /batches
+Disallow: /commission
+Disallow: /full-package
+Disallow: /invoices
+Disallow: /payments
+Disallow: /company/
+Disallow: /admin/
+Disallow: /portal-center
+Allow: /
