@@ -80,6 +80,14 @@ export async function removeCarrier(id: number, userId: number) {
 
 // ── the box's way to the customer ────────────────────────────────────────
 
+/** A box the customer collects: no delivery, so nothing to charge or pay for it. */
+export const PICKUP_HAS_NO_DELIVERY = {
+  deliveryMethod: "warehouse_pickup" as const,
+  deliveryChargeUsd: "0.00",
+  deliveryCostUsd: "0.00",
+  deliveryProfitUsd: "0.00",
+};
+
 export async function setBoxHandover(
   input: { boxId: number; mode: HandoverMode; carrierId?: number | null; trackings?: string[] },
   _userId: number,
@@ -107,6 +115,9 @@ export async function setBoxHandover(
     carrierId,
     carrierName,
     carrierTrackings: trackings.length ? JSON.stringify(trackings) : null,
+    // Owner, 2026-10-22: a box the customer collects has no delivery - its
+    // price and cost go to 0, and the receipt (read from the box) follows.
+    ...(input.mode === "pickup" ? PICKUP_HAS_NO_DELIVERY : {}),
   }).where(eq(deliveryBoxes.id, input.boxId));
   return { mode: input.mode, carrierId, carrierName, trackings };
 }

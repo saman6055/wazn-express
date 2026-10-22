@@ -1498,6 +1498,18 @@ export const deliveryBoxRouter = router({
     }))
     .mutation(async ({ input }) => {
       const { id, ...data } = input;
+      // Owner, 2026-10-22: «وەرگرتنی خۆی» means no delivery - price and cost
+      // 0 whatever was typed, and the handover line says the same.
+      if (data.deliveryMethod === "warehouse_pickup") {
+        return db.updateDeliveryBox(id, {
+          ...data,
+          ...db.PICKUP_HAS_NO_DELIVERY,
+          handoverMode: "pickup",
+          carrierId: null,
+          carrierName: null,
+          carrierTrackings: null,
+        });
+      }
       return db.updateDeliveryBox(id, data);
     }),
 

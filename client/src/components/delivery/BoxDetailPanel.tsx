@@ -1077,7 +1077,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         <BoxHandoverCard
           box={box as unknown as HandoverBox}
           paid={hasLiveReceipt && settlementDueUsd <= 0}
-          onChanged={() => { void refetchBox(); void utils.deliveryBox.customerBoxes.invalidate(); }}
+          onChanged={() => { void refetchBox(); void utils.deliveryBox.customerBoxes.invalidate(); void utils.deliveryBox.list.invalidate(); }}
         />
         {box.customerId ? <CustomerBoxesPanel customerId={Number(box.customerId)} currentBoxId={box.id} /> : null}
 
