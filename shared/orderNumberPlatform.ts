@@ -96,6 +96,26 @@ export function looksLikeOrderNumber(value: string | null | undefined): boolean 
   return Boolean(v) && (PINDUODUO_SHAPE.test(v) || LONG_DIGITS_SHAPE.test(v));
 }
 
+/**
+ * A tracking number as couriers write them: letters and digits, maybe a
+ * dash, one unbroken run. Shorter than eight is a code of ours, not theirs.
+ */
+const TRACKING_SHAPE = /^[A-Za-z0-9-]{8,40}$/;
+
+/**
+ * What a pasted piece of text is (owner, 2026-10-22: «Ctrl+V بەبێ تەحدید
+ * خۆی بیخاتە ناو خانەکە»): an order number by the shapes above, otherwise a
+ * tracking by its own shape, otherwise nothing - and nothing is left alone.
+ * Returns the tidied value with its kind.
+ */
+export function pastedIdKind(text: string | null | undefined): { kind: "order" | "tracking"; value: string } | null {
+  const value = tidy(text);
+  if (!value) return null;
+  if (looksLikeOrderNumber(value)) return { kind: "order", value };
+  if (TRACKING_SHAPE.test(value) && /\d/.test(value)) return { kind: "tracking", value };
+  return null;
+}
+
 /** What to say about it, in the four languages every screen here speaks. */
 export const ORDER_NUMBER_IN_TRACKING_TEXT = {
   ku: "ئەمە لە ژمارەی ئۆردەری فرۆشگاکە دەچێت، نەک ژمارەی تراکینگ. ژمارەی تراکینگ ئەوەیە کە کۆمپانیای گەیاندن دەیدات — تکایە ئەو بنووسە.",

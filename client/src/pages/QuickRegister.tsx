@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { trpc } from "@/lib/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
+import { usePasteIntoField } from "@/hooks/usePasteIntoField";
 import { toast } from "sonner";
 import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers, PencilLine } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -932,6 +933,10 @@ export default function QuickRegister() {
     }, TRACKING_LOOKUP_PAUSE_MS);
     setSearchTimeout(timer);
   };
+
+  // Ctrl+V with no field chosen puts a tracking into the tracking box
+  // (owner, 2026-10-22: Quick Register takes the tracking only).
+  usePasteIntoField({ tracking: { ref: trackingRef, set: handleTrackingChange } });
   
   const selectCustomer = (customer: any) => {
     setCustomerId(customer.id);

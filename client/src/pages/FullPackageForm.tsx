@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { usePasteIntoField } from "@/hooks/usePasteIntoField";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
@@ -167,6 +168,21 @@ function FullPackageFormScreen() {
     dimensionWidth: "",
     dimensionHeight: "",
     volumeCbm: "",
+  });
+
+  // Ctrl+V with no field chosen puts an order number or a tracking into its
+  // own field (owner, 2026-10-22; hooks/usePasteIntoField).
+  const orderNumberRef = useRef<HTMLInputElement>(null);
+  const trackingNumberRef = useRef<HTMLInputElement>(null);
+  usePasteIntoField({
+    order: {
+      ref: orderNumberRef,
+      set: (orderNumber) => {
+        const guess = platformFromOrderNumber(orderNumber);
+        setFormData((p) => ({ ...p, orderNumber, platform: guess.platform ?? p.platform }));
+      },
+    },
+    tracking: { ref: trackingNumberRef, set: (trackingNumber) => setFormData((p) => ({ ...p, trackingNumber })) },
   });
 
   // "Filled" indicator — subtle green border + ring + tint when a field has a value
@@ -1034,6 +1050,7 @@ function FullPackageFormScreen() {
                   <Label className="text-xs">{pickLang(language, { ku: "ئۆردەر نەمبەر *", en: "Order number *", ar: "رقم الطلب *", zh: "订单号 *" })}</Label>
                   <Input
                     value={formData.orderNumber}
+                    ref={orderNumberRef}
                     onChange={(e) => {
                       /*
                         The number names its own shop (owner, 2026-09-30).
@@ -1099,6 +1116,7 @@ function FullPackageFormScreen() {
                   </Label>
                   <Input
                     value={formData.trackingNumber}
+                    ref={trackingNumberRef}
                     onChange={(e) => setFormData({ ...formData, trackingNumber: e.target.value })}
                     placeholder={pickLang(language, { ku: "ئەگەر ئێستا بەردەستە، داخڵی بکە", en: "Enter it if already available", ar: "أدخله إن كان متاحاً الآن", zh: "如已有则填写" })}
                     className={cn("h-10", filledCls(formData.trackingNumber))}
