@@ -1308,7 +1308,7 @@ function CommissionFormScreen() {
                       <p className="font-bold text-orange-900 dark:text-orange-200 text-sm">{pickLang(language, { ku: "نرخی کاڵا بە یوانی چینی", en: "Item price in Chinese yuan", ar: "سعر المنتج باليوان الصيني", zh: "商品价格（人民币）" })}</p>
                       {rmbRate > 0 ? (
                         <p className="text-xs text-orange-700 dark:text-orange-300 truncate">
-                          {pickLang(language, { ku: `نرخی بەراورد: 1 دۆلار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} یوانی چینی`, en: `Exchange rate: 1 USD = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} CNY`, ar: `سعر الصرف: 1 دولار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} يوان صيني`, zh: `汇率：1 美元 = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 0 })} 人民币` })}
+                          {pickLang(language, { ku: `نرخی بەراورد: 1 دۆلار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 2 })} یوانی چینی`, en: `Exchange rate: 1 USD = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 2 })} CNY`, ar: `سعر الصرف: 1 دولار = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 2 })} يوان صيني`, zh: `汇率：1 美元 = ${rmbRate.toLocaleString("en-US", { maximumFractionDigits: 2 })} 人民币` })}
                         </p>
                       ) : (
                         <p className="text-xs text-red-600 dark:text-red-300">{pickLang(language, { ku: "تکایە نرخی بەراورد لە سیتینگی سیستەم داخڵ بکە", en: "Please set the exchange rate in system settings", ar: "يرجى إدخال سعر الصرف في إعدادات النظام", zh: "请在系统设置中设置汇率" })}</p>
