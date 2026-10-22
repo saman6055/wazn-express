@@ -4,6 +4,7 @@ import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { acceptUpload } from "../lib/uploadGate";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 
@@ -718,12 +719,14 @@ export const blogRouter = router({
       .mutation(async ({ input }) => {
         const { storagePut } = await import("../services/storage.service");
         const { nanoid } = await import("nanoid");
-        
-        // Decode base64 to buffer
-        const buffer = Buffer.from(input.fileData, "base64");
-        
-        // Generate unique filename
-        const ext = input.fileName.split(".").pop() || "jpg";
+
+        // A cover is a picture; the extension stored is ours (shared/uploadRule).
+        const { buffer, ext } = acceptUpload({
+          fileName: input.fileName,
+          contentType: input.mimeType,
+          base64: input.fileData,
+          purpose: "image",
+        });
         const uniqueFileName = `blog-covers/${nanoid(12)}.${ext}`;
         
         // Upload to S3
@@ -741,7 +744,16 @@ export const storageRouter = router({
         base64Data: z.string(),
       }))
       .mutation(async ({ input }) => {
-        const buffer = Buffer.from(input.base64Data, "base64");
+        // Pictures, PDFs, office files and archives; nothing a browser would
+        // run. Customers reach this door from the portal's messenger, so the
+        // check is the whole of what stands between a stranger's file and
+        // the office's own address (shared/uploadRule).
+        const { buffer, ext } = acceptUpload({
+          fileName: input.fileName,
+          contentType: input.contentType,
+          base64: input.base64Data,
+          purpose: "file",
+        });
         const { ENV } = await import("../_core/env");
         const hasForge = Boolean(ENV.forgeApiUrl?.trim() && ENV.forgeApiKey?.trim());
 
@@ -749,7 +761,6 @@ export const storageRouter = router({
           try {
             const { storagePut } = await import("../services/storage.service");
             const { nanoid } = await import("nanoid");
-            const ext = input.fileName.split(".").pop() || "jpg";
             const uniqueFileName = `uploads/${nanoid(12)}.${ext}`;
             const { url } = await storagePut(uniqueFileName, buffer, input.contentType);
             return { success: true, url };
@@ -761,7 +772,7 @@ export const storageRouter = router({
 
         try {
           const { localUpload } = await import("../services/localUpload");
-          const { url } = localUpload(input.fileName, buffer, input.contentType);
+          const { url } = localUpload(`file.${ext}`, buffer, input.contentType);
           return { success: true, url };
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);

@@ -14,6 +14,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { registerDocumentGuard } from "./documentGuard";
+import { uploadsStaticOptions } from "./uploadsServe";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
@@ -93,14 +94,9 @@ function serveStatic(app: express.Express) {
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
   // Passports, ID cards and contracts answer only to a staff session.
   registerDocumentGuard(app);
-  app.use(UPLOADS_ROUTE, express.static(uploadsDir, {
-    // Private: photos are one person's business — a shared proxy or CDN must
-    // not keep a copy for the next visitor. A customer's document is not kept
-    // at all, not even by the browser (the guard marks it).
-    setHeaders(res) {
-      res.setHeader("Cache-Control", res.locals?.customerDocument ? "private, no-store" : "private, max-age=604800");
-    },
-  }));
+  // Private, and inert: how a stored file is handed back lives in one place
+  // for both entries (uploadsServe.ts).
+  app.use(UPLOADS_ROUTE, express.static(uploadsDir, uploadsStaticOptions));
   appLogger.info("Serving uploads", { uploadsDir, route: UPLOADS_ROUTE });
 
   // Without a mounted volume this directory is part of the container and is
@@ -181,9 +177,13 @@ async function startServer() {
     })
   );
 
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Bodies: a file arrives as base64 inside a tRPC call, so that route takes
+  // a large one. Nothing else does — an error report or a form has no
+  // business being fifty megabytes, and parsing one from a stranger costs
+  // the server memory and time for nothing.
+  app.use("/api/trpc", express.json({ limit: "50mb" }));
+  app.use(express.json({ limit: "100kb" }));
+  app.use(express.urlencoded({ limit: "100kb", extended: true }));
 
   // Request logging (method, url, status, duration)
   app.use(requestLoggingMiddleware(appLogger));

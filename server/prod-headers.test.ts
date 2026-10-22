@@ -29,8 +29,23 @@ describe("production caching", () => {
   it("uploads are private to the browser that asked", () => {
     // A customer's passport or ID card (marked by the document guard) is not
     // kept at all; every other upload is kept a week by that browser alone.
-    at('res.setHeader("Cache-Control", res.locals?.customerDocument ? "private, no-store" : "private, max-age=604800")');
+    // The headers live in uploadsServe.ts, shared with the dev entry.
+    const serve = fs.readFileSync(path.resolve(__dirname, "_core/uploadsServe.ts"), "utf8");
+    expect(serve).toContain('res.setHeader("Cache-Control", res.locals?.customerDocument ? "private, no-store" : "private, max-age=604800")');
+    at("express.static(uploadsDir, uploadsStaticOptions)");
     expect(PROD).not.toContain('express.static(uploadsDir, { maxAge: "7d" })');
+  });
+});
+
+describe("production body limits", () => {
+  it("takes a large body only where a file can arrive", () => {
+    // A base64 photo rides inside a tRPC call; an error report or a form
+    // from a stranger has no business being fifty megabytes.
+    const large = at('app.use("/api/trpc", express.json({ limit: "50mb" }))');
+    const small = at('app.use(express.json({ limit: "100kb" }))');
+    expect(large).toBeLessThan(small);
+    expect(PROD).not.toContain('app.use(express.json({ limit: "50mb" }))');
+    at('express.urlencoded({ limit: "100kb", extended: true })');
   });
 });
 

@@ -14,6 +14,7 @@ import {
   parseAppearance,
 } from "../lib/uiAppearance";
 import { localUploadIsMissing } from "../services/localUpload";
+import { safeUploadExtension } from "@shared/uploadRule";
 
 export const countriesRouter = router({
     list: staffProcedure
@@ -358,7 +359,8 @@ export const settingsRouter = router({
         }
 
         const { localUpload } = await import("../services/localUpload");
-        const { url } = localUpload(input.fileName, buffer, "font/" + format);
+        // The stored name is ours; only the checked extension travels with it.
+        const { url } = localUpload(`font.${safeUploadExtension(input.fileName) || "ttf"}`, buffer, "font/" + format);
 
         const current = parseAppearance(await db.getSetting(APPEARANCE_SETTING_KEY));
         // Derived from the stored filename, so the id and the file on disk

@@ -10,6 +10,7 @@ import { generateCustomerCode } from "@shared/types";
 import * as bcrypt from "bcryptjs";
 import { sendNotification } from "../services/notification.service";
 import { forgetDocumentNames } from "../_core/documentGuard";
+import { acceptUpload } from "../lib/uploadGate";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const customersRouter = router({
@@ -275,12 +276,14 @@ export const customersRouter = router({
       .mutation(async ({ input, ctx }) => {
         const { storagePut } = await import("../services/storage.service");
         const { nanoid } = await import("nanoid");
-        
-        // Decode base64 to buffer
-        const buffer = Buffer.from(input.fileData, "base64");
-        
-        // Generate unique filename
-        const ext = input.fileName.split(".").pop() || "pdf";
+
+        // A scan or a PDF; the stored extension is ours (shared/uploadRule).
+        const { buffer, ext } = acceptUpload({
+          fileName: input.fileName,
+          contentType: input.mimeType,
+          base64: input.fileData,
+          purpose: "file",
+        });
         const uniqueFileName = `customer-${input.customerId}/${input.documentType}-${nanoid(8)}.${ext}`;
         
         // Upload to S3

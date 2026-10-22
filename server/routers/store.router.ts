@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, router } from "../_core/trpc";
 import { staffProcedure } from "../middleware/auth";
+import { acceptUpload } from "../lib/uploadGate";
 import { appLogger } from "../utils/logger";
 import * as db from "../db";
 
@@ -151,14 +152,19 @@ export const storeRouter = router({
   uploadImage: staffProcedure
     .input(z.object({ fileName: z.string(), contentType: z.string(), base64Data: z.string() }))
     .mutation(async ({ input }) => {
-      const buffer = Buffer.from(input.base64Data, "base64");
+      // A product picture is a picture (shared/uploadRule).
+      const { buffer, ext } = acceptUpload({
+        fileName: input.fileName,
+        contentType: input.contentType,
+        base64: input.base64Data,
+        purpose: "image",
+      });
       const { ENV } = await import("../_core/env");
       const hasForge = Boolean(ENV.forgeApiUrl?.trim() && ENV.forgeApiKey?.trim());
       if (hasForge) {
         try {
           const { storagePut } = await import("../services/storage.service");
           const { nanoid } = await import("nanoid");
-          const ext = input.fileName.split(".").pop() || "jpg";
           const { url } = await storagePut(`store-products/${nanoid(12)}.${ext}`, buffer, input.contentType);
           return { success: true, url };
         } catch (err) {
@@ -167,7 +173,7 @@ export const storeRouter = router({
       }
       try {
         const { localUpload } = await import("../services/localUpload");
-        const { url } = localUpload(input.fileName, buffer, input.contentType);
+        const { url } = localUpload(`image.${ext}`, buffer, input.contentType);
         return { success: true, url };
       } catch (err) {
         return { success: false, url: null, error: err instanceof Error ? err.message : String(err) };

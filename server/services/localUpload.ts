@@ -1,6 +1,7 @@
 import fs from "fs";
 import path from "path";
 import { nanoid } from "nanoid";
+import { safeUploadExtension } from "@shared/uploadRule";
 import { localUploadFileName } from "../lib/photoUrls";
 
 const UPLOADS_DIR = "uploads";
@@ -34,7 +35,11 @@ export function localUpload(
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
-  const ext = path.extname(fileName) || ".jpg";
+  // The stored name's extension is ours, not the uploader's: lower case,
+  // letters and digits, and never one a browser would open as a page
+  // (shared/uploadRule). A name with nothing usable is stored as a photo,
+  // which is what nearly everything that lands here is.
+  const ext = `.${safeUploadExtension(fileName) || "jpg"}`;
   const uniqueName = `${nanoid(12)}${ext}`;
   const absolutePath = path.join(dir, uniqueName);
   fs.writeFileSync(absolutePath, data);

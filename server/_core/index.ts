@@ -9,6 +9,7 @@ import { createExpressMiddleware } from "@trpc/server/adapters/express";
 import { registerOAuthRoutes } from "./oauth";
 import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { registerDocumentGuard } from "./documentGuard";
+import { uploadsStaticOptions } from "./uploadsServe";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
@@ -85,9 +86,10 @@ async function startServer() {
     })
   );
 
-  // Configure body parser with larger size limit for file uploads
-  app.use(express.json({ limit: "50mb" }));
-  app.use(express.urlencoded({ limit: "50mb", extended: true }));
+  // Bodies: large only where a file can arrive (see prod-entry.ts).
+  app.use("/api/trpc", express.json({ limit: "50mb" }));
+  app.use(express.json({ limit: "100kb" }));
+  app.use(express.urlencoded({ limit: "100kb", extended: true }));
 
   // Request logging (method, url, status, duration)
   app.use(requestLoggingMiddleware(appLogger));
@@ -147,7 +149,7 @@ async function startServer() {
   if (!fs.existsSync(uploadsDir)) fs.mkdirSync(uploadsDir, { recursive: true });
   // Passports, ID cards and contracts answer only to a staff session.
   registerDocumentGuard(app);
-  app.use(UPLOADS_ROUTE, express.static(uploadsDir));
+  app.use(UPLOADS_ROUTE, express.static(uploadsDir, uploadsStaticOptions));
   // development mode uses Vite, production mode uses static files
   if (process.env.NODE_ENV === "development") {
     // Dynamic import to avoid loading vite in production
