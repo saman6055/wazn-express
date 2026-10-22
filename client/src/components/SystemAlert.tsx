@@ -67,6 +67,30 @@ export interface SystemAlertRequest {
    * acknowledged.
    */
   autoDismissMs?: number;
+  /**
+   * The full window, read like any other, that closes itself after this many
+   * milliseconds and puts the caret back where it was (owner, 2026-10-22:
+   * on the arrival check a parcel not in the batch stopped the scanning
+   * until somebody pressed OK). Enter and Esc still close it sooner.
+   */
+  closeAfterMs?: number;
+}
+
+/** A line under the buttons that empties as the window's time runs out. */
+function DrainBar({ ms }: { ms: number }) {
+  const [full, setFull] = useState(true);
+  useEffect(() => {
+    const id = window.requestAnimationFrame(() => setFull(false));
+    return () => window.cancelAnimationFrame(id);
+  }, []);
+  return (
+    <div className="h-1 w-full bg-muted" data-testid="system-alert-drain">
+      <div
+        className="h-full bg-primary"
+        style={{ width: full ? "100%" : "0%", transition: `width ${ms}ms linear` }}
+      />
+    </div>
+  );
 }
 
 type Ctx = (request: SystemAlertRequest) => void;
@@ -87,6 +111,8 @@ export function useSystemAlert(): Ctx {
 export function SystemAlertProvider({ children }: { children: ReactNode }) {
   const [queue, setQueue] = useState<SystemAlertRequest[]>([]);
   const okRef = useRef<HTMLButtonElement | null>(null);
+  // Where the caret was when a self-closing window opened: it goes back there.
+  const returnTo = useRef<HTMLElement | null>(null);
   const current = queue[0] ?? null;
 
   const show = useCallback((request: SystemAlertRequest) => {
@@ -107,10 +133,24 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
       return; // and never pull the caret out of a scan box
     }
     soundManager.playAlert();
+    const closes = !!current.closeAfterMs;
+    if (closes && document.activeElement instanceof HTMLElement) returnTo.current = document.activeElement;
     // After the sound, not before: the button must exist to be focused.
     const id = window.setTimeout(() => okRef.current?.focus(), 0);
-    return () => window.clearTimeout(id);
+    return () => {
+      window.clearTimeout(id);
+      if (!closes) return;
+      const back = returnTo.current;
+      returnTo.current = null;
+      window.setTimeout(() => { if (back?.isConnected) back.focus(); }, 0);
+    };
   }, [current]);
+
+  useEffect(() => {
+    if (!current?.closeAfterMs || current.autoDismissMs) return;
+    const id = window.setTimeout(dismiss, current.closeAfterMs);
+    return () => window.clearTimeout(id);
+  }, [current, dismiss]);
 
   // A transient notice takes itself away. Keyed on the request object so a
   // second one arriving mid-countdown gets its own full span.
@@ -318,6 +358,9 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
                   </span>
                 )}
               </div>
+            )}
+            {!current.autoDismissMs && current.closeAfterMs && (
+              <DrainBar key={queue.length} ms={current.closeAfterMs} />
             )}
           </div>
         </div>

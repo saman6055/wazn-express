@@ -111,6 +111,8 @@ export default function ArrivalVerificationScanner() {
   const [completedBatch, setCompletedBatch] = useState<{ id: number; code: string; count: number } | null>(null);
   /** Batches already announced, so a later scan does not announce them again. */
   const announcedBatches = useRef<Set<number>>(new Set());
+  /** The last code that was not found, so a second scan of it stays longer. */
+  const lastNotFound = useRef<string | null>(null);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [verifiedPackages, setVerifiedPackages] = useState<VerifiedPackage[]>([]);
   /** The same list, readable from a load that finishes after it changed. */
@@ -481,10 +483,17 @@ export default function ArrivalVerificationScanner() {
         if (!result?.found || !result.package) {
           // A box on the floor that the system has never heard of. Somebody
           // has to decide what it is before it goes on a shelf.
+          // Owner, 2026-10-22: it must not stop the scanning. It closes
+          // itself and the caret goes back to the scan box; the same code
+          // scanned again is refused again and stays a little longer.
+          const code = scannedValue.trim();
+          const again = lastNotFound.current === code;
+          lastNotFound.current = code;
           systemAlert({
             kind: "error",
             title: t("scan.packageNotFoundExcl"),
             detail: scannedValue,
+            closeAfterMs: again ? 3000 : 2000,
           });
           return;
         }

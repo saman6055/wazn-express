@@ -40,9 +40,11 @@ describe("a failure has to be acknowledged", () => {
     // A blocking alert that closes itself is a toast with extra steps, and
     // the operator was looking at the parcel. Only a request that explicitly
     // asks to be transient may carry a timer.
-    const body = slice(alert, "const id = window.setTimeout(dismiss", "}, [current, dismiss]);", "auto dismiss");
+    const body = slice(alert, "const id = window.setTimeout(dismiss, current.autoDismissMs", "}, [current, dismiss]);", "auto dismiss");
     expect(body, "the timer must be gated on an explicit request").toContain("autoDismissMs");
     expect(alert).toContain("if (!current?.autoDismissMs) return;");
+    // The full window that closes itself (owner, 2026-10-22) asks for it too.
+    expect(alert).toContain("if (!current?.closeAfterMs || current.autoDismissMs) return;");
   });
 
   it("can be dismissed without finding the mouse", () => {
