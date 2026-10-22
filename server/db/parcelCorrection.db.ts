@@ -264,9 +264,11 @@ export async function parcelCorrectionRefusal(packageId: number, name: string): 
  */
 export async function ownerMoveRefusal(
   pkg: Pick<Package, "id" | "fullPackageOrderId" | "trackingNumber" | "packageCode">,
+  toCustomerId: number | null,
 ): Promise<string | null> {
   const name = pkg.trackingNumber || pkg.packageCode || String(pkg.id);
-  const orders = await ordersBehindParcel(pkg);
+  // Moving a parcel TO its order's owner is the cure, not the fault.
+  const orders = (await ordersBehindParcel(pkg)).filter((o) => o.customerId !== toCustomerId);
   if (orders.length > 0) {
     const codes = orders.map((o) => o.orderCode).join("، ");
     return withFix(

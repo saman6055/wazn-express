@@ -1838,7 +1838,7 @@ export const packagesRouter = router({
         const current = data.customerId !== undefined ? await db.getPackageById(id) : undefined;
         const ownerMoves = Boolean(current && data.customerId !== undefined && data.customerId !== current.customerId);
         if (current && ownerMoves) {
-          const why = await db.ownerMoveRefusal(current);
+          const why = await db.ownerMoveRefusal(current, data.customerId ?? null);
           if (why) throw new TRPCError({ code: "CONFLICT", message: why });
         }
         

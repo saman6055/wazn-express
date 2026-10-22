@@ -25,10 +25,10 @@ describe("a parcel's owner never moves without its money", () => {
 
   it("the parcel edit asks first, and refuses when the money cannot follow", () => {
     const update = slice(router, "    update: staffProcedure", "    delete: adminProcedure");
-    expect(update).toContain("const why = await db.ownerMoveRefusal(current);");
+    expect(update).toContain("const why = await db.ownerMoveRefusal(current, data.customerId ?? null);");
     expect(update).toContain('if (ownerMoves && onAccount?.outcome === "held")');
     // The refusal comes before the row is written.
-    expect(update.indexOf("db.ownerMoveRefusal(current)")).toBeLessThan(update.indexOf("await db.updatePackage(id, updateData);"));
+    expect(update.indexOf("db.ownerMoveRefusal(current,")).toBeLessThan(update.indexOf("await db.updatePackage(id, updateData);"));
   });
 
   it("registration refuses a customer who is not the linked order's", () => {
@@ -44,7 +44,7 @@ describe("a parcel's owner never moves without its money", () => {
 
   it("the one refusal covers an order behind the parcel, a box and a receipt", () => {
     const fn = slice(read("server/db/parcelCorrection.db.ts"), "export async function ownerMoveRefusal(", "\n}\n");
-    expect(fn).toContain("await ordersBehindParcel(pkg)");
+    expect(fn).toContain("(await ordersBehindParcel(pkg)).filter((o) => o.customerId !== toCustomerId)");
     expect(fn).toContain("return parcelCorrectionRefusal(pkg.id, name);");
   });
 });
