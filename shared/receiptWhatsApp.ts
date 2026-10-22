@@ -74,53 +74,56 @@ const money = (amount: number): string => {
 /**
  * The message that travels with the receipt.
  *
- * A greeting by name, with good wishes - «پاش سەلام علیک بەریز فلان ناوی
- * بنووسێت هیوادارم ساغ و سەلامەت بیت ... هەر چەندی ئەدەب زۆر بێ هەرکەمە»
- * (owner, 2026-10-21) - then which box, how many parcels and the very figure
- * the paper asks for, and a closing line that promises no date. Digits stay
- * 0-9 in every language.
+ * Short and neat (owner, 2026-10-22: the polite paragraph was too long):
+ * a greeting by first name - «سڵاو بەڕێز خەرمان، هیوادارین باش بیت» - that
+ * the goods have arrived, the box on its own line, the very figure the paper
+ * asks for on its own line, and a short thanks. It still promises no date.
+ * Digits stay 0-9 in every language.
  */
 export function receiptWhatsAppMessage(lang: ReceiptLanguage, facts: ReceiptMessageFacts): string {
   const code = facts.boxCode;
-  const parcels = Math.max(0, Math.round(Number(facts.parcelCount) || 0));
   const usd = facts.totalUsd === null ? null : money(facts.totalUsd);
   // Digits stay 0-9 and the thousands are grouped the way the receipt groups
   // them, so the chat and the paper read as the same figure.
   const iqd = Number(facts.totalIqd);
   const dinars = Number.isFinite(iqd) && iqd > 0 ? Math.round(iqd).toLocaleString("en-GB") : null;
-  const name = String(facts.customerName ?? "").trim();
+  // The first name, as a person is greeted: «بەڕێز خەرمان», not the full name.
+  const name = String(facts.customerName ?? "").trim().split(/\s+/)[0] ?? "";
 
   if (lang === "ar") {
     const amount = usd !== null
       ? (dinars ? `${usd} دولار (${dinars} دينار)` : `${usd} دولار`)
       : `${dinars ?? "0"} دينار`;
-    return (
-      `السلام عليكم ورحمة الله وبركاته${name ? `، حضرة ${name} المحترم` : ""}.\n` +
-      `نتمنى أن تكونوا بخير وصحة وعافية. يسعدنا إبلاغكم بأن أغراضكم قد وصلت — الصندوق ${code}، ${parcels} طرد.\n` +
-      `المبلغ المستحق: ${amount}.\n` +
-      `إن شاء الله تصلكم في أنسب وقت. نشكركم جزيل الشكر على ثقتكم الغالية — وزن اكسبريس`
-    );
+    return [
+      `مرحباً${name ? ` حضرة ${name}` : ""}، نتمنى أن تكون بخير.`,
+      "وصلت أغراضك.",
+      `الصندوق: ${code}`,
+      `المبلغ: ${amount}`,
+      "شكراً لثقتك — وزن اكسبريس",
+    ].join("\n");
   }
   if (lang === "en") {
     const amount = usd !== null
       ? (dinars ? `$${usd} (${dinars} IQD)` : `$${usd}`)
       : `${dinars ?? "0"} IQD`;
-    return (
-      `Hello${name ? ` dear ${name}` : ""}, we hope you are well and in good health.\n` +
-      `We are glad to let you know your goods have arrived — box ${code}, ${parcels} parcel(s).\n` +
-      `Amount due: ${amount}.\n` +
-      `They will reach you at the most suitable time, God willing. Thank you very much for your trust — Wazn Express`
-    );
+    return [
+      `Hello${name ? ` ${name}` : ""}, we hope you are well.`,
+      "Your goods have arrived.",
+      `Box: ${code}`,
+      `Amount: ${amount}`,
+      "Thank you for your trust — Wazn Express",
+    ].join("\n");
   }
   const amount = usd !== null
     ? (dinars ? `${usd} دۆلار (${dinars} دینار)` : `${usd} دۆلار`)
     : `${dinars ?? "0"} دینار`;
-  return (
-    `سڵاو و ڕێزێکی زۆر${name ? `، بەڕێز ${name}` : ""}.\n` +
-    `هیوادارین هەمیشە ساغ و سەلامەت بن. خۆشحاڵین پێتان ڕابگەیەنین کە کەل و پەلەکانتان گەیشتوون — بۆکس ${code}، ${parcels} پاکەت.\n` +
-    `بڕی داواکراو: ${amount}.\n` +
-    `ان شاءاللە لە گونجاوترین کاتدا دەگاتە دەستتان. زۆر سوپاس بۆ متمانە بەنرخەکەتان — وەزن ئێکسپرێس`
-  );
+  return [
+    `سڵاو${name ? ` بەڕێز ${name}` : ""}، هیوادارین باش بیت.`,
+    "کەل و پەلەکانی بەڕێزت گەیشتوون.",
+    `بۆکس: ${code}`,
+    `بڕ: ${amount}`,
+    "سوپاس بۆ متمانەت — وەزن ئێکسپرێس",
+  ].join("\n");
 }
 
 /**

@@ -36,11 +36,10 @@ describe("which language the customer is written to in", () => {
 describe("the message", () => {
   const facts = { boxCode: "BOX-20260921-002", parcelCount: 2, totalUsd: 44.88 };
 
-  it("names the box, the parcels and the figure, in each language", () => {
+  it("names the box and the figure, in each language", () => {
     for (const lang of ["ku", "ar", "en"] as const) {
       const text = receiptWhatsAppMessage(lang, facts);
       expect(text, lang).toContain("BOX-20260921-002");
-      expect(text, lang).toContain("2");
       expect(text, lang).toContain("44.88");
     }
   });
@@ -51,9 +50,6 @@ describe("the message", () => {
       expect(text, lang).not.toMatch(/\b2 (ڕۆژ|days|يوم)/);
       expect(text, lang).not.toMatch(/کەمتر لە|أقل من|less than/);
     }
-    expect(receiptWhatsAppMessage("ku", facts)).toContain("گونجاوترین کات");
-    expect(receiptWhatsAppMessage("ar", facts)).toContain("أنسب وقت");
-    expect(receiptWhatsAppMessage("en", facts)).toContain("most suitable time");
   });
 
   it("signs with the company's one name per language", () => {
@@ -64,7 +60,6 @@ describe("the message", () => {
 
   it("keeps digits 0-9 and survives nonsense figures", () => {
     const odd = receiptWhatsAppMessage("ku", { boxCode: "BOX-1", parcelCount: Number.NaN, totalUsd: Number.NaN });
-    expect(odd).toContain("0 پاکەت");
     expect(odd).toContain("0.00");
     expect(odd).not.toMatch(/[٠-٩۰-۹]/);
   });
@@ -117,21 +112,54 @@ describe("the message asks for the paper's own figure, by name", () => {
     expect(receiptMessageDue(100, null)).toEqual({ usd: 100, iqd: null });
   });
 
-  it("greets the customer by name, with good wishes, in each language", () => {
+  it("greets the customer by first name, with good wishes, in each language", () => {
     const f = { boxCode: "BOX-20261021-023", parcelCount: 9, totalUsd: 116.93, totalIqd: 197000, customerName: "Hama Ali" };
     const ar = receiptWhatsAppMessage("ar", f);
-    expect(ar).toContain("حضرة Hama Ali المحترم");
-    expect(ar).toContain("نتمنى أن تكونوا بخير");
+    expect(ar).toContain("حضرة Hama،");
+    expect(ar).toContain("نتمنى أن تكون بخير");
     expect(ar).toContain("116.93 دولار (197,000 دينار)");
     expect(ar).not.toContain("183.03");
     const ku = receiptWhatsAppMessage("ku", f);
-    expect(ku).toContain("بەڕێز Hama Ali");
-    expect(ku).toContain("ساغ و سەلامەت");
+    expect(ku).toContain("بەڕێز Hama،");
+    expect(ku).not.toContain("Ali");
     expect(ku).toContain("116.93 دۆلار (197,000 دینار)");
-    expect(receiptWhatsAppMessage("en", f)).toContain("dear Hama Ali");
+    expect(receiptWhatsAppMessage("en", f)).toContain("Hello Hama,");
     // Dinars only when the paper asks in dinars only.
-    expect(receiptWhatsAppMessage("ku", { ...f, totalUsd: null })).toContain("بڕی داواکراو: 197,000 دینار.");
+    expect(receiptWhatsAppMessage("ku", { ...f, totalUsd: null })).toContain("بڕ: 197,000 دینار");
     // No name: still polite, never "undefined".
     expect(receiptWhatsAppMessage("ar", { ...f, customerName: null })).not.toContain("undefined");
+  });
+});
+
+/**
+ * Owner, 2026-10-22: the message was too long - «سڵاو بەڕێز خەرمان، هیوادارین
+ * باش بیت، کەل و پەلەکانی بەڕێزت گەیشتوون», then the box on its own line, the
+ * amount on its own line, and a short closing.
+ */
+describe("the message is short: greeting, arrived, box, amount, thanks", () => {
+  const f = { boxCode: "BOX-20261022-001", parcelCount: 3, totalUsd: 176.04, totalIqd: 296000, customerName: "خەرمان عەلی" };
+
+  it("five lines in Kurdish, the box and the amount each on its own", () => {
+    expect(receiptWhatsAppMessage("ku", f).split("\n")).toEqual([
+      "سڵاو بەڕێز خەرمان، هیوادارین باش بیت.",
+      "کەل و پەلەکانی بەڕێزت گەیشتوون.",
+      "بۆکس: BOX-20261022-001",
+      "بڕ: 176.04 دۆلار (296,000 دینار)",
+      "سوپاس بۆ متمانەت — وەزن ئێکسپرێس",
+    ]);
+  });
+
+  it("the same five lines in Arabic and English", () => {
+    for (const lang of ["ar", "en"] as const) {
+      const lines = receiptWhatsAppMessage(lang, f).split("\n");
+      expect(lines, lang).toHaveLength(5);
+      expect(lines[2], lang).toContain("BOX-20261022-001");
+      expect(lines[3], lang).toContain("176.04");
+      expect(lines[3], lang).toContain("296,000");
+    }
+  });
+
+  it("no name: a plain greeting, never undefined", () => {
+    expect(receiptWhatsAppMessage("ku", { ...f, customerName: null }).split("\n")[0]).toBe("سڵاو، هیوادارین باش بیت.");
   });
 });
