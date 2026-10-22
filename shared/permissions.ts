@@ -750,6 +750,7 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/finance/goods-on-road": "balance_sheet",
   "/finance/company-stock": "balance_sheet",
   "/finance/extra-costs": "balance_sheet",
+  "/finance/yuan-rates": "balance_sheet",
   "/finance/box-double-charges": "balance_sheet",
   "/finance/bank-accounts": "bank_accounts",
   "/company/expenses": "expenses",

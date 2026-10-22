@@ -341,6 +341,8 @@ export default function BulkOrderForm() {
         sellingPriceUsd: !isCommission && item.sellingPriceUsd ? item.sellingPriceUsd : undefined,
         // Commission fields
         itemPriceUsd: isCommission ? item.itemPriceUsd || undefined : undefined,
+        // Kept with the order for the yuan rate's history (/finance/yuan-rates).
+        itemPriceCny: isCommission && parseFloat(item.itemPriceCny) > 0 ? parseFloat(item.itemPriceCny).toFixed(2) : undefined,
         commissionFeeUsd: isCommission ? item.commissionFeeUsd || undefined : undefined,
         // Advance payment
         advancePaidUsd: item.advancePaidUsd || undefined,

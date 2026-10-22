@@ -230,6 +230,9 @@ export const ledgerRouter = router({
         return { reversed: done.length, totalUsd: Math.round(done.reduce((s, r) => s + r.amountUsd, 0) * 100) / 100 };
       }),
 
+    /** The yuan rate's periods and the orders entered in each (shared/yuanRateHistory). */
+    yuanRateHistory: accountantProcedure.query(async () => db.getYuanRateHistory()),
+
     /** Every other cost written on a box - the main admin's watch (shared/extraCosts). */
     extraCosts: accountantProcedure
       .input(z.object({ sinceDays: z.number().int().min(1).max(3650).default(90) }).optional())

@@ -633,6 +633,8 @@ function FullPackageFormScreen() {
       size: formData.size || undefined,
       productType: formData.productType || undefined,
       purchasePriceUsd: formData.purchasePriceUsd || undefined,
+      // Kept with the order for the yuan rate's history (/finance/yuan-rates).
+      purchasePriceCny: parseFloat(rmbPerUnit) > 0 ? parseFloat(rmbPerUnit).toFixed(2) : undefined,
       sellingPriceUsd: formData.sellingPriceUsd || undefined,
       // Only send an advance when one was actually entered. A typed "0" is a
       // truthy string, so `|| undefined` alone would still post it; the server

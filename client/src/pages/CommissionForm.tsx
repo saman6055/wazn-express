@@ -773,6 +773,8 @@ function CommissionFormScreen() {
       size: formData.size || undefined,
       productType: formData.productType || undefined,
       itemPriceUsd: formData.itemPriceUsd,
+      // Kept with the order for the yuan rate's history (/finance/yuan-rates).
+      itemPriceCny: parseFloat(rmbPerUnit) > 0 ? parseFloat(rmbPerUnit).toFixed(2) : undefined,
       commissionFeeUsd: formData.commissionFeeUsd,
       totalPrepaidUsd: totalPrepaid.toFixed(2),
       // Only send an advance when one was actually entered. A typed "0" is a

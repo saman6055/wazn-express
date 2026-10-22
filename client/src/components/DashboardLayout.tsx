@@ -480,6 +480,7 @@ function DashboardLayoutContent({
           { icon: Ship, label: pickLang(language, { ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" }), path: "/finance/goods-on-road" },
           { icon: PackageX, label: pickLang(language, { ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" }), path: "/finance/company-stock" },
           { icon: Receipt, label: pickLang(language, { ku: "تێچووی تر", en: "Other costs", ar: "تكاليف أخرى", zh: "其他费用" }), path: "/finance/extra-costs" },
+          { icon: TrendingUp, label: pickLang(language, { ku: "مێژووی نرخی یوان", en: "Yuan rate history", ar: "سجل سعر اليوان", zh: "人民币汇率历史" }), path: "/finance/yuan-rates" },
           { icon: Scale, label: t("nav.balanceSheet") || "تەرازوی دارایی", path: "/finance/balance-sheet" },
           { icon: Landmark, label: t("nav.bankAccounts") || "هەژمارە بانکییەکان", path: "/finance/bank-accounts" },
           { icon: Receipt, label: t("nav.expenses") || "خەرجییەکان", path: "/company/expenses" },

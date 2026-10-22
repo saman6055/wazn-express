@@ -58,3 +58,4 @@ export * from './ordersByTracking.db';
 export * from './extraCosts.db';
 export * from './boxDecides.db';
 export * from './boxHandover.db';
+export * from './yuanRateHistory.db';

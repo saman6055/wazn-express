@@ -890,6 +890,9 @@ const [companyData, setCompanyData] = useState({
                           zh: "也是门户的人民币价格——也可以在门户中心修改。",
                         })}
                       </p>
+                      <Link href="/finance/yuan-rates" className="text-xs text-primary underline mt-1 inline-block">
+                        {pickLang(language, { ku: "بینینی مێژوو ←", en: "See the history →", ar: "عرض السجل ←", zh: "查看历史 →" })}
+                      </Link>
                     </div>
                     <div className="space-y-2">
                       <Label htmlFor="rmbRate">{t("settings.newRate") || "New Rate"}</Label>
