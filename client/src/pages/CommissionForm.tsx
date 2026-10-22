@@ -2,7 +2,7 @@
 import { RefusalWarning } from "@/components/RefusalWarning";
 import { oddOrderNumbers, oddOrderQuestion } from "@shared/orderNumberSense";
 import { orderTrackingWarnings, ORDER_TRACKING_WARNING_TEXT } from "@shared/orderTrackingSanity";
-import { platformFromOrderNumber } from "@shared/orderNumberPlatform";
+import { platformFromOrderNumber, platformForOrderNumber } from "@shared/orderNumberPlatform";
 import { pickOrderFormDraft, stashOrderFormDraft, takeOrderFormDraft } from "@/lib/formSwitchDraft";
 import { useLocation, useParams } from "wouter";
 import { LastOrderStrip } from "@/components/forms/LastOrderStrip";
@@ -150,13 +150,14 @@ function CommissionFormScreen() {
   // Ctrl+V with no field chosen puts an order number or a tracking into its
   // own field (owner, 2026-10-22; hooks/usePasteIntoField).
   const orderNumberRef = useRef<HTMLInputElement>(null);
+  /** The platform was picked by hand for this order, not remembered from the last. */
+  const platformByHand = useRef(false);
   const trackingNumberRef = useRef<HTMLInputElement>(null);
   usePasteIntoField({
     order: {
       ref: orderNumberRef,
       set: (orderNumber) => {
-        const guess = platformFromOrderNumber(orderNumber);
-        setFormData((p) => ({ ...p, orderNumber, platform: guess.platform ?? p.platform }));
+        setFormData((p) => ({ ...p, orderNumber, platform: platformForOrderNumber(orderNumber, p.platform, platformByHand.current) }));
       },
     },
     tracking: { ref: trackingNumberRef, set: (trackingNumber) => setFormData((p) => ({ ...p, trackingNumber })) },
@@ -273,6 +274,8 @@ function CommissionFormScreen() {
         ? ((parseFloat(buy) || 0) + (parseFloat(commission) || 0)).toFixed(2)
         : "";
 
+    // A saved order's platform was chosen when it was entered.
+    platformByHand.current = !!o.platform;
     const hydrated = {
       customerId: o.customerId?.toString() || "",
       supplierId: o.supplierId?.toString() || "none",
@@ -373,6 +376,8 @@ function CommissionFormScreen() {
       // Platform is sticky the same way the customer is: a run of orders is
       // usually bought from one shop, so it carries over until changed.
       const keepPlatform = formData.platform;
+      // Carried over, so a guess again for the next order's number.
+      platformByHand.current = false;
       if (keepPlatform) {
         localStorage.setItem(LAST_PLATFORM_KEY, keepPlatform);
       }
@@ -1114,12 +1119,30 @@ function CommissionFormScreen() {
                   <Label className="text-xs">{pickLang(language, { ku: "پلاتفۆرم *", en: "Platform *", ar: "المنصة *", zh: "平台 *" })}</Label>
                   <PlatformSelect
                     value={formData.platform}
-                    onChange={(v) => setFormData((p) => ({ ...p, platform: v }))}
+                    onChange={(v) => { platformByHand.current = true; setFormData((p) => ({ ...p, platform: v })); }}
                     className={cn(filledCls(formData.platform))}
                   />
+                  {/* Two shops, one shape (owner, 2026-10-22): the number
+                      cannot say which, so the form asks - two buttons, one tap. */}
+                  {platformHint.length > 1 && !formData.platform && (
+                    <div className="flex flex-wrap items-center gap-1.5 text-[11px] font-medium text-red-600 dark:text-red-300" data-testid="platform-ask">
+                      <AlertTriangle className="h-3 w-3" />
+                      {pickLang(language, { ku: "پلاتفۆرم دیاری بکە:", en: "Choose the platform:", ar: "حدد المنصة:", zh: "请选择平台：" })}
+                      {platformHint.map((name) => (
+                        <button
+                          key={name}
+                          type="button"
+                          onClick={() => { platformByHand.current = true; setFormData((p) => ({ ...p, platform: name })); }}
+                          className="rounded-md border border-red-300 bg-red-50 px-2 py-0.5 text-red-700 hover:bg-red-100 dark:border-red-800/60 dark:bg-red-950/40 dark:text-red-200"
+                        >
+                          {name}
+                        </button>
+                      ))}
+                    </div>
+                  )}
                   {/* Two shops, one shape. Naming both is a short question;
                       choosing one would be wrong half the time. */}
-                  {platformHint.length > 1 && (
+                  {platformHint.length > 1 && formData.platform && (
                     <p className="flex items-center gap-1 text-[11px] text-sky-600 dark:text-sky-300">
                       <Sparkles className="h-3 w-3" />
                       {pickLang(language, {
@@ -1149,11 +1172,10 @@ function CommissionFormScreen() {
                         neither is chosen — the hint below names both.
                       */
                       const orderNumber = e.target.value;
-                      const guess = platformFromOrderNumber(orderNumber);
                       setFormData((p) => ({
                         ...p,
                         orderNumber,
-                        platform: guess.platform ?? p.platform,
+                        platform: platformForOrderNumber(orderNumber, p.platform, platformByHand.current),
                       }));
                     }}
                     placeholder={pickLang(language, { ku: "ژمارەی ئۆردەر", en: "Order number", ar: "رقم الطلب", zh: "订单编号" })}

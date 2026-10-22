@@ -44,3 +44,15 @@ describe("the screens", () => {
     expect(read("client/src/pages/QuickRegister.tsx")).toContain("usePasteIntoField({ tracking: { ref: trackingRef, set: handleTrackingChange } });");
   });
 });
+
+describe("the forms ask for the platform on a Taobao-or-1688 number", () => {
+  it("both forms, typed or pasted, with two buttons to choose", () => {
+    for (const f of ["client/src/pages/CommissionForm.tsx", "client/src/pages/FullPackageForm.tsx"]) {
+      const src = read(f);
+      expect(src.split("platformForOrderNumber(orderNumber, p.platform, platformByHand.current)").length - 1, f).toBe(2);
+      expect(src, f).not.toContain("guess.platform ?? p.platform");
+      expect(src, f).toContain('data-testid="platform-ask"');
+      expect(src, f).toContain("platformByHand.current = false;");
+    }
+  });
+});

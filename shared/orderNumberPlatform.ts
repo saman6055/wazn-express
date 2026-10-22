@@ -81,6 +81,25 @@ export function platformFromOrderNumber(orderNumber: string | null | undefined):
 }
 
 /**
+ * The platform once the order number is in (owner, 2026-10-22: «کە
+ * ئۆردەرنەمبەری پین دوو دوو نەبوو ... سیستەم بڵێ پلاتفۆرم دیاری بکە»).
+ *
+ * Pinduoduo by its dash, whatever was there. A Taobao-or-1688 number keeps
+ * the platform only when somebody chose Taobao or 1688 by hand for this
+ * order; the one remembered from the last order is a guess, so it is cleared
+ * and the form asks. Anything else leaves the platform alone.
+ */
+export function platformForOrderNumber(orderNumber: string | null | undefined, current: string, chosenByHand: boolean): string {
+  const guess = platformFromOrderNumber(orderNumber);
+  if (guess.platform) return guess.platform;
+  if (guess.candidates.length > 1) {
+    const kept = guess.candidates.some((c) => c.toLowerCase() === current.trim().toLowerCase());
+    return chosenByHand && kept ? current : "";
+  }
+  return current;
+}
+
+/**
  * Does this look like a shop's order number rather than a courier's tracking?
  *
  * The owner, 2026-09-30: «ئەگەر کەسێ لە جیاتی تراک نەمبەر، ئۆردەر نەمبەری
