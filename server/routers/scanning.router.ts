@@ -1779,6 +1779,10 @@ export const deliveryBoxRouter = router({
         }
       }
 
+      // Goods of another customer's order never enter this box (foreignOrderInBox).
+      const foreign = await db.foreignOrderInBox(box.customerId, { packageId: pkg?.id, fullPackageOrderId: fpOrder?.id });
+      if (foreign) throw new TRPCError({ code: "BAD_REQUEST", message: db.foreignOrderRefusal(box.boxCode, foreign.orderCode) });
+
       const item = await db.addItemToBox({
         boxId: input.boxId,
         packageId: pkg?.id || undefined,

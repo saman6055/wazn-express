@@ -1108,7 +1108,9 @@ export async function claimPackage(
       claimedAt: new Date(),
       claimedById,
     })
-    .where(eq(packages.id, packageId));
+    // Only a parcel that is nobody's: one with an owner never changes hands
+    // here, where its money would stay on the old owner (owner, 2026-10-22).
+    .where(and(eq(packages.id, packageId), or(eq(packages.isUnclaimed, true), isNull(packages.customerId))));
   
   const [updated] = await db.select().from(packages).where(eq(packages.id, packageId));
   return updated;

@@ -252,6 +252,35 @@ export async function parcelCorrectionRefusal(packageId: number, name: string): 
 }
 
 /**
+ * Why a parcel's owner may not be changed from the parcel (owner, 2026-10-22:
+ * a parcel entered on the wrong customer and put right must leave nothing on
+ * the old one - nobody is charged for goods that went to somebody else).
+ *
+ * The owner and the money move together or neither moves. A parcel that
+ * travels for an order follows the order's owner (the order's own edit moves
+ * both); one in a box or on a receipt has its price written there. Before
+ * this, the parcel edit saved the new owner and left the debt behind
+ * (AZ298 $10.20 for a parcel AZ086 received and paid for).
+ */
+export async function ownerMoveRefusal(
+  pkg: Pick<Package, "id" | "fullPackageOrderId" | "trackingNumber" | "packageCode">,
+): Promise<string | null> {
+  const name = pkg.trackingNumber || pkg.packageCode || String(pkg.id);
+  const orders = await ordersBehindParcel(pkg);
+  if (orders.length > 0) {
+    const codes = orders.map((o) => o.orderCode).join("، ");
+    return withFix(
+      `خاوەنی پاکەتی ${name} لێرە ناگۆڕدرێت — ئەم پاکەتە هی ئۆردەری ${codes} ـە، و پارەکەی لەسەر خاوەنی ئۆردەرەکەیە. گۆڕینی تەنها پاکەتەکە، پارەکە لەسەر کڕیارە کۆنەکە بەجێدەهێڵێت.`,
+      [
+        `ئۆردەری ${codes} بکەرەوە و کڕیارەکەی لەوێ بگۆڕە — پاکەت و پارەکە پێکەوە دەچن`,
+        "ئەگەر ئەم تراکە هی ئەو ئۆردەرە نییە، لە ئۆردەرەکە تراکەکە لابدە، ئینجا خاوەنی پاکەتەکە بگۆڕە",
+      ],
+    );
+  }
+  return parcelCorrectionRefusal(pkg.id, name);
+}
+
+/**
  * The invoice written with the charge reads the corrected figure too.
  *
  * adjustCharge writes the one new amount over the invoice total — right for

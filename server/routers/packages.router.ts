@@ -698,6 +698,24 @@ export const packagesRouter = router({
             });
           }
           primaryOrder = orders[0]!;
+          // The customer picked on the screen and the order's customer must be
+          // one person: otherwise the order's owner is charged for goods that
+          // go home with somebody else (CM-MTVGC8UN: Helin charged $28.63 for
+          // a bag Zainab received and paid for in her box).
+          const ordersOwner = primaryOrder.customerId;
+          if (!input.isUnclaimed && input.customerId && ordersOwner && input.customerId !== ordersOwner) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: withFix(
+                `ئەم پاکەتە هی ئۆردەری ${primaryOrder.orderCode} ـە، کە لەسەر کڕیارێکی ترە نەک ئەو کڕیارەی هەڵتبژاردووە.`,
+                [
+                  "ئەگەر کاڵاکە هی ئەو کڕیارەیە کە هەڵتبژاردووە، سەرەتا ئۆردەرەکە بکەرەوە و کڕیارەکەی لەوێ ڕاست بکەرەوە",
+                  "ئەگەر ئۆردەرەکە ڕاستە، خانەی کڕیار لێرە بگۆڕە بۆ خاوەنی ئۆردەرەکە",
+                  "ئینجا دووبارە تۆمارکردن لێبدە",
+                ],
+              ),
+            });
+          }
         }
 
         // For unclaimed packages, customer is optional
@@ -1156,6 +1174,24 @@ export const packagesRouter = router({
         }
         if (request.status !== "pending") {
           throw new TRPCError({ code: "BAD_REQUEST", message: "Request has already been processed" });
+        }
+
+        // A claim gives a parcel that is nobody's. One that already has an
+        // owner is moved from the parcel's own edit, which takes its money
+        // with it - never here, where the old owner's debt would stay behind.
+        const claimed = await db.getPackageById(request.packageId);
+        if (claimed && claimed.customerId && !claimed.isUnclaimed && claimed.customerId !== request.customerId) {
+          throw new TRPCError({
+            code: "CONFLICT",
+            message: withFix(
+              `پاکەتی ${claimed.trackingNumber || claimed.packageCode} پێشتر خاوەنی هەیە — داواکە لێرە پەسەند ناکرێت، چونکە پارەکەی لەسەر خاوەنە کۆنەکە دەمێنێتەوە.`,
+              [
+                "پاکەتەکە لە «هەموو پاکەتەکان» بکەرەوە",
+                "ئەگەر بەڕاستی هی ئەم کڕیارەیە، خاوەنەکەی لەوێ بگۆڕە — پارەکەشی لەگەڵ دەڕوات",
+                "ئینجا ئەم داوایە دابخە",
+              ],
+            ),
+          });
         }
         
         const result = await db.approveClaimRequest(input.requestId, ctx.user.id, input.adminNote);
@@ -1796,6 +1832,15 @@ export const packagesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, volumeCbm: inputVolumeCbm, photos, approveCredit, ...data } = input;
+
+        // A new owner: the money goes with the parcel or the edit is refused
+        // (db/parcelCorrection ownerMoveRefusal, owner 2026-10-22).
+        const current = data.customerId !== undefined ? await db.getPackageById(id) : undefined;
+        const ownerMoves = Boolean(current && data.customerId !== undefined && data.customerId !== current.customerId);
+        if (current && ownerMoves) {
+          const why = await db.ownerMoveRefusal(current);
+          if (why) throw new TRPCError({ code: "CONFLICT", message: why });
+        }
         
         // Calculate volume if dimensions provided, or use direct input
         const updateData: Partial<InsertPackage> = { ...data };
@@ -1901,6 +1946,17 @@ export const packagesRouter = router({
               wasUsd: pkg.calculatedCostUsd,
               resolvedUsd: priced?.costUsd,
             });
+            // The money could not follow the new owner: nothing is saved,
+            // rather than the parcel moving and its debt staying behind.
+            if (ownerMoves && onAccount?.outcome === "held") {
+              throw new TRPCError({
+                code: "CONFLICT",
+                message: withFix(`خاوەنی پاکەتەکە نەگۆڕدرا — پارەکەی ناتوانرێت لەگەڵیدا بڕوات. ${onAccount.said?.ku ?? ""}`.trim(), [
+                  "سەرەتا ئەوەی سەرەوە چاک بکە (بۆکس، وەسڵ یان باچ)",
+                  "ئینجا خاوەنی پاکەتەکە دووبارە بگۆڕە",
+                ]),
+              });
+            }
             if (onAccount) pricing = onAccount;
             if (shouldStoreNewPrice(pricing) && priced?.costUsd) {
               updateData.calculatedCostUsd = priced.costUsd;

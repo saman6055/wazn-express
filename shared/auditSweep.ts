@@ -57,7 +57,9 @@ export type CheckId =
   | "payment_without_ledger"
   | "arrived_goods_unbilled"
   | "commission_profit_one_unit"
-  | "customer_in_credit";
+  | "customer_in_credit"
+  | "parcel_charged_to_other"
+  | "order_charged_to_other";
 
 export interface CheckDefinition {
   id: CheckId;
@@ -513,6 +515,41 @@ export const CHECKS: readonly CheckDefinition[] = [
       en: "This account says we hold the customer's money. Nobody prepays, so it is usually a debt cleared twice, or money for goods not yet put on the account. See customers in credit under Finance.",
       ar: "هذا الحساب يقول إن للعميل مالاً عندنا. لا أحد يدفع مقدماً، فهو غالباً دين سُدِّد مرتين أو ثمن بضاعة لم تُقيَّد بعد. راجع العملاء الدائنين في المالية.",
       zh: "该账户显示我们持有客户的钱。没有人预付，所以这通常是同一笔欠款被冲减了两次，或是尚未入账商品的款项。请在财务中查看有贷方余额的客户。",
+    },
+  },
+  {
+    // Owner, 2026-10-22: nobody is charged for goods that went to somebody else.
+    id: "parcel_charged_to_other",
+    severity: "critical",
+    path: "/finance",
+    title: {
+      ku: "کرێی پاکەت لەسەر کڕیارێک کە خاوەنی پاکەتەکە نییە",
+      en: "Parcel charges standing on someone who does not own the parcel",
+      ar: "رسوم طرود مسجّلة على شخص لا يملك الطرد",
+      zh: "包裹费用记在了非包裹所有人的账上",
+    },
+    meaning: {
+      ku: "پاکەتەکە گوازراوەتەوە بۆ کڕیارێکی تر، بەڵام کرێکەی لەسەر کڕیارە کۆنەکە ماوەتەوە. کڕیارێک پارەی شتێک دەدات کە هی ئەو نییە. نووسینەکە لە حیسابی کڕیارە کۆنەکە هەڵبوەشێنەوە.",
+      en: "The parcel was moved to another customer but its charge stayed on the old one: somebody is paying for goods that are not theirs. Reverse the line on the old customer's account.",
+      ar: "نُقل الطرد إلى عميل آخر وبقيت رسومه على العميل القديم: أحدهم يدفع ثمن ما ليس له. ألغِ القيد من حساب العميل القديم.",
+      zh: "包裹已转给另一位客户，费用却留在原客户账上：有人在为不属于自己的货付钱。请在原客户账户上冲销该笔。",
+    },
+  },
+  {
+    id: "order_charged_to_other",
+    severity: "critical",
+    path: "/finance",
+    title: {
+      ku: "ئۆردەر لەسەر کڕیارێک، پاکەتەکەی لای کڕیارێکی تر",
+      en: "An order charged to one customer whose parcel went to another",
+      ar: "طلب محسوب على عميل وطرده ذهب إلى عميل آخر",
+      zh: "订单记在一位客户名下，包裹却给了另一位",
+    },
+    meaning: {
+      ku: "پارەی ئۆردەرەکە لەسەر کڕیارێکە، بەڵام پاکەتەکەی تۆمارکراوە بۆ کڕیارێکی تر — زۆرجار ئەو کڕیارەی تر لە بۆکسەکەیدا پارەکەی داوە. کاڵایەک دوو جار وەرگیراوە. خاوەنی ڕاستەقینە دیاری بکە و نووسینەکە لە ئەوی تر لابەرە.",
+      en: "The order's money is on one customer but its parcel is registered to another - often the other paid for it in their box. The same goods were charged twice. Settle who owns it and take the line off the other.",
+      ar: "مال الطلب على عميل وطرده مسجّل لعميل آخر - وغالباً دفع الآخر ثمنه في صندوقه. البضاعة نفسها حُسبت مرتين. حدّد المالك الحقيقي وأزل القيد عن الآخر.",
+      zh: "订单的钱记在一位客户名下，包裹却登记给另一位——往往另一位已在其箱子里付过款。同一批货收了两次钱。确定真正的所有人，并从另一方删除该笔。",
     },
   },
 ];

@@ -3,7 +3,7 @@ import { smallParcelRuleFor } from "./smallParcel.db";
 import { and, desc, eq, getTableColumns, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { withFix } from "@shared/fixAdvice";
 import { getDb } from "./connection";
-import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers } from "../../drizzle/schema";
+import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers, packageOrderLinks } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
 import { appLogger } from "../utils/logger";
 import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
@@ -559,10 +559,60 @@ export async function refuseIfBoxPaid(boxId: number): Promise<void> {
   ));
 }
 
+/**
+ * A live order behind these goods that belongs to somebody other than the box's
+ * customer (owner, 2026-10-22). The box charges its customer for the order
+ * behind each parcel, and the order was already charged to its own customer
+ * when it was entered - so a parcel of Helin's order in Zainab's box billed the
+ * same bag to both ($28.63, CM-MTVGC8UN). Such goods never enter the box.
+ */
+export async function foreignOrderInBox(
+  boxCustomerId: number,
+  goods: { packageId?: number | null; fullPackageOrderId?: number | null },
+): Promise<{ orderCode: string } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const ids = new Set<number>();
+  if (goods.fullPackageOrderId) ids.add(Number(goods.fullPackageOrderId));
+  if (goods.packageId) {
+    const [pkg] = await db.select({ orderId: packages.fullPackageOrderId }).from(packages).where(eq(packages.id, Number(goods.packageId))).limit(1);
+    if (pkg?.orderId) ids.add(Number(pkg.orderId));
+    const links = await db.select({ orderId: packageOrderLinks.fullPackageOrderId }).from(packageOrderLinks).where(eq(packageOrderLinks.packageId, Number(goods.packageId)));
+    for (const l of links) ids.add(Number(l.orderId));
+  }
+  if (ids.size === 0) return null;
+  const [other] = await db
+    .select({ orderCode: fullPackageOrders.orderCode })
+    .from(fullPackageOrders)
+    .where(and(
+      inArray(fullPackageOrders.id, Array.from(ids)),
+      isNull(fullPackageOrders.deletedAt),
+      ne(fullPackageOrders.customerId, boxCustomerId),
+      sql`${fullPackageOrders.status} NOT IN ('cancelled','refunded','rejected')`,
+    ))
+    .limit(1);
+  return other ? { orderCode: String(other.orderCode) } : null;
+}
+
+/** What the counter is told when such goods are scanned into a box. */
+export function foreignOrderRefusal(boxCode: string, orderCode: string): string {
+  return withFix(
+    `ئەم کاڵایە هی ئۆردەری ${orderCode} ـە، کە لەسەر کڕیارێکی ترە نەک خاوەنی بۆکسی ${boxCode}. ئەگەر بخرێتە ئەم بۆکسە، هەمان کاڵا لە دوو کڕیار وەردەگیرێت.`,
+    [
+      `ئۆردەری ${orderCode} بکەرەوە و سەیری خاوەنەکەی بکە`,
+      "ئەگەر ئۆردەرەکە لەسەر کڕیاری هەڵە تۆمار کراوە، کڕیارەکەی لەوێ ڕاست بکەرەوە — پارەکەشی لەگەڵ دەڕوات",
+      "ئینجا پاکەتەکە دووبارە سکان بکە",
+    ],
+  );
+}
+
 export async function addItemToBox(data: InsertDeliveryBoxItem): Promise<DeliveryBoxItem> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   await refuseIfBoxPaid(Number(data.boxId));
+  const [owner] = await db.select({ customerId: deliveryBoxes.customerId, boxCode: deliveryBoxes.boxCode }).from(deliveryBoxes).where(eq(deliveryBoxes.id, Number(data.boxId))).limit(1);
+  const foreign = owner?.customerId ? await foreignOrderInBox(owner.customerId, data) : null;
+  if (foreign) throw new Error(foreignOrderRefusal(owner!.boxCode, foreign.orderCode));
 
   const result = await db.insert(deliveryBoxItems).values(data);
   const insertId = Number(result[0].insertId);
@@ -1181,6 +1231,11 @@ export async function createDeliveryBoxesForBatch(
     // sum, fresh shipping recompute, and chargeable-weight logic in a single
     // place that recompute also calls.
     for (const pkg of pkgs) {
+      // Goods of somebody else's order stay out (foreignOrderInBox).
+      if (await foreignOrderInBox(customerId, { packageId: pkg.id })) {
+        appLogger.warn("[DeliveryBox] Parcel left out: its order is another customer's", { packageId: pkg.id, customerId });
+        continue;
+      }
       const values = await buildBoxItemValuesFromPackage(pkg, batchRow, userId);
       await db.insert(deliveryBoxItems).values({ boxId, ...values });
     }
@@ -1446,6 +1501,11 @@ export async function recomputeBoxItems(
       }).where(eq(deliveryBoxItems.id, existing.id));
       updated++;
     } else {
+      // Goods of somebody else's order stay out (foreignOrderInBox).
+      if (await foreignOrderInBox(box.customerId, { packageId: pkg.id })) {
+        appLogger.warn("[DeliveryBox] Parcel left out: its order is another customer's", { packageId: pkg.id, boxId });
+        continue;
+      }
       await db.insert(deliveryBoxItems).values({ boxId, ...values });
       added++;
     }

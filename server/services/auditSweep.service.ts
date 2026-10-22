@@ -377,6 +377,58 @@ const QUERIES: Record<CheckId, string> = {
     WHERE CAST(a.currentBalanceUsd AS DECIMAL(14,2)) < -0.01
     ORDER BY CAST(a.currentBalanceUsd AS DECIMAL(14,2)) ASC
     LIMIT ${SAMPLE_LIMIT}`,
+
+  /*
+   * A parcel's own charge still standing on an account that is not its
+   * owner's (owner, 2026-10-22). Order freight is written with the order's id
+   * under "package" and names the order, so lines naming an order are left to
+   * the check below.
+   */
+  parcel_charged_to_other: `
+    SELECT p.packageCode, p.trackingNumber, c.customerCode AS chargedTo, o.customerCode AS ownedBy,
+           ROUND(SUM(CASE WHEN t.transactionType LIKE 'DEBIT_%' OR t.transactionType = 'ADJUSTMENT_DEBIT'
+                          THEN CAST(t.amountUsd AS DECIMAL(14,2))
+                          ELSE -CAST(t.amountUsd AS DECIMAL(14,2)) END), 2) AS standingUsd
+    FROM ledgerTransactions t
+    JOIN customerAccounts a ON a.id = t.accountId
+    JOIN packages p ON p.id = t.referenceId
+    JOIN customers c ON c.id = a.customerId
+    JOIN customers o ON o.id = p.customerId
+    WHERE t.referenceType = 'package'
+      AND t.description NOT REGEXP '(CM|FP|PR)-[A-Z0-9]{6,}'
+      AND p.customerId IS NOT NULL
+      AND p.customerId <> a.customerId
+    GROUP BY p.id, p.packageCode, p.trackingNumber, c.customerCode, o.customerCode
+    HAVING standingUsd > 0.009
+    ORDER BY standingUsd DESC
+    LIMIT ${SAMPLE_LIMIT}`,
+
+  /*
+   * An order whose parcel is registered to someone else while the order's
+   * money still stands on the order's customer (CM-MTVGC8UN: Helin charged
+   * $28.63, the bag in Zainab's box and paid there).
+   */
+  order_charged_to_other: `
+    SELECT o.orderCode, oc.customerCode AS chargedTo, pc.customerCode AS parcelWith, p.packageCode,
+           (SELECT ROUND(COALESCE(SUM(CASE WHEN t.transactionType LIKE 'DEBIT_%' OR t.transactionType = 'ADJUSTMENT_DEBIT'
+                                           THEN CAST(t.amountUsd AS DECIMAL(14,2))
+                                           ELSE -CAST(t.amountUsd AS DECIMAL(14,2)) END), 0), 2)
+              FROM ledgerTransactions t
+              JOIN customerAccounts a ON a.id = t.accountId
+             WHERE a.customerId = o.customerId
+               AND t.referenceId = o.id
+               AND (t.referenceType IN ('commission', 'full_package')
+                    OR (t.referenceType = 'package'
+                        AND (t.description LIKE CONCAT('%', o.orderCode, '%') OR t.description LIKE '%[REV:%' OR t.description LIKE '%[ADJ:%')))) AS standingUsd
+    FROM fullPackageOrders o
+    JOIN packages p ON p.fullPackageOrderId = o.id
+    JOIN customers oc ON oc.id = o.customerId
+    JOIN customers pc ON pc.id = p.customerId
+    WHERE o.deletedAt IS NULL
+      AND o.status NOT IN ('cancelled', 'refunded', 'rejected')
+      AND p.customerId <> o.customerId
+    HAVING standingUsd > 0.009
+    LIMIT ${SAMPLE_LIMIT}`,
 };
 
 /**
