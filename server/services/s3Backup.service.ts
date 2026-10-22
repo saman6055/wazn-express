@@ -18,6 +18,7 @@ import {
   systemSettings,
 } from "../../drizzle/schema.js";
 import { isNotNull } from "drizzle-orm";
+import { isStoredFileUrl } from "@shared/uploadRule";
 import archiver from "archiver";
 import fs from "fs/promises";
 import { createWriteStream } from "fs";
@@ -162,7 +163,11 @@ export async function collectAllFileUrls(): Promise<Array<{
   // Helper: safely add a URL (skip null, empty, or non-URL values)
   function addUrl(url: string | null | undefined, path: string, source: string) {
     if (!url || typeof url !== "string" || url.trim() === "") return;
-    if (!url.startsWith("http") && !url.startsWith("/")) return;
+    // Only a file we stored. Some of these links were typed by a customer
+    // (a message's attachment), and this job fetches every one of them from
+    // the server itself — an address inside our own network would be read
+    // and its answer written into the backup (shared/uploadRule).
+    if (!isStoredFileUrl(url.trim())) return;
     fileUrls.push({ url: url.trim(), path, source });
   }
 

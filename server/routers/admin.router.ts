@@ -9,6 +9,7 @@ import { eq, desc } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, auditorProcedure, superAdminProcedure } from "../middleware/auth";
 import { lockedStaff, unlockStaff } from "../lib/staffLoginLocks";
+import { isStoredFileUrl } from "@shared/uploadRule";
 import * as db from "../db";
 import { cacheGetOrSet, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -297,8 +298,10 @@ export const dataManagementRouter = router({
     
     // ============ DATA IMPORT ============
     
-    // Import category data
-    importCategory: adminProcedure
+    // Import category data. Rows go into the table as given — the users
+    // table and the ledger included — and with `overwrite` the table is
+    // emptied first. That is the main admin's hand alone.
+    importCategory: superAdminProcedure
       .input(z.object({
         category: z.string(),
         data: z.array(z.record(z.string(), z.any())),
@@ -321,8 +324,8 @@ export const dataManagementRouter = router({
         return result;
       }),
     
-    // Import all data (full restore)
-    importAllData: adminProcedure
+    // Import all data (full restore). The main admin alone, as above.
+    importAllData: superAdminProcedure
       .input(z.object({
         data: z.record(z.string(), z.array(z.record(z.string(), z.any()))),
         overwrite: z.boolean().optional()
@@ -1371,9 +1374,11 @@ export const supportChatRouter = router({
         chatId: z.number(),
         content: z.string().min(1),
         messageType: z.enum(['text', 'image', 'file', 'voice']).optional(),
-        attachmentUrl: z.string().optional(),
-        attachmentName: z.string().optional(),
-        attachmentType: z.string().optional(),
+        // A link to a file we stored, nothing else: the office's screen
+        // puts it in a link and the backup job fetches it (shared/uploadRule).
+        attachmentUrl: z.string().refine(isStoredFileUrl, "Not a stored file").optional(),
+        attachmentName: z.string().max(255).optional(),
+        attachmentType: z.string().max(100).optional(),
       }))
       .mutation(async ({ ctx, input }) => {
         const chat = await db.getSupportChatById(input.chatId);
