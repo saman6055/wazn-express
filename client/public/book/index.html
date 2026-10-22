@@ -1,0 +1,479 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>وزن إكسبريس — نجيب الصين لجيبك</title>
+<meta name="description" content="اشترِ من الصين من موبايلك ببطاقتك، أو دزّ لنا الصورة وإحنا نشتريها الك. شحن جوي وبحري من مخازننا بالصين لحد باب بيتك بكل محافظات العراق.">
+<meta name="theme-color" content="#00AEEF">
+<link rel="icon" href="/brand/wazn-logo.png">
+<meta property="og:type" content="website">
+<meta property="og:title" content="وزن إكسبريس — نجيب الصين لجيبك">
+<meta property="og:description" content="اشترِ من الصين من موبايلك، وإحنا نوصّلها لحد باب بيتك.">
+<meta property="og:image" content="https://waznexpress.com/book/assets/share.jpg">
+<meta property="og:url" content="https://waznexpress.com/book">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="stylesheet" href="assets/fonts.css">
+<style>
+/* ══════════════════════════════════════════════════════════════
+   WAZN EXPRESS — waznexpress.com/book
+   The booklet, for a thumb.  One language at a time, nothing to pinch.
+   An inline style block is allowed by the production CSP; an inline script
+   is NOT — every line of behaviour lives in book.js.
+   ══════════════════════════════════════════════════════════════ */
+:root{
+  --ink:#0E1114; --cyan:#00AEEF; --cyan-ink:#0077A8;
+  --tint:#E9F7FE; --tint-2:#F5FBFE; --line:#DCE3E8;
+  --grey:#5E656C; --grey-2:#8A9199; --wa:#25D366;
+  --dock:62px; --pad:18px;
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+body{background:#fff;color:var(--ink);font-family:"Noto Sans Arabic",Tahoma,sans-serif;
+  font-size:17px;line-height:1.75;text-wrap:pretty;overflow-x:hidden;
+  padding-bottom:calc(var(--dock) + env(safe-area-inset-bottom));
+  /* Reading is welcome; lifting the text is not. */
+  -webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+img{display:block;max-width:100%;-webkit-user-drag:none;pointer-events:none}
+a{text-decoration:none;color:inherit}
+
+/* One language at a time — book.js flips the class on <body>.
+   !important on purpose: these three rules have to beat every layout rule
+   below them. A plain `.ku{display:none}` loses to anything more specific
+   that happens to match the same span (`.tip div span` did), and then the
+   page quietly shows both languages at once. */
+.ku{display:none !important}
+body.lang-ku .ku{display:contents !important}
+body.lang-ku .ar{display:none !important}
+
+/* A grid item never shrinks past its own min-content, and Kurdish has some
+   very long single words. Let every card shrink, and let a word break
+   rather than push the page sideways. */
+.btns>*,.apps>*,.why>*{min-width:0}
+h1,h2,h3,b,.btn{overflow-wrap:anywhere}
+
+/* ───── top bar ───── */
+.top{position:sticky;top:0;z-index:30;background:rgba(255,255,255,.94);
+  -webkit-backdrop-filter:saturate(1.4) blur(8px);backdrop-filter:saturate(1.4) blur(8px);
+  border-bottom:1px solid var(--line);display:flex;align-items:center;gap:12px;
+  padding:10px var(--pad);padding-top:calc(10px + env(safe-area-inset-top))}
+.top img{height:26px;width:auto}
+.top .sp{flex:1}
+.lang{display:flex;border:1px solid var(--line);border-radius:999px;overflow:hidden}
+.lang button{font:inherit;font-size:13px;font-weight:700;font-family:"Noto Kufi Arabic",sans-serif;
+  border:0;background:#fff;color:var(--grey);padding:0 14px;min-height:38px;cursor:pointer}
+.lang button[aria-pressed="true"]{background:var(--cyan);color:#fff}
+
+/* ───── hero ───── */
+.hero{padding:30px var(--pad) 26px;background:radial-gradient(125% 90% at 85% 0%,#E6F6FD 0%,#fff 62%)}
+.eyebrow{font-family:"Inter",sans-serif;font-size:11px;font-weight:800;letter-spacing:.18em;
+  text-transform:uppercase;color:var(--cyan-ink)}
+h1{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:30px;line-height:1.35;
+  margin-top:12px;text-wrap:balance;letter-spacing:-.01em}
+.hl{color:var(--cyan-ink)}
+.hero .sub{font-size:17px;color:var(--grey);margin-top:12px}
+
+/* ───── buttons ───── */
+.btn{display:flex;align-items:center;justify-content:center;gap:10px;min-height:54px;
+  border-radius:14px;font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:17px;
+  border:1.5px solid var(--line);background:#fff;color:var(--ink);padding:0 18px;text-align:center}
+.btn.wa{background:var(--wa);border-color:var(--wa);color:#fff;box-shadow:0 6px 18px rgba(37,211,102,.3)}
+.btn.cy{background:var(--cyan);border-color:var(--cyan);color:#fff;box-shadow:0 6px 18px rgba(0,174,239,.28)}
+.btn svg{width:22px;height:22px;flex:none;pointer-events:none}
+.btns{display:grid;gap:10px;margin-top:22px}
+
+/* ───── sections ───── */
+section{padding:34px var(--pad);border-top:10px solid #F2F6F9}
+h2{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:23px;line-height:1.4;text-wrap:balance}
+.lead{color:var(--grey);margin-top:10px;font-size:16px}
+
+/* ───── two ways ───── */
+.way{border:1.5px solid var(--line);border-radius:18px;padding:20px;margin-top:18px;position:relative}
+.way.one{border-color:var(--cyan);background:var(--tint)}
+.way .n{position:absolute;top:-13px;inset-inline-start:20px;background:var(--cyan);color:#fff;
+  font-family:"Inter",sans-serif;font-weight:900;font-size:13px;border-radius:999px;padding:4px 12px}
+.way h3{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:20px;margin-top:4px}
+.way p{color:var(--grey);margin-top:8px;font-size:16px}
+
+/* ───── steps ───── */
+.steps{margin-top:20px}
+.step{display:flex;gap:16px;padding-bottom:22px;position:relative}
+.step:last-child{padding-bottom:0}
+.step::before{content:"";position:absolute;inset-inline-start:17px;top:42px;bottom:2px;width:2px;
+  background:repeating-linear-gradient(180deg,var(--cyan) 0 6px,transparent 6px 12px);opacity:.55}
+.step:last-child::before{display:none}
+.step .n{width:36px;height:36px;border-radius:50%;background:var(--cyan);color:#fff;flex:none;
+  display:flex;align-items:center;justify-content:center;font-family:"Inter",sans-serif;
+  font-weight:900;font-size:15px;z-index:1}
+.step h3{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:18px;line-height:1.4;padding-top:5px}
+.step p{color:var(--grey);margin-top:6px;font-size:16px}
+
+/* ───── why cards ───── */
+.why{display:grid;gap:12px;margin-top:20px}
+.card{border:1.5px solid var(--line);border-radius:16px;padding:16px 18px}
+.card > b{display:block;font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:18px}
+.card > span{display:block;color:var(--grey);font-size:16px;margin-top:5px}
+
+/* ───── apps ───── */
+.apps{display:grid;gap:10px;margin-top:18px}
+.app{display:flex;align-items:center;gap:11px;border:1.5px solid var(--line);border-radius:16px;padding:12px}
+.app>img{width:42px;height:42px;border-radius:10px;object-fit:contain;flex:none}
+.app .t{flex:1;min-width:0}
+/* A long name — ئەلیئێکسپرێس — is one unbreakable word. Without this the
+   row's min-content is wider than the phone and the whole page scrolls
+   sideways, because a grid item will not shrink past its min-content. */
+.app .t > b{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:16px;display:block;
+  overflow-wrap:anywhere}
+.app .t > span{font-family:"Inter",sans-serif;font-size:11px;font-weight:700;letter-spacing:.08em;
+  text-transform:uppercase;color:var(--grey-2)}
+.app .gs{display:flex;gap:6px;flex:none}
+.app .gs a{min-height:40px;display:flex;align-items:center;padding:0 10px;border-radius:999px;
+  background:var(--tint);color:var(--cyan-ink);font-family:"Inter",sans-serif;
+  font-weight:800;font-size:12px;border:1px solid #C9E9F9}
+
+/* ───── routes ───── */
+.route{display:flex;align-items:center;gap:13px;border:1.5px solid var(--line);border-radius:16px;
+  padding:16px;margin-top:12px}
+.route .ic{width:44px;height:44px;border-radius:13px;background:var(--tint);border:1px solid #C9E9F9;
+  color:var(--cyan-ink);display:flex;align-items:center;justify-content:center;flex:none}
+.route .ic svg{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.7;
+  stroke-linecap:round;stroke-linejoin:round}
+.route .t{flex:1;min-width:0}
+.route .t > b{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:18px;display:block}
+.route .t > span{color:var(--grey);font-size:15px}
+.route .d{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:14px;white-space:nowrap;
+  color:#fff;background:var(--cyan);border-radius:999px;padding:6px 13px;flex:none}
+.note{margin-top:16px;border-inline-start:3px solid var(--cyan);padding:4px 14px;color:var(--grey);font-size:16px}
+
+/* ───── portal ───── */
+.portal{display:flex;gap:18px;align-items:flex-start;margin-top:20px}
+.portal .ph{width:140px;flex:none;border-radius:20px;background:#0E1114;padding:5px;
+  box-shadow:0 10px 26px rgba(14,17,20,.18)}
+.portal .ph img{border-radius:16px;width:100%}
+.portal ul{list-style:none;flex:1;min-width:0}
+.portal li{position:relative;padding-inline-start:22px;margin-bottom:15px;font-size:16px;color:var(--grey)}
+.portal li:last-child{margin-bottom:0}
+.portal li > b{display:block;font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:17px;color:var(--ink)}
+.portal li::before{content:"";position:absolute;inset-inline-start:0;top:10px;width:9px;height:9px;
+  border-radius:50%;background:var(--cyan)}
+
+/* ───── tips ───── */
+.tips{counter-reset:t;margin-top:18px}
+.tip{display:flex;gap:14px;padding:13px 0;border-bottom:1px solid var(--line)}
+.tip:last-child{border-bottom:0}
+.tip::before{counter-increment:t;content:counter(t,decimal-leading-zero);
+  font-family:"Inter",sans-serif;font-weight:900;font-size:17px;color:var(--cyan);flex:none;width:26px}
+.tip div > b{display:block;font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:17px}
+.tip div > span{display:block;color:var(--grey);font-size:16px;margin-top:3px}
+
+/* ───── take it with you ───── */
+.take{background:var(--tint-2)}
+.take .btns{margin-top:18px}
+.take .btn{justify-content:flex-start;gap:14px}
+.take .btn em{font-style:normal;margin-inline-start:auto;font-family:"Inter",sans-serif;
+  font-size:12px;font-weight:800;letter-spacing:.1em;color:var(--grey-2)}
+
+/* ───── contact ───── */
+.ct{display:flex;align-items:center;gap:14px;padding:15px 0;border-bottom:1px solid var(--line)}
+.ct:last-of-type{border-bottom:0}
+.ct .ic{width:40px;height:40px;border-radius:12px;background:var(--tint);border:1px solid #C9E9F9;
+  color:var(--cyan-ink);display:flex;align-items:center;justify-content:center;flex:none}
+.ct .ic svg{width:21px;height:21px;fill:none;stroke:currentColor;stroke-width:1.8;
+  stroke-linecap:round;stroke-linejoin:round}
+.ct .t{flex:1;min-width:0}
+.ct .t > b{display:block;font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:17px}
+.ct .t > span{display:block;color:var(--grey);font-size:15px;margin-top:2px}
+.ct .t span.ltr{direction:ltr;text-align:right;font-family:"Inter",sans-serif;font-weight:700}
+
+/* ───── closing ───── */
+.close{background:var(--ink);color:#fff;text-align:center;padding:40px var(--pad) 38px;border-top:0}
+.close img{height:46px;width:auto;margin:0 auto}
+.close p{font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:21px;margin-top:20px}
+.close small{display:block;font-family:"Inter",sans-serif;font-size:11px;font-weight:700;
+  letter-spacing:.2em;text-transform:uppercase;color:#6B7580;margin-top:26px}
+.close .btn{margin-top:24px}
+
+/* ───── sticky dock ───── */
+.dock{position:fixed;inset-inline:0;bottom:0;z-index:40;display:flex;gap:10px;
+  padding:8px var(--pad);padding-bottom:calc(8px + env(safe-area-inset-bottom));
+  background:rgba(255,255,255,.95);-webkit-backdrop-filter:blur(10px);backdrop-filter:blur(10px);
+  border-top:1px solid var(--line)}
+.dock a{flex:1;min-height:46px;border-radius:12px;display:flex;align-items:center;justify-content:center;
+  gap:8px;font-family:"Noto Kufi Arabic",sans-serif;font-weight:800;font-size:16px}
+.dock .w{background:var(--wa);color:#fff}
+.dock .c{background:var(--tint);color:var(--cyan-ink);border:1.5px solid #C9E9F9}
+.dock svg{width:20px;height:20px;flex:none;pointer-events:none}
+
+/* a quiet word when the link has been copied */
+.toast{position:fixed;inset-inline:0;bottom:calc(var(--dock) + 16px + env(safe-area-inset-bottom));
+  z-index:50;display:flex;justify-content:center;pointer-events:none;opacity:0;transition:opacity .25s}
+.toast.on{opacity:1}
+.toast > span{background:var(--ink);color:#fff;border-radius:999px;padding:10px 20px;
+  font-family:"Noto Kufi Arabic",sans-serif;font-weight:700;font-size:15px}
+
+@media (min-width:620px){
+  body{font-size:18px}
+  .top,.hero,section{padding-inline:max(var(--pad),calc((100% - 600px)/2))}
+  .dock{padding-inline:max(var(--pad),calc((100% - 600px)/2))}
+}
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+ <symbol id="wa" viewBox="0 0 24 24"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2Zm5.3 14.1c-.2.6-1.3 1.2-1.8 1.2-.5.1-1 .1-1.7-.1a12 12 0 0 1-5.6-4.8c-.4-.7-.7-1.5-.7-2.2 0-.8.4-1.4.6-1.6.2-.2.4-.3.6-.3h.5c.2 0 .4 0 .6.4l.8 1.9c.1.2 0 .4-.1.5l-.4.5c-.1.2-.3.3-.1.6.3.5.8 1.2 1.4 1.7.8.7 1.4.9 1.7 1 .2.1.4.1.5-.1l.7-.8c.2-.2.3-.2.6-.1l1.8.9c.3.1.4.2.4.4s0 .7-.2.9Z"/></symbol>
+ <symbol id="ph" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M6.5 3h3l1.5 4-2 1.5a12 12 0 0 0 6.5 6.5L17 13l4 1.5v3a2 2 0 0 1-2.2 2A16.5 16.5 0 0 1 4 5.2 2 2 0 0 1 6 3Z"/></symbol>
+ <symbol id="plane" viewBox="0 0 24 24"><path d="M17.8 19.2 16 11l3.5-3.5a2.1 2.1 0 0 0-3-3L13 8 4.8 6.2a.5.5 0 0 0-.5.8l3.4 3.9-2.5 2.5-2.3-.6a.5.5 0 0 0-.5.8L4.7 16l1.9 2.3a.5.5 0 0 0 .8-.5l-.6-2.3 2.5-2.5 3.9 3.4a.5.5 0 0 0 .8-.5Z"/></symbol>
+ <symbol id="special" viewBox="0 0 24 24"><rect x="3.5" y="7" width="13" height="10" rx="2.4"/><path d="M16.5 10.5h2.2v3h-2.2M6.5 10.8v2.4M9.5 10.8v2.4"/><path d="M20.5 5.5 19 8.5"/></symbol>
+ <symbol id="ship" viewBox="0 0 24 24"><path d="M2 17.5c1.6 0 1.6 1.5 3.2 1.5s1.6-1.5 3.2-1.5 1.6 1.5 3.2 1.5 1.6-1.5 3.2-1.5 1.6 1.5 3.2 1.5 1.6-1.5 3.2-1.5"/><path d="M4 15.5 5.5 9h13L20 15.5"/><path d="M12 9V5M9 5h6"/></symbol>
+ <symbol id="pin" viewBox="0 0 24 24"><path d="M12 21s7-5.6 7-11a7 7 0 1 0-14 0c0 5.4 7 11 7 11Z"/><circle cx="12" cy="10" r="2.6"/></symbol>
+ <symbol id="globe" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.6 3 2.6 15 0 18M12 3c-2.6 3-2.6 15 0 18"/></symbol>
+ <symbol id="insta" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4.2"/><circle cx="17.2" cy="6.8" r="1"/></symbol>
+ <symbol id="dl" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3v12m0 0 4.5-4.5M12 15l-4.5-4.5M4 19.5h16"/></symbol>
+ <symbol id="share" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M12 3v13m0-13 4 4m-4-4-4 4"/><path fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" d="M5 12v7.5h14V12"/></symbol>
+</defs></svg>
+
+<header class="top">
+  <img src="assets/logo-black.png" alt="Wazn Express">
+  <span class="sp"></span>
+  <div class="lang" id="lang">
+    <button type="button" data-lang="ar" aria-pressed="true">عربي</button>
+    <button type="button" data-lang="ku" aria-pressed="false">کوردی</button>
+  </div>
+</header>
+
+<div class="hero">
+  <div class="eyebrow">Wazn Express · Erbil ⇄ China</div>
+  <h1>
+    <span class="ar">نجيب <span class="hl">الصين</span> لجيبك</span>
+    <span class="ku">وڵاتی چین <span class="hl">دەخەینە</span> ناو گیرفانت</span>
+  </h1>
+  <p class="sub">
+    <span class="ar">اشترِ من موبايلك ببطاقتك، أو بس دزّ لنا الصورة وإحنا نشتريها الك. والباقي علينا — لحد باب بيتك.</span>
+    <span class="ku">بە مۆبایلەکەت و کارتی خۆت بکڕە، یان تەنها وێنەکەمان بۆ بنێرە و ئێمە بۆت دەکڕین. پاشان ئیشەکە لای ئێمەیە — تا بەردەم دەرگاکەت.</span>
+  </p>
+  <div class="btns">
+    <a class="btn wa" href="https://wa.me/9647709183535"><svg><use href="#wa"/></svg>
+      <span class="ar">احچي وياّنا بالواتساب</span><span class="ku">بە واتسئەپ قسەمان لەگەڵ بکە</span></a>
+    <a class="btn cy" href="https://waznexpress.com">
+      <span class="ar">شوف بوابتك</span><span class="ku">پۆرتاڵەکەت ببینە</span></a>
+  </div>
+</div>
+
+<section>
+  <h2><span class="ar">شلون <span class="hl">تشتري</span>؟</span><span class="ku">چۆن <span class="hl">بکڕیت</span>؟</span></h2>
+  <p class="lead"><span class="ar">طريقتين — إنت تختار.</span><span class="ku">دوو ڕێگا — خۆت هەڵیدەبژێریت.</span></p>
+
+  <div class="way one">
+    <span class="n">1</span>
+    <h3><span class="ar">اشترِ بنفسك</span><span class="ku">خۆت بکڕە</span></h3>
+    <p><span class="ar">ببطاقتك البنكية، من موبايلك، بأي وقت تريد. إحنا نعلّمك بـ 30 دقيقة — كي كارد، جيهان، آر تي، زين كاش وأي بطاقة ثانية تشتغل.</span>
+       <span class="ku">بە کارتی بانکیی خۆت، لە مۆبایلەکەت، هەر کاتێک بتەوێت. لە ٣٠ خولەکدا فێرت دەکەین — کی کارت، جیهان، ئاڕتی، زەین کاش و هەر کارتێکی تر کە کار بکات.</span></p>
+  </div>
+
+  <div class="way">
+    <span class="n">2</span>
+    <h3><span class="ar">إحنا نشتريها الك</span><span class="ku">ئێمە بۆت دەکڕین</span></h3>
+    <p><span class="ar">بس دزّ الصورة أو الرابط — نشتريها الك بسعرها ووياها عمولة واضحة.</span>
+       <span class="ku">تەنها وێنە یان لینکەکە بنێرە — بە تێچووی خۆی و عمولەیەکی ڕوون بۆت دەیکڕین.</span></p>
+  </div>
+</section>
+
+<section>
+  <h2><span class="ar">أربع خطوات، <span class="hl">من موبايلك</span></span><span class="ku">چوار هەنگاو، <span class="hl">لە مۆبایلەکەتەوە</span></span></h2>
+  <div class="steps">
+    <div class="step"><div class="n">1</div><div>
+      <h3><span class="ar">تلگه بضاعتك</span><span class="ku">کاڵاکەت دەدۆزیتەوە</span></h3>
+      <p><span class="ar">دوّر بـ Pinduoduo أو أي تطبيق ثاني — بالكلمة أو بالصورة.</span>
+         <span class="ku">لە Pinduoduo یان هەر ئەپێکی تر بگەڕێ — بە وشە، یان بە وێنە.</span></p></div></div>
+    <div class="step"><div class="n">2</div><div>
+      <h3><span class="ar">إحنا نحطّ العنوان</span><span class="ku">ئێمە ناونیشانەکە دادەنێین</span></h3>
+      <p><span class="ar">نسجّل عنوان مخزننا بالصين ورمز AZ مالتك بحسابك — مرة وحدة وللأبد.</span>
+         <span class="ku">ناونیشانی کۆگاکەمان لە چین و کۆدی AZ ـی تۆ لە ئەکاونتەکەت تۆمار دەکەین — یەک جار بۆ هەمیشە.</span></p></div></div>
+    <div class="step"><div class="n">3</div><div>
+      <h3><span class="ar">تضغط زرّ الشراء</span><span class="ku">دوگمەی کڕین دادەگریت</span></h3>
+      <p><span class="ar">تدخّل معلومات بطاقتك وتدفع — مثل أي شرِيّة عادية.</span>
+         <span class="ku">زانیاری کارتەکەت دەنووسیت و پارە دەدەیت — وەک هەر کڕینێکی ئاسایی.</span></p></div></div>
+    <div class="step"><div class="n">4</div><div>
+      <h3><span class="ar">توصل مخزننا مباشرة</span><span class="ku">ڕاستەوخۆ دێتە کۆگای ئێمە</span></h3>
+      <p><span class="ar">البائع يدزّها بإسمك لمخزننا بالصين. إنت ما تسوّي أي شي ثاني.</span>
+         <span class="ku">فرۆشیار بە ناوی تۆ دەینێرێت بۆ کۆگاکەمان لە چین. تۆ هیچی تر ناکەیت.</span></p></div></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="ar">ليش هذا <span class="hl">يغيّر كل شي</span></span><span class="ku">بۆچی ئەمە <span class="hl">هەموو شتێک دەگۆڕێت</span></span></h2>
+  <div class="why">
+    <div class="card">
+      <b><span class="ar">ماكو انتظار</span><span class="ku">چاوەڕوانی نامێنێت</span></b>
+      <span><span class="ar">ما تنتظر أحد يردّ عليك. بأي وقت تشتري — ليل أو نهار — وتوصل تلقائياً لمخزن وزن.</span>
+            <span class="ku">هیچ کەس چاوەڕێ ناکەیت وەڵامت بداتەوە. شەو بێت یان ڕۆژ، دەکڕیت و ئۆتۆماتیکی دێتە کۆگای وەزن.</span></span>
+    </div>
+    <div class="card">
+      <b><span class="ar">دولار أرخص</span><span class="ku">دۆلارێکی هەرزانتر</span></b>
+      <span><span class="ar">سعر الدولار بالبطاقات أقل من سعر السوق — والفرق يبقى بجيبك.</span>
+            <span class="ku">نرخی دۆلار لەناو کارتە بانکییەکاندا لە نرخی بازاڕ کەمترە — جیاوازییەکە بۆ گیرفانی خۆت دەمێنێتەوە.</span></span>
+    </div>
+    <div class="card">
+      <b><span class="ar">أي شي، حتى دانة وحدة</span><span class="ku">هەر شتێک، تەنانەت یەک دانە</span></b>
+      <span><span class="ar">أدوات بيت، قطع سيارات، هدايا، ملابس — حتى برغي واحد. اللي ماكو بالسوق المحلي، اكو هناك.</span>
+            <span class="ku">کەلوپەلی ناوماڵ، پارچەی ئۆتۆمبێل، دیاری، جلوبەرگ — تەنانەت یەک بورغو. ئەوەی لە بازاڕی ناوخۆ نییە، لەوێ هەیە.</span></span>
+    </div>
+    <div class="card">
+      <b><span class="ar">أول خطوة بالتجارة</span><span class="ku">یەکەم هەنگاوی بازرگانی</span></b>
+      <span><span class="ar">إذا تعلّمت هذا الطريق، تكون خطيت أول خطوة حتى تصير تاجر — سوقك يصير جوّه موبايلك.</span>
+            <span class="ku">ئەگەر فێری ئەم ڕێگایە بوویت، یەکەم هەنگاوت ناوە بۆ بوون بە بازرگان — بازاڕەکەت دەچێتە ناو مۆبایلەکەت.</span></span>
+    </div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="ar">حمّل <span class="hl">التطبيقات</span></span><span class="ku">ئەپەکان <span class="hl">دابەزێنە</span></span></h2>
+  <p class="lead"><span class="ar">اضغط آيفون أو أندرويد ويفتحلك صفحة التحميل مباشرة.</span>
+     <span class="ku">دوگمەی ئایفۆن یان ئەندرۆید دابگرە — ڕاستەوخۆ لاپەڕەی دابەزاندنت بۆ دەکرێتەوە.</span></p>
+  <div class="apps">
+    <div class="app"><img src="assets/app-1688.png" alt="1688">
+      <span class="t"><b>1688</b><span>Wholesale</span></span>
+      <span class="gs"><a href="https://m.1688.com">iPhone</a><a href="https://play.google.com/store/apps/details?id=com.alibaba.wireless">Android</a></span></div>
+    <div class="app"><img src="assets/app-taobao.png" alt="Taobao">
+      <span class="t"><b><span class="ar">تاوباو</span><span class="ku">تاوباو</span></b><span>Taobao</span></span>
+      <span class="gs"><a href="https://apps.apple.com/app/id387682726">iPhone</a><a href="https://play.google.com/store/apps/details?id=com.taobao.taobao">Android</a></span></div>
+    <div class="app"><img src="assets/app-pinduoduo.png" alt="Pinduoduo">
+      <span class="t"><b><span class="ar">بيندودو</span><span class="ku">پیندودوو</span></b><span>Pinduoduo</span></span>
+      <span class="gs"><a href="https://apps.apple.com/app/id1044283059">iPhone</a><a href="https://mobile.yangkeduo.com">Android</a></span></div>
+    <div class="app"><img src="assets/app-gxhy.png" alt="GXH">
+      <span class="t"><b><span class="ar">جي إكس إتش</span><span class="ku">جی ئێکس ئێچ</span></b><span>GXH</span></span>
+      <span class="gs"><a href="https://www.gxhyapp.com">iPhone</a><a href="https://www.gxhyapp.com">Android</a></span></div>
+    <div class="app"><img src="assets/app-alipay.png" alt="Alipay">
+      <span class="t"><b><span class="ar">علي باي</span><span class="ku">ئەلیپەی</span></b><span>Alipay</span></span>
+      <span class="gs"><a href="https://apps.apple.com/app/id333206289">iPhone</a><a href="https://play.google.com/store/apps/details?id=com.eg.android.AlipayGphone">Android</a></span></div>
+    <div class="app"><img src="assets/app-alibaba.png" alt="Alibaba">
+      <span class="t"><b><span class="ar">علي بابا</span><span class="ku">ئەلیبابا</span></b><span>Alibaba.com</span></span>
+      <span class="gs"><a href="https://apps.apple.com/app/id503451073">iPhone</a><a href="https://play.google.com/store/apps/details?id=com.alibaba.intl.android.apps.poseidon">Android</a></span></div>
+    <div class="app"><img src="assets/app-aliexpress.png" alt="AliExpress">
+      <span class="t"><b><span class="ar">علي إكسبريس</span><span class="ku">ئەلیئێکسپرێس</span></b><span>AliExpress</span></span>
+      <span class="gs"><a href="https://apps.apple.com/app/id436672029">iPhone</a><a href="https://play.google.com/store/apps/details?id=com.alibaba.aliexpresshd">Android</a></span></div>
+  </div>
+</section>
+
+<section>
+  <h2><span class="ar">ثلاث طرق <span class="hl">للشحن</span></span><span class="ku">سێ ڕێگا بۆ <span class="hl">گواستنەوە</span></span></h2>
+  <div class="route">
+    <span class="ic"><svg><use href="#plane"/></svg></span>
+    <span class="t"><b><span class="ar">جوّي عادي</span><span class="ku">ئاسمانیی ئاسایی</span></b>
+      <span><span class="ar">ملابس، أحذية، جنط وقطع غيار.</span><span class="ku">جلوبەرگ، پێڵاو، جانتا و پارچەی یەدەگ.</span></span></span>
+    <span class="d"><span dir="ltr">10–15</span> <span class="ar">يوم</span><span class="ku">ڕۆژ</span></span>
+  </div>
+  <div class="route">
+    <span class="ic"><svg><use href="#special"/></svg></span>
+    <span class="t"><b><span class="ar">جوّي خاص</span><span class="ku">ئاسمانیی تایبەت</span></b>
+      <span><span class="ar">بطاريات، سوائل، مستحضرات تجميل.</span><span class="ku">پاتری، شلەمەنی یان کۆزمێتیک.</span></span></span>
+    <span class="d"><span dir="ltr">35–45</span> <span class="ar">يوم</span><span class="ku">ڕۆژ</span></span>
+  </div>
+  <div class="route">
+    <span class="ic"><svg><use href="#ship"/></svg></span>
+    <span class="t"><b><span class="ar">بحري</span><span class="ku">دەریایی</span></b>
+      <span><span class="ar">الكبير والثقيل — بالمتر المكعب، وحتى أقل من متر.</span><span class="ku">باری گەورە و قورس — بە مەتری سێجا، و کەمتر لە مەتریش.</span></span></span>
+    <span class="d"><span dir="ltr">~65</span> <span class="ar">يوم</span><span class="ku">ڕۆژ</span></span>
+  </div>
+  <p class="note">
+    <span class="ar">السعر يتغيّر حسب الوقت ونوع البضاعة — للسعر مال اليوم تواصل وياّنا. وبعد اكو توصيل داخلي لكل مدن العراق.</span>
+    <span class="ku">نرخ بەپێی کات و جۆری کاڵا دەگۆڕێت — بۆ نرخی ئەمڕۆ پەیوەندیمان پێوە بکە. گەیاندنی ناوخۆیی بۆ هەموو شارەکانی عێراقیش هەیە.</span>
+  </p>
+</section>
+
+<section>
+  <h2><span class="ar">بوابتك — <span class="hl">تعرف وين بضاعتك</span></span><span class="ku">پۆرتاڵەکەت — <span class="hl">دەزانیت بارەکەت لە کوێیە</span></span></h2>
+  <div class="portal">
+    <div class="ph"><img src="assets/portal-home.jpg" alt=""></div>
+    <ul>
+      <li><b><span class="ar">رمز AZ خاص بيك</span><span class="ku">کۆدی AZ ی تایبەت بە خۆت</span></b>
+        <span class="ar">ما عاد تسأل «وين شحنتي؟»</span><span class="ku">چیتر ناپرسیت «بارەکەم لە کوێیە؟»</span></li>
+      <li><b><span class="ar">كل شي بشاشة وحدة</span><span class="ku">هەموو شتێک لە یەک شاشەدا</span></b>
+        <span class="ar">الباقي عليك، اللي بالطريق، واللي وصل.</span><span class="ku">قەرزی ماوە، ئەوانەی لە ڕێگان، و ئەوانەی گەیشتوون.</span></li>
+      <li><b><span class="ar">إشعار بكل مرحلة</span><span class="ku">ئاگادارکردنەوە بۆ هەر قۆناغێک</span></b>
+        <span class="ar">ما تحتاج تفتح البوابة — إحنا نعلمك.</span><span class="ku">پێویست ناکات پۆرتاڵەکە بکەیتەوە — ئێمە ئاگادارت دەکەینەوە.</span></li>
+    </ul>
+  </div>
+</section>
+
+<section>
+  <h2><span class="ar">5 نصائح <span class="hl">للشراء الذكي</span></span><span class="ku">5 ئامۆژگاری بۆ <span class="hl">کڕینی زیرەکانە</span></span></h2>
+  <div class="tips">
+    <div class="tip"><div>
+      <b><span class="ar">صوّره ودوّر بيه</span><span class="ku">وێنەی بگرە و بگەڕێ</span></b>
+      <span><span class="ar">أي شي تشوفه، بأي منصة — صوّره ودوّر بيه بهاي التطبيقات. راح تنصدم بفرق السعر.</span>
+            <span class="ku">هەر شتێکت بینی، لە هەر پلاتفۆرمێک — وێنەکەی بگرە و لەو ئەپانەدا بیگەڕێ.</span></span></div></div>
+    <div class="tip"><div>
+      <b><span class="ar">قارن الأسعار</span><span class="ku">نرخ بەراورد بکە</span></b>
+      <span><span class="ar">لا تاخذ أول سعر. قارن بين ثلاث بائعين على الأقل.</span>
+            <span class="ku">یەکەم نرخ مەگرە. لانیکەم لە سێ فرۆشیار بەراوردی بکە.</span></span></div></div>
+    <div class="tip"><div>
+      <b><span class="ar">اقرا التقييمات</span><span class="ku">هەڵسەنگاندنەکان بخوێنەوە</span></b>
+      <span><span class="ar">صور المشترين الحقيقية أصدق من صور المتجر.</span>
+            <span class="ku">وێنەی ڕاستەقینەی کڕیاران زۆر ڕاستگۆترە لە وێنەی فرۆشگا.</span></span></div></div>
+    <div class="tip"><div>
+      <b><span class="ar">أول شي اشترِ شويّة</span><span class="ku">سەرەتا کەم بکڕە</span></b>
+      <span><span class="ar">قبل الجملة، اشترِ عيّنة صغيرة وجرّبها.</span>
+            <span class="ku">پێش کڕینی بەکۆمەڵ، نموونەیەکی کەم بکڕە و بیبینە.</span></span></div></div>
+    <div class="tip"><div>
+      <b><span class="ar">استخدم رمز AZ</span><span class="ku">کۆدی AZ بەکاربێنە</span></b>
+      <span><span class="ar">دزّ كل مشترياتك برمز واحد — ماكو شحنة تختلط.</span>
+            <span class="ku">هەموو کڕینەکانت بە یەک کۆد بنێرە — هیچ بارێک تێکەڵ نابێت.</span></span></div></div>
+  </div>
+</section>
+
+<section class="take">
+  <h2><span class="ar">خذها <span class="hl">وياك</span></span><span class="ku">لەگەڵ <span class="hl">خۆت ببە</span></span></h2>
+  <p class="lead"><span class="ar">نزّل الكتيّب كامل PDF، أو دزّ الرابط لأي واحد.</span>
+     <span class="ku">بووکلێتەکە بە تەواوی دابەزێنە، یان لینکەکە بۆ هەر کەسێک بنێرە.</span></p>
+  <div class="btns">
+    <a class="btn" href="wazn-booklet-ar.pdf" download><svg><use href="#dl"/></svg>
+      <span class="ar">نزّل الكتيّب — عربي</span><span class="ku">بووکلێت دابەزێنە — عەرەبی</span><em>PDF</em></a>
+    <a class="btn" href="wazn-booklet-ku.pdf" download><svg><use href="#dl"/></svg>
+      <span class="ar">نزّل الكتيّب — كردي</span><span class="ku">بووکلێت دابەزێنە — کوردی</span><em>PDF</em></a>
+    <button class="btn cy" type="button" id="share"><svg><use href="#share"/></svg>
+      <span class="ar">شارك الرابط</span><span class="ku">لینکەکە بنێرە</span></button>
+  </div>
+</section>
+
+<section>
+  <h2><span class="ar">تواصل <span class="hl">وياّنا</span></span><span class="ku">پەیوەندیمان <span class="hl">پێوە بکە</span></span></h2>
+  <a class="ct" href="https://wa.me/9647709183535">
+    <span class="ic"><svg><use href="#wa"/></svg></span>
+    <span class="t"><b><span class="ar">واتساب وموبايل</span><span class="ku">واتسئەپ و مۆبایل</span></b>
+      <span class="ltr">0770 918 3535 · 0750 918 3535</span></span></a>
+  <a class="ct" href="https://maps.app.goo.gl/94SbcCesBB8i5SMk6">
+    <span class="ic"><svg><use href="#pin"/></svg></span>
+    <span class="t"><b><span class="ar">العنوان</span><span class="ku">ناونیشان</span></b>
+      <span><span class="ar">أربيل — شارع 32 بارك — قرب سايدين الجوازات</span>
+            <span class="ku">هەولێر — شەقامی 32 پارک — نزیک جووت سایدی جەوازات</span></span></span></a>
+  <a class="ct" href="https://waznexpress.com">
+    <span class="ic"><svg><use href="#globe"/></svg></span>
+    <span class="t"><b><span class="ar">الموقع</span><span class="ku">ماڵپەڕ</span></b><span class="ltr">waznexpress.com</span></span></a>
+  <a class="ct" href="https://www.instagram.com/waznexpress/">
+    <span class="ic"><svg><use href="#insta"/></svg></span>
+    <span class="t"><b><span class="ar">سوشيال ميديا</span><span class="ku">سۆشیاڵ میدیا</span></b><span class="ltr">@waznexpress</span></span></a>
+</section>
+
+<section class="close">
+  <img src="assets/logo-white.png" alt="Wazn Express">
+  <p><span class="ar">سوقك صار جوّه موبايلك</span><span class="ku">بازاڕەکەت چووەتە ناو مۆبایلەکەت</span></p>
+  <a class="btn wa" href="https://wa.me/9647709183535"><svg><use href="#wa"/></svg>
+    <span class="ar">ابدأ هسه بالواتساب</span><span class="ku">ئێستا دەست پێبکە</span></a>
+  <small>Wazn Express · Erbil ⇄ China · 2026</small>
+</section>
+
+<nav class="dock">
+  <a class="w" href="https://wa.me/9647709183535"><svg><use href="#wa"/></svg>
+    <span class="ar">واتساب</span><span class="ku">واتسئەپ</span></a>
+  <a class="c" href="tel:+9647709183535"><svg><use href="#ph"/></svg>
+    <span class="ar">اتصل</span><span class="ku">پەیوەندی</span></a>
+</nav>
+
+<div class="toast" id="toast"><span
+  ><span class="ar">اننسخ الرابط</span><span class="ku">لینکەکە کۆپی کرا</span></span></div>
+
+<script src="book.js"></script>
+</body>
+</html>

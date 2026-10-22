@@ -15,6 +15,18 @@
       "port": 3500
     },
     {
+      "name": "book",
+      "runtimeExecutable": "python",
+      "runtimeArgs": [
+        "-m",
+        "http.server",
+        "5601",
+        "--directory",
+        "client/public"
+      ],
+      "port": 5601
+    },
+    {
       "name": "brochure",
       "runtimeExecutable": "python",
       "runtimeArgs": [
