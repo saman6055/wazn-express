@@ -65,6 +65,7 @@ import {
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { PlatformChip } from "@/components/PlatformChip";
+import { ShippingWayChip } from "@/components/ShippingWayChip";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
@@ -978,19 +979,24 @@ export default function CommissionDashboard() {
                           </div>
                         </TableCell>
                         <TableCell>
-                          {(order as any).batch ? (
-                            <div className="flex items-center gap-1">
-                              <Badge variant="secondary" className="text-xs font-mono">
-                                <Layers className="h-3 w-3 me-1" />
-                                {(order as any).batch.batchCode}
+                          <div className="flex flex-col items-center gap-1">
+                            {(order as any).batch ? (
+                              <div className="flex items-center gap-1">
+                                <Badge variant="secondary" className="text-xs font-mono">
+                                  <Layers className="h-3 w-3 me-1" />
+                                  {(order as any).batch.batchCode}
+                                </Badge>
+                                <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
+                              </div>
+                            ) : (
+                              <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
+                                {t("commission.noBatch")}
                               </Badge>
-                              <CopyButton value={(order as any).batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
-                            </div>
-                          ) : (
-                            <Badge variant="outline" className="text-xs bg-amber-50 dark:bg-amber-950/40 text-amber-700 dark:text-amber-300 border-amber-200 dark:border-amber-800/60">
-                              {t("commission.noBatch")}
-                            </Badge>
-                          )}
+                            )}
+                        
+                            {/* How it comes: air regular, air irregular or sea (owner, 2026-10-22). */}
+                            <ShippingWayChip batchType={(order as any).batch?.shippingType} ownType={(order as any).shippingType} language={language} />
+                          </div>
                         </TableCell>
                         <TableCell className="font-mono">
                           ${(parseFloat(order.itemPriceUsd || "0") * (order.quantity || 1)).toFixed(2)}

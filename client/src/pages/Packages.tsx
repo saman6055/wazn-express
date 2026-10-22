@@ -12,6 +12,7 @@ import { OrderNumbers } from "@/components/OrderNumbers";
 import { ZoomImage } from "@/components/ZoomImage";
 import { ParcelThumb, ParcelThumbs } from "@/components/packages/ParcelThumb";
 import { CountBadges } from "@/components/packages/CountBadges";
+import { ShippingWayChip } from "@/components/ShippingWayChip";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { TrackingOnAnOrder } from "@/components/packages/TrackingOnAnOrder";
@@ -263,9 +264,8 @@ const PackageTableRow = memo(function PackageTableRow({
         )}
       </TableCell>
       <TableCell>
-        <Badge variant="outline" className="capitalize text-xs">
-          {pkg.shippingType.replace(/_/g, " ")}
-        </Badge>
+        {/* How it comes, in words (owner, 2026-10-22); the batch it is on decides. */}
+        <ShippingWayChip batchType={getBatchShippingType(pkg.batchId)} ownType={pkg.shippingType} language={language} />
       </TableCell>
       <TableCell>
         {pkg.batchId ? (
