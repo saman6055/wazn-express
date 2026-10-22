@@ -16,8 +16,23 @@ import { writeLimiterMiddleware } from "./middleware/rateLimiter";
  * routing decision in front of it — which requests reach a limiter at all.
  */
 
+/**
+ * Shaped the way Express hands a request to middleware mounted with
+ * `app.use("/api/trpc", …)`: the mount in `baseUrl`, the rest in `path`.
+ * Tests here used to pass the full path as `path`, which is how the real
+ * mount's requests were never recognised — see rate-limit-mount.test.ts.
+ */
 function request(method: string, path: string): Request {
-  return { method, path, headers: {}, ip: "1.2.3.4", query: {} } as unknown as Request;
+  const mount = "/api/trpc";
+  const mounted = path.startsWith(mount);
+  return {
+    method,
+    baseUrl: mounted ? mount : "",
+    path: mounted ? path.slice(mount.length) || "/" : path,
+    headers: {},
+    ip: "1.2.3.4",
+    query: {},
+  } as unknown as Request;
 }
 
 const response = () =>

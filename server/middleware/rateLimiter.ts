@@ -1,9 +1,25 @@
 import type { Request, Response, NextFunction } from "express";
 import { createHash } from "crypto";
 import rateLimit, { ipKeyGenerator } from "express-rate-limit";
+import { jwtVerify } from "jose";
 import { COOKIE_NAME } from "@shared/const";
 
 const isDev = process.env.NODE_ENV === "development";
+
+/**
+ * The path as the client sent it, whatever this middleware is mounted under.
+ *
+ * Inside `app.use("/api/trpc", …)` Express strips the mount from `req.path`:
+ * a login arrives as `/auth.customerLogin`, not `/api/trpc/auth.customerLogin`.
+ * Every check below asked "does this start with /api/trpc" and the answer was
+ * always no — so the login limiter and the write limiters, mounted exactly
+ * there, never ran once in production. Twenty wrong passwords a quarter-hour
+ * was the rule on paper; a thousand requests a minute was the rule in fact.
+ * `baseUrl` holds what the mount stripped.
+ */
+export function requestPath(req: Request): string {
+  return `${req.baseUrl ?? ""}${req.path ?? ""}`;
+}
 
 /**
  * A throttled request used to answer with a bare `{ error: "..." }` body. The
@@ -39,7 +55,7 @@ export function buildThrottleBody(path: string, isBatch: boolean, message: strin
 
 function throttledHandler(message: string) {
   return (req: Request, res: Response): void => {
-    res.status(429).json(buildThrottleBody(req.path, req.query.batch === "1", message));
+    res.status(429).json(buildThrottleBody(requestPath(req), req.query.batch === "1", message));
   };
 }
 
@@ -72,6 +88,27 @@ export const authLimiter = rateLimit({
 });
 
 /**
+ * Is this cookie a session this server signed?
+ *
+ * The write limiters key on the session so that one office does not share
+ * one bucket. Keyed on the cookie's bare value, though, every made-up cookie
+ * was a fresh bucket: a script that changed the cookie on each request was
+ * never counted at all. Only a token that verifies earns its own allowance;
+ * anything else is counted with its address. Signature only — no database —
+ * so this costs a hash per write and nothing more.
+ */
+async function isOurSession(token: string): Promise<boolean> {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) return false;
+  try {
+    await jwtVerify(token, new TextEncoder().encode(secret), { algorithms: ["HS256"] });
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+/**
  * Who a limit applies to: the signed-in session, or the address when there
  * isn't one.
  *
@@ -91,11 +128,13 @@ export const authLimiter = rateLimit({
  * and rate-limiter keys end up in memory stores and, on some deployments, in
  * logs.
  */
-function sessionOrIpKey(req: Request): string {
+async function sessionOrIpKey(req: Request): Promise<string> {
   const cookies = req.headers.cookie;
   if (cookies) {
     const match = cookies.match(new RegExp(`(?:^|;\\s*)${COOKIE_NAME}=([^;]+)`));
-    if (match?.[1]) return "s:" + createHash("sha256").update(match[1]).digest("hex").slice(0, 32);
+    if (match?.[1] && (await isOurSession(match[1]))) {
+      return "s:" + createHash("sha256").update(match[1]).digest("hex").slice(0, 32);
+    }
   }
   return "ip:" + (ipKeyGenerator(req.ip ?? "") || "unknown");
 }
@@ -131,19 +170,42 @@ export const fileUploadLimiter = rateLimit({
   handler: throttledHandler("Too many file uploads, please try again in a minute."),
 });
 
+/**
+ * Writes anybody may make without signing in — today, an order in the shop.
+ *
+ * A stranger has no session to be counted by and no account to switch off,
+ * so the only handle is the address, and the allowance has to be a person's:
+ * a family ordering three things in an evening is inside it, a script
+ * filling the orders list with rubbish is not.
+ */
+export const publicWriteLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: isDev ? 200 : 15,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: throttledHandler("Too many orders from this address, please try again later."),
+});
+
 /** tRPC procedure paths that are considered auth login (rate-limited strictly) */
 const AUTH_LOGIN_PROCEDURES = [
   "auth.customerLogin",
   "auth.staffLogin",
 ];
 
-function isAuthLoginRequest(req: Request): boolean {
-  if (req.method !== "POST" || !req.path.startsWith("/api/trpc")) return false;
+/** Mutations open to anyone, held to publicWriteLimiter. */
+const PUBLIC_WRITE_PROCEDURES = ["store.createOrder"];
+
+function trpcProcedures(req: Request): string[] {
+  const path = requestPath(req);
+  if (!path.startsWith("/api/trpc")) return [];
   // tRPC sends procedure name in path: /api/trpc/auth.customerLogin or batch: /api/trpc/auth.customerLogin,other.procedure
-  const pathSegment = req.path.replace(/^\/api\/trpc\/?/, "").trim();
-  if (!pathSegment) return false;
-  const procedures = pathSegment.split(",").map((p) => p.trim());
-  return procedures.some((p) => AUTH_LOGIN_PROCEDURES.includes(p));
+  const segment = path.replace(/^\/api\/trpc\/?/, "").trim();
+  return segment ? segment.split(",").map((p) => p.trim()) : [];
+}
+
+function isAuthLoginRequest(req: Request): boolean {
+  if (req.method !== "POST") return false;
+  return trpcProcedures(req).some((p) => AUTH_LOGIN_PROCEDURES.includes(p));
 }
 
 /**
@@ -182,12 +244,12 @@ function isUploadRequest(procedures: string[]): boolean {
  * spending two allowances.
  */
 export function writeLimiterMiddleware(req: Request, res: Response, next: NextFunction): void {
-  if (req.method !== "POST" || !req.path.startsWith("/api/trpc")) return next();
+  if (req.method !== "POST") return next();
+  const procedures = trpcProcedures(req);
+  if (procedures.length === 0) return next();
   if (isAuthLoginRequest(req)) return next();
 
-  const segment = req.path.replace(/^\/api\/trpc\/?/, "").trim();
-  const procedures = segment ? segment.split(",").map((p) => p.trim()) : [];
-
+  if (procedures.some((p) => PUBLIC_WRITE_PROCEDURES.includes(p))) return publicWriteLimiter(req, res, next);
   if (isUploadRequest(procedures)) return fileUploadLimiter(req, res, next);
   return mutationLimiter(req, res, next);
 }
