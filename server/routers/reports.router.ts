@@ -6,6 +6,20 @@ import * as db from "../db";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const reportsRouter = router({
+    /**
+     * Volumetric parcels (owner, 2026-10-23): scale, volume, kilos charged and
+     * discounts, by batch against its carrier, by customer and by box. For
+     * the office - never the customer (db/volumetricReport).
+     */
+    volumetric: accountantProcedure
+      .input(z.object({
+        batchId: idSchema.optional(),
+        customerId: idSchema.optional(),
+        boxId: idSchema.optional(),
+        from: z.date().optional(),
+        to: z.date().optional(),
+      }).optional())
+      .query(async ({ input }) => db.getVolumetricReport(input ?? {})),
     revenue: accountantProcedure
       .input(z.object({
         startDate: z.date(),

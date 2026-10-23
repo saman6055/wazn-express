@@ -126,6 +126,7 @@ const ProfitDashboardByType = lazy(() => import("./pages/ProfitDashboardByType")
 const UnifiedProfitDashboard = lazy(() => import("./pages/UnifiedProfitDashboard"));
 const MonthlyProfitReport = lazy(() => import("./pages/MonthlyProfitReport"));
 const ProfitReports = lazy(() => import("./pages/ProfitReports"));
+const VolumetricReport = lazy(() => import("./pages/VolumetricReport"));
 const ProfitLossReport = lazy(() => import("./pages/ProfitLossReport"));
 
 // ---------------------------------------------------------------------------
@@ -305,6 +306,7 @@ function Router() {
         <Route path="/business-analytics" component={BusinessAnalytics} />
         <Route path="/reports" component={Reports} />
         <Route path="/reports/batches" component={BatchReports} />
+        <Route path="/reports/volumetric" component={VolumetricReport} />
         <Route path="/reports/batch-financial/:id" component={BatchFinancialReportFull} />
         <Route path="/reports/services" component={ServicesReport} />
         <Route path="/services" component={ServicesManagement} />

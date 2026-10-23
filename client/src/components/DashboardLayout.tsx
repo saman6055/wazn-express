@@ -516,6 +516,8 @@ function DashboardLayoutContent({
         items: [
           { icon: BarChart3, label: t("nav.reportsOverview") || "پوختەی ڕاپۆرت", path: "/reports" },
           { icon: Boxes, label: t("nav.batchReports") || "ڕاپۆرتی باچەکان", path: "/reports/batches" },
+          // Owner, 2026-10-23: volumetric weight against the carrier, by batch, customer and box.
+          { icon: Scale, label: pickLang(language, { ku: "بارە قەبارەییەکان", en: "Volumetric parcels", ar: "الطرود الحجمية", zh: "体积重包裹" }), path: "/reports/volumetric" },
           { icon: Wrench, label: t("nav.serviceProfitReport") || "Service Report", path: "/reports/services" },
           { icon: TrendingUp, label: t("nav.profitDashboard") || "داشبۆردی قازانج", path: "/reports/profit" },
           { icon: Calendar, label: t("nav.monthlyProfitReport") || "ڕاپۆرتی مانگانە", path: "/reports/monthly-profit" },

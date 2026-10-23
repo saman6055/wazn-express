@@ -1,6 +1,7 @@
 import { fmtDate } from "@/lib/numericDate";
 import { useParams, Link } from "wouter";
 import { BatchCostWorkingLine } from "@/components/batches/BatchCostNotes";
+import { BatchVolumetricCard } from "@/components/reports/BatchVolumetricCard";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -488,6 +489,9 @@ export default function BatchFinancialReportFull() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Volume against the carrier (owner, 2026-10-23); air batches only. */}
+        {batch.shippingType !== "sea" && <BatchVolumetricCard batchId={batchId} language={language} />}
 
         {/* Customer Breakdown Table */}
         <Card className="shadow-lg">

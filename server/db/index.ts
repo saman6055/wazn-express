@@ -59,3 +59,4 @@ export * from './extraCosts.db';
 export * from './boxDecides.db';
 export * from './boxHandover.db';
 export * from './yuanRateHistory.db';
+export * from './volumetricReport.db';

@@ -762,6 +762,8 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/service-types": "service_types",
   "/reports": "reports_overview",
   "/reports/batches": "batch_reports",
+  // Volume against the carrier: batch money, the same people as the batch reports.
+  "/reports/volumetric": "batch_reports",
   "/reports/services": "service_reports",
   "/reports/profit": "profit_dashboard",
   "/reports/monthly-profit": "monthly_profit",
