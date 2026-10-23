@@ -597,6 +597,25 @@ export async function setVolumetricDiscount(
     throw refuse("BAD_REQUEST", "ئەم پاکەتە کێشی قەبارەیی لە کێشی ڕاستەقینەی زیاتر نییە - داشکانی قەبارەی بۆ نییە.", ["درێژی، پانی و بەرزی پاکەتەکە بپشکنە"]);
   }
 
+  // A parcel that travels for an order: its shipping belongs to the order.
+  // A full package's is in its agreed price; a commission order's, once
+  // charged, sits on the order - a discount here would leave the two
+  // disagreeing. Only a commission order not yet charged its shipping takes it
+  // (the till charges that from the parcel's price).
+  const orders = await db.ordersBehindParcel(pkg);
+  const fullPackage = orders.find((o) => o.orderType !== "commission");
+  if (fullPackage) {
+    throw refuse("BAD_REQUEST", `ئەم پاکەتە هی پاکێجی تەواوی ${fullPackage.orderCode}ـە - نرخی گواستنەوەکەی لە نرخی ڕێککەوتوودایە، داشکانی قەبارەی لێ ناکرێت.`, [
+      "ئەگەر داشکان دەکەیت، نرخی فرۆشتنی ئۆردەرەکە کەم بکەرەوە",
+    ]);
+  }
+  const freightCharged = orders.find((o) => o.isShippingCharged);
+  if (freightCharged) {
+    throw refuse("BAD_REQUEST", `کرێی گواستنەوەی ئەم پاکەتە پێشتر لەسەر ئۆردەری ${freightCharged.orderCode} حیساب کراوە - داشکانی لێرە ئەو حیسابە ناگۆڕێت.`, [
+      `ئۆردەری ${freightCharged.orderCode} بکەرەوە و کرێی گواستنەوەکەی لەوێ ڕاست بکەرەوە`,
+    ]);
+  }
+
   let billed: string | null = null;
   if (input.billedWeightKg !== null) {
     const kg = Number(input.billedWeightKg);

@@ -1,7 +1,7 @@
 import { toCustomerVisibleBatch } from "../lib/customerVisibleBatch";
 import { getDb } from './connection';
 import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
-import { chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
+import { afterVolumetricDiscount, chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
 import { customerBatchStatus } from '@shared/customerBatchStage';
 import { concealsSizeAndCarriage, concealParcelSize } from '@shared/fullPackagePrivacy';
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from '@shared/ledgerTypes';
@@ -172,6 +172,7 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
     widthCm: packages.widthCm,
     heightCm: packages.heightCm,
     volumeCbm: packages.volumeCbm,
+    billedWeightKg: packages.billedWeightKg,
     shippingType: packages.shippingType,
     status: packages.status,
     deliveredAt: packages.deliveredAt,
@@ -366,7 +367,7 @@ export async function getCustomerPackagesInBatch(customerId: number, batchId: nu
         const widthCm = Number(pkg.widthCm) || 0;
         const heightCm = Number(pkg.heightCm) || 0;
         const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-        const chargeableKg = Math.max(actualKg, volumetricKg);
+        const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg);
         calculatedCostUsd = liveRate * chargeableKg;
       }
     }
@@ -411,6 +412,9 @@ const CUSTOMER_PACKAGE_FIELDS = {
   lengthCm: packages.lengthCm,
   widthCm: packages.widthCm,
   heightCm: packages.heightCm,
+  // The kilos charged after a volumetric discount, so the price shown here is
+  // the one on the account (owner, 2026-10-23).
+  billedWeightKg: packages.billedWeightKg,
   calculatedCostUsd: packages.calculatedCostUsd,
   isCharged: packages.isCharged,
   batchId: packages.batchId,

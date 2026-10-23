@@ -1201,14 +1201,20 @@ export async function getBatchFinancialSummary(batchId: number) {
   // Calculate chargeable weight for each package (max of actual vs volumetric)
   const divisor = await getVolumetricDivisor();
   let totalChargeableWeight = 0;
+  // The space carried, before any volumetric discount: what the carrier's
+  // side is measured on. The discount is what we let the customer off, not
+  // weight the aircraft did not carry (owner, 2026-10-23).
+  let totalSpaceWeight = 0;
   for (const pkg of batchPackages) {
-    totalChargeableWeight += chargeableWeight(pkg, divisor).chargeableKg;
+    const w = chargeableWeight(pkg, divisor);
+    totalChargeableWeight += w.chargeableKg;
+    totalSpaceWeight += w.fullKg ?? w.chargeableKg;
   }
   
   // Use batch values if set, otherwise use calculated values from packages
   const actualWeight = Number(batchData.actualWeightKg) || packageTotalWeight;
   const actualCbm = Number(batchData.actualCbm) || packageTotalCbm;
-  const chargedWeight = Number(batchData.chargedWeightKg) || totalChargeableWeight;
+  const chargedWeight = Number(batchData.chargedWeightKg) || totalSpaceWeight;
   const chargedCbm = Number(batchData.chargedCbm) || packageTotalCbm;
   
   // What the shipment cost the company. One shared rule (@shared/batchCost):
@@ -1219,7 +1225,7 @@ export async function getBatchFinancialSummary(batchId: number) {
   // What the rate multiplies, or the total is divided over — the one rule
   // (shared/batchCost), the same the profit reports use. It used to be our
   // parcels' volume weight here and the carrier's billed weight there.
-  const costBase = carrierCostBase(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm });
+  const costBase = carrierCostBase(batchData.shippingType, batchData, { billedKg: totalSpaceWeight, cbm: packageTotalCbm });
   const resolvedCost = resolveBatchCost({
     shippingType: batchData.shippingType,
     costPerKg: batchData.costPerKg,
@@ -1360,9 +1366,9 @@ export async function getBatchFinancialSummary(batchId: number) {
      * Our weight, counted from the parcels — the same the customers were
      * charged on — and the carrier's against it (owner, 2026-10-04).
      */
-    ourBilledKg: totalChargeableWeight,
+    ourBilledKg: totalSpaceWeight,
     ourCbm: packageTotalCbm,
-    carrierDifference: carrierDifference(batchData.shippingType, batchData, { billedKg: totalChargeableWeight, cbm: packageTotalCbm }),
+    carrierDifference: carrierDifference(batchData.shippingType, batchData, { billedKg: totalSpaceWeight, cbm: packageTotalCbm }),
     waitingFor,
     totalPackages: batchPackages.length,
     customerBreakdown: Object.values(customerBreakdown)

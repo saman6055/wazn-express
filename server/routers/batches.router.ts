@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { afterVolumetricDiscount } from "@shared/chargeableWeight";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { missingShippingNumber, type BatchAwaitingDetails } from "@shared/batchReminders";
 import { canDeleteBatch, REFUSAL_MESSAGE, tiesQuestion } from "@shared/batchDeletion";
@@ -1796,7 +1797,7 @@ export const batchesRouter = router({
                   const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
                   const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
                   const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                  const chargeableKg = Math.max(actualKg, volumetricKg);
+                  const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg);
                   shippingCost = chargeableKg * pkgRateKg;
                 }
 
@@ -2023,7 +2024,7 @@ export const batchesRouter = router({
                 const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
                 const cbm = parseFloat(pkg.volumeCbm?.toString() || "0");
                 const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                const chargeableKg = Math.max(actualKg, volumetricKg);
+                const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg);
                 const cartonCount = (pkg as any).cartonCount ?? 1;
 
                 if (isSea && custRateCbm > 0) {
@@ -2149,7 +2150,7 @@ export const batchesRouter = router({
                       const widthCm = parseFloat(pkg.widthCm?.toString() || "0");
                       const heightCm = parseFloat(pkg.heightCm?.toString() || "0");
                       const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                      const chargeableKg = Math.max(actualKg, volumetricKg);
+                      const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg);
                       pkgPrice = chargeableKg * custRateKg;
                     }
 

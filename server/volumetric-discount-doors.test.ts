@@ -33,3 +33,35 @@ describe("the volumetric discount reaches every door", () => {
     expect(read("server/db/batches.db.ts")).toContain("return sum + (w.fullKg ?? w.chargeableKg);");
   });
 });
+
+/**
+ * Owner, 2026-10-23, "does it fit every part of the accounts?" - seven doors
+ * worked a parcel's kilos out by their own arithmetic and would have put the
+ * full volume back: the old batch-delivery charge, the claim charge, the
+ * status update, the delivery recalculation, the customer portal. Each ends
+ * with afterVolumetricDiscount now; the batch's cost is measured on the space
+ * carried, never on the discounted kilos. Proven on real MySQL: account line,
+ * invoice, revenue, batch profit, portal, batch delivery, commission till.
+ */
+describe("no door works a parcel's kilos out around the discount", () => {
+  it("every hand-written max(scale, volume) for a parcel ends with the discount", () => {
+    const raw = "const chargeableKg = Math.max(actualKg, volumetricKg);";
+    // The one left is an order's own sizes, not a parcel's (batches.router order freight line).
+    expect(read("server/routers/batches.router.ts").split(raw).length - 1).toBe(1);
+    expect(read("server/routers/packages.router.ts")).not.toContain(raw);
+    expect(read("server/db/portal.db.ts")).not.toContain(raw);
+    expect(read("server/routers/batches.router.ts").split("afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg)").length - 1).toBe(3);
+  });
+
+  it("the batch's cost base and carrier comparison use the space carried", () => {
+    const src = read("server/db/batches.db.ts");
+    expect(src).toContain("const costBase = carrierCostBase(batchData.shippingType, batchData, { billedKg: totalSpaceWeight, cbm: packageTotalCbm });");
+    expect(src).toContain("ourBilledKg: totalSpaceWeight,");
+  });
+
+  it("an order's parcel: a full package refuses, a commission order whose freight is charged refuses", () => {
+    const src = read("server/lib/correctRegisteredParcel.ts");
+    expect(src).toContain('const fullPackage = orders.find((o) => o.orderType !== "commission");');
+    expect(src).toContain("const freightCharged = orders.find((o) => o.isShippingCharged);");
+  });
+});

@@ -1,5 +1,6 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
+import { afterVolumetricDiscount } from "@shared/chargeableWeight";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { eq } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
@@ -1351,7 +1352,7 @@ export const packagesRouter = router({
             const heightCm = parseFloat(updated.heightCm?.toString() || '0') || 0;
             const cbm = parseFloat(updated.volumeCbm?.toString() || '0') || 0;
             const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-            const chargeableKg = Math.max(actualKg, volumetricKg);
+            const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, updated.billedWeightKg);
 
             let calculatedCost = 0;
             if (isSea && pricePerCbm > 0 && cbm > 0) {
@@ -1646,7 +1647,7 @@ export const packagesRouter = router({
                     const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
                     const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
                     const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                    const chargeableKg = Math.max(actualKg, volumetricKg);
+                    const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg);
                     chargeAmount = pricePerUnit * chargeableKg;
                   }
                 }
@@ -1678,7 +1679,7 @@ export const packagesRouter = router({
                     const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
                     const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
                     const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                    const chargeableKg = Math.max(actualKg, volumetricKg);
+                    const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg);
                     chargeAmount = pricePerUnit * chargeableKg;
                   } else if (pricingRule.unit === "cbm" && pkg.volumeCbm) {
                     chargeAmount = pricePerUnit * parseFloat(pkg.volumeCbm);
@@ -1787,7 +1788,7 @@ export const packagesRouter = router({
                         const widthCm = parseFloat(pkg.widthCm?.toString() || '0');
                         const heightCm = parseFloat(pkg.heightCm?.toString() || '0');
                         const volumetricKg = (lengthCm * widthCm * heightCm) / 6000;
-                        const chargeableKg = Math.max(actualKg, volumetricKg);
+                        const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, pkg.billedWeightKg);
                         shippingCost = pricePerUnit * chargeableKg;
                       }
                     }

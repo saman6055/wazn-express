@@ -67,6 +67,23 @@ export function volumetricWeightKg(dims: Dimensions, divisor = DEFAULT_VOLUMETRI
   return (cbm * 1_000_000) / d;
 }
 
+/**
+ * The kilos charged once a volumetric discount is applied (owner,
+ * 2026-10-23): the kilos he chose, kept between the scale and the volume -
+ * the sides themselves stay true. No discount, or no volume over the scale:
+ * the greater of the two, as always. Every door that works a weight out, here
+ * or by its own arithmetic, ends with this.
+ */
+export function afterVolumetricDiscount(
+  actualKg: number,
+  volumetricKg: number,
+  billedWeightKg: string | number | null | undefined,
+): number {
+  const fullKg = Math.max(actualKg, volumetricKg);
+  const billed = n(billedWeightKg);
+  return billed > 0 && volumetricKg > actualKg ? Math.min(fullKg, Math.max(actualKg, billed)) : fullKg;
+}
+
 export type ChargeableBreakdown = {
   actualKg: number;
   volumetricKg: number;
@@ -97,12 +114,7 @@ export function chargeableWeight(
   const actualKg = n(input.weightKg);
   const volumetricKg = volumetricWeightKg(input, divisor);
   const fullKg = Math.max(actualKg, volumetricKg);
-  // A volumetric discount (owner, 2026-10-23): the kilos he chose to charge,
-  // kept between the scale and the volume - the sides themselves stay true.
-  const billed = n(input.billedWeightKg);
-  const chargeableKg = billed > 0 && volumetricKg > actualKg
-    ? Math.min(fullKg, Math.max(actualKg, billed))
-    : fullKg;
+  const chargeableKg = afterVolumetricDiscount(actualKg, volumetricKg, input.billedWeightKg);
 
   return {
     actualKg,
