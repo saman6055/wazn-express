@@ -38,6 +38,8 @@ export interface ParcelCostInput {
   heightCm?: string | number | null;
   /** Measured or entered directly; only a cbm rate uses it. */
   volumeCbm?: string | number | null;
+  /** A volumetric discount: the kilos charged (shared/chargeableWeight). Air only. */
+  billedWeightKg?: string | number | null;
   /** The install's air divisor. Defaults to IATA's 6000. */
   divisor?: number;
   /**

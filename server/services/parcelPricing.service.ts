@@ -38,6 +38,8 @@ export interface ParcelPricingFacts {
   widthCm?: string | number | null;
   heightCm?: string | number | null;
   volumeCbm?: string | number | null;
+  /** A volumetric discount: the kilos charged (shared/chargeableWeight). */
+  billedWeightKg?: string | number | null;
   /** An existing parcel being repriced: its stored volume is not counted twice in its owner's total. */
   packageId?: number | null;
 }
@@ -81,6 +83,7 @@ export async function resolveParcelCost(
     widthCm: facts.widthCm,
     heightCm: facts.heightCm,
     volumeCbm: facts.volumeCbm,
+    billedWeightKg: facts.billedWeightKg,
     divisor,
   };
 

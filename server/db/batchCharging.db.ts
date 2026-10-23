@@ -47,7 +47,7 @@ import { appLogger } from "../utils/logger";
  * that could round a cent differently one day.
  */
 export function parcelShippingCharge(
-  pkg: Pick<Package, "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm">,
+  pkg: Pick<Package, "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm"> & { billedWeightKg?: string | null },
   isSea: boolean,
   rate: number,
   divisor: number,
@@ -125,6 +125,7 @@ export async function shippingChargeDueNow(
     Package,
     | "batchId" | "customerId" | "isUnclaimed" | "fullPackageOrderId" | "trackingNumber" | "registeredAt"
     | "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm"
+  > & Partial<Pick<Package, "billedWeightKg">
   >,
 ): Promise<ShippingChargeDue> {
   const none: ShippingChargeDue = { due: false, amount: 0, rate: 0, quantity: 0, unit: "kg", batchCode: null };

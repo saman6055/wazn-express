@@ -70,7 +70,12 @@ export function volumetricWeightKg(dims: Dimensions, divisor = DEFAULT_VOLUMETRI
 export type ChargeableBreakdown = {
   actualKg: number;
   volumetricKg: number;
+  /** What is charged: the greater weight, less any volumetric discount. */
   chargeableKg: number;
+  /** The greater of the two weights, before a discount. */
+  fullKg?: number;
+  /** Kilos taken off by a volumetric discount (0 when none). */
+  discountKg?: number;
   /** True when the dimensions, not the scale, decide the price. */
   billedOnVolume: boolean;
   /** chargeable ÷ actual. 1 when they agree; 0 when there is no actual weight. */
@@ -86,17 +91,25 @@ export type ChargeableBreakdown = {
  * through a weight comparison would invent a number nobody charges.
  */
 export function chargeableWeight(
-  input: { weightKg?: string | number | null } & Dimensions,
+  input: { weightKg?: string | number | null; billedWeightKg?: string | number | null } & Dimensions,
   divisor = DEFAULT_VOLUMETRIC_DIVISOR,
 ): ChargeableBreakdown {
   const actualKg = n(input.weightKg);
   const volumetricKg = volumetricWeightKg(input, divisor);
-  const chargeableKg = Math.max(actualKg, volumetricKg);
+  const fullKg = Math.max(actualKg, volumetricKg);
+  // A volumetric discount (owner, 2026-10-23): the kilos he chose to charge,
+  // kept between the scale and the volume - the sides themselves stay true.
+  const billed = n(input.billedWeightKg);
+  const chargeableKg = billed > 0 && volumetricKg > actualKg
+    ? Math.min(fullKg, Math.max(actualKg, billed))
+    : fullKg;
 
   return {
     actualKg,
     volumetricKg,
     chargeableKg,
+    fullKg,
+    discountKg: Math.max(0, fullKg - chargeableKg),
     // Ties are not "billed on volume": nothing surprising happened.
     billedOnVolume: volumetricKg > actualKg,
     ratio: actualKg > 0 ? chargeableKg / actualKg : 0,

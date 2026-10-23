@@ -5,7 +5,7 @@ import { resolveParcelCost } from "../services/parcelPricing.service";
 import { undoCreditRefusal } from "./creditGuard";
 import { mayApproveCredit } from "@shared/creditGuard";
 import { withFix } from "@shared/fixAdvice";
-import { isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
 import {
   correctionNote, correctionWords, editHoldWords, measuresChanged, moneyFactsChanged, ownerChanged, plainNumber,
@@ -171,6 +171,8 @@ interface PricedFacts {
   heightCm: string | null;
   volumeCbm: string | null;
   cartonCount?: number | null;
+  /** A volumetric discount, the kilos charged; undefined leaves the parcel's own. */
+  billedWeightKg?: string | null;
 }
 
 /** The rest of the row a correction writes: nothing here is behind the price. */
@@ -209,7 +211,9 @@ async function moveParcelMoney(
   after: PricedFacts,
   details: ParcelDetails,
   approveCredit: boolean | undefined,
+  boxFollows?: { weightKg: string },
 ): Promise<MoneyMoved> {
+  const billedWeightKg = after.billedWeightKg !== undefined ? after.billedWeightKg : pkg.billedWeightKg ?? null;
   // 3. Registration stores no price for a parcel nobody owns.
   let calculatedCostUsd: string | null = null;
   let appliedPricingRuleId: number | null = null;
@@ -225,6 +229,7 @@ async function moveParcelMoney(
       widthCm: after.widthCm,
       heightCm: after.heightCm,
       volumeCbm: after.volumeCbm,
+      billedWeightKg,
     });
     calculatedCostUsd = priced.costUsd ?? null;
     appliedPricingRuleId = priced.pricingRuleId ?? null;
@@ -245,6 +250,7 @@ async function moveParcelMoney(
     moved = await db.applyParcelCorrection(pkg.id, actor.id, facts, reason, {
       allowCredit: mayApproveCredit(actor.role) && approveCredit === true,
       actorRole: actor.role ?? null,
+      boxFollows,
     });
   } catch (err) {
     const credit = undoCreditRefusal(err, actor.role);
@@ -558,5 +564,86 @@ export async function correctChargedParcelOnEdit(
     wasUsd: moved.wasUsd > 0 ? moved.wasUsd : null,
     nowUsd: moved.nowUsd > 0 ? moved.nowUsd : chargedUsd > 0 ? chargedUsd : null,
     said: correctionWords(outcome),
+  };
+}
+
+/**
+ * A volumetric discount (owner, 2026-10-23): «کێشی قەبارەیی 12 kg، 7 kg حیساب
+ * بکرێت». The sides stay as measured, so the volumetric figures stay true;
+ * the kilos charged are written beside them and the price follows.
+ *
+ * Given from the parcel list, from Quick Register and from inside the box
+ * before its receipt - the box's line for the parcel follows. Money taken on
+ * a receipt is not moved from here. The parcel's one line on the account is
+ * put right in place, as any correction (restateCharge); a lowering that
+ * would leave a credit asks the main admin, as everywhere.
+ *
+ * `billedWeightKg` null takes the discount off: charged as measured again.
+ */
+export async function setVolumetricDiscount(
+  actor: CorrectionActor,
+  input: { packageId: number; billedWeightKg: number | null; approveCredit?: boolean },
+): Promise<{ billedWeightKg: string | null; wasUsd: number; nowUsd: number; priceUsd: number | null; words: CorrectionWords }> {
+  const pkg = await db.getPackageById(input.packageId);
+  if (!pkg) throw refuse("NOT_FOUND", "ئەم پاکەتە نەدۆزرایەوە.", ["لاپەڕەکە نوێ بکەرەوە"]);
+  const batch = pkg.batchId ? await db.getBatchById(pkg.batchId) : null;
+  const type = batch?.shippingType ?? pkg.shippingType;
+  if (!isAirShipping(String(type))) {
+    throw refuse("BAD_REQUEST", "داشکانی قەبارە تەنها بۆ باری ئاسمانییە - دەریایی بە CBM حیساب دەکرێت.", ["پاکەتێکی ئاسمانی هەڵبژێرە"]);
+  }
+  const divisor = (await db.getVolumetricDivisor()) || DEFAULT_VOLUMETRIC_DIVISOR;
+  const measured = chargeableWeight({ ...pkg, billedWeightKg: null }, divisor);
+  if (!(measured.volumetricKg > measured.actualKg)) {
+    throw refuse("BAD_REQUEST", "ئەم پاکەتە کێشی قەبارەیی لە کێشی ڕاستەقینەی زیاتر نییە - داشکانی قەبارەی بۆ نییە.", ["درێژی، پانی و بەرزی پاکەتەکە بپشکنە"]);
+  }
+
+  let billed: string | null = null;
+  if (input.billedWeightKg !== null) {
+    const kg = Number(input.billedWeightKg);
+    const low = Math.round(measured.actualKg * 1000) / 1000;
+    const high = Math.round(measured.volumetricKg * 1000) / 1000;
+    if (!Number.isFinite(kg) || kg < low - 0.0005 || kg > high + 0.0005) {
+      throw refuse(
+        "BAD_REQUEST",
+        `کێشی حیسابکراو دەبێت لە نێوان ${plainNumber(low, 3)} kg (کێشی ڕاستەقینە) و ${plainNumber(high, 3)} kg (کێشی قەبارەیی) بێت.`,
+        ["ژمارەیەک لەو نێوانەدا بنووسە", "بۆ لابردنی داشکان، «لابردن» لێبدە"],
+      );
+    }
+    // The full volume is no discount at all.
+    billed = kg >= high - 0.0005 ? null : kg.toFixed(3);
+  }
+
+  const after: PricedFacts = {
+    customerId: pkg.customerId ?? null,
+    isUnclaimed: Boolean(pkg.isUnclaimed),
+    weightKg: pkg.weightKg ?? null,
+    lengthCm: pkg.lengthCm ?? null,
+    widthCm: pkg.widthCm ?? null,
+    heightCm: pkg.heightCm ?? null,
+    volumeCbm: pkg.volumeCbm ?? null,
+    billedWeightKg: billed,
+  };
+  const name = pkg.trackingNumber || pkg.packageCode || String(pkg.id);
+  let done: MoneyMoved;
+  try {
+    done = await moveParcelMoney(actor, pkg, name, after, {
+      description: pkg.description ?? null,
+      categoryId: pkg.categoryId ?? null,
+    }, input.approveCredit, {
+      // The kilos the box and its receipt show: the kilos now charged.
+      weightKg: chargeableWeight({ ...pkg, billedWeightKg: billed }, divisor).chargeableKg.toFixed(2),
+    });
+  } catch (err) {
+    if (err instanceof TRPCError) throw err;
+    throw new TRPCError({ code: "CONFLICT", message: err instanceof Error ? err.message : String(err) });
+  }
+  const { moved, calculatedCostUsd, chargedUsd } = done;
+  const outcome = { money: moved.money, wasUsd: moved.wasUsd, nowUsd: moved.nowUsd, chargedUsd, priceUsd: positive(calculatedCostUsd) };
+  return {
+    billedWeightKg: billed,
+    wasUsd: moved.wasUsd,
+    nowUsd: moved.nowUsd > 0 ? moved.nowUsd : chargedUsd,
+    priceUsd: positive(calculatedCostUsd),
+    words: correctionWords(outcome),
   };
 }

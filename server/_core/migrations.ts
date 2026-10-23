@@ -3296,6 +3296,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "batches.smallParcelSurchargePercent", sql: "ALTER TABLE batches ADD COLUMN smallParcelSurchargePercent DECIMAL(5,2) NULL" },
   { name: "batches.smallParcelRule", sql: "ALTER TABLE batches ADD COLUMN smallParcelRule BOOLEAN NULL" },
 
+  // Owner, 2026-10-23: a volumetric parcel billed at less than its volume
+  // (12 kg by size, 7 kg charged) - the sides stay true, the kilos charged
+  // are written here (shared/chargeableWeight). Null: billed as measured.
+  { name: "packages.billedWeightKg", sql: "ALTER TABLE packages ADD COLUMN billedWeightKg DECIMAL(10,3) NULL" },
+
   // A message either of the two can take back out of the conversation. Struck
   // out, not erased — see the schema note beside these columns.
   { name: "staffMessages.deletedAt", sql: "ALTER TABLE staffMessages ADD COLUMN deletedAt TIMESTAMP NULL" },

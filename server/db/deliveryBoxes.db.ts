@@ -1035,7 +1035,7 @@ export async function isFPOrderBoxedNonCancelled(fpOrderId: number): Promise<boo
 
 // ============ RECALCULATE BOX TOTALS ============
 
-async function recalculateBoxTotals(boxId: number): Promise<void> {
+export async function recalculateBoxTotals(boxId: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
 

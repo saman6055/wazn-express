@@ -61,6 +61,7 @@ export async function priceClaimedParcel(packageId: number): Promise<void> {
     widthCm: pkg.widthCm,
     heightCm: pkg.heightCm,
     volumeCbm: pkg.volumeCbm,
+    billedWeightKg: pkg.billedWeightKg,
   });
   if (priced.costUsd) {
     await db.updatePackage(packageId, {

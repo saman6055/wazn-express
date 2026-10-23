@@ -1,4 +1,5 @@
 import { statusForScan, advanceStatus } from "../lib/scanStatus";
+import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { chargeBoxDeliveryFee, markBoxContentsDelivered, finishPaidBox, reopenDeliveredBox } from "../lib/boxLifecycle";
 import { BATCH_ARRIVED_STATUSES } from "@shared/parcelStage";
 import { resolveGoodsCategory } from "../lib/goodsCategory";
@@ -1696,7 +1697,9 @@ export const deliveryBoxRouter = router({
         const batch = pkg.batchId ? await db.getBatchById(pkg.batchId) : null;
         sourceInfo = batch ? `باچ ${batch.batchCode}` : 'بێ باچ';
         description = pkg.description || pkg.trackingNumber || '';
-        weightKg = computeChargeableKg(pkg.weightKg, pkg.lengthCm, pkg.widthCm, pkg.heightCm);
+        // The kilos charged - a volumetric discount included (owner,
+        // 2026-10-23), read by the one rule the account is charged by.
+        weightKg = chargeableWeight(pkg, (await db.getVolumetricDivisor()) || DEFAULT_VOLUMETRIC_DIVISOR).chargeableKg.toFixed(2);
 
         // Recompute shipping cost FRESH from current measurements × batch
         // rate. `pkg.calculatedCostUsd` alone is unreliable: it is only

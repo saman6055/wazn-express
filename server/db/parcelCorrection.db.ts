@@ -13,6 +13,7 @@ import { parcelOwnCharges, parcelReceipt, PARCEL_CHARGE_TYPES } from "./parcelDe
 import {
   orderClaimsTracking, parcelInvoiceLine, shippingChargeDueNow, type ShippingChargeDue,
 } from "./batchCharging.db";
+import { recalculateBoxTotals } from "./deliveryBoxes.db";
 import { withFix } from "@shared/fixAdvice";
 import { ownerChanged, type ParcelMoneyHold } from "@shared/parcelCorrection";
 import { appLogger } from "../utils/logger";
@@ -82,6 +83,8 @@ export interface ParcelCorrectionFacts {
   volumeCbm: string | null;
   /** Cartons of one size; undefined leaves the count as it is (shared/parcelCost). */
   cartonCount?: number | null;
+  /** A volumetric discount, the kilos charged; undefined leaves it as it is. */
+  billedWeightKg?: string | null;
   description: string | null;
   categoryId: number | null;
   /** Undefined leaves the photographs as they are. */
@@ -106,6 +109,14 @@ export type ParcelCorrectionMoney =
 /** The ledger's own switches, and who is asking - kept with the record of a restated charge. */
 export interface CorrectionOptions extends UndoOptions {
   actorRole?: string | null;
+  /**
+   * The box follows (owner, 2026-10-23: the volumetric discount is given in
+   * the box, before its receipt): a parcel in a box is corrected all the
+   * same, and the box's own line for it reads the new price and the kilos
+   * charged (worked out by the caller: no weight is decided in this file).
+   * A receipt still refuses - money taken is not moved from here.
+   */
+  boxFollows?: { weightKg: string };
 }
 
 export interface ParcelCorrectionResult {
@@ -419,8 +430,11 @@ export async function applyParcelCorrection(
   }
   const name = pkg.trackingNumber || pkg.packageCode || String(packageId);
 
+  const hold = opts?.boxFollows ? await parcelMoneyHold(packageId) : null;
   const refusal = await parcelCorrectionRefusal(packageId, name);
-  if (refusal) throw new Error(refusal);
+  // In a box is no refusal when the box follows; a receipt always is.
+  if (refusal && !(opts?.boxFollows && hold?.kind === "box")) throw new Error(refusal);
+  const billedWeightKg = facts.billedWeightKg !== undefined ? facts.billedWeightKg : pkg.billedWeightKg ?? null;
 
   // An order's parcel carries no charge of its own: its money is on the order.
   const orderLinked = pkg.fullPackageOrderId !== null || await orderClaimsTracking(pkg.trackingNumber);
@@ -436,6 +450,7 @@ export async function applyParcelCorrection(
     widthCm: facts.widthCm,
     heightCm: facts.heightCm,
     volumeCbm: facts.volumeCbm,
+    billedWeightKg,
   });
 
   const result = await db.transaction(async (tx) => {
@@ -540,6 +555,7 @@ export async function applyParcelCorrection(
       heightCm: facts.heightCm,
       volumeCbm: facts.volumeCbm,
         ...(facts.cartonCount !== undefined ? { cartonCount: facts.cartonCount } : {}),
+      ...(facts.billedWeightKg !== undefined ? { billedWeightKg: facts.billedWeightKg } : {}),
       description: facts.description,
       categoryId: facts.categoryId,
       calculatedCostUsd: facts.calculatedCostUsd,
@@ -549,9 +565,27 @@ export async function applyParcelCorrection(
     if (released) set.isCharged = false;
     await tx.update(packages).set(set).where(eq(packages.id, packageId));
 
+    // The box's own line for the parcel reads the new price with it.
+    let boxIds: number[] = [];
+    if (opts?.boxFollows) {
+      // The kilos the receipt prints are the kilos charged.
+      const kg = opts.boxFollows.weightKg;
+      const lines = await tx
+        .select({ id: deliveryBoxItems.id, boxId: deliveryBoxItems.boxId })
+        .from(deliveryBoxItems)
+        .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, deliveryBoxItems.boxId))
+        .where(and(eq(deliveryBoxItems.packageId, packageId), ne(deliveryBoxes.status, "cancelled")));
+      for (const line of lines) {
+        await tx.update(deliveryBoxItems).set({ calculatedCostUsd: facts.calculatedCostUsd, weightKg: kg }).where(eq(deliveryBoxItems.id, line.id));
+      }
+      boxIds = Array.from(new Set(lines.map((l) => Number(l.boxId))));
+    }
+
     const chargedNow = released ? false : Boolean(row.isCharged);
-    return { money, wasUsd, nowUsd, chargeAfter: !chargedNow && due.due, revenue };
+    return { money, wasUsd, nowUsd, chargeAfter: !chargedNow && due.due, revenue, boxIds };
   });
+
+  for (const boxId of result.boxIds) await recalculateBoxTotals(boxId);
 
   // The day's running revenue total, moved by the same difference. Kept
   // outside the transaction by the function that keeps it everywhere else;

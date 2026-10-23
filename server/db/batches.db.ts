@@ -1106,7 +1106,12 @@ export async function deriveBatchCostRateIfMissing(batchId: number): Promise<{
     // The carrier's billed weight, else ours as the customer was charged on —
     // one rule for every screen (shared/batchCost).
     const divisor = await getVolumetricDivisor();
-    const billedKg = batchPackages.reduce((sum, pkg) => sum + chargeableWeight(pkg, divisor).chargeableKg, 0);
+    // The space the parcels take - before any volumetric discount, which is
+    // what we let the customer off, not what the aircraft carried.
+    const billedKg = batchPackages.reduce((sum, pkg) => {
+      const w = chargeableWeight(pkg, divisor);
+      return sum + (w.fullKg ?? w.chargeableKg);
+    }, 0);
     base = carrierCostBase(batch.shippingType, batch, { billedKg, cbm: 0 });
   }
 

@@ -23,6 +23,10 @@ export const packages = mysqlTable("packages", {
   // Cartons of one size under this tracking: the sides are one carton's, the
   // volume is all of them (shared/parcelCost: cartonVolume). Owner, 2026-10-17.
   cartonCount: int("cartonCount"),
+  // A volumetric discount (owner, 2026-10-23): the kilos charged when less
+  // than the volume says - never below the scale, never above the volume.
+  // The sides above stay as measured. Null: charged as measured.
+  billedWeightKg: decimal("billedWeightKg", { precision: 10, scale: 3 }),
   shippingType: mysqlEnum("shippingType", ["air_regular", "air_irregular", "sea"]).notNull(),
   description: text("description"),
   photos: json("photos").$type<string[]>(),

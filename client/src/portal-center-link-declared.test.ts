@@ -52,7 +52,8 @@ describe("the price, as approving a claim sets it", () => {
     expect(keysOf(link)).toEqual(keysOf(claim));
     expect(keysOf(link)).toEqual(
       // packageId: an existing parcel is not counted twice in its owner's small-parcel total.
-      ["batchId", "customerId", "heightCm", "lengthCm", "originWarehouseId", "packageId", "shippingType", "volumeCbm", "weightKg", "widthCm"],
+      // billedWeightKg: a volumetric discount stays with the parcel (owner, 2026-10-23).
+      ["batchId", "billedWeightKg", "customerId", "heightCm", "lengthCm", "originWarehouseId", "packageId", "shippingType", "volumeCbm", "weightKg", "widthCm"],
     );
     expect(lib).toContain("if (!pkg || pkg.isCharged) return;");
   });

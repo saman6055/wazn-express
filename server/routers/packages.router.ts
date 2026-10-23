@@ -19,7 +19,7 @@ import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/
 import { resolveParcelCost } from "../services/parcelPricing.service";
 import { cachedThumbnail, thumbnailFor } from "../services/orderThumbs.service";
 import { customerPhotos } from "@shared/parcelPhotos";
-import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView } from "../lib/correctRegisteredParcel";
+import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView, setVolumetricDiscount } from "../lib/correctRegisteredParcel";
 
 export const packagesRouter = router({
     list: staffProcedure
@@ -1074,6 +1074,20 @@ export const packagesRouter = router({
       .mutation(async ({ input, ctx }) =>
         correctLastRegistration({ id: ctx.user.id, name: ctx.user.name, role: ctx.user.role }, input)),
     /**
+     * A volumetric discount (owner, 2026-10-23): the kilos charged for a
+     * parcel whose volume weighs more than its scale - the sides stay true.
+     * From the parcel list, Quick Register and the box before its receipt
+     * (lib/correctRegisteredParcel: setVolumetricDiscount). Null takes it off.
+     */
+    setBilledWeight: staffProcedure
+      .input(z.object({
+        packageId: idSchema,
+        billedWeightKg: z.number().min(0).max(100000).nullable(),
+        approveCredit: z.boolean().optional(),
+      }))
+      .mutation(async ({ input, ctx }) =>
+        setVolumetricDiscount({ id: ctx.user.id, name: ctx.user.name, role: ctx.user.role }, input)),
+    /**
      * The figure the register screen quotes before Save.
      *
      * The screen used to multiply the batch's list rate by the weight itself,
@@ -1222,6 +1236,7 @@ export const packagesRouter = router({
             widthCm: pkg.widthCm,
             heightCm: pkg.heightCm,
             volumeCbm: pkg.volumeCbm,
+            billedWeightKg: pkg.billedWeightKg,
           });
           if (priced.costUsd) {
             await db.updatePackage(request.packageId, {
@@ -1938,6 +1953,8 @@ export const packagesRouter = router({
                   widthCm: updateData.widthCm ?? pkg.widthCm,
                   heightCm: updateData.heightCm ?? pkg.heightCm,
                   volumeCbm: updateData.volumeCbm ?? pkg.volumeCbm,
+                  // A volumetric discount stays with the parcel through an edit.
+                  billedWeightKg: pkg.billedWeightKg,
                   packageId: pkg.id,
                 });
             pricing = repriceReport({
