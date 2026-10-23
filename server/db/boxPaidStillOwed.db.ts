@@ -293,9 +293,10 @@ async function gatherAccount(customerId: number) {
   }));
 
   const parcels = await db
-    .select({ id: packages.id, tracking: packages.trackingNumber, description: packages.description })
+    .select({ id: packages.id, tracking: packages.trackingNumber, description: packages.description, status: packages.status })
     .from(packages)
     .where(eq(packages.customerId, customerId));
+  const undeliveredPackageIds = new Set(parcels.filter((p) => p.status !== "delivered").map((p) => Number(p.id)));
 
   // Payments given back or undone, by the ledger row of the payment.
   const reversed = await db
@@ -336,7 +337,7 @@ async function gatherAccount(customerId: number) {
     boxAt: s.boxAt ? new Date(s.boxAt).toISOString() : null,
   }));
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), pendingPackageIds, pendingOrderIds, pendingTrackings };
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, pendingPackageIds, pendingOrderIds, pendingTrackings };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 

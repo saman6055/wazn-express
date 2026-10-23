@@ -318,7 +318,23 @@ describe("a payment undone is not paid", () => {
   it("the finder reads what was given back from the payments themselves", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
-    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), pendingPackageIds, pendingOrderIds, pendingTrackings };");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, pendingPackageIds, pendingOrderIds, pendingTrackings };");
+  });
+});
+
+describe("a zeroing never settles goods not yet handed over (AZ111, 2026-10-23)", () => {
+  const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+  const rows = [
+    { id: 1, transactionNumber: "T1", transactionType: "DEBIT_PACKAGE", amountUsd: 1.19, balanceAfterUsd: -100, description: "پاکەت 435243643153197 - باچ AIR", referenceId: 7, createdAt: "2026-08-18T10:00:00.000Z" },
+    { id: 2, transactionNumber: "T2", transactionType: "ADJUSTMENT_DEBIT", amountUsd: 100, balanceAfterUsd: 0, description: "[ڕێکخستنی دەستی] وەسڵی بۆکسە کۆنەکان", referenceId: null, createdAt: "2026-10-01T10:00:00.000Z" },
+  ];
+  it("a parcel still at customs stays owed across the zeroing", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    expect(explainDebt(rows as never, { ...base, undeliveredPackageIds: new Set([7]) } as never).owedUsd.parcel).toBe(1.19);
+  });
+  it("a delivered one is settled by it", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    expect(explainDebt(rows as never, { ...base, undeliveredPackageIds: new Set<number>() } as never).owedUsd.parcel).toBe(0);
   });
 });
 

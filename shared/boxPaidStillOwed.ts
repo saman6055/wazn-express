@@ -133,6 +133,8 @@ export interface SettledFacts {
   receipts?: Array<{ usd: number; at: string | null; boxAt: string | null }>;
   /** Every box of the customer's that still stands (not deleted). */
   standingBoxCodes?: Set<string>;
+  /** The customer's parcels not yet handed over. */
+  undeliveredPackageIds?: Set<number>;
   /** Goods in a box with no receipt that has not been handed over yet. */
   pendingPackageIds?: Set<number>;
   pendingOrderIds?: Set<number>;
@@ -300,7 +302,13 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     const pending = order
       ? Boolean(facts.pendingOrderIds?.has(order.id) || order.trackings.some((t) => facts.pendingTrackings?.has(trackingKey(t))))
       : Boolean(r.referenceId != null && facts.pendingPackageIds?.has(r.referenceId));
-    if (verdict !== "paid" && !(verdict === "openBox" && pending) && r.id <= zeroedAt) verdict = "settled";
+    // Nor goods not yet handed over: nobody paid for what has not come
+    // (AZ111, owner 21/10: a parcel still at customs, swept by the 01/10
+    // zeroing, is debt).
+    const notYetHere = order
+      ? (verdict === "road" || verdict === "arrived") && Boolean(order.status) && String(order.status) !== "delivered"
+      : verdict === "parcel" && r.referenceId != null && Boolean(facts.undeliveredPackageIds?.has(r.referenceId));
+    if (verdict !== "paid" && !(verdict === "openBox" && pending) && !notYetHere && r.id <= zeroedAt) verdict = "settled";
     out.verdict = verdict;
     if (verdict === "road" || verdict === "arrived" || verdict === "openBox" || verdict === "parcel") owed[verdict] += cents;
   }
