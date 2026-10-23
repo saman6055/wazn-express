@@ -322,6 +322,20 @@ describe("a payment undone is not paid", () => {
   });
 });
 
+describe("a credit put back to nothing by hand is a zeroing too (AZ229, 2026-10-23)", () => {
+  it("a parcel charged before it is settled, not owed", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+    const rows = [
+      { id: 1, transactionNumber: "T1", transactionType: "DEBIT_PACKAGE", amountUsd: 8.25, balanceAfterUsd: -100, description: "پاکەت X - باچ AIR", referenceId: 5, createdAt: "2026-09-03T10:00:00.000Z" },
+      { id: 2, transactionNumber: "T2", transactionType: "ADJUSTMENT_DEBIT", amountUsd: 100, balanceAfterUsd: 0, description: "[ڕێکخستنی دەستی] سفرکردنەوەی کریدیت", referenceId: null, createdAt: "2026-10-02T10:00:00.000Z" },
+    ];
+    const e = explainDebt(rows as never, base as never);
+    expect(e.owedUsd.parcel).toBe(0);
+    expect(e.charges[0].verdict).toBe("settled");
+  });
+});
+
 describe("old cash that is a later receipt's own money pays that box (AZ217, 2026-10-23)", () => {
   const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
   const rows = [

@@ -210,8 +210,10 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     if (target && stands.has(target.id)) {
       const amount = Math.round(r.amountUsd * 100);
       stands.set(target.id, stands.get(target.id)! + (r.transactionType === "ADJUSTMENT_DEBIT" ? amount : -amount));
-    } else if (r.transactionType === "ADJUSTMENT_CREDIT" && r.description.includes(MANUAL) && r.balanceAfterUsd <= 0.005) {
+    } else if (r.description.includes(MANUAL) && (r.transactionType === "ADJUSTMENT_CREDIT" ? r.balanceAfterUsd <= 0.005 : Math.abs(r.balanceAfterUsd) <= 0.005)) {
       // The account was put to nothing by hand: whatever stood before is settled.
+      // A credit taken back up to nothing counts too (AZ229, AZ220: the 01-02/10
+      // corrections of the 10/09 receipts left old parcels looking owed).
       if (r.id > zeroedAt) { zeroedAt = r.id; zeroedTime = r.createdAt ?? null; }
     }
   }
