@@ -2518,6 +2518,20 @@ export default function QuickRegister() {
                                 : `${lengthCm || 0} × ${widthCm || 0} × ${heightCm || 0} ÷ ${volumetricDivisor} = ${volumetricWeight.toFixed(2)} kg`}
                             </p>
                           )}
+                          {/* More than twice the scale (owner, 2026-10-23): a
+                              mistyped side looks exactly like this, so it asks
+                              to be checked before it is saved. */}
+                          {byVolume && actual > 0 && volumetricWeight >= actual * 2 && (
+                            <p className="mt-2 flex items-center gap-1.5 rounded-md bg-red-100 px-2 py-1.5 text-xs font-bold text-red-700 animate-pulse dark:bg-red-950/40 dark:text-red-300" data-testid="qr-volumetric-double">
+                              <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
+                              {pickLang(language, {
+                                ku: `کێشی قەبارەیی ${(volumetricWeight / actual).toFixed(1)} ئەوەندەی کێشی ڕاستەقینەیە - درێژی، پانی و بەرزی بپشکنە`,
+                                en: `By volume it weighs ${(volumetricWeight / actual).toFixed(1)}× the scale - check the sides`,
+                                ar: `الوزن الحجمي ${(volumetricWeight / actual).toFixed(1)} أضعاف الوزن الفعلي - تحقق من الأبعاد`,
+                                zh: `体积重是实际重量的 ${(volumetricWeight / actual).toFixed(1)} 倍 - 请核对尺寸`,
+                              })}
+                            </p>
+                          )}
                         </div>
                       );
                     })()}
