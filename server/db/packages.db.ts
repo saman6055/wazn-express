@@ -1439,7 +1439,12 @@ export async function backlinkRegisteredPackagesForOrder(orderId: number): Promi
   }
 
   let promoted = false;
-  if (linked.length > 0) {
+  // A parcel of this customer's that could not be linked because its own
+  // freight was already on the account (finance_closed) is still this order's
+  // goods sitting in the warehouse (owner, 2026-10-22): the order reads
+  // «گەیشتە کۆگای چین» like a linked one. Nothing about money moves here.
+  const arrivedUnlinked = conflicts.some((c) => c.reason === 'finance_closed');
+  if (linked.length > 0 || arrivedUnlinked) {
     appLogger.info('[Backlink] Linked pre-registered packages to order', {
       orderId, orderCode: order.orderCode,
       linked: linked.map((l) => l.packageCode), conflicts: conflicts.length,
