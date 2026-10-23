@@ -336,7 +336,7 @@ async function gatherAccount(customerId: number) {
     boxAt: s.boxAt ? new Date(s.boxAt).toISOString() : null,
   }));
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, pendingPackageIds, pendingOrderIds, pendingTrackings };
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), pendingPackageIds, pendingOrderIds, pendingTrackings };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 

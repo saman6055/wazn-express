@@ -318,7 +318,22 @@ describe("a payment undone is not paid", () => {
   it("the finder reads what was given back from the payments themselves", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
-    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, pendingPackageIds, pendingOrderIds, pendingTrackings };");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), pendingPackageIds, pendingOrderIds, pendingTrackings };");
+  });
+});
+
+describe("a box line whose receipt was undone is owed again (AZ002, 2026-10-23)", () => {
+  const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+  const rows = [{ id: 1, transactionNumber: "T1", transactionType: "DEBIT_PACKAGE", amountUsd: 17.6, balanceAfterUsd: 17.6, description: "BOX-20260910-005 — YT7638707984880", referenceId: 9, createdAt: "2026-09-10T10:00:00.000Z" }];
+  it("the box stands with no receipt: the line is owed", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const e = explainDebt(rows as never, { ...base, standingBoxCodes: new Set(["BOX-20260910-005"]) } as never);
+    expect(e.owedUsd.openBox).toBe(17.6);
+  });
+  it("its box receipted, or gone: paid as before", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    expect(explainDebt(rows as never, { ...base, standingBoxCodes: new Set(["BOX-20260910-005"]), receiptedBoxCodes: new Set(["BOX-20260910-005"]) } as never).owedUsd.openBox).toBe(0);
+    expect(explainDebt(rows as never, { ...base, standingBoxCodes: new Set<string>() } as never).owedUsd.openBox).toBe(0);
   });
 });
 

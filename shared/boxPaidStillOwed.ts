@@ -131,6 +131,8 @@ export interface SettledFacts {
    * 18/08 was BOX-20260816-001's, receipted again on 10/09).
    */
   receipts?: Array<{ usd: number; at: string | null; boxAt: string | null }>;
+  /** Every box of the customer's that still stands (not deleted). */
+  standingBoxCodes?: Set<string>;
   /** Goods in a box with no receipt that has not been handed over yet. */
   pendingPackageIds?: Set<number>;
   pendingOrderIds?: Set<number>;
@@ -269,7 +271,15 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     charges.push(out);
 
     if (cents <= 0) { out.verdict = "back"; continue; }
-    if (line) continue; // written by a receipt, paid by it
+    if (line) {
+      // Written by a receipt, paid by it - unless its box still stands with
+      // no receipt: the receipt was undone and the goods are owed again
+      // (AZ002, owner 2026-10-20: Khogr's receipts taken back, all is debt).
+      if (!facts.standingBoxCodes?.has(line[1]) || facts.receiptedBoxCodes.has(line[1])) continue;
+      out.verdict = r.id <= zeroedAt ? "settled" : "openBox";
+      if (out.verdict === "openBox") owed.openBox += cents;
+      continue;
+    }
     let verdict: ChargeVerdict;
     const extra = facts.extraCharges?.get(r.id);
     if (extra) verdict = extra;
