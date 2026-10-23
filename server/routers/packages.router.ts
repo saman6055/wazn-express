@@ -19,7 +19,7 @@ import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/
 import { resolveParcelCost } from "../services/parcelPricing.service";
 import { cachedThumbnail, thumbnailFor } from "../services/orderThumbs.service";
 import { customerPhotos } from "@shared/parcelPhotos";
-import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView, setVolumetricDiscount } from "../lib/correctRegisteredParcel";
+import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView, setVolumetricDiscount, volumetricFacts } from "../lib/correctRegisteredParcel";
 
 export const packagesRouter = router({
     list: staffProcedure
@@ -1087,6 +1087,9 @@ export const packagesRouter = router({
       }))
       .mutation(async ({ input, ctx }) =>
         setVolumetricDiscount({ id: ctx.user.id, name: ctx.user.name, role: ctx.user.role }, input)),
+    volumetricFacts: staffProcedure
+      .input(z.object({ packageId: idSchema }))
+      .query(async ({ input }) => volumetricFacts(input.packageId)),
     /**
      * The figure the register screen quotes before Save.
      *

@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { keepPreviousData } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { usePasteIntoField } from "@/hooks/usePasteIntoField";
+import { VolumetricDiscountIfDue } from "@/components/packages/VolumetricDiscount";
 import { toast } from "sonner";
 import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers, PencilLine } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -982,7 +983,7 @@ export default function QuickRegister() {
   };
   
   // State for last registered package
-  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null; orderNumber?: string | null; customerId?: number | null } | null>(null);
+  const [lastRegistered, setLastRegistered] = useState<{ packageCode: string; trackingNumber: string; customerName: string; time: Date; enteredBy?: string; orderDate?: Date | null; orderNumber?: string | null; customerId?: number | null; packageId?: number | null } | null>(null);
 
   /**
    * The banner survives a reload.
@@ -1006,6 +1007,7 @@ export default function QuickRegister() {
       customerName: myLastRegistration.customerCode || myLastRegistration.customerName || t("quickRegister.unclaimed"),
       time: when,
       customerId: myLastRegistration.isUnclaimed ? null : (myLastRegistration.customerId ?? null),
+      packageId: myLastRegistration.id,
     });
     // Only when the answer arrives: the banner belongs to whatever was
     // registered since, once anything has been.
@@ -1054,6 +1056,7 @@ export default function QuickRegister() {
         customerName: customerSearch || t("quickRegister.unclaimed"),
         // For «بۆکس دروست بکە بۆی»: only a parcel with an owner goes in a box.
         customerId: isUnclaimed ? null : (customerId ?? null),
+        packageId: (data as { id?: number }).id ?? null,
         time: new Date(),
         enteredBy: ((user?.name as string) || "").trim() || undefined,
         orderDate: orderCreatedAt ? new Date(orderCreatedAt) : null,
@@ -1130,6 +1133,7 @@ export default function QuickRegister() {
         trackingNumber: data.trackingNumber ?? "",
         customerName: isUnclaimed ? t("quickRegister.unclaimed") : (customerSearch || t("quickRegister.unclaimed")),
         customerId: isUnclaimed ? null : (customerId ?? null),
+        packageId: data.packageId,
       }));
       // What the account said, what it says now, and that only the
       // difference was written — long enough on screen to be read.
@@ -1223,6 +1227,7 @@ export default function QuickRegister() {
         trackingNumber: last.trackingNumber ?? "",
         customerName: last.customerCode || last.customerName || t("quickRegister.unclaimed"),
         customerId: last.isUnclaimed ? null : (last.customerId ?? null),
+        packageId: last.id,
       }));
       setCorrecting({ id: last.id, packageCode: last.packageCode, orderLinked: last.orderLinked, photos: last.photos, cartonCount: last.cartonCount ?? 1 });
       // The weight is what is usually wrong, so that is where the caret goes.
@@ -1616,6 +1621,11 @@ export default function QuickRegister() {
                     </Button>
                   ) : (
                     <>
+                    {/* Billed on its volume: a discount here, right after
+                        registering (owner, 2026-10-23). Shown only when due. */}
+                    {lastRegistered.packageId ? (
+                      <VolumetricDiscountIfDue packageId={lastRegistered.packageId} language={language} />
+                    ) : null}
                     {/* Straight into the customer's box (owner, 2026-10-21). */}
                     {lastRegistered.customerId && lastRegistered.trackingNumber ? (
                       <span className="ms-auto">

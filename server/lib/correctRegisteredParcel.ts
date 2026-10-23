@@ -647,3 +647,39 @@ export async function setVolumetricDiscount(
     words: correctionWords(outcome),
   };
 }
+
+/**
+ * What the volumetric discount window shows: the scale, the volume, the kilos
+ * charged now and the price, and whether a discount can be given at all.
+ */
+export async function volumetricFacts(packageId: number): Promise<{
+  eligible: boolean;
+  actualKg: number;
+  volumetricKg: number;
+  chargeableKg: number;
+  billedKg: number | null;
+  priceUsd: number | null;
+  /** Dollars per kilo the price was worked out at, when it can be read back. */
+  rate: number | null;
+  receipted: boolean;
+} | null> {
+  const pkg = await db.getPackageById(packageId);
+  if (!pkg) return null;
+  const batch = pkg.batchId ? await db.getBatchById(pkg.batchId) : null;
+  const air = isAirShipping(String(batch?.shippingType ?? pkg.shippingType));
+  const divisor = (await db.getVolumetricDivisor()) || DEFAULT_VOLUMETRIC_DIVISOR;
+  const w = chargeableWeight(pkg, divisor);
+  const billed = Number(pkg.billedWeightKg ?? 0);
+  const price = positive(pkg.calculatedCostUsd);
+  const receipted = (await db.parcelMoneyHold(packageId))?.kind === "receipt";
+  return {
+    eligible: air && w.volumetricKg > w.actualKg,
+    actualKg: w.actualKg,
+    volumetricKg: w.volumetricKg,
+    chargeableKg: w.chargeableKg,
+    billedKg: billed > 0 ? billed : null,
+    priceUsd: price,
+    rate: price !== null && w.chargeableKg > 0 ? price / w.chargeableKg : null,
+    receipted,
+  };
+}

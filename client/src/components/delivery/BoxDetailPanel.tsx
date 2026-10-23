@@ -180,6 +180,7 @@ import { CustomerBoxesPanel } from "@/components/delivery/CustomerBoxesPanel";
 import { pledgeLabel } from "@shared/pledgedDiscount";
 import { shippingOnlyAmongOrders, shippingOnlyNotice, SHIPPING_ONLY_CHIP } from "@shared/boxShippingOnly";
 import { parcelListHref } from "@shared/parcelSource";
+import { VolumetricDiscountButton } from "@/components/packages/VolumetricDiscount";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 
@@ -1334,6 +1335,16 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                             ? <span data-testid="box-item-cartons">{cartonVolumeText(item.volumeCbm, item.cartonCount)} CBM</span>
                             : `${fmtNumber(Number(item.volumeCbm || 0), 3)} CBM`)
                         : fmtKg(Number(item.weightKg || 0))}
+                      {/* Billed on its volume: a discount can be given here,
+                          before the receipt (owner, 2026-10-23). */}
+                      {!isSea && item.volumetric && status !== "delivered" && status !== "cancelled" && (
+                        <div className="mt-1 flex flex-col items-end gap-0.5">
+                          {item.volumetric.billedKg && (
+                            <span className="text-[10px] text-muted-foreground line-through">{fmtKg(item.volumetric.volumetricKg)}</span>
+                          )}
+                          <VolumetricDiscountButton packageId={Number(item.packageId)} billedKg={item.volumetric.billedKg} language={language} />
+                        </div>
+                      )}
                     </TableCell>
                     {/* Price */}
                     <TableCell className="text-end font-mono text-sm font-semibold">

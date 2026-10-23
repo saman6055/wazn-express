@@ -1,4 +1,6 @@
 import { smallParcelPrice } from "@shared/parcelCost";
+import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { getVolumetricDivisor } from "./settings.db";
 import { smallParcelRuleFor } from "./smallParcel.db";
 import { and, desc, eq, getTableColumns, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { withFix } from "@shared/fixAdvice";
@@ -725,6 +727,12 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
   cartonCount: number | null;
   /** Pieces its order is, when more than one (owner, 2026-10-21); else null. */
   pieceCount: number | null;
+  /**
+   * An air parcel whose volume weighs more than its scale: the three weights,
+   * so the box can offer a volumetric discount before its receipt (owner,
+   * 2026-10-23). Null for anything else.
+   */
+  volumetric?: { actualKg: number; volumetricKg: number; chargeableKg: number; billedKg: number | null } | null;
 };
 
 /**
@@ -907,7 +915,17 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     return { volumeCbm: null, shippingType: null, cartonCount: null };
   };
 
-  return items.map((item): BoxItemWithAdvance => {
+  const divisor = (await getVolumetricDivisor()) || DEFAULT_VOLUMETRIC_DIVISOR;
+  const volumetricFor = (item: typeof items[number]): BoxItemWithAdvance["volumetric"] => {
+    const p = item.packageId ? pkgById.get(item.packageId) : undefined;
+    if (!p || !isAirShipping(String(p.shippingType))) return null;
+    const w = chargeableWeight(p, divisor);
+    if (!(w.volumetricKg > w.actualKg)) return null;
+    const billed = Number(p.billedWeightKg ?? 0);
+    return { actualKg: w.actualKg, volumetricKg: w.volumetricKg, chargeableKg: w.chargeableKg, billedKg: billed > 0 ? billed : null };
+  };
+
+  const built = items.map((item): BoxItemWithAdvance => {
     const productImage = imageFor(item);
     const { volumeCbm, shippingType, cartonCount } = measureFor(item);
     // The order behind the line: how many pieces to count out of it.
@@ -967,6 +985,7 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
 
     return { ...item, advanceAppliedUsd: '0', productImage, volumeCbm, shippingType, cartonCount, pieceCount, hasOrder, orderNumbers, orderNote };
   });
+  return built.map((b) => ({ ...b, volumetric: volumetricFor(b) }));
 }
 
 export async function isPackageInAnyBox(packageId: number): Promise<{ inBox: boolean; boxCode?: string; boxId?: number }> {

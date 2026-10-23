@@ -13,6 +13,7 @@ import { ZoomImage } from "@/components/ZoomImage";
 import { ParcelThumb, ParcelThumbs } from "@/components/packages/ParcelThumb";
 import { CountBadges } from "@/components/packages/CountBadges";
 import { ShippingWayChip } from "@/components/ShippingWayChip";
+import { VolumetricDiscountButton } from "@/components/packages/VolumetricDiscount";
 import { TableSkeleton } from "@/components/ui/skeletons";
 import { EmptyState } from "@/components/EmptyState";
 import { TrackingOnAnOrder } from "@/components/packages/TrackingOnAnOrder";
@@ -283,7 +284,7 @@ const PackageTableRow = memo(function PackageTableRow({
         )}
       </TableCell>
       <TableCell>
-        <PackageWeight pkg={pkg} getBatchShippingType={getBatchShippingType} divisor={divisor} t={t} />
+        <PackageWeight pkg={pkg} getBatchShippingType={getBatchShippingType} divisor={divisor} t={t} language={language} />
       </TableCell>
       {/* The raw decimal string printed $12.5 in one row and $12.50 in the
           next, from the same column. */}
@@ -318,7 +319,7 @@ const PackageTableRow = memo(function PackageTableRow({
  */
 type PieceT = (key: string, opts?: Record<string, string | number>) => string;
 
-function PackageWeight({ pkg, getBatchShippingType, divisor, t }: { pkg: Package; getBatchShippingType: (id: number | null) => string | null; divisor: number; t: PieceT }) {
+function PackageWeight({ pkg, getBatchShippingType, divisor, t, language }: { pkg: Package; getBatchShippingType: (id: number | null) => string | null; divisor: number; t: PieceT; language: string }) {
   return (
     <>
     {(() => {
@@ -337,15 +338,29 @@ function PackageWeight({ pkg, getBatchShippingType, divisor, t }: { pkg: Package
       // The shared rule with the configured divisor — a hardcoded 6000
       // here showed a different weight than the invoice whenever the
       // setting was changed.
-      const { chargeableKg, billedOnVolume } = chargeableWeight(pkg, divisor);
+      const { chargeableKg, billedOnVolume, volumetricKg, discountKg } = chargeableWeight(pkg, divisor);
       if (chargeableKg === 0) return "-";
       return (
-        <div dir="ltr" className="flex items-center gap-1">
-          <span className="tabular-nums">{chargeableKg.toFixed(2)} kg</span>
+        <div className="flex flex-col items-start gap-1">
+          <div dir="ltr" className="flex items-center gap-1">
+            <span className="tabular-nums">{chargeableKg.toFixed(2)} kg</span>
+            {/* A volumetric discount: the size's own kilos beside the ones charged. */}
+            {(discountKg ?? 0) > 0 && (
+              <span className="text-[11px] tabular-nums text-muted-foreground line-through">{volumetricKg.toFixed(2)} kg</span>
+            )}
+            {billedOnVolume && (
+              <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
+                {t('packages.volumetric')}
+              </Badge>
+            )}
+          </div>
+          {/* Owner, 2026-10-23: a parcel billed on its volume can be charged fewer kilos. */}
           {billedOnVolume && (
-            <Badge variant="outline" className="text-[10px] px-1 py-0 bg-purple-50 dark:bg-purple-950/40 text-purple-700 dark:text-purple-300 border-purple-200 dark:border-purple-800/60">
-              {t('packages.volumetric')}
-            </Badge>
+            <VolumetricDiscountButton
+              packageId={pkg.id}
+              billedKg={(discountKg ?? 0) > 0 ? chargeableKg : null}
+              language={language}
+            />
           )}
         </div>
       );
@@ -469,7 +484,7 @@ const PackageMobileCard = memo(function PackageMobileCard({
         </div>
         <div className="min-w-0 rounded-lg bg-muted/60 px-2 py-1.5">
           <div className="text-[11px] text-muted-foreground">{t("packages.weight")}</div>
-          <div className="truncate font-semibold"><PackageWeight pkg={pkg} getBatchShippingType={getBatchShippingType} divisor={divisor} t={t} /></div>
+          <div className="truncate font-semibold"><PackageWeight pkg={pkg} getBatchShippingType={getBatchShippingType} divisor={divisor} t={t} language={language} /></div>
         </div>
         <div className="min-w-0 rounded-lg bg-muted/60 px-2 py-1.5">
           <div className="text-[11px] text-muted-foreground">{t("packages.cost")}</div>

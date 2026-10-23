@@ -75,7 +75,9 @@ describe("a note written on an order follows it", () => {
     expect(boxesDb).toContain("orderNote: string | null;");
     // Every return path of the mapper, or which kind of item it is decides
     // whether the note survives.
-    const mapper = boxesDb.slice(boxesDb.indexOf("return items.map((item): BoxItemWithAdvance"));
+    const start = boxesDb.indexOf("const built = items.map((item): BoxItemWithAdvance");
+    expect(start, "marker").toBeGreaterThan(-1);
+    const mapper = boxesDb.slice(start);
     expect(mapper.match(/orderNote \}/g)?.length, "a return path drops it").toBe(3);
   });
 });

@@ -482,6 +482,8 @@ export async function getAllPackages(options: {
       // How many cartons the tracking is, and how many pieces its order is
       // (owner, 2026-10-21) - the row says «2 کارتۆن», «×3 پارچە».
       cartonCount: packages.cartonCount,
+      // A volumetric discount: the kilos charged (owner, 2026-10-23).
+      billedWeightKg: packages.billedWeightKg,
       orderQuantity: fullPackageOrders.quantity,
       status: packages.status,
       createdAt: packages.createdAt,
