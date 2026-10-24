@@ -98,3 +98,19 @@ describe("one rule, read everywhere it matters", () => {
     expect(dispatch.slice(at, dispatch.indexOf("onError", at))).toContain("batchHasShipmentNumber(s?.batch)");
   });
 });
+
+describe("a parcel packed for the carrier says so", () => {
+  const root = path.join(__dirname, "..");
+  const read = (p: string) => fs.readFileSync(path.join(root, p), "utf8").replace(/\r\n/g, "\n");
+
+  it("the words stop short of saying it has left", () => {
+    const src = read("client/src/lib/packageStatus.ts");
+    expect(src).toContain('packed: { ku: "ئامادەکاری گواستنەوە"');
+    expect(src).toContain("if (parcel.inCarton) return PARCEL_WHERE_WORDS.packed;");
+  });
+
+  it("the fact comes from the carton table, for the customer's own parcels", () => {
+    expect(read("server/db/dispatch.db.ts")).toContain("export async function packagesInCartons(");
+    expect(read("server/db/portal.db.ts")).toContain("inCarton: packed.has(Number(row.id))");
+  });
+});

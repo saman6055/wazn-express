@@ -210,6 +210,8 @@ export interface ParcelRow {
   weightKg?: string | number | null;
   volumeCbm?: string | number | null;
   batchId?: number | null;
+  /** Packed into a carton for the carrier, still in China. */
+  inCarton?: boolean | null;
   fullPackageOrderId?: number | null;
   registeredAt?: When;
   deliveredAt?: When;

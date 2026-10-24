@@ -71,19 +71,31 @@ export function packageStatusTone(status: string | null | undefined): string {
  * them too, and there "registered" and "packed into a shipment" must stay
  * apart. A customer needs only to know where the goods are.
  */
-export const PARCEL_WHERE_WORDS: Record<"erbil" | "onTheWay" | "china", L> = {
+export const PARCEL_WHERE_WORDS: Record<"erbil" | "onTheWay" | "china" | "packed", L> = {
   erbil: { ku: "گەیشتە هەولێر — ئامادەیە بۆ وەرگرتن", en: "In Erbil — ready to collect", ar: "وصل إلى أربيل — جاهز للاستلام", zh: "已到埃尔比勒——可以取件" },
   // The mode-free fallback. A parcel whose shipment is known says how it
   // travels instead — «لە ڕێگای ئاسمانی» / «لە ڕێگای دەریایی» (lib/travelMode,
   // the owner 2026-09-27: never "a plane or a ship" about goods on a plane).
   onTheWay: ON_THE_WAY_WORDS.unknown,
   china: { ku: "تۆمارکراوە لە کۆگای چین", en: "Registered at our China warehouse", ar: "مسجّل في مستودعنا في الصين", zh: "已在我们的中国仓库登记" },
+  /**
+   * Packed into a carton for the carrier, still in China.
+   *
+   * The owner, 2026-10-24: a customer who opens the portal every day and
+   * reads the same line stops opening it, and any real movement is worth
+   * showing. This is real — somebody packed the carton — and it stops short
+   * of "on the way", which is the shipment's number to say, because a
+   * packed carton can wait a week for the carrier.
+   */
+  packed: { ku: "ئامادەکاری گواستنەوە", en: "Being prepared for shipping", ar: "قيد التجهيز للشحن", zh: "正在备运" },
 };
 
 interface ParcelWhere {
   status?: string | null;
   batchId?: number | null;
   registeredInCountryId?: number | null;
+  /** Packed into a carton for the carrier (server/db/dispatch packagesInCartons). */
+  inCarton?: boolean | null;
 }
 
 /**
@@ -153,6 +165,9 @@ export function parcelStatusWords(
       return onTheWayWords(shippingType);
     case "registered":
     case "in_batch":
+      // Packed for the carrier but not gone: real movement, short of the
+      // claim that it has left, which only the shipment's number makes.
+      if (parcel.inCarton) return PARCEL_WHERE_WORDS.packed;
       return registeredInChina(parcel, originCountries) ? PARCEL_WHERE_WORDS.china : PACKAGE_STATUS_LABEL.registered;
     default:
       return PACKAGE_STATUS_LABEL[status] ?? null;

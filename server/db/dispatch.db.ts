@@ -314,6 +314,26 @@ export async function countRecentDispatches(hours = 48): Promise<number> {
 }
 
 /** The carton each parcel of these batches went in - for the arrival check in Erbil. */
+/**
+ * Which of these parcels are already packed into a carton.
+ *
+ * The customer is told, in their own words: a parcel waiting loose on the
+ * shelf and one packed for the carrier are both "in the China depot", and
+ * the owner asked (2026-10-24) that the second say it is being prepared, so
+ * that somebody checking every day sees that something moved.
+ */
+export async function packagesInCartons(packageIds: number[]): Promise<Set<number>> {
+  const out = new Set<number>();
+  if (packageIds.length === 0) return out;
+  const db = await need();
+  const rows = await db
+    .select({ packageId: batchCartonItems.packageId })
+    .from(batchCartonItems)
+    .where(inArray(batchCartonItems.packageId, packageIds));
+  for (const r of rows) out.add(Number(r.packageId));
+  return out;
+}
+
 export async function cartonsOfBatches(batchIds: number[]): Promise<Array<{ packageId: number; batchId: number; cartonNo: number }>> {
   if (batchIds.length === 0) return [];
   const db = await need();

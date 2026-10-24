@@ -10,6 +10,7 @@ import { getAccountStatementForCustomer, getCustomerAccountByCustomerId } from '
 import { selfOrderWhere } from './selfOrder.filter';
 import { getBatchStatusTimestamps, getBatchRateForCustomer } from './batches.db';
 import { batchHasShipmentNumber } from '@shared/parcelStage';
+import { packagesInCartons } from './dispatch.db';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -507,7 +508,15 @@ export async function getCustomerVisiblePackages(customerId: number, limit = 200
     .where(eq(packages.customerId, customerId))
     .orderBy(desc(packages.createdAt))
     .limit(limit);
-  return concealFullPackageParcels(rows);
+
+  /**
+   * Packed into a carton for the carrier. Loose on the shelf and packed are
+   * both "in the China depot", and the owner asked that the second say so,
+   * so a customer who checks every day sees that something moved.
+   */
+  const packed = await packagesInCartons(rows.map((r) => Number(r.id)));
+  const visible = await concealFullPackageParcels(rows);
+  return visible.map((row) => ({ ...row, inCarton: packed.has(Number(row.id)) }));
 }
 
 /**
