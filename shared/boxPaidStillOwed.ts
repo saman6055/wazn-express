@@ -135,6 +135,9 @@ export interface SettledFacts {
   standingBoxCodes?: Set<string>;
   /** The customer's parcels not yet handed over. */
   undeliveredPackageIds?: Set<number>;
+  /** Delivered, and traceable through a batch or a box. */
+  deliveredTracedPackageIds?: Set<number>;
+  deliveredTracedOrderIds?: Set<number>;
   /** Goods in a box with no receipt that has not been handed over yet. */
   pendingPackageIds?: Set<number>;
   pendingOrderIds?: Set<number>;
@@ -313,6 +316,13 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
       ? (verdict === "road" || verdict === "arrived") && Boolean(order.status) && String(order.status) !== "delivered"
       : verdict === "parcel" && r.referenceId != null && Boolean(facts.undeliveredPackageIds?.has(r.referenceId));
     if (verdict !== "paid" && !(verdict === "openBox" && pending) && !notYetHere && r.id <= zeroedAt) verdict = "settled";
+    // Owner's rule, 2026-10-24: whatever came before the boxes and was
+    // delivered is settled - unless it went through no batch and no box,
+    // which is left owed until it is decided one way or the other.
+    const deliveredBeforeBoxes = Boolean(r.createdAt && r.createdAt < ADVANCE_SINCE) && (order
+      ? Boolean(facts.deliveredTracedOrderIds?.has(order.id))
+      : r.referenceId != null && Boolean(facts.deliveredTracedPackageIds?.has(r.referenceId)));
+    if ((verdict === "parcel" || verdict === "arrived") && deliveredBeforeBoxes) verdict = "settled";
     out.verdict = verdict;
     if (verdict === "road" || verdict === "arrived" || verdict === "openBox" || verdict === "parcel") owed[verdict] += cents;
   }

@@ -269,7 +269,7 @@ async function gatherAccount(customerId: number) {
   const own = await db
     .select({
       id: fullPackageOrders.id, chargeTransactionId: fullPackageOrders.chargeTransactionId, tracking: fullPackageOrders.trackingNumber,
-      status: fullPackageOrders.status, orderType: fullPackageOrders.orderType, orderCode: fullPackageOrders.orderCode,
+      status: fullPackageOrders.status, orderType: fullPackageOrders.orderType, orderCode: fullPackageOrders.orderCode, batchId: fullPackageOrders.batchId,
       orderNumber: fullPackageOrders.orderNumber, productName: fullPackageOrders.productName,
       hasImage: sql<number>`(${fullPackageOrders.productImage} IS NOT NULL AND ${fullPackageOrders.productImage} <> '')`,
     })
@@ -293,10 +293,22 @@ async function gatherAccount(customerId: number) {
   }));
 
   const parcels = await db
-    .select({ id: packages.id, tracking: packages.trackingNumber, description: packages.description, status: packages.status })
+    .select({ id: packages.id, tracking: packages.trackingNumber, description: packages.description, status: packages.status, batchId: packages.batchId, orderId: packages.fullPackageOrderId })
     .from(packages)
     .where(eq(packages.customerId, customerId));
   const undeliveredPackageIds = new Set(parcels.filter((p) => p.status !== "delivered").map((p) => Number(p.id)));
+  // Delivered and traceable - in a batch or a box - is settled when it came
+  // before the boxes (owner, 2026-10-24). One in no batch and no box is not.
+  const boxedPackageIds = new Set(boxRows.map((b) => Number(b.packageId)).filter((n) => n > 0));
+  const boxedOrderIds = new Set(boxRows.flatMap((b) => [Number(b.orderId), Number(b.parcelOrderId)]).filter((n) => n > 0));
+  const tracedPackage = (p: { id: unknown; batchId: unknown }) => p.batchId != null || boxedPackageIds.has(Number(p.id));
+  const deliveredTracedPackageIds = new Set(parcels.filter((p) => p.status === "delivered" && tracedPackage(p)).map((p) => Number(p.id)));
+  const tracedTracking = new Set(parcels.filter((p) => tracedPackage(p) && p.tracking).map((p) => trackingKey(String(p.tracking))));
+  const tracedOrderIds = new Set(parcels.filter((p) => tracedPackage(p) && p.orderId != null).map((p) => Number(p.orderId)));
+  const deliveredTracedOrderIds = new Set(own.filter((o) => String(o.status) === "delivered" && (
+    o.batchId != null || boxedOrderIds.has(Number(o.id)) || tracedOrderIds.has(Number(o.id))
+    || orders.find((x) => x.id === Number(o.id))?.trackings.some((t) => tracedTracking.has(trackingKey(t)))
+  )).map((o) => Number(o.id)));
 
   // Payments given back or undone, by the ledger row of the payment.
   const reversed = await db
@@ -337,7 +349,7 @@ async function gatherAccount(customerId: number) {
     boxAt: s.boxAt ? new Date(s.boxAt).toISOString() : null,
   }));
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, pendingPackageIds, pendingOrderIds, pendingTrackings };
+  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, deliveredTracedPackageIds, deliveredTracedOrderIds, pendingPackageIds, pendingOrderIds, pendingTrackings };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 

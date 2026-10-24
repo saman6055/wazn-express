@@ -318,7 +318,25 @@ describe("a payment undone is not paid", () => {
   it("the finder reads what was given back from the payments themselves", () => {
     const db = root("server/db/boxPaidStillOwed.db.ts");
     expect(db).toContain("select({ transactionId: paymentRecords.transactionId, reversedUsd: paymentRecords.reversedAmountUsd })");
-    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, pendingPackageIds, pendingOrderIds, pendingTrackings };");
+    expect(db).toContain("isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, deliveredTracedPackageIds, deliveredTracedOrderIds, pendingPackageIds, pendingOrderIds, pendingTrackings };");
+  });
+});
+
+describe("delivered before the boxes is settled, unless it went through no batch and no box (owner, 2026-10-24)", () => {
+  const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+  const rows = [{ id: 1, transactionNumber: "T1", transactionType: "DEBIT_PACKAGE", amountUsd: 0.33, balanceAfterUsd: 0.33, description: "پاکەت 33444 - باچ AIR-2026-050", referenceId: 3983, createdAt: "2026-09-03T10:00:00.000Z" }];
+  it("AZ195's 33-cent parcel, delivered in a batch in August: settled", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    expect(explainDebt(rows as never, { ...base, deliveredTracedPackageIds: new Set([3983]) } as never).owedUsd.parcel).toBe(0);
+  });
+  it("in no batch and no box: still owed, to be decided", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    expect(explainDebt(rows as never, { ...base, deliveredTracedPackageIds: new Set<number>() } as never).owedUsd.parcel).toBe(0.33);
+  });
+  it("after the boxes began: the box decides, not this rule", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const late = [{ ...rows[0], createdAt: "2026-09-20T10:00:00.000Z" }];
+    expect(explainDebt(late as never, { ...base, deliveredTracedPackageIds: new Set([3983]) } as never).owedUsd.parcel).toBe(0.33);
   });
 });
 
