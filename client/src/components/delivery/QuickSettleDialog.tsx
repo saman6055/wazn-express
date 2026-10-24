@@ -21,6 +21,7 @@ import { SettlementLoadError, NothingToTake } from "@/components/delivery/Settle
 import { useSystemAlert } from "@/components/SystemAlert";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { AdvanceSplitNote } from "./AdvanceSplitNote";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
 import { payeeCodeMatches } from "@shared/payeeCheck";
@@ -422,6 +423,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                     {" "}<bdi dir="ltr" className="font-mono">{fmtUsd(cover.coveredUsd)}</bdi>
                   </p>
                 )}
+                <AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} />
                 {promised.length > 0 && (
                   <div
                     className="mt-3 space-y-1 border-t pt-2 text-start"

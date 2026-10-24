@@ -27,6 +27,7 @@ import { useSystemAlert } from "@/components/SystemAlert";
 import { showErrorToast } from "@/lib/errorToast";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { AdvanceSplitNote } from "./AdvanceSplitNote";
 import { cn } from "@/lib/utils";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { fmtAmount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -763,6 +764,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
                 <span>{t({ ku: "پێویستە بدرێت", en: "Due", ar: "المطلوب", zh: "应付" })}</span>
                 <span className="font-mono tabular-nums" data-testid="settle-due">{money(cashDue)}</span>
               </div>
+              <AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} />
             </div>
 
             <div className="rounded-lg border p-3 space-y-2">

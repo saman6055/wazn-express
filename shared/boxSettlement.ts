@@ -427,6 +427,20 @@ export interface AccountCover {
   coveredUsd: number;
 }
 
+/**
+ * The advance at the till, in three figures (owner, 2026-10-24): what the
+ * customer has paid ahead, what this box takes of it, what is left for the
+ * next box. The advance is the same one accountCover reads (openUsd less the
+ * balance); null when there is none.
+ */
+export function advanceSplit(args: { openUsd: number | null | undefined; balanceUsd: number; coveredUsd: number }): { advanceUsd: number; usedUsd: number; leftUsd: number } | null {
+  if (args.openUsd == null) return null;
+  const advanceUsd = round2(Math.max(0, args.openUsd - args.balanceUsd));
+  if (advanceUsd <= 0.01) return null;
+  const usedUsd = round2(Math.min(advanceUsd, Math.max(0, args.coveredUsd)));
+  return { advanceUsd, usedUsd, leftUsd: round2(advanceUsd - usedUsd) };
+}
+
 export function accountCover(args: {
   /** The box's own due, after discounts and corrections (settlementTotals). */
   dueUsd: number;
