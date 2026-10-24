@@ -70,6 +70,14 @@ export default function StaffManagement() {
   // Fetch staff list
   const { data: staffList, isLoading } = trpc.auth.getStaffList.useQuery();
   const { data: countries } = trpc.countries.list.useQuery();
+  // Where an existing member of staff works (owner, 2026-10-24).
+  const setCountryMutation = trpc.auth.setStaffWorkCountry.useMutation({
+    onSuccess: () => {
+      toast.success(pickLang(language, { ku: "وڵات گۆڕدرا", en: "Country changed", ar: "تم تغيير البلد", zh: "国家已更改" }));
+      void utils.auth.getStaffList.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
 
   // Mutations
   const registerMutation = trpc.auth.registerStaff.useMutation({
@@ -348,6 +356,21 @@ export default function StaffManagement() {
                       </div>
                     </div>
                     <div className="flex items-center gap-4">
+                      {/* Where they work - China staff pack and send the batches. */}
+                      <Select
+                        value={staff.workCountryId ? String(staff.workCountryId) : "none"}
+                        onValueChange={(v) => setCountryMutation.mutate({ userId: staff.id, countryId: v === "none" ? null : Number(v) })}
+                      >
+                        <SelectTrigger className="h-8 w-32 text-xs" data-testid={`staff-country-${staff.id}`}>
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="none">{pickLang(language, { ku: "وڵات دیاری نەکراوە", en: "No country", ar: "بلا بلد", zh: "未设置国家" })}</SelectItem>
+                          {countries?.map((c: any) => (
+                            <SelectItem key={c.id} value={c.id.toString()}>{language === "ku" ? (c.nameKu || c.nameEn) : c.nameEn}</SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
                       {getRoleBadge(staff.role)}
                       {staff.isActive ? (
                         <Badge variant="outline" className="text-green-600 dark:text-green-300 border-green-200 dark:border-green-800/60">

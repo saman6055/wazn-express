@@ -397,6 +397,9 @@ export async function getAllStaff() {
     isActive: users.isActive,
     createdAt: users.createdAt,
     lastSignedIn: users.lastSignedIn,
+    // Where they work: China staff pack cartons and send batches (owner, 2026-10-24).
+    workCountryId: users.workCountryId,
+    workCity: users.workCity,
   }).from(users).where(
     or(
       eq(users.role, "admin"),

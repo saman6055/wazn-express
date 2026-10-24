@@ -450,6 +450,27 @@ export const authRouter = router({
       return { success: true };
     }),
   getStaffList: adminProcedure.query(async () => db.getAllStaff()),
+  /**
+   * Where a member of staff works, changed after they were created (owner,
+   * 2026-10-24: an admin in China closes a batch's dispatch check). Stamped
+   * on what they create from now on; what they made before keeps its own.
+   */
+  setStaffWorkCountry: adminProcedure
+    .input(z.object({ userId: idSchema, countryId: idSchema.nullable() }))
+    .mutation(async ({ input, ctx }) => {
+      const target = await db.getUserById(input.userId);
+      if (!target) throw new TRPCError({ code: "NOT_FOUND", message: "User not found" });
+      if (target.role === "super_admin" && ctx.user.role !== "super_admin") {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Only the main admin changes the main admin" });
+      }
+      await db.setUserWorkLocation(input.userId, { countryId: input.countryId, city: target.workCity ?? null });
+      await db.createAuditLog({
+        userId: ctx.user.id, userRole: ctx.user.role, action: "set_staff_work_country",
+        entityType: "user", entityId: input.userId,
+        oldValues: { workCountryId: target.workCountryId ?? null }, newValues: { workCountryId: input.countryId },
+      });
+      return { success: true };
+    }),
   toggleStaffStatus: adminProcedure
     .input(z.object({ userId: z.number(), isActive: z.boolean() }))
     .mutation(async ({ input }) => {
