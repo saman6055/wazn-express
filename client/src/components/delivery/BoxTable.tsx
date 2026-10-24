@@ -264,7 +264,9 @@ export function BoxTable({
         notes: box.notes,
         createdAt: box.createdAt,
       },
-      box.items || [],
+      // The box's own rows, as the box panel reads them - a volumetric
+      // discount included, so the paper says it (owner, 2026-10-24).
+      (await trpcUtils.deliveryBox.getItems.fetch({ boxId: box.id }).catch(() => null)) ?? box.items ?? [],
       customer
         ? {
             fullName: customer.fullName,

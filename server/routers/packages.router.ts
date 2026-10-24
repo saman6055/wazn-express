@@ -668,8 +668,12 @@ export const packagesRouter = router({
         //   package that physically goes home with customer A. Reject before
         //   any insert touches the DB.
         let primaryOrder: Awaited<ReturnType<typeof db.getFullPackageOrderById>> | undefined;
+        // A full package's carton takes no volumetric discount: its price is
+        // agreed, and its shipping is our own cost (lib/correctRegisteredParcel).
+        let forFullPackage = false;
         if (linkedOrderIds.length > 0) {
           const orders = await Promise.all(linkedOrderIds.map((id) => db.getFullPackageOrderById(id)));
+          forFullPackage = orders.some((o) => o && o.orderType !== "commission");
           const missing = orders.findIndex((o) => !o);
           if (missing !== -1) {
             throw new TRPCError({
@@ -790,7 +794,7 @@ export const packagesRouter = router({
          * invoice will use rather than at the route default.
          */
         // Air only, and only below the volume: anything else is no discount.
-        const billedWeightKg = input.shippingType !== "sea" && Number(input.billedWeightKg) > 0 ? input.billedWeightKg : undefined;
+        const billedWeightKg = input.shippingType !== "sea" && !forFullPackage && Number(input.billedWeightKg) > 0 ? input.billedWeightKg : undefined;
         const priced = await resolveParcelCost({
           customerId: input.isUnclaimed ? null : effectiveCustomerId,
           batchId: input.batchId,

@@ -689,6 +689,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         description: i.description,
         sourceInfo: i.sourceInfo,
         advanceAppliedUsd: i.advanceAppliedUsd,
+        // A volumetric discount, printed on the receipt (owner, 2026-10-24).
+        volumetric: i.volumetric ?? null,
       })),
       customer
         ? {

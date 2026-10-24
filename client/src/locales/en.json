@@ -6009,6 +6009,7 @@
     "remove": "Remove",
     "packageCount": "Packages",
     "totalWeight": "Total Weight",
+    "volumeDiscount": "Volume discount",
     "totalVolume": "Total CBM",
     "packageValue": "Package Value",
     "deliveryCharge": "Delivery Charge",

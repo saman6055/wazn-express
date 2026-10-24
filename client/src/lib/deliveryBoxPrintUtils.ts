@@ -55,6 +55,39 @@ export interface BoxItemForPrint {
    *  plain goods document. Kept on the type because callers pass it through
    *  and the in-app box panel shows it to staff. */
   advanceAppliedUsd?: string | number | null;
+  /**
+   * A volumetric discount on this parcel (owner, 2026-10-24: the receipt
+   * must say it): its weight by volume and the kilos charged. `weightKg`
+   * above is already the kilos charged. Null when there is none.
+   */
+  volumetric?: { volumetricKg: number; billedKg: number | null } | null;
+}
+
+/**
+ * The volumetric discount a row carries: the kilos let off and their worth
+ * at the row's own price per kilo. Null when the row has none (sea, a full
+ * package, no discount).
+ */
+export function volumeDiscountOf(item: BoxItemForPrint): { fullKg: number; offKg: number; offUsd: number } | null {
+  if (item.itemType === "full_package" || item.shippingType === "sea") return null;
+  const v = item.volumetric;
+  const charged = Number(item.weightKg || 0) || 0;
+  if (!v?.billedKg || !(v.volumetricKg > charged + 0.004) || !(charged > 0)) return null;
+  const offKg = v.volumetricKg - charged;
+  const price = Number(item.calculatedCostUsd || 0) || 0;
+  return { fullKg: v.volumetricKg, offKg, offUsd: Math.round((offKg * price / charged) * 100) / 100 };
+}
+
+/** The receipt's line for the discounts, when any row has one. */
+function volumeDiscountLine(items: BoxItemForPrint[], t: TFunc): { label: string; value: string } | null {
+  let kg = 0;
+  let usd = 0;
+  for (const item of items) {
+    const d = volumeDiscountOf(item);
+    if (d) { kg += d.offKg; usd += d.offUsd; }
+  }
+  if (!(kg > 0)) return null;
+  return { label: t("delivery.volumeDiscount"), value: `${kg.toFixed(2)} kg — $${usd.toFixed(2)}` };
 }
 
 export interface CustomerForPrint {
@@ -143,10 +176,15 @@ function itemMeasure(box: BoxForPrint, item: BoxItemForPrint): string {
   // See shared/fullPackagePrivacy.ts.
   if (item.itemType === "full_package") return "—";
   const sea = item.shippingType ? item.shippingType === "sea" : isSeaBox(box);
-  return sea
-    ? (Number(item.cartonCount) > 1
-        ? `${cartonVolumeText(item.volumeCbm, item.cartonCount)} CBM`
-        : `${formatNum(item.volumeCbm, 3)} CBM`)
+  if (sea) {
+    return Number(item.cartonCount) > 1
+      ? `${cartonVolumeText(item.volumeCbm, item.cartonCount)} CBM`
+      : `${formatNum(item.volumeCbm, 3)} CBM`;
+  }
+  // A volumetric discount: the weight by volume struck, the kilos charged beside it.
+  const off = volumeDiscountOf(item);
+  return off
+    ? `<span style="text-decoration:line-through; color:#9ca3af; font-size:0.85em;">${formatNum(off.fullKg)} kg</span> ${formatNum(item.weightKg)} kg`
     : `${formatNum(item.weightKg)} kg`;
 }
 
@@ -715,6 +753,10 @@ export function printBoxLabel(
         <div style="font-size:9px; color:#6b7280;">${line.label}</div>
         <div style="font-weight:700;" dir="ltr">${line.value}</div>
       </div>`).join("")}
+      ${(() => { const d = volumeDiscountLine(items, t); return d ? `<div class="total-cell">
+        <div style="font-size:9px; color:#6b7280;">${d.label}</div>
+        <div style="font-weight:700; color:#047857;" dir="ltr">${d.value}</div>
+      </div>` : ""; })()}
       <div class="total-cell">
         <div style="font-size:9px; color:#6b7280;">${t("delivery.packageValue")}</div>
         <div style="font-weight:700;">$${totalValue}</div>
@@ -1182,6 +1224,10 @@ export function buildBoxReceiptHtml(
           <span>${line.label}:</span>
           <span style="font-weight:600;" dir="ltr">${line.value}</span>
         </div>`).join("")}
+        ${(() => { const d = volumeDiscountLine(items, t); return d ? `<div class="financial-row" data-volume-discount="1">
+          <span>${d.label}:</span>
+          <span style="font-weight:600; color:#047857;" dir="ltr">${d.value}</span>
+        </div>` : ""; })()}
         <div class="financial-row">
           <span>${t("delivery.packageValue")}:</span>
           <span style="font-weight:600;">$${totalValue}</span>
