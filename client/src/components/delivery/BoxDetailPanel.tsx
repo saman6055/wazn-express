@@ -75,7 +75,7 @@ import { ReceiptSendMenu } from "@/components/delivery/ReceiptSendMenu";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
-import { receiptLanguageFor, receiptMessageDue, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber, type ReceiptLanguage } from "@shared/receiptWhatsApp";
+import { boxPhotosWhatsAppMessage, receiptLanguageFor, receiptMessageDue, receiptWhatsAppMessage, whatsappChatUrl, whatsappNumber, type ReceiptLanguage } from "@shared/receiptWhatsApp";
 import { shareReceiptOnWhatsApp, type ReceiptShareDestination, type ReceiptShareFormat } from "@/lib/receiptShare";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
@@ -180,6 +180,7 @@ import { CustomerBoxesPanel } from "@/components/delivery/CustomerBoxesPanel";
 import { pledgeLabel } from "@shared/pledgedDiscount";
 import { shippingOnlyAmongOrders, shippingOnlyNotice, SHIPPING_ONLY_CHIP } from "@shared/boxShippingOnly";
 import { parcelListHref } from "@shared/parcelSource";
+import { buildBoxPhotoSheetHtml } from "@/lib/boxPhotoSheet";
 import { VolumetricDiscountButton } from "@/components/packages/VolumetricDiscount";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -261,6 +262,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // Drawing the receipt takes a moment; the button says so rather than
   // looking dead while it happens.
   const [sharing, setSharing] = useState(false);
+  const [sharingPhotos, setSharingPhotos] = useState(false);
   /**
    * Opening a box that is already delivered or paid for (owner, 2026-09-22).
    *
@@ -1028,6 +1030,45 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     }
   };
 
+  /**
+   * The box's parcels as photos, to the customer (owner, 2026-10-24): each
+   * parcel's picture, then its tracking, then its kilos - no money, so no
+   * gate before it. The receipt's own sharing makes the picture or PDF.
+   */
+  const sharePhotosNow = async (format: ReceiptShareFormat, destination: ReceiptShareDestination) => {
+    const lang = sendLanguage ?? receiptLanguageFor((customer as any)?.nationality);
+    const html = buildBoxPhotoSheetHtml(
+      items.map((i: any) => ({
+        trackingNumber: i.trackingNumber ?? null,
+        packageCode: i.packageCode ?? null,
+        productImage: i.productImage ?? null,
+        weightKg: i.weightKg,
+        volumeCbm: i.volumeCbm,
+      })),
+      { lang, boxCode: box.boxCode, customerName: customer?.fullName ?? null, isSea, logoUrl: logoUrlOnDark(logoUrl), companyName: (company as any)?.companyName ?? null },
+    );
+    const message = boxPhotosWhatsAppMessage(lang, { boxCode: box.boxCode, parcelCount: items.length, customerName: customer?.fullName ?? null });
+    const number = whatsappNumber(customer?.mobileNumber);
+    setSharingPhotos(true);
+    try {
+      const outcome = await shareReceiptOnWhatsApp({
+        html,
+        format,
+        destination,
+        fileName: `${box.boxCode}-photos`,
+        message,
+        chatUrl: number ? whatsappChatUrl(number, message) : null,
+      });
+      if (outcome === "shared") toast.success(pickLang(language, SHARE_WORDS.shared));
+      else if (outcome === "copied") toast.success(pickLang(language, SHARE_WORDS.copied), { duration: 10000 });
+      else if (outcome === "chat_opened") toast.info(pickLang(language, number ? SHARE_WORDS.chatOpened : SHARE_WORDS.noNumber), { duration: 10000 });
+      else if (outcome === "saved") toast.success(pickLang(language, SHARE_WORDS.saved));
+      else if (outcome === "failed") toast.error(pickLang(language, SHARE_WORDS.failed), { duration: 10000 });
+    } finally {
+      setSharingPhotos(false);
+    }
+  };
+
   askBeforePrintingRef.current = askBeforePrinting;
 
   const handlePrintReceipt = (lang: Language) => askBeforePrinting(lang, printReceiptNow);
@@ -1680,6 +1721,29 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               >
                 {sharing ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Send className="h-4 w-4 me-1" />}
                 {pickLang(language, { ku: "ناردنی وەسڵ", en: "Send receipt", ar: "إرسال الإيصال", zh: "发送收据" })}
+                <ChevronDown className="h-3 w-3 ms-1 opacity-60" />
+              </Button>
+            }
+          />
+          {/* The parcels themselves, as photos (owner, 2026-10-24). */}
+          <ReceiptSendMenu
+            uiLanguage={language}
+            sendLanguage={sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)}
+            onSendLanguage={setSendLanguage}
+            onPick={(format, destination) => { void sharePhotosNow(format, destination); }}
+            title={{ ku: "ناردنی وێنەی پاکەتەکان", en: "Send the parcel photos", ar: "إرسال صور الطرود", zh: "发送包裹照片" }}
+            languageLabel={{ ku: "زمانی پەیام", en: "Message language", ar: "لغة الرسالة", zh: "消息语言" }}
+            testId="photos-send-menu"
+            trigger={
+              <Button
+                variant="outline"
+                size="sm"
+                disabled={sharingPhotos || items.length === 0}
+                className="border-sky-300 text-sky-700 hover:bg-sky-50 hover:text-sky-800 dark:border-sky-800 dark:text-sky-300"
+                data-testid="box-send-photos"
+              >
+                {sharingPhotos ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <ImageIcon className="h-4 w-4 me-1" />}
+                {pickLang(language, { ku: "ناردنی وێنەی پاکەتەکان", en: "Send parcel photos", ar: "إرسال صور الطرود", zh: "发送包裹照片" })}
                 <ChevronDown className="h-3 w-3 ms-1 opacity-60" />
               </Button>
             }

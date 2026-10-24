@@ -28,6 +28,9 @@ export function ReceiptSendMenu({
   onPick,
   trigger,
   align = "end",
+  title,
+  languageLabel,
+  testId = "receipt-send-menu",
 }: {
   uiLanguage: string;
   sendLanguage: ReceiptLanguage;
@@ -35,21 +38,25 @@ export function ReceiptSendMenu({
   onPick: (format: ReceiptShareFormat, destination: ReceiptShareDestination) => void;
   trigger: ReactNode;
   align?: "start" | "end" | "center";
+  /** The heading, when it sends something other than the receipt (the box's photos). */
+  title?: { ku: string; en: string; ar: string; zh: string };
+  languageLabel?: { ku: string; en: string; ar: string; zh: string };
+  testId?: string;
 }) {
   const L = (w: { ku: string; en: string; ar: string; zh: string }) => pickLang(uiLanguage, w);
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>{trigger}</DropdownMenuTrigger>
-      <DropdownMenuContent align={align} data-testid="receipt-send-menu">
+      <DropdownMenuContent align={align} data-testid={testId}>
         <DropdownMenuLabel>
-          {L({ ku: "ناردن بۆ وەتسئاپ", en: "Send on WhatsApp", ar: "إرسال عبر واتساب", zh: "通过 WhatsApp 发送" })}
+          {L(title ?? { ku: "ناردن بۆ وەتسئاپ", en: "Send on WhatsApp", ar: "إرسال عبر واتساب", zh: "通过 WhatsApp 发送" })}
         </DropdownMenuLabel>
         {/* The language the paper and the message will both be in. It comes
             from the customer's nationality and can be changed here (owner,
             2026-09-24). */}
         <div className="px-2 pb-1.5">
           <p className="mb-1 text-[11px] text-muted-foreground">
-            {L({ ku: "زمانی وەسڵ و پەیام", en: "Receipt and message language", ar: "لغة الإيصال والرسالة", zh: "收据与消息语言" })}
+            {L(languageLabel ?? { ku: "زمانی وەسڵ و پەیام", en: "Receipt and message language", ar: "لغة الإيصال والرسالة", zh: "收据与消息语言" })}
           </p>
           <div className="grid grid-cols-3 gap-1">
             {(["ku", "ar", "en"] as const).map((code) => (

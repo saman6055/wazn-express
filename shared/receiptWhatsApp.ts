@@ -127,6 +127,35 @@ export function receiptWhatsAppMessage(lang: ReceiptLanguage, facts: ReceiptMess
 }
 
 /**
+ * The message that travels with the box's parcel photos (owner, 2026-10-24):
+ * «سلاو فلان کەس ئەمە وێنەی پاکەتە گەیشتوەکانە» - the customer sees what
+ * is in the box. No money: that is the receipt's.
+ */
+export function boxPhotosWhatsAppMessage(lang: ReceiptLanguage, facts: { boxCode: string; parcelCount: number; customerName?: string | null }): string {
+  const name = String(facts.customerName ?? "").trim().split(/\s+/)[0] ?? "";
+  const n = Math.max(0, Math.round(Number(facts.parcelCount) || 0));
+  if (lang === "ar") {
+    return [
+      `مرحباً${name ? ` حضرة ${name}` : ""}، هذه صور الطرود التي وصلت.`,
+      `الصندوق: ${facts.boxCode} · ${n} طرد`,
+      "شكراً لثقتك — وزن اكسبريس",
+    ].join("\n");
+  }
+  if (lang === "en") {
+    return [
+      `Hello${name ? ` ${name}` : ""}, here are the photos of your parcels that arrived.`,
+      `Box: ${facts.boxCode} · ${n} parcel(s)`,
+      "Thank you for your trust — Wazn Express",
+    ].join("\n");
+  }
+  return [
+    `سڵاو${name ? ` بەڕێز ${name}` : ""}، ئەمە وێنەی ئەو پاکەتانەیە کە گەیشتوون.`,
+    `بۆکس: ${facts.boxCode} · ${n} پاکەت`,
+    "سوپاس بۆ متمانەت — وەزن ئێکسپرێس",
+  ].join("\n");
+}
+
+/**
  * What the receipt message asks for: the paper's own last figure
  * (shared/receiptDinar). An advance in dollars leaves dollars due and their
  * dinars; one in dinars leaves dinars only; none, the total and its dinars.

@@ -29,7 +29,8 @@ describe("the language a receipt goes out in", () => {
   it("is the customer's, and is shown before it is used", () => {
     expect(panel).toContain("const [sendLanguage, setSendLanguage] = useState<ReceiptLanguage | null>(null);");
     expect(menu).toContain('data-testid={`receipt-language-${code}`}');
-    expect(menu).toContain('{L({ ku: "زمانی وەسڵ و پەیام"');
+    // The receipt's own wording stays the default; the photos menu passes its own.
+    expect(menu).toContain('{L(languageLabel ?? { ku: "زمانی وەسڵ و پەیام"');
   });
 
   it("is the same for the paper and for the message", () => {
