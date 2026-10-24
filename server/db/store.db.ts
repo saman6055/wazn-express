@@ -42,6 +42,13 @@ export async function getStoreProductById(id: number): Promise<StoreProduct | nu
   return row || null;
 }
 
+export async function getStoreProductByBarcode(barcode: string): Promise<StoreProduct | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select().from(storeProducts).where(eq(storeProducts.barcode, barcode));
+  return row ?? null;
+}
+
 export async function getStoreProductBySlug(slug: string): Promise<StoreProduct | null> {
   const db = await getDb();
   if (!db) return null;

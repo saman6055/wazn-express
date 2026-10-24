@@ -205,7 +205,7 @@ describe("every index reaches a database that already exists", () => {
       }
     }
     const patched = new Set(
-      Array.from(migrations.matchAll(/CREATE INDEX (\w+) ON/g), (m) => m[1]!),
+      Array.from(migrations.matchAll(/CREATE (?:UNIQUE )?INDEX (\w+) ON/g), (m) => m[1]!),
     );
     const orphans = Array.from(inCreates).filter(([name]) => !patched.has(name));
     expect(inCreates.size, "no CREATE indexes found — the scan is broken").toBeGreaterThan(40);

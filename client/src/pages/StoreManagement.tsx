@@ -14,13 +14,14 @@ import { Switch } from "@/components/ui/switch";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import {
   Plus, Pencil, Trash2, Image as ImageIcon, Store, ShoppingCart,
-  Phone, MapPin, ExternalLink, Loader2, Package,
+  Phone, MapPin, ExternalLink, Loader2, Package, FileSpreadsheet, Barcode,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { compressImage } from "@/lib/imageCompression";
 import { cn } from "@/lib/utils";
+import { rowsToStoreProducts } from "@shared/storeImport";
 
 const emptyForm = {
   nameEn: "", nameKu: "", nameAr: "",
@@ -28,6 +29,7 @@ const emptyForm = {
   price: "", compareAtPrice: "", currency: "USD",
   coverImageUrl: "", category: "", status: "active" as "active" | "hidden" | "out_of_stock",
   stock: "", isFeatured: false, sortOrder: 0,
+  barcode: "", sku: "", size: "", variantGroup: "",
 };
 
 const ORDER_STATUSES = ["new", "confirmed", "preparing", "shipped", "delivered", "cancelled"] as const;
@@ -60,6 +62,20 @@ export default function StoreManagement() {
     onSuccess: (res) => { if (res.success && res.url) { setForm((f) => ({ ...f, coverImageUrl: res.url! })); toast.success(label({ ku: "وێنە بارکرا", en: "Image uploaded", ar: "تم رفع الصورة", zh: "图片已上传" })); } else { toast.error(res.error || "upload failed"); } setUploading(false); },
     onError: (e) => { toast.error(e.message); setUploading(false); },
   });
+  const importMutation = trpc.store.importProducts.useMutation({
+    onSuccess: (res) => {
+      invalidate();
+      const summary = label({
+        ku: `${res.created} کاڵای نوێ، ${res.updated} نوێکرایەوە`,
+        en: `${res.created} new, ${res.updated} updated`,
+        ar: `${res.created} جديد، ${res.updated} محدث`,
+        zh: `新增 ${res.created}，更新 ${res.updated}`,
+      });
+      if (res.failed.length) toast.warning(`${summary} · ${res.failed.length} ✗ ${res.failed.slice(0, 3).map((f) => `${f.name}: ${f.error}`).join(" · ")}`);
+      else toast.success(summary);
+    },
+    onError: (e) => toast.error(e.message),
+  });
   const orderStatusMutation = trpc.store.updateOrderStatus.useMutation({ onSuccess: () => { ordersQ.refetch(); }, onError: (e) => toast.error(e.message) });
 
   const openCreate = () => { setEditingId(null); setForm({ ...emptyForm }); setDialogOpen(true); };
@@ -71,6 +87,7 @@ export default function StoreManagement() {
       price: String(p.price ?? ""), compareAtPrice: p.compareAtPrice != null ? String(p.compareAtPrice) : "",
       currency: p.currency || "USD", coverImageUrl: p.coverImageUrl || "", category: p.category || "",
       status: p.status || "active", stock: p.stock != null ? String(p.stock) : "", isFeatured: !!p.isFeatured, sortOrder: p.sortOrder || 0,
+      barcode: p.barcode || "", sku: p.sku || "", size: p.size || "", variantGroup: p.variantGroup || "",
     });
     setDialogOpen(true);
   };
@@ -91,6 +108,33 @@ export default function StoreManagement() {
     }
   };
 
+  // The catalogue spreadsheet: one row per barcode (shared/storeImport).
+  const handleExcelImport = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    try {
+      const XLSX = await import("xlsx");
+      const wb = XLSX.read(await file.arrayBuffer(), { type: "array" });
+      const sheetName = wb.SheetNames.find((n) => /product|کاڵا/i.test(n)) ?? wb.SheetNames[0];
+      const rows = XLSX.utils.sheet_to_json<Record<string, unknown>>(wb.Sheets[sheetName], { defval: "" });
+      const { products, problems } = rowsToStoreProducts(rows);
+      if (problems.length) {
+        toast.error(problems.slice(0, 5).map((p) => `${label({ ku: "ڕیز", en: "Row", ar: "سطر", zh: "行" })} ${p.row}: ${label(p.message)}`).join(" · "));
+      }
+      if (!products.length) return;
+      const ok = await confirmDanger(label({
+        ku: `${products.length} کاڵا لە فایلەکەوە داخڵ بکرێت؟ ئەوانەی بارکۆدیان هەیە نوێ دەکرێنەوە.`,
+        en: `Import ${products.length} products? Rows whose barcode already exists update that product.`,
+        ar: `استيراد ${products.length} منتج؟ المنتجات ذات الباركود الموجود سيتم تحديثها.`,
+        zh: `导入 ${products.length} 个产品？已存在条码的将被更新。`,
+      }));
+      if (ok) importMutation.mutate({ rows: products });
+    } catch {
+      toast.error(label({ ku: "فایلەکە نەخوێندرایەوە", en: "Could not read the file", ar: "تعذرت قراءة الملف", zh: "无法读取文件" }));
+    }
+  };
+
   const save = () => {
     if (!form.nameEn && !form.nameKu && !form.nameAr) { toast.error(label({ ku: "ناوی کاڵا پێویستە", en: "Product name is required", ar: "اسم المنتج مطلوب", zh: "需要产品名称" })); return; }
     if (!form.price || parseFloat(form.price) < 0) { toast.error(label({ ku: "نرخ پێویستە", en: "Price is required", ar: "السعر مطلوب", zh: "需要价格" })); return; }
@@ -106,6 +150,10 @@ export default function StoreManagement() {
       stock: form.stock !== "" ? parseInt(form.stock) : null,
       isFeatured: form.isFeatured,
       sortOrder: Number(form.sortOrder) || 0,
+      barcode: form.barcode.trim() || null,
+      sku: form.sku.trim() || null,
+      size: form.size.trim() || null,
+      variantGroup: form.variantGroup.trim() || null,
     };
     if (editingId) updateMutation.mutate({ id: editingId, ...payload });
     else createMutation.mutate(payload);
@@ -141,7 +189,14 @@ export default function StoreManagement() {
 
           {/* PRODUCTS */}
           <TabsContent value="products">
-            <div className="flex justify-end mb-4">
+            <div className="flex justify-end gap-2 mb-4">
+              <label className="cursor-pointer">
+                <input type="file" accept=".xlsx,.xls,.csv" className="hidden" onChange={handleExcelImport} />
+                <span className={cn("inline-flex h-9 items-center gap-1.5 rounded-md border px-3 text-sm font-medium hover:bg-muted", importMutation.isPending && "opacity-60 pointer-events-none")}>
+                  {importMutation.isPending ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileSpreadsheet className="w-4 h-4" />}
+                  {label({ ku: "داخڵکردن لە ئێکسڵ", en: "Import from Excel", ar: "استيراد من Excel", zh: "从 Excel 导入" })}
+                </span>
+              </label>
               <Button onClick={openCreate} className="gap-1.5"><Plus className="w-4 h-4" />{label({ ku: "کاڵای نوێ", en: "New product", ar: "منتج جديد", zh: "新产品" })}</Button>
             </div>
             {productsQ.isLoading ? (
@@ -162,7 +217,8 @@ export default function StoreManagement() {
                       </div>
                     </div>
                     <CardContent className="p-3">
-                      <p className="font-medium text-sm line-clamp-1">{p.nameKu || p.nameEn || p.nameAr}</p>
+                      <p className="font-medium text-sm line-clamp-1">{p.nameKu || p.nameEn || p.nameAr}{p.size && <Badge variant="outline" className="ms-1.5 align-middle text-[10px]">{p.size}</Badge>}</p>
+                      {p.barcode && <p className="text-[11px] font-mono text-muted-foreground inline-flex items-center gap-1 mt-0.5" dir="ltr"><Barcode className="w-3 h-3" />{p.barcode}</p>}
                       <div className="flex items-center justify-between mt-1.5">
                         <span className="font-bold text-violet-600 dark:text-violet-300">{money(p.price, p.currency)}</span>
                         <span className="text-xs text-muted-foreground">{p.orderCount} {label({ ku: "ئۆردەر", en: "orders", ar: "طلب", zh: "订单" })}</span>
@@ -281,6 +337,14 @@ export default function StoreManagement() {
                   <SelectItem value="out_of_stock">{label({ ku: "نەماوە", en: "Out of stock", ar: "نفد", zh: "售罄" })}</SelectItem>
                 </SelectContent></Select>
               </div>
+            </div>
+
+            {/* Shelf identity: barcode, size, SKU, variant group */}
+            <div className="grid grid-cols-2 gap-3">
+              <div><Label>{label({ ku: "بارکۆد", en: "Barcode", ar: "الباركود", zh: "条码" })}</Label><Input value={form.barcode} onChange={(e) => setForm({ ...form, barcode: e.target.value })} className="mt-1.5 font-mono" dir="ltr" inputMode="numeric" /></div>
+              <div><Label>{label({ ku: "قەبارە", en: "Size", ar: "المقاس", zh: "尺码" })}</Label><Input value={form.size} onChange={(e) => setForm({ ...form, size: e.target.value })} className="mt-1.5" dir="ltr" placeholder="M / L / XL" /></div>
+              <div><Label>SKU</Label><Input value={form.sku} onChange={(e) => setForm({ ...form, sku: e.target.value })} className="mt-1.5 font-mono" dir="ltr" /></div>
+              <div><Label>{label({ ku: "گروپی قەبارەکان", en: "Variant group", ar: "مجموعة المقاسات", zh: "变体组" })}</Label><Input value={form.variantGroup} onChange={(e) => setForm({ ...form, variantGroup: e.target.value })} className="mt-1.5 font-mono" dir="ltr" /></div>
             </div>
 
             <div className="flex items-center justify-between rounded-lg border p-3">

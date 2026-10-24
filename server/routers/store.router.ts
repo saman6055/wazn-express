@@ -28,11 +28,56 @@ const productWriteInput = z.object({
   coverImageUrl: z.string().max(500).optional(),
   images: z.array(z.string().max(500)).optional(),
   category: z.string().max(100).optional(),
+  barcode: z.string().max(64).optional().nullable(),
+  sku: z.string().max(64).optional().nullable(),
+  size: z.string().max(30).optional().nullable(),
+  variantGroup: z.string().max(100).optional().nullable(),
   status: z.enum(["active", "hidden", "out_of_stock"]).optional(),
   stock: z.number().int().optional().nullable(),
   isFeatured: z.boolean().optional(),
   sortOrder: z.number().int().optional(),
 });
+
+// One spreadsheet row, already read by shared/storeImport on the client.
+// Price may be missing: such a product is saved hidden at 0 until priced.
+const optText = (max: number) => z.string().max(max).nullable().optional();
+const importRowInput = z.object({
+  nameEn: optText(300),
+  nameKu: optText(300),
+  nameAr: optText(300),
+  descriptionEn: z.string().nullable().optional(),
+  descriptionKu: z.string().nullable().optional(),
+  descriptionAr: z.string().nullable().optional(),
+  price: z.number().nonnegative().nullable(),
+  compareAtPrice: z.number().nonnegative().nullable().optional(),
+  currency: optText(10),
+  coverImageUrl: optText(500),
+  images: z.array(z.string().max(500)).nullable().optional(),
+  category: optText(100),
+  barcode: optText(64),
+  sku: optText(64),
+  size: optText(30),
+  variantGroup: optText(100),
+  status: z.enum(["active", "hidden", "out_of_stock"]).nullable().optional(),
+  stock: z.number().int().nonnegative().nullable().optional(),
+  isFeatured: z.boolean().nullable().optional(),
+  sortOrder: z.number().int().nullable().optional(),
+});
+
+/** Blank -> null, and no stray spaces inside a scanned code. */
+function cleanBarcode(v: string | null | undefined): string | null | undefined {
+  if (v === undefined) return undefined;
+  const s = (v ?? "").replace(/\s+/g, "");
+  return s === "" ? null : s;
+}
+
+/** A second product with the same barcode is refused by the unique index. */
+function isDuplicateBarcode(e: unknown): boolean {
+  const m = e instanceof Error ? e.message : String(e);
+  return /duplicate entry/i.test(m) && /barcode/i.test(m);
+}
+
+const DUPLICATE_BARCODE = "This barcode already belongs to another product — بارکۆدەکە هی کاڵایەکی ترە";
 
 export const storeRouter = router({
   // ---- Public reads -------------------------------------------------------
@@ -119,26 +164,99 @@ export const storeRouter = router({
     .mutation(async ({ input, ctx }) => {
       const nameEn = input.nameEn || input.nameKu || input.nameAr;
       if (!nameEn) throw new TRPCError({ code: "BAD_REQUEST", message: "A product name is required" });
-      return db.createStoreProduct({
-        ...input,
-        nameEn,
-        price: input.price.toFixed(2),
-        compareAtPrice: input.compareAtPrice != null ? input.compareAtPrice.toFixed(2) : null,
-        createdById: ctx.user.id,
-      });
+      try {
+        return await db.createStoreProduct({
+          ...input,
+          nameEn,
+          barcode: cleanBarcode(input.barcode) ?? null,
+          price: input.price.toFixed(2),
+          compareAtPrice: input.compareAtPrice != null ? input.compareAtPrice.toFixed(2) : null,
+          createdById: ctx.user.id,
+        });
+      } catch (e) {
+        if (isDuplicateBarcode(e)) throw new TRPCError({ code: "CONFLICT", message: DUPLICATE_BARCODE });
+        throw e;
+      }
     }),
 
   updateProduct: staffProcedure
     .input(productWriteInput.partial().extend({ id: z.number() }))
     .mutation(async ({ input }) => {
-      const { id, price, compareAtPrice, ...rest } = input;
-      const updated = await db.updateStoreProduct(id, {
-        ...rest,
-        ...(price != null ? { price: price.toFixed(2) } : {}),
-        ...(compareAtPrice !== undefined ? { compareAtPrice: compareAtPrice != null ? compareAtPrice.toFixed(2) : null } : {}),
-      });
+      const { id, price, compareAtPrice, barcode, ...rest } = input;
+      let updated;
+      try {
+        updated = await db.updateStoreProduct(id, {
+          ...rest,
+          ...(barcode !== undefined ? { barcode: cleanBarcode(barcode) ?? null } : {}),
+          ...(price != null ? { price: price.toFixed(2) } : {}),
+          ...(compareAtPrice !== undefined ? { compareAtPrice: compareAtPrice != null ? compareAtPrice.toFixed(2) : null } : {}),
+        });
+      } catch (e) {
+        if (isDuplicateBarcode(e)) throw new TRPCError({ code: "CONFLICT", message: DUPLICATE_BARCODE });
+        throw e;
+      }
       if (!updated) throw new TRPCError({ code: "NOT_FOUND", message: "Product not found" });
       return updated;
+    }),
+
+  // The catalogue from a spreadsheet. A row whose barcode is already in the
+  // store updates that product; any other row is a new product. A row with no
+  // price yet is saved hidden at 0, so nothing goes on sale unpriced. Each row
+  // stands alone: one bad row is reported and the rest are still saved.
+  importProducts: staffProcedure
+    .input(z.object({ rows: z.array(importRowInput).min(1).max(2000) }))
+    .mutation(async ({ input, ctx }) => {
+      let created = 0;
+      let updated = 0;
+      const failed: { index: number; name: string; error: string }[] = [];
+
+      for (let index = 0; index < input.rows.length; index++) {
+        const row = input.rows[index];
+        const nameEn = row.nameEn || row.nameKu || row.nameAr;
+        if (!nameEn) {
+          failed.push({ index, name: "", error: "A product name is required" });
+          continue;
+        }
+        const barcode = cleanBarcode(row.barcode) ?? null;
+        const unpriced = row.price == null;
+        const values = {
+          nameEn,
+          nameKu: row.nameKu || null,
+          nameAr: row.nameAr || null,
+          descriptionEn: row.descriptionEn || null,
+          descriptionKu: row.descriptionKu || null,
+          descriptionAr: row.descriptionAr || null,
+          category: row.category || null,
+          barcode,
+          sku: row.sku || null,
+          size: row.size || null,
+          variantGroup: row.variantGroup || null,
+          price: (row.price ?? 0).toFixed(2),
+          compareAtPrice: row.compareAtPrice != null ? row.compareAtPrice.toFixed(2) : null,
+          currency: row.currency || "USD",
+          stock: row.stock ?? null,
+          status: unpriced ? ("hidden" as const) : (row.status ?? "active"),
+          ...(row.coverImageUrl ? { coverImageUrl: row.coverImageUrl } : {}),
+          ...(row.images && row.images.length ? { images: row.images } : {}),
+          ...(row.isFeatured != null ? { isFeatured: row.isFeatured } : {}),
+          ...(row.sortOrder != null ? { sortOrder: row.sortOrder } : {}),
+        };
+        try {
+          const existing = barcode ? await db.getStoreProductByBarcode(barcode) : null;
+          if (existing) {
+            await db.updateStoreProduct(existing.id, values);
+            updated++;
+          } else {
+            await db.createStoreProduct({ ...values, createdById: ctx.user.id });
+            created++;
+          }
+        } catch (e) {
+          const message = isDuplicateBarcode(e) ? DUPLICATE_BARCODE : e instanceof Error ? e.message : String(e);
+          appLogger.error("[store.importProducts] row failed", { index, barcode, error: message });
+          failed.push({ index, name: nameEn, error: message });
+        }
+      }
+      return { created, updated, failed };
     }),
 
   deleteProduct: staffProcedure

@@ -32,6 +32,16 @@ export const storeProducts = mysqlTable("storeProducts", {
   // Free-text category label (kept simple for v1; can graduate to a table later).
   category: varchar("category", { length: 100 }),
 
+  // Shelf identity. One row is one thing a till can scan: a bed sold in M, L
+  // and XL is three rows, each with its own barcode, joined by variantGroup.
+  // The barcode is the maker's EAN when the box has one, otherwise an in-store
+  // EAN-13 from the 20-29 range GS1 keeps for exactly that (never collides
+  // with a real product). Unique, so one scan finds one product.
+  barcode: varchar("barcode", { length: 64 }).unique(),
+  sku: varchar("sku", { length: 64 }),
+  size: varchar("size", { length: 30 }),
+  variantGroup: varchar("variantGroup", { length: 100 }),
+
   // Visibility. out_of_stock still shows the product but disables ordering.
   status: mysqlEnum("status", ["active", "hidden", "out_of_stock"]).default("active").notNull(),
 
@@ -52,6 +62,7 @@ export const storeProducts = mysqlTable("storeProducts", {
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (t) => ({
   statusIdx: index("storeProducts_status_idx").on(t.status),
+  variantGroupIdx: index("storeProducts_variantGroup_idx").on(t.variantGroup),
 }));
 
 export type StoreProduct = typeof storeProducts.$inferSelect;

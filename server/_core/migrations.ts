@@ -2539,6 +2539,10 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       coverImageUrl VARCHAR(500),
       images JSON,
       category VARCHAR(100),
+      barcode VARCHAR(64),
+      sku VARCHAR(64),
+      size VARCHAR(30),
+      variantGroup VARCHAR(100),
       status ENUM('active', 'hidden', 'out_of_stock') NOT NULL DEFAULT 'active',
       stock INT,
       slug VARCHAR(255) UNIQUE,
@@ -2549,7 +2553,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdById INT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-      INDEX storeProducts_status_idx (status)
+      INDEX storeProducts_status_idx (status),
+      UNIQUE INDEX storeProducts_barcode_unique (barcode),
+      INDEX storeProducts_variantGroup_idx (variantGroup)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -3351,6 +3357,17 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // out, not erased — see the schema note beside these columns.
   { name: "staffMessages.deletedAt", sql: "ALTER TABLE staffMessages ADD COLUMN deletedAt TIMESTAMP NULL" },
   { name: "staffMessages.deletedById", sql: "ALTER TABLE staffMessages ADD COLUMN deletedById INT NULL" },
+
+  // Store products learn the shelf (owner, 2026-10-24): a barcode a till can
+  // scan, a SKU, the size, and the group that joins the sizes of one item
+  // (a bed in M, L and XL is three products with three barcodes). Additive and
+  // nullable: a product with none still sells exactly as before.
+  { name: "storeProducts.barcode", sql: "ALTER TABLE storeProducts ADD COLUMN barcode VARCHAR(64) NULL" },
+  { name: "storeProducts.sku", sql: "ALTER TABLE storeProducts ADD COLUMN sku VARCHAR(64) NULL" },
+  { name: "storeProducts.size", sql: "ALTER TABLE storeProducts ADD COLUMN size VARCHAR(30) NULL" },
+  { name: "storeProducts.variantGroup", sql: "ALTER TABLE storeProducts ADD COLUMN variantGroup VARCHAR(100) NULL" },
+  { name: "idx.storeProducts_barcode_unique", sql: "CREATE UNIQUE INDEX storeProducts_barcode_unique ON storeProducts (barcode)" },
+  { name: "idx.storeProducts_variantGroup_idx", sql: "CREATE INDEX storeProducts_variantGroup_idx ON storeProducts (variantGroup)" },
 ];
 
 /**
