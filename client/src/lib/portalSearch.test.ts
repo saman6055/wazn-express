@@ -9,6 +9,8 @@ import {
   searchKey,
   searchTarget,
   shouldAskServer,
+  ordersAwaitingQuote,
+  SEARCH_TAB_UNIT,
   PARCEL_NEXT_STEP,
   SEARCH_TAB_LABEL,
   SEARCH_TAB_TONE,
@@ -63,7 +65,7 @@ const index = buildSearchIndex(SOURCES);
 const find = (q: string) => searchItems(index, parseSearch(q));
 const byKey = (key: string) => index.find((i) => i.key === key)!;
 
-describe("the three tabs", () => {
+describe("the four tabs", () => {
   it("puts a parcel where the owner said: in Erbil, on the way, in China", () => {
     expect(parcelTab({ status: "ready_for_delivery" })).toBe("arrived");
     expect(parcelTab({ status: "out_for_delivery" })).toBe("arrived");
@@ -96,18 +98,65 @@ describe("the three tabs", () => {
     expect(orderTab("in_china_warehouse")).toBe("registered");
     expect(orderTab("in_batch")).toBe("registered");
     expect(orderTab("delivered")).toBeNull();
-    expect(orderTab("ordered")).toBeNull();
+  });
+
+  it("an order recorded has been bought, whatever it is waiting for", () => {
+    // The owner's rule, 2026-10-24. A full-package or commission order is
+    // created as `ordered` when its order number is known and `pending`
+    // when it is not; both are money already spent on the customer's goods.
+    for (const status of ["pending", "approved", "ordered", "tracking_added"]) {
+      expect(orderTab(status), status).toBe("bought");
+    }
+  });
+
+  it("a purchase request waiting for our price is not bought, and is counted apart", () => {
+    expect(orderTab("pending_quote")).toBeNull();
+    expect(orderTab("quoted")).toBeNull();
+    expect(ordersAwaitingQuote([
+      { id: 1, status: "pending_quote" },
+      { id: 2, status: "quoted" },
+      { id: 3, status: "ordered" },
+      { id: 4, status: "cancelled" },
+    ] as any)).toBe(2);
+    expect(ordersAwaitingQuote(undefined)).toBe(0);
   });
 
   it("counts live over what the search found", () => {
-    expect(countByTab(find(""))).toEqual({ arrived: 1, onTheWay: 2, registered: 3 });
-    expect(countByTab(find("SF14"))).toEqual({ arrived: 0, onTheWay: 1, registered: 0 });
+    expect(countByTab(find(""))).toEqual({ arrived: 1, onTheWay: 2, registered: 3, bought: 1 });
+    expect(countByTab(find("SF14"))).toEqual({ arrived: 0, onTheWay: 1, registered: 0, bought: 0 });
   });
 
-  it("names and colours each tab — green, blue, grey — in four languages", () => {
+  it("says what each number counts, because a bare figure does not", () => {
+    // Goods not yet shipped have no parcel to count, so that card counts
+    // orders; the other three count parcels.
+    expect(SEARCH_TAB_UNIT.bought.ku).toBe("ئۆردەر");
+    for (const tab of ["arrived", "onTheWay", "registered"] as const) {
+      expect(SEARCH_TAB_UNIT[tab].ku, tab).toBe("پاکەت");
+    }
+    for (const unit of Object.values(SEARCH_TAB_UNIT)) {
+      expect(unit.ku && unit.en && unit.ar && unit.zh).toBeTruthy();
+    }
+  });
+
+  it("only Arabic names the country, and names the city with it", () => {
+    // An Arabic-speaking customer may be outside Erbil, so the country is
+    // the news; the city in brackets keeps it clear of "on the way", which
+    // is where a parcel in customs still sits (owner, 2026-10-24).
+    expect(SEARCH_TAB_LABEL.arrived.ar).toBe("العراق (أربيل)");
+    expect(SEARCH_TAB_LABEL.arrived.ku).not.toContain("عێراق");
+    expect(SEARCH_TAB_LABEL.arrived.en).not.toMatch(/Iraq/i);
+  });
+
+  it("names and colours each tab — green, blue, grey, pink — in four languages", () => {
     expect(SEARCH_TAB_TONE.arrived).toContain("emerald");
     expect(SEARCH_TAB_TONE.onTheWay).toContain("sky");
     expect(SEARCH_TAB_TONE.registered).toContain("slate");
+    // Not violet: `.portal-theme` folds that family into its navy scale, so
+    // a violet card would come out as a second blue one.
+    expect(SEARCH_TAB_TONE.bought).toContain("pink");
+    for (const tone of Object.values(SEARCH_TAB_TONE)) {
+      expect(tone).not.toMatch(/violet|indigo|purple|fuchsia/);
+    }
     for (const tone of Object.values(SEARCH_TAB_TONE)) {
       expect(tone).toMatch(/dark:bg-/);
       expect(tone).toMatch(/dark:text-/);
@@ -179,7 +228,9 @@ describe("what one box finds", () => {
     expect(keys).not.toContain("parcel:6");
     expect(keys).not.toContain("box:50");
     expect(keys).not.toContain("declared:90");
-    expect(keys).not.toContain("order:71");
+    // An order bought but not yet at the depot now has a tab of its own, so
+    // it is listed: that stretch used to show nowhere at all.
+    expect(keys).toContain("order:71");
     const at = find("").map((i) => i.sortAt);
     expect(at).toEqual([...at].sort((a, b) => b - a));
   });

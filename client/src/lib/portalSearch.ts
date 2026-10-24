@@ -18,29 +18,80 @@ import { matchScore, normalizeSearch } from "@/lib/ops/commandMatch";
 type L = { ku: string; en: string; ar: string; zh: string };
 type When = Date | string | null | undefined;
 
-/** The three stages a customer asks about, in the order they are asked. */
-export type SearchTab = "arrived" | "onTheWay" | "registered";
-export const SEARCH_TABS: readonly SearchTab[] = ["arrived", "onTheWay", "registered"];
+/**
+ * The four stages a customer asks about, in the order they are asked.
+ *
+ * "bought" was added 2026-10-24. Until then the stretch between "I asked you
+ * to buy this" and "it reached the China depot" showed nowhere at all: six
+ * order statuses belonged to no tab, so the longest and most anxious wait —
+ * the one the customer has already paid for — was invisible, and they phoned
+ * instead. The owner's rule decides what it is called: anything recorded has
+ * been done, so these goods are bought, not "being bought".
+ */
+export type SearchTab = "arrived" | "onTheWay" | "registered" | "bought";
+export const SEARCH_TABS: readonly SearchTab[] = ["arrived", "onTheWay", "registered", "bought"];
 
-/** The owner's three places (2026-09-19), short enough for a tab and a home card. */
+/**
+ * The same stages in the order the goods travel, for the home screen's row
+ * of cards. The search lists them the other way round — nearest first, which
+ * is the order a customer asks about them — and a row of cards that reads
+ * backwards along the journey is the kind of thing nobody can name but
+ * everybody feels. Right to left in Kurdish and Arabic, this reads bought,
+ * China, the road, Erbil.
+ */
+export const STAGE_JOURNEY: readonly SearchTab[] = ["bought", "registered", "onTheWay", "arrived"];
+
+/** The owner's places, short enough for a tab and a home card. */
 export const SEARCH_TAB_LABEL: Record<SearchTab, L> = {
-  arrived: { ku: "گەیشتە هەولێر", en: "In Erbil", ar: "في أربيل", zh: "已到埃尔比勒" },
+  /**
+   * Arabic alone names the country: an Arabic-speaking customer may be
+   * outside Erbil, and "arrived in Iraq" is the news. The city in brackets
+   * keeps it from colliding with "on the way", since a parcel in customs has
+   * also reached Iraq but has not reached us (owner, 2026-10-24).
+   */
+  arrived: { ku: "گەیشتە هەولێر", en: "In Erbil", ar: "العراق (أربيل)", zh: "已到埃尔比勒" },
   onTheWay: { ku: "لە ڕێگادایە", en: "On the way", ar: "في الطريق", zh: "运输中" },
   registered: { ku: "لە کۆگای چین", en: "In China", ar: "في الصين", zh: "在中国仓库" },
+  bought: { ku: "کڕاوەکان", en: "Bought", ar: "تم الشراء", zh: "已购买" },
 };
 
-/** Green for arrived, blue for on the way, grey for registered — the owner's three colours. */
+/**
+ * What each card counts, written under the number.
+ *
+ * A bare number says nothing: the owner himself asked what "5" meant. Goods
+ * that have not shipped are still an order — there is no parcel to count —
+ * so that card counts orders and the other three count parcels.
+ */
+export const SEARCH_TAB_UNIT: Record<SearchTab, L> = {
+  arrived: { ku: "پاکەت", en: "parcels", ar: "طرود", zh: "件" },
+  onTheWay: { ku: "پاکەت", en: "parcels", ar: "طرود", zh: "件" },
+  registered: { ku: "پاکەت", en: "parcels", ar: "طرود", zh: "件" },
+  bought: { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" },
+};
+
+/**
+ * Green for arrived, blue for on the way, grey in China, pink once bought.
+ *
+ * Pink and not violet, which was the colour on the drawing the owner
+ * approved: the portal deliberately folds the whole indigo/violet/purple/
+ * fuchsia family into its navy scale (index.css, `.portal-theme`), so a
+ * violet card renders as a second blue one and the row loses a stage. Amber
+ * was the other candidate and is spoken for by money owed, directly above
+ * these cards.
+ */
 export const SEARCH_TAB_TONE: Record<SearchTab, string> = {
   arrived: "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-300",
   onTheWay: "bg-sky-100 text-sky-700 dark:bg-sky-950/40 dark:text-sky-300",
   registered: "bg-slate-100 text-slate-700 dark:bg-slate-700 dark:text-slate-200",
+  bought: "bg-pink-100 text-pink-700 dark:bg-pink-950/40 dark:text-pink-300",
 };
 
-/** The dot beside each tab's name, in the same three colours. */
+/** The dot beside each tab's name, in the same four colours. */
 export const SEARCH_TAB_DOT: Record<SearchTab, string> = {
   arrived: "bg-emerald-500",
   onTheWay: "bg-sky-500",
   registered: "bg-slate-400",
+  bought: "bg-pink-500",
 };
 
 /**
@@ -77,13 +128,26 @@ export function parcelTab(parcel: { status?: string | null; batchId?: number | n
 }
 
 /**
- * The same three places for an order that has no parcel of its own yet, by
- * the same decisions: packed into a shipment still in China is grey, one that
+ * The same places for an order that has no parcel of its own yet, by the
+ * same decisions: packed into a shipment still in China is grey, one that
  * reached Iraq is on the way until it says ready, and a delivered one has
- * left the tabs. Orders not yet bought or shipped have no tab.
+ * left the tabs.
+ *
+ * Before the goods reach the China depot the order sits under "bought". The
+ * owner's rule (2026-10-24) settles which statuses those are: recording an
+ * order IS buying it, and the order flow bears that out — a full-package or
+ * commission order is created as `ordered` when its order number is known
+ * and `pending` when it is not. Only a purchase request genuinely is not
+ * bought: it waits for us to quote a price, and belongs to no card at all,
+ * so the home screen says so on its own line rather than counting it here.
  */
 export function orderTab(status: string | null | undefined): SearchTab | null {
   switch (String(status ?? "")) {
+    case "pending":
+    case "approved":
+    case "ordered":
+    case "tracking_added":
+      return "bought";
     case "in_china_warehouse":
     case "quality_check":
     case "in_batch":
@@ -490,9 +554,23 @@ export function searchItems(index: readonly SearchItem[], q: ParsedSearch): Sear
 
 /** How many answers sit under each tab — the live counts on the tabs. */
 export function countByTab(items: readonly SearchItem[]): Record<SearchTab, number> {
-  const counts: Record<SearchTab, number> = { arrived: 0, onTheWay: 0, registered: 0 };
+  const counts: Record<SearchTab, number> = { arrived: 0, onTheWay: 0, registered: 0, bought: 0 };
   for (const item of items) if (item.tab) counts[item.tab]++;
   return counts;
+}
+
+/** Statuses where we owe the customer a price before anything is bought. */
+const AWAITING_QUOTE = new Set(["pending_quote", "quoted"]);
+
+/**
+ * Purchase requests still waiting on us for a price.
+ *
+ * They belong to no card: nothing has been bought, so nothing is on its way.
+ * But the customer is waiting on an answer from us, which is its own reason
+ * to telephone, so the home screen shows one line when any exists.
+ */
+export function ordersAwaitingQuote(orders: readonly OrderRow[] | null | undefined): number {
+  return (orders ?? []).filter((o) => AWAITING_QUOTE.has(String(o.status ?? ""))).length;
 }
 
 /**

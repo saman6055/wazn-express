@@ -4,8 +4,8 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { useTheme } from "@/contexts/ThemeContext";
 import { trpc } from "@/lib/trpc";
 import {
-  Package, PackageCheck, Bell, ChevronRight, Truck, CheckCircle, Clock, Calculator,
-  AlertCircle, Plane, Ship, Megaphone, Search, Plus,
+  Package, PackageCheck, Bell, ChevronRight, ChevronLeft, Truck, CheckCircle, Clock, Calculator,
+  AlertCircle, Plane, Ship, Megaphone, Search, Plus, ShoppingBag,
   MessageCircle, AlertTriangle, BookOpen, Coins, User,
 } from "lucide-react";
 import { pickLang } from "@/lib/lang";
@@ -23,7 +23,10 @@ import { ReferralCard } from "@/components/portal/ReferralCard";
 import { MyDeliveryBoxes } from "@/components/portal/MyDeliveryBoxes";
 import { PortalClock, PortalLanguagePicker } from "@/components/portal/PortalHeaderControls";
 import { formatPortalDate } from "@/lib/portalClock";
-import { buildSearchIndex, countByTab, parseSearch, searchItems, SEARCH_TAB_LABEL } from "@/lib/portalSearch";
+import {
+  buildSearchIndex, countByTab, parseSearch, searchItems, ordersAwaitingQuote,
+  STAGE_JOURNEY, SEARCH_TAB_LABEL, SEARCH_TAB_UNIT, type SearchTab,
+} from "@/lib/portalSearch";
 import { isDebt, isCredit } from "@/lib/portalMoney";
 import { onImageError } from "@/lib/imageFallback";
 import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "@/lib/brand";
@@ -279,6 +282,11 @@ export default function PortalHome() {
     [parcelsQuery.data, ordersQuery.data, batches],
   );
   const stagesLoading = parcelsQuery.isLoading;
+  /** Purchase requests still waiting on us for a price: no card, one line. */
+  const awaitingQuote = useMemo(
+    () => ordersAwaitingQuote(ordersQuery.data as any),
+    [ordersQuery.data],
+  );
 
   /**
    * One banner rather than several: a dropped connection must say so once at
@@ -397,6 +405,50 @@ export default function PortalHome() {
   ];
 
   const card = isDark ? "bg-[#152238] border-white/10" : "bg-white dark:bg-[#152238] border-slate-200 dark:border-slate-700";
+
+  /**
+   * How each stage card is dressed. One entry per tab in SEARCH_TABS, so a
+   * card can never be added to the row without someone choosing its colour.
+   * The four colours are the owner's: violet once bought, grey in the China
+   * depot, blue on the road, green once it reaches Erbil.
+   */
+  const STAGE_CARD_TONE: Record<SearchTab, {
+    Icon: typeof Package; card: string; icon: string; number: string; unit: string; label: string;
+  }> = {
+    bought: {
+      Icon: ShoppingBag,
+      card: "border-pink-300 bg-white dark:border-pink-500/35 dark:bg-pink-950/30",
+      icon: "text-pink-600 dark:text-pink-400",
+      number: "text-pink-600 dark:text-pink-400",
+      unit: "text-pink-700/70 dark:text-pink-300/70",
+      label: "text-pink-700 dark:text-pink-300",
+    },
+    registered: {
+      Icon: Package,
+      card,
+      icon: "text-blue-600 dark:text-blue-300",
+      number: "text-foreground",
+      unit: "text-muted-foreground",
+      label: "text-muted-foreground",
+    },
+    onTheWay: {
+      Icon: Plane,
+      card: "border-sky-300 bg-white dark:border-sky-500/35 dark:bg-[#152238]",
+      icon: "text-sky-600 dark:text-sky-400",
+      number: "text-sky-600 dark:text-sky-400",
+      unit: "text-sky-700/70 dark:text-sky-300/70",
+      label: "text-sky-700 dark:text-sky-300",
+    },
+    arrived: {
+      Icon: CheckCircle,
+      card: "border-emerald-300 bg-emerald-50 dark:border-emerald-500/50 dark:bg-emerald-950/40",
+      icon: "text-emerald-600 dark:text-emerald-400",
+      number: "text-emerald-600 dark:text-emerald-400",
+      unit: "text-emerald-700/70 dark:text-emerald-300/70",
+      label: "text-emerald-700 dark:text-emerald-300",
+    },
+  };
+
   const glassPill = isDark
     ? "bg-white/10 border-white/20 text-white"
     : "bg-slate-900/[0.06] border-slate-900/10 text-slate-800 dark:text-slate-200";
@@ -532,52 +584,13 @@ export default function PortalHome() {
           </div>
         </div>
 
-        {/* Currency ticker. The yuan is the price of buying yuan from us and
-            opens the page where it is bought; one rate with the office's,
-            edited in Settings → Currency or the Portal Center. The dinar is
-            the office's IQD rate, when the price list shows it. Hidden
-            entirely until either is set; wraps rather than cutting a figure
-            off on a narrow phone. */}
-        {(yuanRate || iqdRate) && (
+        {/* Something did not load. Say so once, near the top, rather than
+            letting zero counters imply the account is empty. */}
+        {homeFailed && (
           <div className="px-4 mt-3">
-            <div className={cn(
-              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-3 py-1.5 text-xs",
-              isDark ? "border-sky-500/25 bg-sky-950/40 text-sky-300" : "border-sky-200 dark:border-sky-500/25 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
-            )}>
-              <Coins className="h-3.5 w-3.5 shrink-0" />
-              {yuanRate && (
-                <Link href="/portal/yuan-exchange" className="relative tap-44 inline-flex items-center gap-1 font-semibold underline-offset-2 hover:underline">
-                  {pickLang(language, { ku: "کڕینی یوان:", en: "Buy yuan:", ar: "شراء اليوان:", zh: "购买人民币：" })}
-                  <bdi dir="ltr" className="tabular-nums">$1 = ¥{fmtNumber(yuanRate, 2)}</bdi>
-                </Link>
-              )}
-              {yuanRate && iqdRate && <span aria-hidden="true">•</span>}
-              {iqdRate && (
-                <bdi dir="ltr" className="tabular-nums">$100 = {(iqdRate * 100).toLocaleString("en-US")} IQD</bdi>
-              )}
-            </div>
+            <PortalErrorState compact onRetry={retryHome} isRetrying={homeRetrying} />
           </div>
         )}
-
-        {/* Hero action — the one thing a customer should do after every
-            purchase. Blue is the action colour; green stays for arrival. */}
-        <div className="px-4 mt-4">
-          <Link href="/portal/declare">
-            <span className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] p-4 shadow-lg shadow-blue-600/30 transition-transform active:scale-[0.99]">
-              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
-                <Plus className="h-5 w-5 text-white" />
-              </span>
-              <span className="min-w-0">
-                <span className="block text-sm font-bold text-white">
-                  {pickLang(language, { ku: "هەرچیت کڕیوە؟ تراکەکەی تۆمار بکە", en: "Bought something? Register its tracking", ar: "اشتريت شيئًا؟ سجّل رقم تتبعه", zh: "买了东西？登记运单号" })}
-                </span>
-                <span className="block text-[11px] text-white/85">
-                  {pickLang(language, { ku: "بەدواداچوونی خۆکار بۆ هەموو کڕینەکانت", en: "Automatic follow-up for every purchase", ar: "متابعة تلقائية لكل مشترياتك", zh: "自动跟进您的每一笔购买" })}
-                </span>
-              </span>
-            </span>
-          </Link>
-        </div>
 
         {/* Money — amber while anything is owed, calm green when clear */}
         <div className="px-4 mt-3">
@@ -651,6 +664,121 @@ export default function PortalHome() {
           )}
         </div>
 
+        {/* The four places a customer's goods can be: bought → the China
+            depot → the road → Erbil. Each card opens the search on its own
+            tab and counts what that tab lists, so the number tapped is the
+            number the search opens with (owner's briefs, 2026-09-19 and
+            2026-10-24). Rendered from SEARCH_TABS rather than written out
+            four times, so a card cannot drift from the list behind it. */}
+        {awaitingQuote > 0 && (
+          <div className="px-4 mt-4">
+            <Link
+              href="/portal/full-package"
+              className={cn(
+                "flex items-center justify-between gap-2 rounded-xl border px-3 py-2 text-xs font-medium transition-transform active:scale-[0.99]",
+                "border-pink-300 bg-pink-50 text-pink-700 dark:border-pink-500/40 dark:bg-pink-950/40 dark:text-pink-300",
+              )}
+            >
+              <span className="block min-w-0">
+                {awaitingQuote === 1
+                  ? pickLang(language, { ku: "داواکارییەک چاوەڕێی نرخە", en: "A request is waiting for a price", ar: "طلب ينتظر التسعير", zh: "一个请求等待报价" })
+                  : pickLang(language, { ku: `${awaitingQuote} داواکاری چاوەڕێی نرخن`, en: `${awaitingQuote} requests are waiting for a price`, ar: `${awaitingQuote} طلبات تنتظر التسعير`, zh: `${awaitingQuote} 个请求等待报价` })}
+              </span>
+              <ChevronLeft className="h-4 w-4 shrink-0 rtl:rotate-180" />
+            </Link>
+          </div>
+        )}
+
+        <div className="px-4 mt-4">
+          {/* Two across on a phone, four from md up: four figures in a
+              375px row leaves each label three lines deep. The journey
+              still reads in order, the top row then the bottom. */}
+          <div className="grid grid-cols-2 gap-2 md:grid-cols-4">
+            {STAGE_JOURNEY.map((tab) => {
+              const tone = STAGE_CARD_TONE[tab];
+              return (
+                <Link
+                  key={tab}
+                  href={`/portal/search?tab=${tab}`}
+                  data-testid={`portal-stage-${tab}`}
+                  className={cn(
+                    "block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
+                    tone.card,
+                  )}
+                >
+                  <tone.Icon className={cn("mx-auto h-5 w-5", tone.icon)} />
+                  {/* A div, not a p: the skeleton inside is a div, and a div
+                      inside a p is illegal HTML the browser silently unnests —
+                      which then costs React the tree it thought it had. */}
+                  <div className={cn("mt-1 text-2xl font-bold tabular-nums", tone.number)}>
+                    {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts[tab]} />}
+                  </div>
+                  {/* The unit, because a bare number does not say what it
+                      counts — the owner himself had to ask what "5" meant. */}
+                  <p className={cn("text-[10px] leading-tight", tone.unit)}>
+                    {pickLang(language, SEARCH_TAB_UNIT[tab])}
+                  </p>
+                  <p className={cn("mt-0.5 text-[11px] leading-tight", tone.label)}>
+                    {pickLang(language, SEARCH_TAB_LABEL[tab])}
+                    {tab === "onTheWay" && nextEtaDays !== null && (
+                      <span className="block tabular-nums">
+                        {pickLang(language, { ku: `نزیکەی ${nextEtaDays} ڕۆژ ماوە`, en: `about ${nextEtaDays} days left`, ar: `نحو ${nextEtaDays} يومًا متبقية`, zh: `约剩 ${nextEtaDays} 天` })}
+                      </span>
+                    )}
+                  </p>
+                </Link>
+              );
+            })}
+          </div>
+        </div>
+
+        {/* Currency ticker. The yuan is the price of buying yuan from us and
+            opens the page where it is bought; one rate with the office's,
+            edited in Settings → Currency or the Portal Center. The dinar is
+            the office's IQD rate, when the price list shows it. Hidden
+            entirely until either is set; wraps rather than cutting a figure
+            off on a narrow phone. */}
+        {(yuanRate || iqdRate) && (
+          <div className="px-4 mt-3">
+            <div className={cn(
+              "flex flex-wrap items-center gap-x-2 gap-y-1 rounded-xl border px-3 py-1.5 text-xs",
+              isDark ? "border-sky-500/25 bg-sky-950/40 text-sky-300" : "border-sky-200 dark:border-sky-500/25 bg-sky-50 dark:bg-sky-950/40 text-sky-700 dark:text-sky-300",
+            )}>
+              <Coins className="h-3.5 w-3.5 shrink-0" />
+              {yuanRate && (
+                <Link href="/portal/yuan-exchange" className="relative tap-44 inline-flex items-center gap-1 font-semibold underline-offset-2 hover:underline">
+                  {pickLang(language, { ku: "کڕینی یوان:", en: "Buy yuan:", ar: "شراء اليوان:", zh: "购买人民币：" })}
+                  <bdi dir="ltr" className="tabular-nums">$1 = ¥{fmtNumber(yuanRate, 2)}</bdi>
+                </Link>
+              )}
+              {yuanRate && iqdRate && <span aria-hidden="true">•</span>}
+              {iqdRate && (
+                <bdi dir="ltr" className="tabular-nums">$100 = {(iqdRate * 100).toLocaleString("en-US")} IQD</bdi>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Hero action — the one thing a customer should do after every
+            purchase. Blue is the action colour; green stays for arrival. */}
+        <div className="px-4 mt-4">
+          <Link href="/portal/declare">
+            <span className="flex items-center gap-3 rounded-2xl bg-gradient-to-br from-[#2563EB] to-[#1D4ED8] p-4 shadow-lg shadow-blue-600/30 transition-transform active:scale-[0.99]">
+              <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-white/20">
+                <Plus className="h-5 w-5 text-white" />
+              </span>
+              <span className="min-w-0">
+                <span className="block text-sm font-bold text-white">
+                  {pickLang(language, { ku: "هەرچیت کڕیوە؟ تراکەکەی تۆمار بکە", en: "Bought something? Register its tracking", ar: "اشتريت شيئًا؟ سجّل رقم تتبعه", zh: "买了东西？登记运单号" })}
+                </span>
+                <span className="block text-[11px] text-white/85">
+                  {pickLang(language, { ku: "بەدواداچوونی خۆکار بۆ هەموو کڕینەکانت", en: "Automatic follow-up for every purchase", ar: "متابعة تلقائية لكل مشترياتك", zh: "自动跟进您的每一笔购买" })}
+                </span>
+              </span>
+            </span>
+          </Link>
+        </div>
+
         {/* Prohibited packages — flashes while any item awaits the customer's decision */}
         {prohibitedPackages && prohibitedPackages.length > 0 && (
           <div className="px-4 mt-3">
@@ -679,75 +807,6 @@ export default function PortalHome() {
             </Link>
           </div>
         )}
-
-        {/* Something did not load. Say so once, near the top, rather than
-            letting zero counters imply the account is empty. */}
-        {homeFailed && (
-          <div className="px-4 mt-3">
-            <PortalErrorState compact onRetry={retryHome} isRetrying={homeRetrying} />
-          </div>
-        )}
-
-        {/* Stats Cards */}
-        {/* The three places a customer's goods can be: China → the road →
-            Erbil. Each card opens the search on its own tab, and counts what
-            that tab lists (owner's brief, 2026-09-19). */}
-        <div className="px-4 mt-4">
-          <div className="grid grid-cols-3 gap-2">
-            <Link
-              href="/portal/search?tab=registered"
-              className={cn("block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]", card)}
-            >
-              <Package className={cn("mx-auto h-5 w-5", "text-blue-600 dark:text-blue-300")} />
-              {/* A div, not a p: the skeleton inside is a div, and a div
-                  inside a p is illegal HTML the browser silently unnests —
-                  which then costs React the tree it thought it had. */}
-              <div className={cn("mt-1 text-2xl font-bold tabular-nums", "text-foreground")}>
-                {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.registered} />}
-              </div>
-              <p className={cn("mt-0.5 text-[11px] leading-tight", "text-muted-foreground")}>
-                {pickLang(language, SEARCH_TAB_LABEL.registered)}
-              </p>
-            </Link>
-
-            <Link
-              href="/portal/search?tab=onTheWay"
-              className={cn(
-                "block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
-                isDark ? "border-sky-500/35 bg-[#152238]" : "border-sky-300 dark:border-sky-500/35 bg-white dark:bg-[#152238]",
-              )}
-            >
-              <Plane className={cn("mx-auto h-5 w-5", "text-sky-600 dark:text-sky-400")} />
-              <div className={cn("mt-1 text-2xl font-bold tabular-nums", "text-sky-600 dark:text-sky-400")}>
-                {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.onTheWay} />}
-              </div>
-              <p className={cn("mt-0.5 text-[11px] leading-tight", isDark ? "text-sky-300" : "text-sky-700 dark:text-sky-300")}>
-                {pickLang(language, SEARCH_TAB_LABEL.onTheWay)}
-                {nextEtaDays !== null && (
-                  <span className="block tabular-nums">
-                    {pickLang(language, { ku: `نزیکەی ${nextEtaDays} ڕۆژ ماوە`, en: `about ${nextEtaDays} days left`, ar: `نحو ${nextEtaDays} يومًا متبقية`, zh: `约剩 ${nextEtaDays} 天` })}
-                  </span>
-                )}
-              </p>
-            </Link>
-
-            <Link
-              href="/portal/search?tab=arrived"
-              className={cn(
-                "block rounded-2xl border p-3 text-center transition-all active:scale-[0.98]",
-                isDark ? "border-emerald-500/50 bg-emerald-950/40" : "border-emerald-300 dark:border-emerald-500/50 bg-emerald-50 dark:bg-emerald-950/40",
-              )}
-            >
-              <CheckCircle className={cn("mx-auto h-5 w-5", "text-emerald-600 dark:text-emerald-400")} />
-              <div className={cn("mt-1 text-2xl font-bold tabular-nums", "text-emerald-600 dark:text-emerald-400")}>
-                {stagesLoading ? <Skeleton className="mx-auto my-1 h-6 w-8 rounded-md" /> : <AnimatedCounter value={stageCounts.arrived} />}
-              </div>
-              <p className={cn("mt-0.5 text-[11px] leading-tight", "text-emerald-700 dark:text-emerald-300")}>
-                {pickLang(language, SEARCH_TAB_LABEL.arrived)}
-              </p>
-            </Link>
-          </div>
-        </div>
 
         {/* What happens next — becomes the pulsing collect-me banner when a
             shipment is waiting in the Erbil depot */}

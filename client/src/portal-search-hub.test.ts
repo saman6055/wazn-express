@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 import { cleanSearchPaste } from "./lib/entry/cleanPaste";
-import { SEARCH_TABS } from "./lib/portalSearch";
+import { SEARCH_TABS, STAGE_JOURNEY } from "./lib/portalSearch";
 
 /**
  * The search is the portal's hub: the centre button opens it, and the home's
@@ -17,13 +17,18 @@ import { SEARCH_TABS } from "./lib/portalSearch";
 const SRC = __dirname;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
-describe("the home's three cards", () => {
+describe("the home's stage cards", () => {
   const home = read("pages/portal/PortalHome.tsx");
 
-  it("each open the search on its own tab", () => {
-    for (const tab of SEARCH_TABS) {
-      expect(home, tab).toContain(`href="/portal/search?tab=${tab}"`);
-    }
+  it("are drawn from the shared tab list, so none can be left out", () => {
+    // They used to be written out one card at a time, which is how a fourth
+    // stage can be added to the search and never reach the home screen.
+    // In journey order, not the search's: right to left the row has to read
+    // bought → China → the road → Erbil, the way the goods actually travel.
+    expect(home).toContain("STAGE_JOURNEY.map(");
+    expect(STAGE_JOURNEY).toEqual(["bought", "registered", "onTheWay", "arrived"]);
+    expect([...STAGE_JOURNEY].sort()).toEqual([...SEARCH_TABS].sort());
+    expect(home).toContain("href={`/portal/search?tab=${tab}`}");
     expect(home).not.toContain("togglePipeline");
     expect(home).not.toContain("pipelineFilter");
   });
@@ -33,10 +38,21 @@ describe("the home's three cards", () => {
     expect(home).toContain("searchItems(");
     expect(home).toContain("buildSearchIndex({ parcels: parcelsQuery.data as any, orders: ordersQuery.data as any, batches: batches as any })");
     expect(home).toContain('parseSearch("")');
+    expect(home).toContain("stageCounts[tab]");
+    expect(home).toContain("SEARCH_TAB_LABEL[tab]");
+  });
+
+  it("say what the number counts, and dress every tab", () => {
+    expect(home).toContain("SEARCH_TAB_UNIT[tab]");
+    // One tone per tab: a card cannot join the row without a colour chosen.
     for (const tab of SEARCH_TABS) {
-      expect(home, tab).toContain(`stageCounts.${tab}`);
-      expect(home, tab).toContain(`SEARCH_TAB_LABEL.${tab}`);
+      expect(home, tab).toMatch(new RegExp(`^\\s{4}${tab}: \\{$`, "m"));
     }
+  });
+
+  it("show the requests waiting on us for a price, which belong to no card", () => {
+    expect(home).toContain("ordersAwaitingQuote(");
+    expect(home).toContain("awaitingQuote > 0 &&");
   });
 
   it("keep the days-left line under the blue card", () => {
