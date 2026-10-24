@@ -51,6 +51,7 @@ import {
   Landmark,
   Vault,
   Scale,
+  PackageCheck,
   Coins,
   ShieldAlert,
   PackageX,
@@ -442,6 +443,8 @@ function DashboardLayoutContent({
           { icon: PackageX, label: pickLang(language, { ku: "بێ بۆکس دەرچوون", en: "Out without a box", ar: "خرجت بلا صندوق", zh: "未装箱即出库" }), path: "/packages/without-box" },
           { icon: Ban, label: pickLang(language, { ku: "تۆماری کەلوپەلی قەدەغە", en: "Register prohibited items", ar: "تسجيل البضائع الممنوعة", zh: "登记违禁物品" }), path: "/packages/prohibited-register" },
           { icon: Boxes, label: t("nav.batchAssignment") || "خستنە ناو باچ", path: "/batch-assignment-scanner" },
+          // The dispatch check in China (owner, 2026-10-24).
+          { icon: PackageCheck, label: pickLang(language, { ku: "خستنە ناو کارتۆن", en: "Dispatch check", ar: "التعبئة في الكراتين", zh: "装箱核对" }), path: "/dispatch-check" },
           { icon: Truck, label: t("nav.arrivalVerification") || "پشکنینی گەیشتن", path: "/arrival-verification-scanner" },
           { icon: CreditCard, label: t("nav.customerDelivery") || "گەیاندن بە کڕیار", path: "/customer-delivery-scanner" },
           { icon: Activity, label: t("nav.scanDashboard") || "داشبۆردی سکان", path: "/scan-dashboard" },

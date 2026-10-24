@@ -292,6 +292,11 @@ export default function ArrivalVerificationScanner() {
   }, [batchPackages, verifiedPackages]);
   
   // Get unverified packages
+  // The carton each parcel left China in (owner, 2026-10-24): Erbil scans as
+  // it always has, and the check says which carton a missing parcel was in.
+  const cartonsQ = trpc.dispatch.cartonsFor.useQuery({ batchIds: selectedBatchIds }, { enabled: selectedBatchIds.length > 0 });
+  const cartonOf = useMemo(() => new Map((cartonsQ.data ?? []).map((c) => [c.packageId, c.cartonNo])), [cartonsQ.data]);
+
   const unverifiedPackages = useMemo(() => {
     const unverified: (BatchPackage & { batchNumber: string })[] = [];
     batchPackages.forEach((packages, batchId) => {
@@ -1145,6 +1150,36 @@ export default function ArrivalVerificationScanner() {
                               <span className="text-xs text-muted-foreground">{verified}/{total}</span>
                             </div>
                             <Progress value={pct} className="h-2" />
+                            {/* Carton by carton, from the dispatch check in China. */}
+                            {(() => {
+                              const byCarton = new Map<number, { total: number; verified: number }>();
+                              for (const p of batchPkgs) {
+                                const no = cartonOf.get(p.id);
+                                if (!no) continue;
+                                const c = byCarton.get(no) ?? { total: 0, verified: 0 };
+                                c.total++;
+                                if (p.verified) c.verified++;
+                                byCarton.set(no, c);
+                              }
+                              if (byCarton.size === 0) return null;
+                              return (
+                                <div className="mt-2 flex flex-wrap gap-1" data-testid="arrival-cartons">
+                                  {Array.from(byCarton.entries()).sort((a, z) => a[0] - z[0]).map(([no, c]) => (
+                                    <span
+                                      key={no}
+                                      className={cn(
+                                        "rounded px-1.5 py-0.5 text-[11px] font-medium tabular-nums",
+                                        c.verified === c.total
+                                          ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                                          : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
+                                      )}
+                                    >
+                                      {pickLang(language, { ku: `کارتۆنی ${no}`, en: `Carton ${no}`, ar: `كرتون ${no}`, zh: `第 ${no} 箱` })} {c.verified}/{c.total}
+                                    </span>
+                                  ))}
+                                </div>
+                              );
+                            })()}
                           </div>
                         );
                       })}
@@ -1363,7 +1398,11 @@ export default function ArrivalVerificationScanner() {
                       {unverifiedPackages.map((pkg, i) => (
                         <div key={i} className="text-sm flex justify-between p-2 bg-yellow-50 dark:bg-yellow-900/20 rounded">
                           <span className="font-mono">{pkg.trackingNumber}</span>
-                          <span className="text-muted-foreground">{pkg.customerCode}</span>
+                          <span className="text-muted-foreground">
+                            {pkg.customerCode}
+                            {/* The carton it left China in, to look for it. */}
+                            {cartonOf.get(pkg.id) ? ` · ${pickLang(language, { ku: `کارتۆنی ${cartonOf.get(pkg.id)}`, en: `carton ${cartonOf.get(pkg.id)}`, ar: `كرتون ${cartonOf.get(pkg.id)}`, zh: `第 ${cartonOf.get(pkg.id)} 箱` })}` : ""}
+                          </span>
                         </div>
                       ))}
                     </div>

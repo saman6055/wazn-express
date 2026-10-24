@@ -127,6 +127,8 @@ const UnifiedProfitDashboard = lazy(() => import("./pages/UnifiedProfitDashboard
 const MonthlyProfitReport = lazy(() => import("./pages/MonthlyProfitReport"));
 const ProfitReports = lazy(() => import("./pages/ProfitReports"));
 const VolumetricReport = lazy(() => import("./pages/VolumetricReport"));
+const DispatchCheck = lazy(() => import("./pages/DispatchCheck"));
+const DispatchReport = lazy(() => import("./pages/DispatchReport"));
 const ProfitLossReport = lazy(() => import("./pages/ProfitLossReport"));
 
 // ---------------------------------------------------------------------------
@@ -279,6 +281,8 @@ function Router() {
         <Route path="/packages/claim-requests" component={ClaimRequests} />
         <Route path="/batch-assignment-scanner" component={BatchAssignmentScanner} />
         <Route path="/arrival-verification-scanner" component={ArrivalVerificationScanner} />
+        <Route path="/dispatch-check" component={DispatchCheck} />
+        <Route path="/dispatch-check/:id/report" component={DispatchReport} />
         <Route path="/customer-delivery-scanner" component={CustomerDeliveryScanner} />
         <Route path="/scan-dashboard" component={ScanDashboard} />
         <Route path="/scan-reports" component={ScanReports} />

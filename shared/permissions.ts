@@ -734,6 +734,8 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/tracking-alerts": "tracking_alerts",
   "/quick-register": "scan_quick_register",
   "/batch-assignment-scanner": "batch_assignment_scanner",
+  // Packing a batch into cartons in China: the same people who put parcels in batches.
+  "/dispatch-check": "batch_assignment_scanner",
   "/arrival-verification-scanner": "arrival_verification",
   "/customer-delivery-scanner": "customer_delivery_scanner",
   "/scan-dashboard": "scan_dashboard",
