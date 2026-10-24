@@ -307,6 +307,21 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
           })}
         </div>
 
+        {data.advance && data.advance.inUsd > 0.005 && (
+          <div className="grid grid-cols-3 gap-2 rounded-xl border border-emerald-300 bg-emerald-50/60 p-3 text-sm dark:border-emerald-800 dark:bg-emerald-950/30" data-testid="advance-card">
+            {[
+              { label: pickLang(language, { ku: "پێشەکی کڕیار", en: "Customer's advance", ar: "الدفعة المقدمة", zh: "预付款" }), usd: data.advance.inUsd },
+              { label: pickLang(language, { ku: "بۆ بۆکسەکان ڕۆیشتووە", en: "Gone to boxes", ar: "ذهب للصناديق", zh: "已用于箱子" }), usd: data.advance.usedUsd },
+              { label: pickLang(language, { ku: "ماوە", en: "Left", ar: "المتبقي", zh: "剩余" }), usd: data.advance.leftUsd },
+            ].map((x, i) => (
+              <div key={i} className="min-w-0">
+                <div className="text-xs text-emerald-800 dark:text-emerald-300">{x.label}</div>
+                <div className={i === 2 ? "text-lg font-semibold text-emerald-900 dark:text-emerald-200" : "font-medium text-emerald-900 dark:text-emerald-200"} dir="ltr">{fmtUsd(x.usd)}</div>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="rounded-xl border divide-y text-sm">
           {data.paidOnAccountUsd > 0.005 && (
             <div className="flex items-center justify-between gap-2 px-3 py-2">

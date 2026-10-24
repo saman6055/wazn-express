@@ -197,6 +197,10 @@ export interface ExplainedDebt {
    * ADVANCE_SINCE and not yet used by a receipt.
    */
   advanceUsd: number;
+  /** Advance money taken since ADVANCE_SINCE, before any box used it. */
+  advanceInUsd: number;
+  /** Of that, what box receipts have taken so far. */
+  advanceUsedUsd: number;
   stillOwedUsd: number;
 }
 
@@ -321,12 +325,15 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
   const usedSince = (facts.accountCovered ?? [])
     .filter((c) => c.at && c.at >= ADVANCE_SINCE && (!zeroedTime || c.at > zeroedTime))
     .reduce((s, c) => s + Math.max(0, Math.round(c.usd * 100)), 0);
+  const advanceIn = advance;
   advance = Math.max(0, Math.min(paidOnAccount, advance - usedSince));
   return {
     charges,
     owedUsd: { road: owed.road / 100, arrived: owed.arrived / 100, openBox: owed.openBox / 100, parcel: owed.parcel / 100 },
     paidOnAccountUsd: paidOnAccount / 100,
     advanceUsd: advance / 100,
+    advanceInUsd: advanceIn / 100,
+    advanceUsedUsd: Math.max(0, advanceIn - advance) / 100,
     stillOwedUsd: Math.max(0, open - paidOnAccount) / 100,
   };
 }

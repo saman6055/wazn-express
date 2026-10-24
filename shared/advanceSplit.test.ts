@@ -14,7 +14,19 @@ describe("the advance at the till (AZ234, owner 2026-10-24)", () => {
     expect(advanceSplit({ openUsd: 100, balanceUsd: 100, coveredUsd: 0 })).toBeNull();
     expect(advanceSplit({ openUsd: undefined, balanceUsd: -50, coveredUsd: 0 })).toBeNull();
   });
-  it("both tills show it", () => {
+  it("the finance profile shows taken / gone to boxes / left", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+    const rows = [{ id: 1, transactionNumber: "T1", transactionType: "CREDIT_PAYMENT", amountUsd: 300, balanceAfterUsd: -300, description: "پێشەکی", referenceId: null, createdAt: "2026-10-20T10:00:00.000Z" }];
+    const before = explainDebt(rows as never, base as never);
+    expect([before.advanceInUsd, before.advanceUsedUsd, before.advanceUsd]).toEqual([300, 0, 300]);
+    const after = explainDebt(rows as never, { ...base, accountCovered: [{ at: "2026-10-24T10:00:00.000Z", usd: 183.59 }] } as never);
+    expect([after.advanceInUsd, after.advanceUsedUsd, after.advanceUsd]).toEqual([300, 183.59, 116.41]);
+    expect(readFileSync("client/src/components/customers/CustomerDebtExplained.tsx", "utf8")).toContain('data-testid="advance-card"');
+  });
+
+  it("both tills and the print window show it", () => {
+    expect(readFileSync("client/src/components/delivery/ReceiptDinarDialog.tsx", "utf8")).toContain("<AdvanceSplitNote openUsd={boxView.data?.openChargesUsd}");
     for (const f of ["client/src/components/delivery/BoxSettlementPanel.tsx", "client/src/components/delivery/QuickSettleDialog.tsx"]) {
       expect(readFileSync(f, "utf8")).toContain("<AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} />");
     }

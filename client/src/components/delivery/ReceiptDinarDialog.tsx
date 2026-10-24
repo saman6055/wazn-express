@@ -42,6 +42,7 @@ import { DISCOUNT_REASON_LABELS, REASON_NEEDS_TEXT, type DiscountReason } from "
 import { accountCover, settlementTotals, unbackedOnReceiptUsd, unbilledOnReceiptUsd } from "@shared/boxSettlement";
 import { pledgeFloors, type DiscountPledge } from "@shared/pledgedDiscount";
 import { BoxExtraCosts } from "@/components/delivery/BoxExtraCosts";
+import { AdvanceSplitNote } from "@/components/delivery/AdvanceSplitNote";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -621,6 +622,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
             ) : (
               <p className="text-xs text-muted-foreground">{L(TXT.advanceHint)}</p>
             )}
+            <AdvanceSplitNote openUsd={boxView.data?.openChargesUsd} balanceUsd={boxView.data?.accountBalanceUsd} coveredUsd={accountAdvanceUsd} />
           </div>
 
           <div className="space-y-1.5">

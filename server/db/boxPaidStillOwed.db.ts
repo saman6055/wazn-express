@@ -421,6 +421,8 @@ export async function explainCustomerDebt(customerId: number): Promise<{
   unexplainedUsd: number;
   owedUsd: Record<"road" | "arrived" | "openBox" | "parcel", number>;
   paidOnAccountUsd: number;
+  /** The customer's advance: taken, gone to boxes, left (owner, 2026-10-24). */
+  advance: { inUsd: number; usedUsd: number; leftUsd: number };
   items: OwedItem[];
   subjects: Record<number, LedgerSubject>;
   /** The lines behind "written twice", and what they come to before the cap. */
@@ -428,7 +430,7 @@ export async function explainCustomerDebt(customerId: number): Promise<{
   /** The whole account in five sums that make the balance. */
   sums: AccountSums;
 }> {
-  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, items: [], subjects: {}, double: { lines: [], twiceUsd: 0 }, sums: accountSums([], 0) };
+  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, advance: { inUsd: 0, usedUsd: 0, leftUsd: 0 }, items: [], subjects: {}, double: { lines: [], twiceUsd: 0 }, sums: accountSums([], 0) };
   const got = await gatherAccount(customerId);
   if (!got) return empty;
   const explained = explainDebt(got.rows, got.facts);
@@ -493,6 +495,7 @@ export async function explainCustomerDebt(customerId: number): Promise<{
     unexplainedUsd: cents(got.balanceUsd - stillOwedUsd - falseDebtUsd),
     owedUsd: explained.owedUsd,
     paidOnAccountUsd: explained.paidOnAccountUsd,
+    advance: { inUsd: explained.advanceInUsd, usedUsd: explained.advanceUsedUsd, leftUsd: explained.advanceUsd },
     items: Array.from(items.values())
       .map((item) => ({ ...item, story: chargeStory(got.rows, item.chargeIds) }))
       .sort((a, b) => b.usd - a.usd),
