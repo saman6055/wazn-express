@@ -22,7 +22,7 @@ import { oddParcelNumbers, oddParcelQuestion } from "@shared/parcelNumberSense";
 import { useLeaveGuard } from "@/hooks/useLeaveGuard";
 import { isRecentEntry } from "@shared/lastEntry";
 import { StickyFormBar } from "@/components/forms/sticky-form-bar";
-import { volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
+import { afterVolumetricDiscount, volumetricWeightKg, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { cartonCountOf, cartonsMultiplyWeight, MAX_CARTONS } from "@shared/parcelCost";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { useAuth } from "@/_core/hooks/useAuth";
@@ -568,13 +568,18 @@ export default function QuickRegister() {
     [lengthCm, widthCm, heightCm, directCbm, volumetricDivisor],
   );
   
+  // A volumetric discount given while registering (owner, 2026-10-24): the
+  // kilos charged for the whole parcel, between the scale and the volume.
+  const [billedKg, setBilledKg] = useState("");
   const chargeableWeight = useMemo(() => {
     const actualWeight = parseFloat(weightKg) || 0;
     if (shippingType === "air_regular" || shippingType === "air_irregular") {
-      return Math.max(actualWeight, volumetricWeight);
+      // Per carton, as the card multiplies by the cartons itself.
+      const billedPerCarton = (parseFloat(billedKg) || 0) / Math.max(1, airCartons);
+      return afterVolumetricDiscount(actualWeight, volumetricWeight, billedPerCarton);
     }
     return actualWeight;
-  }, [weightKg, volumetricWeight, shippingType]);
+  }, [weightKg, volumetricWeight, shippingType, billedKg, airCartons]);
   
   const uploadMutation = trpc.storage.upload.useMutation({
     onSuccess: (data) => {
@@ -693,7 +698,8 @@ export default function QuickRegister() {
     heightCm: heightCm || undefined,
     volumeCbm: directCbm || undefined,
     cartonCount: cartonsSent,
-  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm, cartonsSent]);
+    billedWeightKg: billedKg || undefined,
+  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm, cartonsSent, billedKg]);
 
   // A keystroke in the weight field should not fire a request per digit.
   const [debouncedFacts, setDebouncedFacts] = useState(estimateFacts);
@@ -1294,6 +1300,7 @@ export default function QuickRegister() {
     setLinkAllSharingOrders(true);
     setIsSearching(false);
     setWeightKg("");
+    setBilledKg("");
     setLengthCm("");
     setWidthCm("");
     setHeightCm("");
@@ -1326,6 +1333,7 @@ export default function QuickRegister() {
     setCustomerSearch("");
     setIsUnclaimed(false);
     setWeightKg("");
+    setBilledKg("");
     setLengthCm("");
     setWidthCm("");
     setHeightCm("");
@@ -1426,6 +1434,7 @@ export default function QuickRegister() {
       heightCm: heightCm || undefined,
       volumeCbm: directCbm || undefined,
       cartonCount: cartonsSent,
+      billedWeightKg: billedKg && shippingType !== "sea" && volumetricWeight > (parseFloat(weightKg) || 0) ? billedKg : undefined,
       shippingType,
       description: description || undefined,
       batchId: batchId && batchId !== "none" ? parseInt(batchId) : undefined,
@@ -2547,6 +2556,45 @@ export default function QuickRegister() {
                                 ? `${directCbm} m³ × 1,000,000 ÷ ${volumetricDivisor} = ${volumetricWeight.toFixed(2)} kg`
                                 : `${lengthCm || 0} × ${widthCm || 0} × ${heightCm || 0} ÷ ${volumetricDivisor} = ${volumetricWeight.toFixed(2)} kg`}
                             </p>
+                          )}
+                          {/* A volumetric discount, here, before saving (owner,
+                              2026-10-24): the kilos to charge, between the
+                              scale and the volume. Empty: charged by volume. */}
+                          {byVolume && actual > 0 && (
+                            <div className="mt-3 flex flex-wrap items-center gap-2 rounded-lg border border-emerald-300 bg-emerald-50/70 px-3 py-2 dark:border-emerald-800/60 dark:bg-emerald-950/30" data-testid="qr-volumetric-discount">
+                              <span className="text-xs font-semibold text-emerald-800 dark:text-emerald-200">
+                                {pickLang(language, { ku: "داشکانی قەبارە - کێشی حیسابکراو", en: "Volume discount - kilos to charge", ar: "خصم الحجم - الوزن المحتسب", zh: "体积优惠 - 计费重量" })}
+                              </span>
+                              <Input
+                                type="number"
+                                step="0.1"
+                                value={billedKg}
+                                onChange={(e) => setBilledKg(e.target.value)}
+                                placeholder={(volumetricWeight * airCartons).toFixed(2)}
+                                className="h-8 w-24 text-sm font-bold tabular-nums"
+                                dir="ltr"
+                                data-testid="qr-billed-kg"
+                              />
+                              <span className="text-xs text-muted-foreground" dir="ltr">kg</span>
+                              {(() => {
+                                const full = volumetricWeight * airCartons;
+                                const low = actual * airCartons;
+                                const typed = parseFloat(billedKg);
+                                if (!billedKg) return null;
+                                if (!(typed >= low - 0.0005 && typed <= full + 0.0005)) {
+                                  return (
+                                    <span className="text-xs font-semibold text-red-600 dark:text-red-300">
+                                      {pickLang(language, { ku: `لە نێوان ${low.toFixed(2)} و ${full.toFixed(2)} kg`, en: `between ${low.toFixed(2)} and ${full.toFixed(2)} kg`, ar: `بين ${low.toFixed(2)} و ${full.toFixed(2)} kg`, zh: `介于 ${low.toFixed(2)} 与 ${full.toFixed(2)} kg` })}
+                                    </span>
+                                  );
+                                }
+                                return (
+                                  <span className="text-xs font-semibold text-emerald-700 dark:text-emerald-300">
+                                    {pickLang(language, { ku: `داشکان ${(full - typed).toFixed(2)} kg`, en: `${(full - typed).toFixed(2)} kg off`, ar: `خصم ${(full - typed).toFixed(2)} kg`, zh: `优惠 ${(full - typed).toFixed(2)} kg` })}
+                                  </span>
+                                );
+                              })()}
+                            </div>
                           )}
                           {/* More than twice the scale (owner, 2026-10-23): a
                               mistyped side looks exactly like this, so it asks

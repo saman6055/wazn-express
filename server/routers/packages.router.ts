@@ -559,6 +559,9 @@ export const packagesRouter = router({
         // Cartons of one size: the sides and the volume above are ONE carton's
         // when this is given (shared/parcelCost: cartonVolume).
         cartonCount: z.number().int().min(1).max(MAX_CARTONS).optional(),
+        // A volumetric discount given while registering (owner, 2026-10-24):
+        // the kilos charged, between the scale and the volume.
+        billedWeightKg: z.string().max(50).optional(),
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
         description: z.string().max(1000).optional(),
         photos: z.array(z.string().max(2048)).optional(),
@@ -786,6 +789,8 @@ export const packagesRouter = router({
          * registered straight into a rated batch is stored at the rate its
          * invoice will use rather than at the route default.
          */
+        // Air only, and only below the volume: anything else is no discount.
+        const billedWeightKg = input.shippingType !== "sea" && Number(input.billedWeightKg) > 0 ? input.billedWeightKg : undefined;
         const priced = await resolveParcelCost({
           customerId: input.isUnclaimed ? null : effectiveCustomerId,
           batchId: input.batchId,
@@ -796,6 +801,7 @@ export const packagesRouter = router({
           widthCm: input.widthCm,
           heightCm: input.heightCm,
           volumeCbm,
+          billedWeightKg,
         });
         const calculatedCostUsd = priced.costUsd;
         const appliedPricingRuleId = priced.pricingRuleId;
@@ -831,6 +837,7 @@ export const packagesRouter = router({
               heightCm: input.heightCm,
               volumeCbm,
               cartonCount: cartons && cartons.count > 1 ? cartons.count : undefined,
+              billedWeightKg: billedWeightKg ? Number(billedWeightKg).toFixed(3) : undefined,
               shippingType: input.shippingType,
               description: input.description,
               photos: input.photos,
@@ -1112,6 +1119,7 @@ export const packagesRouter = router({
         heightCm: z.string().max(50).optional(),
         volumeCbm: z.string().max(50).optional(),
         cartonCount: z.number().int().min(1).max(MAX_CARTONS).optional(),
+        billedWeightKg: z.string().max(50).optional(),
       }))
       .query(async ({ input }) => {
         // Sea with dimensions but no typed CBM: derive it exactly as the
@@ -1135,6 +1143,7 @@ export const packagesRouter = router({
           widthCm: input.widthCm,
           heightCm: input.heightCm,
           volumeCbm,
+          billedWeightKg: input.shippingType !== "sea" ? input.billedWeightKg : undefined,
         });
         return {
           amountUsd: priced.amountUsd,
