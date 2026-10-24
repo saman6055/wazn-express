@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -77,6 +77,8 @@ export interface RiskFacts {
   extraCostsToday?: number;
   /** Batches whose dispatch check in China was finished in the last 48 hours (owner, 2026-10-24). */
   batchesDispatched?: number;
+  /** Customers whose advance waits on a box left unreceipted more than 3 days (owner, 2026-10-24). */
+  advanceWaiting?: number;
 }
 
 /**
@@ -100,6 +102,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "box-paid-owed": "/finance/box-double-charges",
   "extra-costs": "/finance/extra-costs",
   "batch-dispatched": "/dispatch-check/latest/report",
+  "advance-waiting": "/customer-delivery-scanner?unpaid=1",
 };
 
 /** The page whose permission decides who is told. */
@@ -120,6 +123,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "extra-costs": "/finance/extra-costs",
   // Every member of staff is told (owner, 2026-10-24): the report is no page anybody is kept from.
   "batch-dispatched": "/dispatch-check/latest/report",
+  "advance-waiting": "/customer-delivery-scanner",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -240,6 +244,11 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   // not come — it may have been paid and not receipted.
   if ((facts.boxesUnpaid ?? 0) > 0) {
     items.push({ id: "boxes-unpaid", level: "high", count: facts.boxesUnpaid ?? 0 });
+  }
+  // Owner, 2026-10-24: an advance waiting on a box that went out with nothing
+  // written stays "unspent" for ever (AZ018). The box must be receipted.
+  if ((facts.advanceWaiting ?? 0) > 0) {
+    items.push({ id: "advance-waiting", level: "high", count: facts.advanceWaiting ?? 0 });
   }
   // Owner, 2026-10-19: anybody may write another cost on a box, and the main
   // admin is told of every one - who, how much, why.
@@ -410,6 +419,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "money that is stuck — sell it for less or write it off",
           ar: "مال عالق — بعه بسعر أقل أو اشطبه",
           zh: "占用资金 — 降价出售或核销",
+        },
+      };
+    case "advance-waiting":
+      return {
+        title: { ku: `پێشەکیی ${n} کڕیار چاوەڕێی بۆکسێکە کە زیاتر لە 3 ڕۆژە وەسڵ نەکراوە`, en: `${n} customer advance(s) waiting on a box unreceipted for over 3 days`, ar: `دفعات ${n} عميل تنتظر صندوقاً لم يُوصَّل منذ أكثر من 3 أيام`, zh: `${n} 位客户的预付款在等待超过 3 天未开收据的箱子` },
+        detail: {
+          ku: "ئەگەر بۆکسەکە ڕۆیشتووە، وەسڵی بکە (یان 0 + «قەرز لەسەر کڕیار») — تا وەسڵ نەکرێت پێشەکییەکە بە بەکارنەهاتوو دەمێنێتەوە",
+          en: "if the box has gone, receipt it (or 0 + debt on the customer) - until then the advance looks unspent",
+          ar: "إن خرج الصندوق فأصدر إيصاله (أو 0 + دين على العميل) — وإلا تبقى الدفعة كأنها غير مستعملة",
+          zh: "如箱子已送出，请开收据（或 0 + 记为欠款）— 否则预付款看似未用",
         },
       };
     case "boxes-unpaid":

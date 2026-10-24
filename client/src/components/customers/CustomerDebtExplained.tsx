@@ -319,6 +319,16 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
                 <div className={i === 2 ? "text-lg font-semibold text-emerald-900 dark:text-emerald-200" : "font-medium text-emerald-900 dark:text-emerald-200"} dir="ltr">{fmtUsd(x.usd)}</div>
               </div>
             ))}
+            {data.advance.forBox && data.advance.leftUsd > 0.005 && (
+              <div className="col-span-3 text-xs text-emerald-800 dark:text-emerald-300" data-testid="advance-for-box">
+                {pickLang(language, {
+                  ku: `تەرخان کراوە بۆ بۆکسی ${data.advance.forBox.boxCode} — هێشتا وەسڵ نەکراوە (${data.advance.forBox.days} ڕۆژ)`,
+                  en: `Set for box ${data.advance.forBox.boxCode} — not receipted yet (${data.advance.forBox.days} days)`,
+                  ar: `مخصص للصندوق ${data.advance.forBox.boxCode} — لم يُوصَّل بعد (${data.advance.forBox.days} يوم)`,
+                  zh: `预留给箱子 ${data.advance.forBox.boxCode} — 尚未开收据（${data.advance.forBox.days} 天）`,
+                })}
+              </div>
+            )}
           </div>
         )}
 

@@ -2035,6 +2035,9 @@ export const deliveryBoxRouter = router({
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
+      if ((await db.liveReceiptsOfBox(box.id)).length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: db.noReceiptRefusal(box.boxCode) });
+      }
       if (box.status !== 'ready') {
         throw new TRPCError({
           code: "BAD_REQUEST",
@@ -2093,6 +2096,9 @@ export const deliveryBoxRouter = router({
     .mutation(async ({ input, ctx }) => {
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
+      if ((await db.liveReceiptsOfBox(box.id)).length === 0) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: db.noReceiptRefusal(box.boxCode) });
+      }
       if (box.status !== 'in_transit' && box.status !== 'ready') {
         throw new TRPCError({
           code: "BAD_REQUEST",

@@ -12,6 +12,7 @@ import {
   explainDebt,
   falseDebt,
   planCorrection,
+  ADVANCE_SINCE,
   stillOwed,
   trackingKey,
   twiceCharged,
@@ -424,6 +425,50 @@ export interface DoubleLine {
  * boxed, in a box not receipted, and the customer's own parcels waiting for
  * a box. The verdicts are the shared rule's; nothing is decided here.
  */
+/** The customer's oldest box with no receipt: the one an advance waits on (oldest first). */
+export async function oldestUnreceiptedBox(customerId: number): Promise<{ boxCode: string; days: number } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db
+    .select({ boxCode: deliveryBoxes.boxCode, createdAt: deliveryBoxes.createdAt })
+    .from(deliveryBoxes)
+    .where(and(
+      eq(deliveryBoxes.customerId, customerId),
+      ne(deliveryBoxes.status, "cancelled"),
+      sql`NOT EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`,
+    ))
+    .orderBy(deliveryBoxes.id)
+    .limit(1);
+  if (!row) return null;
+  const days = row.createdAt ? Math.floor((Date.now() - new Date(row.createdAt).getTime()) / 86_400_000) : 0;
+  return { boxCode: String(row.boxCode), days };
+}
+
+/**
+ * Customers whose advance waits on a box left unreceipted for more than
+ * three days (the bell, owner 2026-10-24). Only customers who paid without a
+ * box since the till began can have one, so only they are read.
+ */
+export async function countAdvanceWaiting(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const candidates = await db
+    .selectDistinct({ customerId: customerAccounts.customerId })
+    .from(ledgerTransactions)
+    .innerJoin(customerAccounts, eq(customerAccounts.id, ledgerTransactions.accountId))
+    .where(and(
+      eq(ledgerTransactions.transactionType, "CREDIT_PAYMENT"),
+      sql`${ledgerTransactions.createdAt} >= ${ADVANCE_SINCE.slice(0, 10)}`,
+      sql`${ledgerTransactions.description} NOT LIKE 'BOX-%'`,
+    ));
+  let n = 0;
+  for (const c of candidates) {
+    const d = await explainCustomerDebt(Number(c.customerId));
+    if (d.advance.leftUsd > 0.005 && d.advance.forBox && d.advance.forBox.days > 3) n++;
+  }
+  return n;
+}
+
 export async function explainCustomerDebt(customerId: number): Promise<{
   balanceUsd: number;
   stillOwedUsd: number;
@@ -433,8 +478,8 @@ export async function explainCustomerDebt(customerId: number): Promise<{
   unexplainedUsd: number;
   owedUsd: Record<"road" | "arrived" | "openBox" | "parcel", number>;
   paidOnAccountUsd: number;
-  /** The customer's advance: taken, gone to boxes, left (owner, 2026-10-24). */
-  advance: { inUsd: number; usedUsd: number; leftUsd: number };
+  /** The customer's advance: taken, gone to boxes, left, and the box it waits on (owner, 2026-10-24). */
+  advance: { inUsd: number; usedUsd: number; leftUsd: number; forBox: { boxCode: string; days: number } | null };
   items: OwedItem[];
   subjects: Record<number, LedgerSubject>;
   /** The lines behind "written twice", and what they come to before the cap. */
@@ -442,7 +487,7 @@ export async function explainCustomerDebt(customerId: number): Promise<{
   /** The whole account in five sums that make the balance. */
   sums: AccountSums;
 }> {
-  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, advance: { inUsd: 0, usedUsd: 0, leftUsd: 0 }, items: [], subjects: {}, double: { lines: [], twiceUsd: 0 }, sums: accountSums([], 0) };
+  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, advance: { inUsd: 0, usedUsd: 0, leftUsd: 0, forBox: null }, items: [], subjects: {}, double: { lines: [], twiceUsd: 0 }, sums: accountSums([], 0) };
   const got = await gatherAccount(customerId);
   if (!got) return empty;
   const explained = explainDebt(got.rows, got.facts);
@@ -507,7 +552,7 @@ export async function explainCustomerDebt(customerId: number): Promise<{
     unexplainedUsd: cents(got.balanceUsd - stillOwedUsd - falseDebtUsd),
     owedUsd: explained.owedUsd,
     paidOnAccountUsd: explained.paidOnAccountUsd,
-    advance: { inUsd: explained.advanceInUsd, usedUsd: explained.advanceUsedUsd, leftUsd: explained.advanceUsd },
+    advance: { inUsd: explained.advanceInUsd, usedUsd: explained.advanceUsedUsd, leftUsd: explained.advanceUsd, forBox: explained.advanceUsd > 0.005 ? await oldestUnreceiptedBox(customerId) : null },
     items: Array.from(items.values())
       .map((item) => ({ ...item, story: chargeStory(got.rows, item.chargeIds) }))
       .sort((a, b) => b.usd - a.usd),

@@ -958,7 +958,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
       return fallback;
     }
   };
-  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes, whatsappUnsent, finance, boxesUnpaid, stockOld, boxPaidOwed, extraCostsToday, batchesDispatched] = await Promise.all([
+  const [stale, volumetric, debtOverLimit, noTracking, unclaimed, emptyBoxes, whatsappUnsent, finance, boxesUnpaid, stockOld, boxPaidOwed, extraCostsToday, batchesDispatched, advanceWaiting] = await Promise.all([
     settle('stale depot', () => getStaleDepotPackages(), []),
     settle('volumetric', () => getVolumetricParcels({ pendingOnly: true }), []),
     settle('debt over limit', countDebtorsOverLimit, 0),
@@ -973,6 +973,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     settle('box paid still owed', async () => (await import('./boxPaidStillOwed.db')).countBoxDoubleCharges(), 0),
     settle('extra costs', async () => (await import('./extraCosts.db')).countExtraCostsSince(24), 0),
     settle('batches dispatched', async () => (await import('./dispatch.db')).countRecentDispatches(48), 0),
+    settle('advance waiting', async () => (await import('./boxPaidStillOwed.db')).countAdvanceWaiting(), 0),
   ]);
   return buildRiskItems({
     staleDepotDays: stale.map((p) => p.daysInDepot),
@@ -990,6 +991,7 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     boxPaidOwed,
     extraCostsToday,
     batchesDispatched,
+    advanceWaiting,
   });
 }
 

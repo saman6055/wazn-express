@@ -544,6 +544,25 @@ export async function liveReceiptsOfBox(boxId: number): Promise<Array<{ id: numb
   return rows.map((r) => ({ id: Number(r.id), settlementNumber: String(r.settlementNumber) }));
 }
 
+/**
+ * A box never leaves without a receipt (owner, 2026-10-24). Either the money
+ * taken is written, or a receipt of $0 with "debt on the customer" says it
+ * went on credit - the advance is used and the rest becomes debt. A box that
+ * went out with nothing written kept its customer's advance looking unspent
+ * (AZ018: the clothes box, $1,633.99).
+ */
+export function noReceiptRefusal(boxCode: string): string {
+  return withFix(
+    `بۆکسی ${boxCode} وەسڵی نییە — بۆکس بێ وەسڵ نانێردرێت و نادرێتە دەست، بۆ ئەوەی سیستەم بزانێت پارەکەی چی لێهات.`,
+    [
+      "پەنجەرەی «پارەدان»ی بۆکسەکە بکەرەوە",
+      "ئەگەر کڕیار پارەی دا: بڕەکە بنووسە و وەسڵی بکە",
+      "ئەگەر بێ پارە بردی: بڕی 0 بنووسە و «قەرز لەسەر کڕیار» هەڵبژێرە، ئینجا وەسڵی بکە — پێشەکییەکەی بەکار دێت و باقییەکەی دەبێتە قەرز",
+      "دوای ئەوە دووبارە «ناردن» یان «گەیەنرا» لێبدە",
+    ],
+  );
+}
+
 export async function refuseIfBoxPaid(boxId: number): Promise<void> {
   const receipts = await liveReceiptsOfBox(boxId);
   if (receipts.length === 0) return;
