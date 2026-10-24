@@ -423,7 +423,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                     {" "}<bdi dir="ltr" className="font-mono">{fmtUsd(cover.coveredUsd)}</bdi>
                   </p>
                 )}
-                <AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} />
+                <AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} earlierUsd={data?.advanceForEarlierBoxesUsd} />
                 {promised.length > 0 && (
                   <div
                     className="mt-3 space-y-1 border-t pt-2 text-start"

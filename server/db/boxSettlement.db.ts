@@ -204,6 +204,13 @@ export interface BoxSettlementView {
    */
   openChargesUsd: number | null;
   /**
+   * Of the customer's advance, what their older unpaid boxes take first
+   * (owner, 2026-10-24, AZ018: three open boxes each showed the whole
+   * $1,633.99). One advance is spent once, oldest box first; this box sees
+   * only what is left after them. 0 when there is no advance.
+   */
+  advanceForEarlierBoxesUsd: number;
+  /**
    * Other costs on this box or a parcel in it (shared/extraCosts) - customs,
    * an inspection... Their prices are on the account already; the box asks
    * for the ones no receipt has taken (extrasDueUsd).
@@ -893,7 +900,7 @@ export async function getLastSettlementRate(): Promise<{ rate: number; at: Date 
 export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
   const empty: BoxSettlementView = {
     box: null, customer: null, parcels: [], settlements: [], pledges: [],
-    lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null, extras: [], extrasDueUsd: 0,
+    lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null, advanceForEarlierBoxesUsd: 0, extras: [], extrasDueUsd: 0,
   };
   const db = await getDb();
   if (!db) return empty;
@@ -958,16 +965,35 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
       const due = extras.filter((e) => e.priceUsd > 0 && e.settlementId === null).reduce((s, e) => s + Math.round(e.priceUsd * 100), 0) / 100;
       return { extras, extrasDueUsd: due };
     })()),
-    openChargesUsd: await (async () => {
+    ...(await (async () => {
+      const balance = Number(account?.balance ?? 0);
+      let open: number | null;
       try {
         // Imported here: the debt rule's file reaches back into this side of the graph.
         const { openChargesUsd } = await import("./boxPaidStillOwed.db");
-        return await openChargesUsd(Number(boxRow.customer?.id ?? boxRow.box.customerId));
+        open = await openChargesUsd(Number(boxRow.customer?.id ?? boxRow.box.customerId));
       } catch (err) {
         appLogger.warn("[BoxSettlement] open charges not read; the advance is not set against the box", { boxId, error: err instanceof Error ? err.message : String(err) });
-        return null;
+        return { openChargesUsd: null, advanceForEarlierBoxesUsd: 0 };
       }
-    })(),
+      const advance = round2(Math.max(0, open - balance));
+      if (advance <= 0.01) return { openChargesUsd: open, advanceForEarlierBoxesUsd: 0 };
+      // One advance, spent once: the customer's older unpaid boxes take it first.
+      const earlier = await db
+        .select({ id: deliveryBoxes.id })
+        .from(deliveryBoxes)
+        .where(and(
+          eq(deliveryBoxes.customerId, Number(boxRow.box.customerId)),
+          sql`${deliveryBoxes.id} < ${boxId}`,
+          ne(deliveryBoxes.status, "cancelled"),
+          sql`NOT EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`,
+        ));
+      if (earlier.length === 0) return { openChargesUsd: open, advanceForEarlierBoxesUsd: 0 };
+      const owed = await getBoxesOutstanding(earlier.map((b) => Number(b.id)));
+      const earlierDue = round2(Array.from(owed.values()).reduce((s, v) => s + v, 0));
+      const taken = round2(Math.min(advance, earlierDue));
+      return { openChargesUsd: round2(open - taken), advanceForEarlierBoxesUsd: taken };
+    })()),
   };
 }
 

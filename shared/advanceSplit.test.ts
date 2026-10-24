@@ -26,9 +26,15 @@ describe("the advance at the till (AZ234, owner 2026-10-24)", () => {
   });
 
   it("both tills and the print window show it", () => {
-    expect(readFileSync("client/src/components/delivery/ReceiptDinarDialog.tsx", "utf8")).toContain("<AdvanceSplitNote openUsd={boxView.data?.openChargesUsd}");
+    expect(readFileSync("client/src/components/delivery/ReceiptDinarDialog.tsx", "utf8")).toContain("<AdvanceSplitNote openUsd={boxView.data?.openChargesUsd} balanceUsd={boxView.data?.accountBalanceUsd} coveredUsd={accountAdvanceUsd} earlierUsd={boxView.data?.advanceForEarlierBoxesUsd} />");
     for (const f of ["client/src/components/delivery/BoxSettlementPanel.tsx", "client/src/components/delivery/QuickSettleDialog.tsx"]) {
-      expect(readFileSync(f, "utf8")).toContain("<AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} />");
+      expect(readFileSync(f, "utf8")).toContain("<AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} earlierUsd={data?.advanceForEarlierBoxesUsd} />");
     }
+  });
+  it("one advance is spent once: older unpaid boxes take it first (AZ018, 2026-10-24)", () => {
+    const src = readFileSync("server/db/boxSettlement.db.ts", "utf8");
+    expect(src).toContain("sql`${deliveryBoxes.id} < ${boxId}`");
+    expect(src).toContain("const taken = round2(Math.min(advance, earlierDue));");
+    expect(src).toContain("return { openChargesUsd: round2(open - taken), advanceForEarlierBoxesUsd: taken };");
   });
 });

@@ -8,11 +8,13 @@ import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
 import { advanceSplit } from "@shared/boxSettlement";
 
-export function AdvanceSplitNote(props: { openUsd: number | null | undefined; balanceUsd: number | null | undefined; coveredUsd: number }) {
+export function AdvanceSplitNote(props: { openUsd: number | null | undefined; balanceUsd: number | null | undefined; coveredUsd: number; earlierUsd?: number }) {
   const { language } = useTranslation();
   const L = (w: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, w);
   const split = advanceSplit({ openUsd: props.openUsd, balanceUsd: props.balanceUsd ?? 0, coveredUsd: props.coveredUsd });
-  if (!split) return null;
+  const earlier = Math.max(0, Number(props.earlierUsd ?? 0));
+  if (!split && !(earlier > 0.005)) return null;
+  const s = split ?? { advanceUsd: 0, usedUsd: 0, leftUsd: 0 };
   const line = (label: string, usd: number, strong = false) => (
     <div className="flex items-baseline justify-between gap-2">
       <span>{label}</span>
@@ -21,9 +23,10 @@ export function AdvanceSplitNote(props: { openUsd: number | null | undefined; ba
   );
   return (
     <div className="mt-3 space-y-0.5 rounded-md border border-emerald-300 bg-emerald-50/60 p-2 text-start text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" data-testid="advance-split">
-      {line(L({ ku: "پێشەکی کڕیار", en: "Customer's advance", ar: "دفعة العميل المقدمة", zh: "客户预付款" }), split.advanceUsd, true)}
-      {line(L({ ku: "بۆ ئەم بۆکسە دەڕوات", en: "Goes to this box", ar: "يذهب لهذا الصندوق", zh: "用于本箱" }), split.usedUsd)}
-      {line(L({ ku: "دەمێنێتەوە بۆ بۆکسی داهاتوو", en: "Left for the next box", ar: "يبقى للصندوق التالي", zh: "留给下一箱" }), split.leftUsd, true)}
+      {line(L({ ku: "پێشەکی کڕیار", en: "Customer's advance", ar: "دفعة العميل المقدمة", zh: "客户预付款" }), Math.round((s.advanceUsd + earlier) * 100) / 100, true)}
+      {earlier > 0.005 && line(L({ ku: "بۆ بۆکسە کۆنترە پارەنەدراوەکانی دەڕوات", en: "Goes to their older unpaid boxes", ar: "يذهب لصناديقه الأقدم غير المدفوعة", zh: "用于其更早的未付箱" }), earlier)}
+      {line(L({ ku: "بۆ ئەم بۆکسە دەڕوات", en: "Goes to this box", ar: "يذهب لهذا الصندوق", zh: "用于本箱" }), s.usedUsd)}
+      {line(L({ ku: "دەمێنێتەوە بۆ بۆکسی داهاتوو", en: "Left for the next box", ar: "يبقى للصندوق التالي", zh: "留给下一箱" }), s.leftUsd, true)}
     </div>
   );
 }

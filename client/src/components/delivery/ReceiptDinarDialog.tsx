@@ -622,7 +622,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
             ) : (
               <p className="text-xs text-muted-foreground">{L(TXT.advanceHint)}</p>
             )}
-            <AdvanceSplitNote openUsd={boxView.data?.openChargesUsd} balanceUsd={boxView.data?.accountBalanceUsd} coveredUsd={accountAdvanceUsd} />
+            <AdvanceSplitNote openUsd={boxView.data?.openChargesUsd} balanceUsd={boxView.data?.accountBalanceUsd} coveredUsd={accountAdvanceUsd} earlierUsd={boxView.data?.advanceForEarlierBoxesUsd} />
           </div>
 
           <div className="space-y-1.5">
