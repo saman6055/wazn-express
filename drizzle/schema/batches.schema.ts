@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, bigint, index } from "drizzle-orm/mysql-core";
+import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, bigint, index, uniqueIndex } from "drizzle-orm/mysql-core";
 
 export const batches = mysqlTable("batches", {
   id: int("id").autoincrement().primaryKey(),
@@ -87,6 +87,12 @@ export const batches = mysqlTable("batches", {
   // next year, this batch must still say where it was actually made.
   createdInCountryId: int("createdInCountryId"),
   createdInCity: varchar("createdInCity", { length: 100 }),
+  // The dispatch check in China (owner, 2026-10-24): every parcel scanned
+  // into a carton before the batch leaves. When it was finished, by whom,
+  // and the reason given when it was finished with parcels left out.
+  dispatchCheckedAt: timestamp("dispatchCheckedAt"),
+  dispatchCheckedById: int("dispatchCheckedById"),
+  dispatchNote: text("dispatchNote"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -225,3 +231,45 @@ export const batchPriceHistory = mysqlTable("batchPriceHistory", {
 
 export type BatchPriceHistory = typeof batchPriceHistory.$inferSelect;
 export type InsertBatchPriceHistory = typeof batchPriceHistory.$inferInsert;
+
+// ============ CARTONS (owner, 2026-10-24) ============
+
+/**
+ * The cartons a batch leaves China in, numbered within the batch. Filled on
+ * the dispatch check: every parcel scanned in, so a parcel not registered or
+ * registered on another batch is caught in China, not in Erbil.
+ */
+export const batchCartons = mysqlTable("batchCartons", {
+  id: int("id").autoincrement().primaryKey(),
+  batchId: int("batchId").notNull(),
+  cartonNo: int("cartonNo").notNull(),
+  weightKg: decimal("weightKg", { precision: 10, scale: 2 }),
+  status: mysqlEnum("status", ["open", "closed"]).default("open").notNull(),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  closedAt: timestamp("closedAt"),
+  closedById: int("closedById"),
+}, (table) => ({
+  batchIdx: index("idx_batch_cartons_batch").on(table.batchId),
+  numberUnique: uniqueIndex("uq_batch_cartons_no").on(table.batchId, table.cartonNo),
+}));
+
+export type BatchCarton = typeof batchCartons.$inferSelect;
+
+/** One parcel in one carton. A parcel is in at most one carton. */
+export const batchCartonItems = mysqlTable("batchCartonItems", {
+  id: int("id").autoincrement().primaryKey(),
+  cartonId: int("cartonId").notNull(),
+  batchId: int("batchId").notNull(),
+  packageId: int("packageId").notNull(),
+  trackingNumber: varchar("trackingNumber", { length: 100 }),
+  scannedById: int("scannedById").notNull(),
+  scannedAt: timestamp("scannedAt").defaultNow().notNull(),
+}, (table) => ({
+  packageUnique: uniqueIndex("uq_batch_carton_items_package").on(table.packageId),
+  cartonIdx: index("idx_batch_carton_items_carton").on(table.cartonId),
+  batchIdx: index("idx_batch_carton_items_batch").on(table.batchId),
+}));
+
+export type BatchCartonItem = typeof batchCartonItems.$inferSelect;
+

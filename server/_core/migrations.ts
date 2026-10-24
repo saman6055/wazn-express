@@ -1514,6 +1514,43 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "batchCartons",
+    dependencies: ["batches", "users"],
+    // The cartons a batch leaves China in (owner, 2026-10-24). See
+    // drizzle/schema/batches.schema.ts and server/db/dispatch.db.ts.
+    sql: `CREATE TABLE IF NOT EXISTS batchCartons (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      batchId INT NOT NULL,
+      cartonNo INT NOT NULL,
+      weightKg DECIMAL(10, 2) NULL,
+      status ENUM('open','closed') NOT NULL DEFAULT 'open',
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      closedAt TIMESTAMP NULL,
+      closedById INT NULL,
+      INDEX idx_batch_cartons_batch (batchId),
+      UNIQUE KEY uq_batch_cartons_no (batchId, cartonNo)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "batchCartonItems",
+    dependencies: ["batchCartons", "packages", "users"],
+    sql: `CREATE TABLE IF NOT EXISTS batchCartonItems (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      cartonId INT NOT NULL,
+      batchId INT NOT NULL,
+      packageId INT NOT NULL,
+      trackingNumber VARCHAR(100) NULL,
+      scannedById INT NOT NULL,
+      scannedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_batch_carton_items_package (packageId),
+      INDEX idx_batch_carton_items_carton (cartonId),
+      INDEX idx_batch_carton_items_batch (batchId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "boxReceiptEvents",
     dependencies: ["deliveryBoxes", "customers", "users"],
     // Every receipt printed, saved or sent (owner, 2026-10-19).
@@ -3300,6 +3337,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // (12 kg by size, 7 kg charged) - the sides stay true, the kilos charged
   // are written here (shared/chargeableWeight). Null: billed as measured.
   { name: "packages.billedWeightKg", sql: "ALTER TABLE packages ADD COLUMN billedWeightKg DECIMAL(10,3) NULL" },
+
+  // The dispatch check in China (owner, 2026-10-24): when the batch's cartons
+  // were checked, by whom, and why it went with parcels left out.
+  { name: "batches.dispatchCheckedAt", sql: "ALTER TABLE batches ADD COLUMN dispatchCheckedAt TIMESTAMP NULL" },
+  { name: "batches.dispatchCheckedById", sql: "ALTER TABLE batches ADD COLUMN dispatchCheckedById INT NULL" },
+  { name: "batches.dispatchNote", sql: "ALTER TABLE batches ADD COLUMN dispatchNote TEXT NULL" },
 
   // A message either of the two can take back out of the conversation. Struck
   // out, not erased — see the schema note beside these columns.
