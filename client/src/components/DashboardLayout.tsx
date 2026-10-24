@@ -402,6 +402,8 @@ function DashboardLayoutContent({
           { icon: Package, label: t("nav.completePackage") || "پاکێجی تەواو", path: "/full-package" },
           { icon: DollarSign, label: t("nav.markupPurchase") || "کڕین بە تێچوو", path: "/commission" },
           { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
+          // Refused / unwanted goods live with the orders they came from (owner, 2026-10-24).
+          { icon: PackageX, label: pickLang(language, { ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" }), path: "/finance/company-stock" },
           { icon: Building2, label: t("nav.suppliers") || "فرۆشیارەکان", path: "/suppliers" },
           { icon: LayoutDashboard, label: t("nav.unifiedOrders") || "داشبۆردی یەکگرتوو", path: "/unified-orders" },
         ]
@@ -478,7 +480,6 @@ function DashboardLayoutContent({
           // The main admin's alone: the server refuses anyone else (ledger.workingCapital).
           ...(isSuperAdmin ? [{ icon: Coins, label: pickLang(language, { ku: "سەرمایەی کار", en: "Working capital", ar: "رأس المال العامل", zh: "营运资金" }), path: "/finance/working-capital" }] : []),
           { icon: Ship, label: pickLang(language, { ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" }), path: "/finance/goods-on-road" },
-          { icon: PackageX, label: pickLang(language, { ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" }), path: "/finance/company-stock" },
           { icon: Receipt, label: pickLang(language, { ku: "تێچووی تر", en: "Other costs", ar: "تكاليف أخرى", zh: "其他费用" }), path: "/finance/extra-costs" },
           { icon: TrendingUp, label: pickLang(language, { ku: "مێژووی نرخی یوان", en: "Yuan rate history", ar: "سجل سعر اليوان", zh: "人民币汇率历史" }), path: "/finance/yuan-rates" },
           { icon: Scale, label: t("nav.balanceSheet") || "تەرازوی دارایی", path: "/finance/balance-sheet" },
