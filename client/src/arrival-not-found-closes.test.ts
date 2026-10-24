@@ -20,3 +20,28 @@ describe("a parcel not found on the arrival check does not stop the work", () =>
     expect(alert).toContain("if (back?.isConnected) back.focus();");
   });
 });
+
+/**
+ * Owner, 2026-10-24: a parcel the system knows, scanned in another batch's
+ * check, is not "extra" - it arrived, and counts as arrived on its own batch.
+ * The window says whose it is and which batch it belongs to.
+ */
+describe("a parcel from another batch, on the arrival check", () => {
+  const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+
+  it("says its batch and its customer", () => {
+    expect(page).toContain('data-testid="extra-package-whose"');
+    expect(page).toContain("package: { ...pkg, orderNumbers: result.orderNumbers, customer: result.customer ?? null },");
+  });
+
+  it("records the arrival, on the parcel's own batch", () => {
+    const fn = page.slice(page.indexOf("const handleAddExtraPackage = async () => {"), page.indexOf("// Get status color"));
+    expect(fn.length).toBeGreaterThan(200);
+    expect(fn).toContain('recordArrival.mutate(\n      { trackingNumber: verifiedPkg.trackingNumber, packageId: pkg.id, scanType: "received_local" },');
+    expect(fn).toContain("const batch = pkg.batchId ? batches?.find((b: any) => b.id === pkg.batchId) : null;");
+  });
+
+  it("can take its batch into the check", () => {
+    expect(page).toContain('data-testid="extra-package-open-batch"');
+  });
+});

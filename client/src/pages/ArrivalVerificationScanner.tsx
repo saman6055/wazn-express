@@ -20,6 +20,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
 import { useSystemAlert } from "@/components/SystemAlert";
+import { pickLang } from "@/lib/lang";
 import { CopyButton } from "@/components/CopyButton";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { ScanInput } from "@/components/scanner/ScanInput";
@@ -91,7 +92,7 @@ const SESSION_KEY = "scan-session-arrival-verification";
 
 export default function ArrivalVerificationScanner() {
   const systemAlert = useSystemAlert();
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
 
   // Core state
   const [selectedBatchIds, setSelectedBatchIds] = useState<number[]>([]);
@@ -527,7 +528,7 @@ export default function ArrivalVerificationScanner() {
           soundManager.playWarning();
           setExtraPackageDialog({
             open: true,
-            package: { ...pkg, orderNumbers: result.orderNumbers },
+            package: { ...pkg, orderNumbers: result.orderNumbers, customer: result.customer ?? null },
             trackingNumber: scannedValue,
           });
           return;
@@ -618,7 +619,10 @@ export default function ArrivalVerificationScanner() {
     if (!extraPackageDialog.package) return;
     
     const pkg = extraPackageDialog.package;
-    const batch = batches?.find((b: any) => b.id === selectedBatchIds[0]);
+    // Its own batch (owner, 2026-10-24): a parcel the system knows is not
+    // "extra" - it arrived, and it counts as arrived on the batch it was
+    // registered on. Only a parcel on no batch at all is extra.
+    const batch = pkg.batchId ? batches?.find((b: any) => b.id === pkg.batchId) : null;
     const hasCompleteData = !!(pkg.weightKg || (pkg.lengthCm && pkg.widthCm && pkg.heightCm));
     
     // Just verify it as extra - don't actually move it
@@ -634,14 +638,27 @@ export default function ArrivalVerificationScanner() {
       weight: pkg.weightKg ? parseFloat(pkg.weightKg) : null,
       cbm: pkg.volumeCbm ? parseFloat(pkg.volumeCbm) : null,
       hasCompleteData,
-      batchId: pkg.batchId || selectedBatchIds[0],
-      batchNumber: batch?.batchCode || "زیادە",
+      batchId: pkg.batchId || 0,
+      batchNumber: batch?.batchCode || (pkg.batchId ? `#${pkg.batchId}` : "زیادە"),
       verifiedAt: new Date(),
       isExtra: true,
     };
     
     setVerifiedPackages(prev => [verifiedPkg, ...prev]);
     soundManager.playSuccess();
+    // Written down like any other arrival, so its own batch counts it.
+    recordArrival.mutate(
+      { trackingNumber: verifiedPkg.trackingNumber, packageId: pkg.id, scanType: "received_local" },
+      {
+        onError: (e) =>
+          systemAlert({
+            kind: "error",
+            title: t("scan.arrivalNotSaved"),
+            message: e.message,
+            detail: verifiedPkg.trackingNumber,
+          }),
+      },
+    );
     
     toast.info(
       <div className="flex items-center gap-2">
@@ -1220,11 +1237,29 @@ export default function ArrivalVerificationScanner() {
             </DialogHeader>
             
             <div className="p-4 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-800/60">
-              <div className="font-mono text-lg">{extraPackageDialog.trackingNumber}</div>
-              <div className="text-sm text-blue-700 dark:text-blue-300 mt-2 flex items-center gap-2">
-                <Info className="h-4 w-4" />
-                {t("scan.packageInAnotherBatch")}
-              </div>
+              <div className="font-mono text-lg" dir="ltr">{extraPackageDialog.trackingNumber}</div>
+              {/* Whose it is and where it belongs (owner, 2026-10-24): «لە
+                  باچێکی تردایە» alone did not say what the mistake was. */}
+              {(() => {
+                const pkg = extraPackageDialog.package;
+                const own = pkg?.batchId ? batches?.find((b: any) => b.id === pkg.batchId) : null;
+                const code = own?.batchCode ?? (pkg?.batchId ? `#${pkg.batchId}` : null);
+                return (
+                  <div className="mt-2 space-y-1 text-sm text-blue-800 dark:text-blue-200" data-testid="extra-package-whose">
+                    <div className="flex items-center gap-2">
+                      <Info className="h-4 w-4 shrink-0" />
+                      {code
+                        ? <span>{pickLang(language, { ku: "ئەم پاکێجە هی باچی", en: "This parcel belongs to batch", ar: "هذا الطرد من الدفعة", zh: "该包裹属于批次" })} <b dir="ltr" className="font-mono">{code}</b></span>
+                        : <span>{pickLang(language, { ku: "ئەم پاکێجە لەسەر هیچ باچێک نییە", en: "This parcel is on no batch", ar: "هذا الطرد ليس في أي دفعة", zh: "该包裹不在任何批次中" })}</span>}
+                    </div>
+                    {pkg?.customer && (
+                      <div className="ps-6">
+                        {pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}: <b dir="ltr" className="font-mono">{pkg.customer.customerCode}</b> {pkg.customer.fullName}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
             </div>
             
             <DialogFooter>
@@ -1234,12 +1269,30 @@ export default function ArrivalVerificationScanner() {
               >
                 {t("scan.cancel")}
               </Button>
+              {/* Its batch into this check: its other parcels are counted too. */}
+              {extraPackageDialog.package?.batchId && !selectedBatchIds.includes(extraPackageDialog.package.batchId) && (
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    const id = extraPackageDialog.package.batchId as number;
+                    setSelectedBatchIds((ids) => (ids.includes(id) ? ids : [...ids, id]));
+                    void handleAddExtraPackage();
+                  }}
+                  data-testid="extra-package-open-batch"
+                >
+                  <Package className="h-4 w-4 me-2" />
+                  {pickLang(language, { ku: "ئەو باچەش بکەرەوە", en: "Open that batch too", ar: "افتح تلك الدفعة أيضاً", zh: "同时打开该批次" })}
+                </Button>
+              )}
               <Button
                 onClick={handleAddExtraPackage}
                 className="bg-blue-600 hover:bg-blue-700"
+                data-testid="extra-package-arrived"
               >
                 <Plus className="h-4 w-4 me-2" />
-                {t("scan.recordAsExtra")}
+                {extraPackageDialog.package?.batchId
+                  ? pickLang(language, { ku: "وەک گەیشتوو تۆمار بکە لەسەر باچەکەی خۆی", en: "Record as arrived on its own batch", ar: "سجّل كواصل في دفعته", zh: "按其所属批次记为已到" })
+                  : t("scan.recordAsExtra")}
               </Button>
             </DialogFooter>
           </DialogContent>

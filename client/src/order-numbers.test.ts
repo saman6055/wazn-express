@@ -84,7 +84,7 @@ describe("the screens that show it", () => {
     const page = read("pages/ArrivalVerificationScanner.tsx");
     expect(page.split("<OrderNumbers numbers={pkg.orderNumbers} />").length - 1).toBe(2);
     // A parcel from outside the chosen batches has no manifest row: the scan brings its numbers.
-    expect(page).toContain("package: { ...pkg, orderNumbers: result.orderNumbers },");
+    expect(page).toContain("package: { ...pkg, orderNumbers: result.orderNumbers, customer: result.customer ?? null },");
   });
 
   it("the batch scanner's list", () => {
