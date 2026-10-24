@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -75,6 +75,8 @@ export interface RiskFacts {
   boxPaidOwed?: number;
   /** Other costs written on boxes in the last day, by anybody (shared/extraCosts). */
   extraCostsToday?: number;
+  /** Batches whose dispatch check in China was finished in the last 48 hours (owner, 2026-10-24). */
+  batchesDispatched?: number;
 }
 
 /**
@@ -97,6 +99,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "stock-old": "/finance/company-stock",
   "box-paid-owed": "/finance/box-double-charges",
   "extra-costs": "/finance/extra-costs",
+  "batch-dispatched": "/dispatch-check/latest/report",
 };
 
 /** The page whose permission decides who is told. */
@@ -115,6 +118,8 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "stock-old": "/finance/company-stock",
   "box-paid-owed": "/finance/box-double-charges",
   "extra-costs": "/finance/extra-costs",
+  // Every member of staff is told (owner, 2026-10-24): the report is no page anybody is kept from.
+  "batch-dispatched": "/dispatch-check/latest/report",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -240,6 +245,10 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   // admin is told of every one - who, how much, why.
   if ((facts.extraCostsToday ?? 0) > 0) {
     items.push({ id: "extra-costs", level: "notice", count: facts.extraCostsToday ?? 0 });
+  }
+  // A batch packed and checked in China: Erbil knows before the goods arrive.
+  if ((facts.batchesDispatched ?? 0) > 0) {
+    items.push({ id: "batch-dispatched", level: "notice", count: facts.batchesDispatched ?? 0 });
   }
   // Refused goods that have sat two months: sell them cheaper or write them off.
   if ((facts.stockOld ?? 0) > 0) {
@@ -371,6 +380,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "the same goods were written on their account twice — see the proof and put it right",
           ar: "قُيّدت البضاعة نفسها مرتين — اعرض الدليل وصحّح",
           zh: "同一货物被记账两次 — 查看依据并更正",
+        },
+      };
+    case "batch-dispatched":
+      return {
+        title: { ku: `${n} باچ لە چین پشکنینی ناردنی بۆ کرا`, en: `${n} batch(es) dispatch-checked in China`, ar: `${n} دفعة اكتمل فحص إرسالها في الصين`, zh: `${n} 个批次已在中国完成发货核对` },
+        detail: {
+          ku: "کارتۆنەکان و پاکێجەکانی ناویان ببینە، پێش ئەوەی بگەن",
+          en: "see the cartons and the parcels in them before they arrive",
+          ar: "اعرض الكراتين ومحتواها قبل وصولها",
+          zh: "到货前查看各箱及箱内包裹",
         },
       };
     case "extra-costs":

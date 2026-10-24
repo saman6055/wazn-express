@@ -57,6 +57,14 @@ export const dispatchRouter = router({
       return { ...state, mayFinishShort: await db.mayFinishDispatchShort({ id: ctx.user.id, role: ctx.user.role }) };
     }),
 
+  /** The carton each parcel of these batches left China in - for the arrival check. */
+  cartonsFor: staffProcedure
+    .input(z.object({ batchIds: z.array(idSchema).max(50) }))
+    .query(async ({ input }) => db.cartonsOfBatches(input.batchIds)),
+
+  /** The batch whose dispatch check was finished last (the bell's link). */
+  latest: staffProcedure.query(async () => ({ batchId: await db.latestDispatchedBatchId() })),
+
   /** Whether the person is working in China - the screens open the Chinese way for them. */
   me: staffProcedure.query(async ({ ctx }) => ({ inChina: await db.worksInChina(ctx.user.id) })),
 

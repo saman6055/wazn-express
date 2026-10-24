@@ -291,6 +291,18 @@ export async function finishDispatch(input: { batchId: number; note?: string | n
   return { cartons: state.cartons.length, parcels: state.packedParcels, leftOut: state.unpacked.length };
 }
 
+/** The batch whose dispatch check was finished last - where the bell's notice opens. */
+export async function latestDispatchedBatchId(): Promise<number | null> {
+  const db = await need();
+  const [row] = await db
+    .select({ id: batches.id })
+    .from(batches)
+    .where(isNotNull(batches.dispatchCheckedAt))
+    .orderBy(sql`${batches.dispatchCheckedAt} DESC`)
+    .limit(1);
+  return row ? Number(row.id) : null;
+}
+
 /** Batches whose dispatch was finished in the last hours - the bell's notice. */
 export async function countRecentDispatches(hours = 48): Promise<number> {
   const db = await need();

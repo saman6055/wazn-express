@@ -3343,6 +3343,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "batches.dispatchCheckedAt", sql: "ALTER TABLE batches ADD COLUMN dispatchCheckedAt TIMESTAMP NULL" },
   { name: "batches.dispatchCheckedById", sql: "ALTER TABLE batches ADD COLUMN dispatchCheckedById INT NULL" },
   { name: "batches.dispatchNote", sql: "ALTER TABLE batches ADD COLUMN dispatchNote TEXT NULL" },
+  { name: "idx.batch_cartons_batch", sql: "CREATE INDEX idx_batch_cartons_batch ON batchCartons (batchId)" },
+  { name: "idx.batch_carton_items_carton", sql: "CREATE INDEX idx_batch_carton_items_carton ON batchCartonItems (cartonId)" },
+  { name: "idx.batch_carton_items_batch", sql: "CREATE INDEX idx_batch_carton_items_batch ON batchCartonItems (batchId)" },
 
   // A message either of the two can take back out of the conversation. Struck
   // out, not erased — see the schema note beside these columns.
