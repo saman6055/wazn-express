@@ -10,6 +10,7 @@ import { keepPreviousData } from "@tanstack/react-query";
 import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { usePasteIntoField } from "@/hooks/usePasteIntoField";
 import { VolumetricDiscountIfDue } from "@/components/packages/VolumetricDiscount";
+import { ChinaBatchBanner, confirmBatchToday, confirmedBatchToday } from "@/components/packages/ChinaBatchBanner";
 import { toast } from "sonner";
 import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers, PencilLine } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -110,6 +111,11 @@ export default function QuickRegister() {
   // Sea: how many cartons of the size above (owner, 2026-10-17). One means one.
   const [cartonCount, setCartonCount] = useState("1");
   const [batchId, setBatchId] = useState<string>("");
+  // China (owner, 2026-10-24): the batch big at the top, confirmed once a day.
+  const { data: dispatchMe } = trpc.dispatch.me.useQuery(undefined, { staleTime: 5 * 60_000 });
+  const inChina = !!dispatchMe?.inChina;
+  const [confirmedBatch, setConfirmedBatch] = useState<string | null>(() => confirmedBatchToday());
+  const batchSelectRef = useRef<HTMLButtonElement>(null);
   const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
   const [isUnclaimed, setIsUnclaimed] = useState(false);
   /** A moment's ring on the weight box, so the handover is seen, not guessed. */
@@ -1346,6 +1352,20 @@ export default function QuickRegister() {
       return;
     }
     
+    // In China, today's batch is confirmed before the first registration of
+    // the day (ChinaBatchBanner) - a day on yesterday's batch is a day of
+    // cartons in the wrong shipment.
+    if (inChina && batchId && batchId !== "none" && confirmedBatch !== batchId) {
+      soundManager.playError();
+      toast.error(pickLang(language, {
+        ku: "سەرەتا باچی ئەمڕۆ پشتڕاست بکەرەوە (سەرەوەی پەڕە)",
+        en: "Confirm today's batch first (top of the page)",
+        ar: "أكّد دفعة اليوم أولاً (أعلى الصفحة)",
+        zh: "请先确认今日批次（页面顶部）",
+      }));
+      return;
+    }
+
     // Require tracking number - cannot register without it
     if (!trackingNumber.trim()) {
       soundManager.playError();
@@ -1480,6 +1500,16 @@ export default function QuickRegister() {
   return (
     <DashboardLayout>
       <div className="max-w-6xl mx-auto px-2" onKeyDown={handleKeyDown}>
+        {inChina && shippingType !== undefined && (
+          <ChinaBatchBanner
+            batchId={batchId}
+            batchCode={batchId && batchId !== "none" ? (batches?.find((b: any) => b.id === parseInt(batchId))?.batchCode ?? null) : null}
+            confirmed={!!batchId && confirmedBatch === batchId}
+            onConfirm={() => { confirmBatchToday(batchId); setConfirmedBatch(batchId); }}
+            onChange={() => batchSelectRef.current?.click()}
+            language={language}
+          />
+        )}
         {/* Non-blocking error banner when list APIs fail */}
         {hasQueryError && (
           <div className="mb-4 p-4 rounded-xl bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-700 flex items-center justify-between gap-4 flex-wrap">
@@ -2971,7 +3001,7 @@ export default function QuickRegister() {
                       if (v && v !== "none") confirmNoBatchRef.current = false;
                     }}
                   >
-                    <SelectTrigger className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
+                    <SelectTrigger ref={batchSelectRef} className="h-9 text-xs min-w-0 [&>span]:truncate [&>span]:block [&>span]:text-start">
                       <SelectValue placeholder={t("quickRegister.batchPlaceholder")} />
                     </SelectTrigger>
                     <SelectContent>
