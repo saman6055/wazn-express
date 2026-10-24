@@ -87,6 +87,29 @@ export const BATCH_ARRIVED_STATUSES = ["arrived", "customs", "at_depot", "delive
 const BATCH_ARRIVED = BATCH_ARRIVED_STATUSES;
 
 /**
+ * Has this shipment left China? The owner's answer, 2026-10-24.
+ *
+ * The number the batch travels under: the air waybill by air, the container
+ * by sea. Filling it in is a real act, performed by a person, with the
+ * carrier's own number — the goods are in the carrier's hands when it
+ * exists, and nothing else about a batch proves that. A status somebody
+ * moved by hand does not, and neither does a date two days after the
+ * cartons were packed, because a packed carton can wait a week for the
+ * carrier.
+ *
+ * Here rather than in either screen, because the parcel's own timeline and
+ * the home screen's cards used to answer this question differently and a
+ * customer could read both in one sitting.
+ */
+export function batchHasShipmentNumber(
+  batch: { shippingType?: string | null; awbNumber?: string | null; containerNumber?: string | null } | null | undefined,
+): boolean {
+  if (!batch) return false;
+  const number = String(batch.shippingType ?? "") === "sea" ? batch.containerNumber : batch.awbNumber;
+  return Boolean(String(number ?? "").trim());
+}
+
+/**
  * A parcel registered at the destination has no journey to show.
  *
  * It is registered in Erbil, boxed and sent in the same day; walking it

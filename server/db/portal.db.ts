@@ -9,6 +9,7 @@ import { getVolumetricDivisor } from './settings.db';
 import { getAccountStatementForCustomer, getCustomerAccountByCustomerId } from './finance.db';
 import { selfOrderWhere } from './selfOrder.filter';
 import { getBatchStatusTimestamps, getBatchRateForCustomer } from './batches.db';
+import { batchHasShipmentNumber } from '@shared/parcelStage';
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -766,10 +767,9 @@ export async function parcelStageFacts(packageId: number): Promise<{
       .where(eq(batches.id, pkg.batchId))
       .limit(1);
     if (row) {
-      // The number the batch travels under: the waybill by air, the
-      // container by sea. Filling it is what says the goods have left.
-      const number = row.shippingType === "sea" ? row.containerNumber : row.awbNumber;
-      batch = { hasShipmentTracking: Boolean((number ?? "").trim()), status: row.status ?? null };
+      // The number the batch travels under, read by the one rule the home
+      // screen's cards also use (shared/parcelStage).
+      batch = { hasShipmentTracking: batchHasShipmentNumber(row), status: row.status ?? null };
     }
   }
 

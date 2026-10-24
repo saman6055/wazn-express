@@ -50,8 +50,10 @@ const SOURCES = {
     { id: 73, orderCode: "FP-00073", status: "cancelled", productName: "Shoes" },
   ],
   batches: [
-    { id: 10, batchCode: "AIR-2026-041", statusDates: { at_depot: day(8) } },
-    { id: 11, batchCode: "SEA-2026-007", estimatedArrival: day(30) },
+    // No waybill: whatever a parcel's own status says, it has not left.
+    { id: 10, batchCode: "AIR-2026-041", shippingType: "air_regular", statusDates: { at_depot: day(8) } },
+    // A container number, so the goods in it really are at sea.
+    { id: 11, batchCode: "SEA-2026-007", shippingType: "sea", containerNumber: "MSKU7781234", estimatedArrival: day(30) },
   ],
   boxes: [{ id: 50, boxCode: "BOX-20260910-005", status: "delivered", deliveredAt: day(10), packageIds: [5] }],
   declared: [
@@ -121,9 +123,30 @@ describe("the four tabs", () => {
     expect(ordersAwaitingQuote(undefined)).toBe(0);
   });
 
+  it("the shipment's own number decides what is on the way, not the parcel's status", () => {
+    // The owner's rule, 2026-10-24. Batch 10 has no waybill, so parcel 2 is
+    // in China however it was stamped; batch 11 has a container number, so
+    // parcel 7 is at sea however it was stamped.
+    const air = { id: 10, shippingType: "air_regular" };
+    const sea = { id: 11, shippingType: "sea", containerNumber: "MSKU7781234" };
+    expect(parcelTab({ status: "in_transit" }, air)).toBe("registered");
+    expect(parcelTab({ status: "customs_processing" }, air)).toBe("registered");
+    expect(parcelTab({ status: "registered" }, sea)).toBe("onTheWay");
+    expect(parcelTab({ status: "in_transit" }, { ...air, awbNumber: "176-55512345" })).toBe("onTheWay");
+    // A blank number is no number.
+    expect(parcelTab({ status: "in_transit" }, { ...air, awbNumber: "   " })).toBe("registered");
+    // The parcel's own stamp still wins once the goods are here, and so
+    // does a container that has reached us.
+    expect(parcelTab({ status: "ready_for_delivery" }, sea)).toBe("arrived");
+    expect(parcelTab({ status: "in_batch" }, { id: 10, status: "at_depot" })).toBe("arrived");
+    // With no shipment to ask, the parcel's own status answers, as before.
+    expect(parcelTab({ status: "in_transit" })).toBe("onTheWay");
+  });
+
   it("counts live over what the search found", () => {
     expect(countByTab(find(""))).toEqual({ arrived: 1, onTheWay: 2, registered: 3, bought: 1 });
-    expect(countByTab(find("SF14"))).toEqual({ arrived: 0, onTheWay: 1, registered: 0, bought: 0 });
+    // SF14 is parcel 2, in the batch with no waybill: still in China.
+    expect(countByTab(find("SF14"))).toEqual({ arrived: 0, onTheWay: 0, registered: 1, bought: 0 });
   });
 
   it("says what each number counts, because a bare figure does not", () => {

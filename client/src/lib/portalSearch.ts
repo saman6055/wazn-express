@@ -14,6 +14,7 @@
  */
 import { cleanTrackingPaste } from "@/lib/entry/cleanPaste";
 import { matchScore, normalizeSearch } from "@/lib/ops/commandMatch";
+import { batchHasShipmentNumber, BATCH_ARRIVED_STATUSES } from "@shared/parcelStage";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 type When = Date | string | null | undefined;
@@ -105,17 +106,45 @@ export const SEARCH_TAB_DOT: Record<SearchTab, string> = {
  *  - onTheWay: on the plane or the ship, and through customs, which the
  *    owner kept on the way.
  *  - registered: at the China depot — including packed into a shipment that
- *    has not left yet. It is grey until the plane or ship leaves: the server
- *    moves every parcel of a shipment to in_transit at departure.
+ *    has not left yet, and including one whose cartons have been checked,
+ *    since a packed carton can wait a week for the carrier.
  *
  * Returned and cancelled parcels belong under none of them either: they are
  * found by searching for them, and say what happened in red.
+ *
+ * The shipment decides the middle, not the parcel's own status (owner,
+ * 2026-10-24). A parcel moved to `in_transit` by hand said "on the way" on
+ * this card while its own timeline, which reads the air waybill, still said
+ * China — two answers to one question, in one sitting. Both now read
+ * batchHasShipmentNumber. Pass the batch wherever it is known; without it
+ * the parcel's own status answers, as before.
  */
-export function parcelTab(parcel: { status?: string | null; batchId?: number | null }): SearchTab | null {
-  switch (String(parcel.status ?? "")) {
-    case "ready_for_delivery":
-    case "out_for_delivery":
-      return "arrived";
+export function parcelTab(
+  parcel: { status?: string | null; batchId?: number | null },
+  batch?: BatchRow | null,
+): SearchTab | null {
+  const status = String(parcel.status ?? "");
+
+  // The parcel's own stamp wins: it is here, whatever the shipment says.
+  if (status === "ready_for_delivery" || status === "out_for_delivery") return "arrived";
+  // Delivered, returned and cancelled are nobody's tab.
+  if (status === "delivered" || status === "returned" || status === "cancelled") return null;
+
+  if (batch) {
+    const batchStatus = String(batch.status ?? "").trim();
+    // The container is here, so the goods are, even if nobody scanned this
+    // parcel out of it yet.
+    if (batchStatus && BATCH_ARRIVED_STATUSES.includes(batchStatus)) return "arrived";
+    if (batchHasShipmentNumber(batch)) return "onTheWay";
+    // It has a shipment and no number: still in China, whatever its own
+    // status was set to.
+    if (status === "registered" || status === "in_batch" || status === "in_transit" || status === "customs_processing") {
+      return "registered";
+    }
+    return null;
+  }
+
+  switch (status) {
     case "in_transit":
     case "customs_processing":
       return "onTheWay";
@@ -214,6 +243,9 @@ export interface BatchRow {
    */
   status?: string | null;
   shippingType?: string | null;
+  /** The number it travels under; filling one in is what says it has left. */
+  awbNumber?: string | null;
+  containerNumber?: string | null;
   estimatedArrival?: When;
   actualArrival?: When;
   statusDates?: Partial<Record<string, When>> | null;
@@ -353,7 +385,7 @@ export function buildSearchIndex(src: SearchSources): SearchItem[] {
     const batch = p.batchId != null ? batchById.get(p.batchId) : undefined;
     const box = boxByParcel.get(p.id);
     const status = String(p.status ?? "");
-    const tab = parcelTab(p);
+    const tab = parcelTab(p, batch ?? null);
 
     let date: When = p.registeredAt ?? p.createdAt;
     let dateKind: SearchDateKind = "registered";
