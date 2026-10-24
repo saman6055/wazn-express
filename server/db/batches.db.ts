@@ -198,6 +198,11 @@ const BATCH_LIST_COLUMNS = {
   awbNumber: batches.awbNumber,
   shipmentTrackings: batches.shipmentTrackings,
   cartonCount: batches.cartonCount,
+  // When the cartons were checked in China. The list needs it to flag a
+  // batch packed and still missing the number it travels under — without
+  // that number every parcel inside reads "in the China depot" to its
+  // customer (shared/parcelStage).
+  dispatchCheckedAt: batches.dispatchCheckedAt,
   // Where the work was done — Guangzhou or Erbil.
   createdInCountryId: batches.createdInCountryId,
   createdInCity: batches.createdInCity,

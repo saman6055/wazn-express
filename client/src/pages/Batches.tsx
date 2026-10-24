@@ -14,6 +14,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
 import { batchMissingCost, batchMissingSellingPrice } from "@shared/batchPricing";
+import { batchAwaitingShipmentNumber, shipmentNumberName } from "@shared/parcelStage";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { customerCodeOnly } from "@shared/customerCode";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
@@ -1596,6 +1597,21 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         {batchMissingSellingPrice(batch, { hasTiers: !!batch.useTieredPricing, hasCustomerPricing: !!(batch as any).hasCustomerPricing }) && (
                           <Badge variant="outline" className="ms-1 shrink-0 border-red-300 bg-red-50 text-[10px] font-semibold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
                             {pickLang(language, { ku: "بێ نرخی فرۆشتن — چاوەڕێی نرخە", en: "No selling price — waiting", ar: "بدون سعر بيع — بالانتظار", zh: "无售价 — 待定" })}
+                          </Badge>
+                        )}
+                        {/* Packed and still without the number it travels
+                            under (owner, 2026-10-24). That number is what
+                            tells a customer their goods have left China, so
+                            until it is typed in every parcel in this batch
+                            reads "in the China depot" on their phone. */}
+                        {batchAwaitingShipmentNumber(batch as any) && (
+                          <Badge variant="outline" className="ms-1 shrink-0 border-amber-300 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300" data-testid="batch-awaiting-shipment-number">
+                            {pickLang(language, {
+                              ku: `بێ ${pickLang(language, shipmentNumberName(batch.shippingType))} — کڕیار هێشتا دەڵێت لە چینە`,
+                              en: `No ${pickLang("en", shipmentNumberName(batch.shippingType)).toLowerCase()} — customers still read "in China"`,
+                              ar: `بدون ${pickLang("ar", shipmentNumberName(batch.shippingType))} — العملاء ما زالوا يرون «في الصين»`,
+                              zh: `无${pickLang("zh", shipmentNumberName(batch.shippingType))} — 客户仍看到"在中国"`,
+                            })}
                           </Badge>
                         )}
                         {/* The cost too (owner, 2026-10-04): weight and

@@ -12,6 +12,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useSystemAlert } from "@/components/SystemAlert";
 import { soundManager } from "@/lib/soundManager";
 import { pickLang } from "@/lib/lang";
+import { batchHasShipmentNumber, shipmentNumberName } from "@shared/parcelStage";
 import { cn } from "@/lib/utils";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
@@ -114,6 +115,20 @@ export default function DispatchCheck() {
         ar: `اكتمل فحص الإرسال: ${d.cartons} كرتون، ${d.parcels} طرد`,
         zh: `发货核对完成：${d.cartons} 箱，${d.parcels} 件`,
       }));
+      /**
+       * The number it travels under is what tells every customer in this
+       * batch that their goods have left China. Asked for here, at the one
+       * moment the person who will have it is already looking at the batch.
+       */
+      if (!batchHasShipmentNumber(s?.batch)) {
+        const name = L(shipmentNumberName(s?.batch?.shippingType));
+        toast.warning(L({
+          ku: `${name} بنووسە — بەبێ ئەو، کڕیارەکان هێشتا دەڵێن کاڵاکەیان لە چینە`,
+          en: `Add the ${name.toLowerCase()} — without it customers still read "in China"`,
+          ar: `أضف ${name} — بدونه يرى العملاء أن بضاعتهم ما زالت في الصين`,
+          zh: `请填写${name} — 否则客户仍会看到货物"在中国"`,
+        }), { duration: 10000 });
+      }
       refresh();
     },
     onError: err,

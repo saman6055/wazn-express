@@ -109,6 +109,39 @@ export function batchHasShipmentNumber(
   return Boolean(String(number ?? "").trim());
 }
 
+/** What the number is called on this batch, for a message that asks for it. */
+export function shipmentNumberName(shippingType?: string | null): { ku: string; en: string; ar: string; zh: string } {
+  return String(shippingType ?? "") === "sea"
+    ? { ku: "ژمارەی کۆنتەینەر", en: "Container number", ar: "رقم الحاوية", zh: "集装箱号" }
+    : { ku: "ژمارەی ئەی دەبلیو بی", en: "Air waybill number", ar: "رقم بوليصة الشحن", zh: "航空运单号" };
+}
+
+/**
+ * The cartons are packed and the number is still missing.
+ *
+ * Since the number is what tells a customer their goods have left, a batch
+ * that flies without it leaves every parcel inside reading "in the China
+ * depot" — and the customer telephones, which is the whole thing this was
+ * meant to stop. So the people who can fill it in are shown the list.
+ *
+ * Only after the carton check, because before it nobody could have the
+ * number yet; and not once the shipment is here, because then it no longer
+ * matters what it travelled under.
+ */
+export function batchAwaitingShipmentNumber(
+  batch: {
+    shippingType?: string | null;
+    awbNumber?: string | null;
+    containerNumber?: string | null;
+    status?: string | null;
+    dispatchCheckedAt?: Date | string | null;
+  } | null | undefined,
+): boolean {
+  if (!batch?.dispatchCheckedAt) return false;
+  if (batchHasShipmentNumber(batch)) return false;
+  return !BATCH_ARRIVED.includes(String(batch.status ?? "").trim());
+}
+
 /**
  * A parcel registered at the destination has no journey to show.
  *
