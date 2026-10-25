@@ -52,6 +52,8 @@ interface Draft {
 }
 
 const EMPTY: Draft = { arrivedOn: "", billed: "", costUsd: "", awbNumber: "" };
+/** "74.00 kg" kept in one piece inside a right-to-left sentence. */
+const ltr = (n: string) => `⁦${n} kg⁩`;
 const noEnter = (e: React.KeyboardEvent) => {
   if (e.key === "Enter") e.preventDefault();
 };
@@ -209,19 +211,19 @@ export function CarrierPartsCard({
           <p className="flex items-center gap-1.5 font-medium">
             <Clock className="h-4 w-4 shrink-0" />
             {L({
-              ku: `کۆمپانیا ${summary.carrierKg.toFixed(2)} kg ی حیساب کردووە لە ${summary.registered.kg.toFixed(2)} kg — کارتۆن/بارێک دیار نییە. قازانج چاوەڕێی باری ترە.`,
-              en: `The carrier billed ${summary.carrierKg.toFixed(2)} kg of ${summary.registered.kg.toFixed(2)} kg — a carton or load is missing. Profit waits for the next load.`,
-              ar: `احتسبت الشركة ${summary.carrierKg.toFixed(2)} kg من ${summary.registered.kg.toFixed(2)} kg — كرتونة أو شحنة مفقودة. الربح بانتظار الشحنة التالية.`,
-              zh: `承运商计费 ${summary.carrierKg.toFixed(2)} kg / 共 ${summary.registered.kg.toFixed(2)} kg — 缺一箱或一批。利润待下一批。`,
+              ku: `کۆمپانیا ${ltr(summary.carrierKg.toFixed(2))} ی حیساب کردووە لە ${ltr(summary.registered.kg.toFixed(2))} — کارتۆن/بارێک دیار نییە. قازانج چاوەڕێی باری ترە.`,
+              en: `The carrier billed ${ltr(summary.carrierKg.toFixed(2))} of ${ltr(summary.registered.kg.toFixed(2))} — a carton or load is missing. Profit waits for the next load.`,
+              ar: `احتسبت الشركة ${ltr(summary.carrierKg.toFixed(2))} من ${ltr(summary.registered.kg.toFixed(2))} — كرتونة أو شحنة مفقودة. الربح بانتظار الشحنة التالية.`,
+              zh: `承运商计费 ${ltr(summary.carrierKg.toFixed(2))} / 共 ${ltr(summary.registered.kg.toFixed(2))} — 缺一箱或一批。利润待下一批。`,
             })}
           </p>
           {!sea && summary.arrived.count > 0 && (
             <p className="mt-1 text-xs tabular-nums">
               {L({
-                ku: `گەیشتوو ${summary.arrived.kg.toFixed(2)} kg · حیسابکراو ${summary.carrierKg.toFixed(2)} kg`,
-                en: `Arrived ${summary.arrived.kg.toFixed(2)} kg · billed ${summary.carrierKg.toFixed(2)} kg`,
-                ar: `وصل ${summary.arrived.kg.toFixed(2)} kg · محتسب ${summary.carrierKg.toFixed(2)} kg`,
-                zh: `已到 ${summary.arrived.kg.toFixed(2)} kg · 计费 ${summary.carrierKg.toFixed(2)} kg`,
+                ku: `گەیشتوو ${ltr(summary.arrived.kg.toFixed(2))} · حیسابکراو ${ltr(summary.carrierKg.toFixed(2))}`,
+                en: `Arrived ${ltr(summary.arrived.kg.toFixed(2))} · billed ${ltr(summary.carrierKg.toFixed(2))}`,
+                ar: `وصل ${ltr(summary.arrived.kg.toFixed(2))} · محتسب ${ltr(summary.carrierKg.toFixed(2))}`,
+                zh: `已到 ${ltr(summary.arrived.kg.toFixed(2))} · 计费 ${ltr(summary.carrierKg.toFixed(2))}`,
               })}
             </p>
           )}
