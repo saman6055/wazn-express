@@ -1233,7 +1233,14 @@ export async function getBatchFinancialSummary(batchId: number) {
   const carrierLoads = await db.select().from(batchCarrierParts)
     .where(eq(batchCarrierParts.batchId, batchId))
     .orderBy(asc(batchCarrierParts.partNo));
-  const partsVerdict = carrierPartsVerdict({
+  // Only a batch made in China arrives in loads and is checked in on arrival.
+  // One registered in Erbil was weighed here parcel by parcel - it has no
+  // "on the road" and nothing to wait for (owner, 2026-10-25, AIR-2026-077).
+  const chinaIds = new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, 'CN'))).map((r) => Number(r.id)));
+  const madeInChina = batchData.createdInCountryId != null
+    ? chinaIds.has(Number(batchData.createdInCountryId))
+    : batchPackages.filter((p) => p.registeredInCountryId != null && chinaIds.has(Number(p.registeredInCountryId))).length * 2 > batchPackages.length;
+  const partsVerdict = !madeInChina ? ('none' as const) : carrierPartsVerdict({
     shippingType: batchData.shippingType,
     oursKg: totalSpaceWeight,
     carrierKg: Number(batchData.chargedWeightKg) || 0,
@@ -1404,6 +1411,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     // Not a gain while the bill covers only part of the batch.
     carrierDifference: profitWaitsForParts(partsVerdict) ? null : carrierDifference(batchData.shippingType, batchData, { billedKg: totalSpaceWeight, cbm: packageTotalCbm }),
     carrierParts: {
+      madeInChina,
       verdict: partsVerdict,
       loads: carrierLoads.map((p) => ({
         id: p.id,

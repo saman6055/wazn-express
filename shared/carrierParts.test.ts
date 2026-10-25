@@ -66,6 +66,11 @@ describe("wired where the money is", () => {
     expect(src).toContain("carrierDifference: profitWaitsForParts(partsVerdict) ? null");
   });
 
+  it("only a batch made in China: one registered in Erbil has no loads and nothing to wait for", () => {
+    expect(read("server/db/batches.db.ts")).toContain("const partsVerdict = !madeInChina ? ('none' as const)");
+    expect(read("client/src/pages/Batches.tsx")).toContain("editFinancialQ.data?.carrierParts?.madeInChina && (");
+  });
+
   it("loads reach the batch only through updateBatch (price history kept)", () => {
     const src = read("server/db/carrierParts.db.ts");
     expect(src).toContain("await updateBatch(batchId, {");

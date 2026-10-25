@@ -36,6 +36,8 @@ export interface CarrierLoad {
 }
 
 export interface CarrierPartsSummary {
+  /** Only a batch made in China shows this card (owner, 2026-10-25). */
+  madeInChina: boolean;
   verdict: CarrierPartsVerdict;
   loads: CarrierLoad[];
   registered: { count: number; kg: number };

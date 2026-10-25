@@ -2603,7 +2603,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           )}
                         </div>
                         <CarrierDifferenceLine difference={editFinancialQ.data?.carrierDifference ?? null} />
-                        {editFinancialQ.data?.carrierParts && (
+                        {editFinancialQ.data?.carrierParts?.madeInChina && (
                           <CarrierPartsCard
                             batchId={editingBatch.id}
                             shippingType={editingBatch.shippingType}
