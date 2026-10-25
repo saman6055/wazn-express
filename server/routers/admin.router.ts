@@ -1,5 +1,5 @@
 import { withoutSecrets } from "../lib/accountSecrets";
-import { retryFix } from "@shared/fixAdvice";
+import { retryFix, withFix } from "@shared/fixAdvice";
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
@@ -29,7 +29,9 @@ import {
   getBatchReportData,
   generateBatchPDF,
 } from "../services/pdf.service";
-import { createZipBackup, restoreFromZipBackup } from "../services/zipBackup.service";
+import { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } from "../services/zipBackup.service";
+import { currentBackupJob, startFullBackup, startRestore } from "../services/fullBackup.service";
+import { V6_KEY_PREFIX } from "../lib/backupFormat";
 import { createBackup, restoreBackup } from "../services/backup.service";
 import { getScheduleConfig, updateScheduleConfig } from "../services/scheduledBackups.service";
 
@@ -964,22 +966,20 @@ export const backupRouter = router({
       .mutation(async ({ input, ctx }) => {
         appLogger.info('[BACKUP] Create backup called', { input, userId: ctx.user.id, userName: ctx.user.name });
         
-        // Use new ZIP backup system for full backups
+        // A full backup is every table the database has plus every file in
+        // the uploads folder (services/fullBackup). It runs in the
+        // background — with the photos in it, it takes minutes — and the
+        // screen follows it through backup.activeJob.
         if (input.backupContent === "full") {
           try {
-            return await createZipBackup({
-              backupType: input.backupType,
-              schedule: input.schedule,
+            return await startFullBackup({
               createdById: ctx.user.id,
               createdByName: ctx.user.name || undefined,
             });
           } catch (err) {
             const msg = err instanceof Error ? err.message : String(err);
-            appLogger.error("[BACKUP] Full ZIP backup failed", { error: msg });
-            throw new TRPCError({
-              code: "INTERNAL_SERVER_ERROR",
-              message: msg || retryFix("پاشەکەوتی ZIP دروست نەبوو."),
-            });
+            appLogger.error("[BACKUP] Full backup could not start", { error: msg });
+            throw new TRPCError({ code: "CONFLICT", message: msg || retryFix("بەکاپی تەواو دەستی پێنەکرد.") });
           }
         }
         
@@ -1034,43 +1034,84 @@ export const backupRouter = router({
         return backup;
       }),
 
-    // Delete a backup
+    // Delete a backup — its file on the server too. A complete backup holds
+    // every photo, and a row deleted without its file would fill the disk.
     delete: adminProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
         const database = await db.getDb();
-        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
-        
+        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: retryFix("داتابەیس بەردەست نییە.") });
+
+        const running = currentBackupJob();
+        if (running && !running.finishedAt && (running.backupId === input.id || running.safetyBackupId === input.id)) {
+          throw new TRPCError({ code: "CONFLICT", message: withFix("ئەم بەکاپە ئێستا کاری لەسەر دەکرێت.", ["چاوەڕێ بکە تا تەواو دەبێت", "پاشان بیسڕەوە"]) });
+        }
+        const [backup] = await database.select().from(backups).where(eq(backups.id, input.id));
+        if (backup?.fileUrl?.startsWith(LOCAL_BACKUP_PREFIX) || backup?.fileKey?.startsWith(V6_KEY_PREFIX)) {
+          const fsp = await import("fs/promises");
+          for (const ext of ["zip", "json"] as const) {
+            const file = getLocalBackupFilePath(input.id, ext);
+            await fsp.rm(file, { force: true }).catch(() => undefined);
+            await fsp.rm(`${file}.part`, { force: true }).catch(() => undefined);
+          }
+        }
         await database.delete(backups).where(eq(backups.id, input.id));
-        
+
         return { success: true };
       }),
 
-    // Restore from backup
-    restore: adminProcedure
-      .input(z.object({ 
+    /**
+     * Put the system back to a backup. The main admin's hand alone: every
+     * table is replaced, users and the books included.
+     *
+     * A complete backup (v6) is checked whole, a copy of the present is
+     * taken first — the way back — and the restore runs in the background;
+     * the screen follows it through backup.activeJob.
+     *
+     * The old ZIP format is refused. It held 71 of the 111 tables — no
+     * boxes, no box receipts, no carton checks — and restored every row
+     * under a new id unless the tables were wiped first, so a customer's
+     * parcels came back pointing at somebody else.
+     */
+    restore: superAdminProcedure
+      .input(z.object({
         id: z.number(),
         clearExisting: z.boolean().default(false),
       }))
-      .mutation(async ({ input }) => {
-        // Get backup to check if it's a ZIP backup
+      .mutation(async ({ input, ctx }) => {
         const database = await db.getDb();
-        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Database connection failed" });
-        
+        if (!database) throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: retryFix("داتابەیس بەردەست نییە.") });
+
         const [backup] = await database.select().from(backups).where(eq(backups.id, input.id));
-        
         if (!backup) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Backup not found" });
+          throw new TRPCError({ code: "NOT_FOUND", message: withFix("ئەم بەکاپە نەدۆزرایەوە.", ["لاپەڕەکە نوێ بکەرەوە", "بەکاپەکە لە لیستەکە هەڵبژێرەوە"]) });
         }
-        
-        // Check if it's a ZIP backup (filename ends with .zip)
-        if (backup.filename?.endsWith('.zip')) {
-          return await restoreFromZipBackup(input.id, input.clearExisting);
+
+        if (backup.fileKey?.startsWith(V6_KEY_PREFIX)) {
+          try {
+            await startRestore(input.id, { id: ctx.user.id, name: ctx.user.name });
+            return { started: true as const, message: "گەڕاندنەوە دەستی پێکرد. لە لاپەڕەی «بەڕێوەبردنی بەکاپ» ئاگاداری بە." };
+          } catch (err) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+          }
         }
-        
+
+        if (backup.filename?.endsWith(".zip")) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix("ئەم بەکاپە بە شێوازە کۆنەکەیە و ناتەواوە — سندووقەکان و وەسڵەکانیان تێدا نییە، و گەڕاندنەوەی ژمارەی تۆمارەکان تێکدەدات.", [
+              "«دروستکردنی بەکاپی نوێ» → «بەکاپی تەواو» هەڵبژێرە",
+              "ئەو بەکاپە نوێیە بەکاربهێنە بۆ گەڕاندنەوە",
+            ]),
+          });
+        }
+
         // Use original restore for JSON backups
         return await restoreBackup(input.id);
       }),
+
+    /** The backup or restore running now (or the last one), for the screen's progress bar. */
+    activeJob: adminProcedure.query(() => currentBackupJob()),
 
     // Get schedule configuration
     getScheduleConfig: adminProcedure.query(() => getScheduleConfig()),

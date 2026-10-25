@@ -47,4 +47,9 @@ export function cacheInvalidate(keys: string[]): void {
   for (const k of keys) store.delete(k);
 }
 
+/** Forget everything — after a restore, nothing remembered from before may answer. */
+export function cacheClear(): void {
+  store.clear();
+}
+
 export const CACHE_TTL = DEFAULT_TTL;

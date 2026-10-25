@@ -12,9 +12,17 @@ import { Readable } from "stream";
 /** Prefix for backup fileUrl when stored locally (no S3/Forge). Download via GET /api/backup-file/:id */
 export const LOCAL_BACKUP_PREFIX = "local:";
 
-/** Path on disk for a local backup file (when storage is not configured). ext: 'zip' | 'json' */
+/**
+ * Path on disk for a local backup file (when storage is not configured). ext: 'zip' | 'json'
+ *
+ * BACKUPS_DIR points it at a mounted volume. Without one the folder lives
+ * inside the container and a Redeploy empties it — which is why a backup is
+ * downloaded to a computer the moment it is made.
+ */
 export function getLocalBackupFilePath(backupId: number, ext: "zip" | "json" = "zip"): string {
-  return path.join(process.cwd(), "data", "backups", `${backupId}.${ext}`);
+  const configured = process.env.BACKUPS_DIR?.trim();
+  const dir = configured ? path.resolve(configured) : path.join(process.cwd(), "data", "backups");
+  return path.join(dir, `${Math.trunc(Number(backupId))}.${ext}`);
 }
 
 interface ZipBackupOptions {

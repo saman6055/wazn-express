@@ -1,5 +1,5 @@
 import { confirmDanger } from "@/components/ConfirmDialog";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -10,6 +10,8 @@ import { toast } from "sonner";
 import { fmtWhen } from "@/lib/numericDate";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { BackupJobBanner, BackupUploadCard, type BackupJobView } from "@/components/admin/BackupTools";
 
 export default function BackupManagement() {
   const { language } = useTranslation();
@@ -17,16 +19,35 @@ export default function BackupManagement() {
   const [backupContent, setBackupContent] = useState<"database_only" | "files_only" | "full">("database_only");
   const [selectedStatus, setSelectedStatus] = useState<"in_progress" | "completed" | "failed" | undefined>();
 
+  const { user } = useAuth();
+  const isMainAdmin = user?.role === "super_admin";
+
+  // While a backup or restore runs, the list and the progress bar follow it.
+  const { data: job, refetch: refetchJob } = trpc.backup.activeJob.useQuery(undefined, {
+    refetchInterval: (q) => (q.state.data && !(q.state.data as BackupJobView).finishedAt ? 1500 : false),
+  });
+  const working = !!job && !(job as BackupJobView).finishedAt;
+
   const { data: backups, isLoading, refetch } = trpc.backup.list.useQuery({
     status: selectedStatus,
     limit: 50,
     offset: 0,
+  }, {
+    refetchInterval: working ? 3000 : false,
   });
+
+  // The moment a backup or restore ends, the list shows how it ended — a
+  // short one can finish between two polls.
+  const finishedAt = (job as BackupJobView | null | undefined)?.finishedAt;
+  useEffect(() => {
+    if (finishedAt) void refetch();
+  }, [finishedAt, refetch]);
 
   const createBackup = trpc.backup.create.useMutation({
     onSuccess: () => {
       toast.success(pickLang(language, { ku: "بەکاپ دەستی پێکرد", en: "Backup started", ar: "بدأ النسخ الاحتياطي", zh: "备份已开始" }));
       refetch();
+      refetchJob();
     },
     onError: (error) => {
       toast.error(`${pickLang(language, { ku: "هەڵە", en: "Error", ar: "خطأ", zh: "错误" })}: ${error.message}`);
@@ -44,8 +65,13 @@ export default function BackupManagement() {
   });
 
   const restoreBackup = trpc.backup.restore.useMutation({
-    onSuccess: () => {
-      toast.success(pickLang(language, { ku: "داتابەیس گەڕایەوە", en: "Database restored", ar: "تمت استعادة قاعدة البيانات", zh: "数据库已恢复" }));
+    onSuccess: (result) => {
+      const started = (result as { started?: boolean } | undefined)?.started;
+      toast.success(started
+        ? pickLang(language, { ku: "گەڕاندنەوە دەستی پێکرد — لێرە ئاگاداری بە", en: "Restore started — follow it here", ar: "بدأت الاستعادة — تابعها هنا", zh: "恢复已开始" })
+        : pickLang(language, { ku: "داتابەیس گەڕایەوە", en: "Database restored", ar: "تمت استعادة قاعدة البيانات", zh: "数据库已恢复" }));
+      refetch();
+      refetchJob();
     },
     onError: (error) => {
       toast.error(`${pickLang(language, { ku: "هەڵە", en: "Error", ar: "خطأ", zh: "错误" })}: ${error.message}`);
@@ -61,8 +87,11 @@ export default function BackupManagement() {
     setShowCreateDialog(false);
   };
 
-  const handleDownload = (fileUrl: string) => {
-    window.open(fileUrl, "_blank");
+  // Every backup is downloaded through the server, which checks the session.
+  // A backup kept on the server's own disk is stored as "local:<id>", and
+  // opening that address opened nothing.
+  const handleDownload = (backupId: number) => {
+    window.open(`/api/backup-file/${backupId}`, "_blank");
   };
 
   const handleDelete = async (id: number) => {
@@ -79,7 +108,7 @@ export default function BackupManagement() {
     const warning = "⚠️ " + pickLang(language, { ku: "ئاگاداری گرنگ!", en: "Important warning!", ar: "تحذير هام!", zh: "重要警告！" }) + "\n\n"
       + pickLang(language, { ku: "گەڕاندنەوەی بەکاپ هەموو داتاکانی ئێستا دەسڕێتەوە و دەیگۆڕێت بە داتاکانی بەکاپ.", en: "Restoring a backup will erase all current data and replace it with the backup data.", ar: "ستؤدي استعادة النسخة الاحتياطية إلى مسح جميع البيانات الحالية واستبدالها ببيانات النسخة الاحتياطية.", zh: "恢复备份将清除所有当前数据并替换为备份数据。" }) + "\n\n"
       + (isFull ? pickLang(language, { ku: "ئەم بەکاپە بەکاپی تەواوە (داتابەیس + فایلەکان).", en: "This is a full backup (database + files).", ar: "هذه نسخة احتياطية كاملة (قاعدة البيانات + الملفات).", zh: "这是完整备份（数据库 + 文件）。" }) + "\n\n" : "")
-      + pickLang(language, { ku: "پێش لە گەڕاندنەوە، دڵنیا بە لە دروستکردنی بەکاپی نوێ.", en: "Before restoring, make sure to create a new backup.", ar: "قبل الاستعادة، تأكد من إنشاء نسخة احتياطية جديدة.", zh: "恢复前，请务必创建新备份。" }) + "\n\n"
+      + pickLang(language, { ku: "پێش گەڕاندنەوە سیستەم خۆی کۆپییەکی دۆخی ئێستا دروست دەکات، بۆ ئەوەی ئەگەر هەڵە بوو بگەڕێیتەوە. لە ماوەی گەڕاندنەوەدا هیچ کەس کار نەکات.", en: "Before restoring, the system first saves a copy of the current state so you can go back. Nobody should work in the system during the restore.", ar: "قبل الاستعادة يحفظ النظام نسخة من الحالة الحالية للعودة إليها. لا يعمل أحد في النظام أثناء الاستعادة.", zh: "恢复前系统会先保存当前状态的副本。恢复期间请勿使用系统。" }) + "\n\n"
       + pickLang(language, { ku: "ئایا دڵنیایت لە بەردەوامبوون؟", en: "Are you sure you want to continue?", ar: "هل أنت متأكد من المتابعة؟", zh: "确定要继续吗？" });
 
     if (await confirmDanger(warning)) {
@@ -179,7 +208,7 @@ export default function BackupManagement() {
                   />
                   <div>
                     <div className="font-medium">{pickLang(language, { ku: "بەکاپی تەواو", en: "Full backup", ar: "نسخة احتياطية كاملة", zh: "完整备份" })}</div>
-                    <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "داتابەیس + فایلەکان (پێشنیاری ئۆفلاین)", en: "Database + files (recommended for offline)", ar: "قاعدة البيانات + الملفات (موصى به للعمل دون اتصال)", zh: "数据库 + 文件（推荐离线使用）" })}</div>
+                    <div className="text-sm text-muted-foreground">{pickLang(language, { ku: "هەموو خشتەکان + هەموو وێنە و فایلەکان، لە یەک ZIP دا. بۆ هەڵگرتن لە کۆمپیوتەرەکەت و گەڕاندنەوەی تەواوی سیستەم.", en: "Every table + every photo and file, in one ZIP. Keep it on your computer; it can bring the whole system back.", ar: "كل الجداول + كل الصور والملفات في ملف ZIP واحد. احفظه على حاسوبك لاستعادة النظام كاملاً.", zh: "所有表 + 所有照片和文件，一个 ZIP。保存到电脑，可恢复整个系统。" })}</div>
                   </div>
                 </label>
               </div>
@@ -196,6 +225,10 @@ export default function BackupManagement() {
           </Card>
         </div>
       )}
+
+      <BackupJobBanner job={job as BackupJobView | null | undefined} />
+
+      {isMainAdmin && <BackupUploadCard onUploaded={() => refetch()} />}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -293,61 +326,32 @@ export default function BackupManagement() {
                   <div className="flex gap-2">
                     {backup.status === "completed" && backup.fileUrl && (
                       <>
-                        {backup.backupContent === "full" && backup.filesZipUrl ? (
-                          <>
-                            <Button
-                              variant="default"
-                              size="sm"
-                              onClick={() => {
-                                handleDownload(backup.fileUrl!);
-                                setTimeout(() => handleDownload(backup.filesZipUrl!), 1000);
-                              }}
-                              title={pickLang(language, { ku: "دابەزاندنی هەردووکیان (SQL + ZIP)", en: "Download both (SQL + ZIP)", ar: "تنزيل كليهما (SQL + ZIP)", zh: "下载两者 (SQL + ZIP)" })}
-                            >
-                              <Download className="w-4 h-4 me-1" />
-                              {pickLang(language, { ku: "هەردووکیان", en: "Both", ar: "كلاهما", zh: "两者" })}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownload(backup.fileUrl!)}
-                              title={pickLang(language, { ku: "تەنها داتابەیس", en: "Database only", ar: "قاعدة البيانات فقط", zh: "仅数据库" })}
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              onClick={() => handleDownload(backup.filesZipUrl!)}
-                              title={pickLang(language, { ku: "تەنها فایلەکان", en: "Files only", ar: "الملفات فقط", zh: "仅文件" })}
-                            >
-                              <Download className="w-4 h-4" />
-                            </Button>
-                          </>
-                        ) : (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleDownload(backup.fileUrl!)}
-                          >
-                            <Download className="w-4 h-4" />
-                          </Button>
-                        )}
                         <Button
                           variant="outline"
                           size="sm"
-                          onClick={() => handleRestore(backup.id)}
-                          disabled={restoreBackup.isPending}
+                          onClick={() => handleDownload(backup.id)}
+                          title={pickLang(language, { ku: "دابەزاندن بۆ کۆمپیوتەر", en: "Download to this computer", ar: "تنزيل إلى هذا الحاسوب", zh: "下载到本机" })}
                         >
-                          <RefreshCw className="w-4 h-4" />
+                          <Download className="w-4 h-4" />
                         </Button>
+                        {isMainAdmin && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleRestore(backup.id)}
+                            disabled={restoreBackup.isPending || working}
+                            title={pickLang(language, { ku: "گەڕاندنەوەی سیستەم بۆ ئەم بەکاپە", en: "Restore the system to this backup", ar: "استعادة النظام إلى هذه النسخة", zh: "恢复到此备份" })}
+                          >
+                            <RefreshCw className="w-4 h-4" />
+                          </Button>
+                        )}
                       </>
                     )}
                     <Button
                       variant="outline"
                       size="sm"
                       onClick={() => handleDelete(backup.id)}
-                      disabled={deleteBackup.isPending}
+                      disabled={deleteBackup.isPending || (working && ((job as BackupJobView).backupId === backup.id || (job as BackupJobView).safetyBackupId === backup.id))}
                     >
                       <Trash2 className="w-4 h-4 text-red-600 dark:text-red-300" />
                     </Button>
