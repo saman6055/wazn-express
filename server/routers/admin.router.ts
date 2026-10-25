@@ -5,7 +5,7 @@ import { z } from "zod";
 import { DASHBOARD_FIGURE_IDS, type DashboardFigureId } from "@shared/dashboardExplain";
 import { riskVisibleTo, sortRiskItems } from "@shared/riskBell";
 import { auditRisks } from "../lib/auditRisks";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, like } from "drizzle-orm";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, auditorProcedure, superAdminProcedure } from "../middleware/auth";
 import { lockedStaff, unlockStaff } from "../lib/staffLoginLocks";
@@ -31,7 +31,8 @@ import {
 } from "../services/pdf.service";
 import { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } from "../services/zipBackup.service";
 import { currentBackupJob, startFullBackup, startRestore } from "../services/fullBackup.service";
-import { V6_KEY_PREFIX } from "../lib/backupFormat";
+import { AUTO_KEY_PREFIX, V6_KEY_PREFIX } from "../lib/backupFormat";
+import { AUTO_BACKUP_SETTING, fingerprint, keyHint, newAutoBackupKey, parseStoredKey } from "../lib/autoBackupKey";
 import { createBackup, restoreBackup } from "../services/backup.service";
 import { getScheduleConfig, updateScheduleConfig } from "../services/scheduledBackups.service";
 
@@ -1112,6 +1113,49 @@ export const backupRouter = router({
 
     /** The backup or restore running now (or the last one), for the screen's progress bar. */
     activeJob: adminProcedure.query(() => currentBackupJob()),
+
+    /**
+     * The daily backup the owner's own computer takes (tools/auto-backup):
+     * whether its key exists, and how the last one went. Never the key.
+     */
+    autoBackup: superAdminProcedure.query(async () => {
+      const stored = parseStoredKey(await db.getSetting(AUTO_BACKUP_SETTING));
+      const database = await db.getDb();
+      const [last] = database
+        ? await database
+            .select({ createdAt: backups.createdAt, status: backups.status, fileSize: backups.fileSize, errorMessage: backups.errorMessage })
+            .from(backups)
+            .where(like(backups.fileKey, `${AUTO_KEY_PREFIX}%`))
+            .orderBy(desc(backups.createdAt))
+            .limit(1)
+        : [];
+      return {
+        hasKey: !!stored,
+        hint: stored?.hint ?? null,
+        createdAt: stored?.createdAt ?? null,
+        lastUsedAt: stored?.lastUsedAt ?? null,
+        last: last ?? null,
+      };
+    }),
+
+    /** A new key for the computer. Shown this once; the old one stops working. */
+    createAutoBackupKey: superAdminProcedure.mutation(async ({ ctx }) => {
+      const key = newAutoBackupKey();
+      await db.setSetting(
+        AUTO_BACKUP_SETTING,
+        JSON.stringify({ hash: fingerprint(key), hint: keyHint(key), createdAt: new Date().toISOString(), createdById: ctx.user.id, lastUsedAt: null }),
+        ctx.user.id,
+      );
+      await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "auto_backup_key_created", entityType: "setting", newValues: { hint: keyHint(key) } });
+      return { key };
+    }),
+
+    /** Switch the computer's key off. Its next daily run is refused. */
+    revokeAutoBackupKey: superAdminProcedure.mutation(async ({ ctx }) => {
+      await db.setSetting(AUTO_BACKUP_SETTING, "", ctx.user.id);
+      await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "auto_backup_key_revoked", entityType: "setting" });
+      return { revoked: true };
+    }),
 
     // Get schedule configuration
     getScheduleConfig: adminProcedure.query(() => getScheduleConfig()),

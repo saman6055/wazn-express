@@ -14,6 +14,7 @@ import {
 } from "../services/fullBackup.service";
 import { cleanUploadedName, MAX_UPLOAD_BYTES, UPLOAD_CHUNK_BYTES } from "../lib/backupFormat";
 import { appLogger } from "../utils/logger";
+import { registerAutoBackupRoutes } from "./autoBackupRoute";
 
 /**
  * Backup file download (admin only): serves a local ZIP/JSON or redirects to
@@ -62,6 +63,8 @@ export function registerBackupFileRoute(app: Express): void {
   });
 
   registerBackupUploadRoutes(app);
+  // The owner's computer, taking its daily backup with the backup key.
+  registerAutoBackupRoutes(app);
 }
 
 /** The main admin, or an answer saying why not. */

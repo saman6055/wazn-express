@@ -33,6 +33,9 @@ export const BACKUP_VERSION = "6.0";
 /** Marks a v6 backup's row in the backups table (fileKey prefix). */
 export const V6_KEY_PREFIX = "backups/v6/";
 
+/** A backup the owner's computer made with its backup key (server/lib/autoBackupKey.ts). */
+export const AUTO_KEY_PREFIX = "backups/v6/auto/";
+
 /**
  * Tables a restore leaves exactly as they are.
  *

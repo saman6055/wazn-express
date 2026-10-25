@@ -20,6 +20,7 @@ import {
   BACKUP_VERSION,
   RESTORE_KEEPS,
   V6_KEY_PREFIX,
+  AUTO_KEY_PREFIX,
   backupFileName,
   insertStatements,
   manifestProblem,
@@ -256,6 +257,8 @@ export interface FullBackupOptions {
   /** False for the copy taken before a restore: a restore never deletes a photo. */
   includeUploads: boolean;
   reason: BackupManifest["reason"];
+  /** Made by the owner's computer with its backup key — the only backups that key may fetch or delete. */
+  automatic?: boolean;
 }
 
 /** Files kept on object storage rather than in our folder — usually none. */
@@ -436,9 +439,9 @@ async function insertBackupRow(filename: string, opts: FullBackupOptions): Promi
   if (!db) throw new Error(retryFix("داتابەیس بەردەست نییە."));
   const [result] = await db.insert(backups).values({
     filename,
-    fileKey: `${V6_KEY_PREFIX}${filename}`,
+    fileKey: `${opts.automatic ? AUTO_KEY_PREFIX : V6_KEY_PREFIX}${filename}`,
     fileUrl: "",
-    backupType: "manual",
+    backupType: opts.automatic ? "scheduled" : "manual",
     backupContent: opts.includeUploads ? "full" : "database_only",
     status: "in_progress",
     createdById: opts.createdById,
@@ -825,6 +828,24 @@ export async function startRestore(backupId: number, by: { id: number; name?: st
       if (running === job) running = null;
     });
   return { started: true };
+}
+
+/** A backup gone: its row and its file. The one way the server lets go of one. */
+export async function removeBackup(backupId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error(retryFix("داتابەیس بەردەست نییە."));
+  for (const ext of ["zip", "json"] as const) {
+    const file = getLocalBackupFilePath(backupId, ext);
+    await fsp.rm(file, { force: true }).catch(() => undefined);
+    await fsp.rm(`${file}.part`, { force: true }).catch(() => undefined);
+  }
+  await db.delete(backups).where(eq(backups.id, backupId));
+}
+
+/** Is this backup being worked on right now — or is it the copy a running restore just took? */
+export function backupIsBusy(backupId: number): boolean {
+  const job = running;
+  return !!job && (job.backupId === backupId || job.safetyBackupId === backupId);
 }
 
 // ─── A backup brought from a computer ────────────────────────────────────

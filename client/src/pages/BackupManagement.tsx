@@ -11,7 +11,7 @@ import { fmtWhen } from "@/lib/numericDate";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { BackupJobBanner, BackupUploadCard, type BackupJobView } from "@/components/admin/BackupTools";
+import { AutoBackupCard, BackupJobBanner, BackupUploadCard, type BackupJobView } from "@/components/admin/BackupTools";
 
 export default function BackupManagement() {
   const { language } = useTranslation();
@@ -229,6 +229,8 @@ export default function BackupManagement() {
       <BackupJobBanner job={job as BackupJobView | null | undefined} />
 
       {isMainAdmin && <BackupUploadCard onUploaded={() => refetch()} />}
+
+      {isMainAdmin && <AutoBackupCard />}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
