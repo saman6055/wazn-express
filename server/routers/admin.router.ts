@@ -32,7 +32,7 @@ import {
 import { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } from "../services/zipBackup.service";
 import { currentBackupJob, startFullBackup, startRestore } from "../services/fullBackup.service";
 import { AUTO_KEY_PREFIX, V6_KEY_PREFIX } from "../lib/backupFormat";
-import { AUTO_BACKUP_SETTING, fingerprint, keyHint, newAutoBackupKey, parseStoredKey } from "../lib/autoBackupKey";
+import { AUTO_BACKUP_PENDING_SETTING, AUTO_BACKUP_SETTING, livePending, parseStoredKey } from "../lib/autoBackupKey";
 import { createBackup, restoreBackup } from "../services/backup.service";
 import { getScheduleConfig, updateScheduleConfig } from "../services/scheduledBackups.service";
 
@@ -1120,6 +1120,7 @@ export const backupRouter = router({
      */
     autoBackup: superAdminProcedure.query(async () => {
       const stored = parseStoredKey(await db.getSetting(AUTO_BACKUP_SETTING));
+      const pendingRaw = await db.getSetting(AUTO_BACKUP_PENDING_SETTING);
       const database = await db.getDb();
       const [last] = database
         ? await database
@@ -1135,19 +1136,46 @@ export const backupRouter = router({
         createdAt: stored?.createdAt ?? null,
         lastUsedAt: stored?.lastUsedAt ?? null,
         last: last ?? null,
+        // A computer waiting to be connected: its code and name, never more.
+        pending: (() => {
+          const p = livePending(pendingRaw);
+          return p ? { code: p.code, computer: p.computer, requestedAt: p.requestedAt } : null;
+        })(),
       };
     }),
 
-    /** A new key for the computer. Shown this once; the old one stops working. */
-    createAutoBackupKey: superAdminProcedure.mutation(async ({ ctx }) => {
-      const key = newAutoBackupKey();
-      await db.setSetting(
-        AUTO_BACKUP_SETTING,
-        JSON.stringify({ hash: fingerprint(key), hint: keyHint(key), createdAt: new Date().toISOString(), createdById: ctx.user.id, lastUsedAt: null }),
-        ctx.user.id,
-      );
-      await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "auto_backup_key_created", entityType: "setting", newValues: { hint: keyHint(key) } });
-      return { key };
+    /**
+     * Connect the computer that is showing this code. The key it made stays
+     * on that computer; the server keeps the fingerprint it sent. The old
+     * computer's key, if there was one, stops working.
+     */
+    approveAutoBackupComputer: superAdminProcedure
+      .input(z.object({ code: z.string().regex(/^\d{6}$/) }))
+      .mutation(async ({ ctx, input }) => {
+        const pending = livePending(await db.getSetting(AUTO_BACKUP_PENDING_SETTING));
+        if (!pending || pending.code !== input.code) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix("ئەم کۆدە چیتر چاوەڕێ ناکات (15 خولەکی تێپەڕی یان کۆدێکی نوێتر هات).", [
+              "لەسەر کۆمپیوتەرەکە «Wazn - بەکاپی خۆکار» دووبارە بکەرەوە",
+              "کە هەمان کۆد لێرە دەرکەوت، «بیبەستەوە» دابگرە",
+            ]),
+          });
+        }
+        await db.setSetting(
+          AUTO_BACKUP_SETTING,
+          JSON.stringify({ hash: pending.fingerprint, hint: pending.computer, createdAt: new Date().toISOString(), createdById: ctx.user.id, lastUsedAt: null }),
+          ctx.user.id,
+        );
+        await db.setSetting(AUTO_BACKUP_PENDING_SETTING, "", ctx.user.id);
+        await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "auto_backup_computer_connected", entityType: "setting", newValues: { computer: pending.computer } });
+        return { connected: pending.computer };
+      }),
+
+    /** Say no to the computer asking. */
+    rejectAutoBackupComputer: superAdminProcedure.mutation(async ({ ctx }) => {
+      await db.setSetting(AUTO_BACKUP_PENDING_SETTING, "", ctx.user.id);
+      return { rejected: true };
     }),
 
     /** Switch the computer's key off. Its next daily run is refused. */

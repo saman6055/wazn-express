@@ -6,10 +6,13 @@ into the backup folder, checks it is whole, and only then deletes the older
 copies on this computer and the server's copy. A download that is not whole
 never replaces the last good one.
 
-Set up once, after the server has a key:
+Set up once (after the Redeploy):
 
-1. Backups page → **بەکاپی خۆکاری ڕۆژانە** → **دروستکردنی کلیل**, copy the key.
-2. Run `Wazn - auto backup.cmd` (the desktop shortcut), paste the key, Enter.
+1. Run `Wazn - auto backup.cmd` (the desktop shortcut). It makes this
+   computer's own key, sends the server only its fingerprint, and shows a
+   6-digit code.
+2. On the Backups page the same code appears; press **بیبەستەوە**.
+   The key never leaves the computer and is never shown.
 
 Files beside the scripts: `config.json` (server, folder, `keepDays` = 30, `maxFolderGB` = 30,
 time), `key.dat` (the key, encrypted to this Windows user with DPAPI),

@@ -7,7 +7,20 @@ import * as db from "../db";
 import { getLocalBackupFilePath } from "../services/zipBackup.service";
 import { backupIsBusy, getBackupJob, removeBackup, startFullBackup } from "../services/fullBackup.service";
 import { AUTO_KEY_PREFIX } from "../lib/backupFormat";
-import { AUTO_BACKUP_SETTING, keyFromHeader, keyMatches, parseStoredKey, type StoredAutoKey } from "../lib/autoBackupKey";
+import rateLimit from "express-rate-limit";
+import {
+  AUTO_BACKUP_PENDING_SETTING,
+  AUTO_BACKUP_SETTING,
+  PAIR_MINUTES,
+  cleanComputerName,
+  isFingerprint,
+  keyFromHeader,
+  keyMatches,
+  newPairCode,
+  parseStoredKey,
+  type PendingPairing,
+  type StoredAutoKey,
+} from "../lib/autoBackupKey";
 import { appLogger } from "../utils/logger";
 
 /**
@@ -74,7 +87,35 @@ async function dropStaleAutoBackups(): Promise<void> {
   for (const row of old) if (!backupIsBusy(row.id)) await removeBackup(row.id).catch(() => undefined);
 }
 
+/** Asking to be connected is open to anyone, so it is held to a person's pace. */
+const pairLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 10,
+  standardHeaders: true,
+  legacyHeaders: false,
+  handler: (_req, res) => {
+    res.status(429).json({ error: "داواکاری زۆر بوو. 15 خولەک چاوەڕێ بکە و دووبارە هەوڵ بدەرەوە." });
+  },
+});
+
 export function registerAutoBackupRoutes(app: Express): void {
+  // A computer asks to be connected: it sends its key's fingerprint, never
+  // the key, and gets the six-digit code the Backups page will show beside
+  // the main admin's «بیبەستەوە» button (server/lib/autoBackupKey.ts).
+  app.post("/api/auto-backup/pair", pairLimiter, async (req, res) => {
+    const body = (req.body ?? {}) as { fingerprint?: unknown; computer?: unknown };
+    if (!isFingerprint(body.fingerprint)) return res.status(400).json({ error: "داواکارییەکە دروست نییە." });
+    const pending: PendingPairing = {
+      fingerprint: body.fingerprint,
+      code: newPairCode(),
+      computer: cleanComputerName(body.computer),
+      requestedAt: new Date().toISOString(),
+    };
+    await db.setSetting(AUTO_BACKUP_PENDING_SETTING, JSON.stringify(pending));
+    appLogger.info("[Auto backup] A computer asked to be connected", { computer: pending.computer });
+    return res.json({ code: pending.code, minutes: PAIR_MINUTES });
+  });
+
   // The setup on the computer asks this once: is the key right, and is the
   // server new enough to know what a backup key is?
   app.get("/api/auto-backup/check", async (req, res) => {

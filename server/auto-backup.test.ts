@@ -1,7 +1,18 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { fingerprint, keyFromHeader, keyHint, keyMatches, newAutoBackupKey, parseStoredKey } from "./lib/autoBackupKey";
+import {
+  cleanComputerName,
+  fingerprint,
+  isFingerprint,
+  keyFromHeader,
+  keyHint,
+  keyMatches,
+  livePending,
+  newAutoBackupKey,
+  newPairCode,
+  parseStoredKey,
+} from "./lib/autoBackupKey";
 
 /**
  * The daily backup the owner's computer takes by itself (owner, 2026-10-25:
@@ -65,14 +76,54 @@ describe("what the key may do", () => {
     expect(read("server/_core/backupFileRoute.ts")).toContain("registerAutoBackupRoutes(app);");
   });
 
-  it("is made, shown and switched off by the main admin alone; the page never sees it again", () => {
+  it("is connected and cut off by the main admin alone, and the page never sees a key", () => {
     const router = read("server/routers/admin.router.ts");
     expect(router).toMatch(/autoBackup: superAdminProcedure/);
-    expect(router).toMatch(/createAutoBackupKey: superAdminProcedure/);
+    expect(router).toMatch(/approveAutoBackupComputer: superAdminProcedure/);
+    expect(router).toMatch(/rejectAutoBackupComputer: superAdminProcedure/);
     expect(router).toMatch(/revokeAutoBackupKey: superAdminProcedure/);
-    const status = router.slice(router.indexOf("autoBackup: superAdminProcedure"), router.indexOf("createAutoBackupKey:"));
+    // No procedure makes or returns a key any more: the computer makes its own.
+    expect(router).not.toContain("createAutoBackupKey");
+    expect(router).not.toContain("newAutoBackupKey(");
+    const end = router.indexOf("Connect the computer that is showing this code");
+    expect(end).toBeGreaterThan(-1);
+    const status = router.slice(router.indexOf("autoBackup: superAdminProcedure"), end);
     expect(status).not.toMatch(/\bkey:/);
+    expect(status).not.toContain("fingerprint");
     expect(status).not.toContain("hash");
+  });
+});
+
+describe("connecting a computer without anybody copying a key", () => {
+  // Owner, 2026-10-25: «لەوانە هیچ تێناگەم» — no key is copied or shown.
+  const routes = read("server/_core/autoBackupRoute.ts");
+  const router = read("server/routers/admin.router.ts");
+  const setup = read("tools/auto-backup/Setup-WaznAutoBackup.ps1");
+
+  it("the computer sends only a fingerprint, at a person's pace", () => {
+    expect(routes).toContain('app.post("/api/auto-backup/pair", pairLimiter,');
+    expect(routes).toContain("if (!isFingerprint(body.fingerprint))");
+    expect(setup).toContain("$body = @{ fingerprint = $fingerprint; computer = $env:COMPUTERNAME }");
+    expect(setup).not.toMatch(/Read-Host/);
+  });
+
+  it("the approval must name the very code that is waiting, inside its 15 minutes", () => {
+    expect(router).toContain("if (!pending || pending.code !== input.code)");
+    expect(router).toContain("livePending(await db.getSetting(AUTO_BACKUP_PENDING_SETTING))");
+  });
+
+  it("codes run out, and a fingerprint is exactly 64 hex characters", () => {
+    const now = new Date("2026-10-25T10:00:00Z");
+    const p = (minutesAgo: number) =>
+      JSON.stringify({ fingerprint: "a".repeat(64), code: "123456", computer: "PC", requestedAt: new Date(now.getTime() - minutesAgo * 60000).toISOString() });
+    expect(livePending(p(1), now)?.code).toBe("123456");
+    expect(livePending(p(16), now)).toBeNull();
+    expect(livePending("", now)).toBeNull();
+    expect(isFingerprint("a".repeat(64))).toBe(true);
+    expect(isFingerprint("A".repeat(64))).toBe(false);
+    expect(isFingerprint("a".repeat(63))).toBe(false);
+    expect(newPairCode()).toMatch(/^\d{6}$/);
+    expect(cleanComputerName("XOGR<script>")).toBe("XOGRscript");
   });
 });
 
@@ -100,6 +151,13 @@ describe("the script on the computer", () => {
     expect(script).toContain("while ($kept.Count -gt 1 -and $total -gt $maxBytes)");
     const setup = read("tools/auto-backup/Setup-WaznAutoBackup.ps1");
     expect(setup).toContain("keepDays = 30; maxFolderGB = 30");
+  });
+
+  it("makes the same fingerprint the server makes", () => {
+    const setup = read("tools/auto-backup/Setup-WaznAutoBackup.ps1");
+    // sha256 of the key's UTF-8 bytes, lower-case hex — fingerprint() in autoBackupKey.ts.
+    expect(setup).toContain("$sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($key))");
+    expect(setup).toContain('$_.ToString("x2")');
   });
 
   it("keeps the key encrypted to the Windows user, and the key file out of git", () => {

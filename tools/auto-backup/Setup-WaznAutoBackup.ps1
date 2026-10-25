@@ -1,10 +1,12 @@
-﻿# Wazn Express - set up the daily backup on this computer.
+﻿# Wazn Express - connect this computer to the daily backup.
 #
-# 1. Asks for the key made on the Backups page (Backups -> daily backup -> make key).
-# 2. Checks the key with the server, and keeps it encrypted to this Windows user.
-# 3. Adds a daily task to Windows Task Scheduler and takes the first backup now.
+# 1. Makes this computer's own key (it never leaves this computer).
+# 2. Sends the server only the key's fingerprint and shows a 6-digit code.
+#    The same code appears on the Backups page; press «بیبەستەوە» there.
+# 3. Keeps the key encrypted to this Windows user, adds a daily task to
+#    Windows Task Scheduler, and takes the first backup now.
 #
-# Run again any time to put in a new key or change the time.
+# Run again any time to connect again (the old connection then stops working).
 
 param(
     [string]$ServerUrl = "",
@@ -12,7 +14,7 @@ param(
     [string]$Time = "",
     [string]$TaskName = "Wazn Daily Backup",
     [switch]$NoTask,
-    [string]$KeyText = ""
+    [int]$WaitMinutes = 15
 )
 
 $ErrorActionPreference = "Stop"
@@ -32,6 +34,7 @@ if ($config.PSObject.Properties["keep"]) { $config.PSObject.Properties.Remove("k
 if ($ServerUrl) { $config.serverUrl = $ServerUrl }
 if ($Folder) { $config.folder = $Folder }
 if ($Time) { $config.time = $Time }
+$server = ([string]$config.serverUrl).TrimEnd("/")
 
 Write-Host ""
 Write-Host "  Wazn Express - بەکاپی خۆکاری ڕۆژانە"
@@ -41,30 +44,21 @@ Write-Host "  کات: هەموو ڕۆژێک $($config.time) (ئەگەر کۆمپ
 Write-Host "  دەهێڵرێتەوە: یەک کۆپی بۆ هەر ڕۆژێک، $($config.keepDays) ڕۆژ، فۆڵدەرەکە لە $($config.maxFolderGB) GB تێناپەڕێت"
 Write-Host ""
 
-# 1. The key.
-if ($KeyText) {
-    $plain = $KeyText.Trim()
-} else {
-    $secure = Read-Host "  کلیلەکە لێرە بلکێنە (Ctrl+V) و Enter دابگرە" -AsSecureString
-    $bstr = [Runtime.InteropServices.Marshal]::SecureStringToBSTR($secure)
-    try { $plain = ([Runtime.InteropServices.Marshal]::PtrToStringBSTR($bstr)).Trim() }
-    finally { [Runtime.InteropServices.Marshal]::ZeroFreeBSTR($bstr) }
-}
-if ($plain -notmatch '^wbk_[A-Za-z0-9_-]{40,60}$') {
-    Write-Host "  ئەمە کلیلی بەکاپ نییە. لە لاپەڕەی «بەڕێوەبردنی بەکاپ» کلیلەکە کۆپی بکە و دووبارە هەوڵ بدەرەوە." -ForegroundColor Red
-    exit 1
-}
+# 1. This computer's own key.
+$bytes = New-Object byte[] 32
+[System.Security.Cryptography.RandomNumberGenerator]::Create().GetBytes($bytes)
+$key = "wbk_" + ([Convert]::ToBase64String($bytes).TrimEnd("=").Replace("+", "-").Replace("/", "_"))
+$sha = [System.Security.Cryptography.SHA256]::Create()
+$fingerprint = -join ($sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($key)) | ForEach-Object { $_.ToString("x2") })
 
-# 2. Does the server know it?
+# 2. Ask to be connected.
 try {
-    $check = Invoke-RestMethod -Uri "$($config.serverUrl.TrimEnd('/'))/api/auto-backup/check" -Headers @{ Authorization = "Bearer $plain" } -UseBasicParsing -TimeoutSec 60
-    if (-not $check.ok) { throw "unexpected answer" }
+    $body = @{ fingerprint = $fingerprint; computer = $env:COMPUTERNAME } | ConvertTo-Json
+    $pair = Invoke-RestMethod -Method Post -Uri "$server/api/auto-backup/pair" -ContentType "application/json" -Body $body -UseBasicParsing -TimeoutSec 60
 } catch {
     $status = 0
     if ($_.Exception.Response) { $status = [int]$_.Exception.Response.StatusCode }
-    if ($status -eq 401) {
-        Write-Host "  سێرڤەر ئەم کلیلە ناناسێت (لەوانەیە کلیلێکی نوێتر دروست کرابێت). کلیلی تازە کۆپی بکە و دووبارە هەوڵ بدەرەوە." -ForegroundColor Red
-    } elseif ($status -eq 404) {
+    if ($status -eq 404) {
         Write-Host "  سێرڤەر هێشتا نوێ نەکراوەتەوە. لە Coolify ـەوە Redeploy بکە، پاشان دووبارە ئەم پەنجەرەیە بکەرەوە." -ForegroundColor Red
     } else {
         Write-Host "  سێرڤەر وەڵامی نەدایەوە: $($_.Exception.Message)" -ForegroundColor Red
@@ -72,14 +66,40 @@ try {
     }
     exit 1
 }
+$code = [string]$pair.code
+Write-Host "  لە سیستەم بچۆ «بەڕێوەبردنی بەکاپ». ئەم کۆدە دەبینیت:"
+Write-Host ""
+Write-Host ("        {0} {1}" -f $code.Substring(0, 3), $code.Substring(3)) -ForegroundColor Yellow
+Write-Host ""
+Write-Host "  ئەگەر هەمان کۆد بوو، «بیبەستەوە» دابگرە. چاوەڕێ دەکەم..."
+Write-Output "PAIR-CODE $code"
 
-ConvertTo-SecureString $plain -AsPlainText -Force | ConvertFrom-SecureString | Set-Content (Join-Path $here "key.dat")
-$plain = $null
+# 3. Wait until the main admin says yes.
+$headers = @{ Authorization = "Bearer $key" }
+$deadline = (Get-Date).AddMinutes($WaitMinutes)
+$connected = $false
+while ((Get-Date) -lt $deadline) {
+    Start-Sleep -Seconds 3
+    try {
+        $check = Invoke-RestMethod -Uri "$server/api/auto-backup/check" -Headers $headers -UseBasicParsing -TimeoutSec 30
+        if ($check.ok) { $connected = $true; break }
+    } catch {
+        # 401 until it is approved; anything else is worth another try too.
+    }
+}
+if (-not $connected) {
+    Write-Host "  کەس نەیبەستەوە لە $WaitMinutes خولەکدا. دووبارە ئەم پەنجەرەیە بکەرەوە." -ForegroundColor Red
+    exit 1
+}
+
+ConvertTo-SecureString $key -AsPlainText -Force | ConvertFrom-SecureString | Set-Content (Join-Path $here "key.dat")
+$key = $null
 $config | ConvertTo-Json | Set-Content $configPath -Encoding UTF8
 if (-not (Test-Path $config.folder)) { New-Item -ItemType Directory -Path $config.folder | Out-Null }
-Write-Host "  کلیلەکە پاشەکەوت کرا (تەنها بۆ ئەم بەکارهێنەرەی ویندۆز دەکرێتەوە)." -ForegroundColor Green
+Write-Host "  بەسترایەوە. کلیلەکە تەنها لەسەر ئەم کۆمپیوتەرە و بۆ ئەم بەکارهێنەرەی ویندۆز دەمێنێتەوە." -ForegroundColor Green
+Write-Output "PAIR-CONNECTED"
 
-# 3. The daily task.
+# 4. The daily task, and the first backup now.
 if (-not $NoTask) {
     $script = Join-Path $here "WaznAutoBackup.ps1"
     $action = New-ScheduledTaskAction -Execute "powershell.exe" -Argument "-NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$script`""
