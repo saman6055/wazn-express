@@ -72,8 +72,12 @@ try {
     $config = Get-Content $ConfigPath -Raw -Encoding UTF8 | ConvertFrom-Json
     $script:Server = ([string]$config.serverUrl).TrimEnd("/")
     $folder = [string]$config.folder
-    $keep = [int]$config.keep
-    if ($keep -lt 1) { $keep = 1 }
+    # How long a copy stays, and the most the folder may hold (owner, 2026-10-25:
+    # «ئەگەر زۆر جێگا ناگرێت، 7 ڕۆژ یان 1 مانگ بمێنێتەوە»). Whichever is reached first.
+    $keepDays = 30
+    if ($config.PSObject.Properties["keepDays"] -and [int]$config.keepDays -ge 1) { $keepDays = [int]$config.keepDays }
+    $maxBytes = 30GB
+    if ($config.PSObject.Properties["maxFolderGB"] -and [double]$config.maxFolderGB -gt 0) { $maxBytes = [int64]([double]$config.maxFolderGB * 1GB) }
     if (-not (Test-Path $folder)) { New-Item -ItemType Directory -Path $folder | Out-Null }
 
     $key = Read-Key $PSScriptRoot
@@ -104,7 +108,14 @@ try {
     } while ($state.status -eq "in_progress")
     if ($state.status -ne "completed") { throw "The server could not make backup $($id): $($state.error)" }
 
-    # 3. Download it beside the others, under a temporary name.
+    # 3. Room for it? A disk filled by something else stops the backup, never the old copies.
+    $free = (Get-PSDrive -Name (Split-Path -Qualifier (Resolve-Path $folder)).TrimEnd(":")).Free
+    $need = [int64]$state.fileSize + 500MB
+    if ($free -lt $need) {
+        throw ("Not enough room on the disk: {0:N1} GB free, {1:N1} GB needed; the earlier copies were kept" -f ($free / 1GB), ($need / 1GB))
+    }
+
+    # Download it beside the others, under a temporary name.
     $stamp = Get-Date -Format "yyyy-MM-dd_HHmm"
     $final = Join-Path $folder "Wazn-Backup-$stamp.zip"
     $part = "$final.part"
@@ -125,11 +136,33 @@ try {
     Write-Log ("Saved {0} ({1:N1} MB)" -f $final, ($size / 1MB))
 
     # 5. Only now: the older copies go, here and on the server.
-    $old = Get-ChildItem -Path $folder -Filter "Wazn-Backup-*.zip" | Sort-Object LastWriteTime -Descending | Select-Object -Skip $keep
-    foreach ($f in $old) {
-        Remove-Item $f.FullName -Force
-        Write-Log "Deleted older copy $($f.Name)"
+    #    One copy per day (the newest of that day), none older than keepDays,
+    #    and the oldest go first while the folder is over its ceiling.
+    #    The copy that just arrived is never deleted.
+    $copies = @(Get-ChildItem -Path $folder -Filter "Wazn-Backup-*.zip" | Sort-Object LastWriteTime -Descending)
+    $cutoff = (Get-Date).AddDays(-$keepDays)
+    $kept = New-Object System.Collections.ArrayList
+    $daysSeen = @{}
+    foreach ($f in $copies) {
+        $day = $f.LastWriteTime.ToString("yyyy-MM-dd")
+        $isNewest = ($f.FullName -eq (Get-Item $final).FullName)
+        if (-not $isNewest -and ($daysSeen.ContainsKey($day) -or $f.LastWriteTime -lt $cutoff)) {
+            Remove-Item $f.FullName -Force
+            Write-Log "Deleted older copy $($f.Name)"
+            continue
+        }
+        $daysSeen[$day] = $true
+        [void]$kept.Add($f)
     }
+    $total = ($kept | Measure-Object -Property Length -Sum).Sum
+    while ($kept.Count -gt 1 -and $total -gt $maxBytes) {
+        $oldest = $kept[$kept.Count - 1]
+        Remove-Item $oldest.FullName -Force
+        Write-Log ("Deleted {0} - the folder was over {1:N0} GB" -f $oldest.Name, ($maxBytes / 1GB))
+        $total -= $oldest.Length
+        $kept.RemoveAt($kept.Count - 1)
+    }
+    Write-Log ("Keeping {0} copies, {1:N1} GB" -f $kept.Count, ($total / 1GB))
     try {
         Invoke-Api "DELETE" "/api/auto-backup/$id" $headers | Out-Null
         Write-Log "Deleted the server's copy of backup $id"

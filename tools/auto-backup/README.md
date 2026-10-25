@@ -11,7 +11,7 @@ Set up once, after the server has a key:
 1. Backups page → **بەکاپی خۆکاری ڕۆژانە** → **دروستکردنی کلیل**, copy the key.
 2. Run `Wazn - auto backup.cmd` (the desktop shortcut), paste the key, Enter.
 
-Files beside the scripts: `config.json` (server, folder, how many to keep,
+Files beside the scripts: `config.json` (server, folder, `keepDays` = 30, `maxFolderGB` = 30,
 time), `key.dat` (the key, encrypted to this Windows user with DPAPI),
 `auto-backup.log`.
 

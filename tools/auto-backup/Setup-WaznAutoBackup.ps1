@@ -23,8 +23,12 @@ $configPath = Join-Path $here "config.json"
 if (Test-Path $configPath) {
     $config = Get-Content $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
 } else {
-    $config = [pscustomobject]@{ serverUrl = "https://admin.waznexpress.com"; folder = "D:\Wazn-Backups"; keep = 1; time = "23:00" }
+    $config = [pscustomobject]@{ serverUrl = "https://admin.waznexpress.com"; folder = "D:\Wazn-Backups"; keepDays = 30; maxFolderGB = 30; time = "23:00" }
 }
+# One copy a day for 30 days, the folder never past 30 GB (owner, 2026-10-25).
+if (-not $config.PSObject.Properties["keepDays"]) { $config | Add-Member -NotePropertyName keepDays -NotePropertyValue 30 }
+if (-not $config.PSObject.Properties["maxFolderGB"]) { $config | Add-Member -NotePropertyName maxFolderGB -NotePropertyValue 30 }
+if ($config.PSObject.Properties["keep"]) { $config.PSObject.Properties.Remove("keep") }
 if ($ServerUrl) { $config.serverUrl = $ServerUrl }
 if ($Folder) { $config.folder = $Folder }
 if ($Time) { $config.time = $Time }
@@ -34,6 +38,7 @@ Write-Host "  Wazn Express - بەکاپی خۆکاری ڕۆژانە"
 Write-Host "  ------------------------------------"
 Write-Host "  فۆڵدەر: $($config.folder)"
 Write-Host "  کات: هەموو ڕۆژێک $($config.time) (ئەگەر کۆمپیوتەر کوژاوە بوو، کە هەڵکرا)"
+Write-Host "  دەهێڵرێتەوە: یەک کۆپی بۆ هەر ڕۆژێک، $($config.keepDays) ڕۆژ، فۆڵدەرەکە لە $($config.maxFolderGB) GB تێناپەڕێت"
 Write-Host ""
 
 # 1. The key.
@@ -81,7 +86,7 @@ if (-not $NoTask) {
     $trigger = New-ScheduledTaskTrigger -Daily -At $config.time
     $settings = New-ScheduledTaskSettingsSet -StartWhenAvailable -RunOnlyIfNetworkAvailable -ExecutionTimeLimit (New-TimeSpan -Hours 4) -MultipleInstances IgnoreNew
     $principal = New-ScheduledTaskPrincipal -UserId "$env:USERDOMAIN\$env:USERNAME" -LogonType Interactive -RunLevel Limited
-    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description "Wazn Express: complete daily backup to $($config.folder); keeps the newest only after it arrives whole." -Force | Out-Null
+    Register-ScheduledTask -TaskName $TaskName -Action $action -Trigger $trigger -Settings $settings -Principal $principal -Description "Wazn Express: complete daily backup to $($config.folder); one copy a day for $($config.keepDays) days, at most $($config.maxFolderGB) GB, older ones removed only after the new one arrives whole." -Force | Out-Null
     Write-Host "  کاری ڕۆژانە زیاد کرا: $TaskName" -ForegroundColor Green
     Start-ScheduledTask -TaskName $TaskName
     Write-Host "  یەکەم بەکاپ ئێستا دەستی پێکرد. چەند خولەکێکی پێدەچێت؛ فایلەکە لە $($config.folder) دەردەکەوێت."

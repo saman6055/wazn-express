@@ -80,14 +80,26 @@ describe("the script on the computer", () => {
   const script = read("tools/auto-backup/WaznAutoBackup.ps1");
 
   it("deletes an older copy only after the new one is whole", () => {
+    const room = script.indexOf("if ($free -lt $need)");
     const verify = script.indexOf("Test-BackupZip $part");
     const sizeCheck = script.indexOf("-ne [int64]$state.fileSize");
     const move = script.indexOf("Move-Item $part $final");
-    const deleteOld = script.indexOf("Select-Object -Skip $keep");
-    expect(sizeCheck).toBeGreaterThan(-1);
+    const deleteOld = script.indexOf("$cutoff = (Get-Date).AddDays(-$keepDays)");
+    expect(room).toBeGreaterThan(-1);
+    expect(sizeCheck).toBeGreaterThan(room);
     expect(verify).toBeGreaterThan(sizeCheck);
     expect(move).toBeGreaterThan(verify);
     expect(deleteOld).toBeGreaterThan(move);
+  });
+
+  it("keeps one copy a day for 30 days within 30 GB, and never the copy that just arrived", () => {
+    // Owner, 2026-10-25: «ئەگەر زۆر جێگا ناگرێت، 7 ڕۆژ یان 1 مانگ بمێنێتەوە».
+    expect(script).toContain("$keepDays = 30");
+    expect(script).toContain("$maxBytes = 30GB");
+    expect(script).toContain("if (-not $isNewest -and ($daysSeen.ContainsKey($day) -or $f.LastWriteTime -lt $cutoff))");
+    expect(script).toContain("while ($kept.Count -gt 1 -and $total -gt $maxBytes)");
+    const setup = read("tools/auto-backup/Setup-WaznAutoBackup.ps1");
+    expect(setup).toContain("keepDays = 30; maxFolderGB = 30");
   });
 
   it("keeps the key encrypted to the Windows user, and the key file out of git", () => {
