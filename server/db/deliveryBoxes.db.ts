@@ -12,7 +12,7 @@ import { commissionGoodsTotal, updateFullPackageOrder } from "./fullPackage.db";
 import { markLinkedOrdersDelivered } from "./packages.db";
 import { orderAdvancePaidUsd, type AdvanceSource } from "@shared/orderAdvance";
 import { boxSettlements, boxSettlementLines } from "../../drizzle/schema/finance.schema";
-import { getBoxesOutstanding, getBoxesPaidInFull } from "./boxSettlement.db";
+import { getBoxesOutstanding, getBoxesPaidInFull, getBoxesPaidInPart } from "./boxSettlement.db";
 import { archiveCutoff, SETTLED_SLACK_USD } from "@shared/archive";
 import { boxOldCutoff } from "@shared/boxAging";
 
@@ -397,7 +397,12 @@ export async function getAllDeliveryBoxes(filters?: {
 
   const boxes = await db.select(BOX_LIST_COLUMNS).from(deliveryBoxes)
     .where(where)
-    .orderBy(desc(deliveryBoxes.createdAt))
+    // A box paid in part comes first, so the rest is never forgotten (owner,
+    // 2026-10-25). In the unpaid list a receipt means a part was paid.
+    .orderBy(
+      desc(sql`EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`),
+      desc(deliveryBoxes.createdAt),
+    )
     .limit(filters?.limit || 50)
     .offset(filters?.offset || 0);
 
@@ -459,6 +464,7 @@ export async function getAllDeliveryBoxes(filters?: {
   // What each box still owes, by the payment screen's own sums - so a row,
   // the box opened, and the figure above the list all say the same amount.
   const owedByBox = await getBoxesOutstanding(boxes.map(b => b.id));
+  const inPart = await getBoxesPaidInPart(boxes.filter(b => settledByBox.has(b.id)).map(b => b.id));
 
   const boxesWithType = boxes.map(b => ({
     ...b,
@@ -467,6 +473,8 @@ export async function getAllDeliveryBoxes(filters?: {
     /** The payment screen's verdict; null when no payment is on record. */
     settlementCleared: settledByBox.has(b.id) ? (clearedByBox.get(b.id) ?? false) : null,
     settledDiscountUsd: discountByBox.get(b.id) ?? 0,
+    /** Paid in part: orange, the rest still asked for in the box (owner, 2026-10-25). */
+    paidInPart: inPart.has(b.id),
     shippingType: resolveBoxShippingType(
       b.batchId ? (shippingTypeByBatch.get(b.batchId) ?? null) : null,
       (itemTypesByBox.get(b.id) || []).map(t => ({ shippingType: t })),

@@ -350,7 +350,13 @@ async function gatherAccount(customerId: number) {
     boxAt: s.boxAt ? new Date(s.boxAt).toISOString() : null,
   }));
 
-  const facts = { receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, deliveredTracedPackageIds, deliveredTracedOrderIds, pendingPackageIds, pendingOrderIds, pendingTrackings };
+  // A box paid in part: the rest it still asks for is owed in the box.
+  const partialBoxesOwedUsd = receiptedBoxIds.size === 0 ? 0 : await (async () => {
+    const { getBoxesPaidInPart } = await import("./boxSettlement.db");
+    const owedByBox = await getBoxesPaidInPart(Array.from(receiptedBoxIds));
+    return cents(Array.from(owedByBox.values()).filter((v) => v > 0.005).reduce((s, v) => s + v, 0));
+  })();
+  const facts = { partialBoxesOwedUsd, receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, deliveredTracedPackageIds, deliveredTracedOrderIds, pendingPackageIds, pendingOrderIds, pendingTrackings };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 
@@ -464,7 +470,7 @@ export async function countAdvanceWaiting(): Promise<number> {
   let n = 0;
   for (const c of candidates) {
     const d = await explainCustomerDebt(Number(c.customerId));
-    if (d.advance.leftUsd > 0.005 && d.advance.forBox && d.advance.forBox.days > 3) n++;
+    if (d.advance.leftUsd > 0.005 && d.advance.forBox && d.advance.forBox.days > 5) n++;
   }
   return n;
 }

@@ -333,6 +333,39 @@ export function roundingToleranceUsd(rate: number, stepIqd = 250): number {
  * question asked; over is simply taken as paid in full, so no one-cent credit
  * ever appears on a statement. `roundingUsd` says which it was.
  */
+/**
+ * A box paid in part keeps the rest ON THE BOX (owner, 2026-10-25). The
+ * shortfall kept as debt comes off the lines' paid amounts - the last lines
+ * first - so those parcels still read as owed, the box stays on the unpaid
+ * list in orange, and the next receipt of the same box takes the rest. Before
+ * this every line read paid in full, the box left the list, and the rest was
+ * a debt on the account that no box asked for.
+ */
+/**
+ * From when a box can be "paid in part" (owner, 2026-10-25). Older receipts
+ * that kept a shortfall as debt wrote every line as paid; their boxes are left
+ * as they were, never turned orange by old noise.
+ */
+export const PARTIAL_PAY_SINCE = "2026-10-25T00:00:00.000Z";
+
+/** Paid in part: its latest receipt kept a shortfall as debt, since the rule began, and the box still asks for money. */
+export function isPaidInPart(latest: { differenceKind?: string | null; createdAt?: string | Date | null } | null | undefined, owedUsd: number): boolean {
+  if (!latest || latest.differenceKind !== "debt" || !latest.createdAt) return false;
+  return new Date(latest.createdAt).toISOString() >= PARTIAL_PAY_SINCE && owedUsd > 0.005;
+}
+
+export function leaveShortOnLines<T extends { paidUsd: number }>(lines: readonly T[], shortUsd: number): T[] {
+  let left = Math.round(Math.max(0, shortUsd) * 100);
+  const out = lines.map((l) => ({ ...l }));
+  for (let i = out.length - 1; i >= 0 && left > 0; i--) {
+    const paid = Math.round(out[i].paidUsd * 100);
+    const take = Math.min(paid, left);
+    out[i].paidUsd = (paid - take) / 100;
+    left -= take;
+  }
+  return out;
+}
+
 export function differenceOf(
   dueUsd: number,
   paidUsd: number,

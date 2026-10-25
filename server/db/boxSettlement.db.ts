@@ -27,6 +27,8 @@ import { guardAgainstCredit } from "../lib/creditGuard";
 import { createPendingCredit } from "./pendingCredits.db";
 import {
   settlementTotals,
+  leaveShortOnLines,
+  isPaidInPart,
   differenceOf,
   roundingToleranceUsd,
   ROUNDING_VARIANCE_REASON,
@@ -740,6 +742,28 @@ export async function getBoxesPaidInFull(boxIds: number[]): Promise<Set<number>>
  * total. A box with nothing in it owes nothing. The courier's delivery fee is
  * not in it: it is not on the parcels (shared/deliveryFee).
  */
+/** The boxes paid in part (shared isPaidInPart), with what each still asks for. */
+export async function getBoxesPaidInPart(boxIds: number[]): Promise<Map<number, number>> {
+  const out = new Map<number, number>();
+  const ids = Array.from(new Set(boxIds.map(Number))).filter((id) => id > 0);
+  const db = await getDb();
+  if (!db || ids.length === 0) return out;
+  const rows = await db
+    .select({ boxId: boxSettlements.boxId, id: boxSettlements.id, differenceKind: boxSettlements.differenceKind, createdAt: boxSettlements.createdAt })
+    .from(boxSettlements)
+    .where(and(inArray(boxSettlements.boxId, ids), eq(boxSettlements.status, "confirmed")));
+  const latest = new Map<number, (typeof rows)[number]>();
+  for (const r of rows) {
+    const had = latest.get(Number(r.boxId));
+    if (!had || Number(r.id) > Number(had.id)) latest.set(Number(r.boxId), r);
+  }
+  const candidates = Array.from(latest.entries()).filter(([, r]) => isPaidInPart(r, 1)).map(([id]) => id);
+  if (candidates.length === 0) return out;
+  const owed = await getBoxesOutstanding(candidates);
+  owed.forEach((usd, id) => { if (usd > 0.005) out.set(id, usd); });
+  return out;
+}
+
 export async function getBoxesOutstanding(boxIds: number[]): Promise<Map<number, number>> {
   const owed = new Map<number, number>();
   const ids = Array.from(new Set(boxIds.map(Number))).filter((id) => id > 0);
@@ -1660,7 +1684,12 @@ export async function createBoxSettlement(
     // The other costs this receipt took the money for.
     await markExtraCostsSettled(tx, unpaidExtras.map((e) => e.id), settlementId);
 
-    for (const line of totals.lines) {
+    // Paid in part with the rest kept as debt: the rest stays on the box's
+    // lines, not only on the account (shared leaveShortOnLines).
+    const linesToWrite = difference.kind === "debt" && difference.amountUsd > 0
+      ? leaveShortOnLines(totals.lines, difference.amountUsd)
+      : totals.lines;
+    for (const line of linesToWrite) {
       const source = input.lines.find((l) => l.lineId === line.lineId);
       const parcel = parcels.find((p) => p.lineId === line.lineId);
       await tx.insert(boxSettlementLines).values({

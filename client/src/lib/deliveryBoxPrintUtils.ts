@@ -1272,6 +1272,8 @@ export function buildBoxReceiptHtml(
           <span>${t("delivery.remainingDebt")}:</span>
           <span style="font-weight:600; color:#b91c1c;">$${Number(settlement.debtUsd).toFixed(2)}</span>
         </div>` : ""}
+        ${(settlement?.debtUsd && settlement.debtUsd > 0) || (paidBeforeNum > 0 && leftToPayNum > 0.005) ? `
+        <div style="margin-top:6px; font-size:12px; color:#92400e;">${t("delivery.politeRest")}</div>` : ""}
         ${dinar ? dinarRowsHtml(dinar, t) : ""}
       </div>
 

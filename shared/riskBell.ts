@@ -77,7 +77,7 @@ export interface RiskFacts {
   extraCostsToday?: number;
   /** Batches whose dispatch check in China was finished in the last 48 hours (owner, 2026-10-24). */
   batchesDispatched?: number;
-  /** Customers whose advance waits on a box left unreceipted more than 3 days (owner, 2026-10-24). */
+  /** Customers whose advance waits on a box left unreceipted more than 5 days (owner, 2026-10-24/25). */
   advanceWaiting?: number;
 }
 
@@ -423,7 +423,7 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
       };
     case "advance-waiting":
       return {
-        title: { ku: `پێشەکیی ${n} کڕیار چاوەڕێی بۆکسێکە کە زیاتر لە 3 ڕۆژە وەسڵ نەکراوە`, en: `${n} customer advance(s) waiting on a box unreceipted for over 3 days`, ar: `دفعات ${n} عميل تنتظر صندوقاً لم يُوصَّل منذ أكثر من 3 أيام`, zh: `${n} 位客户的预付款在等待超过 3 天未开收据的箱子` },
+        title: { ku: `پێشەکیی ${n} کڕیار چاوەڕێی بۆکسێکە کە زیاتر لە 5 ڕۆژە وەسڵ نەکراوە`, en: `${n} customer advance(s) waiting on a box unreceipted for over 5 days`, ar: `دفعات ${n} عميل تنتظر صندوقاً لم يُوصَّل منذ أكثر من 5 أيام`, zh: `${n} 位客户的预付款在等待超过 5 天未开收据的箱子` },
         detail: {
           ku: "ئەگەر بۆکسەکە ڕۆیشتووە، وەسڵی بکە (یان 0 + «قەرز لەسەر کڕیار») — تا وەسڵ نەکرێت پێشەکییەکە بە بەکارنەهاتوو دەمێنێتەوە",
           en: "if the box has gone, receipt it (or 0 + debt on the customer) - until then the advance looks unspent",

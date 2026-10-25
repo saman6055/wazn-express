@@ -16,6 +16,7 @@ import { CustomerPendingOrdersSection } from "@/components/customers/CustomerPen
 import { foldedCorrectionIds } from "@shared/ledgerFold";
 import { ACCOUNT_LINES_ANCHOR } from "@/components/customers/DebtPeel";
 import { CustomerDebtExplained, LedgerSubjectCard, LedgerSubjectLine, useDebtExplained } from "@/components/customers/CustomerDebtExplained";
+import { CustomerBoxesPanel } from "@/components/delivery/CustomerBoxesPanel";
 import { AccountStatementSummary } from "@/components/finance/AccountStatementSummary";
 import { isChargeTx, isPaymentTx } from "@shared/ledgerTypes";
 import {
@@ -125,6 +126,10 @@ export default function CustomerFinance() {
   const customerId = parseInt(id || "0");
   
   const [paymentDialogOpen, setPaymentDialogOpen] = useState(false);
+  // Money is taken for a box, at the box (owner, 2026-10-25: the finance
+  // profile and the box are one body). Only with no box to pay does the
+  // payment go on the account, as an advance for the next box.
+  const [payWithoutBox, setPayWithoutBox] = useState(false);
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentAmountIqd, setPaymentAmountIqd] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
@@ -1326,7 +1331,7 @@ export default function CustomerFinance() {
                   <RotateCcw className="w-4 h-4 me-2" />
                   {pickLang(language, { ku: "ریفاوند", en: "Refund", ar: "استرداد", zh: "退款" })}
                 </Button>
-                <Dialog open={paymentDialogOpen} onOpenChange={setPaymentDialogOpen}>
+                <Dialog open={paymentDialogOpen} onOpenChange={(o) => { setPaymentDialogOpen(o); if (!o) setPayWithoutBox(false); }}>
                   <DialogTrigger asChild>
                     <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl shadow-lg">
                       <Plus className="w-4 h-4 me-2" />
@@ -1340,6 +1345,13 @@ export default function CustomerFinance() {
                         {pickLang(language, { ku: "تۆمارکردنی پارەدان", en: "Record payment", ar: "تسجيل دفعة", zh: "登记付款" })}
                       </DialogTitle>
                     </DialogHeader>
+                    <PayForWhichBox
+                      customerId={customerId}
+                      enabled={paymentDialogOpen}
+                      language={language}
+                      withoutBox={payWithoutBox}
+                      onWithoutBox={() => setPayWithoutBox(true)}
+                    >
                     <div className="space-y-4 mt-4">
                       <div className="grid grid-cols-2 gap-4">
                         <div>
@@ -1447,6 +1459,7 @@ export default function CustomerFinance() {
                         {recordPayment.isPending ? pickLang(language, { ku: 'چاوەڕوان بە...', en: 'Please wait...', ar: 'يرجى الانتظار...', zh: '请稍候...' }) : pickLang(language, { ku: 'تۆمارکردن', en: 'Record', ar: 'تسجيل', zh: '登记' })}
                       </Button>
                     </div>
+                    </PayForWhichBox>
                   </DialogContent>
                 </Dialog>
               </div>
@@ -1621,6 +1634,10 @@ export default function CustomerFinance() {
             >
               <div className="mb-6">
                 <CustomerDebtExplained customerId={customerId} />
+              </div>
+              {/* The same boxes, colours and figures as the box screen (owner, 2026-10-25). */}
+              <div className="mb-6">
+                <CustomerBoxesPanel customerId={customerId} />
               </div>
               <CustomerPendingOrdersSection customerId={customerId} />
             </motion.div>
@@ -2778,5 +2795,70 @@ export default function CustomerFinance() {
         </DialogContent>
       </Dialog>
     </DashboardLayout>
+  );
+}
+
+/**
+ * «For which box?» - the first question of a payment on the finance profile
+ * (owner, 2026-10-25). Each box still owing opens at its own payment window,
+ * so the money is written on the box and the account at once. Only when the
+ * customer has no box to pay - goods still on the road - is the plain form
+ * shown, and the money waits as an advance for the next box.
+ */
+function PayForWhichBox({ customerId, enabled, language, withoutBox, onWithoutBox, children }: {
+  customerId: number;
+  enabled: boolean;
+  language: string;
+  withoutBox: boolean;
+  onWithoutBox: () => void;
+  children: React.ReactNode;
+}) {
+  const L = (w: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, w);
+  const boxes = trpc.deliveryBox.customerBoxes.useQuery({ customerId }, { enabled: enabled && customerId > 0 });
+  const owing = (boxes.data?.boxes ?? []).filter((b) => b.status !== "cancelled" && !b.paidInFull && Number(b.owedUsd) > 0.005);
+  if (boxes.isLoading) return <p className="mt-4 text-sm text-muted-foreground">…</p>;
+  return (
+    <div className="mt-4 space-y-3" data-testid="pay-which-box">
+      {owing.length > 0 && (
+        <>
+          <p className="text-sm font-semibold">{L({ ku: "بۆ کام بۆکس؟", en: "For which box?", ar: "لأي صندوق؟", zh: "为哪个箱子？" })}</p>
+          <div className="space-y-2">
+            {owing.map((b) => (
+              <Link
+                key={b.id}
+                href={`/customer-delivery-scanner?box=${b.id}`}
+                className={
+                  b.hasReceipt
+                    ? "flex items-center justify-between gap-2 rounded-lg border-2 border-orange-300 bg-orange-50 px-3 py-2 text-sm hover:bg-orange-100 dark:border-orange-800 dark:bg-orange-950/30"
+                    : "flex items-center justify-between gap-2 rounded-lg border border-amber-300 bg-amber-50 px-3 py-2 text-sm hover:bg-amber-100 dark:border-amber-800 dark:bg-amber-950/30"
+                }
+                data-testid={`pay-box-${b.id}`}
+              >
+                <span className="min-w-0">
+                  <bdi dir="ltr" className="font-mono font-semibold">{b.boxCode}</bdi>
+                  {b.paidInPart ? <span className="ms-2 text-xs font-semibold text-orange-700 dark:text-orange-300">{L({ ku: "بەشێکی دراوە", en: "Paid in part", ar: "مدفوع جزئياً", zh: "部分已付" })}</span> : null}
+                </span>
+                <span className="shrink-0 text-xs">
+                  {L({ ku: "ماوە", en: "left", ar: "المتبقي", zh: "剩余" })} <bdi dir="ltr" className="font-mono font-semibold">{fmtUsd(Number(b.owedUsd))}</bdi> ←
+                </span>
+              </Link>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground">{L({ ku: "بۆکسەکە دەکرێتەوە و پارەکە لە پەنجەرەی خۆیدا وەردەگیرێت — هەمان پارە لە بۆکس و لە حیسابیش دەنووسرێت.", en: "The box opens and the money is taken in its own window - written on the box and on the account at once.", ar: "يُفتح الصندوق وتُستلم الدفعة في نافذته — تُسجّل على الصندوق والحساب معاً.", zh: "打开箱子并在其窗口收款 — 同时记入箱子和账户。" })}</p>
+        </>
+      )}
+      {owing.length > 0 && !withoutBox ? (
+        <Button variant="outline" className="w-full" onClick={onWithoutBox} data-testid="pay-without-box">
+          {L({ ku: "هیچ بۆکسێک نییە — وەک پێشەکی تۆمار بکە", en: "No box — record it as an advance", ar: "لا صندوق — سجّلها كدفعة مقدمة", zh: "没有箱子 — 记为预付款" })}
+        </Button>
+      ) : (
+        <>
+          <p className="rounded-md border border-emerald-300 bg-emerald-50/60 p-2 text-xs text-emerald-900 dark:border-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200">
+            {L({ ku: "ئەم پارەیە وەک پێشەکی تۆمار دەکرێت و بۆ بۆکسی داهاتووی کڕیار تەرخان دەکرێت.", en: "This money is recorded as an advance, set for the customer's next box.", ar: "تُسجّل هذه الدفعة كدفعة مقدمة لصندوق العميل التالي.", zh: "此款记为预付款，留给客户的下一个箱子。" })}
+          </p>
+          {children}
+        </>
+      )}
+    </div>
   );
 }

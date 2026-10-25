@@ -72,6 +72,7 @@ import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { BoxMissingParcels, EarlierWaiting, MissingList, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
 import { CountBadges } from "@/components/packages/CountBadges";
 import { ReceiptSendMenu } from "@/components/delivery/ReceiptSendMenu";
+import { isPaidInPart } from "@shared/boxSettlement";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { settlementTotals } from "@shared/boxSettlement";
@@ -721,6 +722,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   const settlementDueUsd = settlementTotals(
     (settlementView?.parcels ?? []).filter((p) => p.outstandingUsd > 0 || p.notChargedYet),
   ).dueUsd;
+  // Paid in part (owner, 2026-10-25): its latest receipt kept the rest as debt, in the box.
+  const latestReceipt = (settlementView?.settlements ?? []).filter((s) => s.status === "confirmed").sort((a, b) => Number(b.id) - Number(a.id))[0];
+  const paidInPart = isPaidInPart(latestReceipt ? { differenceKind: latestReceipt.differenceKind, createdAt: latestReceipt.createdAt } : null, settlementDueUsd);
 
   const settlementForPrint = (() => {
     const confirmed = (settlementView?.settlements ?? []).filter((s) => s.status === "confirmed");
@@ -1003,6 +1007,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       totalUsd: due.usd,
       totalIqd: due.iqd,
       customerName: customer?.fullName ?? null,
+      // Paid in part: the message thanks for it and asks for the rest (owner, 2026-10-25).
+      paidUsd: (settlementView?.settlements ?? []).filter((s) => s.status === "confirmed").reduce((sum, s) => sum + Number(s.paidUsd || 0), 0),
     });
     const number = whatsappNumber(customer?.mobileNumber);
     setSharing(true);
@@ -1125,7 +1131,15 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         />
         {box.customerId ? <CustomerBoxesPanel customerId={Number(box.customerId)} currentBoxId={box.id} /> : null}
 
-        {isOpen && hasLiveReceipt && (
+        {paidInPart && (
+          // Paid in part (owner, 2026-10-25): orange, what was paid, what is left.
+          <div className="rounded-lg border-2 border-orange-400 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-900 dark:bg-orange-950/30 dark:text-orange-200" data-testid="box-partial">
+            {pickLang(language, { ku: "بەشێکی دراوە", en: "Paid in part", ar: "مدفوع جزئياً", zh: "部分已付" })}
+            {" — "}{pickLang(language, { ku: "دراوە", en: "paid", ar: "دُفع", zh: "已付" })} <bdi dir="ltr">{fmtUsd((settlementView?.settlements ?? []).filter((s) => s.status === "confirmed").reduce((sum, s) => sum + Number(s.paidUsd || 0), 0))}</bdi>
+            {" · "}{pickLang(language, { ku: "ماوە", en: "left", ar: "المتبقي", zh: "剩余" })} <bdi dir="ltr">{fmtUsd(settlementDueUsd)}</bdi>
+          </div>
+        )}
+        {isOpen && hasLiveReceipt && settlementDueUsd <= 0.005 && (
           <div className="rounded-lg border border-emerald-500/40 bg-emerald-50 px-3 py-2 text-sm text-emerald-800 dark:bg-emerald-950/30 dark:text-emerald-200" data-testid="box-paid-closed">
             🔒 {pickLang(language, REOPEN_WORDS.paidClosed)}
           </div>
@@ -1727,6 +1741,31 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               </Button>
             }
           />
+          {/* Paid in part: a gentle reminder of the rest, the same paper with
+              what was paid and what is left (owner, 2026-10-25). */}
+          {paidInPart && (
+            <ReceiptSendMenu
+              uiLanguage={language}
+              sendLanguage={sendLanguage ?? receiptLanguageFor((customer as any)?.nationality)}
+              onSendLanguage={setSendLanguage}
+              onPick={(format, destination) => handleSendOnWhatsApp(format, destination)}
+              title={{ ku: "بیرخستنەوەی بڕی ماوە", en: "Remind of the rest", ar: "تذكير بالمتبقي", zh: "提醒余款" }}
+              testId="box-remind-rest"
+              trigger={
+                <Button
+                  variant="outline"
+                  size="sm"
+                  disabled={sharing}
+                  className="border-orange-400 text-orange-700 hover:bg-orange-50 hover:text-orange-800 dark:border-orange-800 dark:text-orange-300"
+                  data-testid="box-remind-rest-button"
+                >
+                  <Send className="h-4 w-4 me-1" />
+                  {pickLang(language, { ku: "بیرخستنەوە", en: "Remind", ar: "تذكير", zh: "提醒" })}
+                  <ChevronDown className="h-3 w-3 ms-1 opacity-60" />
+                </Button>
+              }
+            />
+          )}
           {/* The parcels themselves, as photos (owner, 2026-10-24). */}
           <ReceiptSendMenu
             uiLanguage={language}

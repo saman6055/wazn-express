@@ -18,7 +18,9 @@
  *      customer directly.
  */
 
-export const REMIND_AFTER_DAYS = 3;
+// Five days, not three (owner, 2026-10-25): the box goes first and the money
+// follows - a box paid in part included.
+export const REMIND_AFTER_DAYS = 5;
 
 const DAY_MS = 86_400_000;
 

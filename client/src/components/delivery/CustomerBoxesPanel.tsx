@@ -140,13 +140,16 @@ export function CustomerBoxesPanel({ customerId, currentBoxId }: { customerId: n
                   "rounded px-1.5 py-0.5 text-xs",
                   b.status === "cancelled" ? "bg-muted text-muted-foreground"
                     : b.paidInFull ? "bg-emerald-100 text-emerald-800 dark:bg-emerald-950/40 dark:text-emerald-200"
+                    : b.paidInPart ? "bg-orange-100 font-semibold text-orange-800 dark:bg-orange-950/40 dark:text-orange-300"
                     : "bg-amber-100 text-amber-800 dark:bg-amber-950/40 dark:text-amber-200",
                 )}>
                   {b.status === "cancelled"
                     ? L({ ku: "هەڵوەشێنراوە", en: "Cancelled", ar: "ملغى", zh: "已取消" })
                     : b.paidInFull
                       ? L({ ku: "دراوە", en: "Paid", ar: "مدفوع", zh: "已付" })
-                      : `${L({ ku: "ماوە", en: "Owes", ar: "متبقٍ", zh: "欠" })} ${fmtUsd(b.owedUsd)}`}
+                      : b.paidInPart
+                        ? `${L({ ku: "بەشێکی دراوە · ماوە", en: "Paid in part · left", ar: "مدفوع جزئياً · المتبقي", zh: "部分已付 · 剩余" })} ${fmtUsd(b.owedUsd)}`
+                        : `${L({ ku: "ماوە", en: "Owes", ar: "متبقٍ", zh: "欠" })} ${fmtUsd(b.owedUsd)}`}
                 </span>
                 <span className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Package className="h-3.5 w-3.5" />{b.totalPackages} · <bdi dir="ltr">{fmtUsd(b.totalValueUsd)}</bdi>

@@ -135,6 +135,12 @@ export interface SettledFacts {
   standingBoxCodes?: Set<string>;
   /** The customer's parcels not yet handed over. */
   undeliveredPackageIds?: Set<number>;
+  /**
+   * What receipted boxes still ask for: a box paid in part keeps the rest on
+   * the box (owner, 2026-10-25). Its goods read paid; this is the rest, owed
+   * in the box.
+   */
+  partialBoxesOwedUsd?: number;
   /** Delivered, and traceable through a batch or a box. */
   deliveredTracedPackageIds?: Set<number>;
   deliveredTracedOrderIds?: Set<number>;
@@ -234,7 +240,7 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
   const arrived = new Set<string>(ARRIVED_ORDER_STATUSES);
 
   const charges: ExplainedCharge[] = [];
-  const owed = { road: 0, arrived: 0, openBox: 0, parcel: 0 };
+  const owed = { road: 0, arrived: 0, openBox: Math.max(0, Math.round((facts.partialBoxesOwedUsd ?? 0) * 100)), parcel: 0 };
   let paidOnAccount = 0;
   let advance = 0;
   const receiptTaken = new Set<number>();

@@ -7,7 +7,7 @@ import { getDb } from "./connection";
 import { deliveryBoxes, deliveryCarriers, boxReceiptEvents } from "../../drizzle/schema";
 import { boxSettlements, boxSettlementLines } from "../../drizzle/schema/finance.schema";
 import { users } from "../../drizzle/schema/users.schema";
-import { getBoxesOutstanding, getBoxesPaidInFull } from "./boxSettlement.db";
+import { getBoxesOutstanding, getBoxesPaidInFull, getBoxesPaidInPart } from "./boxSettlement.db";
 import { withFix } from "@shared/fixAdvice";
 import {
   cleanCarrierName,
@@ -244,9 +244,10 @@ export async function customerBoxesOverview(customerId: number) {
     return { boxes: [], totals: { boxes: 0, paidUsd: 0, discountUsd: 0, owedUsd: 0 }, discounts: [] };
   }
 
-  const [owed, paidInFull, receipts, events] = await Promise.all([
+  const [owed, paidInFull, inPart, receipts, events] = await Promise.all([
     getBoxesOutstanding(ids),
     getBoxesPaidInFull(ids),
+    getBoxesPaidInPart(ids),
     db.select({
         id: boxSettlements.id,
         boxId: boxSettlements.boxId,
@@ -373,6 +374,8 @@ export async function customerBoxesOverview(customerId: number) {
       carrierTrackings: parseCarrierTrackings(b.carrierTrackings),
       paidInFull: paidInFull.has(id),
       hasReceipt: live.length > 0,
+      /** Paid in part, the rest asked for in the box (owner, 2026-10-25). */
+      paidInPart: inPart.has(id),
       owedUsd: due,
       discountUsd: round2(live.reduce((s, r) => s + Number(r.discountUsd), 0)),
       history,

@@ -416,7 +416,15 @@ export function BoxTable({
                   <span className={cn("inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium", statusCfg.className)}>
                     {t(statusCfg.key)}
                   </span>
-                  {alert && (
+                  {(box as any).paidInPart === true && (
+                    // Paid in part (owner, 2026-10-25): orange, with what was paid and what is left.
+                    <span className="mt-1 block w-fit rounded-full bg-orange-100 px-2 py-0.5 text-[11px] font-bold text-orange-800 dark:bg-orange-950/40 dark:text-orange-300" data-testid={`box-partial-${box.id}`}>
+                      {pickLang(language, { ku: "بەشێکی دراوە", en: "Paid in part", ar: "مدفوع جزئياً", zh: "部分已付" })}
+                      {" · "}{pickLang(language, { ku: "دراوە", en: "paid", ar: "دُفع", zh: "已付" })} <bdi dir="ltr">{fmtUsd(Number(box.settledUsd || 0))}</bdi>
+                      {" · "}{pickLang(language, { ku: "ماوە", en: "left", ar: "المتبقي", zh: "剩余" })} <bdi dir="ltr">{fmtUsd(Number(box.outstandingUsd || 0))}</bdi>
+                    </span>
+                  )}
+                  {alert && (box as any).paidInPart !== true && (
                     <span className="mt-1 block w-fit rounded-full bg-red-100 px-2 py-0.5 text-[10px] font-bold text-red-700 dark:bg-red-900/40 dark:text-red-300">
                       {alert.kind === "handed_unpaid"
                         ? pickLang(language, {
@@ -505,7 +513,9 @@ export function BoxTable({
                       data-testid={`open-box-${box.id}`}
                     >
                       <Wallet className="h-4 w-4 me-1" />
-                      {pickLang(language, { ku: "کردنەوە و پارەدان", en: "Open to pay", ar: "فتح للدفع", zh: "打开收款" })}
+                      {(box as any).paidInPart === true
+                        ? pickLang(language, { ku: "کردنەوە و پارەی ماوە", en: "Open to take the rest", ar: "فتح لاستلام الباقي", zh: "打开收取余款" })
+                        : pickLang(language, { ku: "کردنەوە و پارەدان", en: "Open to pay", ar: "فتح للدفع", zh: "打开收款" })}
                     </Button>
                   )}
                   <DropdownMenu>

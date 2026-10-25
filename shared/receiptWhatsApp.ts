@@ -49,6 +49,11 @@ export interface ReceiptMessageFacts {
   boxCode: string;
   parcelCount: number;
   /**
+   * What earlier receipts of this box already took (owner, 2026-10-25): the
+   * message then thanks for it and asks for the rest, gently, with no date.
+   */
+  paidUsd?: number;
+  /**
    * What the paper asks for in dollars - after the discount, what earlier
    * receipts paid and an advance taken off in dollars (owner, 2026-10-21:
    * the message said $183.03 where the paper said $116.93). Null when the
@@ -89,6 +94,39 @@ export function receiptWhatsAppMessage(lang: ReceiptLanguage, facts: ReceiptMess
   const dinars = Number.isFinite(iqd) && iqd > 0 ? Math.round(iqd).toLocaleString("en-GB") : null;
   // The first name, as a person is greeted: «بەڕێز خەرمان», not the full name.
   const name = String(facts.customerName ?? "").trim().split(/\s+/)[0] ?? "";
+
+  const paid = Number(facts.paidUsd ?? 0) > 0.005 ? money(Number(facts.paidUsd)) : null;
+  if (paid !== null) {
+    // Paid in part: thanks for what came, the rest asked for gently.
+    if (lang === "ar") {
+      const left = usd !== null ? (dinars ? `${usd} دولار (${dinars} دينار)` : `${usd} دولار`) : `${dinars ?? "0"} دينار`;
+      return [
+        `مرحباً${name ? ` حضرة ${name}` : ""}، نتمنى أن تكون بخير.`,
+        `الصندوق: ${code}`,
+        `المدفوع: ${paid} دولار — شكراً لك`,
+        `المتبقي: ${left}`,
+        "نرجو إرسال المتبقي في الوقت المناسب لك — وزن اكسبريس",
+      ].join("\n");
+    }
+    if (lang === "en") {
+      const left = usd !== null ? (dinars ? `$${usd} (${dinars} IQD)` : `$${usd}`) : `${dinars ?? "0"} IQD`;
+      return [
+        `Hello${name ? ` ${name}` : ""}, we hope you are well.`,
+        `Box: ${code}`,
+        `Paid: $${paid} — thank you`,
+        `Left: ${left}`,
+        "Please send the rest at a time that suits you — Wazn Express",
+      ].join("\n");
+    }
+    const left = usd !== null ? (dinars ? `${usd} دۆلار (${dinars} دینار)` : `${usd} دۆلار`) : `${dinars ?? "0"} دینار`;
+    return [
+      `سڵاو${name ? ` بەڕێز ${name}` : ""}، هیوادارین باش بیت.`,
+      `بۆکس: ${code}`,
+      `دراوە: ${paid} دۆلار — سوپاس بۆت`,
+      `ماوە: ${left}`,
+      "تکایە باقییەکەی لە کاتێکی گونجاودا بنێرە — وەزن ئێکسپرێس",
+    ].join("\n");
+  }
 
   if (lang === "ar") {
     const amount = usd !== null

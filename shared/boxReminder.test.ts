@@ -18,10 +18,10 @@ const NOW = new Date("2026-10-07T09:00:00Z");
 const ago = (days: number) => new Date(NOW.getTime() - days * 86_400_000);
 
 describe("when the office is asked", () => {
-  it("three days after the hand-over, with money still owed", () => {
-    expect(REMIND_AFTER_DAYS).toBe(3);
-    expect(officeShouldLook({ deliveredAt: ago(3), unpaidConfirmedAt: null, outstandingUsd: 45 }, NOW)).toBe(true);
-    expect(officeShouldLook({ deliveredAt: ago(2), unpaidConfirmedAt: null, outstandingUsd: 45 }, NOW)).toBe(false);
+  it("five days after the hand-over, with money still owed (owner, 2026-10-25)", () => {
+    expect(REMIND_AFTER_DAYS).toBe(5);
+    expect(officeShouldLook({ deliveredAt: ago(5), unpaidConfirmedAt: null, outstandingUsd: 45 }, NOW)).toBe(true);
+    expect(officeShouldLook({ deliveredAt: ago(4), unpaidConfirmedAt: null, outstandingUsd: 45 }, NOW)).toBe(false);
   });
 
   it("never for a box that owes nothing, or was never handed over", () => {
@@ -29,9 +29,9 @@ describe("when the office is asked", () => {
     expect(officeShouldLook({ deliveredAt: null, unpaidConfirmedAt: null, outstandingUsd: 45 }, NOW)).toBe(false);
   });
 
-  it("again three days after the last confirmation, not before", () => {
-    expect(officeShouldLook({ deliveredAt: ago(10), unpaidConfirmedAt: ago(1), outstandingUsd: 45 }, NOW)).toBe(false);
-    expect(officeShouldLook({ deliveredAt: ago(10), unpaidConfirmedAt: ago(3), outstandingUsd: 45 }, NOW)).toBe(true);
+  it("again five days after the last confirmation, not before", () => {
+    expect(officeShouldLook({ deliveredAt: ago(10), unpaidConfirmedAt: ago(4), outstandingUsd: 45 }, NOW)).toBe(false);
+    expect(officeShouldLook({ deliveredAt: ago(10), unpaidConfirmedAt: ago(5), outstandingUsd: 45 }, NOW)).toBe(true);
   });
 
   it("counts whole days", () => {
