@@ -47,6 +47,7 @@ import { MIN_BATCH_SEARCH_LENGTH } from "@shared/batchSearch";
 import { canDeleteBatch, isTiesQuestion, isSuperAdmin, BATCH_TIES_MARK } from "@shared/batchDeletion";
 import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
 import { BatchCostWorkingLine, BatchRealCostPreview, BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
+import { CarrierPartsCard } from "@/components/batches/CarrierPartsCard";
 import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
@@ -567,6 +568,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     { batchId: editingBatch?.id ?? 0 },
     { enabled: isEditOpen && !!editingBatch?.id },
   );
+  const editLoads = editFinancialQ.data?.carrierParts?.loads ?? [];
   /*
    * What is in the cost boxes right now, before any save — so the carrier's
    * total shows what it comes to per kilo while it is being typed (owner,
@@ -2585,17 +2587,33 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           {editingBatch.shippingType !== "sea" && (
                             <div className="grid gap-2">
                               <Label>{pickLang(language, { ku: "کێشی کۆمپانیای گواستنەوە (لە پسوولەکەیان)", en: "Carrier's billed weight (from its invoice)", ar: "وزن شركة الشحن (من فاتورتها)", zh: "承运商计费重量（发票）" })}</Label>
-                              <Input name="chargedWeightKg" type="number" step="0.01" defaultValue={editingBatch.chargedWeightKg || ""} onChange={(e) => setCostDraft((d) => ({ ...d, carrier: e.target.value }))} />
+                              {/* With loads, the weight is their sum and is changed there (CarrierPartsCard). */}
+                              {editLoads.length > 0
+                                ? <Input type="number" readOnly value={editFinancialQ.data?.chargedWeight ?? ""} className="bg-muted/40" data-testid="charged-weight-from-loads" />
+                                : <Input name="chargedWeightKg" type="number" step="0.01" defaultValue={editingBatch.chargedWeightKg || ""} onChange={(e) => setCostDraft((d) => ({ ...d, carrier: e.target.value }))} />}
                             </div>
                           )}
                           {editingBatch.shippingType === "sea" && (
                             <div className="grid gap-2">
                               <Label>{pickLang(language, { ku: "قەبارەی کۆمپانیای گواستنەوە (لە پسوولەکەیان)", en: "Carrier's billed volume (from its invoice)", ar: "حجم شركة الشحن (من فاتورتها)", zh: "承运商计费体积（发票）" })}</Label>
-                              <Input name="chargedCbm" type="number" step="0.0001" defaultValue={editingBatch.chargedCbm || ""} onChange={(e) => setCostDraft((d) => ({ ...d, carrier: e.target.value }))} />
+                              {editLoads.length > 0
+                                ? <Input type="number" readOnly value={editFinancialQ.data?.chargedCbm ?? ""} className="bg-muted/40" />
+                                : <Input name="chargedCbm" type="number" step="0.0001" defaultValue={editingBatch.chargedCbm || ""} onChange={(e) => setCostDraft((d) => ({ ...d, carrier: e.target.value }))} />}
                             </div>
                           )}
                         </div>
                         <CarrierDifferenceLine difference={editFinancialQ.data?.carrierDifference ?? null} />
+                        {editFinancialQ.data?.carrierParts && (
+                          <CarrierPartsCard
+                            batchId={editingBatch.id}
+                            shippingType={editingBatch.shippingType}
+                            summary={editFinancialQ.data.carrierParts}
+                            onChanged={() => {
+                              void editFinancialQ.refetch();
+                              void trpcUtilsForAudit.batches.invalidate();
+                            }}
+                          />
+                        )}
                       </CardContent>
                     </Card>
                     
@@ -2634,7 +2652,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           <Label className="mt-2">{t("batches.totalShippingCost")}</Label>
                           <div className="relative">
                             <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                            <Input name="shippingCost" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.shippingCost || ""} placeholder={t("batches.totalAmountToCompany")} onChange={(e) => setCostDraft((d) => ({ ...d, total: e.target.value }))} data-testid="batch-total-cost" />
+                            {editLoads.length > 0
+                              ? <Input type="number" readOnly className="pl-7 bg-muted/40" value={editFinancialQ.data?.shippingCostTotal || ""} data-testid="batch-total-cost-from-loads" />
+                              : <Input name="shippingCost" type="number" step="0.01" className="pl-7" defaultValue={editingBatch.shippingCost || ""} placeholder={t("batches.totalAmountToCompany")} onChange={(e) => setCostDraft((d) => ({ ...d, total: e.target.value }))} data-testid="batch-total-cost" />}
                           </div>
                           <p className="text-xs text-muted-foreground">
                             {pickLang(language, {
@@ -2646,9 +2666,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           </p>
                           <BatchRealCostPreview
                             shippingType={editingBatch.shippingType}
-                            total={costDraft.total ?? editingBatch.shippingCost}
+                            total={editLoads.length > 0 ? String(editFinancialQ.data?.shippingCostTotal ?? "") : costDraft.total ?? editingBatch.shippingCost}
                             typedRate={costDraft.rate ?? (editingBatch.shippingType === "sea" ? editingBatch.costPerCbm : editingBatch.costPerKg)}
-                            carrierBilled={costDraft.carrier ?? (editingBatch.shippingType === "sea" ? editingBatch.chargedCbm : editingBatch.chargedWeightKg)}
+                            carrierBilled={editLoads.length > 0 ? String((editingBatch.shippingType === "sea" ? editFinancialQ.data?.chargedCbm : editFinancialQ.data?.chargedWeight) ?? "") : costDraft.carrier ?? (editingBatch.shippingType === "sea" ? editingBatch.chargedCbm : editingBatch.chargedWeightKg)}
                             ours={editFinancialQ.data ? { billedKg: Number(editFinancialQ.data.ourBilledKg) || 0, cbm: Number(editFinancialQ.data.ourCbm) || 0 } : null}
                           />
                         </div>

@@ -93,6 +93,11 @@ export const batches = mysqlTable("batches", {
   dispatchCheckedAt: timestamp("dispatchCheckedAt"),
   dispatchCheckedById: int("dispatchCheckedById"),
   dispatchNote: text("dispatchNote"),
+  // The carrier's bill looked like part of the batch only (shared/carrierParts)
+  // and an admin said why and that it should not wait (owner, 2026-10-25).
+  partsAcceptedAt: timestamp("partsAcceptedAt"),
+  partsAcceptedById: int("partsAcceptedById"),
+  partsAcceptedNote: text("partsAcceptedNote"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -273,3 +278,29 @@ export const batchCartonItems = mysqlTable("batchCartonItems", {
 
 export type BatchCartonItem = typeof batchCartonItems.$inferSelect;
 
+
+/**
+ * One delivery of a batch by the carrier, with its own invoice (owner,
+ * 2026-10-25): a carrier may send one of our batches in two or three loads.
+ * The batch's billed weight and total cost are the sums of these rows once
+ * any exist (server/db/carrierParts.db.ts) - every cost rule reads the batch.
+ */
+export const batchCarrierParts = mysqlTable("batchCarrierParts", {
+  id: int("id").autoincrement().primaryKey(),
+  batchId: int("batchId").notNull(),
+  partNo: int("partNo").notNull(),
+  arrivedOn: varchar("arrivedOn", { length: 10 }),
+  billedKg: decimal("billedKg", { precision: 10, scale: 2 }),
+  billedCbm: decimal("billedCbm", { precision: 10, scale: 4 }),
+  costUsd: decimal("costUsd", { precision: 12, scale: 2 }),
+  awbNumber: varchar("awbNumber", { length: 64 }),
+  note: varchar("note", { length: 255 }),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  batchIdx: index("idx_batch_carrier_parts_batch").on(table.batchId),
+  numberUnique: uniqueIndex("uq_batch_carrier_parts_no").on(table.batchId, table.partNo),
+}));
+
+export type BatchCarrierPart = typeof batchCarrierParts.$inferSelect;

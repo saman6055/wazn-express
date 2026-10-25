@@ -629,6 +629,30 @@ async function guardOddNumbers(args: {
   }
 }
 
+
+const carrierPartInput = z.object({
+  arrivedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional(),
+  billedKg: z.string().max(20).nullable().optional(),
+  billedCbm: z.string().max(20).nullable().optional(),
+  costUsd: z.string().max(20).nullable().optional(),
+  awbNumber: z.string().max(64).nullable().optional(),
+  note: z.string().max(255).nullable().optional(),
+});
+
+/** The same lock as the batch's own cost fields. */
+async function assertCarrierPartsEditable(batchId: number, role: string) {
+  const batch = await db.getBatchById(batchId);
+  if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("ئەم باچە") });
+  if (isBatchEditLocked(batch.status) && !mayEditLockedBatch(role)) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: withFix("ئەم باچە گەیشتووە و داخراوە — بارەکانی کۆمپانیای گواستنەوە تەنها ئادمینی سەرەکی دەیانگۆڕێت.", [
+        "داوا لە ئادمینی سەرەکی بکە بارەکە زیاد بکات یان ڕاستی بکاتەوە",
+      ]),
+    });
+  }
+}
+
 export const batchesRouter = router({
     /**
      * Waybill prefix to airline, as this company's own paperwork has it.
@@ -2588,6 +2612,54 @@ export const batchesRouter = router({
       }),
     
     // Get financial summary for a batch
+    /**
+     * The loads the carrier delivers this batch in, each with its own invoice
+     * (owner, 2026-10-25). Their sums become the batch's billed weight and
+     * total cost (server/db/carrierParts.db.ts). Admins only: these are the
+     * company's cost figures. A delivered batch: the main admin only, as for
+     * every other cost field.
+     */
+    carrierParts: router({
+      add: adminProcedure
+        .input(z.object({ batchId: z.number().int().positive() }).merge(carrierPartInput))
+        .mutation(async ({ input, ctx }) => {
+          const { batchId, ...part } = input;
+          await assertCarrierPartsEditable(batchId, ctx.user.role);
+          const res = await db.addCarrierPart(batchId, part, ctx.user.id);
+          await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "add_carrier_part", entityType: "batch", entityId: batchId, newValues: { ...part, partNo: res.partNo } });
+          return res;
+        }),
+      update: adminProcedure
+        .input(z.object({ id: z.number().int().positive() }).merge(carrierPartInput))
+        .mutation(async ({ input, ctx }) => {
+          const { id, ...part } = input;
+          const batchId = await db.partBatchId(id);
+          if (!batchId) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("ئەم بارە") });
+          await assertCarrierPartsEditable(batchId, ctx.user.role);
+          await db.updateCarrierPart(id, part, ctx.user.id);
+          await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "update_carrier_part", entityType: "batch", entityId: batchId, newValues: { partId: id, ...part } });
+          return { success: true };
+        }),
+      remove: adminProcedure
+        .input(z.object({ id: z.number().int().positive() }))
+        .mutation(async ({ input, ctx }) => {
+          const batchId = await db.partBatchId(input.id);
+          if (!batchId) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("ئەم بارە") });
+          await assertCarrierPartsEditable(batchId, ctx.user.role);
+          await db.removeCarrierPart(input.id, ctx.user.id);
+          await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "remove_carrier_part", entityType: "batch", entityId: batchId, newValues: { partId: input.id } });
+          return { success: true };
+        }),
+      /** "I know why the bill is short - do not wait." A reason is required; null undoes it. */
+      accept: adminProcedure
+        .input(z.object({ batchId: z.number().int().positive(), note: z.string().trim().min(3).max(500).nullable() }))
+        .mutation(async ({ input, ctx }) => {
+          await db.setPartsAccepted(input.batchId, input.note, ctx.user.id);
+          await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: input.note ? "accept_partial_carrier_bill" : "undo_accept_partial_carrier_bill", entityType: "batch", entityId: input.batchId, newValues: { note: input.note } });
+          return { success: true };
+        }),
+    }),
+
     getFinancialSummary: staffProcedure
       .input(z.object({ batchId: z.number() }))
       .query(async ({ input }) => {

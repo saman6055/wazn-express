@@ -49,7 +49,7 @@ export function CarrierDifferenceLine({ difference }: { difference: CarrierDiffe
 }
 
 /** In place of a profit: the batch is waiting for its cost or its price. */
-export function BatchWaitingFor({ waitingFor }: { waitingFor: "cost" | "price" | null | undefined }) {
+export function BatchWaitingFor({ waitingFor }: { waitingFor: "cost" | "price" | "parts" | null | undefined }) {
   const { language } = useTranslation();
   if (!waitingFor) return null;
   return (
@@ -59,7 +59,14 @@ export function BatchWaitingFor({ waitingFor }: { waitingFor: "cost" | "price" |
     >
       <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
-        {waitingFor === "cost"
+        {waitingFor === "parts"
+          ? pickLang(language, {
+              ku: "قازانج چاوەڕێی بارەکانی ترە — کۆمپانیای گواستنەوە تەنها بەشێکی باچەکەی حیساب کردووە. کە بارەکەی تر گەیشت، وەسڵەکەی لە «قەبارە و تێچوو» زیاد بکە.",
+              en: "Profit waits for the other loads — the carrier has billed only part of the batch. Add the next invoice under Volume & cost when it arrives.",
+              ar: "الربح بانتظار بقية الشحنات — شركة الشحن احتسبت جزءاً من الدفعة فقط. أضف الفاتورة التالية عند وصولها.",
+              zh: "利润待其余批次 — 承运商只计费了部分货物。下一批到达后请添加其发票。",
+            })
+          : waitingFor === "cost"
           ? pickLang(language, {
               ku: "قازانج و زیان چاوەڕێی نرخی تێچووە — تێچووی هەر کیلۆ/CBM یان کۆی پسوولەی کۆمپانیای گواستنەوە بنووسە.",
               en: "Profit and loss wait for the cost — enter the cost per kg/CBM or the carrier's invoice total.",

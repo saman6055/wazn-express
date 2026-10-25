@@ -1551,6 +1551,29 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "batchCarrierParts",
+    dependencies: ["batches", "users"],
+    // Each load the carrier delivers a batch in, with its own invoice
+    // (owner, 2026-10-25). See server/db/carrierParts.db.ts.
+    sql: `CREATE TABLE IF NOT EXISTS batchCarrierParts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      batchId INT NOT NULL,
+      partNo INT NOT NULL,
+      arrivedOn VARCHAR(10) NULL,
+      billedKg DECIMAL(10, 2) NULL,
+      billedCbm DECIMAL(10, 4) NULL,
+      costUsd DECIMAL(12, 2) NULL,
+      awbNumber VARCHAR(64) NULL,
+      note VARCHAR(255) NULL,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      INDEX idx_batch_carrier_parts_batch (batchId),
+      UNIQUE KEY uq_batch_carrier_parts_no (batchId, partNo)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "boxReceiptEvents",
     dependencies: ["deliveryBoxes", "customers", "users"],
     // Every receipt printed, saved or sent (owner, 2026-10-19).
@@ -3346,6 +3369,13 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.batch_cartons_batch", sql: "CREATE INDEX idx_batch_cartons_batch ON batchCartons (batchId)" },
   { name: "idx.batch_carton_items_carton", sql: "CREATE INDEX idx_batch_carton_items_carton ON batchCartonItems (cartonId)" },
   { name: "idx.batch_carton_items_batch", sql: "CREATE INDEX idx_batch_carton_items_batch ON batchCartonItems (batchId)" },
+
+  // The carrier billed far less than our weight and an admin said it is not
+  // another load coming (owner, 2026-10-25, shared/carrierParts).
+  { name: "batches.partsAcceptedAt", sql: "ALTER TABLE batches ADD COLUMN partsAcceptedAt TIMESTAMP NULL" },
+  { name: "batches.partsAcceptedById", sql: "ALTER TABLE batches ADD COLUMN partsAcceptedById INT NULL" },
+  { name: "batches.partsAcceptedNote", sql: "ALTER TABLE batches ADD COLUMN partsAcceptedNote TEXT NULL" },
+  { name: "idx.batch_carrier_parts_batch", sql: "CREATE INDEX idx_batch_carrier_parts_batch ON batchCarrierParts (batchId)" },
 
   // A message either of the two can take back out of the conversation. Struck
   // out, not erased — see the schema note beside these columns.

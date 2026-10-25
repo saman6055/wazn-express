@@ -100,7 +100,8 @@ describe("every screen shows the real cost of a kilo, and how it was reached", (
     const page = read("client/src/pages/Batches.tsx");
     expect(page).toContain("<BatchCostWorkingLine working={financialSummary.costWorking}");
     expect(page).toContain("<BatchRealCostPreview");
-    expect(page).toContain("total={costDraft.total ?? editingBatch.shippingCost}");
+    // With carrier loads the total is their sum (CarrierPartsCard); else what is typed.
+    expect(page).toContain(": costDraft.total ?? editingBatch.shippingCost}");
     // The old hand-built line read the typed rate.
     expect(page).not.toContain("kg × $${financialSummary.costPerKg}");
   });

@@ -16,6 +16,8 @@ import {
 import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate';
 import { batchCostWorking, carrierBaseKgSql, CARRIER_BASE_CBM_SQL, carrierCostBase, carrierDifference, deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
 import { batchMissingCost, batchMissingSellingPrice } from '@shared/batchPricing';
+import { carrierPartsVerdict, profitWaitsForParts } from '@shared/carrierParts';
+import { batchCarrierParts } from '../../drizzle/schema';
 import { diffPriceFields, normalizePriceValue, PRICE_HISTORY_FIELDS } from '@shared/batchPriceHistory';
 import { createCustomerNotification } from './portal.db';
 import { getSetting, getVolumetricDivisor } from './settings.db';
@@ -1210,11 +1212,33 @@ export async function getBatchFinancialSummary(batchId: number) {
   // side is measured on. The discount is what we let the customer off, not
   // weight the aircraft did not carry (owner, 2026-10-23).
   let totalSpaceWeight = 0;
+  // Of those, the parcels checked in at the bench on arrival - what has
+  // reached Erbil of a batch the carrier may bring in loads (owner, 2026-10-25).
+  const arrivedRows = batchPackages.length === 0 ? [] : await db.selectDistinct({ id: packageScans.packageId })
+    .from(packageScans)
+    .innerJoin(packages, eq(packages.id, packageScans.packageId))
+    .where(and(eq(packages.batchId, batchId), eq(packageScans.scanType, 'received_local')));
+  const arrivedIds = new Set(arrivedRows.map((r) => Number(r.id)));
+  let arrivedKg = 0;
+  let arrivedCount = 0;
   for (const pkg of batchPackages) {
     const w = chargeableWeight(pkg, divisor);
     totalChargeableWeight += w.chargeableKg;
     totalSpaceWeight += w.fullKg ?? w.chargeableKg;
+    if (arrivedIds.has(pkg.id)) {
+      arrivedCount += 1;
+      arrivedKg += w.fullKg ?? w.chargeableKg;
+    }
   }
+  const carrierLoads = await db.select().from(batchCarrierParts)
+    .where(eq(batchCarrierParts.batchId, batchId))
+    .orderBy(asc(batchCarrierParts.partNo));
+  const partsVerdict = carrierPartsVerdict({
+    shippingType: batchData.shippingType,
+    oursKg: totalSpaceWeight,
+    carrierKg: Number(batchData.chargedWeightKg) || 0,
+    accepted: !!batchData.partsAcceptedAt,
+  });
   
   // Use batch values if set, otherwise use calculated values from packages
   const actualWeight = Number(batchData.actualWeightKg) || packageTotalWeight;
@@ -1330,7 +1354,11 @@ export async function getBatchFinancialSummary(batchId: number) {
     ? ("cost" as const)
     : batchMissingSellingPrice(batchData, { hasTiers: !!batchData.useTieredPricing }) && totalRevenue <= 0
       ? ("price" as const)
-      : null;
+      // The carrier billed only part of the batch: the rest is on the road,
+      // not profit (shared/carrierParts).
+      : profitWaitsForParts(partsVerdict)
+        ? ("parts" as const)
+        : null;
   
   return {
     batchId,
@@ -1373,7 +1401,27 @@ export async function getBatchFinancialSummary(batchId: number) {
      */
     ourBilledKg: totalSpaceWeight,
     ourCbm: packageTotalCbm,
-    carrierDifference: carrierDifference(batchData.shippingType, batchData, { billedKg: totalSpaceWeight, cbm: packageTotalCbm }),
+    // Not a gain while the bill covers only part of the batch.
+    carrierDifference: profitWaitsForParts(partsVerdict) ? null : carrierDifference(batchData.shippingType, batchData, { billedKg: totalSpaceWeight, cbm: packageTotalCbm }),
+    carrierParts: {
+      verdict: partsVerdict,
+      loads: carrierLoads.map((p) => ({
+        id: p.id,
+        partNo: p.partNo,
+        arrivedOn: p.arrivedOn,
+        billedKg: p.billedKg,
+        billedCbm: p.billedCbm,
+        costUsd: p.costUsd,
+        awbNumber: p.awbNumber,
+        note: p.note,
+      })),
+      registered: { count: batchPackages.length, kg: Math.round(totalSpaceWeight * 100) / 100 },
+      arrived: { count: arrivedCount, kg: Math.round(arrivedKg * 100) / 100 },
+      carrierKg: Number(batchData.chargedWeightKg) || 0,
+      accepted: batchData.partsAcceptedAt
+        ? { at: batchData.partsAcceptedAt, byId: batchData.partsAcceptedById, note: batchData.partsAcceptedNote }
+        : null,
+    },
     waitingFor,
     totalPackages: batchPackages.length,
     customerBreakdown: Object.values(customerBreakdown)

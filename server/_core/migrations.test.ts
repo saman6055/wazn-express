@@ -14,6 +14,8 @@ describe("Migration System", () => {
     // A count, so adding a table is a deliberate act rather than something
     // that slips in. Bump it in the same commit that adds the table.
     it("should have 93 table definitions", () => {
+      // 111 since batchCarrierParts - a batch the carrier delivers in more
+      // than one load, each with its own invoice (owner, 2026-10-25).
       // 110 since batchCartons and batchCartonItems - the dispatch check in
       // China (owner, 2026-10-24).
       // 103 since pendingCredits — the extra a customer handed over, held
@@ -33,7 +35,7 @@ describe("Migration System", () => {
       // 105 since customerStanding — cautions and the blacklist.
       // 106 since boxExtraCosts — customs and other costs on a box.
       // 108 since deliveryCarriers and boxReceiptEvents (owner, 2026-10-19).
-      expect(TABLE_DEFINITIONS.length).toBe(110);
+      expect(TABLE_DEFINITIONS.length).toBe(111);
     });
     
     it("should have unique table names", () => {
