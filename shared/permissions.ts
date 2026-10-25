@@ -219,7 +219,11 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
         label: "Batch Assignment",
         labelKu: "خستنە ناو باچ",
         actions: ["view", "create"],
-        subPermissions: [],
+        subPermissions: [
+          // The dispatch check in China (owner, 2026-10-25): for staff working
+          // in China; admins there and the main admin have it anyway.
+          { key: "finish_dispatch_short", label: "Finish the dispatch check with parcels left out", labelKu: "تەواوکردنی پشکنینی ناردن کاتێک پاکێج نەخراوەتە ناو کارتۆن", description: "With a reason, for a member of staff working in China", descriptionKu: "بە نووسینی هۆکار، بۆ کارمەندی چین" },
+        ],
       },
       {
         module: "arrival_verification",
@@ -805,4 +809,42 @@ export const PATH_TO_MODULE: Record<string, string> = {
   // The create screens are the create action of the dashboard that owns them.
   "/commission/new": "commission",
   "/full-package/new": "full_package",
+};
+
+/**
+ * The permissions a member of staff in the China warehouse needs (owner,
+ * 2026-10-25): register, put in batches and cartons, put a parcel right -
+ * weight, size, batch, status - and print. Nothing of money: no prices, no
+ * discounts, no finance. The permissions page fills these in with one click;
+ * an admin still presses Save. What such a person sees is limited to the
+ * parcels registered in China (db/dispatch: chinaStaffScope).
+ */
+export const CHINA_STAFF_PRESET: {
+  permissions: Array<{ module: string; canView: boolean; canCreate: boolean; canEdit: boolean; canDelete: boolean }>;
+  subPermissions: Array<{ module: string; permissionKey: string; isAllowed: boolean }>;
+} = {
+  permissions: [
+    { module: "dashboard", canView: true, canCreate: false, canEdit: false, canDelete: false },
+    { module: "quick_register", canView: true, canCreate: true, canEdit: false, canDelete: false },
+    { module: "scan_quick_register", canView: true, canCreate: true, canEdit: false, canDelete: false },
+    { module: "packages", canView: true, canCreate: false, canEdit: true, canDelete: false },
+    { module: "batches", canView: true, canCreate: true, canEdit: true, canDelete: false },
+    { module: "batch_assignment_scanner", canView: true, canCreate: true, canEdit: false, canDelete: false },
+    { module: "unclaimed_packages", canView: true, canCreate: false, canEdit: true, canDelete: false },
+    { module: "registrations", canView: true, canCreate: false, canEdit: false, canDelete: false },
+    { module: "prohibited_register", canView: true, canCreate: true, canEdit: false, canDelete: false },
+    { module: "scan_dashboard", canView: true, canCreate: false, canEdit: false, canDelete: false },
+    { module: "label_printing", canView: true, canCreate: false, canEdit: false, canDelete: false },
+  ],
+  subPermissions: [
+    { module: "packages", permissionKey: "change_status", isAllowed: true },
+    { module: "packages", permissionKey: "print_labels", isAllowed: true },
+    { module: "packages", permissionKey: "upload_images", isAllowed: true },
+    { module: "packages", permissionKey: "view_prices", isAllowed: false },
+    { module: "packages", permissionKey: "edit_prices", isAllowed: false },
+    { module: "batches", permissionKey: "print_manifest", isAllowed: true },
+    { module: "batches", permissionKey: "assign_packages", isAllowed: true },
+    { module: "batches", permissionKey: "finalize_batch", isAllowed: false },
+    { module: "batch_assignment_scanner", permissionKey: "finish_dispatch_short", isAllowed: true },
+  ],
 };

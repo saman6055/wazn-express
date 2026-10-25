@@ -13,7 +13,7 @@ import {
   Eye, Plus, Pencil, Trash2, Search, ToggleLeft, CheckCircle2,
   XCircle, AlertTriangle, Loader2
 } from "lucide-react";
-import { PERMISSION_GROUPS, SYSTEM_MODULES } from "../../../shared/permissions";
+import { CHINA_STAFF_PRESET, PERMISSION_GROUPS, SYSTEM_MODULES } from "../../../shared/permissions";
 import type { PermissionGroup, ModulePermissions } from "../../../shared/permissions";
 import DashboardLayout from "@/components/DashboardLayout";
 import { toast } from "sonner";
@@ -61,7 +61,11 @@ interface PermState {
 
 export default function PermissionsManagement() {
   const { language } = useTranslation();
-  const [selectedUserId, setSelectedUserId] = useState<number | null>(null);
+  // A link can open one member of staff with the China preset filled in
+  // (owner, 2026-10-25): ?user=ID&preset=china. Saving is still a click.
+  const linkParams = useMemo(() => new URLSearchParams(typeof window !== "undefined" ? window.location.search : ""), []);
+  const [selectedUserId, setSelectedUserId] = useState<number | null>(() => Number(linkParams.get("user")) || null);
+  const pendingPreset = React.useRef(linkParams.get("preset") === "china");
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState("");
   const [hasChanges, setHasChanges] = useState(false);
@@ -133,6 +137,11 @@ export default function PermissionsManagement() {
       setPermState({ permissions: perms, subPermissions: subPerms });
       setHasChanges(false);
       setShowAllGroups(false);
+      // The link asked for the China preset: filled in over what was loaded.
+      if (pendingPreset.current) {
+        pendingPreset.current = false;
+        setTimeout(() => applyChinaPreset(), 0);
+      }
 
       // Auto-expand groups that have at least one enabled permission
       const groupsWithPerms = new Set<string>();
@@ -261,6 +270,27 @@ export default function PermissionsManagement() {
     setExpandedGroups(new Set(PERMISSION_GROUPS.map(g => g.id)));
     setHasChanges(true);
   };
+
+  /**
+   * The China warehouse's permissions in one click (shared/permissions:
+   * CHINA_STAFF_PRESET) - everything else off. Nothing is saved until Save.
+   */
+  function applyChinaPreset() {
+    const perms: PermState["permissions"] = {};
+    for (const p of CHINA_STAFF_PRESET.permissions) {
+      perms[p.module] = { canView: p.canView, canCreate: p.canCreate, canEdit: p.canEdit, canDelete: p.canDelete };
+    }
+    const subPerms: PermState["subPermissions"] = {};
+    for (const sp of CHINA_STAFF_PRESET.subPermissions) subPerms[`${sp.module}::${sp.permissionKey}`] = sp.isAllowed;
+    setPermState({ permissions: perms, subPermissions: subPerms });
+    setHasChanges(true);
+    toast.info(pickLang(language, {
+      ku: "مۆڵەتەکانی کارمەندی چین دانران - «پاشەکەوتکردن» لێبدە",
+      en: "China staff permissions filled in - press Save",
+      ar: "عُيّنت صلاحيات موظف الصين - اضغط حفظ",
+      zh: "已填入中国员工权限 - 请点击保存",
+    }), { duration: 8000 });
+  }
 
   // Disable ALL permissions
   const disableAll = () => {
@@ -521,6 +551,10 @@ export default function PermissionsManagement() {
                         <Button variant="outline" size="sm" onClick={disableAll} className="text-xs">
                           <XCircle className="h-3.5 w-3.5 me-1" />
                           {pickLang(language, { ku: "هەمووی ناچالاک", en: "Disable all", ar: "تعطيل الكل", zh: "全部禁用" })}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={applyChinaPreset} className="text-xs border-red-300 text-red-700 dark:border-red-800 dark:text-red-300" data-testid="china-staff-preset">
+                          <Shield className="h-3.5 w-3.5 me-1" />
+                          {pickLang(language, { ku: "مۆڵەتەکانی کارمەندی چین", en: "China staff permissions", ar: "صلاحيات موظف الصين", zh: "中国员工权限" })}
                         </Button>
                       </div>
                     </div>

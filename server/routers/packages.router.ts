@@ -22,6 +22,21 @@ import { cachedThumbnail, thumbnailFor } from "../services/orderThumbs.service";
 import { customerPhotos } from "@shared/parcelPhotos";
 import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView, setVolumetricDiscount, volumetricFacts } from "../lib/correctRegisteredParcel";
 
+/**
+ * Staff working in China see and put right the parcels registered in China
+ * only (owner, 2026-10-25). Admins and Erbil staff are unaffected.
+ */
+async function assertChinaScope(user: { id: number; role: string }, packageId: number) {
+  const scope = await db.chinaStaffScope(user);
+  if (scope && !(await db.parcelInScope(packageId, scope))) {
+    throw new TRPCError({
+      code: "FORBIDDEN",
+      message: withFix("ئەم پاکەتە لە چین تۆمار نەکراوە - تەنها ئۆفیسی هەولێر دەستکاری دەکات.", ["ئۆفیسی هەولێر ئاگادار بکە"]),
+    });
+  }
+  return scope;
+}
+
 export const packagesRouter = router({
     list: staffProcedure
       .input(z.object({
@@ -35,8 +50,10 @@ export const packagesRouter = router({
         dateFrom: z.string().max(50).optional(),
         dateTo: z.string().max(50).optional(),
       }).optional())
-      .query(async ({ input }) => {
-        return db.getAllPackages({
+      .query(async ({ input, ctx }) => {
+        const scope = await db.chinaStaffScope({ id: ctx.user.id, role: ctx.user.role });
+        const result = await db.getAllPackages({
+          registeredIn: scope ?? undefined,
           page: input?.page,
           pageSize: input?.pageSize,
           search: input?.search,
@@ -47,6 +64,11 @@ export const packagesRouter = router({
           dateFrom: input?.dateFrom ? new Date(input.dateFrom) : undefined,
           dateTo: input?.dateTo ? new Date(input.dateTo) : undefined,
         });
+        // China staff see no prices unless they were given «بینینی نرخەکان».
+        if (scope && !(await db.checkUserSubPermission(ctx.user.id, "packages", "view_prices"))) {
+          return { ...result, data: result.data.map((row: any) => ({ ...row, calculatedCostUsd: null })) };
+        }
+        return result;
       }),
     /**
      * Clear photo URLs whose files no longer exist on disk.
@@ -1097,8 +1119,13 @@ export const packagesRouter = router({
         billedWeightKg: z.number().min(0).max(100000).nullable(),
         approveCredit: z.boolean().optional(),
       }))
-      .mutation(async ({ input, ctx }) =>
-        setVolumetricDiscount({ id: ctx.user.id, name: ctx.user.name, role: ctx.user.role }, input)),
+      .mutation(async ({ input, ctx }) => {
+        // A discount is money: Erbil's, not the China warehouse's.
+        if (await db.chinaStaffScope({ id: ctx.user.id, role: ctx.user.role })) {
+          throw new TRPCError({ code: "FORBIDDEN", message: withFix("داشکانی قەبارە کاری ئۆفیسی هەولێرە.", ["ئۆفیسی هەولێر ئاگادار بکە"]) });
+        }
+        return setVolumetricDiscount({ id: ctx.user.id, name: ctx.user.name, role: ctx.user.role }, input);
+      }),
     volumetricFacts: staffProcedure
       .input(z.object({ packageId: idSchema }))
       .query(async ({ input }) => volumetricFacts(input.packageId)),
@@ -1600,6 +1627,7 @@ export const packagesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
+        await assertChinaScope({ id: ctx.user.id, role: ctx.user.role }, id);
         
         // Get package details before update
         const pkg = await db.getPackageById(id);
@@ -1864,6 +1892,14 @@ export const packagesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, volumeCbm: inputVolumeCbm, photos, approveCredit, ...data } = input;
+        const chinaScope = await assertChinaScope({ id: ctx.user.id, role: ctx.user.role }, id);
+        // Whose a parcel is, and its money, are Erbil's to change.
+        if (chinaScope && data.customerId !== undefined) {
+          const was = await db.getPackageById(id);
+          if (was && was.customerId !== data.customerId) {
+            throw new TRPCError({ code: "FORBIDDEN", message: withFix("گۆڕینی خاوەنی پاکەت کاری ئۆفیسی هەولێرە.", ["ئۆفیسی هەولێر ئاگادار بکە"]) });
+          }
+        }
 
         // A new owner: the money goes with the parcel or the edit is refused
         // (db/parcelCorrection ownerMoveRefusal, owner 2026-10-22).

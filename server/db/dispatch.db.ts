@@ -19,6 +19,7 @@ import { getDb } from "./connection";
 import { batches, batchCartons, batchCartonItems, packages, customers, users, countries } from "../../drizzle/schema";
 import { getBatchById, getBatchRateForCustomer } from "./batches.db";
 import { withFix } from "@shared/fixAdvice";
+import { checkUserSubPermission } from "./admin.db";
 
 export type DispatchScan =
   | { kind: "added"; packageId: number; trackingNumber: string; customerCode: string | null; cartonNo: number }
@@ -45,10 +46,37 @@ export async function worksInChina(userId: number): Promise<boolean> {
   return String(row?.iso ?? "").toUpperCase() === "CN";
 }
 
+/**
+ * The scope a member of staff working in China sees and edits parcels in
+ * (owner, 2026-10-25): the parcels registered in China. Null for anybody
+ * else - admins and Erbil staff see everything, as before.
+ */
+export async function chinaStaffScope(user: { id: number; role: string }): Promise<{ countryId: number; userId: number } | null> {
+  if (user.role === "super_admin" || user.role === "admin") return null;
+  const db = await need();
+  const [row] = await db
+    .select({ countryId: countries.id, iso: countries.isoCode })
+    .from(users)
+    .innerJoin(countries, eq(countries.id, users.workCountryId))
+    .where(eq(users.id, user.id))
+    .limit(1);
+  return String(row?.iso ?? "").toUpperCase() === "CN" ? { countryId: Number(row!.countryId), userId: user.id } : null;
+}
+
+/** Is this parcel inside the scope (registered in China, or by this person)? */
+export async function parcelInScope(packageId: number, scope: { countryId: number; userId: number }): Promise<boolean> {
+  const db = await need();
+  const [p] = await db.select({ c: packages.registeredInCountryId, by: packages.registeredById }).from(packages).where(eq(packages.id, packageId)).limit(1);
+  return !!p && (Number(p.c) === scope.countryId || Number(p.by) === scope.userId);
+}
+
 /** May this person finish a batch's dispatch with parcels left out? */
 export async function mayFinishDispatchShort(user: { id: number; role: string }): Promise<boolean> {
   if (user.role === "super_admin") return true;
-  return user.role === "admin" && (await worksInChina(user.id));
+  if (!(await worksInChina(user.id))) return false;
+  if (user.role === "admin") return true;
+  // A member of staff in China given it on the permissions page (owner, 2026-10-25).
+  return checkUserSubPermission(user.id, "batch_assignment_scanner", "finish_dispatch_short");
 }
 
 /** The batch, its cartons with their parcels, and the parcels in no carton. */

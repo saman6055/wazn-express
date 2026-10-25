@@ -322,11 +322,17 @@ export async function getAllPackages(options: {
   customerId?: number;
   dateFrom?: Date;
   dateTo?: Date;
+  /**
+   * Staff working in China see the parcels registered in China (owner,
+   * 2026-10-25) - registered there, or registered by them before their
+   * country was set.
+   */
+  registeredIn?: { countryId: number; userId: number };
 } = {}) {
   const db = await getDb();
   if (!db) return { data: [], total: 0, page: 1, pageSize: DEFAULT_PAGE_SIZE, totalPages: 0, nextCursor: undefined as number | undefined };
   
-  const { page = 1, pageSize = DEFAULT_PAGE_SIZE, cursor, search, status, shippingType, batchId, customerId, dateFrom, dateTo } = options;
+  const { page = 1, pageSize = DEFAULT_PAGE_SIZE, cursor, search, status, shippingType, batchId, customerId, dateFrom, dateTo, registeredIn } = options;
   const offset = (page - 1) * pageSize;
   
   // Build where conditions
@@ -424,6 +430,10 @@ export async function getAllPackages(options: {
     conditions.push(eq(packages.shippingType, shippingType as 'air_regular' | 'air_irregular' | 'sea'));
   }
   
+  if (registeredIn) {
+    conditions.push(or(eq(packages.registeredInCountryId, registeredIn.countryId), eq(packages.registeredById, registeredIn.userId))!);
+  }
+
   if (batchId) {
     conditions.push(eq(packages.batchId, batchId));
   }

@@ -25,7 +25,8 @@ describe("the dispatch check in China", () => {
   });
 
   it("finishing short: only the main admin, or an admin working in China, and with a reason", () => {
-    expect(db).toContain('return user.role === "admin" && (await worksInChina(user.id));');
+    expect(db).toContain('if (!(await worksInChina(user.id))) return false;');
+    expect(db).toContain('return checkUserSubPermission(user.id, "batch_assignment_scanner", "finish_dispatch_short");');
     expect(db).toContain("if (note.length < 3) {");
   });
 
