@@ -11,8 +11,6 @@ import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
 import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
-import { payeeCodeMatches } from "@shared/payeeCheck";
-import { splitCustomerCode } from "@shared/customerCode";
 import { DISCOUNT_REASONS } from "@shared/boxSettlement";
 import { PAID_WINDOWS, paidWindowStart, withoutMoney } from "@shared/boxOverview";
 import { canSeeAllAccounts } from "@shared/financeAccess";
@@ -1287,24 +1285,9 @@ export const deliveryBoxRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       const { approveCredit, confirmCustomerCode, ...settlement } = input;
-      // Whose money is this (owner, 2026-10-21): the customer's code, typed.
-      {
-        const payBox = await db.getDeliveryBoxById(input.boxId);
-        const payee = payBox?.customerId ? await db.getCustomerById(payBox.customerId) : null;
-        if (payee && !payeeCodeMatches(payee.customerCode, confirmCustomerCode)) {
-          throw new TRPCError({
-            code: "BAD_REQUEST",
-            message: withFix(
-              `ژمارەی کۆدی کڕیار ڕاست نییە - ئەم بۆکسە هی ${payee.fullName ?? ""} (${splitCustomerCode(payee.customerCode).code})ە.`,
-              [
-                "سەیری ناوی کڕیار بکە لە سەرەوەی پەنجەرەی پارەدان",
-                "ئەگەر ئەم کڕیارە نییە، پەنجەرەکە دابخە و بۆکسی ڕاست بکەرەوە",
-                "ئەگەر خۆیەتی، ژمارەی کۆدەکەی بنووسە (بۆ نموونە 303 بۆ AZ303)",
-              ],
-            ),
-          });
-        }
-      }
+      // The customer's code is no longer typed (owner, 2026-10-25: it slowed
+      // every payment). The payee's name and code still flash on the screen.
+      void confirmCustomerCode;
       const result = await db.createBoxSettlement(
         { ...settlement, credit: { role: ctx.user.role, approved: approveCredit } },
         ctx.user.id,
@@ -1450,6 +1433,11 @@ export const deliveryBoxRouter = router({
       html: z.string().max(5_000_000).nullable().optional(),
     }))
     .mutation(async ({ input, ctx }) => db.logReceiptEvent(input, ctx.user.id)),
+
+  /** The figures the last receipt of a box went out with - to send it again the same. */
+  lastReceiptEvent: staffProcedure
+    .input(z.object({ boxId: z.number().int().positive() }))
+    .query(async ({ input }) => db.lastReceiptEventOfBox(input.boxId)),
 
   receiptEventHtml: staffProcedure
     .input(z.object({ id: z.number().int().positive() }))

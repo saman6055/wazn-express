@@ -94,7 +94,7 @@ describe("every way into a receipt goes through it", () => {
     expect(panel).toContain("rate: settlementForPrint?.exchangeRate ?? null,");
     expect(panel).not.toContain("if (settlementForPrint) {\n      void output(lang, null);");
     expect(read("components/delivery/ReceiptDinarDialog.tsx")).toContain(
-      "const offered = Number.isFinite(ownRate) && ownRate > 0 ? ownRate : offeredRate(device, payment);",
+      "const offered = Number.isFinite(ownRate) && ownRate > 0 ? ownRate : sentRate > 0 ? sentRate : offeredRate(device, payment);",
     );
     // The box list still prints a cleared box straight off; it has no window.
     expect(table).toContain("if (box.settlementCleared === true) {\n      void printReceiptNow(box, lang, null);");

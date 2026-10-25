@@ -27,16 +27,12 @@ describe("whose money is this", () => {
     expect(payeeCodeMatches("VIP", "")).toBe(true);
   });
 
-  it("the server refuses a payment without it, and both payment screens ask it", () => {
+  it("the code is no longer typed (owner, 2026-10-25): the server does not ask it", () => {
     const router = read("server/routers/scanning.router.ts");
-    expect(router).toContain("if (payee && !payeeCodeMatches(payee.customerCode, confirmCustomerCode)) {");
+    expect(router).not.toContain("payeeCodeMatches(payee.customerCode, confirmCustomerCode)");
     const quick = read("client/src/components/delivery/QuickSettleDialog.tsx");
     expect(quick).toContain("<PayeeConfirm");
-    expect(quick).toContain("confirmCustomerCode: payeeCode,");
-    expect(quick).toContain("disabled={needsReason || settle.isPending || !payeeOk}");
-    const panel = read("client/src/components/delivery/BoxSettlementPanel.tsx");
-    expect(panel).toContain("      confirmCustomerCode,\n");
-    expect(panel).toContain("payeeOk === false");
+    expect(quick).not.toContain("confirmCustomerCode: payeeCode,");
   });
 
   it("the name and code flash, and the button names whose money", () => {

@@ -51,3 +51,13 @@ describe("the advance names its box, and the bell watches it", () => {
     expect(read("server/db/reports.db.ts")).toContain("countAdvanceWaiting()");
   });
 });
+
+describe("a receipt sent again keeps its figures (owner, 2026-10-25)", () => {
+  it("the window reads the last paper of the box and fills its rate and advance", () => {
+    const dlg = read("client/src/components/delivery/ReceiptDinarDialog.tsx");
+    expect(dlg).toContain("trpc.deliveryBox.lastReceiptEvent.useQuery(");
+    expect(dlg).toContain("sentRate > 0 ? sentRate : offeredRate(device, payment)");
+    expect(dlg).toContain('data-testid="receipt-sent-before"');
+    expect(read("server/routers/scanning.router.ts")).toContain("db.lastReceiptEventOfBox(input.boxId)");
+  });
+});

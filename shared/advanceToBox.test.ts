@@ -51,7 +51,8 @@ describe("one rule in every place money is asked for", () => {
   it("the printed receipt takes the same advance off, filled in by itself", () => {
     const dialog = root("client/src/components/delivery/ReceiptDinarDialog.tsx");
     expect(dialog).toContain("openUsd: v.openChargesUsd,");
-    expect(dialog).toContain("setAdvance(accountAdvanceUsd.toFixed(2));");
+    expect(dialog).toContain("const use = before > 0 ? before : accountAdvanceUsd;");
+    expect(dialog).toContain("setAdvance(use.toFixed(2));");
     expect(dialog).toContain('data-testid="receipt-account-advance"');
     for (const f of ["client/src/components/delivery/BoxDetailPanel.tsx", "client/src/components/delivery/BoxTable.tsx"]) {
       expect(root(f), f).toContain("boxId: box.id,");

@@ -378,6 +378,11 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
    * and the payment screen take off the same dollars. It fills the advance
    * field in dollars; the person printing can still change it.
    */
+  // The last receipt of this box, to send it again with the same figures.
+  const lastSent = trpc.deliveryBox.lastReceiptEvent.useQuery(
+    { boxId: Number(request?.boxId ?? 0) },
+    { enabled: open && Number(request?.boxId ?? 0) > 0, staleTime: 0 },
+  );
   const boxView = trpc.deliveryBox.settlementView.useQuery(
     { boxId: Number(request?.boxId ?? 0) },
     { enabled: open && Number(request?.boxId ?? 0) > 0, staleTime: 30_000 },
@@ -398,10 +403,14 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     }).coveredUsd;
   }, [boxView.data]);
   useEffect(() => {
-    if (!request || advanceTouched || !(accountAdvanceUsd > 0)) return;
-    setAdvance(accountAdvanceUsd.toFixed(2));
+    if (!request || advanceTouched) return;
+    // Sent before: the same advance as that paper, unless the person types another.
+    const before = lastSent.data?.advanceUsd ?? 0;
+    const use = before > 0 ? before : accountAdvanceUsd;
+    if (!(use > 0)) return;
+    setAdvance(use.toFixed(2));
     setCurrency("USD");
-  }, [request, advanceTouched, accountAdvanceUsd]);
+  }, [request, advanceTouched, accountAdvanceUsd, lastSent.data]);
 
   const ownRate = Number(request?.rate);
   const payment: DatedRate | null = lastPayment.data
@@ -409,7 +418,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     : null;
   const saved = recall();
   const device: DatedRate | null = saved.rate && saved.at ? { rate: saved.rate, at: saved.at } : null;
-  const offered = Number.isFinite(ownRate) && ownRate > 0 ? ownRate : offeredRate(device, payment);
+  const sentRate = Number(lastSent.data?.rate ?? 0);
+  const offered = Number.isFinite(ownRate) && ownRate > 0 ? ownRate : sentRate > 0 ? sentRate : offeredRate(device, payment);
   useEffect(() => {
     if (request && !rateTouched) setRate(offered ? String(offered) : "");
   }, [request, rateTouched, offered]);
@@ -522,6 +532,17 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
             {L(TXT.parcels(request?.parcelCount ?? 0))}
           </DialogDescription>
         </DialogHeader>
+        {lastSent.data && (
+          <p className="rounded-md border border-sky-300 bg-sky-50/70 p-2 text-xs text-sky-900 dark:border-sky-800 dark:bg-sky-950/30 dark:text-sky-200" data-testid="receipt-sent-before">
+            {L({ ku: "پێشتر نێردراوە/چاپ کراوە", en: "Sent / printed before", ar: "أُرسل / طُبع سابقاً", zh: "之前已发送/打印" })}
+            {": "}<bdi dir="ltr">{new Date(lastSent.data.at).toLocaleDateString("en-GB")}</bdi>
+            {lastSent.data.rate ? <> · {L({ ku: "نرخ", en: "rate", ar: "السعر", zh: "汇率" })} <bdi dir="ltr" className="font-mono">{lastSent.data.rate.toLocaleString("en-US")}</bdi></> : null}
+            {lastSent.data.advanceUsd > 0 ? <> · {L({ ku: "پێشەکی", en: "advance", ar: "مقدمة", zh: "预付" })} <bdi dir="ltr" className="font-mono">${lastSent.data.advanceUsd.toFixed(2)}</bdi></> : null}
+            {lastSent.data.discountUsd > 0 ? <> · {L({ ku: "داشکان", en: "discount", ar: "خصم", zh: "折扣" })} <bdi dir="ltr" className="font-mono">${lastSent.data.discountUsd.toFixed(2)}</bdi></> : null}
+            {lastSent.data.dueIqd ? <> · {L({ ku: "ماوە", en: "due", ar: "المتبقي", zh: "应付" })} <bdi dir="ltr" className="font-mono">{lastSent.data.dueIqd.toLocaleString("en-US")} IQD</bdi></> : null}
+            {" — "}{L({ ku: "هەمان ژمارەکان دانراونەتەوە", en: "the same figures are filled in again", ar: "أُعيدت الأرقام نفسها", zh: "已填入相同数字" })}
+          </p>
+        )}
 
         {/*
           * Two columns on a wide screen (owner, 2026-10-19: "it is very long,

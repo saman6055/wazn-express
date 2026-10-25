@@ -168,6 +168,36 @@ export async function logReceiptEvent(
   return { id: Number((res as any)[0].insertId) };
 }
 
+/**
+ * The figures the last receipt of this box went out with (owner, 2026-10-25:
+ * sending a receipt again, the rate, the dinars and the advance of the first
+ * one were gone, and he could not remember how he had worked it out).
+ */
+export async function lastReceiptEventOfBox(boxId: number): Promise<{
+  at: string; action: string; rate: number | null; advanceUsd: number; discountUsd: number; dueUsd: number | null; dueIqd: number | null; byName: string | null;
+} | null> {
+  const db = await need();
+  const [row] = await db
+    .select({ e: boxReceiptEvents, byName: users.name })
+    .from(boxReceiptEvents)
+    .leftJoin(users, eq(users.id, boxReceiptEvents.createdById))
+    .where(eq(boxReceiptEvents.boxId, boxId))
+    .orderBy(desc(boxReceiptEvents.id))
+    .limit(1);
+  if (!row) return null;
+  const e = row.e;
+  return {
+    at: new Date(e.createdAt).toISOString(),
+    action: String(e.action),
+    rate: e.rate == null ? null : Number(e.rate),
+    advanceUsd: Number(e.advanceUsd ?? 0),
+    discountUsd: Number(e.discountUsd ?? 0),
+    dueUsd: e.dueUsd == null ? null : Number(e.dueUsd),
+    dueIqd: e.dueIqd == null ? null : Number(e.dueIqd),
+    byName: row.byName ?? null,
+  };
+}
+
 export async function receiptEventHtml(id: number): Promise<string | null> {
   const db = await need();
   const [row] = await db.select({ html: boxReceiptEvents.html }).from(boxReceiptEvents).where(eq(boxReceiptEvents.id, id)).limit(1);

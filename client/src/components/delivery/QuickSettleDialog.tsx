@@ -24,7 +24,6 @@ import { pickLang } from "@/lib/lang";
 import { AdvanceSplitNote } from "./AdvanceSplitNote";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
-import { payeeCodeMatches } from "@shared/payeeCheck";
 import { PayeeConfirm, payeeButtonLabel } from "@/components/delivery/PayeeConfirm";
 import {
   settlementTotals, differenceOf, roundingToleranceUsd, accountCover, unbilledOnReceiptUsd, unbackedOnReceiptUsd,
@@ -65,8 +64,6 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const [iqd, setIqd] = useState("");
   // The digits of the customer's code, typed before the money is taken
   // (owner, 2026-10-21; shared/payeeCheck). A new box starts empty.
-  const [payeeCode, setPayeeCode] = useState("");
-  useEffect(() => { setPayeeCode(""); }, [boxId]);
   const [rate, setRate] = useState("");
   const [usd, setUsd] = useState("");
   const [treatShortAs, setTreatShortAs] = useState<"debt" | "discount">("debt");
@@ -249,7 +246,6 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
     }
     settle.mutate({
       boxId,
-      confirmCustomerCode: payeeCode,
       /**
        * The promised discounts go with the payment — each on the thing it
        * was promised on, and with the reason it was given for.
@@ -288,7 +284,8 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
 
   const code = splitCustomerCode(data?.customer?.customerCode);
   const payeeName = data?.customer?.fullName || code.name || code.code;
-  const payeeOk = payeeCodeMatches(data?.customer?.customerCode, payeeCode);
+  // The code is no longer typed (owner, 2026-10-25); the name still flashes.
+  const payeeOk = true;
   // A failed load is not "nothing to pay": it says so, with its report.
   const nothingToPay = !isLoading && !error && parcels.length === 0;
 
@@ -319,8 +316,6 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             customerName={data.customer.fullName}
             customerCode={data.customer.customerCode}
             boxCode={data.box?.boxCode}
-            value={payeeCode}
-            onChange={setPayeeCode}
             language={language}
           />
         )}
@@ -575,7 +570,6 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
             <BoxSettlementPanel
               boxId={boxId}
               embedded
-              confirmCustomerCode={payeeCode}
               payeeOk={payeeOk}
               payeeName={payeeName}
               onSettled={() => { onOpenChange(false); onSettled?.(); }}
