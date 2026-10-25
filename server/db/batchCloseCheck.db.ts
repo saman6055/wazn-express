@@ -1,6 +1,6 @@
 import { and, eq, inArray, ne, or } from "drizzle-orm";
 import { getDb } from "./connection";
-import { customers, deliveryBoxItems, deliveryBoxes, fullPackageOrders, packageScans, packages } from "../../drizzle/schema";
+import { batches, countries, customers, deliveryBoxItems, deliveryBoxes, fullPackageOrders, packageScans, packages } from "../../drizzle/schema";
 import { getVolumetricDivisor } from "./settings.db";
 import { orderNumbersForPackages } from "./orderNumbers.db";
 import { getBoxesPaidInFull, getBoxSettlementView } from "./boxSettlement.db";
@@ -138,8 +138,16 @@ export async function getBatchCloseFacts(batchId: number): Promise<BatchCloseFac
     idSet.has(r.pkg.id) || (!!r.pkg.trackingNumber && trackingSet.has(r.pkg.trackingNumber));
 
   const unboxed = live.filter((r) => !has(boxedIds, boxedTrackings, r)).map(carton);
+  // Registered outside China (the parcel's own country, else the batch's):
+  // weighed here, so its registration was its arrival.
+  const chinaIds = new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, "CN"))).map((r) => Number(r.id)));
+  const [batchRow] = await db.select({ createdInCountryId: batches.createdInCountryId }).from(batches).where(eq(batches.id, batchId)).limit(1);
+  const registeredHere = (r: (typeof live)[number]) => {
+    const country = r.pkg.registeredInCountryId ?? batchRow?.createdInCountryId ?? null;
+    return country != null && !chinaIds.has(Number(country));
+  };
   const notArrivalChecked = live
-    .filter((r) => needsArrivalCheck(r.pkg.status) && !has(scannedIds, scannedTrackings, r))
+    .filter((r) => needsArrivalCheck(r.pkg.status, registeredHere(r)) && !has(scannedIds, scannedTrackings, r))
     .map(carton);
   const unmeasured = live
     .filter((r) => !(r.pkg.fullPackageOrderId && fullPackageOrderIds.has(r.pkg.fullPackageOrderId)))

@@ -80,10 +80,11 @@ export function parcelEnded(status: string | null | undefined): boolean {
 /**
  * Should this carton have been checked in on arrival? Not one that has ended,
  * and not one already handed over — that one certainly arrived, scanned in or
- * not.
+ * not. Nor one registered here, in Erbil: it was weighed on our bench, which
+ * is its arrival (owner, 2026-10-25, AIR-2026-077 asked for 45 scans).
  */
-export function needsArrivalCheck(status: string | null | undefined): boolean {
-  return !parcelEnded(status) && status !== "delivered";
+export function needsArrivalCheck(status: string | null | undefined, registeredHere = false): boolean {
+  return !registeredHere && !parcelEnded(status) && status !== "delivered";
 }
 
 /**

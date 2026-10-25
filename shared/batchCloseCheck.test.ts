@@ -41,6 +41,8 @@ describe("which cartons the check still counts", () => {
     // Handed over: it arrived, scanned in or not.
     expect(needsArrivalCheck("delivered")).toBe(false);
     expect(needsArrivalCheck("returned")).toBe(false);
+    // Registered in Erbil: weighed on our bench, no arrival scan needed.
+    expect(needsArrivalCheck("ready_for_delivery", true)).toBe(false);
   });
 });
 
