@@ -62,3 +62,22 @@ describe("the rest stays on the box (real-MySQL proved 2026-10-25)", () => {
     expect(isPaidInPart({ differenceKind: "debt", createdAt: "2026-10-26T10:00:00Z" }, 0)).toBe(false);
   });
 });
+
+describe("the paper reads the till's prices (AZ004, 2026-10-25)", () => {
+  it("a line boxed at an older freight takes the till's price, and its breakdown follows", async () => {
+    const { alignItemsToTill, tillBoxTotalUsd } = await import("../client/src/lib/deliveryBoxPrintUtils");
+    const items = [
+      { id: 1, calculatedCostUsd: "12.38", description: "Bag | نرخی بەرهەم: $4.24 + نرخی گواستنەوە: $8.14" },
+      { id: 2, calculatedCostUsd: "2.03", description: "x" },
+    ];
+    const out = alignItemsToTill(items, [{ lineId: 1, chargedUsd: 4.24, pendingFreightUsd: 6.66 }, { lineId: 2, chargedUsd: 2.03 }]);
+    expect(out[0].calculatedCostUsd).toBe("10.90");
+    expect(out[0].description).toBe("Bag | نرخی بەرهەم: $4.24 + نرخی گواستنەوە: $6.66");
+    expect(out[1]).toBe(items[1]);
+    expect(tillBoxTotalUsd(out)).toBe(12.93);
+  });
+  it("the box panel and the list print with it", () => {
+    expect(read("client/src/components/delivery/BoxDetailPanel.tsx")).toContain("alignItemsToTill(items as any[], settlementView?.parcels).map(");
+    expect(read("client/src/components/delivery/BoxTable.tsx")).toContain("const tillItems = alignItemsToTill(");
+  });
+});

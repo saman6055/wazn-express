@@ -42,7 +42,7 @@ import {
 import { isEmptyBox } from "@shared/emptyBox";
 import type { ReceiptDinarInput } from "@shared/receiptDinar";
 import { ReceiptDinarDialog, type ReceiptDinarRequest } from "@/components/delivery/ReceiptDinarDialog";
-import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines, alignItemsToTill, tillBoxValue } from "@/lib/deliveryBoxPrintUtils";
 import { buildBoxReceiptHtml } from "@/lib/deliveryBoxPrintUtils";
 import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
 import { toast } from "sonner";
@@ -231,7 +231,7 @@ export function BoxTable({
       customerCode: customer?.customerCode,
       parcelCount: box.totalPackages,
       measures: boxPhysicalTotals(box, box.items || []),
-      totalUsd: receiptAmountUsd(box),
+      totalUsd: receiptAmountUsd({ ...box, totalValueUsd: tillBoxValue((box.items ?? []) as any[], view?.parcels, box.totalValueUsd) }),
       paidBeforeUsd: before.usd,
       paidBeforeReceipt: before.receipt,
       // A discount is a promise the till keeps (shared/pledgedDiscount), and
@@ -247,6 +247,10 @@ export function BoxTable({
     // Locales load on demand now; fetch the chosen one before translating.
     await loadLocale(lang);
     const customer = getCustomer(box.customerId);
+    // The till's prices on the paper (alignItemsToTill), as the box panel prints them.
+    const tillView = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null);
+    const tillItems = alignItemsToTill(((await trpcUtils.deliveryBox.getItems.fetch({ boxId: box.id }).catch(() => null)) ?? box.items ?? []) as any[], tillView?.parcels);
+    const tillTotal = tillBoxValue(tillItems, tillView?.parcels, box.totalValueUsd);
     const receiptArgs = [
       {
         boxCode: box.boxCode,
@@ -259,14 +263,14 @@ export function BoxTable({
         deliveryChargeUsd: box.deliveryChargeUsd,
         totalPackages: box.totalPackages,
         totalWeightKg: box.totalWeightKg,
-        totalValueUsd: box.totalValueUsd,
+        totalValueUsd: tillTotal,
         shippingType: (box as any).shippingType,
         notes: box.notes,
         createdAt: box.createdAt,
       },
       // The box's own rows, as the box panel reads them - a volumetric
       // discount included, so the paper says it (owner, 2026-10-24).
-      (await trpcUtils.deliveryBox.getItems.fetch({ boxId: box.id }).catch(() => null)) ?? box.items ?? [],
+      tillItems,
       customer
         ? {
             fullName: customer.fullName,
@@ -292,7 +296,7 @@ export function BoxTable({
     printBoxReceipt(...receiptArgs);
     try {
       const options = receiptArgs[4];
-      const totalUsd = Math.round(Number(receiptAmountUsd(box)) * 100) / 100;
+      const totalUsd = Math.round(Number(receiptAmountUsd({ ...box, totalValueUsd: tillTotal })) * 100) / 100;
       logReceipt.mutate({
         boxId: box.id,
         action: "print",

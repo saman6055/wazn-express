@@ -35,7 +35,7 @@ describe("the receipt says the volumetric discount", () => {
 
   it("every door that prints the box's receipt carries the rows' discount", () => {
     expect(read("client/src/components/delivery/BoxDetailPanel.tsx")).toContain("volumetric: i.volumetric ?? null,");
-    expect(read("client/src/components/delivery/BoxTable.tsx")).toContain("(await trpcUtils.deliveryBox.getItems.fetch({ boxId: box.id }).catch(() => null)) ?? box.items ?? [],");
+    expect(read("client/src/components/delivery/BoxTable.tsx")).toContain("(await trpcUtils.deliveryBox.getItems.fetch({ boxId: box.id }).catch(() => null)) ?? box.items ?? []) as any[], tillView?.parcels);");
   });
 
   it("a full package's carton takes no discount at registration either", () => {

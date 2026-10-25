@@ -117,7 +117,7 @@ describe("the receipt", () => {
   it("quotes the discounted figure in the WhatsApp message too", () => {
     // …with the box's other costs (customs and the like), as the paper has them.
     // 2026-10-19 (AZ295): what an earlier receipt of the box paid comes off first (paidBeforeOnBox).
-    expect(boxPanel).toContain("const totalUsd = Math.max(0, Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang)) - paidBeforeOnBox(settlementView).usd) * 100) / 100);");
+    expect(boxPanel).toContain("const totalUsd = Math.max(0, Math.round((receiptAmountUsd(tillBox, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang)) - paidBeforeOnBox(settlementView).usd) * 100) / 100);");
   });
 });
 

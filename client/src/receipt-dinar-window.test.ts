@@ -71,7 +71,7 @@ describe("every way into a receipt goes through it", () => {
   it("the box panel's print and PDF", () => {
     expect(panel).toContain("const handlePrintReceipt = (lang: Language) => askBeforePrinting(lang, printReceiptNow);");
     expect(panel).toContain("const handleDownloadReceiptPDF = (lang: Language) => askBeforePrinting(lang, downloadReceiptNow);");
-    expect(panel).toContain("totalUsd: receiptAmountUsd(box, settlementForPrint)");
+    expect(panel).toContain("totalUsd: receiptAmountUsd(tillBox, settlementForPrint)");
     expect(panel).toContain("<ReceiptDinarDialog request={receiptRequest}");
     // Other costs are written where the paper is made too (owner, 2026-10-19).
     expect(read("components/delivery/ReceiptDinarDialog.tsx")).toContain("onChanged={() => void boxView.refetch()}");
@@ -82,7 +82,7 @@ describe("every way into a receipt goes through it", () => {
   });
 
   it("the box list's print", () => {
-    expect(table).toContain("totalUsd: receiptAmountUsd(box)");
+    expect(table).toContain("totalUsd: receiptAmountUsd({ ...box, totalValueUsd: tillBoxValue((box.items ?? []) as any[], view?.parcels, box.totalValueUsd) }),");
     expect(table).toContain("onConfirm: (dinar) => void printReceiptNow(box, lang, dinar)");
     expect(table).toContain("company: companyContact(company, lang), dinar,");
     expect(table).toContain("<ReceiptDinarDialog request={receiptRequest}");

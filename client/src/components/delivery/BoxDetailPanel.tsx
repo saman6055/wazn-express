@@ -172,7 +172,7 @@ const RECEIPT_LANGUAGES: Language[] = ["ku", "ar", "en"];
 // slower, so it never auto-fires — Enter still submits it explicitly.
 const SCANNER_BURST_GAP_MS = 50;   // inter-key gap below this ⇒ hardware scanner
 const SCAN_AUTOSUBMIT_MS = 110;    // trailing quiet time that marks "scan done"
-import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd, boxPhysicalTotals, receiptExtraLines, receiptExtrasUsd } from "@/lib/deliveryBoxPrintUtils";
+import { printBoxLabel, printBoxReceipt, buildBoxReceiptHtml, downloadBoxReceiptPDF, normalizeCommissionDescription, receiptAmountUsd, alignItemsToTill, tillBoxValue, boxPhysicalTotals, receiptExtraLines, receiptExtrasUsd } from "@/lib/deliveryBoxPrintUtils";
 import { paidBeforeOnBox } from "@/lib/deliveryBoxPrintUtils";
 import { ReceiptDinarDialog, type ReceiptDinarRequest, type ReceiptDiscount } from "@/components/delivery/ReceiptDinarDialog";
 import { receiptDinar, type ReceiptDinarInput } from "@shared/receiptDinar";
@@ -661,6 +661,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // Receipt and PDF share the same data payload. The language is chosen at
   // print time (createTranslator + getLanguageDirection), independent of the
   // active UI language, so staff can hand each customer a receipt in ku/ar/en.
+  // The paper, the message and the window read the till's prices (alignItemsToTill).
+  const tillBox = { ...box, totalValueUsd: tillBoxValue(items as any[], settlementView?.parcels, box.totalValueUsd) };
   const buildReceiptPayload = () =>
     [
       {
@@ -674,12 +676,12 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         deliveryChargeUsd: box.deliveryChargeUsd,
         totalPackages: box.totalPackages,
         totalWeightKg: box.totalWeightKg,
-        totalValueUsd: box.totalValueUsd,
+        totalValueUsd: tillBox.totalValueUsd,
         shippingType: (box as any).shippingType,
         notes: box.notes,
         createdAt: box.createdAt,
       },
-      items.map((i: any) => ({
+      alignItemsToTill(items as any[], settlementView?.parcels).map((i: any) => ({
         trackingNumber: i.trackingNumber,
         itemType: i.itemType,
         weightKg: i.weightKg,
@@ -780,7 +782,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     try {
       const [b, its, c] = buildReceiptPayload();
       const discounted = receiptDiscount(lang, given);
-      const totalUsd = Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang))) * 100) / 100;
+      const totalUsd = Math.round((receiptAmountUsd(tillBox, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang))) * 100) / 100;
       const before = paidBeforeOnBox(settlementView).usd;
       const left = Math.max(0, Math.round((totalUsd - before) * 100) / 100);
       const figures = receiptDinar(left, dinar);
@@ -879,7 +881,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       customerCode: customer?.customerCode,
       parcelCount: box.totalPackages ?? items.length,
       measures: boxPhysicalTotals(box, items),
-      totalUsd: receiptAmountUsd(box, settlementForPrint),
+      totalUsd: receiptAmountUsd(tillBox, settlementForPrint),
       paidBeforeUsd: paidBeforeOnBox(settlementView).usd,
       paidBeforeReceipt: paidBeforeOnBox(settlementView).receipt,
       /**
@@ -993,7 +995,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     // because that is the number the customer is actually asked for
     // (owner, 2026-09-22).
     // The message quotes what the paper says, discount and all.
-    const totalUsd = Math.max(0, Math.round((receiptAmountUsd(box, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang)) - paidBeforeOnBox(settlementView).usd) * 100) / 100);
+    const totalUsd = Math.max(0, Math.round((receiptAmountUsd(tillBox, discounted) + receiptExtrasUsd(receiptExtraLines(settlementView?.extras, lang)) - paidBeforeOnBox(settlementView).usd) * 100) / 100);
     const figures = receiptDinar(totalUsd, dinar);
     // And what the paper takes off by hand - an advance, or the customer's
     // account money put against these goods - so the chat asks for the very

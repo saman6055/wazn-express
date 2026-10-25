@@ -257,6 +257,52 @@ export function paidBeforeOnBox(
  * any discount agreed when the money was taken. The window before printing
  * counts its dinars from this, and the receipt from the same sum.
  */
+/**
+ * The paper reads the payment screen's own prices (owner, 2026-10-25: one
+ * body). A box item keeps the price it was given when it was boxed; the till
+ * reads the account - an order's freight posted at a newer rate, a volumetric
+ * discount. AZ004's box printed $230.62 while the till asked $220.62. Each
+ * line takes the till's price (charged + freight still to post), and an
+ * order's breakdown in the description follows it, so paper, message and till
+ * say one figure.
+ */
+export function alignItemsToTill<T extends { id?: number | null; calculatedCostUsd?: unknown; description?: string | null }>(
+  items: readonly T[],
+  parcels: ReadonlyArray<{ lineId: number; chargedUsd: number; pendingFreightUsd?: number | null }> | null | undefined,
+): T[] {
+  if (!parcels || parcels.length === 0) return items.slice();
+  const byLine = new Map(parcels.map((p) => [Number(p.lineId), p]));
+  return items.map((item) => {
+    const p = item.id != null ? byLine.get(Number(item.id)) : undefined;
+    if (!p) return item;
+    const price = Math.round((Number(p.chargedUsd || 0) + Number(p.pendingFreightUsd || 0)) * 100) / 100;
+    if (!(price > 0) || Math.abs(price - Number(item.calculatedCostUsd || 0)) <= 0.005) return item;
+    let description = item.description ?? null;
+    const m = description ? /نرخی بەرهەم: \$([\d.]+) \+ نرخی گواستنەوە: \$([\d.]+)/.exec(description) : null;
+    if (m && description) {
+      const goods = Number(m[1]);
+      const freight = Math.round((price - goods) * 100) / 100;
+      if (freight >= 0) description = description.replace(m[0], `نرخی بەرهەم: $${goods.toFixed(2)} + نرخی گواستنەوە: $${freight.toFixed(2)}`);
+    }
+    return { ...item, calculatedCostUsd: price.toFixed(2), description };
+  });
+}
+
+/** The box's total as the till reads it - the sum of the aligned lines. */
+export function tillBoxTotalUsd(items: ReadonlyArray<{ calculatedCostUsd?: unknown }>): number {
+  return Math.round(items.reduce((s, i) => s + Number(i.calculatedCostUsd || 0), 0) * 100) / 100;
+}
+
+/** The box's value as the till reads it, written as the box's own field is; the box's when the till is not read. */
+export function tillBoxValue(
+  items: ReadonlyArray<{ id?: number | null; calculatedCostUsd?: unknown; description?: string | null }>,
+  parcels: ReadonlyArray<{ lineId: number; chargedUsd: number; pendingFreightUsd?: number | null }> | null | undefined,
+  fallback: string | number | null | undefined,
+): string {
+  if (!parcels || parcels.length === 0) return String(fallback ?? "0");
+  return tillBoxTotalUsd(alignItemsToTill(items as any[], parcels)).toFixed(2);
+}
+
 export function receiptAmountUsd(
   box: Pick<BoxForPrint, "totalValueUsd" | "deliveryChargeUsd">,
   settlement?: Pick<SettlementForPrint, "discountUsd"> | null,
