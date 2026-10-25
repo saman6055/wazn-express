@@ -52,11 +52,8 @@ export function CustomerBoxesPanel({ customerId, currentBoxId }: { customerId: n
   if (!data || data.boxes.length === 0) return null;
   const t = data.totals;
 
-  const toggle = (id: number) => setOpen((old) => {
-    const next = new Set(old);
-    if (next.has(id)) next.delete(id); else next.add(id);
-    return next;
-  });
+  // One box open at a time (owner, 2026-10-25): opening another closes the last.
+  const toggle = (id: number) => setOpen((old) => (old.has(id) ? new Set() : new Set([id])));
 
   if (!shown) {
     return (

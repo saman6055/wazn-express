@@ -1,5 +1,4 @@
 import { getDb } from './connection';
-import { listUnsentPaymentWhatsApp } from "./paymentWhatsApp.db";
 import { ORDER_PROFIT_SQL, LIVE_SALE_SQL, orderProfitUsd, isLiveSale } from "@shared/orderProfit";
 import { getBatchCostsByRule } from "./batches.db";
 import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
@@ -965,7 +964,8 @@ export async function getRiskItems(): Promise<RiskItem[]> {
     settle('orders without tracking', countOrdersWithoutTracking, { total: 0, aging: 0 }),
     settle('unclaimed', countUnclaimedPackages, 0),
     settle('empty boxes', countEmptyBoxes, 0),
-    settle('whatsapp unsent', async () => (await listUnsentPaymentWhatsApp()).length, 0),
+    // Not a risk any more (owner, 2026-10-25): sending it is a choice, the portal tells the customer.
+    Promise.resolve(0),
     // Imported here, not at the top: financePulse.db reads this file's profit rule.
     settle('finance pulse', async () => (await import('./financePulse.db')).getFinancePulseRisks(), { lossForecastUsd: 0, ordersThisWeek: 0, ordersSlow: false, partnerOverdrawUsd: 0 }),
     settle('boxes unpaid', async () => (await import('./boxReminder.db')).countBoxesAwaitingOffice(), 0),

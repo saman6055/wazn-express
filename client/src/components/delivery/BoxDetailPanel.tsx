@@ -64,6 +64,8 @@ import {
   Unlock,
   Send,
   Image as ImageIcon,
+  MessageCircle,
+  CheckCircle2,
   Share2,
   Download,
 } from "lucide-react";
@@ -182,6 +184,7 @@ import { pledgeLabel } from "@shared/pledgedDiscount";
 import { shippingOnlyAmongOrders, shippingOnlyNotice, SHIPPING_ONLY_CHIP } from "@shared/boxShippingOnly";
 import { parcelListHref } from "@shared/parcelSource";
 import { buildBoxPhotoSheetHtml } from "@/lib/boxPhotoSheet";
+import { useSendPaymentWhatsApp } from "@/hooks/useSendPaymentWhatsApp";
 import { VolumetricDiscountButton } from "@/components/packages/VolumetricDiscount";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
@@ -264,6 +267,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
   // looking dead while it happens.
   const [sharing, setSharing] = useState(false);
   const [sharingPhotos, setSharingPhotos] = useState(false);
+  const paymentWhatsApp = useSendPaymentWhatsApp((w) => pickLang(language, w));
   /**
    * Opening a box that is already delivered or paid for (owner, 2026-09-22).
    *
@@ -1767,6 +1771,23 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                 </Button>
               }
             />
+          )}
+          {/* «Your payment arrived» to the customer - a choice, from the box
+              itself, not a prompt after paying (owner, 2026-10-25). The
+              portal tells the customer either way. */}
+          {latestReceipt && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => void paymentWhatsApp.send(latestReceipt.id)}
+              className="border-emerald-300 text-emerald-700 hover:bg-emerald-50 dark:border-emerald-800 dark:text-emerald-300"
+              title={pickLang(language, { ku: "پەیامی «پارەکەت گەیشت» بۆ کڕیار", en: "Send \"your payment arrived\"", ar: "إرسال «وصلت دفعتك»", zh: "发送“已收款”" })}
+              data-testid="box-payment-whatsapp"
+            >
+              <MessageCircle className="h-4 w-4 me-1" />
+              {pickLang(language, { ku: "پارەکەت گەیشت", en: "Payment arrived", ar: "وصلت دفعتك", zh: "已收款" })}
+              {latestReceipt.whatsappSentAt && <CheckCircle2 className="h-3.5 w-3.5 ms-1" />}
+            </Button>
           )}
           {/* The parcels themselves, as photos (owner, 2026-10-24). */}
           <ReceiptSendMenu

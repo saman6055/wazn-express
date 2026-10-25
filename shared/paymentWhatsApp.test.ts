@@ -26,10 +26,13 @@ describe("“your payment arrived” on WhatsApp (owner, 2026-10-04)", () => {
     expect(paymentWhatsAppMessage("en", chewar)).toContain("Your payment arrived");
   });
 
-  it("both receipt screens offer it after a receipt", () => {
+  // Since 2026-10-25 it is a button in the box, never a prompt after paying.
+  it("the box offers it; the receipt screens do not prompt", () => {
     for (const f of ["QuickSettleDialog.tsx", "BoxSettlementPanel.tsx"]) {
       const src = fs.readFileSync(path.resolve(__dirname, "..", "client/src/components/delivery", f), "utf8");
-      expect(src, f).toContain("offerPaymentWhatsApp(res.whatsapp,");
+      expect(src, f).not.toContain("offerPaymentWhatsApp(res.whatsapp,");
     }
+    const box = fs.readFileSync(path.resolve(__dirname, "..", "client/src/components/delivery/BoxDetailPanel.tsx"), "utf8");
+    expect(box).toContain('data-testid="box-payment-whatsapp"');
   });
 });
