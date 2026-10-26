@@ -29,6 +29,8 @@ import { OrderNumbers } from "@/components/OrderNumbers";
 import { OrderThumb, OrderThumbs } from "@/components/orders/OrderThumb";
 import { parcelListHref, parcelSourceTarget, type ParcelOrderType } from "@shared/parcelSource";
 import { AccountSumsPanel, DoublePanel, OwedSumPanel, PeelRow, StoryLines } from "@/components/customers/DebtPeel";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { toast } from "sonner";
 
 export interface LedgerSubject {
   verdict: string | null;
@@ -216,6 +218,92 @@ export function LedgerSubjectCard({ subject }: { subject?: LedgerSubject | null 
   );
 }
 
+/**
+ * Old goods read settled only because they came before the boxes. The main
+ * admin knows which of them were never paid and says so, one by one (owner,
+ * 2026-10-26: AZ164's sewing machine). His word only changes what the card
+ * explains - the balance and every ledger row stay as they are.
+ */
+function OldSettledPanel({ customerId, rows }: {
+  customerId: number;
+  rows: Array<LedgerSubject & { chargeId: number; usd: number; at: string | null; description: string }>;
+}) {
+  const utils = trpc.useUtils();
+  const [reason, setReason] = useState<Record<number, string>>({});
+  const mark = trpc.ledger.markChargeStillOwed.useMutation({
+    onSuccess: () => {
+      toast.success("تۆمار کرا: ئەم قەرزە ماوە");
+      void utils.ledger.debtExplained.invalidate({ customerId });
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  return (
+    <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50/50 p-3 dark:border-amber-800 dark:bg-amber-950/20" data-testid="old-settled-panel">
+      <p className="text-sm font-medium">کاڵای کۆن کە بە «تەواو» دانراوە، چونکە پێش سیستەمی بۆکس گەیشتووە</p>
+      <p className="text-xs text-muted-foreground">
+        ئەگەر یەکێکیان پارەی نەدراوە، هۆکار بنووسە و «ئەمە پارەی نەدراوە» دابگرە. پارە ناجووڵێت - تەنها ئەم کارتە ڕاست دەبێتەوە.
+      </p>
+      <ul className="divide-y rounded-lg border bg-background">
+        {rows.map((r) => (
+          <li key={r.chargeId} className="space-y-2 p-3" data-testid="old-settled-row">
+            <div className="flex flex-wrap items-start justify-between gap-2">
+              <span className="min-w-0 break-words text-sm">{r.productName || r.orderCode || r.tracking || r.description}</span>
+              <span className="whitespace-nowrap font-semibold" dir="ltr">{fmtUsd(r.usd)}</span>
+            </div>
+            {r.orderCode && <p className="text-xs text-muted-foreground"><bdi dir="ltr" className="font-mono">{r.orderCode}</bdi></p>}
+            <LedgerSubjectLine subject={{ ...r, verdict: null }} />
+            {r.at && <p className="text-xs text-muted-foreground"><bdi dir="ltr">{r.at.slice(0, 10)}</bdi></p>}
+            <div className="flex flex-wrap items-center gap-2">
+              <input
+                value={reason[r.chargeId] ?? ""}
+                onChange={(e) => setReason((m) => ({ ...m, [r.chargeId]: e.target.value }))}
+                placeholder="هۆکار (بۆ نموونە: کڕیار پارەی نەداوە)"
+                className="min-h-9 min-w-0 flex-1 rounded-lg border bg-background px-3 text-sm"
+              />
+              <button
+                type="button"
+                disabled={mark.isPending || (reason[r.chargeId] ?? "").trim().length < 3}
+                onClick={() => mark.mutate({ customerId, chargeId: r.chargeId, owed: true, reason: (reason[r.chargeId] ?? "").trim() })}
+                className="inline-flex min-h-9 items-center rounded-lg bg-amber-600 px-3 text-sm font-medium text-white hover:bg-amber-700 disabled:opacity-50"
+                data-testid="mark-still-owed"
+              >
+                ئەمە پارەی نەدراوە
+              </button>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** Taking the main admin's word back: the old charge reads settled again. */
+function UndoStillOwed({ customerId, chargeIds }: { customerId: number; chargeIds: number[] }) {
+  const utils = trpc.useUtils();
+  const undo = trpc.ledger.markChargeStillOwed.useMutation({
+    onError: (err) => toast.error(err.message),
+  });
+  return (
+    <span className="inline-flex flex-wrap items-center gap-2 text-xs">
+      <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-amber-800 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-200">
+        بە بڕیاری ئەدمینی سەرەکی: پارەی نەدراوە
+      </span>
+      <button
+        type="button"
+        disabled={undo.isPending}
+        onClick={async () => {
+          for (const chargeId of chargeIds) await undo.mutateAsync({ customerId, chargeId, owed: false, reason: "گەڕاندنەوەی بڕیار" });
+          void utils.ledger.debtExplained.invalidate({ customerId });
+        }}
+        className="font-medium text-primary hover:underline disabled:opacity-50"
+        data-testid="undo-still-owed"
+      >
+        گەڕاندنەوە
+      </button>
+    </span>
+  );
+}
+
 /** The address of the card on the account page: a balance pressed anywhere lands on it. */
 export const DEBT_ANCHOR = "#debt";
 
@@ -227,6 +315,8 @@ export function useDebtExplained(customerId: number) {
 export function CustomerDebtExplained({ customerId }: { customerId: number }) {
   const { language } = useTranslation();
   const { data, isLoading } = useDebtExplained(customerId);
+  const { user } = useAuth();
+  const isMainAdmin = user?.role === "super_admin";
   const [open, setOpen] = useState<Bucket | null>(null);
   // Which figure is peeled open, and which thing's own rows are shown (DebtPeel).
   const [peel, setPeel] = useState<"owed" | "double" | "account" | null>(null);
@@ -380,6 +470,11 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
               <span className="font-medium whitespace-nowrap" dir="ltr">{fmtUsd(data.unexplainedUsd)}</span>
             </div>
           )}
+          {isMainAdmin && data.unexplainedUsd > 0.5 && (data.oldSettled?.length ?? 0) > 0 && (
+            <div className="p-3">
+              <OldSettledPanel customerId={customerId} rows={data.oldSettled} />
+            </div>
+          )}
           <PeelRow
             testId="debt-account-row"
             open={peel === "account"}
@@ -421,6 +516,9 @@ export function CustomerDebtExplained({ customerId }: { customerId: number }) {
                         <p className="text-xs text-muted-foreground"><bdi dir="ltr" className="font-mono">{item.orderCode}</bdi></p>
                       )}
                       <LedgerSubjectLine subject={{ ...item, verdict: null }} />
+                      {isMainAdmin && (item.ownerOwedChargeIds?.length ?? 0) > 0 && (
+                        <UndoStillOwed customerId={customerId} chargeIds={item.ownerOwedChargeIds ?? []} />
+                      )}
                       {/* The rows of the account this amount is added up from. */}
                       <button
                         type="button"

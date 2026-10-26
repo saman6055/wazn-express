@@ -141,6 +141,12 @@ export interface SettledFacts {
    * in the box.
    */
   partialBoxesOwedUsd?: number;
+  /**
+   * Charges the main admin said are still owed, one by one (owner,
+   * 2026-10-26: AZ164's sewing machine came in a batch before the boxes and
+   * was never paid). They are not settled by coming before the boxes.
+   */
+  ownerOwedChargeIds?: Set<number>;
   /** Delivered, and traceable through a batch or a box. */
   deliveredTracedPackageIds?: Set<number>;
   deliveredTracedOrderIds?: Set<number>;
@@ -184,6 +190,10 @@ export interface ExplainedCharge {
   /** The box and tracking a box line names. */
   boxCode: string | null;
   tracking: string | null;
+  /** Settled only because it was delivered before the boxes: the main admin may say it is still owed. */
+  byAge?: boolean;
+  /** The main admin said it is still owed (facts.ownerOwedChargeIds). */
+  ownerOwed?: boolean;
 }
 
 /**
@@ -328,7 +338,11 @@ export function explainDebt(rows: AccountRow[], facts: SettledFacts): ExplainedD
     const deliveredBeforeBoxes = Boolean(r.createdAt && r.createdAt < ADVANCE_SINCE) && (order
       ? Boolean(facts.deliveredTracedOrderIds?.has(order.id))
       : r.referenceId != null && Boolean(facts.deliveredTracedPackageIds?.has(r.referenceId)));
-    if ((verdict === "parcel" || verdict === "arrived") && deliveredBeforeBoxes) verdict = "settled";
+    if ((verdict === "parcel" || verdict === "arrived") && deliveredBeforeBoxes) {
+      // Unless the main admin said this one was never paid (2026-10-26).
+      if (facts.ownerOwedChargeIds?.has(r.id)) out.ownerOwed = true;
+      else { verdict = "settled"; out.byAge = true; }
+    }
     out.verdict = verdict;
     if (verdict === "road" || verdict === "arrived" || verdict === "openBox" || verdict === "parcel") owed[verdict] += cents;
   }

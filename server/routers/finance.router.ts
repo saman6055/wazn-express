@@ -230,6 +230,41 @@ export const ledgerRouter = router({
         return { reversed: done.length, totalUsd: Math.round(done.reduce((s, r) => s + r.amountUsd, 0) * 100) / 100 };
       }),
 
+    /**
+     * The main admin's word on an old charge read settled only for coming
+     * before the boxes: "this was never paid" - or taking that back (owner,
+     * 2026-10-26, AZ164). Kept in the audit log; no money moves.
+     */
+    markChargeStillOwed: superAdminProcedure
+      .input(z.object({
+        customerId: z.number().int().positive(),
+        chargeId: z.number().int().positive(),
+        owed: z.boolean(),
+        reason: z.string().trim().min(3).max(500),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const account = await db.getCustomerAccountByCustomerId(input.customerId);
+        if (!account) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("حیسابی کڕیار") });
+        const row = await db.getLedgerTransactionById(input.chargeId);
+        if (!row || Number(row.accountId) !== Number(account.id)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix(`نووسینی ${input.chargeId} هی ئەم کڕیارە نییە.`, ["پەڕەکە نوێ بکەرەوە و دووبارە هەوڵ بدە"]) });
+        }
+        if (!String(row.transactionType).startsWith("DEBIT_")) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix(`نووسینی ${input.chargeId} قەرز نییە (${row.transactionType}).`, ["تەنها دێڕی قەرز دەتوانرێت بە «پارەی نەدراوە» دابنرێت"]) });
+        }
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: input.owed ? db.CHARGE_STILL_OWED : db.CHARGE_STILL_OWED_UNDONE,
+          entityType: "LedgerCharge",
+          entityId: input.chargeId,
+          entityCode: row.transactionNumber,
+          description: input.reason,
+          newValues: { customerId: input.customerId, amountUsd: Number(row.amountUsd), owed: input.owed },
+        });
+        return { ok: true };
+      }),
+
     /** The yuan rate's periods and the orders entered in each (shared/yuanRateHistory). */
     yuanRateHistory: accountantProcedure.query(async () => db.getYuanRateHistory()),
 

@@ -428,3 +428,35 @@ describe("an advance is money that came in, never a gap in the books (AZ225, 202
     expect(src).toContain("return Math.min(open, cents(got.balanceUsd + explained.advanceUsd));");
   });
 });
+
+describe("the main admin says an old charge was never paid (owner, 2026-10-26)", () => {
+  const base = { receiptedBoxCodes: new Set<string>(), receiptedPackageIds: new Set<number>(), receiptedOrderIds: new Set<number>(), receiptedTrackings: new Set<string>(), orders: [], isOrderText: () => false };
+  // AZ164: a sewing machine charged 10/09, delivered through a batch, no box, never paid.
+  const rows = [{ id: 7531, transactionNumber: "T7531", transactionType: "DEBIT_PACKAGE", amountUsd: 1073, balanceAfterUsd: 1073, description: "پاکەت 800184072439 - باچ SEA-2026-006", referenceId: 302, createdAt: "2026-09-10T20:08:00.000Z" }];
+  const facts = { ...base, deliveredTracedPackageIds: new Set([302]) };
+  it("by age alone it reads settled, and is offered to him", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const out = explainDebt(rows as never, facts as never);
+    expect(out.owedUsd.parcel).toBe(0);
+    expect(out.charges[0].byAge).toBe(true);
+  });
+  it("his word makes it owed again; no money moves", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const out = explainDebt(rows as never, { ...facts, ownerOwedChargeIds: new Set([7531]) } as never);
+    expect(out.owedUsd.parcel).toBe(1073);
+    expect(out.charges[0].ownerOwed).toBe(true);
+    expect(out.charges[0].byAge).toBeFalsy();
+  });
+  it("his word never reopens what a zeroing by hand settled", async () => {
+    const { explainDebt } = await import("./boxPaidStillOwed");
+    const src = root("shared/boxPaidStillOwed.ts");
+    expect(src).toContain('if ((verdict === "parcel" || verdict === "arrived") && deliveredBeforeBoxes) {');
+    void explainDebt;
+  });
+  it("kept in the audit log, latest word decides, main admin only", () => {
+    const db = root("server/db/boxPaidStillOwed.db.ts");
+    expect(db).toContain('eq(auditLogs.entityType, "LedgerCharge")');
+    const router = root("server/routers/finance.router.ts");
+    expect(router).toContain("markChargeStillOwed: superAdminProcedure");
+  });
+});

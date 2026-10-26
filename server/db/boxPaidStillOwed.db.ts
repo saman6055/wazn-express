@@ -1,6 +1,6 @@
 import { and, eq, inArray, like, ne, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { boxSettlements, boxSettlementLines, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages, paymentRecords } from "../../drizzle/schema";
+import { auditLogs, boxSettlements, boxSettlementLines, customerAccounts, deliveryBoxItems, deliveryBoxes, fullPackageOrders, fullPackageOrderTrackings, ledgerTransactions, packages, paymentRecords } from "../../drizzle/schema";
 import { customers } from "../../drizzle/schema/users.schema";
 import { isOrderChargeText } from "@shared/batchCleanup";
 import { withFix } from "@shared/fixAdvice";
@@ -181,6 +181,35 @@ export async function findBoxDoubleCharges(onlyCustomerId?: number): Promise<Dou
     .sort((a, b) => b.falseDebtUsd - a.falseDebtUsd || b.twiceUsd - a.twiceUsd);
 }
 
+/** The audit action that records the main admin's word on an old charge. */
+export const CHARGE_STILL_OWED = "charge_still_owed";
+export const CHARGE_STILL_OWED_UNDONE = "charge_still_owed_undone";
+
+/**
+ * Old charges the main admin said were never paid (owner, 2026-10-26). His
+ * word is kept in the audit log, one line each time he says it or takes it
+ * back; the latest line for a charge decides. No money moves.
+ */
+export async function ownerOwedCharges(chargeIds: number[]): Promise<Set<number>> {
+  const out = new Set<number>();
+  const db = await getDb();
+  if (!db || chargeIds.length === 0) return out;
+  const said = await db
+    .select({ id: auditLogs.id, entityId: auditLogs.entityId, action: auditLogs.action })
+    .from(auditLogs)
+    .where(and(
+      eq(auditLogs.entityType, "LedgerCharge"),
+      inArray(auditLogs.action, [CHARGE_STILL_OWED, CHARGE_STILL_OWED_UNDONE]),
+      inArray(auditLogs.entityId, chargeIds),
+    ))
+    .orderBy(auditLogs.id);
+  for (const s of said) {
+    if (s.action === CHARGE_STILL_OWED) out.add(Number(s.entityId));
+    else out.delete(Number(s.entityId));
+  }
+  return out;
+}
+
 /**
  * Everything the shared rule needs to explain one account: its ledger rows,
  * the boxes whose receipt stands and those still waiting for one, and the
@@ -356,7 +385,9 @@ async function gatherAccount(customerId: number) {
     const owedByBox = await getBoxesPaidInPart(Array.from(receiptedBoxIds));
     return cents(Array.from(owedByBox.values()).filter((v) => v > 0.005).reduce((s, v) => s + v, 0));
   })();
-  const facts = { partialBoxesOwedUsd, receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, deliveredTracedPackageIds, deliveredTracedOrderIds, pendingPackageIds, pendingOrderIds, pendingTrackings };
+  // The main admin's word, charge by charge: still owed (ownerOwedCharges).
+  const ownerOwedChargeIds = await ownerOwedCharges(rows.filter((r) => r.transactionType.startsWith("DEBIT_")).map((r) => r.id));
+  const facts = { ownerOwedChargeIds, partialBoxesOwedUsd, receiptedBoxCodes, receiptedPackageIds, receiptedOrderIds, receiptedTrackings, openPackageIds, openOrderIds, openTrackings, orders, isOrderText: isOrderChargeText, reversedPaymentUsd, extraCharges, accountCovered, receipts, standingBoxCodes: new Set(boxByCode.keys()), undeliveredPackageIds, deliveredTracedPackageIds, deliveredTracedOrderIds, pendingPackageIds, pendingOrderIds, pendingTrackings };
   return { accountId: Number(account.id), balanceUsd: num(account.balance), rows, facts, orders, parcels, boxOf, boxByCode };
 }
 
@@ -407,6 +438,8 @@ export interface OwedItem extends LedgerSubject {
   chargeIds: number[];
   /** The rows of the account this amount was added up from (shared chargeStory). */
   story: StoryLine[];
+  /** Of chargeIds, those owed only by the main admin's word (ownerOwedCharges). */
+  ownerOwedChargeIds?: number[];
 }
 
 /** One tracking written on the account twice, for the card's own list. */
@@ -487,13 +520,15 @@ export async function explainCustomerDebt(customerId: number): Promise<{
   /** The customer's advance: taken, gone to boxes, left, and the box it waits on (owner, 2026-10-24). */
   advance: { inUsd: number; usedUsd: number; leftUsd: number; forBox: { boxCode: string; days: number } | null };
   items: OwedItem[];
+  /** Old charges read settled only for coming before the boxes: the main admin may say one is still owed. */
+  oldSettled: Array<LedgerSubject & { chargeId: number; usd: number; at: string | null; description: string }>;
   subjects: Record<number, LedgerSubject>;
   /** The lines behind "written twice", and what they come to before the cap. */
   double: { lines: DoubleLine[]; twiceUsd: number };
   /** The whole account in five sums that make the balance. */
   sums: AccountSums;
 }> {
-  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, advance: { inUsd: 0, usedUsd: 0, leftUsd: 0, forBox: null }, items: [], subjects: {}, double: { lines: [], twiceUsd: 0 }, sums: accountSums([], 0) };
+  const empty = { balanceUsd: 0, stillOwedUsd: 0, falseDebtUsd: 0, unexplainedUsd: 0, owedUsd: { road: 0, arrived: 0, openBox: 0, parcel: 0 }, paidOnAccountUsd: 0, advance: { inUsd: 0, usedUsd: 0, leftUsd: 0, forBox: null }, items: [], oldSettled: [], subjects: {}, double: { lines: [], twiceUsd: 0 }, sums: accountSums([], 0) };
   const got = await gatherAccount(customerId);
   if (!got) return empty;
   const explained = explainDebt(got.rows, got.facts);
@@ -539,6 +574,7 @@ export async function explainCustomerDebt(customerId: number): Promise<{
     const item = items.get(key) ?? { ...subject, key, usd: 0, chargeIds: [], story: [] };
     item.usd = cents(item.usd + c.standsUsd);
     item.chargeIds.push(c.id);
+    if (c.ownerOwed) item.ownerOwedChargeIds = [...(item.ownerOwedChargeIds ?? []), c.id];
     items.set(key, item);
   }
   // A payment or a correction that names a box opens that box.
@@ -561,6 +597,13 @@ export async function explainCustomerDebt(customerId: number): Promise<{
     advance: { inUsd: explained.advanceInUsd, usedUsd: explained.advanceUsedUsd, leftUsd: explained.advanceUsd, forBox: explained.advanceUsd > 0.005 ? await oldestUnreceiptedBox(customerId) : null },
     items: Array.from(items.values())
       .map((item) => ({ ...item, story: chargeStory(got.rows, item.chargeIds) }))
+      .sort((a, b) => b.usd - a.usd),
+    oldSettled: got.balanceUsd <= 0.005 ? [] : explained.charges
+      .filter((c) => c.byAge)
+      .map((c) => {
+        const row = got.rows.find((r) => r.id === c.id);
+        return { ...subjects[c.id], chargeId: c.id, usd: c.standsUsd, at: row?.createdAt ?? null, description: row?.description ?? "" };
+      })
       .sort((a, b) => b.usd - a.usd),
     subjects,
     double: {
