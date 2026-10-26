@@ -231,3 +231,40 @@ describe("where it is wired", () => {
     expect(offenders.map((f) => path.relative(ROOT, f))).toEqual([]);
   });
 });
+
+/**
+ * The recording has to answer the home screen's four cards, or a visitor
+ * tours a portal that says nothing. Added 2026-10-26, when the cards became
+ * bought → China → the road → Erbil and a parcel packed for the carrier
+ * started saying so.
+ */
+describe("the sample fills the four stages", () => {
+  const json = (path: string) => (recording.calls as any)[path]?.[0]?.data?.json;
+  const parcels: any[] = json("customerPortal.getMyPackages") ?? [];
+  const orders: any[] = json("customerPortal.getMyFullPackageOrders") ?? [];
+  const batches: any[] = json("customerPortal.getMyBatches") ?? [];
+
+  it("has goods in every one of the four stages", () => {
+    // Bought and not yet shipped.
+    expect(orders.some((o) => ["pending", "approved", "ordered", "tracking_added"].includes(String(o.status)))).toBe(true);
+    // At the China depot: a shipment with no number of its own yet.
+    const stillThere = batches.filter((b) => !String(b.awbNumber ?? b.containerNumber ?? "").trim());
+    expect(stillThere.length).toBeGreaterThan(0);
+    expect(parcels.some((p) => stillThere.some((b) => b.id === p.batchId))).toBe(true);
+    // On the way: a shipment carrying its number.
+    const gone = batches.filter((b) => String(b.awbNumber ?? b.containerNumber ?? "").trim());
+    expect(gone.length).toBeGreaterThan(0);
+    expect(parcels.some((p) => gone.some((b) => b.id === p.batchId))).toBe(true);
+    // In Erbil.
+    expect(parcels.some((p) => ["ready_for_delivery", "out_for_delivery"].includes(String(p.status)))).toBe(true);
+  });
+
+  it("shows both of the China words: packed for the carrier, and waiting", () => {
+    expect(parcels.some((p) => p.inCarton === true)).toBe(true);
+    expect(parcels.some((p) => p.inCarton === false)).toBe(true);
+  });
+
+  it("has one request still waiting on us for a price", () => {
+    expect(orders.some((o) => ["pending_quote", "quoted"].includes(String(o.status)))).toBe(true);
+  });
+});
