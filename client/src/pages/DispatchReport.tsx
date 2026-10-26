@@ -1,8 +1,8 @@
 import { useRef, useState } from "react";
 import { useParams, Link } from "wouter";
-import { ArrowRight, Loader2, MessageCircle, Printer, Share2 } from "lucide-react";
+import { ArrowRight, FileText, Loader2, MessageCircle, Printer, Share2 } from "lucide-react";
 import { toast } from "sonner";
-import { dataUrlToBytes } from "@/lib/imagePdf";
+import { dataUrlToBytes, jpegDataUrlToPdfFile } from "@/lib/imagePdf";
 import { waznChatUrl } from "@/lib/waznChat";
 import { dispatchPlainText } from "@shared/dispatchMessage";
 import { trpc } from "@/lib/trpc";
@@ -41,7 +41,8 @@ export default function DispatchReport() {
     by: s.batch.dispatchCheckedBy ?? null,
     reportUrl: `${window.location.origin}/dispatch-check/${batchId}/report`,
   }) : "";
-  const picture = async (): Promise<File | null> => {
+  /** A picture, or the same picture as a PDF (owner, 2026-10-26: PDF for WhatsApp too). */
+  const picture = async (format: "image" | "pdf" = "image"): Promise<File | null> => {
     if (!reportRef.current || !s) return null;
     const { toJpeg } = await import("html-to-image");
     const url = await toJpeg(reportRef.current, {
@@ -50,6 +51,12 @@ export default function DispatchReport() {
       pixelRatio: 2,
       filter: (node) => !(node instanceof HTMLElement && node.dataset.noShot === "1"),
     });
+    if (format === "pdf") {
+      const img = new Image();
+      img.src = url;
+      await img.decode();
+      return jpegDataUrlToPdfFile(url, img.naturalWidth, img.naturalHeight, `${s.batch.batchCode}-dispatch.pdf`, { title: `${s.batch.batchCode} dispatch` });
+    }
     return new File([dataUrlToBytes(url).slice().buffer as ArrayBuffer], `${s.batch.batchCode}-dispatch.jpg`, { type: "image/jpeg" });
   };
   /** The picture as PNG on the clipboard - the only kind it takes. */
@@ -71,10 +78,10 @@ export default function DispatchReport() {
       return false;
     }
   };
-  const send = async (to: "sheet" | "whatsapp") => {
+  const send = async (to: "sheet" | "whatsapp", format: "image" | "pdf" = "image") => {
     setBusy(true);
     try {
-      const file = await picture();
+      const file = await picture(format);
       const text = message();
       const touch = window.matchMedia?.("(pointer: coarse)").matches;
       if (file && (to === "sheet" || touch) && navigator.canShare?.({ files: [file] })) {
@@ -86,7 +93,8 @@ export default function DispatchReport() {
         }
       }
       // A computer: the picture on the clipboard (Ctrl+V in the chat), or saved.
-      const copied = file ? await copyPicture(file) : false;
+      // A PDF cannot go on the clipboard: it is saved, to drop into the chat.
+      const copied = file && format === "image" ? await copyPicture(file) : false;
       if (!copied && file) {
         const a = document.createElement("a");
         a.href = URL.createObjectURL(file);
@@ -96,7 +104,9 @@ export default function DispatchReport() {
       if (to === "whatsapp") window.open(waznChatUrl(text), "_blank", "noopener");
       toast.success(copied
         ? L({ ku: "وێنەکە کۆپی کرا — لە چاتەکەدا Ctrl+V بکە", en: "Picture copied — Ctrl+V in the chat", ar: "نُسخت الصورة — Ctrl+V في المحادثة", zh: "图片已复制 — 在聊天中 Ctrl+V" })
-        : L({ ku: "وێنەکە پاشەکەوت کرا — بیخە ناو چاتەکە", en: "Picture saved — drop it into the chat", ar: "حُفظت الصورة — أضفها إلى المحادثة", zh: "图片已保存 — 拖入聊天" }));
+        : format === "pdf"
+          ? L({ ku: "PDF پاشەکەوت کرا — بیخە ناو چاتەکە", en: "PDF saved — drop it into the chat", ar: "حُفظ ملف PDF — أضفه إلى المحادثة", zh: "PDF 已保存 — 拖入聊天" })
+          : L({ ku: "وێنەکە پاشەکەوت کرا — بیخە ناو چاتەکە", en: "Picture saved — drop it into the chat", ar: "حُفظت الصورة — أضفها إلى المحادثة", zh: "图片已保存 — 拖入聊天" }));
     } catch {
       toast.error(L({ ku: "وێنەی ڕاپۆرت دروست نەبوو — «چاپ / PDF» بەکاربهێنە", en: "Could not draw the report — use Print / PDF", ar: "تعذر رسم التقرير — استخدم الطباعة", zh: "无法生成图片 — 请用打印/PDF" }));
     } finally {
@@ -123,6 +133,10 @@ export default function DispatchReport() {
           <Button variant="outline" disabled={busy} onClick={() => void send("whatsapp")} className="border-emerald-400 text-emerald-700 dark:text-emerald-300" data-testid="dispatch-report-whatsapp">
             <MessageCircle className="me-2 h-4 w-4" />
             WhatsApp
+          </Button>
+          <Button variant="outline" disabled={busy} onClick={() => void send("whatsapp", "pdf")} className="border-emerald-400 text-emerald-700 dark:text-emerald-300" data-testid="dispatch-report-whatsapp-pdf">
+            <FileText className="me-2 h-4 w-4" />
+            WhatsApp PDF
           </Button>
           <Button variant="outline" onClick={() => window.print()} data-testid="dispatch-report-print">
             <Printer className="me-2 h-4 w-4" />

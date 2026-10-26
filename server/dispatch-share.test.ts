@@ -83,6 +83,9 @@ describe("sending", () => {
     expect(page).toContain('data-testid="dispatch-report-whatsapp"');
     expect(page).toContain("await navigator.share({ files: [file], text });");
     expect(page).toContain('window.open(waznChatUrl(text), "_blank", "noopener")');
+    // ...and as a PDF (owner, 2026-10-26).
+    expect(page).toContain('onClick={() => void send("whatsapp", "pdf")}');
+    expect(page).toContain("jpegDataUrlToPdfFile(url, img.naturalWidth, img.naturalHeight");
     expect(root("client/src/pages/Settings.tsx")).toContain("<WecomRobotCard />");
   });
 });
