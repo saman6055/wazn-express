@@ -66,6 +66,8 @@ export const dispatchRouter = router({
 
   /** The batch whose dispatch check was finished last (the bell's link). */
   latest: staffProcedure.query(async () => ({ batchId: await db.latestDispatchedBatchId() })),
+  /** Every batch packed into cartons, newest first - the page's way back to them. */
+  history: staffProcedure.query(async () => db.getDispatchHistory()),
 
   /** Whether the person is working in China - the screens open the Chinese way for them. */
   me: staffProcedure.query(async ({ ctx }) => ({ inChina: await db.worksInChina(ctx.user.id) })),

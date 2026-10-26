@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useLocation } from "wouter";
+import { DispatchHistory } from "@/components/dispatch/DispatchHistory";
 import { AlertTriangle, CheckCircle2, FileText, Loader2, Lock, LockOpen, PackageCheck, PackagePlus, ScanBarcode, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -63,7 +64,10 @@ export default function DispatchCheck() {
   const carton = s?.cartons.find((c) => c.id === cartonId) ?? null;
 
   useEffect(() => {
-    try { if (batchId) localStorage.setItem("wazn-dispatch-batch", String(batchId)); } catch { /* a convenience */ }
+    try {
+      if (batchId) localStorage.setItem("wazn-dispatch-batch", String(batchId));
+      else localStorage.removeItem("wazn-dispatch-batch");
+    } catch { /* a convenience */ }
     setCartonId(null);
     setLines([]);
   }, [batchId]);
@@ -177,17 +181,27 @@ export default function DispatchCheck() {
             <PackageCheck className="h-6 w-6 text-primary" />
             {L({ ku: "خستنە ناو کارتۆن", en: "Dispatch check", ar: "التعبئة في الكراتين", zh: "装箱核对" })}
           </h1>
+          <div className="flex flex-wrap items-center gap-2">
+          {/* Back to every check kept - the cards (owner, 2026-10-26). */}
+          {batchId ? (
+            <Button variant="outline" size="sm" onClick={() => setBatchId(null)} data-testid="dispatch-back-to-list">
+              {L({ ku: "هەموو پشکنینەکان", en: "All checks", ar: "كل الفحوصات", zh: "全部核对" })}
+            </Button>
+          ) : null}
           <Select value={batchId ? String(batchId) : ""} onValueChange={(v) => setBatchId(Number(v))}>
             <SelectTrigger className="w-60" data-testid="dispatch-batch">
               <SelectValue placeholder={L({ ku: "باچ هەڵبژێرە", en: "Choose a batch", ar: "اختر دفعة", zh: "选择批次" })} />
             </SelectTrigger>
             <SelectContent>
               {open.map((b) => <SelectItem key={b.id} value={String(b.id)}>{b.batchCode}</SelectItem>)}
+              {/* A batch opened from the cards that has since left the list. */}
+              {s && batchId && !open.some((b) => b.id === batchId) && <SelectItem value={String(batchId)}>{s.batch.batchCode}</SelectItem>}
             </SelectContent>
           </Select>
+          </div>
         </div>
 
-        {!batchId ? null : !s ? (
+        {!batchId ? <DispatchHistory onOpen={(id) => setBatchId(id)} /> : !s ? (
           <div className="flex justify-center py-12"><Loader2 className="h-6 w-6 animate-spin text-muted-foreground" /></div>
         ) : (
           <>

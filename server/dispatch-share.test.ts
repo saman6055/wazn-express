@@ -86,3 +86,15 @@ describe("sending", () => {
     expect(root("client/src/pages/Settings.tsx")).toContain("<WecomRobotCard />");
   });
 });
+
+describe("the page keeps what was checked (owner, 2026-10-26)", () => {
+  it("with no batch chosen it shows every check as cards, each with its report", () => {
+    const page = root("client/src/pages/DispatchCheck.tsx");
+    expect(page).toContain("{!batchId ? <DispatchHistory onOpen={(id) => setBatchId(id)} /> : !s ? (");
+    expect(page).toContain('data-testid="dispatch-back-to-list"');
+    const cards = root("client/src/components/dispatch/DispatchHistory.tsx");
+    expect(cards).toContain("trpc.dispatch.history.useQuery()");
+    expect(cards).toContain("href={`/dispatch-check/${r.batchId}/report`}");
+    expect(root("server/routers/dispatch.router.ts")).toContain("history: staffProcedure.query(async () => db.getDispatchHistory())");
+  });
+});

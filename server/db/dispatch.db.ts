@@ -331,6 +331,68 @@ export async function latestDispatchedBatchId(): Promise<number | null> {
   return row ? Number(row.id) : null;
 }
 
+/**
+ * Every batch the dispatch check was started on, newest first (owner,
+ * 2026-10-26: "nothing is kept here, no cards, no report?"). It was all kept
+ * - cartons and their parcels are rows - but the page offered only a batch
+ * picker, and a batch that had left China was no longer in it. This is the
+ * way back: what is being packed now, and every finished check with its report.
+ */
+export async function getDispatchHistory(limit = 60) {
+  const db = await need();
+  const cartons = await db
+    .select({
+      batchId: batchCartons.batchId,
+      cartons: sql<number>`COUNT(*)`,
+      closed: sql<number>`SUM(CASE WHEN ${batchCartons.status} = 'closed' THEN 1 ELSE 0 END)`,
+      weightKg: sql<string>`COALESCE(SUM(${batchCartons.weightKg}), 0)`,
+      lastAt: sql<Date>`MAX(COALESCE(${batchCartons.closedAt}, ${batchCartons.createdAt}))`,
+    })
+    .from(batchCartons)
+    .groupBy(batchCartons.batchId)
+    .orderBy(sql`MAX(COALESCE(${batchCartons.closedAt}, ${batchCartons.createdAt})) DESC`)
+    .limit(Math.min(200, Math.max(1, limit)));
+  const ids = cartons.map((c) => Number(c.batchId)).filter((id) => id > 0);
+  if (ids.length === 0) return [];
+
+  const [packed, totals, info] = await Promise.all([
+    db.select({ batchId: batchCartonItems.batchId, n: sql<number>`COUNT(*)` }).from(batchCartonItems).where(inArray(batchCartonItems.batchId, ids)).groupBy(batchCartonItems.batchId),
+    db.select({ batchId: packages.batchId, n: sql<number>`COUNT(*)` }).from(packages).where(and(inArray(packages.batchId, ids), sql`${packages.status} NOT IN ('returned','cancelled')`)).groupBy(packages.batchId),
+    db
+      .select({ id: batches.id, batchCode: batches.batchCode, status: batches.status, shippingType: batches.shippingType, checkedAt: batches.dispatchCheckedAt, note: batches.dispatchNote, by: users.name })
+      .from(batches)
+      .leftJoin(users, eq(users.id, batches.dispatchCheckedById))
+      .where(inArray(batches.id, ids)),
+  ]);
+  const packedOf = new Map(packed.map((r) => [Number(r.batchId), Number(r.n) || 0]));
+  const totalOf = new Map(totals.map((r) => [Number(r.batchId), Number(r.n) || 0]));
+  const infoOf = new Map(info.map((r) => [Number(r.id), r]));
+
+  return cartons.flatMap((c) => {
+    const id = Number(c.batchId);
+    const b = infoOf.get(id);
+    if (!b) return [];
+    const parcels = packedOf.get(id) ?? 0;
+    const total = totalOf.get(id) ?? 0;
+    return [{
+      batchId: id,
+      batchCode: b.batchCode,
+      status: b.status,
+      shippingType: b.shippingType,
+      cartons: Number(c.cartons) || 0,
+      closedCartons: Number(c.closed) || 0,
+      weightKg: Number(c.weightKg) || 0,
+      parcels,
+      totalParcels: total,
+      leftOut: Math.max(0, total - parcels),
+      finishedAt: b.checkedAt,
+      finishedBy: b.by ?? null,
+      note: b.note ?? null,
+      lastAt: c.lastAt,
+    }];
+  });
+}
+
 /** Batches whose dispatch was finished in the last hours - the bell's notice. */
 export async function countRecentDispatches(hours = 48): Promise<number> {
   const db = await need();
