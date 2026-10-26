@@ -39,7 +39,7 @@ const PAID_TEST = "lines.length > 0 && lines.every((p) => Number(p.outstandingUs
 describe("the list and the payment screen use the same sums", () => {
   it("the payment screen gets its parcels from parcelsForItems", () => {
     const view = between(settleSrc, "export async function getBoxSettlementView(", "\n}\n");
-    expect(view).toContain("const parcels = await parcelsForItems(db, items);");
+    expect(view).toContain("const parcels = await parcelsForItems(db, items, opts);");
     expect(view).not.toContain("CHARGE_TYPES");
   });
 

@@ -237,7 +237,38 @@ type BoxItemWithPackage = {
  * package or order, never on the box, so any set of items works. Returns one
  * parcel per item, in the order given.
  */
-async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): Promise<BoxParcelView[]> {
+/**
+ * Boxes a standing receipt has closed (owner's hard rule: a receipted box is
+ * settled - nobody owes for it). Its latest confirmed receipt decides: one
+ * that kept the rest as debt leaves the box asking (paid in part, or 0 with
+ * «قەرز لەسەر کڕیار»); any other closes it. A receipt taken back is no receipt.
+ *
+ * Owner, 2026-10-26: 23 paid boxes stood in «پارە نەدراو» for $3,200 that was
+ * never owed. The goods of an old box were on the account twice - the order's
+ * own price and the 10/09 receipt's line - or their freight was written after
+ * the receipt had already taken it, and the till added both up.
+ */
+async function boxesClosedByReceipt(db: SettlementDb, boxIds: number[]): Promise<Set<number>> {
+  const out = new Set<number>();
+  if (boxIds.length === 0) return out;
+  const rows = await db
+    .select({ boxId: boxSettlements.boxId, id: boxSettlements.id, differenceKind: boxSettlements.differenceKind })
+    .from(boxSettlements)
+    .where(and(inArray(boxSettlements.boxId, boxIds), eq(boxSettlements.status, "confirmed")));
+  const latest = new Map<number, (typeof rows)[number]>();
+  for (const r of rows) {
+    const had = latest.get(Number(r.boxId));
+    if (!had || Number(r.id) > Number(had.id)) latest.set(Number(r.boxId), r);
+  }
+  latest.forEach((r, boxId) => { if (r.differenceKind !== "debt") out.add(boxId); });
+  return out;
+}
+
+/**
+ * `raw`: the parcels as the ledger alone reads them, a closed box too - for
+ * the repair that writes an old receipt's missing charges (db/boxDecides).
+ */
+async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[], opts: { raw?: boolean } = {}): Promise<BoxParcelView[]> {
   const packageIds = Array.from(new Set(
     items.map((r) => r.item.packageId).filter((id): id is number => !!id),
   ));
@@ -508,6 +539,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
     orderSeen.add(id);
   }
   const claimedInBox = new Set<string>();
+  const closedBoxes = opts.raw ? new Set<number>() : await boxesClosedByReceipt(db, boxIds);
 
   const parcels: BoxParcelView[] = items
     .map((r) => {
@@ -609,7 +641,11 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[]): P
       const elsewhereUsd = packageId
         ? (paidElsewhereByPackage.get(Number(packageId)) ?? 0)
         : (orderId ? (paidElsewhereByOrder.get(Number(orderId)) ?? 0) : 0);
-      const settledUsd = round2(settledHereUsd + Math.min(elsewhereUsd, Math.max(0, round2(chargedUsd - discountedUsd - settledHereUsd))));
+      const openSettledUsd = round2(settledHereUsd + Math.min(elsewhereUsd, Math.max(0, round2(chargedUsd - discountedUsd - settledHereUsd))));
+      // A box its receipt closed owes nothing more, whatever the ledger adds up.
+      const closed = closedBoxes.has(boxId);
+      const settledUsd = closed ? Math.max(openSettledUsd, round2(chargedUsd - discountedUsd)) : openSettledUsd;
+      if (closed) { pendingFreightUsd = 0; freightOrder = null; }
       return {
         lineId: Number(r.item.id),
         packageId,
@@ -921,7 +957,7 @@ export async function getLastSettlementRate(): Promise<{ rate: number; at: Date 
   return row?.rate ? { rate: Number(row.rate), at: row.at } : null;
 }
 
-export async function getBoxSettlementView(boxId: number): Promise<BoxSettlementView> {
+export async function getBoxSettlementView(boxId: number, opts: { raw?: boolean } = {}): Promise<BoxSettlementView> {
   const empty: BoxSettlementView = {
     box: null, customer: null, parcels: [], settlements: [], pledges: [],
     lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null, advanceForEarlierBoxesUsd: 0, extras: [], extrasDueUsd: 0,
@@ -945,7 +981,7 @@ export async function getBoxSettlementView(boxId: number): Promise<BoxSettlement
     .where(eq(deliveryBoxItems.boxId, boxId))
     .orderBy(deliveryBoxItems.scannedAt);
 
-  const parcels = await parcelsForItems(db, items);
+  const parcels = await parcelsForItems(db, items, opts);
 
   const history = await db
     .select({ s: boxSettlements, staffName: users.name })

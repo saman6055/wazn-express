@@ -90,7 +90,8 @@ export async function chargeReceiptedBox(boxId: number, userId: number): Promise
   const goods = await chargeOrdersInBox(boxId, userId);
 
   // 2. Read the box again, as the till does, and write what is still missing.
-  const view = await getBoxSettlementView(boxId);
+  // Raw: the ledger's own reading - the box's receipt has closed it for the till.
+  const view = await getBoxSettlementView(boxId, { raw: true });
   const customer = view.customer;
   if (!customer) throw new Error(withFix("کڕیاری ئەم بۆکسە نەدۆزرایەوە.", ["بۆکسەکە بکەرەوە و کڕیارەکەی بپشکنە"]));
 
