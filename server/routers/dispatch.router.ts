@@ -66,6 +66,8 @@ export const dispatchRouter = router({
 
   /** The batch whose dispatch check was finished last (the bell's link). */
   latest: staffProcedure.query(async () => ({ batchId: await db.latestDispatchedBatchId() })),
+  /** The batches the page offers: only those made in China (owner, 2026-10-26). */
+  batches: staffProcedure.query(async () => db.dispatchableBatches()),
   /** Every batch packed into cartons, newest first - the page's way back to them. */
   history: staffProcedure.query(async () => db.getDispatchHistory()),
 

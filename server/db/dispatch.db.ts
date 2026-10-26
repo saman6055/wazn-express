@@ -143,11 +143,42 @@ export async function getDispatchState(batchId: number) {
   };
 }
 
+/**
+ * Only a batch made in China is packed into cartons (owner, 2026-10-26: "only
+ * for the China admin's batches, not the old ones"). A batch made in Erbil
+ * was weighed here, parcel by parcel; it has nothing to check before leaving.
+ */
+async function chinaCountryIds(): Promise<Set<number>> {
+  const db = await need();
+  return new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, "CN"))).map((r) => Number(r.id)));
+}
+
+export async function isChinaBatch(batch: { createdInCountryId?: number | null } | null | undefined): Promise<boolean> {
+  return !!batch?.createdInCountryId && (await chinaCountryIds()).has(Number(batch.createdInCountryId));
+}
+
+/** The batches the page offers: made in China, not yet arrived. */
+export async function dispatchableBatches() {
+  const db = await need();
+  const ids = Array.from(await chinaCountryIds());
+  if (ids.length === 0) return [];
+  return db
+    .select({ id: batches.id, batchCode: batches.batchCode, status: batches.status })
+    .from(batches)
+    .where(and(inArray(batches.createdInCountryId, ids), inArray(batches.status, ["preparing", "in_transit"])))
+    .orderBy(sql`${batches.id} DESC`);
+}
+
 /** A new carton, numbered after the batch's last one. */
 export async function openCarton(batchId: number, userId: number) {
   const db = await need();
   const batch = await getBatchById(batchId);
   if (!batch) throw new Error(withFix("ئەم باچە نەدۆزرایەوە.", ["لاپەڕەکە نوێ بکەرەوە"]));
+  if (!(await isChinaBatch(batch))) {
+    throw new Error(withFix(`باچی ${batch.batchCode} لە چین دروست نەکراوە — خستنە ناو کارتۆن تەنها بۆ باچەکانی ئادمینی چینە.`, [
+      "باچێکی چین لە لیستەکە هەڵبژێرە",
+    ]));
+  }
   const [last] = await db
     .select({ n: sql<number>`COALESCE(MAX(${batchCartons.cartonNo}), 0)` })
     .from(batchCartons)

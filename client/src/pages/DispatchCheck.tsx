@@ -54,11 +54,17 @@ export default function DispatchCheck() {
   const [weight, setWeight] = useState("");
   const [note, setNote] = useState("");
 
-  const { data: batchList } = trpc.batches.list.useQuery();
-  const open = useMemo(
-    () => ((batchList as any[]) ?? []).filter((b) => b.status === "preparing" || b.status === "in_transit").sort((a, z) => z.id - a.id),
-    [batchList],
-  );
+  // Only batches made in China (owner, 2026-10-26) - the server decides which.
+  const { data: batchList } = trpc.dispatch.batches.useQuery();
+  const open = useMemo(() => batchList ?? [], [batchList]);
+  // A batch remembered from before that the page no longer offers (made in
+  // Erbil, or long gone) is let go: back to the cards. One already packed
+  // stays reachable through them.
+  const { data: history } = trpc.dispatch.history.useQuery();
+  useEffect(() => {
+    if (!batchId || !batchList || !history) return;
+    if (!open.some((b) => b.id === batchId) && !history.some((h) => h.batchId === batchId)) setBatchId(null);
+  }, [batchId, batchList, history, open]);
   const state = trpc.dispatch.state.useQuery({ batchId: batchId ?? 0 }, { enabled: !!batchId });
   const s = state.data;
   const carton = s?.cartons.find((c) => c.id === cartonId) ?? null;

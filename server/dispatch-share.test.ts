@@ -98,3 +98,14 @@ describe("the page keeps what was checked (owner, 2026-10-26)", () => {
     expect(root("server/routers/dispatch.router.ts")).toContain("history: staffProcedure.query(async () => db.getDispatchHistory())");
   });
 });
+
+describe("only batches made in China (owner, 2026-10-26)", () => {
+  it("the page offers them and the server refuses any other", () => {
+    expect(root("client/src/pages/DispatchCheck.tsx")).toContain("trpc.dispatch.batches.useQuery()");
+    const db = root("server/db/dispatch.db.ts");
+    const open = db.slice(db.indexOf("export async function openCarton"));
+    expect(open.indexOf("if (!(await isChinaBatch(batch)))")).toBeGreaterThan(-1);
+    expect(open.indexOf("if (!(await isChinaBatch(batch)))")).toBeLessThan(open.indexOf("insert(batchCartons)"));
+    expect(db).toContain('inArray(batches.createdInCountryId, ids), inArray(batches.status, ["preparing", "in_transit"])');
+  });
+});
