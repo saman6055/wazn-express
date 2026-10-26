@@ -72,6 +72,9 @@ import {
 } from "@/components/ui/popover";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { OrderOutcomeMenuItems, OrderStockMark, useOrderStockMarks } from "@/components/orders/OrderOutcome";
+import { RefundOrderDialog } from "@/components/orders/RefundOrderDialog";
 import { pickLang } from "@/lib/lang";
 import { PlatformChip } from "@/components/PlatformChip";
 import { ShippingWayChip } from "@/components/ShippingWayChip";
@@ -95,6 +98,9 @@ type SortDirection = "asc" | "desc";
 export default function FullPackageDashboard() {
   const { t, language } = useTranslation();
   const [, setLocation] = useLocation();
+  const { user: outcomeUser } = useAuth();
+  const isMainAdmin = outcomeUser?.role === "super_admin";
+  const [refundOrder, setRefundOrder] = useState<{ id: number; orderCode: string; productName?: string | null } | null>(null);
   const [search, setSearch] = useState("");
   /*
    * What the server is asked about, a moment after typing stops.
@@ -265,6 +271,7 @@ export default function FullPackageDashboard() {
   } = useShippingRouteFilter(filteredOrders, (o: any) => o.shippingType);
   // Fifty rows at a time; the totals above still count every order.
   const orderPage = useClientPagination(routedOrders, 50, [customerFilter, batchFilter, dateFrom, dateTo, minPrice, maxPrice, shippingFilter, trackingFilter, imageFilter, sortField, sortDirection, routeFilter].join("|"));
+  const stockMarks = useOrderStockMarks(orderPage.pageRows.map((o) => o.id));
 
   const totalOrders = filteredOrders.length;
   const pendingOrders = filteredOrders.filter(o => ["pending", "ordered", "tracking_added"].includes(o.status)).length;
@@ -1096,8 +1103,16 @@ export default function FullPackageDashboard() {
                                   {order.status === option.value && " ✓"}
                                 </DropdownMenuItem>
                               ))}
+                              <OrderOutcomeMenuItems
+                                order={order}
+                                language={language}
+                                isMainAdmin={isMainAdmin}
+                                onReturned={() => setLocation(`/finance/company-stock?order=${encodeURIComponent(order.orderCode)}`)}
+                                onRefund={() => setRefundOrder({ id: order.id, orderCode: order.orderCode, productName: order.productName })}
+                              />
                             </DropdownMenuContent>
                           </DropdownMenu>
+                        <OrderStockMark mark={stockMarks.get(order.id)} language={language} />
                         </TableCell>
                         <TableCell className="text-sm text-muted-foreground">
                           <RelativeTime date={order.createdAt} />
@@ -1133,6 +1148,7 @@ export default function FullPackageDashboard() {
           </CardContent>
         </Card>
       </div>
+      <RefundOrderDialog order={refundOrder} onClose={() => setRefundOrder(null)} onDone={() => { void refetch(); }} />
     </DashboardLayout>
   );
 }

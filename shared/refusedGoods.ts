@@ -30,7 +30,7 @@
  * when it is sold — and a sale ends it for good.
  */
 
-export const REFUSAL_REASONS = ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "abandoned", "ownerless", "other"] as const;
+export const REFUSAL_REASONS = ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "abandoned", "ownerless", "refunded", "other"] as const;
 export type RefusalReason = (typeof REFUSAL_REASONS)[number];
 export type RefusalFault = "customer" | "office" | "nobody";
 
@@ -59,6 +59,7 @@ export const REFUSAL_REASON_WORDS: Record<RefusalReason, Words> = {
   office_duplicate: { ku: "ئادمین دوو جار داوای کردووە", en: "Ordered twice by the office", ar: "طلبه المكتب مرتين", zh: "办公室重复下单" },
   abandoned: { ku: "کرێی گواستنەوەی زۆرە، کڕیار پاکەتەکەی بەجێ هێشت", en: "The freight was too much; the customer left the parcel", ar: "أجرة الشحن مرتفعة، ترك العميل الطرد", zh: "运费过高，客户弃货" },
   ownerless: { ku: "پاکەتی بێ خاوەن", en: "A parcel with no owner", ar: "طرد بلا صاحب", zh: "无主包裹" },
+  refunded: { ku: "ڕیفەند — گەڕایەوە بۆ فرۆشیار", en: "Refunded — sent back to the seller", ar: "استرداد — أُعيد للبائع", zh: "退款 — 退回卖家" },
   other: { ku: "هۆکارێکی تر — بینووسە", en: "Another reason — write it", ar: "سبب آخر — اكتبه", zh: "其他 — 请写明" },
 };
 
@@ -73,6 +74,7 @@ export const REFUSAL_FAULT: Record<RefusalReason, RefusalFault> = {
   changed_mind: "customer",
   abandoned: "customer",
   ownerless: "nobody",
+  refunded: "nobody",
   other: "customer",
 };
 
@@ -207,4 +209,53 @@ export function keptLedgerReason(orderCode: string): string {
 
 export function stockSaleLedgerText(productName: string | null, orderCode: string | null): string {
   return `فرۆشتنی کاڵای ماوە — ${productName ?? "کاڵا"}${orderCode ? ` (${orderCode})` : ""}`;
+}
+
+// ---------------------------------------------------------------------------
+// Refund: the goods go back to the seller in China (owner, 2026-10-26)
+// ---------------------------------------------------------------------------
+
+/**
+ * Not refused goods on our shelf, but goods the seller took back and paid
+ * for. The owner: the customer pays the cost of sending them back inside
+ * China; a refund of part of an order happens, rarely.
+ *
+ * In money, for the refunded pieces:
+ *   - they come off the customer's account, as a refusal does;
+ *   - the return fee goes on it, its own line;
+ *   - the company: paid B for them and the return fee F, got back R from the
+ *     seller and F from the customer - its loss is B - R. Nothing when the
+ *     seller refunds in full.
+ *
+ * On the books it is one companyStock row, reason "refunded", closed at
+ * once as sold for R: cost B + F, kept F, so the one stock profit rule reads
+ * (F + R) - (B + F) = R - B, and nothing new reads money.
+ */
+export interface RefundMoney {
+  /** What the refunded pieces cost the company. */
+  buyUsd: number;
+  /** What the seller paid back. */
+  sellerRefundUsd: number;
+  /** Sending them back inside China - on the customer. */
+  returnFeeUsd: number;
+}
+
+export function refundStockFigures(m: RefundMoney): { costUsd: number; keptUsd: number; soldPriceUsd: number; companyResultUsd: number } {
+  const buy = Math.max(0, Number(m.buyUsd) || 0);
+  const refund = Math.max(0, Number(m.sellerRefundUsd) || 0);
+  const fee = Math.max(0, Number(m.returnFeeUsd) || 0);
+  return {
+    costUsd: cents(buy + fee),
+    keptUsd: cents(fee),
+    soldPriceUsd: cents(refund),
+    companyResultUsd: cents(refund - buy),
+  };
+}
+
+export function refundLedgerReason(orderCode: string, quantity: number): string {
+  return `ڕیفەند — کاڵا گەڕایەوە بۆ فرۆشیار (${orderCode}، ${quantity} دانە)`;
+}
+
+export function returnFeeLedgerReason(orderCode: string): string {
+  return `کرێی گەڕاندنەوەی کاڵا بۆ فرۆشیار لە چین (${orderCode})`;
 }

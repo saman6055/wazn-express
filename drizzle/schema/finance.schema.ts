@@ -1100,7 +1100,7 @@ export const companyStock = mysqlTable("companyStock", {
   refusedSellUsd: decimal("refusedSellUsd", { precision: 12, scale: 2 }).default("0").notNull(),
   /** The customer's money the company kept against the loss. Income, the day of the refusal. */
   keptUsd: decimal("keptUsd", { precision: 12, scale: 2 }).default("0").notNull(),
-  reason: mysqlEnum("reason", ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "abandoned", "ownerless", "other"]).notNull(),
+  reason: mysqlEnum("reason", ["late", "fake_customer", "no_answer", "partial", "changed_mind", "office_mistake", "office_duplicate", "abandoned", "ownerless", "refunded", "other"]).notNull(),
   /** Whose side it happened on — what the loss report groups by. */
   fault: mysqlEnum("fault", ["customer", "office", "nobody"]).notNull(),
   note: text("note"),

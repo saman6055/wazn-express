@@ -13,7 +13,10 @@ import {
   parcelFreightCostUsd,
   keptLedgerReason,
   planRefusal,
+  refundLedgerReason,
+  refundStockFigures,
   refusalLedgerReason,
+  returnFeeLedgerReason,
   stockSaleLedgerText,
   type RefusalReason,
 } from "@shared/refusedGoods";
@@ -361,6 +364,95 @@ export async function refuseOrderGoods(
   });
   appLogger.info("[RefusedGoods] refused", { orderId: order.id, orderCode: order.orderCode, refused, takenOffUsd: plan.takenOffUsd, keepUsd, costUsd: plan.costUsd, userId });
   return { stockId: Number(inserted.insertId), orderCode: order.orderCode, refused, takenOffUsd: plan.takenOffUsd, keptUsd: keepUsd, costUsd: plan.costUsd, returnedToCustomerUsd: cents(plan.keepableUsd - keepUsd) };
+}
+
+/**
+ * Refund: the pieces went back to the seller in China, who paid for them
+ * (owner, 2026-10-26). Off the customer's account like a refusal; the return
+ * fee on it as its own line (the customer pays it); and one stock row,
+ * closed at once as "sold" to the seller for what was refunded - see
+ * shared/refusedGoods refundStockFigures for why that reads the right loss.
+ * The customer's own money stays theirs: nothing is kept.
+ */
+export async function refundOrderGoods(
+  input: { orderId: number; quantity: number; sellerRefundUsd: number; returnFeeUsd: number; note?: string },
+  userId: number,
+) {
+  const { db, order, customer, balanceUsd } = await loadForRefusal(input.orderId);
+  const prices = unitPrices(order);
+  const plan = planRefusal({ orderQuantity: order.quantity ?? 1, refuseQuantity: input.quantity, ...prices, charged: Boolean(order.isCharged), balanceUsd });
+  const refunded = (order.quantity ?? 1) - plan.remainingQuantity;
+  const fee = cents(Math.max(0, Number(input.returnFeeUsd) || 0));
+  const sellerRefundUsd = cents(Math.max(0, Number(input.sellerRefundUsd) || 0));
+  if (sellerRefundUsd > cents(plan.costUsd * 1.5 + 1)) {
+    throw new Error(withFix(`فرۆشیار $${sellerRefundUsd.toFixed(2)} ی گەڕاندۆتەوە، بەڵام ئەم ${refunded} دانەیە تەنها $${plan.costUsd.toFixed(2)} یان تێچووە.`, ["بڕی ڕیفەندەکە دووبارە بپشکنە (بە دۆلار، نەک یوان)"]));
+  }
+  const figures = refundStockFigures({ buyUsd: plan.costUsd, sellerRefundUsd, returnFeeUsd: fee });
+
+  // 1. The refunded pieces come off the account.
+  const why = refundLedgerReason(order.orderCode, refunded);
+  if (plan.takenOffUsd > 0) {
+    if (order.chargeTransactionId) {
+      if (plan.whole) await reverseCharge(order.chargeTransactionId, why, userId, undefined, { allowCredit: true });
+      else await adjustCharge(order.chargeTransactionId, cents(prices.unitSellUsd * plan.remainingQuantity), why, userId, undefined, { allowCredit: true });
+    } else {
+      await adjustCustomerBalance(order.customerId!, customer.customerCode, plan.takenOffUsd, "credit", why, userId);
+    }
+  }
+
+  // 2. Sending them back inside China is the customer's.
+  if (fee > 0) {
+    try {
+      await adjustCustomerBalance(order.customerId!, customer.customerCode, fee, "debit", returnFeeLedgerReason(order.orderCode), userId);
+    } catch (e) {
+      appLogger.error("[Refund] taken off the account but the return fee line failed", { orderId: order.id, fee, error: e instanceof Error ? e.message : String(e) });
+      throw new Error(withFix(
+        `کاڵاکە لەسەر ${customer.customerCode} لابرا، بەڵام کرێی گەڕاندنەوە ($${fee.toFixed(2)}) لەسەری نەنووسرا.`,
+        [`لە حیسابی ${customer.customerCode} ڕێکخستنێکی دەستی بە $${fee.toFixed(2)} وەک «زیادکردن» بنووسە`, `لە هۆکارەکەدا بنووسە: ${returnFeeLedgerReason(order.orderCode)}`, "ئەم ڕیفەندە دووبارە مەکەوە"],
+      ));
+    }
+  }
+
+  // 3. The order: ended, or smaller (the same words a refusal uses).
+  if (plan.whole) await db.update(fullPackageOrders).set({ status: "cancelled" }).where(eq(fullPackageOrders.id, order.id));
+  else await db.update(fullPackageOrders).set({ quantity: plan.remainingQuantity }).where(eq(fullPackageOrders.id, order.id));
+
+  // 4. One row that tells it, closed at once.
+  const now = new Date();
+  const [inserted] = await db.insert(companyStock).values({
+    orderId: order.id,
+    orderCode: order.orderCode,
+    trackingNumber: order.trackingNumber || null,
+    customerId: order.customerId,
+    productName: order.productName,
+    productImage: order.productImage,
+    quantity: refunded,
+    costUsd: figures.costUsd.toFixed(2),
+    refusedSellUsd: plan.takenOffUsd.toFixed(2),
+    keptUsd: figures.keptUsd.toFixed(2),
+    reason: "refunded",
+    fault: REFUSAL_FAULT.refunded,
+    note: (input.note ?? "").trim() || null,
+    status: "sold",
+    soldPriceUsd: figures.soldPriceUsd.toFixed(2),
+    soldToCustomerId: null,
+    closedAt: now,
+    closedById: userId,
+    closeNote: `ڕیفەند لە فرۆشیارەوە: $${figures.soldPriceUsd.toFixed(2)}`,
+    createdById: userId,
+  });
+  appLogger.info("[Refund] refunded", { orderId: order.id, orderCode: order.orderCode, refunded, takenOffUsd: plan.takenOffUsd, fee, sellerRefundUsd, userId });
+  return { stockId: Number(inserted.insertId), orderCode: order.orderCode, refunded, takenOffUsd: plan.takenOffUsd, returnFeeUsd: fee, sellerRefundUsd, companyResultUsd: figures.companyResultUsd };
+}
+
+/** Which of these orders were refused or refunded - for a mark on the order lists. No money. */
+export async function stockMarksForOrders(orderIds: number[]) {
+  const db = await getDb();
+  if (!db || orderIds.length === 0) return [];
+  return db
+    .select({ orderId: companyStock.orderId, reason: companyStock.reason, status: companyStock.status, quantity: companyStock.quantity })
+    .from(companyStock)
+    .where(inArray(companyStock.orderId, orderIds));
 }
 
 export async function listCompanyStock(now: Date = new Date()) {

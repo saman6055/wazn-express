@@ -319,6 +319,26 @@ export const ledgerRouter = router({
           throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
         }
       }),
+    /** Goods sent back to the seller in China, who paid for them (owner, 2026-10-26). */
+    refundOrder: superAdminProcedure
+      .input(z.object({
+        orderId: z.number().int().positive(),
+        quantity: z.number().int().positive(),
+        sellerRefundUsd: z.number().min(0).max(1_000_000),
+        returnFeeUsd: z.number().min(0).max(100_000),
+        note: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.refundOrderGoods(input, ctx.user.id);
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+    /** Refused / refunded marks for the order lists - which, not how much. */
+    stockMarks: staffProcedure
+      .input(z.object({ orderIds: z.array(z.number().int().positive()).max(500) }))
+      .query(async ({ input }) => db.stockMarksForOrders(input.orderIds)),
     /** A parcel the company only carried — left behind by its customer, or ownerless — taken into stock. */
     abandonParcel: superAdminProcedure
       .input(z.object({ packageId: z.number().int().positive(), keepUsd: z.number().min(0).max(1_000_000), note: z.string().max(1000).optional() }))

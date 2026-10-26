@@ -63,6 +63,9 @@ import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
 import { orderStatusLabel } from "@/lib/shipmentFilters";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { OrderOutcomeMenuItems, OrderStockMark, useOrderStockMarks, withoutMoneyStatuses } from "@/components/orders/OrderOutcome";
+import { RefundOrderDialog } from "@/components/orders/RefundOrderDialog";
 
 
 const statusColors: Record<string, string> = {
@@ -128,6 +131,9 @@ export default function CommissionOrders() {
   const statusLabels = getStatusLabels(language);
   const statusOptions = getStatusOptions(language);
   const [, setLocation] = useLocation();
+  const { user: outcomeUser } = useAuth();
+  const isMainAdmin = outcomeUser?.role === "super_admin";
+  const [refundOrder, setRefundOrder] = useState<{ id: number; orderCode: string; productName?: string | null } | null>(null);
   const [search, setSearch] = useState("");
   /*
    * What the server is asked about, a moment after typing stops.
@@ -300,6 +306,7 @@ export default function CommissionOrders() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [orders, shippingFilter, customerFilter, trackingFilter, batchFilter, dateFromMs, dateToMs, sortBy],
   );
+  const stockMarks = useOrderStockMarks(fullPackageOrders.map((o) => o.id));
   const { totalOrders, pendingOrders, inTransitOrders } = useMemo(
     () => ({
       totalOrders: fullPackageOrders.length,
@@ -784,7 +791,7 @@ export default function CommissionOrders() {
                             </button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="start">
-                            {statusOptions.map((option) => (
+                            {withoutMoneyStatuses(statusOptions).map((option) => (
                               <DropdownMenuItem
                                 key={option.value}
                                 onClick={() => {
@@ -802,8 +809,16 @@ export default function CommissionOrders() {
                                 {order.status === option.value && " ✓"}
                               </DropdownMenuItem>
                             ))}
+                            <OrderOutcomeMenuItems
+                              order={order}
+                              language={language}
+                              isMainAdmin={isMainAdmin}
+                              onReturned={() => setLocation(`/finance/company-stock?order=${encodeURIComponent(order.orderCode)}`)}
+                              onRefund={() => setRefundOrder({ id: order.id, orderCode: order.orderCode, productName: order.productName })}
+                            />
                           </DropdownMenuContent>
                         </DropdownMenu>
+                      <OrderStockMark mark={stockMarks.get(order.id)} language={language} />
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(order.createdAt).toLocaleDateString("en-GB")}
@@ -849,6 +864,7 @@ export default function CommissionOrders() {
       </div>
 
 
+      <RefundOrderDialog order={refundOrder} onClose={() => setRefundOrder(null)} onDone={() => { void refetch(); }} />
     </DashboardLayout>
   );
 }

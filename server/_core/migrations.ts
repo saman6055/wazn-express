@@ -1647,7 +1647,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       freightCostUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       refusedSellUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       keptUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
-      reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','abandoned','ownerless','other') NOT NULL,
+      reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','abandoned','ownerless','refunded','other') NOT NULL,
       fault ENUM('customer','office','nobody') NOT NULL,
       note TEXT,
       status ENUM('held','sold','written_off') NOT NULL DEFAULT 'held',
@@ -3314,8 +3314,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // companyStock learned two more reasons and a third side when parcels the
   // company only carried were given a place in it (shared/refusedGoods).
   {
+    // 'refunded' since 2026-10-26: goods sent back to the seller. One patch
+    // holds the whole list - every patch runs on every boot, so a second
+    // MODIFY would put the shorter list back first and fail on the new rows.
     name: "companyStock.reason.parcels",
-    sql: "ALTER TABLE companyStock MODIFY COLUMN reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','abandoned','ownerless','other') NOT NULL",
+    sql: "ALTER TABLE companyStock MODIFY COLUMN reason ENUM('late','fake_customer','no_answer','partial','changed_mind','office_mistake','office_duplicate','abandoned','ownerless','refunded','other') NOT NULL",
   },
   {
     name: "companyStock.fault.nobody",

@@ -1215,6 +1215,18 @@ export const fullPackageRouter = router({
         if (!existing) {
           throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
         }
+        // Naming an order refunded or returned moved no money: the debt
+        // stayed on the customer and the goods left the books (owner,
+        // 2026-10-26). Both have their own doors now, which do the money.
+        if ((input.status === "refunded" || input.status === "returned") && existing.status !== input.status) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix("«ڕیفەند» و «گەڕاوە» بە گۆڕینی ناوی دۆخ ناکرێن — قەرزەکە لەسەر کڕیار دەمایەوە.", [
+              "لە لیستەکە کلیک لە دۆخی داواکارییەکە بکە",
+              "«ڕیفەند…» هەڵبژێرە ئەگەر کاڵاکە بۆ فرۆشیار گەڕایەوە، یان «گەڕاوە…» ئەگەر کڕیار ڕەتی کردەوە و کاڵاکە لای ئێمەیە",
+            ]),
+          });
+        }
         
         const updateData: Record<string, unknown> = { status: input.status };
         
