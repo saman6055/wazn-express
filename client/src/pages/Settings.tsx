@@ -15,6 +15,7 @@ import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { WecomRobotCard } from "@/components/settings/WecomRobotCard";
 
 export default function Settings() {
     const { t, language } = useTranslation();
@@ -517,6 +518,7 @@ const [companyData, setCompanyData] = useState({
           </TabsContent>
 
           <TabsContent value="notifications" className="space-y-4 mt-4">
+            <WecomRobotCard />
             <Card>
               <CardHeader>
                 <CardTitle>{t("settings.emailNotifications")}</CardTitle>

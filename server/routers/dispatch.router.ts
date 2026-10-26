@@ -6,6 +6,8 @@ import * as db from "../db";
 import { appLogger } from "../utils/logger";
 import { idSchema } from "./schemas";
 import { notifyStaffAlert } from "../_core/notifyStaff";
+import { sendWecomMarkdown } from "../lib/wecomBot";
+import { dispatchWecomMarkdown } from "@shared/dispatchMessage";
 
 const fail = (err: unknown): never => {
   if (err instanceof TRPCError) throw err;
@@ -124,6 +126,19 @@ export const dispatchRouter = router({
         title: `باچی ${batch?.batchCode ?? input.batchId} پشکنینی ناردنی بۆ کرا`,
         content: `${done.cartons} کارتۆن، ${done.parcels} پاکێج${done.leftOut > 0 ? ` - ${done.leftOut} پاکێج نەخراونەتە ناو کارتۆن: ${input.note ?? ""}` : ""}`,
       });
+      // And the WeCom group, by itself when a robot is set (owner, 2026-10-26).
+      // Not awaited: the check is saved whether or not WeCom answers.
+      const host = ctx.req?.get?.("host");
+      const secure = host && !/^(localhost|127\.0\.0\.1)(:|$)/.test(host);
+      void sendWecomMarkdown(dispatchWecomMarkdown({
+        batchCode: batch?.batchCode ?? String(input.batchId),
+        cartons: done.cartons,
+        parcels: done.parcels,
+        leftOut: done.leftOut,
+        note: input.note ?? null,
+        by: ctx.user.name ?? null,
+        reportUrl: host ? `${secure ? "https" : "http"}://${host}/dispatch-check/${input.batchId}/report` : null,
+      }));
       return done;
     }),
 });

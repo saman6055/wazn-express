@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { AlertTriangle, CheckCircle2, FileText, Loader2, Lock, LockOpen, PackageCheck, PackagePlus, ScanBarcode, Trash2, XCircle } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -41,6 +41,7 @@ export default function DispatchCheck() {
   const { language } = useTranslation();
   const L = (w: Words) => pickLang(language, w);
   const utils = trpc.useUtils();
+  const [, setLocation] = useLocation();
   const systemAlert = useSystemAlert();
   const scanRef = useRef<HTMLInputElement>(null);
   const [batchId, setBatchId] = useState<number | null>(() => {
@@ -114,7 +115,14 @@ export default function DispatchCheck() {
         en: `Dispatch check done: ${d.cartons} cartons, ${d.parcels} parcels`,
         ar: `اكتمل فحص الإرسال: ${d.cartons} كرتون، ${d.parcels} طرد`,
         zh: `发货核对完成：${d.cartons} 箱，${d.parcels} 件`,
-      }));
+      }), {
+        duration: 15000,
+        // Straight to the report, where WeChat and WhatsApp are one tap (owner, 2026-10-26).
+        action: {
+          label: L({ ku: "ناردنی ڕاپۆرت", en: "Send the report", ar: "إرسال التقرير", zh: "发送报告" }),
+          onClick: () => setLocation(`/dispatch-check/${batchId}/report`),
+        },
+      });
       /**
        * The number it travels under is what tells every customer in this
        * batch that their goods have left China. Asked for here, at the one

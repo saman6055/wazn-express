@@ -2,7 +2,10 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
-import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
+import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
+import { SERVER_ONLY_SETTINGS, sendWecomMarkdown, wecomConfigured } from "../lib/wecomBot";
+import { WECOM_SETTING_KEY, wecomKeyFrom } from "@shared/dispatchMessage";
+import { withFix } from "@shared/fixAdvice";
 import * as db from "../db";
 import { cacheGetOrSet, cacheInvalidate, CACHE_TTL } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
@@ -274,6 +277,8 @@ export const settingsRouter = router({
     get: adminProcedure
       .input(z.object({ key: z.string() }))
       .query(async ({ input }) => {
+        // A robot key never goes back to a browser (server/lib/wecomBot).
+        if (SERVER_ONLY_SETTINGS.includes(input.key)) return null;
         return db.getSetting(input.key);
       }),
     set: adminProcedure
@@ -282,6 +287,9 @@ export const settingsRouter = router({
         value: z.string(),
       }))
       .mutation(async ({ input, ctx }) => {
+        if (SERVER_ONLY_SETTINGS.includes(input.key)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Use the WeCom robot card for this setting" });
+        }
         await db.setSetting(input.key, input.value, ctx.user.id);
         await db.createAuditLog({
           userId: ctx.user.id,
@@ -293,8 +301,42 @@ export const settingsRouter = router({
         return { success: true };
       }),
     list: adminProcedure.query(async () => {
-      return db.getAllSettings();
+      return (await db.getAllSettings()).filter((s) => !SERVER_ONLY_SETTINGS.includes(s.settingKey));
     }),
+
+    /**
+     * The WeCom group robot (owner, 2026-10-26): told by itself when a batch
+     * leaves China. Whether one is set - never the key.
+     */
+    wecomStatus: superAdminProcedure.query(async () => ({ configured: await wecomConfigured() })),
+    /** Paste the robot's webhook address (or key); a test message must arrive before it is kept. Empty removes it. */
+    setWecom: superAdminProcedure
+      .input(z.object({ webhook: z.string().max(300) }))
+      .mutation(async ({ input, ctx }) => {
+        if (!input.webhook.trim()) {
+          await db.setSetting(WECOM_SETTING_KEY, "", ctx.user.id);
+          await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "remove_wecom_robot", entityType: "setting", newValues: {} });
+          return { configured: false };
+        }
+        const key = wecomKeyFrom(input.webhook);
+        if (!key) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix("ئەمە ناونیشانی ڕۆبۆتی WeCom نییە.", [
+            "لە گرووپی 企业微信 ← 群机器人 ← ڕۆبۆتەکە بکەوە",
+            "ناونیشانی Webhook کۆپی بکە (بە https://qyapi.weixin.qq.com/cgi-bin/webhook/send?key= دەست پێدەکات)",
+            "لێرە پەیستی بکە",
+          ]) });
+        }
+        const test = await sendWecomMarkdown("**Wazn Express** ✅ 机器人已连接 · ڕۆبۆت پەیوەست کرا", key);
+        if (!test.ok) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix(`WeCom پەیامی تاقیکردنەوەی وەرنەگرت (${test.error ?? "?"}).`, [
+            "دڵنیابە ڕۆبۆتەکە لە گرووپەکەدا ماوە و نەسڕاوەتەوە",
+            "ناونیشانی Webhook دووبارە کۆپی بکە و پەیستی بکە",
+          ]) });
+        }
+        await db.setSetting(WECOM_SETTING_KEY, key, ctx.user.id);
+        await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "set_wecom_robot", entityType: "setting", newValues: { configured: true } });
+        return { configured: true };
+      }),
 
     /**
      * Public: the company's text size, text colour and uploaded fonts.
