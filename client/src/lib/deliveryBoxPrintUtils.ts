@@ -264,7 +264,8 @@ export function paidBeforeOnBox(
  * discount. AZ004's box printed $230.62 while the till asked $220.62. Each
  * line takes the till's price (charged + freight still to post), and an
  * order's breakdown in the description follows it, so paper, message and till
- * say one figure.
+ * say one figure. The price is chargedUsd alone - it already holds freight
+ * still to post (2026-10-26: adding pendingFreightUsd counted it twice).
  */
 export function alignItemsToTill<T extends { id?: number | null; calculatedCostUsd?: unknown; description?: string | null }>(
   items: readonly T[],
@@ -275,7 +276,9 @@ export function alignItemsToTill<T extends { id?: number | null; calculatedCostU
   return items.map((item) => {
     const p = item.id != null ? byLine.get(Number(item.id)) : undefined;
     if (!p) return item;
-    const price = Math.round((Number(p.chargedUsd || 0) + Number(p.pendingFreightUsd || 0)) * 100) / 100;
+    // The till's own price: chargedUsd already carries an order's freight
+    // still to post (pendingFreightUsd is that part, shown, never added again).
+    const price = Math.round(Number(p.chargedUsd || 0) * 100) / 100;
     if (!(price > 0) || Math.abs(price - Number(item.calculatedCostUsd || 0)) <= 0.005) return item;
     let description = item.description ?? null;
     const m = description ? /نرخی بەرهەم: \$([\d.]+) \+ نرخی گواستنەوە: \$([\d.]+)/.exec(description) : null;
