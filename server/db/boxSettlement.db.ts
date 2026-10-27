@@ -265,6 +265,41 @@ async function boxesClosedByReceipt(db: SettlementDb, boxIds: number[]): Promise
 }
 
 /**
+ * What a batch may no longer charge (owner, 2026-10-27): goods in a box its
+ * receipt closed. The box decides; the batch is logistics. Closing old
+ * batches on 27/10 wrote $417 of "deferred" freight onto 30 orders, $209 of
+ * it on cartons whose box had been receipted weeks before - the old receipts
+ * never marked the order's freight as taken. Matched by the order, by the
+ * carton's parcel, and by the tracking - the three names one carton goes by.
+ */
+export async function goodsInReceiptedBoxes(input: { orderIds?: number[]; packageIds?: number[]; trackings?: string[] }): Promise<{ orderIds: Set<number>; packageIds: Set<number>; trackings: Set<string> }> {
+  const out = { orderIds: new Set<number>(), packageIds: new Set<number>(), trackings: new Set<string>() };
+  const db = await getDb();
+  if (!db) return out;
+  const orderIds = Array.from(new Set((input.orderIds ?? []).map(Number).filter((n) => n > 0)));
+  const packageIds = Array.from(new Set((input.packageIds ?? []).map(Number).filter((n) => n > 0)));
+  const trackings = Array.from(new Set((input.trackings ?? []).map((t) => String(t ?? "").trim()).filter(Boolean)));
+  if (orderIds.length + packageIds.length + trackings.length === 0) return out;
+  const items = await db
+    .select({ boxId: deliveryBoxItems.boxId, orderId: deliveryBoxItems.fullPackageOrderId, packageId: deliveryBoxItems.packageId, tracking: deliveryBoxItems.trackingNumber })
+    .from(deliveryBoxItems)
+    .where(or(
+      orderIds.length ? inArray(deliveryBoxItems.fullPackageOrderId, orderIds) : sql`1 = 0`,
+      packageIds.length ? inArray(deliveryBoxItems.packageId, packageIds) : sql`1 = 0`,
+      trackings.length ? inArray(deliveryBoxItems.trackingNumber, trackings) : sql`1 = 0`,
+    ));
+  if (items.length === 0) return out;
+  const closed = await boxesClosedByReceipt(db, Array.from(new Set(items.map((i) => Number(i.boxId)))));
+  for (const i of items) {
+    if (!closed.has(Number(i.boxId))) continue;
+    if (i.orderId) out.orderIds.add(Number(i.orderId));
+    if (i.packageId) out.packageIds.add(Number(i.packageId));
+    if (i.tracking) out.trackings.add(String(i.tracking).trim().toLowerCase());
+  }
+  return out;
+}
+
+/**
  * `raw`: the parcels as the ledger alone reads them, a closed box too - for
  * the repair that writes an old receipt's missing charges (db/boxDecides).
  */

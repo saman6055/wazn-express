@@ -90,6 +90,34 @@ type EmitResult = {
   invoiceNumbers: string[];
 };
 
+/**
+ * Takes out of a delivery's buckets every order whose carton sits in a box
+ * its receipt closed (db.goodsInReceiptedBoxes). Empty customers drop out.
+ */
+async function dropReceiptedGoods(buckets: Map<number, DeliveryItem[]>, kind: string): Promise<void> {
+  const all = Array.from(buckets.values()).flat();
+  if (all.length === 0) return;
+  const held = await db.goodsInReceiptedBoxes({
+    orderIds: all.map((i) => Number(i.order?.id)),
+    packageIds: all.map((i) => Number(i.pkg?.id)),
+    trackings: all.flatMap((i) => [i.order?.trackingNumber, i.pkg?.trackingNumber]).filter(Boolean),
+  });
+  const isHeld = (i: DeliveryItem) =>
+    held.orderIds.has(Number(i.order?.id))
+    || held.packageIds.has(Number(i.pkg?.id))
+    || [i.order?.trackingNumber, i.pkg?.trackingNumber].some((t) => t && held.trackings.has(String(t).trim().toLowerCase()));
+  for (const [customerId, items] of Array.from(buckets.entries())) {
+    const kept = items.filter((i) => !isHeld(i));
+    if (kept.length !== items.length) {
+      appLogger.info(`[BatchDelivered ${kind}] receipted in a box - not charged by the batch`, {
+        customerId, orderCodes: items.filter(isHeld).map((i) => i.order?.orderCode),
+      });
+    }
+    if (kept.length === 0) buckets.delete(customerId);
+    else buckets.set(customerId, kept);
+  }
+}
+
 async function emitFpInvoices(
   buckets: Map<number, DeliveryItem[]>,
   ctx: { user: { id: number; role: string } },
@@ -100,6 +128,7 @@ async function emitFpInvoices(
   const result: EmitResult = { invoicesCreated: 0, ordersCharged: 0, errors: [], invoiceNumbers: [] };
   const isSea = batch?.shippingType === 'sea';
 
+  await dropReceiptedGoods(buckets, "FP");
   for (const [customerId, fpItems] of Array.from(buckets.entries())) {
     try {
       appLogger.info("[BatchDelivered FP] Processing customer", {
@@ -323,6 +352,9 @@ async function emitCmInvoices(
     return parts.join('\n');
   };
 
+  // The box decides (owner, 2026-10-27): an order whose carton was receipted
+  // in a box is never charged by its batch - not its goods, not its freight.
+  await dropReceiptedGoods(buckets, "CM");
   for (const [customerId, cmItems] of Array.from(buckets.entries())) {
     try {
       appLogger.info("[BatchDelivered CM] Processing customer", {
@@ -2004,9 +2036,16 @@ export const batchesRouter = router({
             try {
               // STEP 1: Separate uncharged packages from already-charged ones
               const unchargedPackages: typeof customerPackages = [];
+              // A parcel receipted in a box is the box's (owner, 2026-10-27).
+              const heldByBox = await db.goodsInReceiptedBoxes({
+                packageIds: customerPackages.map((p) => Number(p.id)),
+                trackings: customerPackages.map((p) => p.trackingNumber).filter(Boolean) as string[],
+              });
               for (const pkg of customerPackages) {
                 const freshPkg = await db.getPackageById(pkg.id);
-                if (freshPkg?.isCharged) {
+                if (heldByBox.packageIds.has(Number(pkg.id))) {
+                  appLogger.info("[Batch] Parcel receipted in a box - not charged by the batch", { packageCode: pkg.packageCode });
+                } else if (freshPkg?.isCharged) {
                   appLogger.info("[Batch] Package already charged, skipping invoice+charge", { packageCode: pkg.packageCode });
                 } else {
                   unchargedPackages.push(pkg);
