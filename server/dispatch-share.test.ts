@@ -98,7 +98,7 @@ describe("the page keeps what was checked (owner, 2026-10-26)", () => {
     const cards = root("client/src/components/dispatch/DispatchHistory.tsx");
     expect(cards).toContain("trpc.dispatch.history.useQuery()");
     expect(cards).toContain("href={`/dispatch-check/${r.batchId}/report`}");
-    expect(root("server/routers/dispatch.router.ts")).toContain("history: staffProcedure.query(async () => db.getDispatchHistory())");
+    expect(root("server/routers/dispatch.router.ts")).toContain("history: staffProcedure.query(async () => db.getDispatchOverview())");
   });
 });
 

@@ -69,7 +69,15 @@ export const dispatchRouter = router({
   /** The batches the page offers: only those made in China (owner, 2026-10-26). */
   batches: staffProcedure.query(async () => db.dispatchableBatches()),
   /** Every batch packed into cartons, newest first - the page's way back to them. */
-  history: staffProcedure.query(async () => db.getDispatchHistory()),
+  history: staffProcedure.query(async () => db.getDispatchOverview()),
+  /** One batch in figures, opened from its card (owner, 2026-10-26). */
+  details: staffProcedure
+    .input(z.object({ batchId: idSchema }))
+    .query(async ({ input }) => db.getDispatchDetails(input.batchId)),
+  /** "Where is my parcel?" - a tracking or a customer's code. */
+  find: staffProcedure
+    .input(z.object({ query: z.string().min(3).max(100) }))
+    .query(async ({ input }) => db.findInDispatch(input.query)),
 
   /** Whether the person is working in China - the screens open the Chinese way for them. */
   me: staffProcedure.query(async ({ ctx }) => ({ inChina: await db.worksInChina(ctx.user.id) })),
@@ -130,6 +138,9 @@ export const dispatchRouter = router({
         title: `باچی ${batch?.batchCode ?? input.batchId} پشکنینی ناردنی بۆ کرا`,
         content: `${done.cartons} کارتۆن، ${done.parcels} پاکێج${done.leftOut > 0 ? ` - ${done.leftOut} پاکێج نەخراونەتە ناو کارتۆن: ${input.note ?? ""}` : ""}`,
       });
+      // Every customer whose goods are in the cartons, on the portal - once,
+      // no arrival date (owner, 2026-10-26). Not awaited.
+      void db.notifyLeftChina(input.batchId).catch(() => undefined);
       // And the WeCom group, by itself when a robot is set (owner, 2026-10-26).
       // Not awaited: the check is saved whether or not WeCom answers.
       const host = ctx.req?.get?.("host");

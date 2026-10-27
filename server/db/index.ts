@@ -61,4 +61,5 @@ export * from './boxHandover.db';
 export * from './yuanRateHistory.db';
 export * from './volumetricReport.db';
 export * from './dispatch.db';
+export * from './dispatchInsight.db';
 export * from './carrierParts.db';
