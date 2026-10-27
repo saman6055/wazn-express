@@ -28,7 +28,8 @@ describe("our weight, the carrier's, and a batch that waits", () => {
   });
 
   it("the list asks for a missing cost in red, beside the price", () => {
-    expect(page).toContain('data-testid="batch-missing-cost"');
+    // A red dot among the quiet ones since the list redesign (owner, 2026-10-27).
+    expect(page).toContain('testId: "batch-missing-cost", red: true');
     expect(read("pages/BatchAssignmentScanner.tsx")).toContain("batchMissingCost(batch)");
   });
 

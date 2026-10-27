@@ -28,7 +28,7 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History, ChevronDown } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation, useSearch } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
@@ -48,6 +48,7 @@ import { canDeleteBatch, isTiesQuestion, isSuperAdmin, BATCH_TIES_MARK } from "@
 import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
 import { BatchCostWorkingLine, BatchRealCostPreview, BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
 import { CarrierPartsCard } from "@/components/batches/CarrierPartsCard";
+import { BatchJourney, BatchOriginChip, BatchTypeIcon, MissingDots } from "@/components/batches/BatchListBits";
 import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
@@ -180,6 +181,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
   const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
+  // The "waiting for a waybill" notice folds to one line (owner, 2026-10-27).
+  const [showAwaiting, setShowAwaiting] = useState(false);
+  const isChinaBatch = (b: { createdInCountryId?: number | null }) =>
+    !!b.createdInCountryId && String((countries ?? []).find((c) => c.id === b.createdInCountryId)?.isoCode ?? "").toUpperCase() === "CN";
   const { packages: batchPackages } = useBatchPackages(selectedBatch);
   const { tiers: existingTiers, isSuccess: tiersLoaded } = useBatchPricingTiers(editingBatch?.id ?? null);
   const { customerPricing: existingCustomerPricing, isSuccess: customerPricingLoaded } = useBatchCustomerPricing(editingBatch?.id ?? null);
@@ -1430,23 +1435,37 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             { label: pickLang(language, STATUS_LABEL.delivered), value: counts.delivered },
           ];
           return (
-            <div className="grid gap-4 md:grid-cols-4">
-              {tiles.map(tile => (
-                <Card key={tile.label}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm font-medium text-muted-foreground">{tile.label}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold tabular-nums">{tile.value}</p>
-                  </CardContent>
-                </Card>
+            <div className="flex flex-wrap items-center gap-2" data-testid="batch-stage-pills">
+              {tiles.map((tile, i) => (
+                <span
+                  key={tile.label}
+                  className="inline-flex items-center gap-2 rounded-full border bg-card px-3.5 py-1.5 text-sm text-muted-foreground shadow-sm transition-all duration-300 hover:-translate-y-0.5 hover:border-primary/50 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:zoom-in-95"
+                  style={{ animationDelay: `${i * 60}ms` }}
+                >
+                  <span className={cn("h-2 w-2 rounded-full", ["bg-sky-500", "bg-amber-500", "bg-rose-500", "bg-emerald-500"][i] ?? "bg-muted-foreground")} />
+                  {tile.label}
+                  <b className="font-semibold tabular-nums text-foreground">{tile.value}</b>
+                </span>
               ))}
+              {awaitingNumber.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowAwaiting((v) => !v)}
+                  aria-expanded={showAwaiting}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-amber-400/50 bg-amber-500/10 px-3.5 py-1.5 text-sm text-amber-700 transition-colors hover:bg-amber-500/20 dark:text-amber-300"
+                  data-testid="batch-awaiting-toggle"
+                >
+                  <AlertTriangle className="h-4 w-4" />
+                  {t("batches.awaitingNumberTitle", { count: awaitingNumber.length })}
+                  <ChevronDown className={cn("h-4 w-4 transition-transform duration-300", showAwaiting && "rotate-180")} />
+                </button>
+              )}
             </div>
           );
         })()}
 
-        {awaitingNumber.length > 0 && (
-          <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
+        {awaitingNumber.length > 0 && showAwaiting && (
+          <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-top-2">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -1566,7 +1585,6 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 <TableRow>
                   <TableHead>{t("batches.batchCode")}</TableHead>
                   <TableHead>{t("batches.origin")} → {t("batches.destination")}</TableHead>
-                  <TableHead className="text-center">{t("batches.shippingType")}</TableHead>
                   <TableHead className="text-center">{t("common.price")}</TableHead>
                   <TableHead className="text-center">{t("batches.packages")}</TableHead>
                   <TableHead className="text-center">{t("batches.departureDate")}</TableHead>
@@ -1580,50 +1598,42 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     key={batch.id}
                     data-batch-code={batch.batchCode}
                     className={cn(
-                      "transition-colors hover:bg-blue-50/60 dark:hover:bg-blue-950/30 hover:ring-2 hover:ring-inset hover:ring-blue-400/50",
+                      "group transition-colors duration-300 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1",
                       focusCode === batch.batchCode && "bg-amber-50 ring-2 ring-inset ring-amber-500 dark:bg-amber-950/30",
                     )}
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
-                        {batch.shippingType === "sea" ? (
-                          <Ship className="h-4 w-4 shrink-0 text-blue-600 dark:text-blue-300" />
-                        ) : (
-                          <Plane className="h-4 w-4 shrink-0 text-amber-600 dark:text-amber-300" />
-                        )}
+                        {/* Ship, plane, or the red plane of an irregular flight; CN / IQ for where it was made (owner, 2026-10-27). */}
+                        <BatchTypeIcon shippingType={batch.shippingType} language={language} />
+                        <BatchOriginChip china={isChinaBatch(batch as never)} language={language} />
                         <span className="font-mono font-medium whitespace-nowrap">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
-                        {/* The owner's ask: priced and unpriced batches must
-                            tell apart at a glance — an unpriced one charges
-                            nobody until its price is typed in. */}
-                        {batchMissingSellingPrice(batch, { hasTiers: !!batch.useTieredPricing, hasCustomerPricing: !!(batch as any).hasCustomerPricing }) && (
-                          <Badge variant="outline" className="ms-1 shrink-0 border-red-300 bg-red-50 text-[10px] font-semibold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300">
-                            {pickLang(language, { ku: "بێ نرخی فرۆشتن — چاوەڕێی نرخە", en: "No selling price — waiting", ar: "بدون سعر بيع — بالانتظار", zh: "无售价 — 待定" })}
-                          </Badge>
-                        )}
-                        {/* Packed and still without the number it travels
-                            under (owner, 2026-10-24). That number is what
-                            tells a customer their goods have left China, so
-                            until it is typed in every parcel in this batch
-                            reads "in the China depot" on their phone. */}
-                        {batchAwaitingShipmentNumber(batch as any) && (
-                          <Badge variant="outline" className="ms-1 shrink-0 border-amber-300 bg-amber-50 text-[10px] font-semibold text-amber-700 dark:border-amber-800 dark:bg-amber-950/40 dark:text-amber-300" data-testid="batch-awaiting-shipment-number">
-                            {pickLang(language, {
-                              ku: `بێ ${pickLang(language, shipmentNumberName(batch.shippingType))} — کڕیار هێشتا دەڵێت لە چینە`,
-                              en: `No ${pickLang("en", shipmentNumberName(batch.shippingType)).toLowerCase()} — customers still read "in China"`,
-                              ar: `بدون ${pickLang("ar", shipmentNumberName(batch.shippingType))} — العملاء ما زالوا يرون «في الصين»`,
-                              zh: `无${pickLang("zh", shipmentNumberName(batch.shippingType))} — 客户仍看到"在中国"`,
-                            })}
-                          </Badge>
-                        )}
-                        {/* The cost too (owner, 2026-10-04): weight and
-                            trackings go in as before, the cost is asked for
-                            in red, and the batch's profit waits for it. */}
-                        {batchMissingCost(batch) && (
-                          <Badge variant="outline" className="ms-1 shrink-0 border-red-300 bg-red-50 text-[10px] font-semibold text-red-700 dark:border-red-800 dark:bg-red-950/40 dark:text-red-300" data-testid="batch-missing-cost">
-                            {pickLang(language, { ku: "بێ نرخی تێچوو — چاوەڕێی نرخە", en: "No cost — waiting", ar: "بدون تكلفة — بالانتظار", zh: "无成本 — 待定" })}
-                          </Badge>
-                        )}
+                        {/* What it is still missing - selling price, the number it
+                            travels under, the cost - as quiet dots with the words on
+                            hover (owner, 2026-10-27). Red badges on a batch that is
+                            only "not yet" read as faults. The rules are the same. */}
+                        <MissingDots
+                          items={[
+                            ...(batchMissingSellingPrice(batch, { hasTiers: !!batch.useTieredPricing, hasCustomerPricing: !!(batch as any).hasCustomerPricing })
+                              ? [{ label: pickLang(language, { ku: "بێ نرخی فرۆشتن — چاوەڕێی نرخە", en: "No selling price — waiting", ar: "بدون سعر بيع — بالانتظار", zh: "无售价 — 待定" }) }]
+                              : []),
+                            ...(batchAwaitingShipmentNumber(batch as any)
+                              ? [{
+                                  testId: "batch-awaiting-shipment-number",
+                                  label: pickLang(language, {
+                                    ku: `بێ ${pickLang(language, shipmentNumberName(batch.shippingType))} — کڕیار هێشتا دەڵێت لە چینە`,
+                                    en: `No ${pickLang("en", shipmentNumberName(batch.shippingType)).toLowerCase()} — customers still read "in China"`,
+                                    ar: `بدون ${pickLang("ar", shipmentNumberName(batch.shippingType))} — العملاء ما زالوا يرون «في الصين»`,
+                                    zh: `无${pickLang("zh", shipmentNumberName(batch.shippingType))} — 客户仍看到"在中国"`,
+                                  }),
+                                }]
+                              : []),
+                            ...(batchMissingCost(batch)
+                              ? [{ testId: "batch-missing-cost", red: true, label: pickLang(language, { ku: "بێ نرخی تێچوو — چاوەڕێی نرخە", en: "No cost — waiting", ar: "بدون تكلفة — بالانتظار", zh: "无成本 — 待定" }) }]
+                              : []),
+                          ]}
+                        />
                       </div>
                       {/* Everything else about the shipment sits on ONE
                           wrapping chip line. Stacked one-per-line, five short
@@ -1706,14 +1716,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <TableCell>
                       {/* Isolated LTR so "A → B" keeps its direction inside
                           an RTL row instead of reading back to front. */}
-                      <span dir="ltr" className="whitespace-nowrap [unicode-bidi:isolate]">
-                        {getWarehouseName(batch.originWarehouseId)} → {getCountryName(batch.destinationCountryId)}
-                      </span>
-                    </TableCell>
-                    <TableCell className="text-center">
-                      <Badge variant="outline" className="capitalize">
-                        {batch.shippingType.replace(/_/g, " ")}
-                      </Badge>
+                      {/* One block: on a phone each cell is a row, and side by side the line was cut off. */}
+                      <div className="flex min-w-0 flex-col items-stretch gap-1.5">
+                        <span dir="ltr" className="whitespace-nowrap text-xs text-muted-foreground [unicode-bidi:isolate]">
+                          {getWarehouseName(batch.originWarehouseId)} → {getCountryName(batch.destinationCountryId)}
+                        </span>
+                        <BatchJourney status={batch.status} language={language} />
+                      </div>
                     </TableCell>
                     <TableCell className="text-center">
                       <span className="font-medium text-green-600 dark:text-green-300">{formatPrice(batch)}</span>
@@ -1777,7 +1786,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         ⋯ menu — eight buttons per row were what pushed the
                         table past the edge of the screen. */}
                     <TableCell className="text-center">
-                      <div className="flex items-center justify-center gap-1">
+                      <div className="flex items-center justify-center gap-1 transition-opacity duration-300 sm:opacity-60 sm:group-hover:opacity-100 sm:focus-within:opacity-100">
                         <Button variant="ghost" size="icon" onClick={() => setSelectedBatch(batch.id)} title={t("batches.viewPackages")}>
                           <Eye className="h-4 w-4" />
                         </Button>
@@ -1812,7 +1821,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               );
                             }}
                           >
-                            <SelectTrigger className="w-[110px] h-8">
+                            <SelectTrigger className="w-[132px] h-8">
                               <SelectValue />
                             </SelectTrigger>
                             <SelectContent>
@@ -1899,14 +1908,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 ))}
                 {searchActive && !searchQuery.isFetching && !searchQuery.error && rowsToRender.length === 0 && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       {t("batches.searchNoResults", { query: debouncedSearch })}
                     </TableCell>
                   </TableRow>
                 )}
                 {!searchActive && (!batches || batches.length === 0) && (
                   <TableRow>
-                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
+                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
                       No batches created yet
                     </TableCell>
                   </TableRow>
