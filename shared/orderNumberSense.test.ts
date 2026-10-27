@@ -28,3 +28,18 @@ describe("order prices that are not logical", () => {
     }
   });
 });
+
+describe("the bulk order form asks too (owner, 2026-10-27)", () => {
+  it("CM-MPC9AGUF's numbers are asked about: $19 a unit on $0.51 goods", async () => {
+    const { oddOrderNumbers } = await import("./orderNumberSense");
+    expect(oddOrderNumbers({ orderType: "commission", quantity: 100, itemPriceUsd: 0.51, commissionFeeUsd: 19 }).length).toBe(1);
+  });
+  it("the bulk form runs the same question before saving", async () => {
+    const fs = await import("node:fs");
+    const path = await import("node:path");
+    const src = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/BulkOrderForm.tsx"), "utf8");
+    expect(src).toContain('import { oddOrderNumbers, oddOrderQuestion } from "@shared/orderNumberSense";');
+    expect(src).toContain("message: oddOrderQuestion(odd),");
+    expect(src.indexOf("oddOrderQuestion(odd)")).toBeLessThan(src.indexOf("bulkCreateMutation.mutate({"));
+  });
+});

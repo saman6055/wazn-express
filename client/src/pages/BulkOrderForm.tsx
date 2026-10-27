@@ -52,6 +52,8 @@ import {
   AccordionTrigger,
 } from "@/components/ui/accordion";
 import { PhotoStack } from "@/components/PhotoStack";
+import { oddOrderNumbers, oddOrderQuestion } from "@shared/orderNumberSense";
+import { confirmAction } from "@/components/ConfirmDialog";
 
 type AdvancePaymentMethod = "CASH" | "BANK_TRANSFER" | "FIB" | "FASTPAY" | "ZAINCASH" | "ASIAHAWALA" | "CARD" | "OTHER";
 
@@ -294,7 +296,7 @@ export default function BulkOrderForm() {
     setExpandedItems([]);
   }, []);
 
-  const handleSubmit = () => {
+  const handleSubmit = async () => {
     if (!customerId) {
       toast.error(t("toast.selectCustomer"));
       return;
@@ -318,6 +320,30 @@ export default function BulkOrderForm() {
         toast.error(t("toast.packagePriceRequired", { index: i + 1 }));
         return;
       }
+    }
+
+    // A whole order's commission typed where one unit's is asked: 100 units at
+    // $0.51 with a $19 fee read $1,900 of profit (owner, 2026-10-27 - 138
+    // such orders). Asked once before saving, as the single forms do
+    // (shared/orderNumberSense). Never a refusal.
+    const odd = validItems.flatMap((item, i) =>
+      oddOrderNumbers({
+        orderType,
+        quantity: item.quantity,
+        itemPriceUsd: item.itemPriceUsd,
+        commissionFeeUsd: item.commissionFeeUsd,
+        purchasePriceUsd: item.purchasePriceUsd,
+        sellingPriceUsd: item.sellingPriceUsd,
+      }).map((line) => `${pickLang(language, { ku: "پاکێجی", en: "Item", ar: "الطرد", zh: "第" })} ${i + 1}: ${line}`),
+    );
+    if (odd.length > 0) {
+      const sure = await confirmAction({
+        title: pickLang(language, { ku: "ئەم ژمارەیە لۆجیکی نییە", en: "This number does not look right", ar: "هذا الرقم غير منطقي", zh: "这个数字不合逻辑" }),
+        message: oddOrderQuestion(odd),
+        confirmLabel: pickLang(language, { ku: "بەڵێ، ڕاستە", en: "Yes, it is right", ar: "نعم، صحيح", zh: "是的，正确" }),
+        cancelLabel: pickLang(language, { ku: "دەگەڕێمەوە ڕاستی دەکەمەوە", en: "Go back and fix it", ar: "أعود وأصححه", zh: "返回修改" }),
+      });
+      if (!sure) return;
     }
 
     bulkCreateMutation.mutate({
