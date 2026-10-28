@@ -1,4 +1,5 @@
 import { customerEta } from "@shared/customerEta";
+import { publicAirlineName, publicAwb } from "@shared/publicCarrier";
 
 /**
  * What a customer is allowed to see of a shipment (batch) they have goods in.
@@ -30,6 +31,7 @@ export const VISIBLE_BATCH_KEYS = [
   "containerNumber",
   "awbNumber",
   "shippingCompany",
+  "airlineName",
   "createdAt",
   "updatedAt",
 ] as const;
@@ -51,11 +53,24 @@ export function toCustomerVisibleBatch<B extends Record<VisibleBatchKey, unknown
    */
   const padded = customerEta(out.estimatedArrival as Date | string | null | undefined);
   (out as Record<string, unknown>).estimatedArrival = padded;
+  /*
+   * Nothing of a third party (owner, 2026-10-28): the airline by its real
+   * name, the airline's waybill only when it has a waybill's shape, and the
+   * forwarder's name never on an air batch (shared/publicCarrier). A sea
+   * batch keeps its shipping line - it is what the container link follows.
+   */
+  const o = out as Record<string, unknown>;
+  o.airlineName = publicAirlineName(o.airlineName as string | null);
+  o.awbNumber = publicAwb(o.awbNumber as string | null);
+  if (o.shippingType !== "sea") o.shippingCompany = null;
   return out;
 }
 
 /** Columns that must never reach a customer. Asserted by the test. */
 export const FORBIDDEN_BATCH_FIELDS = [
+  // The carrier's own batch number - a third party's, office only (owner, 2026-10-28).
+  "carrierBatchNo",
+  "twinOfBatchId",
   "costPerKg",
   "costPerCbm",
   "shippingCost",

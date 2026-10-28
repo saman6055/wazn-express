@@ -236,8 +236,17 @@ const { t, language } = useLanguage();
               These two are the customer's half of the shipping detail; the
               courier trackings the cartons travelled under stay internal.
             */}
-            {batch && (batch.containerNumber || batch.awbNumber) && (
+            {batch && (batch.containerNumber || batch.awbNumber || batch.airlineName) && (
               <div className="flex flex-wrap items-center gap-2 mt-2">
+                {/* The airline, by its real name - never the forwarder (owner, 2026-10-28). */}
+                {batch.airlineName && (
+                  <span className="px-2.5 py-1 rounded-lg bg-white/10 text-xs" data-testid="portal-batch-airline">
+                    <span className="text-slate-400">
+                      {pickLang(language, { ku: "هێڵی ئاسمانی", en: "Airline", ar: "شركة الطيران", zh: "航空公司" })}:
+                    </span>{" "}
+                    <span dir="ltr">{batch.airlineName}</span>
+                  </span>
+                )}
                 {batch.containerNumber && (
                   <span className="px-2.5 py-1 rounded-lg bg-white/10 text-xs">
                     <span className="text-slate-400">
