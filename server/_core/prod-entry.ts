@@ -23,6 +23,7 @@ import { registerClientErrorsRoute } from "./clientErrorsRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
 import { startBatchStageSweep } from "../services/batchStage.service";
+import { startDailySnapshots } from "../services/dailyBrief.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
 import { startScheduledCampaignsPoller } from "../services/push.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
@@ -271,6 +272,16 @@ async function startServer() {
     appLogger.info("Batch stage sweep started");
   } catch (error) {
     appLogger.error("Failed to start the batch stage sweep", { error: error instanceof Error ? error.message : String(error) });
+  }
+
+  // Yesterday, written down - the memory the morning brief compares against.
+  // Dev-only until now, so on production the brief said «یەکەم بەیانییە»
+  // every morning: no snapshot was ever taken (2026-10-28).
+  try {
+    startDailySnapshots();
+    appLogger.info("Daily snapshots started");
+  } catch (error) {
+    appLogger.error("Failed to start daily snapshots", { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Scheduled push campaigns. The dev server has started this since it was

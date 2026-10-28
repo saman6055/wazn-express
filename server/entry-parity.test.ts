@@ -41,6 +41,7 @@ const MUST_BE_IN_BOTH: { name: string; token: string; why: string }[] = [
   { name: 'tracking alerts', token: 'scheduleTrackingAlertNotifications', why: 'orders waiting on a tracking' },
   { name: 'open box reminders', token: 'scheduleOpenBoxAlerts', why: 'boxes left open past their window' },
   { name: 'batch stage sweep', token: 'startBatchStageSweep', why: 'a batch with its waybill stayed in China on production' },
+  { name: 'daily brief snapshots', token: 'startDailySnapshots', why: 'the morning brief said "first morning" every day on production' },
   { name: 'push campaigns', token: 'startScheduledCampaignsPoller', why: 'scheduled campaigns never send without it' },
   { name: 'scheduled backups', token: 'initializeScheduledBackups', why: 'the only copy of the data' },
   { name: 'rate limiting', token: 'globalLimiter', why: 'abuse protection' },
