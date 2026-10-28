@@ -224,6 +224,18 @@ export function stageIndex(facts: ParcelFacts): number {
   return stagesFor(facts).indexOf(stage as ParcelStage);
 }
 
+/**
+ * Sent to the customer and not yet paid for (owner, 2026-10-28): the box has
+ * left us - sent, or handed over - but the parcel is only "delivered" once
+ * the box is paid. Still the ready step; its words say it went.
+ */
+export function boxSentUnpaid(box: ParcelFacts["box"]): boolean {
+  if (!box || box.paidInFull) return false;
+  return box.status === "in_transit" || box.status === "delivered";
+}
+
+export const SENT_TO_YOU_LABEL = { ku: "نێردرا بۆت", en: "Sent to you", ar: "أُرسل إليك", zh: "已发给你" } as const;
+
 /** What each stage is called, for the customer and for the counter. */
 export const PARCEL_STAGE_LABELS: Record<
   ParcelStage | ParcelEnding,

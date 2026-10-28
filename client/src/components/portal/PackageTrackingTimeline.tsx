@@ -7,6 +7,8 @@ import { onImageError } from "@/lib/imageFallback";
 import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
 import {
   PARCEL_STAGE_LABELS,
+  SENT_TO_YOU_LABEL,
+  boxSentUnpaid,
   parcelStage,
   stagesFor,
   type ParcelFacts,
@@ -218,7 +220,7 @@ export function PackageTrackingTimeline({
         const isDone = index < safeIndex || isDeliveredAll;
         const isCurrent = index === safeIndex && !isDeliveredAll;
         const Icon = stage.icon;
-        const label = pickLang(language, PARCEL_STAGE_LABELS[stage.key]);
+        const label = pickLang(language, stage.key === "ready" && boxSentUnpaid(facts?.box) ? SENT_TO_YOU_LABEL : PARCEL_STAGE_LABELS[stage.key]);
         const date = stageDates.get(stage.key);
         const photo = stagePhotos.get(stage.key);
 
