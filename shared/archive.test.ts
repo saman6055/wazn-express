@@ -26,7 +26,8 @@ describe("archiving", () => {
   it("archives finished work once it has been left alone long enough", () => {
     for (const status of FINISHED_BATCH_STATUSES) {
       expect(isBatchArchived({ status, updatedAt: daysAgo(ARCHIVE_AFTER_DAYS + 1) }, NOW), status).toBe(true);
-      expect(isBatchArchived({ status, updatedAt: daysAgo(ARCHIVE_AFTER_DAYS - 1) }, NOW), status).toBe(false);
+      // Closed goes at once since 2026-10-28 (owner); delivered keeps its ten days.
+      expect(isBatchArchived({ status, updatedAt: daysAgo(ARCHIVE_AFTER_DAYS - 1) }, NOW), status).toBe(status === "closed");
     }
   });
 
@@ -205,5 +206,18 @@ describe("a box the payment screen cleared is archived", () => {
   it("without the verdict the amounts decide, as before", () => {
     expect(isBoxArchived({ status: "delivered", updatedAt: now, totalValueUsd: "24.77", settledUsd: 24.75, settlementCleared: false }, now)).toBe(false);
     expect(isBoxArchived({ status: "delivered", updatedAt: now, totalValueUsd: "20.00", settledUsd: 20, settlementCleared: false }, now)).toBe(true);
+  });
+});
+
+describe("a closed batch goes to the archive at once (owner, 2026-10-28)", () => {
+  it("closed today: archived; delivered today: still in the list for ten days", async () => {
+    const { isBatchArchived, partitionBatches } = await import("./archive");
+    const now = new Date("2026-10-28T12:00:00Z");
+    expect(isBatchArchived({ status: "closed", updatedAt: now }, now)).toBe(true);
+    expect(isBatchArchived({ status: "delivered", updatedAt: now }, now)).toBe(false);
+    expect(isBatchArchived({ status: "at_depot", updatedAt: now }, now)).toBe(false);
+    const { current, archived } = partitionBatches([{ status: "closed", updatedAt: now }, { status: "preparing", updatedAt: now }], now);
+    expect(current.length).toBe(1);
+    expect(archived.length).toBe(1);
   });
 });

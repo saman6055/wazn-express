@@ -31,7 +31,7 @@ import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History, ChevronDown, Link2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation, useSearch } from "wouter";
-import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
+import { partitionBatches } from "@shared/archive";
 import { BAND_CLASS, BAND_MEANING, ageLabel, batchAge } from "@shared/batchAge";
 import { AIRPORT_WATCH_ON, watchDecision, watchExplain } from "@shared/flightWatch";
 import { cn } from "@/lib/utils";
@@ -759,7 +759,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   // "Delivered" figure drop. One shared rule, so the next section to adopt
   // this cannot answer "how old is old" differently.
   const { current: currentBatches, archived: archivedBatches } = useMemo(
-    () => partitionArchived(batches ?? [], FINISHED_BATCH_STATUSES),
+    // A closed batch at once, a delivered one after ten days (shared/archive).
+    () => partitionBatches(batches ?? []),
     [batches]
   );
   const shownBatches = showArchived ? (batches ?? []) : currentBatches;
@@ -1450,6 +1451,20 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <b className="font-semibold tabular-nums text-foreground">{tile.value}</b>
                 </span>
               ))}
+              {/* The archive, one click away (owner, 2026-10-28). */}
+              {archivedBatches.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setShowArchived((v) => !v)}
+                  aria-pressed={showArchived}
+                  className={cn("inline-flex items-center gap-1.5 rounded-full border px-3.5 py-1.5 text-sm transition-colors", showArchived ? "border-primary/60 bg-primary/10 text-primary" : "bg-card text-muted-foreground hover:border-primary/40")}
+                  data-testid="batch-archive-pill"
+                >
+                  <Archive className="h-4 w-4" />
+                  {pickLang(language, { ku: "ئەرشیف", en: "Archive", ar: "الأرشيف", zh: "归档" })}
+                  <b className="font-semibold tabular-nums text-foreground">{archivedBatches.length}</b>
+                </button>
+              )}
               {awaitingNumber.length > 0 && (
                 <button
                   type="button"

@@ -133,8 +133,26 @@ export function isBoxArchived(box: ArchivableBox, now: Date = new Date()): boole
 }
 
 /** Has this batch dropped out of the main list? */
+/**
+ * A closed batch goes to the archive at once (owner, 2026-10-28: «باچە
+ * داخراوەکان لەناو لیستی باچە ئاکتیفەکان نەبێ»): closing is the office saying
+ * the work is over, and an edit afterwards (a cost shared out, a typo put
+ * right) is not work coming back. A delivered one keeps the ten days - its
+ * tail is still being handled.
+ */
+export const ARCHIVED_AT_ONCE_BATCH_STATUSES = ["closed"] as const;
+
 export function isBatchArchived(record: ArchivableRecord, now?: Date): boolean {
+  if (record.status && (ARCHIVED_AT_ONCE_BATCH_STATUSES as readonly string[]).includes(record.status)) return true;
   return isArchived(record, FINISHED_BATCH_STATUSES, now);
+}
+
+/** The batches list split by that rule. */
+export function partitionBatches<T extends ArchivableRecord>(records: readonly T[], now?: Date): { current: T[]; archived: T[] } {
+  const current: T[] = [];
+  const archived: T[] = [];
+  for (const record of records) (isBatchArchived(record, now) ? archived : current).push(record);
+  return { current, archived };
 }
 
 /**
