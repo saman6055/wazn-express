@@ -33,7 +33,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { Link, useLocation, useSearch } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
 import { BAND_CLASS, BAND_MEANING, ageLabel, batchAge } from "@shared/batchAge";
-import { watchDecision, watchExplain } from "@shared/flightWatch";
+import { AIRPORT_WATCH_ON, watchDecision, watchExplain } from "@shared/flightWatch";
 import { cn } from "@/lib/utils";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import {
@@ -1678,6 +1678,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             batch, and if not, why not. Quiet reasons stay
                             grey; the two that need somebody stay loud. */}
                         {(() => {
+                          // Off, and so not shown (owner, 2026-10-28 - shared/flightWatch).
+                          if (!AIRPORT_WATCH_ON) return null;
                           const decision = watchDecision(batch as never, new Date());
                           const explain = watchExplain(decision);
                           if (!explain.needsAction && !decision.watch) {

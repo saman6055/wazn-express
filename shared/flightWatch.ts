@@ -18,6 +18,17 @@
  * "where is my parcel".
  */
 
+/**
+ * Off (owner, 2026-10-28: «بێ سوودە بیسڕەوە»). Checked by hand on the live
+ * sites that day: Erbil airport's board lists passenger flights only - our
+ * cargo flights (TK6108 IST-EBL) are never on it - and the request this
+ * makes now answers "Error"; Turkish Cargo's tracking sits behind a captcha.
+ * In 26 batches with a flight number not one landing was ever recorded.
+ * Nothing is looked up and no "not watched" notice is shown while this is
+ * false. The batch's AWB link to the carrier stays.
+ */
+export const AIRPORT_WATCH_ON = false;
+
 /** Nothing is checked in the first days — a China–Erbil batch is never there yet. */
 export const WATCH_AFTER_DAYS = 4;
 

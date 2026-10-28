@@ -3,6 +3,7 @@ import * as db from "../db";
 import { notifyStaffAlert } from "../_core/notifyStaff";
 import { fetchFlightBoard, airlinePrefix } from "./flightBoard.service";
 import {
+  AIRPORT_WATCH_ON,
   ARRIVED_TITLE,
   WATCHER_BROKEN,
   adminAlertTitle,
@@ -82,7 +83,9 @@ export async function checkFlights(now = new Date()): Promise<void> {
     return;
   }
 
-  const watching = batches.filter((batch) => watchDecision(batch, now).watch);
+  // The airport part is off (shared/flightWatch AIRPORT_WATCH_ON); the
+  // reminder for batches open too long, below, still runs.
+  const watching = AIRPORT_WATCH_ON ? batches.filter((batch) => watchDecision(batch, now).watch) : [];
 
   if (watching.length > 0) {
     // One request per airline, not per batch: six shipments on Turkish

@@ -308,3 +308,17 @@ describe("saying why a batch is not being watched", () => {
     }
   });
 });
+
+describe("switched off (owner, 2026-10-28)", () => {
+  it("nothing looked up and no 'not watched' chip while the airport watch is off; the 30-day reminder stays", async () => {
+    const fs = await import("fs");
+    const path = await import("path");
+    const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+    const { AIRPORT_WATCH_ON } = await import("./flightWatch");
+    expect(AIRPORT_WATCH_ON).toBe(false);
+    const svc = read("server/services/flightWatch.service.ts");
+    expect(svc).toContain("const watching = AIRPORT_WATCH_ON ? batches.filter((batch) => watchDecision(batch, now).watch) : [];");
+    expect(svc).toContain("await reportOverdueBatches(batches, now);");
+    expect(read("client/src/pages/Batches.tsx")).toContain("if (!AIRPORT_WATCH_ON) return null;");
+  });
+});
