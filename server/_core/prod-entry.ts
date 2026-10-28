@@ -22,6 +22,7 @@ import { registerBackupFileRoute } from "./backupFileRoute";
 import { registerClientErrorsRoute } from "./clientErrorsRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
+import { startBatchStageSweep } from "../services/batchStage.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
 import { startScheduledCampaignsPoller } from "../services/push.service";
 import { initializeScheduledBackups } from "../services/scheduledBackups.service";
@@ -260,6 +261,16 @@ async function startServer() {
     appLogger.info("Flight arrival watcher started");
   } catch (error) {
     appLogger.error("Failed to start notification scheduler", { error: error instanceof Error ? error.message : String(error) });
+  }
+
+  // Batches move forward from their facts (shared/batchStage). On its own:
+  // it was wired into the dev entry only, so production never swept and
+  // AIR-2026-072GZ stayed «لە کۆگای چین» with its waybill (2026-10-28).
+  try {
+    await startBatchStageSweep();
+    appLogger.info("Batch stage sweep started");
+  } catch (error) {
+    appLogger.error("Failed to start the batch stage sweep", { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Scheduled push campaigns. The dev server has started this since it was

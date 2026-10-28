@@ -40,6 +40,7 @@ const MUST_BE_IN_BOTH: { name: string; token: string; why: string }[] = [
   { name: 'customer documents guard', token: 'registerDocumentGuard(app)', why: 'passports and ID cards are staff-only' },
   { name: 'tracking alerts', token: 'scheduleTrackingAlertNotifications', why: 'orders waiting on a tracking' },
   { name: 'open box reminders', token: 'scheduleOpenBoxAlerts', why: 'boxes left open past their window' },
+  { name: 'batch stage sweep', token: 'startBatchStageSweep', why: 'a batch with its waybill stayed in China on production' },
   { name: 'push campaigns', token: 'startScheduledCampaignsPoller', why: 'scheduled campaigns never send without it' },
   { name: 'scheduled backups', token: 'initializeScheduledBackups', why: 'the only copy of the data' },
   { name: 'rate limiting', token: 'globalLimiter', why: 'abuse protection' },

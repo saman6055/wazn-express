@@ -110,6 +110,11 @@ export async function startBatchStageSweep(): Promise<void> {
     const moved = await sweepBatchStages();
     if (moved > 0) appLogger.info("[BatchStage] sweep moved batches", { moved });
   };
+  // The timer first: a first pass that throws must not leave no timer behind.
+  if (!timer) {
+    timer = setInterval(() => {
+      void run().catch((e) => appLogger.error("[BatchStage] sweep failed", { error: e instanceof Error ? e.message : String(e) }));
+    }, EVERY_MS);
+  }
   await run();
-  if (!timer) timer = setInterval(() => void run().catch(() => {}), EVERY_MS);
 }

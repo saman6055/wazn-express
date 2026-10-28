@@ -123,6 +123,8 @@ describe("wired", () => {
     expect(root("server/routers/batches.router.ts").match(/syncBatchStageQuietly\(/g)?.length).toBe(2);
     expect(root("server/routers/packages.router.ts").match(/syncBatchStageQuietly\(/g)?.length).toBe(2);
     expect(root("server/routers/scanning.router.ts")).toContain("await syncBatchStageQuietly(input.batchId, ctx.user.id);");
+    // In both entries - production starts from prod-entry, not index (2026-10-28).
     expect(root("server/_core/index.ts")).toContain("await startBatchStageSweep();");
+    expect(root("server/_core/prod-entry.ts")).toContain("await startBatchStageSweep();");
   });
 });
