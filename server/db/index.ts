@@ -63,3 +63,4 @@ export * from './volumetricReport.db';
 export * from './dispatch.db';
 export * from './dispatchInsight.db';
 export * from './carrierParts.db';
+export * from './carrierGroup.db';

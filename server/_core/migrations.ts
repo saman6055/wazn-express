@@ -1574,6 +1574,25 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "carrierGroupInvoices",
+    dependencies: ["users"],
+    // One carrier shipment's invoice, shared by our batches that carry its
+    // number (owner, 2026-10-28). See server/db/carrierGroup.db.ts.
+    sql: `CREATE TABLE IF NOT EXISTS carrierGroupInvoices (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      carrierBatchNo VARCHAR(64) NOT NULL,
+      billedKg DECIMAL(10, 2) NOT NULL,
+      costUsd DECIMAL(12, 2) NOT NULL,
+      note VARCHAR(255) NULL,
+      splitAt TIMESTAMP NULL,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY uq_carrier_group_invoices_no (carrierBatchNo)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "boxReceiptEvents",
     dependencies: ["deliveryBoxes", "customers", "users"],
     // Every receipt printed, saved or sent (owner, 2026-10-19).
@@ -3379,6 +3398,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "batches.partsAcceptedById", sql: "ALTER TABLE batches ADD COLUMN partsAcceptedById INT NULL" },
   { name: "batches.partsAcceptedNote", sql: "ALTER TABLE batches ADD COLUMN partsAcceptedNote TEXT NULL" },
   { name: "idx.batch_carrier_parts_batch", sql: "CREATE INDEX idx_batch_carrier_parts_batch ON batchCarrierParts (batchId)" },
+  // The carrier's batch number and the Erbil twin (owner, 2026-10-28).
+  { name: "batches.carrierBatchNo", sql: "ALTER TABLE batches ADD COLUMN carrierBatchNo VARCHAR(64) NULL" },
+  { name: "batches.twinOfBatchId", sql: "ALTER TABLE batches ADD COLUMN twinOfBatchId INT NULL" },
+  { name: "idx.batches_carrier_batch_no", sql: "CREATE INDEX idx_batches_carrier_batch_no ON batches (carrierBatchNo)" },
 
   // A message either of the two can take back out of the conversation. Struck
   // out, not erased — see the schema note beside these columns.

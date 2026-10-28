@@ -17,6 +17,7 @@ import { billingUnit, resolveBatchRate, type BatchRate } from '@shared/batchRate
 import { batchCostWorking, carrierBaseKgSql, CARRIER_BASE_CBM_SQL, carrierCostBase, carrierDifference, deriveCostRate, resolveBatchCost, type BatchCostSource } from '@shared/batchCost';
 import { batchMissingCost, batchMissingSellingPrice } from '@shared/batchPricing';
 import { carrierPartsVerdict, profitWaitsForParts } from '@shared/carrierParts';
+import { parcelHasArrived } from '@shared/dispatchStage';
 import { batchCarrierParts } from '../../drizzle/schema';
 import { diffPriceFields, normalizePriceValue, PRICE_HISTORY_FIELDS } from '@shared/batchPriceHistory';
 import { createCustomerNotification } from './portal.db';
@@ -208,6 +209,10 @@ const BATCH_LIST_COLUMNS = {
   // Where the work was done — Guangzhou or Erbil.
   createdInCountryId: batches.createdInCountryId,
   createdInCity: batches.createdInCity,
+  // The carrier's batch number and the Erbil twin (owner, 2026-10-28) - the
+  // edit form is filled from this row, and the list marks the group.
+  carrierBatchNo: batches.carrierBatchNo,
+  twinOfBatchId: batches.twinOfBatchId,
   createdById: batches.createdById,
   status: batches.status,
   totalPackages: batches.totalPackages,
@@ -1225,7 +1230,8 @@ export async function getBatchFinancialSummary(batchId: number) {
     const w = chargeableWeight(pkg, divisor);
     totalChargeableWeight += w.chargeableKg;
     totalSpaceWeight += w.fullKg ?? w.chargeableKg;
-    if (arrivedIds.has(pkg.id)) {
+    // Scanned in, or already ready for / handed to its customer (shared/dispatchStage).
+    if (parcelHasArrived({ scannedIn: arrivedIds.has(pkg.id), status: pkg.status })) {
       arrivedCount += 1;
       arrivedKg += w.fullKg ?? w.chargeableKg;
     }

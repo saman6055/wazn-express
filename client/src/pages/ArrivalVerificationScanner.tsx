@@ -27,6 +27,7 @@ import { ScanInput } from "@/components/scanner/ScanInput";
 import { SessionStats } from "@/components/scanner/SessionStats";
 import { ArrivalCheckHistory, type CheckedBatch } from "@/components/scanner/ArrivalCheckHistory";
 import { isFullyArrived } from "@shared/arrivalCheck";
+import { CarrierGroupStrip } from "@/components/batches/CarrierGroupCard";
 
 // ==================== TYPES ====================
 interface VerifiedPackage {
@@ -1129,6 +1130,9 @@ export default function ArrivalVerificationScanner() {
                 </CardContent>
               </Card>
               
+              {/* Each batch's carrier invoice against what has arrived (owner, 2026-10-28). */}
+              {selectedBatchIds.map((id) => <CarrierGroupStrip key={id} batchId={id} />)}
+
               {/* Selected Batches Summary */}
               {selectedBatches.length > 0 && (
                 <Card className="border-0 shadow-lg">

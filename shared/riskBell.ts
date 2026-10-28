@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting" | "carrier-short";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -77,6 +77,8 @@ export interface RiskFacts {
   extraCostsToday?: number;
   /** Batches whose dispatch check in China was finished in the last 48 hours (owner, 2026-10-24). */
   batchesDispatched?: number;
+  /** Carrier groups whose invoice holds more kilos than our customers were charged on, all goods in (owner, 2026-10-28). */
+  carrierShort?: number;
   /** Customers whose advance waits on a box left unreceipted more than 5 days (owner, 2026-10-24/25). */
   advanceWaiting?: number;
 }
@@ -103,6 +105,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "extra-costs": "/finance/extra-costs",
   "batch-dispatched": "/dispatch-check/latest/report",
   "advance-waiting": "/customer-delivery-scanner?unpaid=1",
+  "carrier-short": "/batches",
 };
 
 /** The page whose permission decides who is told. */
@@ -124,6 +127,8 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   // Every member of staff is told (owner, 2026-10-24): the report is no page anybody is kept from.
   "batch-dispatched": "/dispatch-check/latest/report",
   "advance-waiting": "/customer-delivery-scanner",
+  // Money: the carrier's cost against ours - the finance people.
+  "carrier-short": "/finance/company-dashboard",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -254,6 +259,10 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   // admin is told of every one - who, how much, why.
   if ((facts.extraCostsToday ?? 0) > 0) {
     items.push({ id: "extra-costs", level: "notice", count: facts.extraCostsToday ?? 0 });
+  }
+  // The carrier billed more kilos than our customers were charged on (owner, 2026-10-28).
+  if ((facts.carrierShort ?? 0) > 0) {
+    items.push({ id: "carrier-short", level: "high", count: facts.carrierShort ?? 0 });
   }
   // A batch packed and checked in China: Erbil knows before the goods arrive.
   if ((facts.batchesDispatched ?? 0) > 0) {
@@ -389,6 +398,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "the same goods were written on their account twice — see the proof and put it right",
           ar: "قُيّدت البضاعة نفسها مرتين — اعرض الدليل وصحّح",
           zh: "同一货物被记账两次 — 查看依据并更正",
+        },
+      };
+    case "carrier-short":
+      return {
+        title: { ku: `${n} وەسڵی کۆمپانیای گواستنەوە کێشی زیاترە لەوەی لە کڕیار وەرگیراوە`, en: `${n} carrier invoice(s) billed more kilos than our customers were charged`, ar: `${n} فاتورة شحن بوزن أكبر مما احتُسب على العملاء`, zh: `${n} 张承运商发票的计费重量多于向客户收取的重量` },
+        detail: {
+          ku: "باچەکە بکەوە ← «قەبارە و تێچوو» ← گرووپەکە: چەند کیلۆ و چەند دۆلار",
+          en: "open the batch, Volume & cost, the group: how many kilos and dollars",
+          ar: "افتح الدفعة ← الحجم والتكلفة ← المجموعة",
+          zh: "打开批次 → 体积与成本 → 组",
         },
       };
     case "batch-dispatched":

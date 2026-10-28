@@ -28,7 +28,7 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History, ChevronDown } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History, ChevronDown, Link2 } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation, useSearch } from "wouter";
 import { partitionArchived, FINISHED_BATCH_STATUSES } from "@shared/archive";
@@ -48,6 +48,7 @@ import { canDeleteBatch, isTiesQuestion, isSuperAdmin, BATCH_TIES_MARK } from "@
 import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
 import { BatchCostWorkingLine, BatchRealCostPreview, BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
 import { CarrierPartsCard } from "@/components/batches/CarrierPartsCard";
+import { CarrierGroupCard } from "@/components/batches/CarrierGroupCard";
 import { BatchJourney, BatchOriginChip, BatchTypeIcon, MissingDots } from "@/components/batches/BatchListBits";
 import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
@@ -649,6 +650,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       // Charged measurements
       chargedWeightKg: formData.get("chargedWeightKg") as string || undefined,
       chargedCbm: formData.get("chargedCbm") as string || undefined,
+      // The carrier's batch number: erasable, and absent on a sea batch's form.
+      carrierBatchNo: clearable("carrierBatchNo"),
       // Cost — erasable on purpose, see clearable above.
       costPerKg: clearable("costPerKg"),
       costPerCbm: clearable("costPerCbm"),
@@ -1607,6 +1610,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         {/* Ship, plane, or the red plane of an irregular flight; CN / IQ for where it was made (owner, 2026-10-27). */}
                         <BatchTypeIcon shippingType={batch.shippingType} language={language} />
                         <BatchOriginChip china={isChinaBatch(batch as never)} language={language} />
+                        {/* In a carrier group / a twin (owner, 2026-10-28). */}
+                        {((batch as any).carrierBatchNo || (batch as any).twinOfBatchId) && (
+                          <span className="inline-flex shrink-0 items-center gap-0.5 rounded bg-sky-500/10 px-1.5 py-px text-[10px] font-medium text-sky-700 dark:text-sky-300" title={pickLang(language, { ku: "لە گرووپی کۆمپانیای گواستنەوەدایە", en: "In a carrier group", ar: "ضمن مجموعة شركة الشحن", zh: "属于承运商组" })} data-testid="batch-group-chip">
+                            <Link2 className="h-3 w-3" />
+                            {(batch as any).carrierBatchNo ? <bdi dir="ltr">{(batch as any).carrierBatchNo}</bdi> : null}
+                          </span>
+                        )}
                         <span className="font-mono font-medium whitespace-nowrap">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                         {/* What it is still missing - selling price, the number it
@@ -2504,6 +2514,19 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <Input name="shippingCompany" defaultValue={editingBatch.shippingCompany || ""} className="h-9" />
                             </div>
                           </div>
+                          {/* The carrier's own batch number - one carrier shipment can hold
+                              several of ours (owner, 2026-10-28). Office only: never sent
+                              to a customer (server/lib/customerVisibleBatch). */}
+                          <div className="grid gap-1.5">
+                            <Label className="flex items-center gap-1.5 text-xs">
+                              <Lock className="h-3.5 w-3.5 text-amber-600 dark:text-amber-400" />
+                              {pickLang(language, { ku: "ژمارەی باچی کۆمپانیای گواستنەوە · تەنها بۆ ئۆفیس", en: "Carrier's batch number · office only", ar: "رقم دفعة شركة الشحن · للمكتب فقط", zh: "承运商批次号 · 仅内部" })}
+                            </Label>
+                            <Input name="carrierBatchNo" dir="ltr" placeholder="ANC 169" defaultValue={editingBatch.carrierBatchNo || ""} className="h-9 border-amber-400/50" data-testid="batch-carrier-batch-no" />
+                            <p className="text-[11px] text-muted-foreground">
+                              {pickLang(language, { ku: "هەموو ئەو باچانەی هەمان ژمارەیان هەیە یەک گرووپن و یەک وەسڵیان هەیە. لە پۆرتال نیشان نادرێت.", en: "Every batch with the same number is one group with one invoice. Never shown in the portal.", ar: "كل الدفعات بالرقم نفسه مجموعة واحدة بفاتورة واحدة. لا يظهر في البوابة.", zh: "相同编号的批次为一组、一张发票。门户不显示。" })}
+                            </p>
+                          </div>
                         </CardContent>
                       </Card>
                     ) : (
@@ -2614,6 +2637,17 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           )}
                         </div>
                         <CarrierDifferenceLine difference={editFinancialQ.data?.carrierDifference ?? null} />
+                        {editingBatch.shippingType !== "sea" && (
+                          <CarrierGroupCard
+                            batchId={editingBatch.id}
+                            madeInChina={!!editFinancialQ.data?.carrierParts?.madeInChina}
+                            shippingType={editingBatch.shippingType}
+                            onChanged={() => {
+                              void editFinancialQ.refetch();
+                              void trpcUtilsForAudit.batches.invalidate();
+                            }}
+                          />
+                        )}
                         {editFinancialQ.data?.carrierParts?.madeInChina && (
                           <CarrierPartsCard
                             batchId={editingBatch.id}

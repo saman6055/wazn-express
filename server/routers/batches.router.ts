@@ -2410,6 +2410,8 @@ export const batchesRouter = router({
         containerNumber: z.string().optional(),
         vesselName: z.string().optional(),
         awbNumber: z.string().optional(),
+        // The carrier's own batch number - office only (owner, 2026-10-28).
+        carrierBatchNo: z.string().max(64).nullable().optional(),
         shipmentTrackings: shipmentTrackingsSchema,
         cartonCount: z.number().int().min(0).max(100000).nullable().optional(),
         shippingCost: z.string().nullable().optional(),
@@ -2451,7 +2453,7 @@ export const batchesRouter = router({
         approveOddNumbers: z.boolean().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        const { id, pricingTiers, customerPricing, approveCostBreach, approveOddNumbers, ...data } = input;
+        const { id, pricingTiers, customerPricing, approveCostBreach, approveOddNumbers, carrierBatchNo, ...data } = input;
 
         // A delivered batch is settled: weights final, cost derived, money
         // invoiced from them. The owner's rule — no field changes after
@@ -2530,7 +2532,11 @@ export const batchesRouter = router({
           approved: approveCostBreach,
         });
 
-        await db.updateBatch(id, data, ctx.user.id);
+        // Only the carrier number changed: nothing else to write (an empty
+        // update is refused by the driver).
+        if (Object.values(data).some((v) => v !== undefined)) await db.updateBatch(id, data, ctx.user.id);
+        // Written the same on the batch and its twin, however it was typed.
+        if (carrierBatchNo !== undefined) await db.setCarrierBatchNo(id, carrierBatchNo);
         // The small-parcel box changed: every customer's charged parcels in the
         // batch are put to what the rule now says (server/db/smallParcelRebalance).
         if (data.smallParcelRule !== undefined && Boolean(data.smallParcelRule) !== Boolean((existing as { smallParcelRule?: boolean | null }).smallParcelRule)) {
@@ -2696,6 +2702,49 @@ export const batchesRouter = router({
           await db.setPartsAccepted(input.batchId, input.note, ctx.user.id);
           await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: input.note ? "accept_partial_carrier_bill" : "undo_accept_partial_carrier_bill", entityType: "batch", entityId: input.batchId, newValues: { note: input.note } });
           return { success: true };
+        }),
+    }),
+
+    /**
+     * One carrier shipment, several of our batches (owner, 2026-10-28):
+     * the group, its one invoice shared by kilos, and the Erbil twin.
+     * Reading is staff (the scan screens show the live strip); the money is
+     * admin's.
+     */
+    carrierGroup: router({
+      forBatch: staffProcedure
+        .input(z.object({ batchId: z.number().int().positive() }))
+        .query(async ({ input }) => db.getCarrierGroup(input.batchId)),
+      saveInvoice: adminProcedure
+        .input(z.object({ batchId: z.number().int().positive(), billedKg: z.number().positive().max(100000), costUsd: z.number().min(0).max(10_000_000), note: z.string().max(255).nullable().optional() }))
+        .mutation(async ({ input, ctx }) => {
+          try {
+            const res = await db.saveCarrierGroupInvoice(input, { id: ctx.user.id, role: ctx.user.role });
+            await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "carrier_group_invoice", entityType: "batch", entityId: input.batchId, newValues: { ...input, ...res } });
+            return res;
+          } catch (err) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+          }
+        }),
+      reapply: adminProcedure
+        .input(z.object({ batchId: z.number().int().positive() }))
+        .mutation(async ({ input, ctx }) => {
+          try {
+            return await db.applyCarrierGroupSplit(input.batchId, { id: ctx.user.id, role: ctx.user.role });
+          } catch (err) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+          }
+        }),
+      createTwin: adminProcedure
+        .input(z.object({ batchId: z.number().int().positive() }))
+        .mutation(async ({ input, ctx }) => {
+          try {
+            const twin = await db.createTwinBatch(input.batchId, ctx.user.id);
+            await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "create_twin_batch", entityType: "batch", entityId: twin.id, newValues: { twinOfBatchId: input.batchId, batchCode: twin.batchCode } });
+            return { id: twin.id, batchCode: twin.batchCode };
+          } catch (err) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+          }
         }),
     }),
 

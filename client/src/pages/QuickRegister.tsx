@@ -36,6 +36,7 @@ import { PhotoStack } from "@/components/PhotoStack";
 import { BoxForParcel } from "@/components/delivery/BoxForParcel";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { CopyButton } from "@/components/CopyButton";
+import { CarrierGroupStrip } from "@/components/batches/CarrierGroupCard";
 
 /** Short enough to be half a number: not worth asking about yet. */
 const MIN_TRACKING_LOOKUP = 8;
@@ -1518,6 +1519,12 @@ export default function QuickRegister() {
             onChange={() => batchSelectRef.current?.click()}
             language={language}
           />
+        )}
+        {/* The carrier's invoice against what is registered so far (owner, 2026-10-28). */}
+        {batchId && batchId !== "none" && (
+          <div className="mb-3">
+            <CarrierGroupStrip batchId={parseInt(batchId) || null} />
+          </div>
         )}
         {/* Non-blocking error banner when list APIs fail */}
         {hasQueryError && (

@@ -98,6 +98,12 @@ export const batches = mysqlTable("batches", {
   partsAcceptedAt: timestamp("partsAcceptedAt"),
   partsAcceptedById: int("partsAcceptedById"),
   partsAcceptedNote: text("partsAcceptedNote"),
+  // The carrier's own batch number (e.g. "ANC 169") - one carrier shipment
+  // can hold several of ours (owner, 2026-10-28). Office only: never sent to
+  // a customer (server/lib/customerVisibleBatch FORBIDDEN_BATCH_FIELDS).
+  carrierBatchNo: varchar("carrierBatchNo", { length: 64 }),
+  // The Erbil twin of a China batch, made by the office from inside it.
+  twinOfBatchId: int("twinOfBatchId"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
 }, (table) => ({
@@ -304,3 +310,25 @@ export const batchCarrierParts = mysqlTable("batchCarrierParts", {
 }));
 
 export type BatchCarrierPart = typeof batchCarrierParts.$inferSelect;
+
+/**
+ * The carrier's invoice for one of its shipments (owner, 2026-10-28): ANC
+ * "Batch 169 - 276 kg - $2,428.80" held several of our batches. Written once;
+ * the batches that carry the same carrierBatchNo share it by the kilos their
+ * customers were charged on (shared/carrierGroup).
+ */
+export const carrierGroupInvoices = mysqlTable("carrierGroupInvoices", {
+  id: int("id").autoincrement().primaryKey(),
+  carrierBatchNo: varchar("carrierBatchNo", { length: 64 }).notNull(),
+  billedKg: decimal("billedKg", { precision: 10, scale: 2 }).notNull(),
+  costUsd: decimal("costUsd", { precision: 12, scale: 2 }).notNull(),
+  note: varchar("note", { length: 255 }),
+  splitAt: timestamp("splitAt"),
+  createdById: int("createdById").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+}, (table) => ({
+  numberUnique: uniqueIndex("uq_carrier_group_invoices_no").on(table.carrierBatchNo),
+}));
+
+export type CarrierGroupInvoice = typeof carrierGroupInvoices.$inferSelect;

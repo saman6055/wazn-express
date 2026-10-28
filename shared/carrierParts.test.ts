@@ -79,7 +79,7 @@ describe("wired where the money is", () => {
 
   it("admins only, and the delivered-batch lock applies", () => {
     const src = read("server/routers/batches.router.ts");
-    const block = src.slice(src.indexOf("carrierParts: router({"), src.indexOf("getFinancialSummary: staffProcedure"));
+    const block = src.slice(src.indexOf("carrierParts: router({"), src.indexOf("carrierGroup: router({"));
     expect(block.length).toBeGreaterThan(500);
     expect(block).not.toContain("staffProcedure");
     expect(block.match(/assertCarrierPartsEditable/g)?.length).toBe(3);
