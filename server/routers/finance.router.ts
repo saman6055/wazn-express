@@ -265,6 +265,32 @@ export const ledgerRouter = router({
         return { ok: true };
       }),
 
+    /**
+     * An old order ticked "paid before" whose money never reached the books
+     * (or was handed back): clear the tick and charge its goods the one way
+     * (db.chargeOrderMarkedPrepaid). Main admin, with a reason; audited.
+     */
+    chargeOrderMarkedPrepaid: superAdminProcedure
+      .input(z.object({ orderId: z.number().int().positive(), reason: z.string().trim().min(5).max(500) }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          const result = await db.chargeOrderMarkedPrepaid(input.orderId, ctx.user.id);
+          await db.createAuditLog({
+            userId: ctx.user.id,
+            userRole: ctx.user.role,
+            action: "charge_order_marked_prepaid",
+            entityType: "full_package_order",
+            entityId: input.orderId,
+            entityCode: result.orderCode,
+            description: input.reason,
+            newValues: { amountUsd: result.amountUsd },
+          });
+          return result;
+        } catch (err) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
+        }
+      }),
+
     /** The yuan rate's periods and the orders entered in each (shared/yuanRateHistory). */
     yuanRateHistory: accountantProcedure.query(async () => db.getYuanRateHistory()),
 

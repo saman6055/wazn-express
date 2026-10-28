@@ -9,6 +9,7 @@ import {
   packages,
 } from "../../drizzle/schema";
 import { appLogger } from "../utils/logger";
+import { withFix } from "@shared/fixAdvice";
 
 /**
  * The goods a customer already has, put on their account.
@@ -428,4 +429,66 @@ export async function billUnbilledOrders(
   }
   appLogger.info("[OrderCharge] repair run", { asked: ids.length, charged, amountUsd, skipped: skipped.length });
   return { charged, amountUsd, skipped };
+}
+
+/**
+ * An old order marked "paid before" whose money never reached the books, put
+ * on the account the way an order entered today is (owner, 2026-10-28).
+ *
+ * In April an order could be ticked prepaid with cash taken by hand and its
+ * goods never written. When that cash was handed back, the tick stayed: the
+ * till set the phantom advance against the carton and asked for its freight
+ * alone, while the customer paid for the whole box. The main admin, with a
+ * reason, clears the tick and the goods are charged through the one charge
+ * path. Refused when the goods are already on the account, or when the box
+ * they are in was receipted - the box decides.
+ */
+export async function chargeOrderMarkedPrepaid(
+  orderId: number,
+  userId: number,
+): Promise<{ orderCode: string; amountUsd: number }> {
+  const db = await getDb();
+  if (!db) throw new Error(withFix("بنکەی داتا بەردەست نییە.", ["چەند چرکەیەک چاوەڕێ بکە و دووبارە هەوڵ بدە"]));
+  const [order] = await db.select().from(fullPackageOrders).where(eq(fullPackageOrders.id, orderId)).limit(1);
+  if (!order || order.deletedAt) throw new Error(withFix("ئەم ئۆردەرە نەدۆزرایەوە.", ["لیستی ئۆردەرەکان نوێ بکەرەوە و دووبارە هەوڵ بدە"]));
+  if (!order.customerId) throw new Error(withFix(`ئۆردەری ${order.orderCode} کڕیاری نییە.`, ["سەرەتا کڕیارەکەی لەسەر ئۆردەرەکە دیاری بکە"]));
+
+  const { getCustomerAccountByCustomerId } = await import("./finance.db");
+  const account = await getCustomerAccountByCustomerId(order.customerId);
+  if (!account) throw new Error(withFix("حیسابی کڕیار نەدۆزرایەوە.", ["پەڕەی دارایی کڕیارەکە بکەرەوە تا حیسابەکەی دروست بێت"]));
+  const { ledgerTransactions } = await import("../../drizzle/schema");
+  const goods = await db
+    .select({ id: ledgerTransactions.id })
+    .from(ledgerTransactions)
+    .where(and(
+      eq(ledgerTransactions.accountId, account.id),
+      eq(ledgerTransactions.referenceId, order.id),
+      inArray(ledgerTransactions.referenceType, ["commission", "full_package", "purchase_request"]),
+    ))
+    .limit(1);
+  if (goods.length > 0) throw new Error(withFix(`نرخی ئۆردەری ${order.orderCode} پێشتر لەسەر حیسابەکە نووسراوە — دووبارە نانووسرێت.`, ["پێویست بە هیچ نییە — بۆکسەکە بکەرەوە و پارەکەی وەربگرە"]));
+
+  const { goodsInReceiptedBoxes } = await import("./boxSettlement.db");
+  const held = await goodsInReceiptedBoxes({ orderIds: [order.id], trackings: [order.trackingNumber ?? ""] });
+  if (held.orderIds.size > 0 || (order.trackingNumber && held.trackings.has(order.trackingNumber.trim().toLowerCase()))) {
+    throw new Error(withFix(`ئۆردەری ${order.orderCode} لە بۆکسێکی وەسڵکراودایە — بۆکس بڕیار دەدات، نرخەکەی نانووسرێت.`, ["ئەگەر وەسڵەکە هەڵەیە، ئەدمینی سەرەکی بۆکسەکە دەکاتەوە و ئینجا ئەمە دەکرێت"]));
+  }
+
+  await db.update(fullPackageOrders).set({
+    isCharged: false,
+    chargeTransactionId: null,
+    isChargedToCustomer: false,
+    isPrepaid: false,
+    isPaid: false,
+    paidFromBalanceUsd: "0",
+    totalPrepaidUsd: "0",
+    prepaidAt: null,
+    chargedAt: null,
+  } as never).where(eq(fullPackageOrders.id, order.id));
+
+  const [fresh] = await db.select().from(fullPackageOrders).where(eq(fullPackageOrders.id, order.id)).limit(1);
+  const { chargeOrderAtCreation } = await import("./fullPackage.db");
+  const result = await chargeOrderAtCreation(fresh as never, userId);
+  if (!result.charged) throw new Error(withFix(`نرخی ئۆردەری ${order.orderCode} نەنووسرا (${result.reason ?? "unknown"}).`, ["نرخی کاڵا و ژمارەی دانەی ئۆردەرەکە بپشکنە", "دووبارە هەوڵ بدە"]));
+  return { orderCode: String(order.orderCode), amountUsd: result.amount };
 }
