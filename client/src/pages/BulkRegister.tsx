@@ -1,3 +1,4 @@
+import { batchOpenForRegistration } from "@shared/batchStage";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -254,7 +255,7 @@ export default function BulkRegister() {
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter(b => b.status === "preparing" || b.status === "in_transit");
+    }).filter(b => batchOpenForRegistration(b as never));
   }, [batches, shippingType]);
 
   // Filter customers by search

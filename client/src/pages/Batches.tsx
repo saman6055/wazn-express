@@ -48,7 +48,7 @@ import { BatchCostWorkingLine, BatchRealCostPreview, BatchWaitingFor, CarrierDif
 import { CarrierPartsCard } from "@/components/batches/CarrierPartsCard";
 import { CarrierGroupCard } from "@/components/batches/CarrierGroupCard";
 import { BatchJourney, BatchOriginChip, BatchStageChip, BatchTypeIcon, MissingDots } from "@/components/batches/BatchListBits";
-import { BATCH_STAGE_LABEL, batchStage, type BatchStage } from "@shared/batchStage";
+import { BATCH_STAGE_LABEL, batchOpenForRegistration, batchStage, type BatchStage } from "@shared/batchStage";
 import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
@@ -1887,7 +1887,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 chosen — picking it again from a long dropdown
                                 is the step people get wrong. Only while it is
                                 still open. */}
-                            {(batch.status === "preparing" || batch.status === "in_transit") && (
+                            {batchOpenForRegistration({ status: batch.status, madeInChina: isChinaBatch(batch as never) }) && (
                               <DropdownMenuItem onClick={() => setLocation(`/batch-assignment-scanner?batch=${batch.id}`)}>
                                 <ScanLine className="h-4 w-4 me-2" />
                                 {t("batches.scanIntoThisBatch")}

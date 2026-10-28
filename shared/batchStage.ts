@@ -69,6 +69,20 @@ export function batchMadeInChina(createdInCountryId: number | null | undefined, 
   return createdInCountryId == null || chinaIds.has(Number(createdInCountryId));
 }
 
+/**
+ * May parcels still be registered or scanned into this batch?
+ *
+ * The owner, 2026-10-28: an Erbil batch takes goods at every stage until it
+ * is closed - it reaches «لە کۆگای هەولێر» on its first registration, and
+ * the next parcel must still find it. A China batch takes them while it is
+ * in China or on the road, as before.
+ */
+export function batchOpenForRegistration(b: { status: string | null | undefined; madeInChina?: boolean | null }): boolean {
+  const status = String(b.status ?? "");
+  if (b.madeInChina === false) return status !== "closed";
+  return status === "preparing" || status === "in_transit";
+}
+
 /** The facts the stored status is read from. */
 export interface BatchStatusFacts {
   status: string | null | undefined;

@@ -128,3 +128,20 @@ describe("wired", () => {
     expect(root("server/_core/prod-entry.ts")).toContain("await startBatchStageSweep();");
   });
 });
+
+describe("an Erbil batch takes goods until it is closed (owner, 2026-10-28)", () => {
+  it("at every stage until the close; a China batch while in China or on the road", async () => {
+    const { batchOpenForRegistration } = await import("./batchStage");
+    for (const s of ["preparing", "at_depot", "delivered"]) expect(batchOpenForRegistration({ status: s, madeInChina: false }), s).toBe(true);
+    expect(batchOpenForRegistration({ status: "closed", madeInChina: false })).toBe(false);
+    expect(batchOpenForRegistration({ status: "in_transit", madeInChina: true })).toBe(true);
+    expect(batchOpenForRegistration({ status: "at_depot", madeInChina: true })).toBe(false);
+  });
+
+  it("every picker reads it, and the list says where each batch was made", () => {
+    for (const f of ["client/src/pages/QuickRegister.tsx", "client/src/pages/BatchAssignmentScanner.tsx", "client/src/pages/BulkRegister.tsx", "client/src/pages/Packages.tsx"]) {
+      expect(root(f), f).toContain("batchOpenForRegistration(");
+    }
+    expect(root("server/db/batches.db.ts").match(/madeInChina: china\.get\(batch\.id\) \?\? true,/g)?.length).toBe(2);
+  });
+});

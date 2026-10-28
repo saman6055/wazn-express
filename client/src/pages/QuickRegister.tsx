@@ -1,4 +1,5 @@
-﻿import DashboardLayout from "@/components/DashboardLayout";
+﻿import { batchOpenForRegistration } from "@shared/batchStage";
+import DashboardLayout from "@/components/DashboardLayout";
 import { RefusalWarning } from "@/components/RefusalWarning";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -507,7 +508,7 @@ export default function QuickRegister() {
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter((b: any) => b.status === "preparing" || b.status === "in_transit");
+    }).filter((b: any) => batchOpenForRegistration(b));
   }, [batches, shippingType]);
   
   const filteredCustomers = useMemo(() => {

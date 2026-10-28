@@ -9,6 +9,15 @@ import { batchMadeInChina } from "@shared/batchStage";
  * the batch reads «ئامادەیە بۆ دابەشکردن» (shared/batchStage). Two grouped
  * queries for the whole page.
  */
+/** Made by the China office, per batch (null place = an old China batch). */
+export async function madeInChinaPerBatch(
+  db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
+  rows: Array<{ id: number; createdInCountryId: number | null }>,
+): Promise<Map<number, boolean>> {
+  const chinaIds = new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, "CN"))).map((r) => Number(r.id)));
+  return new Map(rows.map((r) => [r.id, batchMadeInChina(r.createdInCountryId, chinaIds)]));
+}
+
 export async function lastArrivalPerBatch(
   db: NonNullable<Awaited<ReturnType<typeof getDb>>>,
   rows: Array<{ id: number; createdInCountryId: number | null }>,

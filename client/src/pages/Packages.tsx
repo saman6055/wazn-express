@@ -1,3 +1,4 @@
+import { batchOpenForRegistration } from "@shared/batchStage";
 import { toCsv, downloadText } from "@/lib/csv";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { oddParcelNumbers, oddParcelQuestion } from "@shared/parcelNumberSense";
@@ -836,7 +837,7 @@ const [, setLocation] = useLocation();
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter((b: any) => b.status === "preparing" || b.status === "in_transit");
+    }).filter((b: any) => batchOpenForRegistration(b));
   }, [batches, editShippingType]);
 
   // Calculate CBM for edit dialog

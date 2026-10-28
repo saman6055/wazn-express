@@ -1,3 +1,4 @@
+import { batchOpenForRegistration } from "@shared/batchStage";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -132,7 +133,7 @@ export default function BatchAssignmentScanner() {
   // Get open batches
   const openBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter((b: any) => b.status === "preparing" || b.status === "in_transit");
+    return batches.filter((b: any) => batchOpenForRegistration(b));
   }, [batches]);
   
   // A batch id handed to us in the URL is not to be trusted: it may be closed,
