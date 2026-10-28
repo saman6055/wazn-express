@@ -25,6 +25,8 @@ import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedur
 import { planCleanup, cleanupRefusal } from "@shared/batchCleanup";
 import * as db from "../db";
 import { notifyBatchStatusChange } from "../services/notification.service";
+import { syncBatchStageQuietly } from "../services/batchStage.service";
+import { manualMoveAllowed } from "@shared/batchStage";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema } from "./schemas";
 
 /**
@@ -1558,6 +1560,25 @@ export const batchesRouter = router({
         const { id, ...data } = input;
 
         /**
+         * The stage follows the facts; a person adds only customs and the
+         * close (owner, 2026-10-28: «کەس نەتوانێ بیباتەوە قۆناغی دوای خۆی»).
+         */
+        const current = await db.getBatchById(id);
+        if (current && !manualMoveAllowed(current.status, input.status)) {
+          throw new TRPCError({
+            code: "PRECONDITION_FAILED",
+            message: withFix(
+              `قۆناغی باچی ${current.batchCode} بە دەست ناگۆڕدرێت — خۆی دەگۆڕێت لە ڕووداوەکانەوە، و هەرگیز ناگەڕێتەوە دواوە.`,
+              [
+                "بۆ «لە ڕێگا»: ژمارەی AWB یان کۆنتێنەر بنووسە و خەزنی بکە",
+                "بۆ «لە کۆگای هەولێر»: پاکێجەکان لە شاشەی پشکنینی گەیشتن سکان بکە",
+                "تەنها «گومرگ» (کاتێک لە ڕێگایە) و «داخستن» بە دەستن",
+              ],
+            ),
+          });
+        }
+
+        /**
          * A batch does not leave without the number it leaves under.
          *
          * The owner, 2026-09-25: the tracking field is what tells the system
@@ -2598,6 +2619,10 @@ export const batchesRouter = router({
           });
         }
 
+        // The waybill or container number just written moves the batch onto
+        // the road by itself (shared/batchStage, owner 2026-10-28).
+        await syncBatchStageQuietly(id, ctx.user.id);
+
         return { success: true };
       }),
 
@@ -2740,6 +2765,8 @@ export const batchesRouter = router({
         .mutation(async ({ input, ctx }) => {
           try {
             const twin = await db.createTwinBatch(input.batchId, ctx.user.id);
+            // An Erbil twin means the China batch flew.
+            await syncBatchStageQuietly(input.batchId, ctx.user.id);
             await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "create_twin_batch", entityType: "batch", entityId: twin.id, newValues: { twinOfBatchId: input.batchId, batchCode: twin.batchCode } });
             return { id: twin.id, batchCode: twin.batchCode };
           } catch (err) {

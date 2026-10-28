@@ -15,6 +15,7 @@ import { DISCOUNT_REASONS } from "@shared/boxSettlement";
 import { PAID_WINDOWS, paidWindowStart, withoutMoney } from "@shared/boxOverview";
 import { canSeeAllAccounts } from "@shared/financeAccess";
 import { notifyPackageStatusChange } from "../services/notification.service";
+import { syncBatchStageQuietly } from "../services/batchStage.service";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 // ---------------------------------------------------------------------------
@@ -449,6 +450,7 @@ export const scanningRouter = router({
               error: e instanceof Error ? e.message : String(e),
             });
           }
+          await syncBatchStageQuietly(input.batchId, ctx.user.id);
         }
 
         return pkg;

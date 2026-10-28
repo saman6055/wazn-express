@@ -26,6 +26,7 @@ import { usePullToRefresh } from "@/hooks/usePullToRefresh";
 import { useState, useMemo, useEffect } from "react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
+import { CUSTOMER_STAGE_LABEL, type CustomerBatchStage } from "@shared/batchStage";
 import { getBatchEta, formatBatchEta } from "@/lib/batchEta";
 import {
   matchesStage, countByStage, STATUS_LABEL, batchStatusWords, orderStageOf,
@@ -252,7 +253,9 @@ function ClassicPortalShipments() {
    * the raw column value, and used different words from the filters directly
    * above it — the page disagreeing with itself.
    */
-  const getStatusText = (status: string, shippingType?: string | null) => {
+  const getStatusText = (status: string, shippingType?: string | null, stage?: CustomerBatchStage | null) => {
+    // The batch's stage (shared/batchStage) - the words the office list uses.
+    if (stage && stage !== "on_road") return pickLang(language, CUSTOMER_STAGE_LABEL[stage]);
     const label = batchStatusWords(status, shippingType);
     return label ? pickLang(language, label) : status;
   };
@@ -802,7 +805,7 @@ function ClassicPortalShipments() {
                         
                         {/* Status Badge */}
                         <PortalChip tone={batchStatusTone(batch.status)} icon={getStatusIcon(batch.status, batch.shippingType)}>
-                          {getStatusText(batch.status, batch.shippingType)}
+                          {getStatusText(batch.status, batch.shippingType, (batch as { stage?: CustomerBatchStage }).stage)}
                         </PortalChip>
                       </div>
                     </div>
@@ -848,7 +851,7 @@ function ClassicPortalShipments() {
                           <WhatsAppHelpButton
                             language={language}
                             section={language === "ku" ? "بارەکان" : language === "ar" ? "الشحنات" : language === "zh" ? "货运" : "Shipments"}
-                            topic={`${batch.batchCode} — ${getStatusText(batch.status, batch.shippingType)}`}
+                            topic={`${batch.batchCode} — ${getStatusText(batch.status, batch.shippingType, (batch as { stage?: CustomerBatchStage }).stage)}`}
                           />
                         </div>
                       </div>

@@ -17,6 +17,7 @@ import { registerBackupFileRoute } from "./backupFileRoute";
 import { registerClientErrorsRoute } from "./clientErrorsRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
 import { startFlightWatch } from "../services/flightWatch.service";
+import { startBatchStageSweep } from "../services/batchStage.service";
 import { scheduleOpenBoxAlerts } from "../services/openBoxAlert.service";
 import { scheduleBoxDeliveredAfterDays } from "../services/boxDeliveredAfterDays.service";
 import { startDailySnapshots } from "../services/dailyBrief.service";
@@ -187,6 +188,9 @@ async function startServer() {
     // Watches the airport's arrivals board for the flights our shipments are
     // on, and tells the office and the customers when one lands.
     await startFlightWatch();
+    // Batches move forward from their facts; the sweep catches any path that
+    // wrote a fact without moving its batch (shared/batchStage).
+    await startBatchStageSweep();
     // Yesterday, written down. The memory the morning brief compares against.
     startDailySnapshots();
     appLogger.info("Flight arrival watcher started");

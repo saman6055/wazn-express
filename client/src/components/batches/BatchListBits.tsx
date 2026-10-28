@@ -1,7 +1,8 @@
 import { Plane, Ship } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
-import { JOURNEY_STEPS, batchTypeMark, journeyStep } from "@shared/batchJourney";
+import { batchTypeMark } from "@shared/batchJourney";
+import { BATCH_STAGE_LABEL, stagesForBatch, type BatchStage } from "@shared/batchStage";
 
 /**
  * The small pieces of the batches list (owner, 2026-10-27: "beautiful,
@@ -56,35 +57,71 @@ export function BatchOriginChip({ china, language }: { china: boolean; language:
   );
 }
 
-const STEP_COLOR = ["bg-sky-500", "bg-amber-500", "bg-rose-500", "bg-emerald-500"] as const;
-const STEP_RING = ["bg-sky-400", "bg-amber-400", "bg-rose-400", "bg-emerald-400"] as const;
+/** One colour per stage: China blue, the road amber, customs violet, Erbil rose, ready green. */
+const STAGE_DOT: Record<BatchStage, string> = {
+  china_depot: "bg-sky-500",
+  packed: "bg-sky-600",
+  on_road: "bg-amber-500",
+  customs: "bg-violet-500",
+  erbil_depot: "bg-rose-500",
+  ready: "bg-emerald-500",
+  closed: "bg-emerald-500",
+};
+const STAGE_RING: Record<BatchStage, string> = {
+  china_depot: "bg-sky-400",
+  packed: "bg-sky-400",
+  on_road: "bg-amber-400",
+  customs: "bg-violet-400",
+  erbil_depot: "bg-rose-400",
+  ready: "bg-emerald-400",
+  closed: "bg-emerald-400",
+};
+const STAGE_CHIP: Record<BatchStage, string> = {
+  china_depot: "bg-sky-500/15 text-sky-700 dark:text-sky-300",
+  packed: "bg-sky-500/15 text-sky-800 dark:text-sky-200",
+  on_road: "bg-amber-500/15 text-amber-800 dark:text-amber-300",
+  customs: "bg-violet-500/15 text-violet-700 dark:text-violet-300",
+  erbil_depot: "bg-rose-500/15 text-rose-700 dark:text-rose-300",
+  ready: "bg-emerald-500/15 text-emerald-700 dark:text-emerald-300",
+  closed: "bg-muted text-muted-foreground",
+};
 
 /**
- * China → road → Erbil → delivered, the step it is on breathing softly. The
- * line fills up to it in that step's colour; a delivered batch is all green
- * and still.
+ * The batch's own stages (shared/batchStage, owner 2026-10-28), the one it
+ * is on breathing softly. An Erbil batch starts in Erbil; customs shows only
+ * when the batch was held there. A closed batch is all green and still.
  */
-export function BatchJourney({ status, language, caption }: { status: string; language: string; caption?: React.ReactNode }) {
-  const step = journeyStep(status);
-  const done = step === 3;
-  const fill = done ? "bg-emerald-500" : STEP_COLOR[step];
+export function BatchJourney({ stage, china, language, caption }: { stage: BatchStage; china: boolean; language: string; caption?: React.ReactNode }) {
+  const steps = stagesForBatch(china, stage).filter((s) => s !== "closed");
+  const done = stage === "closed";
+  const at = done ? steps.length - 1 : Math.max(0, steps.indexOf(stage));
+  const fill = done ? "bg-emerald-500" : STAGE_DOT[stage];
   return (
-    <div className="min-w-[150px]" data-testid="batch-journey" data-step={step}>
-      <div className="flex items-center" dir="rtl" aria-label={pickLang(language, JOURNEY_STEPS[step])}>
-        {JOURNEY_STEPS.map((w, i) => (
-          <div key={i} className="flex flex-1 items-center last:flex-none">
-            <span className="relative flex h-2.5 w-2.5 shrink-0" title={pickLang(language, w)}>
-              {i === step && !done && (
-                <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-60 motion-safe:animate-ping", STEP_RING[step])} />
+    <div className="min-w-[150px]" data-testid="batch-journey" data-stage={stage}>
+      <div className="flex items-center" dir="rtl" aria-label={pickLang(language, BATCH_STAGE_LABEL[stage])}>
+        {steps.map((s, i) => (
+          <div key={s} className="flex flex-1 items-center last:flex-none">
+            <span className="relative flex h-2.5 w-2.5 shrink-0" title={pickLang(language, BATCH_STAGE_LABEL[s])}>
+              {i === at && !done && (
+                <span className={cn("absolute inline-flex h-full w-full rounded-full opacity-60 motion-safe:animate-ping", STAGE_RING[stage])} />
               )}
-              <span className={cn("relative inline-flex h-2.5 w-2.5 rounded-full transition-colors duration-500", i <= step ? fill : "bg-muted-foreground/25")} />
+              <span className={cn("relative inline-flex h-2.5 w-2.5 rounded-full transition-colors duration-500", i <= at ? fill : "bg-muted-foreground/25")} />
             </span>
-            {i < 3 && <span className={cn("h-0.5 flex-1 rounded transition-colors duration-500", i < step ? fill : "bg-muted-foreground/15")} />}
+            {i < steps.length - 1 && <span className={cn("h-0.5 flex-1 rounded transition-colors duration-500", i < at ? fill : "bg-muted-foreground/15")} />}
           </div>
         ))}
       </div>
-      <p className="mt-1 text-[11px] text-muted-foreground">{caption ?? pickLang(language, JOURNEY_STEPS[step])}</p>
+      <p className="mt-1 text-[11px] text-muted-foreground">{caption ?? pickLang(language, BATCH_STAGE_LABEL[stage])}</p>
     </div>
+  );
+}
+
+/** The stage in words, where the status badge used to be. */
+export function BatchStageChip({ stage, language }: { stage: BatchStage; language: string }) {
+  return (
+    <span className={cn("inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium", STAGE_CHIP[stage])} data-testid="batch-stage-chip" data-stage={stage}>
+      {pickLang(language, BATCH_STAGE_LABEL[stage])}
+    </span>
   );
 }
 

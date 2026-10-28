@@ -5,6 +5,7 @@ import { ShareParcelButton } from "@/components/portal/ShareParcelButton";
 import { copyText } from "@/lib/copyText";
 import { STATUS_LABEL, SHIPPING_TYPE_LABEL, batchStatusWords, type BatchStatus } from "@/lib/shipmentFilters";
 import { travelModeOf } from "@/lib/travelMode";
+import { CUSTOMER_STAGE_LABEL, customerStagesFor, type CustomerBatchStage } from "@shared/batchStage";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { WhatsAppHelpButton } from "@/components/portal/WhatsAppHelpButton";
 import { usePackageImages } from "@/components/portal/PackageThumb";
@@ -37,8 +38,8 @@ import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
 // Timeline step type
 interface TimelineStep {
   status: string;
-  /** Names come from the shared STATUS_LABEL table, not from this file. */
-  stepKey: BatchStatus;
+  /** Names come from the shared stage table (shared/batchStage), not from this file. */
+  stepKey: CustomerBatchStage;
   icon: any;
   completed: boolean;
   current: boolean;
@@ -91,55 +92,32 @@ const { t, language } = useLanguage();
   // shows pictures in (shared/parcelPhotos, owner 2026-09-26).
   const photos = selectedPkg ? resolvePackageImage(selectedPkg as never).urls : undefined;
 
-  // Generate timeline steps based on batch status
+  /*
+   * The batch's own stages, the same ones the office list shows
+   * (shared/batchStage, owner 2026-10-28) - read off the facts by the
+   * server, from this customer's side. A batch registered in Erbil starts
+   * there; customs shows only when the load was held.
+   */
+  const STAGE_ICON: Record<CustomerBatchStage, any> = {
+    china_depot: Package,
+    packed: Box,
+    on_road: travelModeOf(batch?.shippingType) === "sea" ? Ship : Plane,
+    customs: FileText,
+    erbil_depot: Warehouse,
+    ready: MapPin,
+    delivered: CheckCircle,
+  };
   const getTimelineSteps = (): TimelineStep[] => {
-    const statusOrder = ["preparing", "in_transit", "arrived", "customs", "at_depot", "delivered"];
-    const currentIndex = statusOrder.indexOf(batch?.status || "preparing");
-    
-    return [
-      { 
-        status: "preparing", 
-        stepKey: "preparing" as const,
-        icon: Package, 
-        completed: currentIndex > 0, 
-        current: currentIndex === 0 
-      },
-      { 
-        status: "in_transit", 
-        stepKey: "in_transit" as const,
-        icon: travelModeOf(batch?.shippingType) === "sea" ? Ship : Plane, 
-        completed: currentIndex > 1, 
-        current: currentIndex === 1 
-      },
-      { 
-        status: "arrived", 
-        stepKey: "arrived" as const,
-        icon: MapPin, 
-        completed: currentIndex > 2, 
-        current: currentIndex === 2 
-      },
-      { 
-        status: "customs", 
-        stepKey: "customs" as const,
-        icon: FileText, 
-        completed: currentIndex > 3, 
-        current: currentIndex === 3 
-      },
-      { 
-        status: "at_depot", 
-        stepKey: "at_depot" as const,
-        icon: Warehouse, 
-        completed: currentIndex > 4, 
-        current: currentIndex === 4 
-      },
-      { 
-        status: "delivered", 
-        stepKey: "delivered" as const,
-        icon: CheckCircle, 
-        completed: currentIndex >= 5 || batch?.status === "closed", 
-        current: currentIndex === 5 || batch?.status === "closed"
-      },
-    ];
+    const stage = ((batch as { stage?: CustomerBatchStage } | undefined)?.stage ?? "china_depot") as CustomerBatchStage;
+    const steps = customerStagesFor(Boolean((batch as { journeyFromErbil?: boolean } | undefined)?.journeyFromErbil), stage);
+    const at = steps.indexOf(stage);
+    return steps.map((s, i) => ({
+      status: s,
+      stepKey: s,
+      icon: STAGE_ICON[s],
+      completed: i < at || (s === "delivered" && stage === "delivered"),
+      current: i === at && s !== "delivered",
+    }));
   };
 
   const openPhotoViewer = (packageId: number) => {
@@ -312,22 +290,26 @@ const { t, language } = useLanguage();
               shipment is at keeps its name. */}
           <div className="relative @container">
             {/* Timeline line */}
-            <div className={cn(
-              "absolute top-5 start-[8.33%] end-[8.33%] h-1 rounded-full",
-              "bg-muted"
-            )} />
+            {/* The line runs from the first dot's centre to the last's:
+                half a column in from each edge, for however many steps
+                this batch has (an Erbil batch has three). */}
+            <div
+              className={cn("absolute top-5 h-1 rounded-full", "bg-muted")}
+              style={{ insetInlineStart: `${50 / timelineSteps.length}%`, insetInlineEnd: `${50 / timelineSteps.length}%` }}
+            />
             
             {/* Progress line */}
             <div 
-              className="absolute top-5 start-[8.33%] h-1 rounded-full bg-emerald-500 transition-all duration-500"
+              className="absolute top-5 h-1 rounded-full bg-emerald-500 transition-all duration-500"
               style={{
+                insetInlineStart: `${50 / timelineSteps.length}%`,
                 // A status outside statusOrder — `cancelled` — put indexOf at
                 // -1, so nothing was completed or current and this computed
                 // "-20%", which is not a width a browser accepts.
                 width: `${Math.max(
                   0,
                   ((timelineSteps.filter(s => s.completed || s.current).length - 1) /
-                    Math.max(1, timelineSteps.length - 1)) * 83.34,
+                    Math.max(1, timelineSteps.length - 1)) * (100 - 100 / timelineSteps.length),
                 )}%`
               }}
             />
@@ -353,7 +335,7 @@ const { t, language } = useLanguage();
                       ? ("text-foreground")
                       : ("text-muted-foreground")
                   )}>
-                    {pickLang(language, batchStatusWords(step.stepKey, batch?.shippingType) ?? STATUS_LABEL[step.stepKey])}
+                    {pickLang(language, step.stepKey === "on_road" ? (batchStatusWords("in_transit", batch?.shippingType) ?? CUSTOMER_STAGE_LABEL.on_road) : CUSTOMER_STAGE_LABEL[step.stepKey])}
                   </span>
                 </div>
               ))}

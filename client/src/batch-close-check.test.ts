@@ -66,8 +66,10 @@ describe("the server gathers it", () => {
 });
 
 describe("the dialog shows it", () => {
-  it("before delivered as before closed", () => {
-    expect(page).toContain('if (value === "delivered" || value === "closed") {');
+  // The stage dropdown is gone (shared/batchStage, 2026-10-28): the close
+  // has its own button, and it still opens the check first.
+  it("before the close", () => {
+    expect(page).toContain('setPendingDeliveryConfirm({ batchId: batch.id, targetStatus: "closed" });');
     expect(page).toContain("trpcUtilsForAudit.batches.getPreDeliveryAudit.fetch({ batchId: batch.id })");
   });
 

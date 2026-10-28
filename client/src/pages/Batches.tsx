@@ -10,7 +10,6 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CopyButton } from "@/components/CopyButton";
 import { BatchCloseCheckSections, CloseCheckTiles } from "@/components/batches/BatchCloseCheck";
 import { OrderNumbers } from "@/components/OrderNumbers";
-import { StatusBadge } from "@/components/ui/status-badge";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
 import { batchMissingCost, batchMissingSellingPrice } from "@shared/batchPricing";
@@ -18,7 +17,6 @@ import { batchAwaitingShipmentNumber, shipmentNumberName } from "@shared/parcelS
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { customerCodeOnly } from "@shared/customerCode";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
-import { STATUS_LABEL, countByStage, isInIraqNotDelivered } from "@/lib/shipmentFilters";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -49,7 +47,8 @@ import { BatchDeleteDialog } from "@/components/batches/BatchDeleteDialog";
 import { BatchCostWorkingLine, BatchRealCostPreview, BatchWaitingFor, CarrierDifferenceLine } from "@/components/batches/BatchCostNotes";
 import { CarrierPartsCard } from "@/components/batches/CarrierPartsCard";
 import { CarrierGroupCard } from "@/components/batches/CarrierGroupCard";
-import { BatchJourney, BatchOriginChip, BatchTypeIcon, MissingDots } from "@/components/batches/BatchListBits";
+import { BatchJourney, BatchOriginChip, BatchStageChip, BatchTypeIcon, MissingDots } from "@/components/batches/BatchListBits";
+import { BATCH_STAGE_LABEL, batchStage, type BatchStage } from "@shared/batchStage";
 import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
@@ -184,8 +183,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { data: countries } = trpc.countries.list.useQuery({ activeOnly: true });
   // The "waiting for a waybill" notice folds to one line (owner, 2026-10-27).
   const [showAwaiting, setShowAwaiting] = useState(false);
+  // No place recorded is an old China batch (shared/batchStage batchMadeInChina).
   const isChinaBatch = (b: { createdInCountryId?: number | null }) =>
-    !!b.createdInCountryId && String((countries ?? []).find((c) => c.id === b.createdInCountryId)?.isoCode ?? "").toUpperCase() === "CN";
+    b.createdInCountryId == null || String((countries ?? []).find((c) => c.id === b.createdInCountryId)?.isoCode ?? "").toUpperCase() === "CN";
+  /** Where the batch is, from its facts - the same rule the portal reads. */
+  const stageOf = (b: { status: string; dispatchCheckedAt?: Date | string | null; lastArrivalAt?: Date | string | null }): BatchStage =>
+    batchStage({ status: b.status, dispatchCheckedAt: b.dispatchCheckedAt, lastArrivalAt: b.lastArrivalAt });
   const { packages: batchPackages } = useBatchPackages(selectedBatch);
   const { tiers: existingTiers, isSuccess: tiersLoaded } = useBatchPricingTiers(editingBatch?.id ?? null);
   const { customerPricing: existingCustomerPricing, isSuccess: customerPricingLoaded } = useBatchCustomerPricing(editingBatch?.id ?? null);
@@ -1430,13 +1433,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             arrived, at_depot and closed in no tile at all — a delivered batch
             that had been closed dropped out of "Delivered" entirely. */}
         {(() => {
-          const counts = countByStage((batches ?? []).map(b => b.status));
-          const inIraqNotDelivered = (batches ?? []).filter(b => isInIraqNotDelivered(b.status)).length;
+          // By the batch's own stage (shared/batchStage); closed ones are in the archive pill.
+          const stages = (batches ?? []).map((b) => stageOf(b));
+          const n = (...of: BatchStage[]) => stages.filter((s) => of.includes(s)).length;
           const tiles = [
-            { label: pickLang(language, STATUS_LABEL.preparing), value: counts.in_china },
-            { label: pickLang(language, STATUS_LABEL.in_transit), value: counts.in_transit - inIraqNotDelivered },
-            { label: pickLang(language, STATUS_LABEL.arrived), value: inIraqNotDelivered },
-            { label: pickLang(language, STATUS_LABEL.delivered), value: counts.delivered },
+            { label: pickLang(language, BATCH_STAGE_LABEL.china_depot), value: n("china_depot", "packed") },
+            { label: pickLang(language, BATCH_STAGE_LABEL.on_road), value: n("on_road", "customs") },
+            { label: pickLang(language, BATCH_STAGE_LABEL.erbil_depot), value: n("erbil_depot") },
+            { label: pickLang(language, BATCH_STAGE_LABEL.ready), value: n("ready") },
           ];
           return (
             <div className="flex flex-wrap items-center gap-2" data-testid="batch-stage-pills">
@@ -1748,7 +1752,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <span dir="ltr" className="whitespace-nowrap text-xs text-muted-foreground [unicode-bidi:isolate]">
                           {getWarehouseName(batch.originWarehouseId)} → {getCountryName(batch.destinationCountryId)}
                         </span>
-                        <BatchJourney status={batch.status} language={language} />
+                        <BatchJourney stage={stageOf(batch)} china={isChinaBatch(batch as never)} language={language} />
                       </div>
                     </TableCell>
                     <TableCell className="text-center">
@@ -1769,9 +1773,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         are one piece of news and were always read together. */}
                     <TableCell className="text-center">
                       <div className="flex flex-col items-center gap-1">
-                        <StatusBadge status={batch.status} kind="batch" />
+                        <BatchStageChip stage={stageOf(batch)} language={language} />
                       {(() => {
-                        const isCompleted = batch.status === "arrived" || batch.status === "delivered" || batch.status === "closed";
+                        const isCompleted = ["erbil_depot", "ready", "closed"].includes(stageOf(batch));
                         if (isCompleted) {
                           return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">{t("auto.text_4c0d23")} </Badge>;
                         }
@@ -1820,47 +1824,57 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(batch)} title={t("batches.editBatch")}>
                           <Edit className="h-4 w-4" />
                         </Button>
-                        {batch.status !== "closed" && (
-                          <Select
-                            value={batch.status}
-                            onValueChange={async (value) => {
-                              // For "delivered" / "closed" — run the pre-delivery
-                              // audit first and let the operator confirm. For
-                              // other transitions, fire directly.
-                              if (value === "delivered" || value === "closed") {
-                                setPendingDeliveryConfirm({ batchId: batch.id, targetStatus: value });
-                                setAuditLoading(true);
-                                setAuditData(null);
-                                try {
-                                  const data = await trpcUtilsForAudit.batches.getPreDeliveryAudit.fetch({ batchId: batch.id });
-                                  setAuditData(data);
-                                } catch (e: any) {
-                                  toast.error(e?.message || pickLang(language, { ku: "هەڵە لە audit", en: "Audit error", ar: "خطأ في التدقيق", zh: "审计错误" }));
-                                  setPendingDeliveryConfirm(null);
-                                } finally {
-                                  setAuditLoading(false);
-                                }
-                                return;
-                              }
+                        {/* The stage moves itself (shared/batchStage); a person
+                            adds only customs and the close (owner, 2026-10-28). */}
+                        {batch.status === "in_transit" && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8 border-violet-300 text-violet-700 dark:border-violet-800 dark:text-violet-300"
+                            disabled={updateStatusMutation.isPending}
+                            data-testid="batch-customs-button"
+                            onClick={async () => {
+                              const ok = await confirmAction({
+                                title: pickLang(language, { ku: `${batch.batchCode} لە گومرگ ڕاگیراوە؟`, en: `${batch.batchCode} held at customs?`, ar: `${batch.batchCode} محتجزة في الجمارك؟`, zh: `${batch.batchCode} 被海关扣留？` }),
+                                message: pickLang(language, { ku: "تەنها کاتێک بار لە گومرگ ڕاگیرا. کە یەکەم پاکێج لە هەولێر سکان کرا، خۆی دەچێتە «لە کۆگای هەولێر».", en: "Only when the load is held. The first arrival scan in Erbil moves it on by itself.", ar: "فقط عند احتجاز الشحنة. أول مسح وصول في أربيل ينقلها تلقائياً.", zh: "仅在货物被扣时。埃尔比勒首次到货扫描后自动前进。" }),
+                                confirmLabel: pickLang(language, { ku: "بەڵێ، گومرگ", en: "Yes, customs", ar: "نعم، الجمارك", zh: "是，清关" }),
+                              });
+                              if (!ok) return;
                               updateStatusMutation.mutate(
-                                { id: batch.id, status: value as any },
+                                { id: batch.id, status: "customs" },
                                 { onSuccess: (data) => onBatchStatusSuccess(data), onError: onMutationError },
                               );
                             }}
                           >
-                            <SelectTrigger className="w-[132px] h-8">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="preparing">{t("batches.preparing")}</SelectItem>
-                              <SelectItem value="in_transit">{t("batches.inTransit")}</SelectItem>
-                              <SelectItem value="arrived">{t("batches.arrived")}</SelectItem>
-                              <SelectItem value="customs">{t("batches.customs")}</SelectItem>
-                              <SelectItem value="at_depot">{t("batches.atDepot")}</SelectItem>
-                              <SelectItem value="delivered">{t("batches.delivered")}</SelectItem>
-                              <SelectItem value="closed">{t("batches.closed")}</SelectItem>
-                            </SelectContent>
-                          </Select>
+                            {pickLang(language, BATCH_STAGE_LABEL.customs)}
+                          </Button>
+                        )}
+                        {(stageOf(batch) === "erbil_depot" || stageOf(batch) === "ready") && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="h-8"
+                            disabled={auditLoading}
+                            data-testid="batch-close-button"
+                            onClick={async () => {
+                              // The close runs the pre-delivery audit first, as before.
+                              setPendingDeliveryConfirm({ batchId: batch.id, targetStatus: "closed" });
+                              setAuditLoading(true);
+                              setAuditData(null);
+                              try {
+                                const data = await trpcUtilsForAudit.batches.getPreDeliveryAudit.fetch({ batchId: batch.id });
+                                setAuditData(data);
+                              } catch (e: any) {
+                                toast.error(e?.message || pickLang(language, { ku: "هەڵە لە audit", en: "Audit error", ar: "خطأ في التدقيق", zh: "审计错误" }));
+                                setPendingDeliveryConfirm(null);
+                              } finally {
+                                setAuditLoading(false);
+                              }
+                            }}
+                          >
+                            <Lock className="h-3.5 w-3.5 me-1" />
+                            {pickLang(language, { ku: "داخستن", en: "Close", ar: "إغلاق", zh: "关闭" })}
+                          </Button>
                         )}
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>

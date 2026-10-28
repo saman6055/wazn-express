@@ -27,7 +27,7 @@ describe("the page", () => {
   it("each row: type icon, CN / IQ, journey, quiet missing dots", () => {
     expect(page).toContain("<BatchTypeIcon shippingType={batch.shippingType} language={language} />");
     expect(page).toContain("<BatchOriginChip china={isChinaBatch(batch as never)} language={language} />");
-    expect(page).toContain("<BatchJourney status={batch.status} language={language} />");
+    expect(page).toContain("<BatchJourney stage={stageOf(batch)} china={isChinaBatch(batch as never)} language={language} />");
     expect(page).toContain("<MissingDots");
   });
 

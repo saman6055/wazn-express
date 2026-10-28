@@ -19,6 +19,7 @@ import { affectsCost, cartonCountOf, cartonVolume, cartonWeightTotal, MAX_CARTON
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
 import { cachedThumbnail, thumbnailFor } from "../services/orderThumbs.service";
+import { syncBatchStageQuietly } from "../services/batchStage.service";
 import { customerPhotos } from "@shared/parcelPhotos";
 import { correctChargedParcelOnEdit, correctLastRegistration, lastRegistrationView, setVolumetricDiscount, volumetricFacts } from "../lib/correctRegisteredParcel";
 
@@ -1070,6 +1071,11 @@ export const packagesRouter = router({
             });
           }
         }
+        if (input.batchId != null && pkg) {
+          // A parcel registered in Erbil puts an Erbil batch in the Erbil depot
+          // (shared/batchStage).
+          await syncBatchStageQuietly(input.batchId, ctx.user.id);
+        }
 
         return pkg;
       }),
@@ -1610,6 +1616,10 @@ export const packagesRouter = router({
             error: e instanceof Error ? e.message : String(e),
           });
         }
+
+        // A parcel registered in Erbil puts an Erbil batch in the Erbil depot
+        // (shared/batchStage).
+        await syncBatchStageQuietly(input.batchId, ctx.user.id);
 
         return { success: true };
       }),

@@ -21,6 +21,7 @@ import { parcelHasArrived } from '@shared/dispatchStage';
 import { batchCarrierParts } from '../../drizzle/schema';
 import { diffPriceFields, normalizePriceValue, PRICE_HISTORY_FIELDS } from '@shared/batchPriceHistory';
 import { createCustomerNotification } from './portal.db';
+import { lastArrivalPerBatch } from './batchArrival.db';
 import { getSetting, getVolumetricDivisor } from './settings.db';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import type { MySqlColumn } from "drizzle-orm/mysql-core";
@@ -286,10 +287,12 @@ export async function getAllBatches(options: { page?: number; pageSize?: number 
     .offset(offset);
 
   const countByBatch = await countPackagesPerBatch(db, data.map((b) => b.id));
+  const lastArrival = await lastArrivalPerBatch(db, data);
 
   const withCounts = data.map((batch) => ({
     ...batch,
     packageCount: countByBatch.get(batch.id) ?? 0,
+    lastArrivalAt: lastArrival.get(batch.id) ?? null,
   }));
 
   return { data: withCounts, total, page, pageSize, totalPages };
@@ -452,10 +455,12 @@ export async function searchBatches(rawQuery: string) {
     .slice(0, BATCH_SEARCH_ROW_CAP);
 
   const countByBatch = await countPackagesPerBatch(db, allRows.map((b) => b.id));
+  const lastArrival = await lastArrivalPerBatch(db, allRows);
 
   return allRows.map((batch) => ({
     ...batch,
     packageCount: countByBatch.get(batch.id) ?? 0,
+    lastArrivalAt: lastArrival.get(batch.id) ?? null,
     matchedBy: matchByBatch.get(batch.id) ?? null,
   }));
 }

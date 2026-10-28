@@ -3,6 +3,8 @@ import { getDb } from './connection';
 import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { afterVolumetricDiscount, chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
 import { customerBatchStatus } from '@shared/customerBatchStage';
+import { batchMadeInChina, customerBatchStage } from '@shared/batchStage';
+import { lastArrivalPerBatch } from './batchArrival.db';
 import { concealsSizeAndCarriage, concealParcelSize } from '@shared/fullPackagePrivacy';
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from '@shared/ledgerTypes';
 import { getVolumetricDivisor } from './settings.db';
@@ -213,6 +215,9 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
    * One query for the whole page, not one per card.
    */
   const statusDatesByBatch = await getBatchStatusTimestamps(batchIds);
+  // The stage the office list shows, so the two never disagree (shared/batchStage).
+  const lastArrival = await lastArrivalPerBatch(db, batchRows as never);
+  const chinaIds = new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, "CN"))).map((r) => Number(r.id)));
 
   return batchRows
     .map(batch => {
@@ -248,6 +253,13 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
          */
         status: customerStatus,
         batchStatus: batch.status,
+        /** The batch's stage from this customer's side (shared/batchStage). */
+        stage: customerBatchStage(customerStatus, {
+          dispatchCheckedAt: (batch as { dispatchCheckedAt?: Date | null }).dispatchCheckedAt ?? null,
+          lastArrivalAt: lastArrival.get(batch.id) ?? null,
+        }),
+        /** Registered in Erbil: the journey starts there, with no China steps. */
+        journeyFromErbil: !batchMadeInChina(batch.createdInCountryId, chinaIds),
         customerPackageCount: countByBatch.get(batch.id) || 0,
         /** This customer's own total, in the unit this batch is billed by. */
         customerChargeable: Number((bySea ? size.cbm : size.kg).toFixed(bySea ? 3 : 2)),

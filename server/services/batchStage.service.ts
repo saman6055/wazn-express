@@ -1,0 +1,115 @@
+import { and, count, eq, inArray, or } from "drizzle-orm";
+import { getDb } from "../db/connection";
+import { updateBatch } from "../db/batches.db";
+import { batches, countries, packageScans, packages } from "../../drizzle/schema";
+import { batchHasShipmentNumber } from "@shared/parcelStage";
+import { batchMadeInChina, nextStoredStatus } from "@shared/batchStage";
+import { notifyBatchStatusChange } from "./notification.service";
+import { appLogger } from "../utils/logger";
+
+/**
+ * Moves a batch forward from the facts — the waybill, the twin, the scans,
+ * the Erbil registration — so nobody has to (shared/batchStage, owner
+ * 2026-10-28). Called the moment one of those facts is written, and swept
+ * every half hour for any path that writes one without calling it.
+ *
+ * Forward only, and never onto a delivered or closed batch.
+ */
+
+async function chinaCountryIds(): Promise<Set<number>> {
+  const db = await getDb();
+  if (!db) return new Set();
+  return new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, "CN"))).map((r) => Number(r.id)));
+}
+
+/**
+ * One batch. `announce` tells the customers it left, the way the old
+ * dropdown did; the sweep passes false so a batch fixed after the fact does
+ * not send a "your goods left" days late.
+ */
+export async function syncBatchStage(
+  batchId: number,
+  opts: { changedById?: number | null; announce?: boolean; chinaIds?: Set<number> } = {},
+): Promise<{ moved: boolean; from?: string; to?: string }> {
+  const db = await getDb();
+  if (!db) return { moved: false };
+  const [b] = await db.select().from(batches).where(eq(batches.id, batchId)).limit(1);
+  if (!b) return { moved: false };
+
+  const chinaIds = opts.chinaIds ?? (await chinaCountryIds());
+  const [[pkgs], [scans], [twin]] = await Promise.all([
+    db.select({ n: count() }).from(packages).where(eq(packages.batchId, batchId)),
+    db.select({ n: count() }).from(packageScans)
+      .innerJoin(packages, eq(packages.id, packageScans.packageId))
+      .where(and(eq(packages.batchId, batchId), eq(packageScans.scanType, "received_local"))),
+    db.select({ id: batches.id }).from(batches).where(eq(batches.twinOfBatchId, batchId)).limit(1),
+  ]);
+
+  const to = nextStoredStatus({
+    status: b.status,
+    madeInChina: batchMadeInChina(b.createdInCountryId, chinaIds),
+    hasShipmentNumber: batchHasShipmentNumber(b),
+    hasTwin: Boolean(twin),
+    packageCount: Number(pkgs?.n ?? 0),
+    arrivalScans: Number(scans?.n ?? 0),
+  });
+  if (!to) return { moved: false, from: b.status };
+
+  await updateBatch(batchId, { status: to as never }, opts.changedById ?? null);
+  appLogger.info("[BatchStage] moved by the facts", { batchId, from: b.status, to });
+
+  if (to === "in_transit") {
+    // Only parcels still at the start of the road; a parcel already further
+    // along (boxed, delivered) is never dragged back by its batch.
+    await db.update(packages).set({ status: "in_transit" })
+      .where(and(eq(packages.batchId, batchId), inArray(packages.status, ["registered", "in_batch"])));
+    if (opts.announce) {
+      try {
+        await notifyBatchStatusChange(batchId, "batch_departed");
+      } catch (e) {
+        appLogger.error("[BatchStage] departure notification failed", { batchId, error: e instanceof Error ? e.message : String(e) });
+      }
+    }
+  }
+  return { moved: true, from: b.status, to };
+}
+
+/** Best-effort: a stage that cannot move must never fail the save that triggered it. */
+export async function syncBatchStageQuietly(batchId: number | null | undefined, changedById?: number | null): Promise<void> {
+  if (!batchId) return;
+  try {
+    await syncBatchStage(batchId, { changedById, announce: true });
+  } catch (e) {
+    appLogger.error("[BatchStage] sync failed", { batchId, error: e instanceof Error ? e.message : String(e) });
+  }
+}
+
+/** Every batch still on the road to Erbil. Silent. */
+export async function sweepBatchStages(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const open = await db.select({ id: batches.id }).from(batches)
+    .where(or(eq(batches.status, "preparing"), eq(batches.status, "in_transit"), eq(batches.status, "arrived"), eq(batches.status, "customs")));
+  const chinaIds = await chinaCountryIds();
+  let moved = 0;
+  for (const { id } of open) {
+    try {
+      if ((await syncBatchStage(id, { announce: false, chinaIds })).moved) moved += 1;
+    } catch (e) {
+      appLogger.error("[BatchStage] sweep failed on a batch", { batchId: id, error: e instanceof Error ? e.message : String(e) });
+    }
+  }
+  return moved;
+}
+
+const EVERY_MS = 30 * 60 * 1000;
+let timer: ReturnType<typeof setInterval> | null = null;
+
+export async function startBatchStageSweep(): Promise<void> {
+  const run = async () => {
+    const moved = await sweepBatchStages();
+    if (moved > 0) appLogger.info("[BatchStage] sweep moved batches", { moved });
+  };
+  await run();
+  if (!timer) timer = setInterval(() => void run().catch(() => {}), EVERY_MS);
+}
