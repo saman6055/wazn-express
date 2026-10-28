@@ -138,14 +138,15 @@ export async function getBatchCloseFacts(batchId: number): Promise<BatchCloseFac
     idSet.has(r.pkg.id) || (!!r.pkg.trackingNumber && trackingSet.has(r.pkg.trackingNumber));
 
   const unboxed = live.filter((r) => !has(boxedIds, boxedTrackings, r)).map(carton);
-  // Registered outside China (the parcel's own country, else the batch's):
-  // weighed here, so its registration was its arrival.
+  // The arrival check is for batches made in China only (owner, 2026-10-28:
+  // «پشکنینی گەیشتن بەس بۆ باچەکانی چینە»). A batch made in Erbil - or an
+  // old one with no country recorded, all of which were made in Erbil - was
+  // weighed here; inside a China batch, a parcel registered here was too.
   const chinaIds = new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, "CN"))).map((r) => Number(r.id)));
   const [batchRow] = await db.select({ createdInCountryId: batches.createdInCountryId }).from(batches).where(eq(batches.id, batchId)).limit(1);
-  const registeredHere = (r: (typeof live)[number]) => {
-    const country = r.pkg.registeredInCountryId ?? batchRow?.createdInCountryId ?? null;
-    return country != null && !chinaIds.has(Number(country));
-  };
+  const madeInChina = batchRow?.createdInCountryId != null && chinaIds.has(Number(batchRow.createdInCountryId));
+  const registeredHere = (r: (typeof live)[number]) =>
+    !madeInChina || (r.pkg.registeredInCountryId != null && !chinaIds.has(Number(r.pkg.registeredInCountryId)));
   const notArrivalChecked = live
     .filter((r) => needsArrivalCheck(r.pkg.status, registeredHere(r)) && !has(scannedIds, scannedTrackings, r))
     .map(carton);

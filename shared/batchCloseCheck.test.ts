@@ -1,3 +1,5 @@
+import fs from "fs";
+import path from "path";
 import { describe, expect, it } from "vitest";
 import {
   batchAtLoss,
@@ -43,6 +45,12 @@ describe("which cartons the check still counts", () => {
     expect(needsArrivalCheck("returned")).toBe(false);
     // Registered in Erbil: weighed on our bench, no arrival scan needed.
     expect(needsArrivalCheck("ready_for_delivery", true)).toBe(false);
+  });
+
+  it("only a batch made in China is asked for arrival scans (owner, 2026-10-28)", () => {
+    const db = fs.readFileSync(path.resolve(__dirname, "..", "server/db/batchCloseCheck.db.ts"), "utf8").replace(/\r\n/g, "\n");
+    expect(db).toContain("const madeInChina = batchRow?.createdInCountryId != null && chinaIds.has(Number(batchRow.createdInCountryId));");
+    expect(db).toContain("!madeInChina ||");
   });
 });
 
