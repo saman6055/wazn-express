@@ -31,3 +31,13 @@ describe("a receipt closes its box", () => {
     expect(read("server/db/boxDecides.db.ts")).toContain("getBoxSettlementView(boxId, { raw: true })");
   });
 });
+
+describe("an advance pays goods the account holds (2026-10-28)", () => {
+  const settle = read("server/db/boxSettlement.db.ts");
+  it("goods and freight of an order are told apart", () => {
+    expect(settle).toContain('if (row.referenceType !== "package") orderGoods.set(id,');
+  });
+  it("an order on the account sets its advance only against its goods; one not on it, as before", () => {
+    expect(settle).toContain("advanceCents += Math.round((orderSeen.has(id) ? Math.min(advanceUsd, Math.max(0, orderGoods.get(id) ?? 0)) : advanceUsd) * 100);");
+  });
+});

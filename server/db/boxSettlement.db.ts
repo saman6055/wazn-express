@@ -557,6 +557,9 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[], op
     : [];
   // Per account and order: the goods, the freight, and their corrections.
   const orderCharged = new Map<string, number>();
+  // The goods alone (not freight) each order has on the account: an advance
+  // pays goods, so it counts only against goods the account holds.
+  const orderGoods = new Map<string, number>();
   const orderSeen = new Set<string>();
   for (const row of orderRows) {
     const order = orderById.get(Number(row.referenceId));
@@ -571,6 +574,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[], op
     if (sign === 0) continue;
     const id = `${row.accountId}|${order.id}`;
     orderCharged.set(id, round2((orderCharged.get(id) ?? 0) + sign * Number(row.amountUsd || 0)));
+    if (row.referenceType !== "package") orderGoods.set(id, round2((orderGoods.get(id) ?? 0) + sign * Number(row.amountUsd || 0)));
     orderSeen.add(id);
   }
   const claimedInBox = new Set<string>();
@@ -626,7 +630,19 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[], op
             if (claimedInBox.has(claim)) continue;
             claimedInBox.add(claim);
             chargedCents += Math.round((orderCharged.get(id) ?? 0) * 100);
-            advanceCents += Math.round(orderAdvancePaidUsd(o as unknown as AdvanceSource) * 100);
+            /*
+             * An advance paid goods, so it is set only against goods the
+             * account holds. 2026-10-28: an order prepaid in April with its
+             * goods never written; when its freight came on, the till set the
+             * advance against the freight, read the box as overpaid and offered
+             * nothing - a paid box could not be receipted and stayed
+             * «بێ پارەدان». Goods paid before the books
+             * kept them are settled outside them; their advance is too.
+             */
+            const advanceUsd = orderAdvancePaidUsd(o as unknown as AdvanceSource);
+            // Nothing of the order on the account yet: the receipt writes its
+            // goods, and the advance is set against them as before.
+            advanceCents += Math.round((orderSeen.has(id) ? Math.min(advanceUsd, Math.max(0, orderGoods.get(id) ?? 0)) : advanceUsd) * 100);
           }
           orderMoney = { chargedUsd: chargedCents / 100, advanceUsd: advanceCents / 100, onAccount };
           // Commission orders in this carton, their goods on the account, the
