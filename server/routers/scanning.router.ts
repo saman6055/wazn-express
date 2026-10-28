@@ -11,6 +11,7 @@ import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
 import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
+import { boxMayBeHeld, HOLD_NOTE_MAX } from "@shared/boxHold";
 import { DISCOUNT_REASONS } from "@shared/boxSettlement";
 import { PAID_WINDOWS, paidWindowStart, withoutMoney } from "@shared/boxOverview";
 import { canSeeAllAccounts } from "@shared/financeAccess";
@@ -2074,6 +2075,38 @@ export const deliveryBoxRouter = router({
         appLogger.error("[DeliveryBox] dispatch notify failed", { boxCode: box.boxCode, error: e instanceof Error ? e.message : String(e) });
       }
       return dispatched;
+    }),
+
+  /**
+   * Hold a box at the customer's request, or let it go (shared/boxHold,
+   * owner 2026-10-28). Only the box's own three fields; its goods, money and
+   * status are not touched.
+   */
+  setHold: staffProcedure
+    .input(z.object({ id: z.number(), held: z.boolean(), note: z.string().trim().max(HOLD_NOTE_MAX).optional() }))
+    .mutation(async ({ input, ctx }) => {
+      const box = await db.getDeliveryBoxById(input.id);
+      if (!box) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("بۆکس", { bin: true }) });
+      if (input.held && !boxMayBeHeld(box.status)) {
+        throw new TRPCError({
+          code: "BAD_REQUEST",
+          message: withFix(`بۆکسی ${box.boxCode} پێشتر نێردراوە یان دراوە بە کڕیار — شتێک نەماوە ڕابگیرێت.`, [
+            "تەنها بۆکسێک کە هێشتا لای ئێمەیە (کراوە یان داخراو) ڕادەگیرێت",
+          ]),
+        });
+      }
+      await db.updateDeliveryBox(box.id, input.held
+        ? { heldForCustomerAt: new Date(), heldById: ctx.user.id, heldNote: input.note || null }
+        : { heldForCustomerAt: null, heldById: null, heldNote: null });
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: input.held ? "hold_box_for_customer" : "release_box_hold",
+        entityType: "deliveryBox",
+        entityId: box.id,
+        newValues: { boxCode: box.boxCode, note: input.note ?? null },
+      });
+      return { success: true };
     }),
 
   // Mark box as delivered

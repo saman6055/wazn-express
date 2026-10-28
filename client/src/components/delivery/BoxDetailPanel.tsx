@@ -68,7 +68,9 @@ import {
   CheckCircle2,
   Share2,
   Download,
+  PauseCircle,
 } from "lucide-react";
+import { BOX_HELD_LABEL, HOLD_NOTE_MAX } from "@shared/boxHold";
 import { EditBoxDialog } from "@/components/delivery/EditBoxDialog";
 import { QuickSettleDialog } from "@/components/delivery/QuickSettleDialog";
 import { BoxMissingParcels, EarlierWaiting, MissingList, MISSING_WORDS } from "@/components/delivery/BoxMissingParcels";
@@ -405,6 +407,20 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     onSuccess: () => {
       toast.success(t("delivery.toastBoxInTransit"));
       soundManager.playSuccess();
+      refetchBox();
+    },
+    onError: (err) => showFailure(err),
+  });
+
+  // Held at the customer's request (shared/boxHold, owner 2026-10-28).
+  // The reason being typed; null while the little form is closed.
+  const [holdDraft, setHoldDraft] = useState<string | null>(null);
+  const setHold = trpc.deliveryBox.setHold.useMutation({
+    onSuccess: (_d, vars) => {
+      toast.success(pickLang(language, vars.held
+        ? { ku: "بۆکسەکە ڕاگیرا بە داوای کڕیار", en: "Box held for the customer", ar: "تم حجز الصندوق للعميل", zh: "已为客户暂存" }
+        : { ku: "ڕاگرتنەکە لابرا", en: "Hold released", ar: "تم إلغاء الحجز", zh: "已取消暂存" }));
+      setHoldDraft(null);
       refetchBox();
     },
     onError: (err) => showFailure(err),
@@ -1529,6 +1545,49 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
               {sealBox.isPending ? <Loader2 className="h-4 w-4 me-1 animate-spin" /> : <Lock className="h-4 w-4 me-1" />}
               {t("delivery.sealBox")}
             </Button>
+          )}
+
+          {/* Held at the customer's request: not late, waiting on their word. */}
+          {(isOpen || isReady) && (box as { heldForCustomerAt?: Date | string | null } | undefined)?.heldForCustomerAt && (
+            <span className="inline-flex items-center gap-2 rounded-full border border-amber-300 bg-amber-50 px-3 py-1 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/40 dark:text-amber-200" data-testid="box-held-chip">
+              <PauseCircle className="h-4 w-4" />
+              {pickLang(language, BOX_HELD_LABEL)}
+              {(box as { heldNote?: string | null }).heldNote ? <span className="text-amber-700/80 dark:text-amber-300/80">— {(box as { heldNote?: string | null }).heldNote}</span> : null}
+              <button
+                type="button"
+                className="ms-1 rounded-full px-2 text-xs underline underline-offset-2 hover:text-amber-950 dark:hover:text-amber-50"
+                disabled={setHold.isPending}
+                onClick={() => setHold.mutate({ id: boxId, held: false })}
+                data-testid="box-hold-release"
+              >
+                {pickLang(language, { ku: "لابردن", en: "Release", ar: "إلغاء", zh: "取消" })}
+              </button>
+            </span>
+          )}
+          {(isOpen || isReady) && !(box as { heldForCustomerAt?: Date | string | null } | undefined)?.heldForCustomerAt && (
+            holdDraft === null ? (
+              <Button variant="outline" onClick={() => setHoldDraft("")} className="text-amber-700 dark:text-amber-300" data-testid="box-hold-button">
+                <PauseCircle className="h-4 w-4 me-1" />
+                {pickLang(language, BOX_HELD_LABEL)}
+              </Button>
+            ) : (
+              <span className="inline-flex flex-wrap items-center gap-2" data-testid="box-hold-form">
+                <Input
+                  autoFocus
+                  value={holdDraft}
+                  maxLength={HOLD_NOTE_MAX}
+                  onChange={(e) => setHoldDraft(e.target.value)}
+                  placeholder={pickLang(language, { ku: "هۆکار (ئارەزوومەندانە) — بۆ نموونە: دوای هەینی", en: "Reason (optional) — e.g. after Friday", ar: "السبب (اختياري)", zh: "原因（可选）" })}
+                  className="h-9 w-64 max-w-full"
+                />
+                <Button size="sm" disabled={setHold.isPending} onClick={() => setHold.mutate({ id: boxId, held: true, note: holdDraft.trim() || undefined })}>
+                  {pickLang(language, { ku: "ڕایبگرە", en: "Hold", ar: "احجز", zh: "暂存" })}
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setHoldDraft(null)}>
+                  {pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
+                </Button>
+              </span>
+            )
           )}
 
           {isReady && (

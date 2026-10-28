@@ -52,6 +52,7 @@ export function selectStaleBoxes<T extends {
   inTransitAt?: Date | string | null;
   sealedAt?: Date | string | null;
   createdAt?: Date | string | null;
+  heldForCustomerAt?: Date | string | null;
 }>(boxes: T[], now: Date): { box: T; daysOpen: number; step: "first" | "second" }[] {
   const out: { box: T; daysOpen: number; step: "first" | "second" }[] = [];
 
@@ -60,6 +61,8 @@ export function selectStaleBoxes<T extends {
     if (box.status !== "ready" && box.status !== "in_transit") continue;
     // The customer already answered the question.
     if (box.customerConfirmedAt) continue;
+    // The customer asked us to keep it (shared/boxHold): not late, waiting.
+    if (box.heldForCustomerAt) continue;
 
     // Count from when it left, not from when it was created: a box can sit
     // half-packed for a week without anything being late.

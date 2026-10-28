@@ -516,6 +516,10 @@ export async function markBoxInTransit(id: number, userId: number): Promise<Deli
   return updateDeliveryBox(id, {
     status: 'in_transit',
     inTransitAt: new Date(),
+    // Sent is the customer's word given: nothing is held any more (shared/boxHold).
+    heldForCustomerAt: null,
+    heldById: null,
+    heldNote: null,
   });
 }
 

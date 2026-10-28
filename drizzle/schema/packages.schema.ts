@@ -389,6 +389,13 @@ export const deliveryBoxes = mysqlTable("deliveryBoxes", {
   unpaidConfirmedById: int("unpaidConfirmedById"),
   paymentReminderCount: int("paymentReminderCount").default(0).notNull(),
 
+  // Held at the customer's request (owner, 2026-10-28: «خاوەنەکەی دەڵێ جارێ
+  // مەنێرە بۆم»): the box stays ready, and no reminder chases it until an
+  // admin lets it go. Who held it, when, and the customer's reason.
+  heldForCustomerAt: timestamp("heldForCustomerAt"),
+  heldById: int("heldById"),
+  heldNote: varchar("heldNote", { length: 200 }),
+
   // How the box reaches the customer (owner, 2026-10-19; shared/boxHandover):
   // the customer collects it, our driver takes it, or a delivery company does.
   // Nothing is printed or sent until it is said. The carrier's name is kept

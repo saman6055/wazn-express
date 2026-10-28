@@ -3154,6 +3154,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "deliveryBoxes.carrierId", sql: "ALTER TABLE deliveryBoxes ADD COLUMN carrierId INT NULL" },
   { name: "deliveryBoxes.carrierName", sql: "ALTER TABLE deliveryBoxes ADD COLUMN carrierName VARCHAR(120) NULL" },
   { name: "deliveryBoxes.carrierTrackings", sql: "ALTER TABLE deliveryBoxes ADD COLUMN carrierTrackings TEXT NULL" },
+  // Held at the customer's request (owner, 2026-10-28; shared/boxHold).
+  { name: "deliveryBoxes.heldForCustomerAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN heldForCustomerAt TIMESTAMP NULL" },
+  { name: "deliveryBoxes.heldById", sql: "ALTER TABLE deliveryBoxes ADD COLUMN heldById INT NULL" },
+  { name: "deliveryBoxes.heldNote", sql: "ALTER TABLE deliveryBoxes ADD COLUMN heldNote VARCHAR(200) NULL" },
   { name: "boxReceiptEvents.html.mediumtext", sql: "ALTER TABLE boxReceiptEvents MODIFY COLUMN html MEDIUMTEXT" },
   // Greetings: the day and month a customer chooses to share, and the last
   // milestone they were congratulated for. All three are optional and all
