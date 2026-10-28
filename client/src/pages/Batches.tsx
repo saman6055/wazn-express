@@ -26,7 +26,7 @@ import { trpc } from "@/lib/trpc";
 import { useBatches, useBatchPackages, useBatchPricingTiers, useBatchCustomerPricing, useBatchFinancialSummary } from "@/hooks/useBatches";
 import { BatchShipmentInfo } from "@/components/batches/BatchShipmentInfo";
 import { TrackingNumberLink } from "@/components/batches/TrackingNumberLink";
-import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History, ChevronDown, Link2 } from "lucide-react";
+import { Plus, Layers, Plane, Ship, Eye, DollarSign, Edit, Trash2, TrendingUp, Package, Users, Calculator, BarChart3, ExternalLink, FileDown, Loader2, AlertTriangle, ShieldCheck, ChevronsUpDown, ScanLine, Archive, MapPin, Search, X, MoreHorizontal, Lock, History, ChevronDown, Link2, ShieldAlert } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Link, useLocation, useSearch } from "wouter";
 import { partitionBatches } from "@shared/archive";
@@ -1826,29 +1826,6 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </Button>
                         {/* The stage moves itself (shared/batchStage); a person
                             adds only customs and the close (owner, 2026-10-28). */}
-                        {batch.status === "in_transit" && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 border-violet-300 text-violet-700 dark:border-violet-800 dark:text-violet-300"
-                            disabled={updateStatusMutation.isPending}
-                            data-testid="batch-customs-button"
-                            onClick={async () => {
-                              const ok = await confirmAction({
-                                title: pickLang(language, { ku: `${batch.batchCode} لە گومرگ ڕاگیراوە؟`, en: `${batch.batchCode} held at customs?`, ar: `${batch.batchCode} محتجزة في الجمارك؟`, zh: `${batch.batchCode} 被海关扣留？` }),
-                                message: pickLang(language, { ku: "تەنها کاتێک بار لە گومرگ ڕاگیرا. کە یەکەم پاکێج لە هەولێر سکان کرا، خۆی دەچێتە «لە کۆگای هەولێر».", en: "Only when the load is held. The first arrival scan in Erbil moves it on by itself.", ar: "فقط عند احتجاز الشحنة. أول مسح وصول في أربيل ينقلها تلقائياً.", zh: "仅在货物被扣时。埃尔比勒首次到货扫描后自动前进。" }),
-                                confirmLabel: pickLang(language, { ku: "بەڵێ، گومرگ", en: "Yes, customs", ar: "نعم، الجمارك", zh: "是，清关" }),
-                              });
-                              if (!ok) return;
-                              updateStatusMutation.mutate(
-                                { id: batch.id, status: "customs" },
-                                { onSuccess: (data) => onBatchStatusSuccess(data), onError: onMutationError },
-                              );
-                            }}
-                          >
-                            {pickLang(language, BATCH_STAGE_LABEL.customs)}
-                          </Button>
-                        )}
                         {(stageOf(batch) === "erbil_depot" || stageOf(batch) === "ready") && (
                           <Button
                             variant="outline"
@@ -1883,6 +1860,29 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
+                            {/* Customs only by hand, when a load is really held (owner,
+                                2026-10-28) - so it lives here, not as a step on every row. */}
+                            {batch.status === "in_transit" && (
+                              <DropdownMenuItem
+                                disabled={updateStatusMutation.isPending}
+                                data-testid="batch-customs-button"
+                                onClick={async () => {
+                                  const ok = await confirmAction({
+                                    title: pickLang(language, { ku: `${batch.batchCode} لە گومرگ ڕاگیراوە؟`, en: `${batch.batchCode} held at customs?`, ar: `${batch.batchCode} محتجزة في الجمارك؟`, zh: `${batch.batchCode} 被海关扣留？` }),
+                                    message: pickLang(language, { ku: "تەنها کاتێک بار لە گومرگ ڕاگیرا. کە یەکەم پاکێج لە هەولێر سکان کرا، خۆی دەچێتە «لە کۆگای هەولێر».", en: "Only when the load is held. The first arrival scan in Erbil moves it on by itself.", ar: "فقط عند احتجاز الشحنة. أول مسح وصول في أربيل ينقلها تلقائياً.", zh: "仅在货物被扣时。埃尔比勒首次到货扫描后自动前进。" }),
+                                    confirmLabel: pickLang(language, { ku: "بەڵێ، گومرگ", en: "Yes, customs", ar: "نعم، الجمارك", zh: "是，清关" }),
+                                  });
+                                  if (!ok) return;
+                                  updateStatusMutation.mutate(
+                                    { id: batch.id, status: "customs" },
+                                    { onSuccess: (data) => onBatchStatusSuccess(data), onError: onMutationError },
+                                  );
+                                }}
+                              >
+                                <ShieldAlert className="h-4 w-4 me-2" />
+                                {pickLang(language, { ku: "بار لە گومرگ ڕاگیراوە", en: "Load held at customs", ar: "الشحنة محتجزة في الجمارك", zh: "货物被海关扣留" })}
+                              </DropdownMenuItem>
+                            )}
                             {/* Straight to the scanner with this batch already
                                 chosen — picking it again from a long dropdown
                                 is the step people get wrong. Only while it is
