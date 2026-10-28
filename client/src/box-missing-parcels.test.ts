@@ -66,12 +66,12 @@ describe("a parcel is delivered by its box, not by its batch's arrival", () => {
     expect(step).toBeGreaterThan(safety);
   });
 
-  it("the three-day clock runs with the server, only on parcels inside a box", () => {
-    expect(read("server/_core/index.ts")).toContain("await scheduleBoxDeliveredAfterDays();");
-    const db = read("server/db/boxMissing.db.ts");
-    expect(db).toContain("export const BOX_DELIVERED_AFTER_DAYS = 3;");
-    const fn = db.slice(db.indexOf("export async function deliverParcelsOfOldBoxes"));
-    expect(fn).toContain("inArray(packages.id, inOldBoxes)");
+  // Dropped 2026-10-28 (owner): some boxes wait at the customer's request,
+  // some go out unpaid - a clock cannot tell which (shared/boxHold).
+  it("no three-day clock delivers a box's parcels", () => {
+    expect(read("server/_core/index.ts")).not.toContain("scheduleBoxDeliveredAfterDays");
+    expect(read("server/_core/prod-entry.ts")).not.toContain("scheduleBoxDeliveredAfterDays");
+    expect(read("server/db/boxMissing.db.ts")).not.toContain("deliverParcelsOfOldBoxes(");
   });
 
   it("the unbilled-goods checks count a parcel at the office as arrived", () => {
