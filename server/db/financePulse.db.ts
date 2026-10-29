@@ -1,5 +1,6 @@
 import { and, desc, eq, gt, gte, inArray, lte, sql } from "drizzle-orm";
 import { getDb } from "./connection";
+import { appLogger } from "../utils/logger";
 import {
   batches,
   boxSettlementLines,
@@ -279,10 +280,17 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
   const bounds = periodBounds(period, now);
   const end = period === "lastMonth" ? bounds.end : new Date(now.getTime() + DAY);
 
-  const settle = async <T>(work: () => Promise<T>, fallback: T): Promise<T> => {
+  /*
+   * A figure that could not be read is never shown as a real 0 (2026-10-30):
+   * it is logged, named in `unmeasured`, and the page says so above it.
+   */
+  const unmeasured: string[] = [];
+  const settle = async <T>(name: string, work: () => Promise<T>, fallback: T): Promise<T> => {
     try {
       return await work();
-    } catch {
+    } catch (e) {
+      unmeasured.push(name);
+      appLogger.error("[FinanceDashboard] a figure could not be read", { figure: name, error: e instanceof Error ? e.message : String(e) });
       return fallback;
     }
   };
@@ -295,17 +303,17 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
     withdrawalsBetween(db, bounds.start, end),
     getFinancialSummary(),
     getFinancePulse(now),
-    settle(async () => (await findUnbilledArrivedOrders()).filter((o) => !o.paidOnReceipt).length, 0),
-    settle(async () => (await listUnsentPaymentWhatsApp()).length, 0),
-    settle(() => arrivedBatchesWithoutCost(db), 0),
-    settle(() => lossBatches(db, bounds.start, end), []),
+    settle("unbilledArrived", async () => (await findUnbilledArrivedOrders()).filter((o) => !o.paidOnReceipt).length, 0),
+    settle("whatsappUnsent", async () => (await listUnsentPaymentWhatsApp()).length, 0),
+    settle("batchesWithoutCost", () => arrivedBatchesWithoutCost(db), 0),
+    settle("lossBatches", () => lossBatches(db, bounds.start, end), []),
   ]);
   const [stuck, top, capital, boxesUnpaid, boxPaidOwed] = await Promise.all([
-    settle(() => oldDebt(db, now), { usd: 0, count: 0 }),
-    settle(() => topDebtors(db, ledger.totalDebtUsd), []),
-    mainAdmin ? settle(() => getWorkingCapital(), null) : Promise.resolve(null),
-    settle(() => countBoxesAwaitingOffice(), 0),
-    settle(async () => (await import("./boxPaidStillOwed.db")).countBoxDoubleCharges(), 0),
+    settle("oldDebt", () => oldDebt(db, now), { usd: 0, count: 0 }),
+    settle("topDebtors", () => topDebtors(db, ledger.totalDebtUsd), []),
+    mainAdmin ? settle("capital", () => getWorkingCapital(), null) : Promise.resolve(null),
+    settle("boxesUnpaid", () => countBoxesAwaitingOffice(), 0),
+    settle("boxPaidOwed", async () => (await import("./boxPaidStillOwed.db")).countBoxDoubleCharges(), 0),
   ]);
 
   const freightProfitUsd = num(profit.pkgs.profit);
@@ -316,6 +324,8 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
 
   return {
     period,
+    /** Figures that failed to read and stand at 0 below: never taken as true. */
+    unmeasured,
     received,
     profit: {
       freightUsd: cents(freightProfitUsd),

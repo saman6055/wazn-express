@@ -39,3 +39,12 @@ describe("a reversed receipt", () => {
     expect(src).toContain("}).then(async ({ customerId, putBack }) => {");
   });
 });
+
+describe("the finance dashboard never passes a failed read off as 0", () => {
+  it("names what it could not read, and the page says so", () => {
+    const src = read("server/db/financePulse.db.ts");
+    expect(src).toContain("unmeasured.push(name);");
+    expect(src).toContain("    unmeasured,\n    received,");
+    expect(read("client/src/pages/CompanyFinanceDashboard.tsx")).toContain('data-testid="finance-unmeasured"');
+  });
+});

@@ -240,6 +240,21 @@ export default function CompanyFinanceDashboard() {
           <Skeleton className="h-96 w-full" />
         ) : (
           <>
+            {/* A figure the server could not read stands at 0 below: say so, never pass it off as true. */}
+            {(data.unmeasured?.length ?? 0) > 0 && (
+              <div className="flex items-start gap-2 rounded-lg border border-red-300 bg-red-50 p-3 text-sm text-red-800 dark:border-red-800 dark:bg-red-950/40 dark:text-red-200" data-testid="finance-unmeasured">
+                <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
+                <span>
+                  {L({
+                    ku: `${data.unmeasured.length} ژمارە نەخوێنرانەوە و لە خوارەوە وەک 0 دەردەکەون — ئەوانە ڕاست نین. 1. پەڕەکە نوێ بکەرەوە 2. ئەگەر مایەوە، بە بەڕێوەبەری سیستەم بڵێ (${data.unmeasured.join("، ")})`,
+                    en: `${data.unmeasured.length} figures could not be read and show as 0 below — they are not real. 1. Reload the page 2. If it stays, tell the system admin (${data.unmeasured.join(", ")})`,
+                    ar: `${data.unmeasured.length} أرقام لم تُقرأ وتظهر 0 أدناه — ليست حقيقية. 1. أعد تحميل الصفحة 2. إن بقيت، أبلغ مسؤول النظام (${data.unmeasured.join("، ")})`,
+                    zh: `${data.unmeasured.length} 个数字未能读取，下方显示为 0，并非真实。1. 刷新页面 2. 若仍如此，请告知系统管理员（${data.unmeasured.join("、")}）`,
+                  })}
+                </span>
+              </div>
+            )}
+
             {/* 1. The warning — always about now, whatever period is chosen below. */}
             <div ref={pulseRef} className={cn("scroll-mt-20 rounded-lg border p-4", LEVEL_STYLE[level])} data-testid="finance-pulse">
               <div className="flex items-start gap-2">

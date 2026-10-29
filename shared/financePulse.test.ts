@@ -182,6 +182,6 @@ describe("the dashboard", () => {
     const router = root("server/routers/finance.router.ts");
     expect(router).toContain('ctx.user.role === "super_admin"');
     expect(router).toContain("saveFixedCosts: superAdminProcedure");
-    expect(facts).toContain("mainAdmin ? settle(() => getWorkingCapital(), null)");
+    expect(facts).toContain('mainAdmin ? settle("capital", () => getWorkingCapital(), null)');
   });
 });

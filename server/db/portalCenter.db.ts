@@ -296,7 +296,10 @@ const num = (v: unknown) => Number(v ?? 0);
 async function safe<T>(p: Promise<T>, fallback: T): Promise<T> {
   try {
     return await p;
-  } catch {
+  } catch (e) {
+    // Degraded, but on record: a panel at 0 because a query failed is
+    // otherwise indistinguishable from a quiet day (2026-10-30).
+    appLogger.warn("[PortalCenter] a panel figure could not be read", { error: e instanceof Error ? e.message : String(e) });
     return fallback;
   }
 }
