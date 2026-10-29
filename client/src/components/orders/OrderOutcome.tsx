@@ -1,4 +1,5 @@
-import { PackageX, Undo2 } from "lucide-react";
+import { PackageX, Undo2, Receipt } from "lucide-react";
+import { toast } from "sonner";
 import { pickLang } from "@/lib/lang";
 import { trpc } from "@/lib/trpc";
 import { DropdownMenuItem, DropdownMenuSeparator } from "@/components/ui/dropdown-menu";
@@ -44,6 +45,50 @@ export function OrderOutcomeMenuItems({
         {pickLang(language, { ku: "ڕیفەند… (بۆ فرۆشیار گەڕایەوە)", en: "Refund… (back to the seller)", ar: "استرداد… (أُعيد للبائع)", zh: "退款…（退回卖家）" })}
       </DropdownMenuItem>
     </>
+  );
+}
+
+/**
+ * An old order ticked "paid before" whose money never reached the books, or
+ * was handed back (owner, 2026-10-28): the main admin clears the tick and the
+ * goods are charged the one way (ledger.chargeOrderMarkedPrepaid). Shown only
+ * on an order carrying the tick; the server refuses goods already on the
+ * account and an order in a receipted box.
+ */
+export function PrepaidFixMenuItem({ order, language, isMainAdmin }: {
+  order: { id: number; orderCode: string; isPrepaid?: boolean | null; status: string };
+  language: string;
+  isMainAdmin: boolean;
+}) {
+  const utils = trpc.useUtils();
+  const fix = trpc.ledger.chargeOrderMarkedPrepaid.useMutation({
+    onSuccess: (r) => {
+      toast.success(`نرخی ${r.orderCode} نووسرا: $${r.amountUsd.toFixed(2)}`);
+      void utils.invalidate();
+    },
+    onError: (err) => toast.error(err.message),
+  });
+  if (!isMainAdmin || !order.isPrepaid || ENDED.includes(order.status)) return null;
+  return (
+    <DropdownMenuItem
+      data-testid="order-prepaid-fix"
+      disabled={fix.isPending}
+      onClick={() => {
+        const reason = window.prompt(
+          pickLang(language, {
+            ku: `${order.orderCode}: پێشەکییەکەی بە هەڵە نیشانە کراوە؟ نرخی کاڵاکە دەچێتە سەر حیسابی کڕیار. هۆکار بنووسە:`,
+            en: `${order.orderCode}: wrongly marked prepaid? Its goods will be charged to the customer. Write the reason:`,
+            ar: `${order.orderCode}: هل عُلّم كمدفوع مسبقاً بالخطأ؟ سيُحمَّل سعر البضاعة على العميل. اكتب السبب:`,
+            zh: `${order.orderCode}：误标为已预付？货款将计入客户账户。请写原因：`,
+          }),
+        );
+        if (!reason || reason.trim().length < 5) return;
+        fix.mutate({ orderId: order.id, reason: reason.trim() });
+      }}
+    >
+      <Receipt className="me-2 h-4 w-4 text-amber-600 dark:text-amber-400" />
+      {pickLang(language, { ku: "پێشەکی بە هەڵە نیشانە کراوە — نرخەکە بنووسە", en: "Wrongly marked prepaid — charge the goods", ar: "عُلّم مدفوعاً بالخطأ — سجّل السعر", zh: "误标已预付 — 记入货款" })}
+    </DropdownMenuItem>
   );
 }
 

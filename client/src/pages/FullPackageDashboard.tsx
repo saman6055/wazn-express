@@ -73,7 +73,7 @@ import {
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { OrderOutcomeMenuItems, OrderStockMark, useOrderStockMarks } from "@/components/orders/OrderOutcome";
+import { OrderOutcomeMenuItems, PrepaidFixMenuItem, OrderStockMark, useOrderStockMarks } from "@/components/orders/OrderOutcome";
 import { RefundOrderDialog } from "@/components/orders/RefundOrderDialog";
 import { pickLang } from "@/lib/lang";
 import { PlatformChip } from "@/components/PlatformChip";
@@ -1103,6 +1103,7 @@ export default function FullPackageDashboard() {
                                   {order.status === option.value && " ✓"}
                                 </DropdownMenuItem>
                               ))}
+                              <PrepaidFixMenuItem order={order as any} language={language} isMainAdmin={isMainAdmin} />
                               <OrderOutcomeMenuItems
                                 order={order}
                                 language={language}

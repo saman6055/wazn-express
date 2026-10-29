@@ -34,3 +34,13 @@ describe("charging an order wrongly marked prepaid", () => {
     expect(router).toContain('action: "charge_order_marked_prepaid"');
   });
 });
+
+describe("the main admin has the button on both order lists", () => {
+  it("shown only on an order carrying the prepaid tick", () => {
+    const ui = read("client/src/components/orders/OrderOutcome.tsx");
+    expect(ui).toContain("if (!isMainAdmin || !order.isPrepaid || ENDED.includes(order.status)) return null;");
+    expect(ui).toContain("trpc.ledger.chargeOrderMarkedPrepaid.useMutation(");
+    expect(read("client/src/pages/CommissionOrders.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
+    expect(read("client/src/pages/FullPackageDashboard.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
+  });
+});

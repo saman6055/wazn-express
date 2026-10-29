@@ -64,7 +64,7 @@ import { pickLang } from "@/lib/lang";
 import { orderStatusLabel } from "@/lib/shipmentFilters";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
-import { OrderOutcomeMenuItems, OrderStockMark, useOrderStockMarks, withoutMoneyStatuses } from "@/components/orders/OrderOutcome";
+import { OrderOutcomeMenuItems, PrepaidFixMenuItem, OrderStockMark, useOrderStockMarks, withoutMoneyStatuses } from "@/components/orders/OrderOutcome";
 import { RefundOrderDialog } from "@/components/orders/RefundOrderDialog";
 
 
@@ -809,6 +809,7 @@ export default function CommissionOrders() {
                                 {order.status === option.value && " ✓"}
                               </DropdownMenuItem>
                             ))}
+                            <PrepaidFixMenuItem order={order as any} language={language} isMainAdmin={isMainAdmin} />
                             <OrderOutcomeMenuItems
                               order={order}
                               language={language}
