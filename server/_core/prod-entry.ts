@@ -18,6 +18,7 @@ import { uploadsStaticOptions } from "./uploadsServe";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
+import { registerPortalImageRoute } from "../lib/portalImages";
 import { registerBackupFileRoute } from "./backupFileRoute";
 import { registerClientErrorsRoute } from "./clientErrorsRoute";
 import { scheduleTrackingAlertNotifications } from "../services/trackingAlert.service";
@@ -211,6 +212,7 @@ async function startServer() {
   // Backup download and the portal's live updates — shared with the dev server.
   registerBackupFileRoute(app);
   registerPortalEventsRoute(app);
+  registerPortalImageRoute(app);
   registerClientErrorsRoute(app);
 
   // tRPC API (auth limiter applies strict limit to login procedures only)

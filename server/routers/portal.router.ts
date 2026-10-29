@@ -18,6 +18,7 @@ import { occasionsFor } from "@shared/occasions";
 import { milestoneReached, milestoneGreeting } from "@shared/milestones";
 import { getHijriOccasionDates } from "../services/hijriCalendar.service";
 import { yuanSettingsWithSharedRate } from "../lib/sharedRmbRate";
+import { linkOrdersPhotos, linkParcelsPhotos } from "../lib/portalImages";
 
 /**
  * Photos a customer attaches, checked before they are stored.
@@ -294,7 +295,8 @@ export const customerPortalRouter = router({
       // signature. On a long-standing account it was large enough to time out
       // on a mobile connection, and it grew every month.
       const customerId = ctx.customerId;
-      return db.getCustomerVisiblePackages(customerId);
+      // Photos as links, fetched once and kept (server/lib/portalImages).
+      return linkParcelsPhotos(await db.getCustomerVisiblePackages(customerId));
     }),
     getMyInvoices: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
@@ -321,7 +323,7 @@ export const customerPortalRouter = router({
       .input(z.object({ batchId: z.number() }))
       .query(async ({ ctx, input }) => {
         const customerId = ctx.customerId;
-        return db.getCustomerPackagesInBatch(customerId, input.batchId);
+        return linkParcelsPhotos(await db.getCustomerPackagesInBatch(customerId, input.batchId));
       }),
     
     /**
@@ -369,7 +371,7 @@ export const customerPortalRouter = router({
     // Get unbatched packages
     getMyUnbatchedPackages: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
-      return db.getCustomerUnbatchedPackages(customerId);
+      return linkParcelsPhotos(await db.getCustomerUnbatchedPackages(customerId));
     }),
     
     /**
@@ -381,7 +383,7 @@ export const customerPortalRouter = router({
      */
     getMySelfOrderPackages: customerProcedure.query(async ({ ctx }) => {
       const customerId = ctx.customerId;
-      return db.getSelfOrderPackagesByCustomer(customerId);
+      return linkParcelsPhotos(await db.getSelfOrderPackagesByCustomer(customerId));
     }),
 
     // Get customer's full package orders (for customer portal)
@@ -396,7 +398,7 @@ export const customerPortalRouter = router({
         // netProfitUsd and the supplier ids. This is the list the portal loads
         // on five different screens, so it was the widest of the leaks.
         const orders = await db.getFullPackageOrdersByCustomer(customerId, input);
-        return toCustomerVisibleOrders(orders as any[]);
+        return linkOrdersPhotos(toCustomerVisibleOrders(orders as any[]));
       }),
 
     /**
