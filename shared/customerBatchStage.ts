@@ -46,6 +46,12 @@ export function customerBatchStatus(
 
   const delivered = parcels.filter(inHand).length;
 
+  // The batch reached Erbil without any of theirs - still on the road for
+  // them (owner, 2026-10-28: only a parcel that arrived is arrived).
+  if (["arrived", "customs", "at_depot"].includes(batchStatus) && parcels.every((p) => p.status === "in_transit")) {
+    return "in_transit";
+  }
+
   // Everything of theirs is handed over. Whatever the container is still
   // doing, this customer's part of it is finished.
   if (delivered === parcels.length) {

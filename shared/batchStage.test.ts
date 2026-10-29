@@ -145,3 +145,25 @@ describe("an Erbil batch takes goods until it is closed (owner, 2026-10-28)", ()
     expect(root("server/db/batches.db.ts").match(/madeInChina: china\.get\(batch\.id\) \?\? true,/g)?.length).toBe(2);
   });
 });
+
+describe("only a parcel that arrived is arrived (owner, 2026-10-28, AIR-2026-069)", () => {
+  it("a parcel on a later load reads on the road, its batch in Erbil or not", async () => {
+    const { parcelStage } = await import("./parcelStage");
+    const batch = { status: "at_depot", hasShipmentTracking: true };
+    expect(parcelStage({ batch, status: "in_transit" })).toBe("in_transit");
+    expect(parcelStage({ batch, status: "ready_for_delivery" })).toBe("arrived");
+  });
+
+  it("a customer with nothing of theirs here yet sees the batch on the road", async () => {
+    const { customerBatchStatus } = await import("./customerBatchStage");
+    expect(customerBatchStatus("at_depot", [{ status: "in_transit" }, { status: "in_transit" }])).toBe("in_transit");
+    expect(customerBatchStatus("at_depot", [{ status: "in_transit" }, { status: "ready_for_delivery" }])).toBe("at_depot");
+  });
+
+  it("the sweep settles the batch-wide stamp per parcel: scanned or boxed is here, the rest on the road", () => {
+    const svc = root("server/services/batchStage.service.ts");
+    expect(svc).toContain('.where(and(stamped, or(inArray(packages.id, scanned), inArray(packages.id, boxed))));');
+    expect(svc).toContain('const r = await db.update(packages).set({ status: "in_transit" }).where(stamped);');
+    expect(svc).toContain("const settled = await settleArrivalStamps();");
+  });
+});

@@ -1,7 +1,7 @@
-import { and, count, eq, inArray, or } from "drizzle-orm";
+import { and, count, eq, inArray, or, sql } from "drizzle-orm";
 import { getDb } from "../db/connection";
 import { updateBatch } from "../db/batches.db";
-import { batches, countries, packageScans, packages } from "../../drizzle/schema";
+import { batches, countries, deliveryBoxes, deliveryBoxItems, packageScans, packages } from "../../drizzle/schema";
 import { batchHasShipmentNumber } from "@shared/parcelStage";
 import { batchMadeInChina, nextStoredStatus } from "@shared/batchStage";
 import { notifyBatchStatusChange } from "./notification.service";
@@ -84,6 +84,36 @@ export async function syncBatchStageQuietly(batchId: number | null | undefined, 
   }
 }
 
+/**
+ * Only a parcel that really arrived is arrived (owner, 2026-10-28, on
+ * AIR-2026-069: «تەنها ئەو تراکانە بە گەیشتوو حیساب بکە کە پشکنینی
+ * گەیشتنی بۆ کراوە»).
+ *
+ * Moving a batch to the depot by hand used to stamp every parcel in it
+ * `customs_processing`, scanned or not, so the portal told the owners of
+ * parcels still on a later flight that theirs were here. In a batch at the
+ * depot, that stamp is settled per parcel: an arrival scan, or a place in a
+ * box (some were handed out without a scan), is arrived; the rest are still
+ * on the road. Idempotent; touches nothing else.
+ */
+export async function settleArrivalStamps(): Promise<{ arrived: number; onRoad: number }> {
+  const db = await getDb();
+  if (!db) return { arrived: 0, onRoad: 0 };
+  const atDepot = (await db.select({ id: batches.id }).from(batches)
+    .where(or(eq(batches.status, "at_depot"), eq(batches.status, "arrived")))).map((r) => r.id);
+  if (atDepot.length === 0) return { arrived: 0, onRoad: 0 };
+  const scanned = db.select({ id: packageScans.packageId }).from(packageScans).where(eq(packageScans.scanType, "received_local"));
+  const boxed = db.select({ id: deliveryBoxItems.packageId }).from(deliveryBoxItems)
+    .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, deliveryBoxItems.boxId))
+    .where(sql`${deliveryBoxes.status} <> 'cancelled'`);
+  const stamped = and(inArray(packages.batchId, atDepot), eq(packages.status, "customs_processing"));
+  const a = await db.update(packages).set({ status: "ready_for_delivery" })
+    .where(and(stamped, or(inArray(packages.id, scanned), inArray(packages.id, boxed))));
+  const r = await db.update(packages).set({ status: "in_transit" }).where(stamped);
+  const n = (x: unknown) => Number((x as [{ affectedRows?: number }])[0]?.affectedRows ?? 0);
+  return { arrived: n(a), onRoad: n(r) };
+}
+
 /** Every batch still on the road to Erbil. Silent. */
 export async function sweepBatchStages(): Promise<number> {
   const db = await getDb();
@@ -109,6 +139,8 @@ export async function startBatchStageSweep(): Promise<void> {
   const run = async () => {
     const moved = await sweepBatchStages();
     if (moved > 0) appLogger.info("[BatchStage] sweep moved batches", { moved });
+    const settled = await settleArrivalStamps();
+    if (settled.arrived + settled.onRoad > 0) appLogger.info("[BatchStage] arrival stamps settled per parcel", settled);
   };
   // The timer first: a first pass that throws must not leave no timer behind.
   if (!timer) {

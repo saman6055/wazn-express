@@ -209,6 +209,9 @@ export function parcelStage(facts: ParcelFacts): ParcelStage | ParcelEnding {
   // Only a parcel that travelled with us has the two middle stages.
   if (facts.registeredAtOrigin !== false) {
     const batchStatus = (facts.batch?.status ?? "").trim();
+    // Its batch reached Erbil, but this parcel did not come with it - it is
+    // on a later load (owner, 2026-10-28, AIR-2026-069).
+    if (batchStatus && BATCH_ARRIVED.includes(batchStatus) && (facts.status ?? "").trim() === "in_transit") return "in_transit";
     if (batchStatus && BATCH_ARRIVED.includes(batchStatus)) return "arrived";
     if (facts.batch?.hasShipmentTracking) return "in_transit";
   }
