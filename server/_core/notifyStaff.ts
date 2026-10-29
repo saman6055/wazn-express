@@ -35,7 +35,10 @@ export async function notifyStaffAlert(params: {
 
   // Always record it where somebody will see it.
   try {
-    const { createActivityAlert } = await import("../db/admin.db");
+    const { createActivityAlert, activityAlertRecordedRecently } = await import("../db/admin.db");
+    // The same line within a day is the same alert, not news: the boot-time
+    // checks re-run on every redeploy and used to add a copy each time.
+    if (await activityAlertRecordedRecently(action, content)) return;
     await createActivityAlert({
       action,
       category,

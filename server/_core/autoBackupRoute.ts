@@ -22,6 +22,7 @@ import {
   type StoredAutoKey,
 } from "../lib/autoBackupKey";
 import { appLogger } from "../utils/logger";
+import { asyncRoute } from "./asyncRoute";
 
 /**
  * Where the owner's computer takes its daily backup (tools/auto-backup).
@@ -102,7 +103,7 @@ export function registerAutoBackupRoutes(app: Express): void {
   // A computer asks to be connected: it sends its key's fingerprint, never
   // the key, and gets the six-digit code the Backups page will show beside
   // the main admin's «بیبەستەوە» button (server/lib/autoBackupKey.ts).
-  app.post("/api/auto-backup/pair", pairLimiter, async (req, res) => {
+  app.post("/api/auto-backup/pair", pairLimiter, asyncRoute(async (req, res) => {
     const body = (req.body ?? {}) as { fingerprint?: unknown; computer?: unknown };
     if (!isFingerprint(body.fingerprint)) return res.status(400).json({ error: "داواکارییەکە دروست نییە." });
     const pending: PendingPairing = {
@@ -114,16 +115,16 @@ export function registerAutoBackupRoutes(app: Express): void {
     await db.setSetting(AUTO_BACKUP_PENDING_SETTING, JSON.stringify(pending));
     appLogger.info("[Auto backup] A computer asked to be connected", { computer: pending.computer });
     return res.json({ code: pending.code, minutes: PAIR_MINUTES });
-  });
+  }));
 
   // The setup on the computer asks this once: is the key right, and is the
   // server new enough to know what a backup key is?
-  app.get("/api/auto-backup/check", async (req, res) => {
+  app.get("/api/auto-backup/check", asyncRoute(async (req, res) => {
     if (!(await keyHolder(req, res))) return;
     return res.json({ ok: true });
-  });
+  }));
 
-  app.post("/api/auto-backup/start", async (req, res) => {
+  app.post("/api/auto-backup/start", asyncRoute(async (req, res) => {
     const stored = await keyHolder(req, res);
     if (!stored) return;
     try {
@@ -134,9 +135,9 @@ export function registerAutoBackupRoutes(app: Express): void {
     } catch (err) {
       return res.status(409).json({ error: err instanceof Error ? err.message : String(err) });
     }
-  });
+  }));
 
-  app.get("/api/auto-backup/:id", async (req, res) => {
+  app.get("/api/auto-backup/:id", asyncRoute(async (req, res) => {
     if (!(await keyHolder(req, res))) return;
     const row = await ownBackup(req, res);
     if (!row) return;
@@ -151,9 +152,9 @@ export function registerAutoBackupRoutes(app: Express): void {
       done: job?.done ?? null,
       total: job?.total ?? null,
     });
-  });
+  }));
 
-  app.get("/api/auto-backup/:id/file", async (req, res) => {
+  app.get("/api/auto-backup/:id/file", asyncRoute(async (req, res) => {
     const stored = await keyHolder(req, res);
     if (!stored) return;
     const row = await ownBackup(req, res);
@@ -166,9 +167,9 @@ export function registerAutoBackupRoutes(app: Express): void {
     return res.download(file, row.filename, (err) => {
       if (err && !res.headersSent) res.status(500).json({ error: "دابەزاندن سەرکەوتوو نەبوو." });
     });
-  });
+  }));
 
-  app.delete("/api/auto-backup/:id", async (req, res) => {
+  app.delete("/api/auto-backup/:id", asyncRoute(async (req, res) => {
     const stored = await keyHolder(req, res);
     if (!stored) return;
     const row = await ownBackup(req, res);
@@ -177,5 +178,5 @@ export function registerAutoBackupRoutes(app: Express): void {
     await removeBackup(row.id);
     await noteUse(stored, "auto_backup_delete", row.id);
     return res.json({ deleted: row.id });
-  });
+  }));
 }

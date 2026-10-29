@@ -88,6 +88,9 @@ export const countriesRouter = router({
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
         await db.updateCountry(id, data);
+        // The same keys `create` clears: a country switched off must leave
+        // every picker now, not when the hour's cache runs out.
+        cacheInvalidate(["countries:all", "countries:true", "countries:false", "countries:origins", "countries:destinations"]);
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -186,8 +189,14 @@ export const warehousesRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
+        // Read before the write: the per-country list is cached under the
+        // country's id, which the update does not carry.
+        const before = await db.getWarehouseById(id);
         await db.updateWarehouse(id, data);
-        cacheInvalidate(["warehouses:all", "warehouses:true", "warehouses:false"]);
+        cacheInvalidate([
+          "warehouses:all", "warehouses:true", "warehouses:false",
+          ...(before ? [`warehouses:country:${before.countryId}`] : []),
+        ]);
         try {
           await db.createAuditLog({
             userId: ctx.user.id,
@@ -402,7 +411,7 @@ export const settingsRouter = router({
 
         const { localUpload } = await import("../services/localUpload");
         // The stored name is ours; only the checked extension travels with it.
-        const { url } = localUpload(`font.${safeUploadExtension(input.fileName) || "ttf"}`, buffer, "font/" + format);
+        const { url } = await localUpload(`font.${safeUploadExtension(input.fileName) || "ttf"}`, buffer, "font/" + format);
 
         const current = parseAppearance(await db.getSetting(APPEARANCE_SETTING_KEY));
         // Derived from the stored filename, so the id and the file on disk

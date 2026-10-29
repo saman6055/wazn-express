@@ -63,7 +63,8 @@ describe("what the key may do", () => {
       expect(at, p).toBeGreaterThan(-1);
       expect(routes.slice(at, at + 200), p).toContain("await keyHolder(req, res)");
     }
-    expect(routes).toContain('app.delete("/api/auto-backup/:id", async (req, res) => {\n    const stored = await keyHolder(req, res);');
+    // Wrapped in asyncRoute so a thrown await answers 500 instead of hanging.
+    expect(routes).toContain('app.delete("/api/auto-backup/:id", asyncRoute(async (req, res) => {\n    const stored = await keyHolder(req, res);');
   });
 
   it("only ever touches backups the key itself made", () => {

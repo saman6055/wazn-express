@@ -58,7 +58,7 @@ export default function CustomerMessages() {
   const { data: messages, isLoading: loadingMessages } =
     trpc.supportChat.getMessages.useQuery(
       { chatId: selectedChatId! },
-      { enabled: !!selectedChatId, refetchInterval: 3000 }
+      { enabled: !!selectedChatId, refetchInterval: 3000, refetchIntervalInBackground: false }
     );
 
   // Send message mutation

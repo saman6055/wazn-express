@@ -97,12 +97,12 @@ describe("batch shipment identifiers", () => {
     const accepts = [...new Set([...seg.matchAll(/^ {8}(\w+):/gm)].map((m) => m[1]!))];
     expect(accepts.length, "could not read the update procedure").toBeGreaterThan(10);
 
-    const listQuery = slice(
-      read("server/db/batches.db.ts"),
-      "export async function getAllBatches",
-      "export async function getBatchById",
-      "getAllBatches"
-    );
+    // The list's columns live in one named set, and the list query (and the
+    // search beside it) select from that set — so one place is checked.
+    const batchesDb = read("server/db/batches.db.ts");
+    const listQuery = slice(batchesDb, "const BATCH_LIST_COLUMNS = {", "} as const;", "BATCH_LIST_COLUMNS");
+    const listFn = slice(batchesDb, "export async function getAllBatches", "export async function getBatchById", "getAllBatches");
+    expect(listFn, "the list must select the named column set").toContain("db.select(BATCH_LIST_COLUMNS)");
     const schema = read("drizzle/schema/batches.schema.ts");
 
     const missing = accepts.filter((field) => {

@@ -61,7 +61,7 @@ const JPEG_BYTES = Buffer.from(
 
 describe('localUpload — the URL it returns must actually serve the file', () => {
   it('serves back the exact bytes that were uploaded', async () => {
-    const { url } = localUpload('parcel-photo.jpg', JPEG_BYTES, 'image/jpeg');
+    const { url } = await localUpload('parcel-photo.jpg', JPEG_BYTES, 'image/jpeg');
 
     const res = await fetch(`${baseUrl}${url}`);
 
@@ -73,7 +73,7 @@ describe('localUpload — the URL it returns must actually serve the file', () =
   it('does not hand back the SPA shell in place of the image', async () => {
     // This is the failure that made photos look like they were never added:
     // status 200, but HTML where an image should be.
-    const { url } = localUpload('parcel-photo.jpg', JPEG_BYTES, 'image/jpeg');
+    const { url } = await localUpload('parcel-photo.jpg', JPEG_BYTES, 'image/jpeg');
 
     const res = await fetch(`${baseUrl}${url}`);
 
@@ -84,26 +84,26 @@ describe('localUpload — the URL it returns must actually serve the file', () =
   it('writes into UPLOADS_DIR so a mounted volume actually receives the file', async () => {
     // Without this the file lands inside the container and is wiped on the
     // next redeploy, taking every photo with it.
-    const { url } = localUpload('parcel-photo.jpg', JPEG_BYTES, 'image/jpeg');
+    const { url } = await localUpload('parcel-photo.jpg', JPEG_BYTES, 'image/jpeg');
 
     const name = url.split('/').pop()!;
     expect(fs.existsSync(path.join(tmpDir, name))).toBe(true);
   });
 
-  it('gives every upload its own name so two photos never collide', () => {
-    const a = localUpload('photo.jpg', JPEG_BYTES, 'image/jpeg');
-    const b = localUpload('photo.jpg', JPEG_BYTES, 'image/jpeg');
+  it('gives every upload its own name so two photos never collide', async () => {
+    const a = await localUpload('photo.jpg', JPEG_BYTES, 'image/jpeg');
+    const b = await localUpload('photo.jpg', JPEG_BYTES, 'image/jpeg');
 
     expect(a.url).not.toBe(b.url);
   });
 
-  it('keeps the file extension so the browser gets the right content type', () => {
-    expect(localUpload('scan.png', JPEG_BYTES).url).toMatch(/\.png$/);
-    expect(localUpload('no-extension', JPEG_BYTES).url).toMatch(/\.jpg$/);
+  it('keeps the file extension so the browser gets the right content type', async () => {
+    expect((await localUpload('scan.png', JPEG_BYTES)).url).toMatch(/\.png$/);
+    expect((await localUpload('no-extension', JPEG_BYTES)).url).toMatch(/\.jpg$/);
   });
 
-  it('serves the URL under the same route the server mounts', () => {
-    expect(localUpload('photo.jpg', JPEG_BYTES).url.startsWith(`${UPLOADS_ROUTE}/`)).toBe(true);
+  it('serves the URL under the same route the server mounts', async () => {
+    expect((await localUpload('photo.jpg', JPEG_BYTES)).url.startsWith(`${UPLOADS_ROUTE}/`)).toBe(true);
   });
 
   it('still falls through to the SPA for a path that is not an upload', async () => {

@@ -2758,6 +2758,24 @@ const ALERT_TRIGGERS: Record<string, { severity: 'info' | 'warning' | 'critical'
   'add_payment': { severity: 'info', titleKu: 'زیادکردنی پارەدان' },
 };
 
+/**
+ * Was this exact alert already recorded in the last `hours`?
+ *
+ * The boot-time checks (tracking, open boxes, overdue batches) run on every
+ * redeploy and insert the same digest again; the bell filled with copies.
+ */
+export async function activityAlertRecordedRecently(action: string, message: string, hours = 24): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const since = new Date(Date.now() - hours * 3600_000);
+  const [row] = await db
+    .select({ id: activityAlerts.id })
+    .from(activityAlerts)
+    .where(and(eq(activityAlerts.action, action), eq(activityAlerts.message, message), gte(activityAlerts.createdAt, since)))
+    .limit(1);
+  return !!row;
+}
+
 export async function createActivityAlert(data: {
   action: string;
   category: string;

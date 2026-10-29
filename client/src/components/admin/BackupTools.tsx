@@ -113,7 +113,7 @@ export function BackupJobBanner({ job }: { job: BackupJobView | null | undefined
     <Card className={job.ok ? "border-green-500" : "border-red-500"}>
       <CardContent className="pt-6 space-y-2">
         <div className="flex items-center gap-2 font-medium">
-          {job.ok ? <CheckCircle2 className="w-4 h-4 text-green-600" /> : <AlertCircle className="w-4 h-4 text-red-600" />}
+          {job.ok ? <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" /> : <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" />}
           {title} — {job.ok ? "تەواو بوو" : "سەرکەوتوو نەبوو"}
         </div>
         {job.message && <p className="text-sm whitespace-pre-line">{job.message}</p>}
@@ -136,7 +136,7 @@ export function BackupJobBanner({ job }: { job: BackupJobView | null | undefined
  */
 export function AutoBackupCard() {
   const utils = trpc.useUtils();
-  const { data } = trpc.backup.autoBackup.useQuery(undefined, { refetchInterval: 4000 });
+  const { data } = trpc.backup.autoBackup.useQuery(undefined, { refetchInterval: 4000, refetchIntervalInBackground: false });
   const approve = trpc.backup.approveAutoBackupComputer.useMutation({
     onSuccess: (r: { connected: string }) => {
       toast.success(`کۆمپیوتەری «${r.connected}» بەسترایەوە. یەکەم بەکاپ ئێستا دەستی پێدەکات.`);
@@ -201,7 +201,7 @@ export function AutoBackupCard() {
         )}
         {last && (
           <p className="flex items-center gap-1">
-            {last.status === "failed" ? <AlertCircle className="w-4 h-4 text-red-600" /> : <CheckCircle2 className="w-4 h-4 text-green-600" />}
+            {last.status === "failed" ? <AlertCircle className="w-4 h-4 text-red-600 dark:text-red-400" /> : <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />}
             دوایین بەکاپی خۆکار: {fmtWhen(last.createdAt, true)} {mb(last.fileSize)}
             {last.status === "failed" && last.errorMessage ? ` — ${last.errorMessage}` : ""}
           </p>

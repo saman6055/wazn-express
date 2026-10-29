@@ -30,6 +30,7 @@ import { registerHealthRoutes } from "./health";
 import { registerAppIconRoutes } from "../services/appIcons.service";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
 import { closeDb } from "../db/connection";
+import { installProcessGuards } from "./processGuards";
 
 function listenAsync(server: ReturnType<typeof createServer>, port: number, host: string): Promise<void> {
   return new Promise((resolve, reject) => {
@@ -42,6 +43,7 @@ function listenAsync(server: ReturnType<typeof createServer>, port: number, host
 }
 
 async function startServer() {
+  installProcessGuards();
   loadConfig(); // Validates required env vars (DATABASE_URL, JWT_SECRET, MIGRATION_SECRET); throws if missing
   const app = express();
   const server = createServer(app);
@@ -187,14 +189,24 @@ async function startServer() {
     // Watches the airport's arrivals board for the flights our shipments are
     // on, and tells the office and the customers when one lands.
     await startFlightWatch();
-    // Batches move forward from their facts; the sweep catches any path that
-    // wrote a fact without moving its batch (shared/batchStage).
-    await startBatchStageSweep();
-    // Yesterday, written down. The memory the morning brief compares against.
-    startDailySnapshots();
     appLogger.info("Flight arrival watcher started");
   } catch (error) {
     appLogger.error("Failed to start tracking alert scheduler", { error: error instanceof Error ? error.message : String(error) });
+  }
+  // Each on its own, as prod-entry.ts has them: one first pass that throws
+  // must not leave the next service never started.
+  try {
+    // Batches move forward from their facts; the sweep catches any path that
+    // wrote a fact without moving its batch (shared/batchStage).
+    await startBatchStageSweep();
+  } catch (error) {
+    appLogger.error("Failed to start the batch stage sweep", { error: error instanceof Error ? error.message : String(error) });
+  }
+  try {
+    // Yesterday, written down. The memory the morning brief compares against.
+    startDailySnapshots();
+  } catch (error) {
+    appLogger.error("Failed to start daily snapshots", { error: error instanceof Error ? error.message : String(error) });
   }
 
   // Start scheduled backups

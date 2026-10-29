@@ -381,7 +381,7 @@ export function MobileMoreSheet({
           aria-label={isDark ? L(W.light) : L(W.dark)}
           className="grid h-10 w-10 place-items-center rounded-full border border-border active:bg-muted"
         >
-          {isDark ? <Sun className="h-5 w-5 text-amber-500" /> : <Moon className="h-5 w-5 text-indigo-500" />}
+          {isDark ? <Sun className="h-5 w-5 text-amber-500 dark:text-amber-400" /> : <Moon className="h-5 w-5 text-indigo-500 dark:text-indigo-400" />}
         </button>
         <button
           type="button"

@@ -14,6 +14,7 @@ import {
 } from "../services/fullBackup.service";
 import { cleanUploadedName, MAX_UPLOAD_BYTES, UPLOAD_CHUNK_BYTES } from "../lib/backupFormat";
 import { appLogger } from "../utils/logger";
+import { asyncRoute } from "./asyncRoute";
 import { registerAutoBackupRoutes } from "./autoBackupRoute";
 
 /**
@@ -31,7 +32,7 @@ import { registerAutoBackupRoutes } from "./autoBackupRoute";
  * others — from where the Restore button puts the system back to it.
  */
 export function registerBackupFileRoute(app: Express): void {
-  app.get("/api/backup-file/:id", async (req, res) => {
+  app.get("/api/backup-file/:id", asyncRoute(async (req, res) => {
     try {
       const user = await sdk.authenticateRequest(req);
       if (!user || user.isCustomer || (user.role !== "super_admin" && user.role !== "admin")) {
@@ -60,7 +61,7 @@ export function registerBackupFileRoute(app: Express): void {
     } catch {
       return res.status(403).json({ error: "Forbidden" });
     }
-  });
+  }));
 
   registerBackupUploadRoutes(app);
   // The owner's computer, taking its daily backup with the backup key.
@@ -85,7 +86,7 @@ function refuse(res: Response, status: number, error: string, extra: Record<stri
 
 function registerBackupUploadRoutes(app: Express): void {
   // 1. Open a place for the file. Body: { name, size }.
-  app.post("/api/backup-upload/start", async (req, res) => {
+  app.post("/api/backup-upload/start", asyncRoute(async (req, res) => {
     const by = await mainAdmin(req, res);
     if (!by) return;
     const size = Number((req.body ?? {}).size);
@@ -100,7 +101,7 @@ function registerBackupUploadRoutes(app: Express): void {
     } catch (err) {
       return refuse(res, 409, err instanceof Error ? err.message : String(err));
     }
-  });
+  }));
 
   // 2. One piece, at the offset it belongs. A piece sent twice, or one that
   //    arrives after a dropped connection, is answered with where the file
@@ -108,7 +109,7 @@ function registerBackupUploadRoutes(app: Express): void {
   app.put(
     "/api/backup-upload/:id/chunk",
     express.raw({ type: () => true, limit: UPLOAD_CHUNK_BYTES + 1024 }),
-    async (req, res) => {
+    asyncRoute(async (req, res) => {
       const by = await mainAdmin(req, res);
       if (!by) return;
       const id = parseInt(req.params.id, 10);
@@ -123,11 +124,11 @@ function registerBackupUploadRoutes(app: Express): void {
       if (row.fileSize && current + body.length > row.fileSize) return refuse(res, 400, "زیاتر لە قەبارەی فایلەکە نێردرا.");
       await fsp.appendFile(part, body);
       return res.json({ size: current + body.length });
-    },
+    }),
   );
 
   // 3. Every piece is here: check the ZIP whole and list it.
-  app.post("/api/backup-upload/:id/finish", async (req, res) => {
+  app.post("/api/backup-upload/:id/finish", asyncRoute(async (req, res) => {
     const by = await mainAdmin(req, res);
     if (!by) return;
     const id = parseInt(req.params.id, 10);
@@ -152,5 +153,5 @@ function registerBackupUploadRoutes(app: Express): void {
     } catch (err) {
       return refuse(res, 500, err instanceof Error ? err.message : String(err));
     }
-  });
+  }));
 }

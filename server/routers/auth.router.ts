@@ -212,7 +212,8 @@ export const authRouter = router({
       // A good password ends the run. Otherwise four old mistakes would sit
       // there waiting to lock the account on the next single typo.
       if (customer.failedLoginAttempts > 0 || customer.lockedUntil) {
-        void db.clearFailedCustomerLogins(customer.id);
+        void db.clearFailedCustomerLogins(customer.id).catch((err) =>
+          appLogger.warn("[Auth] could not clear the failed-login count", { customerId: customer.id, error: err instanceof Error ? err.message : String(err) }));
       }
       const { SignJWT } = await import("jose");
       const secret = new TextEncoder().encode(getConfig().jwtSecret);

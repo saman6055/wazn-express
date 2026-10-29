@@ -49,7 +49,7 @@ async function storeStaffAttachment(name: string, type: string, base64: string):
     return { url, name, type };
   }
   const { localUpload } = await import("../services/localUpload");
-  const { url } = localUpload(`file.${ext}`, buffer, type);
+  const { url } = await localUpload(`file.${ext}`, buffer, type);
   return { url, name, type };
 }
 

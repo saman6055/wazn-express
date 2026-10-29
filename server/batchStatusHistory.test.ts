@@ -106,8 +106,9 @@ describe("the move is recorded where the move happens", () => {
    */
   it("writes nothing when the status did not change", () => {
     expect(fn).toMatch(/nextStatus !== undefined && nextStatus !== previousStatus/);
-    // And does not pay for a lookup on an update that cannot change it.
-    expect(fn).toMatch(/if \(nextStatus !== undefined\) \{/);
+    // And does not pay for a lookup on an update that cannot change it —
+    // nor the prices, which share the one read (batchPriceHistory).
+    expect(fn).toMatch(/if \(nextStatus !== undefined \|\| touchesPrices\) \{/);
   });
 
   /**

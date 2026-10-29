@@ -110,7 +110,9 @@ export function buildReminderMessage(
 export async function checkAndNotifyOpenBoxes(): Promise<void> {
   try {
     // Returns a page, not a bare array.
-    const { boxes } = await db.getAllDeliveryBoxes({});
+    // Every box, not the list's first page: the one out for ten days is
+    // exactly the one no longer among the fifty newest.
+    const { boxes } = await db.getAllDeliveryBoxes({ limit: 100000 });
     if (!boxes || boxes.length === 0) return;
 
     const stale = selectStaleBoxes(boxes as any[], new Date());

@@ -30,15 +30,27 @@ import { useBackCloses } from "@/hooks/useBackCloses";
  */
 export function usePortalMode(): [PortalMode, (m: PortalMode) => void] {
   const { theme, setTheme, accent, setAccent } = useTheme();
-  const [mode, setModeState] = useState<PortalMode>(() => {
-    const stored = localStorage.getItem(PORTAL_MODE_KEY) as PortalMode | null;
-    return stored ?? DEFAULT_PORTAL_MODE;
-  });
+  // The live pair is the truth: the mode key alone named the wrong dot
+  // when the theme had been changed elsewhere.
+  const [mode, setModeState] = useState<PortalMode>(() => modeFromTheme(theme, accent));
 
-  // Apply the saved mode once on mount, so a returning customer lands in the
-  // colours they left in rather than the app default.
+  // Apply the saved mode once, on a browser that has no theme choice yet,
+  // so a first visit lands in the portal's own colours rather than the app
+  // default. Not on every page: the toggle on the Profile page writes the
+  // theme, and this used to put the saved mode straight back over it on the
+  // next screen — and, in the office's browser, over the office's own theme
+  // whenever a portal was opened to look at.
   useEffect(() => {
-    const def = modeDef(mode);
+    let chosen: string | null = null;
+    let stored: PortalMode | null = null;
+    try {
+      chosen = localStorage.getItem("theme");
+      stored = localStorage.getItem(PORTAL_MODE_KEY) as PortalMode | null;
+    } catch {
+      // Storage refused: the context's defaults stand.
+    }
+    if (chosen) return;
+    const def = modeDef(stored ?? DEFAULT_PORTAL_MODE);
     setTheme(def.theme);
     setAccent(def.accent);
     // Deliberately mount-only: later changes go through setMode below.

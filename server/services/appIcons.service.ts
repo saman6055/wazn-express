@@ -25,6 +25,7 @@ import Jimp from "jimp";
 import type { Express, Request, Response } from "express";
 import * as db from "../db";
 import { appLogger } from "../utils/logger";
+import { asyncRoute } from "../_core/asyncRoute";
 import { getUploadsDir } from "./localUpload";
 import { localUploadFileName } from "../lib/photoUrls";
 import { SYSTEM_APP_NAME, SYSTEM_ICON_SIZES, isSystemHost, systemIconUrl } from "@shared/appVariant";
@@ -168,7 +169,7 @@ export function buildManifest(
 }
 
 export function registerAppIconRoutes(app: Express): void {
-  app.get("/app-icons/icon-:size.png", async (req: Request, res: Response) => {
+  app.get("/app-icons/icon-:size.png", asyncRoute(async (req: Request, res: Response) => {
     const size = parseInt(req.params.size, 10);
     if (!RENDERABLE_SIZES.includes(size)) {
       res.status(404).end();
@@ -194,9 +195,9 @@ export function registerAppIconRoutes(app: Express): void {
       });
       res.status(500).end();
     }
-  });
+  }));
 
-  app.get("/manifest.json", async (req: Request, res: Response) => {
+  app.get("/manifest.json", asyncRoute(async (req: Request, res: Response) => {
     try {
       const info = await getCompanyInfo();
       const url = readLogoUrl(info);
@@ -217,5 +218,5 @@ export function registerAppIconRoutes(app: Express): void {
       });
       res.status(500).end();
     }
-  });
+  }));
 }

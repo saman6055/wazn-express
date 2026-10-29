@@ -197,7 +197,14 @@ export default function PlatformSelect({ value, onChange, className }: PlatformS
         </Button>
       </PopoverTrigger>
 
-      <PopoverContent variant="panel" className="w-(--radix-popover-trigger-width) min-w-[240px]" align="start">
+      <PopoverContent
+        variant="panel"
+        className="w-(--radix-popover-trigger-width) min-w-[240px]"
+        align="start"
+        // A name being typed is work: a tap outside must not throw it away
+        // (the rule every dialog and sheet already keeps).
+        onInteractOutside={(e) => { if (adding && newName.trim()) e.preventDefault(); }}
+      >
         {/* shouldFilter={false} — filtering happens above so a search matches
             the platform name itself, not the rendered row. */}
         <Command shouldFilter={false}>

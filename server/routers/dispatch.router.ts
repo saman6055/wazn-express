@@ -153,7 +153,7 @@ export const dispatchRouter = router({
         note: input.note ?? null,
         by: ctx.user.name ?? null,
         reportUrl: host ? `${secure ? "https" : "http"}://${host}/dispatch-check/${input.batchId}/report` : null,
-      }));
+      })).catch(() => undefined);
       return done;
     }),
 });

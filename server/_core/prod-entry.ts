@@ -33,6 +33,7 @@ import { registerHealthRoutes } from "./health";
 import { registerAppIconRoutes } from "../services/appIcons.service";
 import { appLogger, requestLoggingMiddleware } from "../utils/logger";
 import { closeDb } from "../db/connection";
+import { installProcessGuards } from "./processGuards";
 import autoMigrate from "./autoMigrate";
 
 function isPortAvailable(port: number): Promise<boolean> {
@@ -119,6 +120,7 @@ function serveStatic(app: express.Express) {
 }
 
 async function startServer() {
+  installProcessGuards();
   loadConfig(); // Validates required env vars (DATABASE_URL, JWT_SECRET, MIGRATION_SECRET); throws if missing
 
   // Run DB migrations + schema patches (e.g. serviceTypes columns) before serving

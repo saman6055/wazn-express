@@ -51,6 +51,10 @@ export function useLeaveGuard(dirty: boolean, ask: () => Promise<boolean>): void
 
     const onPop = () => {
       if (leaving) return;
+      // Back took a layer that sat above this step (a photo, a sheet —
+      // useBackCloses) and landed on the step itself: the page is not being
+      // left, so there is nothing to ask.
+      if (marked(window.history.state)) return;
       void askRef.current().then((leave) => {
         if (leave) {
           leaving = true;

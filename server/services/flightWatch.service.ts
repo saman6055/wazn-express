@@ -302,7 +302,9 @@ async function recordSchedule(batch: WatchableRow, rows: FlightRow[]): Promise<v
  * already at the depot or delivered is left exactly where it is.
  */
 async function moveLandedBatchesToCustoms(batches: WatchableRow[], now: Date): Promise<void> {
-  const BEFORE_CUSTOMS = ["preparing", "in_transit", "arrived"];
+  // Stored `arrived` is the Erbil depot (shared/batchStage): a batch there
+  // is past customs, and must never be dragged back into it.
+  const BEFORE_CUSTOMS = ["preparing", "in_transit"];
 
   for (const batch of batches) {
     if (!batch.flightArrivedAt) continue;

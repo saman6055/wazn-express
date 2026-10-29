@@ -24,6 +24,18 @@ export function serveStatic(app: Express) {
 
   app.use(express.static(distPath));
 
+  // The page shell, read once: it is the build's own file and does not
+  // change while the server runs, and a public share link is no place for a
+  // synchronous disk read per hit.
+  let indexHtml: string | null = null;
+  const readIndexHtml = (): string | null => {
+    if (indexHtml !== null) return indexHtml;
+    const indexPath = path.resolve(distPath, "index.html");
+    if (!fs.existsSync(indexPath)) return null;
+    indexHtml = fs.readFileSync(indexPath, "utf8");
+    return indexHtml;
+  };
+
   // Wazn Store product pages get real Open Graph / Twitter tags injected so a
   // shared link (WhatsApp, Facebook, ...) previews the product's own image,
   // name, and price instead of the generic site card. The SPA still hydrates
@@ -33,9 +45,8 @@ export function serveStatic(app: Express) {
       const product = await getStoreProductBySlug(req.params.slug);
       if (!product || product.status === "hidden") return next();
 
-      const indexPath = path.resolve(distPath, "index.html");
-      if (!fs.existsSync(indexPath)) return next();
-      let html = fs.readFileSync(indexPath, "utf8");
+      let html = readIndexHtml();
+      if (html === null) return next();
 
       const origin = `${req.protocol}://${req.get("host")}`;
       const name = product.nameEn || product.nameKu || product.nameAr || "Wazn Store";

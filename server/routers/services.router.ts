@@ -772,7 +772,7 @@ export const storageRouter = router({
 
         try {
           const { localUpload } = await import("../services/localUpload");
-          const { url } = localUpload(`file.${ext}`, buffer, input.contentType);
+          const { url } = await localUpload(`file.${ext}`, buffer, input.contentType);
           return { success: true, url };
         } catch (err) {
           const message = err instanceof Error ? err.message : String(err);

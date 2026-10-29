@@ -23,12 +23,23 @@ export const USER_DATA_KEYS = [
   "wazn.searchHistory",
 ] as const;
 
+/**
+ * Keys named by a prefix, because the rest is computed: a scanner keeps its
+ * half-finished session as `scan-session-<scanner>`, and one person's ten
+ * scanned cartons must not greet the next person who signs in on that tab.
+ */
+export const USER_DATA_KEY_PREFIXES = ["scan-session-"] as const;
+
 export function clearSignedInData(queryClient?: QueryClient): void {
   queryClient?.clear();
   for (const store of ["localStorage", "sessionStorage"] as const) {
     try {
       const s = window[store];
       for (const key of USER_DATA_KEYS) s.removeItem(key);
+      for (let i = s.length - 1; i >= 0; i--) {
+        const key = s.key(i);
+        if (key && USER_DATA_KEY_PREFIXES.some((p) => key.startsWith(p))) s.removeItem(key);
+      }
     } catch {
       // Storage refused (private mode): nothing was kept there either.
     }

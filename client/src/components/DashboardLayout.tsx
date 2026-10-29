@@ -247,6 +247,8 @@ function DashboardLayoutContent({
   useEffect(() => {
     if (!fullScreen) return;
     const onKey = (e: KeyboardEvent) => {
+      // Already taken — by the dialog it closed, say. One Escape, one layer.
+      if (e.defaultPrevented) return;
       if (e.key === "Escape") { setFullScreen(false); return; }
       // Ctrl +/- is what people already press to zoom. Take it over only in
       // full screen, so the browser's own zoom is untouched everywhere else.

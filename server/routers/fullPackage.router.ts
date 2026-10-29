@@ -1928,7 +1928,13 @@ export const fullPackageRouter = router({
         }
         
         // Verify customer owns this order
-        if (existing.customerId !== ctx.user.id && ctx.user.role !== 'admin' && ctx.user.role !== 'employee') {
+        // The customer who owns it, or staff. `ctx.user.id` is a customers.id
+        // for a customer and a users.id for staff: compared without asking
+        // which, a staff account could pass as whichever customer shares its
+        // number, and the main admin was refused outright.
+        const owns = ctx.user.isCustomer && existing.customerId === ctx.user.id;
+        const staff = !ctx.user.isCustomer && ["super_admin", "admin", "employee"].includes(ctx.user.role);
+        if (!owns && !staff) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized" });
         }
         
@@ -1997,7 +2003,13 @@ export const fullPackageRouter = router({
         }
         
         // Verify customer owns this order
-        if (existing.customerId !== ctx.user.id && ctx.user.role !== 'admin' && ctx.user.role !== 'employee') {
+        // The customer who owns it, or staff. `ctx.user.id` is a customers.id
+        // for a customer and a users.id for staff: compared without asking
+        // which, a staff account could pass as whichever customer shares its
+        // number, and the main admin was refused outright.
+        const owns = ctx.user.isCustomer && existing.customerId === ctx.user.id;
+        const staff = !ctx.user.isCustomer && ["super_admin", "admin", "employee"].includes(ctx.user.role);
+        if (!owns && !staff) {
           throw new TRPCError({ code: "FORBIDDEN", message: "Not authorized" });
         }
         

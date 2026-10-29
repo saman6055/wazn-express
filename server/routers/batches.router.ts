@@ -1624,9 +1624,13 @@ export const batchesRouter = router({
         let diagOut: any = null;
 
         // Update all packages in batch if status changes
+        // Only parcels still at that point of the road: one already further
+        // along (boxed, delivered — a batch that came in several loads) is
+        // never dragged back by its batch (same rule as batchStage.service).
         if (input.status === "in_transit") {
           const packages = await db.getPackagesByBatch(id);
           for (const pkg of packages) {
+            if (pkg.status !== "registered" && pkg.status !== "in_batch") continue;
             await db.updatePackage(pkg.id, { status: "in_transit" });
           }
           // Notify customers about batch departure
@@ -1638,6 +1642,7 @@ export const batchesRouter = router({
         } else if (input.status === "arrived" || input.status === "customs" || input.status === "at_depot") {
           const packages = await db.getPackagesByBatch(id);
           for (const pkg of packages) {
+            if (pkg.status !== "registered" && pkg.status !== "in_batch" && pkg.status !== "in_transit") continue;
             await db.updatePackage(pkg.id, { status: "customs_processing" });
           }
           // Notify customers about batch arrival

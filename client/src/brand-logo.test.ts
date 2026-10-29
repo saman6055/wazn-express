@@ -56,7 +56,9 @@ describe("every place that shows a logo falls back to the mark", () => {
     for (const rel of ["components/delivery/BoxTable.tsx", "components/delivery/BoxDetailPanel.tsx"]) {
       const calls = read(rel).match(/absoluteLogoUrl\([^)]*\)/g) ?? [];
       expect(calls.length, rel).toBeGreaterThan(0);
-      for (const call of calls) expect(call, rel).toContain("BRAND_LOGO_URL");
+      // Either the mark itself or logoUrlOnDark(), which falls back to the
+      // on-dark mark (lib/brand.ts) — the receipt's header is dark.
+      for (const call of calls) expect(call, rel).toMatch(/BRAND_LOGO_URL|logoUrlOnDark\(/);
     }
   });
 

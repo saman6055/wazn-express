@@ -173,7 +173,7 @@ export const storeRouter = router({
       }
       try {
         const { localUpload } = await import("../services/localUpload");
-        const { url } = localUpload(`image.${ext}`, buffer, input.contentType);
+        const { url } = await localUpload(`image.${ext}`, buffer, input.contentType);
         return { success: true, url };
       } catch (err) {
         return { success: false, url: null, error: err instanceof Error ? err.message : String(err) };

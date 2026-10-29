@@ -359,7 +359,7 @@ export default function DispatchCheck() {
             {/* Left out: on the batch, in no carton. */}
             <div className={cn("rounded-xl border-2 p-4", left > 0 ? "border-red-300 dark:border-red-800/60" : "border-emerald-300 dark:border-emerald-800/60")} data-testid="dispatch-left-out">
               <p className="mb-2 flex items-center gap-2 font-bold">
-                {left > 0 ? <AlertTriangle className="h-5 w-5 text-red-600" /> : <CheckCircle2 className="h-5 w-5 text-emerald-600" />}
+                {left > 0 ? <AlertTriangle className="h-5 w-5 text-red-600 dark:text-red-400" /> : <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />}
                 {left > 0
                   ? L({ ku: `${left} پاکێج لەسەر ئەم باچەن بەڵام لە هیچ کارتۆنێکدا نین`, en: `${left} parcels on this batch are in no carton`, ar: `${left} طرد في الدفعة خارج الكراتين`, zh: `本批次有 ${left} 件未装箱` })
                   : L({ ku: "هەموو پاکێجەکان خراونەتە ناو کارتۆن", en: "Every parcel is packed", ar: "كل الطرود معبأة", zh: "全部已装箱" })}

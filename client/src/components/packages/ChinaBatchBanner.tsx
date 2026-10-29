@@ -66,7 +66,7 @@ export function ChinaBatchBanner({
         </div>
       </div>
       {confirmed ? (
-        <CheckCircle2 className="h-6 w-6 text-emerald-600" />
+        <CheckCircle2 className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
       ) : (
         <div className="flex gap-2">
           <Button variant="outline" onClick={onChange} data-testid="china-batch-change">

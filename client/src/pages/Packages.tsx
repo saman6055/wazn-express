@@ -580,6 +580,9 @@ const [, setLocation] = useLocation();
   // clicked. Applied once, after the hook's own state exists.
   useEffect(() => {
     if (linkFilters.shippingType) setShippingTypeFilter(linkFilters.shippingType);
+    // A link naming a batch used to set the chip and nothing else: the
+    // server never heard of it, and the chip stood over an unfiltered table.
+    if (linkFilters.batch) setBatchFilterWithHook(linkFilters.batch);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -894,7 +897,8 @@ const [, setLocation] = useLocation();
   const filteredPackages = useMemo(() => {
     if (!packages) return undefined;
     return packages.filter(pkg => {
-      const matchesBatch = batchFilter === "all" || batchFilter !== "no_batch" || (batchFilter === "no_batch" && !pkg.batchId);
+      // A numeric batch is the server's filter (setBatchFilterWithHook); here only «no batch» narrows.
+      const matchesBatch = batchFilter !== "no_batch" || !pkg.batchId;
       const registeredAt = new Date(pkg.createdAt);
       const now = new Date();
       const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));

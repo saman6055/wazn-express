@@ -305,7 +305,7 @@ export default function BatchLabelTemplateSettings() {
           )}
         </div>
 
-        <Dialog open={isDialogOpen} onOpenChange={(o) => { setIsDialogOpen(o); if (!o) setEditingTemplate(null); setIsCreating(false); }}>
+        <Dialog open={isDialogOpen} onOpenChange={(o) => { setIsDialogOpen(o); if (!o) { setEditingTemplate(null); setIsCreating(false); } }}>
           <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">

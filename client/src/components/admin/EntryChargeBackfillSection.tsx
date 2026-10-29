@@ -168,7 +168,7 @@ export function EntryChargeBackfillSection({ language }: { language: string }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <TriangleAlert className="h-5 w-5 text-amber-600" />
+              <TriangleAlert className="h-5 w-5 text-amber-600 dark:text-amber-400" />
               {pickLang(language, {
                 ku: "قەرز دەچێتە سەر حساباتی کڕیارەکان",
                 en: "This puts debt on customer accounts",

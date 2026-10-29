@@ -29,7 +29,7 @@ export function BatchVolumetricCard({ batchId, language }: { batchId: number; la
     <Card className="border-amber-300 dark:border-amber-800/60" data-testid="batch-volumetric-card">
       <CardHeader className="pb-2">
         <CardTitle className="flex items-center gap-2 text-base">
-          <Scale className="h-5 w-5 text-amber-600" />
+          <Scale className="h-5 w-5 text-amber-600 dark:text-amber-400" />
           {L({ ku: "بارە قەبارەییەکان", en: "Volumetric parcels", ar: "الطرود الحجمية", zh: "体积重包裹" })}
           <span className="text-xs font-normal text-muted-foreground">({b.figures.volumetricParcels})</span>
         </CardTitle>

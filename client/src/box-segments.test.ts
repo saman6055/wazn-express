@@ -42,7 +42,9 @@ describe("the server", () => {
 
   it("slices only the unpaid list, by the shared five days", () => {
     const fn = between(read("server/db/deliveryBoxes.db.ts"), "export async function getAllDeliveryBoxes(", "\nexport async function");
-    expect(fn).toContain('if (filters?.archive === "exclude" && filters.segment)');
+    // A search looks across every chip: the slice applies only when no
+    // search is typed.
+    expect(fn).toContain('if (!isSearching && filters?.archive === "exclude" && filters.segment)');
     expect(fn).toContain("boxOldCutoff()");
     expect(fn).toContain('filters.segment === "handed"');
     expect(fn).toContain("segmentCounts = {");

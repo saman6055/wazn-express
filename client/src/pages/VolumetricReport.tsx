@@ -72,7 +72,7 @@ export default function VolumetricReport() {
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div>
             <h1 className="flex items-center gap-2 text-2xl font-bold">
-              <Scale className="h-6 w-6 text-amber-600" />
+              <Scale className="h-6 w-6 text-amber-600 dark:text-amber-400" />
               {L({ ku: "بارە قەبارەییەکان", en: "Volumetric parcels", ar: "الطرود الحجمية", zh: "体积重包裹" })}
             </h1>
             <p className="text-sm text-muted-foreground">

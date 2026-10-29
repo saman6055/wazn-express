@@ -157,7 +157,15 @@ export function ScanInput({
   // Global keyboard shortcuts (Escape, Ctrl+M, Ctrl+S)
   useEffect(() => {
     const handleKeyboard = (e: KeyboardEvent) => {
+      // A dialog that just closed on this Escape has claimed it (Radix
+      // prevents the default): it must not also wipe the half-typed number
+      // and pull the focus back here.
+      if (e.defaultPrevented) return;
       if (e.key === "Escape") {
+        const active = document.activeElement as HTMLElement | null;
+        const typingElsewhere = active && active !== inputRef.current
+          && (active.tagName === "INPUT" || active.tagName === "TEXTAREA" || active.isContentEditable);
+        if (typingElsewhere) return;
         setTrackingNumber("");
         inputRef.current?.focus();
       }

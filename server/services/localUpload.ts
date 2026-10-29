@@ -26,15 +26,16 @@ export function getUploadsDir(): string {
  * Save file to local disk and return public URL.
  * Used when Forge storage is not configured.
  */
-export function localUpload(
+export async function localUpload(
   fileName: string,
   data: Buffer,
   _contentType?: string
-): { key: string; url: string } {
+): Promise<{ key: string; url: string }> {
   const dir = getUploadsDir();
-  if (!fs.existsSync(dir)) {
-    fs.mkdirSync(dir, { recursive: true });
-  }
+  // Asynchronous on purpose: a photo of several megabytes written with
+  // writeFileSync held every other request (and the portal's live
+  // heartbeats) for the whole of the write.
+  await fs.promises.mkdir(dir, { recursive: true });
   // The stored name's extension is ours, not the uploader's: lower case,
   // letters and digits, and never one a browser would open as a page
   // (shared/uploadRule). A name with nothing usable is stored as a photo,
@@ -42,7 +43,7 @@ export function localUpload(
   const ext = `.${safeUploadExtension(fileName) || "jpg"}`;
   const uniqueName = `${nanoid(12)}${ext}`;
   const absolutePath = path.join(dir, uniqueName);
-  fs.writeFileSync(absolutePath, data);
+  await fs.promises.writeFile(absolutePath, data);
   const url = `${UPLOADS_ROUTE}/${uniqueName}`;
   return { key: path.join(UPLOADS_DIR, uniqueName), url };
 }
