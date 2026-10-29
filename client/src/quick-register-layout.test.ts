@@ -34,7 +34,7 @@ describe("what sits where", () => {
     // it was always meant to be: the answer beneath the question.
     const tracking = at('{t("quickRegister.stepTracking")}');
     const customer = at('{t("quickRegister.stepCustomer")}');
-    const order = at('className="md:col-span-5 border-2 border-indigo-200');
+    const order = at('data-testid="qr-found-order"');
     expect(customer).toBeGreaterThan(tracking);
     expect(order).toBeGreaterThan(customer);
   });
@@ -66,7 +66,7 @@ describe("what sits where", () => {
 
   it("the side column is the warehouse, then the photos", () => {
     const side = at('className="lg:col-span-1 min-w-0 space-y-3"');
-    const photos = at('className="border-2 border-sky-200 dark:border-sky-900/60');
+    const photos = at('data-testid="qr-photos-card"');
     expect(photos).toBeGreaterThan(side);
     // The register button is no longer a card here — it is the bar below.
     expect(page).not.toContain("lg:sticky lg:top-4 border-2 border-primary/30");
@@ -122,7 +122,9 @@ describe("what sits where", () => {
   });
 
   it("the header is a strip, not a banner", () => {
-    expect(page).toContain("rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 px-4 py-2.5");
+    // One calm card since 2026-10-29 (owner: the orange slab was «ناشیرین»).
+    expect(page).toContain('className="relative overflow-clip rounded-xl border bg-card px-4 py-2.5 shadow-sm" data-testid="qr-header"');
+    expect(page).not.toContain("via-orange-500");
     expect(page).toContain('<h1 className="text-lg font-bold');
   });
 });
@@ -230,7 +232,7 @@ describe("the whole job on one screen", () => {
     // its own stack: those are the customer's photographs of what they
     // ordered, and that card exists to say who declared it.
     const orderCard = page.slice(
-      at('className="md:col-span-5 border-2 border-indigo-200'),
+      at('data-testid="qr-found-order"'),
       at("{/* What was just registered, and what is still coming."),
     );
     expect(orderCard).not.toContain("<PhotoStack");

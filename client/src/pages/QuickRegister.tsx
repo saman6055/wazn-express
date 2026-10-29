@@ -1554,30 +1554,26 @@ export default function QuickRegister() {
               scrolled to it. Focusing the button at the end of the banner did
               exactly that — the whole header slid 64px sideways and cut its
               own title off. A clipped box cannot scroll at all. */}
-          <div className="relative overflow-clip rounded-xl bg-gradient-to-br from-amber-500 via-orange-500 to-amber-600 px-4 py-2.5 shadow-md ring-1 ring-white/10 text-white">
-            <div className="pointer-events-none absolute -end-16 -top-20 h-48 w-48 rounded-full bg-white/10 blur-3xl" />
-            <div className="pointer-events-none absolute inset-x-0 top-0 h-20 bg-gradient-to-b from-white/10 to-transparent" />
+          <div className="relative overflow-clip rounded-xl border bg-card px-4 py-2.5 shadow-sm" data-testid="qr-header">
             <div className="relative flex items-center justify-between flex-wrap gap-4">
               {/* Title Section */}
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-xl bg-white/15 backdrop-blur-md ring-1 ring-white/25 text-white shadow-lg flex items-center justify-center">
+                <div className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center">
                   <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold tracking-tight text-white drop-shadow-sm">{t("quickRegister.title")}</h1>
-                  <p className="text-white/85 text-[11px]">{t("quickRegister.shortcutsHint")}</p>
+                  <h1 className="text-lg font-bold tracking-tight text-foreground">{t("quickRegister.title")}</h1>
+                  <p className="text-muted-foreground text-[11px]">{t("quickRegister.shortcutsHint")}</p>
                 </div>
               </div>
 
               {/* Today's Counter */}
               <div className="flex items-center gap-3">
-                <div className="rounded-lg bg-white/15 backdrop-blur ring-1 ring-white/25 px-3 py-1.5 flex items-center gap-3">
-                  <div className="w-7 h-7 rounded-full bg-white/20 text-white flex items-center justify-center">
-                    <Calendar className="h-4 w-4" />
-                  </div>
+                <div className="rounded-lg border bg-muted/40 px-3 py-1.5 flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-muted-foreground" />
                   <div>
-                    <div className="text-xs text-white/80">{t("quickRegister.todayRegistered")}</div>
-                    <div className="text-xl font-bold text-white leading-none">{packageStats?.todayCount || 0}</div>
+                    <div className="text-xs text-muted-foreground">{t("quickRegister.todayRegistered")}</div>
+                    <div className="text-xl font-bold text-foreground leading-none tabular-nums">{packageStats?.todayCount || 0}</div>
                   </div>
                 </div>
 
@@ -1586,7 +1582,7 @@ export default function QuickRegister() {
                   type="button"
                   variant="outline"
                   onClick={clearAllForm}
-                  className="h-9 px-3 text-sm bg-white/15 text-white border-white/25 hover:bg-white/25 hover:text-white backdrop-blur"
+                  className="h-9 px-3 text-sm"
                 >
                   <RotateCcw className="h-4 w-4 ms-1.5" />
                   {t("quickRegister.clear")}
@@ -1602,10 +1598,10 @@ export default function QuickRegister() {
             {lastRegistered && (
               <div
                 className={cn(
-                  "mt-3 rounded-xl border px-4 py-3",
+                  "mt-2.5 rounded-lg border px-3 py-2",
                   correcting
                     ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40"
-                    : "border-emerald-200/70 dark:border-emerald-900/50 bg-gradient-to-br from-emerald-50 to-teal-50/50 dark:from-emerald-950/30 dark:to-teal-950/20",
+                    : "border-border bg-muted/30",
                 )}
                 data-testid="qr-last-registered"
               >
@@ -1654,8 +1650,7 @@ export default function QuickRegister() {
                       </span>
                     </>
                   )}
-                  {/* The way back to it. Dark on the pale strip, because the
-                      header behind is orange and white text would vanish. */}
+                  {/* The way back to it. */}
                   {correcting ? (
                     <Button
                       type="button"
@@ -1693,7 +1688,7 @@ export default function QuickRegister() {
                       variant="outline"
                       onClick={openCorrection}
                       disabled={openingCorrection}
-                      className={cn(lastRegistered.customerId && lastRegistered.trackingNumber ? "" : "ms-auto", "h-8 gap-1.5 border-emerald-300 bg-white/80 text-emerald-800 hover:bg-white dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/60")}
+                      className={cn(lastRegistered.customerId && lastRegistered.trackingNumber ? "" : "ms-auto", "h-8 gap-1.5")}
                       data-testid="qr-correct-last"
                     >
                       {openingCorrection ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <PencilLine className="h-3.5 w-3.5" />}
@@ -1720,13 +1715,13 @@ export default function QuickRegister() {
             by accident with a correction open). */}
         <Link
           href="/packages/prohibited-register"
-          className="mb-2 w-full flex items-center justify-between gap-2 rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 hover:bg-red-100 dark:hover:bg-red-900/30 transition"
+          className="mb-2 ms-auto flex w-fit items-center gap-2 rounded-md border bg-card px-3 py-1.5 text-muted-foreground transition hover:border-red-300 hover:text-red-700 dark:hover:border-red-800 dark:hover:text-red-300"
         >
-          <span className="flex items-center gap-2.5 text-xs font-medium text-red-700 dark:text-red-300">
-            <AlertTriangle className="h-3.5 w-3.5" />
+          <span className="flex items-center gap-2 text-xs font-medium">
+            <AlertTriangle className="h-3.5 w-3.5 text-red-500 dark:text-red-400" />
             {pickLang(language, { ku: "کەلوپەلی قەدەغە؟ لێرەوە تۆماری بکە", en: "Prohibited item? Register it here", ar: "بضاعة ممنوعة؟ سجّلها من هنا", zh: "违禁物品？在此登记" })}
           </span>
-          <ChevronDown className="h-4 w-4 -rotate-90 rtl:rotate-90 text-red-400" />
+          <ChevronDown className="h-3.5 w-3.5 -rotate-90 rtl:rotate-90" />
         </Link>
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-3 items-start">
@@ -1738,7 +1733,7 @@ export default function QuickRegister() {
               <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-stretch [&>*]:h-full">
                 {/* Tracking Number — spans the full row so the field is a
                     wide, comfortable rectangle (it's the primary input) */}
-                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     {/*
                       One frame for the two things a person does here (owner,
@@ -1755,10 +1750,10 @@ export default function QuickRegister() {
                     <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
                             <PackageSearch className="h-4 w-4" />
                           </div>
-                          <span className="text-sm font-bold text-amber-700 dark:text-amber-400">{t("quickRegister.stepTracking")}</span>
+                          <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepTracking")}</span>
                           {isSearching && <Loader2 className="h-4 w-4 animate-spin text-amber-500 dark:text-amber-400" />}
                         </div>
                         {/* A box the width of a tracking number, not of the
@@ -1814,10 +1809,10 @@ export default function QuickRegister() {
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-8 h-8 rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
                             <User className="h-4 w-4" />
                           </div>
-                          <span className="text-sm font-bold text-blue-700 dark:text-blue-400">{t("quickRegister.stepCustomer")}</span>
+                          <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepCustomer")}</span>
                         </div>
                         <div className="flex gap-2">
                           <div className="relative flex-1">
@@ -2089,7 +2084,7 @@ export default function QuickRegister() {
                 </Card>
 
               {foundOrder?.found && foundOrder.order && (
-                <Card className="md:col-span-5 border-2 border-indigo-200 dark:border-indigo-900/60 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
+                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm overflow-hidden" data-testid="qr-found-order">
                   <CardContent className="p-5 space-y-4">
                     {/* Header: type + order code + product name. The picture
                         of the goods is in the photo card on the other side —
@@ -2318,7 +2313,7 @@ export default function QuickRegister() {
                     here — how many pieces are left — until the next tracking
                     is typed. The screen then belongs to that parcel again. */}
                 {!foundOrder?.found && lastRegistered && customerId && !correcting && (
-                  <Card className="md:col-span-5 border-2 border-emerald-300 dark:border-emerald-800 bg-emerald-50/70 dark:bg-emerald-950/25 rounded-2xl shadow-sm">
+                  <Card className="md:col-span-5 border border-emerald-300 dark:border-emerald-800 bg-card rounded-xl shadow-sm">
                     <CardContent className="p-3 space-y-2">
                       <div className="flex flex-wrap items-center gap-2 text-sm">
                         <CheckCircle2 className="h-4 w-4 shrink-0 text-emerald-600 dark:text-emerald-400" />
@@ -2383,10 +2378,10 @@ export default function QuickRegister() {
                 <Card className="border bg-card rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-8 h-8 rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400 flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
                         <Scale className="h-4 w-4" />
                       </div>
-                      <span className="text-sm font-bold text-emerald-700 dark:text-emerald-400">{t("quickRegister.stepWeight")}</span>
+                      <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepWeight")}</span>
                     </div>
                     <div className="relative" dir="ltr">
                       <Input
@@ -2409,18 +2404,18 @@ export default function QuickRegister() {
 
               {/* Row 2.5: Dimensions - Only for Air shipping */}
               {(shippingType === "air_regular" || shippingType === "air_irregular") && (
-                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-violet-100 text-violet-700 dark:bg-violet-900/30 dark:text-violet-400 flex items-center justify-center">
-                        <Ruler className="h-5 w-5" />
+                      <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                        <Ruler className="h-4 w-4" />
                       </div>
-                      <span className="text-base font-bold text-violet-700 dark:text-violet-400">{t("quickRegister.stepDimensions")}</span>
+                      <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepDimensions")}</span>
                       <span className="text-xs text-muted-foreground me-2">{t("quickRegister.forVolumetricWeight")}</span>
                     </div>
                     <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.length")}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{t("quickRegister.length")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -2433,7 +2428,7 @@ export default function QuickRegister() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.width")}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{t("quickRegister.width")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -2446,7 +2441,7 @@ export default function QuickRegister() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-violet-700 dark:text-violet-400">{t("quickRegister.height")}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{t("quickRegister.height")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -2630,17 +2625,17 @@ export default function QuickRegister() {
 
               {/* Sea shipping - CBM input */}
               {shippingType === "sea" && (
-                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-10 h-10 rounded-xl bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400 flex items-center justify-center">
-                        <Ship className="h-5 w-5" />
+                      <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                        <Ship className="h-4 w-4" />
                       </div>
-                      <span className="text-base font-bold text-cyan-700 dark:text-cyan-400">{t("quickRegister.stepDimensionsSea")}</span>
+                      <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepDimensionsSea")}</span>
                     </div>
                     <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.length")}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{t("quickRegister.length")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -2653,7 +2648,7 @@ export default function QuickRegister() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.width")}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{t("quickRegister.width")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -2666,7 +2661,7 @@ export default function QuickRegister() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.height")}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{t("quickRegister.height")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -2679,7 +2674,7 @@ export default function QuickRegister() {
                         </div>
                       </div>
                       <div className="space-y-1">
-                        <Label className="text-xs font-semibold text-cyan-700 dark:text-cyan-400">{t("quickRegister.orCbm")}</Label>
+                        <Label className="text-xs font-medium text-muted-foreground">{t("quickRegister.orCbm")}</Label>
                         <div className="relative" dir="ltr">
                           <Input
                             type="number"
@@ -2741,7 +2736,7 @@ export default function QuickRegister() {
                   declared in advance by a customer, so we surface who owns it
                   (auto-filled above) with the photo/platform they provided. */}
               {declaredMatch?.customer && (
-                <Card className="border-2 border-emerald-300 dark:border-emerald-800 bg-gradient-to-br from-emerald-50 to-white dark:from-emerald-950/40 dark:to-card rounded-2xl shadow-sm overflow-hidden">
+                <Card className="border border-emerald-300 dark:border-emerald-800 bg-card rounded-xl shadow-sm overflow-hidden">
                   <CardContent className="p-4 flex items-center gap-4">
                     {/* The customer often sends several shots of what they
                         ordered; matching a parcel to it is easier with all of
@@ -2794,7 +2789,7 @@ export default function QuickRegister() {
                   sight. */}
 
               {/* Row 3: Optional Fields — compact, rarely used, sits low */}
-              <Card className="border bg-card rounded-xl shadow-sm hover:shadow-md transition-shadow">
+              <Card className="border bg-card rounded-xl shadow-sm">
                 <CardContent className="p-3">
                   <button
                     type="button"
@@ -2844,7 +2839,7 @@ export default function QuickRegister() {
 
               {/* The summary, last: it repeats what the fields above
                   already say, and the owner wants the room (2026-09-23). */}
-              <Card className="border bg-card rounded-2xl shadow-sm">
+              <Card className="border bg-card rounded-xl shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -2938,7 +2933,7 @@ export default function QuickRegister() {
             {/* Side panel: compact Warehouse + Shipping + Batch selectors
                 (moved out of the center) followed by the sticky Summary */}
             <div className="lg:col-span-1 min-w-0 space-y-3">
-              <Card className="border bg-card rounded-2xl shadow-sm">
+              <Card className="border bg-card rounded-xl shadow-sm">
                 <CardContent className="p-4 space-y-3">
                   <div className="grid grid-cols-2 gap-2.5">
                     {/* Warehouse */}
@@ -3114,10 +3109,10 @@ export default function QuickRegister() {
                   other side of the screen, so the same card now holds both:
                   what was ordered above, what turned up below — the
                   order the portal shows them in too (@shared/parcelPhotos). */}
-              <Card className="border-2 border-sky-200 dark:border-sky-900/60 bg-gradient-to-br from-sky-50/60 to-card dark:from-sky-950/20 rounded-xl shadow-sm">
+              <Card className="border bg-card rounded-xl shadow-sm">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-md bg-sky-500 text-white flex items-center justify-center">
+                    <div className="w-6 h-6 rounded-md bg-muted text-muted-foreground flex items-center justify-center" data-testid="qr-photos-card">
                       <Camera className="h-3.5 w-3.5" />
                     </div>
                     <span className="text-xs font-semibold">{t("quickRegister.photos")}</span>
@@ -3222,7 +3217,7 @@ export default function QuickRegister() {
                       locales is "3. کێش (kg)", and beside a box that already
                       prints kg that says it twice — but dropping the number
                       with it left the screen counting 1, 2, 4. */}
-                  <span className="text-xs text-muted-foreground">
+                  <span className="text-sm font-semibold text-foreground">
                     {pickLang(language, { ku: "3. کێش", en: "3. Weight", ar: "3. الوزن", zh: "3. 重量" })}
                   </span>
                   {/*
@@ -3247,7 +3242,7 @@ export default function QuickRegister() {
                       // ends its own classes with `md:text-sm`, which a plain
                       // `text-lg` does not override on a desktop — the box was
                       // rendering at 14px in a bar sized for 18.
-                      "h-10 w-28 text-lg md:text-lg font-mono font-bold text-center transition-shadow",
+                      "h-11 w-32 text-xl md:text-xl font-mono font-bold text-center transition-shadow",
                       weightGlow && "ring-4 ring-emerald-400/70 border-emerald-500",
                     )}
                     dir="ltr"
