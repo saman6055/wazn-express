@@ -451,6 +451,12 @@ export const authRouter = router({
     }),
   getStaffList: adminProcedure.query(async () => db.getAllStaff()),
   /**
+   * Where the signed-in person works. The main admin is not in the staff
+   * list, so his own place had nowhere to be set (owner, 2026-10-29) - the
+   * batches he made carried no place and read as China.
+   */
+  myWorkPlace: protectedProcedure.query(async ({ ctx }) => db.getUserWorkLocation(ctx.user.id)),
+  /**
    * Where a member of staff works, changed after they were created (owner,
    * 2026-10-24: an admin in China closes a batch's dispatch check). Stamped
    * on what they create from now on; what they made before keeps its own.

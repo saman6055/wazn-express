@@ -71,10 +71,13 @@ export default function StaffManagement() {
   const { data: staffList, isLoading } = trpc.auth.getStaffList.useQuery();
   const { data: countries } = trpc.countries.list.useQuery();
   // Where an existing member of staff works (owner, 2026-10-24).
+  // The main admin's own place: he is not in the list below (owner, 2026-10-29).
+  const { data: myPlace } = trpc.auth.myWorkPlace.useQuery(undefined, { enabled: currentUser?.role === "super_admin" });
   const setCountryMutation = trpc.auth.setStaffWorkCountry.useMutation({
     onSuccess: () => {
       toast.success(pickLang(language, { ku: "وڵات گۆڕدرا", en: "Country changed", ar: "تم تغيير البلد", zh: "国家已更改" }));
       void utils.auth.getStaffList.invalidate();
+      void utils.auth.myWorkPlace.invalidate();
     },
     onError: (e) => toast.error(e.message),
   });
@@ -325,6 +328,34 @@ export default function StaffManagement() {
             </DialogContent>
           </Dialog>
         </div>
+
+        {/* The main admin's own place of work - what he creates is stamped with it. */}
+        {currentUser?.role === "super_admin" && currentUser.id != null && (
+          <Card data-testid="my-work-place">
+            <CardContent className="flex flex-wrap items-center justify-between gap-3 pt-6">
+              <div>
+                <p className="font-medium">{pickLang(language, { ku: "شوێنی کاری خۆم", en: "My place of work", ar: "مكان عملي", zh: "我的工作地点" })}</p>
+                <p className="text-sm text-muted-foreground">
+                  {pickLang(language, { ku: "ئەو باچ و پاکێجانەی دروستیان دەکەیت ئەم شوێنەیان لەسەر دەنووسرێت.", en: "The batches and parcels you create carry this place.", ar: "الدفعات والطرود التي تنشئها تحمل هذا المكان.", zh: "你创建的批次和包裹将记录此地点。" })}
+                </p>
+              </div>
+              <Select
+                value={myPlace?.countryId ? String(myPlace.countryId) : "none"}
+                onValueChange={(v) => setCountryMutation.mutate({ userId: Number(currentUser.id), countryId: v === "none" ? null : Number(v) })}
+              >
+                <SelectTrigger className="h-9 w-44" data-testid="my-work-place-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{pickLang(language, { ku: "وڵات دیاری نەکراوە", en: "No country", ar: "بلا بلد", zh: "未设置国家" })}</SelectItem>
+                  {countries?.map((c: any) => (
+                    <SelectItem key={c.id} value={c.id.toString()}>{language === "ku" ? (c.nameKu || c.nameEn) : c.nameEn}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Staff List */}
         <Card>

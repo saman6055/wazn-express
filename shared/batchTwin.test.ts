@@ -56,3 +56,10 @@ describe("our kilos against the carrier's on every batch (owner, 2026-10-29)", (
     expect(read("server/db/carrierGroup.db.ts")).toContain("export async function getBatchKgCheck(batchId: number) {");
   });
 });
+
+describe("the main admin sets his own place (owner, 2026-10-29)", () => {
+  it("a card on the staff page, his own row being absent from the list", () => {
+    expect(read("client/src/pages/StaffManagement.tsx")).toContain('data-testid="my-work-place-select"');
+    expect(read("server/routers/auth.router.ts")).toContain("myWorkPlace: protectedProcedure.query(async ({ ctx }) => db.getUserWorkLocation(ctx.user.id)),");
+  });
+});
