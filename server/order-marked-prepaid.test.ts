@@ -42,5 +42,7 @@ describe("the main admin has the button on both order lists", () => {
     expect(ui).toContain("trpc.ledger.chargeOrderMarkedPrepaid.useMutation(");
     expect(read("client/src/pages/CommissionOrders.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
     expect(read("client/src/pages/FullPackageDashboard.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
+    // /commission is CommissionDashboard, not CommissionOrders (owner looked there, 2026-10-29).
+    expect(read("client/src/pages/CommissionDashboard.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
   });
 });

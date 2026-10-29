@@ -69,6 +69,8 @@ import { ShippingWayChip } from "@/components/ShippingWayChip";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { PrepaidFixMenuItem } from "@/components/orders/OrderOutcome";
 
 const statusColors: Record<string, string> = {
   pending: statusChip("pending", "order"),
@@ -141,6 +143,8 @@ export default function CommissionDashboard() {
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
+  const { user: me } = useAuth();
+  const isMainAdmin = me?.role === "super_admin";
 
   // Update status mutation
   /*
@@ -1070,6 +1074,7 @@ export default function CommissionDashboard() {
                                   {order.status === option.value && " ✓"}
                                 </DropdownMenuItem>
                               ))}
+                              <PrepaidFixMenuItem order={order as any} language={language} isMainAdmin={isMainAdmin} />
                             </DropdownMenuContent>
                           </DropdownMenu>
                         </TableCell>
