@@ -105,7 +105,8 @@ describe("a finished check can be gone back to", () => {
     // A complete one is a look, not a second finish: the announcement would
     // take it straight back out of the selection.
     expect(fn).toContain("if (isFullyArrived(batch)) announcedBatches.current.add(batch.batchId);");
-    expect(page).toContain('b.status === "in_transit" || b.status === "preparing" || again.has(b.id)');
+    // A China batch still being checked in stays offered, in the depot or not (shared/batchTwin, 2026-10-29).
+    expect(page).toContain("batchOpenForArrivalCheck(b) || again.has(b.id)");
   });
 });
 

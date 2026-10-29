@@ -1,3 +1,4 @@
+import { batchOpenForArrivalCheck } from "@shared/batchTwin";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { OrderNote } from "@/components/scanner/OrderNote";
 import { trpc } from "@/lib/trpc";
@@ -251,7 +252,7 @@ export default function ArrivalVerificationScanner() {
   const availableBatches = useMemo(() => {
     if (!batches) return [];
     const again = new Set(reopened.map((b) => b.batchId));
-    return batches.filter((b: any) => b.status === "in_transit" || b.status === "preparing" || again.has(b.id));
+    return batches.filter((b: any) => batchOpenForArrivalCheck(b) || again.has(b.id));
   }, [batches, reopened]);
   
   // Selected batches info

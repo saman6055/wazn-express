@@ -31,12 +31,21 @@ describe("the twin beside its original", () => {
 });
 
 describe("a parcel goes only into a batch made where its desk is", () => {
-  it("China desk: only China batches; Erbil desk: both; unknown: either (owner, 2026-10-29)", () => {
+  it("each desk only its own place's batches; unknown: either (owner, 2026-10-29)", () => {
     expect(batchMatchesDesk(false, true)).toBe(false);
     expect(batchMatchesDesk(true, true)).toBe(true);
-    expect(batchMatchesDesk(true, false)).toBe(true);
+    expect(batchMatchesDesk(true, false)).toBe(false);
     expect(batchMatchesDesk(false, false)).toBe(true);
     expect(batchMatchesDesk(true, null)).toBe(true);
+  });
+
+  it("the arrival check offers China batches still being checked in, never an Erbil one", async () => {
+    const { batchOpenForArrivalCheck } = await import("./batchTwin");
+    expect(batchOpenForArrivalCheck({ status: "at_depot", madeInChina: true })).toBe(true);
+    expect(batchOpenForArrivalCheck({ status: "in_transit", madeInChina: true })).toBe(true);
+    expect(batchOpenForArrivalCheck({ status: "at_depot", madeInChina: false })).toBe(false);
+    expect(batchOpenForArrivalCheck({ status: "closed", madeInChina: true })).toBe(false);
+    expect(read("client/src/pages/ArrivalVerificationScanner.tsx")).toContain("batchOpenForArrivalCheck(b) || again.has(b.id)");
   });
 
   it("every register picker filters by it, and the server refuses the rest", () => {

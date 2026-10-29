@@ -59,8 +59,8 @@ export async function deskInChina(userId: number): Promise<boolean | null> {
 }
 
 /**
- * Refuse a China desk's parcel going into an Erbil batch (owner, 2026-10-29;
- * an Erbil desk may use either). Unknown on either side lets it through.
+ * Refuse a parcel going into a batch made in the other place (owner,
+ * 2026-10-29). Unknown on either side lets it through.
  */
 export async function assertBatchMatchesDesk(batchId: number | null | undefined, userId: number): Promise<void> {
   if (!batchId) return;
