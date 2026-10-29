@@ -213,6 +213,13 @@ export interface BoxSettlementView {
    */
   advanceForEarlierBoxesUsd: number;
   /**
+   * What those older living boxes still have to write on the account (their
+   * order freight, their never-billed parcels): owed as surely as what is
+   * written (shared/boxSettlement accountCover othersUnwrittenUsd). 0 when no
+   * older box takes the advance.
+   */
+  earlierUnwrittenUsd: number;
+  /**
    * Other costs on this box or a parcel in it (shared/extraCosts) - customs,
    * an inspection... Their prices are on the account already; the box asks
    * for the ones no receipt has taken (extrasDueUsd).
@@ -262,6 +269,40 @@ async function boxesClosedByReceipt(db: SettlementDb, boxIds: number[]): Promise
   }
   latest.forEach((r, boxId) => { if (r.differenceKind !== "debt") out.add(boxId); });
   return out;
+}
+
+/**
+ * What living boxes still have to write on the account when they are
+ * receipted: an order's freight (pendingFreightUsd) and an ordinary parcel
+ * never billed. Read by the same rule the till uses for the box itself.
+ */
+export async function unwrittenOfBoxes(boxIds: number[]): Promise<{
+  totalUsd: number;
+  lines: Array<{ boxCode: string; kind: "freight" | "parcel"; amountUsd: number; freightOrder: BoxParcelView["freightOrder"]; packageId: number | null; tracking: string | null }>;
+}> {
+  const db = await getDb();
+  const ids = Array.from(new Set(boxIds.map(Number).filter((n) => n > 0)));
+  if (!db || ids.length === 0) return { totalUsd: 0, lines: [] };
+  const items = await db
+    .select({ item: deliveryBoxItems, pkg: packages })
+    .from(deliveryBoxItems)
+    .leftJoin(packages, eq(packages.id, deliveryBoxItems.packageId))
+    .where(inArray(deliveryBoxItems.boxId, ids));
+  if (items.length === 0) return { totalUsd: 0, lines: [] };
+  const parcels = await parcelsForItems(db, items);
+  const codes = await db.select({ id: deliveryBoxes.id, code: deliveryBoxes.boxCode }).from(deliveryBoxes).where(inArray(deliveryBoxes.id, ids));
+  const codeOf = new Map(codes.map((c) => [Number(c.id), String(c.code)]));
+  const lines: Array<{ boxCode: string; kind: "freight" | "parcel"; amountUsd: number; freightOrder: BoxParcelView["freightOrder"]; packageId: number | null; tracking: string | null }> = [];
+  items.forEach((r, i) => {
+    const p = parcels[i];
+    const boxCode = codeOf.get(Number(r.item.boxId)) ?? "";
+    if (p.pendingFreightUsd > 0 && p.freightOrder) {
+      lines.push({ boxCode, kind: "freight", amountUsd: round2(p.pendingFreightUsd), freightOrder: p.freightOrder, packageId: p.packageId, tracking: p.trackingNumber });
+    } else if (!p.fromOrder && p.notChargedYet && p.packageId !== null && p.chargedUsd > 0) {
+      lines.push({ boxCode, kind: "parcel", amountUsd: round2(p.chargedUsd), freightOrder: null, packageId: p.packageId, tracking: p.trackingNumber });
+    }
+  });
+  return { totalUsd: round2(lines.reduce((s, l) => s + l.amountUsd, 0)), lines };
 }
 
 /**
@@ -1011,7 +1052,7 @@ export async function getLastSettlementRate(): Promise<{ rate: number; at: Date 
 export async function getBoxSettlementView(boxId: number, opts: { raw?: boolean } = {}): Promise<BoxSettlementView> {
   const empty: BoxSettlementView = {
     box: null, customer: null, parcels: [], settlements: [], pledges: [],
-    lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null, advanceForEarlierBoxesUsd: 0, extras: [], extrasDueUsd: 0,
+    lastExchangeRate: null, accountBalanceUsd: 0, openChargesUsd: null, advanceForEarlierBoxesUsd: 0, earlierUnwrittenUsd: 0, extras: [], extrasDueUsd: 0,
   };
   const db = await getDb();
   if (!db) return empty;
@@ -1085,10 +1126,10 @@ export async function getBoxSettlementView(boxId: number, opts: { raw?: boolean 
         open = await openChargesUsd(Number(boxRow.customer?.id ?? boxRow.box.customerId));
       } catch (err) {
         appLogger.warn("[BoxSettlement] open charges not read; the advance is not set against the box", { boxId, error: err instanceof Error ? err.message : String(err) });
-        return { openChargesUsd: null, advanceForEarlierBoxesUsd: 0 };
+        return { openChargesUsd: null, advanceForEarlierBoxesUsd: 0, earlierUnwrittenUsd: 0 };
       }
       const advance = round2(Math.max(0, open - balance));
-      if (advance <= 0.01) return { openChargesUsd: open, advanceForEarlierBoxesUsd: 0 };
+      if (advance <= 0.01) return { openChargesUsd: open, advanceForEarlierBoxesUsd: 0, earlierUnwrittenUsd: 0 };
       // One advance, spent once: the customer's older unpaid boxes take it first.
       const earlier = await db
         .select({ id: deliveryBoxes.id })
@@ -1099,11 +1140,12 @@ export async function getBoxSettlementView(boxId: number, opts: { raw?: boolean 
           ne(deliveryBoxes.status, "cancelled"),
           sql`NOT EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`,
         ));
-      if (earlier.length === 0) return { openChargesUsd: open, advanceForEarlierBoxesUsd: 0 };
+      if (earlier.length === 0) return { openChargesUsd: open, advanceForEarlierBoxesUsd: 0, earlierUnwrittenUsd: 0 };
       const owed = await getBoxesOutstanding(earlier.map((b) => Number(b.id)));
       const earlierDue = round2(Array.from(owed.values()).reduce((s, v) => s + v, 0));
       const taken = round2(Math.min(advance, earlierDue));
-      return { openChargesUsd: round2(open - taken), advanceForEarlierBoxesUsd: taken };
+      const unwritten = taken > 0.005 ? await unwrittenOfBoxes(earlier.map((b) => Number(b.id))) : { totalUsd: 0, lines: [] };
+      return { openChargesUsd: round2(open - taken), advanceForEarlierBoxesUsd: taken, earlierUnwrittenUsd: unwritten.totalUsd };
     })()),
   };
 }
@@ -1484,6 +1526,8 @@ export async function createBoxSettlement(
     discountUsd: totals.discountUsd,
     // Goods with no charge anywhere are always paid for (see accountCover).
     unbackedUsd: unbackedOnReceiptUsd(parcels, totals.lines),
+    // The older living boxes' charges not yet written (owner, 2026-10-29).
+    othersUnwrittenUsd: view.earlierUnwrittenUsd,
   });
   const cashDueUsd = cover.cashDueUsd;
 
@@ -1644,6 +1688,41 @@ export async function createBoxSettlement(
     for (const parcel of parcels) {
       if (!(parcel.pendingFreightUsd > 0) || !parcel.freightOrder || !settling(parcel)) continue;
       await postOrderFreight(tx, customer, box.boxCode, parcel.freightOrder, parcel.pendingFreightUsd, userId);
+    }
+
+    // 0c. The older living boxes' charges this receipt counted as owed
+    //     (othersUnwrittenUsd): written now, under their own box, so the
+    //     account holds what the till asked against and never reads the
+    //     advance waiting for them as a credit (owner, 2026-10-29). Their
+    //     orders are marked as for 0b; their boxes stay open and unchanged.
+    if (cover.coveredUsd > 0.005 && view.earlierUnwrittenUsd > 0.005) {
+      const earlierIds = (await tx
+        .select({ id: deliveryBoxes.id })
+        .from(deliveryBoxes)
+        .where(and(
+          eq(deliveryBoxes.customerId, Number(customer.id)),
+          sql`${deliveryBoxes.id} < ${input.boxId}`,
+          ne(deliveryBoxes.status, "cancelled"),
+          sql`NOT EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`,
+        ))).map((b) => Number(b.id));
+      const { lines: older } = await unwrittenOfBoxes(earlierIds);
+      for (const l of older) {
+        if (l.kind === "freight" && l.freightOrder) {
+          await postOrderFreight(tx, customer, l.boxCode, l.freightOrder, l.amountUsd, userId);
+        } else if (l.kind === "parcel" && l.packageId !== null) {
+          await recordPackageChargeWithoutInvoice(
+            customer.id,
+            customer.customerCode ?? String(customer.id),
+            l.packageId,
+            l.amountUsd,
+            `${l.boxCode} — ${l.tracking ?? ""}`.trim(),
+            userId,
+            undefined,
+            tx,
+          );
+          await tx.update(packages).set({ isCharged: true }).where(eq(packages.id, l.packageId));
+        }
+      }
     }
 
     // 1. Corrections change the price, so they go in before anything is paid.

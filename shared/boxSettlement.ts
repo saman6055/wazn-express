@@ -508,12 +508,22 @@ export function accountCover(args: {
    * advance now goes to the goods in the box. Absent, the old rule stands.
    */
   openUsd?: number;
+  /**
+   * Charges the customer's OLDER living boxes still have to write - an
+   * order's freight, a parcel never billed (owner, 2026-10-29). Every living
+   * box of one customer knows the others: the advance goes oldest box first,
+   * and the account owes these too, written or not. One customer's older box
+   * held $85.82 of freight not yet written; the till read the account as
+   * owing $71.86 and asked $71.76 where the receipt (and the truth) said $157.68.
+   */
+  othersUnwrittenUsd?: number;
 }): AccountCover {
   const due = round2(Math.max(0, args.dueUsd));
   const unbacked = round2(Math.min(due, Math.max(0, args.unbackedUsd ?? 0)));
   const backedDue = round2(due - unbacked);
   const willOwe = round2(
-    args.balanceUsd + (args.toChargeUsd ?? 0) + (args.correctionUsd ?? 0) - (args.discountUsd ?? 0),
+    args.balanceUsd + (args.toChargeUsd ?? 0) + (args.correctionUsd ?? 0) - (args.discountUsd ?? 0)
+    + Math.max(0, args.othersUnwrittenUsd ?? 0),
   );
   // The money on the account that no goods have taken yet: everything still
   // owed for goods, less what the account says is owed.

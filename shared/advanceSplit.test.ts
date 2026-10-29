@@ -35,6 +35,6 @@ describe("the advance at the till (AZ234, owner 2026-10-24)", () => {
     const src = readFileSync("server/db/boxSettlement.db.ts", "utf8");
     expect(src).toContain("sql`${deliveryBoxes.id} < ${boxId}`");
     expect(src).toContain("const taken = round2(Math.min(advance, earlierDue));");
-    expect(src).toContain("return { openChargesUsd: round2(open - taken), advanceForEarlierBoxesUsd: taken };");
+    expect(src).toContain("return { openChargesUsd: round2(open - taken), advanceForEarlierBoxesUsd: taken, earlierUnwrittenUsd: unwritten.totalUsd };");
   });
 });

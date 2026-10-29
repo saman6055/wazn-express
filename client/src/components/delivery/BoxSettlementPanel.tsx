@@ -234,6 +234,8 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
   // server applies the same rule (shared accountCover).
   const cover = useMemo(
     () => accountCover({
+      // The older living boxes' charges not yet written (owner, 2026-10-29).
+      othersUnwrittenUsd: data?.earlierUnwrittenUsd ?? 0,
       // Other costs no receipt has taken are asked for with the box (shared/extraCosts).
       dueUsd: totals.dueUsd + Number(data?.extrasDueUsd ?? 0),
       balanceUsd: data?.accountBalanceUsd ?? 0,

@@ -68,3 +68,18 @@ describe("one rule in every place money is asked for", () => {
     expect(fn).toContain("return Math.min(open, cents(got.balanceUsd + explained.advanceUsd));");
   });
 });
+
+describe("every living box of one customer knows the others (owner, 2026-10-29)", () => {
+  // A $300 advance; older box $183.59 holding $85.82 of freight not yet
+  // written; newer box $274.09. The older box takes $183.59 of the advance,
+  // the newer one $116.41, so the newer box asks $157.68 - not $71.76.
+  it("the till counts the older living boxes' unwritten charges as owed", () => {
+    const sinan = { dueUsd: 274.09, balanceUsd: 21.81, toChargeUsd: 50.05, openUsd: 138.22 };
+    expect(accountCover(sinan).cashDueUsd).toBe(71.86);
+    expect(accountCover({ ...sinan, othersUnwrittenUsd: 85.82 }).cashDueUsd).toBe(157.68);
+  });
+  it("with no older box nothing changes", () => {
+    const one = { dueUsd: 300, balanceUsd: 250, openUsd: 300 };
+    expect(accountCover({ ...one, othersUnwrittenUsd: 0 })).toEqual(accountCover(one));
+  });
+});

@@ -41,3 +41,19 @@ describe("an advance pays goods the account holds (2026-10-28)", () => {
     expect(settle).toContain("advanceCents += Math.round((orderSeen.has(id) ? Math.min(advanceUsd, Math.max(0, orderGoods.get(id) ?? 0)) : advanceUsd) * 100);");
   });
 });
+
+describe("living boxes know each other at the till (2026-10-29)", () => {
+  const settle = read("server/db/boxSettlement.db.ts");
+  it("the view says what the older living boxes still have to write", () => {
+    expect(settle).toContain("earlierUnwrittenUsd: unwritten.totalUsd };");
+  });
+  it("the receipt asks against it and writes it, so the account never reads the advance as a credit", () => {
+    expect(settle).toContain("othersUnwrittenUsd: view.earlierUnwrittenUsd,");
+    expect(settle).toContain("const { lines: older } = await unwrittenOfBoxes(earlierIds);");
+  });
+  it("every screen asks the same figure", () => {
+    for (const f of ["client/src/components/delivery/QuickSettleDialog.tsx", "client/src/components/delivery/BoxSettlementPanel.tsx", "client/src/components/delivery/ReceiptDinarDialog.tsx"]) {
+      expect(read(f)).toContain("othersUnwrittenUsd: ");
+    }
+  });
+});

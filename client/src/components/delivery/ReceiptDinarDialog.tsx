@@ -392,6 +392,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
     if (!v || v.openChargesUsd === null || v.openChargesUsd === undefined) return 0;
     const totals = settlementTotals(v.parcels, []);
     return accountCover({
+      // The older living boxes' charges not yet written (owner, 2026-10-29).
+      othersUnwrittenUsd: v?.earlierUnwrittenUsd ?? 0,
       // Other costs no receipt has taken are asked for with the box.
       dueUsd: totals.dueUsd + Number(v.extrasDueUsd ?? 0),
       balanceUsd: v.accountBalanceUsd,
