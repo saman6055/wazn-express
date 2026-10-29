@@ -50,6 +50,7 @@ import { CarrierGroupCard } from "@/components/batches/CarrierGroupCard";
 import { BatchJourney, BatchOriginChip, BatchStageChip, BatchTypeIcon, MissingDots } from "@/components/batches/BatchListBits";
 import { BATCH_STAGE_LABEL, batchOpenForRegistration, batchStage, type BatchStage } from "@shared/batchStage";
 import { twinsBesideOriginal } from "@shared/batchTwin";
+import { BATCH_ROLE_LABEL, BATCH_ROLE_TONE, batchRole } from "@shared/batchRole";
 import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
@@ -1657,11 +1658,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                         {/* Which is the twin and which the original, said on both rows. */}
                         {(batch as any).twinOfBatchId ? (
-                          <span className="inline-flex shrink-0 items-center rounded bg-violet-500/15 px-1.5 py-px text-[10px] font-medium text-violet-700 dark:text-violet-300" data-testid="batch-twin-chip">
+                          <span className={cn("inline-flex shrink-0 items-center rounded px-1.5 py-px text-[10px] font-medium", BATCH_ROLE_TONE.twin)} data-testid="batch-twin-chip">
                             {pickLang(language, { ku: "توینی", en: "Twin of", ar: "توأم", zh: "孪生于" })}&nbsp;<bdi dir="ltr">{batchCodeById.get((batch as any).twinOfBatchId) ?? "?"}</bdi>
                           </span>
                         ) : twinCodeOf.has(batch.id) ? (
-                          <span className="inline-flex shrink-0 items-center rounded bg-violet-500/10 px-1.5 py-px text-[10px] font-medium text-violet-700 dark:text-violet-300" data-testid="batch-original-chip">
+                          <span className={cn("inline-flex shrink-0 items-center rounded px-1.5 py-px text-[10px] font-semibold", BATCH_ROLE_TONE.original)} data-testid="batch-original-chip">
                             {pickLang(language, { ku: "ئەسڵی — توینەکەی", en: "Original — twin", ar: "الأصل — التوأم", zh: "原批次 — 孪生" })}&nbsp;<bdi dir="ltr">{twinCodeOf.get(batch.id)}</bdi>
                           </span>
                         ) : null}
@@ -2473,7 +2474,22 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         <Dialog open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if (!open) { setEditingBatch(null); resetForm(); } }}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <DialogHeader>
-              <DialogTitle>{t("batches.editBatch")}</DialogTitle>
+              <DialogTitle className="flex flex-wrap items-center gap-2">
+                {t("batches.editBatch")}
+                {/* Original or one that hangs on it, at the top of the form (shared/batchRole). */}
+                {editingBatch && editGroupQ.data && (() => {
+                  const me = editGroupQ.data.members.find((m) => m.batchId === editingBatch.id);
+                  if (!me) return null;
+                  const role = batchRole(me, editGroupQ.data.members);
+                  const original = editGroupQ.data.members.find((m) => batchRole(m, editGroupQ.data!.members) === "original");
+                  return (
+                    <span className={cn("rounded px-2 py-0.5 text-xs font-semibold", BATCH_ROLE_TONE[role])} data-testid="batch-edit-role" data-role={role}>
+                      {pickLang(language, BATCH_ROLE_LABEL[role])}
+                      {role === "twin" && original ? <> · <bdi dir="ltr">{original.batchCode}</bdi></> : null}
+                    </span>
+                  );
+                })()}
+              </DialogTitle>
               <DialogDescription>
                 Update batch details and pricing for {editingBatch?.batchCode}
               </DialogDescription>

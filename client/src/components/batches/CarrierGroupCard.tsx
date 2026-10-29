@@ -9,6 +9,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { BATCH_ROLE_LABEL, BATCH_ROLE_TONE, batchRole } from "@shared/batchRole";
 import { groupVerdict } from "@shared/carrierGroup";
 
 /**
@@ -99,8 +100,13 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
                   return (
                     <tr key={m.batchId} className={cn("border-t", m.batchId === batchId && "bg-muted/40")} data-testid="carrier-group-member">
                       <td className="py-1">
+                        {(() => {
+                          // Which is the original and which hang on it (shared/batchRole).
+                          const role = batchRole(m, g.members);
+                          return <span className={cn("me-1 rounded px-1.5 py-px text-[10px] font-semibold", BATCH_ROLE_TONE[role])} data-testid="carrier-group-role" data-role={role}>{L(BATCH_ROLE_LABEL[role])}</span>;
+                        })()}
                         <span className={cn("me-1 rounded px-1 text-[10px] font-semibold", m.madeInChina ? "bg-rose-500/15 text-rose-700 dark:text-rose-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300")}>{m.madeInChina ? "CN" : "IQ"}</span>
-                        <bdi dir="ltr" className="font-mono">{m.batchCode}</bdi>
+                        <bdi dir="ltr" className={cn("font-mono", batchRole(m, g.members) === "original" && "font-bold")}>{m.batchCode}</bdi>
                       </td>
                       <td className="py-1">
                         {kgf(m.kg)}
