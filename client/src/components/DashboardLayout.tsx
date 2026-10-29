@@ -404,7 +404,7 @@ function DashboardLayoutContent({
           { icon: DollarSign, label: t("nav.markupPurchase") || "کڕین بە تێچوو", path: "/commission" },
           { icon: ShoppingBag, label: t("nav.selfOrders") || "سێلف ئۆردەر", path: "/self-orders" },
           // Refused / unwanted goods live with the orders they came from (owner, 2026-10-24).
-          { icon: PackageX, label: pickLang(language, { ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" }), path: "/finance/company-stock" },
+          { icon: PackageX, label: pickLang(language, { ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" }), path: "/company-stock" },
           { icon: Building2, label: t("nav.suppliers") || "فرۆشیارەکان", path: "/suppliers" },
           { icon: LayoutDashboard, label: t("nav.unifiedOrders") || "داشبۆردی یەکگرتوو", path: "/unified-orders" },
         ]

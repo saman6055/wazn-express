@@ -215,7 +215,7 @@ describe("told where it matters", () => {
 
   it("old stock reaches the bell and clicks to the list", () => {
     expect(buildRiskItems({ ...NONE, stockOld: 2 })).toEqual([{ id: "stock-old", level: "notice", count: 2 }]);
-    expect(riskPath("stock-old")).toBe("/finance/company-stock");
+    expect(riskPath("stock-old")).toBe("/company-stock");
   });
 
   it("a customer who refused before is flagged where their next order is typed", () => {
@@ -225,9 +225,9 @@ describe("told where it matters", () => {
   });
 
   it("the page is on the menu and both finance pages link to it", () => {
-    expect(root("client/src/App.tsx")).toContain('path="/finance/company-stock"');
-    expect(root("client/src/pages/WorkingCapital.tsx")).toContain('href="/finance/company-stock"');
-    expect(root("client/src/pages/CompanyFinanceDashboard.tsx")).toContain('href="/finance/company-stock"');
+    expect(root("client/src/App.tsx")).toContain('path="/company-stock"');
+    expect(root("client/src/pages/WorkingCapital.tsx")).toContain('href="/company-stock"');
+    expect(root("client/src/pages/CompanyFinanceDashboard.tsx")).toContain('href="/company-stock"');
   });
 });
 

@@ -32,6 +32,7 @@ export const ALL_ACCOUNTS_PATHS: readonly string[] = [
   "/finance/balance-sheet",
   "/finance/working-capital",
   "/finance/goods-on-road",
+  "/company-stock",
   "/finance/company-stock",
   "/finance/extra-costs",
   "/finance/yuan-rates",

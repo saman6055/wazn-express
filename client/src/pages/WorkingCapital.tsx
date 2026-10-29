@@ -192,7 +192,7 @@ export default function WorkingCapital() {
                     <span className="flex flex-wrap items-center gap-x-2">
                       {L({ ku: `کاڵای خەسارە — ${f.stockCount} دانە`, en: `Loss goods — ${f.stockCount}`, ar: `بضائع خاسرة — ${f.stockCount}`, zh: `亏损货物 — ${f.stockCount}` })}
                       <span className="text-xs text-muted-foreground">{L({ ku: "ڕەتکراوەتەوە و نەفرۆشراوە · وەک خەسارە ژمێردراوە، لە کۆکەدا نییە", en: "refused and unsold · already counted as a loss, not in the total", ar: "مرفوضة ولم تُبع · محسوبة كخسارة", zh: "被拒收未售出 · 已计为亏损" })}</span>
-                      <Link href="/finance/company-stock" className="text-xs text-primary underline">{L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}</Link>
+                      <Link href="/company-stock" className="text-xs text-primary underline">{L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}</Link>
                     </span>
                     <Money value={f.stockUsd} />
                   </div>

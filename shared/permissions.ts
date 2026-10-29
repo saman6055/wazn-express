@@ -754,6 +754,8 @@ export const PATH_TO_MODULE: Record<string, string> = {
   // Main admin only on the server (ledger.workingCapital); the same door as the balance sheet here.
   "/finance/working-capital": "balance_sheet",
   "/finance/goods-on-road": "balance_sheet",
+  "/company-stock": "balance_sheet",
+  // Old address of the page above; it only redirects (owner, 2026-10-29).
   "/finance/company-stock": "balance_sheet",
   "/finance/extra-costs": "balance_sheet",
   "/finance/yuan-rates": "balance_sheet",

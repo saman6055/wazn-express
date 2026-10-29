@@ -4,7 +4,7 @@ import { ConfirmHost } from "@/components/ConfirmDialog";
 import { SystemAlertProvider } from "@/components/SystemAlert";
 import { TaskComposerProvider } from "@/components/tasks/TaskComposer";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import { Route, Switch, useLocation } from "wouter";
+import { Redirect, Route, Switch, useLocation } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AppearanceProvider } from "./contexts/AppearanceContext";
@@ -293,7 +293,9 @@ function Router() {
         <Route path="/finance/balance-sheet" component={BalanceSheet} />
         <Route path="/finance/working-capital" component={WorkingCapital} />
         <Route path="/finance/goods-on-road" component={GoodsOnRoad} />
-        <Route path="/finance/company-stock" component={CompanyStock} />
+        {/* Goods, not finance (owner, 2026-10-29): old links still land here. */}
+        <Route path="/company-stock" component={CompanyStock} />
+        <Route path="/finance/company-stock">{() => <Redirect to={`/company-stock${window.location.search}`} replace />}</Route>
         <Route path="/finance/extra-costs" component={ExtraCosts} />
         <Route path="/finance/yuan-rates" component={YuanRateHistory} />
         <Route path="/finance/box-double-charges" component={BoxDoubleCharges} />

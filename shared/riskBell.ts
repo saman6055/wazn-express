@@ -100,7 +100,7 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "orders-slow": "/finance/company-dashboard?focus=pulse",
   "partner-overdraw": "/finance/company-dashboard?focus=pulse",
   "boxes-unpaid": "/customer-delivery-scanner?unpaid=1",
-  "stock-old": "/finance/company-stock",
+  "stock-old": "/company-stock",
   "box-paid-owed": "/finance/box-double-charges",
   "extra-costs": "/finance/extra-costs",
   "batch-dispatched": "/dispatch-check/latest/report",
@@ -121,7 +121,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "orders-slow": "/finance/company-dashboard",
   "partner-overdraw": "/finance/company-dashboard",
   "boxes-unpaid": "/customer-delivery-scanner",
-  "stock-old": "/finance/company-stock",
+  "stock-old": "/company-stock",
   "box-paid-owed": "/finance/box-double-charges",
   "extra-costs": "/finance/extra-costs",
   // Every member of staff is told (owner, 2026-10-24): the report is no page anybody is kept from.

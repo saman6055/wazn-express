@@ -814,7 +814,7 @@ export default function CommissionOrders() {
                               order={order}
                               language={language}
                               isMainAdmin={isMainAdmin}
-                              onReturned={() => setLocation(`/finance/company-stock?order=${encodeURIComponent(order.orderCode)}`)}
+                              onReturned={() => setLocation(`/company-stock?order=${encodeURIComponent(order.orderCode)}`)}
                               onRefund={() => setRefundOrder({ id: order.id, orderCode: order.orderCode, productName: order.productName })}
                             />
                           </DropdownMenuContent>
