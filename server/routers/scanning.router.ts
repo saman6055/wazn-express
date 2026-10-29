@@ -322,6 +322,13 @@ export const scanningRouter = router({
         // moved to Erbil.
         const registrationLocation = await db.getUserWorkLocation(ctx.user.id);
 
+        // Only into a batch made where this person works (shared/batchTwin).
+        try {
+          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);
+        } catch (e) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
+        }
+
         // Generate package code
         const packageCode = `PKG-${Date.now().toString(36).toUpperCase()}`;
 

@@ -2511,6 +2511,24 @@ export const batchesRouter = router({
             ),
           });
         }
+        /*
+         * A twin's name is not its own (shared/batchTwin, owner 2026-10-29):
+         * it is always its original's code with " Erbil" after it. Two
+         * renames swapped AIR-2026-072GZ and its twin, and a day of Erbil
+         * parcels went into the China batch.
+         */
+        if (existing.twinOfBatchId && data.batchCode !== undefined && data.batchCode.trim() !== existing.batchCode) {
+          const original = await db.getBatchById(existing.twinOfBatchId);
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix(
+              `ناوی باچی توین ناگۆڕدرێت — هەمیشە ناوی باچە ئەسڵییەکەیە (${original?.batchCode ?? "?"}) و «Erbil»ـی لەگەڵە.`,
+              [
+                "ئەگەر ناو دەگۆڕیت، ناوی باچە ئەسڵییەکە بگۆڕە — توینەکە خۆی لەگەڵی دەگۆڕێت",
+              ],
+            ),
+          });
+        }
         if (isBatchEditLocked(existing.status)) {
           appLogger.info("[Batch] main admin corrected a delivered batch", {
             batchId: id, batchCode: existing.batchCode, userId: ctx.user.id,
@@ -2556,6 +2574,10 @@ export const batchesRouter = router({
         // Only the carrier number changed: nothing else to write (an empty
         // update is refused by the driver).
         if (Object.values(data).some((v) => v !== undefined)) await db.updateBatch(id, data, ctx.user.id);
+        // The original renamed: its twin's name follows (shared/batchTwin).
+        if (data.batchCode !== undefined && data.batchCode.trim() !== existing.batchCode) {
+          await db.renameTwinsOf(id, data.batchCode.trim(), ctx.user.id);
+        }
         // Written the same on the batch and its twin, however it was typed.
         if (carrierBatchNo !== undefined) await db.setCarrierBatchNo(id, carrierBatchNo);
         // The small-parcel box changed: every customer's charged parcels in the
@@ -2760,6 +2782,16 @@ export const batchesRouter = router({
             throw new TRPCError({ code: "BAD_REQUEST", message: err instanceof Error ? err.message : String(err) });
           }
         }),
+      /**
+       * Where this person registers: in China, in Erbil, or not set. The
+       * register screens offer only batches made in the same place
+       * (shared/batchTwin batchMatchesDesk).
+       */
+      myDesk: staffProcedure.query(async ({ ctx }) => ({ inChina: await db.deskInChina(ctx.user.id) })),
+      /** Our kilos against the carrier's, for the scan screens (any batch). */
+      kgCheck: staffProcedure
+        .input(z.object({ batchId: z.number().int().positive() }))
+        .query(({ input }) => db.getBatchKgCheck(input.batchId)),
       createTwin: adminProcedure
         .input(z.object({ batchId: z.number().int().positive() }))
         .mutation(async ({ input, ctx }) => {

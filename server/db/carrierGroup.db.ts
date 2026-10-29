@@ -7,11 +7,13 @@
  */
 import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { batchCarrierParts, batches, carrierGroupInvoices, countries, packageScans, packages } from "../../drizzle/schema";
+import { batchCarrierParts, batches, carrierGroupInvoices, countries, packageScans, packages, users } from "../../drizzle/schema";
 import { chargeableWeight } from "@shared/chargeableWeight";
 import { parcelHasArrived } from "@shared/dispatchStage";
 import { groupDifferenceUsd, groupVerdict, normalizeCarrierBatchNo, splitGroupInvoice, twinBatchCode } from "@shared/carrierGroup";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
+import { batchMadeInChina } from "@shared/batchStage";
+import { batchMatchesDesk, twinCodeFor } from "@shared/batchTwin";
 import { withFix } from "@shared/fixAdvice";
 import { getVolumetricDivisor } from "./settings.db";
 import { createBatch, getBatchById, updateBatch } from "./batches.db";
@@ -40,15 +42,46 @@ async function memberIds(batch: { id: number; carrierBatchNo: string | null; twi
   return Array.from(new Set([batch.id, ...rows.map((r) => Number(r.id))])).sort((a, b) => a - b);
 }
 
-/** Everything the group card and the scan strip show. Read only. */
-export async function getCarrierGroup(batchId: number) {
+/** The original renamed: every twin of it takes the new name (shared/batchTwin). */
+export async function renameTwinsOf(originalId: number, originalCode: string, userId: number): Promise<void> {
   const db = await need();
-  const batch = await getBatchById(batchId);
-  if (!batch) return null;
-  const ids = await memberIds(batch as never);
-  const key = normalizeCarrierBatchNo(batch.carrierBatchNo);
-  if (ids.length < 2 && !key) return null;
+  const twins = await db.select({ id: batches.id }).from(batches).where(eq(batches.twinOfBatchId, originalId));
+  for (const t of twins) await updateBatch(t.id, { batchCode: twinCodeFor(originalCode) } as never, userId);
+}
 
+/** Is this member of staff's desk in China? Null when their place is not set. */
+export async function deskInChina(userId: number): Promise<boolean | null> {
+  const db = await need();
+  const [u] = await db.select({ countryId: users.workCountryId }).from(users).where(eq(users.id, userId)).limit(1);
+  if (u?.countryId == null) return null;
+  return (await chinaIds()).has(Number(u.countryId));
+}
+
+/**
+ * Refuse a parcel going into a batch made in the other country (owner,
+ * 2026-10-29). Unknown on either side lets it through.
+ */
+export async function assertBatchMatchesDesk(batchId: number | null | undefined, userId: number): Promise<void> {
+  if (!batchId) return;
+  const batch = await getBatchById(batchId);
+  if (!batch) return;
+  const desk = await deskInChina(userId);
+  const made = batchMadeInChina(batch.createdInCountryId, await chinaIds());
+  if (batchMatchesDesk(made, desk)) return;
+  const twins = made ? await (await need()).select({ code: batches.batchCode }).from(batches).where(eq(batches.twinOfBatchId, batch.id)).limit(1) : [];
+  throw new Error(withFix(
+    made
+      ? `باچی ${batch.batchCode} باچی چینە — پاکێجی هەولێر ناچێتە ناوی.`
+      : `باچی ${batch.batchCode} باچی هەولێرە — پاکێجی چین ناچێتە ناوی.`,
+    made && twins[0]
+      ? [`لە تۆماری خێرا باچی ${twins[0].code} هەڵبژێرە`]
+      : ["باچێکی دروستکراو لە هەمان شوێنی خۆت هەڵبژێرە"],
+  ));
+}
+
+/** Each batch's kilos: all of them, and the part already in Erbil (read only). */
+async function memberFacts(ids: number[]) {
+  const db = await need();
   const rows = await db.select().from(batches).where(inArray(batches.id, ids));
   const cn = await chinaIds();
   const parcels = await db
@@ -66,7 +99,7 @@ export async function getCarrierGroup(batchId: number) {
   const loads = new Set((await db.select({ batchId: batchCarrierParts.batchId }).from(batchCarrierParts).where(inArray(batchCarrierParts.batchId, ids))).map((r) => Number(r.batchId)));
 
   const members = rows.map((b) => {
-    const china = b.createdInCountryId != null && cn.has(Number(b.createdInCountryId));
+    const china = batchMadeInChina(b.createdInCountryId, cn);
     const mine = parcels.filter((p) => p.batchId === b.id);
     let kg = 0, liveKg = 0, coming = 0;
     for (const p of mine) {
@@ -83,6 +116,19 @@ export async function getCarrierGroup(batchId: number) {
       chargedWeightKg: b.chargedWeightKg, shippingCost: b.shippingCost, hasLoads: loads.has(b.id),
     };
   }).sort((a, b) => Number(b.madeInChina) - Number(a.madeInChina) || a.batchId - b.batchId);
+  return members;
+}
+
+/** Everything the group card and the scan strip show. Read only. */
+export async function getCarrierGroup(batchId: number) {
+  const db = await need();
+  const batch = await getBatchById(batchId);
+  if (!batch) return null;
+  const ids = await memberIds(batch as never);
+  const key = normalizeCarrierBatchNo(batch.carrierBatchNo);
+  if (ids.length < 2 && !key) return null;
+
+  const members = await memberFacts(ids);
 
   const [invoice] = key ? await db.select().from(carrierGroupInvoices).where(eq(carrierGroupInvoices.carrierBatchNo, key)).limit(1) : [];
   const billedKg = invoice ? Number(invoice.billedKg) : null;
@@ -220,4 +266,28 @@ export async function countShortCarrierGroups(): Promise<Array<{ batchId: number
     if (g?.verdict === "short") out.push({ batchId: Number(b.id), key: inv.key, kg: r2((g.invoice?.billedKg ?? 0) - g.oursKg), usd: -g.differenceUsd });
   }
   return out;
+}
+
+/**
+ * Our kilos against the carrier's, for the scan screens - on every batch,
+ * not only one in a carrier group (owner, 2026-10-29: Quick Register said
+ * nothing on AIR-2026-0789). A group compares against its invoice; a batch
+ * on its own against the kilos the carrier billed it (chargedWeightKg, which
+ * carrier loads also write); with neither, carrierKg is null and the strip
+ * says it is missing.
+ */
+export async function getBatchKgCheck(batchId: number) {
+  const g = await getCarrierGroup(batchId);
+  if (g) return { key: g.key, carrierKg: g.invoice?.billedKg ?? null, oursKg: g.oursKg, allKg: g.allKg, stillComing: g.stillComing };
+  const batch = await getBatchById(batchId);
+  if (!batch) return null;
+  const [m] = await memberFacts([batchId]);
+  const billed = Number(batch.chargedWeightKg);
+  return {
+    key: null,
+    carrierKg: billed > 0 ? billed : null,
+    oursKg: m?.liveKg ?? 0,
+    allKg: m?.kg ?? 0,
+    stillComing: m?.stillComing ?? 0,
+  };
 }

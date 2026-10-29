@@ -1,4 +1,5 @@
 import { batchOpenForRegistration } from "@shared/batchStage";
+import { batchMatchesDesk } from "@shared/batchTwin";
 import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -127,14 +128,16 @@ export default function BatchAssignmentScanner() {
   
   // Queries
   const { data: batchesRaw, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const trpcUtils = trpc.useUtils();
   
   // Get open batches
   const openBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter((b: any) => batchOpenForRegistration(b));
-  }, [batches]);
+    return batches.filter((b: any) => batchOpenForRegistration(b) && batchMatchesDesk(b.madeInChina, desk?.inChina));
+  }, [batches, desk?.inChina]);
   
   // A batch id handed to us in the URL is not to be trusted: it may be closed,
   // delivered, or simply gone. Once the list has loaded, drop anything that

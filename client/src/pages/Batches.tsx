@@ -49,6 +49,7 @@ import { CarrierPartsCard } from "@/components/batches/CarrierPartsCard";
 import { CarrierGroupCard } from "@/components/batches/CarrierGroupCard";
 import { BatchJourney, BatchOriginChip, BatchStageChip, BatchTypeIcon, MissingDots } from "@/components/batches/BatchListBits";
 import { BATCH_STAGE_LABEL, batchOpenForRegistration, batchStage, type BatchStage } from "@shared/batchStage";
+import { twinsBesideOriginal } from "@shared/batchTwin";
 import { BatchDurationChip } from "@/components/batches/BatchDuration";
 import { mayApproveCostBreach } from "@shared/batchCostGuard";
 import { isOddNumberQuestion, oddNumberText } from "@shared/batchNumberSense";
@@ -856,7 +857,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   // While searching, the server's answer replaces the local list. The link
   // filter and the archive split describe the unsearched list, so they stand
   // aside rather than silently hiding a hit the search just found.
-  const rowsToRender: any[] = searchActive ? (searchQuery.data ?? []) : visibleBatches;
+  // Each Erbil twin straight after its original (shared/batchTwin, owner 2026-10-29).
+  const rowsToRender: any[] = useMemo(
+    () => twinsBesideOriginal(searchActive ? (searchQuery.data ?? []) : visibleBatches),
+    [searchActive, searchQuery.data, visibleBatches],
+  );
+  const batchCodeById = new Map<number, string>((batches ?? []).map((b: any) => [b.id, b.batchCode]));
+  const twinCodeOf = new Map<number, string>((batches ?? []).filter((b: any) => b.twinOfBatchId).map((b: any) => [b.twinOfBatchId, b.batchCode]));
 
   // Once the search has answered and the row asked for is on screen, bring it
   // to the middle — once.
@@ -1638,6 +1645,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         )}
                         <span className="font-mono font-medium whitespace-nowrap">{batch.batchCode}</span>
                         <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
+                        {/* Which is the twin and which the original, said on both rows. */}
+                        {(batch as any).twinOfBatchId ? (
+                          <span className="inline-flex shrink-0 items-center rounded bg-violet-500/15 px-1.5 py-px text-[10px] font-medium text-violet-700 dark:text-violet-300" data-testid="batch-twin-chip">
+                            {pickLang(language, { ku: "توینی", en: "Twin of", ar: "توأم", zh: "孪生于" })}&nbsp;<bdi dir="ltr">{batchCodeById.get((batch as any).twinOfBatchId) ?? "?"}</bdi>
+                          </span>
+                        ) : twinCodeOf.has(batch.id) ? (
+                          <span className="inline-flex shrink-0 items-center rounded bg-violet-500/10 px-1.5 py-px text-[10px] font-medium text-violet-700 dark:text-violet-300" data-testid="batch-original-chip">
+                            {pickLang(language, { ku: "ئەسڵی — توینەکەی", en: "Original — twin", ar: "الأصل — التوأم", zh: "原批次 — 孪生" })}&nbsp;<bdi dir="ltr">{twinCodeOf.get(batch.id)}</bdi>
+                          </span>
+                        ) : null}
                         {/* What it is still missing - selling price, the number it
                             travels under, the cost - as quiet dots with the words on
                             hover (owner, 2026-10-27). Red badges on a batch that is
@@ -2494,7 +2511,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <TabsContent value="basic" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
                     <div className="grid gap-2">
                       <Label>{t("batches.batchCode")}</Label>
-                      <Input name="batchCode" defaultValue={editingBatch.batchCode} />
+                      {/* A twin's name follows its original's (shared/batchTwin). */}
+                      <Input name="batchCode" defaultValue={editingBatch.batchCode} readOnly={!!editingBatch.twinOfBatchId} className={editingBatch.twinOfBatchId ? "bg-muted" : undefined} title={editingBatch.twinOfBatchId ? pickLang(language, { ku: "ناوی توین لەگەڵ باچە ئەسڵییەکەی دەگۆڕێت", en: "A twin's name follows its original", ar: "اسم التوأم يتبع الأصل", zh: "孪生批次名称随原批次" }) : undefined} />
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
                       <div className="flex items-center gap-2">

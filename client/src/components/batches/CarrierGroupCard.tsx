@@ -9,6 +9,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
+import { groupVerdict } from "@shared/carrierGroup";
 
 /**
  * One carrier shipment, several of our batches (owner, 2026-10-28): the
@@ -161,17 +162,33 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
 export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefined }) {
   const { language } = useTranslation();
   const L = (w: Words) => pickLang(language, w);
-  const q = trpc.batches.carrierGroup.forBatch.useQuery({ batchId: batchId ?? 0 }, { enabled: !!batchId, refetchInterval: 15000 });
+  // Every batch, in or out of a carrier group (owner, 2026-10-29).
+  const q = trpc.batches.carrierGroup.kgCheck.useQuery({ batchId: batchId ?? 0 }, { enabled: !!batchId, refetchInterval: 15000 });
   const g = q.data;
-  if (!batchId || !g?.invoice) return null;
-  const left = g.invoice.billedKg - g.oursKg;
+  if (!batchId || !g) return null;
+  const ours = (
+    <span className="text-sky-700 dark:text-sky-300">{L({ ku: "ئێمە", en: "Ours", ar: "لدينا", zh: "我方" })} <b dir="ltr">{g.oursKg.toFixed(2)}</b>
+      {g.stillComing > 0 && <span className="ms-1 text-xs text-amber-700 dark:text-amber-300">· {g.stillComing} {L({ ku: "لە ڕێگا", en: "on the road", ar: "في الطريق", zh: "在途" })}</span>}
+    </span>
+  );
+  if (g.carrierKg == null) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-dashed px-3 py-2 text-sm tabular-nums text-muted-foreground" data-testid="carrier-group-strip" data-state="no-carrier-kg">
+        {g.key && <span className="flex items-center gap-1 font-medium"><Link2 className="h-4 w-4" /><bdi dir="ltr">{g.key}</bdi></span>}
+        {ours}
+        <span>{L({ ku: "کێشی کۆمپانیای گواستنەوە هێشتا نەنووسراوە", en: "The carrier's kilos are not entered yet", ar: "وزن شركة الشحن لم يُدخل بعد", zh: "承运商重量尚未录入" })}</span>
+      </div>
+    );
+  }
+  const verdict = groupVerdict({ billedKg: g.carrierKg, oursKg: g.oursKg, stillComing: g.stillComing });
+  const left = g.carrierKg - g.oursKg;
   return (
     <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2 text-sm tabular-nums",
-      g.verdict === "short" ? "border-rose-400 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200" : "bg-card")}
-      data-testid="carrier-group-strip">
-      <span className="flex items-center gap-1 font-medium"><Link2 className="h-4 w-4" /><bdi dir="ltr">{g.key}</bdi></span>
-      <span>{L({ ku: "وەسڵ", en: "Invoice", ar: "الفاتورة", zh: "发票" })} <b dir="ltr">{g.invoice.billedKg.toFixed(2)}</b></span>
-      <span className="text-sky-700 dark:text-sky-300">{L({ ku: "ئێمە", en: "Ours", ar: "لدينا", zh: "我方" })} <b dir="ltr">{g.oursKg.toFixed(2)}</b></span>
+      verdict === "short" ? "border-rose-400 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200" : "bg-card")}
+      data-testid="carrier-group-strip" data-state={verdict}>
+      {g.key && <span className="flex items-center gap-1 font-medium"><Link2 className="h-4 w-4" /><bdi dir="ltr">{g.key}</bdi></span>}
+      <span>{L({ ku: "کۆمپانیا", en: "Carrier", ar: "الشركة", zh: "承运商" })} <b dir="ltr">{g.carrierKg.toFixed(2)}</b></span>
+      {ours}
       <span className={left > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}>
         {left > 0 ? L({ ku: "ماوە", en: "To come", ar: "يتبقى", zh: "尚余" }) : L({ ku: "زیاتر", en: "Over", ar: "زيادة", zh: "超出" })} <b dir="ltr">{Math.abs(left).toFixed(2)} kg</b>
       </span>

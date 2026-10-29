@@ -1,4 +1,5 @@
 import { batchOpenForRegistration } from "@shared/batchStage";
+import { batchMatchesDesk } from "@shared/batchTwin";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -222,6 +223,8 @@ export default function BulkRegister() {
   // Queries
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: batchesResponse } = trpc.batches.list.useQuery();
+  // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
   const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
   const { data: warehouses } = trpc.warehouses.list.useQuery();
   const { data: categories } = trpc.productCategories.list.useQuery();
@@ -255,8 +258,8 @@ export default function BulkRegister() {
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter(b => batchOpenForRegistration(b as never));
-  }, [batches, shippingType]);
+    }).filter(b => batchOpenForRegistration(b as never) && batchMatchesDesk((b as { madeInChina?: boolean }).madeInChina, desk?.inChina));
+  }, [batches, shippingType, desk?.inChina]);
 
   // Filter customers by search
   const filteredCustomers = useMemo(() => {

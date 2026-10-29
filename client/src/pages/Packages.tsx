@@ -1,4 +1,5 @@
 import { batchOpenForRegistration } from "@shared/batchStage";
+import { batchMatchesDesk } from "@shared/batchTwin";
 import { toCsv, downloadText } from "@/lib/csv";
 import { confirmAction } from "@/components/ConfirmDialog";
 import { oddParcelNumbers, oddParcelQuestion } from "@shared/parcelNumberSense";
@@ -719,6 +720,8 @@ const [, setLocation] = useLocation();
   }, []);
 
   const { data: batchesRaw } = trpc.batches.list.useQuery();
+  // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: categories } = trpc.productCategories.list.useQuery();
 
@@ -837,8 +840,8 @@ const [, setLocation] = useLocation();
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter((b: any) => batchOpenForRegistration(b));
-  }, [batches, editShippingType]);
+    }).filter((b: any) => batchOpenForRegistration(b) && batchMatchesDesk(b.madeInChina, desk?.inChina));
+  }, [batches, editShippingType, desk?.inChina]);
 
   // Calculate CBM for edit dialog
   const editCalculatedCbm = useMemo(() => {

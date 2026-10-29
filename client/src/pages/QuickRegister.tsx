@@ -1,4 +1,5 @@
 ﻿import { batchOpenForRegistration } from "@shared/batchStage";
+import { batchMatchesDesk } from "@shared/batchTwin";
 import DashboardLayout from "@/components/DashboardLayout";
 import { RefusalWarning } from "@/components/RefusalWarning";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,8 @@ export default function QuickRegister() {
   // Queries — handle errors so one failed API doesn't block the form
   const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
   const { data: batchesRaw, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
+  // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: warehouses, isError: warehousesError, refetch: refetchWarehouses } = trpc.warehouses.list.useQuery();
   const { data: categories, isError: categoriesError, refetch: refetchCategories } = trpc.productCategories.list.useQuery();
@@ -508,8 +511,8 @@ export default function QuickRegister() {
         return batchType === "air" || batchType.startsWith("air");
       }
       return batchType === "sea";
-    }).filter((b: any) => batchOpenForRegistration(b));
-  }, [batches, shippingType]);
+    }).filter((b: any) => batchOpenForRegistration(b) && batchMatchesDesk(b.madeInChina, desk?.inChina));
+  }, [batches, shippingType, desk?.inChina]);
   
   const filteredCustomers = useMemo(() => {
     if (!customers || !customerSearch) return [];

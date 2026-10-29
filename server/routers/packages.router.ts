@@ -603,6 +603,13 @@ export const packagesRouter = router({
         // have moved to Erbil.
         const registrationLocation = await db.getUserWorkLocation(ctx.user.id);
 
+        // Only into a batch made where this person works (shared/batchTwin).
+        try {
+          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);
+        } catch (e) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
+        }
+
         const warehouse = await db.getWarehouseById(input.originWarehouseId);
         if (!warehouse) {
           throw new TRPCError({
@@ -1584,6 +1591,12 @@ export const packagesRouter = router({
         batchId: z.number(),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Only into a batch made where this person works (shared/batchTwin).
+        try {
+          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);
+        } catch (e) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
+        }
         await db.updatePackage(input.packageId, {
           batchId: input.batchId,
           status: "in_batch",
