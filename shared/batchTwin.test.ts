@@ -7,9 +7,11 @@ import { batchMatchesDesk, twinCodeFor, twinsBesideOriginal } from "./batchTwin"
 const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the twin beside its original", () => {
-  it("each twin straight after its original; a twin whose original is not listed stays where it is", () => {
+  it("each twin straight after its original, the pair where the higher of them stood; a twin whose original is not listed stays where it is", () => {
     const rows = [{ id: 9, twinOfBatchId: 2 }, { id: 5 }, { id: 2 }, { id: 7, twinOfBatchId: 99 }];
-    expect(twinsBesideOriginal(rows).map((r) => r.id)).toEqual([5, 2, 9, 7]);
+    expect(twinsBesideOriginal(rows).map((r) => r.id)).toEqual([2, 9, 5, 7]);
+    // Original above: the pair stays there.
+    expect(twinsBesideOriginal([{ id: 2 }, { id: 5 }, { id: 9, twinOfBatchId: 2 }]).map((r) => r.id)).toEqual([2, 9, 5]);
   });
 
   it("its name is the original's with Erbil after it", () => {

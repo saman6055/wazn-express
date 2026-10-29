@@ -6,7 +6,10 @@ import { twinBatchCode } from "./carrierGroup";
  * The owner mixed AIR-2026-072GZ and its twin up: the two names looked
  * alike, both could be renamed, and in the list they sat apart. So:
  *
- *   - the twin is listed straight after its original;
+ *   - the twin is listed straight after its original, and the pair stands
+ *     where the higher of the two stood - the twin is the newer, so the pair
+ *     rises to the top instead of the twin sinking to its original (owner,
+ *     2026-10-30: «لە تەنیشت یەک بن، بڕۆنە سەری سەرەوەش»);
  *   - the twin's name is not its own - it is always the original's code with
  *     " Erbil" after it, and follows when the original is renamed;
  *   - a desk registers only into batches made where it is: China into China
@@ -15,7 +18,10 @@ import { twinBatchCode } from "./carrierGroup";
  *     باچی چین نیشان بدات»; China batches are for the arrival check).
  */
 
-/** Each twin moved to sit straight after its original, when both are in the list. */
+/**
+ * Each twin straight after its original, when both are in the list; the pair
+ * takes the place of whichever of them came first.
+ */
 export function twinsBesideOriginal<T extends { id: number; twinOfBatchId?: number | null }>(rows: readonly T[]): T[] {
   const ids = new Set(rows.map((r) => r.id));
   const twinsOf = new Map<number, T[]>();
@@ -24,10 +30,14 @@ export function twinsBesideOriginal<T extends { id: number; twinOfBatchId?: numb
       twinsOf.set(r.twinOfBatchId, [...(twinsOf.get(r.twinOfBatchId) ?? []), r]);
     }
   }
+  const byId = new Map(rows.map((r) => [r.id, r]));
   const out: T[] = [];
+  const done = new Set<number>();
   for (const r of rows) {
-    if (r.twinOfBatchId != null && ids.has(r.twinOfBatchId)) continue;
-    out.push(r, ...(twinsOf.get(r.id) ?? []));
+    const head = r.twinOfBatchId != null && ids.has(r.twinOfBatchId) ? byId.get(r.twinOfBatchId)! : r;
+    if (done.has(head.id)) continue;
+    done.add(head.id);
+    out.push(head, ...(twinsOf.get(head.id) ?? []));
   }
   return out;
 }
