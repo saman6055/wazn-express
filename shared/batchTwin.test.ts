@@ -63,3 +63,13 @@ describe("the main admin sets his own place (owner, 2026-10-29)", () => {
     expect(read("server/routers/auth.router.ts")).toContain("myWorkPlace: protectedProcedure.query(async ({ ctx }) => db.getUserWorkLocation(ctx.user.id)),");
   });
 });
+
+describe("a batch with Erbil in its name was made in Iraq (owner, 2026-10-29)", () => {
+  it("filled before the creator rule, only where no place is stamped", () => {
+    const m = read("server/_core/migrations.ts");
+    const name = m.indexOf('name: "backfill.batches.erbilNameIsIraq"');
+    expect(name).toBeGreaterThan(0);
+    expect(name).toBeLessThan(m.indexOf('name: "backfill.batches.createdInLocation"'));
+    expect(m).toContain("WHERE b.createdInCountryId IS NULL AND LOWER(b.batchCode) LIKE '%erbil%'`");
+  });
+});

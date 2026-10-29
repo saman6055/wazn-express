@@ -3234,6 +3234,15 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // the person who made it works now — which is exactly the rule the office
   // was going to apply by hand anyway. Runs only over rows with no stamp, so
   // it never overwrites a real one.
+  // A batch with Erbil in its name was made in Iraq (owner, 2026-10-29:
+  // «ئەوەی ئەربیلی پێوە بێت یانی عێراق»). Before the creator rule below, so
+  // the name wins for a batch with no place yet; a stamped one is untouched.
+  {
+    name: "backfill.batches.erbilNameIsIraq",
+    sql: `UPDATE batches b JOIN countries c ON c.isoCode = 'IQ'
+          SET b.createdInCountryId = c.id
+          WHERE b.createdInCountryId IS NULL AND LOWER(b.batchCode) LIKE '%erbil%'`,
+  },
   {
     name: "backfill.batches.createdInLocation",
     sql: `UPDATE batches b JOIN users u ON u.id = b.createdById
