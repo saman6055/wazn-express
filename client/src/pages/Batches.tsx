@@ -2678,7 +2678,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           {editInGroup && (
                             <div className="col-span-2">
                               <p className="rounded-md border border-sky-300/60 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-200" data-testid="batch-in-group-note">
-                                {pickLang(language, { ku: `ئەم باچە لە گرووپی ${editGroupKey}ـە — کێش و پارەی کۆمپانیا تەنها لە کارتی گرووپ دەنووسرێت، و بەشی ئەم باچە خۆی لێرە دادەنرێت.`, en: `This batch is in group ${editGroupKey} — the carrier's weight and money are written only on the group card, and this batch's share is filled in by itself.`, ar: `هذه الدفعة ضمن مجموعة ${editGroupKey} — يُكتب وزن الشركة ومبلغها في بطاقة المجموعة فقط.`, zh: `本批次属于 ${editGroupKey} 组 — 承运商重量和金额只在组卡片中填写。` })}
+                                {pickLang(language, { ku: `ئەم باچە لە گرووپی \u2068${editGroupKey}\u2069 دایە — کێش و پارەی کۆمپانیا تەنها لە کارتی گرووپ دەنووسرێت، و بەشی ئەم باچە خۆی لێرە دادەنرێت.`, en: `This batch is in group ${editGroupKey} — the carrier's weight and money are written only on the group card, and this batch's share is filled in by itself.`, ar: `هذه الدفعة ضمن مجموعة ${editGroupKey} — يُكتب وزن الشركة ومبلغها في بطاقة المجموعة فقط.`, zh: `本批次属于 ${editGroupKey} 组 — 承运商重量和金额只在组卡片中填写。` })}
                               </p>
                             </div>
                           )}
@@ -2739,7 +2739,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             <Label>{t("batches.totalShippingCost")}</Label>
                             <Input type="number" readOnly className="bg-muted/40" value={editingBatch.shippingCost || ""} placeholder={pickLang(language, { ku: "دوای دابەشکردنی وەسڵی گرووپ", en: "After the group invoice is shared out", ar: "بعد توزيع فاتورة المجموعة", zh: "组发票分摊后" })} />
                             <p className="rounded-md border border-sky-300/60 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-200" data-testid="batch-in-group-note">
-                                {pickLang(language, { ku: `ئەم باچە لە گرووپی ${editGroupKey}ـە — کێش و پارەی کۆمپانیا تەنها لە کارتی گرووپ دەنووسرێت، و بەشی ئەم باچە خۆی لێرە دادەنرێت.`, en: `This batch is in group ${editGroupKey} — the carrier's weight and money are written only on the group card, and this batch's share is filled in by itself.`, ar: `هذه الدفعة ضمن مجموعة ${editGroupKey} — يُكتب وزن الشركة ومبلغها في بطاقة المجموعة فقط.`, zh: `本批次属于 ${editGroupKey} 组 — 承运商重量和金额只在组卡片中填写。` })}
+                                {pickLang(language, { ku: `ئەم باچە لە گرووپی \u2068${editGroupKey}\u2069 دایە — کێش و پارەی کۆمپانیا تەنها لە کارتی گرووپ دەنووسرێت، و بەشی ئەم باچە خۆی لێرە دادەنرێت.`, en: `This batch is in group ${editGroupKey} — the carrier's weight and money are written only on the group card, and this batch's share is filled in by itself.`, ar: `هذه الدفعة ضمن مجموعة ${editGroupKey} — يُكتب وزن الشركة ومبلغها في بطاقة المجموعة فقط.`, zh: `本批次属于 ${editGroupKey} 组 — 承运商重量和金额只在组卡片中填写。` })}
                               </p>
                           </div>
                         ) : (
