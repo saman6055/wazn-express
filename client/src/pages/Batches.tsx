@@ -580,6 +580,16 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   );
   const editLoads = editFinancialQ.data?.carrierParts?.loads ?? [];
   /*
+   * In a carrier group (a carrier batch number, or a twin either way), the
+   * carrier's weight and money are written once on the group card and shared
+   * out; the batch's own fields for them are hidden, so nobody types the
+   * whole invoice into one batch again (owner, 2026-10-29, AIR-2026-072).
+   * Outside a group, the group card shows nothing but the twin button.
+   */
+  const editGroupQ = trpc.batches.carrierGroup.forBatch.useQuery({ batchId: editingBatch?.id ?? 0 }, { enabled: !!editingBatch?.id });
+  const editInGroup = !!editGroupQ.data && editingBatch?.shippingType !== "sea";
+  const editGroupKey = editGroupQ.data?.key ?? editGroupQ.data?.members.map((m) => m.batchCode).join(" + ") ?? "";
+  /*
    * What is in the cost boxes right now, before any save — so the carrier's
    * total shows what it comes to per kilo while it is being typed (owner,
    * 2026-10-05). `undefined` means "not touched": the saved figure stands.
@@ -2665,7 +2675,14 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       </CardHeader>
                       <CardContent>
                         <div className="grid grid-cols-2 gap-4">
-                          {editingBatch.shippingType !== "sea" && (
+                          {editInGroup && (
+                            <div className="col-span-2">
+                              <p className="rounded-md border border-sky-300/60 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-200" data-testid="batch-in-group-note">
+                                {pickLang(language, { ku: `ئەم باچە لە گرووپی ${editGroupKey}ـە — کێش و پارەی کۆمپانیا تەنها لە کارتی گرووپ دەنووسرێت، و بەشی ئەم باچە خۆی لێرە دادەنرێت.`, en: `This batch is in group ${editGroupKey} — the carrier's weight and money are written only on the group card, and this batch's share is filled in by itself.`, ar: `هذه الدفعة ضمن مجموعة ${editGroupKey} — يُكتب وزن الشركة ومبلغها في بطاقة المجموعة فقط.`, zh: `本批次属于 ${editGroupKey} 组 — 承运商重量和金额只在组卡片中填写。` })}
+                              </p>
+                            </div>
+                          )}
+                          {editingBatch.shippingType !== "sea" && !editInGroup && (
                             <div className="grid gap-2">
                               <Label>{pickLang(language, { ku: "کێشی کۆمپانیای گواستنەوە (لە پسوولەکەیان)", en: "Carrier's billed weight (from its invoice)", ar: "وزن شركة الشحن (من فاتورتها)", zh: "承运商计费重量（发票）" })}</Label>
                               {/* With loads, the weight is their sum and is changed there (CarrierPartsCard). */}
@@ -2683,7 +2700,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </div>
                           )}
                         </div>
-                        <CarrierDifferenceLine difference={editFinancialQ.data?.carrierDifference ?? null} />
+                        {!editInGroup && <CarrierDifferenceLine difference={editFinancialQ.data?.carrierDifference ?? null} />}
                         {editingBatch.shippingType !== "sea" && (
                           <CarrierGroupCard
                             batchId={editingBatch.id}
@@ -2695,7 +2712,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             }}
                           />
                         )}
-                        {editFinancialQ.data?.carrierParts?.madeInChina && (
+                        {editFinancialQ.data?.carrierParts?.madeInChina && !editInGroup && (
                           <CarrierPartsCard
                             batchId={editingBatch.id}
                             shippingType={editingBatch.shippingType}
@@ -2717,6 +2734,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardTitle>
                       </CardHeader>
                       <CardContent>
+                        {editInGroup ? (
+                          <div className="grid gap-2" data-testid="batch-cost-from-group">
+                            <Label>{t("batches.totalShippingCost")}</Label>
+                            <Input type="number" readOnly className="bg-muted/40" value={editingBatch.shippingCost || ""} placeholder={pickLang(language, { ku: "دوای دابەشکردنی وەسڵی گرووپ", en: "After the group invoice is shared out", ar: "بعد توزيع فاتورة المجموعة", zh: "组发票分摊后" })} />
+                            <p className="rounded-md border border-sky-300/60 bg-sky-50 px-3 py-2 text-xs text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/40 dark:text-sky-200" data-testid="batch-in-group-note">
+                                {pickLang(language, { ku: `ئەم باچە لە گرووپی ${editGroupKey}ـە — کێش و پارەی کۆمپانیا تەنها لە کارتی گرووپ دەنووسرێت، و بەشی ئەم باچە خۆی لێرە دادەنرێت.`, en: `This batch is in group ${editGroupKey} — the carrier's weight and money are written only on the group card, and this batch's share is filled in by itself.`, ar: `هذه الدفعة ضمن مجموعة ${editGroupKey} — يُكتب وزن الشركة ومبلغها في بطاقة المجموعة فقط.`, zh: `本批次属于 ${editGroupKey} 组 — 承运商重量和金额只在组卡片中填写。` })}
+                              </p>
+                          </div>
+                        ) : (
                         <div className="grid gap-2">
                           {editingBatch.shippingType !== "sea" ? (
                             <>
@@ -2764,6 +2790,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             ours={editFinancialQ.data ? { billedKg: Number(editFinancialQ.data.ourBilledKg) || 0, cbm: Number(editFinancialQ.data.ourCbm) || 0 } : null}
                           />
                         </div>
+                        )}
                       </CardContent>
                     </Card>
 

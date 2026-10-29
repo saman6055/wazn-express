@@ -73,3 +73,15 @@ describe("a batch with Erbil in its name was made in Iraq (owner, 2026-10-29)", 
     expect(m).toContain("WHERE b.createdInCountryId IS NULL AND LOWER(b.batchCode) LIKE '%erbil%'`");
   });
 });
+
+describe("a batch in a carrier group shows only the group's invoice (owner, 2026-10-29)", () => {
+  it("its own carrier weight, loads, difference line and cost inputs are hidden; outside a group the card shows only the twin button", () => {
+    const page = read("client/src/pages/Batches.tsx");
+    expect(page).toContain('{editingBatch.shippingType !== "sea" && !editInGroup && (');
+    expect(page).toContain("{!editInGroup && <CarrierDifferenceLine");
+    expect(page).toContain('data-testid="batch-cost-from-group"');
+    const card = read("client/src/components/batches/CarrierGroupCard.tsx");
+    expect(card).toContain("if (!g && !canTwin) return null;");
+    expect(card).toContain("{g && (");
+  });
+});

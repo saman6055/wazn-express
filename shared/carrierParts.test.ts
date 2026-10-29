@@ -68,7 +68,8 @@ describe("wired where the money is", () => {
 
   it("only a batch made in China: one registered in Erbil has no loads and nothing to wait for", () => {
     expect(read("server/db/batches.db.ts")).toContain("const partsVerdict = !madeInChina ? ('none' as const)");
-    expect(read("client/src/pages/Batches.tsx")).toContain("editFinancialQ.data?.carrierParts?.madeInChina && (");
+    // Hidden in a carrier group too: the group card takes the invoice (owner, 2026-10-29).
+    expect(read("client/src/pages/Batches.tsx")).toContain("editFinancialQ.data?.carrierParts?.madeInChina && !editInGroup && (");
   });
 
   it("loads reach the batch only through updateBatch (price history kept)", () => {
