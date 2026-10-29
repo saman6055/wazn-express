@@ -9,8 +9,9 @@ import { twinBatchCode } from "./carrierGroup";
  *   - the twin is listed straight after its original;
  *   - the twin's name is not its own - it is always the original's code with
  *     " Erbil" after it, and follows when the original is renamed;
- *   - a parcel is registered only into a batch made where the person works
- *     (an Erbil desk never sees a China batch, and the other way round).
+ *   - a China desk registers only into China batches; an Erbil desk into
+ *     either (owner, 2026-10-29: «کارمەندی چین بەس باچی خۆی ببێنێت
+ *     کارمەندی هەولێریش هەر دوو باچ کێشە نیە»).
  */
 
 /** Each twin moved to sit straight after its original, when both are in the list. */
@@ -36,10 +37,11 @@ export function twinCodeFor(originalCode: string): string {
 }
 
 /**
- * May this person register into this batch, by where each is?
- * Unknown on either side (a desk with no place set, an old batch) answers yes.
+ * May this person register into this batch, by where each is? A China desk
+ * only into China batches; an Erbil desk into either. Unknown on either side
+ * (a desk with no place set, an old batch) answers yes.
  */
 export function batchMatchesDesk(batchMadeInChina: boolean | null | undefined, deskInChina: boolean | null | undefined): boolean {
   if (batchMadeInChina == null || deskInChina == null) return true;
-  return batchMadeInChina === deskInChina;
+  return deskInChina ? batchMadeInChina : true;
 }

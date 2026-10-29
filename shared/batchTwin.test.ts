@@ -31,9 +31,10 @@ describe("the twin beside its original", () => {
 });
 
 describe("a parcel goes only into a batch made where its desk is", () => {
-  it("Erbil desk: no China batch; China desk: no Erbil batch; unknown: either", () => {
-    expect(batchMatchesDesk(true, false)).toBe(false);
+  it("China desk: only China batches; Erbil desk: both; unknown: either (owner, 2026-10-29)", () => {
     expect(batchMatchesDesk(false, true)).toBe(false);
+    expect(batchMatchesDesk(true, true)).toBe(true);
+    expect(batchMatchesDesk(true, false)).toBe(true);
     expect(batchMatchesDesk(false, false)).toBe(true);
     expect(batchMatchesDesk(true, null)).toBe(true);
   });
