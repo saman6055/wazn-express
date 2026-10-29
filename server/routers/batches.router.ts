@@ -1401,6 +1401,8 @@ export const batchesRouter = router({
         // so restoring can put exactly those back rather than guessing from a
         // batchId that will no longer exist anywhere.
         const releasedPackageIds = await db.releasePackagesFromBatch(input.id);
+        // Its prices and history go with it, so they ride in the copy too.
+        const sideRows = await db.batchSideRows(input.id);
 
         // A complete copy into the bin before the row goes, so a deletion
         // made in error can be undone. Written first: if this insert fails,
@@ -1409,7 +1411,7 @@ export const batchesRouter = router({
           entityType: "batch",
           entityId: batch.id,
           label: batch.batchCode,
-          snapshot: { ...batch, releasedPackageIds } as unknown as Record<string, unknown>,
+          snapshot: { ...batch, releasedPackageIds, sideRows } as unknown as Record<string, unknown>,
           deletedById: ctx.user.id,
           deletedByName: ctx.user.name ?? null,
           deletionReason: input.reason ?? null,
@@ -1534,9 +1536,10 @@ export const batchesRouter = router({
 
         await step(`سڕینەوەی باچی ${batch.batchCode}`, async () => {
           const releasedPackageIds = await db.releasePackagesFromBatch(input.id);
+          const sideRows = await db.batchSideRows(input.id);
           await db.recordDeletion({
             entityType: "batch", entityId: batch.id, label: batch.batchCode,
-            snapshot: { ...batch, releasedPackageIds } as unknown as Record<string, unknown>,
+            snapshot: { ...batch, releasedPackageIds, sideRows } as unknown as Record<string, unknown>,
             deletedById: ctx.user.id, deletedByName: ctx.user.name ?? null, deletionReason: why,
           });
           await db.createAuditLog({

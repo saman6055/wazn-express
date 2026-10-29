@@ -127,6 +127,11 @@ async function storedDay(dateKey: string): Promise<DaySnapshot | null> {
  * The one write in this file, and it is a record of what was, never a change
  * to it. Idempotent on the date, so running twice on the same morning — or a
  * restart mid-run — leaves one row rather than two.
+ *
+ * The standing totals (debt owed, batches open) are kept from the first
+ * write, the one just after midnight: the hourly re-writes would otherwise
+ * replace yesterday's debt with today's, and the brief's "debt moved" would
+ * always read nothing (2026-10-29). The day's own counts are re-measured.
  */
 export async function captureSnapshot(dateKey = dayKey(-1)): Promise<void> {
   const db = await getDb();
@@ -146,9 +151,7 @@ export async function captureSnapshot(dateKey = dayKey(-1)): Promise<void> {
           parcelsRegistered = VALUES(parcelsRegistered),
           parcelsDelivered = VALUES(parcelsDelivered),
           newCustomers = VALUES(newCustomers),
-          kilos = VALUES(kilos),
-          outstandingDebtUsd = VALUES(outstandingDebtUsd),
-          openBatches = VALUES(openBatches)`,
+          kilos = VALUES(kilos)`,
     );
     appLogger.info("Daily snapshot stored", { date: dateKey });
   } catch (error) {

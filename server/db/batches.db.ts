@@ -1551,6 +1551,31 @@ export async function getBatchDeletionBlockers(batchId: number): Promise<{
 }
 
 /**
+ * The rows that die with a batch: its price tiers, its prices for named
+ * customers, its stage history. Copied into the bin with the batch so a
+ * restore brings the batch back as it was - the same prices, not the
+ * defaults (2026-10-29).
+ */
+export async function batchSideRows(batchId: number): Promise<{
+  pricingTiers: Record<string, unknown>[];
+  customerPricing: Record<string, unknown>[];
+  statusHistory: Record<string, unknown>[];
+}> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const [pricingTiers, customerPricing, statusHistory] = await Promise.all([
+    db.select().from(batchPricingTiers).where(eq(batchPricingTiers.batchId, batchId)),
+    db.select().from(batchCustomerPricing).where(eq(batchCustomerPricing.batchId, batchId)),
+    db.select().from(batchStatusHistory).where(eq(batchStatusHistory.batchId, batchId)),
+  ]);
+  return {
+    pricingTiers: pricingTiers as Record<string, unknown>[],
+    customerPricing: customerPricing as Record<string, unknown>[],
+    statusHistory: statusHistory as Record<string, unknown>[],
+  };
+}
+
+/**
  * Delete a batch and the rows that belong to it.
  *
  * Callers must check `getBatchDeletionBlockers` first — this does not, so

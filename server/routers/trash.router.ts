@@ -102,13 +102,16 @@ export const trashRouter = router({
           // back would fail at the database — better to say why here.
           if (code && !(await db.isBatchCodeFree(code))) blocked("label_taken");
 
-          // releasedPackageIds rides in the snapshot but is not a column, so
-          // it must not reach the insert.
-          const { releasedPackageIds, ...batchRow } = snapshot as {
+          // releasedPackageIds and sideRows ride in the snapshot but are not
+          // columns, so they must not reach the batch insert.
+          const { releasedPackageIds, sideRows, ...batchRow } = snapshot as {
             releasedPackageIds?: number[];
+            sideRows?: Parameters<typeof db.restoreBatchFromSnapshot>[1];
           } & Record<string, unknown>;
 
-          await db.restoreBatchFromSnapshot(batchRow);
+          // With its prices and stage history (copies made before 2026-10-29
+          // carry none, and come back as before).
+          await db.restoreBatchFromSnapshot(batchRow, sideRows);
 
           // Put back only the parcels still unassigned. One scanned into
           // another batch meanwhile belongs there now, and dragging it back

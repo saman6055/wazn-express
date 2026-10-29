@@ -276,11 +276,13 @@ async function boxesClosedByReceipt(db: SettlementDb, boxIds: number[]): Promise
  * receipted: an order's freight (pendingFreightUsd) and an ordinary parcel
  * never billed. Read by the same rule the till uses for the box itself.
  */
-export async function unwrittenOfBoxes(boxIds: number[]): Promise<{
+export async function unwrittenOfBoxes(boxIds: number[], inTx?: unknown): Promise<{
   totalUsd: number;
   lines: Array<{ boxCode: string; kind: "freight" | "parcel"; amountUsd: number; freightOrder: BoxParcelView["freightOrder"]; packageId: number | null; tracking: string | null }>;
 }> {
-  const db = await getDb();
+  // Inside a receipt: the receipt's own connection, never a second one from
+  // the pool while the first is held.
+  const db = (inTx as SettlementDb | undefined) ?? await getDb();
   const ids = Array.from(new Set(boxIds.map(Number).filter((n) => n > 0)));
   if (!db || ids.length === 0) return { totalUsd: 0, lines: [] };
   const items = await db
@@ -1705,11 +1707,23 @@ export async function createBoxSettlement(
           ne(deliveryBoxes.status, "cancelled"),
           sql`NOT EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`,
         ))).map((b) => Number(b.id));
-      const { lines: older } = await unwrittenOfBoxes(earlierIds);
+      const { lines: older } = await unwrittenOfBoxes(earlierIds, tx);
       for (const l of older) {
+        /*
+         * Claimed before it is written. Two receipts for two boxes of the
+         * same customer at the same moment both read the older box's freight
+         * as unwritten; the UPDATE waits for the other and then finds the
+         * flag already set, so the charge is written once.
+         */
         if (l.kind === "freight" && l.freightOrder) {
+          const [claim] = await tx.update(fullPackageOrders).set({ isShippingCharged: true })
+            .where(and(eq(fullPackageOrders.id, l.freightOrder.id), sql`COALESCE(${fullPackageOrders.isShippingCharged}, 0) = 0`));
+          if (!((claim as { affectedRows?: number }).affectedRows ?? 0)) continue;
           await postOrderFreight(tx, customer, l.boxCode, l.freightOrder, l.amountUsd, userId);
         } else if (l.kind === "parcel" && l.packageId !== null) {
+          const [claim] = await tx.update(packages).set({ isCharged: true })
+            .where(and(eq(packages.id, l.packageId), eq(packages.isCharged, false)));
+          if (!((claim as { affectedRows?: number }).affectedRows ?? 0)) continue;
           await recordPackageChargeWithoutInvoice(
             customer.id,
             customer.customerCode ?? String(customer.id),
@@ -2192,9 +2206,14 @@ export async function reverseBoxSettlement(
      * customer's balance goes back UP, and a debt reappearing with nothing
      * to explain it is how somebody decides the company is cheating them.
      */
+    appLogger.info("[BoxSettlement] reversed", { settlementId, putBack, userId });
+    return { customerId: settlement.customerId, putBack };
+  }).then(async ({ customerId, putBack }) => {
+    // Outside the transaction, like the receipt's own message: told only
+    // once the money is committed, and on a connection of its own.
     try {
       await createCustomerNotification({
-        customerId: settlement.customerId,
+        customerId,
         type: "payment",
         relatedType: "payment",
         relatedId: settlementId,
@@ -2206,8 +2225,6 @@ export async function reverseBoxSettlement(
     } catch (err) {
       appLogger.error("[BoxSettlement] reversal notification failed", { settlementId, err });
     }
-
-    appLogger.info("[BoxSettlement] reversed", { settlementId, putBack, userId });
     return { ok: true as const };
   });
 }

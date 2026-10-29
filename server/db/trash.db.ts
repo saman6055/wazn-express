@@ -1,7 +1,7 @@
 import { getDb } from "./connection";
 import { and, desc, eq, getTableColumns, inArray, isNotNull, isNull, sql } from "drizzle-orm";
 import type { MySqlTable } from "drizzle-orm/mysql-core";
-import { batches, customers, deletedRecords, deliveryBoxItems, deliveryBoxes, fullPackageOrders, users } from "../../drizzle/schema";
+import { batchCustomerPricing, batchPricingTiers, batchStatusHistory, batches, customers, deletedRecords, deliveryBoxItems, deliveryBoxes, fullPackageOrders, users } from "../../drizzle/schema";
 import type { InsertDeletedRecord } from "../../drizzle/schema";
 import { deliveryBoxSnapshotFacts, type TrashItem } from "@shared/trash";
 
@@ -194,10 +194,29 @@ export async function batchExists(id: number): Promise<boolean> {
  * while it was gone — a scan log, an audit entry — points at the right row
  * again rather than at a stranger.
  */
-export async function restoreBatchFromSnapshot(snapshot: Record<string, unknown>): Promise<void> {
+export async function restoreBatchFromSnapshot(
+  snapshot: Record<string, unknown>,
+  side?: {
+    pricingTiers?: Record<string, unknown>[];
+    customerPricing?: Record<string, unknown>[];
+    statusHistory?: Record<string, unknown>[];
+  },
+): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.insert(batches).values(snapshotRowForInsert(batches, snapshot) as any);
+  // The batch with its prices and its history, in one transaction: a batch
+  // back without its prices would charge every parcel the defaults.
+  await db.transaction(async (tx) => {
+    await tx.insert(batches).values(snapshotRowForInsert(batches, snapshot) as any);
+    const rows = (table: MySqlTable, list?: Record<string, unknown>[]) =>
+      (Array.isArray(list) ? list : []).map((r) => snapshotRowForInsert(table, r));
+    const tiers = rows(batchPricingTiers, side?.pricingTiers);
+    const named = rows(batchCustomerPricing, side?.customerPricing);
+    const history = rows(batchStatusHistory, side?.statusHistory);
+    if (tiers.length) await tx.insert(batchPricingTiers).values(tiers as any);
+    if (named.length) await tx.insert(batchCustomerPricing).values(named as any);
+    if (history.length) await tx.insert(batchStatusHistory).values(history as any);
+  });
 }
 
 /** Clear the deletedAt marker on a full-package order. */

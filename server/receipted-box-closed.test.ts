@@ -49,7 +49,9 @@ describe("living boxes know each other at the till (2026-10-29)", () => {
   });
   it("the receipt asks against it and writes it, so the account never reads the advance as a credit", () => {
     expect(settle).toContain("othersUnwrittenUsd: view.earlierUnwrittenUsd,");
-    expect(settle).toContain("const { lines: older } = await unwrittenOfBoxes(earlierIds);");
+    expect(settle).toContain("const { lines: older } = await unwrittenOfBoxes(earlierIds, tx);");
+    // Claimed before written: two tills at once write the older freight once.
+    expect(settle).toContain("COALESCE(${fullPackageOrders.isShippingCharged}, 0) = 0");
   });
   it("every screen asks the same figure", () => {
     for (const f of ["client/src/components/delivery/QuickSettleDialog.tsx", "client/src/components/delivery/BoxSettlementPanel.tsx", "client/src/components/delivery/ReceiptDinarDialog.tsx"]) {
