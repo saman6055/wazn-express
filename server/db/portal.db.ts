@@ -1243,6 +1243,21 @@ export async function getUnreadMessageCount(customerId: number, forSenderType: '
   return result?.count || 0;
 }
 
+/**
+ * How many customer messages nobody has read — the badge on every office
+ * screen, asked every minute. One count; it used to build every conversation
+ * with its last message and add the badges up in JS.
+ */
+export async function getUnreadCustomerMessageCount(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db
+    .select({ n: count() })
+    .from(customerMessages)
+    .where(and(eq(customerMessages.senderType, 'customer'), eq(customerMessages.isRead, false)));
+  return Number(row?.n ?? 0);
+}
+
 export async function getAllConversations(): Promise<{ customerId: number; customerName: string; customerCode: string; mobileNumber: string; unreadCount: number; lastMessage: string; lastMessageAt: Date }[]> {
   const db = await getDb();
   if (!db) return [];

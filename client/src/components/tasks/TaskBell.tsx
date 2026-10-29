@@ -12,6 +12,7 @@ import { soundManager } from "@/lib/soundManager";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useTaskComposer } from "@/components/tasks/TaskComposer";
+import { QueryErrorNote } from "@/components/QueryErrorNote";
 import {
   TASK_GUIDE,
   TASK_WORDS,
@@ -289,7 +290,9 @@ export function TaskBell({ className }: { className?: string }) {
           </div>
         ) : (
           <div className="max-h-[22rem] overflow-y-auto">
-            {awake.length === 0 ? (
+            {mine.isError ? (
+              <QueryErrorNote error={mine.error} onRetry={() => void mine.refetch()} className="m-2" />
+            ) : awake.length === 0 ? (
               <div className="px-3 py-6 text-center">
                 <p className="text-sm text-muted-foreground">{L(TASK_WORDS.empty)}</p>
                 <p className="mt-1.5 text-[11px] leading-relaxed text-muted-foreground/80">{L(TASK_WORDS.hint)}</p>

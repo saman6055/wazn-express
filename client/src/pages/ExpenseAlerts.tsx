@@ -45,6 +45,7 @@ import {
 } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { toast } from "sonner";
+import { QueryErrorNote } from "@/components/QueryErrorNote";
 
 export default function ExpenseAlerts() {
   const { t } = useLanguage();
@@ -282,7 +283,9 @@ export default function ExpenseAlerts() {
 
           {/* Alerts Tab */}
           <TabsContent value="alerts" className="space-y-4">
-            {alerts.length === 0 ? (
+            {alertsQuery.isError ? (
+              <QueryErrorNote error={alertsQuery.error} onRetry={() => void alertsQuery.refetch()} />
+            ) : alerts.length === 0 ? (
               <Card>
                 <CardContent className="p-12 text-center">
                   <AlertTriangle className="h-16 w-16 mx-auto text-muted-foreground/30 mb-4" />

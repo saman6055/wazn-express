@@ -2,6 +2,7 @@ import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { paymentWhatsAppMessage } from "@shared/paymentWhatsApp";
 import { receiptLanguageFor, whatsappChatUrl, whatsappNumber } from "@shared/receiptWhatsApp";
+import { showErrorToast } from "@/lib/errorToast";
 
 type Say = (w: { ku: string; en: string; ar: string; zh: string }) => string;
 
@@ -26,7 +27,22 @@ export function useSendPaymentWhatsApp(say: Say, onDone?: () => void) {
     // server is blocked by the browser — and pointed at the chat once the
     // message is known.
     const win = window.open("about:blank", "_blank");
-    const facts = await utils.deliveryBox.paymentWhatsAppFacts.fetch({ settlementId }).catch(() => null);
+    // A fault (no signal, a server error) is said as itself; only a real
+    // "not there" is called not found — staff went looking for a reversal
+    // that had never happened.
+    let facts: Awaited<ReturnType<typeof utils.deliveryBox.paymentWhatsAppFacts.fetch>> | null = null;
+    try {
+      facts = await utils.deliveryBox.paymentWhatsAppFacts.fetch({ settlementId });
+    } catch (err) {
+      win?.close();
+      const code = (err as { data?: { code?: string } })?.data?.code;
+      if (code === "NOT_FOUND") {
+        toast.error(say({ ku: "ئەم وەسڵە نەدۆزرایەوە یان هەڵوەشێنراوەتەوە", en: "Receipt not found or reversed", ar: "الإيصال غير موجود أو ملغى", zh: "收据不存在或已撤销" }));
+      } else {
+        showErrorToast(err);
+      }
+      return;
+    }
     if (!facts) {
       win?.close();
       toast.error(say({ ku: "ئەم وەسڵە نەدۆزرایەوە یان هەڵوەشێنراوەتەوە", en: "Receipt not found or reversed", ar: "الإيصال غير موجود أو ملغى", zh: "收据不存在或已撤销" }));

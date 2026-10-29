@@ -17,6 +17,7 @@ import { fmtUsd } from "@/lib/portalFormat";
 import { fmtWhen } from "@/lib/numericDate";
 import { HANDOVER_LABELS, RECEIPT_ACTION_LABELS, type HandoverMode } from "@shared/boxHandover";
 import { DISCOUNT_REASON_LABELS, type DiscountReason } from "@shared/boxSettlement";
+import { QueryErrorNote } from "@/components/QueryErrorNote";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -31,7 +32,7 @@ export function CustomerBoxesPanel({ customerId, currentBoxId }: { customerId: n
     const label = (DISCOUNT_REASON_LABELS as Record<string, Words>)[code as DiscountReason];
     return [label ? L(label) : code, ...rest].join(" — ");
   };
-  const { data, isLoading } = trpc.deliveryBox.customerBoxes.useQuery({ customerId }, { enabled: customerId > 0 });
+  const { data, isLoading, isError, error, refetch } = trpc.deliveryBox.customerBoxes.useQuery({ customerId }, { enabled: customerId > 0 });
   const [open, setOpen] = useState<Set<number>>(() => new Set(currentBoxId ? [currentBoxId] : []));
   const [paperId, setPaperId] = useState<number | null>(null);
   // Folded to one button (owner, 2026-10-21: «یەک دوگمە ... تەنها کاتێ کلیکت کرد ئێنجا نیشان بدات»).
@@ -49,6 +50,8 @@ export function CustomerBoxesPanel({ customerId, currentBoxId }: { customerId: n
   }, [paperId, paper.data]);
 
   if (isLoading) return <div className="flex justify-center py-4"><Loader2 className="h-4 w-4 animate-spin text-muted-foreground" /></div>;
+  // A failed read is not "no boxes": the unpaid-boxes panel used to vanish.
+  if (isError) return <QueryErrorNote error={error} onRetry={() => void refetch()} />;
   if (!data || data.boxes.length === 0) return null;
   const t = data.totals;
 

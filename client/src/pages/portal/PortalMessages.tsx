@@ -56,6 +56,7 @@ import { toast } from "sonner";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { notificationText } from "@/lib/portalNotificationText";
 import { formatPortalDate, formatClockTime } from "@/lib/portalClock";
+import { showErrorToast } from "@/lib/errorToast";
 
 export default function PortalMessages() {
   // Banner colour follows the mode the customer picked, like every other page.
@@ -203,8 +204,8 @@ export default function PortalMessages() {
         attachmentName = attachmentFile.name;
         attachmentType = attachmentFile.type;
         messageType = attachmentFile.type.startsWith("image/") ? "image" : "file";
-      } catch {
-        toast.error(pickLang(language, { ku: "هەڵە لە ئەپڵۆدکردنی فایل", en: "File upload failed", ar: "فشل رفع الملف", zh: "文件上传失败" }));
+      } catch (err) {
+        showErrorToast(err, pickLang(language, { ku: "هەڵە لە ئەپڵۆدکردنی فایل", en: "File upload failed", ar: "فشل رفع الملف", zh: "文件上传失败" }));
         setIsUploading(false);
         return;
       }
@@ -289,8 +290,8 @@ export default function PortalMessages() {
         attachmentName: file.name,
         attachmentType: file.type,
       });
-    } catch {
-      toast.error(pickLang(language, { ku: "هەڵە لە ناردنی دەنگ", en: "Voice send failed", ar: "فشل إرسال الرسالة الصوتية", zh: "语音发送失败" }));
+    } catch (err) {
+      showErrorToast(err, pickLang(language, { ku: "هەڵە لە ناردنی دەنگ", en: "Voice send failed", ar: "فشل إرسال الرسالة الصوتية", zh: "语音发送失败" }));
     }
     setIsUploading(false);
   };

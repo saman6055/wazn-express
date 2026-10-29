@@ -2,6 +2,7 @@ import { and, desc, eq, inArray, like, or, sql, type SQL } from "drizzle-orm";
 import { declaredLinkRefusal, OPEN_DECLARATION_STATUSES } from "@shared/declaredLink";
 import { RECEIPT_PAGE_PREFIXES } from "@shared/customerFeatures";
 import { getDb } from "./connection";
+import { appLogger } from "../utils/logger";
 import {
   customers,
   customerDeclaredPackages,
@@ -283,8 +284,8 @@ export async function updateCustomerLastSignedIn(
       .update(customers)
       .set({ lastSignedIn: new Date() })
       .where(eq(customers.id, customerId));
-  } catch {
-    // ignore
+  } catch (e) {
+    appLogger.warn("[PortalCenter] lastSignedIn not written", { customerId, error: e instanceof Error ? e.message : String(e) });
   }
 }
 

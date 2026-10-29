@@ -264,9 +264,10 @@ export const customerPortalRouter = router({
                 ` لە پۆرتاڵەوە دووپاتی کردەوە کە بۆکسی ${box.boxCode} بەدەستی گەیشتووە.`,
               severity: "info",
             });
-          } catch {
+          } catch (e) {
             // The confirmation itself already succeeded; a failed feed entry
             // must not turn that into an error for the customer.
+            appLogger.warn("[Portal] delivery-confirmed feed entry not written", { boxId: box.id, error: e instanceof Error ? e.message : String(e) });
           }
         }
 
@@ -1009,9 +1010,10 @@ export const customerPortalRouter = router({
                 ` پێویستە بە دەست دیاری بکرێت هی کێیە پێش گەیشتنی.`,
               severity: "warning",
             });
-          } catch {
+          } catch (e) {
             // The refusal below is the protection; the alert is how the office
             // hears about it, and a failed alert must not swallow the refusal.
+            appLogger.warn("[Portal] declared-tracking conflict alert not written", { tracking: input.trackingNumber, error: e instanceof Error ? e.message : String(e) });
           }
           throw new TRPCError({
             code: "CONFLICT",
@@ -1053,8 +1055,9 @@ export const customerPortalRouter = router({
               ` تراکی ${input.trackingNumber} ی تۆمار کرد و چاوەڕێی گەیشتنیەتی.`,
             severity: "info",
           });
-        } catch {
+        } catch (e) {
           // The declaration itself already saved; the feed entry is secondary.
+          appLogger.warn("[Portal] declared-parcel feed entry not written", { tracking: input.trackingNumber, error: e instanceof Error ? e.message : String(e) });
         }
 
         return declared;

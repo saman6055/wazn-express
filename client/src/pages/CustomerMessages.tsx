@@ -30,6 +30,7 @@ import {
   Square,
 } from "lucide-react";
 import { useVoiceRecorder } from "@/hooks/useVoiceRecorder";
+import { showErrorToast } from "@/lib/errorToast";
 
 export default function CustomerMessages() {
   const { t, language } = useTranslation();
@@ -143,8 +144,8 @@ export default function CustomerMessages() {
         attachmentName = attachmentFile.name;
         attachmentType = attachmentFile.type;
         messageType = attachmentFile.type.startsWith("image/") ? "image" : "file";
-      } catch {
-        toast.error(pickLang(language, { ku: "هەڵە لە ئەپڵۆدکردنی فایل", en: "Error uploading file", ar: "خطأ في رفع الملف", zh: "上传文件出错" }));
+      } catch (err) {
+        showErrorToast(err, pickLang(language, { ku: "هەڵە لە ئەپڵۆدکردنی فایل", en: "Error uploading file", ar: "خطأ في رفع الملف", zh: "上传文件出错" }));
         setIsUploading(false);
         return;
       }

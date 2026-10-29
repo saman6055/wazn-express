@@ -16,6 +16,7 @@ import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { WecomRobotCard } from "@/components/settings/WecomRobotCard";
+import { showErrorToast } from "@/lib/errorToast";
 
 export default function Settings() {
     const { t, language } = useTranslation();
@@ -146,8 +147,8 @@ const [companyData, setCompanyData] = useState({
         const msg = "error" in data ? data.error : (t("settings.logoUploadFailed") || pickLang(language, { ku: "ئەپلۆدی لۆگۆ سەرنەگەیشت", en: "Logo upload failed", ar: "فشل رفع الشعار", zh: "标志上传失败" }));
         toast.error(msg);
       }
-    } catch {
-      toast.error(t("settings.logoUploadFailed") || pickLang(language, { ku: "ئەپلۆدی لۆگۆ سەرنەگەیشت", en: "Logo upload failed", ar: "فشل رفع الشعار", zh: "标志上传失败" }));
+    } catch (err) {
+      showErrorToast(err, t("settings.logoUploadFailed") || pickLang(language, { ku: "ئەپلۆدی لۆگۆ سەرنەگەیشت", en: "Logo upload failed", ar: "فشل رفع الشعار", zh: "标志上传失败" }));
     } finally {
       setLogoUploading(false);
       e.target.value = "";

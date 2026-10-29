@@ -763,18 +763,16 @@ export const adminMessagesRouter = router({
             title: "New reply from support", titleKu: "وەڵامی نوێ لە پشتگیری", titleAr: "رد جديد من الدعم",
             message: preview, messageKu: preview, messageAr: preview,
           });
-        } catch {
+        } catch (e) {
           // Best-effort — the chat message itself already saved.
+          appLogger.warn("[Support] reply notification not sent", { customerId: input.customerId, error: e instanceof Error ? e.message : String(e) });
         }
 
         return message;
       }),
     
     // Get unread count for all customers
-    getUnreadCount: adminProcedure.query(async () => {
-      const conversations = await db.getAllConversations();
-      return conversations.reduce((sum, conv) => sum + conv.unreadCount, 0);
-    }),
+    getUnreadCount: adminProcedure.query(() => db.getUnreadCustomerMessageCount()),
 });
 
 export const suppliersRouter = router({
@@ -1052,8 +1050,9 @@ export const backupRouter = router({
           const fsp = await import("fs/promises");
           for (const ext of ["zip", "json"] as const) {
             const file = getLocalBackupFilePath(input.id, ext);
-            await fsp.rm(file, { force: true }).catch(() => undefined);
-            await fsp.rm(`${file}.part`, { force: true }).catch(() => undefined);
+            // The row goes either way; a file left behind is said in the log.
+            await fsp.rm(file, { force: true }).catch((e) => appLogger.warn("[Backup] file not removed", { file, error: e instanceof Error ? e.message : String(e) }));
+            await fsp.rm(`${file}.part`, { force: true }).catch((e) => appLogger.warn("[Backup] part file not removed", { file, error: e instanceof Error ? e.message : String(e) }));
           }
         }
         await database.delete(backups).where(eq(backups.id, input.id));

@@ -13,6 +13,7 @@ import { cn } from "@/lib/utils";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Textarea } from "@/components/ui/textarea";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { QueryErrorNote } from "@/components/QueryErrorNote";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,7 +32,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   const [actionType, setActionType] = useState<"approve" | "reject" | null>(null);
   
   // Queries
-  const { data, isLoading, refetch } = trpc.packages.getClaimRequests.useQuery({
+  const { data, isLoading, isError, error, refetch } = trpc.packages.getClaimRequests.useQuery({
     status: statusFilter === "all" ? undefined : statusFilter,
   });
   
@@ -221,6 +222,8 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
               <Skeleton key={i} className="h-32 w-full rounded-xl" />
             ))}
           </div>
+        ) : isError ? (
+          <QueryErrorNote error={error} onRetry={() => void refetch()} />
         ) : filteredRequests.length === 0 ? (
           <Card className="p-12 text-center">
             <div className="w-16 h-16 bg-gray-100 dark:bg-gray-950/40 rounded-full flex items-center justify-center mx-auto mb-4">

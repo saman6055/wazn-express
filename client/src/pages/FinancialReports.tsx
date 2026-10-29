@@ -24,6 +24,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { showErrorToast } from "@/lib/errorToast";
 import { 
   TrendingUp,
   TrendingDown,
@@ -76,7 +77,7 @@ const [activeTab, setActiveTab] = useState("pnl");
       window.open(data.url, '_blank');
       toast.success('ڕاپۆرتی PDF دروستکرا');
     },
-    onError: () => toast.error('هەڵە لە دروستکردنی PDF'),
+    onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
   });
 
   const generateBalanceSheetPDF = trpc.financialReports.generateBalanceSheetPDF.useMutation({
@@ -84,7 +85,7 @@ const [activeTab, setActiveTab] = useState("pnl");
       window.open(data.url, '_blank');
       toast.success('تەرازووی دارایی PDF دروستکرا');
     },
-    onError: () => toast.error('هەڵە لە دروستکردنی PDF'),
+    onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
   });
 
   const generatePartnerPDF = trpc.financialReports.generatePartnerReportPDF.useMutation({
@@ -92,7 +93,7 @@ const [activeTab, setActiveTab] = useState("pnl");
       window.open(data.url, '_blank');
       toast.success('ڕاپۆرتی شەریک PDF دروستکرا');
     },
-    onError: () => toast.error('هەڵە لە دروستکردنی PDF'),
+    onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
   });
 
   const generateExpensePDF = trpc.financialReports.generateExpenseReportPDF.useMutation({
@@ -100,7 +101,7 @@ const [activeTab, setActiveTab] = useState("pnl");
       window.open(data.url, '_blank');
       toast.success('ڕاپۆرتی مەسروفات PDF دروستکرا');
     },
-    onError: () => toast.error('هەڵە لە دروستکردنی PDF'),
+    onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
   });
 
   const generateDebtPDF = trpc.financialReports.generateDebtSchedulePDF.useMutation({
@@ -108,7 +109,7 @@ const [activeTab, setActiveTab] = useState("pnl");
       window.open(data.url, '_blank');
       toast.success('خشتەی قەرز PDF دروستکرا');
     },
-    onError: () => toast.error('هەڵە لە دروستکردنی PDF'),
+    onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
   });
 
   // Month names in English for PDF

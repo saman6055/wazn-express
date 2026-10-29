@@ -55,6 +55,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { showErrorToast } from "@/lib/errorToast";
 
 export default function CompanyDebts() {
     const { t } = useTranslation();
@@ -281,7 +282,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
       window.open(data.url, '_blank');
       toast.success(t("debts.pdfGenerated"));
     },
-    onError: () => toast.error(t("debts.pdfError")),
+    onError: (error) => showErrorToast(error, t("debts.pdfError")),
   });
 
   return (

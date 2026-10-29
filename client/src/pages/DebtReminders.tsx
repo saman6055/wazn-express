@@ -9,11 +9,9 @@ import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { 
   Bell, 
-  Send, 
-  MessageSquare, 
+  Send,  
   Mail, 
   Phone,
   Users,
@@ -24,11 +22,12 @@ import {
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
+import { showErrorToast } from "@/lib/errorToast";
 
 export default function DebtReminders() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
-  const [reminderMethod, setReminderMethod] = useState<"whatsapp" | "email" | "both">("whatsapp");
   const [customMessage, setCustomMessage] = useState("");
   const [minDebt, setMinDebt] = useState("");
   const [isSendDialogOpen, setIsSendDialogOpen] = useState(false);
@@ -38,8 +37,10 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     minBalanceUsd: minDebt ? parseFloat(minDebt) : 0,
   });
 
-  // Send reminder mutation - simplified for now
+  // One portal notification (with push) per chosen debtor. This button used
+  // to wait a second and a half and say "sent" having sent nothing.
   const [isSending, setIsSending] = useState(false);
+  const notify = trpc.portalCenter.sendNotificationToCustomer.useMutation();
 
   const handleSelectAll = () => {
     if (selectedCustomers.length === debtors?.length) {
@@ -64,16 +65,36 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     }
 
     setIsSending(true);
-    try {
-      // Simulate sending - in real implementation, call the API
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      toast.success(`یادکردنەوە نێردرا بۆ ${selectedCustomers.length} کڕیار`);
+    const chosen = (debtors ?? []).filter((d) => selectedCustomers.includes(d.customerId));
+    let sent = 0;
+    const failed: string[] = [];
+    for (const d of chosen) {
+      const owed = `$${(d.balanceUsd || 0).toFixed(2)}`;
+      const body = customMessage.trim()
+        ? `${customMessage.trim()}\n(${owed})`
+        : `بڕی ${owed} لەسەر حیسابەکەتە. تکایە بۆ یەکلاکردنەوەی پەیوەندیمان پێوە بکە.`;
+      try {
+        await notify.mutateAsync({
+          customerId: d.customerId,
+          withPush: true,
+          title: "Debt reminder — Wazn Express",
+          titleKu: "یادکردنەوەی قەرز — وەزن ئێکسپرێس",
+          titleAr: "تذكير بالدين — وزن اكسبريس",
+          message: customMessage.trim() ? `${customMessage.trim()}\n(${owed})` : `You have an outstanding balance of ${owed}. Please contact us to settle it.`,
+          messageKu: body,
+          messageAr: customMessage.trim() ? `${customMessage.trim()}\n(${owed})` : `لديك رصيد مستحق بقيمة ${owed}. يرجى التواصل معنا لتسويته.`,
+        });
+        sent++;
+      } catch (error) {
+        failed.push(d.customer?.fullName || String(d.customerId));
+        showErrorToast(error, t("auto.text_112d62"));
+      }
+    }
+    setIsSending(false);
+    if (sent > 0) toast.success(`یادکردنەوە نێردرا بۆ ${sent} کڕیار${failed.length ? ` — ${failed.length} نەنێردرا` : ""}`);
+    if (failed.length === 0) {
       setSelectedCustomers([]);
       setIsSendDialogOpen(false);
-    } catch (error) {
-      toast.error(t("auto.text_112d62"));
-    } finally {
-      setIsSending(false);
     }
   };
 
@@ -119,32 +140,14 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                     </p>
                   </div>
 
-                  <div>
-                    <Label>{t("auto.text_244ad9")} </Label>
-                    <Select value={reminderMethod} onValueChange={(v: "whatsapp" | "email" | "both") => setReminderMethod(v)}>
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="whatsapp">
-                          <div className="flex items-center gap-2">
-                            <MessageSquare className="h-4 w-4 text-green-600 dark:text-green-300" />
-                            {t("auto.text_218781")}
-                          </div>
-                        </SelectItem>
-                        <SelectItem value="email">
-                          <div className="flex items-center gap-2">
-                            <Mail className="h-4 w-4 text-blue-600 dark:text-blue-300" />{t("auth.email")}</div>
-                        </SelectItem>
-                        <SelectItem value="both">
-                          <div className="flex items-center gap-2">
-                            <Send className="h-4 w-4 text-purple-600 dark:text-purple-300" />
-                            {t("auto.text_837079")}
-                          </div>
-                        </SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <p className="text-xs text-muted-foreground">
+                    {pickLang(language, {
+                      ku: "یادکردنەوەکە وەک ئاگادارکەرەوە دەچێتە پۆرتاڵی کڕیار و وەک push بۆ مۆبایلەکەی.",
+                      en: "The reminder goes to the customer's portal as a notification and as a push to their phone.",
+                      ar: "يصل التذكير إلى بوابة العميل كإشعار وكتنبيه push إلى هاتفه.",
+                      zh: "提醒将作为通知发送到客户门户，并推送到其手机。",
+                    })}
+                  </p>
 
                   <div>
                     <Label>{t("auto.text_59553e")} </Label>

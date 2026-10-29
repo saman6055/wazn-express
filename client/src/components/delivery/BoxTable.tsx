@@ -53,6 +53,7 @@ import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { absoluteLogoUrl } from "@/lib/absoluteLogoUrl";
 import { companyContact, logoUrlOnDark } from "@/lib/brand";
 import { trpc } from "@/lib/trpc";
+import { showErrorToast } from "@/lib/errorToast";
 
 type BoxStatus = "open" | "ready" | "in_transit" | "delivered" | "cancelled";
 type DeliveryMethod = "warehouse_pickup" | "home_delivery" | "city_transfer";
@@ -201,8 +202,16 @@ export function BoxTable({
     // A parcel of the same batch not in a box: the box itself asks
     // «ئاگاداری...؟» (owner, 2026-10-20/21), so the paper is printed there.
     if (!reached) {
-      const state = await trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id }).catch(() => null);
-      const left = (state?.missing.length ?? 0) + (state?.earlier.length ?? 0);
+      // The gate cannot be passed by a failed read: a parcel outside a box
+      // would then print as if there were none (owner, 2026-10-20).
+      let state: Awaited<ReturnType<typeof trpcUtils.deliveryBox.missingParcels.fetch>>;
+      try {
+        state = await trpcUtils.deliveryBox.missingParcels.fetch({ boxId: box.id });
+      } catch (err) {
+        showErrorToast(err);
+        return;
+      }
+      const left = state.missing.length + state.earlier.length;
       if (left > 0) {
         toast.warning(pickLang(language, {
           ku: `${left} پاکێجی ئەم کڕیارە لە هیچ بۆکسێکدا نییە - بۆکسەکە کرایەوە، لەوێ چاپی بکە`,
@@ -222,7 +231,15 @@ export function BoxTable({
     void loadLocale(lang);
     const customer = getCustomer(box.customerId);
     // Paid on an earlier receipt of this box: the window asks only what is left.
-    const view = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null);
+    // Paid-before and extras come from the till; without them the paper
+    // would say less than was paid. A failed read stops here, said aloud.
+    let view: Awaited<ReturnType<typeof trpcUtils.deliveryBox.settlementView.fetch>>;
+    try {
+      view = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id });
+    } catch (err) {
+      showErrorToast(err);
+      return;
+    }
     const before = paidBeforeOnBox(view);
     setReceiptRequest({
       boxCode: box.boxCode,
@@ -248,7 +265,13 @@ export function BoxTable({
     await loadLocale(lang);
     const customer = getCustomer(box.customerId);
     // The till's prices on the paper (alignItemsToTill), as the box panel prints them.
-    const tillView = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null);
+    let tillView: Awaited<ReturnType<typeof trpcUtils.deliveryBox.settlementView.fetch>>;
+    try {
+      tillView = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id });
+    } catch (err) {
+      showErrorToast(err);
+      return;
+    }
     const tillItems = alignItemsToTill(((await trpcUtils.deliveryBox.getItems.fetch({ boxId: box.id }).catch(() => null)) ?? box.items ?? []) as any[], tillView?.parcels);
     const tillTotal = tillBoxValue(tillItems, tillView?.parcels, box.totalValueUsd);
     const receiptArgs = [
@@ -283,11 +306,11 @@ export function BoxTable({
       createTranslator(lang),
       {
         direction: getLanguageDirection(lang), logoUrl: absoluteLogoUrl(logoUrlOnDark(logoUrl)), company: companyContact(company, lang), dinar,
-        ...(await (async () => {
-          const view = await trpcUtils.deliveryBox.settlementView.fetch({ boxId: box.id }).catch(() => null);
-          const before = paidBeforeOnBox(view);
+        // The same till view already read above: one request, one truth.
+        ...((() => {
+          const before = paidBeforeOnBox(tillView);
           return {
-            extras: receiptExtraLines(view?.extras, lang),
+            extras: receiptExtraLines(tillView?.extras, lang),
             settlement: before.usd > 0 ? { paidBeforeUsd: before.usd, settlementNumber: before.receipt } : undefined,
           };
         })()),

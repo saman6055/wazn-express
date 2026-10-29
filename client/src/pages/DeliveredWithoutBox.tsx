@@ -12,6 +12,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { CopyButton } from "@/components/CopyButton";
 import { parcelListHref } from "@shared/parcelSource";
 import { formatRowDate } from "@/components/ui/relative-time";
+import { QueryErrorNote } from "@/components/QueryErrorNote";
 
 /**
  * Parcels that went out without a box - read only.
@@ -25,7 +26,7 @@ import { formatRowDate } from "@/components/ui/relative-time";
  */
 export default function DeliveredWithoutBox() {
   const { language } = useLanguage();
-  const { data, isLoading } = trpc.packages.deliveredWithoutBox.useQuery();
+  const { data, isLoading, isError, error, refetch } = trpc.packages.deliveredWithoutBox.useQuery();
   const [search, setSearch] = useState("");
 
   const rows = useMemo(() => {
@@ -110,6 +111,8 @@ export default function DeliveredWithoutBox() {
                 <Skeleton className="h-8 w-full" />
                 <Skeleton className="h-8 w-full" />
               </div>
+            ) : isError ? (
+              <QueryErrorNote error={error} onRetry={() => void refetch()} className="m-4" />
             ) : rows.length === 0 ? (
               <div className="p-8 text-center text-sm text-muted-foreground" data-testid="never-boxed-empty">
                 {L("هیچ پاکێجێک بێ بۆکس دەرنەچووە ✓", "No parcel went out without a box ✓", "لم يخرج أي طرد بلا صندوق ✓", "没有未装箱出库的包裹 ✓")}

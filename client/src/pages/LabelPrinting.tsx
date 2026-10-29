@@ -59,6 +59,7 @@ import {
 } from "@/components/ui/table";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { generateLabelsHtml, openLabelPrintWindow } from "@/lib/labelPrintUtils";
+import { showErrorToast } from "@/lib/errorToast";
 
 export default function LabelPrinting() {
     const { t } = useTranslation();
@@ -119,7 +120,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
     }
 
     setIsPrinting(true);
-
+    try {
     // Loaded on demand so the qrcode bundle stays out of the page chunk.
     const QRCode = (await import("qrcode")).default;
     const selectedPkgs = packages?.filter((p) => selectedPackages.includes(p.id)) || [];
@@ -162,8 +163,13 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
     });
 
     openLabelPrintWindow(html);
-    setIsPrinting(false);
     toast.success(`${selectedPackages.length} لەیبڵ چاپ کرا`);
+    } catch (err) {
+      // A QR that would not render used to leave the button disabled for good.
+      showErrorToast(err);
+    } finally {
+      setIsPrinting(false);
+    }
   };
 
   const handlePreview = async (pkg: any) => {

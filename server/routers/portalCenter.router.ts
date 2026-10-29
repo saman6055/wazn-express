@@ -15,6 +15,7 @@ import * as db from "../db";
 import { linkDeclaredParcel } from "../lib/linkDeclaredParcel";
 import { recordRmbRateFromPortalCenter, yuanSettingsWithSharedRate } from "../lib/sharedRmbRate";
 import { DECLARED_LINK_REFUSAL_MESSAGE } from "@shared/declaredLink";
+import { appLogger } from "../utils/logger";
 
 const ANNOUNCEMENT_KEY = "portal_announcement";
 
@@ -813,8 +814,9 @@ export const portalCenterRouter = router({
           type: input.status === "completed" ? "success" : input.status === "cancelled" ? "error" : "info",
           actionUrl: "/portal/yuan-exchange",
         }));
-      } catch {
+      } catch (e) {
         // Notification is best-effort; the status change itself already saved.
+        appLogger.warn("[PortalCenter] yuan-order status notice not sent", { orderId: order.id, error: e instanceof Error ? e.message : String(e) });
       }
       return { ok: true, order };
     }),

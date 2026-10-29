@@ -203,7 +203,6 @@ describe("what may still sit in a bottom corner of the window", () => {
   const MAY: Record<string, { count: number; why: string }> = {
     "lib/floatingCorner.ts": { count: 1, why: "the panel the chat or the lamp opens: opened on purpose, closed again" },
     "components/DashboardLayout.tsx": { count: 2, why: "full screen only: the way out and the zoom, when the rail and the bars are gone" },
-    "components/entry/EntryWidgets.tsx": { count: 1, why: "a read-out that takes no clicks (pointer-events-none)" },
     "components/portal/PortalWidthSwitch.tsx": { count: 1, why: "the customer's portal, not the office's pages" },
   };
 
@@ -239,7 +238,8 @@ describe("what may still sit in a bottom corner of the window", () => {
 
   it("finds the ones that are there", () => {
     // Guard the guard: a pattern that matches nothing would pass the next test.
-    expect(Object.keys(found).length).toBeGreaterThanOrEqual(4);
+    // Three since EntryWidgets (never mounted) was removed, 2026-10-30.
+    expect(Object.keys(found).length).toBeGreaterThanOrEqual(3);
     expect(found["lib/floatingCorner.ts"]).toBe(1);
   });
 

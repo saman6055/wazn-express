@@ -295,7 +295,7 @@ export const authRouter = router({
               entityType: "user",
               entityId: user.id,
               newValues: { attempts: after.failedAttempts, minutes: LOCK_MINUTES },
-            }).catch(() => undefined);
+            }).catch((err) => appLogger.warn("[Auth] could not write the lockout audit line", { userId: user.id, error: err instanceof Error ? err.message : String(err) }));
           }
           throw new TRPCError({ code: "UNAUTHORIZED", message: after.justLocked ? STAFF_LOCKED_MESSAGE : STAFF_LOGIN_MISS });
         }

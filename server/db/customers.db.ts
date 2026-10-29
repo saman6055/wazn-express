@@ -194,13 +194,16 @@ export async function getCustomerByCode(customerCode: string): Promise<Customer 
  * column added later is carried automatically and the four that must never
  * be carried are named in exactly one place.
  */
-const {
+export const {
   photoUrl: _photoUrl,
   passportUrl: _passportUrl,
   nationalIdUrl: _nationalIdUrl,
   contractUrl: _contractUrl,
   ...CUSTOMER_LIST_COLUMNS
 } = getTableColumns(customers);
+
+/** A customer row as every list carries it: without the four document columns. */
+export type CustomerListRow = Omit<Customer, "photoUrl" | "passportUrl" | "nationalIdUrl" | "contractUrl">;
 
 export async function getAllCustomers(activeOnly = false) {
   const db = await getDb();

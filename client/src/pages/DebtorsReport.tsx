@@ -46,6 +46,7 @@ import { FILTER_LABEL, debtorsHref, packagesHref, readDebtorsLink } from "@share
 import { customerCodeOnly } from "@shared/customerCode";
 import { whatsappNumber } from "@shared/receiptWhatsApp";
 import { isOverCreditLimit } from "@shared/riskRules";
+import { QueryErrorNote } from "@/components/QueryErrorNote";
 
 type AgingCategory = 'all' | '0-30' | '30-60' | '60-90' | '90+';
 
@@ -73,7 +74,7 @@ const [searchTerm, setSearchTerm] = useState("");
   const [agingFilter, setAgingFilter] = useState<AgingCategory>("all");
   const [sortBy, setSortBy] = useState<'balance' | 'days'>('balance');
   
-  const { data: accounts, isLoading } = trpc.ledger.getAllAccounts.useQuery();
+  const { data: accounts, isLoading, isError, error, refetch } = trpc.ledger.getAllAccounts.useQuery();
   // The age of a debt is its oldest unpaid charge (shared/debtAge). Measured
   // from the last movement, every account read "0–30 days" after the credit
   // clean-up touched them all (2026-10-03), debts from May among them.
@@ -406,6 +407,8 @@ const [searchTerm, setSearchTerm] = useState("");
           <CardContent>
             {isLoading ? (
               <div className="text-center py-8">{t("common.loading")}</div>
+            ) : isError ? (
+              <QueryErrorNote error={error} onRetry={() => void refetch()} />
             ) : filteredDebtors.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
                 {t("auto.text_295932")}

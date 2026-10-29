@@ -1458,7 +1458,8 @@ function AlertSummarySection() {
   const batchList = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
 
   // Calculate package alerts
-  const packageAlerts = packages?.reduce((acc, pkg) => {
+  // Once per list, not on every render of the dashboard (500 parcels).
+  const packageAlerts = useMemo(() => packages?.reduce((acc, pkg) => {
     const registeredAt = new Date(pkg.createdAt);
     const now = new Date();
     const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
@@ -1474,10 +1475,10 @@ function AlertSummarySection() {
       acc.normal++;
     }
     return acc;
-  }, { normal: 0, warning: 0, highRisk: 0 }) || { normal: 0, warning: 0, highRisk: 0 };
+  }, { normal: 0, warning: 0, highRisk: 0 }) || { normal: 0, warning: 0, highRisk: 0 }, [packages]);
 
   // Calculate batch alerts
-  const batchAlerts = batchList?.reduce((acc, batch) => {
+  const batchAlerts = useMemo(() => batchList?.reduce((acc, batch) => {
     const isCompleted = batch.status === "arrived" || batch.status === "delivered" || batch.status === "closed";
     if (isCompleted) {
       acc.normal++;
@@ -1512,7 +1513,7 @@ function AlertSummarySection() {
       acc.normal++;
     }
     return acc;
-  }, { normal: 0, warning: 0, highRisk: 0 }) || { normal: 0, warning: 0, highRisk: 0 };
+  }, { normal: 0, warning: 0, highRisk: 0 }) || { normal: 0, warning: 0, highRisk: 0 }, [batchList]);
 
   const totalHighRisk = packageAlerts.highRisk + batchAlerts.highRisk;
   const totalWarning = packageAlerts.warning + batchAlerts.warning;

@@ -3193,6 +3193,30 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // history each time and discarding almost all of it.
   { name: "idx.packages_customer_batch", sql: "CREATE INDEX idx_packages_customer_batch ON packages (customerId, batchId)" },
 
+  // The query indexes of drizzle/0031_add_query_indexes.sql. That file runs
+  // only through `pnpm db:push`, which the deploy skips on purpose, so on
+  // production the packages/batches/invoices lists were reading whole tables
+  // (2026-10-30). Each is idempotent here: an index that exists is skipped.
+  { name: "idx.packages_customer_id", sql: "CREATE INDEX idx_packages_customer_id ON packages (customerId)" },
+  { name: "idx.packages_batch_id", sql: "CREATE INDEX idx_packages_batch_id ON packages (batchId)" },
+  { name: "idx.packages_status", sql: "CREATE INDEX idx_packages_status ON packages (status)" },
+  { name: "idx.packages_tracking_number", sql: "CREATE INDEX idx_packages_tracking_number ON packages (trackingNumber)" },
+  { name: "idx.packages_created_at", sql: "CREATE INDEX idx_packages_created_at ON packages (createdAt)" },
+  // The registrations report asks for registered parcels in a date range.
+  { name: "idx.packages_status_registered_at", sql: "CREATE INDEX idx_packages_status_registered_at ON packages (status, registeredAt)" },
+  { name: "idx.batches_status", sql: "CREATE INDEX idx_batches_status ON batches (status)" },
+  { name: "idx.batches_shipping_type", sql: "CREATE INDEX idx_batches_shipping_type ON batches (shippingType)" },
+  { name: "idx.batches_created_at", sql: "CREATE INDEX idx_batches_created_at ON batches (createdAt)" },
+  { name: "idx.ledger_account_id", sql: "CREATE INDEX idx_ledger_account_id ON ledgerTransactions (accountId)" },
+  { name: "idx.ledger_created_at", sql: "CREATE INDEX idx_ledger_created_at ON ledgerTransactions (createdAt)" },
+  { name: "idx.ledger_transaction_type", sql: "CREATE INDEX idx_ledger_transaction_type ON ledgerTransactions (transactionType)" },
+  { name: "idx.ledger_account_created", sql: "CREATE INDEX idx_ledger_account_created ON ledgerTransactions (accountId, createdAt)" },
+  { name: "idx.customers_customer_code", sql: "CREATE INDEX idx_customers_customer_code ON customers (customerCode)" },
+  { name: "idx.customers_mobile_number", sql: "CREATE INDEX idx_customers_mobile_number ON customers (mobileNumber)" },
+  { name: "idx.invoices_customer_id", sql: "CREATE INDEX idx_invoices_customer_id ON invoices (customerId)" },
+  { name: "idx.invoices_batch_id", sql: "CREATE INDEX idx_invoices_batch_id ON invoices (batchId)" },
+  { name: "idx.invoices_created_at", sql: "CREATE INDEX idx_invoices_created_at ON invoices (createdAt)" },
+
   // When a customer last set their own password. The password stays
   // hashed and unreadable; this only records that they chose one.
   { name: "customers.passwordChangedAt", sql: "ALTER TABLE customers ADD COLUMN passwordChangedAt TIMESTAMP NULL" },

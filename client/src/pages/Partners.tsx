@@ -57,6 +57,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { showErrorToast } from "@/lib/errorToast";
 
 export default function Partners() {
     const { t } = useTranslation();
@@ -246,7 +247,7 @@ const [activeTab, setActiveTab] = useState("partners");
       window.open(data.url, '_blank');
       toast.success(t("partners.pdfGenerated"));
     },
-    onError: () => toast.error(t("common.pdfError")),
+    onError: (error) => showErrorToast(error, t("common.pdfError")),
   });
 
   return (

@@ -1,7 +1,7 @@
 import { getDb } from './connection';
 import { selfOrderWhere } from './selfOrder.filter';
 import { appLogger } from '../utils/logger';
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL, getTableColumns } from "drizzle-orm";
 import {
   getFullPackageOrderByTrackingNumber,
   getAllOrdersByTrackingNumber,
@@ -669,16 +669,41 @@ export async function getRecentPackages(limit = 10) {
   return db.select().from(packages).orderBy(desc(packages.createdAt)).limit(limit);
 }
 
+/**
+ * A parcel without its pictures.
+ *
+ * `photos` (a JSON array that, on older rows, holds the images themselves),
+ * the delivery photo, the signature and the QR payload are megabytes across
+ * a batch, and no list that asks for "the parcels of this batch / customer"
+ * shows any of them — they went over the wire and were thrown away. The
+ * one reader that wants a first photo (packages.customerJourney) asks for
+ * it by name.
+ */
+const {
+  photos: _photos,
+  deliveryPhoto: _deliveryPhoto,
+  recipientSignature: _recipientSignature,
+  qrCodeData: _qrCodeData,
+  ...PACKAGE_LIGHT_COLUMNS
+} = getTableColumns(packages);
+
 export async function getPackagesByCustomer(customerId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(packages).where(eq(packages.customerId, customerId)).orderBy(desc(packages.createdAt));
+  return db.select(PACKAGE_LIGHT_COLUMNS).from(packages).where(eq(packages.customerId, customerId)).orderBy(desc(packages.createdAt));
+}
+
+/** The same, with `photos`: the customer journey shows the first one. */
+export async function getPackagesByCustomerWithPhotos(customerId: number) {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select({ ...PACKAGE_LIGHT_COLUMNS, photos: packages.photos }).from(packages).where(eq(packages.customerId, customerId)).orderBy(desc(packages.createdAt));
 }
 
 export async function getPackagesByBatch(batchId: number) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(packages).where(eq(packages.batchId, batchId)).orderBy(desc(packages.createdAt));
+  return db.select(PACKAGE_LIGHT_COLUMNS).from(packages).where(eq(packages.batchId, batchId)).orderBy(desc(packages.createdAt));
 }
 
 /**
@@ -1031,7 +1056,7 @@ export async function deletePackage(id: number) {
 export async function getPackagesByStatus(status: string) {
   const db = await getDb();
   if (!db) return [];
-  return db.select().from(packages).where(eq(packages.status, status as any)).orderBy(desc(packages.createdAt));
+  return db.select(PACKAGE_LIGHT_COLUMNS).from(packages).where(eq(packages.status, status as any)).orderBy(desc(packages.createdAt));
 }
 
 export async function getNextPackageCode(prefix: string): Promise<string> {
@@ -1763,7 +1788,9 @@ export type AwaitedParcel = {
   /** Past this, the parcel is late enough that somebody should look. */
   isLate: boolean;
   productName: string | null;
+  /** A declared parcel's own (small) photo; an order's picture is a thumbnail asked for by id. */
   productImage: string | null;
+  hasImage: boolean;
   shippingType: string | null;
   order: { id: number; orderCode: string; orderType: string; status: string } | null;
 };
@@ -1952,7 +1979,9 @@ export async function getAwaitingArrival(options: { lateOnly?: boolean } = {}): 
     orderType: fullPackageOrders.orderType,
     orderStatus: fullPackageOrders.status,
     productName: fullPackageOrders.productName,
-    productImage: fullPackageOrders.productImage,
+    // Whether there is a picture — not the picture: a base64 JPEG per row
+    // made this list megabytes; the card asks fullPackage.thumbs for it.
+    hasImage: sql<boolean>`(${fullPackageOrders.productImage} IS NOT NULL AND ${fullPackageOrders.productImage} <> '')`,
     trackingAddedDate: fullPackageOrders.trackingAddedDate,
     customerId: fullPackageOrders.customerId,
     customerName: customers.fullName,
@@ -1970,7 +1999,9 @@ export async function getAwaitingArrival(options: { lateOnly?: boolean } = {}): 
     orderType: fullPackageOrders.orderType,
     orderStatus: fullPackageOrders.status,
     productName: fullPackageOrders.productName,
-    productImage: fullPackageOrders.productImage,
+    // Whether there is a picture — not the picture: a base64 JPEG per row
+    // made this list megabytes; the card asks fullPackage.thumbs for it.
+    hasImage: sql<boolean>`(${fullPackageOrders.productImage} IS NOT NULL AND ${fullPackageOrders.productImage} <> '')`,
     trackingAddedDate: fullPackageOrders.trackingAddedDate,
     customerId: fullPackageOrders.customerId,
     customerName: customers.fullName,
@@ -2030,7 +2061,8 @@ export async function getAwaitingArrival(options: { lateOnly?: boolean } = {}): 
       daysWaiting: days,
       isLate: days >= AWAITING_LATE_AFTER_DAYS,
       productName: o.productName ?? null,
-      productImage: o.productImage ?? null,
+      productImage: null,
+      hasImage: Boolean(Number(o.hasImage)),
       shippingType: null,
       order: { id: o.orderId, orderCode: o.orderCode, orderType: String(o.orderType), status: String(o.orderStatus) },
     });
@@ -2051,6 +2083,7 @@ export async function getAwaitingArrival(options: { lateOnly?: boolean } = {}): 
       isLate: days >= AWAITING_LATE_AFTER_DAYS,
       productName: d.productName ?? null,
       productImage: ((d.productImages as string[] | null) ?? [])[0] ?? null,
+      hasImage: false,
       shippingType: null,
       order: null,
     });

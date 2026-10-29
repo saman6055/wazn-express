@@ -269,7 +269,7 @@ export const packagesRouter = router({
       .input(z.object({ customerId: idSchema }))
       .query(async ({ input }) => {
         const [pkgs, orders, declared, boxed] = await Promise.all([
-          db.getPackagesByCustomer(input.customerId),
+          db.getPackagesByCustomerWithPhotos(input.customerId),
           db.getFullPackageOrdersByCustomer(input.customerId),
           db.getDeclaredPackagesByCustomer(input.customerId),
           db.getCustomerBoxedPackages(input.customerId),

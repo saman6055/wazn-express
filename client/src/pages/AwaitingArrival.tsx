@@ -14,6 +14,8 @@ import {
   UserCircle, ExternalLink, ImageOff, CheckCircle2, Hourglass,
 } from "lucide-react";
 import { useLocation } from "wouter";
+import { QueryErrorNote } from "@/components/QueryErrorNote";
+import { OrderThumbs, OrderThumb } from "@/components/orders/OrderThumb";
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -28,6 +30,7 @@ type Awaited = {
   isLate: boolean;
   productName: string | null;
   productImage: string | null;
+  hasImage: boolean;
   order: { id: number; orderCode: string; orderType: string; status: string } | null;
 };
 
@@ -70,7 +73,7 @@ export default function AwaitingArrival() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "late" | "customer" | "order">("all");
 
-  const { data, isLoading } = trpc.packages.awaitingArrival.useQuery(undefined, { staleTime: 60_000 });
+  const { data, isLoading, isError, error, refetch } = trpc.packages.awaitingArrival.useQuery(undefined, { staleTime: 60_000 });
 
   const all = (data ?? []) as Awaited[];
 
@@ -181,6 +184,8 @@ export default function AwaitingArrival() {
           <Skeleton className="h-20 w-full rounded-2xl" />
           <Skeleton className="h-20 w-full rounded-2xl" />
         </div>
+      ) : isError ? (
+        <QueryErrorNote error={error} onRetry={() => void refetch()} />
       ) : rows.length === 0 ? (
         <Card className="rounded-2xl">
           <CardContent className="flex flex-col items-center gap-3 py-16 text-center">
@@ -201,6 +206,7 @@ export default function AwaitingArrival() {
         </Card>
       ) : (
         <div className="space-y-2">
+          <OrderThumbs orders={rows.filter((r) => r.order).map((r) => ({ id: r.order!.id, hasImage: r.hasImage }))}>
           {rows.map((r) => (
             <AwaitedCard
               key={`${r.trackingNumber}-${r.origin}`}
@@ -210,6 +216,7 @@ export default function AwaitingArrival() {
               onOpenOrder={() => r.order && setLocation(`${ORDER_PATH[r.order.orderType] ?? "/full-package"}/${r.order.id}`)}
             />
           ))}
+          </OrderThumbs>
         </div>
       )}
     </div>
@@ -259,7 +266,9 @@ function AwaitedCard({
       )} />
       <CardContent className="flex gap-3 p-3 ps-4">
         <div className="shrink-0">
-          {row.productImage && !imgBroken ? (
+          {row.order && row.hasImage ? (
+            <OrderThumb order={{ id: row.order.id, productName: row.productName, hasImage: true }} className="h-16 w-16 rounded-xl ring-1 ring-border" tone="amber" />
+          ) : row.productImage && !imgBroken ? (
             <img
               src={row.productImage}
               alt=""

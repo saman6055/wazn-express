@@ -3602,7 +3602,8 @@ export async function deleteStaffUser(userId: number) {
   try {
     await deleteUserPermissions(userId);
   } catch (e) {
-    // Permissions may not exist, that's ok
+    // Permissions may not exist; a failed delete must still be on record.
+    appLogger.warn("[Staff] permissions not removed before deleting the user", { userId, error: e instanceof Error ? e.message : String(e) });
   }
   
   await database.delete(users).where(eq(users.id, userId));

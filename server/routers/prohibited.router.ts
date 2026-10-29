@@ -42,7 +42,7 @@ async function reverseProhibitedFee(record: any, staffId: number): Promise<numbe
     messageAr: `تمت إزالة رسوم $${amount.toFixed(2)} الخاصة بـ ${record.trackingNumber} من رصيدك.`,
     relatedType: "payment",
     actionUrl: "/portal/financial",
-  } as any).catch(() => null);
+  } as any).catch((e: unknown) => appLogger.warn("[Prohibited] fee notice not sent", { error: e instanceof Error ? e.message : String(e) }));
   return amount;
 }
 
@@ -144,7 +144,7 @@ export const prohibitedRouter = router({
         messageAr: `تمت إضافة رسوم بقيمة $${input.feeUsd.toFixed(2)} إلى رصيدك للطرد الممنوع ${record.trackingNumber}.`,
         relatedType: "payment",
         actionUrl: "/portal/financial",
-      } as any).catch(() => null);
+      } as any).catch((e: unknown) => appLogger.warn("[Prohibited] fee-reversal notice not sent", { error: e instanceof Error ? e.message : String(e) }));
 
       return updated;
     }),

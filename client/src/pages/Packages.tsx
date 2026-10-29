@@ -75,6 +75,7 @@ import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel";
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
+import { showErrorToast } from "@/lib/errorToast";
 
 const statusColors: Record<string, string> = {
   registered: statusChip("registered", "package"),
@@ -2393,7 +2394,7 @@ const [, setLocation] = useLocation();
                               }
                             }
                           } catch (error) {
-                            toast.error(t("toast.imageUploadError"));
+                            showErrorToast(error, t("toast.imageUploadError"));
                           } finally {
                             setEditIsUploading(false);
                           }

@@ -1,5 +1,6 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { appLogger } from "../utils/logger";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -468,7 +469,9 @@ export async function getSetting(key: string): Promise<string | null> {
     if (!db) return null;
     const result = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, key)).limit(1);
     return result[0]?.settingValue ?? null;
-  } catch {
+  } catch (e) {
+    // "Unset" is the safe answer for every caller, but not a silent one.
+    appLogger.warn("[Settings] read failed, treated as unset", { key, error: e instanceof Error ? e.message : String(e) });
     return null;
   }
 }

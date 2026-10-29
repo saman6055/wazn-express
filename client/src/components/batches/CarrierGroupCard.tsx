@@ -183,7 +183,8 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
   const { language } = useTranslation();
   const L = (w: Words) => pickLang(language, w);
   // Every batch, in or out of a carrier group (owner, 2026-10-29).
-  const q = trpc.batches.carrierGroup.kgCheck.useQuery({ batchId: batchId ?? 0 }, { enabled: !!batchId, refetchInterval: 15000 });
+  const q = trpc.batches.carrierGroup.kgCheck.useQuery({ batchId: batchId ?? 0 }, // A minute: this strip sits on the register and both scanners all day.
+  { enabled: !!batchId, refetchInterval: 60_000, refetchIntervalInBackground: false });
   const g = q.data;
   if (!batchId || !g) return null;
   const ours = (

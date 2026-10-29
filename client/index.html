@@ -33,10 +33,11 @@
     <link rel="apple-touch-startup-image" href="/icons/splash-750x1334.png" media="(device-width: 375px) and (device-height: 667px) and (-webkit-device-pixel-ratio: 2)" />
     <link rel="apple-touch-startup-image" href="/icons/splash-1242x2208.png" media="(device-width: 414px) and (device-height: 736px) and (-webkit-device-pixel-ratio: 3)" />
     
-    <!-- Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+    <!-- Fonts: Rudaw is the UI face (index.css); it is served from here, so
+         the first paint no longer waits on a round trip to Google for a
+         fallback face the page never shows. Preloaded, so Kurdish text does
+         not flash in a system font while the stylesheet is still parsing. -->
+    <link rel="preload" as="font" type="font/ttf" href="/fonts/rudaw-regular.ttf" crossorigin />
 
     <!--
       Put the saved theme on <html> before the first paint.

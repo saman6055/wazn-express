@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { parseCSV, convertCSVToImportFormat, detectFileFormat, generateCSVTemplate } from "@/lib/csvParser";
 import type { ReactNode } from "react";
+import { showErrorToast } from "@/lib/errorToast";
 
 export interface DataCategory {
   id: string;
@@ -68,29 +69,45 @@ export function useDataManagement(dataCategories: DataCategory[]) {
   const deleteOldData = trpc.dataManagement.deleteOldData.useMutation();
   const exportCategoryMutation = trpc.dataManagement.exportCategory.useMutation();
   const exportAllMutation = trpc.dataManagement.exportAllData.useMutation();
+  /**
+   * "Imported N" is only half the story when rows were skipped: say how many
+   * and why, so a half-restored table is never taken for a whole one.
+   */
+  const importOutcome = (imported: number, skipped: number | undefined, errors: string[] | undefined) => {
+    const problems = (errors ?? []).slice(0, 5);
+    if (!skipped && problems.length === 0) {
+      toast.success(t("dataManagement.importSuccess", { count: imported }));
+      return;
+    }
+    toast.warning(`${t("dataManagement.importSuccess", { count: imported })} — ${skipped ?? problems.length} skipped`, {
+      description: problems.join("\n") + ((errors?.length ?? 0) > 5 ? `\n… +${errors!.length - 5}` : ""),
+      duration: 15000,
+    });
+  };
   const importMutation = trpc.dataManagement.importAllData.useMutation({
     onSuccess: (result) => {
-      if (result.success) {
-        toast.success(t("dataManagement.importSuccess", { count: result.totalImported }));
+      const r = result as { success: boolean; totalImported: number; totalSkipped?: number; errors?: string[] };
+      if (r.success) {
+        importOutcome(r.totalImported, r.totalSkipped, r.errors);
         setImportFile(null);
         setImportPreview(null);
         refetchCounts();
       } else {
-        toast.error(t("dataManagement.importError"));
+        toast.error(t("dataManagement.importError"), { description: (r.errors ?? []).slice(0, 5).join("\n") });
       }
     },
-    onError: () => toast.error(t("dataManagement.importError")),
+    onError: (error) => showErrorToast(error, t("dataManagement.importError")),
   });
   const importCategoryMutation = trpc.dataManagement.importCategory.useMutation({
     onSuccess: (result) => {
       if (result.success) {
-        toast.success(t("dataManagement.importSuccess", { count: result.importedCount }));
+        importOutcome(result.importedCount, result.skippedCount, result.errors);
         refetchCounts();
       } else {
-        toast.error(t("dataManagement.importError"));
+        toast.error(t("dataManagement.importError"), { description: (result.errors ?? []).slice(0, 5).join("\n") });
       }
     },
-    onError: () => toast.error(t("dataManagement.importError")),
+    onError: (error) => showErrorToast(error, t("dataManagement.importError")),
   });
 
   const createBackupMutation = trpc.backup.create.useMutation({
@@ -119,11 +136,11 @@ export function useDataManagement(dataCategories: DataCategory[]) {
       toast.success(t("dataManagement.backupDeleted"));
       refetchBackups();
     },
-    onError: () => toast.error(t("dataManagement.backupDeleteError")),
+    onError: (error) => showErrorToast(error, t("dataManagement.backupDeleteError")),
   });
   const updateScheduleMutation = trpc.backup.updateSchedule.useMutation({
     onSuccess: () => toast.success(t("dataManagement.scheduleUpdated")),
-    onError: () => toast.error(t("dataManagement.scheduleError")),
+    onError: (error) => showErrorToast(error, t("dataManagement.scheduleError")),
   });
 
   const getMutation = (key: string) => {

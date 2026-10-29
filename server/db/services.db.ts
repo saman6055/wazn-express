@@ -1,5 +1,6 @@
 import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { CUSTOMER_LIST_COLUMNS, type CustomerListRow } from "./customers.db";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -388,7 +389,7 @@ export async function getExtraServicesByCustomer(customerId: number): Promise<Ex
     .orderBy(desc(extraServices.createdAt));
 }
 
-export async function getExtraServicesWithDetails(customerId?: number): Promise<(ExtraService & { serviceType?: ServiceType; customer?: Customer })[]> {
+export async function getExtraServicesWithDetails(customerId?: number): Promise<(ExtraService & { serviceType?: ServiceType; customer?: CustomerListRow })[]> {
   const db = await getDb();
   if (!db) return [];
   
@@ -399,7 +400,7 @@ export async function getExtraServicesWithDetails(customerId?: number): Promise<
   
   const services = await query.orderBy(desc(extraServices.createdAt));
   const types = await db.select().from(serviceTypes);
-  const customersList = await db.select().from(customers);
+  const customersList = await db.select(CUSTOMER_LIST_COLUMNS).from(customers);
   
   return services.map(service => ({
     ...service,

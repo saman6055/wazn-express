@@ -1,6 +1,7 @@
 import { getDb } from './connection';
 import { withFix } from "@shared/fixAdvice";
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { CUSTOMER_LIST_COLUMNS, type CustomerListRow } from "./customers.db";
 import { appLogger } from '../utils/logger';
 import { generateAccountNumber, generateTransactionNumber, generatePaymentNumber } from './utils.db';
 import {
@@ -453,22 +454,25 @@ export async function getBalanceDistribution(): Promise<{ debtCount: number; cre
 }
 
 // Get all customer accounts with customer info
-export async function getAllCustomerAccountsWithInfo(): Promise<(CustomerAccount & { customer?: Customer })[]> {
+export async function getAllCustomerAccountsWithInfo(): Promise<(CustomerAccount & { customer?: CustomerListRow })[]> {
   const db = await getDb();
   if (!db) return [];
   
   const accounts = await db.select().from(customerAccounts).orderBy(desc(customerAccounts.currentBalanceUsd));
-  const customersList = await db.select().from(customers);
+  // Without the document columns: every account on the finance page used to
+  // carry its customer's passport and photo, and found it by a linear scan.
+  const customersList = await db.select(CUSTOMER_LIST_COLUMNS).from(customers);
+  const byId = new Map(customersList.map((c) => [c.id, c]));
   
   return accounts.map(account => ({
     ...account,
-    customer: customersList.find(c => c.id === account.customerId)
+    customer: byId.get(account.customerId)
   }));
 }
 
 // Get debtors (customers with positive balance = they owe money)
 // Uses unified customerAccounts table for balance
-export async function getDebtors(minBalanceUsd = 0): Promise<{ customerId: number; balanceUsd: number; balanceIqd: number; customer?: Customer }[]> {
+export async function getDebtors(minBalanceUsd = 0): Promise<{ customerId: number; balanceUsd: number; balanceIqd: number; customer?: CustomerListRow }[]> {
   const db = await getDb();
   if (!db) return [];
   
@@ -484,15 +488,16 @@ export async function getDebtors(minBalanceUsd = 0): Promise<{ customerId: numbe
   // Get customer details for each debtor
   const customerIds = accountsWithDebt.map(a => a.customerId);
   const customersList = customerIds.length > 0 
-    ? await db.select().from(customers).where(inArray(customers.id, customerIds))
+    ? await db.select(CUSTOMER_LIST_COLUMNS).from(customers).where(inArray(customers.id, customerIds))
     : [];
+  const byId = new Map(customersList.map((c) => [c.id, c]));
   
   // Map accounts to debtors with customer info
   return accountsWithDebt.map(account => ({
     customerId: account.customerId,
     balanceUsd: Number(account.balanceUsd) || 0,
     balanceIqd: Number(account.balanceIqd) || 0,
-    customer: customersList.find(c => c.id === account.customerId)
+    customer: byId.get(account.customerId)
   }));
 }
 
@@ -2077,7 +2082,7 @@ export async function restateCharge(
 }
 
 // Get recent transactions across all accounts
-export async function getRecentTransactions(limit = 20): Promise<(LedgerTransaction & { customer?: Customer })[]> {
+export async function getRecentTransactions(limit = 20): Promise<(LedgerTransaction & { customer?: CustomerListRow })[]> {
   const db = await getDb();
   if (!db) return [];
   
@@ -2086,12 +2091,21 @@ export async function getRecentTransactions(limit = 20): Promise<(LedgerTransact
     .orderBy(desc(ledgerTransactions.createdAt))
     .limit(limit);
   
-  const accounts = await db.select().from(customerAccounts);
-  const customersList = await db.select().from(customers);
+  // Only the accounts these lines belong to, and the customers of those.
+  const accountIds = Array.from(new Set(transactions.map((t) => t.accountId)));
+  const accounts = accountIds.length
+    ? await db.select({ id: customerAccounts.id, customerId: customerAccounts.customerId }).from(customerAccounts).where(inArray(customerAccounts.id, accountIds))
+    : [];
+  const customerIds = Array.from(new Set(accounts.map((a) => a.customerId)));
+  const customersList = customerIds.length
+    ? await db.select(CUSTOMER_LIST_COLUMNS).from(customers).where(inArray(customers.id, customerIds))
+    : [];
+  const accountById = new Map(accounts.map((a) => [a.id, a]));
+  const customerById = new Map(customersList.map((c) => [c.id, c]));
   
   return transactions.map(txn => {
-    const account = accounts.find(a => a.id === txn.accountId);
-    const customer = account ? customersList.find(c => c.id === account.customerId) : undefined;
+    const account = accountById.get(txn.accountId);
+    const customer = account ? customerById.get(account.customerId) : undefined;
     return { ...txn, customer };
   });
 }
