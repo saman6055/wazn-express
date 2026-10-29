@@ -85,3 +85,14 @@ describe("a batch in a carrier group shows only the group's invoice (owner, 2026
     expect(card).toContain("{g && (");
   });
 });
+
+describe("a batch that came partly on this load (owner, 2026-10-29, AIR-2026-069)", () => {
+  it("only its parcels checked in from the load's day count, and its share becomes a load of its own", () => {
+    const db = read("server/db/carrierGroup.db.ts");
+    expect(db).toContain("const partial = !!arrivedOn && all.some((p) => (firstScan.get(p.id) ?? \"9999\") < arrivedOn);");
+    expect(db).toContain("const mineLoad = parts.find((p) => p.note === g.key);");
+    expect(read("server/db/carrierParts.db.ts")).toContain("costUsd: decimalOrNull(batch.shippingCost) ?? decimalOrNull(firstLoadCost(batch)),");
+    expect(read("client/src/components/batches/CarrierGroupCard.tsx")).toContain('data-testid="carrier-group-day"');
+    expect(read("server/_core/migrations.ts")).toContain('"carrierGroupInvoices.arrivedOn"');
+  });
+});

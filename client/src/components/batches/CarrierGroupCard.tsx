@@ -33,9 +33,12 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
   const g = q.data;
   const [kg, setKg] = useState("");
   const [usd, setUsd] = useState("");
+  // The day this load reached Erbil: a batch with parcels checked in before
+  // it came partly on an earlier load (AIR-2026-069, owner 2026-10-29).
+  const [day, setDay] = useState("");
   useEffect(() => {
-    if (g?.invoice) { setKg(String(g.invoice.billedKg)); setUsd(String(g.invoice.costUsd)); }
-  }, [g?.invoice?.billedKg, g?.invoice?.costUsd]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (g?.invoice) { setKg(String(g.invoice.billedKg)); setUsd(String(g.invoice.costUsd)); setDay(g.invoice.arrivedOn ?? ""); }
+  }, [g?.invoice?.billedKg, g?.invoice?.costUsd, g?.invoice?.arrivedOn]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const done = (msg: string) => { toast.success(msg); void q.refetch(); void utils.batches.invalidate(); onChanged(); };
   const fail = (e: { message: string }) => toast.error(e.message);
@@ -99,7 +102,14 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
                         <span className={cn("me-1 rounded px-1 text-[10px] font-semibold", m.madeInChina ? "bg-rose-500/15 text-rose-700 dark:text-rose-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300")}>{m.madeInChina ? "CN" : "IQ"}</span>
                         <bdi dir="ltr" className="font-mono">{m.batchCode}</bdi>
                       </td>
-                      <td className="py-1">{kgf(m.kg)}</td>
+                      <td className="py-1">
+                        {kgf(m.kg)}
+                        {m.partial && (
+                          <span className="ms-1 text-[11px] text-violet-700 dark:text-violet-300" data-testid="carrier-group-partial">
+                            ({L({ ku: `بەشێکی: ${m.parcels} لە ${m.allParcels} پاکێج، ئەوانەی لەم بارەدا گەیشتوون`, en: `part: ${m.parcels} of ${m.allParcels} parcels, those that came on this load`, ar: `جزء: ${m.parcels} من ${m.allParcels}`, zh: `部分：${m.allParcels} 件中的 ${m.parcels} 件` })})
+                          </span>
+                        )}
+                      </td>
                       <td className="py-1">{kgf(m.liveKg)}{m.stillComing > 0 && <span className="ms-1 text-amber-700 dark:text-amber-300">· {m.stillComing} {L({ ku: "لە ڕێگا", en: "on the road", ar: "في الطريق", zh: "在途" })}</span>}</td>
                       {g.invoice && <td className="py-1">{share ? <bdi dir="ltr">{fmtUsd(share.costUsd)}</bdi> : "—"}{m.hasLoads && <span className="ms-1 text-amber-700 dark:text-amber-300">({L({ ku: "بارەکانی خۆی هەیە", en: "has its own loads", ar: "له شحنات خاصة", zh: "有自己的分批" })})</span>}</td>}
                     </tr>
@@ -136,7 +146,11 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
                 {L({ ku: "پارەی وەسڵ ($)", en: "Invoice total ($)", ar: "إجمالي الفاتورة ($)", zh: "发票金额 ($)" })}
                 <Input type="number" step="0.01" dir="ltr" value={usd} onChange={(e) => setUsd(e.target.value)} onKeyDown={noEnter} className="h-8 w-32" data-testid="carrier-group-usd" />
               </label>
-              <Button type="button" size="sm" disabled={save.isPending || !(Number(kg) > 0)} onClick={() => save.mutate({ batchId, billedKg: Number(kg), costUsd: Number(usd) || 0 })} data-testid="carrier-group-save">
+              <label className="grid gap-1 text-xs">
+                {L({ ku: "ڕۆژی گەیشتنی ئەم بارە", en: "Day this load arrived", ar: "يوم وصول هذه الشحنة", zh: "本批到达日期" })}
+                <Input type="date" dir="ltr" value={day} onChange={(e) => setDay(e.target.value)} onKeyDown={noEnter} className="h-8 w-40" data-testid="carrier-group-day" />
+              </label>
+              <Button type="button" size="sm" disabled={save.isPending || !(Number(kg) > 0)} onClick={() => save.mutate({ batchId, billedKg: Number(kg), costUsd: Number(usd) || 0, arrivedOn: day || null })} data-testid="carrier-group-save">
                 {L({ ku: "پاشەکەوت و دابەشکردن", en: "Save and share out", ar: "حفظ وتوزيع", zh: "保存并分摊" })}
               </Button>
               {g.invoice && (

@@ -323,6 +323,13 @@ export const carrierGroupInvoices = mysqlTable("carrierGroupInvoices", {
   billedKg: decimal("billedKg", { precision: 10, scale: 2 }).notNull(),
   costUsd: decimal("costUsd", { precision: 12, scale: 2 }).notNull(),
   note: varchar("note", { length: 255 }),
+  /**
+   * The day this load reached Erbil (YYYY-MM-DD). A batch of the group with
+   * parcels that arrived before it came partly on an earlier load; only its
+   * parcels checked in from this day count for this invoice (owner,
+   * 2026-10-29, AIR-2026-069: half on one load, half on ANC 169).
+   */
+  arrivedOn: varchar("arrivedOn", { length: 10 }),
   splitAt: timestamp("splitAt"),
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

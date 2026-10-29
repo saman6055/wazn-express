@@ -2763,7 +2763,7 @@ export const batchesRouter = router({
         .input(z.object({ batchId: z.number().int().positive() }))
         .query(async ({ input }) => db.getCarrierGroup(input.batchId)),
       saveInvoice: adminProcedure
-        .input(z.object({ batchId: z.number().int().positive(), billedKg: z.number().positive().max(100000), costUsd: z.number().min(0).max(10_000_000), note: z.string().max(255).nullable().optional() }))
+        .input(z.object({ batchId: z.number().int().positive(), billedKg: z.number().positive().max(100000), costUsd: z.number().min(0).max(10_000_000), note: z.string().max(255).nullable().optional(), arrivedOn: z.string().regex(/^\d{4}-\d{2}-\d{2}$/).nullable().optional() }))
         .mutation(async ({ input, ctx }) => {
           try {
             const res = await db.saveCarrierGroupInvoice(input, { id: ctx.user.id, role: ctx.user.role });

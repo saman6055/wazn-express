@@ -34,6 +34,15 @@ const decimalOrNull = (v: string | null | undefined) => {
   return Number.isFinite(n) && n > 0 ? String(n) : null;
 };
 
+/** The money of the invoice typed on the batch, when only a rate was typed. */
+function firstLoadCost(batch: { chargedWeightKg?: string | null; chargedCbm?: string | null; costPerKg?: string | null; costPerCbm?: string | null }): string | null {
+  const kg = parseFloat(String(batch.chargedWeightKg ?? "")), perKg = parseFloat(String(batch.costPerKg ?? ""));
+  if (kg > 0 && perKg > 0) return (Math.round(kg * perKg * 100) / 100).toFixed(2);
+  const cbm = parseFloat(String(batch.chargedCbm ?? "")), perCbm = parseFloat(String(batch.costPerCbm ?? ""));
+  if (cbm > 0 && perCbm > 0) return (Math.round(cbm * perCbm * 100) / 100).toFixed(2);
+  return null;
+}
+
 export async function listCarrierParts(batchId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -69,7 +78,9 @@ export async function addCarrierPart(batchId: number, input: CarrierPartInput, u
       arrivedOn: batch.actualArrival ? new Date(batch.actualArrival).toISOString().slice(0, 10) : null,
       billedKg: decimalOrNull(batch.chargedWeightKg),
       billedCbm: decimalOrNull(batch.chargedCbm),
-      costUsd: decimalOrNull(batch.shippingCost),
+      // A total typed on the batch; else its weight at its typed rate (AIR-2026-069:
+      // 74 kg at $8.80, no total) - or load 1 would carry no money at all.
+      costUsd: decimalOrNull(batch.shippingCost) ?? decimalOrNull(firstLoadCost(batch)),
       awbNumber: clean(batch.awbNumber),
       createdById: userId,
     });
