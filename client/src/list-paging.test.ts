@@ -26,7 +26,6 @@ const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf
 describe("the long lists", () => {
   it.each([
     ["pages/Customers.tsx", "customerPage.pageRows.map("],
-    ["pages/Accounting.tsx", "balancePage.pageRows.map("],
     ["pages/FullPackageDashboard.tsx", "orderPage.pageRows.map("],
     ["pages/CommissionDashboard.tsx", "orderPage.pageRows.map("],
     ["pages/UnifiedOrdersDashboard.tsx", "orderPage.pageRows.map("],
@@ -35,12 +34,6 @@ describe("the long lists", () => {
     expect(src).toContain("useClientPagination(");
     expect(src).toContain(rows);
     expect(src).toContain("<ListPager");
-  });
-
-  it("Accounting asks for a page of balances at once, not one per row", () => {
-    const src = read("pages/Accounting.tsx");
-    expect(src).toContain("trpc.customers.getBalances.useQuery(");
-    expect(src).not.toContain("trpc.customers.getBalance.useQuery(");
   });
 
   it("the customer search filters after a pause, while the box shows every keystroke", () => {

@@ -629,6 +629,9 @@ export default function CustomerDetail() {
                               <TableCell>
                                 {service.isPaid ? (
                                   <Badge className="bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-0 text-xs">{pickLang(language, { ku: "پارەدراو", en: "Paid", ar: "مدفوع", zh: "已付款" })}</Badge>
+                                ) : service.addedToBalance ? (
+                                  // On the account: paid there, with the rest of the debt.
+                                  <Badge variant="outline" className="text-xs">{pickLang(language, { ku: "لەسەر حیساب", en: "On account", ar: "على الحساب", zh: "记入账户" })}</Badge>
                                 ) : (
                                   <Button
                                     variant="outline"

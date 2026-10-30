@@ -107,7 +107,6 @@ const Batches = lazy(() => import("./pages/Batches"));
 const BatchFinancialReport = lazy(() => import("./pages/BatchFinancialReport"));
 const BatchFinancialReportFull = lazy(() => import("./pages/BatchFinancialReportFull"));
 const CustomerPricingReport = lazy(() => import("./pages/CustomerPricingReport"));
-const Accounting = lazy(() => import("./pages/Accounting"));
 const Invoices = lazy(() => import("./pages/Invoices"));
 const InvoiceReports = lazy(() => import("./pages/InvoiceReports"));
 const InvoiceView = lazy(() => import("./pages/InvoiceView"));
@@ -305,7 +304,8 @@ function Router() {
         <Route path="/batches" component={Batches} />
         <Route path="/batches/:id/financial" component={BatchFinancialReport} />
         <Route path="/batches/customer-pricing" component={CustomerPricingReport} />
-        <Route path="/accounting" component={Accounting} />
+        {/* An old copy of the finance page with no menu link (2026-10-30): one place takes payments. */}
+        <Route path="/accounting">{() => <Redirect to="/finance" replace />}</Route>
         <Route path="/invoices" component={Invoices} />
         <Route path="/invoice-reports" component={InvoiceReports} />
         <Route path="/invoices/:id" component={InvoiceView} />

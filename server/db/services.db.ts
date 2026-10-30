@@ -435,16 +435,17 @@ export async function deleteExtraService(id: number): Promise<void> {
   await db.delete(extraServices).where(eq(extraServices.id, id));
 }
 
-export async function markExtraServiceAsPaid(id: number, paymentMethod: string, paidAmount: string): Promise<ExtraService | null> {
+export async function markExtraServiceAsPaid(id: number, paymentMethod: string): Promise<ExtraService | null> {
   const db = await getDb();
   if (!db) return null;
   
+  // Paid at its own price, once: a second click changes nothing.
   await db.update(extraServices).set({
     isPaid: true,
     paidAt: new Date(),
-    paidAmount,
+    paidAmount: sql`${extraServices.priceAmount}`,
     paymentMethod: paymentMethod as any
-  }).where(eq(extraServices.id, id));
+  }).where(and(eq(extraServices.id, id), eq(extraServices.isPaid, false)));
   
   const [updated] = await db.select().from(extraServices).where(eq(extraServices.id, id));
   return updated || null;

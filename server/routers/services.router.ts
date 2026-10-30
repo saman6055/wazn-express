@@ -6,6 +6,16 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { acceptUpload } from "../lib/uploadGate";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
+import { withFix } from "../../shared/fixAdvice";
+
+/*
+ * A service written onto the customer's account (addedToBalance) is a debt
+ * there like any other: it is paid on the account, and its price is not
+ * changed or removed behind the ledger's back (2026-10-30). "Mark paid" used
+ * to flip a flag with no money recorded while the debt stayed on the account.
+ */
+const ON_ACCOUNT_CAUSE = "ئەم خزمەتگوزارییە لەسەر حیسابی کڕیارەکە نووسراوە — وەک هەر قەرزێکی تر لە حیساب دەدرێت و دەگۆڕدرێت، نەک لێرە.";
+const ON_ACCOUNT_STEPS = ["حیسابی کڕیارەکە بکەرەوە", "پارەکە بە «پارەدان» وەربگرە، یان نرخەکە بە ڕاستکردنەوەی قەرز بگۆڕە"];
 
 
 /**
@@ -225,7 +235,7 @@ export const extraServicesRouter = router({
       }),
     
     // Update extra service
-    update: staffProcedure
+    update: accountantProcedure
       .input(z.object({
         id: z.number(),
         description: z.string().optional(),
@@ -235,26 +245,41 @@ export const extraServicesRouter = router({
       }))
       .mutation(async ({ input }) => {
         const { id, ...data } = input;
+        const service = await db.getExtraServiceById(id);
+        if (!service) throw new TRPCError({ code: "NOT_FOUND", message: "Service not found" });
+        if (service.addedToBalance && data.priceAmount !== undefined && Number(data.priceAmount) !== Number(service.priceAmount)) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix(ON_ACCOUNT_CAUSE, ON_ACCOUNT_STEPS) });
+        }
         return db.updateExtraService(id, data);
       }),
     
     // Delete extra service
-    delete: staffProcedure
+    delete: accountantProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => {
+        const service = await db.getExtraServiceById(input.id);
+        if (service?.addedToBalance) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix(ON_ACCOUNT_CAUSE, ON_ACCOUNT_STEPS) });
+        }
         await db.deleteExtraService(input.id);
         return { success: true };
       }),
     
     // Mark as paid
-    markAsPaid: staffProcedure
+    // Only a service not on any account (a walk-in) is paid here, and at its own price.
+    markAsPaid: accountantProcedure
       .input(z.object({
         id: z.number(),
         paymentMethod: z.enum(["cash", "card", "transfer", "balance"]),
-        paidAmount: z.string(),
+        paidAmount: z.string().optional(),
       }))
       .mutation(async ({ input }) => {
-        return db.markExtraServiceAsPaid(input.id, input.paymentMethod, input.paidAmount);
+        const service = await db.getExtraServiceById(input.id);
+        if (!service) throw new TRPCError({ code: "NOT_FOUND", message: "Service not found" });
+        if (service.addedToBalance) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: withFix(ON_ACCOUNT_CAUSE, ON_ACCOUNT_STEPS) });
+        }
+        return db.markExtraServiceAsPaid(input.id, input.paymentMethod);
       }),
     
     // Get summary for reports

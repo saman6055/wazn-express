@@ -3348,7 +3348,8 @@ export async function getDetailedProfitAndLoss(startDate: Date, endDate: Date) {
   const commissionCost = parseFloat(commResult[0]?.cost || '0');
   const commCount = Number(commResult[0]?.cnt || 0);
 
-  // 4. Service revenue & cost (paid extra services)
+  // 4. Service revenue & cost: paid walk-in services, and every service
+  //    written onto an account (a debt the moment it is entered, like an order).
   const serviceResult = await db.select({
     revenue: sql<string>`COALESCE(SUM(CAST(${extraServices.priceAmount} AS DECIMAL(14,2))), 0)`,
     cost: sql<string>`COALESCE(SUM(CAST(${extraServices.costAmount} AS DECIMAL(14,2))), 0)`,
@@ -3357,7 +3358,7 @@ export async function getDetailedProfitAndLoss(startDate: Date, endDate: Date) {
     .where(and(
       gte(extraServices.createdAt, startDate),
       lte(extraServices.createdAt, endDate),
-      eq(extraServices.isPaid, true),
+      or(eq(extraServices.isPaid, true), eq(extraServices.addedToBalance, true)),
     ));
 
   const serviceRevenue = parseFloat(serviceResult[0]?.revenue || '0');
