@@ -263,7 +263,7 @@ export default function StoreManagement() {
             </div>
 
             {/* Price row */}
-            <div className="grid grid-cols-3 gap-3">
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div><Label>{label({ ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })} *</Label><Input type="number" value={form.price} onChange={(e) => setForm({ ...form, price: e.target.value })} className="mt-1.5" /></div>
               <div><Label>{label({ ku: "نرخی کۆن", en: "Was price", ar: "السعر قبل", zh: "原价" })}</Label><Input type="number" value={form.compareAtPrice} onChange={(e) => setForm({ ...form, compareAtPrice: e.target.value })} className="mt-1.5" /></div>
               <div><Label>{label({ ku: "دراو", en: "Currency", ar: "العملة", zh: "货币" })}</Label>

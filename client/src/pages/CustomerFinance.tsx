@@ -1866,16 +1866,16 @@ export default function CustomerFinance() {
                         </div>
                       ) : (
                         <div className="rounded-xl border overflow-hidden">
-                          <Table>
+                          <Table mobileCards>
                             <TableHeader>
                               <TableRow className="bg-muted/50">
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "ژمارە", en: "Number", ar: "الرقم", zh: "编号" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "بڕی USD", en: "Amount USD", ar: "المبلغ USD", zh: "金额 USD" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "باڵانس دوای", en: "Balance after", ar: "الرصيد بعد", zh: "之后余额" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "ژمارە", en: "Number", ar: "الرقم", zh: "编号" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "جۆر", en: "Type", ar: "النوع", zh: "类型" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "بڕی USD", en: "Amount USD", ar: "المبلغ USD", zh: "金额 USD" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "باڵانس دوای", en: "Balance after", ar: "الرصيد بعد", zh: "之后余额" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -2179,17 +2179,17 @@ export default function CustomerFinance() {
                         </div>
                       ) : (
                         <div className="rounded-xl border overflow-hidden">
-                          <Table>
+                          <Table mobileCards>
                             <TableHeader>
                               <TableRow className="bg-muted/50">
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "ژمارە", en: "Number", ar: "الرقم", zh: "编号" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "بڕی USD", en: "Amount USD", ar: "المبلغ USD", zh: "金额 USD" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "ژمارەی پسوڵە", en: "Receipt number", ar: "رقم الإيصال", zh: "收据编号" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "تێبینی", en: "Note", ar: "ملاحظة", zh: "备注" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
-                                <TableHead className="text-right font-semibold">{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "ژمارە", en: "Number", ar: "الرقم", zh: "编号" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "شێواز", en: "Method", ar: "الطريقة", zh: "方式" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "بڕی USD", en: "Amount USD", ar: "المبلغ USD", zh: "金额 USD" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "ژمارەی پسوڵە", en: "Receipt number", ar: "رقم الإيصال", zh: "收据编号" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "تێبینی", en: "Note", ar: "ملاحظة", zh: "备注" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
+                                <TableHead className="text-end font-semibold">{pickLang(language, { ku: "کردارەکان", en: "Actions", ar: "الإجراءات", zh: "操作" })}</TableHead>
                               </TableRow>
                             </TableHeader>
                             <TableBody>
@@ -2345,7 +2345,7 @@ export default function CustomerFinance() {
                   type="button"
                   onClick={() => setAdjustDirection('debit')}
                   className={cn(
-                    "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                    "p-3 rounded-lg border-2 text-sm transition-all text-end",
                     adjustDirection === 'debit'
                       ? "border-red-500 bg-red-50 dark:bg-red-950/40 shadow"
                       : "border-muted hover:border-red-300"
@@ -2363,7 +2363,7 @@ export default function CustomerFinance() {
                   type="button"
                   onClick={() => setAdjustDirection('credit')}
                   className={cn(
-                    "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                    "p-3 rounded-lg border-2 text-sm transition-all text-end",
                     adjustDirection === 'credit'
                       ? "border-emerald-500 bg-emerald-50 dark:bg-emerald-950/40 shadow"
                       : "border-muted hover:border-emerald-300"
@@ -2498,7 +2498,7 @@ export default function CustomerFinance() {
                           key={p.id}
                           type="button"
                           onClick={() => openReverseDialog(p)}
-                          className="w-full p-3 text-right hover:bg-amber-50 transition-colors flex items-center justify-between gap-3"
+                          className="w-full p-3 text-end hover:bg-amber-50 transition-colors flex items-center justify-between gap-3"
                         >
                           <div className="flex-1 min-w-0">
                             <div className="flex items-center gap-2">
@@ -2577,7 +2577,7 @@ export default function CustomerFinance() {
                     type="button"
                     onClick={() => setReverseMode('mistake')}
                     className={cn(
-                      "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                      "p-3 rounded-lg border-2 text-sm transition-all text-end",
                       reverseMode === 'mistake'
                         ? "border-amber-500 bg-amber-50 dark:bg-amber-950/40 shadow"
                         : "border-muted hover:border-amber-300"
@@ -2595,7 +2595,7 @@ export default function CustomerFinance() {
                     type="button"
                     onClick={() => setReverseMode('refund')}
                     className={cn(
-                      "p-3 rounded-lg border-2 text-sm transition-all text-right",
+                      "p-3 rounded-lg border-2 text-sm transition-all text-end",
                       reverseMode === 'refund'
                         ? "border-red-500 bg-red-50 dark:bg-red-950/40 shadow"
                         : "border-muted hover:border-red-300"

@@ -1,7 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
-import { staffProcedure } from "../middleware/auth";
+import { staffProcedure, accountantProcedure } from "../middleware/auth";
 import { appLogger } from "../utils/logger";
 import * as db from "../db";
 
@@ -111,7 +111,7 @@ export const prohibitedRouter = router({
     }),
 
   // ---- Staff: post the resolution fee as a debt --------------------------
-  chargeFee: staffProcedure
+  chargeFee: accountantProcedure
     .input(z.object({ id: z.number(), feeUsd: z.number().positive() }))
     .mutation(async ({ input, ctx }) => {
       const record = await db.getProhibitedPackageById(input.id);
@@ -150,7 +150,7 @@ export const prohibitedRouter = router({
     }),
 
   // ---- Staff: reverse a charged fee directly -----------------------------
-  reverseFee: staffProcedure
+  reverseFee: accountantProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ input, ctx }) => {
       const record = await db.getProhibitedPackageById(input.id);

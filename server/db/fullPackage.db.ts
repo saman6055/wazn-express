@@ -6,6 +6,7 @@ import { getCustomerById } from './customers.db';
 import { applyCharge } from './finance.db';
 import { getCustomerPriceInBatch } from './batches.db';
 import { findActiveDeclaredByTracking } from './declaredPackages.db';
+import { likePattern } from "./utils.db";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -455,7 +456,7 @@ export async function getAllFullPackageOrders(filters?: {
   }
   if (filters?.search) {
     const rawSearch = filters.search.trim();
-    const searchTerm = `%${rawSearch}%`;
+    const searchTerm = likePattern(rawSearch);
 
     /*
      * The two lookups the search needs, each capped.

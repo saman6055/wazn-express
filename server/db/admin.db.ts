@@ -2,6 +2,7 @@ import { getDb } from './connection';
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { ENV } from '../_core/env';
 import { appLogger } from '../utils/logger';
+import { likePattern } from "./utils.db";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -292,7 +293,9 @@ export async function getNextSequenceForPrefix(prefix: string): Promise<number> 
     .where(sql`UPPER(${customers.customerCode}) LIKE ${upperPrefix + '%'}`);
   
   let maxNum = 0;
-  const prefixRegex = new RegExp(`^${upperPrefix}(\\d+)`, 'i');
+  // A prefix with a regex character (a bracket, a dot) must not throw.
+  const safePrefix = upperPrefix.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+  const prefixRegex = new RegExp(`^${safePrefix}(\\d+)`, 'i');
   
   for (const row of result) {
     if (!row.code) continue;
@@ -591,9 +594,9 @@ export async function getAdvancedAuditLogs(filters: AuditLogFilters = {}, limit 
   }
   if (filters.search) {
     const searchCond = or(
-      like(auditLogs.entityCode, `%${filters.search}%`),
-      like(auditLogs.description, `%${filters.search}%`),
-      like(auditLogs.userName, `%${filters.search}%`)
+      like(auditLogs.entityCode, likePattern(filters.search)),
+      like(auditLogs.description, likePattern(filters.search)),
+      like(auditLogs.userName, likePattern(filters.search))
     );
     if (searchCond) conditions.push(searchCond as SQL);
   }

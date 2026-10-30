@@ -21,7 +21,9 @@ export function StickyFormBar({ children, className }: StickyFormBarProps) {
   return (
     <div
       className={cn(
-        "sticky bottom-0 z-20 -mx-px mt-4 border-t border-border",
+        // On a phone the tab bar is fixed at the bottom (h-16); a sticky bar pins to
+        // the viewport edge, so without this offset the Save row sat behind it.
+        "sticky bottom-[calc(4rem+env(safe-area-inset-bottom))] md:bottom-0 z-20 -mx-px mt-4 border-t border-border",
         "bg-card/80 supports-[backdrop-filter]:bg-card/60 backdrop-blur",
         "print:hidden",
         className

@@ -13,6 +13,7 @@ import { selfOrderWhere } from './selfOrder.filter';
 import { getBatchStatusTimestamps, getBatchRateForCustomer } from './batches.db';
 import { batchHasShipmentNumber } from '@shared/parcelStage';
 import { packagesInCartons } from './dispatch.db';
+import { likePattern } from "./utils.db";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -1124,8 +1125,8 @@ export async function getUnclaimedPackagesWithSearch(options?: {
   if (options?.search) {
     conditions.push(
       or(
-        like(packages.trackingNumber, `%${options.search}%`),
-        like(packages.packageCode, `%${options.search}%`)
+        like(packages.trackingNumber, likePattern(options.search)),
+        like(packages.packageCode, likePattern(options.search))
       )!
     );
   }

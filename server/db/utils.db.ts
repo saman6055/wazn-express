@@ -1,6 +1,14 @@
 // Shared helper functions (no DB connection)
 import { randomInt } from "crypto";
 
+/**
+ * Typed text as a LIKE pattern: `%` and `_` are letters here, not wildcards,
+ * so a search for "100%" does not match every row.
+ */
+export function likePattern(text: string): string {
+  return `%${text.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+}
+
 export function generateAccountNumber(customerCode: string): string {
   const year = new Date().getFullYear();
   return `ACC-${customerCode}-${year}`;

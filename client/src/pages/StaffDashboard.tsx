@@ -229,7 +229,7 @@ export default function StaffDashboard() {
             ) : (
               <div className="space-y-2">
                 {activeBatches.slice(0, 5).map((batch: { id: number; batchCode: string; status: string; packageCount: number }) => (
-                  <Link key={batch.id} href={`/batches`}>
+                  <Link key={batch.id} href={`/batches?find=${encodeURIComponent(batch.batchCode)}`}>
                     <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <Layers className="h-4 w-4 text-muted-foreground" />

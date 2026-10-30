@@ -133,8 +133,8 @@ export function CustomerFinanceTab({
                 <TableHead>Date</TableHead>
                 <TableHead>Type</TableHead>
                 <TableHead>Description</TableHead>
-                <TableHead className="text-right">Amount</TableHead>
-                <TableHead className="text-right">Balance</TableHead>
+                <TableHead className="text-end">Amount</TableHead>
+                <TableHead className="text-end">Balance</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -162,13 +162,13 @@ export function CustomerFinanceTab({
                     </TableCell>
                     <TableCell className="text-sm">{entry.description ?? "-"}</TableCell>
                     <TableCell
-                      className={`text-right font-mono text-sm ${
+                      className={`text-end font-mono text-sm ${
                         isCredit ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"
                       }`}
                     >
                       {isCredit ? "-" : "+"}${entry.amountUsd}
                     </TableCell>
-                    <TableCell className="text-right font-mono text-sm">
+                    <TableCell className="text-end font-mono text-sm">
                       ${entry.balanceAfterUsd}
                     </TableCell>
                   </TableRow>
@@ -206,7 +206,7 @@ export function CustomerFinanceTab({
                 <TableHead>Date</TableHead>
                 <TableHead>Total (USD)</TableHead>
                 <TableHead>Status</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="text-end">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -229,7 +229,7 @@ export function CustomerFinanceTab({
                       {invoice.status}
                     </Badge>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="text-end">
                     <Button
                       variant="ghost"
                       size="icon"

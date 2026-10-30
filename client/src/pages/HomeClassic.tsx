@@ -15,6 +15,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useLandingTheme } from "@/contexts/LandingThemeContext";
 import { trpc } from "@/lib/trpc";
+import { openWaznChat } from "@/lib/waznChat";
 
 export default function HomeClassic() {
   const { t } = useTranslation();
@@ -270,9 +271,9 @@ export default function HomeClassic() {
                     {t("auto.text_410482")}
                   </Button>
                 </Link>
-                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/20 w-full sm:w-auto">
+                <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/20 w-full sm:w-auto" onClick={() => openWaznChat()}>
                   <Phone className="me-2 h-5 w-5" />
-                  {t("auto.text_6733ea")}
+                  {t("home.contact")}
                 </Button>
               </div>
             </div>

@@ -939,7 +939,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <DialogTrigger asChild>
               <Button><Plus className="h-4 w-4 me-2" />{t("batches.newBatch")}</Button>
             </DialogTrigger>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-2xl overflow-y-auto">
               <DialogHeader>
                 <DialogTitle>{t("batches.newBatch")}</DialogTitle>
                 <DialogDescription>{t("batches.createBatchDesc")}</DialogDescription>
@@ -2089,7 +2089,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               </DialogDescription>
             </DialogHeader>
             <div className="max-h-[70vh] overflow-y-auto">
-              <Table>
+              <Table mobileCards>
                 <TableHeader>
                   <TableRow>
                     <TableHead>{t("batches.packageCode")}</TableHead>
@@ -2172,7 +2172,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
         {/* Financial Report Dialog */}
         <Dialog open={isFinancialOpen} onOpenChange={(open) => { setIsFinancialOpen(open); if (!open) setFinancialBatchId(null); }}>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-4xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 <BarChart3 className="h-5 w-5 text-primary" />
@@ -2281,7 +2281,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <Table>
+                    <Table mobileCards>
                       <TableHeader>
                         <TableRow>
                           <TableHead>{t('batches.customer')}</TableHead>
@@ -2478,7 +2478,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
         {/* Edit Batch Dialog */}
         <Dialog open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if (!open) { setEditingBatch(null); resetForm(); } }}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-2xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 {t("batches.editBatch")}
@@ -2991,7 +2991,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             }
           }}
         >
-          <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
+          <DialogContent className="max-w-3xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2">
                 {auditData?.summary?.blocking ? (

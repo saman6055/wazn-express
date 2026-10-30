@@ -313,15 +313,15 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
               </CardHeader>
               <CardContent>
                 {selectedCustomerId ? (
-                  <Table>
+                  <Table mobileCards>
                     <TableHeader>
                       <TableRow>
                         <TableHead>Date</TableHead>
                         <TableHead>Type</TableHead>
                         <TableHead>Description</TableHead>
-                        <TableHead className="text-right">Debit</TableHead>
-                        <TableHead className="text-right">Credit</TableHead>
-                        <TableHead className="text-right">Balance</TableHead>
+                        <TableHead className="text-end">Debit</TableHead>
+                        <TableHead className="text-end">Credit</TableHead>
+                        <TableHead className="text-end">Balance</TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -342,13 +342,13 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                               </Badge>
                             </TableCell>
                             <TableCell>{txn.description || "-"}</TableCell>
-                            <TableCell className="text-right font-mono text-red-600 dark:text-red-300">
+                            <TableCell className="text-end font-mono text-red-600 dark:text-red-300">
                               {isDebit ? `$${txn.amountUsd}` : "-"}
                             </TableCell>
-                            <TableCell className="text-right font-mono text-green-600 dark:text-green-300">
+                            <TableCell className="text-end font-mono text-green-600 dark:text-green-300">
                               {isCredit ? `$${txn.amountUsd}` : "-"}
                             </TableCell>
-                            <TableCell className="text-right font-mono font-medium">
+                            <TableCell className="text-end font-mono font-medium">
                               ${txn.balanceAfterUsd}
                             </TableCell>
                           </TableRow>
@@ -389,14 +389,14 @@ const [isPaymentOpen, setIsPaymentOpen] = useState(false);
                 </div>
               </CardHeader>
               <CardContent>
-                <Table>
+                <Table mobileCards>
                   <TableHeader>
                     <TableRow>
                       <TableHead>Customer Code</TableHead>
                       <TableHead>Name</TableHead>
                       <TableHead>Contact</TableHead>
-                      <TableHead className="text-right">Balance</TableHead>
-                      <TableHead className="text-right">Status</TableHead>
+                      <TableHead className="text-end">Balance</TableHead>
+                      <TableHead className="text-end">Status</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -429,12 +429,12 @@ function CustomerBalanceRow({ customer, balance }: { customer: any; balance: num
       <TableCell className="font-mono">{customer.customerCode}</TableCell>
       <TableCell className="font-medium">{customer.fullName}</TableCell>
       <TableCell>{customer.mobileNumber}</TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-end">
         <span className={`font-mono font-medium ${(balance || 0) > 0 ? "text-red-600 dark:text-red-300" : (balance || 0) < 0 ? "text-green-600 dark:text-green-300" : ""}`}>
           {balance === undefined ? "—" : fmtUsd(Math.abs(balance))}
         </span>
       </TableCell>
-      <TableCell className="text-right">
+      <TableCell className="text-end">
         {(balance || 0) > 0 ? (
           <Badge variant="destructive" className="gap-1">
             <TrendingUp className="h-3 w-3" />

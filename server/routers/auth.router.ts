@@ -438,14 +438,24 @@ export const authRouter = router({
       newPassword: z.string().min(6).max(500),
     }))
     .mutation(async ({ input, ctx }) => {
+      // ctx.user.id is a customers.id for a customer: read against the users
+      // table it named whichever staff account shares the number, and a
+      // wrong guess cost nothing. Customers have customerPortal.changeMyPassword.
+      if (ctx.user.isCustomer) {
+        throw new TRPCError({ code: "FORBIDDEN", message: "Change your password from the portal profile." });
+      }
       const user = await db.getUserById(ctx.user.id);
       if (!user || !user.passwordHash) {
         throw new TRPCError({ code: "BAD_REQUEST", message: "Cannot change password" });
       }
+      const lockKey = staffLockKey(user.id);
       const isValid = await bcrypt.compare(input.currentPassword, user.passwordHash);
       if (!isValid) {
-        throw new TRPCError({ code: "UNAUTHORIZED", message: "Current password is incorrect" });
+        // Counted like a wrong password at the door: five and the account locks.
+        const after = recordStaffFailure(lockKey, new Date());
+        throw new TRPCError({ code: "UNAUTHORIZED", message: after.justLocked ? STAFF_LOCKED_MESSAGE : "Current password is incorrect" });
       }
+      clearStaffFailures(lockKey);
       const passwordHash = await bcrypt.hash(input.newPassword, 12);
       await db.updateUserPassword(ctx.user.id, passwordHash);
       return { success: true };

@@ -23,6 +23,7 @@ import {
   CheckCircle, Truck, AlertCircle, XCircle
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
+import { useLocation } from "wouter";
 
 const COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -44,6 +45,9 @@ export default function UnifiedOrdersDashboard() {
   const [statusFilter, setStatusFilter] = useState("all");
   const [viewMode, setViewMode] = useState<"table" | "card">("table");
   const [selectedOrder, setSelectedOrder] = useState<any>(null);
+  const [, setLocation] = useLocation();
+  // The row knows its kind; each kind has its own edit form.
+  const editPath = (o: { id: number; type: string }) => `/${o.type === "commission" ? "commission" : "full-package"}/${o.id}/edit`;
 
 
   // Fetch data
@@ -243,9 +247,9 @@ export default function UnifiedOrdersDashboard() {
         </div>
 
         {/* Charts Section */}
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Weekly Trend Chart */}
-          <Card className="col-span-2 border-0 shadow-lg">
+          <Card className="border-0 shadow-lg md:col-span-2">
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
               <CardTitle className="flex items-center gap-2">
                 <TrendingUp className="h-5 w-5 text-emerald-500 dark:text-emerald-400" />
@@ -330,7 +334,7 @@ export default function UnifiedOrdersDashboard() {
         </div>
 
         {/* Status Overview & Recent Activity */}
-        <div className="grid grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
           {/* Status Overview */}
           <Card className="border-0 shadow-lg">
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
@@ -361,7 +365,7 @@ export default function UnifiedOrdersDashboard() {
           </Card>
 
           {/* Recent Activity */}
-          <Card className="col-span-2 border-0 shadow-lg">
+          <Card className="border-0 shadow-lg md:col-span-2">
             <CardHeader className="border-b bg-gradient-to-r from-slate-50 dark:from-slate-950/40 to-gray-50 dark:to-gray-950/40">
               <CardTitle className="flex items-center gap-2">
                 <Clock className="h-5 w-5 text-orange-500 dark:text-orange-400" />
@@ -470,17 +474,17 @@ export default function UnifiedOrdersDashboard() {
 
             {/* Table View */}
             {viewMode === "table" && (
-              <div className="rounded-lg border overflow-hidden">
+              <div className="rounded-lg border overflow-x-auto">
                 <table className="w-full">
                   <thead className="bg-gray-50 dark:bg-gray-950/40">
                     <tr>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'کاڵا', en: 'Product', ar: 'المنتج', zh: '商品' })}</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' })}</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'کڕیار', en: 'Customer', ar: 'العميل', zh: '客户' })}</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'تراکینگ', en: 'Tracking', ar: 'التتبع', zh: '追踪号' })}</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'بارودۆخ', en: 'Status', ar: 'الحالة', zh: '状态' })}</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'نرخ', en: 'Price', ar: 'السعر', zh: '价格' })}</th>
-                      <th className="px-4 py-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'کردارەکان', en: 'Actions', ar: 'الإجراءات', zh: '操作' })}</th>
+                      <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'کاڵا', en: 'Product', ar: 'المنتج', zh: '商品' })}</th>
+                      <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' })}</th>
+                      <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'کڕیار', en: 'Customer', ar: 'العميل', zh: '客户' })}</th>
+                      <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'تراکینگ', en: 'Tracking', ar: 'التتبع', zh: '追踪号' })}</th>
+                      <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'بارودۆخ', en: 'Status', ar: 'الحالة', zh: '状态' })}</th>
+                      <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'نرخ', en: 'Price', ar: 'السعر', zh: '价格' })}</th>
+                      <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'کردارەکان', en: 'Actions', ar: 'الإجراءات', zh: '操作' })}</th>
                     </tr>
                   </thead>
                   <tbody className="divide-y">
@@ -508,7 +512,7 @@ export default function UnifiedOrdersDashboard() {
                             <Button variant="ghost" size="sm" onClick={() => setSelectedOrder(order)}>
                               <Eye className="h-4 w-4" />
                             </Button>
-                            <Button variant="ghost" size="sm">
+                            <Button variant="ghost" size="sm" onClick={() => setLocation(editPath(order))}>
                               <Edit className="h-4 w-4" />
                             </Button>
                           </div>
@@ -594,7 +598,7 @@ export default function UnifiedOrdersDashboard() {
                 </div>
                 <div className="flex justify-end gap-2">
                   <Button variant="outline" onClick={() => setSelectedOrder(null)}>{pickLang(language, { ku: 'داخستن', en: 'Close', ar: 'إغلاق', zh: '关闭' })}</Button>
-                  <Button className="bg-gradient-to-r from-purple-500 to-indigo-600">
+                  <Button className="bg-gradient-to-r from-purple-500 to-indigo-600" onClick={() => setLocation(editPath(selectedOrder))}>
                     <Edit className="me-2 h-4 w-4" />
                     {pickLang(language, { ku: 'دەستکاری', en: 'Edit', ar: 'تعديل', zh: '编辑' })}
                   </Button>

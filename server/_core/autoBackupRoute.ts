@@ -16,6 +16,7 @@ import {
   isFingerprint,
   keyFromHeader,
   keyMatches,
+  livePending,
   newPairCode,
   parseStoredKey,
   type PendingPairing,
@@ -106,6 +107,12 @@ export function registerAutoBackupRoutes(app: Express): void {
   app.post("/api/auto-backup/pair", pairLimiter, asyncRoute(async (req, res) => {
     const body = (req.body ?? {}) as { fingerprint?: unknown; computer?: unknown };
     if (!isFingerprint(body.fingerprint)) return res.status(400).json({ error: "داواکارییەکە دروست نییە." });
+    // One request at a time: while the owner's own code is still live, a
+    // second computer waits — otherwise anyone could keep replacing it.
+    const current = livePending(await db.getSetting(AUTO_BACKUP_PENDING_SETTING));
+    if (current && current.fingerprint !== body.fingerprint) {
+      return res.status(409).json({ error: `کۆمپیوتەرێکی تر لە پەیوەستبووندایە. ${PAIR_MINUTES} خولەک چاوەڕێ بکە.` });
+    }
     const pending: PendingPairing = {
       fingerprint: body.fingerprint,
       code: newPairCode(),

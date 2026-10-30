@@ -2034,37 +2034,6 @@ export const fullPackageRouter = router({
       }),
     
     // Charge shipping cost when batch arrives (for full_package orders)
-    chargeShippingCost: staffProcedure
-      .input(z.object({
-        id: z.number(),
-        shippingCostUsd: z.string(),
-      }))
-      .mutation(async ({ input, ctx }) => {
-        const existing = await db.getFullPackageOrderById(input.id);
-        if (!existing) {
-          throw new TRPCError({ code: "NOT_FOUND", message: "Order not found" });
-        }
-        
-        if (existing.isChargedToCustomer) {
-          throw new TRPCError({ code: "BAD_REQUEST", message: "Shipping already charged" });
-        }
-        
-        const shippingCost = parseFloat(input.shippingCostUsd);
-        const grossProfit = parseFloat(existing.grossProfitUsd || '0');
-        const netProfitUsd = (grossProfit - shippingCost).toFixed(2);
-        
-        await db.updateFullPackageOrder(input.id, {
-          shippingCostUsd: input.shippingCostUsd,
-          netProfitUsd,
-          isChargedToCustomer: true,
-          chargedAt: new Date(),
-        }, ctx.user.id);
-        
-        return { success: true, netProfitUsd };
-      }),
-    
-    // ============ COMMISSION ORDER PROCEDURES ============
-    
     // Create commission order with prepaid
     createCommissionOrder: staffProcedure
       .input(z.object({
@@ -2168,29 +2137,7 @@ export const fullPackageRouter = router({
       }),
     
     // Get customer's purchase requests (for customer portal)
-    getMyPurchaseRequests: protectedProcedure
-      .input(z.object({
-        status: z.string().optional(),
-      }).optional())
-      .query(async ({ input, ctx }) => {
-        return db.getFullPackageOrdersByCustomer(ctx.user.id, {
-          orderType: 'purchase_request',
-          status: input?.status,
-        });
-      }),
-    
     // Get customer's full package orders (for customer portal)
-    getMyOrders: protectedProcedure
-      .input(z.object({
-        status: z.string().optional(),
-        orderType: z.enum(["full_package", "purchase_request", "commission"]).optional(),
-      }).optional())
-      .query(async ({ input, ctx }) => {
-        return db.getFullPackageOrdersByCustomer(ctx.user.id, input);
-      }),
-    
-    // ============ PROFIT REPORTS ============
-    
     // Get detailed profit report for Full Package orders
     getProfitReport: adminProcedure
       .input(z.object({

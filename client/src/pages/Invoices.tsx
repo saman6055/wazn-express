@@ -233,10 +233,6 @@ export default function Invoices() {
                                 title={t('invoicesList.view')} onClick={() => navigate(`/invoices/${invoice.id}`)}>
                                 <Eye className="h-4 w-4" />
                               </Button>
-                              <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-blue-50 hover:text-blue-600"
-                                title={t('invoicesList.download')} onClick={() => navigate(`/invoices/${invoice.id}`)}>
-                                <Download className="h-4 w-4" />
-                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>

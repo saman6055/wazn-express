@@ -423,6 +423,9 @@ class SDKServer {
           email: userInfo.email ?? null,
           loginMethod: userInfo.loginMethod ?? userInfo.platform ?? null,
           lastSignedIn: signedInAt,
+          // Known to the OAuth server is not yet one of ours: an admin
+          // switches the account on. The default was an active employee.
+          isActive: false,
         });
         user = await db.getUserByOpenId(userInfo.openId);
       } catch (error) {

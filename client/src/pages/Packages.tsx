@@ -2020,7 +2020,7 @@ const [, setLocation] = useLocation();
 
       {/* Edit Package Dialog - Quick Register Style */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-3xl w-[95vw] max-h-[92vh] overflow-y-auto overflow-x-hidden">
+        <DialogContent className="max-w-3xl w-[95vw] overflow-y-auto overflow-x-hidden">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-primary" />
@@ -2438,7 +2438,7 @@ const [, setLocation] = useLocation();
 
       {/* View Details Dialog */}
       <Dialog open={showViewDialog} onOpenChange={setShowViewDialog}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Eye className="h-5 w-5 text-primary" />

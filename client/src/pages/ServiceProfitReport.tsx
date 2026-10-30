@@ -112,10 +112,7 @@ const [startDate, setStartDate] = useState<string>("");
             <h1 className="text-2xl font-bold tracking-tight">{t("auto.text_910369")} </h1>
             <p className="text-muted-foreground">{t("auto.text_9c41e3")} </p>
           </div>
-          <Button variant="outline" className="gap-2">
-            <Download className="h-4 w-4" />
-            {t("auto.text_5a5a9b")} PDF
-          </Button>
+
         </div>
 
         {/* Filters */}

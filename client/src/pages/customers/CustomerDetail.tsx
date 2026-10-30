@@ -591,15 +591,15 @@ export default function CustomerDetail() {
                     </div>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <Table>
+                    <Table mobileCards>
                       <TableHeader>
                         <TableRow className="bg-muted/30">
                           <TableHead>{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</TableHead>
                           <TableHead>{pickLang(language, { ku: "خزمەت", en: "Service", ar: "الخدمة", zh: "服务" })}</TableHead>
                           <TableHead>{pickLang(language, { ku: "وەسف", en: "Description", ar: "الوصف", zh: "描述" })}</TableHead>
-                          <TableHead className="text-right">{pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableHead>
-                          <TableHead className="text-right">{pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</TableHead>
-                          <TableHead className="text-right">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
+                          <TableHead className="text-end">{pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableHead>
+                          <TableHead className="text-end">{pickLang(language, { ku: "نرخ", en: "Price", ar: "السعر", zh: "价格" })}</TableHead>
+                          <TableHead className="text-end">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
                           <TableHead>{pickLang(language, { ku: "دۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
                         </TableRow>
                       </TableHeader>
@@ -617,13 +617,13 @@ export default function CustomerDetail() {
                                 </Badge>
                               </TableCell>
                               <TableCell className="max-w-[200px] truncate">{service.description}</TableCell>
-                              <TableCell className="text-right text-sm text-muted-foreground">
+                              <TableCell className="text-end text-sm text-muted-foreground">
                                 ${Number(service.costAmount ?? 0).toFixed(2)}
                               </TableCell>
-                              <TableCell className="text-right text-sm font-medium">
+                              <TableCell className="text-end text-sm font-medium">
                                 ${Number(service.priceAmount ?? 0).toFixed(2)}
                               </TableCell>
-                              <TableCell className={`text-right font-medium ${profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
+                              <TableCell className={`text-end font-medium ${profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
                                 ${profit.toFixed(2)}
                               </TableCell>
                               <TableCell>
@@ -721,7 +721,7 @@ export default function CustomerDetail() {
                                 <p className="text-sm text-muted-foreground">{order.productName ?? t("common.noName")}</p>
                               </div>
                             </div>
-                            <div className="text-right">
+                            <div className="text-end">
                               <Badge variant={order.status === "delivered" ? "default" : order.status === "pending" ? "secondary" : "outline"}>
                                 {order.status}
                               </Badge>
@@ -746,7 +746,7 @@ export default function CustomerDetail() {
 
       {/* Edit Customer Dialog - full form matching create form */}
       <Dialog open={cd.isEditOpen} onOpenChange={cd.setIsEditOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-2xl overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="h-5 w-5 text-primary" />

@@ -67,7 +67,7 @@ export function InlineTracking({
           type="button"
           onClick={onSave}
           disabled={!value.trim() || saving}
-          className="grid h-7 w-7 place-items-center rounded-md text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
+          className="tap-44 grid h-7 w-7 place-items-center rounded-md text-emerald-600 hover:bg-emerald-50 disabled:opacity-40 dark:text-emerald-400 dark:hover:bg-emerald-950/40"
           title={pickLang(language, { ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
           data-testid="inline-tracking-save"
         >
@@ -76,7 +76,7 @@ export function InlineTracking({
         <button
           type="button"
           onClick={onCancel}
-          className="grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted"
+          className="tap-44 grid h-7 w-7 place-items-center rounded-md text-muted-foreground hover:bg-muted"
           title={pickLang(language, { ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
         >
           <X className="h-4 w-4" />

@@ -47,6 +47,7 @@ import { customerCodeOnly } from "@shared/customerCode";
 import { whatsappNumber } from "@shared/receiptWhatsApp";
 import { isOverCreditLimit } from "@shared/riskRules";
 import { QueryErrorNote } from "@/components/QueryErrorNote";
+import { exportToCSV } from "@/components/ExportUtils";
 
 type AgingCategory = 'all' | '0-30' | '30-60' | '60-90' | '90+';
 
@@ -215,7 +216,18 @@ const [searchTerm, setSearchTerm] = useState("");
                 <p className="text-red-100">{t("auto.text_cad531")} </p>
               </div>
             </div>
-            <Button variant="secondary" size="sm">
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => exportToCSV({
+                title: t("auto.text_fcb1a0"),
+                headers: ["Code", "Name", "Mobile", "Balance USD", "Days", "Aging"],
+                rows: filteredDebtors.map((d) => [
+                  d.customerCode ?? "", d.customerName ?? "", d.customerMobile ?? "",
+                  Number(d.currentBalanceUsd ?? 0).toFixed(2), d.daysSinceActivity, d.agingCategory,
+                ]),
+              }, `debtors-${new Date().toISOString().slice(0, 10)}`)}
+            >
               <Download className="w-4 h-4 me-2" />{t("actions.download")}</Button>
           </div>
         </div>

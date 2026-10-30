@@ -35,6 +35,7 @@ import { AUTO_KEY_PREFIX, V6_KEY_PREFIX } from "../lib/backupFormat";
 import { AUTO_BACKUP_PENDING_SETTING, AUTO_BACKUP_SETTING, livePending, parseStoredKey } from "../lib/autoBackupKey";
 import { createBackup, restoreBackup } from "../services/backup.service";
 import { getScheduleConfig, updateScheduleConfig } from "../services/scheduledBackups.service";
+import { vanishedFix } from "@shared/fixAdvice";
 
 export const migrationRouter = router({
   run: adminProcedure
@@ -54,70 +55,70 @@ export const dataManagementRouter = router({
     }),
     
     // Delete all customers
-    deleteAllCustomers: adminProcedure
+    deleteAllCustomers: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllCustomers();
       }),
     
     // Delete all packages
-    deleteAllPackages: adminProcedure
+    deleteAllPackages: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllPackages();
       }),
     
     // Delete all batches
-    deleteAllBatches: adminProcedure
+    deleteAllBatches: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllBatches();
       }),
     
     // Delete all invoices
-    deleteAllInvoices: adminProcedure
+    deleteAllInvoices: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllInvoices();
       }),
     
     // Delete all payments
-    deleteAllPayments: adminProcedure
+    deleteAllPayments: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllPayments();
       }),
     
     // Delete all expenses
-    deleteAllExpenses: adminProcedure
+    deleteAllExpenses: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllExpenses();
       }),
     
     // Delete all ledger transactions (unified system)
-    deleteAllLedgerTransactions: adminProcedure
+    deleteAllLedgerTransactions: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllLedgerTransactions();
       }),
     
     // Delete all full packages
-    deleteAllFullPackages: adminProcedure
+    deleteAllFullPackages: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllFullPackages();
       }),
     
     // Delete all suppliers
-    deleteAllSuppliers: adminProcedure
+    deleteAllSuppliers: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllSuppliers();
       }),
     
     // Full system reset with automatic backup
-    resetAllData: adminProcedure
+    resetAllData: superAdminProcedure
       .input(z.object({ confirmation: z.literal('RESET ALL DATA') }))
       .mutation(async ({ ctx }) => {
         // Step 1: Create automatic backup before reset
@@ -199,7 +200,7 @@ export const dataManagementRouter = router({
       }),
     
     // Delete old data
-    deleteOldData: adminProcedure
+    deleteOldData: superAdminProcedure
       .input(z.object({
         confirmation: z.literal('DELETE'),
         daysOld: z.number().min(1),
@@ -210,7 +211,7 @@ export const dataManagementRouter = router({
       }),
     
     // Delete all scans
-    deleteAllScans: adminProcedure
+    deleteAllScans: superAdminProcedure
       .input(z.object({ confirmation: z.literal('DELETE') }))
       .mutation(async () => {
         return db.deleteAllScans();
@@ -534,6 +535,18 @@ export const usersRouter = router({
         role: z.enum(["super_admin", "admin", "employee", "accountant", "auditor"]),
       }))
       .mutation(async ({ input, ctx }) => {
+        // Only the main admin hands out or takes away main-admin, and nobody
+        // changes their own role: an admin could otherwise make themselves
+        // super_admin and walk through every gate that word opens.
+        const target = await db.getUserById(input.userId);
+        if (!target) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("ئەم هەژمارە") });
+        const touchesSuper = input.role === "super_admin" || target.role === "super_admin";
+        if (ctx.user.role !== "super_admin" && (touchesSuper || input.userId === ctx.user.id)) {
+          throw new TRPCError({ code: "FORBIDDEN", message: withFix("تەنها بەڕێوەبەری سەرەکی دەتوانێت ئەم ڕۆڵە بگۆڕێت.", [
+            "داوا لە بەڕێوەبەری سەرەکی بکە ڕۆڵەکە بگۆڕێت.",
+            "ڕۆڵی خۆت لە ئەم شاشەیە ناگۆڕدرێت.",
+          ]) });
+        }
         await db.updateUserRole(input.userId, input.role);
         await db.createAuditLog({
           userId: ctx.user.id,
@@ -1244,7 +1257,11 @@ export const permissionsRouter = router({
     // Get user permissions
     getUserPermissions: staffProcedure
       .input(z.object({ userId: z.number() }))
-      .query(async ({ input }) => {
+      .query(async ({ input, ctx }) => {
+        // A colleague's permissions are an admin's business, not an employee's.
+        if (input.userId !== ctx.user.id && ctx.user.role !== "admin" && ctx.user.role !== "super_admin") {
+          throw new TRPCError({ code: "FORBIDDEN", message: "Not your permissions" });
+        }
         const perms = await db.getUserPermissions(input.userId);
         const subPerms = await db.getUserSubPermissions(input.userId);
         return {

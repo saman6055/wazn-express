@@ -393,7 +393,7 @@ export function TaskBell({ className }: { className?: string }) {
                     </div>
                     <button
                       type="button"
-                      className="inline-flex h-6 shrink-0 items-center gap-1 self-center rounded-md px-1.5 text-[11px] text-muted-foreground hover:bg-background hover:text-foreground"
+                      className="tap-44 inline-flex h-6 shrink-0 items-center gap-1 self-center rounded-md px-1.5 text-[11px] text-muted-foreground hover:bg-background hover:text-foreground"
                       onClick={(e) => { e.stopPropagation(); wake.mutate({ id: task.id, until: new Date(Date.now() - 1000) }); }}
                       title={L(TASK_WORDS.wakeNow)}
                       data-testid={`task-wake-${task.id}`}

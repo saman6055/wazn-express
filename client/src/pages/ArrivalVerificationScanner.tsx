@@ -1440,10 +1440,6 @@ export default function ArrivalVerificationScanner() {
               <Button variant="outline" onClick={() => setReportDialog(false)}>
                 {t("scan.close")}
               </Button>
-              <Button className="bg-emerald-600 hover:bg-emerald-700">
-                <Printer className="h-4 w-4 me-2" />
-                {t("scan.print")}
-              </Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>

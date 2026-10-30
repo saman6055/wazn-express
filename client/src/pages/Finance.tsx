@@ -1120,12 +1120,12 @@ export default function Finance() {
               </CardHeader>
               <CardContent>
                 <div className="overflow-x-auto">
-                  <Table>
+                  <Table mobileCards>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
                         <TableHead>{pickLang(language, { ku: "کڕیارەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TableHead>
                         <TableHead>{pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
-                        <TableHead className="text-right">{pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</TableHead>
+                        <TableHead className="text-end">{pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</TableHead>
                         <TableHead></TableHead>
                       </TableRow>
                     </TableHeader>
@@ -1151,7 +1151,7 @@ export default function Finance() {
                                 {account.accountStatus === 'active' ? pickLang(language, { ku: "چالاک", en: "Active", ar: "نشط", zh: "活跃" }) : pickLang(language, { ku: "ناچالاک", en: "Inactive", ar: "غير نشط", zh: "停用" })}
                               </Badge>
                             </TableCell>
-                            <TableCell className={`text-right font-bold text-lg ${balanceUsd > 0 ? 'text-red-600' : balanceUsd < 0 ? 'text-green-600' : ''}`}>
+                            <TableCell className={`text-end font-bold text-lg ${balanceUsd > 0 ? 'text-red-600' : balanceUsd < 0 ? 'text-green-600' : ''}`}>
                               {formatCurrency(balanceUsd)}
                             </TableCell>
                             <TableCell>
@@ -1197,7 +1197,7 @@ export default function Finance() {
                             <p className="text-sm text-muted-foreground">{getTransactionTypeLabel(tx.transactionType || '')}</p>
                           </div>
                         </div>
-                        <div className="text-right">
+                        <div className="text-end">
                           <p className={`font-bold ${isDebit ? 'text-red-600' : 'text-green-600'}`}>
                             {isDebit ? '+' : '-'}{formatCurrency(Math.abs(Number(tx.amountUsd || 0)))}
                           </p>
@@ -1370,12 +1370,12 @@ export default function Finance() {
                   <div className="text-center py-8 text-muted-foreground">{t("common.loading")}</div>
                 ) : (
                   <div className="overflow-x-auto">
-                    <Table>
+                    <Table mobileCards>
                       <TableHeader>
                         <TableRow className="bg-muted/30 hover:bg-muted/30">
                           <TableHead className="font-semibold">{pickLang(language, { ku: "کڕیارەکان", en: "Customers", ar: "العملاء", zh: "客户" })}</TableHead>
                           <TableHead className="font-semibold">{pickLang(language, { ku: "ژمارەی حساب", en: "Account number", ar: "رقم الحساب", zh: "账户号" })}</TableHead>
-                          <TableHead className="text-right font-semibold">{pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</TableHead>
+                          <TableHead className="text-end font-semibold">{pickLang(language, { ku: "باڵانس (USD)", en: "Balance (USD)", ar: "الرصيد (USD)", zh: "余额 (USD)" })}</TableHead>
                           <TableHead className="font-semibold">{pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
                           <TableHead></TableHead>
                         </TableRow>
@@ -1397,7 +1397,7 @@ export default function Finance() {
                                 </div>
                               </TableCell>
                               <TableCell className="font-mono text-sm text-muted-foreground">{account.accountNumber}</TableCell>
-                              <TableCell className={`text-right font-bold text-lg ${balanceUsd > 0 ? 'text-red-600' : balanceUsd < 0 ? 'text-green-600' : ''}`}>
+                              <TableCell className={`text-end font-bold text-lg ${balanceUsd > 0 ? 'text-red-600' : balanceUsd < 0 ? 'text-green-600' : ''}`}>
                                 {formatCurrency(balanceUsd)}
                               </TableCell>
                               <TableCell>
@@ -1520,7 +1520,7 @@ export default function Finance() {
                 </div>
               </CardHeader>
               <CardContent className="p-0">
-                <Table>
+                <Table mobileCards>
                   <TableHeader>
                     <TableRow className="bg-muted/30 hover:bg-muted/30">
                       <TableHead className="font-semibold">{t("common.date")}</TableHead>
@@ -1704,13 +1704,13 @@ export default function Finance() {
                 
                 {/* Table */}
                 <div className="overflow-x-auto rounded-lg border">
-                  <Table>
+                  <Table mobileCards>
                     <TableHeader>
                       <TableRow className="bg-muted/30">
                         <TableHead className="w-12">#</TableHead>
                         <TableHead>{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</TableHead>
                         <TableHead>{pickLang(language, { ku: "ژمارەی مۆبایل", en: "Mobile number", ar: "رقم الهاتف", zh: "手机号" })}</TableHead>
-                        <TableHead className="text-right">{pickLang(language, { ku: "بڕی کریدیت (USD)", en: "Credit amount (USD)", ar: "مبلغ الرصيد (USD)", zh: "贷方金额 (USD)" })}</TableHead>
+                        <TableHead className="text-end">{pickLang(language, { ku: "بڕی کریدیت (USD)", en: "Credit amount (USD)", ar: "مبلغ الرصيد (USD)", zh: "贷方金额 (USD)" })}</TableHead>
                         <TableHead>{pickLang(language, { ku: "بارودۆخ", en: "Status", ar: "الحالة", zh: "状态" })}</TableHead>
                         <TableHead className="w-16"></TableHead>
                       </TableRow>
@@ -1744,7 +1744,7 @@ export default function Finance() {
                               <TableCell className="text-sm">
                                 {account.customer?.mobileNumber || '-'}
                               </TableCell>
-                              <TableCell className="text-right">
+                              <TableCell className="text-end">
                                 <span className="font-bold text-emerald-600 dark:text-emerald-400 text-lg">
                                   {formatCurrency(balance)}
                                 </span>

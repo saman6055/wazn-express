@@ -355,7 +355,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
         
         {/* Add/Edit Dialog */}
         <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogContent className="max-w-md overflow-y-auto">
             <DialogHeader>
               <DialogTitle>
                 {editingAddress ? pickLang(language, { ku: "دەستکاری ناونیشان", en: "Edit address", ar: "تعديل العنوان", zh: "编辑地址" }) : pickLang(language, { ku: "زیادکردنی ناونیشان", en: "Add address", ar: "إضافة عنوان", zh: "添加地址" })}

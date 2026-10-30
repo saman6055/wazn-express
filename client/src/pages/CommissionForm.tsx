@@ -1441,7 +1441,7 @@ function CommissionFormScreen() {
 
                   {/* Result */}
                   {(parseFloat(rmbPerUnit) > 0 || parseFloat(rmbTotal) > 0) && (
-                    <div className="grid grid-cols-3 gap-2">
+                    <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
                       <div className="bg-amber-50 dark:bg-amber-950/40 rounded-lg p-2 text-center border border-amber-100 dark:border-amber-800/60">
                         <p className="text-[10px] text-amber-500 dark:text-amber-400 uppercase tracking-wide mb-0.5">{pickLang(language, { ku: "1 دانە یوانی چینی", en: "1 unit CNY", ar: "وحدة واحدة يوان", zh: "单件人民币" })}</p>
                         <p className="font-bold text-amber-700 dark:text-amber-300 font-mono text-sm">{Number(rmbPerUnit || 0).toLocaleString("en-US")} ¥</p>

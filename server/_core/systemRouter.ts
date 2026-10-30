@@ -1,10 +1,29 @@
 import { z } from "zod";
 import { notifyOwner } from "./notification";
 import { publicProcedure, protectedProcedure, router } from "./trpc";
-import { adminProcedure } from "../middleware/auth";
+import { adminProcedure, staffProcedure } from "../middleware/auth";
+import { SERVER_ONLY_SETTINGS } from "../lib/wecomBot";
+import { AUTO_BACKUP_PENDING_SETTING, AUTO_BACKUP_SETTING } from "../lib/autoBackupKey";
+import { TRPCError } from "@trpc/server";
+
+/**
+ * Keys that belong to the server alone: the WeCom webhook key, the backup
+ * key's hash and a pairing code. Readable by nobody here, writable only
+ * through their own guarded procedures (settings.setWecom, the pairing).
+ */
+const PROTECTED_KEYS = new Set<string>([...SERVER_ONLY_SETTINGS, AUTO_BACKUP_SETTING, AUTO_BACKUP_PENDING_SETTING]);
+const refuseProtected = (key: string) => {
+  if (PROTECTED_KEYS.has(key)) {
+    throw new TRPCError({ code: "FORBIDDEN", message: withFix("ئەم ڕێکخستنە لە ڕێگەی ئەم دەرگایەوە ناگۆڕدرێت.", [
+      "کلیلی WeCom لە ڕێکخستنەکان → WeCom دابنێ.",
+      "کلیلی بەکاپی خۆکار لە «بەڕێوەبردنی بەکاپ» پەیوەست بکە.",
+    ]) });
+  }
+};
 import { systemSettings } from "../../drizzle/schema";
 import { eq } from "drizzle-orm";
 import { getDb } from "../db/connection";
+import { withFix } from "@shared/fixAdvice";
 
 // Use the shared connection pool instead of creating individual connections
 async function getDbConnection() {
@@ -37,17 +56,20 @@ export const systemRouter = router({
     }),
 
   // Get all system settings
-  getSettings: protectedProcedure.query(async () => {
+  // Staff, not customers: this used to answer any signed-in session, the
+  // WeCom key and the owner's cost base included.
+  getSettings: staffProcedure.query(async () => {
     const db = await getDbConnection();
     if (!db) return [];
     const settings = await db.select().from(systemSettings);
-    return settings;
+    return settings.filter((s) => !PROTECTED_KEYS.has(s.settingKey));
   }),
 
   // Get a specific setting by key
-  getSetting: protectedProcedure
+  getSetting: staffProcedure
     .input(z.object({ key: z.string() }))
     .query(async ({ input }) => {
+      refuseProtected(input.key);
       const db = await getDbConnection();
       if (!db) return null;
       const result = await db.select().from(systemSettings).where(eq(systemSettings.settingKey, input.key)).limit(1);
@@ -63,6 +85,7 @@ export const systemRouter = router({
       description: z.string().optional(),
     }))
     .mutation(async ({ input, ctx }) => {
+      refuseProtected(input.key);
       const db = await getDbConnection();
       if (!db) throw new Error("Database not available");
       
@@ -97,6 +120,7 @@ export const systemRouter = router({
   deleteSetting: adminProcedure
     .input(z.object({ key: z.string() }))
     .mutation(async ({ input }) => {
+      refuseProtected(input.key);
       const db = await getDbConnection();
       if (!db) throw new Error("Database not available");
       

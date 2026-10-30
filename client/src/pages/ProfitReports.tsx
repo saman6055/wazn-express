@@ -156,11 +156,11 @@ export default function ProfitReports() {
               </div>
             </div>
             <div className="flex items-center gap-3">
-              <Button onClick={exportToExcel} variant="outline" size="sm" className="bg-white/15 border-white/30 text-white hover:bg-white/25">
+              <Button onClick={exportToExcel} variant="outline" size="sm" className="bg-white/15 border-white/30 text-white hover:bg-white/25 print:hidden">
                 <Download className="h-4 w-4 ms-2 rtl:ms-0 rtl:me-2" />
                 {t("profitReport.excel")}
               </Button>
-              <Button onClick={handlePrint} variant="outline" size="sm" className="bg-white/15 border-white/30 text-white hover:bg-white/25">
+              <Button onClick={handlePrint} variant="outline" size="sm" className="bg-white/15 border-white/30 text-white hover:bg-white/25 print:hidden">
                 <Printer className="h-4 w-4 ms-2 rtl:ms-0 rtl:me-2" />
                 {t("profitReport.pdf")}
               </Button>

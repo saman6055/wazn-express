@@ -33,6 +33,7 @@ import { createCustomerNotification } from './portal.db';
 import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPackages.db';
 import { orderNumbersForPackages, orderSourcesForPackages } from './orderNumbers.db';
 import type { ParcelOrderRef } from '@shared/parcelSource';
+import { likePattern } from "./utils.db";
 import {
   InsertUser, users,
   customers, InsertCustomer, Customer,
@@ -339,7 +340,7 @@ export async function getAllPackages(options: {
   const conditions = [];
   
   if (search) {
-    const searchTerm = `%${search.trim()}%`;
+    const searchTerm = likePattern(search.trim());
 
     // Find customer IDs matching the search term
     // Capped like the other three lookups around it: uncapped, one letter

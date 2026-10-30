@@ -519,7 +519,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
 
   return (
     <Dialog open={open} onOpenChange={(next) => { if (!next) onClose(); }}>
-      <DialogContent dir={isRTL ? "rtl" : "ltr"} className="max-h-[92vh] overflow-y-auto sm:max-w-md lg:max-w-4xl">
+      <DialogContent dir={isRTL ? "rtl" : "ltr"} className=" overflow-y-auto sm:max-w-md lg:max-w-4xl">
         <DialogHeader>
           <DialogTitle className="flex flex-wrap items-center gap-2">
             {sending ? <Send className="h-5 w-5 text-primary" /> : <Printer className="h-5 w-5 text-primary" />}

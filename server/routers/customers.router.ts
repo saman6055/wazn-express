@@ -208,6 +208,26 @@ export const customersRouter = router({
       }))
       .mutation(async ({ input, ctx }) => {
         const { id, ...data } = input;
+
+        // The login mobile, the code and the on/off switch are Portal
+        // Center's adminProcedure work; this door is for the rest. An
+        // employee sending them back unchanged is fine, changing them is not.
+        const isAdmin = ctx.user.role === "admin" || ctx.user.role === "super_admin";
+        if (!isAdmin) {
+          const before = await db.getCustomerById(id);
+          if (!before) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("ئەم کڕیارە") });
+          const changed = (
+            (data.mobileNumber !== undefined && data.mobileNumber !== before.mobileNumber) ||
+            (data.customerCode !== undefined && data.customerCode !== before.customerCode) ||
+            (data.isActive !== undefined && data.isActive !== before.isActive)
+          );
+          if (changed) {
+            throw new TRPCError({ code: "FORBIDDEN", message: withFix("گۆڕینی ژمارەی مۆبایل، کۆد یان چالاکی کڕیار کاری بەڕێوەبەرە.", [
+              "زانیارییەکانی تر پاشەکەوت بکە بێ گۆڕینی ئەم سێ خانەیە.",
+              "بۆ ئەم سێ خانەیە داوا لە بەڕێوەبەر بکە لە «ناوەندی پۆرتاڵ» بیانگۆڕێت.",
+            ]) });
+          }
+        }
         
         // If customerCode is being updated, check uniqueness
         if (data.customerCode) {
@@ -231,7 +251,9 @@ export const customersRouter = router({
         });
         return { success: true };
       }),
-    resetPassword: staffProcedure
+    // An admin's: with a new password an employee could open the customer's
+    // whole portal (Portal Center's resetCustomerPassword is adminProcedure).
+    resetPassword: adminProcedure
       .input(z.object({
         id: idSchema,
         newPassword: z.string().min(6).max(500),

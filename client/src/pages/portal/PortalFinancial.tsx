@@ -1015,7 +1015,7 @@ const { t, language } = useLanguage();
 
       {/* Invoice Detail Dialog */}
       <Dialog open={!!selectedInvoice} onOpenChange={() => setSelectedInvoice(null)}>
-        <DialogContent className={cn("max-w-md max-h-[90vh] overflow-y-auto", "bg-card border-border")}>
+        <DialogContent className={cn("max-w-md overflow-y-auto", "bg-card border-border")}>
           {(() => {
             const invoice = invoices?.find(inv => inv.id === selectedInvoice) as any;
             if (!invoice) return null;

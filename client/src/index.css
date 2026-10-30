@@ -1561,6 +1561,25 @@ a:focus-visible,
   }
 }
 @media print {
+  /* Dark mode prints on white paper: the light theme's tokens, or the text
+     came out near-white on a background the printer dropped. */
+  html.dark {
+    color-scheme: light;
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.20 0.02 250);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.20 0.02 250);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.20 0.02 250);
+    --secondary: oklch(0.96 0.005 250);
+    --secondary-foreground: oklch(0.35 0.02 250);
+    --muted: oklch(0.95 0.005 250);
+    --muted-foreground: oklch(0.50 0.02 250);
+    --accent: oklch(0.94 0.01 220);
+    --accent-foreground: oklch(0.25 0.02 220);
+    --border: oklch(0.90 0.005 250);
+    --input: oklch(0.90 0.005 250);
+  }
   aside#sidebar,
   .fixed {
     display: none !important;
