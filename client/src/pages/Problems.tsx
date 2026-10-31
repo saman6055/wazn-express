@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { CheckCircle2, ChevronDown, ExternalLink, LifeBuoy } from "lucide-react";
 import { checkDefinition, type CheckSeverity } from "@shared/auditSweep";
+import { FIX_STEPS } from "@shared/auditFixSteps";
+import { CopyButton } from "@/components/CopyButton";
 
 /**
  * One page for what is wrong right now (owner, 2026-10-30): the warnings that
@@ -29,6 +31,17 @@ const LEVEL: Record<CheckSeverity, { ku: string; en: string; ar: string; zh: str
   warning: { ku: "گرنگ", en: "Important", ar: "مهم", zh: "重要" },
   info: { ku: "بۆ زانین", en: "To know", ar: "للعلم", zh: "知悉" },
 };
+
+/** The records a finding names, whichever column carries their code. */
+const CODE_FIELDS = ["batchCode", "packageCode", "orderCode", "orderNumber", "invoiceNumber", "settlementNumber", "accountNumber", "customerCode", "trackingNumber", "number"];
+function codesIn(sample: unknown[] | undefined): string[] {
+  const codes = (sample ?? []).map((row) => {
+    const r = row as Record<string, unknown>;
+    const field = CODE_FIELDS.find((f) => r[f]);
+    return field ? String(r[field]) : null;
+  });
+  return Array.from(new Set(codes.filter((c): c is string => !!c)));
+}
 
 function Row({ severity, title, open, onToggle, children }: { severity: CheckSeverity; title: string; open: boolean; onToggle: () => void; children: React.ReactNode }) {
   const { language } = useTranslation();
@@ -119,6 +132,22 @@ export default function Problems() {
           return (
             <Row key={r.id} severity={def.severity} open={openId === r.id} onToggle={() => toggle(r.id)} title={`${pickLang(language, def.title)} (${r.count})`}>
               <p>{pickLang(language, def.meaning)}</p>
+              <div>
+                <p className="text-muted-foreground">{L({ ku: "چارەسەر:", en: "Fix:", ar: "الحل:", zh: "解决：" })}</p>
+                <ol className="list-inside list-decimal space-y-0.5" data-testid="problem-steps">
+                  {FIX_STEPS[r.id].map((s) => <li key={s.en}>{pickLang(language, s)}</li>)}
+                </ol>
+              </div>
+              {codesIn(r.sample).length > 0 && (
+                <div className="flex flex-wrap items-center gap-2" dir="ltr" data-testid="problem-codes">
+                  {codesIn(r.sample).map((code) => (
+                    <span key={code} className="inline-flex items-center gap-1 rounded bg-muted px-1.5 py-0.5 font-mono text-xs">
+                      {code}
+                      <CopyButton value={code} />
+                    </span>
+                  ))}
+                </div>
+              )}
               <Button asChild size="sm" variant="outline" className="h-8 gap-1.5">
                 <Link href={def.path ?? "/audit-sweep"}>
                   <ExternalLink className="h-3.5 w-3.5" />
