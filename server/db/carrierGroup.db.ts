@@ -10,7 +10,7 @@ import { getDb } from "./connection";
 import { batchCarrierParts, batches, carrierGroupInvoices, countries, packageScans, packages, users } from "../../drizzle/schema";
 import { chargeableWeight } from "@shared/chargeableWeight";
 import { parcelHasArrived } from "@shared/dispatchStage";
-import { groupDifferenceUsd, groupVerdict, normalizeCarrierBatchNo, splitGroupInvoice, twinBatchCode } from "@shared/carrierGroup";
+import { groupDifferenceUsd, groupVerdict, normalizeCarrierBatchNo, splitGroupInvoice, splitInvoiceByHand, twinBatchCode } from "@shared/carrierGroup";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
 import { batchMadeInChina } from "@shared/batchStage";
 import { batchMatchesDesk, twinCodeFor } from "@shared/batchTwin";
@@ -131,6 +131,9 @@ async function memberFacts(ids: number[], arrivedOn: string | null = null) {
       madeInChina: china, twinOfBatchId: b.twinOfBatchId ?? null, carrierBatchNo: b.carrierBatchNo ?? null,
       parcels: mine.length, kg: r2(kg), liveKg: r2(liveKg), stillComing: coming,
       partial, allParcels: all.length,
+      // The scale's kilos, every parcel; and what a carrier already billed on it.
+      realKg: r2(all.reduce((s, p) => s + (Number(p.weightKg) || 0), 0)),
+      earlierKg: Number(b.chargedWeightKg) || 0,
       chargedWeightKg: b.chargedWeightKg, shippingCost: b.shippingCost, hasLoads: loads.has(b.id),
     };
   }).sort((a, b) => Number(b.madeInChina) - Number(a.madeInChina) || a.batchId - b.batchId);
@@ -153,12 +156,27 @@ export async function getCarrierGroup(batchId: number) {
   const costUsd = invoice ? Number(invoice.costUsd) : null;
   const oursKg = r2(members.reduce((s, m) => s + m.liveKg, 0));
   const stillComing = members.reduce((s, m) => s + m.stillComing, 0);
-  const shares = invoice ? splitGroupInvoice(members.map((m) => ({ batchId: m.batchId, kg: m.kg })), billedKg!, costUsd!) : [];
+  const allocations = (invoice?.allocations ?? null) as Record<string, number> | null;
+  const shares = !invoice ? []
+    : allocations ? splitInvoiceByHand(members.map((m) => m.batchId), allocations, billedKg!, costUsd!)
+    : splitGroupInvoice(members.map((m) => ({ batchId: m.batchId, kg: m.kg })), billedKg!, costUsd!);
+  // The invoice typed on one batch before the group card was used: offered
+  // here so it is never typed twice, and not counted as that batch's own load.
+  const holder = invoice ? null : members.reduce<(typeof members)[number] | null>((a, m) => (Number(m.shippingCost) > Number(a?.shippingCost ?? 0) ? m : a), null);
+  for (const m of members) if (holder && m.batchId === holder.batchId) m.earlierKg = 0;
+  // Once saved, a batch's figures are its share: what it had before is its other loads.
+  if (invoice) {
+    for (const m of members) {
+      const parts = await listCarrierParts(m.batchId);
+      m.earlierKg = r2(parts.filter((p) => p.note !== key).reduce((s, p) => s + (Number(p.billedKg) || 0), 0));
+    }
+  }
 
   return {
     key,
     members,
-    invoice: invoice ? { billedKg: billedKg!, costUsd: costUsd!, note: invoice.note, splitAt: invoice.splitAt, arrivedOn: invoice.arrivedOn ?? null } : null,
+    invoice: invoice ? { billedKg: billedKg!, costUsd: costUsd!, note: invoice.note, splitAt: invoice.splitAt, arrivedOn: invoice.arrivedOn ?? null, allocations } : null,
+    suggested: holder ? { billedKg: Number(holder.chargedWeightKg) || 0, costUsd: Number(holder.shippingCost) || 0 } : null,
     oursKg,
     allKg: r2(members.reduce((s, m) => s + m.kg, 0)),
     stillComing,
@@ -170,7 +188,7 @@ export async function getCarrierGroup(batchId: number) {
 
 /** The invoice, once, for the group - then shared out onto each batch. */
 export async function saveCarrierGroupInvoice(
-  input: { batchId: number; billedKg: number; costUsd: number; note?: string | null; arrivedOn?: string | null },
+  input: { batchId: number; billedKg: number; costUsd: number; note?: string | null; arrivedOn?: string | null; allocations?: Record<string, number> | null },
   user: { id: number; role: string },
 ) {
   const db = await need();
@@ -184,11 +202,20 @@ export async function saveCarrierGroupInvoice(
     ]));
   }
   if (!(input.billedKg > 0) || !(input.costUsd >= 0)) throw new Error(withFix("کێش یان پارەی وەسڵ دروست نییە.", ["کێشی وەسڵ بە کیلۆ و پارەکەی بە دۆلار بنووسە"]));
+  // Read before saving: a batch that already carries another load keeps it, and takes this share as one more.
+  const before = await getCarrierGroup(input.batchId);
+  const keepsItsLoad = new Set((before?.members ?? []).filter((m) => m.earlierKg > 0).map((m) => m.batchId));
   const [existing] = await db.select({ id: carrierGroupInvoices.id }).from(carrierGroupInvoices).where(eq(carrierGroupInvoices.carrierBatchNo, key)).limit(1);
-  const values = { billedKg: input.billedKg.toFixed(2), costUsd: input.costUsd.toFixed(2), note: (input.note ?? "").trim() || null, arrivedOn: input.arrivedOn || null };
+  if (input.allocations) {
+    const written = Object.values(input.allocations).reduce((s, kg) => s + Math.max(0, kg), 0);
+    if (written > input.billedKg + 0.005) {
+      throw new Error(withFix(`کێشی نووسراو بۆ باچەکان (${written.toFixed(2)} kg) لە کێشی وەسڵ (${input.billedKg.toFixed(2)} kg) زیاترە.`, ["کێشی باچەکان کەم بکەرەوە", "بۆ باچی کۆتایی ئەوەی ماوە خۆی دادەنرێت"]));
+    }
+  }
+  const values = { billedKg: input.billedKg.toFixed(2), costUsd: input.costUsd.toFixed(2), note: (input.note ?? "").trim() || null, arrivedOn: input.arrivedOn || null, allocations: input.allocations ?? null };
   if (existing) await db.update(carrierGroupInvoices).set(values).where(eq(carrierGroupInvoices.id, existing.id));
   else await db.insert(carrierGroupInvoices).values({ carrierBatchNo: key, ...values, createdById: user.id });
-  return applyCarrierGroupSplit(input.batchId, user);
+  return applyCarrierGroupSplit(input.batchId, user, keepsItsLoad);
 }
 
 /**
@@ -196,7 +223,7 @@ export async function saveCarrierGroupInvoice(
  * and its cost. A batch whose carrier came in loads of its own (carrierParts)
  * or a delivered one the user may not edit is left as it is, and said so.
  */
-export async function applyCarrierGroupSplit(batchId: number, user: { id: number; role: string }) {
+export async function applyCarrierGroupSplit(batchId: number, user: { id: number; role: string }, keepsItsLoad: Set<number> = new Set()) {
   const db = await need();
   const g = await getCarrierGroup(batchId);
   if (!g || !g.invoice || !g.key) throw new Error(withFix("ئەم گرووپە هێشتا وەسڵی نییە.", ["وەسڵی کۆمپانیا بنووسە"]));
@@ -208,8 +235,8 @@ export async function applyCarrierGroupSplit(batchId: number, user: { id: number
     if (isBatchEditLocked(m.status) && !mayEditLockedBatch(user.role)) { skipped.push({ batchCode: m.batchCode, why: "locked" }); continue; }
     // Part of it came on an earlier load: this invoice's share is one more
     // load of its own (its earlier invoice becomes load 1, kept as it was).
-    if (m.partial) {
-      const parts = await listCarrierParts(m.batchId);
+    const parts = await listCarrierParts(m.batchId);
+    if (m.partial || keepsItsLoad.has(m.batchId) || parts.some((p) => p.note === g.key)) {
       const mineLoad = parts.find((p) => p.note === g.key);
       const values = { billedKg: share.billedKg.toFixed(2), costUsd: share.costUsd.toFixed(2), arrivedOn: g.invoice.arrivedOn, note: g.key };
       if (mineLoad) await updateCarrierPart(mineLoad.id, values, user.id);

@@ -103,7 +103,7 @@ describe("a batch that came partly on this load (owner, 2026-10-29, AIR-2026-069
     expect(db).toContain("const partial = !!arrivedOn && all.some((p) => (firstScan.get(p.id) ?? \"9999\") < arrivedOn);");
     expect(db).toContain("const mineLoad = parts.find((p) => p.note === g.key);");
     expect(read("server/db/carrierParts.db.ts")).toContain("costUsd: decimalOrNull(batch.shippingCost) ?? decimalOrNull(firstLoadCost(batch)),");
-    expect(read("client/src/components/batches/CarrierGroupCard.tsx")).toContain('data-testid="carrier-group-day"');
+    expect(read("client/src/components/batches/CarrierGroupCard.tsx")).toContain('data-testid="carrier-group-hand"');
     expect(read("server/_core/migrations.ts")).toContain('"carrierGroupInvoices.arrivedOn"');
   });
 });

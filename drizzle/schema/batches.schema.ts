@@ -330,6 +330,8 @@ export const carrierGroupInvoices = mysqlTable("carrierGroupInvoices", {
    * 2026-10-29, AIR-2026-069: half on one load, half on ANC 169).
    */
   arrivedOn: varchar("arrivedOn", { length: 10 }),
+  /** Kilos of this invoice written by hand, batch id to kilos; the last batch takes the rest. */
+  allocations: json("allocations").$type<Record<string, number>>(),
   splitAt: timestamp("splitAt"),
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

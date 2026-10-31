@@ -58,6 +58,25 @@ export function splitGroupInvoice(members: GroupMember[], billedKg: number, cost
   return rows;
 }
 
+/**
+ * The invoice shared by kilos written by hand (owner, 2026-10-31): each batch
+ * but the last takes what it was given, the last takes what is left, so the
+ * shares always add up to the invoice exactly, to the kilo and the cent.
+ */
+export function splitInvoiceByHand(batchIds: number[], given: Record<string, number>, billedKg: number, costUsd: number) {
+  const rate = billedKg > 0 ? costUsd / billedKg : 0;
+  let kgLeft = cents(billedKg);
+  let usdLeft = cents(costUsd);
+  return batchIds.map((batchId, i) => {
+    const last = i === batchIds.length - 1;
+    const kg = last ? kgLeft : cents(Math.max(0, given[batchId] ?? 0));
+    const usd = last ? usdLeft : cents(kg * rate);
+    kgLeft = cents(kgLeft - kg);
+    usdLeft = cents(usdLeft - usd);
+    return { batchId, costUsd: usd, billedKg: kg, share: billedKg > 0 ? kg / billedKg : 0 };
+  });
+}
+
 /** Below this the two weights agree - rounding, a carton weighed a little differently. */
 export const GROUP_KG_TOLERANCE = 0.5;
 

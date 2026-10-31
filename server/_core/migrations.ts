@@ -3156,6 +3156,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "deliveryBoxes.carrierTrackings", sql: "ALTER TABLE deliveryBoxes ADD COLUMN carrierTrackings TEXT NULL" },
   // The day a carrier group's load reached Erbil (server/db/carrierGroup).
   { name: "carrierGroupInvoices.arrivedOn", sql: "ALTER TABLE carrierGroupInvoices ADD COLUMN arrivedOn VARCHAR(10) NULL" },
+  { name: "carrierGroupInvoices.allocations", sql: "ALTER TABLE carrierGroupInvoices ADD COLUMN allocations JSON NULL" },
   // Held at the customer's request (owner, 2026-10-28; shared/boxHold).
   { name: "deliveryBoxes.heldForCustomerAt", sql: "ALTER TABLE deliveryBoxes ADD COLUMN heldForCustomerAt TIMESTAMP NULL" },
   { name: "deliveryBoxes.heldById", sql: "ALTER TABLE deliveryBoxes ADD COLUMN heldById INT NULL" },

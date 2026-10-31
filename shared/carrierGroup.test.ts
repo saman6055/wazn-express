@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { splitInvoiceByHand } from "./carrierGroup";
 import fs from "fs";
 import path from "path";
 import { groupDifferenceUsd, groupVerdict, normalizeCarrierBatchNo, splitGroupInvoice, twinBatchCode } from "./carrierGroup";
@@ -85,5 +86,17 @@ describe("the bell", () => {
     expect(it?.level).toBe("high");
     expect(it?.count).toBe(2);
     expect(RISK_GATE["carrier-short"]).toBe("/finance/company-dashboard");
+  });
+});
+
+describe("an invoice shared by hand (owner, 2026-10-31)", () => {
+  it("ANC 169: two batches as written, the last takes the rest, the sums are exact", () => {
+    const rows = splitInvoiceByHand([113, 116, 127], { 113: 123.7, 116: 72.1 }, 276, 2428.8);
+    expect(rows.map((r) => r.billedKg)).toEqual([123.7, 72.1, 80.2]);
+    expect(rows.map((r) => r.costUsd)).toEqual([1088.56, 634.48, 705.76]);
+  });
+  it("cents that do not divide land on the last batch", () => {
+    const rows = splitInvoiceByHand([1, 2, 3], { 1: 1, 2: 1 }, 3, 10);
+    expect(rows.map((r) => r.costUsd)).toEqual([3.33, 3.33, 3.34]);
   });
 });

@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { CheckCircle2, CopyPlus, FileText, Link2, Loader2, RefreshCw } from "lucide-react";
+import { CheckCircle2, CopyPlus, FileText, Link2, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { pickLang } from "@/lib/lang";
@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
 import { BATCH_ROLE_LABEL, BATCH_ROLE_TONE, batchRole } from "@shared/batchRole";
-import { groupVerdict } from "@shared/carrierGroup";
+import { groupVerdict, splitInvoiceByHand } from "@shared/carrierGroup";
 
 /**
  * One carrier shipment, several of our batches (owner, 2026-10-28): the
@@ -34,12 +34,21 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
   const g = q.data;
   const [kg, setKg] = useState("");
   const [usd, setUsd] = useState("");
-  // The day this load reached Erbil: a batch with parcels checked in before
-  // it came partly on an earlier load (AIR-2026-069, owner 2026-10-29).
-  const [day, setDay] = useState("");
+  // Kilos written per batch. Offered: the invoice wherever it was typed, and
+  // each batch's own kilos less what an earlier load already billed
+  // (owner, 2026-10-31: «من کێش و تێچووی گەیاندنم دا بەتۆ»).
+  const [hand, setHand] = useState<Record<number, string>>({});
   useEffect(() => {
-    if (g?.invoice) { setKg(String(g.invoice.billedKg)); setUsd(String(g.invoice.costUsd)); setDay(g.invoice.arrivedOn ?? ""); }
-  }, [g?.invoice?.billedKg, g?.invoice?.costUsd, g?.invoice?.arrivedOn]); // eslint-disable-line react-hooks/exhaustive-deps
+    if (!g) return;
+    const from = g.invoice ?? g.suggested;
+    if (from) { setKg(String(from.billedKg)); setUsd(String(from.costUsd)); }
+    const saved = g.invoice?.allocations ?? null;
+    setHand(Object.fromEntries(g.members.map((m) => {
+      const shared = g.shares.find((s) => s.batchId === m.batchId);
+      const kilos = shared ? shared.billedKg : Math.max(0, m.realKg - m.earlierKg);
+      return [m.batchId, (saved ? saved[m.batchId] ?? kilos : kilos).toFixed(2)];
+    })));
+  }, [q.dataUpdatedAt]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const done = (msg: string) => { toast.success(msg); void q.refetch(); void utils.batches.invalidate(); onChanged(); };
   const fail = (e: { message: string }) => toast.error(e.message);
@@ -53,7 +62,6 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
       : L({ ku: "وەسڵ پاشەکەوت کرا و پارەکە دابەش کرا", en: "Invoice saved and shared out", ar: "حُفظت الفاتورة ووُزّعت", zh: "发票已保存并分摊" })),
     onError: fail,
   });
-  const reapply = trpc.batches.carrierGroup.reapply.useMutation({ onSuccess: () => done(L({ ku: "دووبارە دابەش کرا", en: "Shared out again", ar: "أُعيد التوزيع", zh: "已重新分摊" })), onError: fail });
 
   if (q.isLoading) return null;
   const hasTwin = !!g?.members.some((m) => m.twinOfBatchId === batchId);
@@ -61,9 +69,10 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
   if (!g && !canTwin) return null;
 
   const kgf = (n: number) => <bdi dir="ltr" className="tabular-nums">{n.toFixed(2)} kg</bdi>;
-  const billed = g?.invoice?.billedKg ?? 0;
-  const max = Math.max(billed, g?.oursKg ?? 0, 1) * 1.08;
-  const tone = g?.verdict === "short" ? "text-red-700 dark:text-red-300" : g?.verdict === "ahead" || g?.verdict === "even" ? "text-emerald-700 dark:text-emerald-300" : "text-amber-700 dark:text-amber-300";
+  const ids = (g?.members ?? []).map((m) => m.batchId);
+  const given = Object.fromEntries(ids.slice(0, -1).map((id) => [String(id), Number(hand[id]) || 0]));
+  const rows = splitInvoiceByHand(ids, given, Number(kg) || 0, Number(usd) || 0);
+  const over = Object.values(given).reduce((s, n) => s + n, 0) > (Number(kg) || 0) + 0.005;
 
   return (
     <div className="mt-3 space-y-3 rounded-md border p-3" data-testid="carrier-group">
@@ -85,60 +94,53 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
       {g && (
         <>
           <div className="overflow-x-auto">
-            <table className="w-full text-xs tabular-nums">
-              <thead className="text-muted-foreground">
+            <table className="w-full text-sm tabular-nums">
+              <thead className="text-xs text-muted-foreground">
                 <tr>
                   <th className="py-1 text-start">{L({ ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}</th>
-                  <th className="py-1 text-start">{L({ ku: "کێشی سەر کڕیار", en: "Charged to customers", ar: "المحتسب على العملاء", zh: "客户计费重" })}</th>
-                  <th className="py-1 text-start">{L({ ku: "گەیشتوو / تۆمارکراو", en: "In Erbil", ar: "في أربيل", zh: "已到" })}</th>
-                  {g.invoice && <th className="py-1 text-start">{L({ ku: "بەشی پارە", en: "Cost share", ar: "حصة التكلفة", zh: "成本分摊" })}</th>}
+                  <th className="py-1 text-start">{L({ ku: "کێشی خۆمان", en: "Our kilos", ar: "وزننا", zh: "我方重量" })}</th>
+                  <th className="py-1 text-start">{L({ ku: "لەم وەسڵەدا", en: "On this invoice", ar: "في هذه الفاتورة", zh: "本发票" })}</th>
+                  <th className="py-1 text-start">{L({ ku: "پارە", en: "Money", ar: "المبلغ", zh: "金额" })}</th>
                 </tr>
               </thead>
               <tbody>
-                {g.members.map((m) => {
-                  const share = g.shares.find((s) => s.batchId === m.batchId);
+                {rows.map((row, i) => {
+                  const m = g.members[i];
+                  const role = batchRole(m, g.members);
+                  const last = i === rows.length - 1;
                   return (
                     <tr key={m.batchId} className={cn("border-t", m.batchId === batchId && "bg-muted/40")} data-testid="carrier-group-member">
-                      <td className="py-1">
-                        {(() => {
-                          // Which is the original and which hang on it (shared/batchRole).
-                          const role = batchRole(m, g.members);
-                          return <span className={cn("me-1 rounded px-1.5 py-px text-[10px] font-semibold", BATCH_ROLE_TONE[role])} data-testid="carrier-group-role" data-role={role}>{L(BATCH_ROLE_LABEL[role])}</span>;
-                        })()}
-                        <span className={cn("me-1 rounded px-1 text-[10px] font-semibold", m.madeInChina ? "bg-rose-500/15 text-rose-700 dark:text-rose-300" : "bg-sky-500/15 text-sky-700 dark:text-sky-300")}>{m.madeInChina ? "CN" : "IQ"}</span>
-                        <bdi dir="ltr" className={cn("font-mono", batchRole(m, g.members) === "original" && "font-bold")}>{m.batchCode}</bdi>
+                      <td className="py-1.5">
+                        <span className={cn("me-1 rounded px-1.5 py-px text-[10px] font-semibold", BATCH_ROLE_TONE[role])} data-testid="carrier-group-role" data-role={role}>{L(BATCH_ROLE_LABEL[role])}</span>
+                        <bdi dir="ltr" className={cn("font-mono", role === "original" && "font-bold")}>{m.batchCode}</bdi>
                       </td>
-                      <td className="py-1">
-                        {kgf(m.kg)}
-                        {m.partial && (
-                          <span className="ms-1 text-[11px] text-violet-700 dark:text-violet-300" data-testid="carrier-group-partial">
-                            ({L({ ku: `بەشێکی: ${m.parcels} لە ${m.allParcels} پاکێج، ئەوانەی لەم بارەدا گەیشتوون`, en: `part: ${m.parcels} of ${m.allParcels} parcels, those that came on this load`, ar: `جزء: ${m.parcels} من ${m.allParcels}`, zh: `部分：${m.allParcels} 件中的 ${m.parcels} 件` })})
-                          </span>
+                      <td className="py-1.5">{kgf(m.realKg)}</td>
+                      <td className="py-1.5">
+                        {last || !isAdmin ? (
+                          <span data-testid="carrier-group-rest">{kgf(row.billedKg)} {last && <span className="text-xs text-muted-foreground">{L({ ku: "ماوە", en: "the rest", ar: "الباقي", zh: "其余" })}</span>}</span>
+                        ) : (
+                          <Input type="number" step="0.01" dir="ltr" value={hand[m.batchId] ?? ""} onChange={(e) => setHand((was) => ({ ...was, [m.batchId]: e.target.value }))} onKeyDown={noEnter} className="h-8 w-28" data-testid="carrier-group-hand" />
                         )}
+                        {m.earlierKg > 0 && <span className="ms-1 text-xs text-muted-foreground">+ {m.earlierKg.toFixed(2)} {L({ ku: "باری پێشوو", en: "earlier load", ar: "الشحنة السابقة", zh: "前批" })}</span>}
                       </td>
-                      <td className="py-1">{kgf(m.liveKg)}{m.stillComing > 0 && <span className="ms-1 text-amber-700 dark:text-amber-300">· {m.stillComing} {L({ ku: "لە ڕێگا", en: "on the road", ar: "في الطريق", zh: "在途" })}</span>}</td>
-                      {g.invoice && <td className="py-1">{share ? <bdi dir="ltr">{fmtUsd(share.costUsd)}</bdi> : "—"}{m.hasLoads && <span className="ms-1 text-amber-700 dark:text-amber-300">({L({ ku: "بارەکانی خۆی هەیە", en: "has its own loads", ar: "له شحنات خاصة", zh: "有自己的分批" })})</span>}</td>}
+                      <td className="py-1.5"><bdi dir="ltr">{fmtUsd(row.costUsd)}</bdi></td>
                     </tr>
                   );
                 })}
+                <tr className="border-t-2 font-semibold">
+                  <td className="py-1.5">{L({ ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}</td>
+                  <td className="py-1.5">{kgf(g.members.reduce((s, m) => s + m.realKg, 0))}</td>
+                  <td className="py-1.5">{kgf(Number(kg) || 0)}</td>
+                  <td className="py-1.5"><bdi dir="ltr">{fmtUsd(Number(usd) || 0)}</bdi></td>
+                </tr>
               </tbody>
             </table>
           </div>
 
-          {g.invoice && (
-            <div>
-              <div className="relative h-3 overflow-hidden rounded-full bg-muted" data-testid="carrier-group-bar">
-                <div className={cn("absolute inset-y-0 start-0 rounded-full transition-all duration-500", g.verdict === "short" ? "bg-rose-500" : "bg-sky-500")} style={{ width: `${Math.min(100, (g.oursKg / max) * 100)}%` }} />
-                <div className="absolute -top-1 -bottom-1 w-0.5 bg-foreground" style={{ insetInlineStart: `${(billed / max) * 100}%` }} title={L({ ku: "کێشی وەسڵ", en: "Invoice weight", ar: "وزن الفاتورة", zh: "发票重量" })} />
-              </div>
-              <p className={cn("mt-1 text-xs font-medium", tone)} data-testid="carrier-group-verdict">
-                {L({ ku: "ئێمە", en: "Ours", ar: "لدينا", zh: "我方" })} {kgf(g.oursKg)} · {L({ ku: "وەسڵ", en: "invoice", ar: "الفاتورة", zh: "发票" })} {kgf(billed)} —{" "}
-                {g.verdict === "waiting" && L({ ku: `ماوە ${(billed - g.oursKg).toFixed(2)} kg، ${g.stillComing} پاکێج هێشتا لە ڕێگان`, en: `${(billed - g.oursKg).toFixed(2)} kg to come, ${g.stillComing} parcels on the road`, ar: `يتبقى ${(billed - g.oursKg).toFixed(2)} kg`, zh: `尚余 ${(billed - g.oursKg).toFixed(2)} kg` })}
-                {g.verdict === "short" && L({ ku: `کۆمپانیا ${(billed - g.oursKg).toFixed(2)} kg زیاتری حیساب کردووە ≈ ${fmtUsd(-g.differenceUsd)} زیان`, en: `the carrier billed ${(billed - g.oursKg).toFixed(2)} kg more ≈ ${fmtUsd(-g.differenceUsd)} lost`, ar: `احتسبت الشركة ${(billed - g.oursKg).toFixed(2)} kg أكثر ≈ ${fmtUsd(-g.differenceUsd)} خسارة`, zh: `承运商多计 ${(billed - g.oursKg).toFixed(2)} kg ≈ ${fmtUsd(-g.differenceUsd)} 损失` })}
-                {g.verdict === "ahead" && L({ ku: `+${(g.oursKg - billed).toFixed(2)} kg لە کڕیار زیاتر وەرگیراوە ≈ +${fmtUsd(g.differenceUsd)}`, en: `+${(g.oursKg - billed).toFixed(2)} kg more charged to customers ≈ +${fmtUsd(g.differenceUsd)}`, ar: `+${(g.oursKg - billed).toFixed(2)} kg ≈ +${fmtUsd(g.differenceUsd)}`, zh: `+${(g.oursKg - billed).toFixed(2)} kg ≈ +${fmtUsd(g.differenceUsd)}` })}
-                {g.verdict === "even" && <><CheckCircle2 className="inline h-3.5 w-3.5" /> {L({ ku: "یەکسانە", en: "they agree", ar: "متطابق", zh: "一致" })}</>}
-              </p>
-            </div>
+          {over && (
+            <p className="text-xs font-medium text-red-700 dark:text-red-300" data-testid="carrier-group-over">
+              {L({ ku: "کێشی نووسراو لە کێشی وەسڵ زیاترە. کێشی باچەکان کەم بکەرەوە.", en: "The kilos written are more than the invoice. Lower them.", ar: "الوزن المكتوب أكبر من الفاتورة.", zh: "填写重量超过发票。" })}
+            </p>
           )}
 
           {isAdmin && g.key && (
@@ -152,19 +154,10 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
                 {L({ ku: "پارەی وەسڵ ($)", en: "Invoice total ($)", ar: "إجمالي الفاتورة ($)", zh: "发票金额 ($)" })}
                 <Input type="number" step="0.01" dir="ltr" value={usd} onChange={(e) => setUsd(e.target.value)} onKeyDown={noEnter} className="h-8 w-32" data-testid="carrier-group-usd" />
               </label>
-              <label className="grid gap-1 text-xs">
-                {L({ ku: "ڕۆژی گەیشتنی ئەم بارە", en: "Day this load arrived", ar: "يوم وصول هذه الشحنة", zh: "本批到达日期" })}
-                <Input type="date" dir="ltr" value={day} onChange={(e) => setDay(e.target.value)} onKeyDown={noEnter} className="h-8 w-40" data-testid="carrier-group-day" />
-              </label>
-              <Button type="button" size="sm" disabled={save.isPending || !(Number(kg) > 0)} onClick={() => save.mutate({ batchId, billedKg: Number(kg), costUsd: Number(usd) || 0, arrivedOn: day || null })} data-testid="carrier-group-save">
-                {L({ ku: "پاشەکەوت و دابەشکردن", en: "Save and share out", ar: "حفظ وتوزيع", zh: "保存并分摊" })}
+              <Button type="button" size="sm" disabled={save.isPending || !(Number(kg) > 0) || over} onClick={() => save.mutate({ batchId, billedKg: Number(kg), costUsd: Number(usd) || 0, arrivedOn: g.invoice?.arrivedOn ?? null, allocations: given })} data-testid="carrier-group-save">
+                {L({ ku: "پاشەکەوت بکە", en: "Save", ar: "حفظ", zh: "保存" })}
               </Button>
-              {g.invoice && (
-                <Button type="button" size="sm" variant="ghost" disabled={reapply.isPending} onClick={() => reapply.mutate({ batchId })} title={L({ ku: "دوای تۆماری پاکێجی تر، دووبارە بەپێی کێشی نوێ دابەشی بکە", en: "After more parcels, share out again by the new weights", ar: "أعد التوزيع بالأوزان الجديدة", zh: "按新重量重新分摊" })}>
-                  <RefreshCw className="me-1 h-4 w-4" />
-                  {L({ ku: "دووبارە دابەشکردن", en: "Share out again", ar: "إعادة التوزيع", zh: "重新分摊" })}
-                </Button>
-              )}
+              {g.invoice && <span className="mb-1.5 flex items-center gap-1 text-xs text-emerald-700 dark:text-emerald-300" data-testid="carrier-group-saved"><CheckCircle2 className="h-3.5 w-3.5" />{L({ ku: "پاشەکەوت کراوە", en: "Saved", ar: "محفوظ", zh: "已保存" })}</span>}
             </div>
           )}
           {!g.key && (
