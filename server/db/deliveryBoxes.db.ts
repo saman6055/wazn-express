@@ -4,6 +4,7 @@ import { getVolumetricDivisor } from "./settings.db";
 import { smallParcelRuleFor } from "./smallParcel.db";
 import { and, desc, eq, getTableColumns, gte, inArray, isNull, lte, ne, sql } from "drizzle-orm";
 import { withFix } from "@shared/fixAdvice";
+import { photoList } from "@shared/parcelPhotos";
 import { getDb } from "./connection";
 import { deliveryBoxes, deliveryBoxItems, packages, fullPackageOrders, fullPackageOrderTrackings, batches, customers, packageOrderLinks } from "../../drizzle/schema";
 import type { DeliveryBox, InsertDeliveryBox, DeliveryBoxItem, InsertDeliveryBoxItem } from "../../drizzle/schema/packages.schema";
@@ -875,14 +876,21 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
   // The pieces of an order reached only through its parcel (no tracking on
   // the order): read just the count, for «×3 پارچە» (owner, 2026-10-21).
   const qtyByOrderId = new Map<number, number>();
+  // And its photo: a bought parcel registered in China has the depot's shot on
+  // the parcel and its own picture on the order (owner, 2026-10-31).
+  const photoByOrderId = new Map<number, string>();
   {
     const viaParcel = Array.from(new Set(
       Array.from(pkgById.values()).map((p) => p.fullPackageOrderId).filter((id): id is number => !!id && !fpById.has(id)),
     ));
     if (viaParcel.length > 0) {
-      const rows = await db.select({ id: fullPackageOrders.id, quantity: fullPackageOrders.quantity })
+      const rows = await db.select({ id: fullPackageOrders.id, quantity: fullPackageOrders.quantity, productImage: fullPackageOrders.productImage, productImages: fullPackageOrders.productImages })
         .from(fullPackageOrders).where(inArray(fullPackageOrders.id, viaParcel));
-      for (const r of rows) qtyByOrderId.set(r.id, Number(r.quantity) || 1);
+      for (const r of rows) {
+        qtyByOrderId.set(r.id, Number(r.quantity) || 1);
+        const img = photoList(r.productImage, r.productImages)[0];
+        if (img) photoByOrderId.set(r.id, img);
+      }
     }
   }
 
@@ -897,8 +905,11 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
       if (img) return img;
     }
     if (item.packageId) {
-      const photos = (pkgById.get(item.packageId) as any)?.photos;
-      if (Array.isArray(photos) && photos[0]) return photos[0];
+      const pkg = pkgById.get(item.packageId) as any;
+      const viaParcel = pkg?.fullPackageOrderId ? fpById.get(pkg.fullPackageOrderId) as any : undefined;
+      const orderPhoto = photoByOrderId.get(pkg?.fullPackageOrderId) ?? photoList(viaParcel?.productImage, viaParcel?.productImages)[0];
+      if (orderPhoto) return orderPhoto;
+      if (Array.isArray(pkg?.photos) && pkg.photos[0]) return pkg.photos[0];
     }
     return null;
   };
