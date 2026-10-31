@@ -1385,25 +1385,6 @@ export const deliveryBoxRouter = router({
       return db.reverseBoxSettlement(input.settlementId, input.reason, ctx.user.id);
     }),
 
-  /** A reversed receipt back as it stood - the main admin's alone (owner, 2026-10-31). */
-  restoreSettlement: superAdminProcedure
-    .input(z.object({
-      settlementId: z.number(),
-      reason: z.string().min(3).max(500),
-    }))
-    .mutation(async ({ input, ctx }) => {
-      const done = await db.restoreBoxSettlement(input.settlementId, input.reason, ctx.user.id);
-      await db.createAuditLog({
-        userId: ctx.user.id,
-        userRole: ctx.user.role,
-        action: "restore_box_settlement",
-        entityType: "box_settlement",
-        entityId: input.settlementId,
-        newValues: { reason: input.reason, creditedUsd: done.creditedUsd },
-      });
-      return done;
-    }),
-
   // ── How the box reaches the customer, and its receipts (shared/boxHandover) ──
   carriers: staffProcedure
     .input(z.object({ kind: z.enum(["driver", "courier"]) }))
