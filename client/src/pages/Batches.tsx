@@ -2478,7 +2478,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
         {/* Edit Batch Dialog */}
         <Dialog open={isEditOpen} onOpenChange={(open) => { setIsEditOpen(open); if (!open) { setEditingBatch(null); resetForm(); } }}>
-          <DialogContent className="max-w-2xl overflow-y-auto">
+          <DialogContent className="w-[96vw] max-w-7xl overflow-y-auto">
             <DialogHeader>
               <DialogTitle className="flex flex-wrap items-center gap-2">
                 {t("batches.editBatch")}
@@ -2540,7 +2540,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   <fieldset disabled={editLocked} className="min-w-0 border-0 p-0 m-0">
 
                   {/* Tab 1: Basic Info */}
-                  <TabsContent value="basic" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
+                  <TabsContent value="basic" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4 lg:columns-2 lg:gap-4 [&>*]:break-inside-avoid">
                     <div className="grid gap-2">
                       <Label>{t("batches.batchCode")}</Label>
                       {/* A twin's name follows its original's (shared/batchTwin). */}
@@ -2662,7 +2662,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </TabsContent>
                   
                   {/* Tab 2: Volume & Cost */}
-                  <TabsContent value="volume" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
+                  <TabsContent value="volume" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4 lg:columns-2 lg:gap-4 [&>*]:break-inside-avoid">
                     <Card className="border-blue-200 dark:border-blue-800/60 bg-blue-50/50 dark:bg-blue-950/40">
                       <CardHeader className="pb-2">
                         <CardTitle className="text-sm flex items-center gap-2">
@@ -2858,7 +2858,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </TabsContent>
                   
                   {/* Tab 3: Selling Price */}
-                  <TabsContent value="pricing" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4">
+                  <TabsContent value="pricing" forceMount className="data-[state=inactive]:hidden space-y-4 mt-4 lg:columns-2 lg:gap-4 [&>*]:break-inside-avoid">
                     <fieldset disabled={sellingLocked} className="min-w-0 border-0 p-0 m-0 space-y-4">
                     {/* Tiered pricing toggle */}
                     {(editingBatch.shippingType === "sea" || editingBatch.shippingType === "air_irregular") && (
@@ -2965,7 +2965,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </fieldset>
                 </Tabs>
 
-                <DialogFooter className="mt-6">
+                <DialogFooter className="sticky bottom-0 z-10 mt-6 border-t bg-background pt-3">
                   <Button type="button" variant="outline" onClick={() => { setIsEditOpen(false); setEditingBatch(null); resetForm(); }}>{t("common.cancel")}</Button>
                   {!editLocked && (
                     <Button type="submit" disabled={updateMutation.isPending}>
