@@ -125,6 +125,8 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [reversing, setReversing] = useState<number | null>(null);
   const [reversalReason, setReversalReason] = useState("");
+  const [restoring, setRestoring] = useState<number | null>(null);
+  const [restoreReason, setRestoreReason] = useState("");
 
   const t = (k: { ku: string; en: string; ar: string; zh: string }) => pickLang(language as Lang, k);
 
@@ -314,6 +316,17 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
       onSettled?.();
     },
     onError: (err) => showErrorToast(err, "reverseSettlement"),
+  });
+
+  const restore = trpc.deliveryBox.restoreSettlement.useMutation({
+    onSuccess: () => {
+      toast.success(t({ ku: "واصڵەکە گەڕایەوە", en: "Receipt restored", ar: "أُعيد الإيصال", zh: "收据已恢复" }));
+      setRestoring(null); setRestoreReason("");
+      refetch();
+      void utils.deliveryBox.invalidate();
+      onSettled?.();
+    },
+    onError: (err) => showErrorToast(err, "restoreSettlement"),
   });
 
   if (isLoading) {
@@ -713,9 +726,19 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
                     )
                   )}
                   {s.status === "reversed" ? (
-                    <Badge variant="destructive" className="ms-auto">
-                      {t({ ku: "هەڵوەشێنراوەتەوە", en: "Reversed", ar: "ملغى", zh: "已撤销" })}
-                    </Badge>
+                    <div className="ms-auto flex items-center gap-1">
+                      <Badge variant="destructive">
+                        {t({ ku: "هەڵوەشێنراوەتەوە", en: "Reversed", ar: "ملغى", zh: "已撤销" })}
+                      </Badge>
+                      {isMainAdmin && (
+                        <Button variant="outline" size="sm" className="h-7"
+                                onClick={() => setRestoring(s.id)}
+                                data-testid={`settlement-restore-${s.id}`}>
+                          <RotateCcw className="me-1 h-3.5 w-3.5" />
+                          {t({ ku: "گەڕاندنەوەی واصڵ", en: "Restore", ar: "إعادة الإيصال", zh: "恢复收据" })}
+                        </Button>
+                      )}
+                    </div>
                   ) : isMainAdmin && (
                     <Button variant="ghost" size="sm" className="ms-auto h-7"
                             onClick={() => setReversing(s.id)}
@@ -945,6 +968,45 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
             >
               {reverse.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
               {t({ ku: "هەڵوەشاندنەوە", en: "Reverse", ar: "إلغاء", zh: "撤销" })}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ── putting a reversed one back ─────────────────────────────── */}
+      <Dialog open={restoring !== null} onOpenChange={(o) => !o && setRestoring(null)}>
+        <DialogContent dir="rtl">
+          <DialogHeader>
+            <DialogTitle>
+              {t({ ku: "گەڕاندنەوەی واصڵ", en: "Restore this receipt", ar: "إعادة الإيصال", zh: "恢复此收据" })}
+            </DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-muted-foreground">
+            {t({
+              ku: "واصڵەکە وەک پێشوو دەبێتەوە بە پارەدراو: پارەکە لە حیسابی کڕیار کەم دەبێتەوە و لە ڕاپۆرتی پارەی وەرگیراو دەژمێردرێتەوە.",
+              en: "The receipt counts as paid again: the amount comes off the customer's account and counts again in money received.",
+              ar: "يُحتسب الإيصال مدفوعاً من جديد: يُخصم المبلغ من حساب العميل ويُحتسب مجدداً في المقبوضات.",
+              zh: "收据恢复为已付：金额从客户账户扣除，并重新计入收款。",
+            })}
+          </p>
+          <Textarea
+            value={restoreReason}
+            onChange={(e) => setRestoreReason(e.target.value)}
+            rows={3}
+            placeholder={t({ ku: "هۆکار — داواکراوە", en: "Reason — required", ar: "السبب — مطلوب", zh: "原因——必填" })}
+            data-testid="restore-reason"
+          />
+          <DialogFooter className="gap-2 sm:gap-2">
+            <Button variant="outline" onClick={() => setRestoring(null)}>
+              {t({ ku: "پاشگەزبوونەوە", en: "Cancel", ar: "إلغاء", zh: "取消" })}
+            </Button>
+            <Button
+              disabled={restoreReason.trim().length < 3 || restore.isPending}
+              onClick={() => restore.mutate({ settlementId: restoring!, reason: restoreReason.trim() })}
+              data-testid="restore-confirm"
+            >
+              {restore.isPending && <Loader2 className="me-2 h-4 w-4 animate-spin" />}
+              {t({ ku: "گەڕاندنەوە", en: "Restore", ar: "إعادة", zh: "恢复" })}
             </Button>
           </DialogFooter>
         </DialogContent>

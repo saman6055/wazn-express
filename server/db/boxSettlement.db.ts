@@ -2055,6 +2055,149 @@ async function postDiscountCredits(
 }
 
 /**
+ * Put a reversed receipt back, as it stood (owner, 2026-10-31).
+ *
+ * The exact opposite of reverseBoxSettlement: the receipt is confirmed again,
+ * its payment record counts again, and what the reversal put on the account
+ * comes off. A discount already given back by hand after the reversal is not
+ * taken off a second time. The ledger keeps both rows, so the story stays
+ * readable. It refuses rather than leave a box with two live receipts or an
+ * account below zero.
+ */
+export async function restoreBoxSettlement(
+  settlementId: number,
+  reason: string,
+  userId: number,
+): Promise<{ ok: true; creditedUsd: number; balanceUsd: number }> {
+  if (!reason || reason.trim().length < 3) {
+    throw new Error(withFix("گەڕاندنەوەی واصڵ بەبێ هۆکار تۆمار ناکرێت.", [
+      "بنووسە بۆچی دەگەڕێنرێتەوە (بەلایەنی کەم سێ پیت)",
+      "دووبارە گەڕاندنەوە لێبدە",
+    ]));
+  }
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const [head] = await db.select({ boxId: boxSettlements.boxId }).from(boxSettlements).where(eq(boxSettlements.id, settlementId)).limit(1);
+  if (head?.boxId && (await unpaidExtraCostsByBox([Number(head.boxId)])).size > 0) {
+    throw new Error(withFix("ئەم بۆکسە تێچووی زیادەی لەسەرە کە بەم واصڵە دراوە — ناتوانرێت بە خۆکار بگەڕێنرێتەوە.", [
+      "واصڵێکی نوێ بۆ بۆکسەکە تۆمار بکە",
+    ]));
+  }
+
+  return await db.transaction(async (tx) => {
+    const [settlement] = await tx.select().from(boxSettlements).where(eq(boxSettlements.id, settlementId)).limit(1);
+    if (!settlement) throw new Error(vanishedFix("واصڵەکە"));
+    if (settlement.status !== "reversed") {
+      throw new Error(withFix(`واصڵی ${settlement.settlementNumber} هەڵنەوەشێنراوەتەوە — هیچ بۆ گەڕاندنەوە نییە.`, ["لیستی واصڵەکان نوێ بکەرەوە"]));
+    }
+    const [live] = await tx
+      .select({ number: boxSettlements.settlementNumber })
+      .from(boxSettlements)
+      .where(and(eq(boxSettlements.boxId, settlement.boxId), eq(boxSettlements.status, "confirmed")))
+      .limit(1);
+    if (live) {
+      throw new Error(withFix(`ئەم بۆکسە پێشتر واصڵی ${live.number}ی هەیە — دوو واصڵی زیندوو لەسەر یەک بۆکس پارەکە دوو جار دەژمێرێت.`, [
+        "واصڵی نوێ هەڵبوەشێنەوە",
+        "ئینجا ئەم واصڵە بگەڕێنەوە",
+      ]));
+    }
+
+    const [account] = await tx
+      .select()
+      .from(customerAccounts)
+      .where(eq(customerAccounts.customerId, settlement.customerId))
+      .for("update")
+      .limit(1);
+    if (!account) throw new Error(vanishedFix("حیسابی کڕیار"));
+
+    const [record] = settlement.paymentRecordId
+      ? await tx.select().from(paymentRecords).where(eq(paymentRecords.id, settlement.paymentRecordId)).for("update").limit(1)
+      : [];
+
+    const paid = Number(settlement.paidUsd || 0);
+    const discount = Number(settlement.discountUsd || 0);
+    const [discountBack] = discount > 0
+      ? await tx
+          .select({ id: ledgerTransactions.id })
+          .from(ledgerTransactions)
+          .where(and(
+            eq(ledgerTransactions.accountId, account.id),
+            eq(ledgerTransactions.transactionType, "ADJUSTMENT_CREDIT"),
+            eq(ledgerTransactions.amountUsd, discount.toFixed(2)),
+            sql`${ledgerTransactions.description} LIKE ${`%${settlement.settlementNumber}%`}`,
+          ))
+          .limit(1)
+      : [];
+    const creditedUsd = round2(paid + (discountBack ? 0 : discount));
+    const before = Number(account.currentBalanceUsd || 0);
+    const after = round2(before - creditedUsd);
+    if (after < -0.005) {
+      throw new Error(withFix(`گەڕاندنەوەی ئەم واصڵە حیسابی کڕیار دەباتە ژێر سفر (${after.toFixed(2)}).`, [
+        "حیسابی کڕیارەکە بپشکنە",
+        "ئەگەر ڕاستە، سەرەتا قەرزی ڕاستەقینە بنووسە",
+      ]));
+    }
+
+    if (creditedUsd > 0) {
+      const balanceIqd = Number(account.currentBalanceIqd || 0);
+      await tx.insert(ledgerTransactions).values({
+        accountId: account.id,
+        transactionNumber: generateTransactionNumber(),
+        transactionType: "ADJUSTMENT_CREDIT",
+        amountUsd: creditedUsd.toFixed(2),
+        amountIqd: "0",
+        balanceBeforeUsd: before.toFixed(2),
+        balanceAfterUsd: after.toFixed(2),
+        balanceBeforeIqd: balanceIqd.toFixed(0),
+        balanceAfterIqd: balanceIqd.toFixed(0),
+        referenceType: "adjustment",
+        description: `گەڕاندنەوەی واصڵی ${settlement.settlementNumber} — ${reason.trim()}`,
+        createdById: userId,
+      });
+      await tx
+        .update(customerAccounts)
+        .set({ currentBalanceUsd: after.toFixed(2), lastTransactionAt: new Date() })
+        .where(eq(customerAccounts.id, account.id));
+    }
+
+    if (record) {
+      const stillReversed = round2(Math.max(0, Number(record.reversedAmountUsd || 0) - paid));
+      await tx
+        .update(paymentRecords)
+        .set(stillReversed > 0
+          ? { reversedAmountUsd: stillReversed.toFixed(2) }
+          : {
+              reversedAmountUsd: "0.00",
+              reversedAt: null,
+              reversalTransactionId: null,
+              paymentStatus: "confirmed",
+              cancelledAt: null,
+              cancelledById: null,
+              cancelReason: null,
+            })
+        .where(eq(paymentRecords.id, record.id));
+    }
+
+    await tx
+      .update(boxSettlements)
+      .set({ status: "confirmed", reversedAt: null, reversedById: null, reversalReason: null })
+      .where(eq(boxSettlements.id, settlementId));
+
+    // The promise this receipt kept is kept again.
+    if (discount > 0) {
+      await tx
+        .update(boxDiscountPledges)
+        .set({ settlementId, honouredAt: new Date() })
+        .where(and(eq(boxDiscountPledges.boxId, settlement.boxId), isNull(boxDiscountPledges.settlementId)));
+    }
+
+    appLogger.info("[BoxSettlement] restored", { settlementId, creditedUsd, userId });
+    return { ok: true as const, creditedUsd, balanceUsd: after };
+  });
+}
+
+/**
  * Undo a settlement, without pretending it never happened.
  *
  * Numbers do have to be correctable after the money is in — somebody typed
