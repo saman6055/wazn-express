@@ -54,7 +54,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useState, useMemo, useEffect, useCallback, memo } from "react";
+import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useLocation } from "wouter";
@@ -609,6 +609,7 @@ const [, setLocation] = useLocation();
   const [editCustomerSearch, setEditCustomerSearch] = useState("");
   const [editShippingType, setEditShippingType] = useState<"air_regular" | "air_irregular" | "sea">("air_regular");
   const [editTrackingNumber, setEditTrackingNumber] = useState("");
+  const editSaveRef = useRef<HTMLButtonElement>(null);
   const [editWeightKg, setEditWeightKg] = useState("");
   const [editLengthCm, setEditLengthCm] = useState("");
   const [editWidthCm, setEditWidthCm] = useState("");
@@ -2020,7 +2021,19 @@ const [, setLocation] = useLocation();
 
       {/* Edit Package Dialog - Quick Register Style */}
       <Dialog open={showEditDialog} onOpenChange={setShowEditDialog}>
-        <DialogContent className="max-w-3xl w-[95vw] overflow-y-auto overflow-x-hidden">
+        <DialogContent
+          className="max-w-3xl w-[95vw] overflow-y-auto overflow-x-hidden"
+          // Put the one wrong thing right, press Enter, done - no scrolling
+          // down the form to reach Save (owner, 2026-10-31). The customer box
+          // keeps its own Enter: it is still choosing.
+          onKeyDown={(e) => {
+            if (e.key !== "Enter" || e.defaultPrevented) return;
+            const el = e.target as HTMLElement;
+            if (el.tagName !== "INPUT" || el.dataset.noEnterSave != null) return;
+            e.preventDefault();
+            if (!updatePackageMutation.isPending) void handleEditSave();
+          }}
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Pencil className="h-5 w-5 text-primary" />
@@ -2093,6 +2106,7 @@ const [, setLocation] = useLocation();
                     }}
                     onFocus={() => setShowEditCustomerDropdown(true)}
                     className="ps-9 h-11"
+                    data-no-enter-save
                   />
                   {showEditCustomerDropdown && filteredEditCustomers.length > 0 && (
                     <div className="absolute z-50 w-full mt-1 bg-popover border rounded-md shadow-lg max-h-60 overflow-auto">
@@ -2101,7 +2115,11 @@ const [, setLocation] = useLocation();
                           key={customer.id}
                           type="button"
                           className="w-full px-3 py-2 text-start hover:bg-accent flex items-center justify-between"
-                          onClick={() => selectEditCustomer(customer)}
+                          onClick={() => {
+                            selectEditCustomer(customer);
+                            // The owner is put right: Enter is the next thing.
+                            setTimeout(() => editSaveRef.current?.focus(), 0);
+                          }}
                         >
                           <div>
                             <div className="font-medium">{customer.customerCode}</div>
@@ -2412,7 +2430,7 @@ const [, setLocation] = useLocation();
             </section>
           </div>
 
-          <DialogFooter className="flex justify-between border-t pt-4">
+          <DialogFooter className="sticky bottom-0 z-10 flex justify-between border-t bg-background pt-4">
             <Button 
               variant="destructive" 
               size="sm"
@@ -2426,6 +2444,8 @@ const [, setLocation] = useLocation();
                 {t("common.cancel")}
               </Button>
               <Button 
+                ref={editSaveRef}
+                data-testid="package-edit-save"
                 onClick={handleEditSave} 
                 disabled={updatePackageMutation.isPending}
               >
