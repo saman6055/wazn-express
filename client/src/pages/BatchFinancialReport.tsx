@@ -1,3 +1,4 @@
+import { openPdf } from "@/lib/openPdf";
 import { toCsv, downloadText } from "@/lib/csv";
 import { escapeHtml } from "@/lib/html";
 import { fmtDate, fmtTime } from "@/lib/numericDate";
@@ -65,7 +66,7 @@ function DownloadPDFButton({ batchId }: { batchId: number }) {
   const { language } = useTranslation();
   const generatePDF = trpc.batches.generateFinancialPDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success(pickLang(language, { ku: "PDF دروستکرا", en: "PDF created", ar: "تم إنشاء ملف PDF", zh: "PDF 已生成" }));
     },
     onError: (error) => {

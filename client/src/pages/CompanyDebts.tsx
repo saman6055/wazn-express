@@ -1,3 +1,4 @@
+import { openPdf } from "@/lib/openPdf";
 import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
@@ -279,7 +280,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
   // PDF Export
   const generateDebtPDF = trpc.financialReports.generateDebtSchedulePDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success(t("debts.pdfGenerated"));
     },
     onError: (error) => showErrorToast(error, t("debts.pdfError")),

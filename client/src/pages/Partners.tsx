@@ -1,3 +1,4 @@
+import { openPdf } from "@/lib/openPdf";
 import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
@@ -244,7 +245,7 @@ const [activeTab, setActiveTab] = useState("partners");
   // PDF Export
   const generatePartnerPDF = trpc.financialReports.generatePartnerReportPDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success(t("partners.pdfGenerated"));
     },
     onError: (error) => showErrorToast(error, t("common.pdfError")),

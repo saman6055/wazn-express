@@ -1,6 +1,19 @@
 import { getCompanyDetails } from "./companyDetails";
 import PDFDocument from "pdfkit";
 import { storagePut } from "./storage.service";
+import { ENV } from "../_core/env";
+import { ARABIC_SCRIPT, rtlPen } from "../lib/pdfRtl";
+/**
+ * Where a report can be fetched from. Production has no object storage, so
+ * these failed with "Storage proxy credentials missing" (owner, 2026-10-31).
+ * They hold cost and profit, so they do not go in the public uploads folder:
+ * the file travels back in the answer itself (client/src/lib/openPdf).
+ */
+async function reportPdfUrl(fileName: string, pdf: Buffer): Promise<string> {
+  if (ENV.forgeApiUrl && ENV.forgeApiKey) return (await storagePut(`reports/${fileName}`, pdf, "application/pdf")).url;
+  return `data:application/pdf;base64,${pdf.toString("base64")}`;
+}
+
 import { nanoid } from "nanoid";
 import { drawBrandLogo, brandLogoWidth } from "../lib/brandLogo";
 
@@ -118,7 +131,7 @@ export async function generateBatchFinancialPDF(data: BatchFinancialData): Promi
         try {
           const pdfBuffer = Buffer.concat(chunks);
           const fileName = `batch-report-${data.batchCode}-${nanoid(6)}.pdf`;
-          const { url } = await storagePut(`reports/${fileName}`, pdfBuffer, "application/pdf");
+          const url = await reportPdfUrl(fileName, pdfBuffer);
           resolve(url);
         } catch (err) {
           reject(err);
@@ -233,6 +246,7 @@ export async function generateBatchFinancialPDF(data: BatchFinancialData): Promi
 
       // Table Rows
       let rowY = headerY + 25;
+      const pen = rtlPen(doc, true);
       data.customerBreakdown.forEach((customer, index) => {
         const bgColor = index % 2 === 0 ? "white" : COLORS.lightGray;
         doc.rect(50, rowY, 495, 22)
@@ -241,10 +255,14 @@ export async function generateBatchFinancialPDF(data: BatchFinancialData): Promi
 
         doc.fillColor(COLORS.dark)
           .fontSize(9)
-          .text(customer.customerName.substring(0, 20), 60, rowY + 6)
           .text(customer.customerCode, 180, rowY + 6)
           .text(customer.packages.toString(), 260, rowY + 6)
           .text(customer.volume.toFixed(2), 340, rowY + 6);
+
+        // Kurdish and Arabic names need a font that has them (lib/pdfRtl).
+        if (ARABIC_SCRIPT.test(customer.customerName)) doc.font(pen.regular);
+        pen.write(customer.customerName.substring(0, 20), 60, rowY + 6, { width: 115 });
+        doc.font("Helvetica");
 
         doc.fillColor(COLORS.success)
           .text(`$${customer.revenue.toFixed(2)}`, 420, rowY + 6);
@@ -620,7 +638,7 @@ export async function generateProfitLossPDF(data: ProfitLossData): Promise<strin
         try {
           const pdfBuffer = Buffer.concat(chunks);
           const fileName = `profit-loss-${data.year}-${data.month}-${nanoid(6)}.pdf`;
-          const { url } = await storagePut(`reports/${fileName}`, pdfBuffer, "application/pdf");
+          const url = await reportPdfUrl(fileName, pdfBuffer);
           resolve(url);
         } catch (err) {
           reject(err);
@@ -783,7 +801,7 @@ export async function generateBalanceSheetPDF(data: BalanceSheetData): Promise<s
         try {
           const pdfBuffer = Buffer.concat(chunks);
           const fileName = `balance-sheet-${data.date}-${nanoid(6)}.pdf`;
-          const { url } = await storagePut(`reports/${fileName}`, pdfBuffer, "application/pdf");
+          const url = await reportPdfUrl(fileName, pdfBuffer);
           resolve(url);
         } catch (err) {
           reject(err);
@@ -963,7 +981,7 @@ export async function generatePartnerReportPDF(data: PartnerReportData): Promise
         try {
           const pdfBuffer = Buffer.concat(chunks);
           const fileName = `partner-report-${data.partner.name.replace(/\s+/g, '-')}-${nanoid(6)}.pdf`;
-          const { url } = await storagePut(`reports/${fileName}`, pdfBuffer, "application/pdf");
+          const url = await reportPdfUrl(fileName, pdfBuffer);
           resolve(url);
         } catch (err) {
           reject(err);
@@ -1105,7 +1123,7 @@ export async function generateExpenseReportPDF(data: ExpenseReportData): Promise
         try {
           const pdfBuffer = Buffer.concat(chunks);
           const fileName = `expense-report-${data.year}-${data.month}-${nanoid(6)}.pdf`;
-          const { url } = await storagePut(`reports/${fileName}`, pdfBuffer, "application/pdf");
+          const url = await reportPdfUrl(fileName, pdfBuffer);
           resolve(url);
         } catch (err) {
           reject(err);
@@ -1244,7 +1262,7 @@ export async function generateDebtSchedulePDF(data: DebtScheduleData): Promise<s
         try {
           const pdfBuffer = Buffer.concat(chunks);
           const fileName = `debt-schedule-${nanoid(6)}.pdf`;
-          const { url } = await storagePut(`reports/${fileName}`, pdfBuffer, "application/pdf");
+          const url = await reportPdfUrl(fileName, pdfBuffer);
           resolve(url);
         } catch (err) {
           reject(err);

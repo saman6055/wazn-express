@@ -1,3 +1,4 @@
+import { openPdf } from "@/lib/openPdf";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
@@ -74,7 +75,7 @@ const [activeTab, setActiveTab] = useState("pnl");
   // PDF Generation mutations
   const generatePnLPDF = trpc.financialReports.generateProfitLossPDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success('ڕاپۆرتی PDF دروستکرا');
     },
     onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
@@ -82,7 +83,7 @@ const [activeTab, setActiveTab] = useState("pnl");
 
   const generateBalanceSheetPDF = trpc.financialReports.generateBalanceSheetPDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success('تەرازووی دارایی PDF دروستکرا');
     },
     onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
@@ -90,7 +91,7 @@ const [activeTab, setActiveTab] = useState("pnl");
 
   const generatePartnerPDF = trpc.financialReports.generatePartnerReportPDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success('ڕاپۆرتی شەریک PDF دروستکرا');
     },
     onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
@@ -98,7 +99,7 @@ const [activeTab, setActiveTab] = useState("pnl");
 
   const generateExpensePDF = trpc.financialReports.generateExpenseReportPDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success('ڕاپۆرتی مەسروفات PDF دروستکرا');
     },
     onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
@@ -106,7 +107,7 @@ const [activeTab, setActiveTab] = useState("pnl");
 
   const generateDebtPDF = trpc.financialReports.generateDebtSchedulePDF.useMutation({
     onSuccess: (data) => {
-      window.open(data.url, '_blank');
+      openPdf(data.url);
       toast.success('خشتەی قەرز PDF دروستکرا');
     },
     onError: (error) => showErrorToast(error, 'هەڵە لە دروستکردنی PDF'),
