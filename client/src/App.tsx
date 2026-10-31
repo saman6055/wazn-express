@@ -149,6 +149,7 @@ const PermissionsManagement = lazy(() => import("./pages/PermissionsManagement")
 const Trash = lazy(() => import("./pages/Trash"));
 const AuditLogs = lazy(() => import("./pages/AuditLogs"));
 const AuditSweep = lazy(() => import("./pages/AuditSweep"));
+const Problems = lazy(() => import("./pages/Problems"));
 
 // ---------------------------------------------------------------------------
 // Settings & Admin
@@ -334,6 +335,7 @@ function Router() {
         <Route path="/trash" component={Trash} />
         <Route path="/audit-logs" component={AuditLogs} />
         <Route path="/audit-sweep" component={AuditSweep} />
+        <Route path="/problems" component={Problems} />
         <Route path="/settings" component={Settings} />
         <Route path="/settings/notifications" component={NotificationSettings} />
         <Route path="/admin/push-notifications" component={AdminPushNotificationCenter} />

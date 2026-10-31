@@ -92,6 +92,7 @@ import {
   Trash2,
   Eye,
   ShieldQuestion,
+  LifeBuoy,
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
@@ -449,6 +450,7 @@ function DashboardLayoutContent({
           { icon: PackageCheck, label: pickLang(language, { ku: "خستنە ناو کارتۆن", en: "Dispatch check", ar: "التعبئة في الكراتين", zh: "装箱核对" }), path: "/dispatch-check" },
           { icon: Truck, label: t("nav.arrivalVerification") || "پشکنینی گەیشتن", path: "/arrival-verification-scanner" },
           { icon: CreditCard, label: t("nav.customerDelivery") || "گەیاندن بە کڕیار", path: "/customer-delivery-scanner" },
+          { icon: LifeBuoy, label: pickLang(language, { ku: "کێشەکانی ئێستا", en: "Problems now", ar: "المشاكل الآن", zh: "当前问题" }), path: "/problems" },
           { icon: Activity, label: t("nav.scanDashboard") || "داشبۆردی سکان", path: "/scan-dashboard" },
           { icon: BarChart3, label: t("nav.scanReports") || "ڕاپۆرتی سکان", path: "/scan-reports" },
         ]

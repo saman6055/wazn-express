@@ -742,6 +742,7 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/dispatch-check": "batch_assignment_scanner",
   "/arrival-verification-scanner": "arrival_verification",
   "/customer-delivery-scanner": "customer_delivery_scanner",
+  "/problems": "customer_delivery_scanner",
   "/scan-dashboard": "scan_dashboard",
   "/scan-reports": "scan_reports",
   "/finance": "finance_management",

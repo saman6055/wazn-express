@@ -2,6 +2,7 @@ import { z } from "zod";
 import { router } from "../_core/trpc";
 import { auditorProcedure, staffProcedure } from "../middleware/auth";
 import { buildDailyBrief } from "../services/dailyBrief.service";
+import { parcelsLeftOutOfBoxes } from "../db/boxMissing.db";
 import { CHECKS, headline, rankResults, summarise } from "@shared/auditSweep";
 import { movementsSince, runSweep } from "../services/auditSweep.service";
 
@@ -34,6 +35,9 @@ export const auditRouter = router({
    * the sweep is entitled to say "nothing to report" — and it is not, if any
    * check failed to run.
    */
+  /** What the box desk has left behind (client/src/pages/Problems). */
+  leftOutOfBoxes: staffProcedure.query(() => parcelsLeftOutOfBoxes()),
+
   sweep: auditorProcedure.query(async () => {
     const results = rankResults(await runSweep());
     const summary = summarise(results);

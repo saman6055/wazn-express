@@ -1,6 +1,7 @@
 import { and, eq, gte, inArray, isNotNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { batches, deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
+import { batches, customers, deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
+import { lastArrivalPerBatch } from "./batchArrival.db";
 
 /**
  * What a box is still waiting for.
@@ -253,4 +254,66 @@ export async function getParcelsDeliveredWithoutBox(): Promise<NeverBoxedParcel[
     LIMIT 2000
   `)) as unknown as [NeverBoxedParcel[]];
   return rows ?? [];
+}
+
+/** Days a batch's last arrival must lie behind it: a batch being boxed is not left behind. */
+const LEFT_OUT_AFTER_DAYS = 3;
+
+export interface LeftOutCustomer {
+  customerId: number;
+  customerCode: string | null;
+  customerName: string | null;
+  parcels: Array<{ id: number; packageCode: string; trackingNumber: string | null; batchCode: string | null }>;
+}
+
+/**
+ * Parcels that reached Erbil and sit in no box, once their batch has stopped
+ * being worked on, customer by customer: the warning at the end of a box,
+ * kept where it can be found again (owner, 2026-10-30).
+ */
+export async function parcelsLeftOutOfBoxes(): Promise<LeftOutCustomer[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const since = new Date(Date.now() - EARLIER_DELIVERED_DAYS * 24 * 60 * 60 * 1000);
+  const rows = await db
+    .select({
+      id: packages.id,
+      packageCode: packages.packageCode,
+      trackingNumber: packages.trackingNumber,
+      batchId: packages.batchId,
+      status: packages.status,
+      customerId: packages.customerId,
+      batchCode: batches.batchCode,
+      createdInCountryId: batches.createdInCountryId,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+    })
+    .from(packages)
+    .innerJoin(batches, eq(batches.id, packages.batchId))
+    .innerJoin(customers, eq(customers.id, packages.customerId))
+    .where(and(
+      eq(packages.isUnclaimed, false),
+      or(
+        inArray(packages.status, ["ready_for_delivery", "out_for_delivery"]),
+        and(eq(packages.status, "delivered"), gte(packages.deliveredAt, since)),
+      ),
+    ));
+  if (rows.length === 0) return [];
+
+  const batchRows = Array.from(new Map(rows.map((r) => [Number(r.batchId), { id: Number(r.batchId), createdInCountryId: r.createdInCountryId }])).values());
+  const lastArrival = await lastArrivalPerBatch(db, batchRows);
+  const cutoff = Date.now() - LEFT_OUT_AFTER_DAYS * 24 * 60 * 60 * 1000;
+  const settled = rows.filter((r) => {
+    const at = lastArrival.get(Number(r.batchId));
+    return !!at && at.getTime() < cutoff;
+  });
+
+  const byCustomer = new Map<number, LeftOutCustomer>();
+  for (const p of await notInAnyBox(settled)) {
+    const id = Number(p.customerId);
+    const row = byCustomer.get(id) ?? { customerId: id, customerCode: p.customerCode, customerName: p.customerName, parcels: [] };
+    row.parcels.push({ id: p.id, packageCode: p.packageCode, trackingNumber: p.trackingNumber, batchCode: p.batchCode });
+    byCustomer.set(id, row);
+  }
+  return Array.from(byCustomer.values()).sort((a, b) => b.parcels.length - a.parcels.length);
 }

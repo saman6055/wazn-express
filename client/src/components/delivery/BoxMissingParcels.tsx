@@ -173,7 +173,11 @@ export function BoxMissingParcels({
       soundManager.playWarning();
       toast.warning(
         `${pickLang(language, { ku: "✓ هەموو پاکێجەکانی ئەم باچە داخل کران.", en: "✓ Every parcel of this batch is in.", ar: "✓ أُدخلت كل طرود هذه الدفعة.", zh: "✓ 本批次包裹已全部装箱。" })} ${earlierLine(language, data.earlier)}`,
-        { duration: 15000 },
+        {
+          duration: 15000,
+          // A notice that fades must leave a way back to what it said.
+          action: { label: pickLang(language, { ku: "کێشەکانی ئێستا", en: "Problems now", ar: "المشاكل الآن", zh: "当前问题" }), onClick: () => window.location.assign("/problems") },
+        },
       );
     } else {
       soundManager.playSuccess();
