@@ -2674,7 +2674,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         <div className="grid grid-cols-2 gap-4">
                           {editingBatch.shippingType !== "sea" && (
                             <div className="grid gap-2">
-                              <Label>{pickLang(language, { ku: "کێشی خۆمان (خۆکار)", en: "Our weight (automatic)", ar: "وزننا (تلقائي)", zh: "我方重量（自动）" })}</Label>
+                              <Label>{pickLang(language, { ku: "کێشی حیسابکراو، لەگەڵ قەبارە (خۆکار)", en: "Chargeable weight, with volume (automatic)", ar: "الوزن المحتسب مع الحجم (تلقائي)", zh: "我方重量（自动）" })}</Label>
                               <p className="rounded-md border bg-muted/40 px-3 py-2 text-sm font-semibold tabular-nums" dir="ltr" data-testid="our-weight">{ourWeightLine(false)}</p>
                             </div>
                           )}
