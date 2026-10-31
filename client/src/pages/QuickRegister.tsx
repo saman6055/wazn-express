@@ -1554,26 +1554,26 @@ export default function QuickRegister() {
               scrolled to it. Focusing the button at the end of the banner did
               exactly that — the whole header slid 64px sideways and cut its
               own title off. A clipped box cannot scroll at all. */}
-          <div className="relative overflow-clip rounded-xl border bg-card px-4 py-2.5 shadow-sm" data-testid="qr-header">
+          <div className="relative overflow-clip rounded-xl bg-gradient-to-l from-indigo-600 to-violet-600 px-4 py-2.5 text-white shadow-sm" data-testid="qr-header">
             <div className="relative flex items-center justify-between flex-wrap gap-4">
               {/* Title Section */}
               <div className="flex items-center gap-3">
-                <div className="w-9 h-9 rounded-lg bg-amber-500 text-white flex items-center justify-center">
+                <div className="w-9 h-9 rounded-lg bg-white/15 text-white flex items-center justify-center">
                   <Zap className="h-5 w-5" />
                 </div>
                 <div>
-                  <h1 className="text-lg font-bold tracking-tight text-foreground">{t("quickRegister.title")}</h1>
-                  <p className="text-muted-foreground text-[11px]">{t("quickRegister.shortcutsHint")}</p>
+                  <h1 className="text-lg font-bold tracking-tight text-white">{t("quickRegister.title")}</h1>
+                  <p className="text-white/80 text-[11px]">{t("quickRegister.shortcutsHint")}</p>
                 </div>
               </div>
 
               {/* Today's Counter */}
               <div className="flex items-center gap-3">
-                <div className="rounded-lg border bg-muted/40 px-3 py-1.5 flex items-center gap-3">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
+                <div className="rounded-lg bg-white/15 px-3 py-1.5 flex items-center gap-3">
+                  <Calendar className="h-4 w-4 text-white/80" />
                   <div>
-                    <div className="text-xs text-muted-foreground">{t("quickRegister.todayRegistered")}</div>
-                    <div className="text-xl font-bold text-foreground leading-none tabular-nums">{packageStats?.todayCount || 0}</div>
+                    <div className="text-xs text-white/80">{t("quickRegister.todayRegistered")}</div>
+                    <div className="text-xl font-bold text-white leading-none tabular-nums">{packageStats?.todayCount || 0}</div>
                   </div>
                 </div>
 
@@ -1582,7 +1582,7 @@ export default function QuickRegister() {
                   type="button"
                   variant="outline"
                   onClick={clearAllForm}
-                  className="h-9 px-3 text-sm"
+                  className="h-9 px-3 text-sm bg-white/15 text-white border-white/25 hover:bg-white/25 hover:text-white"
                 >
                   <RotateCcw className="h-4 w-4 ms-1.5" />
                   {t("quickRegister.clear")}
@@ -1601,7 +1601,7 @@ export default function QuickRegister() {
                   "mt-2.5 rounded-lg border px-3 py-2",
                   correcting
                     ? "border-amber-300 dark:border-amber-700 bg-amber-50 dark:bg-amber-950/40"
-                    : "border-border bg-muted/30",
+                    : "border-transparent bg-card text-foreground",
                 )}
                 data-testid="qr-last-registered"
               >
@@ -1733,7 +1733,7 @@ export default function QuickRegister() {
               <div className="grid grid-cols-1 md:grid-cols-5 gap-3 items-stretch [&>*]:h-full">
                 {/* Tracking Number — spans the full row so the field is a
                     wide, comfortable rectangle (it's the primary input) */}
-                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm">
+                <Card className="md:col-span-5 border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     {/*
                       One frame for the two things a person does here (owner,
@@ -1750,7 +1750,7 @@ export default function QuickRegister() {
                     <div className="grid grid-cols-1 gap-x-5 gap-y-4 md:grid-cols-2">
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 flex items-center justify-center">
                             <PackageSearch className="h-4 w-4" />
                           </div>
                           <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepTracking")}</span>
@@ -1809,7 +1809,7 @@ export default function QuickRegister() {
 
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 mb-3">
-                          <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                          <div className="w-7 h-7 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 flex items-center justify-center">
                             <User className="h-4 w-4" />
                           </div>
                           <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepCustomer")}</span>
@@ -2084,7 +2084,7 @@ export default function QuickRegister() {
                 </Card>
 
               {foundOrder?.found && foundOrder.order && (
-                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm overflow-hidden" data-testid="qr-found-order">
+                <Card className="md:col-span-5 border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm overflow-hidden" data-testid="qr-found-order">
                   <CardContent className="p-5 space-y-4">
                     {/* Header: type + order code + product name. The picture
                         of the goods is in the photo card on the other side —
@@ -2375,10 +2375,10 @@ export default function QuickRegister() {
               {/* The weight, on a phone. On a desktop this is the first thing
                   on the bottom bar instead. */}
               {isMobile && (
-                <Card className="border bg-card rounded-xl shadow-sm">
+                <Card className="border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 flex items-center justify-center">
                         <Scale className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepWeight")}</span>
@@ -2404,10 +2404,10 @@ export default function QuickRegister() {
 
               {/* Row 2.5: Dimensions - Only for Air shipping */}
               {(shippingType === "air_regular" || shippingType === "air_irregular") && (
-                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm">
+                <Card className="md:col-span-5 border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 flex items-center justify-center">
                         <Ruler className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepDimensions")}</span>
@@ -2625,10 +2625,10 @@ export default function QuickRegister() {
 
               {/* Sea shipping - CBM input */}
               {shippingType === "sea" && (
-                <Card className="md:col-span-5 border bg-card rounded-xl shadow-sm">
+                <Card className="md:col-span-5 border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                   <CardContent className="p-4">
                     <div className="flex items-center gap-2 mb-3">
-                      <div className="w-7 h-7 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                      <div className="w-7 h-7 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 flex items-center justify-center">
                         <Ship className="h-4 w-4" />
                       </div>
                       <span className="text-sm font-semibold text-foreground">{t("quickRegister.stepDimensionsSea")}</span>
@@ -2789,7 +2789,7 @@ export default function QuickRegister() {
                   sight. */}
 
               {/* Row 3: Optional Fields — compact, rarely used, sits low */}
-              <Card className="border bg-card rounded-xl shadow-sm">
+              <Card className="border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                 <CardContent className="p-3">
                   <button
                     type="button"
@@ -2797,7 +2797,7 @@ export default function QuickRegister() {
                     className="flex items-center justify-between w-full"
                   >
                     <div className="flex items-center gap-2">
-                      <div className="w-6 h-6 rounded-md bg-muted text-muted-foreground flex items-center justify-center">
+                      <div className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 flex items-center justify-center">
                         <Tags className="h-3.5 w-3.5" />
                       </div>
                       <span className="text-xs font-semibold text-muted-foreground">{t("quickRegister.additionalInfo")}</span>
@@ -2839,7 +2839,7 @@ export default function QuickRegister() {
 
               {/* The summary, last: it repeats what the fields above
                   already say, and the owner wants the room (2026-09-23). */}
-              <Card className="border bg-card rounded-xl shadow-sm">
+              <Card className="border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-4 pb-3 border-b">
                     <div className="w-10 h-10 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
@@ -2933,7 +2933,7 @@ export default function QuickRegister() {
             {/* Side panel: compact Warehouse + Shipping + Batch selectors
                 (moved out of the center) followed by the sticky Summary */}
             <div className="lg:col-span-1 min-w-0 space-y-3">
-              <Card className="border bg-card rounded-xl shadow-sm">
+              <Card className="border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                 <CardContent className="p-4 space-y-3">
                   <div className="grid grid-cols-2 gap-2.5">
                     {/* Warehouse */}
@@ -3109,10 +3109,10 @@ export default function QuickRegister() {
                   other side of the screen, so the same card now holds both:
                   what was ordered above, what turned up below — the
                   order the portal shows them in too (@shared/parcelPhotos). */}
-              <Card className="border bg-card rounded-xl shadow-sm">
+              <Card className="border border-indigo-100 dark:border-indigo-900/50 bg-indigo-50/70 dark:bg-indigo-950/30 rounded-xl shadow-sm">
                 <CardContent className="p-3">
                   <div className="flex items-center gap-2 mb-3">
-                    <div className="w-6 h-6 rounded-md bg-muted text-muted-foreground flex items-center justify-center" data-testid="qr-photos-card">
+                    <div className="w-6 h-6 rounded-md bg-indigo-100 text-indigo-700 dark:bg-indigo-900/40 dark:text-indigo-300 flex items-center justify-center" data-testid="qr-photos-card">
                       <Camera className="h-3.5 w-3.5" />
                     </div>
                     <span className="text-xs font-semibold">{t("quickRegister.photos")}</span>

@@ -103,7 +103,7 @@ describe("Quick Register hands the last registration back", () => {
   it("the header card cannot be scrolled sideways by the button at its end", () => {
     // Its glow hangs 64px past the end; a box that only hides overflow still
     // scrolls to a focused child, and the whole header slid over its title.
-    expect(page).toContain('className="relative overflow-clip rounded-xl border bg-card');
+    expect(page).toContain('className="relative overflow-clip rounded-xl bg-gradient-to-l from-indigo-600');
     expect(page).not.toContain('className="relative overflow-hidden rounded-xl');
   });
 

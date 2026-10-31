@@ -43,7 +43,7 @@ describe("what sits where", () => {
     // Owner, 2026-09-29: «ئەو دووانە لە چوارچێوەی یەک کارتدا بن». Two borders
     // and two headings for two short fields was twice the height of one job.
     const card = page.slice(
-      at('<Card className="md:col-span-5 border bg-card'),
+      at('<Card className="md:col-span-5 border border-indigo-100'),
       at('{/* Tracking Info Display */}'),
     );
     expect(card).toContain('{t("quickRegister.stepTracking")}');
@@ -85,8 +85,8 @@ describe("what sits where", () => {
     // Greyed while a correction is open (2026-10-05) — the size is the same.
     expect(page).toContain('className={cn("font-mono text-base h-11 flex-1", correcting && "bg-muted text-muted-foreground")}');
     // The customer takes the whole row since the weight moved to the bar.
-    expect(page).toContain('md:col-span-5 border bg-card');  // customer
-    expect(page).not.toContain('md:col-span-2 border bg-card');  // the old weight box
+    expect(page).toContain('md:col-span-5 border border-indigo-100');  // customer
+    expect(page).not.toContain('md:col-span-2 border border-indigo-100');  // the old weight box
     expect(page).toContain('grid grid-cols-2 sm:grid-cols-4 gap-2');
     expect(page).not.toContain("h-14 text-xl font-mono font-bold text-center");
   });
@@ -122,8 +122,9 @@ describe("what sits where", () => {
   });
 
   it("the header is a strip, not a banner", () => {
-    // One calm card since 2026-10-29 (owner: the orange slab was «ناشیرین»).
-    expect(page).toContain('className="relative overflow-clip rounded-xl border bg-card px-4 py-2.5 shadow-sm" data-testid="qr-header"');
+    // Not the orange slab (owner, 2026-10-29), and not colourless either:
+    // blue-violet (2026-10-31: «شینێکی وەنەوشەیی جوان»).
+    expect(page).toContain('className="relative overflow-clip rounded-xl bg-gradient-to-l from-indigo-600 to-violet-600 px-4 py-2.5 text-white shadow-sm" data-testid="qr-header"');
     expect(page).not.toContain("via-orange-500");
     expect(page).toContain('<h1 className="text-lg font-bold');
   });
