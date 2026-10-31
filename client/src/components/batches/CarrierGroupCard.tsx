@@ -187,17 +187,32 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
   { enabled: !!batchId, refetchInterval: 60_000, refetchIntervalInBackground: false });
   const g = q.data;
   if (!batchId || !g) return null;
+  const inGroup = g.members.length > 1;
   const ours = (
-    <span className="text-sky-700 dark:text-sky-300">{L({ ku: "ئێمە", en: "Ours", ar: "لدينا", zh: "我方" })} <b dir="ltr">{g.oursKg.toFixed(2)}</b>
+    <span className="text-sky-700 dark:text-sky-300" data-testid="carrier-strip-ours">
+      {inGroup && <>{L({ ku: "ئەم باچە", en: "This batch", ar: "هذه الدفعة", zh: "本批次" })} <b dir="ltr">{g.thisKg.toFixed(2)}</b> · </>}
+      {inGroup
+        ? <>{L({ ku: `هەموو ${g.members.length} باچەکە`, en: `All ${g.members.length} batches`, ar: `كل الدفعات ${g.members.length}`, zh: `全部 ${g.members.length} 批` })} <b dir="ltr">{g.oursKg.toFixed(2)}</b></>
+        : <>{L({ ku: "ئێمە", en: "Ours", ar: "لدينا", zh: "我方" })} <b dir="ltr">{g.oursKg.toFixed(2)}</b></>}
       {g.stillComing > 0 && <span className="ms-1 text-xs text-amber-700 dark:text-amber-300">· {g.stillComing} {L({ ku: "لە ڕێگا", en: "on the road", ar: "في الطريق", zh: "在途" })}</span>}
     </span>
   );
+  // Which batches the group is made of, by name and kilos: a batch missing here
+  // has not been given the carrier's number (AIR-2026-069, owner 2026-10-31).
+  const whichBatches = inGroup ? (
+    <span className="basis-full text-xs text-muted-foreground" data-testid="carrier-strip-members">
+      {g.members.map((m) => <span key={m.batchCode} className="me-3"><bdi dir="ltr">{m.batchCode}</bdi>: <b dir="ltr">{m.kg.toFixed(2)}</b></span>)}
+    </span>
+  ) : null;
   if (g.carrierKg == null) {
     return (
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-dashed px-3 py-2 text-sm tabular-nums text-muted-foreground" data-testid="carrier-group-strip" data-state="no-carrier-kg">
         {g.key && <span className="flex items-center gap-1 font-medium"><Link2 className="h-4 w-4" /><bdi dir="ltr">{g.key}</bdi></span>}
         {ours}
-        <span>{L({ ku: "کێشی کۆمپانیای گواستنەوە هێشتا نەنووسراوە", en: "The carrier's kilos are not entered yet", ar: "وزن شركة الشحن لم يُدخل بعد", zh: "承运商重量尚未录入" })}</span>
+        <span>{g.key
+          ? L({ ku: "وەسڵی کۆمپانیا لە کارتی گرووپ هێشتا نەنووسراوە", en: "The carrier's invoice is not on the group card yet", ar: "فاتورة الشركة لم تُكتب في بطاقة المجموعة بعد", zh: "承运商发票尚未录入组卡片" })
+          : L({ ku: "کێشی کۆمپانیای گواستنەوە هێشتا نەنووسراوە", en: "The carrier's kilos are not entered yet", ar: "وزن شركة الشحن لم يُدخل بعد", zh: "承运商重量尚未录入" })}</span>
+        {whichBatches}
       </div>
     );
   }
@@ -213,6 +228,7 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
       <span className={left > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}>
         {left > 0 ? L({ ku: "ماوە", en: "To come", ar: "يتبقى", zh: "尚余" }) : L({ ku: "زیاتر", en: "Over", ar: "زيادة", zh: "超出" })} <b dir="ltr">{Math.abs(left).toFixed(2)} kg</b>
       </span>
+      {whichBatches}
     </div>
   );
 }

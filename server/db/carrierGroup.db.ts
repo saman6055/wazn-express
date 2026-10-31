@@ -307,7 +307,14 @@ export async function countShortCarrierGroups(): Promise<Array<{ batchId: number
  */
 export async function getBatchKgCheck(batchId: number) {
   const g = await getCarrierGroup(batchId);
-  if (g) return { key: g.key, carrierKg: g.invoice?.billedKg ?? null, oursKg: g.oursKg, allKg: g.allKg, stillComing: g.stillComing };
+  if (g) {
+    return {
+      key: g.key, carrierKg: g.invoice?.billedKg ?? null, oursKg: g.oursKg, allKg: g.allKg, stillComing: g.stillComing,
+      // Each batch said apart, so a group figure is never read as this batch's.
+      thisKg: g.members.find((m) => m.batchId === batchId)?.liveKg ?? 0,
+      members: g.members.map((m) => ({ batchCode: m.batchCode, kg: m.liveKg })),
+    };
+  }
   const batch = await getBatchById(batchId);
   if (!batch) return null;
   const [m] = await memberFacts([batchId]);
@@ -318,5 +325,7 @@ export async function getBatchKgCheck(batchId: number) {
     oursKg: m?.liveKg ?? 0,
     allKg: m?.kg ?? 0,
     stillComing: m?.stillComing ?? 0,
+    thisKg: m?.liveKg ?? 0,
+    members: [] as Array<{ batchCode: string; kg: number }>,
   };
 }
