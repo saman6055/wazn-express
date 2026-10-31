@@ -217,3 +217,16 @@ export const BATCH_STAGE_LABEL: Record<BatchStage, { ku: string; en: string; ar:
   ready: { ku: "ئامادەیە بۆ دابەشکردن", en: "Ready to distribute", ar: "جاهز للتوزيع", zh: "待派送" },
   closed: { ku: "داخراو", en: "Closed", ar: "مغلق", zh: "已关闭" },
 };
+
+/**
+ * Scanned at the Erbil desk, is this registered parcel one whose arrival is
+ * still to be recorded? In a batch, and not yet checked in. An unknown desk
+ * answers no: the question makes no sense in China.
+ */
+export function arrivalDue(
+  parcel: { id?: number; batchId?: number | null; status?: string | null } | null | undefined,
+  deskInChina: boolean | null | undefined,
+): boolean {
+  if (deskInChina !== false || !parcel?.id || !parcel.batchId) return false;
+  return parcel.status === "in_batch" || parcel.status === "in_transit";
+}

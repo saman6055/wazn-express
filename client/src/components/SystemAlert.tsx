@@ -36,6 +36,11 @@ export interface SystemAlertRequest {
   detail?: string;
   /** Named so the button can say what happens, not just "OK". */
   actionLabel?: string;
+  /** The main button does this, then closes; a second button only closes. */
+  onConfirm?: () => void;
+  closeLabel?: string;
+  /** Its own noise, for a transient alert that must not pass for another. */
+  sound?: "unknown_tracking";
   /**
    * Where the thing it is talking about lives (owner, 2026-09-23).
    *
@@ -129,7 +134,8 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
       // A quiet single tone, not the two-tone siren. This one is not an
       // emergency — it is the ordinary answer to an ordinary question, and a
       // siren for it teaches the operator to stop hearing the siren.
-      soundManager.playNotice();
+      if (current.sound === "unknown_tracking") soundManager.playUnknownTracking();
+      else soundManager.playNotice();
       return; // and never pull the caret out of a scan box
     }
     soundManager.playAlert();
@@ -313,9 +319,23 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
 
             {!current.autoDismissMs && (
               <div className="flex items-center gap-3 border-t p-4">
-                <Button ref={okRef} onClick={dismiss} className="px-10" data-testid="system-alert-ok">
+                <Button
+                  ref={okRef}
+                  onClick={() => {
+                    const confirm = current.onConfirm;
+                    dismiss();
+                    confirm?.();
+                  }}
+                  className="px-10"
+                  data-testid="system-alert-ok"
+                >
                   {current.actionLabel || "OK"}
                 </Button>
+                {current.onConfirm && (
+                  <Button variant="outline" onClick={dismiss} data-testid="system-alert-close">
+                    {current.closeLabel || "OK"}
+                  </Button>
+                )}
                 {current.openHref && (
                   <Button
                     variant="outline"

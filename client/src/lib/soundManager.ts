@@ -110,6 +110,13 @@ class ScanSoundManager {
   /** Double tone — found in database */
   playFound() { this.playSequence([660, 880], 0.12, 0.15); }
 
+  /**
+   * A tracking on nobody's name. The found order rises and is high; this falls
+   * and is low, so nobody takes one for the other and registers a bought
+   * parcel as a self order (owner, 2026-10-31).
+   */
+  playUnknownTracking() { this.playSequence([392, 262], 0.2, 0.26, 'triangle', 0.4); }
+
   /** Double warning tone */
   playWarning() { this.playSequence([440, 440], 0.15, 0.1, 'triangle', 0.2); }
 

@@ -1781,12 +1781,15 @@ export async function searchTrackingInAllOrderTypes(trackingNumber: string) {
     .limit(1);
 
   if (registered.length > 0) {
+    const batchId = registered[0].package.batchId;
+    const [batch] = batchId ? await db.select({ batchCode: batches.batchCode }).from(batches).where(eq(batches.id, batchId)).limit(1) : [];
     return {
       found: true,
       source: "package" as const,
       order: null,
       customer: registered[0].customer,
-      package: registered[0].package
+      package: registered[0].package,
+      batchCode: batch?.batchCode ?? null,
     };
   }
 

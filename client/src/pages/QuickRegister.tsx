@@ -33,6 +33,7 @@ import { OrderNote } from "@/components/scanner/OrderNote";
 import { useIsMobile } from "@/hooks/useMobile";
 
 import { soundManager } from "@/lib/soundManager";
+import { arrivalDue } from "@shared/batchStage";
 import { useSystemAlert } from "@/components/SystemAlert";
 import { PhotoStack } from "@/components/PhotoStack";
 import { BoxForParcel } from "@/components/delivery/BoxForParcel";
@@ -194,6 +195,22 @@ export default function QuickRegister() {
   const { data: batchesRaw, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
   // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
   const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
+  const recordArrival = trpc.scanning.registerScan.useMutation();
+  const recordArrivalHere = (packageId: number, tracking: string) => {
+    recordArrival.mutate(
+      { trackingNumber: tracking, packageId, scanType: "received_local" },
+      {
+        onSuccess: () => {
+          soundManager.playSuccess();
+          toast.success(pickLang(language, { ku: "گەیشتنی پاکێجەکە تۆمار کرا", en: "Arrival recorded", ar: "تم تسجيل الوصول", zh: "已记录到达" }));
+          setTrackingNumber("");
+          setFoundOrder(null);
+          trackingRef.current?.focus();
+        },
+        onError: (e) => systemAlert({ kind: "error", title: t("scan.arrivalNotSaved"), message: e.message, detail: tracking }),
+      },
+    );
+  };
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: warehouses, isError: warehousesError, refetch: refetchWarehouses } = trpc.warehouses.list.useQuery();
   const { data: categories, isError: categoriesError, refetch: refetchCategories } = trpc.productCategories.list.useQuery();
@@ -335,6 +352,9 @@ export default function QuickRegister() {
              * parcel registered twice is a parcel charged twice.
              */
             const already = result.package as {
+              id?: number;
+              batchId?: number | null;
+              status?: string | null;
               packageCode?: string | null;
               registeredAt?: Date | string | null;
               weightKg?: string | number | null;
@@ -373,6 +393,22 @@ export default function QuickRegister() {
               // The parcel's own code, not the tracking: it is what finds the
               // existing row, and the tracking is already on screen.
               detail: already?.packageCode || currentTracking.trim(),
+              // Registered in China and scanned here: what is wanted is its
+              // arrival, on the batch it belongs to - one press, no second
+              // registration and no second charge (owner, 2026-10-31).
+              ...(arrivalDue(already, desk?.inChina)
+                ? {
+                    title: pickLang(language, {
+                      ku: `ئەم پاکێجە هی باچی ${(result as { batchCode?: string | null }).batchCode ?? ""}ـە`,
+                      en: `This parcel belongs to batch ${(result as { batchCode?: string | null }).batchCode ?? ""}`,
+                      ar: `هذا الطرد من الدفعة ${(result as { batchCode?: string | null }).batchCode ?? ""}`,
+                      zh: `此包裹属于批次 ${(result as { batchCode?: string | null }).batchCode ?? ""}`,
+                    }),
+                    actionLabel: pickLang(language, { ku: "گەیشتنی تۆمار بکە", en: "Record its arrival", ar: "سجّل وصوله", zh: "记录到达" }),
+                    closeLabel: pickLang(language, { ku: "نا", en: "No", ar: "لا", zh: "否" }),
+                    onConfirm: () => recordArrivalHere(already!.id!, currentTracking.trim()),
+                  }
+                : {}),
               // And a way to it: the owner, 2026-09-23 — an alert that names
               // a record and leaves you to find it is half an alert.
               openHref: parcelListHref(already?.packageCode || currentTracking.trim()),
@@ -460,6 +496,7 @@ export default function QuickRegister() {
             // parcel is new and about to be registered. A dismissal per
             // parcel is what makes a warning stop being read.
             autoDismissMs: 4000,
+            sound: "unknown_tracking",
             title: t("quickRegister.trackingNotFound"),
             message: pickLang(language, {
               ku: "ئەم ژمارە تراکینگە لە سیستەمدا نییە. دەتوانیت بەردەوام بیت و پاکێجەکە بە نوێی تۆمار بکەیت.",

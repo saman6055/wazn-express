@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest";
+import { arrivalDue } from "./batchStage";
 import fs from "fs";
 import path from "path";
 import {
@@ -165,5 +166,18 @@ describe("only a parcel that arrived is arrived (owner, 2026-10-28, AIR-2026-069
     expect(svc).toContain('.where(and(stamped, or(inArray(packages.id, scanned), inArray(packages.id, boxed))));');
     expect(svc).toContain('const r = await db.update(packages).set({ status: "in_transit" }).where(stamped);');
     expect(svc).toContain("const settled = await settleArrivalStamps();");
+  });
+});
+
+describe("a registered parcel scanned at the Erbil desk (owner, 2026-10-31)", () => {
+  const parcel = { id: 1, batchId: 2, status: "in_transit" };
+  it("offers its arrival only in Erbil, in a batch, before it is checked in", () => {
+    expect(arrivalDue(parcel, false)).toBe(true);
+    expect(arrivalDue({ ...parcel, status: "in_batch" }, false)).toBe(true);
+    expect(arrivalDue(parcel, true)).toBe(false);
+    expect(arrivalDue(parcel, null)).toBe(false);
+    expect(arrivalDue({ ...parcel, batchId: null }, false)).toBe(false);
+    expect(arrivalDue({ ...parcel, status: "ready_for_delivery" }, false)).toBe(false);
+    expect(arrivalDue({ ...parcel, status: "customs_processing" }, false)).toBe(false);
   });
 });
