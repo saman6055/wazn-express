@@ -48,3 +48,12 @@ describe("the finance dashboard never passes a failed read off as 0", () => {
     expect(read("client/src/pages/CompanyFinanceDashboard.tsx")).toContain('data-testid="finance-unmeasured"');
   });
 });
+
+describe("an account's rows, page by page", () => {
+  it("are ordered as the cursor counts them, so none repeats or goes missing", () => {
+    const src = read("server/db/finance.db.ts");
+    const fn = src.slice(src.indexOf("export async function getAccountLedgerTransactions("), src.indexOf("// Create payment record"));
+    expect(fn).toContain("lt(ledgerTransactions.id, options.cursor)");
+    expect(fn).toContain(".orderBy(desc(ledgerTransactions.id))");
+  });
+});

@@ -369,7 +369,9 @@ export async function getAccountLedgerTransactions(
   })
     .from(ledgerTransactions)
     .where(and(...conditions))
-    .orderBy(desc(ledgerTransactions.createdAt))
+    // By id, as the cursor is: rows written in one second used to repeat or
+    // go missing at a page edge (2026-10-31).
+    .orderBy(desc(ledgerTransactions.id))
     .limit(limit + 1);
   const hasMore = data.length > limit;
   const items = hasMore ? data.slice(0, limit) : data;
