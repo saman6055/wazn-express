@@ -185,7 +185,7 @@ import { CustomerBoxesPanel } from "@/components/delivery/CustomerBoxesPanel";
 import { pledgeLabel } from "@shared/pledgedDiscount";
 import { shippingOnlyAmongOrders, shippingOnlyNotice, SHIPPING_ONLY_CHIP } from "@shared/boxShippingOnly";
 import { parcelListHref } from "@shared/parcelSource";
-import { buildBoxPhotoSheetHtml } from "@/lib/boxPhotoSheet";
+import { buildBoxPhotoSheetPages } from "@/lib/boxPhotoSheet";
 import { useSendPaymentWhatsApp } from "@/hooks/useSendPaymentWhatsApp";
 import { VolumetricDiscountButton } from "@/components/packages/VolumetricDiscount";
 
@@ -1067,7 +1067,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
    */
   const sharePhotosNow = async (format: ReceiptShareFormat, destination: ReceiptShareDestination) => {
     const lang = sendLanguage ?? receiptLanguageFor((customer as any)?.nationality);
-    const html = buildBoxPhotoSheetHtml(
+    const htmlPages = buildBoxPhotoSheetPages(
       items.map((i: any) => ({
         trackingNumber: i.trackingNumber ?? null,
         packageCode: i.packageCode ?? null,
@@ -1082,7 +1082,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
     setSharingPhotos(true);
     try {
       const outcome = await shareReceiptOnWhatsApp({
-        html,
+        html: htmlPages[0],
+        htmlPages,
         format,
         destination,
         fileName: `${box.boxCode}-photos`,

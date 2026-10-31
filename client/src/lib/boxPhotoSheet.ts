@@ -31,7 +31,7 @@ const num = (v: unknown) => {
  */
 export function buildBoxPhotoSheetHtml(
   items: PhotoSheetItem[],
-  opts: { lang: ReceiptLanguage; boxCode: string; customerName?: string | null; isSea: boolean; logoUrl?: string | null; companyName?: string | null },
+  opts: { lang: ReceiptLanguage; boxCode: string; customerName?: string | null; isSea: boolean; logoUrl?: string | null; companyName?: string | null; page?: { at: number; of: number; parcels: number } },
 ): string {
   const w = WORDS[opts.lang];
   const cards = items.map((item) => {
@@ -60,7 +60,27 @@ body{margin:0;padding:22px;font-family:"Noto Sans Arabic","Segoe UI",Tahoma,Aria
 .tr{font-family:Consolas,"Courier New",monospace;font-size:13px;font-weight:700;padding:7px 9px 2px;text-align:center}
 .kg{font-size:13px;color:#555;padding:0 9px 8px;text-align:center}
 </style></head><body>
-<div class="head"><div><h1>${escapeHtml(w.title)}</h1><div class="sub">${opts.customerName ? `${escapeHtml(opts.customerName)} · ` : ""}${escapeHtml(w.box)} <span dir="ltr">${escapeHtml(opts.boxCode)}</span> · ${items.length} ${escapeHtml(w.parcels)}</div></div>${logo ? `<img src="${escapeHtml(logo)}" alt="" />` : `<b>${escapeHtml(opts.companyName ?? "")}</b>`}</div>
+<div class="head"><div><h1>${escapeHtml(w.title)}</h1><div class="sub">${opts.customerName ? `${escapeHtml(opts.customerName)} · ` : ""}${escapeHtml(w.box)} <span dir="ltr">${escapeHtml(opts.boxCode)}</span> · ${opts.page?.parcels ?? items.length} ${escapeHtml(w.parcels)}${opts.page ? ` · <span dir="ltr">${opts.page.at}/${opts.page.of}</span>` : ""}</div></div>${logo ? `<img src="${escapeHtml(logo)}" alt="" />` : `<b>${escapeHtml(opts.companyName ?? "")}</b>`}</div>
 <div class="grid">${cards}</div>
 </body></html>`;
+}
+
+/** Three rows of three: what fits an A4 at this photo size. */
+export const PHOTOS_PER_PAGE = 9;
+
+/**
+ * Every parcel, an A4 at a time. One long picture of a big box is cut short
+ * or shrunk to nothing on the way to a chat (owner, 2026-10-31: 25 parcels).
+ */
+export function buildBoxPhotoSheetPages(
+  items: PhotoSheetItem[],
+  opts: Parameters<typeof buildBoxPhotoSheetHtml>[1],
+): string[] {
+  const of = Math.max(1, Math.ceil(items.length / PHOTOS_PER_PAGE));
+  return Array.from({ length: of }, (_, i) =>
+    buildBoxPhotoSheetHtml(items.slice(i * PHOTOS_PER_PAGE, (i + 1) * PHOTOS_PER_PAGE), {
+      ...opts,
+      page: of > 1 ? { at: i + 1, of, parcels: items.length } : undefined,
+    }),
+  );
 }

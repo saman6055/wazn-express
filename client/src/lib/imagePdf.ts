@@ -59,34 +59,50 @@ export function buildImagePdf(
   heightPx: number,
   options?: ImagePdfOptions,
 ): Uint8Array {
-  const w = Math.max(1, Math.round(widthPx));
-  const h = Math.max(1, Math.round(heightPx));
-  const pageWidth = options?.pageWidthPt && options.pageWidthPt > 0 ? options.pageWidthPt : A4_WIDTH_PT;
-  const pageHeight = Math.round((pageWidth * h) / w * 100) / 100;
+  return buildImagesPdf([{ jpeg, widthPx, heightPx }], options);
+}
 
-  // The picture is drawn once, filling the page: scale, no rotation, at the
-  // origin — which in PDF is the bottom-left corner.
-  const content = `q\n${pageWidth.toFixed(2)} 0 0 ${pageHeight.toFixed(2)} 0 0 cm\n/Im0 Do\nQ\n`;
+/** One PDF, one JPEG to a page, in the order given. */
+export function buildImagesPdf(
+  pages: Array<{ jpeg: Uint8Array; widthPx: number; heightPx: number }>,
+  options?: ImagePdfOptions,
+): Uint8Array {
+  const pageWidth = options?.pageWidthPt && options.pageWidthPt > 0 ? options.pageWidthPt : A4_WIDTH_PT;
+  // Objects 1 and 2 are the catalog and the page list; each page then takes
+  // three: the page, its picture, and the line that draws it.
+  const pageObject = (i: number) => 3 + i * 3;
+  const kids = pages.map((_, i) => `${pageObject(i)} 0 R`).join(" ");
 
   const objects: Uint8Array[] = [
     ascii("1 0 obj\n<< /Type /Catalog /Pages 2 0 R >>\nendobj\n"),
-    ascii("2 0 obj\n<< /Type /Pages /Kids [3 0 R] /Count 1 >>\nendobj\n"),
-    ascii(
-      "3 0 obj\n<< /Type /Page /Parent 2 0 R " +
-        `/MediaBox [0 0 ${pageWidth.toFixed(2)} ${pageHeight.toFixed(2)}] ` +
-        "/Resources << /XObject << /Im0 4 0 R >> >> /Contents 5 0 R >>\nendobj\n",
-    ),
-    join([
-      ascii(
-        "4 0 obj\n<< /Type /XObject /Subtype /Image " +
-          `/Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 ` +
-          `/Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,
-      ),
-      jpeg,
-      ascii("\nendstream\nendobj\n"),
-    ]),
-    join([ascii(`5 0 obj\n<< /Length ${content.length} >>\nstream\n`), ascii(content), ascii("endstream\nendobj\n")]),
+    ascii(`2 0 obj\n<< /Type /Pages /Kids [${kids}] /Count ${pages.length} >>\nendobj\n`),
   ];
+  pages.forEach(({ jpeg, widthPx, heightPx }, i) => {
+    const w = Math.max(1, Math.round(widthPx));
+    const h = Math.max(1, Math.round(heightPx));
+    const pageHeight = Math.round((pageWidth * h) / w * 100) / 100;
+    const n = pageObject(i);
+    // The picture is drawn once, filling the page: scale, no rotation, at the
+    // origin — which in PDF is the bottom-left corner.
+    const content = `q\n${pageWidth.toFixed(2)} 0 0 ${pageHeight.toFixed(2)} 0 0 cm\n/Im0 Do\nQ\n`;
+    objects.push(
+      ascii(
+        `${n} 0 obj\n<< /Type /Page /Parent 2 0 R ` +
+          `/MediaBox [0 0 ${pageWidth.toFixed(2)} ${pageHeight.toFixed(2)}] ` +
+          `/Resources << /XObject << /Im0 ${n + 1} 0 R >> >> /Contents ${n + 2} 0 R >>\nendobj\n`,
+      ),
+      join([
+        ascii(
+          `${n + 1} 0 obj\n<< /Type /XObject /Subtype /Image ` +
+            `/Width ${w} /Height ${h} /ColorSpace /DeviceRGB /BitsPerComponent 8 ` +
+            `/Filter /DCTDecode /Length ${jpeg.length} >>\nstream\n`,
+        ),
+        jpeg,
+        ascii("\nendstream\nendobj\n"),
+      ]),
+      join([ascii(`${n + 2} 0 obj\n<< /Length ${content.length} >>\nstream\n`), ascii(content), ascii("endstream\nendobj\n")]),
+    );
+  });
 
   const header = ascii("%PDF-1.4\n%âãÏÓ\n");
   const offsets: number[] = [];
@@ -124,6 +140,16 @@ export function dataUrlToBytes(dataUrl: string): Uint8Array {
 }
 
 /** The file to hand to WhatsApp, or to save. */
+/** Several pictures as one PDF file, a page each. */
+export function jpegPagesToPdfFile(
+  pages: Array<{ dataUrl: string; width: number; height: number }>,
+  fileName: string,
+  options?: ImagePdfOptions,
+): File {
+  const pdf = buildImagesPdf(pages.map((p) => ({ jpeg: dataUrlToBytes(p.dataUrl), widthPx: p.width, heightPx: p.height })), options);
+  return new File([pdf.slice().buffer as ArrayBuffer], fileName, { type: "application/pdf" });
+}
+
 export function jpegDataUrlToPdfFile(
   dataUrl: string,
   widthPx: number,

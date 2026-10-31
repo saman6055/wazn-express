@@ -121,7 +121,7 @@ describe("the button at the counter", () => {
     expect(menu).toContain('onPick("image", "save")');
     expect(menu).toContain('onPick("pdf", "save")');
     expect(share).toContain('const SHARPNESS = { pdf: 2, image: 3 } as const;');
-    expect(share).toContain('const asImage = request.format === "image";');
+    expect(share).toContain('const asImage = request.format === "image" && !manyPages;');
     expect(share).toContain('`${request.fileName}.jpg`');
     expect(share).toContain('`${request.fileName}.pdf`');
     // A picture is compressed on its way through WhatsApp; the original is

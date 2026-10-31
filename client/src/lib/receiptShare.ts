@@ -1,4 +1,4 @@
-import { dataUrlToBytes, jpegDataUrlToPdfFile } from "./imagePdf";
+import { dataUrlToBytes, jpegDataUrlToPdfFile, jpegPagesToPdfFile } from "./imagePdf";
 
 /**
  * Sending the receipt to the customer on WhatsApp (owner, 2026-09-21).
@@ -64,6 +64,11 @@ export type ReceiptShareOutcome =
 export interface ReceiptShareRequest {
   /** The receipt document, exactly as it would be printed. */
   html: string;
+  /**
+   * More than one page: all of them go as one PDF, whatever format was asked
+   * for, because the clipboard holds a single picture (owner, 2026-10-31).
+   */
+  htmlPages?: string[];
   /** A PDF to keep, or a picture that opens in the chat itself. */
   format: ReceiptShareFormat;
   /** WhatsApp by default; the share sheet or the machine on request. */
@@ -204,10 +209,16 @@ function saveFile(file: File): void {
 }
 
 export async function shareReceiptOnWhatsApp(request: ReceiptShareRequest): Promise<ReceiptShareOutcome> {
-  const asImage = request.format === "image";
+  const manyPages = (request.htmlPages?.length ?? 0) > 1;
+  const asImage = request.format === "image" && !manyPages;
   let file: File;
-  let dataUrl: string;
+  let dataUrl = "";
   try {
+    if (manyPages) {
+      const pictures = [];
+      for (const html of request.htmlPages!) pictures.push(await receiptPicture(html, SHARPNESS.pdf));
+      file = jpegPagesToPdfFile(pictures, `${request.fileName}.pdf`, { title: request.fileName });
+    } else {
     const picture = await receiptPicture(request.html, asImage ? SHARPNESS.image : SHARPNESS.pdf);
     dataUrl = picture.dataUrl;
     file = asImage
@@ -217,6 +228,7 @@ export async function shareReceiptOnWhatsApp(request: ReceiptShareRequest): Prom
       : jpegDataUrlToPdfFile(picture.dataUrl, picture.width, picture.height, `${request.fileName}.pdf`, {
           title: request.fileName,
         });
+    }
   } catch {
     return "failed";
   }
