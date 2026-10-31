@@ -119,7 +119,7 @@ export default function DispatchReport() {
   }
 
   return (
-    <div ref={reportRef} className="mx-auto max-w-3xl bg-white p-6 text-black print:p-0" data-testid="dispatch-report">
+    <div ref={reportRef} className="mx-auto max-w-3xl bg-card p-6 text-black print:p-0" data-testid="dispatch-report">
       <div className="mb-4 flex flex-wrap items-center justify-between gap-2 print:hidden" data-no-shot="1">
         <Link href="/dispatch-check" className="inline-flex items-center gap-1 text-sm text-blue-700 hover:underline dark:text-blue-300">
           <ArrowRight className="h-4 w-4" />

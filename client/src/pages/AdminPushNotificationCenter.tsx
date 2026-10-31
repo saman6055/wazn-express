@@ -437,7 +437,7 @@ function ComposeTab() {
           </CardHeader>
           <CardContent>
             <div className="rounded-2xl border bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-950 p-4 shadow-inner">
-              <div className="rounded-xl bg-white dark:bg-slate-800 p-3 shadow-md">
+              <div className="rounded-xl bg-card dark:bg-slate-800 p-3 shadow-md">
                 <div className="flex items-start gap-2.5">
                   <div className="h-8 w-8 shrink-0 rounded-lg bg-emerald-500 flex items-center justify-center">
                     <Bell className="h-4 w-4 text-white" />

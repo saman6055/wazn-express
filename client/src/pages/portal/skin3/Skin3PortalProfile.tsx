@@ -90,7 +90,7 @@ export default function Skin3PortalProfile() {
                 "w-24 h-24 rounded-full mx-auto mb-5 flex items-center justify-center border-4",
                 isDark
                   ? "bg-zinc-900 border-zinc-700"
-                  : "bg-white border-zinc-200 dark:border-zinc-800/60 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]"
+                  : "bg-card border-zinc-200 dark:border-zinc-800/60 shadow-[4px_4px_0px_rgba(0,0,0,0.1)]"
               )}
             >
               <User
@@ -293,7 +293,7 @@ export default function Skin3PortalProfile() {
         className={cn(
           isDark ? cardBaseDark : cardBase,
           "overflow-hidden",
-          isDark ? "bg-zinc-900" : "bg-white"
+          isDark ? "bg-zinc-900" : "bg-card"
         )}
       >
         {items.map((item, i) => {
@@ -464,7 +464,7 @@ export default function Skin3PortalProfile() {
                     className={cn(
                       isDark ? cardBaseDark : cardBase,
                       "p-3.5 transition-transform hover:-translate-y-0.5",
-                      isDark ? "bg-zinc-900" : "bg-white"
+                      isDark ? "bg-zinc-900" : "bg-card"
                     )}
                   >
                     <div

@@ -175,7 +175,7 @@ export function PackageTrackingTimeline({
           "flex items-center gap-3 rounded-xl border p-4",
           isReturned
             ? "border-rose-200 bg-rose-50 dark:border-rose-900/60 dark:bg-rose-950/30"
-            : "border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-900/40",
+            : "border-slate-200 bg-muted dark:border-slate-700 dark:bg-slate-900/40",
           className,
         )}
       >

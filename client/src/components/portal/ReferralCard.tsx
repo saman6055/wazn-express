@@ -112,7 +112,7 @@ WhatsApp: https://whatsapp.com/channel/0029Vb6AukOK5cDImQtBmz3b`;
                 title={pickLang(language, { ku: "کۆپیکردنی پەیامی تەواو", en: "Copy the full message", ar: "نسخ الرسالة كاملة", zh: "复制完整消息" })}
                 className={cn(
                   "relative tap-44 inline-flex items-center gap-1.5 rounded-xl px-3 py-2 font-mono text-sm font-bold transition active:scale-95",
-                  isDark ? "bg-blue-950/60 text-blue-200 hover:bg-blue-950" : "bg-white text-blue-900 dark:text-blue-200 hover:bg-blue-100 shadow-sm"
+                  isDark ? "bg-blue-950/60 text-blue-200 hover:bg-blue-950" : "bg-card text-blue-900 dark:text-blue-200 hover:bg-blue-100 shadow-sm"
                 )}
               >
                 {code}

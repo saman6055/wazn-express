@@ -154,7 +154,7 @@ export default function ModernPortalShipments() {
         return {
           label: statusLabel("preparing"),
           color: "text-gray-600 dark:text-gray-400",
-          bg: "bg-gray-50 dark:bg-gray-950/40",
+          bg: "bg-muted dark:bg-gray-950/40",
           border: "border-gray-200 dark:border-gray-800",
           icon: Clock,
         };
@@ -162,7 +162,7 @@ export default function ModernPortalShipments() {
         return {
           label: statusLabel(status),
           color: "text-gray-600 dark:text-gray-400",
-          bg: "bg-gray-50 dark:bg-gray-950/40",
+          bg: "bg-muted dark:bg-gray-950/40",
           border: "border-gray-200 dark:border-gray-800",
           icon: Clock,
         };
@@ -199,7 +199,7 @@ export default function ModernPortalShipments() {
         return {
           label: statusLabel(status),
           color: "text-gray-600 dark:text-gray-400",
-          bg: "bg-gray-50 dark:bg-gray-950/40",
+          bg: "bg-muted dark:bg-gray-950/40",
         };
     }
   };
@@ -249,7 +249,7 @@ export default function ModernPortalShipments() {
               "relative rounded-2xl overflow-hidden shadow-sm",
               isDark
                 ? "bg-zinc-900 border border-zinc-800"
-                : "bg-white border border-gray-200 dark:border-gray-800/60"
+                : "bg-card border border-gray-200 dark:border-gray-800/60"
             )}
           >
             <Search
@@ -345,7 +345,7 @@ export default function ModernPortalShipments() {
                     "rounded-2xl p-4 text-center",
                     isDark
                       ? "bg-zinc-900 border border-zinc-800"
-                      : "bg-gray-50 dark:bg-gray-950/40 border border-gray-200 dark:border-gray-800/60"
+                      : "bg-muted dark:bg-gray-950/40 border border-gray-200 dark:border-gray-800/60"
                   )}
                 >
                   <p
@@ -383,7 +383,7 @@ export default function ModernPortalShipments() {
                         "shadow-sm",
                         isDark
                           ? "bg-emerald-600 text-white"
-                          : "bg-white text-emerald-700 dark:text-emerald-300 shadow-sm"
+                          : "bg-card text-emerald-700 dark:text-emerald-300 shadow-sm"
                       )
                     : isDark
                       ? "text-zinc-400 hover:text-zinc-300"
@@ -428,7 +428,7 @@ export default function ModernPortalShipments() {
                         "rounded-2xl overflow-hidden shadow-sm transition-all duration-200",
                         isDark
                           ? "bg-zinc-900 border border-zinc-800"
-                          : "bg-white border border-gray-100 dark:border-gray-800/60",
+                          : "bg-card border border-gray-100 dark:border-gray-800/60",
                         isExpanded && (isDark ? "ring-1 ring-emerald-800" : "ring-1 ring-emerald-200")
                       )}
                     >
@@ -602,7 +602,7 @@ export default function ModernPortalShipments() {
                                           "rounded-xl p-3",
                                           isDark
                                             ? "bg-zinc-800/60"
-                                            : "bg-gray-50 dark:bg-gray-950/40"
+                                            : "bg-muted dark:bg-gray-950/40"
                                         )}
                                       >
                                         {/* What was ordered first, then the depot shot — shared/parcelPhotos,
@@ -730,7 +730,7 @@ export default function ModernPortalShipments() {
                 "rounded-2xl p-10 text-center shadow-sm",
                 isDark
                   ? "bg-zinc-900 border border-zinc-800"
-                  : "bg-white border border-gray-100 dark:border-gray-800/60"
+                  : "bg-card border border-gray-100 dark:border-gray-800/60"
               )}
             >
               <Package

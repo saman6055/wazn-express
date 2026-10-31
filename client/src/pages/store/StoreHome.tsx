@@ -17,7 +17,7 @@ export default function StoreHome() {
   const label = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-slate-50 dark:bg-slate-950/40">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-muted dark:bg-slate-950/40">
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 dark:border-slate-800/60">
         <div className="max-w-3xl mx-auto px-4 h-14 flex items-center justify-between">
           <span className="flex items-center gap-2 font-bold text-slate-800 dark:text-slate-200">
@@ -53,7 +53,7 @@ export default function StoreHome() {
           <div className="grid grid-cols-2 gap-4">
             {products.map((p: any) => (
               <Link key={p.id} href={`/store/${p.slug}`}>
-                <div className="group rounded-2xl bg-white dark:bg-card border border-slate-200 dark:border-slate-800/60 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5">
+                <div className="group rounded-2xl bg-card dark:bg-card border border-slate-200 dark:border-slate-800/60 overflow-hidden cursor-pointer transition-all hover:shadow-lg hover:-translate-y-0.5">
                   <div className="aspect-square bg-slate-100 dark:bg-slate-950/40 relative overflow-hidden">
                     {p.coverImageUrl ? (
                       <img src={p.coverImageUrl} alt={pName(p, language)} loading="lazy" decoding="async" className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-300" />

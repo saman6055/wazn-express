@@ -389,7 +389,7 @@ export default function PortalMessages() {
                   <TabsTrigger 
                     value="chat" 
                     className={cn(
-                      "relative tap-44 flex-1 rounded-lg text-white/70 data-[state=active]:bg-white data-[state=active]:text-purple-600",
+                      "relative tap-44 flex-1 rounded-lg text-white/70 data-[state=active]:bg-card data-[state=active]:text-purple-600",
                       "transition-all duration-200"
                     )}
                   >
@@ -404,7 +404,7 @@ export default function PortalMessages() {
                   <TabsTrigger 
                     value="notifications" 
                     className={cn(
-                      "relative tap-44 flex-1 rounded-lg text-white/70 data-[state=active]:bg-white data-[state=active]:text-purple-600",
+                      "relative tap-44 flex-1 rounded-lg text-white/70 data-[state=active]:bg-card data-[state=active]:text-purple-600",
                       "transition-all duration-200"
                     )}
                   >
@@ -496,7 +496,7 @@ export default function PortalMessages() {
                           "relative tap-44 rounded-full text-xs",
                           isDark 
                             ? "border-slate-700 hover:bg-slate-800 text-slate-300" 
-                            : "border-slate-200 dark:border-slate-800/60 hover:bg-slate-50"
+                            : "border-slate-200 dark:border-slate-800/60 hover:bg-muted"
                         )}
                       >
                         <span className="me-1">{reply.icon}</span>
@@ -558,7 +558,7 @@ export default function PortalMessages() {
                                   : "bg-gradient-to-r from-purple-500 to-indigo-500 text-white rounded-br-md"
                                 : isDark
                                   ? "bg-slate-800 text-slate-100 rounded-bl-md"
-                                  : "bg-white text-slate-800 dark:text-slate-200 rounded-bl-md border border-slate-100 dark:border-slate-800/60"
+                                  : "bg-card text-slate-800 dark:text-slate-200 rounded-bl-md border border-slate-100 dark:border-slate-800/60"
                             )}
                           >
                             {/* Image attachment */}
@@ -856,7 +856,7 @@ export default function PortalMessages() {
                   <div key={n.id} className={cn(
                     "rounded-2xl border p-3",
                     n.isRead
-                      ? "border-slate-200 bg-white dark:border-slate-700 dark:bg-slate-800/50"
+                      ? "border-slate-200 bg-card dark:border-slate-700 dark:bg-slate-800/50"
                       : "border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-950/30"
                   )}>
                     <p className={cn("text-sm font-bold", "text-foreground")}>
@@ -880,7 +880,7 @@ export default function PortalMessages() {
         {/* Contact Info Footer */}
         <div className={cn(
           "border-t px-4 py-3",
-          isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-slate-50 dark:bg-slate-950/40"
+          isDark ? "border-slate-700 bg-slate-800/50" : "border-slate-200 dark:border-slate-800/60 bg-muted dark:bg-slate-950/40"
         )}>
           <div className="flex items-center justify-center gap-6">
             <a 

@@ -74,7 +74,7 @@ export function ImportExportSection({
             {dataCategories.map((category) => (
               <div
                 key={category.id}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-muted"
               >
                 <div className="flex items-center gap-2">
                   <span className={category.color}>{category.icon}</span>
@@ -158,7 +158,7 @@ export function ImportExportSection({
                   {Object.entries(importPreview).map(([category, records]) => (
                     <div
                       key={category}
-                      className="flex items-center justify-between p-2 bg-white dark:bg-card rounded border"
+                      className="flex items-center justify-between p-2 bg-card dark:bg-card rounded border"
                     >
                       <span className="text-sm font-medium">{t(`dataManagement.${category}`)}</span>
                       <span className="rounded-md bg-secondary px-2 py-0.5 text-xs font-medium text-secondary-foreground">
@@ -205,7 +205,7 @@ export function ImportExportSection({
             {dataCategories.slice(0, 10).map((category) => (
               <div
                 key={category.id}
-                className="flex items-center justify-between p-2 rounded-lg hover:bg-gray-50"
+                className="flex items-center justify-between p-2 rounded-lg hover:bg-muted"
               >
                 <div className="flex items-center gap-2">
                   <span className={category.color}>{category.icon}</span>

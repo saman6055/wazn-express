@@ -53,7 +53,7 @@ export default function PublicTracking() {
     d ? new Intl.DateTimeFormat(["ckb-IQ-u-nu-latn", "ar-u-nu-latn"], { day: "numeric", month: "long", year: "numeric" }).format(new Date(d)) : null;
 
   return (
-    <div dir="rtl" className="min-h-screen bg-slate-50 dark:bg-slate-950 px-4 py-10">
+    <div dir="rtl" className="min-h-screen bg-muted dark:bg-slate-950 px-4 py-10">
       <div className="mx-auto w-full max-w-md space-y-5">
 
         <div className="text-center">
@@ -74,7 +74,7 @@ export default function PublicTracking() {
           /* One answer for every failure. Telling a stranger the difference
              between "no such link" and "that one expired" confirms which
              tokens exist, which is the only useful thing to learn here. */
-          <div className="rounded-2xl border border-slate-200 bg-white p-6 text-center dark:border-slate-800 dark:bg-slate-900">
+          <div className="rounded-2xl border border-slate-200 bg-card p-6 text-center dark:border-slate-800 dark:bg-slate-900">
             <p className="font-medium text-slate-800 dark:text-slate-100">
               {L({ ku: "ئەم لینکە کارا نییە", en: "This link is not active", ar: "هذا الرابط غير فعال", zh: "此链接无效" })}
             </p>
@@ -89,7 +89,7 @@ export default function PublicTracking() {
           </div>
         ) : (
           <>
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-2xl border border-slate-200 bg-card p-5 dark:border-slate-800 dark:bg-slate-900">
               {data.photoUrl && (
                 <img
                   src={data.photoUrl}
@@ -129,7 +129,7 @@ export default function PublicTracking() {
             </div>
 
             {/* The journey, in four blocks a person recognises. */}
-            <div className="rounded-2xl border border-slate-200 bg-white p-5 dark:border-slate-800 dark:bg-slate-900">
+            <div className="rounded-2xl border border-slate-200 bg-card p-5 dark:border-slate-800 dark:bg-slate-900">
               <div className="flex items-center justify-between">
                 {STAGES.map((stage, i) => {
                   const reached = i <= (STAGE_OF[data.status ?? ""] ?? 0);

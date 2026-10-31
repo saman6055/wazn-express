@@ -441,7 +441,7 @@ export function OfflineIndicator() {
   return (
     <div role="status" aria-live="polite" className="fixed top-0 inset-x-0 z-[70] bg-amber-700 text-white text-center pt-[calc(0.625rem+env(safe-area-inset-top))] pb-2.5 text-sm font-medium shadow-md">
       <span className="inline-flex items-center gap-2">
-        <span className="w-2 h-2 bg-white dark:bg-card rounded-full animate-pulse" />
+        <span className="w-2 h-2 bg-card dark:bg-card rounded-full animate-pulse" />
         {message}
       </span>
     </div>

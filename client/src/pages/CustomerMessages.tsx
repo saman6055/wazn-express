@@ -326,7 +326,7 @@ export default function CustomerMessages() {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex bg-white dark:bg-slate-900 rounded-b-xl shadow-sm overflow-hidden border border-t-0">
+        <div className="flex-1 flex bg-card dark:bg-slate-900 rounded-b-xl shadow-sm overflow-hidden border border-t-0">
           {/* Conversations List */}
           <div
             className={cn(
@@ -372,7 +372,7 @@ export default function CustomerMessages() {
                     key={chat.id}
                     onClick={() => setSelectedChatId(chat.id)}
                     className={cn(
-                      "w-full p-4 flex items-start gap-3 hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors border-b",
+                      "w-full p-4 flex items-start gap-3 hover:bg-muted dark:hover:bg-slate-800 transition-colors border-b",
                       selectedChatId === chat.id && "bg-blue-50 dark:bg-blue-900/20"
                     )}
                   >
@@ -433,7 +433,7 @@ export default function CustomerMessages() {
                       "text-xs",
                       selectedChat.status === "open" && "border-green-300 dark:border-green-800/60 text-green-700 dark:text-green-300 bg-green-50 dark:bg-green-950/40",
                       selectedChat.status === "resolved" && "border-blue-300 dark:border-blue-800/60 text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40",
-                      selectedChat.status === "closed" && "border-gray-300 dark:border-gray-800/60 text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-gray-950/40"
+                      selectedChat.status === "closed" && "border-gray-300 dark:border-gray-800/60 text-gray-700 dark:text-gray-300 bg-muted dark:bg-gray-950/40"
                     )}
                   >
                     {selectedChat.status === "open" ? pickLang(language, { ku: "کراوە", en: "Open", ar: "مفتوحة", zh: "进行中" }) : selectedChat.status === "resolved" ? pickLang(language, { ku: "چارەسەرکرا", en: "Resolved", ar: "تم الحل", zh: "已解决" }) : selectedChat.status}
@@ -441,7 +441,7 @@ export default function CustomerMessages() {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-gray-50 dark:bg-slate-950">
+                <div className="flex-1 overflow-y-auto p-4 space-y-3 bg-muted dark:bg-slate-950">
                   {loadingMessages ? (
                     <div className="flex items-center justify-center h-full">
                       <Loader2 className="w-8 h-8 animate-spin text-blue-500 dark:text-blue-400" />
@@ -467,7 +467,7 @@ export default function CustomerMessages() {
                             "max-w-[70%] rounded-2xl px-4 py-2",
                             msg.senderType === "staff"
                               ? "bg-blue-600 text-white rounded-bl-md"
-                              : "bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-200 dark:text-white rounded-br-md shadow-sm"
+                              : "bg-card dark:bg-slate-800 text-gray-900 dark:text-gray-200 dark:text-white rounded-br-md shadow-sm"
                           )}
                         >
                           {msg.senderType !== "staff" && msg.senderName && (
@@ -485,7 +485,7 @@ export default function CustomerMessages() {
 
                 {/* Attachment preview */}
                 {attachmentFile && (
-                  <div className="px-4 pt-3 bg-white dark:bg-slate-900 border-t">
+                  <div className="px-4 pt-3 bg-card dark:bg-slate-900 border-t">
                     <div className="flex items-center gap-3 p-2 bg-gray-100 dark:bg-slate-800 rounded-lg">
                       {attachmentPreview ? (
                         <img src={attachmentPreview} alt="" className="w-16 h-16 rounded object-cover" />
@@ -508,7 +508,7 @@ export default function CustomerMessages() {
                 )}
 
                 {/* Message Input */}
-                <div className="p-4 border-t bg-white dark:bg-slate-900">
+                <div className="p-4 border-t bg-card dark:bg-slate-900">
                   <div className="flex gap-2 items-end">
                     {/* Attachment buttons */}
                     <div className="flex gap-1">

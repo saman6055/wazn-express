@@ -121,7 +121,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               <RefreshCw className="h-4 w-4 ms-2" />{t("blog.update")}</Button>
             <Dialog open={isSendDialogOpen} onOpenChange={setIsSendDialogOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white dark:bg-card text-orange-600 dark:text-orange-300 hover:bg-orange-50" disabled={selectedCustomers.length === 0}>
+                <Button className="bg-card dark:bg-card text-orange-600 dark:text-orange-300 hover:bg-orange-50" disabled={selectedCustomers.length === 0}>
                   <Send className="h-4 w-4 ms-2" />
                   {t("auto.text_49e6d3")} ({selectedCustomers.length})
                 </Button>

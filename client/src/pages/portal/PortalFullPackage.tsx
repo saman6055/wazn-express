@@ -659,7 +659,7 @@ export default function PortalFullPackage() {
         <div className={cn(
           "sticky top-14 z-20 grid gap-1 p-1 rounded-xl mb-4",
           allSelfOrders.length > 0 ? "grid-cols-4" : "grid-cols-3",
-          isDark ? "bg-slate-800 shadow-md shadow-slate-900/40" : "bg-white shadow-md shadow-slate-200/60 dark:bg-slate-800 dark:shadow-slate-900/40"
+          isDark ? "bg-slate-800 shadow-md shadow-slate-900/40" : "bg-card shadow-md shadow-slate-200/60 dark:bg-slate-800 dark:shadow-slate-900/40"
         )}>
           <button
             onClick={() => setActiveTab("all")}
@@ -737,7 +737,7 @@ export default function PortalFullPackage() {
                 "w-full pe-12 ps-4 py-4 rounded-2xl border-2 transition-all text-start",
                 isDark
                   ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:border-purple-500"
-                  : "bg-white border-slate-200 dark:border-slate-800/60 focus:border-purple-500 shadow-sm"
+                  : "bg-card border-slate-200 dark:border-slate-800/60 focus:border-purple-500 shadow-sm"
               )}
             />
           </div>
@@ -749,7 +749,7 @@ export default function PortalFullPackage() {
                 ? "bg-gradient-to-r from-violet-500 to-purple-600 border-purple-500 text-white shadow-lg"
                 : isDark
                   ? "bg-slate-800 border-slate-700 text-slate-400 hover:border-purple-500"
-                  : "bg-white border-slate-200 dark:border-slate-800/60 text-slate-500 hover:border-purple-500 shadow-sm"
+                  : "bg-card border-slate-200 dark:border-slate-800/60 text-slate-500 hover:border-purple-500 shadow-sm"
             )}
           >
             <SlidersHorizontal className="w-5 h-5" />
@@ -773,7 +773,7 @@ export default function PortalFullPackage() {
             >
               <div className={cn(
                 "p-4 rounded-2xl space-y-4",
-                isDark ? "bg-slate-800 border border-slate-700" : "bg-white border border-slate-200 dark:border-slate-800/60 shadow-sm"
+                isDark ? "bg-slate-800 border border-slate-700" : "bg-card border border-slate-200 dark:border-slate-800/60 shadow-sm"
               )}>
                 {/* Status Filter */}
                 <div>
@@ -885,7 +885,7 @@ export default function PortalFullPackage() {
           /* Empty State */
           <div className={cn(
             "text-center py-16 rounded-3xl",
-            isDark ? "bg-slate-800/50" : "bg-white shadow-sm"
+            isDark ? "bg-slate-800/50" : "bg-card shadow-sm"
           )}>
             <div className="w-24 h-24 rounded-full bg-gradient-to-br from-purple-100 to-indigo-100 dark:from-purple-900/30 dark:to-indigo-900/30 flex items-center justify-center mx-auto mb-6">
               <ShoppingBag className="w-12 h-12 text-purple-400" />
@@ -962,7 +962,7 @@ export default function PortalFullPackage() {
                       "rounded-2xl overflow-hidden transition-all hover:shadow-lg border",
                       isDark 
                         ? "bg-slate-800 border-slate-700 hover:border-slate-600" 
-                        : "bg-white border-slate-200 dark:border-slate-800/60 hover:shadow-purple-100/50"
+                        : "bg-card border-slate-200 dark:border-slate-800/60 hover:shadow-purple-100/50"
                     )}>
                       <div className="p-4">
                         <div className="flex gap-4">
@@ -1469,7 +1469,7 @@ export default function PortalFullPackage() {
                         "flex items-center justify-between p-4 rounded-2xl transition-colors",
                         isDark 
                           ? "bg-slate-800 hover:bg-slate-700" 
-                          : "bg-slate-50 dark:bg-slate-950/40 hover:bg-slate-100"
+                          : "bg-muted dark:bg-slate-950/40 hover:bg-slate-100"
                       )}
                     >
                       <div className="flex items-center gap-2">

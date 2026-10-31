@@ -80,7 +80,7 @@ const [, setLocation] = useLocation();
               size={96}
               surface="dark"
               iconClassName="w-8 h-8 text-emerald-600"
-              fallbackBg="bg-white"
+              fallbackBg="bg-card"
             />
           </div>
           <h1 className="text-2xl font-bold text-white">{t("common.appName")}</h1>

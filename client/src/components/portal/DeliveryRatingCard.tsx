@@ -63,7 +63,7 @@ export function DeliveryRatingCard({ isDark, language }: { isDark: boolean; lang
     <div className="px-4 mt-4" dir={isRTL ? "rtl" : "ltr"}>
       <div className={cn(
         "relative rounded-2xl p-5 shadow-sm border",
-        isDark ? "bg-slate-800 border-slate-700" : "bg-white border-amber-100 dark:border-amber-800/60",
+        isDark ? "bg-slate-800 border-slate-700" : "bg-card border-amber-100 dark:border-amber-800/60",
       )}>
         <button
           onClick={dismiss}

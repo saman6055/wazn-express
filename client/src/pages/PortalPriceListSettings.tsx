@@ -209,7 +209,7 @@ export default function PortalPriceListSettings() {
                     <CardDescription>{t("priceList.admin.enableSectionDesc")}</CardDescription>
                   </CardHeader>
                   <CardContent className="space-y-6">
-                    <div className="flex items-center justify-between p-4 rounded-xl bg-slate-50 dark:bg-slate-800/50">
+                    <div className="flex items-center justify-between p-4 rounded-xl bg-muted dark:bg-slate-800/50">
                       <Label className="text-base font-semibold">{t("priceList.admin.enableSection")}</Label>
                       <Switch
                         checked={form.isEnabled}
@@ -342,7 +342,7 @@ export default function PortalPriceListSettings() {
                     </CardDescription>
                   </CardHeader>
                   <CardContent className="p-0">
-                    <div className="border-t bg-slate-50 dark:bg-slate-900/30 rounded-b-xl">
+                    <div className="border-t bg-muted dark:bg-slate-900/30 rounded-b-xl">
                       <PriceListSection />
                     </div>
                   </CardContent>
@@ -581,7 +581,7 @@ function ToggleRow({
   onChange: (v: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60">
+    <div className="flex items-center justify-between p-3 rounded-xl bg-muted dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60">
       <Label className="text-sm font-medium">{label}</Label>
       <Switch checked={checked} onCheckedChange={onChange} />
     </div>
@@ -737,13 +737,13 @@ function ShippingRateEditor({
   return (
     <div className={`rounded-2xl border overflow-hidden transition-colors ${
       local.isActive
-        ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+        ? "border-slate-200 dark:border-slate-700 bg-card dark:bg-slate-900"
         : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 opacity-70"
     }`}>
       {/* Header row — price + isActive + showOnPortal */}
-      <div className="flex items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex-wrap">
+      <div className="flex items-center justify-between gap-3 p-4 bg-muted dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex-wrap">
         <div className="flex items-center gap-3 flex-1 min-w-[180px]">
-          <div className="p-2 rounded-lg bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
+          <div className="p-2 rounded-lg bg-card dark:bg-slate-900 border border-slate-200 dark:border-slate-700">
             <PreviewIcon className="h-5 w-5 text-slate-700 dark:text-slate-300" />
           </div>
           <div className="flex-1 min-w-0">
@@ -999,11 +999,11 @@ function ServiceTypeEditor({
   return (
     <div className={`rounded-2xl border overflow-hidden transition-colors ${
       local.isActive
-        ? "border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900"
+        ? "border-slate-200 dark:border-slate-700 bg-card dark:bg-slate-900"
         : "border-slate-200 dark:border-slate-700 bg-slate-50/50 dark:bg-slate-800/30 opacity-70"
     }`}>
       {/* Header — price + isActive + showOnPortal */}
-      <div className="flex items-center justify-between gap-3 p-4 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex-wrap">
+      <div className="flex items-center justify-between gap-3 p-4 bg-muted dark:bg-slate-800/50 border-b border-slate-200 dark:border-slate-700 flex-wrap">
         <div className="flex items-center gap-3 flex-1 min-w-[180px]">
           <div
             className="p-2 rounded-lg text-white shadow-md flex-shrink-0"

@@ -386,7 +386,7 @@ const { t, language } = useLanguage();
           </h2>
           <span className={cn(
             "px-3 py-1 rounded-full text-sm font-medium",
-            isDark ? "bg-slate-800 text-slate-300" : "bg-white text-slate-600"
+            isDark ? "bg-slate-800 text-slate-300" : "bg-card text-slate-600"
           )}>
             {isLoading ? "…" : fmtCount(packages?.length)}
           </span>

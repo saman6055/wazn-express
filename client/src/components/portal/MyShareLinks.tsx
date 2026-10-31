@@ -52,7 +52,7 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
       <div
         className={cn(
           "rounded-2xl p-4 ring-1",
-          isDark ? "bg-slate-800/60 ring-white/5" : "bg-white dark:bg-slate-800/60 ring-slate-200 dark:ring-white/5",
+          isDark ? "bg-slate-800/60 ring-white/5" : "bg-card dark:bg-slate-800/60 ring-slate-200 dark:ring-white/5",
         )}
       >
         <div className="flex items-center gap-2.5">
@@ -73,7 +73,7 @@ export function MyShareLinks({ isDark, language }: { isDark: boolean; language: 
               key={link.id}
               className={cn(
                 "flex flex-wrap items-center gap-2 rounded-lg p-2.5",
-                isDark ? "bg-slate-900/50" : "bg-slate-50 dark:bg-slate-900/50",
+                isDark ? "bg-slate-900/50" : "bg-muted dark:bg-slate-900/50",
               )}
             >
               <div className="min-w-0 flex-1">

@@ -136,7 +136,7 @@ export function CustomerPendingOrdersSection({ customerId }: Props) {
               <CardDescription className="text-amber-50">{t("customers.pendingOrdersDesc")}</CardDescription>
             </div>
           </div>
-          <Badge className="bg-white dark:bg-card text-amber-700 dark:text-amber-300 border-0 text-base px-3 py-1">
+          <Badge className="bg-card dark:bg-card text-amber-700 dark:text-amber-300 border-0 text-base px-3 py-1">
             {count} {t("common.total")}
           </Badge>
         </div>

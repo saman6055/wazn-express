@@ -150,7 +150,7 @@ export default function PortalUnclaimedPackages() {
 
       {/* Search Bar */}
       <div className="px-4 -mt-4">
-        <div className="bg-white dark:bg-card rounded-2xl shadow-lg p-4">
+        <div className="bg-card dark:bg-card rounded-2xl shadow-lg p-4">
           <div className="relative">
             <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-5 h-5 text-slate-400" />
             <Input
@@ -159,7 +159,7 @@ export default function PortalUnclaimedPackages() {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className={cn(
-                "ps-10 h-12 bg-slate-50 dark:bg-slate-950/40 border-0 rounded-xl text-base",
+                "ps-10 h-12 bg-muted dark:bg-slate-950/40 border-0 rounded-xl text-base",
                 isRTL && "pe-10 ps-4 text-start"
               )}
             />
@@ -173,7 +173,7 @@ export default function PortalUnclaimedPackages() {
           <TabsList className="w-full bg-slate-100 dark:bg-slate-950/40 p-1 rounded-xl h-auto">
             <TabsTrigger 
               value="unclaimed" 
-              className="flex-1 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex-1 py-2.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"
             >
               <PackageSearch className="w-4 h-4 me-2" />
               {t("availablePackages") || "Available"}
@@ -185,7 +185,7 @@ export default function PortalUnclaimedPackages() {
             </TabsTrigger>
             <TabsTrigger 
               value="myClaims" 
-              className="flex-1 py-2.5 rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm"
+              className="flex-1 py-2.5 rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm"
             >
               <Send className="w-4 h-4 me-2" />
               {t("myRequests") || "My Requests"}
@@ -213,7 +213,7 @@ export default function PortalUnclaimedPackages() {
                  it is empty when the request failed sends them away. */
               <PortalErrorState onRetry={() => void refetchUnclaimed()} isRetrying={unclaimedFetching} />
             ) : !unclaimedData?.packages.length ? (
-              <div className="bg-white dark:bg-card rounded-2xl p-8 text-center shadow-sm">
+              <div className="bg-card dark:bg-card rounded-2xl p-8 text-center shadow-sm">
                 <div className="w-16 h-16 bg-slate-100 dark:bg-slate-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Package className="w-8 h-8 text-slate-400" />
                 </div>
@@ -233,7 +233,7 @@ export default function PortalUnclaimedPackages() {
                 {unclaimedData.packages.map((pkg) => (
                   <div 
                     key={pkg.id}
-                    className="bg-white dark:bg-card rounded-2xl p-4 shadow-sm hover:shadow-md transition-all"
+                    className="bg-card dark:bg-card rounded-2xl p-4 shadow-sm hover:shadow-md transition-all"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -325,7 +325,7 @@ export default function PortalUnclaimedPackages() {
                  chasing a missing parcel. */
               <PortalErrorState onRetry={() => void refetchClaims()} isRetrying={claimsFetching} />
             ) : !myClaimRequests?.length ? (
-              <div className="bg-white dark:bg-card rounded-2xl p-8 text-center shadow-sm">
+              <div className="bg-card dark:bg-card rounded-2xl p-8 text-center shadow-sm">
                 <div className="w-16 h-16 bg-slate-100 dark:bg-slate-950/40 rounded-full flex items-center justify-center mx-auto mb-4">
                   <Send className="w-8 h-8 text-slate-400" />
                 </div>
@@ -341,7 +341,7 @@ export default function PortalUnclaimedPackages() {
                 {myClaimRequests.map((request) => (
                   <div 
                     key={request.id}
-                    className="bg-white dark:bg-card rounded-2xl p-4 shadow-sm"
+                    className="bg-card dark:bg-card rounded-2xl p-4 shadow-sm"
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex items-start gap-3">
@@ -392,7 +392,7 @@ export default function PortalUnclaimedPackages() {
                     
                     {/* Customer Note */}
                     {request.customerNote && (
-                      <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-sm text-slate-600 dark:text-slate-300">
+                      <div className="mt-3 p-3 bg-muted dark:bg-slate-950/40 rounded-xl text-sm text-slate-600 dark:text-slate-300">
                         <p className="font-medium mb-1 text-slate-700 dark:text-slate-300">
                           {t("yourNote") || "Your Note"}:
                         </p>
@@ -423,13 +423,13 @@ export default function PortalUnclaimedPackages() {
           {selectedPackage && (
             <div className="space-y-4">
               {/* Package Info */}
-              <div className="bg-slate-50 dark:bg-slate-950/40 rounded-xl p-4">
+              <div className="bg-muted dark:bg-slate-950/40 rounded-xl p-4">
                 <div className="flex items-center gap-3">
                   <PhotoStack
                     photos={selectedPackage.photos ?? []}
                     className="w-12 h-12 rounded-xl shadow-sm"
                     fallback={
-                      <div className="w-12 h-12 bg-white dark:bg-card rounded-xl flex items-center justify-center shadow-sm shrink-0">
+                      <div className="w-12 h-12 bg-card dark:bg-card rounded-xl flex items-center justify-center shadow-sm shrink-0">
                         <Package className="w-6 h-6 text-slate-600 dark:text-slate-300" />
                       </div>
                     }

@@ -378,7 +378,7 @@ function ClassicPortalInvoiceReports() {
                 {showExportMenu && (
                   <div className={cn(
                     "absolute end-0 mt-2 w-40 rounded-lg shadow-lg z-50",
-                    isDark ? "bg-slate-700" : "bg-white border"
+                    isDark ? "bg-slate-700" : "bg-card border"
                   )}>
                     <button
                       onClick={exportToCSV}
@@ -578,7 +578,7 @@ function ClassicPortalInvoiceReports() {
                     key={i}
                     className={cn(
                       "flex items-center justify-between p-3 rounded-xl",
-                      isDark ? "bg-slate-700/50" : "bg-slate-50 dark:bg-slate-950/40"
+                      isDark ? "bg-slate-700/50" : "bg-muted dark:bg-slate-950/40"
                     )}
                   >
                     <div className="flex items-center gap-3">

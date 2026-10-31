@@ -194,7 +194,7 @@ export function ScanInput({
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
                 scanMode === "manual"
-                  ? "bg-white shadow text-foreground dark:bg-gray-700"
+                  ? "bg-card shadow text-foreground dark:bg-gray-700"
                   : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setScanMode("manual")}
@@ -207,7 +207,7 @@ export function ScanInput({
               className={cn(
                 "flex items-center gap-2 px-4 py-2 rounded-md text-sm font-medium transition-all",
                 scanMode === "camera"
-                  ? "bg-white shadow text-foreground dark:bg-gray-700"
+                  ? "bg-card shadow text-foreground dark:bg-gray-700"
                   : "text-muted-foreground hover:text-foreground"
               )}
               onClick={() => setScanMode("camera")}

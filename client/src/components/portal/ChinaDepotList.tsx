@@ -174,7 +174,7 @@ export function ChinaDepotList({
 
       <div className={cn(
         "divide-y overflow-hidden rounded-2xl border",
-        isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 dark:border-slate-800/60 bg-white",
+        isDark ? "divide-slate-700 border-slate-700 bg-slate-800/50" : "divide-slate-100 border-slate-200 dark:border-slate-800/60 bg-card",
       )}>
         {visible.map((item) => (
           <button

@@ -220,7 +220,7 @@ export function PortalProfilePhoto({
         onClick={() => (photoUrl ? setMenuOpen((open) => !open) : fileRef.current?.click())}
         className={cn(
           "tap-44 absolute -bottom-1 -end-1 w-8 h-8 rounded-full flex items-center justify-center",
-          "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-md",
+          "bg-card dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-md",
           "text-slate-600 dark:text-slate-300 transition-transform active:scale-95",
           busy && "opacity-60",
         )}
@@ -235,7 +235,7 @@ export function PortalProfilePhoto({
           <div className="fixed inset-0 z-40" onClick={() => setMenuOpen(false)} />
           <div className={cn(
             "absolute top-full mt-2 start-0 z-50 min-w-[10rem] rounded-xl overflow-hidden",
-            "bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xl",
+            "bg-card dark:bg-slate-800 border border-slate-200 dark:border-slate-600 shadow-xl",
           )}>
             <button
               type="button"
@@ -243,7 +243,7 @@ export function PortalProfilePhoto({
                 setMenuOpen(false);
                 fileRef.current?.click();
               }}
-              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700/60"
+              className="w-full flex items-center gap-2 px-3 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-muted dark:hover:bg-slate-700/60"
             >
               <Camera className="w-4 h-4" />
               {pickLang(language, { ku: "گۆڕینی وێنە", en: "Change photo", ar: "تغيير الصورة", zh: "更换照片" })}

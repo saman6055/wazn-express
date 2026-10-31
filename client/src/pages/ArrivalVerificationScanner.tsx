@@ -1053,7 +1053,7 @@ export default function ArrivalVerificationScanner() {
                   <div className="grid grid-cols-2 gap-4">
                     <div className={cn(
                       "rounded-lg p-3 text-center",
-                      verificationStats.isComplete ? "bg-white/20" : "bg-slate-50 dark:bg-slate-800"
+                      verificationStats.isComplete ? "bg-white/20" : "bg-muted dark:bg-slate-800"
                     )}>
                       <div className={cn(
                         "text-2xl font-bold",
@@ -1149,7 +1149,7 @@ export default function ArrivalVerificationScanner() {
                         const pct = total > 0 ? Math.round((verified / total) * 100) : 0;
                         
                         return (
-                          <div key={batch.id} className="p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                          <div key={batch.id} className="p-3 bg-muted dark:bg-slate-800 rounded-lg">
                             <div className="flex items-center justify-between mb-2">
                               <span className="font-medium text-sm">{batch.batchCode}</span>
                               <span className="text-xs text-muted-foreground">{verified}/{total}</span>
@@ -1351,7 +1351,7 @@ export default function ArrivalVerificationScanner() {
             <div className="space-y-4">
               {/* Summary */}
               <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg text-center">
+                <div className="p-4 bg-muted dark:bg-slate-800 rounded-lg text-center">
                   <div className="text-2xl font-bold">{verificationStats.totalExpected}</div>
                   <div className="text-xs text-muted-foreground">{t("scan.total")}</div>
                 </div>

@@ -1257,7 +1257,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             </CardHeader>
                             <CardContent className="space-y-3">
                               {pricingTiers.map((tier, index) => (
-                                <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-white dark:bg-card">
+                                <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-card dark:bg-card">
                                   <div className="flex-1 grid grid-cols-3 gap-2">
                                     <div>
                                       <Label className="text-xs">From {getUnit(shippingType)}</Label>
@@ -1370,7 +1370,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             {customerPricing.map((cp) => {
                               const customer = customers?.find(c => c.id === cp.customerId);
                               return (
-                                <div key={cp.customerId} className="flex items-center gap-2 p-3 border rounded-lg bg-white dark:bg-card">
+                                <div key={cp.customerId} className="flex items-center gap-2 p-3 border rounded-lg bg-card dark:bg-card">
                                   <div className="flex-1">
                                     <div className="font-medium text-sm mb-2">
                                       {customer?.customerCode} - {customer?.fullName}
@@ -1842,7 +1842,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           return <Badge variant="outline" className="bg-green-50 dark:bg-green-950/40 text-green-700 dark:text-green-300 border-green-200 dark:border-green-800/60">✅ {daysSince} {t("auto.text_0145a3")}</Badge>;
                         }
                         
-                        return <Badge variant="outline" className="bg-gray-50 dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800/60">{t("auto.text_ed2a98")} </Badge>;
+                        return <Badge variant="outline" className="bg-muted dark:bg-gray-950/40 text-gray-700 dark:text-gray-300 border-gray-200 dark:border-gray-800/60">{t("auto.text_ed2a98")} </Badge>;
                       })()}
                       </div>
                     </TableCell>
@@ -2914,7 +2914,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         </CardHeader>
                         <CardContent className="space-y-3">
                           {pricingTiers.map((tier, index) => (
-                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-white dark:bg-card">
+                            <div key={index} className="flex items-center gap-2 p-3 border rounded-lg bg-card dark:bg-card">
                               <div className="flex-1 grid grid-cols-3 gap-2">
                                 <div>
                                   <Label className="text-xs">From {getUnit(editingBatch.shippingType)}</Label>

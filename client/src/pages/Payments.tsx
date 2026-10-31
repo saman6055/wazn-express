@@ -142,7 +142,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </div>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white dark:bg-card text-green-600 dark:text-green-300 hover:bg-white/90 shadow-lg">
+                <Button className="bg-card dark:bg-card text-green-600 dark:text-green-300 hover:bg-white/90 shadow-lg">
                   <Plus className="h-4 w-4 me-2" />
                   {pickLang(language, { ku: "تۆمارکردنی پارەدان", en: "Record Payment", ar: "تسجيل دفعة", zh: "记录付款" })}
                 </Button>

@@ -416,7 +416,7 @@ export default function ServicesManagement() {
               </Button>
               <Dialog open={isAddServiceOpen} onOpenChange={setIsAddServiceOpen}>
                 <DialogTrigger asChild>
-                  <Button className="bg-white dark:bg-card text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50">
+                  <Button className="bg-card dark:bg-card text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50">
                     <Plus className="h-4 w-4 ms-2" />
                     {t('services.addService')}
                   </Button>

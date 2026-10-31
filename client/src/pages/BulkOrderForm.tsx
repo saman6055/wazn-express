@@ -893,7 +893,7 @@ export default function BulkOrderForm() {
                                   value={item.advancePaidUsd}
                                   onChange={e => updateItem(item.id, "advancePaidUsd", e.target.value)}
                                   placeholder="0.00"
-                                  className="ps-7 h-9 text-sm border-teal-200 dark:border-teal-900/50 bg-white dark:bg-background"
+                                  className="ps-7 h-9 text-sm border-teal-200 dark:border-teal-900/50 bg-card dark:bg-background"
                                   dir="ltr"
                                 />
                               </div>
@@ -904,7 +904,7 @@ export default function BulkOrderForm() {
                                 value={item.advancePaymentMethod}
                                 onValueChange={(v) => updateItem(item.id, "advancePaymentMethod", v as AdvancePaymentMethod)}
                               >
-                                <SelectTrigger className="h-9 text-sm mt-1 border-teal-200 dark:border-teal-900/50 bg-white dark:bg-background">
+                                <SelectTrigger className="h-9 text-sm mt-1 border-teal-200 dark:border-teal-900/50 bg-card dark:bg-background">
                                   <SelectValue />
                                 </SelectTrigger>
                                 <SelectContent>

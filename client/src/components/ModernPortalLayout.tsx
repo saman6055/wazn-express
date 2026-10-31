@@ -90,7 +90,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         // sit at the bottom of a short page instead of directly under the
         // content, halfway up the screen.
         "portal-theme min-h-screen supports-[height:100dvh]:min-h-dvh flex flex-col transition-colors duration-300",
-        isDark ? "bg-zinc-950" : "bg-gray-50 dark:bg-gray-950/40",
+        isDark ? "bg-zinc-950" : "bg-muted dark:bg-gray-950/40",
         isRTL && "rtl",
         // The bar's 80px, some air, and the home-indicator strip it sits over.
         "pb-[calc(6rem+env(safe-area-inset-bottom))]"
@@ -101,7 +101,7 @@ export function ModernPortalLayout({ children }: ModernPortalLayoutProps) {
         <div
           className={cn(
             "sticky top-0 z-50 h-safe-area-top",
-            isDark ? "bg-zinc-950" : "bg-gray-50 dark:bg-gray-950/40"
+            isDark ? "bg-zinc-950" : "bg-muted dark:bg-gray-950/40"
           )}
         />
       )}

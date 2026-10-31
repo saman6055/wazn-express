@@ -219,7 +219,7 @@ export default function UnifiedOrdersDashboard() {
                 <span className="text-sm">{pickLang(language, { ku: 'زیندوو', en: 'Live', ar: 'مباشر', zh: '实时' })}</span>
                 <LiveClock className="font-mono text-lg" />
               </div>
-              <Button className="bg-white dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-white/90">
+              <Button className="bg-card dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-white/90">
                 <Plus className="me-2 h-4 w-4" />
                 {pickLang(language, { ku: 'ئۆردەری نوێ', en: 'New Order', ar: 'طلب جديد', zh: '新订单' })}
               </Button>
@@ -377,7 +377,7 @@ export default function UnifiedOrdersDashboard() {
               {filteredOrders.slice(0, 5).length > 0 ? (
                 <div className="space-y-4">
                   {filteredOrders.slice(0, 5).map((order, i) => (
-                    <div key={i} className="flex items-center gap-4 rounded-lg border p-3 hover:bg-gray-50 transition-colors">
+                    <div key={i} className="flex items-center gap-4 rounded-lg border p-3 hover:bg-muted transition-colors">
                       <div className="flex h-10 w-10 items-center justify-center rounded-full bg-gradient-to-br from-purple-100 dark:from-purple-900/40 to-indigo-100 dark:to-indigo-900/40">
                         <Package className="h-5 w-5 text-purple-600 dark:text-purple-300" />
                       </div>
@@ -476,7 +476,7 @@ export default function UnifiedOrdersDashboard() {
             {viewMode === "table" && (
               <div className="rounded-lg border overflow-x-auto">
                 <table className="w-full">
-                  <thead className="bg-gray-50 dark:bg-gray-950/40">
+                  <thead className="bg-muted dark:bg-gray-950/40">
                     <tr>
                       <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'کاڵا', en: 'Product', ar: 'المنتج', zh: '商品' })}</th>
                       <th className="px-4 py-3 text-start text-sm font-medium text-gray-500 dark:text-gray-400">{pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' })}</th>
@@ -489,7 +489,7 @@ export default function UnifiedOrdersDashboard() {
                   </thead>
                   <tbody className="divide-y">
                     {filteredOrders.length > 0 ? orderPage.pageRows.map((order, i) => (
-                      <tr key={i} className="hover:bg-gray-50 transition-colors">
+                      <tr key={i} className="hover:bg-muted transition-colors">
                         <td className="px-4 py-3">
                           <div className="flex items-center gap-3">
                             {order.productImage ? (

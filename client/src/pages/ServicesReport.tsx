@@ -393,7 +393,7 @@ export default function ServicesReport() {
                 {pickLang(language, { ku: "چاپکردن", en: "Print", ar: "طباعة", zh: "打印" })}
               </Button>
               <Button
-                className="bg-white dark:bg-card text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50"
+                className="bg-card dark:bg-card text-emerald-600 dark:text-emerald-300 hover:bg-emerald-50"
                 onClick={handleExportCSV}
               >
                 <Download className="h-4 w-4 ms-2" />

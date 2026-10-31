@@ -342,7 +342,7 @@ export default function CommissionOrders() {
               </div>
             </div>
             <Link href="/commission/new">
-              <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
+              <Button className="bg-card dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50">
                 <Plus className="h-4 w-4 ms-2" />
                 {pickLang(language, { ku: "ئۆردەری نوێ", en: "New order", ar: "طلب جديد", zh: "新订单" })}
               </Button>

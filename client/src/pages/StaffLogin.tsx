@@ -62,7 +62,7 @@ export default function StaffLogin() {
               size={96}
               surface="dark"
               iconClassName="w-8 h-8 text-emerald-600"
-              fallbackBg="bg-white"
+              fallbackBg="bg-card"
             />
           </div>
           <h1 className="text-3xl font-bold text-white">{company.name}</h1>

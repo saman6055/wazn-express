@@ -34,7 +34,7 @@ export function PortalEmptyState({
   return (
     <div
       className={cn(
-        "rounded-2xl border border-slate-200 bg-white text-center dark:border-slate-700 dark:bg-slate-800",
+        "rounded-2xl border border-slate-200 bg-card text-center dark:border-slate-700 dark:bg-slate-800",
         compact ? "p-6" : "p-8",
         className,
       )}

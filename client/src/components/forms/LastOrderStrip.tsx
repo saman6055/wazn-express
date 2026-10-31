@@ -55,7 +55,7 @@ export function LastOrderStrip({ orderType }: { orderType: EntryOrderType }) {
       <OrderNumbers numbers={last.orderNumber} className="text-xs" />
       <Link
         href={lastOrderEditHref(orderType, last.id)}
-        className="ms-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-emerald-300 bg-white/80 px-3 text-sm font-medium text-emerald-800 transition-colors hover:bg-white dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
+        className="ms-auto inline-flex h-9 shrink-0 items-center gap-1.5 rounded-md border border-emerald-300 bg-white/80 px-3 text-sm font-medium text-emerald-800 transition-colors hover:bg-card dark:border-emerald-700 dark:bg-emerald-950/60 dark:text-emerald-100 dark:hover:bg-emerald-900/60"
         data-testid="last-order-correct"
       >
         <PencilLine className="h-3.5 w-3.5" />

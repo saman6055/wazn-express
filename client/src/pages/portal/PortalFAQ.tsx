@@ -136,7 +136,7 @@ export default function PortalFAQ() {
                   <h2 className={cn("font-bold text-sm", "text-foreground")}>{pick(cat.title)}</h2>
                 </div>
 
-                <div className={cn("rounded-2xl overflow-hidden divide-y", isDark ? "bg-slate-900 divide-slate-800" : "bg-white divide-slate-100 shadow-sm")}>
+                <div className={cn("rounded-2xl overflow-hidden divide-y", isDark ? "bg-slate-900 divide-slate-800" : "bg-card divide-slate-100 shadow-sm")}>
                   {cat.items.map((it, i) => {
                     const key = `${cat.id}:${i}`;
                     const open = openKey === key;
@@ -146,7 +146,7 @@ export default function PortalFAQ() {
                           onClick={() => setOpenKey(open ? null : key)}
                           className={cn(
                             "w-full flex items-center justify-between gap-3 p-4 text-start transition",
-                            isDark ? "hover:bg-slate-800/50" : "hover:bg-slate-50",
+                            isDark ? "hover:bg-slate-800/50" : "hover:bg-muted",
                           )}
                         >
                           <span className={cn("text-sm font-semibold flex-1", "text-foreground")}>

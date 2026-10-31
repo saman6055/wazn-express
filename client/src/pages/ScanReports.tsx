@@ -141,7 +141,7 @@ export default function ScanReports() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen bg-muted dark:bg-slate-950">
         {/* Header */}
         <div className="bg-gradient-to-r from-indigo-600 via-indigo-700 to-purple-700 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-20" style={{

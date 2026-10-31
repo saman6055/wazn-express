@@ -310,11 +310,11 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
         </div>
 
         {/* Action bar */}
-        <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60">
+        <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-muted dark:bg-slate-950/40 border border-slate-200 dark:border-slate-800/60">
           <div className="flex items-center gap-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "جۆری گەیاندن:", en: "Delivery type:", ar: "نوع التوصيل:", zh: "配送类型：" })}</span>
             <Select value={deliveryMethod} onValueChange={(v) => setDeliveryMethod(v as any)}>
-              <SelectTrigger className="w-[180px] bg-white">
+              <SelectTrigger className="w-[180px] bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
@@ -340,7 +340,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
           <div className="ms-auto flex items-center gap-2">
             <span className="text-sm font-medium text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "جۆری لەیبڵ:", en: "Label type:", ar: "نوع الملصق:", zh: "标签类型：" })}</span>
             <Select value={labelType} onValueChange={(v) => setLabelType(v as any)}>
-              <SelectTrigger className="w-[200px] bg-white">
+              <SelectTrigger className="w-[200px] bg-card">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>

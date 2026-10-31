@@ -443,7 +443,7 @@ export default function CommissionDetail() {
                 <>
                   <Button
                     onClick={() => navigate(`/commission/${id}/edit`)}
-                    className="bg-white dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-purple-50 shadow-md"
+                    className="bg-card dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-purple-50 shadow-md"
                   >
                     <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
@@ -480,7 +480,7 @@ export default function CommissionDetail() {
 
         {/* Visual tracking timeline — China→Iraq journey, from existing fields */}
         {trackingSteps.length > 0 && (
-          <Card className="shadow-sm border-0 bg-white dark:bg-card">
+          <Card className="shadow-sm border-0 bg-card dark:bg-card">
             <CardContent className="p-5">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-1">
                 <Truck className="h-3 w-3" /> {t("tracking.title") || "شوێنکەوتنی ئۆردەر"}
@@ -729,12 +729,12 @@ export default function CommissionDetail() {
                 </div>
 
                 {quantity > 1 && (
-                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
+                  <div className="flex justify-between items-center p-3 bg-muted dark:bg-gray-950/40 rounded-lg">
                     <span className="text-muted-foreground">{pickLang(language, { ku: "نرخی کاڵا × بڕ", en: "Item price × quantity", ar: "سعر المنتج × الكمية", zh: "商品价格 × 数量" })}</span>
                     <span className="font-mono font-medium">${itemSubtotal.toFixed(2)}</span>
                   </div>
                 )}
-                <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
+                <div className="flex justify-between items-center p-3 bg-muted dark:bg-gray-950/40 rounded-lg">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "عمولە (ڕێگری)", en: "Commission (flat)", ar: "العمولة (ثابتة)", zh: "佣金（固定）" })}</span>
                   <span className="font-mono font-medium text-purple-600 dark:text-purple-300">${totalCommission.toFixed(2)}</span>
                 </div>
@@ -833,7 +833,7 @@ export default function CommissionDetail() {
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
               {/* Product Info Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
@@ -927,7 +927,7 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Product Images Gallery */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
@@ -957,7 +957,7 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Customer Info Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
@@ -996,7 +996,7 @@ export default function CommissionDetail() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Pricing Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-green-50 dark:bg-green-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
@@ -1007,7 +1007,7 @@ export default function CommissionDetail() {
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
                   {/* Item Price */}
-                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-950/40 rounded-xl">
+                  <div className="flex justify-between items-center p-3 bg-muted dark:bg-gray-950/40 rounded-xl">
                     <span className="text-sm text-muted-foreground">{t("commission.itemPrice") || "نرخی کاڵا"}</span>
                     <div className="text-right">
                       <span className="font-mono font-semibold">${Number(order.itemPriceUsd || 0).toFixed(2)}</span>
@@ -1120,7 +1120,7 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Status & Date Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-blue-50 dark:bg-blue-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
@@ -1161,7 +1161,7 @@ export default function CommissionDetail() {
               </Card>
 
               {/* Notes */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">

@@ -169,7 +169,7 @@ function NextStepCard({
         "rounded-2xl p-4 flex items-start gap-3.5 border",
         ready
           ? isDark ? "bg-emerald-950/50 border-emerald-500/50" : "bg-emerald-50 dark:bg-emerald-950/50 border-emerald-300 dark:border-emerald-500/50"
-          : isDark ? "bg-[#152238] border-white/10" : "bg-white dark:bg-[#152238] border-slate-200 dark:border-slate-700 shadow-sm",
+          : isDark ? "bg-[#152238] border-white/10" : "bg-card dark:bg-[#152238] border-slate-200 dark:border-slate-700 shadow-sm",
       )}>
         {/* The pulsing dot is the "come and collect" signal; before that,
             a plain truck. Green is reserved for goods actually arrived. */}
@@ -404,7 +404,7 @@ export default function PortalHome() {
     },
   ];
 
-  const card = isDark ? "bg-[#152238] border-white/10" : "bg-white dark:bg-[#152238] border-slate-200 dark:border-slate-700";
+  const card = isDark ? "bg-[#152238] border-white/10" : "bg-card dark:bg-[#152238] border-slate-200 dark:border-slate-700";
 
   /**
    * How each stage card is dressed. One entry per tab in SEARCH_TABS, so a
@@ -417,7 +417,7 @@ export default function PortalHome() {
   }> = {
     bought: {
       Icon: ShoppingBag,
-      card: "border-pink-300 bg-white dark:border-pink-500/35 dark:bg-pink-950/30",
+      card: "border-pink-300 bg-card dark:border-pink-500/35 dark:bg-pink-950/30",
       icon: "text-pink-600 dark:text-pink-400",
       number: "text-pink-600 dark:text-pink-400",
       unit: "text-pink-700/70 dark:text-pink-300/70",
@@ -433,7 +433,7 @@ export default function PortalHome() {
     },
     onTheWay: {
       Icon: Plane,
-      card: "border-sky-300 bg-white dark:border-sky-500/35 dark:bg-[#152238]",
+      card: "border-sky-300 bg-card dark:border-sky-500/35 dark:bg-[#152238]",
       icon: "text-sky-600 dark:text-sky-400",
       number: "text-sky-600 dark:text-sky-400",
       unit: "text-sky-700/70 dark:text-sky-300/70",
@@ -457,7 +457,7 @@ export default function PortalHome() {
 
   return (
     <CustomerPortalLayout>
-      <div className={cn("min-h-screen", isDark ? "bg-[#0B1120]" : "bg-slate-50 dark:bg-slate-950")}>
+      <div className={cn("min-h-screen", isDark ? "bg-[#0B1120]" : "bg-muted dark:bg-slate-950")}>
 
         {/* Slim fixed bar — code, search, bell — once the header scrolls away */}
         <div className={cn(

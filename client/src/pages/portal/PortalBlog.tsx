@@ -166,7 +166,7 @@ const { banner: portalBanner } = usePortalPalette();
         ) : !blogPosts || blogPosts.length === 0 ? (
           <div className={cn(
             "text-center py-16 rounded-2xl",
-            isDark ? "bg-slate-800/50" : "bg-slate-50 dark:bg-slate-950/40"
+            isDark ? "bg-slate-800/50" : "bg-muted dark:bg-slate-950/40"
           )}>
             <Megaphone className={cn(
               "w-16 h-16 mx-auto mb-4",

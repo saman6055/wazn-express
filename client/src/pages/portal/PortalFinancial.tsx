@@ -515,7 +515,7 @@ const { t, language } = useLanguage();
                 activeTab === tab.id
                   ? isDark 
                     ? "bg-slate-700 text-white shadow-lg" 
-                    : "bg-white text-slate-800 dark:text-slate-200 shadow-md"
+                    : "bg-card text-slate-800 dark:text-slate-200 shadow-md"
                   : isDark 
                     ? "text-slate-400 hover:text-slate-300" 
                     : "text-slate-500 hover:text-slate-700"
@@ -828,7 +828,7 @@ const { t, language } = useLanguage();
                         : "bg-blue-500 text-white"
                       : isDark 
                         ? "bg-slate-800 text-slate-400" 
-                        : "bg-white text-slate-600 shadow-sm"
+                        : "bg-card text-slate-600 shadow-sm"
                   )}
                 >
                   {pickLang(language, filter.label)}
@@ -876,7 +876,7 @@ const { t, language } = useLanguage();
                         href && "cursor-pointer",
                         isDark
                           ? "bg-slate-800 hover:bg-slate-750"
-                          : "bg-white shadow-sm hover:shadow-lg"
+                          : "bg-card shadow-sm hover:shadow-lg"
                       )}
                     >
                       <div className="flex items-center gap-4">
@@ -1283,7 +1283,7 @@ const { t, language } = useLanguage();
                               "flex justify-between items-start gap-3 text-sm p-2.5 rounded-lg border",
                               isDark
                                 ? "bg-slate-800 border-slate-600"
-                                : "bg-white border-slate-200 dark:border-slate-800/60",
+                                : "bg-card border-slate-200 dark:border-slate-800/60",
                             )}
                           >
                             <span className={cn(

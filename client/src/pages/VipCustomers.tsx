@@ -155,7 +155,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             </div>
             <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
               <DialogTrigger asChild>
-                <Button className="bg-white dark:bg-card text-amber-600 dark:text-amber-300 hover:bg-white/90 shadow-lg">
+                <Button className="bg-card dark:bg-card text-amber-600 dark:text-amber-300 hover:bg-white/90 shadow-lg">
                   <Plus className="h-4 w-4 me-2" />
                   {pickLang(language, { ku: "زیادکردنی VIP", en: "Add VIP", ar: "إضافة VIP", zh: "添加 VIP" })}
                 </Button>

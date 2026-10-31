@@ -74,7 +74,7 @@ export default function PortalGuide() {
 
   return (
     <PortalLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="min-h-screen bg-muted dark:bg-slate-950" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
         <div className="relative overflow-hidden text-white px-4 pt-8 pb-10" style={portalBanner}>
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
@@ -96,7 +96,7 @@ export default function PortalGuide() {
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder={pick(guideHeader.searchPlaceholder)}
-              className="h-11 ps-9 rounded-xl bg-white dark:bg-card text-slate-800 dark:text-slate-200 placeholder:text-slate-400 border-0"
+              className="h-11 ps-9 rounded-xl bg-card dark:bg-card text-slate-800 dark:text-slate-200 placeholder:text-slate-400 border-0"
               stepper={false}
             />
           </div>
@@ -105,7 +105,7 @@ export default function PortalGuide() {
         <div className="px-4 py-6 space-y-4 pb-28 max-w-2xl mx-auto">
           {/* Clickable index — only when not searching */}
           {!q && (
-            <div className="rounded-2xl bg-white dark:bg-slate-900 ring-1 ring-slate-100 dark:ring-white/5 p-3">
+            <div className="rounded-2xl bg-card dark:bg-slate-900 ring-1 ring-slate-100 dark:ring-white/5 p-3">
               <p className="px-1 pb-2 text-xs font-bold text-slate-500 dark:text-slate-400">
                 {pick(guideHeader.indexTitle)}
               </p>
@@ -115,7 +115,7 @@ export default function PortalGuide() {
                     key={s.id}
                     type="button"
                     onClick={() => jumpTo(s.id)}
-                    className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-start transition hover:bg-slate-50 dark:hover:bg-white/5"
+                    className="flex items-center gap-2 rounded-xl px-2.5 py-2 text-start transition hover:bg-muted dark:hover:bg-white/5"
                   >
                     <span className={cn("flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-gradient-to-br text-white", s.gradient)}>
                       <s.icon className="h-4 w-4" />
@@ -131,7 +131,7 @@ export default function PortalGuide() {
 
           {/* Section cards */}
           {filtered.length === 0 ? (
-            <div className="rounded-2xl bg-white dark:bg-slate-900 p-8 text-center ring-1 ring-slate-100 dark:ring-white/5">
+            <div className="rounded-2xl bg-card dark:bg-slate-900 p-8 text-center ring-1 ring-slate-100 dark:ring-white/5">
               <Search className="mx-auto h-8 w-8 text-slate-300" />
               <p className="mt-3 text-sm text-slate-500 dark:text-slate-400">{pick(guideHeader.notFound)}</p>
             </div>
@@ -142,7 +142,7 @@ export default function PortalGuide() {
                 <section
                   key={s.id}
                   id={`guide-${s.id}`}
-                  className="scroll-mt-20 overflow-hidden rounded-3xl bg-white dark:bg-slate-900 shadow-sm ring-1 ring-slate-100 dark:ring-white/5"
+                  className="scroll-mt-20 overflow-hidden rounded-3xl bg-card dark:bg-slate-900 shadow-sm ring-1 ring-slate-100 dark:ring-white/5"
                 >
                   {/* Header row — tap to expand */}
                   <button

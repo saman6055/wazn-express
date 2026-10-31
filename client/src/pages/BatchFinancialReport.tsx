@@ -1402,7 +1402,7 @@ export default function BatchFinancialReport() {
               {/* Packages Table */}
               <div className="border rounded-lg overflow-hidden">
                 <table className="w-full">
-                  <thead className="bg-slate-50 dark:bg-slate-950/40">
+                  <thead className="bg-muted dark:bg-slate-950/40">
                     <tr>
                       <th className="text-right py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">#</th>
                       <th className="text-right py-3 px-4 font-semibold text-slate-700 dark:text-slate-300">{pickLang(language, { ku: "تراک نەمبەر", en: "Tracking number", ar: "رقم التتبع", zh: "追踪号" })}</th>
@@ -1415,7 +1415,7 @@ export default function BatchFinancialReport() {
                   </thead>
                   <tbody>
                     {customerPackages.map((pkg, idx) => (
-                      <tr key={pkg.id} className="border-t hover:bg-slate-50">
+                      <tr key={pkg.id} className="border-t hover:bg-muted">
                         <td className="py-3 px-4 text-slate-600 dark:text-slate-300">{idx + 1}</td>
                         <td className="py-3 px-4">
                           <span className="font-mono text-sm bg-slate-100 dark:bg-slate-950/40 px-2 py-1 rounded">

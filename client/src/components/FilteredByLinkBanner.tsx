@@ -44,7 +44,7 @@ export function FilteredByLinkBanner({
       {filters.map((filter, i) => (
         <span
           key={i}
-          className="rounded-full bg-white px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/60 dark:text-blue-200"
+          className="rounded-full bg-card px-2.5 py-0.5 text-xs font-medium text-blue-800 dark:bg-blue-900/60 dark:text-blue-200"
         >
           {pickLang(language, filter)}
         </span>

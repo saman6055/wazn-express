@@ -156,7 +156,7 @@ export default function PortalYuanExchange() {
 
   return (
     <PortalLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950" dir={isRTL ? "rtl" : "ltr"}>
+      <div className="min-h-screen bg-muted dark:bg-slate-950" dir={isRTL ? "rtl" : "ltr"}>
         {/* Header */}
         <div className="relative overflow-hidden text-white px-4 pt-8 pb-12" style={portalBanner}>
           <div className="absolute -top-10 -end-10 w-40 h-40 rounded-full bg-white/10 blur-2xl" />
@@ -209,7 +209,7 @@ export default function PortalYuanExchange() {
           ) : (
             <>
               {/* Calculator */}
-              <section className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden">
+              <section className="bg-card dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden">
                 <div className="bg-gradient-to-r from-red-500 to-orange-500 px-4 py-3.5 flex items-center gap-3">
                   <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center ring-1 ring-white/20 shrink-0">
                     <ArrowDownUp className="w-5 h-5 text-white" />
@@ -297,7 +297,7 @@ export default function PortalYuanExchange() {
               </section>
 
               {/* Order */}
-              <section className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 p-4 space-y-3">
+              <section className="bg-card dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 p-4 space-y-3">
                 <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
                   {pick({ ku: "تۆماری داواکاری", en: "Place an order", ar: "تسجيل طلب", zh: "提交订单" })}
                 </h3>
@@ -346,7 +346,7 @@ export default function PortalYuanExchange() {
               </section>
 
               {/* My orders */}
-              <section className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden">
+              <section className="bg-card dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden">
                 <div className="px-4 py-3.5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/60 dark:border-white/5">
                   <h3 className="text-sm font-bold text-slate-700 dark:text-slate-200">
                     {pick({ ku: "داواکارییەکانم", en: "My orders", ar: "طلباتي", zh: "我的订单" })}

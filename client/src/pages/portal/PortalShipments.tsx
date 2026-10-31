@@ -385,7 +385,7 @@ function ClassicPortalShipments() {
               className={cn(
                 "p-3 rounded-xl transition-all duration-300",
                 showFilters 
-                  ? "bg-white dark:bg-card text-slate-800 dark:text-slate-200" 
+                  ? "bg-card dark:bg-card text-slate-800 dark:text-slate-200" 
                   : "bg-white/10 text-white hover:bg-white/20"
               )}
             >
@@ -495,7 +495,7 @@ function ClassicPortalShipments() {
         {!compactFilters && (
           <div className={cn(
             "mt-2 flex items-start gap-2 rounded-xl px-3 py-2",
-            isDark ? "bg-slate-800/60" : "bg-slate-50 dark:bg-slate-950/40"
+            isDark ? "bg-slate-800/60" : "bg-muted dark:bg-slate-950/40"
           )}>
             <Info className={cn("mt-0.5 h-3.5 w-3.5 shrink-0", "text-muted-foreground")} />
             <p className={cn("text-xs leading-relaxed", "text-muted-foreground")}>
@@ -581,7 +581,7 @@ function ClassicPortalShipments() {
       {showFilters && (
         <div className={cn(
           "px-4 py-3 border-b transition-colors duration-300",
-          isDark ? "bg-slate-800/50 border-slate-700" : "bg-white border-slate-100 dark:border-slate-800/60"
+          isDark ? "bg-slate-800/50 border-slate-700" : "bg-card border-slate-100 dark:border-slate-800/60"
         )}>
           <div className="flex items-center gap-2">
             <ArrowUpDown className={cn("w-4 h-4", "text-muted-foreground")} />
@@ -601,7 +601,7 @@ function ClassicPortalShipments() {
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs font-medium transition-all",
                     sortBy === option.value
-                      ? (isDark ? "bg-white text-slate-900 dark:text-slate-200" : "bg-slate-800 text-white")
+                      ? (isDark ? "bg-card text-slate-900 dark:text-slate-200" : "bg-slate-800 text-white")
                       : (isDark ? "bg-slate-700 text-slate-400" : "bg-slate-100 dark:bg-slate-950/40 text-slate-600")
                   )}
                 >
@@ -761,7 +761,7 @@ function ClassicPortalShipments() {
                     "rounded-2xl p-4 shadow-sm hover:shadow-lg hover:-translate-y-0.5 transition-all duration-300 border",
                     isDark 
                       ? "bg-slate-800 border-slate-700 hover:bg-slate-750" 
-                      : "bg-white border-slate-100 dark:border-slate-800/60"
+                      : "bg-card border-slate-100 dark:border-slate-800/60"
                   )}>
                     {/* Top Row */}
                     <div className="flex items-start gap-4">

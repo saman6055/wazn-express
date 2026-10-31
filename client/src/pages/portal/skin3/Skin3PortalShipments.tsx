@@ -266,7 +266,7 @@ export default function Skin3PortalShipments() {
               "relative rounded-xl overflow-hidden border-2 transition-all focus-within:border-indigo-500",
               isDark
                 ? "bg-zinc-900 border-zinc-700/60"
-                : "bg-white border-black/10 shadow-[4px_4px_0px_rgba(0,0,0,0.06)] focus-within:shadow-[4px_4px_0px_rgba(99,102,241,0.15)]"
+                : "bg-card border-black/10 shadow-[4px_4px_0px_rgba(0,0,0,0.06)] focus-within:shadow-[4px_4px_0px_rgba(99,102,241,0.15)]"
             )}
           >
             <Search
@@ -390,7 +390,7 @@ export default function Skin3PortalShipments() {
                     "rounded-xl border-2 p-4 text-center",
                     isDark
                       ? "bg-zinc-900 border-zinc-700/60"
-                      : "bg-white border-black/10"
+                      : "bg-card border-black/10"
                   )}
                 >
                   <p
@@ -423,7 +423,7 @@ export default function Skin3PortalShipments() {
                       : "bg-indigo-500 text-white border-indigo-600 shadow-[3px_3px_0px_rgba(0,0,0,0.1)]"
                     : isDark
                       ? "bg-zinc-900 text-zinc-400 border-zinc-700/60 hover:border-indigo-500/50"
-                      : "bg-white text-gray-500 border-black/10 hover:border-indigo-300 shadow-[2px_2px_0px_rgba(0,0,0,0.04)]"
+                      : "bg-card text-gray-500 border-black/10 hover:border-indigo-300 shadow-[2px_2px_0px_rgba(0,0,0,0.04)]"
                 )}
               >
                 {chip.label}
@@ -468,7 +468,7 @@ export default function Skin3PortalShipments() {
                         "rounded-xl overflow-hidden border-2 transition-all duration-200",
                         isDark
                           ? "bg-zinc-900 border-zinc-700/60"
-                          : "bg-white border-black/10 shadow-[4px_4px_0px_rgba(0,0,0,0.06)]",
+                          : "bg-card border-black/10 shadow-[4px_4px_0px_rgba(0,0,0,0.06)]",
                         isExpanded &&
                           (isDark
                             ? "border-indigo-500/50 shadow-[0_0_16px_rgba(99,102,241,0.15)]"
@@ -806,7 +806,7 @@ export default function Skin3PortalShipments() {
                 "rounded-xl border-2 p-12 text-center",
                 isDark
                   ? "bg-zinc-900 border-zinc-700/60"
-                  : "bg-white border-black/10 shadow-[4px_4px_0px_rgba(0,0,0,0.06)]"
+                  : "bg-card border-black/10 shadow-[4px_4px_0px_rgba(0,0,0,0.06)]"
               )}
             >
               <PackageOpen

@@ -53,7 +53,7 @@ export function PortalSearchCard({
     <button
       type="button"
       onClick={onOpen}
-      className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-white p-3 text-start shadow-sm transition active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800"
+      className="flex w-full items-center gap-3 rounded-2xl border border-slate-200 bg-card p-3 text-start shadow-sm transition active:scale-[0.99] dark:border-slate-700 dark:bg-slate-800"
     >
       <span className="relative flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-xl bg-slate-100 dark:bg-slate-700">
         <Icon className="h-6 w-6 text-slate-400 dark:text-slate-500" />

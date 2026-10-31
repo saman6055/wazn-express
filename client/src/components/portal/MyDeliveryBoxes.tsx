@@ -110,7 +110,7 @@ function DeliveryProof({ boxId, label }: { boxId: number; label: Label }) {
           <img onError={onImageError}
             src={proof.data.signature}
             alt={label({ ku: "واژوو", en: "Signature", ar: "التوقيع", zh: "签名" })}
-            className="h-28 w-full rounded-lg border bg-white dark:bg-card object-contain p-1"
+            className="h-28 w-full rounded-lg border bg-card dark:bg-card object-contain p-1"
             loading="lazy"
           />
           <figcaption className="mt-1 flex items-center gap-1 text-[11px] text-muted-foreground">

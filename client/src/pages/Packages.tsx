@@ -1288,7 +1288,7 @@ const [, setLocation] = useLocation();
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button className="bg-white dark:bg-card text-blue-600 dark:text-blue-300 hover:bg-white/90">
+                  <Button className="bg-card dark:bg-card text-blue-600 dark:text-blue-300 hover:bg-white/90">
                     <Plus className="h-4 w-4 me-2" />
                     {t('packages.registerPackage')}
                     <ChevronDown className="h-4 w-4 ms-2" />

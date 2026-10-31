@@ -1695,7 +1695,7 @@ export default function QuickRegister() {
                       variant="outline"
                       onClick={() => closeCorrection(false)}
                       disabled={correctMutation.isPending}
-                      className="ms-auto h-8 gap-1.5 border-amber-400 bg-white/80 text-amber-900 hover:bg-white dark:border-amber-600 dark:bg-amber-950/60 dark:text-amber-100 dark:hover:bg-amber-900/60"
+                      className="ms-auto h-8 gap-1.5 border-amber-400 bg-white/80 text-amber-900 hover:bg-card dark:border-amber-600 dark:bg-amber-950/60 dark:text-amber-100 dark:hover:bg-amber-900/60"
                       data-testid="qr-correction-cancel"
                     >
                       <X className="h-3.5 w-3.5" />
@@ -1991,7 +1991,7 @@ export default function QuickRegister() {
                                 <span key={od.order.id} className="inline-flex items-center gap-1">
                                   <Link
                                     href={orderHref(od.order)}
-                                    className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 font-mono text-xs font-medium text-rose-900 transition-colors hover:bg-white dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
+                                    className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 font-mono text-xs font-medium text-rose-900 transition-colors hover:bg-card dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
                                   >
                                     <ExternalLink className="h-3 w-3" />
                                     {od.order.orderCode}
@@ -2027,7 +2027,7 @@ export default function QuickRegister() {
                               ))}
                               <Link
                                 href="/tracking-alerts"
-                                className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 text-xs font-medium text-rose-900 transition-colors hover:bg-white dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
+                                className="inline-flex items-center gap-1.5 rounded-md border border-rose-300 bg-white/80 px-2 py-1 text-xs font-medium text-rose-900 transition-colors hover:bg-card dark:border-rose-800 dark:bg-black/30 dark:text-rose-200"
                               >
                                 <AlertTriangle className="h-3 w-3" />
                                 Tracking Alerts
@@ -2048,7 +2048,7 @@ export default function QuickRegister() {
                             <Link
                               key={od.order.id}
                               href={orderHref(od.order)}
-                              className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-orange-200/60 dark:border-orange-800/40 transition-colors hover:border-orange-400 hover:bg-white dark:hover:bg-black/50"
+                              className="flex items-center gap-2 text-xs p-1.5 rounded bg-white/70 dark:bg-black/30 border border-orange-200/60 dark:border-orange-800/40 transition-colors hover:border-orange-400 hover:bg-card dark:hover:bg-black/50"
                             >
                               <span className="font-mono font-medium underline-offset-2">{od.order.orderCode}</span>
                               <OrderNumbers numbers={od.order.orderNumber} />

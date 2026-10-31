@@ -65,7 +65,7 @@ export default function StoreProduct() {
   const label = (v: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, v);
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-slate-50 dark:bg-slate-950/40">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen bg-muted dark:bg-slate-950/40">
       {/* Header */}
       <header className="sticky top-0 z-20 bg-white/90 backdrop-blur border-b border-slate-200 dark:border-slate-800/60">
         <div className="max-w-2xl mx-auto px-4 h-14 flex items-center justify-between">
@@ -124,7 +124,7 @@ export default function StoreProduct() {
               const current = imgs[activeImg] || imgs[0];
               return (
                 <div>
-                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-white dark:bg-card border border-slate-200 dark:border-slate-800/60 flex items-center justify-center">
+                  <div className="aspect-square w-full rounded-3xl overflow-hidden bg-card dark:bg-card border border-slate-200 dark:border-slate-800/60 flex items-center justify-center">
                     {current ? (
                       <img src={current} alt={pName(product, language)} loading="lazy" decoding="async" className="w-full h-full object-cover" />
                     ) : (
@@ -173,7 +173,7 @@ export default function StoreProduct() {
 
             {/* Order form */}
             {product.status !== "out_of_stock" && (
-              <div className="mt-8 rounded-3xl bg-white dark:bg-card border border-slate-200 dark:border-slate-800/60 p-5">
+              <div className="mt-8 rounded-3xl bg-card dark:bg-card border border-slate-200 dark:border-slate-800/60 p-5">
                 <h2 className="font-bold text-slate-800 dark:text-slate-200 mb-4 flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-violet-600 dark:text-violet-300" />
                   {label({ ku: "داواکاری", en: "Place order", ar: "إتمام الطلب", zh: "下单" })}

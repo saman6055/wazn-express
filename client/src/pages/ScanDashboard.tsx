@@ -62,7 +62,7 @@ export default function ScanDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen bg-muted dark:bg-slate-950">
         {/* Header */}
         <div className="bg-gradient-to-r from-cyan-600 via-cyan-700 to-teal-700 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-20" style={{
@@ -268,7 +268,7 @@ export default function ScanDashboard() {
                     const percentage = totalScans > 0 ? Math.round((count / totalScans) * 100) : 0;
                     
                     return (
-                      <div key={module.id} className="text-center p-4 rounded-xl bg-slate-50 dark:bg-slate-950/40">
+                      <div key={module.id} className="text-center p-4 rounded-xl bg-muted dark:bg-slate-950/40">
                         <div className={`inline-flex p-2 bg-gradient-to-br ${module.color} rounded-lg mb-2`}>
                           <Icon className="h-4 w-4 text-white" />
                         </div>
@@ -373,7 +373,7 @@ export default function ScanDashboard() {
                     {latestScans.map((scan: any, index: number) => (
                       <div 
                         key={scan.id || index}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-slate-50 dark:bg-slate-950/40 hover:bg-slate-100 transition-colors"
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted dark:bg-slate-950/40 hover:bg-slate-100 transition-colors"
                       >
                         <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
                           <Package className="h-4 w-4 text-blue-600 dark:text-blue-300" />

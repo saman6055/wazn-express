@@ -144,7 +144,7 @@ export default function PortalProhibitedPackages() {
                 <div key={it.id} ref={highlightId === it.id ? focusRef : undefined} className={cn(
                   "rounded-2xl border overflow-hidden transition-all",
                   highlightId === it.id && "ring-2 ring-offset-2 ring-amber-400 dark:ring-offset-slate-900",
-                  pending ? "wazn-prohibited-flash border-red-400" : (isDark ? "bg-slate-800 border-slate-700" : "bg-white border-slate-200 dark:border-slate-800/60"),
+                  pending ? "wazn-prohibited-flash border-red-400" : (isDark ? "bg-slate-800 border-slate-700" : "bg-card border-slate-200 dark:border-slate-800/60"),
                 )}>
                   <div className={cn("p-4", pending && ("bg-card"))}>
                     {/* Top: tracking + status */}

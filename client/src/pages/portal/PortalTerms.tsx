@@ -53,7 +53,7 @@ export default function PortalTerms() {
   return (
     <PortalLayout>
       <div
-        className={`min-h-screen bg-slate-50 dark:bg-slate-950 ${isRTL ? "rtl" : "ltr"}`}
+        className={`min-h-screen bg-muted dark:bg-slate-950 ${isRTL ? "rtl" : "ltr"}`}
         dir={isRTL ? "rtl" : "ltr"}
       >
         {/* Header */}
@@ -82,7 +82,7 @@ export default function PortalTerms() {
           {termsSections.map((section, index) => (
             <section
               key={section.id}
-              className="bg-white dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden"
+              className="bg-card dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden"
             >
               {/* Section header */}
               <div className={`bg-gradient-to-r ${section.gradient} px-4 py-3.5 flex items-center gap-3`}>

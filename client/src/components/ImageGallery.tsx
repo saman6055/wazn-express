@@ -97,7 +97,7 @@ export default function ImageGallery({ images, accentColor = "emerald" }: ImageG
           <img
             src={images[0]}
             alt={t('common.productImage')}
-            className="w-full max-h-80 object-contain bg-gray-50 dark:bg-gray-950/40"
+            className="w-full max-h-80 object-contain bg-muted dark:bg-gray-950/40"
             loading="lazy"
           />
           <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors flex items-center justify-center">

@@ -266,7 +266,7 @@ export default function HomeClassic() {
               <p className="text-white/90 mb-8 max-w-xl mx-auto">{t("auto.text_e7a0f7")}</p>
               <div className="flex flex-col sm:flex-row gap-4 justify-center">
                 <Link href="/customer-login">
-                  <Button size="lg" className="bg-white dark:bg-card text-amber-600 dark:text-amber-300 hover:bg-slate-100 shadow-xl w-full sm:w-auto">
+                  <Button size="lg" className="bg-card dark:bg-card text-amber-600 dark:text-amber-300 hover:bg-slate-100 shadow-xl w-full sm:w-auto">
                     <Users className="me-2 h-5 w-5" />
                     {t("auto.text_410482")}
                   </Button>

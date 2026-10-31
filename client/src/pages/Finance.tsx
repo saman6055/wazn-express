@@ -1082,19 +1082,19 @@ export default function Finance() {
         {/* Tabs */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
           <TabsList className="bg-muted/50 p-1 h-12 w-full justify-start gap-1">
-            <TabsTrigger value="overview" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
+            <TabsTrigger value="overview" className="data-[state=active]:bg-card data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <Receipt className="w-4 h-4" />
               {pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款" })}
             </TabsTrigger>
-            <TabsTrigger value="accounts" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
+            <TabsTrigger value="accounts" className="data-[state=active]:bg-card data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <Users className="w-4 h-4" />
               {pickLang(language, { ku: "حسابەکان", en: "Accounts", ar: "الحسابات", zh: "账户" })}
             </TabsTrigger>
-            <TabsTrigger value="payments" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
+            <TabsTrigger value="payments" className="data-[state=active]:bg-card data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <FileText className="w-4 h-4" />
               {pickLang(language, { ku: "پوختە", en: "Summary", ar: "ملخص", zh: "摘要" })}
             </TabsTrigger>
-            <TabsTrigger value="credit-customers" className="data-[state=active]:bg-white data-[state=active]:shadow-sm px-6 h-10 gap-2">
+            <TabsTrigger value="credit-customers" className="data-[state=active]:bg-card data-[state=active]:shadow-sm px-6 h-10 gap-2">
               <CreditCard className="w-4 h-4" />
               {pickLang(language, { ku: "کریدیتدارەکان", en: "Credit holders", ar: "أصحاب الرصيد", zh: "贷方客户" })}
             </TabsTrigger>
@@ -1233,7 +1233,7 @@ export default function Finance() {
                   {debtors?.slice(0, 4).map((debtor) => (
                     <div key={debtor.customerId} {...clickable(() => openCustomer(debtor.customerId))} className="p-4 border rounded-xl bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 border-red-200 dark:border-red-800/60 hover:shadow-md transition-shadow cursor-pointer">
                       <div className="flex items-center justify-between mb-2">
-                        <Badge variant="outline" className="bg-white dark:bg-card">{debtor.customer?.customerCode}</Badge>
+                        <Badge variant="outline" className="bg-card dark:bg-card">{debtor.customer?.customerCode}</Badge>
                         <span className="text-red-600 dark:text-red-300 font-bold">{formatCurrency(String(debtor.balanceUsd || 0))}</span>
                       </div>
                       <p className="font-medium">{debtor.customer?.fullName}</p>

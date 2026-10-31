@@ -195,7 +195,7 @@ const [selectedPackages, setSelectedPackages] = useState<number[]>([]);
 
     return (
       <div 
-        className="border-2 border-dashed rounded-lg bg-white p-4 mx-auto"
+        className="border-2 border-dashed rounded-lg bg-card p-4 mx-auto"
         style={{ 
           width: `${width}px`, 
           height: `${height}px`,

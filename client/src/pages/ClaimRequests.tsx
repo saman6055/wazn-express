@@ -290,7 +290,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                       
                       {/* Customer Note */}
                       {request.customerNote && (
-                        <div className="mt-4 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
+                        <div className="mt-4 p-3 bg-muted dark:bg-gray-950/40 rounded-lg">
                           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-1">
                             <MessageSquare className="w-4 h-4" />
                             Customer Note
@@ -301,7 +301,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
 
                       {/* Proof of ownership images */}
                       {request.proofImages && request.proofImages.length > 0 && (
-                        <div className="mt-3 p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
+                        <div className="mt-3 p-3 bg-muted dark:bg-gray-950/40 rounded-lg">
                           <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-gray-400 mb-2">
                             <ImageIcon className="w-4 h-4" />
                             {t("claimRequests.proofImages") || "Proof of ownership"} ({request.proofImages.length})
@@ -349,7 +349,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
                     
                     {/* Actions */}
                     {request.status === "pending" && (
-                      <div className="flex md:flex-col gap-2 p-5 bg-gray-50 dark:bg-gray-950/40 border-t md:border-t-0 md:border-l">
+                      <div className="flex md:flex-col gap-2 p-5 bg-muted dark:bg-gray-950/40 border-t md:border-t-0 md:border-l">
                         <Button
                           onClick={() => {
                             setSelectedRequest(request);
@@ -411,9 +411,9 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
             {selectedRequest && (
               <div className="space-y-4">
                 {/* Request Info */}
-                <div className="bg-gray-50 dark:bg-gray-950/40 rounded-lg p-4">
+                <div className="bg-muted dark:bg-gray-950/40 rounded-lg p-4">
                   <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 bg-white dark:bg-card rounded-lg flex items-center justify-center shadow-sm">
+                    <div className="w-10 h-10 bg-card dark:bg-card rounded-lg flex items-center justify-center shadow-sm">
                       <Package className="w-5 h-5 text-slate-600 dark:text-slate-300" />
                     </div>
                     <div>

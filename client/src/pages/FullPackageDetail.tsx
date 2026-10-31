@@ -525,7 +525,7 @@ export default function FullPackageDetail() {
                 <>
                   <Button
                     onClick={() => navigate(`/full-package/${id}/edit`)}
-                    className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-md"
+                    className="bg-card dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 shadow-md"
                   >
                     <Pencil className="h-4 w-4 ms-2" />
                     {t("common.edit")}
@@ -562,7 +562,7 @@ export default function FullPackageDetail() {
 
         {/* Visual tracking timeline — China→Iraq journey, from existing fields */}
         {trackingSteps.length > 0 && (
-          <Card className="shadow-sm border-0 bg-white dark:bg-card">
+          <Card className="shadow-sm border-0 bg-card dark:bg-card">
             <CardContent className="p-5">
               <p className="text-xs text-muted-foreground uppercase tracking-wide mb-4 flex items-center gap-1">
                 <Truck className="h-3 w-3" /> {t("tracking.title") || pickLang(language, { ku: "شوێنکەوتنی ئۆردەر", en: "Order tracking", ar: "تتبع الطلب", zh: "订单追踪" })}
@@ -576,7 +576,7 @@ export default function FullPackageDetail() {
           /* Edit Form */
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* Customer & Supplier */}
-            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+            <Card className="shadow-sm border-0 bg-card dark:bg-card">
               <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg">
@@ -633,7 +633,7 @@ export default function FullPackageDetail() {
             </Card>
 
             {/* Product Info */}
-            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+            <Card className="shadow-sm border-0 bg-card dark:bg-card">
               <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
@@ -773,7 +773,7 @@ export default function FullPackageDetail() {
             </Card>
 
             {/* Pricing */}
-            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+            <Card className="shadow-sm border-0 bg-card dark:bg-card">
               <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
@@ -814,7 +814,7 @@ export default function FullPackageDetail() {
             </Card>
 
             {/* Notes */}
-            <Card className="shadow-sm border-0 bg-white dark:bg-card">
+            <Card className="shadow-sm border-0 bg-card dark:bg-card">
               <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
@@ -894,7 +894,7 @@ export default function FullPackageDetail() {
             )}
 
             {/* Submit */}
-            <div className="flex gap-4 sticky bottom-4 bg-white dark:bg-card p-4 rounded-xl shadow-lg border">
+            <div className="flex gap-4 sticky bottom-4 bg-card dark:bg-card p-4 rounded-xl shadow-lg border">
               <Button
                 type="button"
                 variant="outline"
@@ -925,7 +925,7 @@ export default function FullPackageDetail() {
             {/* Main Info */}
             <div className="lg:col-span-2 space-y-6">
               {/* Product Info Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-blue-50 dark:bg-blue-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
@@ -1034,7 +1034,7 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Product Images Gallery */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-indigo-50 dark:bg-indigo-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
@@ -1064,7 +1064,7 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Customer Info Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-emerald-50 dark:bg-emerald-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-emerald-100 dark:bg-emerald-950/40 rounded-lg">
@@ -1103,7 +1103,7 @@ export default function FullPackageDetail() {
             {/* Sidebar */}
             <div className="space-y-6">
               {/* Pricing Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-green-50 dark:bg-green-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
@@ -1114,7 +1114,7 @@ export default function FullPackageDetail() {
                 </CardHeader>
                 <CardContent className="p-4 space-y-3">
                   {/* Purchase Price */}
-                  <div className="flex justify-between items-center p-3 bg-gray-50 dark:bg-gray-950/40 rounded-xl">
+                  <div className="flex justify-between items-center p-3 bg-muted dark:bg-gray-950/40 rounded-xl">
                     <span className="text-sm text-muted-foreground">{t("fullPackage.purchasePrice")}</span>
                     <div className="text-right">
                       <span className="font-mono font-semibold">${Number(order.purchasePriceUsd || 0).toFixed(2)}</span>
@@ -1252,7 +1252,7 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Status & Date Card */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-blue-50 dark:bg-blue-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-blue-100 dark:bg-blue-950/40 rounded-lg">
@@ -1293,7 +1293,7 @@ export default function FullPackageDetail() {
               </Card>
 
               {/* Notes */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
                 <CardHeader className="border-b bg-purple-50 dark:bg-purple-950/40">
                   <div className="flex items-center gap-3">
                     <div className="p-2 bg-purple-100 dark:bg-purple-950/40 rounded-lg">
@@ -1313,8 +1313,8 @@ export default function FullPackageDetail() {
               <OrderAuditHistory entityType="full_package_order" entityId={order.id} />
 
               {/* Quick Actions */}
-              <Card className="shadow-sm border-0 bg-white dark:bg-card overflow-hidden">
-                <CardHeader className="border-b bg-gray-50 dark:bg-gray-950/40">
+              <Card className="shadow-sm border-0 bg-card dark:bg-card overflow-hidden">
+                <CardHeader className="border-b bg-muted dark:bg-gray-950/40">
                   <CardTitle className="text-sm">{t("fullPackage.actionsColumn")}</CardTitle>
                 </CardHeader>
                 <CardContent className="p-4 space-y-2">
@@ -1364,7 +1364,7 @@ export default function FullPackageDetail() {
 
           <div className="space-y-4 py-2">
             {/* Tracking Number */}
-            <div className="p-3 bg-gray-50 dark:bg-gray-950/40 rounded-lg">
+            <div className="p-3 bg-muted dark:bg-gray-950/40 rounded-lg">
               <p className="text-xs text-muted-foreground">{t("fullPackage.trackingNumber")}</p>
               <p className="font-mono font-semibold">{trackingForQuery}</p>
             </div>
@@ -1403,7 +1403,7 @@ export default function FullPackageDetail() {
                 <Label className="text-sm font-semibold">{t("fullPackage.splitPreview")}</Label>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full text-sm">
-                    <thead className="bg-gray-50 dark:bg-gray-950/40">
+                    <thead className="bg-muted dark:bg-gray-950/40">
                       <tr>
                         <th className="p-2 text-start text-xs text-muted-foreground">{t("fullPackage.orderCode")}</th>
                         <th className="p-2 text-center text-xs text-muted-foreground">
@@ -1433,7 +1433,7 @@ export default function FullPackageDetail() {
                         </tr>
                       ))}
                     </tbody>
-                    <tfoot className="bg-gray-50 dark:bg-gray-950/40 border-t-2">
+                    <tfoot className="bg-muted dark:bg-gray-950/40 border-t-2">
                       <tr>
                         <td className="p-2 font-semibold" colSpan={2}>{t("common.total")}</td>
                         <td className="p-2 text-center font-semibold">100%</td>

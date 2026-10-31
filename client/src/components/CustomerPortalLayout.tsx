@@ -178,7 +178,7 @@ export function CustomerPortalLayout({ children }: CustomerPortalLayoutProps) {
         // sit at the bottom of a short page instead of directly under the
         // content, halfway up the screen.
         "portal-theme min-h-screen supports-[height:100dvh]:min-h-dvh flex flex-col transition-colors duration-300",
-        isDark ? "bg-slate-900" : "bg-slate-50 dark:bg-slate-950/40",
+        isDark ? "bg-slate-900" : "bg-muted dark:bg-slate-950/40",
         isRTL && "rtl",
         // Bottom room so content (incl. the in-flow news ticker) clears the
         // fixed bottom nav when scrolled to the end: the bar's 92px, a little

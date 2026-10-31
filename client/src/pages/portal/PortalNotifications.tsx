@@ -122,7 +122,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
 
   return (
     <PortalLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950/40">
+      <div className="min-h-screen bg-muted dark:bg-slate-950/40">
         {/* Header */}
         <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
@@ -161,7 +161,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="bg-white dark:bg-card rounded-xl p-4 animate-pulse">
+                <div key={i} className="bg-card dark:bg-card rounded-xl p-4 animate-pulse">
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-full bg-slate-200 dark:bg-slate-800/50" />
                     <div className="flex-1 space-y-2">
@@ -192,7 +192,7 @@ const { data: notifications, isLoading, isError, isFetching, refetch } = trpc.cu
                 <div
                   key={notification.id}
                   className={cn(
-                    "bg-white dark:bg-card rounded-xl p-4 shadow-sm transition-all duration-200",
+                    "bg-card dark:bg-card rounded-xl p-4 shadow-sm transition-all duration-200",
                     !notification.isRead && "border-s-4 border-blue-500 bg-blue-50/50 dark:bg-blue-950/50"
                   )}
                   onClick={() => {

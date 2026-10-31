@@ -238,7 +238,7 @@ export default function ModernPortalFinancial() {
                         "shadow-sm",
                         isDark
                           ? "bg-emerald-600 text-white"
-                          : "bg-white text-emerald-700 dark:text-emerald-300 shadow-sm"
+                          : "bg-card text-emerald-700 dark:text-emerald-300 shadow-sm"
                       )
                     : isDark
                     ? "text-slate-400 hover:text-slate-200"
@@ -286,7 +286,7 @@ export default function ModernPortalFinancial() {
                           "rounded-2xl p-4 shadow-sm border transition-colors",
                           isDark
                             ? "bg-slate-800/50 border-slate-700/40 hover:bg-slate-800/70"
-                            : "bg-white border-slate-100 dark:border-slate-800/60 hover:border-slate-200"
+                            : "bg-card border-slate-100 dark:border-slate-800/60 hover:border-slate-200"
                         )}
                       >
                         <div className="flex items-center gap-3">
@@ -382,7 +382,7 @@ export default function ModernPortalFinancial() {
                   "rounded-2xl p-10 text-center shadow-sm border",
                   isDark
                     ? "bg-slate-800/50 border-slate-700/40"
-                    : "bg-white border-slate-100 dark:border-slate-800/60"
+                    : "bg-card border-slate-100 dark:border-slate-800/60"
                 )}
               >
                 <Receipt
@@ -449,7 +449,7 @@ export default function ModernPortalFinancial() {
                       "rounded-2xl p-4 shadow-sm border",
                       isDark
                         ? "bg-slate-800/50 border-slate-700/40"
-                        : "bg-white border-slate-100 dark:border-slate-800/60"
+                        : "bg-card border-slate-100 dark:border-slate-800/60"
                     )}
                   >
                     <div className="flex items-center gap-3">

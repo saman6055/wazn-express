@@ -117,8 +117,8 @@ export const PortalSearchField = forwardRef<
           "h-12 w-full rounded-2xl border ps-11 pe-11 text-base md:text-sm outline-none transition",
           "[&::-webkit-search-cancel-button]:appearance-none",
           onDark
-            ? "border-transparent bg-white text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-sky-400 dark:bg-slate-900 dark:text-slate-100"
-            : "border-slate-200 bg-slate-100 text-slate-900 placeholder:text-slate-400 focus:border-sky-400 focus:bg-white dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-900",
+            ? "border-transparent bg-card text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-sky-400 dark:bg-slate-900 dark:text-slate-100"
+            : "border-slate-200 bg-slate-100 text-slate-900 placeholder:text-slate-400 focus:border-sky-400 focus:bg-card dark:border-slate-700 dark:bg-slate-800 dark:text-slate-100 dark:focus:bg-slate-900",
         )}
       />
       {value && (
@@ -189,9 +189,9 @@ function PortalSearchSheet({
         if (!e.currentTarget.contains(e.target as Node)) return;
         close();
       }}
-      className="portal-theme fixed inset-0 z-50 flex flex-col bg-slate-50 dark:bg-slate-950"
+      className="portal-theme fixed inset-0 z-50 flex flex-col bg-muted dark:bg-slate-950"
     >
-      <div className="shrink-0 border-b border-slate-200 bg-white pt-[env(safe-area-inset-top)] dark:border-slate-800 dark:bg-slate-900">
+      <div className="shrink-0 border-b border-slate-200 bg-card pt-[env(safe-area-inset-top)] dark:border-slate-800 dark:bg-slate-900">
         <div className="mx-auto flex w-full max-w-2xl items-center gap-1.5 px-2 py-2">
           <button
             type="button"

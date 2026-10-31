@@ -1012,7 +1012,7 @@ function CommissionFormScreen() {
                 className={`relative flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all duration-200 ${
                   formData.shippingType === "air_regular"
                     ? "border-sky-400 bg-sky-50 dark:bg-sky-950/40 shadow-sm shadow-sky-100"
-                    : "border-gray-200 dark:border-gray-800/60 bg-white hover:border-sky-200 hover:bg-sky-50/40"
+                    : "border-gray-200 dark:border-gray-800/60 bg-card hover:border-sky-200 hover:bg-sky-50/40"
                 }`}
               >
                 {formData.shippingType === "air_regular" && (
@@ -1036,7 +1036,7 @@ function CommissionFormScreen() {
                 className={`relative flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all duration-200 ${
                   formData.shippingType === "air_irregular"
                     ? "border-amber-400 bg-amber-50 dark:bg-amber-950/40 shadow-sm shadow-amber-100"
-                    : "border-gray-200 dark:border-gray-800/60 bg-white hover:border-amber-200 hover:bg-amber-50/40"
+                    : "border-gray-200 dark:border-gray-800/60 bg-card hover:border-amber-200 hover:bg-amber-50/40"
                 }`}
               >
                 {formData.shippingType === "air_irregular" && (
@@ -1061,7 +1061,7 @@ function CommissionFormScreen() {
                 className={`relative flex items-center gap-2 p-2.5 rounded-xl border-2 transition-all duration-200 ${
                   formData.shippingType === "sea"
                     ? "border-teal-400 bg-teal-50 dark:bg-teal-950/40 shadow-sm shadow-teal-100"
-                    : "border-gray-200 dark:border-gray-800/60 bg-white hover:border-teal-200 hover:bg-teal-50/40"
+                    : "border-gray-200 dark:border-gray-800/60 bg-card hover:border-teal-200 hover:bg-teal-50/40"
                 }`}
               >
                 {formData.shippingType === "sea" && (
@@ -1366,7 +1366,7 @@ function CommissionFormScreen() {
                 </div>
 
                 {/* 1. Quantity (compact inline) + 2. per-unit ¥ + 3. total ¥ */}
-                <div className="bg-white dark:bg-card px-3 py-3 space-y-3">
+                <div className="bg-card dark:bg-card px-3 py-3 space-y-3">
                   <div className="grid grid-cols-1 sm:grid-cols-[auto_1fr_1fr] gap-3 items-end">
                     {/* 1. Quantity — compact stepper */}
                     <div className="space-y-1.5">
@@ -1474,7 +1474,7 @@ function CommissionFormScreen() {
                       value={formData.itemPriceUsd}
                       onChange={(e) => syncFromUsd(e.target.value)}
                       placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 border-amber-300 dark:border-amber-800/60 bg-white dark:bg-card", filledCls(formData.itemPriceUsd))}
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-amber-300 dark:border-amber-800/60 bg-card dark:bg-card", filledCls(formData.itemPriceUsd))}
                       dir="ltr"
                     />
                   </div>
@@ -1498,7 +1498,7 @@ function CommissionFormScreen() {
                       value={formData.sellPriceUsd}
                       onChange={(e) => syncFromSell(e.target.value)}
                       placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 border-cyan-300 dark:border-cyan-800/60 bg-white dark:bg-card", filledCls(formData.sellPriceUsd))}
+                      className={cn("ps-8 text-start text-base font-bold h-10 border-cyan-300 dark:border-cyan-800/60 bg-card dark:bg-card", filledCls(formData.sellPriceUsd))}
                       dir="ltr"
                     />
                   </div>
@@ -1517,7 +1517,7 @@ function CommissionFormScreen() {
                       value={formData.commissionFeeUsd}
                       onChange={(e) => syncFromCommission(e.target.value)}
                       placeholder="0.00"
-                      className={cn("ps-8 text-start text-base font-bold h-10 bg-white dark:bg-card", isLoss ? "border-red-400 ring-1 ring-red-300 text-red-600 dark:text-red-300" : cn("border-purple-300 dark:border-purple-800/60", filledCls(formData.commissionFeeUsd)))}
+                      className={cn("ps-8 text-start text-base font-bold h-10 bg-card dark:bg-card", isLoss ? "border-red-400 ring-1 ring-red-300 text-red-600 dark:text-red-300" : cn("border-purple-300 dark:border-purple-800/60", filledCls(formData.commissionFeeUsd)))}
                       dir="ltr"
                     />
                   </div>
@@ -1540,11 +1540,11 @@ function CommissionFormScreen() {
                       <TrendingUp className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                       <span className="font-bold text-sm text-amber-800 dark:text-amber-200">{pickLang(language, { ku: "پێشبینی پارەدان", en: "Payment preview", ar: "معاينة الدفع", zh: "付款预览" })}</span>
                     </div>
-                    <span className="bg-white dark:bg-card px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-bold text-xs">{pickLang(language, { ku: `${formData.quantity || 1} عەدەد`, en: `${formData.quantity || 1} units`, ar: `${formData.quantity || 1} قطعة`, zh: `${formData.quantity || 1} 件` })}</span>
+                    <span className="bg-card dark:bg-card px-2.5 py-0.5 rounded-full border border-amber-300 dark:border-amber-800/60 text-amber-700 dark:text-amber-300 font-bold text-xs">{pickLang(language, { ku: `${formData.quantity || 1} عەدەد`, en: `${formData.quantity || 1} units`, ar: `${formData.quantity || 1} قطعة`, zh: `${formData.quantity || 1} 件` })}</span>
                   </div>
 
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
-                    <div className="bg-white dark:bg-card rounded-lg p-2 text-center shadow-sm">
+                    <div className="bg-card dark:bg-card rounded-lg p-2 text-center shadow-sm">
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "نرخی کاڵا (1 دانە)", en: "Item price (1 unit)", ar: "سعر المنتج (وحدة واحدة)", zh: "商品价格（单件）" })}</p>
                       <p className="text-base font-bold text-amber-600 dark:text-amber-300">${itemPrice.toFixed(2)}</p>
                     </div>
@@ -1552,7 +1552,7 @@ function CommissionFormScreen() {
                       <p className="text-[10px] text-amber-700 dark:text-amber-300 mb-0.5">{pickLang(language, { ku: `کۆی نرخ (${formData.quantity || 1} دانە)`, en: `Total price (${formData.quantity || 1} units)`, ar: `إجمالي السعر (${formData.quantity || 1} قطعة)`, zh: `总价（${formData.quantity || 1} 件）` })}</p>
                       <p className="text-base font-bold text-amber-700 dark:text-amber-300">${(itemPrice * quantity).toFixed(2)}</p>
                     </div>
-                    <div className="bg-white dark:bg-card rounded-lg p-2 text-center shadow-sm">
+                    <div className="bg-card dark:bg-card rounded-lg p-2 text-center shadow-sm">
                       <p className="text-[10px] text-slate-500 dark:text-slate-400 mb-0.5">{pickLang(language, { ku: "عمولە (1 دانە)", en: "Commission (1 unit)", ar: "العمولة (وحدة واحدة)", zh: "佣金（单件）" })}</p>
                       <p className={cn("text-base font-bold", isLoss ? "text-red-600 dark:text-red-300" : "text-purple-600 dark:text-purple-300")}>${commissionFee.toFixed(2)}</p>
                     </div>
@@ -1679,7 +1679,7 @@ function CommissionFormScreen() {
                       <span className="text-sm font-semibold">{pickLang(language, { ku: "کێش و قەبارە", en: "Weight and size", ar: "الوزن والحجم", zh: "重量和尺寸" })}</span>
                       <span className="text-xs text-muted-foreground ms-auto">{pickLang(language, { ku: "max(ڕاستەقینە، ئەندازەیی)", en: "max(actual, volumetric)", ar: "max(الفعلي، الحجمي)", zh: "max(实际, 体积)" })}</span>
                     </div>
-                    <div className="p-3 space-y-3 bg-white dark:bg-card">
+                    <div className="p-3 space-y-3 bg-card dark:bg-card">
                       {/* Weight */}
                       <div className="grid grid-cols-2 gap-3">
                         <div className="space-y-1.5">
@@ -1742,7 +1742,7 @@ function CommissionFormScreen() {
                       <span className="text-sm font-semibold text-teal-800 dark:text-teal-200">{pickLang(language, { ku: "قەبارەی CBM", en: "CBM volume", ar: "حجم CBM", zh: "CBM 体积" })}</span>
                       <span className="text-xs text-muted-foreground ms-auto">{pickLang(language, { ku: "1 CBM = 100cm × 100cm × 100cm", en: "1 CBM = 100cm × 100cm × 100cm", ar: "1 CBM = 100سم × 100سم × 100سم", zh: "1 CBM = 100cm × 100cm × 100cm" })}</span>
                     </div>
-                    <div className="p-3 space-y-3 bg-white dark:bg-card">
+                    <div className="p-3 space-y-3 bg-card dark:bg-card">
                       <div className="grid grid-cols-2 gap-3">
                         {/* Direct CBM */}
                         <div className="space-y-1.5">

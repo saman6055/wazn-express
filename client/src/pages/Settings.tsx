@@ -363,7 +363,7 @@ const [companyData, setCompanyData] = useState({
                       <span className="text-xs text-muted-foreground">{pickLang(language, { ku: "PNG, JPG تا 2MB", en: "PNG, JPG up to 2MB", ar: "PNG, JPG حتى 2MB", zh: "PNG、JPG 最大 2MB" })}</span>
                     </div>
                     {companyData.logoUrl && (
-                      <div className="mt-2 p-4 border rounded-lg bg-gray-50 dark:bg-gray-900/50 flex items-center justify-center gap-4">
+                      <div className="mt-2 p-4 border rounded-lg bg-muted dark:bg-gray-900/50 flex items-center justify-center gap-4">
                         <img
                           src={companyData.logoUrl}
                           alt="Company Logo"
@@ -1074,7 +1074,7 @@ function ProductAttributesSettings() {
               className={`flex items-center gap-2 px-5 py-2.5 rounded-xl border-2 font-bold text-sm transition-all ${
                 activeType === type
                   ? "border-violet-400 bg-violet-50 dark:bg-violet-950/40 text-violet-700 dark:text-violet-300 shadow-sm"
-                  : "border-gray-200 dark:border-gray-800/60 bg-white text-gray-600 hover:border-violet-200"
+                  : "border-gray-200 dark:border-gray-800/60 bg-card text-gray-600 hover:border-violet-200"
               }`}
             >
               <span>{typeIcons[type]}</span>
@@ -1120,7 +1120,7 @@ function ProductAttributesSettings() {
             {filtered.map(attr => (
               <div
                 key={attr.id}
-                className="flex items-center gap-3 bg-gray-50 dark:bg-gray-950/40 hover:bg-violet-50/40 border border-gray-200 dark:border-gray-800/60 hover:border-violet-200 rounded-xl px-4 py-3 transition-colors group"
+                className="flex items-center gap-3 bg-muted dark:bg-gray-950/40 hover:bg-violet-50/40 border border-gray-200 dark:border-gray-800/60 hover:border-violet-200 rounded-xl px-4 py-3 transition-colors group"
               >
                 <span className="text-lg">{typeIcons[attr.type]}</span>
 
@@ -1449,7 +1449,7 @@ function LandingThemeSettings() {
 
   const themes = [
     { id: "dark", name: t("settings.landingThemeDark") || pickLang(language, { ku: "تاریک", en: "Dark", ar: "داكن", zh: "深色" }), nameEn: "Dark", description: t("settings.landingThemeDarkDesc") || pickLang(language, { ku: "ڕووکاری ئێستا - پسپۆڕی تاریک", en: "Current look - dark professional", ar: "المظهر الحالي - احترافي داكن", zh: "当前外观——深色专业" }), preview: "bg-[#0f172a]", accent: "from-amber-500 to-orange-500" },
-    { id: "light", name: t("settings.landingThemeLight") || pickLang(language, { ku: "ڕووناک", en: "Light", ar: "فاتح", zh: "浅色" }), nameEn: "Light", description: t("settings.landingThemeLightDesc") || pickLang(language, { ku: "پسپۆڕی ڕووناک - گونجاو بۆ ڕۆژ", en: "Light professional - suited for daytime", ar: "احترافي فاتح - مناسب للنهار", zh: "浅色专业——适合白天" }), preview: "bg-slate-50 dark:bg-slate-950/40", accent: "from-amber-600 to-orange-600" },
+    { id: "light", name: t("settings.landingThemeLight") || pickLang(language, { ku: "ڕووناک", en: "Light", ar: "فاتح", zh: "浅色" }), nameEn: "Light", description: t("settings.landingThemeLightDesc") || pickLang(language, { ku: "پسپۆڕی ڕووناک - گونجاو بۆ ڕۆژ", en: "Light professional - suited for daytime", ar: "احترافي فاتح - مناسب للنهار", zh: "浅色专业——适合白天" }), preview: "bg-muted dark:bg-slate-950/40", accent: "from-amber-600 to-orange-600" },
     { id: "ocean", name: t("settings.landingThemeOcean") || pickLang(language, { ku: "ئۆشن", en: "Ocean", ar: "محيط", zh: "海洋" }), nameEn: "Ocean", description: t("settings.landingThemeOceanDesc") || pickLang(language, { ku: "شین/تەڵاو - گونجاو بۆ لۆژستیک", en: "Blue/teal - suited for logistics", ar: "أزرق/فيروزي - مناسب للوجستيات", zh: "蓝色/青色——适合物流" }), preview: "bg-[#0c4a6e]", accent: "from-sky-400 to-cyan-500" }
   ];
 

@@ -35,7 +35,7 @@ const GROUP_COLORS: Record<string, { bg: string; border: string; text: string; b
   amber: { bg: "bg-amber-50 dark:bg-amber-900/20", border: "border-amber-200 dark:border-amber-800", text: "text-amber-700 dark:text-amber-400", badge: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300", dot: "bg-amber-500" },
   rose: { bg: "bg-rose-50 dark:bg-rose-900/20", border: "border-rose-200 dark:border-rose-800", text: "text-rose-700 dark:text-rose-400", badge: "bg-rose-100 text-rose-800 dark:bg-rose-900/40 dark:text-rose-300", dot: "bg-rose-500" },
   indigo: { bg: "bg-indigo-50 dark:bg-indigo-900/20", border: "border-indigo-200 dark:border-indigo-800", text: "text-indigo-700 dark:text-indigo-400", badge: "bg-indigo-100 text-indigo-800 dark:bg-indigo-900/40 dark:text-indigo-300", dot: "bg-indigo-500" },
-  slate: { bg: "bg-slate-50 dark:bg-slate-900/20", border: "border-slate-200 dark:border-slate-800", text: "text-slate-700 dark:text-slate-400", badge: "bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-300", dot: "bg-slate-500" },
+  slate: { bg: "bg-muted dark:bg-slate-900/20", border: "border-slate-200 dark:border-slate-800", text: "text-slate-700 dark:text-slate-400", badge: "bg-slate-100 text-slate-800 dark:bg-slate-900/40 dark:text-slate-300", dot: "bg-slate-500" },
   orange: { bg: "bg-orange-50 dark:bg-orange-900/20", border: "border-orange-200 dark:border-orange-800", text: "text-orange-700 dark:text-orange-400", badge: "bg-orange-100 text-orange-800 dark:bg-orange-900/40 dark:text-orange-300", dot: "bg-orange-500" },
   teal: { bg: "bg-teal-50 dark:bg-teal-900/20", border: "border-teal-200 dark:border-teal-800", text: "text-teal-700 dark:text-teal-400", badge: "bg-teal-100 text-teal-800 dark:bg-teal-900/40 dark:text-teal-300", dot: "bg-teal-500" },
 };
@@ -685,7 +685,7 @@ export default function PermissionsManagement() {
                                             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg text-xs font-medium transition-all duration-200 border ${
                                               isOn
                                                 ? "bg-blue-50 dark:bg-blue-900/30 border-blue-200 dark:border-blue-800 text-blue-700 dark:text-blue-300"
-                                                : "bg-gray-50 dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300"
+                                                : "bg-muted dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 text-gray-500 dark:text-gray-400 hover:border-gray-300"
                                             }`}
                                           >
                                             <ActionIcon className="h-3 w-3" />
@@ -709,7 +709,7 @@ export default function PermissionsManagement() {
                                           return (
                                             <div
                                               key={sp.key}
-                                              className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-gray-50 dark:bg-gray-800/30"
+                                              className="flex items-center justify-between py-1.5 px-3 rounded-lg bg-muted dark:bg-gray-800/30"
                                             >
                                               <div>
                                                 <span className="text-xs font-medium">{pickLang(language, { ku: sp.labelKu, en: sp.label, ar: sp.label, zh: sp.label })}</span>

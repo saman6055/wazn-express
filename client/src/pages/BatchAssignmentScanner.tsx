@@ -679,7 +679,7 @@ export default function BatchAssignmentScanner() {
             </DialogHeader>
             
             {batchChangeDialog.package && (
-              <div className="p-4 bg-slate-50 dark:bg-slate-800 rounded-lg">
+              <div className="p-4 bg-muted dark:bg-slate-800 rounded-lg">
                 <div className="font-mono text-lg">{batchChangeDialog.package.trackingNumber}</div>
                 <div className="text-sm text-muted-foreground mt-1">
                   {batchChangeDialog.package.customerCode} - {batchChangeDialog.package.customerName}

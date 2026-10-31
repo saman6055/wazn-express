@@ -103,7 +103,7 @@ export default function PortalSecurity() {
     "border focus:ring-2",
     isDark
       ? "bg-slate-800 border-slate-700 text-white placeholder:text-slate-500 focus:ring-cyan-500/40 focus:border-cyan-500"
-      : "bg-white border-slate-200 dark:border-slate-800/60 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-cyan-500/30 focus:border-cyan-500",
+      : "bg-card border-slate-200 dark:border-slate-800/60 text-slate-800 dark:text-slate-200 placeholder:text-slate-400 focus:ring-cyan-500/30 focus:border-cyan-500",
   );
 
   const tips: L[] = [

@@ -162,7 +162,7 @@ function PackageTypeBadge({
 
   if (!lookup || !lookup.found) {
     return (
-      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-slate-50 dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
+      <Badge variant="outline" className="text-[10px] px-1.5 py-0 font-normal bg-muted dark:bg-slate-900 text-slate-500 dark:text-slate-400 border-slate-200 dark:border-slate-700">
         📋 {pickLang(language, { ku: "ئاسایی", en: "Regular", ar: "عادي", zh: "普通" })}
       </Badge>
     );
@@ -667,7 +667,7 @@ export default function BulkRegister() {
                   </SelectContent>
                 </Select>
                 {selectedWarehouse && (
-                  <div className="mt-2 flex items-center gap-1.5 p-1.5 bg-slate-50 dark:bg-slate-900 rounded-md">
+                  <div className="mt-2 flex items-center gap-1.5 p-1.5 bg-muted dark:bg-slate-900 rounded-md">
                     <CheckCircle2 className="h-3.5 w-3.5 text-slate-600 dark:text-slate-300 shrink-0" />
                     <span className="text-[11px] text-slate-700 dark:text-slate-300 font-medium truncate">
                       {selectedWarehouse.nameEn ?? selectedWarehouse.nameKu ?? `${pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "مستودع", zh: "仓库" })} ${selectedWarehouse.id}`}

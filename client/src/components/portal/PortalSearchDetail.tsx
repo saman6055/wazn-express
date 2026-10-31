@@ -211,7 +211,7 @@ export default function PortalSearchDetail({
   };
 
   const actionClass =
-    "flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-3 text-sm font-semibold text-slate-800 transition active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
+    "flex items-center justify-center gap-2 rounded-xl border border-slate-200 bg-card px-3 py-3 text-sm font-semibold text-slate-800 transition active:scale-[0.98] dark:border-slate-700 dark:bg-slate-900 dark:text-slate-100";
 
   return (
     <Drawer
@@ -262,7 +262,7 @@ export default function PortalSearchDetail({
           <div className="min-h-0 flex-1 space-y-4 overflow-y-auto overscroll-contain px-4 pb-[calc(env(safe-area-inset-bottom)+1.25rem)]">
             <dl className="grid grid-cols-2 gap-2">
               {facts.map((fact) => (
-                <div key={fact.key} className="rounded-xl bg-slate-50 p-3 dark:bg-slate-800/60">
+                <div key={fact.key} className="rounded-xl bg-muted p-3 dark:bg-slate-800/60">
                   <dt className="flex items-center gap-1.5 text-[11px] font-medium text-slate-500 dark:text-slate-400">
                     <fact.icon className="h-3.5 w-3.5 shrink-0" />
                     {L(fact.label)}
@@ -278,7 +278,7 @@ export default function PortalSearchDetail({
                   "rounded-xl border p-3 text-sm leading-relaxed",
                   ready
                     ? "border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200"
-                    : "border-slate-200 bg-white text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
+                    : "border-slate-200 bg-card text-slate-700 dark:border-slate-700 dark:bg-slate-900 dark:text-slate-200",
                 )}
               >
                 {L(note)}
@@ -314,7 +314,7 @@ export default function PortalSearchDetail({
             )}
 
             {item.kind === "box" && boxParcelIds.length > 0 && (
-              <section className="rounded-2xl border border-slate-200 bg-white p-3 dark:border-slate-700 dark:bg-slate-900" data-testid="box-parcels">
+              <section className="rounded-2xl border border-slate-200 bg-card p-3 dark:border-slate-700 dark:bg-slate-900" data-testid="box-parcels">
                 <h3 className="mb-2 px-1 text-xs font-medium text-slate-500 dark:text-slate-400">
                   {L({ ku: "پاکەتەکانی ناو ئەم بۆکسە", en: "Parcels in this box", ar: "الطرود في هذا الصندوق", zh: "箱内包裹" })}
                   {" "}
@@ -361,7 +361,7 @@ export default function PortalSearchDetail({
             {extraContent}
 
             {parcel && (
-              <section className="rounded-2xl border border-slate-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-900">
+              <section className="rounded-2xl border border-slate-200 bg-card p-4 dark:border-slate-700 dark:bg-slate-900">
                 <h3 className="mb-3 text-xs font-medium text-slate-500 dark:text-slate-400">
                   {L({ ku: "شوێنکەوتنی بار", en: "Tracking progress", ar: "تتبّع الشحنة", zh: "运输进度" })}
                 </h3>

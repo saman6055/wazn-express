@@ -423,7 +423,7 @@ export default function TrackingAlerts() {
 
   return (
     <DashboardLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950">
+      <div className="min-h-screen bg-muted dark:bg-slate-950">
         {/* Professional Header */}
         <div className="bg-gradient-to-r from-red-600 via-rose-600 to-orange-600 text-white relative overflow-hidden">
           <div className="absolute inset-0 opacity-20" style={{
@@ -770,7 +770,7 @@ export default function TrackingAlerts() {
                         </div>
                       )}
                       <TableHeader>
-                        <TableRow className="bg-slate-50 dark:bg-slate-950/40">
+                        <TableRow className="bg-muted dark:bg-slate-950/40">
                           <TableHead className="w-10">
                             <input
                               type="checkbox"

@@ -59,7 +59,7 @@ export default function OrderAuditHistory({
   }
 
   return (
-    <Card className="shadow-sm border-0 bg-white dark:bg-card">
+    <Card className="shadow-sm border-0 bg-card dark:bg-card">
       <CardHeader className="border-b bg-gray-50/50 dark:bg-gray-900/50">
         <div className="flex items-center gap-3">
           <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
@@ -175,11 +175,11 @@ export default function OrderAuditHistory({
                     )}
                   </button>
                   {isOpen && (
-                    <div className="border-t p-3 bg-gray-50 dark:bg-gray-950/40 text-xs space-y-2">
+                    <div className="border-t p-3 bg-muted dark:bg-gray-950/40 text-xs space-y-2">
                       {log.oldValues && (
                         <div>
                           <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">{pickLang(language, { ku: "پێشوو", en: "Before", ar: "قبل", zh: "之前" })}:</div>
-                          <pre className="bg-white dark:bg-card border rounded p-2 overflow-auto max-h-40 text-[10px]">
+                          <pre className="bg-card dark:bg-card border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.oldValues, null, 2)}
                           </pre>
                         </div>
@@ -187,7 +187,7 @@ export default function OrderAuditHistory({
                       {log.newValues && (
                         <div>
                           <div className="font-bold text-gray-700 dark:text-gray-300 mb-1">{pickLang(language, { ku: "دوایی", en: "After", ar: "بعد", zh: "之后" })}:</div>
-                          <pre className="bg-white dark:bg-card border rounded p-2 overflow-auto max-h-40 text-[10px]">
+                          <pre className="bg-card dark:bg-card border rounded p-2 overflow-auto max-h-40 text-[10px]">
                             {JSON.stringify(log.newValues, null, 2)}
                           </pre>
                         </div>

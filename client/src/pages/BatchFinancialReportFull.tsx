@@ -372,7 +372,7 @@ export default function BatchFinancialReportFull() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Weight Analysis */}
           <Card className="shadow-lg">
-            <CardHeader className="border-b bg-slate-50 dark:bg-slate-950/40">
+            <CardHeader className="border-b bg-muted dark:bg-slate-950/40">
               <CardTitle className="flex items-center gap-3 text-lg">
                 <div className="p-2 bg-amber-100 dark:bg-amber-950/40 rounded-lg">
                   <Scale className="h-5 w-5 text-amber-600 dark:text-amber-300" />
@@ -400,11 +400,11 @@ export default function BatchFinancialReportFull() {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-center">
+                <div className="p-4 bg-muted dark:bg-slate-950/40 rounded-xl text-center">
                   <p className="text-slate-600 dark:text-slate-300 text-sm mb-1">{pickLang(language, { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "包裹总数" })}</p>
                   <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{financial.totalPackages}</p>
                 </div>
-                <div className="p-4 bg-slate-50 dark:bg-slate-950/40 rounded-xl text-center">
+                <div className="p-4 bg-muted dark:bg-slate-950/40 rounded-xl text-center">
                   <p className="text-slate-600 dark:text-slate-300 text-sm mb-1">{pickLang(language, { ku: "کۆی کڕیار", en: "Total customers", ar: "إجمالي الزبائن", zh: "客户总数" })}</p>
                   <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{financial.customerBreakdown?.length || 0}</p>
                 </div>
@@ -414,7 +414,7 @@ export default function BatchFinancialReportFull() {
           
           {/* Price Analysis */}
           <Card className="shadow-lg">
-            <CardHeader className="border-b bg-slate-50 dark:bg-slate-950/40">
+            <CardHeader className="border-b bg-muted dark:bg-slate-950/40">
               <CardTitle className="flex items-center gap-3 text-lg">
                 <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
                   <DollarSign className="h-5 w-5 text-green-600 dark:text-green-300" />
@@ -496,7 +496,7 @@ export default function BatchFinancialReportFull() {
 
         {/* Customer Breakdown Table */}
         <Card className="shadow-lg">
-          <CardHeader className="border-b bg-slate-50 dark:bg-slate-950/40">
+          <CardHeader className="border-b bg-muted dark:bg-slate-950/40">
             <CardTitle className="flex items-center gap-3 text-lg">
               <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
                 <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-300" />
@@ -535,7 +535,7 @@ export default function BatchFinancialReportFull() {
                       .map((item, index) => (
                         <tr 
                           key={item.customerId} 
-                          className={`border-b hover:bg-slate-50 transition-colors ${index % 2 === 0 ? 'bg-white' : 'bg-slate-50/50'}`}
+                          className={`border-b hover:bg-muted transition-colors ${index % 2 === 0 ? 'bg-card' : 'bg-slate-50/50'}`}
                         >
                           <td className="py-4 px-6">
                             <div className="flex items-center gap-3">
@@ -755,7 +755,7 @@ export default function BatchFinancialReportFull() {
                       const chargeableWeight = Math.max(actualWeight, volumetricWeight);
                       
                       return (
-                        <tr key={pkg.id} className="border-t hover:bg-slate-50">
+                        <tr key={pkg.id} className="border-t hover:bg-muted">
                           <td className="py-3 px-4 text-sm">{idx + 1}</td>
                           <td className="py-3 px-4 text-sm font-mono">{pkg.trackingNumber || '-'}</td>
                           <td className="text-center py-3 px-4 text-sm font-bold text-amber-600 dark:text-amber-300">

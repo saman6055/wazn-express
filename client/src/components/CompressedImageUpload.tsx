@@ -424,7 +424,7 @@ export default function CompressedImageUpload({
                   type="button"
                   onClick={() => setPreviewImage(url)}
                   aria-label={t("common.view")}
-                  className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-white transition-colors"
+                  className="w-8 h-8 bg-white/90 rounded-full flex items-center justify-center shadow-lg hover:bg-card transition-colors"
                 >
                   <ZoomIn className="w-4 h-4 text-gray-700 dark:text-gray-300" />
                 </button>

@@ -606,7 +606,7 @@ const { t, language, setLanguage } = useLanguage();
             "w-full mt-6 rounded-2xl p-4 flex items-center justify-center gap-3 font-semibold transition-all duration-200 active:scale-[0.98]",
             isDark 
               ? "bg-red-900/30 text-red-400 hover:bg-red-900/50 border border-red-800" 
-              : "bg-white text-red-600 hover:bg-red-50 shadow-sm border border-red-100 dark:border-red-800/60"
+              : "bg-card text-red-600 hover:bg-red-50 shadow-sm border border-red-100 dark:border-red-800/60"
           )}
         >
           <LogOut className="w-5 h-5" />
@@ -656,7 +656,7 @@ const { t, language, setLanguage } = useLanguage();
                     "w-full flex items-center justify-between gap-3 rounded-2xl px-4 py-3 my-1 transition-all",
                     active
                       ? "bg-blue-500/10 ring-1 ring-blue-500/40"
-                      : isDark ? "hover:bg-slate-800" : "hover:bg-slate-50"
+                      : isDark ? "hover:bg-slate-800" : "hover:bg-muted"
                   )}
                 >
                   <span className="flex items-center gap-3">

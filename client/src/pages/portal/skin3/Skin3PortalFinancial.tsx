@@ -269,7 +269,7 @@ export default function Skin3PortalFinancial() {
                     className={cn(
                       isDark ? cardBaseDark : cardBase,
                       "p-4 transition-transform hover:-translate-y-0.5",
-                      isDark ? "bg-zinc-900" : "bg-white"
+                      isDark ? "bg-zinc-900" : "bg-card"
                     )}
                   >
                     <div
@@ -319,7 +319,7 @@ export default function Skin3PortalFinancial() {
                       : "bg-yellow-400 text-black border-yellow-500 shadow-[3px_3px_0px_rgba(0,0,0,0.1)]"
                     : isDark
                     ? "bg-zinc-900 text-zinc-400 border-zinc-700 hover:border-zinc-500"
-                    : "bg-white text-zinc-500 border-zinc-200 dark:border-zinc-800/60 hover:border-zinc-400"
+                    : "bg-card text-zinc-500 border-zinc-200 dark:border-zinc-800/60 hover:border-zinc-400"
                 )}
               >
                 {tab.label}
@@ -366,7 +366,7 @@ export default function Skin3PortalFinancial() {
                         className={cn(
                           isDark ? cardBaseDark : cardBase,
                           "p-4 transition-transform hover:-translate-y-0.5",
-                          isDark ? "bg-zinc-900" : "bg-white"
+                          isDark ? "bg-zinc-900" : "bg-card"
                         )}
                       >
                         <div className="flex items-center gap-3">
@@ -464,7 +464,7 @@ export default function Skin3PortalFinancial() {
                 className={cn(
                   isDark ? cardBaseDark : cardBase,
                   "p-10 text-center",
-                  isDark ? "bg-zinc-900" : "bg-white"
+                  isDark ? "bg-zinc-900" : "bg-card"
                 )}
               >
                 <Receipt
@@ -545,7 +545,7 @@ export default function Skin3PortalFinancial() {
                     className={cn(
                       isDark ? cardBaseDark : cardBase,
                       "p-4 transition-transform hover:-translate-y-0.5",
-                      isDark ? "bg-zinc-900" : "bg-white"
+                      isDark ? "bg-zinc-900" : "bg-card"
                     )}
                   >
                     <div className="flex items-center gap-3">

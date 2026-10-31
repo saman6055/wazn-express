@@ -699,7 +699,7 @@ function DashboardLayoutContent({
       amber: { bg: "bg-amber-50 dark:bg-amber-900/20", text: "text-amber-700 dark:text-amber-400", icon: "text-amber-600", activeBg: "bg-amber-100 dark:bg-amber-900/40" },
       rose: { bg: "bg-rose-50 dark:bg-rose-900/20", text: "text-rose-700 dark:text-rose-400", icon: "text-rose-600", activeBg: "bg-rose-100 dark:bg-rose-900/40" },
       indigo: { bg: "bg-indigo-50 dark:bg-indigo-900/20", text: "text-indigo-700 dark:text-indigo-400", icon: "text-indigo-600", activeBg: "bg-indigo-100 dark:bg-indigo-900/40" },
-      slate: { bg: "bg-slate-50 dark:bg-slate-900/20", text: "text-slate-700 dark:text-slate-400", icon: "text-slate-600", activeBg: "bg-slate-100 dark:bg-slate-900/40" },
+      slate: { bg: "bg-muted dark:bg-slate-900/20", text: "text-slate-700 dark:text-slate-400", icon: "text-slate-600", activeBg: "bg-slate-100 dark:bg-slate-900/40" },
       orange: { bg: "bg-orange-50 dark:bg-orange-900/20", text: "text-orange-700 dark:text-orange-400", icon: "text-orange-600", activeBg: "bg-orange-100 dark:bg-orange-900/40" },
       teal: { bg: "bg-teal-50 dark:bg-teal-900/20", text: "text-teal-700 dark:text-teal-400", icon: "text-teal-600", activeBg: "bg-teal-100 dark:bg-teal-900/40" },
     };
@@ -707,7 +707,7 @@ function DashboardLayoutContent({
   };
 
   return (
-    <div className={cn("min-h-screen bg-gray-50 dark:bg-gray-900", isRTL && "rtl")}>
+    <div className={cn("min-h-screen bg-muted dark:bg-gray-900", isRTL && "rtl")}>
       {/* The phone: an app's own top bar (owner, 2026-09-27 — «وەکو ئەپی
           پۆرتال بێت»). The page's name and a back arrow, or «سیستەم» on a
           tab's home; search, messages and the two bells. components/mobile. */}
@@ -744,7 +744,7 @@ function DashboardLayoutContent({
       <aside
         id="sidebar"
         className={cn(
-          "fixed top-0 h-full bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50 transition-all duration-300 ease-in-out overflow-hidden flex flex-col",
+          "fixed top-0 h-full bg-card dark:bg-gray-800 border-gray-200 dark:border-gray-700 z-50 transition-all duration-300 ease-in-out overflow-hidden flex flex-col",
           isRTL ? "right-0 border-l" : "left-0 border-r",
           isMobile
             ? cn(
@@ -950,7 +950,7 @@ function DashboardLayoutContent({
         return (
           <div
             ref={flyoutRef}
-            className="fixed z-50 w-60 max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-800 shadow-xl p-2"
+            className="fixed z-50 w-60 max-h-[85vh] overflow-y-auto rounded-2xl border border-gray-200 dark:border-gray-700 bg-card dark:bg-gray-800 shadow-xl p-2"
             style={{ top: flyoutTop, [isRTL ? "right" : "left"]: "5rem" }}
           >
             <div className="px-2 py-1.5 flex items-center gap-2">

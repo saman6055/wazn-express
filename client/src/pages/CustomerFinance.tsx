@@ -439,7 +439,7 @@ export default function CustomerFinance() {
   const getTransactionTypeBgColor = (type: string) => {
     if (isChargeTx(type)) return 'bg-red-50 dark:bg-red-950/40 border-red-100 dark:border-red-800/60';
     if (isPaymentTx(type)) return 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-100 dark:border-emerald-800/60';
-    return 'bg-gray-50 dark:bg-gray-950/40 border-gray-100 dark:border-gray-800/60';
+    return 'bg-muted dark:bg-gray-950/40 border-gray-100 dark:border-gray-800/60';
   };
   
   const getTransactionTypeLabel = (type: string) => {
@@ -1307,7 +1307,7 @@ export default function CustomerFinance() {
                     "هێنانە سفر" quick-mode pre-fills the form with the
                     exact amount + direction needed to zero the balance. */}
                 <Button
-                  className="bg-white dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-purple-50 rounded-xl shadow-lg"
+                  className="bg-card dark:bg-card text-purple-700 dark:text-purple-300 hover:bg-purple-50 rounded-xl shadow-lg"
                   onClick={openAdjustDialogToZero}
                 >
                   <Activity className="w-4 h-4 me-2" />
@@ -1318,7 +1318,7 @@ export default function CustomerFinance() {
                     step so staff can search/choose any reversible payment
                     without scrolling to the payments tab. */}
                 <Button
-                  className="bg-white dark:bg-card text-amber-700 dark:text-amber-300 hover:bg-amber-50 rounded-xl shadow-lg"
+                  className="bg-card dark:bg-card text-amber-700 dark:text-amber-300 hover:bg-amber-50 rounded-xl shadow-lg"
                   onClick={() => {
                     setReverseTargetPayment(null);
                     setReverseMode('mistake');
@@ -1333,7 +1333,7 @@ export default function CustomerFinance() {
                 </Button>
                 <Dialog open={paymentDialogOpen} onOpenChange={(o) => { setPaymentDialogOpen(o); if (!o) setPayWithoutBox(false); }}>
                   <DialogTrigger asChild>
-                    <Button className="bg-white dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl shadow-lg">
+                    <Button className="bg-card dark:bg-card text-emerald-700 dark:text-emerald-300 hover:bg-emerald-50 rounded-xl shadow-lg">
                       <Plus className="w-4 h-4 me-2" />
                       {pickLang(language, { ku: "پارەدان", en: "Payment", ar: "دفعة", zh: "付款" })}
                     </Button>
@@ -1651,16 +1651,16 @@ export default function CustomerFinance() {
               {/* The rows themselves: where "see every row" on the debt card leads (DebtPeel). */}
               <Tabs defaultValue="transactions" id={ACCOUNT_LINES_ANCHOR} className="scroll-mt-16">
                 <TabsList className="bg-muted/50 p-1 rounded-xl">
-                  <TabsTrigger value="transactions" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="transactions" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "هەموو مامەڵەکان", en: "All transactions", ar: "جميع المعاملات", zh: "全部交易" })}
                   </TabsTrigger>
-                  <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="payments" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "پارەدانەکان", en: "Payments", ar: "المدفوعات", zh: "付款记录" })}
                   </TabsTrigger>
-                  <TabsTrigger value="boxAccounts" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="boxAccounts" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "حیسابی سندوق", en: "Box accounts", ar: "حسابات الصناديق", zh: "箱子账目" })}
                   </TabsTrigger>
-                  <TabsTrigger value="batchInvoices" className="rounded-lg data-[state=active]:bg-white data-[state=active]:shadow-sm">
+                  <TabsTrigger value="batchInvoices" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "پسووڵەی باچ", en: "Batch invoices", ar: "فواتير الدفعات", zh: "批次账单" })}
                   </TabsTrigger>
                 </TabsList>

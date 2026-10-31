@@ -200,7 +200,7 @@ export default function PortalUniversalSearch({ view }: PortalUniversalSearchPro
             <button
               type="button"
               onClick={() => setLimit((n) => n + PAGE_SIZE)}
-              className="w-full rounded-2xl border border-slate-200 bg-white py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+              className="w-full rounded-2xl border border-slate-200 bg-card py-3 text-sm font-semibold text-slate-700 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
             >
               {L({ ku: "زیاتر پیشان بدە", en: "Show more", ar: "عرض المزيد", zh: "显示更多" })}{" "}
               <bdi dir="ltr" className="tabular-nums">({shown.length - visible.length})</bdi>
@@ -353,7 +353,7 @@ export default function PortalUniversalSearch({ view }: PortalUniversalSearchPro
               className={cn(
                 "flex min-h-[60px] flex-col items-center justify-center gap-1 rounded-xl px-1 py-2 text-center transition",
                 isActive
-                  ? "bg-white shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700"
+                  ? "bg-card shadow-sm ring-1 ring-slate-200 dark:bg-slate-900 dark:ring-slate-700"
                   : "hover:bg-white/60 dark:hover:bg-slate-900/40",
                 isEmpty && "opacity-45",
               )}
@@ -393,7 +393,7 @@ export default function PortalUniversalSearch({ view }: PortalUniversalSearchPro
                 key={q}
                 type="button"
                 onClick={() => view.setQuery(q)}
-                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-white px-3 py-1.5 text-xs text-slate-700 transition active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
+                className="inline-flex items-center gap-1 rounded-full border border-slate-200 bg-card px-3 py-1.5 text-xs text-slate-700 transition active:scale-95 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-200"
               >
                 <Clock className="h-3 w-3 opacity-60" />
                 <bdi className="font-mono">{q}</bdi>

@@ -348,7 +348,7 @@ export default function BankAccounts() {
               <ArrowLeftRight className="h-4 w-4 ms-2" />
               {t("bankAccounts.transfer") || "گواستنەوە"}
             </Button>
-            <Button className="bg-white dark:bg-card text-blue-700 dark:text-blue-300 hover:bg-blue-50 shadow-lg"
+            <Button className="bg-card dark:bg-card text-blue-700 dark:text-blue-300 hover:bg-blue-50 shadow-lg"
               onClick={() => setIsAddOpen(true)}>
               <Plus className="h-4 w-4 ms-2" />
               {t("bankAccounts.addAccount") || "زیادکردنی هەژمار"}

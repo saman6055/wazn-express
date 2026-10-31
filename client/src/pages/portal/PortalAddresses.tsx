@@ -192,7 +192,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   return (
     <PortalLayout>
-      <div className="min-h-screen bg-slate-50 dark:bg-slate-950/40">
+      <div className="min-h-screen bg-muted dark:bg-slate-950/40">
         {/* Header */}
         <div className="text-white px-4 py-4" style={portalBanner}>
           <div className="flex items-center justify-between">
@@ -227,7 +227,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
           {isLoading ? (
             <div className="space-y-3">
               {[1, 2].map((i) => (
-                <div key={i} className="bg-white dark:bg-card rounded-xl p-4 animate-pulse">
+                <div key={i} className="bg-card dark:bg-card rounded-xl p-4 animate-pulse">
                   <div className="flex items-start gap-3">
                     <div className="w-12 h-12 rounded-full bg-slate-200 dark:bg-slate-800/50" />
                     <div className="flex-1 space-y-2">
@@ -262,7 +262,7 @@ const [isDialogOpen, setIsDialogOpen] = useState(false);
                 <div
                   key={address.id}
                   className={cn(
-                    "bg-white dark:bg-card rounded-xl p-4 shadow-sm transition-all duration-200",
+                    "bg-card dark:bg-card rounded-xl p-4 shadow-sm transition-all duration-200",
                     address.isDefault && "border-2 border-teal-500"
                   )}
                 >

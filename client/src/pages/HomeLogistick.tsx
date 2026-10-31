@@ -108,7 +108,7 @@ export default function HomeLogistick() {
   const btnWhats = "inline-flex items-center justify-center gap-2 rounded-full bg-emerald-500 px-6 py-3 text-sm font-bold text-white shadow-lg shadow-emerald-500/25 hover:bg-emerald-600 hover:-translate-y-0.5 transition-all";
 
   return (
-    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-white dark:bg-card text-slate-900 dark:text-slate-200 antialiased">
+    <div dir={isRTL ? "rtl" : "ltr"} className="min-h-screen overflow-x-hidden bg-background dark:bg-card text-slate-900 dark:text-slate-200 antialiased">
       <style>{`
         @keyframes lkdrift{0%{transform:translateX(0) translateY(0)}50%{transform:translateX(28px) translateY(-10px)}100%{transform:translateX(0) translateY(0)}}
         @keyframes lkfloat{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
@@ -183,7 +183,7 @@ export default function HomeLogistick() {
               </a>
             </div>
             {/* Tracking bar */}
-            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-1.5 shadow-sm">
+            <div className="mt-7 flex max-w-md items-center gap-2 rounded-full border border-slate-200 dark:border-slate-800/60 bg-card dark:bg-card p-1.5 shadow-sm">
               <Search className="ms-3 h-4 w-4 shrink-0 text-slate-400" />
               <input
                 value={tracking}
@@ -243,10 +243,10 @@ export default function HomeLogistick() {
       </section>
 
       {/* ================= Features strip ================= */}
-      <section className="border-y border-slate-100 dark:border-slate-800/60 bg-white dark:bg-card">
+      <section className="border-y border-slate-100 dark:border-slate-800/60 bg-card dark:bg-card">
         <div className="mx-auto grid max-w-7xl gap-5 px-4 py-14 md:grid-cols-2 md:px-6 lg:grid-cols-4">
           {features.map((f, i) => (
-            <div key={i} className="group rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+            <div key={i} className="group rounded-2xl border border-slate-200 dark:border-slate-800/60 bg-card dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg transition-transform group-hover:scale-105">
                 <f.icon className="h-6 w-6" />
               </span>
@@ -324,7 +324,7 @@ export default function HomeLogistick() {
         </div>
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
           {services.map((s, i) => (
-            <div key={i} className="group rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+            <div key={i} className="group rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-card dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
               <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-red-600 text-white shadow-lg transition-transform group-hover:scale-105">
                 <s.icon className="h-6 w-6" />
               </span>
@@ -362,7 +362,7 @@ export default function HomeLogistick() {
         </div>
         <div className="grid gap-5 md:grid-cols-2">
           {why.map((w, i) => (
-            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
+            <div key={i} className="flex gap-4 rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-card dark:bg-card p-6 shadow-sm transition-all hover:-translate-y-1 hover:shadow-xl hover:border-red-200">
               <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-300">
                 <w.icon className="h-6 w-6" />
               </span>
@@ -385,7 +385,7 @@ export default function HomeLogistick() {
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
             {steps.map((s, i) => (
-              <div key={i} className="relative rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-white dark:bg-card p-6 pt-8 shadow-sm">
+              <div key={i} className="relative rounded-3xl border border-slate-200 dark:border-slate-800/60 bg-card dark:bg-card p-6 pt-8 shadow-sm">
                 <span className="absolute -top-3 flex h-8 w-8 items-center justify-center rounded-full bg-red-600 text-sm font-black text-white shadow-lg" style={isRTL ? { right: "1.5rem" } : { left: "1.5rem" }}>{i + 1}</span>
                 <span className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl text-white" style={{ backgroundColor: NAVY }}>
                   <s.icon className="h-6 w-6" />
@@ -411,7 +411,7 @@ export default function HomeLogistick() {
           <h2 className="text-3xl font-black md:text-4xl">{L({ ku: "ئامادەیت بارەکەت بگوازیتەوە؟", en: "Ready to ship your cargo?", ar: "جاهز لشحن بضاعتك؟", zh: "准备好发货了吗？" })}</h2>
           <p className="mx-auto mt-3 max-w-xl text-white/85">{L({ ku: "پەیوەندیمان پێوە بکە بۆ نرخێکی بێبەرامبەر و ڕاوێژکاری.", en: "Talk to us for a free quote and a consultation.", ar: "تواصل معنا للحصول على عرض سعر مجاني واستشارة.", zh: "联系我们获取免费报价与咨询。" })}</p>
           <div className="mt-8 flex flex-wrap justify-center gap-3">
-            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-white dark:bg-card px-6 py-3 text-sm font-bold text-slate-900 dark:text-slate-200 shadow-lg hover:-translate-y-0.5 transition-all">
+            <a href={waLink} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 rounded-full bg-card dark:bg-card px-6 py-3 text-sm font-bold text-slate-900 dark:text-slate-200 shadow-lg hover:-translate-y-0.5 transition-all">
               <MessageCircle className="h-4 w-4 text-emerald-500 dark:text-emerald-400" /> {L({ ku: "واتساپ", en: "WhatsApp", ar: "واتساب", zh: "WhatsApp" })}
             </a>
             <Link href="/customer-login" className="inline-flex items-center gap-2 rounded-full bg-white/15 px-6 py-3 text-sm font-bold text-white ring-1 ring-white/30 backdrop-blur hover:bg-white/25 transition-all">

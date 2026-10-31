@@ -229,7 +229,7 @@ function ServiceCard({
       "relative overflow-hidden rounded-2xl p-5 border transition-all duration-300 hover:-translate-y-1 hover:shadow-xl group",
       isDark
         ? "bg-slate-800 border-slate-700 hover:border-slate-600"
-        : "bg-white border-slate-200 dark:border-slate-800/60 hover:border-slate-300 shadow-sm",
+        : "bg-card border-slate-200 dark:border-slate-800/60 hover:border-slate-300 shadow-sm",
       isYuan && "cursor-pointer",
     )}>
       {service.portalBadge && (
@@ -429,7 +429,7 @@ function PriceCalculator({
     ? "bg-white/10 border border-white/15"
     : isDark
       ? "bg-slate-900/60 border border-slate-700"
-      : "bg-slate-50 dark:bg-slate-950/40 border border-slate-200 dark:border-slate-700";
+      : "bg-muted dark:bg-slate-950/40 border border-slate-200 dark:border-slate-700";
   const strong = violet ? "text-purple-50" : "text-muted-foreground";
   const accent = violet ? "text-amber-200" : "text-amber-500";
   const inputCls = violet ? "bg-white/15 border-white/25 text-white placeholder:text-white/50" : (isDark ? "bg-slate-900 border-slate-600" : "");
@@ -652,7 +652,7 @@ function PriceCalculator({
       {/* Result */}
       <div className={cn(
         "mt-3 rounded-xl px-4 py-3 flex items-center justify-between gap-3",
-        violet ? "bg-white/15 backdrop-blur-sm" : isDark ? "bg-slate-900/70" : "bg-slate-50 dark:bg-slate-950/40",
+        violet ? "bg-white/15 backdrop-blur-sm" : isDark ? "bg-slate-900/70" : "bg-muted dark:bg-slate-950/40",
       )}>
         {hasInput ? (
           <>
@@ -844,7 +844,7 @@ function ShippingMethodsGuide({ lang, isDark, embedded = false }: { lang: string
         {m.examples.map((ex, i) => (
           <span key={i} className={cn(
             "inline-flex items-center gap-1 rounded-full px-2 py-1 text-[11px] font-medium",
-            isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-white text-slate-600 border border-slate-200 dark:border-slate-800/60",
+            isDark ? "bg-slate-800 text-slate-300 border border-slate-700" : "bg-card text-slate-600 border border-slate-200 dark:border-slate-800/60",
           )}>
             <span>{ex.emoji}</span>
             {pickLang(lang, ex.label)}
@@ -1124,7 +1124,7 @@ export function PriceListSection({ forceDark, className, defaultTab }: PriceList
                     className={cn(
                       "flex-1 min-w-0 flex items-center justify-center gap-1.5 px-2 py-2.5 rounded-t-lg text-sm font-medium transition-colors",
                       isActive
-                        ? (isDark ? "bg-slate-900 text-white" : "bg-white text-slate-900 dark:text-slate-200")
+                        ? (isDark ? "bg-slate-900 text-white" : "bg-card text-slate-900 dark:text-slate-200")
                         : (isDark ? "text-slate-400 hover:bg-slate-700/50" : "text-slate-600 hover:bg-slate-100/70"),
                     )}
                   >

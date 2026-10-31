@@ -175,7 +175,7 @@ export default function ModernPortalProfile() {
           "rounded-2xl overflow-hidden shadow-sm border divide-y",
           isDark
             ? "bg-slate-800/50 border-slate-700/40 divide-slate-700/40"
-            : "bg-white border-slate-100 dark:border-slate-800/60 divide-slate-50"
+            : "bg-card border-slate-100 dark:border-slate-800/60 divide-slate-50"
         )}
       >
         {items.map((item, i) => {
@@ -186,7 +186,7 @@ export default function ModernPortalProfile() {
               transition={{ delay: delayBase + i * 0.05 }}
               className={cn(
                 "flex items-center gap-3 px-4 py-3.5 transition-colors cursor-pointer",
-                isDark ? "hover:bg-slate-700/40" : "hover:bg-slate-50"
+                isDark ? "hover:bg-slate-700/40" : "hover:bg-muted"
               )}
             >
               <div
@@ -312,7 +312,7 @@ export default function ModernPortalProfile() {
               "rounded-2xl shadow-sm border overflow-hidden",
               isDark
                 ? "bg-slate-800/50 border-slate-700/40"
-                : "bg-white border-slate-100 dark:border-slate-800/60"
+                : "bg-card border-slate-100 dark:border-slate-800/60"
             )}
           >
             {accountLoading ? (
@@ -334,7 +334,7 @@ export default function ModernPortalProfile() {
                     <div
                       className={cn(
                         "w-9 h-9 rounded-xl flex items-center justify-center shrink-0",
-                        isDark ? "bg-slate-700/60" : "bg-slate-50 dark:bg-slate-950/40"
+                        isDark ? "bg-slate-700/60" : "bg-muted dark:bg-slate-950/40"
                       )}
                     >
                       <row.icon
