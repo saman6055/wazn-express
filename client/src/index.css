@@ -117,28 +117,39 @@
   --chart-5: oklch(0.50 0.15 30);
   
   --radius: 0.5rem;
-  --background: oklch(0.985 0.002 250);
+  /* Light mode is looked at for whole days, so nothing here is pure white.
+     The owner, 2026-10-31: «باکگراوندەکان تەواو سپی بن … تەرکیز کەم دەکەن،
+     هێزی چاو زۆر دەبەن». Cards were oklch(1 0 0) — the brightest a screen
+     can paint — and the page behind them 0.985, so the two barely parted
+     and every surface was glare. Now the page drops to 0.955 and cards to
+     0.985, which both calms the screen and TRIPLES the step between them:
+     a card lifts off the page instead of melting into it. The tint is the
+     brand's own hue, kept faint, so the screen reads as one material.
+     Printing is unaffected — the print block below pins paper to white. */
+  --background: oklch(0.955 0.009 250);
   --foreground: oklch(0.20 0.02 250);
-  --card: oklch(1 0 0);
+  --card: oklch(0.985 0.005 250);
   --card-foreground: oklch(0.20 0.02 250);
-  --popover: oklch(1 0 0);
+  --popover: oklch(0.985 0.005 250);
   --popover-foreground: oklch(0.20 0.02 250);
-  --secondary: oklch(0.96 0.005 250);
+  --secondary: oklch(0.935 0.010 250);
   --secondary-foreground: oklch(0.35 0.02 250);
-  --muted: oklch(0.95 0.005 250);
+  --muted: oklch(0.925 0.011 250);
   --muted-foreground: oklch(0.50 0.02 250);
   --accent: oklch(0.94 0.01 220);
   --accent-foreground: oklch(0.25 0.02 220);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
-  --border: oklch(0.90 0.005 250);
-  --input: oklch(0.90 0.005 250);
+  /* Edges darken with the surfaces, or a hairline drawn for white paper
+     disappears against a page that is no longer white. */
+  --border: oklch(0.875 0.014 250);
+  --input: oklch(0.875 0.014 250);
   --ring: oklch(0.45 0.12 220);
-  --sidebar: oklch(0.98 0.002 250);
+  --sidebar: oklch(0.945 0.010 250);
   --sidebar-foreground: oklch(0.20 0.02 250);
   --sidebar-accent: oklch(0.94 0.01 220);
   --sidebar-accent-foreground: oklch(0.25 0.02 220);
-  --sidebar-border: oklch(0.90 0.005 250);
+  --sidebar-border: oklch(0.875 0.014 250);
   --sidebar-ring: oklch(0.45 0.12 220);
   
   /* Status colors */
@@ -1561,6 +1572,22 @@ a:focus-visible,
   }
 }
 @media print {
+  /* Paper is white, whatever the screen is set to.
+     The screen's surfaces are tinted so they can be looked at all day; a
+     receipt is read once, on paper, and a tinted card there is either a
+     grey wash of ink or a border with nothing inside it. */
+  :root {
+    --background: oklch(1 0 0);
+    --card: oklch(1 0 0);
+    --popover: oklch(1 0 0);
+    --secondary: oklch(0.96 0.005 250);
+    --muted: oklch(0.95 0.005 250);
+    --border: oklch(0.90 0.005 250);
+    --input: oklch(0.90 0.005 250);
+    --sidebar: oklch(1 0 0);
+    --sidebar-border: oklch(0.90 0.005 250);
+  }
+
   /* Dark mode prints on white paper: the light theme's tokens, or the text
      came out near-white on a background the printer dropped. */
   html.dark {
