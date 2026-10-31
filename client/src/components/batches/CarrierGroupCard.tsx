@@ -98,7 +98,7 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
               <thead className="text-xs text-muted-foreground">
                 <tr>
                   <th className="py-1 text-start">{L({ ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" })}</th>
-                  <th className="py-1 text-start">{L({ ku: "کێشی خۆمان", en: "Our kilos", ar: "وزننا", zh: "我方重量" })}</th>
+                  <th className="py-1 text-start">{L({ ku: "کێشی فرۆشراو", en: "Kilos sold", ar: "الوزن المباع", zh: "售出重量" })}</th>
                   <th className="py-1 text-start">{L({ ku: "لەم وەسڵەدا", en: "On this invoice", ar: "في هذه الفاتورة", zh: "本发票" })}</th>
                   <th className="py-1 text-start">{L({ ku: "پارە", en: "Money", ar: "المبلغ", zh: "金额" })}</th>
                 </tr>
@@ -114,7 +114,7 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
                         <span className={cn("me-1 rounded px-1.5 py-px text-[10px] font-semibold", BATCH_ROLE_TONE[role])} data-testid="carrier-group-role" data-role={role}>{L(BATCH_ROLE_LABEL[role])}</span>
                         <bdi dir="ltr" className={cn("font-mono", role === "original" && "font-bold")}>{m.batchCode}</bdi>
                       </td>
-                      <td className="py-1.5">{kgf(m.realKg)}</td>
+                      <td className="py-1.5">{kgf(m.kg)}</td>
                       <td className="py-1.5">
                         {last || !isAdmin ? (
                           <span data-testid="carrier-group-rest">{kgf(row.billedKg)} {last && <span className="text-xs text-muted-foreground">{L({ ku: "ماوە", en: "the rest", ar: "الباقي", zh: "其余" })}</span>}</span>
@@ -129,7 +129,7 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
                 })}
                 <tr className="border-t-2 font-semibold">
                   <td className="py-1.5">{L({ ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}</td>
-                  <td className="py-1.5">{kgf(g.members.reduce((s, m) => s + m.realKg, 0))}</td>
+                  <td className="py-1.5">{kgf(g.members.reduce((s, m) => s + m.kg, 0))}</td>
                   <td className="py-1.5">{kgf(Number(kg) || 0)}</td>
                   <td className="py-1.5"><bdi dir="ltr">{fmtUsd(Number(usd) || 0)}</bdi></td>
                 </tr>
