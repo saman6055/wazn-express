@@ -94,7 +94,7 @@ describe("the rule is actually wired in", () => {
     // The role worked end to end on the server and appeared in no dropdown,
     // so the only way to create one was to edit the database by hand. A
     // permission nobody can grant is a permission that does not exist.
-    for (const page of ["client/src/pages/StaffManagement.tsx", "client/src/pages/Users.tsx"]) {
+    for (const page of ["client/src/pages/admin/StaffManagement.tsx", "client/src/pages/admin/Users.tsx"]) {
       expect(read(page), `${page} offers no way to pick the role`).toContain(`value="${AUDITOR_ROLE}"`);
     }
   });

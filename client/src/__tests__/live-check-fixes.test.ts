@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * What opening the real app found that the source alone had not (2026-11-01).
  * Each of these had passed tsc, the tests and the build.
  */
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 const server = (rel: string) => fs.readFileSync(path.join(SRC, "..", "..", "server", rel), "utf8").replace(/\r\n/g, "\n");
 
@@ -47,7 +50,7 @@ describe("paper", () => {
 });
 
 describe("debt reminders", () => {
-  const page = read("pages/DebtReminders.tsx");
+  const page = read("pages/finance/DebtReminders.tsx");
   const router = server("routers/finance.router.ts");
 
   it("go through the door the list's own readers can use", () => {
@@ -68,7 +71,7 @@ describe("debt reminders", () => {
 
 describe("orders dashboard", () => {
   it("has one gutter on a phone, not three", () => {
-    const page = read("pages/UnifiedOrdersDashboard.tsx");
+    const page = read("pages/orders/UnifiedOrdersDashboard.tsx");
     expect(page).toContain('<div className="space-y-6 md:p-6">');
     expect(page).not.toContain('<CardContent className="p-6">');
   });

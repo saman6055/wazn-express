@@ -24,7 +24,7 @@ describe("a parcel's numbers", () => {
 
   it("both entry screens ask before saving", () => {
     const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages", p), "utf8");
-    for (const page of ["QuickRegister.tsx", "Packages.tsx"]) {
+    for (const page of ["packages/QuickRegister.tsx", "packages/Packages.tsx"]) {
       const src = read(page);
       expect(src, page).toContain("oddParcelNumbers(");
       expect(src.indexOf("oddParcelQuestion(odd)"), page).toBeGreaterThan(-1);

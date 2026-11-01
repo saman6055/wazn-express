@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 function slice(src: string, start: string, end: string, label: string): string {
   const a = src.indexOf(start);
@@ -130,7 +133,7 @@ describe("who is shown the money", () => {
 });
 
 describe("a press opens the list the figure counted", () => {
-  const page = read("client/src/pages/CustomerDeliveryScanner.tsx");
+  const page = read("client/src/pages/scanning/CustomerDeliveryScanner.tsx");
   const cards = read("client/src/components/delivery/DeliveryStats.tsx");
 
   it("the cards are given the three ways out", () => {

@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 /**
  * The production security policy runs scripts from this site's files only.
@@ -15,10 +18,10 @@ describe("no inline script where the policy forbids it", () => {
     "lib/deliveryBoxPrintUtils.ts",
     "lib/labelPrintUtils.ts",
     "lib/batchLabelPrintUtils.ts",
-    "pages/InvoiceReports.tsx",
+    "pages/reports/InvoiceReports.tsx",
     "pages/portal/PortalInvoiceReports.tsx",
-    "pages/Finance.tsx",
-    "pages/CustomerFinance.tsx",
+    "pages/finance/Finance.tsx",
+    "pages/finance/CustomerFinance.tsx",
   ];
 
   for (const file of PRINT) {
@@ -30,7 +33,7 @@ describe("no inline script where the policy forbids it", () => {
   }
 
   it("the invoice closes its window after the dialog, not straight after asking for it", () => {
-    const src = read("pages/InvoiceView.tsx");
+    const src = read("pages/finance/InvoiceView.tsx");
     expect(src).not.toContain("w.print(); w.close();");
     expect(src).toContain('w.addEventListener("afterprint", () => w.close())');
   });

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A ledger row's sign is the side it moved the balance — never the first word
  * of its type.
@@ -16,7 +19,7 @@ import path from "path";
  * one of the fourteen types; this walks the client so no screen asks the
  * prefix again.
  */
-const ROOT = path.join(__dirname);
+const ROOT = path.join(ROOT_DIR);
 
 function sourceFiles(dir: string): string[] {
   const out: string[] = [];

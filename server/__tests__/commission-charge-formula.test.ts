@@ -3,7 +3,7 @@ import {
   commissionGoodsTotal,
   commissionProfit,
   computeOrderChargeAmount,
-} from "./db/fullPackage.db";
+} from "../db/fullPackage.db";
 
 /**
  * A commission order's item price AND its commission are both PER UNIT.

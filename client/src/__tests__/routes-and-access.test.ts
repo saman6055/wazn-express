@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const SRC = path.resolve(__dirname);
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8");
 
 /** Every path the router knows, as a matcher (":id" matches one segment). */
@@ -41,7 +44,7 @@ describe("every internal link lands on a page", () => {
   });
 
   it("an audit-log batch opens the batch's own page", () => {
-    expect(read("pages/AuditLogs.tsx")).toContain("return `/batches/${entityId}/financial`;");
+    expect(read("pages/admin/AuditLogs.tsx")).toContain("return `/batches/${entityId}/financial`;");
   });
 
   it("a purchase request is not a link to nowhere", () => {
@@ -53,7 +56,7 @@ describe("every internal link lands on a page", () => {
 
 describe("Back and home", () => {
   it("the 404 page goes to the reader's own home, and Back never does nothing", () => {
-    const src = read("pages/NotFound.tsx");
+    const src = read("pages/public/NotFound.tsx");
     expect(src).toContain("goBackOr(home, setLocation)");
     expect(src).toMatch(/const home = location\.startsWith\("\/portal"\) \|\| isCustomer \? "\/portal" : user \? "\/dashboard" : "\/"/);
     expect(src).not.toMatch(/"h-4 w-4" \+/);

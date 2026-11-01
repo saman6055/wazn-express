@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { buildThrottleBody } from "./middleware/rateLimiter";
+import { buildThrottleBody } from "../middleware/rateLimiter";
 
 /**
  * A throttled request used to answer with a bare `{ error: "..." }` body. The

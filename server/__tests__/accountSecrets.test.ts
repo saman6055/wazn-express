@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { sessionAccount, withoutSecrets } from "./lib/accountSecrets";
+import { sessionAccount, withoutSecrets } from "../lib/accountSecrets";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 const CUSTOMER = {
   id: 7,

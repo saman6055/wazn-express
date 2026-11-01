@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The two server entry points must agree on what the app actually does.
  *
@@ -23,8 +26,8 @@ import path from 'path';
  * This test makes the third one fail in CI instead.
  */
 
-const DEV = fs.readFileSync(path.resolve(__dirname, '_core/index.ts'), 'utf8');
-const PROD = fs.readFileSync(path.resolve(__dirname, '_core/prod-entry.ts'), 'utf8');
+const DEV = fs.readFileSync(path.resolve(ROOT_DIR, '_core/index.ts'), 'utf8');
+const PROD = fs.readFileSync(path.resolve(ROOT_DIR, '_core/prod-entry.ts'), 'utf8');
 
 /**
  * Background work and routes that must exist in both. Deliberately not the

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveBoxShippingType } from "./db/deliveryBoxes.db";
+import { resolveBoxShippingType } from "../db/deliveryBoxes.db";
 
 /**
  * Delivery-box receipts are billed in CBM for sea (دەریایی) goods and in kg

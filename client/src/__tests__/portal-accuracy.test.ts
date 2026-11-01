@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { orderDisplayTotal } from "./lib/portalOrderPrice";
-import { getBatchEta } from "./lib/batchEta";
+import { orderDisplayTotal } from "../lib/portalOrderPrice";
+import { getBatchEta } from "../lib/batchEta";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The number on the screen is the number the office means.
@@ -14,7 +17,7 @@ import { getBatchEta } from "./lib/batchEta";
  * the Erbil depot still showed a future arrival date.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 describe("an order shows what it is charged", () => {

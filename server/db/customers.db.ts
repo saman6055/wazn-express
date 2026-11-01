@@ -1,79 +1,8 @@
 import { getDb } from './connection';
 import { vanishedFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
-import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
-import {
-  InsertUser, users,
-  customers, InsertCustomer, Customer,
-  customerCodePrefixes, InsertCustomerCodePrefix, CustomerCodePrefix,
-  countries, InsertCountry, Country,
-  warehouses, InsertWarehouse, Warehouse,
-  pricingRules, InsertPricingRule, PricingRule,
-  batches, InsertBatch, Batch,
-  packages, InsertPackage, Package,
-  invoices, InsertInvoice, Invoice,
-  exchangeRates, InsertExchangeRate, ExchangeRate,
-  auditLogs, InsertAuditLog,
-  permissions, subPermissions,
-  notificationLogs, InsertNotificationLog,
-  systemSettings, InsertSystemSetting,
-  currencies, taxRates, emailTemplates, ipWhitelist,
-  fullPackageOrders, InsertFullPackageOrder, FullPackageOrder,
-  suppliers, InsertSupplier, Supplier,
-  fullPackageStatusHistory, InsertFullPackageStatusHistory, FullPackageStatusHistory,
-  customerNotificationPrefs, InsertCustomerNotificationPref, CustomerNotificationPref,
-  vipCustomers, InsertVipCustomer, VipCustomer,
-  packageQrCodes, InsertPackageQrCode, PackageQrCode,
-  scheduledTasksLog, InsertScheduledTaskLog, ScheduledTaskLog,
-  packageScans, InsertPackageScan, PackageScan,
-  packageStatusHistory, InsertPackageStatusHistory, PackageStatusHistory,
-  scanDevices, InsertScanDevice, ScanDevice,
-  customerAccounts, InsertCustomerAccount, CustomerAccount,
-  ledgerTransactions, InsertLedgerTransaction, LedgerTransaction,
-  paymentRecords, InsertPaymentRecord, PaymentRecord,
-  creditAdjustments, InsertCreditAdjustment, CreditAdjustment,
-  paymentReminders, InsertPaymentReminder, PaymentReminder,
-  productCategories, InsertProductCategory, ProductCategory,
-  batchPricingTiers, InsertBatchPricingTier, BatchPricingTier,
-  batchCustomerPricing, InsertBatchCustomerPricing, BatchCustomerPricing,
-  notificationSettings, InsertNotificationSetting, NotificationSetting,
-  expenseCategories, InsertExpenseCategory, ExpenseCategory,
-  expenses, InsertExpense, Expense,
-  partners, InsertPartner, Partner,
-  partnerTransactions, InsertPartnerTransaction, PartnerTransaction,
-  companyDebts, InsertCompanyDebt, CompanyDebt,
-  debtPayments, InsertDebtPayment, DebtPayment,
-  cashAccounts, InsertCashAccount, CashAccount,
-  cashTransactions, InsertCashTransaction, CashTransaction,
-  financialPeriods, InsertFinancialPeriod, FinancialPeriod,
-  scanHistory, InsertScanHistory, ScanHistory,
-  serviceTypes, InsertServiceType, ServiceType,
-  extraServices, InsertExtraService, ExtraService,
-  packageClaimRequests, InsertPackageClaimRequest, PackageClaimRequest,
-  stockCategories, InsertStockCategory, StockCategory,
-  stockProducts, InsertStockProduct, StockProduct,
-  stockPurchases, InsertStockPurchase, StockPurchase,
-  stockPurchaseItems, InsertStockPurchaseItem, StockPurchaseItem,
-  stockSales, InsertStockSale, StockSale,
-  stockSaleItems, InsertStockSaleItem, StockSaleItem,
-  stockMovements, InsertStockMovement, StockMovement,
-  customerMessages, InsertCustomerMessage, CustomerMessage,
-  customerAddresses, InsertCustomerAddress, CustomerAddress,
-  notificationTemplates, InsertNotificationTemplate, NotificationTemplate,
-  labelTemplates, InsertLabelTemplate, LabelTemplate,
-  invoiceTemplates, InsertInvoiceTemplate, InvoiceTemplate,
-  customerNotifications, InsertCustomerNotification, CustomerNotification,
-  revenueRecords, InsertRevenueRecord, RevenueRecord,
-  dailyFinancialSummary, InsertDailyFinancialSummary, DailyFinancialSummary,
-  blogPosts, InsertBlogPost, BlogPost,
-  deletionLogs, InsertDeletionLog, DeletionLog,
-  activityAlerts, InsertActivityAlert, ActivityAlert,
-  supportChats, InsertSupportChat, SupportChat,
-  chatMessages, InsertChatMessage, ChatMessage,
-  backups, InsertBackup, Backup,
-  expenseAlerts, InsertExpenseAlert, ExpenseAlert,
-  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog
-} from "../../drizzle/schema";
+import { SQL, and, count, desc, eq, getTableColumns, inArray, isNotNull, like, lt, or, sql } from "drizzle-orm";
+import { customers, InsertCustomer, Customer, customerCodePrefixes, InsertCustomerCodePrefix, CustomerCodePrefix, packages, invoices, fullPackageOrders, customerNotificationPrefs, vipCustomers, InsertVipCustomer, VipCustomer, customerAccounts, ledgerTransactions, paymentRecords, creditAdjustments, paymentReminders, extraServices, packageClaimRequests, customerMessages, customerAddresses, customerNotifications, deletionLogs } from "../../drizzle/schema";
 
 // ============ CUSTOMER OPERATIONS ============
 
@@ -340,7 +269,6 @@ export async function getCustomerByUserId(userId: number): Promise<Customer | un
   return result[0];
 }
 
-
 // ============ CUSTOMER CODE PREFIX OPERATIONS ============
 
 export async function getAllCustomerCodePrefixes(activeOnly = false) {
@@ -350,13 +278,6 @@ export async function getAllCustomerCodePrefixes(activeOnly = false) {
     return db.select().from(customerCodePrefixes).where(eq(customerCodePrefixes.isActive, true)).orderBy(customerCodePrefixes.code);
   }
   return db.select().from(customerCodePrefixes).orderBy(customerCodePrefixes.code);
-}
-
-export async function getCustomerCodePrefixById(id: number): Promise<CustomerCodePrefix | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(customerCodePrefixes).where(eq(customerCodePrefixes.id, id)).limit(1);
-  return result[0];
 }
 
 export async function createCustomerCodePrefix(data: InsertCustomerCodePrefix): Promise<CustomerCodePrefix> {
@@ -378,7 +299,6 @@ export async function deleteCustomerCodePrefix(id: number): Promise<void> {
   if (!db) return;
   await db.delete(customerCodePrefixes).where(eq(customerCodePrefixes.id, id));
 }
-
 
 // ============ VIP CUSTOMER OPERATIONS ============
 

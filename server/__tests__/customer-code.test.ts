@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { generateCustomerCode } from "@shared/types";
-import * as db from "./db";
+import * as db from "../db";
 
 describe("Customer Code Generation", () => {
   it("should generate code with 3-digit padding", () => {

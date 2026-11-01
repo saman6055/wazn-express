@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { TABLE_DEFINITIONS, REQUIRED_COLUMNS } from "./_core/migrations";
+import { TABLE_DEFINITIONS, REQUIRED_COLUMNS } from "../_core/migrations";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The rules that protect money at the box, checked where they are written.
@@ -12,7 +15,7 @@ import { TABLE_DEFINITIONS, REQUIRED_COLUMNS } from "./_core/migrations";
  * a parcel nobody has been charged for cannot be quietly marked paid.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 const settleDb = read("server/db/boxSettlement.db.ts");
@@ -436,7 +439,7 @@ describe("money moving reaches the customer's notifications", () => {
  * presses at the same instant write exactly one receipt.
  */
 describe("a box is receipted once", () => {
-  const src = fs.readFileSync(path.resolve(__dirname, "db/boxSettlement.db.ts"), "utf8");
+  const src = fs.readFileSync(path.resolve(ROOT_DIR, "db/boxSettlement.db.ts"), "utf8");
   const create = src.slice(src.indexOf("export async function createBoxSettlement"), src.indexOf("async function postDiscountCredits"));
 
   it("nothing owed and nothing handed over is no receipt", () => {

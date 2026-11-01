@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { appRouter } from "./routers";
-import * as db from "./db";
-import { hasDb } from "./testEnv";
+import { appRouter } from "../routers";
+import * as db from "../db";
+import { hasDb } from "../testEnv";
 
 // Create test context
 const createTestContext = (role: "admin" | "employee" | "accountant" | "customer" = "admin") => ({

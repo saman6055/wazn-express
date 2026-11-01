@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The Portal Center, joined to the rest of the system (owner, 2026-09-18,
  * phase 1): every figure at the top opens its tab filtered, every tab with
@@ -13,8 +16,8 @@ import path from "path";
  * pins the wiring.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
-const page = read("client/src/pages/PortalCenter.tsx");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const page = read("client/src/pages/admin/PortalCenter.tsx");
 const links = read("client/src/components/portal-center/PortalLinks.tsx");
 const db = read("server/db/portalCenter.db.ts");
 
@@ -88,7 +91,7 @@ describe("every code leads where it lives, and copies", () => {
     expect(links).toContain("href={`/customer-delivery-scanner?box=${id}`}");
     expect(page).toContain("<BoxCodeLink id={r.boxId} code={r.boxCode}");
     expect(db).toContain("SELECT b.id FROM deliveryBoxItems i");
-    const boxes = read("client/src/pages/CustomerDeliveryScanner.tsx");
+    const boxes = read("client/src/pages/scanning/CustomerDeliveryScanner.tsx");
     expect(boxes).toContain('const asked = Number(new URLSearchParams(search).get("box"));');
     expect(boxes).toContain("setActiveBoxId(asked);");
   });

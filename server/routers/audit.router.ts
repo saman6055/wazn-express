@@ -35,7 +35,7 @@ export const auditRouter = router({
    * the sweep is entitled to say "nothing to report" — and it is not, if any
    * check failed to run.
    */
-  /** What the box desk has left behind (client/src/pages/Problems). */
+  /** What the box desk has left behind (client/src/pages/admin/Problems). */
   leftOutOfBoxes: staffProcedure.query(() => parcelsLeftOutOfBoxes()),
 
   sweep: auditorProcedure.query(async () => {

@@ -12,7 +12,10 @@ import {
   newAutoBackupKey,
   newPairCode,
   parseStoredKey,
-} from "./lib/autoBackupKey";
+} from "../lib/autoBackupKey";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The daily backup the owner's computer takes by itself (owner, 2026-10-25:
@@ -23,7 +26,7 @@ import {
  * two runs left only the newest copy here and nothing on the server, and a
  * switched-off key failed in seconds with yesterday's copy still in place.
  */
-const read = (rel: string) => fs.readFileSync(path.join(__dirname, "..", rel), "utf8").replace(/\r\n/g, "\n");
+const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, "..", rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("the backup key", () => {
   it("is long, random and recognisable", () => {
@@ -168,7 +171,7 @@ describe("the script on the computer", () => {
 
   it("is saved with a byte-order mark, or Windows PowerShell misreads the Kurdish in it", () => {
     for (const f of ["WaznAutoBackup.ps1", "Setup-WaznAutoBackup.ps1"]) {
-      const bytes = fs.readFileSync(path.join(__dirname, "..", "tools/auto-backup", f));
+      const bytes = fs.readFileSync(path.join(ROOT_DIR, "..", "tools/auto-backup", f));
       expect([bytes[0], bytes[1], bytes[2]], f).toEqual([0xef, 0xbb, 0xbf]);
     }
   });

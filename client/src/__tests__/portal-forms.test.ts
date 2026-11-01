@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The screens where a customer types something and presses a button.
  *
@@ -11,12 +14,12 @@ import path from "path";
  * thing they came to do.
  */
 
-const PORTAL = path.resolve(__dirname, "pages/portal");
+const PORTAL = path.resolve(ROOT_DIR, "pages/portal");
 const read = (p: string) => fs.readFileSync(path.join(PORTAL, p), "utf8");
 const ROUTER = fs.readFileSync(
-  path.resolve(__dirname, "../../server/routers/portal.router.ts"), "utf8");
+  path.resolve(ROOT_DIR, "../../server/routers/portal.router.ts"), "utf8");
 const SCHEMA = fs.readFileSync(
-  path.resolve(__dirname, "../../drizzle/schema/users.schema.ts"), "utf8");
+  path.resolve(ROOT_DIR, "../../drizzle/schema/users.schema.ts"), "utf8");
 
 describe("what a customer types fits where it is going", () => {
   /**
@@ -162,7 +165,7 @@ describe("Enter sends the form", () => {
    * the form and send a half-typed tracking number.
    */
   it("does not fire while an IME candidate is open", () => {
-    const src = fs.readFileSync(path.resolve(__dirname, "lib/onEnter.ts"), "utf8");
+    const src = fs.readFileSync(path.resolve(ROOT_DIR, "lib/onEnter.ts"), "utf8");
     expect(src).toContain("isComposing");
     expect(src, "older Safari reports composition as keyCode 229").toContain("229");
     expect(src, "Shift+Enter stays a newline").toContain("e.shiftKey");

@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's seven portal screenshots of 2026-09-27, each held in place.
  * Wording rules for air/sea live in lib/travelMode.test.ts.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("the owner's portal fixes, 2026-09-27", () => {

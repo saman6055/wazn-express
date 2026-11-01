@@ -91,8 +91,8 @@ describe("one rule, read everywhere it matters", () => {
   });
 
   it("the batch list flags it, and the carton screen asks for it on finishing", () => {
-    expect(read("client/src/pages/Batches.tsx")).toContain("batchAwaitingShipmentNumber(");
-    const dispatch = read("client/src/pages/DispatchCheck.tsx");
+    expect(read("client/src/pages/batches/Batches.tsx")).toContain("batchAwaitingShipmentNumber(");
+    const dispatch = read("client/src/pages/batches/DispatchCheck.tsx");
     const at = dispatch.indexOf("dispatch.finish.useMutation");
     expect(at).toBeGreaterThan(-1);
     expect(dispatch.slice(at, dispatch.indexOf("onError", at))).toContain("batchHasShipmentNumber(s?.batch)");

@@ -11,7 +11,7 @@ import {
   resetDocumentGuard,
   uploadNameOf,
   type DocumentGuardDeps,
-} from "./_core/documentGuard";
+} from "../_core/documentGuard";
 
 /**
  * The owner's decision (2026-09-11): a customer's passport, national ID and

@@ -3,7 +3,7 @@ import {
   selectStaleBoxes,
   buildReminderMessage,
   daysSince,
-} from "./services/openBoxAlert.service";
+} from "../services/openBoxAlert.service";
 
 const NOW = new Date("2026-08-01T12:00:00Z");
 const daysAgo = (n: number) => new Date(NOW.getTime() - n * 86_400_000);

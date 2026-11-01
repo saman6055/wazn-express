@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * On the finance page everything opens its details (owner, 2026-09-10: "I
  * want to click anything and get its details, not just see it").
@@ -12,9 +15,9 @@ import path from "path";
  * test reads both sides.
  */
 
-const ROOT = path.join(__dirname, "..", "..");
+const ROOT = path.join(ROOT_DIR, "..", "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
-const page = read("client/src/pages/Finance.tsx");
+const page = read("client/src/pages/finance/Finance.tsx");
 
 function between(src: string, start: string, end: string): string {
   const a = src.indexOf(start);

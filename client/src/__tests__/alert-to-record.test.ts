@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * From an alert to the record that can answer it, in one click.
  *
@@ -18,7 +21,7 @@ import path from "path";
  * the order, or a number rendered as plain text where the order is known.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 

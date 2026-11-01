@@ -35,10 +35,6 @@ export function getLocale(language: Language): Translations | undefined {
   return loaded[language];
 }
 
-export function isLocaleLoaded(language: Language): boolean {
-  return loaded[language] !== undefined;
-}
-
 /** Fetch a locale once. Concurrent callers share the same request. */
 export function loadLocale(language: Language): Promise<void> {
   if (loaded[language]) return Promise.resolve();

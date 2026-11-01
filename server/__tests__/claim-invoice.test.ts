@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as db from "./db";
+import * as db from "../db";
 
 describe("Claim Request Invoice Generation", () => {
   describe("approveClaimRequest creates invoice", () => {

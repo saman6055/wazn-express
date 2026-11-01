@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { hasDb } from "./testEnv";
+import { hasDb } from "../testEnv";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * Deleting a batch is the one operation here that destroys a record, so the
@@ -20,7 +23,7 @@ import { hasDb } from "./testEnv";
  * marker must fail loudly rather than silently assert against "".
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 function slice(src: string, startMarker: string, endMarker: string, label: string): string {
@@ -121,7 +124,7 @@ describe.skipIf(!hasDb())("deleting a batch", () => {
     // The button on the page and the refusal on the server have to agree, or
     // the operator sees a button that always fails.
     expect(procedure()).toContain("canDeleteBatch");
-    expect(read("client/src/pages/Batches.tsx")).toContain("canDeleteBatch");
+    expect(read("client/src/pages/batches/Batches.tsx")).toContain("canDeleteBatch");
   });
 
   it("writes the audit entry while there is still something to record", () => {
@@ -151,7 +154,7 @@ describe.skipIf(!hasDb())("deleting a batch", () => {
   });
 
   it("tells the operator what happens to the parcels before they confirm", () => {
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     // Thirty-seven parcels disappearing from a screen with no explanation is
     // how somebody concludes the system ate them.
     expect(page, "a destructive action needs confirming").toContain("batches.deleteBatchWarning");

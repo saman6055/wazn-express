@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { pageOf } from "./hooks/useClientPagination";
+import { pageOf } from "../hooks/useClientPagination";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The owner's list, item 3 (2026-09-11): the long lists draw a page at a
@@ -21,14 +24,14 @@ describe("a page of a list", () => {
   });
 });
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("the long lists", () => {
   it.each([
-    ["pages/Customers.tsx", "customerPage.pageRows.map("],
-    ["pages/FullPackageDashboard.tsx", "orderPage.pageRows.map("],
-    ["pages/CommissionDashboard.tsx", "orderPage.pageRows.map("],
-    ["pages/UnifiedOrdersDashboard.tsx", "orderPage.pageRows.map("],
+    ["pages/customers/Customers.tsx", "customerPage.pageRows.map("],
+    ["pages/orders/FullPackageDashboard.tsx", "orderPage.pageRows.map("],
+    ["pages/orders/CommissionDashboard.tsx", "orderPage.pageRows.map("],
+    ["pages/orders/UnifiedOrdersDashboard.tsx", "orderPage.pageRows.map("],
   ])("%s draws one page and offers the next", (file, rows) => {
     const src = read(file);
     expect(src).toContain("useClientPagination(");
@@ -37,7 +40,7 @@ describe("the long lists", () => {
   });
 
   it("the customer search filters after a pause, while the box shows every keystroke", () => {
-    const src = read("pages/Customers.tsx");
+    const src = read("pages/customers/Customers.tsx");
     expect(src).toContain("useDebouncedValue(search, 250)");
     expect(src).toContain("search: debouncedSearch,");
     expect(src).toContain("value={search}");

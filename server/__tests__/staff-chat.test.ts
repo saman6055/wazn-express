@@ -3,8 +3,11 @@ import fs from "fs";
 import path from "path";
 import { STAFF_ATTACHMENT_MAX_BYTES, staffAttachmentAllowed } from "@shared/staffChatAttachment";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 const read = (rel: string) =>
-  fs.readFileSync(path.resolve(__dirname, "..", rel), "utf8").replace(/\r\n/g, "\n");
+  fs.readFileSync(path.resolve(ROOT_DIR, "..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * The owner, 2026-09-26: «گرنگە پەیام ناردن هەبێ لە نێوان ئادمینەکان، چات

@@ -1,79 +1,7 @@
 import { getDb } from './connection';
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, or, isNull } from "drizzle-orm";
 import { appLogger } from "../utils/logger";
-import {
-  InsertUser, users,
-  customers, InsertCustomer, Customer,
-  customerCodePrefixes, InsertCustomerCodePrefix, CustomerCodePrefix,
-  countries, InsertCountry, Country,
-  warehouses, InsertWarehouse, Warehouse,
-  pricingRules, InsertPricingRule, PricingRule,
-  batches, InsertBatch, Batch,
-  packages, InsertPackage, Package,
-  invoices, InsertInvoice, Invoice,
-  exchangeRates, InsertExchangeRate, ExchangeRate,
-  auditLogs, InsertAuditLog,
-  permissions, subPermissions,
-  notificationLogs, InsertNotificationLog,
-  systemSettings, InsertSystemSetting,
-  currencies, taxRates, emailTemplates, ipWhitelist,
-  fullPackageOrders, InsertFullPackageOrder, FullPackageOrder,
-  suppliers, InsertSupplier, Supplier,
-  fullPackageStatusHistory, InsertFullPackageStatusHistory, FullPackageStatusHistory,
-  customerNotificationPrefs, InsertCustomerNotificationPref, CustomerNotificationPref,
-  vipCustomers, InsertVipCustomer, VipCustomer,
-  packageQrCodes, InsertPackageQrCode, PackageQrCode,
-  scheduledTasksLog, InsertScheduledTaskLog, ScheduledTaskLog,
-  packageScans, InsertPackageScan, PackageScan,
-  packageStatusHistory, InsertPackageStatusHistory, PackageStatusHistory,
-  scanDevices, InsertScanDevice, ScanDevice,
-  customerAccounts, InsertCustomerAccount, CustomerAccount,
-  ledgerTransactions, InsertLedgerTransaction, LedgerTransaction,
-  paymentRecords, InsertPaymentRecord, PaymentRecord,
-  creditAdjustments, InsertCreditAdjustment, CreditAdjustment,
-  paymentReminders, InsertPaymentReminder, PaymentReminder,
-  productCategories, InsertProductCategory, ProductCategory,
-  batchPricingTiers, InsertBatchPricingTier, BatchPricingTier,
-  batchCustomerPricing, InsertBatchCustomerPricing, BatchCustomerPricing,
-  notificationSettings, InsertNotificationSetting, NotificationSetting,
-  expenseCategories, InsertExpenseCategory, ExpenseCategory,
-  expenses, InsertExpense, Expense,
-  partners, InsertPartner, Partner,
-  partnerTransactions, InsertPartnerTransaction, PartnerTransaction,
-  companyDebts, InsertCompanyDebt, CompanyDebt,
-  debtPayments, InsertDebtPayment, DebtPayment,
-  cashAccounts, InsertCashAccount, CashAccount,
-  cashTransactions, InsertCashTransaction, CashTransaction,
-  financialPeriods, InsertFinancialPeriod, FinancialPeriod,
-  scanHistory, InsertScanHistory, ScanHistory,
-  serviceTypes, InsertServiceType, ServiceType,
-  extraServices, InsertExtraService, ExtraService,
-  packageClaimRequests, InsertPackageClaimRequest, PackageClaimRequest,
-  stockCategories, InsertStockCategory, StockCategory,
-  stockProducts, InsertStockProduct, StockProduct,
-  stockPurchases, InsertStockPurchase, StockPurchase,
-  stockPurchaseItems, InsertStockPurchaseItem, StockPurchaseItem,
-  stockSales, InsertStockSale, StockSale,
-  stockSaleItems, InsertStockSaleItem, StockSaleItem,
-  stockMovements, InsertStockMovement, StockMovement,
-  customerMessages, InsertCustomerMessage, CustomerMessage,
-  customerAddresses, InsertCustomerAddress, CustomerAddress,
-  notificationTemplates, InsertNotificationTemplate, NotificationTemplate,
-  labelTemplates, InsertLabelTemplate, LabelTemplate,
-  invoiceTemplates, InsertInvoiceTemplate, InvoiceTemplate,
-  customerNotifications, InsertCustomerNotification, CustomerNotification,
-  revenueRecords, InsertRevenueRecord, RevenueRecord,
-  dailyFinancialSummary, InsertDailyFinancialSummary, DailyFinancialSummary,
-  blogPosts, InsertBlogPost, BlogPost,
-  deletionLogs, InsertDeletionLog, DeletionLog,
-  activityAlerts, InsertActivityAlert, ActivityAlert,
-  supportChats, InsertSupportChat, SupportChat,
-  chatMessages, InsertChatMessage, ChatMessage,
-  backups, InsertBackup, Backup,
-  expenseAlerts, InsertExpenseAlert, ExpenseAlert,
-  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog,
-  portalPriceListSettings, InsertPortalPriceListSettings, PortalPriceListSettings
-} from "../../drizzle/schema";
+import { countries, InsertCountry, Country, warehouses, InsertWarehouse, Warehouse, pricingRules, InsertPricingRule, PricingRule, batches, systemSettings, currencies, taxRates, emailTemplates, ipWhitelist, notificationSettings, NotificationSetting, portalPriceListSettings, InsertPortalPriceListSettings, PortalPriceListSettings } from "../../drizzle/schema";
 
 // ============ COUNTRY OPERATIONS ============
 
@@ -98,13 +26,6 @@ export async function getAllCountries(activeOnly = false) {
   return db.select().from(countries).orderBy(countries.nameEn);
 }
 
-export async function getCountryById(id: number): Promise<Country | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(countries).where(eq(countries.id, id)).limit(1);
-  return result[0];
-}
-
 export async function updateCountry(id: number, data: Partial<InsertCountry>) {
   const db = await getDb();
   if (!db) return;
@@ -122,7 +43,6 @@ export async function getDestinationCountries() {
   if (!db) return [];
   return db.select().from(countries).where(and(eq(countries.isActive, true), eq(countries.isDestination, true)));
 }
-
 
 // ============ WAREHOUSE OPERATIONS ============
 
@@ -165,7 +85,6 @@ export async function updateWarehouse(id: number, data: Partial<InsertWarehouse>
   if (!db) return;
   await db.update(warehouses).set(data).where(eq(warehouses.id, id));
 }
-
 
 // ============ PRICING OPERATIONS ============
 
@@ -460,7 +379,6 @@ export async function quickUpsertPortalPrices(
   return { prices: updated, missingTemplate };
 }
 
-
 // ============ SYSTEM SETTINGS OPERATIONS ============
 
 export async function getSetting(key: string): Promise<string | null> {
@@ -488,7 +406,6 @@ export async function getAllSettings() {
   if (!db) return [];
   return db.select().from(systemSettings);
 }
-
 
 // ============ NOTIFICATION SETTINGS ============
 
@@ -576,9 +493,6 @@ export async function getNotificationSettingByEvent(eventType: string): Promise<
   return result[0] || null;
 }
 
-
-
-
 // ============ ADVANCED SETTINGS MANAGEMENT ============
 
 /**
@@ -645,7 +559,6 @@ export async function getAllSystemSettings() {
   
   return await database.select().from(systemSettings);
 }
-
 
 // ============ CURRENCY MANAGEMENT ============
 
@@ -720,7 +633,6 @@ export async function deleteCurrency(id: number) {
   return { success: true };
 }
 
-
 // ============ TAX RATE MANAGEMENT ============
 
 /**
@@ -793,7 +705,6 @@ export async function deleteTaxRate(id: number) {
   return { success: true };
 }
 
-
 // ============ IP WHITELIST MANAGEMENT ============
 
 /**
@@ -861,7 +772,6 @@ export async function removeIpFromWhitelist(id: number) {
   await database.delete(ipWhitelist).where(eq(ipWhitelist.id, id));
   return { success: true };
 }
-
 
 // ============ EMAIL TEMPLATE MANAGEMENT ============
 
@@ -936,7 +846,6 @@ export async function deleteEmailTemplate(id: number) {
   await database.delete(emailTemplates).where(eq(emailTemplates.id, id));
   return { success: true };
 }
-
 
 // ============ PORTAL PRICE LIST (لیستی نرخی پۆرتاڵ) ============
 // The settings table is single-row by convention (id=1 seeded by migration).
@@ -1066,7 +975,6 @@ export async function updatePricingRulePortalFields(
   if (!db) return;
   await db.update(pricingRules).set(fields).where(eq(pricingRules.id, id));
 }
-
 
 /**
  * The ids of countries we ship FROM.

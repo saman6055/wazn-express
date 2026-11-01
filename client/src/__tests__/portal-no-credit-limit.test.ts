@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A customer is never shown their credit limit (owner, 2026-10-06: "a customer
  * who sees the limit uses it and pays late — the aim is a debt of zero").
@@ -12,7 +15,7 @@ import path from "path";
  * screen naming it.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 function filesUnder(dir: string): string[] {

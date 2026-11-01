@@ -13,8 +13,8 @@ import {
   Eye, Plus, Pencil, Trash2, Search, ToggleLeft, CheckCircle2,
   XCircle, AlertTriangle, Loader2
 } from "lucide-react";
-import { CHINA_STAFF_PRESET, PERMISSION_GROUPS, SYSTEM_MODULES } from "../../../shared/permissions";
-import type { PermissionGroup, ModulePermissions } from "../../../shared/permissions";
+import { CHINA_STAFF_PRESET, PERMISSION_GROUPS, SYSTEM_MODULES } from "../../../../shared/permissions";
+import type { PermissionGroup, ModulePermissions } from "../../../../shared/permissions";
 import DashboardLayout from "@/components/DashboardLayout";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";

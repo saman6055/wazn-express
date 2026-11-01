@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { scrubText, scrubUrl } from "./lib/scrub";
+import { scrubText, scrubUrl } from "../lib/scrub";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("a report from a browser carries no one's secrets", () => {
   it("phone numbers, in every way they are written", () => {

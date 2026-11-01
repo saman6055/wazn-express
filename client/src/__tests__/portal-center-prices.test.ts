@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The Portal Center's prices tab, phase 5 of the owner's brief (2026-09-18):
  * a carton can be tried against the divisor and the prices as they are
@@ -10,8 +13,8 @@ import path from "path";
  * that the sandbox saves nothing.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
-const page = read("client/src/pages/PortalCenter.tsx");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const page = read("client/src/pages/admin/PortalCenter.tsx");
 const sandbox = read("client/src/components/portal-center/PriceSandbox.tsx");
 
 describe("try a carton before saving", () => {

@@ -130,7 +130,7 @@ describe("it cannot happen again, and cannot stay hidden", () => {
   });
 
   it("the page shows the proof beside each customer before anything is changed", () => {
-    const page = root("client/src/pages/BoxDoubleCharges.tsx");
+    const page = root("client/src/pages/finance/BoxDoubleCharges.tsx");
     expect(page).toContain('data-testid="double-charge-proof"');
     expect(page).toContain('data-testid="double-charge-confirm"');
     expect(root("client/src/App.tsx")).toContain('path="/finance/box-double-charges"');

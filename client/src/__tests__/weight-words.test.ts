@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * One name per weight, everywhere.
  *
@@ -15,7 +18,7 @@ import path from "path";
  * The words are the same three now, and this keeps them that way.
  */
 
-const LOCALES = path.resolve(__dirname, "locales");
+const LOCALES = path.resolve(ROOT_DIR, "locales");
 
 function load(lang: string): Record<string, any> {
   const raw = fs.readFileSync(path.join(LOCALES, `${lang}.json`), "utf8");
@@ -75,7 +78,7 @@ describe("the charged weight is not announced twice", () => {
     // actual weight again beside it under the label "chargeable" — three
     // numbers for one answer, which is what made it unreadable.
     const src = fs
-      .readFileSync(path.resolve(__dirname, "pages/QuickRegister.tsx"), "utf8")
+      .readFileSync(path.resolve(ROOT_DIR, "pages/packages/QuickRegister.tsx"), "utf8")
       .replace(/\r\n/g, "\n");
     const start = src.indexOf("{/* The weight this parcel is charged on.");
     expect(start, "weight readout not found").toBeGreaterThan(-1);

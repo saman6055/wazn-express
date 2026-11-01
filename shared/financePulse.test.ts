@@ -137,7 +137,7 @@ describe("the bell", () => {
       expect(riskPath(id)).toBe("/finance/company-dashboard?focus=pulse");
       expect(riskGate(id)).toBe("/finance/company-dashboard");
     }
-    expect(root("client/src/pages/CompanyFinanceDashboard.tsx")).toContain('focus === "pulse"');
+    expect(root("client/src/pages/finance/CompanyFinanceDashboard.tsx")).toContain('focus === "pulse"');
   });
 });
 
@@ -156,7 +156,7 @@ describe("periods are the office's", () => {
 });
 
 describe("the dashboard", () => {
-  const page = root("client/src/pages/CompanyFinanceDashboard.tsx");
+  const page = root("client/src/pages/finance/CompanyFinanceDashboard.tsx");
   const facts = root("server/db/financePulse.db.ts");
 
   it("a discount is told, never subtracted", () => {

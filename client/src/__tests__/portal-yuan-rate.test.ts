@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The yuan a customer sees is the yuan they can buy, and the office edits one
  * rate from either screen (owner, 2026-09-19). The server side is tested in
  * server/shared-rmb-rate.test.ts.
  */
 
-const read = (rel: string) => fs.readFileSync(path.join(__dirname, rel), "utf8").replace(/\r\n/g, "\n");
+const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("the home ticker's yuan", () => {
   const home = read("pages/portal/PortalHome.tsx");
@@ -31,12 +34,12 @@ describe("the home ticker's yuan", () => {
 
 describe("both screens say it is one rate", () => {
   it("the Portal Center's yuan card and Settings → Currency point at each other", () => {
-    expect(read("pages/PortalCenter.tsx")).toContain("هەمان نرخی ڕێکخستنەکان ← دراوە");
-    expect(read("pages/Settings.tsx")).toContain("هەمان نرخی کڕینی یوانی پۆرتاڵە");
+    expect(read("pages/admin/PortalCenter.tsx")).toContain("هەمان نرخی ڕێکخستنەکان ← دراوە");
+    expect(read("pages/settings/Settings.tsx")).toContain("هەمان نرخی کڕینی یوانی پۆرتاڵە");
   });
 
   it("a save on either side refreshes the other", () => {
-    expect(read("pages/PortalCenter.tsx")).toContain("utils.exchangeRates.invalidate();");
-    expect(read("pages/Settings.tsx")).toContain("utils.portalCenter.getYuanSettings.invalidate();");
+    expect(read("pages/admin/PortalCenter.tsx")).toContain("utils.exchangeRates.invalidate();");
+    expect(read("pages/settings/Settings.tsx")).toContain("utils.portalCenter.getYuanSettings.invalidate();");
   });
 });

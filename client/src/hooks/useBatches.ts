@@ -32,17 +32,6 @@ export function useBatches() {
   };
 }
 
-export function useBatchById(batchId: number | null) {
-  const enabled = batchId != null;
-  const batchQuery = trpc.batches.getById.useQuery({ id: batchId ?? 0 }, { enabled });
-  return {
-    batch: batchQuery.data,
-    isLoading: batchQuery.isLoading,
-    error: batchQuery.error,
-    refetch: batchQuery.refetch,
-  };
-}
-
 export function useBatchPackages(batchId: number | null) {
   const enabled = batchId != null;
   const query = trpc.batches.getPackages.useQuery({ batchId: batchId ?? 0 }, { enabled });

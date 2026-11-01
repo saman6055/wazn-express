@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Behaviours a customer would notice, each one a bug that shipped.
  *
@@ -10,7 +13,7 @@ import path from "path";
  * was wrong on screen, so a regression fails here with the reason attached.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8");
 
 describe("the shipments screen, on all three skins", () => {
@@ -184,7 +187,7 @@ describe("each skin keeps its own chrome", () => {
 
 describe("a filter that leads nowhere does not invite a tap", () => {
   const SRC = fs.readFileSync(
-    path.resolve(__dirname, "pages/portal/PortalShipments.tsx"), "utf8");
+    path.resolve(ROOT_DIR, "pages/portal/PortalShipments.tsx"), "utf8");
 
   /**
    * "On the way — 0" is worth showing: it is the answer to a question the

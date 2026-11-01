@@ -1,11 +1,14 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { statusTone, statusChip, statusDot, statusBgText, TONE_CHIP, TONE_BG, TONE_TEXT } from "./lib/statusTone";
-import { BATCH_STATUS_TONE } from "./lib/shipmentFilters";
-import { PACKAGE_STATUS_TONE } from "./lib/packageStatus";
+import { statusTone, statusChip, statusDot, statusBgText, TONE_CHIP, TONE_BG, TONE_TEXT } from "../lib/statusTone";
+import { BATCH_STATUS_TONE } from "../lib/shipmentFilters";
+import { PACKAGE_STATUS_TONE } from "../lib/packageStatus";
 
-const SRC = path.resolve(__dirname);
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8");
 
 describe("one colour per kind of status", () => {
@@ -61,14 +64,14 @@ describe("one colour per kind of status", () => {
 
 describe("the pages use the one palette", () => {
   const PAGES = [
-    "pages/Packages.tsx",
-    "pages/CommissionDashboard.tsx",
-    "pages/CommissionOrders.tsx",
-    "pages/FullPackageDashboard.tsx",
-    "pages/UnifiedOrdersDashboard.tsx",
-    "pages/PackagesDashboard.tsx",
-    "pages/BatchReports.tsx",
-    "pages/Dashboard.tsx",
+    "pages/packages/Packages.tsx",
+    "pages/orders/CommissionDashboard.tsx",
+    "pages/orders/CommissionOrders.tsx",
+    "pages/orders/FullPackageDashboard.tsx",
+    "pages/orders/UnifiedOrdersDashboard.tsx",
+    "pages/packages/PackagesDashboard.tsx",
+    "pages/reports/BatchReports.tsx",
+    "pages/dashboard/Dashboard.tsx",
   ];
 
   it("every converted page reads its colours from lib/statusTone", () => {
@@ -93,7 +96,7 @@ describe("the pages use the one palette", () => {
   });
 
   it("translucent white panels have a dark twin", () => {
-    for (const page of ["pages/ScanDashboard.tsx", "pages/CommissionDashboard.tsx", "pages/FullPackageDashboard.tsx"]) {
+    for (const page of ["pages/scanning/ScanDashboard.tsx", "pages/orders/CommissionDashboard.tsx", "pages/orders/FullPackageDashboard.tsx"]) {
       const src = read(page);
       const white = src.match(/bg-white\/80/g)?.length ?? 0;
       const dark = src.match(/bg-white\/80 dark:bg-card\/80/g)?.length ?? 0;

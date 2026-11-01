@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Where a parcel is, said plainly, and a list short enough to read.
  *
@@ -14,7 +17,7 @@ import path from "path";
  * checks that every list of parcels reads them, and opens the same sheet.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("one card, one sheet, wherever a parcel is listed", () => {

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's rule (Sep 2026), meant for every picker in the app: the
  * choices used most rise to the top, and among equals the one used last.
@@ -12,14 +15,14 @@ import path from "path";
  * and that none of them has quietly grown its own hand-rolled list again.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 /** Every screen that offers a product type, colour or size. */
 const ATTRIBUTE_FORMS = [
-  "pages/CommissionForm.tsx",
-  "pages/FullPackageForm.tsx",
-  "pages/BulkOrderForm.tsx",
+  "pages/orders/CommissionForm.tsx",
+  "pages/orders/FullPackageForm.tsx",
+  "pages/orders/BulkOrderForm.tsx",
 ];
 
 describe("every attribute picker follows the one rule", () => {
@@ -52,8 +55,8 @@ describe("every attribute picker follows the one rule", () => {
   it("two screens picking the same list share what they learned", () => {
     // The key names the LIST, not the field or the screen — so a product
     // type chosen on the bulk form counts on the single form as well.
-    const bulk = read("pages/BulkOrderForm.tsx");
-    const single = read("pages/CommissionForm.tsx");
+    const bulk = read("pages/orders/BulkOrderForm.tsx");
+    const single = read("pages/orders/CommissionForm.tsx");
     expect(bulk).toContain('usageKey="productType"');
     expect(single).toContain('usageKey="productType"');
   });
@@ -138,7 +141,7 @@ describe("the kind of goods is remembered", () => {
   });
 
   it("opens both order forms on it, and keeps it after a save", () => {
-    for (const page of ["pages/CommissionForm.tsx", "pages/FullPackageForm.tsx"]) {
+    for (const page of ["pages/orders/CommissionForm.tsx", "pages/orders/FullPackageForm.tsx"]) {
       const src = read(page);
       expect(src, page).toContain('lastOptionUsed("productType")');
       // Only a new order, only an empty field, and only a type still on the

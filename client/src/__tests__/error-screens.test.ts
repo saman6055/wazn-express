@@ -1,16 +1,19 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
-import { copyText } from "./lib/copyText";
+import { copyText } from "../lib/copyText";
 import {
   currentSurface,
   errorRef,
   homePath,
   isServerMessage,
   showsTechnicalDetail,
-} from "./lib/errorSurface";
+} from "../lib/errorSurface";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("which screen an error is on", () => {
   it("knows the portal, the public site and the office apart", () => {

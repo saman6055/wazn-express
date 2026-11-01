@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * What a native app needs from this server that a browser does not.
  *
@@ -16,7 +19,7 @@ import path from "path";
  * structural thing standing between this API and a phone.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 const sdk = read("server/_core/sdk.ts");

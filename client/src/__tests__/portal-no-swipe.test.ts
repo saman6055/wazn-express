@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Everything a customer can choose is on the screen — nothing cut at the
  * sides, nothing to swipe sideways to find.
@@ -15,7 +18,7 @@ import path from "path";
  * the sorting and the news categories wrap onto a second line.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 function files(dir: string): string[] {

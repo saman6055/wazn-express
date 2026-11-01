@@ -26,7 +26,7 @@ function slice(src: string, startMarker: string, endMarker: string, label: strin
   return src.slice(start, end);
 }
 const app = read(path.join(HERE, "..", "App.tsx"));
-const quickRegister = read(path.join(HERE, "..", "pages", "QuickRegister.tsx"));
+const quickRegister = read(path.join(HERE, "..", "pages", "packages", "QuickRegister.tsx"));
 const sound = read(path.join(HERE, "..", "lib", "soundManager.ts"));
 
 describe("a failure has to be acknowledged", () => {
@@ -80,8 +80,8 @@ describe("a failure has to be acknowledged", () => {
  */
 describe("the failures that lose goods all stop the operator", () => {
   const boxPanel = read(path.join(HERE, "delivery", "BoxDetailPanel.tsx"));
-  const arrival = read(path.join(HERE, "..", "pages", "ArrivalVerificationScanner.tsx"));
-  const batchAssign = read(path.join(HERE, "..", "pages", "BatchAssignmentScanner.tsx"));
+  const arrival = read(path.join(HERE, "..", "pages", "scanning", "ArrivalVerificationScanner.tsx"));
+  const batchAssign = read(path.join(HERE, "..", "pages", "scanning", "BatchAssignmentScanner.tsx"));
 
   it("a parcel that belongs to another customer", () => {
     // The server refuses it. What was missing was making the refusal
@@ -140,7 +140,7 @@ describe("the failures that lose goods all stop the operator", () => {
 });
 
 describe("a batch that cannot be charged for stops the operator", () => {
-  const batchAssign = read(path.join(HERE, "..", "pages", "BatchAssignmentScanner.tsx"));
+  const batchAssign = read(path.join(HERE, "..", "pages", "scanning", "BatchAssignmentScanner.tsx"));
 
   it("warns when the batch has no selling price", () => {
     expect(batchAssign).toContain("batchMissingSellingPrice");
@@ -161,7 +161,7 @@ describe("a batch that cannot be charged for stops the operator", () => {
 });
 
 describe("a routine failure gets out of the way", () => {
-  const quickReg = read(path.join(HERE, "..", "pages", "QuickRegister.tsx"));
+  const quickReg = read(path.join(HERE, "..", "pages", "packages", "QuickRegister.tsx"));
 
   it("takes itself away rather than waiting for a hand", () => {
     // On quick register a tracking the system has never seen is the ordinary
@@ -239,7 +239,7 @@ describe("only failures come through it", () => {
  * kept, and then the parcel is charged for twice.
  */
 describe("a duplicate stops the operator where it is worth knowing", () => {
-  const quickReg = read(path.join(HERE, "..", "pages", "QuickRegister.tsx"));
+  const quickReg = read(path.join(HERE, "..", "pages", "packages", "QuickRegister.tsx"));
   const branch = () =>
     slice(quickReg, 'if (result.source === "package") {', "} else {", "duplicate branch");
 

@@ -187,6 +187,3 @@ export function AttributeSelect({
     </Popover>
   );
 }
-
-/** The trigger height the order forms use, kept here so callers stay short. */
-export const attributeTriggerClass = (extra?: string) => cn("h-10", extra);

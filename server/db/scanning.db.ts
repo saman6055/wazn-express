@@ -2,82 +2,11 @@ import { getDb } from './connection';
 import { orderNumbersForPackages } from './orderNumbers.db';
 import { advanceStatus, type PackageStatus } from '../lib/scanStatus';
 import { appLogger } from '../utils/logger';
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { eq, desc, asc, and, gte, lte, lt, sql, or, like, isNull, isNotNull, count, inArray, SQL } from "drizzle-orm";
 import { getCustomerById } from './customers.db';
 import { getPackageById, getPackageOrderLinks, updatePackage } from './packages.db';
 import { getFullPackageOrderByTrackingNumber, getAllOrdersByTrackingNumber, updateFullPackageOrder } from './fullPackage.db';
-import {
-  InsertUser, users,
-  customers, InsertCustomer, Customer,
-  customerCodePrefixes, InsertCustomerCodePrefix, CustomerCodePrefix,
-  countries, InsertCountry, Country,
-  warehouses, InsertWarehouse, Warehouse,
-  pricingRules, InsertPricingRule, PricingRule,
-  batches, InsertBatch, Batch,
-  packages, InsertPackage, Package,
-  invoices, InsertInvoice, Invoice,
-  exchangeRates, InsertExchangeRate, ExchangeRate,
-  auditLogs, InsertAuditLog,
-  permissions, subPermissions,
-  notificationLogs, InsertNotificationLog,
-  systemSettings, InsertSystemSetting,
-  currencies, taxRates, emailTemplates, ipWhitelist,
-  fullPackageOrders, InsertFullPackageOrder, FullPackageOrder,
-  suppliers, InsertSupplier, Supplier,
-  fullPackageStatusHistory, InsertFullPackageStatusHistory, FullPackageStatusHistory,
-  customerNotificationPrefs, InsertCustomerNotificationPref, CustomerNotificationPref,
-  vipCustomers, InsertVipCustomer, VipCustomer,
-  packageQrCodes, InsertPackageQrCode, PackageQrCode,
-  scheduledTasksLog, InsertScheduledTaskLog, ScheduledTaskLog,
-  packageScans, InsertPackageScan, PackageScan,
-  packageStatusHistory, InsertPackageStatusHistory, PackageStatusHistory,
-  scanDevices, InsertScanDevice, ScanDevice,
-  customerAccounts, InsertCustomerAccount, CustomerAccount,
-  ledgerTransactions, InsertLedgerTransaction, LedgerTransaction,
-  paymentRecords, InsertPaymentRecord, PaymentRecord,
-  creditAdjustments, InsertCreditAdjustment, CreditAdjustment,
-  paymentReminders, InsertPaymentReminder, PaymentReminder,
-  productCategories, InsertProductCategory, ProductCategory,
-  batchPricingTiers, InsertBatchPricingTier, BatchPricingTier,
-  batchCustomerPricing, InsertBatchCustomerPricing, BatchCustomerPricing,
-  notificationSettings, InsertNotificationSetting, NotificationSetting,
-  expenseCategories, InsertExpenseCategory, ExpenseCategory,
-  expenses, InsertExpense, Expense,
-  partners, InsertPartner, Partner,
-  partnerTransactions, InsertPartnerTransaction, PartnerTransaction,
-  companyDebts, InsertCompanyDebt, CompanyDebt,
-  debtPayments, InsertDebtPayment, DebtPayment,
-  cashAccounts, InsertCashAccount, CashAccount,
-  cashTransactions, InsertCashTransaction, CashTransaction,
-  financialPeriods, InsertFinancialPeriod, FinancialPeriod,
-  scanHistory, InsertScanHistory, ScanHistory,
-  serviceTypes, InsertServiceType, ServiceType,
-  extraServices, InsertExtraService, ExtraService,
-  packageClaimRequests, InsertPackageClaimRequest, PackageClaimRequest,
-  stockCategories, InsertStockCategory, StockCategory,
-  stockProducts, InsertStockProduct, StockProduct,
-  stockPurchases, InsertStockPurchase, StockPurchase,
-  stockPurchaseItems, InsertStockPurchaseItem, StockPurchaseItem,
-  stockSales, InsertStockSale, StockSale,
-  stockSaleItems, InsertStockSaleItem, StockSaleItem,
-  stockMovements, InsertStockMovement, StockMovement,
-  customerMessages, InsertCustomerMessage, CustomerMessage,
-  customerAddresses, InsertCustomerAddress, CustomerAddress,
-  notificationTemplates, InsertNotificationTemplate, NotificationTemplate,
-  labelTemplates, InsertLabelTemplate, LabelTemplate,
-  invoiceTemplates, InsertInvoiceTemplate, InvoiceTemplate,
-  customerNotifications, InsertCustomerNotification, CustomerNotification,
-  revenueRecords, InsertRevenueRecord, RevenueRecord,
-  dailyFinancialSummary, InsertDailyFinancialSummary, DailyFinancialSummary,
-  blogPosts, InsertBlogPost, BlogPost,
-  deletionLogs, InsertDeletionLog, DeletionLog,
-  activityAlerts, InsertActivityAlert, ActivityAlert,
-  supportChats, InsertSupportChat, SupportChat,
-  chatMessages, InsertChatMessage, ChatMessage,
-  backups, InsertBackup, Backup,
-  expenseAlerts, InsertExpenseAlert, ExpenseAlert,
-  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog
-} from "../../drizzle/schema";
+import { users, batches, packages, Package, fullPackageOrders, packageQrCodes, InsertPackageQrCode, PackageQrCode, packageScans, InsertPackageScan, packageStatusHistory, InsertPackageStatusHistory, scanDevices, ledgerTransactions, scanHistory, InsertScanHistory, ScanHistory } from "../../drizzle/schema";
 
 // ============ QR CODE OPERATIONS ============
 
@@ -171,20 +100,6 @@ export async function getRecentScansByUser(userId: number, limit: number = 50) {
   return db.select().from(packageScans).where(eq(packageScans.scannedById, userId)).orderBy(desc(packageScans.scannedAt)).limit(limit);
 }
 
-// Get today's scans by warehouse
-export async function getTodayScansByWarehouse(warehouseId: number) {
-  const db = await getDb();
-  if (!db) return [];
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  return db.select().from(packageScans)
-    .where(and(
-      eq(packageScans.warehouseId, warehouseId),
-      gte(packageScans.scannedAt, today)
-    ))
-    .orderBy(desc(packageScans.scannedAt));
-}
-
 // Create status history entry
 export async function createStatusHistory(data: InsertPackageStatusHistory) {
   const db = await getDb();
@@ -198,22 +113,6 @@ export async function getPackageStatusHistory(packageId: number) {
   const db = await getDb();
   if (!db) return [];
   return db.select().from(packageStatusHistory).where(eq(packageStatusHistory.packageId, packageId)).orderBy(desc(packageStatusHistory.changedAt));
-}
-
-// Register scan device
-export async function registerScanDevice(data: InsertScanDevice) {
-  const db = await getDb();
-  if (!db) throw new Error("Database not connected");
-  const result = await db.insert(scanDevices).values(data);
-  return { id: Number(result[0].insertId) };
-}
-
-// Get scan device by identifier
-export async function getScanDeviceByIdentifier(identifier: string) {
-  const db = await getDb();
-  if (!db) return null;
-  const results = await db.select().from(scanDevices).where(eq(scanDevices.deviceIdentifier, identifier)).limit(1);
-  return results[0] || null;
 }
 
 // Update device last active

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { fmtAmount, fmtUsd } from "./lib/portalFormat";
-import { csvAmount } from "./lib/csv";
+import { fmtAmount, fmtUsd } from "../lib/portalFormat";
+import { csvAmount } from "../lib/csv";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * Money on the finance screens and at the delivery counter (2026-09-11): one
@@ -32,12 +35,12 @@ describe("the amount formatters", () => {
   });
 });
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const FILES = [
-  "pages/Finance.tsx",
-  "pages/CustomerFinance.tsx",
-  "pages/Payments.tsx",
-  "pages/CustomerDeliveryScanner.tsx",
+  "pages/finance/Finance.tsx",
+  "pages/finance/CustomerFinance.tsx",
+  "pages/finance/Payments.tsx",
+  "pages/scanning/CustomerDeliveryScanner.tsx",
   "components/BoxInvoiceView.tsx",
   "components/BatchInvoiceView.tsx",
   "components/delivery/BoxSettlementPanel.tsx",
@@ -65,7 +68,7 @@ describe("the finance screens and the counter write amounts one way", () => {
   });
 
   it("the customer's own report escapes what a person typed, and prints from the opener", () => {
-    const src = fs.readFileSync(path.join(SRC, "pages/CustomerFinance.tsx"), "utf8");
+    const src = fs.readFileSync(path.join(SRC, "pages/finance/CustomerFinance.tsx"), "utf8");
     expect(src).toContain('title="${escapeHtml(txn.description)}"');
     expect(src).not.toMatch(/<script[\s>]/);
     expect(src).toContain("printWhenReady(printWindow)");

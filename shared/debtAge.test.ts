@@ -32,7 +32,7 @@ describe("how old a debt is", () => {
   });
 
   it("the debtors page ages by it", () => {
-    const page = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/DebtorsReport.tsx"), "utf8");
+    const page = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/finance/DebtorsReport.tsx"), "utf8");
     expect(page).toContain("trpc.ledger.debtAges.useQuery()");
     expect(page).toContain("? (daysSince(owedSince) ?? 0)");
   });

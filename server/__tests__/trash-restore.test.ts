@@ -4,8 +4,11 @@ import path from "path";
 import { getTableColumns } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
 import type { MySqlTable } from "drizzle-orm/mysql-core";
-import { batches, deliveryBoxItems, deliveryBoxes } from "../drizzle/schema";
-import { snapshotRowForInsert } from "./db/trash.db";
+import { batches, deliveryBoxItems, deliveryBoxes } from "../../drizzle/schema";
+import { snapshotRowForInsert } from "../db/trash.db";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * What goes into the bin comes out whole (owner, 2026-09-17).
@@ -76,7 +79,7 @@ describe("a row from the bin goes back in", () => {
 });
 
 describe("a box comes back with its parcels or not at all", () => {
-  const source = fs.readFileSync(path.join(__dirname, "db/trash.db.ts"), "utf8").replace(/\r\n/g, "\n");
+  const source = fs.readFileSync(path.join(ROOT_DIR, "db/trash.db.ts"), "utf8").replace(/\r\n/g, "\n");
   const slice = (start: string) => {
     const a = source.indexOf(start);
     expect(a, start).toBeGreaterThan(-1);

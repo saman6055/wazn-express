@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest";
-import { SYSTEM_MODULES, PERMISSION_GROUPS } from "../shared/permissions";
-import { hasDb } from "./testEnv";
+import { SYSTEM_MODULES, PERMISSION_GROUPS } from "../../shared/permissions";
+import { hasDb } from "../testEnv";
 
 /**
  * Tests for batch sync logic:
@@ -94,7 +94,7 @@ describe.skipIf(!hasDb())("Batch Sync Logic", () => {
 
   it("CommissionDashboard should access batch data from order", async () => {
     const fs = await import("fs");
-    const frontendCode = fs.readFileSync("./client/src/pages/CommissionDashboard.tsx", "utf-8");
+    const frontendCode = fs.readFileSync("./client/src/pages/orders/CommissionDashboard.tsx", "utf-8");
     
     // Should access batch from order
     expect(frontendCode).toContain("batch");

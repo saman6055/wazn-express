@@ -48,179 +48,179 @@ function staffPage(load: () => Promise<{ default: ComponentType }>) {
 // Core & Home
 // ---------------------------------------------------------------------------
 const Home = lazy(() => import("./pages/home/Home"));
-const NotFound = lazy(() => import("./pages/NotFound"));
+const NotFound = lazy(() => import("./pages/public/NotFound"));
 
 // ---------------------------------------------------------------------------
 // Dashboard & Customers
 // ---------------------------------------------------------------------------
-const DashboardWrapper = lazy(() => import("./pages/DashboardWrapper"));
-const Customers = lazy(() => import("./pages/Customers"));
+const DashboardWrapper = lazy(() => import("./pages/dashboard/DashboardWrapper"));
+const Customers = lazy(() => import("./pages/customers/Customers"));
 const CustomerDetail = lazy(() => import("./pages/customers/CustomerDetail"));
-const Countries = lazy(() => import("./pages/Countries"));
-const Warehouses = lazy(() => import("./pages/Warehouses"));
+const Countries = lazy(() => import("./pages/settings/Countries"));
+const Warehouses = lazy(() => import("./pages/settings/Warehouses"));
 
 // ---------------------------------------------------------------------------
 // Packages & Registration
 // ---------------------------------------------------------------------------
-const PackagesDashboard = lazy(() => import("./pages/PackagesDashboard"));
-const Packages = lazy(() => import("./pages/Packages"));
-const SelfOrders = lazy(() => import("./pages/SelfOrders"));
-const QuickRegister = lazy(() => import("./pages/QuickRegister"));
-const BulkRegister = lazy(() => import("./pages/BulkRegister"));
-const UnclaimedPackages = lazy(() => import("./pages/UnclaimedPackages"));
-const DeliveredWithoutBox = lazy(() => import("./pages/DeliveredWithoutBox"));
-const Registrations = lazy(() => import("./pages/Registrations"));
-const AwaitingArrival = lazy(() => import("./pages/AwaitingArrival"));
-const ClaimRequests = lazy(() => import("./pages/ClaimRequests"));
+const PackagesDashboard = lazy(() => import("./pages/packages/PackagesDashboard"));
+const Packages = lazy(() => import("./pages/packages/Packages"));
+const SelfOrders = lazy(() => import("./pages/orders/SelfOrders"));
+const QuickRegister = lazy(() => import("./pages/packages/QuickRegister"));
+const BulkRegister = lazy(() => import("./pages/packages/BulkRegister"));
+const UnclaimedPackages = lazy(() => import("./pages/packages/UnclaimedPackages"));
+const DeliveredWithoutBox = lazy(() => import("./pages/packages/DeliveredWithoutBox"));
+const Registrations = lazy(() => import("./pages/packages/Registrations"));
+const AwaitingArrival = lazy(() => import("./pages/packages/AwaitingArrival"));
+const ClaimRequests = lazy(() => import("./pages/packages/ClaimRequests"));
 
 // ---------------------------------------------------------------------------
 // Scanners & Scan
 // ---------------------------------------------------------------------------
-const BatchAssignmentScanner = lazy(() => import("./pages/BatchAssignmentScanner"));
-const ArrivalVerificationScanner = lazy(() => import("./pages/ArrivalVerificationScanner"));
-const CustomerDeliveryScanner = lazy(() => import("./pages/CustomerDeliveryScanner"));
-const ScanDashboard = lazy(() => import("./pages/ScanDashboard"));
-const ScanReports = lazy(() => import("./pages/ScanReports"));
+const BatchAssignmentScanner = lazy(() => import("./pages/scanning/BatchAssignmentScanner"));
+const ArrivalVerificationScanner = lazy(() => import("./pages/scanning/ArrivalVerificationScanner"));
+const CustomerDeliveryScanner = lazy(() => import("./pages/scanning/CustomerDeliveryScanner"));
+const ScanDashboard = lazy(() => import("./pages/scanning/ScanDashboard"));
+const ScanReports = lazy(() => import("./pages/reports/ScanReports"));
 
 // ---------------------------------------------------------------------------
 // Finance
 // ---------------------------------------------------------------------------
-const Finance = lazy(() => import("./pages/Finance"));
-const CompanyFinanceDashboard = lazy(() => import("./pages/CompanyFinanceDashboard"));
-const CustomerFinance = lazy(() => import("./pages/CustomerFinance"));
-const DebtorsReport = lazy(() => import("./pages/DebtorsReport"));
-const WorkingCapital = lazy(() => import("./pages/WorkingCapital"));
-const GoodsOnRoad = lazy(() => import("./pages/GoodsOnRoad"));
-const CompanyStock = lazy(() => import("./pages/CompanyStock"));
-const ExtraCosts = lazy(() => import("./pages/ExtraCosts"));
-const YuanRateHistory = lazy(() => import("./pages/YuanRateHistory"));
-const BoxDoubleCharges = lazy(() => import("./pages/BoxDoubleCharges"));
-const CustomerStanding = lazy(() => import("./pages/CustomerStanding"));
-const BalanceSheet = lazy(() => import("./pages/BalanceSheet"));
-const BankAccounts = staffPage(() => import("./pages/BankAccounts"));
-const DebtReminders = lazy(() => import("./pages/DebtReminders"));
+const Finance = lazy(() => import("./pages/finance/Finance"));
+const CompanyFinanceDashboard = lazy(() => import("./pages/finance/CompanyFinanceDashboard"));
+const CustomerFinance = lazy(() => import("./pages/finance/CustomerFinance"));
+const DebtorsReport = lazy(() => import("./pages/finance/DebtorsReport"));
+const WorkingCapital = lazy(() => import("./pages/finance/WorkingCapital"));
+const GoodsOnRoad = lazy(() => import("./pages/batches/GoodsOnRoad"));
+const CompanyStock = lazy(() => import("./pages/finance/CompanyStock"));
+const ExtraCosts = lazy(() => import("./pages/finance/ExtraCosts"));
+const YuanRateHistory = lazy(() => import("./pages/finance/YuanRateHistory"));
+const BoxDoubleCharges = lazy(() => import("./pages/finance/BoxDoubleCharges"));
+const CustomerStanding = lazy(() => import("./pages/customers/CustomerStanding"));
+const BalanceSheet = lazy(() => import("./pages/finance/BalanceSheet"));
+const BankAccounts = staffPage(() => import("./pages/finance/BankAccounts"));
+const DebtReminders = lazy(() => import("./pages/finance/DebtReminders"));
 
 // ---------------------------------------------------------------------------
 // Batches & Accounting & Invoices
 // ---------------------------------------------------------------------------
-const Batches = lazy(() => import("./pages/Batches"));
-const BatchFinancialReport = lazy(() => import("./pages/BatchFinancialReport"));
-const BatchFinancialReportFull = lazy(() => import("./pages/BatchFinancialReportFull"));
-const CustomerPricingReport = lazy(() => import("./pages/CustomerPricingReport"));
-const Invoices = lazy(() => import("./pages/Invoices"));
-const InvoiceReports = lazy(() => import("./pages/InvoiceReports"));
-const InvoiceView = lazy(() => import("./pages/InvoiceView"));
-const BusinessAnalytics = lazy(() => import("./pages/BusinessAnalytics"));
+const Batches = lazy(() => import("./pages/batches/Batches"));
+const BatchFinancialReport = lazy(() => import("./pages/reports/BatchFinancialReport"));
+const BatchFinancialReportFull = lazy(() => import("./pages/reports/BatchFinancialReportFull"));
+const CustomerPricingReport = lazy(() => import("./pages/reports/CustomerPricingReport"));
+const Invoices = lazy(() => import("./pages/finance/Invoices"));
+const InvoiceReports = lazy(() => import("./pages/reports/InvoiceReports"));
+const InvoiceView = lazy(() => import("./pages/finance/InvoiceView"));
+const BusinessAnalytics = lazy(() => import("./pages/reports/BusinessAnalytics"));
 
 // ---------------------------------------------------------------------------
 // Reports & Services & Profit
 // ---------------------------------------------------------------------------
-const Reports = lazy(() => import("./pages/Reports"));
-const BatchReports = lazy(() => import("./pages/BatchReports"));
-const ServicesReport = lazy(() => import("./pages/ServicesReport"));
-const ServicesManagement = lazy(() => import("./pages/ServicesManagement"));
+const Reports = lazy(() => import("./pages/reports/Reports"));
+const BatchReports = lazy(() => import("./pages/reports/BatchReports"));
+const ServicesReport = lazy(() => import("./pages/reports/ServicesReport"));
+const ServicesManagement = lazy(() => import("./pages/settings/ServicesManagement"));
 // ServiceTypesManagement removed — merged into /service-types (Settings)
-const ProfitDashboard = lazy(() => import("./pages/ProfitDashboard"));
-const ProfitDashboardByType = lazy(() => import("./pages/ProfitDashboardByType"));
-const UnifiedProfitDashboard = lazy(() => import("./pages/UnifiedProfitDashboard"));
-const MonthlyProfitReport = lazy(() => import("./pages/MonthlyProfitReport"));
-const ProfitReports = lazy(() => import("./pages/ProfitReports"));
-const VolumetricReport = lazy(() => import("./pages/VolumetricReport"));
-const DispatchCheck = lazy(() => import("./pages/DispatchCheck"));
-const DispatchReport = lazy(() => import("./pages/DispatchReport"));
-const ProfitLossReport = lazy(() => import("./pages/ProfitLossReport"));
+const ProfitDashboard = lazy(() => import("./pages/reports/ProfitDashboard"));
+const ProfitDashboardByType = lazy(() => import("./pages/reports/ProfitDashboardByType"));
+const UnifiedProfitDashboard = lazy(() => import("./pages/reports/UnifiedProfitDashboard"));
+const MonthlyProfitReport = lazy(() => import("./pages/reports/MonthlyProfitReport"));
+const ProfitReports = lazy(() => import("./pages/reports/ProfitReports"));
+const VolumetricReport = lazy(() => import("./pages/reports/VolumetricReport"));
+const DispatchCheck = lazy(() => import("./pages/batches/DispatchCheck"));
+const DispatchReport = lazy(() => import("./pages/batches/DispatchReport"));
+const ProfitLossReport = lazy(() => import("./pages/reports/ProfitLossReport"));
 
 // ---------------------------------------------------------------------------
 // Company (Expenses, Partners, Treasury)
 // ---------------------------------------------------------------------------
-const Expenses = lazy(() => import("./pages/Expenses"));
-const ExpenseAlerts = lazy(() => import("./pages/ExpenseAlerts"));
-const Partners = lazy(() => import("./pages/Partners"));
-const CompanyDebts = lazy(() => import("./pages/CompanyDebts"));
-const Treasury = lazy(() => import("./pages/Treasury"));
-const FinancialReports = lazy(() => import("./pages/FinancialReports"));
+const Expenses = lazy(() => import("./pages/finance/Expenses"));
+const ExpenseAlerts = lazy(() => import("./pages/finance/ExpenseAlerts"));
+const Partners = lazy(() => import("./pages/finance/Partners"));
+const CompanyDebts = lazy(() => import("./pages/finance/CompanyDebts"));
+const Treasury = lazy(() => import("./pages/finance/Treasury"));
+const FinancialReports = lazy(() => import("./pages/reports/FinancialReports"));
 
 // ---------------------------------------------------------------------------
 // Users & Audit
 // ---------------------------------------------------------------------------
-const Users = lazy(() => import("./pages/Users"));
-const StaffManagement = lazy(() => import("./pages/StaffManagement"));
-const PermissionsManagement = lazy(() => import("./pages/PermissionsManagement"));
-const Trash = lazy(() => import("./pages/Trash"));
-const AuditLogs = lazy(() => import("./pages/AuditLogs"));
-const AuditSweep = lazy(() => import("./pages/AuditSweep"));
-const Problems = lazy(() => import("./pages/Problems"));
+const Users = lazy(() => import("./pages/admin/Users"));
+const StaffManagement = lazy(() => import("./pages/admin/StaffManagement"));
+const PermissionsManagement = lazy(() => import("./pages/admin/PermissionsManagement"));
+const Trash = lazy(() => import("./pages/admin/Trash"));
+const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
+const AuditSweep = lazy(() => import("./pages/admin/AuditSweep"));
+const Problems = lazy(() => import("./pages/admin/Problems"));
 
 // ---------------------------------------------------------------------------
 // Settings & Admin
 // ---------------------------------------------------------------------------
-const Settings = lazy(() => import("./pages/Settings"));
-const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
-const AdminPushNotificationCenter = lazy(() => import("./pages/AdminPushNotificationCenter"));
-const InvoiceTemplateSettings = lazy(() => import("./pages/InvoiceTemplateSettings"));
-const LabelTemplateSettings = lazy(() => import("./pages/LabelTemplateSettings"));
-const BatchLabelTemplateSettings = lazy(() => import("./pages/BatchLabelTemplateSettings"));
+const Settings = lazy(() => import("./pages/settings/Settings"));
+const NotificationSettings = lazy(() => import("./pages/settings/NotificationSettings"));
+const AdminPushNotificationCenter = lazy(() => import("./pages/admin/AdminPushNotificationCenter"));
+const InvoiceTemplateSettings = lazy(() => import("./pages/settings/InvoiceTemplateSettings"));
+const LabelTemplateSettings = lazy(() => import("./pages/settings/LabelTemplateSettings"));
+const BatchLabelTemplateSettings = lazy(() => import("./pages/settings/BatchLabelTemplateSettings"));
 const DataManagement = lazy(() => import("./pages/admin/DataManagement"));
-const BackupManagement = staffPage(() => import("./pages/BackupManagement"));
-const ScheduledBackups = staffPage(() => import("./pages/ScheduledBackups"));
-const SystemMonitorDashboard = staffPage(() => import("./pages/SystemMonitorDashboard"));
-const CustomerOptions = lazy(() => import("./pages/CustomerOptions"));
-const CurrencyManagement = staffPage(() => import("./pages/CurrencyManagement"));
-const TaxRatesManagement = staffPage(() => import("./pages/TaxRatesManagement"));
-const EmailTemplatesManagement = staffPage(() => import("./pages/EmailTemplatesManagement"));
-const IpWhitelistManagement = staffPage(() => import("./pages/IpWhitelistManagement"));
-const AdvancedSettings = staffPage(() => import("./pages/AdvancedSettings"));
-const CustomerCodePrefixSettings = lazy(() => import("./pages/CustomerCodePrefixSettings"));
-const PortalPriceListSettings = lazy(() => import("./pages/PortalPriceListSettings"));
-const PortalCenter = lazy(() => import("./pages/PortalCenter"));
-const Pricing = lazy(() => import("./pages/Pricing"));
+const BackupManagement = staffPage(() => import("./pages/admin/BackupManagement"));
+const ScheduledBackups = staffPage(() => import("./pages/admin/ScheduledBackups"));
+const SystemMonitorDashboard = staffPage(() => import("./pages/admin/SystemMonitorDashboard"));
+const CustomerOptions = lazy(() => import("./pages/customers/CustomerOptions"));
+const CurrencyManagement = staffPage(() => import("./pages/settings/CurrencyManagement"));
+const TaxRatesManagement = staffPage(() => import("./pages/settings/TaxRatesManagement"));
+const EmailTemplatesManagement = staffPage(() => import("./pages/settings/EmailTemplatesManagement"));
+const IpWhitelistManagement = staffPage(() => import("./pages/settings/IpWhitelistManagement"));
+const AdvancedSettings = staffPage(() => import("./pages/settings/AdvancedSettings"));
+const CustomerCodePrefixSettings = lazy(() => import("./pages/settings/CustomerCodePrefixSettings"));
+const PortalPriceListSettings = lazy(() => import("./pages/settings/PortalPriceListSettings"));
+const PortalCenter = lazy(() => import("./pages/admin/PortalCenter"));
+const Pricing = lazy(() => import("./pages/settings/Pricing"));
 
 // ---------------------------------------------------------------------------
 // Labels, VIP, Products, Services, Blog, Payments
 // ---------------------------------------------------------------------------
-const LabelPrinting = lazy(() => import("./pages/LabelPrinting"));
-const VipCustomers = lazy(() => import("./pages/VipCustomers"));
-const ProductCategories = lazy(() => import("./pages/ProductCategories"));
-const ServiceTypes = lazy(() => import("./pages/ServiceTypes"));
-const ServiceProfitReport = lazy(() => import("./pages/ServiceProfitReport"));
-const CustomerMessages = lazy(() => import("./pages/CustomerMessages"));
-const BlogManagement = lazy(() => import("./pages/BlogManagement"));
-const Payments = lazy(() => import("./pages/Payments"));
+const LabelPrinting = lazy(() => import("./pages/packages/LabelPrinting"));
+const VipCustomers = lazy(() => import("./pages/customers/VipCustomers"));
+const ProductCategories = lazy(() => import("./pages/settings/ProductCategories"));
+const ServiceTypes = lazy(() => import("./pages/settings/ServiceTypes"));
+const ServiceProfitReport = lazy(() => import("./pages/reports/ServiceProfitReport"));
+const CustomerMessages = lazy(() => import("./pages/customers/CustomerMessages"));
+const BlogManagement = lazy(() => import("./pages/admin/BlogManagement"));
+const Payments = lazy(() => import("./pages/finance/Payments"));
 
 // ---------------------------------------------------------------------------
 // Full Package System
 // ---------------------------------------------------------------------------
-const UnifiedOrdersDashboard = lazy(() => import("./pages/UnifiedOrdersDashboard"));
-const FullPackageDashboard = lazy(() => import("./pages/FullPackageDashboard"));
-const FullPackageForm = lazy(() => import("./pages/FullPackageForm"));
-const FullPackageDetail = lazy(() => import("./pages/FullPackageDetail"));
-const BulkOrderForm = staffPage(() => import("./pages/BulkOrderForm"));
+const UnifiedOrdersDashboard = lazy(() => import("./pages/orders/UnifiedOrdersDashboard"));
+const FullPackageDashboard = lazy(() => import("./pages/orders/FullPackageDashboard"));
+const FullPackageForm = lazy(() => import("./pages/orders/FullPackageForm"));
+const FullPackageDetail = lazy(() => import("./pages/orders/FullPackageDetail"));
+const BulkOrderForm = staffPage(() => import("./pages/orders/BulkOrderForm"));
 
 // ---------------------------------------------------------------------------
 // Commission
 // ---------------------------------------------------------------------------
-const CommissionDashboard = lazy(() => import("./pages/CommissionDashboard"));
-const CommissionOrders = lazy(() => import("./pages/CommissionOrders"));
-const CommissionForm = lazy(() => import("./pages/CommissionForm"));
-const CommissionDetail = lazy(() => import("./pages/CommissionDetail"));
+const CommissionDashboard = lazy(() => import("./pages/orders/CommissionDashboard"));
+const CommissionOrders = lazy(() => import("./pages/orders/CommissionOrders"));
+const CommissionForm = lazy(() => import("./pages/orders/CommissionForm"));
+const CommissionDetail = lazy(() => import("./pages/orders/CommissionDetail"));
 
 // ---------------------------------------------------------------------------
 // Suppliers & Tracking
 // ---------------------------------------------------------------------------
-const Suppliers = lazy(() => import("./pages/Suppliers"));
-const TrackingAlerts = lazy(() => import("./pages/TrackingAlerts"));
+const Suppliers = lazy(() => import("./pages/admin/Suppliers"));
+const TrackingAlerts = lazy(() => import("./pages/packages/TrackingAlerts"));
 
 // ---------------------------------------------------------------------------
 // Auth (Customer & Staff login)
 // ---------------------------------------------------------------------------
-const CustomerLogin = lazy(() => import("./pages/CustomerLogin"));
-const StaffLogin = lazy(() => import("./pages/StaffLogin"));
+const CustomerLogin = lazy(() => import("./pages/public/CustomerLogin"));
+const StaffLogin = lazy(() => import("./pages/public/StaffLogin"));
 
 // ---------------------------------------------------------------------------
 // Customer Portal routes
 // ---------------------------------------------------------------------------
 // The only page in the system anybody may read without an account.
-const PublicTracking = lazy(() => import("./pages/PublicTracking"));
+const PublicTracking = lazy(() => import("./pages/public/PublicTracking"));
 const PortalHome = lazy(() => import("./pages/portal/PortalHome"));
 const PortalCalculator = lazy(() => import("./pages/portal/PortalCalculator"));
 const PortalShipments = lazy(() => import("./pages/portal/PortalShipments"));
@@ -249,9 +249,9 @@ const PortalFAQ = lazy(() => import("./pages/portal/PortalFAQ"));
 const PortalAbout = lazy(() => import("./pages/portal/PortalAbout"));
 const StoreHome = lazy(() => import("./pages/store/StoreHome"));
 const StoreProduct = lazy(() => import("./pages/store/StoreProduct"));
-const StoreManagement = lazy(() => import("./pages/StoreManagement"));
+const StoreManagement = lazy(() => import("./pages/admin/StoreManagement"));
 const PortalProhibitedPackages = lazy(() => import("./pages/portal/PortalProhibitedPackages"));
-const ProhibitedRegister = lazy(() => import("./pages/ProhibitedRegister"));
+const ProhibitedRegister = lazy(() => import("./pages/packages/ProhibitedRegister"));
 
 function Router() {
   return (

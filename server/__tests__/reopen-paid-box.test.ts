@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Opening a box that was already finished (owner, 2026-09-22).
  *
@@ -20,7 +23,7 @@ import path from "path";
  * left ready to post a second time.
  */
 
-const readRoot = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+const readRoot = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 const lifecycle = readRoot("server/lib/boxLifecycle.ts");
 const router = readRoot("server/routers/scanning.router.ts");

@@ -17,7 +17,7 @@ const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(
 
 const panel = read("client/src/components/delivery/BoxSettlementPanel.tsx");
 const detail = read("client/src/components/delivery/BoxDetailPanel.tsx");
-const page = read("client/src/pages/CustomerDeliveryScanner.tsx");
+const page = read("client/src/pages/scanning/CustomerDeliveryScanner.tsx");
 const quick = read("client/src/components/delivery/QuickSettleDialog.tsx");
 
 function slice(src: string, start: string, end: string, label: string): string {

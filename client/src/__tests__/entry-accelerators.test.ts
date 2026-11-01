@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { cleanNumberPaste, cleanTrackingPaste, splitTrackingPaste, toPlainDigits } from "./lib/entry/cleanPaste";
+import { cleanNumberPaste, cleanTrackingPaste, splitTrackingPaste, toPlainDigits } from "../lib/entry/cleanPaste";
 import {
   SEARCH_HISTORY_KEY,
   forgetSearchHistory,
@@ -9,14 +9,17 @@ import {
   rememberSearch,
   suggestFromHistory,
   type KeyValueStore,
-} from "./lib/entry/searchHistory";
-import { displayDateValue, parseDateShortcut, toDateInputValue } from "./lib/entry/dateShortcuts";
-import { evaluateSum, measureDimensions, parseDimensions } from "./lib/entry/fieldMath";
-import { isGridPaste, parseClipboardGrid } from "./lib/entry/clipboardGrid";
-import { nextCell, parseCell } from "./lib/entry/gridNavigation";
-import { arrivalMessage, waybillSummary, whatsappLink, whatsappNumber } from "./lib/entry/messages";
-import { createShield, duplicateEntry, matchesFilters, toggleFilter } from "./lib/entry/small";
-import { USER_DATA_KEYS } from "./lib/signOut";
+} from "../lib/entry/searchHistory";
+import { displayDateValue, parseDateShortcut, toDateInputValue } from "../lib/entry/dateShortcuts";
+import { evaluateSum, measureDimensions, parseDimensions } from "../lib/entry/fieldMath";
+import { isGridPaste, parseClipboardGrid } from "../lib/entry/clipboardGrid";
+import { nextCell, parseCell } from "../lib/entry/gridNavigation";
+import { arrivalMessage, waybillSummary, whatsappLink, whatsappNumber } from "../lib/entry/messages";
+import { createShield, duplicateEntry, matchesFilters, toggleFilter } from "../lib/entry/small";
+import { USER_DATA_KEYS } from "../lib/signOut";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The owner's workflow brief (2026-09-11): faster entry, fewer clicks, fewer
@@ -226,7 +229,7 @@ describe("guards and small helpers", () => {
   });
 
   it("privacy mode has its style, and it never blurs a printout", () => {
-    const css = fs.readFileSync(path.resolve(__dirname, "index.css"), "utf8");
+    const css = fs.readFileSync(path.resolve(ROOT_DIR, "index.css"), "utf8");
     expect(css).toContain(":root[data-privacy] [data-private]");
     expect(css).toMatch(/@media print\s*\{\s*:root\[data-privacy\] \[data-private\]\s*\{\s*filter: none;/);
   });

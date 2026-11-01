@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Nothing shows the reader the source of a translation call.
  *
@@ -18,9 +21,9 @@ import path from "path";
  */
 
 const ROOTS = [
-  path.resolve(__dirname),
-  path.resolve(__dirname, "../../server"),
-  path.resolve(__dirname, "../../shared"),
+  path.resolve(ROOT_DIR),
+  path.resolve(ROOT_DIR, "../../server"),
+  path.resolve(ROOT_DIR, "../../shared"),
 ];
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
@@ -56,7 +59,7 @@ describe("a label is a label, not the code that would produce one", () => {
         // A comment quoting the bug is how it gets explained, not committed.
         const code = line.replace(/\/\/.*$/, "").replace(/\/\*.*?\*\//g, "");
         if (LITERAL_CALL.test(code)) {
-          const rel = path.relative(path.resolve(__dirname, "../.."), file).replace(/\\/g, "/");
+          const rel = path.relative(path.resolve(ROOT_DIR, "../.."), file).replace(/\\/g, "/");
           offenders.push(`${rel}:${i + 1}  ${line.trim().slice(0, 80)}`);
         }
       });

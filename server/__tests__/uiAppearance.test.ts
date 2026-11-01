@@ -6,7 +6,7 @@ import {
   fontFormatFor,
   normalizeAppearance,
   parseAppearance,
-} from "./lib/uiAppearance";
+} from "../lib/uiAppearance";
 
 /**
  * The appearance row is the one setting that paints every screen in the app.

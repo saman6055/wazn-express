@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The watcher writes to twenty-three customers at a time. What has to hold is
  * less about the happy path than about the ways it could go wrong quietly:
@@ -12,7 +15,7 @@ import path from "path";
  * to run — and both are absent here.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 const WATCH = read("server/services/flightWatch.service.ts");

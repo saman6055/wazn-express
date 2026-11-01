@@ -3,6 +3,9 @@ import fs from "fs";
 import path from "path";
 import { dispatchPlainText, dispatchWecomMarkdown, wecomKeyFrom, WECOM_SETTING_KEY } from "@shared/dispatchMessage";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * When a batch leaves China (owner, 2026-10-26): the WeCom group robot is told
  * by itself, and the report page sends a picture of the report to WeChat (the
@@ -10,7 +13,7 @@ import { dispatchPlainText, dispatchWecomMarkdown, wecomKeyFrom, WECOM_SETTING_K
  * reaches a browser.
  */
 
-const root = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+const root = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 const FACTS = { batchCode: "AIR-2026-075GZ", cartons: 6, parcels: 70, leftOut: 0, by: "Ako", reportUrl: "https://admin.example/dispatch-check/122/report" };
 
 describe("the message", () => {
@@ -55,7 +58,7 @@ describe("sending", () => {
   it("posts markdown to qyapi.weixin.qq.com and reads WeCom's answer", async () => {
     const fetchMock = vi.fn(async () => new Response(JSON.stringify({ errcode: 0, errmsg: "ok" }), { status: 200 }));
     vi.stubGlobal("fetch", fetchMock);
-    const { sendWecomMarkdown } = await import("./lib/wecomBot");
+    const { sendWecomMarkdown } = await import("../lib/wecomBot");
     const res = await sendWecomMarkdown("**hi**", "abcdefghijklmnopqrstuvwx");
     expect(res.ok).toBe(true);
     const [url, init] = fetchMock.mock.calls[0] as unknown as [string, RequestInit];
@@ -65,7 +68,7 @@ describe("sending", () => {
 
   it("a refusal from WeCom is reported, not thrown", async () => {
     vi.stubGlobal("fetch", vi.fn(async () => new Response(JSON.stringify({ errcode: 93000, errmsg: "invalid webhook url" }), { status: 200 })));
-    const { sendWecomMarkdown } = await import("./lib/wecomBot");
+    const { sendWecomMarkdown } = await import("../lib/wecomBot");
     const res = await sendWecomMarkdown("x", "abcdefghijklmnopqrstuvwx");
     expect(res.ok).toBe(false);
     expect(res.error).toContain("93000");
@@ -78,7 +81,7 @@ describe("sending", () => {
   });
 
   it("the report page shares the picture to WeChat and to Wazn's WhatsApp", () => {
-    const page = root("client/src/pages/DispatchReport.tsx");
+    const page = root("client/src/pages/batches/DispatchReport.tsx");
     expect(page).toContain('data-testid="dispatch-report-share"');
     expect(page).toContain('data-testid="dispatch-report-whatsapp"');
     expect(page).toContain("await navigator.share({ files: [file], text });");
@@ -86,13 +89,13 @@ describe("sending", () => {
     // ...and as a PDF (owner, 2026-10-26).
     expect(page).toContain('onClick={() => void send("whatsapp", "pdf")}');
     expect(page).toContain("jpegDataUrlToPdfFile(url, img.naturalWidth, img.naturalHeight");
-    expect(root("client/src/pages/Settings.tsx")).toContain("<WecomRobotCard />");
+    expect(root("client/src/pages/settings/Settings.tsx")).toContain("<WecomRobotCard />");
   });
 });
 
 describe("the page keeps what was checked (owner, 2026-10-26)", () => {
   it("with no batch chosen it shows every check as cards, each with its report", () => {
-    const page = root("client/src/pages/DispatchCheck.tsx");
+    const page = root("client/src/pages/batches/DispatchCheck.tsx");
     expect(page).toContain("{!batchId ? <DispatchHistory onOpen={(id) => setBatchId(id)} /> : !s ? (");
     expect(page).toContain('data-testid="dispatch-back-to-list"');
     const cards = root("client/src/components/dispatch/DispatchHistory.tsx");
@@ -104,7 +107,7 @@ describe("the page keeps what was checked (owner, 2026-10-26)", () => {
 
 describe("only batches made in China (owner, 2026-10-26)", () => {
   it("the page offers them and the server refuses any other", () => {
-    expect(root("client/src/pages/DispatchCheck.tsx")).toContain("trpc.dispatch.batches.useQuery()");
+    expect(root("client/src/pages/batches/DispatchCheck.tsx")).toContain("trpc.dispatch.batches.useQuery()");
     const db = root("server/db/dispatch.db.ts");
     const open = db.slice(db.indexOf("export async function openCarton"));
     expect(open.indexOf("if (!(await isChinaBatch(batch)))")).toBeGreaterThan(-1);

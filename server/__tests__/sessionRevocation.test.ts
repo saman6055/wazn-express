@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Switching an account off has to take effect now, not in a week.
  *
@@ -15,7 +18,7 @@ import path from "path";
  * before the decision to switch them off, so it cannot be asked about it.
  */
 describe("a deactivated account cannot keep using an open session", () => {
-  const SDK = fs.readFileSync(path.resolve(__dirname, "_core/sdk.ts"), "utf8");
+  const SDK = fs.readFileSync(path.resolve(ROOT_DIR, "_core/sdk.ts"), "utf8");
   const auth = SDK.slice(
     SDK.indexOf("async authenticateRequest"),
     SDK.indexOf("Regular OAuth user flow"),
@@ -45,7 +48,7 @@ describe("a deactivated account cannot keep using an open session", () => {
   });
 
   it("the login still refuses an inactive account at the door", () => {
-    const login = fs.readFileSync(path.resolve(__dirname, "routers/auth.router.ts"), "utf8");
+    const login = fs.readFileSync(path.resolve(ROOT_DIR, "routers/auth.router.ts"), "utf8");
     expect(login).toMatch(/if\s*\(!customer\.isActive\)/);
     expect(login).toMatch(/if\s*\(!user\.isActive\)/);
   });

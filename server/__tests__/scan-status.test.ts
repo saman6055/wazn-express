@@ -5,7 +5,7 @@ import {
   advanceStatus,
   PACKAGE_STATUSES,
   type ScanType,
-} from "./lib/scanStatus";
+} from "../lib/scanStatus";
 
 /**
  * `packages.status` is an ENUM. Writing anything outside its nine members is

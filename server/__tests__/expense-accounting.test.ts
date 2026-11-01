@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { SCHEMA_PATCHES } from "./_core/migrations";
+import { SCHEMA_PATCHES } from "../_core/migrations";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * An expense has to affect three things, and used to affect one.
@@ -21,7 +24,7 @@ import { SCHEMA_PATCHES } from "./_core/migrations";
  * marker must fail loudly rather than silently assert against "".
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 
 /**
  * Line endings normalised on the way in.
@@ -250,7 +253,7 @@ describe("the expenses table the code writes is the expenses table that exists",
  * can act on.
  */
 describe("the expenses screen is wired to the accounting", () => {
-  const screen = () => read("client/src/pages/Expenses.tsx");
+  const screen = () => read("client/src/pages/finance/Expenses.tsx");
 
   it("asks which account the money came out of, and sends it", () => {
     const src = screen();

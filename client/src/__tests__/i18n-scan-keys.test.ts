@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Every scanner screen went to production showing raw keys — the pages used
  * ~70 `scan.*` keys that existed in NO locale file, and nothing failed. The
@@ -13,7 +16,7 @@ import path from "path";
  * files, so a new scanner string can't ship untranslated again.
  */
 
-const SRC = path.join(__dirname);
+const SRC = path.join(ROOT_DIR);
 const LOCALES = ["ku", "en", "ar", "zh"] as const;
 
 function walk(dir: string, out: string[] = []): string[] {

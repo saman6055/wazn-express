@@ -2,7 +2,10 @@ import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Owner, 2026-10-23: the volumetric discount window in All Packages, in the
@@ -11,7 +14,7 @@ const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", r
  */
 describe("the volumetric discount window, on three screens", () => {
   it("All Packages: only a parcel billed on its volume, with the struck size beside the kilos charged", () => {
-    const src = read("client/src/pages/Packages.tsx");
+    const src = read("client/src/pages/packages/Packages.tsx");
     expect(src).toContain("{billedOnVolume && (\n            <VolumetricDiscountButton");
     expect(src).toContain("line-through\">{volumetricKg.toFixed(2)} kg</span>");
   });
@@ -23,7 +26,7 @@ describe("the volumetric discount window, on three screens", () => {
   });
 
   it("Quick Register: the last registration, when due", () => {
-    const src = read("client/src/pages/QuickRegister.tsx");
+    const src = read("client/src/pages/packages/QuickRegister.tsx");
     expect(src).toContain("<VolumetricDiscountIfDue packageId={lastRegistered.packageId} language={language} />");
     expect(src.split("packageId:").length - 1).toBeGreaterThanOrEqual(4);
   });
@@ -41,7 +44,7 @@ describe("the volumetric discount window, on three screens", () => {
 
 /** Owner, 2026-10-24: the discount in Quick Register's volume card itself, before saving. */
 describe("the volume discount while registering", () => {
-  const qr = read("client/src/pages/QuickRegister.tsx");
+  const qr = read("client/src/pages/packages/QuickRegister.tsx");
   const router = read("server/routers/packages.router.ts");
 
   it("a field in the volume card, the kilos charged following it", () => {

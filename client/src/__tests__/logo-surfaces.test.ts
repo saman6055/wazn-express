@@ -2,13 +2,16 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The mark sits straight on its card — no white tile — the owner's request
  * (September 2026). That only works if every place says which ink it needs:
  * black on a light surface, the white-ink twin on a dark one.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("the company mark without its white tile", () => {
@@ -27,7 +30,7 @@ describe("the company mark without its white tile", () => {
   });
 
   it("the two login pages sit on a dark gradient, so they ask for white ink and no tile", () => {
-    for (const rel of ["pages/StaffLogin.tsx", "pages/CustomerLogin.tsx"]) {
+    for (const rel of ["pages/public/StaffLogin.tsx", "pages/public/CustomerLogin.tsx"]) {
       const src = read(rel);
       expect(src, rel).toContain('surface="dark"');
       expect(src, rel).not.toContain("bg-white dark:bg-card rounded-2xl shadow-lg p-2");

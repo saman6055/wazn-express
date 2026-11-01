@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's rule (2026-09-10): a delivery box paid for in full is finished
  * at once — delivered, closed, archived — and the next box takes its place in
@@ -9,7 +12,7 @@ import path from "path";
  * (the delivery fee above all) is skipped on the way.
  */
 
-const ROOT = __dirname;
+const ROOT = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 function between(src: string, start: string, end: string): string {

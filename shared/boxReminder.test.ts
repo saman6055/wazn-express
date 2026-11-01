@@ -97,7 +97,7 @@ describe("the office is told", () => {
   });
 
   it("on the boxes page, with both answers on every box", () => {
-    const page = root("client/src/pages/CustomerDeliveryScanner.tsx");
+    const page = root("client/src/pages/scanning/CustomerDeliveryScanner.tsx");
     const alert = root("client/src/components/delivery/UnpaidBoxes.tsx");
     expect(page).toContain("<UnpaidBoxesAlert />");
     expect(alert).toContain('get("unpaid") === "1"');

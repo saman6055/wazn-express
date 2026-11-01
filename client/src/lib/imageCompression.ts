@@ -147,36 +147,6 @@ export async function compressImage(
 }
 
 /**
- * Compress image and convert to base64
- * @param file - The image file to compress
- * @param options - Compression options
- * @returns Promise<{base64: string, file: File}> - The compressed base64 data and file
- */
-export async function compressImageToBase64(
-  file: File,
-  options: CompressionOptions = {}
-): Promise<{ base64: string; file: File; originalSize: number; compressedSize: number }> {
-  const originalSize = file.size;
-  const compressedFile = await compressImage(file, options);
-  
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader();
-    reader.onload = () => {
-      const result = reader.result as string;
-      const base64Data = result.split(',')[1];
-      resolve({
-        base64: base64Data,
-        file: compressedFile,
-        originalSize,
-        compressedSize: compressedFile.size,
-      });
-    };
-    reader.onerror = reject;
-    reader.readAsDataURL(compressedFile);
-  });
-}
-
-/**
  * Format file size for display
  */
 export function formatFileSize(bytes: number): string {

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The office needs to answer "what is my password?" — and cannot.
  *
@@ -19,7 +22,7 @@ import path from "path";
  * shortcut, and it would be easy to add later without anyone noticing.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 describe("passwords are never readable", () => {
@@ -79,7 +82,7 @@ describe("telling a default password from a chosen one", () => {
   });
 
   it("the panel never prints a password the customer chose", () => {
-    const page = read("client/src/pages/PortalCenter.tsx");
+    const page = read("client/src/pages/admin/PortalCenter.tsx");
     // The default may be shown — we handed it out, and reading it back is
     // the whole point. Anything else must not be.
     expect(page).toContain("isOnDefaultPassword");

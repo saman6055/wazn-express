@@ -66,15 +66,6 @@ export function EarlierWaiting({
   );
 }
 
-export function scannedLine(language: string, scanned: number, total: number) {
-  return pickLang(language, {
-    ku: `${scanned}/${total} سکان کرا`,
-    en: `${scanned}/${total} scanned`,
-    ar: `تم مسح ${scanned}/${total}`,
-    zh: `已扫描 ${scanned}/${total}`,
-  });
-}
-
 function leftLine(language: string, left: number) {
   return pickLang(language, { ku: `${left} ماوە`, en: `${left} left`, ar: `${left} متبقية`, zh: `还剩 ${left}` });
 }

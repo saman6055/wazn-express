@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner, 2026-09-27: every place a language is chosen — portal and
  * office — shows Kurdistan for Kurdish, Iraq for Arabic, China for Chinese.
@@ -9,7 +12,7 @@ import path from "path";
  * and Kurdistan has none.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 const PICKERS = [
@@ -19,7 +22,7 @@ const PICKERS = [
   "components/LanguageSwitcher.tsx",
   "components/delivery/BoxDetailPanel.tsx",
   "components/delivery/BoxTable.tsx",
-  "pages/Settings.tsx",
+  "pages/settings/Settings.tsx",
 ];
 
 describe("language flags", () => {

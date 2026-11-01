@@ -3,7 +3,10 @@ import fs from "fs";
 import path from "path";
 import { moneyLineHref } from "@shared/moneyFeed";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8");
 
 /**
  * The money side of the bell (owner, 2026-10-02): every movement, with a

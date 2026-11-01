@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Every WhatsApp button a customer taps goes straight into Wazn's chat,
  * 07709183535, with a summary of the request already written (owner's rule,
@@ -14,7 +17,7 @@ import path from "path";
  * links opened an empty chat that said nothing about who was asking.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 function walk(dir: string, out: string[] = []): string[] {

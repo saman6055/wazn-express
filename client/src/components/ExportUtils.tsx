@@ -1,6 +1,6 @@
 import { csvCell, toCsv, downloadText } from "@/lib/csv";
-import { Button } from "@/components/ui/button";
-import { FileSpreadsheet, FileText, Download } from "lucide-react";
+
+
 
 interface ExportData {
   headers: string[];
@@ -147,42 +147,6 @@ interface ExportButtonsProps {
   filename: string;
   pdfElementId?: string;
   showPDF?: boolean;
-}
-
-export function ExportButtons({ data, filename, pdfElementId, showPDF = true }: ExportButtonsProps) {
-  return (
-    <div className="flex gap-2">
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => exportToExcel(data, filename)}
-        className="gap-2"
-      >
-        <FileSpreadsheet className="h-4 w-4" />
-        Excel
-      </Button>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => exportToCSV(data, filename)}
-        className="gap-2"
-      >
-        <Download className="h-4 w-4" />
-        CSV
-      </Button>
-      {showPDF && pdfElementId && (
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => exportToPDF(pdfElementId, filename)}
-          className="gap-2"
-        >
-          <FileText className="h-4 w-4" />
-          PDF
-        </Button>
-      )}
-    </div>
-  );
 }
 
 // Format currency for export

@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { fmtDate, fmtDateTime, fmtMonth, fmtTime, fmtWhen } from "./lib/numericDate";
-import { formatPortalDate } from "./lib/portalClock";
+import { fmtDate, fmtDateTime, fmtMonth, fmtTime, fmtWhen } from "../lib/numericDate";
+import { formatPortalDate } from "../lib/portalClock";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * One date standard for the whole system — 28/07/2026 — the owner's pick,
@@ -55,12 +58,12 @@ function sourceFiles(dir: string, out: string[] = []): string[] {
 describe("no screen asks the browser for a Kurdish date format", () => {
   it("every date goes through lib/numericDate instead", () => {
     const ASKS = /(?:toLocale(?:Date|Time)?String|DateTimeFormat)\(\s*["'](?:ku|ckb)(?:-[A-Za-z]+)*["']/;
-    const files = sourceFiles(path.resolve(__dirname));
+    const files = sourceFiles(path.resolve(ROOT_DIR));
     const offenders: string[] = [];
     for (const file of files) {
       fs.readFileSync(file, "utf8").split("\n").forEach((line, i) => {
         if (ASKS.test(line) && !/^\s*(\*|\/\/)/.test(line)) {
-          offenders.push(`${path.relative(__dirname, file).replace(/\\/g, "/")}:${i + 1}  ${line.trim()}`);
+          offenders.push(`${path.relative(ROOT_DIR, file).replace(/\\/g, "/")}:${i + 1}  ${line.trim()}`);
         }
       });
     }
@@ -102,25 +105,25 @@ describe("a moment is written, never counted back from today", () => {
     // Counting how many invoices were written today is a figure, not a
     // date, and stays; what is banned is a moment RENDERED as a distance.
     const BANNED = [/formatDistanceToNow\s*\(/, /formatDistance\s*\(/, /toDateString\(\)\s*===\s*today\.toDateString\(\)/];
-    const files = sourceFiles(path.resolve(__dirname));
+    const files = sourceFiles(path.resolve(ROOT_DIR));
     const offenders: string[] = [];
     for (const file of files) {
       const src = fs.readFileSync(file, "utf8");
       for (const rule of BANNED) {
-        if (rule.test(src)) offenders.push(`${path.relative(__dirname, file)}  ${rule}`);
+        if (rule.test(src)) offenders.push(`${path.relative(ROOT_DIR, file)}  ${rule}`);
       }
     }
     expect(offenders, offenders.join(" | ")).toEqual([]);
   });
 
   it("the screens that used to are written out now", () => {
-    const read = (rel: string) => fs.readFileSync(path.join(__dirname, rel), "utf8");
-    expect(read("pages/CustomerMessages.tsx")).toContain("const formatTime = (date: any) => fmtWhen(date, true);");
+    const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, rel), "utf8");
+    expect(read("pages/customers/CustomerMessages.tsx")).toContain("const formatTime = (date: any) => fmtWhen(date, true);");
     expect(read("pages/portal/PortalMessages.tsx")).toContain("const formatDate = (date: Date | string) => formatPortalDate(date, language);");
     expect(read("pages/portal/PortalNotifications.tsx")).toContain("return formatPortalDateTime(d, language);");
-    expect(read("pages/SystemMonitorDashboard.tsx")).toContain("const formatTimeAgo = (date: Date | string) => fmtWhen(date, true);");
-    expect(read("pages/BackupManagement.tsx")).toContain("fmtWhen(backup.createdAt, true)");
-    expect(read("pages/UnclaimedPackages.tsx")).toContain("{fmtWhen(pkg.createdAt)}");
+    expect(read("pages/admin/SystemMonitorDashboard.tsx")).toContain("const formatTimeAgo = (date: Date | string) => fmtWhen(date, true);");
+    expect(read("pages/admin/BackupManagement.tsx")).toContain("fmtWhen(backup.createdAt, true)");
+    expect(read("pages/packages/UnclaimedPackages.tsx")).toContain("{fmtWhen(pkg.createdAt)}");
     expect(read("components/customers/CustomerPendingOrdersSection.tsx")).toContain("fmtWhen(order.updatedAt)");
   });
 });

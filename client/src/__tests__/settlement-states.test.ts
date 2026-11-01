@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The payment window never says "nothing owed" when it simply failed.
  *
@@ -12,7 +15,7 @@ import path from "path";
  * of "no parcels" or "all covered" it is.
  */
 
-const read = (p: string) => fs.readFileSync(path.join(__dirname, p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.join(ROOT_DIR, p), "utf8").replace(/\r\n/g, "\n");
 const NOTHING_OWED_KU = "هیچ پارەیەکی ماوە نییە لەم بۆکسە";
 
 describe("both payment windows", () => {

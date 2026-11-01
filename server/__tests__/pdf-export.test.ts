@@ -1,8 +1,8 @@
 import { describe, it, expect, vi, beforeAll } from 'vitest';
 
 // Mock the database functions
-vi.mock('./db', async () => {
-  const actual = await vi.importActual('./db');
+vi.mock('../db', async () => {
+  const actual = await vi.importActual('../db');
   return {
     ...actual,
     getDb: vi.fn().mockResolvedValue(null),
@@ -15,7 +15,7 @@ vi.mock('./db', async () => {
 
 describe('PDF Export', () => {
   it('should generate dashboard report data', async () => {
-    const { getDashboardReportData } = await import('./services/pdf.service');
+    const { getDashboardReportData } = await import('../services/pdf.service');
     
     const data = await getDashboardReportData();
     
@@ -30,7 +30,7 @@ describe('PDF Export', () => {
   });
 
   it('should generate PDF buffer', async () => {
-    const { generateDashboardPDF, getDashboardReportData } = await import('./services/pdf.service');
+    const { generateDashboardPDF, getDashboardReportData } = await import('../services/pdf.service');
     
     const data = await getDashboardReportData();
     const pdfBuffer = await generateDashboardPDF(data);
@@ -44,7 +44,7 @@ describe('PDF Export', () => {
   });
 
   it('should include financial stats in report data', async () => {
-    const { getDashboardReportData } = await import('./services/pdf.service');
+    const { getDashboardReportData } = await import('../services/pdf.service');
     
     const data = await getDashboardReportData();
     
@@ -56,7 +56,7 @@ describe('PDF Export', () => {
   });
 
   it('should format active batches correctly', async () => {
-    const { getDashboardReportData } = await import('./services/pdf.service');
+    const { getDashboardReportData } = await import('../services/pdf.service');
     
     const data = await getDashboardReportData();
     

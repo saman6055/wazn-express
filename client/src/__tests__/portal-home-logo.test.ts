@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "./lib/brand";
+import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "../lib/brand";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The mark in the centre of the portal home's top row — the owner's choice
@@ -9,9 +12,9 @@ import { BRAND_LOGO_ON_DARK_URL, BRAND_LOGO_URL } from "./lib/brand";
  * the light theme; on the dark one the white-ink twin, where black vanishes.
  */
 
-const PUBLIC = path.resolve(__dirname, "../public");
+const PUBLIC = path.resolve(ROOT_DIR, "../public");
 const HOME = fs
-  .readFileSync(path.resolve(__dirname, "pages/portal/PortalHome.tsx"), "utf8")
+  .readFileSync(path.resolve(ROOT_DIR, "pages/portal/PortalHome.tsx"), "utf8")
   .replace(/\r\n/g, "\n");
 
 function pngSize(file: string): [number, number] {

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's note (Sep 2026): the dashboard header was too big — make it
  * small, refined, modern, and fixed.
@@ -12,11 +15,11 @@ import path from "path";
  * one ~49px bar that holds all three things and stays put.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 const COMPONENT = "components/layout/StickyDashboardHeader.tsx";
-const DASHBOARDS = ["pages/CommissionDashboard.tsx", "pages/FullPackageDashboard.tsx"];
+const DASHBOARDS = ["pages/orders/CommissionDashboard.tsx", "pages/orders/FullPackageDashboard.tsx"];
 
 describe("the bar actually sticks, and in the right place", () => {
   const src = read(COMPONENT);
@@ -77,12 +80,12 @@ describe("both dashboards use it, and neither kept the old banner", () => {
   });
 
   it("the tall coloured banner is gone from both", () => {
-    expect(read("pages/CommissionDashboard.tsx")).not.toContain("from-amber-500 to-yellow-600");
-    expect(read("pages/FullPackageDashboard.tsx")).not.toContain("from-emerald-600 to-emerald-700");
+    expect(read("pages/orders/CommissionDashboard.tsx")).not.toContain("from-amber-500 to-yellow-600");
+    expect(read("pages/orders/FullPackageDashboard.tsx")).not.toContain("from-emerald-600 to-emerald-700");
   });
 
   it("the six stat cards are gone, and the six figures are not", () => {
-    const commission = read("pages/CommissionDashboard.tsx");
+    const commission = read("pages/orders/CommissionDashboard.tsx");
     expect(commission).not.toContain("lg:grid-cols-6");
     for (const key of [
       "commission.totalOrdersLabel", "commission.pendingLabel", "commission.orderedLabel",
@@ -91,7 +94,7 @@ describe("both dashboards use it, and neither kept the old banner", () => {
       expect(commission, key).toContain(key);
     }
 
-    const fullPackage = read("pages/FullPackageDashboard.tsx");
+    const fullPackage = read("pages/orders/FullPackageDashboard.tsx");
     expect(fullPackage).not.toContain("lg:grid-cols-6");
     for (const key of [
       "fullPackage.ordersCountLabel", "fullPackage.pendingLabel", "fullPackage.inTransitLabel",

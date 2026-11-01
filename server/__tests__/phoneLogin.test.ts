@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { normalizePhone, phoneVariants, samePhone } from "../shared/phone";
+import { normalizePhone, phoneVariants, samePhone } from "../../shared/phone";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The failure this exists to stop.
@@ -45,9 +48,9 @@ describe("a phone number is the same number however it is written", () => {
   });
 
   it("the login screen and the server agree on what a number may contain", () => {
-    const schemas = fs.readFileSync(path.resolve(__dirname, "routers/schemas.ts"), "utf8");
+    const schemas = fs.readFileSync(path.resolve(ROOT_DIR, "routers/schemas.ts"), "utf8");
     const page = fs.readFileSync(
-      path.resolve(__dirname, "../client/src/pages/CustomerLogin.tsx"), "utf8");
+      path.resolve(ROOT_DIR, "../client/src/pages/public/CustomerLogin.tsx"), "utf8");
     // A number the server would accept must not be refused by the screen in
     // front of it — that refusal never reaches the lookup, so no fix below
     // can rescue it.
@@ -77,7 +80,7 @@ describe("a phone number is the same number however it is written", () => {
 });
 
 describe("the login looks a customer up by the number, not the spelling", () => {
-  const DB = fs.readFileSync(path.resolve(__dirname, "db/customers.db.ts"), "utf8");
+  const DB = fs.readFileSync(path.resolve(ROOT_DIR, "db/customers.db.ts"), "utf8");
   const fn = DB.slice(
     DB.indexOf("export async function getCustomerByMobile"),
     DB.indexOf("export async function getCustomerByCode"),
@@ -143,15 +146,15 @@ describe("the login looks a customer up by the number, not the spelling", () => 
    */
   it("the login screen says both shapes work", () => {
     const page = fs.readFileSync(
-      path.resolve(__dirname, "../client/src/pages/CustomerLogin.tsx"), "utf8");
+      path.resolve(ROOT_DIR, "../client/src/pages/public/CustomerLogin.tsx"), "utf8");
     expect(page).toMatch(/0750….*750…/s);
   });
 });
 
 describe("both reset screens set the same password", () => {
-  const SHARED = fs.readFileSync(path.resolve(__dirname, "../shared/resetPassword.ts"), "utf8");
-  const CENTRE = fs.readFileSync(path.resolve(__dirname, "../client/src/pages/PortalCenter.tsx"), "utf8");
-  const LIST = fs.readFileSync(path.resolve(__dirname, "../client/src/pages/Customers.tsx"), "utf8");
+  const SHARED = fs.readFileSync(path.resolve(ROOT_DIR, "../shared/resetPassword.ts"), "utf8");
+  const CENTRE = fs.readFileSync(path.resolve(ROOT_DIR, "../client/src/pages/admin/PortalCenter.tsx"), "utf8");
+  const LIST = fs.readFileSync(path.resolve(ROOT_DIR, "../client/src/pages/customers/Customers.tsx"), "utf8");
 
   /**
    * There are two places staff can reset a customer's password. The one thing
@@ -179,9 +182,9 @@ describe("both reset screens set the same password", () => {
    */
   it("the default satisfies the server's own minimum", () => {
     const portalCentre = fs.readFileSync(
-      path.resolve(__dirname, "routers/portalCenter.router.ts"), "utf8");
+      path.resolve(ROOT_DIR, "routers/portalCenter.router.ts"), "utf8");
     const customers = fs.readFileSync(
-      path.resolve(__dirname, "routers/customers.router.ts"), "utf8");
+      path.resolve(ROOT_DIR, "routers/customers.router.ts"), "utf8");
     expect(portalCentre).toMatch(/newPassword: z\.string\(\)\.min\(6\)/);
     expect(customers).toMatch(/newPassword: z\.string\(\)\.min\(6\)/);
     expect("123456".length).toBeGreaterThanOrEqual(6);
@@ -198,7 +201,7 @@ describe("both reset screens set the same password", () => {
 });
 
 describe("why a customer cannot sign in is answerable", () => {
-  const ROUTER = fs.readFileSync(path.resolve(__dirname, "routers/portalCenter.router.ts"), "utf8");
+  const ROUTER = fs.readFileSync(path.resolve(ROOT_DIR, "routers/portalCenter.router.ts"), "utf8");
   const proc = ROUTER.slice(
     ROUTER.indexOf("diagnoseCustomerLogin"),
     ROUTER.indexOf("resetCustomerPassword: adminProcedure"),
@@ -258,7 +261,7 @@ describe("why a customer cannot sign in is answerable", () => {
     // password" for every account, which is worse than saying nothing.
     expect(proc).toContain("input.password === undefined");
     const page = fs.readFileSync(
-      path.resolve(__dirname, "../client/src/pages/PortalCenter.tsx"), "utf8");
+      path.resolve(ROOT_DIR, "../client/src/pages/admin/PortalCenter.tsx"), "utf8");
     expect(page).toContain("password: pw ? pw : undefined");
   });
 });

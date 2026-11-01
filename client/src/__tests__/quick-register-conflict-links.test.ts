@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Quick Register's warnings lead to the record they are about — and they tell
  * the truth about it (owner, 2026-09-23).
@@ -19,10 +22,10 @@ import path from "path";
  * warning that names a record without a way to it.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
-const page = read("pages/QuickRegister.tsx");
+const page = read("pages/packages/QuickRegister.tsx");
 const alert = read("components/SystemAlert.tsx");
 
 describe("the lookup asks the server", () => {

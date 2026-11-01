@@ -1,10 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import * as db from './db';
-import { hasDb } from "./testEnv";
+import * as db from '../db';
+import { hasDb } from "../testEnv";
 
 // Mock the database module
-vi.mock('./db', async () => {
-  const actual = await vi.importActual('./db');
+vi.mock('../db', async () => {
+  const actual = await vi.importActual('../db');
   return {
     ...actual,
     getDb: vi.fn(),

@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 const SRC = fs.readFileSync(
-  path.resolve(__dirname, "components/portal/BatchJourneyTimeline.tsx"), "utf8");
+  path.resolve(ROOT_DIR, "components/portal/BatchJourneyTimeline.tsx"), "utf8");
 
 /**
  * The journey stepper is the first thing a customer looks at, on every card
@@ -48,7 +51,7 @@ describe("a journey cannot run backwards", () => {
       "pages/portal/skin3/Skin3PortalShipments.tsx",
     ];
     for (const s of skins) {
-      const src = fs.readFileSync(path.resolve(__dirname, s), "utf8");
+      const src = fs.readFileSync(path.resolve(ROOT_DIR, s), "utf8");
       expect(src, `${s} must use the shared stepper`).toContain("<BatchJourneyTimeline");
     }
   });
@@ -56,7 +59,7 @@ describe("a journey cannot run backwards", () => {
 
 describe("the route marker means something", () => {
   const SHIPMENTS = fs.readFileSync(
-    path.resolve(__dirname, "pages/portal/PortalShipments.tsx"), "utf8");
+    path.resolve(ROOT_DIR, "pages/portal/PortalShipments.tsx"), "utf8");
 
   /**
    * The China → Iraq line under every batch card had its marker pinned to the
@@ -99,7 +102,7 @@ describe("the route marker means something", () => {
 
 describe("the stepper can date every step it shows", () => {
   const SRC = fs.readFileSync(
-    path.resolve(__dirname, "components/portal/BatchJourneyTimeline.tsx"), "utf8");
+    path.resolve(ROOT_DIR, "components/portal/BatchJourneyTimeline.tsx"), "utf8");
 
   /**
    * A batch carries three timestamps of its own — created, departed, arrived.
@@ -138,7 +141,7 @@ describe("the stepper can date every step it shows", () => {
       "pages/portal/modern/ModernPortalShipments.tsx",
       "pages/portal/skin3/Skin3PortalShipments.tsx",
     ]) {
-      const src = fs.readFileSync(path.resolve(__dirname, skin), "utf8");
+      const src = fs.readFileSync(path.resolve(ROOT_DIR, skin), "utf8");
       expect(src, `${skin} must pass statusDates`).toContain("statusDates=");
     }
   });
@@ -149,7 +152,7 @@ describe("the stepper can date every step it shows", () => {
    */
   it("the server sends them with the batch list, in one query", () => {
     const db = fs.readFileSync(
-      path.resolve(__dirname, "../../server/db/portal.db.ts"), "utf8");
+      path.resolve(ROOT_DIR, "../../server/db/portal.db.ts"), "utf8");
     // Bounded by the next function, not by a character count: a 4000-char
     // window failed the day a comment was added above the return statement,
     // which says nothing about whether the dates still ship with the list.

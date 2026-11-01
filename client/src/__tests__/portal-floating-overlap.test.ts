@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Two floating controls, one corner.
  *
@@ -13,7 +16,7 @@ import path from "path";
  * switch's own visibility rule and moves above it while it shows.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the new-order button never covers the width switch", () => {

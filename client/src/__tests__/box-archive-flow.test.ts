@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * On the delivery-box screen, a box paid for leaves at once and the next one
  * moves up into its place; the archive keeps it one tap away.
@@ -11,11 +14,11 @@ import path from "path";
  * so a paid box left a hole instead of letting the next one up.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the list follows the money", () => {
-  const page = read("pages/CustomerDeliveryScanner.tsx");
+  const page = read("pages/scanning/CustomerDeliveryScanner.tsx");
 
   it("asks the server to leave the archive out, or to show only it", () => {
     expect(page).toContain('params.archive = view === "paid" ? "only" : "exclude";');

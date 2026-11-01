@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 import { DELIVERY_FEE_IN_OUR_ACCOUNTS, ourDeliveryFee } from "@shared/deliveryFee";
-import { boxUnpaidAlert } from "./lib/boxAlert";
+import { boxUnpaidAlert } from "../lib/boxAlert";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * Owner, 2026-09-10: the local delivery fee is the courier's, not ours, and
@@ -10,7 +13,7 @@ import { boxUnpaidAlert } from "./lib/boxAlert";
  * place that reads the fee as money reads it through there.
  */
 
-const ROOT = path.resolve(__dirname, "..", "..");
+const ROOT = path.resolve(ROOT_DIR, "..", "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the delivery fee is not our money, for now", () => {

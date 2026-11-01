@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A surface or a text colour chosen for a white page needs a dark-mode
  * counterpart, or it goes unreadable when the theme flips.
@@ -24,13 +27,13 @@ import path from "path";
  *    modes, because paper does.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 
 const KEEP_WHITE = new Set([
   "components/ui/slider.tsx",
-  "pages/LabelTemplateSettings.tsx",
-  "pages/BatchLabelTemplateSettings.tsx",
-  "pages/LabelPrinting.tsx",
+  "pages/settings/LabelTemplateSettings.tsx",
+  "pages/settings/BatchLabelTemplateSettings.tsx",
+  "pages/packages/LabelPrinting.tsx",
   "components/delivery/BatchPrintBoxesSection.tsx",
 ]);
 

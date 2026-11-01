@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Three things asked for at once: the portal should be faster, it should
  * make a sound where a sound helps, and it should not be rude about either.
@@ -13,7 +16,7 @@ import path from "path";
  * nothing to say to each other.
  */
 
-const HERE = __dirname;
+const HERE = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(HERE, p), "utf8").replace(/\r\n/g, "\n");
 
 const main = read("main.tsx");

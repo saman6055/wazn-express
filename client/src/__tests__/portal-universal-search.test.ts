@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { cleanSearchPaste } from "./lib/entry/cleanPaste";
+import { cleanSearchPaste } from "../lib/entry/cleanPaste";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The centre of the portal's bottom bar is a search (owner's brief,
@@ -15,7 +18,7 @@ import { cleanSearchPaste } from "./lib/entry/cleanPaste";
  * past, a box the phone zooms into, a search that fetches on every keystroke.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 const LAYOUTS = [

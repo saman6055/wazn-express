@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The finance profile explains itself (owner, 2026-10-08): "it is very
  * confused. A transaction's detail has no tracking, no platform order
@@ -13,10 +16,10 @@ import path from "path";
  * the correction page uses.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", "..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", "..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the profile opens with what the debt is for", () => {
-  const page = read("client/src/pages/CustomerFinance.tsx");
+  const page = read("client/src/pages/finance/CustomerFinance.tsx");
 
   it("the card sits above the ledger", () => {
     const card = page.indexOf("<CustomerDebtExplained customerId={customerId} />");
@@ -101,9 +104,9 @@ describe("one rule behind the profile and the correction page", () => {
  * sums are in shared/debtPeel.test).
  */
 describe("every figure on the card opens", () => {
-  const card = fs.readFileSync(path.resolve(__dirname, "components/customers/CustomerDebtExplained.tsx"), "utf8").replace(/\r\n/g, "\n");
-  const peel = fs.readFileSync(path.resolve(__dirname, "components/customers/DebtPeel.tsx"), "utf8").replace(/\r\n/g, "\n");
-  const server = fs.readFileSync(path.resolve(__dirname, "../../server/db/boxPaidStillOwed.db.ts"), "utf8").replace(/\r\n/g, "\n");
+  const card = fs.readFileSync(path.resolve(ROOT_DIR, "components/customers/CustomerDebtExplained.tsx"), "utf8").replace(/\r\n/g, "\n");
+  const peel = fs.readFileSync(path.resolve(ROOT_DIR, "components/customers/DebtPeel.tsx"), "utf8").replace(/\r\n/g, "\n");
+  const server = fs.readFileSync(path.resolve(ROOT_DIR, "../../server/db/boxPaidStillOwed.db.ts"), "utf8").replace(/\r\n/g, "\n");
 
   it("really owed, written twice and what the account shows are each a row that opens", () => {
     for (const id of ["debt-still-owed-row", "debt-false-row", "debt-account-row"]) expect(card, id).toContain(`testId="${id}"`);

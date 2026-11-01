@@ -23,7 +23,7 @@ describe("order prices that are not logical", () => {
 
   it("both order forms ask before saving", () => {
     for (const f of ["CommissionForm.tsx", "FullPackageForm.tsx"]) {
-      const src = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages", f), "utf8");
+      const src = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/orders", f), "utf8");
       expect(src, f).toContain("oddOrderQuestion(oddNumbers)");
     }
   });
@@ -37,7 +37,7 @@ describe("the bulk order form asks too (owner, 2026-10-27)", () => {
   it("the bulk form runs the same question before saving", async () => {
     const fs = await import("node:fs");
     const path = await import("node:path");
-    const src = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/BulkOrderForm.tsx"), "utf8");
+    const src = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/orders/BulkOrderForm.tsx"), "utf8");
     expect(src).toContain('import { oddOrderNumbers, oddOrderQuestion } from "@shared/orderNumberSense";');
     expect(src).toContain("message: oddOrderQuestion(odd),");
     expect(src.indexOf("oddOrderQuestion(odd)")).toBeLessThan(src.indexOf("bulkCreateMutation.mutate({"));

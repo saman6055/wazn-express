@@ -4,7 +4,7 @@ import {
   isTerminalOrderStatus,
   type BacklinkPackage,
   type BacklinkLink,
-} from './lib/orderBacklink';
+} from '../lib/orderBacklink';
 
 /**
  * The scenario these rules exist for:

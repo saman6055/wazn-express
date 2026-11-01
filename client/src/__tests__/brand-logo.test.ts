@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { BRAND_LOGO_URL } from "./lib/brand";
+import { BRAND_LOGO_URL } from "../lib/brand";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The company logo is never a blank and never a generic box.
@@ -12,8 +15,8 @@ import { BRAND_LOGO_URL } from "./lib/brand";
  * keep it there, and keep every place that shows a logo falling back to it.
  */
 
-const SRC = path.resolve(__dirname);
-const PUBLIC = path.resolve(__dirname, "../public");
+const SRC = path.resolve(ROOT_DIR);
+const PUBLIC = path.resolve(ROOT_DIR, "../public");
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8");
 
 function pngSize(file: string): [number, number] {
@@ -30,7 +33,7 @@ describe("the mark ships with the build", () => {
   });
 
   it("and every app icon the manifest and index.html name is a PNG of its stated size", () => {
-    const html = fs.readFileSync(path.resolve(__dirname, "../index.html"), "utf8");
+    const html = fs.readFileSync(path.resolve(ROOT_DIR, "../index.html"), "utf8");
     const named: Array<[string, number]> = Array.from(
       html.matchAll(/href="\/icons\/(icon-(\d+)x\2\.png)"/g),
       (m) => [m[1], Number(m[2])],
@@ -48,8 +51,8 @@ describe("every place that shows a logo falls back to the mark", () => {
   });
 
   it("the customer login shows it, as the staff login always has", () => {
-    expect(read("pages/CustomerLogin.tsx")).toContain("<CompanyLogo");
-    expect(read("pages/StaffLogin.tsx")).toContain("<CompanyLogo");
+    expect(read("pages/public/CustomerLogin.tsx")).toContain("<CompanyLogo");
+    expect(read("pages/public/StaffLogin.tsx")).toContain("<CompanyLogo");
   });
 
   it("every receipt prints it when no logo is uploaded", () => {
@@ -63,6 +66,6 @@ describe("every place that shows a logo falls back to the mark", () => {
   });
 
   it("the invoice page uses it when the template has none", () => {
-    expect(read("pages/InvoiceView.tsx")).toContain("logoUrl: template?.logoUrl || BRAND_LOGO_URL");
+    expect(read("pages/finance/InvoiceView.tsx")).toContain("logoUrl: template?.logoUrl || BRAND_LOGO_URL");
   });
 });

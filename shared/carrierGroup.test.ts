@@ -73,8 +73,8 @@ describe("wired", () => {
   });
 
   it("the live strip on both scan screens", () => {
-    expect(root("client/src/pages/QuickRegister.tsx")).toContain("<CarrierGroupStrip batchId={parseInt(batchId) || null} />");
-    expect(root("client/src/pages/ArrivalVerificationScanner.tsx")).toContain("{selectedBatchIds.map((id) => <CarrierGroupStrip key={id} batchId={id} />)}");
+    expect(root("client/src/pages/packages/QuickRegister.tsx")).toContain("<CarrierGroupStrip batchId={parseInt(batchId) || null} />");
+    expect(root("client/src/pages/scanning/ArrivalVerificationScanner.tsx")).toContain("{selectedBatchIds.map((id) => <CarrierGroupStrip key={id} batchId={id} />)}");
   });
 });
 

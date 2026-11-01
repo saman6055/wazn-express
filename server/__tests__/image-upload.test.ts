@@ -1,10 +1,10 @@
 import { describe, expect, it, vi } from "vitest";
-import { appRouter } from "./routers";
-import type { TrpcContext } from "./_core/context";
-import { hasDb } from "./testEnv";
+import { appRouter } from "../routers";
+import type { TrpcContext } from "../_core/context";
+import { hasDb } from "../testEnv";
 
 // Mock storagePut to avoid actual S3 uploads during tests
-vi.mock("./storage", () => ({
+vi.mock("../storage", () => ({
   storagePut: vi.fn().mockResolvedValue({
     key: "uploads/test123.jpg",
     url: "https://cdn.example.com/uploads/test123.jpg",

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The office system on a phone.
  *
@@ -15,7 +18,7 @@ import path from "path";
  * scrolls inside itself (components/ui/table).
  */
 
-const ROOT = path.resolve(__dirname, "..", "..", "client", "src");
+const ROOT = path.resolve(ROOT_DIR, "..", "..", "client", "src");
 
 function screens(): string[] {
   const out: string[] = [];

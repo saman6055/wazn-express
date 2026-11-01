@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A picture reaches the order forms three ways (the owner asked for the two
  * that were missing, Sep 2026): the file dialog, dragging the file in, and
@@ -12,10 +15,10 @@ import path from "path";
  * needed it most was the one without it. Pasting existed nowhere.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 const COMPONENT = "components/CompressedImageUpload.tsx";
-const FORMS = ["pages/CommissionForm.tsx", "pages/FullPackageForm.tsx"];
+const FORMS = ["pages/orders/CommissionForm.tsx", "pages/orders/FullPackageForm.tsx"];
 
 describe("dragging a file in", () => {
   const src = read(COMPONENT);

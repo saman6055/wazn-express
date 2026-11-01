@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock the database module
-vi.mock("./db", () => ({
+vi.mock("../db", () => ({
   default: {
     getAllCashAccounts: vi.fn(),
     getActiveCashAccounts: vi.fn(),
@@ -15,7 +15,7 @@ vi.mock("./db", () => ({
   },
 }));
 
-import db from "./db";
+import db from "../db";
 
 describe("Cash Accounts", () => {
   beforeEach(() => {

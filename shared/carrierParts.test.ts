@@ -69,7 +69,7 @@ describe("wired where the money is", () => {
   it("only a batch made in China: one registered in Erbil has no loads and nothing to wait for", () => {
     expect(read("server/db/batches.db.ts")).toContain("const partsVerdict = !madeInChina ? ('none' as const)");
     // Hidden in a carrier group too: the group card takes the invoice (owner, 2026-10-29).
-    expect(read("client/src/pages/Batches.tsx")).toContain("editFinancialQ.data?.carrierParts?.madeInChina && !editInGroup && (");
+    expect(read("client/src/pages/batches/Batches.tsx")).toContain("editFinancialQ.data?.carrierParts?.madeInChina && !editInGroup && (");
   });
 
   it("loads reach the batch only through updateBatch (price history kept)", () => {
@@ -87,7 +87,7 @@ describe("wired where the money is", () => {
   });
 
   it("the edit form does not save the summed fields over the loads", () => {
-    const src = read("client/src/pages/Batches.tsx");
+    const src = read("client/src/pages/batches/Batches.tsx");
     expect(src).toContain('editLoads.length > 0\n                                ? <Input type="number" readOnly value={editFinancialQ.data?.chargedWeight');
     expect(src).toContain("<CarrierPartsCard");
   });

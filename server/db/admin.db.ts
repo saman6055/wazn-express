@@ -1,81 +1,9 @@
 import { getDb } from './connection';
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
+import { eq, desc, and, gte, lte, lt, sql, or, like, count, SQL } from "drizzle-orm";
 import { ENV } from '../_core/env';
 import { appLogger } from '../utils/logger';
 import { likePattern } from "./utils.db";
-import {
-  InsertUser, users,
-  customers, InsertCustomer, Customer,
-  customerCodePrefixes, InsertCustomerCodePrefix, CustomerCodePrefix,
-  countries, InsertCountry, Country,
-  warehouses, InsertWarehouse, Warehouse,
-  pricingRules, InsertPricingRule, PricingRule,
-  batches, InsertBatch, Batch,
-  packages, InsertPackage, Package,
-  invoices, InsertInvoice, Invoice,
-  exchangeRates, InsertExchangeRate, ExchangeRate,
-  auditLogs, InsertAuditLog,
-  permissions, subPermissions,
-  notificationLogs, InsertNotificationLog,
-  systemSettings, InsertSystemSetting,
-  currencies, taxRates, emailTemplates, ipWhitelist,
-  fullPackageOrders, InsertFullPackageOrder, FullPackageOrder,
-  suppliers, InsertSupplier, Supplier,
-  fullPackageStatusHistory, InsertFullPackageStatusHistory, FullPackageStatusHistory,
-  customerNotificationPrefs, InsertCustomerNotificationPref, CustomerNotificationPref,
-  vipCustomers, InsertVipCustomer, VipCustomer,
-  packageQrCodes, InsertPackageQrCode, PackageQrCode,
-  scheduledTasksLog, InsertScheduledTaskLog, ScheduledTaskLog,
-  packageScans, InsertPackageScan, PackageScan,
-  packageStatusHistory, InsertPackageStatusHistory, PackageStatusHistory,
-  scanDevices, InsertScanDevice, ScanDevice,
-  customerAccounts, InsertCustomerAccount, CustomerAccount,
-  ledgerTransactions, InsertLedgerTransaction, LedgerTransaction,
-  paymentRecords, InsertPaymentRecord, PaymentRecord,
-  creditAdjustments, InsertCreditAdjustment, CreditAdjustment,
-  paymentReminders, InsertPaymentReminder, PaymentReminder,
-  productCategories, InsertProductCategory, ProductCategory,
-  batchPricingTiers, InsertBatchPricingTier, BatchPricingTier,
-  batchCustomerPricing, InsertBatchCustomerPricing, BatchCustomerPricing,
-  notificationSettings, InsertNotificationSetting, NotificationSetting,
-  expenseCategories, InsertExpenseCategory, ExpenseCategory,
-  expenses, InsertExpense, Expense,
-  partners, InsertPartner, Partner,
-  partnerTransactions, InsertPartnerTransaction, PartnerTransaction,
-  companyDebts, InsertCompanyDebt, CompanyDebt,
-  debtPayments, InsertDebtPayment, DebtPayment,
-  cashAccounts, InsertCashAccount, CashAccount,
-  cashTransactions, InsertCashTransaction, CashTransaction,
-  financialPeriods, InsertFinancialPeriod, FinancialPeriod,
-  scanHistory, InsertScanHistory, ScanHistory,
-  serviceTypes, InsertServiceType, ServiceType,
-  extraServices, InsertExtraService, ExtraService,
-  packageClaimRequests, InsertPackageClaimRequest, PackageClaimRequest,
-  stockCategories, InsertStockCategory, StockCategory,
-  stockProducts, InsertStockProduct, StockProduct,
-  stockPurchases, InsertStockPurchase, StockPurchase,
-  stockPurchaseItems, InsertStockPurchaseItem, StockPurchaseItem,
-  stockSales, InsertStockSale, StockSale,
-  stockSaleItems, InsertStockSaleItem, StockSaleItem,
-  stockMovements, InsertStockMovement, StockMovement,
-  customerMessages, InsertCustomerMessage, CustomerMessage,
-  customerAddresses, InsertCustomerAddress, CustomerAddress,
-  notificationTemplates, InsertNotificationTemplate, NotificationTemplate,
-  labelTemplates, InsertLabelTemplate, LabelTemplate,
-  invoiceTemplates, InsertInvoiceTemplate, InvoiceTemplate,
-  customerNotifications, InsertCustomerNotification, CustomerNotification,
-  revenueRecords, InsertRevenueRecord, RevenueRecord,
-  dailyFinancialSummary, InsertDailyFinancialSummary, DailyFinancialSummary,
-  blogPosts, InsertBlogPost, BlogPost,
-  deletionLogs, InsertDeletionLog, DeletionLog,
-  activityAlerts, InsertActivityAlert, ActivityAlert,
-  supportChats, InsertSupportChat, SupportChat,
-  chatMessages, InsertChatMessage, ChatMessage,
-  backups, InsertBackup, Backup,
-  expenseAlerts, InsertExpenseAlert, ExpenseAlert,
-  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog,
-  boxSettlements, boxSettlementLines, deliveryBoxes, deliveryBoxItems,
-} from "../../drizzle/schema";
+import { InsertUser, users, customers, InsertCustomer, Customer, customerCodePrefixes, countries, Country, warehouses, Warehouse, pricingRules, PricingRule, batches, Batch, packages, Package, invoices, Invoice, exchangeRates, ExchangeRate, auditLogs, InsertAuditLog, permissions, subPermissions, notificationLogs, systemSettings, currencies, taxRates, emailTemplates, ipWhitelist, fullPackageOrders, FullPackageOrder, suppliers, fullPackageStatusHistory, customerNotificationPrefs, vipCustomers, packageQrCodes, scheduledTasksLog, InsertScheduledTaskLog, ScheduledTaskLog, packageScans, packageStatusHistory, scanDevices, customerAccounts, CustomerAccount, ledgerTransactions, LedgerTransaction, paymentRecords, PaymentRecord, creditAdjustments, paymentReminders, productCategories, batchPricingTiers, batchCustomerPricing, notificationSettings, expenseCategories, expenses, partners, partnerTransactions, companyDebts, debtPayments, cashAccounts, cashTransactions, financialPeriods, scanHistory, serviceTypes, extraServices, packageClaimRequests, stockCategories, StockCategory, stockProducts, InsertStockProduct, StockProduct, stockPurchases, InsertStockPurchase, StockPurchase, stockPurchaseItems, InsertStockPurchaseItem, stockSales, InsertStockSale, StockSale, stockSaleItems, InsertStockSaleItem, StockSaleItem, stockMovements, InsertStockMovement, StockMovement, customerMessages, customerAddresses, notificationTemplates, labelTemplates, invoiceTemplates, customerNotifications, revenueRecords, dailyFinancialSummary, blogPosts, deletionLogs, DeletionLog, activityAlerts, InsertActivityAlert, ActivityAlert, supportChats, SupportChat, chatMessages, ChatMessage, backups, Backup, boxSettlements, boxSettlementLines, deliveryBoxes, deliveryBoxItems } from "../../drizzle/schema";
 
 // ============ USER OPERATIONS ============
 
@@ -268,18 +196,6 @@ export async function createCustomer(data: {
   return newCustomer[0];
 }
 
-export async function getNextCustomerSequence(): Promise<number> {
-  const db = await getDb();
-  if (!db) return 1;
-  
-  // Get max sequence from customers table only
-  const customersResult = await db.select({ maxSeq: sql<number>`COALESCE(MAX(sequenceNumber), 0)` })
-    .from(customers);
-  
-  const maxSeq = customersResult[0]?.maxSeq || 0;
-  return maxSeq + 1;
-}
-
 // Get next sequence number for a specific prefix by analyzing existing customer codes
 export async function getNextSequenceForPrefix(prefix: string): Promise<number> {
   const db = await getDb();
@@ -412,7 +328,6 @@ export async function getAllStaff() {
   ).orderBy(desc(users.createdAt));
 }
 
-
 // ============ AUDIT LOG OPERATIONS (ADVANCED) ============
 
 // Category mapping for entity types
@@ -513,35 +428,6 @@ export interface AdvancedAuditLogData {
   userAgent?: string;
 }
 
-export async function createAdvancedAuditLog(data: AdvancedAuditLogData) {
-  const db = await getDb();
-  if (!db) return;
-  
-  const category = entityCategoryMap[data.entityType] || 'system';
-  const actionLabel = actionLabels[data.action] || data.action;
-  const changedFields = getChangedFields(data.oldValues || null, data.newValues || null);
-  const description = generateDescription(data.action, data.entityType, data.entityCode || null, changedFields);
-  
-  await db.insert(auditLogs).values({
-    userId: data.userId,
-    userName: data.userName,
-    userRole: data.userRole,
-    action: data.action,
-    actionLabel,
-    category,
-    entityType: data.entityType,
-    entityId: data.entityId,
-    entityCode: data.entityCode,
-    oldValues: data.oldValues,
-    newValues: data.newValues,
-    changedFields,
-    description,
-    metadata: data.metadata,
-    ipAddress: data.ipAddress,
-    userAgent: data.userAgent,
-  });
-}
-
 // Legacy function for backward compatibility
 export async function createAuditLog(data: InsertAuditLog) {
   const db = await getDb();
@@ -618,12 +504,6 @@ export async function getAdvancedAuditLogs(filters: AuditLogFilters = {}, limit 
   };
 }
 
-export async function getAuditLogs(limit = 100) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(auditLogs).orderBy(desc(auditLogs.createdAt)).limit(limit);
-}
-
 export async function getAuditLogsByEntity(entityType: string, entityId: number) {
   const db = await getDb();
   if (!db) return [];
@@ -687,22 +567,6 @@ export async function getAuditLogStats() {
   };
 }
 
-
-// ============ NOTIFICATION LOG OPERATIONS ============
-
-export async function createNotificationLog(data: InsertNotificationLog) {
-  const db = await getDb();
-  if (!db) return;
-  await db.insert(notificationLogs).values(data);
-}
-
-export async function getNotificationLogs(limit = 100) {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(notificationLogs).orderBy(desc(notificationLogs.createdAt)).limit(limit);
-}
-
-
 // ============ SCHEDULED TASKS LOG OPERATIONS ============
 
 export async function createScheduledTaskLog(data: InsertScheduledTaskLog): Promise<ScheduledTaskLog> {
@@ -725,19 +589,6 @@ export async function getRecentScheduledTasks(limit = 50) {
   return db.select().from(scheduledTasksLog).orderBy(desc(scheduledTasksLog.createdAt)).limit(limit);
 }
 
-
-// ============ STOCK MANAGEMENT OPERATIONS ============
-
-// Stock Categories
-export async function createStockCategory(data: InsertStockCategory): Promise<StockCategory> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(stockCategories).values(data);
-  const inserted = await db.select().from(stockCategories).where(eq(stockCategories.id, Number(result[0].insertId)));
-  return inserted[0];
-}
-
 export async function getStockCategoryById(id: number): Promise<StockCategory | undefined> {
   const db = await getDb();
   if (!db) return undefined;
@@ -745,123 +596,11 @@ export async function getStockCategoryById(id: number): Promise<StockCategory | 
   return result[0];
 }
 
-export async function getAllStockCategories(activeOnly = true): Promise<StockCategory[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  if (activeOnly) {
-    return db.select().from(stockCategories).where(eq(stockCategories.isActive, true)).orderBy(stockCategories.sortOrder);
-  }
-  return db.select().from(stockCategories).orderBy(stockCategories.sortOrder);
-}
-
-export async function updateStockCategory(id: number, data: Partial<InsertStockCategory>): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(stockCategories).set(data).where(eq(stockCategories.id, id));
-}
-
-export async function deleteStockCategory(id: number): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(stockCategories).where(eq(stockCategories.id, id));
-}
-
-// Stock Products
-export async function createStockProduct(data: InsertStockProduct): Promise<StockProduct> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  appLogger.debug('[DB DEBUG] Input data.barcode', { barcode: data.barcode, type: typeof data.barcode });
-  
-  // Set available stock = current stock initially
-  // Handle empty barcode as null to avoid unique constraint issues
-  // Must explicitly check for empty string since empty string is falsy but still sent to DB
-  const barcodeValue = (data.barcode && typeof data.barcode === 'string' && data.barcode.trim() !== '') ? data.barcode.trim() : null;
-  
-  appLogger.debug('[DB DEBUG] Processed barcodeValue', { barcodeValue });
-  
-  // Create productData without barcode first, then add it only if it has a value
-  const { barcode: _ignoredBarcode, ...dataWithoutBarcode } = data;
-  const productData: Record<string, unknown> = {
-    ...dataWithoutBarcode,
-    availableStock: data.currentStock || 0,
-  };
-  // Only add barcode if it has a real value (not empty string, not null)
-  if (barcodeValue) {
-    productData.barcode = barcodeValue;
-  }
-  
-  appLogger.debug('[DB DEBUG] Final productData.barcode', { barcode: productData.barcode });
-  
-  const result = await db.insert(stockProducts).values(productData as InsertStockProduct);
-  const rawId = (result[0] as { insertId?: number }).insertId;
-  const id: number = typeof rawId === "number" && Number.isFinite(rawId) ? rawId : Number(rawId) || 0;
-  const inserted = await db.select().from(stockProducts).where(eq(stockProducts.id, id));
-  return inserted[0];
-}
-
 export async function getStockProductById(id: number): Promise<StockProduct | undefined> {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(stockProducts).where(eq(stockProducts.id, id)).limit(1);
   return result[0];
-}
-
-export async function getStockProductBySku(sku: string): Promise<StockProduct | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(stockProducts).where(eq(stockProducts.sku, sku)).limit(1);
-  return result[0];
-}
-
-export async function getStockProductByBarcode(barcode: string): Promise<StockProduct | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(stockProducts).where(eq(stockProducts.barcode, barcode)).limit(1);
-  return result[0];
-}
-
-export async function getAllStockProducts(filters?: {
-  categoryId?: number;
-  search?: string;
-  lowStock?: boolean;
-  activeOnly?: boolean;
-}): Promise<StockProduct[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const conditions = [];
-  
-  if (filters?.categoryId) {
-    conditions.push(eq(stockProducts.categoryId, filters.categoryId));
-  }
-  
-  if (filters?.activeOnly !== false) {
-    conditions.push(eq(stockProducts.isActive, true));
-  }
-  
-  if (filters?.search) {
-    conditions.push(
-      or(
-        like(stockProducts.name, `%${filters.search}%`),
-        like(stockProducts.sku, `%${filters.search}%`),
-        like(stockProducts.barcode, `%${filters.search}%`)
-      )
-    );
-  }
-  
-  if (filters?.lowStock) {
-    conditions.push(
-      sql`${stockProducts.currentStock} <= ${stockProducts.minStockLevel}`
-    );
-  }
-  
-  if (conditions.length > 0) {
-    return db.select().from(stockProducts).where(and(...conditions)).orderBy(desc(stockProducts.createdAt));
-  }
-  
-  return db.select().from(stockProducts).orderBy(desc(stockProducts.createdAt));
 }
 
 export async function updateStockProduct(id: number, data: Partial<InsertStockProduct>): Promise<void> {
@@ -882,76 +621,11 @@ export async function updateStockProduct(id: number, data: Partial<InsertStockPr
   await db.update(stockProducts).set(updateData).where(eq(stockProducts.id, id));
 }
 
-export async function deleteStockProduct(id: number): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(stockProducts).where(eq(stockProducts.id, id));
-}
-
-export async function getLowStockProducts(): Promise<StockProduct[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  return db.select().from(stockProducts)
-    .where(
-      and(
-        eq(stockProducts.isActive, true),
-        eq(stockProducts.trackInventory, true),
-        sql`${stockProducts.currentStock} <= ${stockProducts.minStockLevel}`
-      )
-    )
-    .orderBy(stockProducts.currentStock);
-}
-
-// Stock Purchases
-export async function createStockPurchase(data: InsertStockPurchase): Promise<StockPurchase> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(stockPurchases).values(data);
-  const inserted = await db.select().from(stockPurchases).where(eq(stockPurchases.id, Number(result[0].insertId)));
-  return inserted[0];
-}
-
 export async function getStockPurchaseById(id: number): Promise<StockPurchase | undefined> {
   const db = await getDb();
   if (!db) return undefined;
   const result = await db.select().from(stockPurchases).where(eq(stockPurchases.id, id)).limit(1);
   return result[0];
-}
-
-export async function getAllStockPurchases(filters?: {
-  status?: string;
-  supplierId?: number;
-  startDate?: Date;
-  endDate?: Date;
-}): Promise<StockPurchase[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const conditions = [];
-  
-  if (filters?.status) {
-    conditions.push(eq(stockPurchases.status, filters.status as never));
-  }
-  
-  if (filters?.supplierId) {
-    conditions.push(eq(stockPurchases.supplierId, filters.supplierId));
-  }
-  
-  if (filters?.startDate) {
-    conditions.push(gte(stockPurchases.createdAt, filters.startDate));
-  }
-  
-  if (filters?.endDate) {
-    conditions.push(lte(stockPurchases.createdAt, filters.endDate));
-  }
-  
-  if (conditions.length > 0) {
-    return db.select().from(stockPurchases).where(and(...conditions)).orderBy(desc(stockPurchases.createdAt));
-  }
-  
-  return db.select().from(stockPurchases).orderBy(desc(stockPurchases.createdAt));
 }
 
 export async function updateStockPurchase(id: number, data: Partial<InsertStockPurchase>): Promise<void> {
@@ -960,101 +634,10 @@ export async function updateStockPurchase(id: number, data: Partial<InsertStockP
   await db.update(stockPurchases).set(data).where(eq(stockPurchases.id, id));
 }
 
-export async function deleteStockPurchase(id: number): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  // Delete items first
-  await db.delete(stockPurchaseItems).where(eq(stockPurchaseItems.purchaseId, id));
-  await db.delete(stockPurchases).where(eq(stockPurchases.id, id));
-}
-
-// Stock Purchase Items
-export async function createStockPurchaseItem(data: InsertStockPurchaseItem): Promise<StockPurchaseItem> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  const result = await db.insert(stockPurchaseItems).values(data);
-  const inserted = await db.select().from(stockPurchaseItems).where(eq(stockPurchaseItems.id, Number(result[0].insertId)));
-  return inserted[0];
-}
-
-export async function getStockPurchaseItems(purchaseId: number): Promise<StockPurchaseItem[]> {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(stockPurchaseItems).where(eq(stockPurchaseItems.purchaseId, purchaseId));
-}
-
 export async function updateStockPurchaseItem(id: number, data: Partial<InsertStockPurchaseItem>): Promise<void> {
   const db = await getDb();
   if (!db) return;
   await db.update(stockPurchaseItems).set(data).where(eq(stockPurchaseItems.id, id));
-}
-
-export async function deleteStockPurchaseItem(id: number): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(stockPurchaseItems).where(eq(stockPurchaseItems.id, id));
-}
-
-// Receive stock from purchase
-export async function receiveStockFromPurchase(purchaseId: number, items: { itemId: number; receivedQuantity: number }[], receivedById: number): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  
-  const purchase = await getStockPurchaseById(purchaseId);
-  if (!purchase) throw new Error("Purchase not found");
-  
-  for (const item of items) {
-    const purchaseItem = await db.select().from(stockPurchaseItems).where(eq(stockPurchaseItems.id, item.itemId)).limit(1);
-    if (!purchaseItem[0]) continue;
-    
-    const product = await getStockProductById(purchaseItem[0].productId);
-    if (!product) continue;
-    
-    const stockBefore = product.currentStock || 0;
-    const stockAfter = stockBefore + item.receivedQuantity;
-    
-    // Update product stock
-    await updateStockProduct(product.id, {
-      currentStock: stockAfter,
-      availableStock: stockAfter - (product.reservedStock || 0),
-    });
-    
-    // Update purchase item received quantity
-    await updateStockPurchaseItem(item.itemId, {
-      receivedQuantity: (purchaseItem[0].receivedQuantity || 0) + item.receivedQuantity,
-    });
-    
-    // Create stock movement
-    await createStockMovement({
-      productId: product.id,
-      warehouseId: purchase.warehouseId,
-      movementType: "purchase_in",
-      quantity: item.receivedQuantity,
-      stockBefore,
-      stockAfter,
-      unitCost: purchaseItem[0].unitCost,
-      totalCost: String(parseFloat(purchaseItem[0].unitCost) * item.receivedQuantity),
-      referenceType: "purchase",
-      referenceId: purchaseId,
-      referenceCode: purchase.purchaseCode,
-      createdById: receivedById,
-    });
-    
-    // Update product cost price (average cost)
-    const totalValue = (stockBefore * parseFloat(product.costPrice || "0")) + (item.receivedQuantity * parseFloat(purchaseItem[0].unitCost));
-    const newAverageCost = stockAfter > 0 ? totalValue / stockAfter : parseFloat(purchaseItem[0].unitCost);
-    await updateStockProduct(product.id, {
-      costPrice: newAverageCost.toFixed(2),
-    });
-  }
-  
-  // Update purchase status
-  await updateStockPurchase(purchaseId, {
-    status: "received",
-    receivedDate: new Date(),
-    receivedById,
-  });
 }
 
 // Stock Sales
@@ -1067,65 +650,6 @@ export async function createStockSale(data: InsertStockSale): Promise<StockSale>
   return inserted[0];
 }
 
-export async function getStockSaleById(id: number): Promise<StockSale | undefined> {
-  const db = await getDb();
-  if (!db) return undefined;
-  const result = await db.select().from(stockSales).where(eq(stockSales.id, id)).limit(1);
-  return result[0];
-}
-
-export async function getAllStockSales(filters?: {
-  saleType?: "account" | "cash";
-  status?: string;
-  customerId?: number;
-  startDate?: Date;
-  endDate?: Date;
-}): Promise<StockSale[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const conditions = [];
-  
-  if (filters?.saleType) {
-    conditions.push(eq(stockSales.saleType, filters.saleType));
-  }
-  
-  if (filters?.status) {
-    conditions.push(eq(stockSales.status, filters.status as never));
-  }
-  
-  if (filters?.customerId) {
-    conditions.push(eq(stockSales.customerId, filters.customerId));
-  }
-  
-  if (filters?.startDate) {
-    conditions.push(gte(stockSales.saleDate, filters.startDate));
-  }
-  
-  if (filters?.endDate) {
-    conditions.push(lte(stockSales.saleDate, filters.endDate));
-  }
-  
-  if (conditions.length > 0) {
-    return db.select().from(stockSales).where(and(...conditions)).orderBy(desc(stockSales.saleDate));
-  }
-  
-  return db.select().from(stockSales).orderBy(desc(stockSales.saleDate));
-}
-
-export async function updateStockSale(id: number, data: Partial<InsertStockSale>): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.update(stockSales).set(data).where(eq(stockSales.id, id));
-}
-
-export async function deleteStockSale(id: number): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  await db.delete(stockSaleItems).where(eq(stockSaleItems.saleId, id));
-  await db.delete(stockSales).where(eq(stockSales.id, id));
-}
-
 // Stock Sale Items
 export async function createStockSaleItem(data: InsertStockSaleItem): Promise<StockSaleItem> {
   const db = await getDb();
@@ -1134,112 +658,6 @@ export async function createStockSaleItem(data: InsertStockSaleItem): Promise<St
   const result = await db.insert(stockSaleItems).values(data);
   const inserted = await db.select().from(stockSaleItems).where(eq(stockSaleItems.id, Number(result[0].insertId)));
   return inserted[0];
-}
-
-export async function getStockSaleItems(saleId: number): Promise<StockSaleItem[]> {
-  const db = await getDb();
-  if (!db) return [];
-  return db.select().from(stockSaleItems).where(eq(stockSaleItems.saleId, saleId));
-}
-
-// Process a complete sale (create sale + items + update stock)
-export async function processStockSale(
-  saleData: InsertStockSale,
-  items: { productId: number; quantity: number; unitPrice: string; discount?: string }[],
-  createdById: number
-): Promise<StockSale> {
-  const db = await getDb();
-  if (!db) throw new Error("Database not available");
-  
-  let subtotal = 0;
-  let totalCost = 0;
-  const saleItems: InsertStockSaleItem[] = [];
-  
-  // Calculate totals and prepare items
-  for (const item of items) {
-    const product = await getStockProductById(item.productId);
-    if (!product) throw new Error(`Product ${item.productId} not found`);
-    
-    if (product.trackInventory && !product.allowNegativeStock && (product.availableStock || 0) < item.quantity) {
-      throw new Error(`Insufficient stock for ${product.name}. Available: ${product.availableStock}`);
-    }
-    
-    const unitPrice = parseFloat(item.unitPrice);
-    const unitCost = parseFloat(product.costPrice || "0");
-    const discount = parseFloat(item.discount || "0");
-    const itemTotal = (unitPrice * item.quantity) - discount;
-    const itemCost = unitCost * item.quantity;
-    const itemProfit = itemTotal - itemCost;
-    
-    subtotal += itemTotal;
-    totalCost += itemCost;
-    
-    saleItems.push({
-      saleId: 0, // Will be set after sale is created
-      productId: item.productId,
-      productName: product.name,
-      productSku: product.sku,
-      quantity: item.quantity,
-      unitPrice: item.unitPrice,
-      unitCost: product.costPrice || "0",
-      discount: item.discount || "0",
-      totalPrice: itemTotal.toFixed(2),
-      totalCost: itemCost.toFixed(2),
-      profit: itemProfit.toFixed(2),
-    });
-  }
-  
-  const discountAmount = parseFloat(saleData.discount || "0");
-  const totalAmount = subtotal - discountAmount + parseFloat(saleData.shippingCharge || "0");
-  const profit = totalAmount - totalCost;
-  const profitMargin = totalAmount > 0 ? (profit / totalAmount) * 100 : 0;
-  
-  // Create sale
-  const sale = await createStockSale({
-    ...saleData,
-    subtotal: subtotal.toFixed(2),
-    totalAmount: totalAmount.toFixed(2),
-    totalCost: totalCost.toFixed(2),
-    profit: profit.toFixed(2),
-    profitMargin: profitMargin.toFixed(2),
-    createdById,
-  });
-  
-  // Create sale items and update stock
-  for (let i = 0; i < saleItems.length; i++) {
-    const saleItem = { ...saleItems[i], saleId: sale.id };
-    await createStockSaleItem(saleItem);
-    
-    const product = await getStockProductById(items[i].productId);
-    if (product && product.trackInventory) {
-      const stockBefore = product.currentStock || 0;
-      const stockAfter = stockBefore - items[i].quantity;
-      
-      // Update product stock
-      await updateStockProduct(product.id, {
-        currentStock: stockAfter,
-        availableStock: stockAfter - (product.reservedStock || 0),
-      });
-      
-      // Create stock movement
-      await createStockMovement({
-        productId: product.id,
-        warehouseId: saleData.warehouseId,
-        movementType: "sale_out",
-        quantity: -items[i].quantity,
-        stockBefore,
-        stockAfter,
-        unitCost: product.costPrice,
-        totalCost: saleItem.totalCost,
-        referenceType: "sale",
-        referenceId: sale.id,
-        referenceCode: sale.saleCode,
-        createdById,
-      });
-    }
-  }
-  
-  return sale;
 }
 
 // Stock Movements
@@ -1251,243 +669,6 @@ export async function createStockMovement(data: InsertStockMovement): Promise<St
   const inserted = await db.select().from(stockMovements).where(eq(stockMovements.id, Number(result[0].insertId)));
   return inserted[0];
 }
-
-export async function getStockMovements(filters?: {
-  productId?: number;
-  movementType?: string;
-  startDate?: Date;
-  endDate?: Date;
-  limit?: number;
-}): Promise<StockMovement[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const conditions = [];
-  
-  if (filters?.productId) {
-    conditions.push(eq(stockMovements.productId, filters.productId));
-  }
-  
-  if (filters?.movementType) {
-    conditions.push(eq(stockMovements.movementType, filters.movementType as never));
-  }
-  
-  if (filters?.startDate) {
-    conditions.push(gte(stockMovements.createdAt, filters.startDate));
-  }
-  
-  if (filters?.endDate) {
-    conditions.push(lte(stockMovements.createdAt, filters.endDate));
-  }
-  
-  let query = db.select().from(stockMovements);
-  
-  if (conditions.length > 0) {
-    query = query.where(and(...conditions)) as typeof query;
-  }
-  
-  query = query.orderBy(desc(stockMovements.createdAt)) as typeof query;
-  
-  if (filters?.limit) {
-    query = query.limit(filters.limit) as typeof query;
-  }
-  
-  return query;
-}
-
-// Stock adjustment (manual correction)
-export async function adjustStock(
-  productId: number,
-  adjustment: number,
-  reason: string,
-  createdById: number
-): Promise<void> {
-  const db = await getDb();
-  if (!db) return;
-  
-  const product = await getStockProductById(productId);
-  if (!product) throw new Error("Product not found");
-  
-  const stockBefore = product.currentStock || 0;
-  const stockAfter = stockBefore + adjustment;
-  
-  // Update product stock
-  await updateStockProduct(productId, {
-    currentStock: stockAfter,
-    availableStock: stockAfter - (product.reservedStock || 0),
-  });
-  
-  // Create stock movement
-  await createStockMovement({
-    productId,
-    movementType: adjustment > 0 ? "adjustment_in" : "adjustment_out",
-    quantity: adjustment,
-    stockBefore,
-    stockAfter,
-    notes: reason,
-    createdById,
-  });
-}
-
-// Stock Summary/Dashboard
-export async function getStockSummary(): Promise<{
-  totalProducts: number;
-  totalStockValue: number;
-  lowStockCount: number;
-  outOfStockCount: number;
-  totalSalesToday: number;
-  totalProfitToday: number;
-  totalSalesThisMonth: number;
-  totalProfitThisMonth: number;
-}> {
-  const db = await getDb();
-  if (!db) return {
-    totalProducts: 0,
-    totalStockValue: 0,
-    lowStockCount: 0,
-    outOfStockCount: 0,
-    totalSalesToday: 0,
-    totalProfitToday: 0,
-    totalSalesThisMonth: 0,
-    totalProfitThisMonth: 0,
-  };
-  
-  // Get product stats
-  const products = await db.select().from(stockProducts).where(eq(stockProducts.isActive, true));
-  
-  let totalStockValue = 0;
-  let lowStockCount = 0;
-  let outOfStockCount = 0;
-  
-  for (const product of products) {
-    const stock = product.currentStock || 0;
-    const cost = parseFloat(product.costPrice || "0");
-    totalStockValue += stock * cost;
-    
-    if (stock === 0) {
-      outOfStockCount++;
-    } else if (stock <= (product.minStockLevel || 0)) {
-      lowStockCount++;
-    }
-  }
-  
-  // Get today's sales
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  
-  const todaySales = await db.select({
-    total: sql<number>`COALESCE(SUM(${stockSales.totalAmount}), 0)`,
-    profit: sql<number>`COALESCE(SUM(${stockSales.profit}), 0)`,
-  }).from(stockSales)
-    .where(
-      and(
-        gte(stockSales.saleDate, today),
-        eq(stockSales.status, "confirmed")
-      )
-    );
-  
-  // Get this month's sales
-  const monthStart = new Date(today.getFullYear(), today.getMonth(), 1);
-  
-  const monthSales = await db.select({
-    total: sql<number>`COALESCE(SUM(${stockSales.totalAmount}), 0)`,
-    profit: sql<number>`COALESCE(SUM(${stockSales.profit}), 0)`,
-  }).from(stockSales)
-    .where(
-      and(
-        gte(stockSales.saleDate, monthStart),
-        eq(stockSales.status, "confirmed")
-      )
-    );
-  
-  return {
-    totalProducts: products.length,
-    totalStockValue,
-    lowStockCount,
-    outOfStockCount,
-    totalSalesToday: Number(todaySales[0]?.total || 0),
-    totalProfitToday: Number(todaySales[0]?.profit || 0),
-    totalSalesThisMonth: Number(monthSales[0]?.total || 0),
-    totalProfitThisMonth: Number(monthSales[0]?.profit || 0),
-  };
-}
-
-// Generate unique codes
-export async function generateStockPurchaseCode(): Promise<string> {
-  const db = await getDb();
-  if (!db) return `PO-${Date.now()}`;
-  
-  const year = new Date().getFullYear();
-  const result = await db.select({ count: sql<number>`COUNT(*)` }).from(stockPurchases);
-  const count = Number(result[0]?.count || 0) + 1;
-  return `PO-${year}-${String(count).padStart(4, '0')}`;
-}
-
-export async function generateStockSaleCode(type: "account" | "cash"): Promise<string> {
-  const db = await getDb();
-  if (!db) return `${type === 'cash' ? 'POS' : 'SO'}-${Date.now()}`;
-  
-  const year = new Date().getFullYear();
-  const result = await db.select({ count: sql<number>`COUNT(*)` }).from(stockSales);
-  const count = Number(result[0]?.count || 0) + 1;
-  const prefix = type === 'cash' ? 'POS' : 'SO';
-  return `${prefix}-${year}-${String(count).padStart(4, '0')}`;
-}
-
-export async function generateProductSku(categoryId?: number): Promise<string> {
-  const db = await getDb();
-  if (!db) return `SKU-${Date.now()}`;
-  
-  let prefix = 'PRD';
-  if (categoryId) {
-    const category = await getStockCategoryById(categoryId);
-    if (category?.slug) {
-      prefix = category.slug.substring(0, 3).toUpperCase();
-    }
-  }
-  
-  // Find the highest SKU number with this prefix to avoid duplicates
-  const result = await db.select({ sku: stockProducts.sku })
-    .from(stockProducts)
-    .where(sql`${stockProducts.sku} LIKE ${prefix + '-%'}`)
-    .orderBy(desc(stockProducts.sku))
-    .limit(1);
-  
-  let nextNum = 1;
-  if (result.length > 0 && result[0].sku) {
-    const match = result[0].sku.match(/-(\d+)$/);
-    if (match) {
-      nextNum = parseInt(match[1], 10) + 1;
-    }
-  }
-  
-  return `${prefix}-${String(nextNum).padStart(4, '0')}`;
-}
-
-// Best selling products
-export async function getBestSellingProducts(limit = 10): Promise<{ productId: number; productName: string; totalSold: number; totalRevenue: number }[]> {
-  const db = await getDb();
-  if (!db) return [];
-  
-  const result = await db.select({
-    productId: stockSaleItems.productId,
-    productName: stockSaleItems.productName,
-    totalSold: sql<number>`SUM(${stockSaleItems.quantity})`,
-    totalRevenue: sql<number>`SUM(${stockSaleItems.totalPrice})`,
-  }).from(stockSaleItems)
-    .groupBy(stockSaleItems.productId, stockSaleItems.productName)
-    .orderBy(desc(sql`SUM(${stockSaleItems.quantity})`))
-    .limit(limit);
-  
-  return result.map(r => ({
-    productId: r.productId,
-    productName: r.productName || '',
-    totalSold: Number(r.totalSold),
-    totalRevenue: Number(r.totalRevenue),
-  }));
-}
-
-
 
 // ============ ADVANCED DATA MANAGEMENT ============
 
@@ -1803,8 +984,6 @@ export async function getDeletionPreview(dataType: string, daysOld?: number): Pr
   }
 }
 
-
-
 // ============ DELETION LOGS ============
 
 // Create a deletion log entry
@@ -1899,7 +1078,6 @@ export async function getDeletionLogs(options?: {
     return { logs: [], total: 0 };
   }
 }
-
 
 // ============ DATA EXPORT ============
 
@@ -2344,8 +1522,6 @@ export async function exportAllData(): Promise<{
   }
 }
 
-
-
 // ============ DATA IMPORT FUNCTIONS ============
 
 // Import category data
@@ -2732,8 +1908,6 @@ export async function importAllData(
   };
 }
 
-
-
 // ============ ACTIVITY ALERTS ============
 
 // Important actions that trigger alerts
@@ -2910,8 +2084,6 @@ export async function getAlertStats(): Promise<{
   };
 }
 
-
-
 // ============ SUPPORT CHAT OPERATIONS ============
 
 export async function createSupportChat(data: {
@@ -3035,7 +2207,6 @@ export async function getOrCreateCustomerChat(customerId: number, customerName?:
   return getSupportChatById(chatId);
 }
 
-
 // ============ CHAT MESSAGE OPERATIONS ============
 
 export async function createChatMessage(data: {
@@ -3150,8 +2321,6 @@ export async function getStaffUnreadChatCount(): Promise<number> {
   
   return Number(result[0]?.count || 0);
 }
-
-
 
 // ============ PRE-RESET BACKUP FUNCTIONS ============
 
@@ -3612,7 +2781,6 @@ export async function deleteStaffUser(userId: number) {
   await database.delete(users).where(eq(users.id, userId));
   return { success: true };
 }
-
 
 /**
  * Where a member of staff works.

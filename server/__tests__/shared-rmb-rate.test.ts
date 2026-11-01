@@ -2,17 +2,20 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 
-vi.mock("./db", () => ({
+vi.mock("../db", () => ({
   getCurrentExchangeRate: vi.fn(),
   getYuanExchangeSettings: vi.fn(),
   createExchangeRate: vi.fn(),
   createAuditLog: vi.fn(),
 }));
-vi.mock("./db/cache", () => ({ cacheInvalidate: vi.fn() }));
+vi.mock("../db/cache", () => ({ cacheInvalidate: vi.fn() }));
 
-import * as db from "./db";
-import { cacheInvalidate } from "./db/cache";
-import { currentRmbRate, recordRmbRateFromPortalCenter, yuanSettingsWithSharedRate } from "./lib/sharedRmbRate";
+import * as db from "../db";
+import { cacheInvalidate } from "../db/cache";
+import { currentRmbRate, recordRmbRateFromPortalCenter, yuanSettingsWithSharedRate } from "../lib/sharedRmbRate";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * One yuan rate for the whole business (owner, 2026-09-19): the office's RMB
@@ -91,7 +94,7 @@ describe("the Portal Center edits the office's rate", () => {
 });
 
 describe("every door uses the one rate", () => {
-  const read = (rel: string) => fs.readFileSync(path.join(__dirname, rel), "utf8").replace(/\r\n/g, "\n");
+  const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, rel), "utf8").replace(/\r\n/g, "\n");
 
   it("the customer's yuan page and a yuan order are priced at it", () => {
     const portal = read("routers/portal.router.ts");

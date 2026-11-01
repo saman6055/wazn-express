@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Empty delivery boxes are flagged, and deletable where they are seen
  * (owner, 2026-09-17). The rule for "empty" is unit-tested in
@@ -13,13 +16,13 @@ import path from "path";
  * delete, or a delete that trusts the list instead of checking again.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 const alert = read("components/delivery/EmptyBoxes.tsx");
 const table = read("components/delivery/BoxTable.tsx");
-const page = read("pages/CustomerDeliveryScanner.tsx");
+const page = read("pages/scanning/CustomerDeliveryScanner.tsx");
 const router = readRoot("server/routers/scanning.router.ts");
 
 describe("the boxes page flags empty boxes", () => {

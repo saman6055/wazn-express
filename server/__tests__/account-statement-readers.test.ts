@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's audit (2026-09-16, AZ002): the staff profile, the portal and the
  * statement PDF each worked out "paid" and "sales" their own way, and none of
@@ -9,7 +12,7 @@ import path from "path";
  * (shared/accountStatement.ts via getAccountStatementForCustomer). These fail
  * if a screen goes back to summing on its own.
  */
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 function body(source: string, start: string, length = 2500): string {
   const at = source.indexOf(start);
@@ -33,7 +36,7 @@ describe("every screen reads the one statement", () => {
   });
 
   it("the staff profile, its print and its spreadsheet", () => {
-    const page = read("../client/src/pages/CustomerFinance.tsx");
+    const page = read("../client/src/pages/finance/CustomerFinance.tsx");
     expect(page).toContain("trpc.ledger.getAccountStatement.useQuery(");
     expect(page).not.toContain("trpc.ledger.getAccountBreakdown.useQuery(");
     expect(page).toContain("<AccountStatementSummary statement={breakdown.statement}");

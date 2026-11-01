@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Three rules about a batch's shipping identifiers, each of which was broken
  * or absent before this feature existed.
@@ -24,7 +27,7 @@ import path from "path";
  * marker must fail loudly rather than silently assert against "".
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 function slice(src: string, startMarker: string, endMarker: string, label: string): string {
@@ -47,7 +50,7 @@ describe("batch shipment identifiers", () => {
 
     // The form has to offer them too: the server accepting a field the edit
     // dialog never renders is exactly the state this replaced.
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     const editForm = slice(page, "const handleEdit", "const openEditDialog", "handleEdit body");
     for (const field of ["awbNumber", "containerNumber", "shipmentTrackings", "cartonCount"]) {
       expect(editForm, `${field} must be sent by the edit form`).toContain(field);

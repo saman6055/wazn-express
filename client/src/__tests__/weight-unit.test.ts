@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's list, item 5 (2026-09-11): weight is written `kg`, in every
  * language — not KG in one place, کگ or کیلۆ in another, كغ or 公斤 in a third.
@@ -9,7 +12,7 @@ import path from "path";
  * What is allowed to stay: کیلۆ / كيلو / 公斤 as words in a sentence with no
  * figure in front of them ("پێنج کیلۆیە", "五公斤" — somebody's own words).
  */
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const LETTER = "\\u0620-\\u065F\\u0670-\\u06D3\\u06D5\\u06EE\\u06EF\\u06FA-\\u06FC\\u06FF";
 
 const OTHER_SPELLINGS: [string, RegExp][] = [

@@ -1,9 +1,9 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import * as db from "./db";
+import * as db from "../db";
 
 // Mock the database module
-vi.mock("./db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./db")>();
+vi.mock("../db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../db")>();
   return {
     ...actual,
     getDb: vi.fn(),

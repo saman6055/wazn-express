@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import nodePath from "node:path";
 
-const src = readFileSync(resolve(__dirname, "db/finance.db.ts"), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = nodePath.resolve(__dirname, "..");
+
+const src = readFileSync(resolve(ROOT_DIR, "db/finance.db.ts"), "utf8");
 const body = (name: string) => {
   const start = src.indexOf(`export async function ${name}(`);
   expect(start, `${name} not found`).toBeGreaterThan(-1);
@@ -110,7 +114,7 @@ describe("the one place a ledger row's amount is rewritten", () => {
       else if (name.endsWith(".ts") && !name.endsWith(".test.ts")) files.push(full);
     }
   };
-  walk(__dirname);
+  walk(ROOT_DIR);
 
   it("no other file updates a ledger row", () => {
     expect(files.length).toBeGreaterThan(100);

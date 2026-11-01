@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The portal is sold in four languages and was written in two.
  *
@@ -17,8 +20,8 @@ import path from "path";
  */
 
 const DIRS = [
-  path.resolve(__dirname, "pages/portal"),
-  path.resolve(__dirname, "components/portal"),
+  path.resolve(ROOT_DIR, "pages/portal"),
+  path.resolve(ROOT_DIR, "components/portal"),
 ];
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -75,7 +78,7 @@ describe("no customer reads a language the portal only half speaks", () => {
     });
 
   for (const file of FILES) {
-    const rel = path.relative(path.resolve(__dirname, ".."), file).replace(/\\/g, "/");
+    const rel = path.relative(path.resolve(ROOT_DIR, ".."), file).replace(/\\/g, "/");
     const src = fs.readFileSync(file, "utf8");
 
     it(`${rel} uses pickLang, not a two-way ternary`, () => {

@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The portal must not change shape as a customer walks through it.
  *
@@ -13,7 +16,7 @@ import path from "path";
  * not.
  */
 
-const PORTAL = path.resolve(__dirname, "pages/portal");
+const PORTAL = path.resolve(ROOT_DIR, "pages/portal");
 
 /** These four have genuine per-skin designs and branch on the skin themselves. */
 const SKIN_AWARE = new Set([
@@ -46,7 +49,7 @@ describe("every portal page wears the chosen skin", () => {
   });
 
   it("the wrapper covers all three skins", () => {
-    const src = fs.readFileSync(path.resolve(__dirname, "components/portal/PortalLayout.tsx"), "utf8");
+    const src = fs.readFileSync(path.resolve(ROOT_DIR, "components/portal/PortalLayout.tsx"), "utf8");
     expect(src).toContain("ModernPortalLayout");
     expect(src).toContain("Skin3PortalLayout");
     expect(src).toContain("CustomerPortalLayout");
@@ -77,7 +80,7 @@ describe("no route is a dead end", () => {
   it("every portal route is linked from somewhere", () => {
     // /portal/services and /portal/invoice-reports were finished pages — 271
     // and 614 lines — that nothing in the app linked to.
-    const app = fs.readFileSync(path.resolve(__dirname, "App.tsx"), "utf8");
+    const app = fs.readFileSync(path.resolve(ROOT_DIR, "App.tsx"), "utf8");
     const routes = [...app.matchAll(/path="(\/portal\/[a-z-]+)"/g)].map((m) => m[1]);
 
     const linked = new Set<string>();
@@ -90,8 +93,8 @@ describe("no route is a dead end", () => {
         }
       }
     };
-    walk(path.resolve(__dirname, "pages"));
-    walk(path.resolve(__dirname, "components"));
+    walk(path.resolve(ROOT_DIR, "pages"));
+    walk(path.resolve(ROOT_DIR, "components"));
 
     const orphans = routes.filter((r) => r !== "/portal" && !linked.has(r));
     expect(orphans, `nothing links to these:\n${orphans.join("\n")}`).toEqual([]);

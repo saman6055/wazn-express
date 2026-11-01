@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The portal on a small phone: nothing under the bottom bar, nothing too
  * small for a thumb, nothing running into its neighbour, and every number
@@ -16,7 +19,7 @@ import path from "path";
  * "kg 2.4".
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 function files(dir: string): string[] {

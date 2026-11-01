@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import { TRPCError } from "@trpc/server";
-import { appRouter } from "./routers";
-import type { TrpcContext } from "./_core/context";
-import { DASHBOARD_FIGURE_IDS } from "../shared/dashboardExplain";
-import { ALL_ACCOUNTS_ROLES, canSeeAllAccounts, isAllAccountsPath } from "../shared/financeAccess";
+import { appRouter } from "../routers";
+import type { TrpcContext } from "../_core/context";
+import { DASHBOARD_FIGURE_IDS } from "../../shared/dashboardExplain";
+import { ALL_ACCOUNTS_ROLES, canSeeAllAccounts, isAllAccountsPath } from "../../shared/financeAccess";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The owner's decision (2026-09-11): an employee takes a payment at the
@@ -78,7 +81,7 @@ describe("an employee cannot read or change the books", () => {
 });
 
 function read(relative: string): string {
-  return fs.readFileSync(path.resolve(__dirname, relative), "utf8");
+  return fs.readFileSync(path.resolve(ROOT_DIR, relative), "utf8");
 }
 
 function between(source: string, start: string, end: string): string {
@@ -119,13 +122,13 @@ describe("the counter still works for an employee", () => {
     const body = between(DASHBOARD, "todayPackages: staffProcedure", "}),");
     expect(body).toContain("return { todayPackages: stats.todayPackages };");
 
-    const screen = read("../client/src/pages/StaffDashboard.tsx");
+    const screen = read("../client/src/pages/dashboard/StaffDashboard.tsx");
     expect(screen).toContain("trpc.dashboard.todayPackages.useQuery()");
     expect(screen).not.toContain("trpc.dashboard.financialStats");
   });
 
   it("the payments page asks for the history only when the role may see it", () => {
-    const page = read("../client/src/pages/Payments.tsx");
+    const page = read("../client/src/pages/finance/Payments.tsx");
     expect(page).toContain("{ enabled: seesHistory }");
     expect(page).toContain("if (seesHistory) refetch();");
   });

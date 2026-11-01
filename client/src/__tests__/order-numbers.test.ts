@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The platform order number beside a parcel's tracking (owner, 2026-09-17).
  *
@@ -14,7 +17,7 @@ import path from "path";
  * several orders showing only one, or the server forgetting to send it.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
@@ -61,13 +64,13 @@ describe("the screens that show it", () => {
   });
 
   it("the registrations page, as cards and as a table", () => {
-    const page = read("pages/Registrations.tsx");
+    const page = read("pages/packages/Registrations.tsx");
     expect(page).toContain('<OrderNumbers numbers={row.order?.orderNumber} className="mt-1 flex text-[12px]" />');
     expect(page).toContain('<OrderNumbers numbers={r.order?.orderNumber} className="flex" />');
   });
 
   it("a parcel's own window on the all-parcels page", () => {
-    expect(read("pages/Packages.tsx")).toContain("numbers={(viewPackage as any).platformOrderNumber || (viewPackage as any).supplierOrderNumber}");
+    expect(read("pages/packages/Packages.tsx")).toContain("numbers={(viewPackage as any).platformOrderNumber || (viewPackage as any).supplierOrderNumber}");
   });
 
   it("a box's parcels, and the box payment in both its states", () => {
@@ -77,11 +80,11 @@ describe("the screens that show it", () => {
   });
 
   it("a batch's parcels", () => {
-    expect(read("pages/Batches.tsx")).toContain('<OrderNumbers numbers={pkg.orderNumbers} className="flex" />');
+    expect(read("pages/batches/Batches.tsx")).toContain('<OrderNumbers numbers={pkg.orderNumbers} className="flex" />');
   });
 
   it("the arrival scanner, in the waiting and the checked lists", () => {
-    const page = read("pages/ArrivalVerificationScanner.tsx");
+    const page = read("pages/scanning/ArrivalVerificationScanner.tsx");
     expect(page.split("<OrderNumbers numbers={pkg.orderNumbers} />").length - 1).toBe(2);
     // A parcel from outside the chosen batches has no manifest row: the scan brings its numbers.
     expect(page).toContain("package: { ...pkg, orderNumbers: result.orderNumbers, customer: result.customer ?? null },");
@@ -89,20 +92,20 @@ describe("the screens that show it", () => {
 
   it("the batch scanner's list", () => {
     expect(read("components/scanner/ScannedList.tsx")).toContain('<OrderNumbers numbers={item.orderNumbers} className="flex" />');
-    const page = read("pages/BatchAssignmentScanner.tsx");
+    const page = read("pages/scanning/BatchAssignmentScanner.tsx");
     expect(page.split("orderNumbers: result.orderNumbers,").length - 1).toBe(2);
     expect(page).toContain("orderNumbers: p.orderNumbers,");
   });
 
   it("quick register: the found order copies it, the last registered and the sharing orders show it", () => {
-    const page = read("pages/QuickRegister.tsx");
+    const page = read("pages/packages/QuickRegister.tsx");
     expect(page).toContain("<CopyButton value={String(foundOrder.order.orderNumber)}");
     expect(page).toContain('<OrderNumbers numbers={lastRegistered.orderNumber} className="text-xs" />');
     expect(page).toContain("<OrderNumbers numbers={od.order.orderNumber} />");
   });
 
   it("bulk register's sharing orders", () => {
-    expect(read("pages/BulkRegister.tsx")).toContain('<OrderNumbers numbers={od.order.orderNumber} className="text-[10px]" />');
+    expect(read("pages/packages/BulkRegister.tsx")).toContain('<OrderNumbers numbers={od.order.orderNumber} className="text-[10px]" />');
   });
 });
 

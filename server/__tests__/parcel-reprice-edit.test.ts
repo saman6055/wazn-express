@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A corrected parcel is a repriced parcel — and when it cannot be, it says so.
  *
@@ -17,7 +20,7 @@ import path from "path";
  * the rule refused, or the page dropping the sentence.
  */
 
-const readRoot = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+const readRoot = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 const router = readRoot("server/routers/packages.router.ts");
 const update = router.slice(router.indexOf("    update: staffProcedure"), router.indexOf("    delete: adminProcedure"));
@@ -60,7 +63,7 @@ describe("the edit", () => {
 });
 
 describe("the screen", () => {
-  const page = readRoot("client/src/pages/Packages.tsx");
+  const page = readRoot("client/src/pages/packages/Packages.tsx");
 
   it("shows the rule's own sentence, and keeps a refusal up until it is read", () => {
     const handler = page.slice(page.indexOf("const onPackageUpdateSuccess"), page.indexOf("const onDeleteSuccess"));
@@ -94,7 +97,7 @@ describe("a parcel already on the account is handed to the correction", () => {
   });
 
   it("the screen reads an edit the debt could not follow in a window, not a toast", () => {
-    const page = readRoot("client/src/pages/Packages.tsx");
+    const page = readRoot("client/src/pages/packages/Packages.tsx");
     const handler = page.slice(page.indexOf("const onPackageUpdateSuccess"), page.indexOf("const onDeleteSuccess"));
     expect(handler.length).toBeGreaterThan(200);
     expect(handler).toContain('else if (result!.pricing!.outcome === "held") systemAlert({');

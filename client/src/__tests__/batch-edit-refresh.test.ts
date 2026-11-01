@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A batch corrected is a batch recounted.
  *
@@ -16,10 +19,10 @@ import path from "path";
  * the list and nothing else.
  */
 
-const read = (rel: string) => fs.readFileSync(path.join(__dirname, rel), "utf8").replace(/\r\n/g, "\n");
+const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("saving a batch", () => {
-  const page = read("pages/Batches.tsx");
+  const page = read("pages/batches/Batches.tsx");
   const refresh = page.slice(page.indexOf("const refreshBatchLists = () => {"), page.indexOf("const onBatchCreateSuccess"));
 
   it("makes every screen of that batch ask again", () => {
@@ -36,7 +39,7 @@ describe("saving a batch", () => {
   });
 
   it("the money report still reads its figures from the server, not from a stored copy", () => {
-    const report = read("pages/BatchFinancialReport.tsx");
+    const report = read("pages/reports/BatchFinancialReport.tsx");
     expect(report).toContain("trpc.batches.getFinancialSummary.useQuery({ batchId }");
   });
 });

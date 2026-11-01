@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { PATH_TO_MODULE } from "../../shared/permissions";
+import { PATH_TO_MODULE } from "../../../shared/permissions";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The quick action hub (Ctrl+K) — the owner's operations brief, 2026-09-16.
@@ -10,7 +13,7 @@ import { PATH_TO_MODULE } from "../../shared/permissions";
  * at a page that exists, offered only to people who may open it, and the
  * hub itself free of anything that writes.
  */
-const read = (rel: string) => fs.readFileSync(path.join(__dirname, rel), "utf8").replace(/\r\n/g, "\n");
+const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, rel), "utf8").replace(/\r\n/g, "\n");
 const HUB = read("components/CommandPalette.tsx");
 
 const ROUTES = [...read("App.tsx").matchAll(/<Route\s+path="([^"]+)"/g)].map((m) => {
@@ -70,7 +73,7 @@ describe("the hub is wired the way it promises", () => {
   });
 
   it("new batch from the hub opens the page's own create dialog", () => {
-    const batches = read("pages/Batches.tsx");
+    const batches = read("pages/batches/Batches.tsx");
     expect(batches).toContain('if (new URLSearchParams(search).get("new") !== "1") return;');
     expect(batches).toContain("setIsCreateOpen(true);");
   });

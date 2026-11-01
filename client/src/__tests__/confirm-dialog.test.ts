@@ -1,7 +1,10 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
-import { confirmAction, confirmDanger } from "./components/ConfirmDialog";
+import { confirmAction, confirmDanger } from "../components/ConfirmDialog";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The owner's list, item 4 (2026-09-11): no screen asks "are you sure?" with
@@ -9,7 +12,7 @@ import { confirmAction, confirmDanger } from "./components/ConfirmDialog";
  * chosen in the app, showed the site's address as a heading, and offered to
  * stop asking altogether — after which deletes went through unasked.
  */
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
@@ -42,7 +45,7 @@ describe("asking before something is done", () => {
   });
 
   it("restoring a backup still asks twice", () => {
-    const page = fs.readFileSync(path.join(SRC, "pages", "BackupManagement.tsx"), "utf8");
+    const page = fs.readFileSync(path.join(SRC, "pages", "admin", "BackupManagement.tsx"), "utf8");
     expect(page.match(/await confirmDanger\(/g)?.length).toBeGreaterThanOrEqual(3);
   });
 });

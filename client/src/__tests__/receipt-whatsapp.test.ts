@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Sending the receipt to the customer's WhatsApp (owner, 2026-09-21).
  *
@@ -15,7 +18,7 @@ import path from "path";
  * whether anything happened.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 const print = read("lib/deliveryBoxPrintUtils.ts");

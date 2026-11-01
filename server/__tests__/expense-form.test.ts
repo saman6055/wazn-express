@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Two things the form used to make somebody do by hand, and one number it
  * used to invent.
@@ -16,11 +19,11 @@ import path from "path";
  * differently by every person who meets it, and then nothing can be searched.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 const END_OF_FN = ["", "}", ""].join("\n");
 
-const screen = read("client/src/pages/Expenses.tsx");
+const screen = read("client/src/pages/finance/Expenses.tsx");
 const financeDb = read("server/db/finance.db.ts");
 const router = read("server/routers/finance.router.ts");
 

@@ -1,6 +1,6 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { appRouter } from "./routers";
-import { hasDb } from "./testEnv";
+import { appRouter } from "../routers";
+import { hasDb } from "../testEnv";
 
 const createTestContext = (role: "admin" | "employee" | "accountant" | "customer" = "admin") => ({
   user: {

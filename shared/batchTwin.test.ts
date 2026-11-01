@@ -25,7 +25,7 @@ describe("the twin beside its original", () => {
   });
 
   it("both rows say which is which", () => {
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     expect(page).toContain('data-testid="batch-twin-chip"');
     expect(page).toContain('data-testid="batch-original-chip"');
     expect(page).toContain("twinsBesideOriginal(searchActive ? (searchQuery.data ?? []) : visibleBatches)");
@@ -47,11 +47,11 @@ describe("a parcel goes only into a batch made where its desk is", () => {
     expect(batchOpenForArrivalCheck({ status: "in_transit", madeInChina: true })).toBe(true);
     expect(batchOpenForArrivalCheck({ status: "at_depot", madeInChina: false })).toBe(false);
     expect(batchOpenForArrivalCheck({ status: "closed", madeInChina: true })).toBe(false);
-    expect(read("client/src/pages/ArrivalVerificationScanner.tsx")).toContain("batchOpenForArrivalCheck(b) || again.has(b.id)");
+    expect(read("client/src/pages/scanning/ArrivalVerificationScanner.tsx")).toContain("batchOpenForArrivalCheck(b) || again.has(b.id)");
   });
 
   it("every register picker filters by it, and the server refuses the rest", () => {
-    for (const f of ["client/src/pages/QuickRegister.tsx", "client/src/pages/BatchAssignmentScanner.tsx", "client/src/pages/BulkRegister.tsx", "client/src/pages/Packages.tsx"]) {
+    for (const f of ["client/src/pages/packages/QuickRegister.tsx", "client/src/pages/scanning/BatchAssignmentScanner.tsx", "client/src/pages/packages/BulkRegister.tsx", "client/src/pages/packages/Packages.tsx"]) {
       expect(read(f), f).toContain("batchMatchesDesk(");
     }
     expect(read("server/routers/packages.router.ts").match(/await db\.assertBatchMatchesDesk\(input\.batchId, ctx\.user\.id\);/g)?.length).toBe(2);
@@ -70,7 +70,7 @@ describe("our kilos against the carrier's on every batch (owner, 2026-10-29)", (
 
 describe("the main admin sets his own place (owner, 2026-10-29)", () => {
   it("a card on the staff page, his own row being absent from the list", () => {
-    expect(read("client/src/pages/StaffManagement.tsx")).toContain('data-testid="my-work-place-select"');
+    expect(read("client/src/pages/admin/StaffManagement.tsx")).toContain('data-testid="my-work-place-select"');
     expect(read("server/routers/auth.router.ts")).toContain("myWorkPlace: protectedProcedure.query(async ({ ctx }) => db.getUserWorkLocation(ctx.user.id)),");
   });
 });
@@ -87,7 +87,7 @@ describe("a batch with Erbil in its name was made in Iraq (owner, 2026-10-29)", 
 
 describe("a batch in a carrier group shows only the group's invoice (owner, 2026-10-29)", () => {
   it("its own carrier weight, loads, difference line and cost inputs are hidden; outside a group the card shows only the twin button", () => {
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     expect(page).toContain('{editingBatch.shippingType !== "sea" && !editInGroup && (');
     expect(page).toContain("{!editInGroup && <CarrierDifferenceLine");
     expect(page).toContain('data-testid="batch-cost-from-group"');

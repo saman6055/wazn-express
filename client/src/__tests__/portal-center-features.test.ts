@@ -3,6 +3,9 @@ import fs from "fs";
 import path from "path";
 import { isReceiptPage } from "@shared/customerFeatures";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The Portal Center's features tab, phase 3 of the owner's brief
  * (2026-09-18): each customer holding a feature shows when it was given, by
@@ -10,7 +13,7 @@ import { isReceiptPage } from "@shared/customerFeatures";
  * to their profile (phase 1).
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the pages where a customer sees their invoices", () => {
   it("are the finance section and the invoice reports", () => {
@@ -37,7 +40,7 @@ describe("each grant says when, by whom, and whether it is used", () => {
   });
 
   it("the page shows all three, and the customer's code opens the profile", () => {
-    const page = read("client/src/pages/PortalCenter.tsx");
+    const page = read("client/src/pages/admin/PortalCenter.tsx");
     expect(page).toContain('<bdi dir="ltr" className="font-mono">{fmtDateTime(g.createdAt)}</bdi>');
     expect(page).toContain("{g.grantedByName ? (");
     expect(page).toContain("{g.lastReceiptViewAt ? (");

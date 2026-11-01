@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { STATUS_LABEL, BATCH_STATUS_TONE } from "./lib/shipmentFilters";
-import { PACKAGE_STATUS_LABEL } from "./lib/packageStatus";
+import { STATUS_LABEL, BATCH_STATUS_TONE } from "../lib/shipmentFilters";
+import { PACKAGE_STATUS_LABEL } from "../lib/packageStatus";
 import { PARCEL_STAGES, PARCEL_STAGE_LABELS } from "@shared/parcelStage";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * One status, one name, one meaning — on every portal screen.
@@ -15,7 +18,7 @@ import { PARCEL_STAGES, PARCEL_STAGE_LABELS } from "@shared/parcelStage";
  * arrival"; five box states collapsed into two.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 function line(src: string, marker: string): string {

@@ -8,7 +8,10 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("charging an order wrongly marked prepaid", () => {
   const src = read("server/db/orderCharging.db.ts");
@@ -40,9 +43,9 @@ describe("the main admin has the button on both order lists", () => {
     const ui = read("client/src/components/orders/OrderOutcome.tsx");
     expect(ui).toContain("if (!isMainAdmin || !order.isPrepaid || ENDED.includes(order.status)) return null;");
     expect(ui).toContain("trpc.ledger.chargeOrderMarkedPrepaid.useMutation(");
-    expect(read("client/src/pages/CommissionOrders.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
-    expect(read("client/src/pages/FullPackageDashboard.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
+    expect(read("client/src/pages/orders/CommissionOrders.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
+    expect(read("client/src/pages/orders/FullPackageDashboard.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
     // /commission is CommissionDashboard, not CommissionOrders (owner looked there, 2026-10-29).
-    expect(read("client/src/pages/CommissionDashboard.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
+    expect(read("client/src/pages/orders/CommissionDashboard.tsx")).toContain("<PrepaidFixMenuItem order={order as any}");
   });
 });

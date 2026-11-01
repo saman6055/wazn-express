@@ -1,7 +1,7 @@
 import { getDb } from './connection';
 import { selfOrderWhere } from './selfOrder.filter';
 import { appLogger } from '../utils/logger';
-import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL, getTableColumns } from "drizzle-orm";
+import { eq, ne, desc, asc, and, gte, lte, lt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL, getTableColumns } from "drizzle-orm";
 import {
   getFullPackageOrderByTrackingNumber,
   getAllOrdersByTrackingNumber,
@@ -34,81 +34,7 @@ import { findActiveDeclaredByTracking, markDeclaredMatched } from './declaredPac
 import { orderNumbersForPackages, orderSourcesForPackages } from './orderNumbers.db';
 import type { ParcelOrderRef } from '@shared/parcelSource';
 import { likePattern } from "./utils.db";
-import {
-  InsertUser, users,
-  customers, InsertCustomer, Customer,
-  customerCodePrefixes, InsertCustomerCodePrefix, CustomerCodePrefix,
-  countries, InsertCountry, Country,
-  warehouses, InsertWarehouse, Warehouse,
-  pricingRules, InsertPricingRule, PricingRule,
-  batches, InsertBatch, Batch,
-  packages, InsertPackage, Package,
-  invoices, InsertInvoice, Invoice,
-  exchangeRates, InsertExchangeRate, ExchangeRate,
-  auditLogs, InsertAuditLog,
-  permissions, subPermissions,
-  notificationLogs, InsertNotificationLog,
-  systemSettings, InsertSystemSetting,
-  currencies, taxRates, emailTemplates, ipWhitelist,
-  fullPackageOrders, InsertFullPackageOrder, FullPackageOrder,
-  suppliers, InsertSupplier, Supplier,
-  fullPackageStatusHistory, InsertFullPackageStatusHistory, FullPackageStatusHistory,
-  customerNotificationPrefs, InsertCustomerNotificationPref, CustomerNotificationPref,
-  vipCustomers, InsertVipCustomer, VipCustomer,
-  packageQrCodes, InsertPackageQrCode, PackageQrCode,
-  scheduledTasksLog, InsertScheduledTaskLog, ScheduledTaskLog,
-  packageScans, InsertPackageScan, PackageScan,
-  packageStatusHistory, InsertPackageStatusHistory, PackageStatusHistory,
-  scanDevices, InsertScanDevice, ScanDevice,
-  customerAccounts, InsertCustomerAccount, CustomerAccount,
-  ledgerTransactions, InsertLedgerTransaction, LedgerTransaction,
-  paymentRecords, InsertPaymentRecord, PaymentRecord,
-  creditAdjustments, InsertCreditAdjustment, CreditAdjustment,
-  paymentReminders, InsertPaymentReminder, PaymentReminder,
-  productCategories, InsertProductCategory, ProductCategory,
-  batchPricingTiers, InsertBatchPricingTier, BatchPricingTier,
-  batchCustomerPricing, InsertBatchCustomerPricing, BatchCustomerPricing,
-  notificationSettings, InsertNotificationSetting, NotificationSetting,
-  expenseCategories, InsertExpenseCategory, ExpenseCategory,
-  expenses, InsertExpense, Expense,
-  partners, InsertPartner, Partner,
-  partnerTransactions, InsertPartnerTransaction, PartnerTransaction,
-  companyDebts, InsertCompanyDebt, CompanyDebt,
-  debtPayments, InsertDebtPayment, DebtPayment,
-  cashAccounts, InsertCashAccount, CashAccount,
-  cashTransactions, InsertCashTransaction, CashTransaction,
-  financialPeriods, InsertFinancialPeriod, FinancialPeriod,
-  scanHistory, InsertScanHistory, ScanHistory,
-  serviceTypes, InsertServiceType, ServiceType,
-  extraServices, InsertExtraService, ExtraService,
-  packageClaimRequests, InsertPackageClaimRequest, PackageClaimRequest,
-  stockCategories, InsertStockCategory, StockCategory,
-  stockProducts, InsertStockProduct, StockProduct,
-  stockPurchases, InsertStockPurchase, StockPurchase,
-  stockPurchaseItems, InsertStockPurchaseItem, StockPurchaseItem,
-  stockSales, InsertStockSale, StockSale,
-  stockSaleItems, InsertStockSaleItem, StockSaleItem,
-  stockMovements, InsertStockMovement, StockMovement,
-  customerMessages, InsertCustomerMessage, CustomerMessage,
-  customerAddresses, InsertCustomerAddress, CustomerAddress,
-  notificationTemplates, InsertNotificationTemplate, NotificationTemplate,
-  labelTemplates, InsertLabelTemplate, LabelTemplate,
-  invoiceTemplates, InsertInvoiceTemplate, InvoiceTemplate,
-  customerNotifications, InsertCustomerNotification, CustomerNotification,
-  revenueRecords, InsertRevenueRecord, RevenueRecord,
-  dailyFinancialSummary, InsertDailyFinancialSummary, DailyFinancialSummary,
-  blogPosts, InsertBlogPost, BlogPost,
-  deletionLogs, InsertDeletionLog, DeletionLog,
-  activityAlerts, InsertActivityAlert, ActivityAlert,
-  supportChats, InsertSupportChat, SupportChat,
-  chatMessages, InsertChatMessage, ChatMessage,
-  backups, InsertBackup, Backup,
-  expenseAlerts, InsertExpenseAlert, ExpenseAlert,
-  expenseAlertLogs, InsertExpenseAlertLog, ExpenseAlertLog,
-  packageOrderLinks, InsertPackageOrderLink, PackageOrderLink,
-  fullPackageOrderTrackings,
-  customerDeclaredPackages,
-} from "../../drizzle/schema";
+import { users, customers, Customer, Warehouse, pricingRules, PricingRule, batches, Batch, packages, InsertPackage, Package, fullPackageOrders, FullPackageOrder, packageScans, productCategories, packageOrderLinks, PackageOrderLink, fullPackageOrderTrackings, customerDeclaredPackages } from "../../drizzle/schema";
 
 // ============ PACKAGE OPERATIONS ============
 
@@ -1096,7 +1022,6 @@ export async function getNextPackageCode(prefix: string): Promise<string> {
   return `${prefix}${nextNum.toString().padStart(6, '0')}`;
 }
 
-
 // ============ UNCLAIMED PACKAGES ============
 
 export async function getNextUnclaimedPackageCode(): Promise<string> {
@@ -1241,18 +1166,6 @@ export async function createPackageOrderLinks(
     }
   }
   return { inserted, skipped };
-}
-
-/** Remove a single link (used when staff fixes a wrong association). */
-export async function deletePackageOrderLink(packageId: number, fullPackageOrderId: number): Promise<boolean> {
-  const db = await getDb();
-  if (!db) return false;
-  await db.delete(packageOrderLinks)
-    .where(and(
-      eq(packageOrderLinks.packageId, packageId),
-      eq(packageOrderLinks.fullPackageOrderId, fullPackageOrderId),
-    ));
-  return true;
 }
 
 /**
@@ -2737,7 +2650,6 @@ export async function backfillPackageOrderLinks(): Promise<{
 
   return { totalCandidates: candidates.length, inserted, alreadyLinked, errors };
 }
-
 
 /**
  * What the warehouse took in over a period, grouped by customer.

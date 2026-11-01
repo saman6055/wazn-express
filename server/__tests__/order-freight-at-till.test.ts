@@ -3,7 +3,10 @@ import fs from "fs";
 import path from "path";
 import { unbilledOnReceiptUsd, accountCover } from "@shared/boxSettlement";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8");
 
 /*
  * 2026-10-04, AZ274 BOX-20260908-001: the $220 order was charged (goods

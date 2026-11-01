@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Searching all parcels stays a question the database can answer quickly.
  *
@@ -17,7 +20,7 @@ import path from "path";
  */
 
 const source = fs
-  .readFileSync(path.join(__dirname, "db", "packages.db.ts"), "utf8")
+  .readFileSync(path.join(ROOT_DIR, "db", "packages.db.ts"), "utf8")
   .replace(/\r\n/g, "\n");
 
 const search = source.slice(source.indexOf("export async function getAllPackages"), source.indexOf("export async function getPackagesStats"));

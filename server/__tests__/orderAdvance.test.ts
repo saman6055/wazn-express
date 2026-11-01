@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { orderAdvancePaidUsd } from '../shared/orderAdvance';
+import { orderAdvancePaidUsd } from '../../shared/orderAdvance';
 
 /**
  * This figure is subtracted from what a customer owes at the delivery box, so

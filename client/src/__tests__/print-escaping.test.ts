@@ -1,9 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
-import { escapeHtml, openExternal } from "./lib/html";
+import { escapeHtml, openExternal } from "../lib/html";
 
-const SRC = path.resolve(__dirname);
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8");
 
 describe("escapeHtml", () => {
@@ -71,18 +74,18 @@ describe("print windows print text, never markup", () => {
     ["lib/labelPrintUtils.ts", RAW("tracking|cust\\.(name|code|phone|city)|company\\.name|batchCode|dimensions|weight|t\\.(fontFamily|primaryColor)")],
     ["lib/batchLabelPrintUtils.ts", RAW("cust\\.(name|code)|company\\.name|batchCode|t\\.(fontFamily|primaryColor)")],
     ["lib/deliveryBoxPrintUtils.ts", RAW_IN_HTML("item\\.trackingNumber|customer\\??\\.(fullName|customerCode|city|mobileNumber)|box\\.(boxCode|notes|destinationCity|destinationAddress|recipientPhone)|description|documentTitle|options\\.logoUrl")],
-    ["pages/AuditLogs.tsx", RAW_IN_HTML("log\\.|company\\.name")],
-    ["pages/BatchFinancialReport.tsx", RAW_IN_HTML("customer\\?\\.(name|code)|company\\.(name|nameKu)|batch\\?\\.batchCode|pkg\\.trackingNumber|title")],
+    ["pages/admin/AuditLogs.tsx", RAW_IN_HTML("log\\.|company\\.name")],
+    ["pages/reports/BatchFinancialReport.tsx", RAW_IN_HTML("customer\\?\\.(name|code)|company\\.(name|nameKu)|batch\\?\\.batchCode|pkg\\.trackingNumber|title")],
     ["pages/portal/PortalFinancial.tsx", RAW_IN_HTML("customer\\.(fullName|customerCode)|transaction\\.transactionNumber|company\\.name|companyName")],
-    ["pages/CommissionDashboard.tsx", RAW_IN_HTML("order\\.(orderCode|productName)|\\(order as any\\)\\.customer|company\\.name")],
-    ["pages/FullPackageDashboard.tsx", RAW_IN_HTML("order\\.(orderCode|productName)|\\(order as any\\)\\.customer|company\\.name")],
-    ["pages/InvoiceReports.tsx", RAW_IN_HTML("c\\.customer(Name|Code)|company\\.name|title")],
-    ["pages/ServicesManagement.tsx", RAW_IN_HTML("getCustomerName|service\\.(description|serviceType)|company\\.name")],
-    ["pages/ServicesReport.tsx", RAW_IN_HTML("company\\.(name|nameKu)|type\\.name|customer\\.name")],
-    ["pages/BatchReports.tsx", RAW_IN_HTML("company\\.name|batch\\.batchCode")],
+    ["pages/orders/CommissionDashboard.tsx", RAW_IN_HTML("order\\.(orderCode|productName)|\\(order as any\\)\\.customer|company\\.name")],
+    ["pages/orders/FullPackageDashboard.tsx", RAW_IN_HTML("order\\.(orderCode|productName)|\\(order as any\\)\\.customer|company\\.name")],
+    ["pages/reports/InvoiceReports.tsx", RAW_IN_HTML("c\\.customer(Name|Code)|company\\.name|title")],
+    ["pages/settings/ServicesManagement.tsx", RAW_IN_HTML("getCustomerName|service\\.(description|serviceType)|company\\.name")],
+    ["pages/reports/ServicesReport.tsx", RAW_IN_HTML("company\\.(name|nameKu)|type\\.name|customer\\.name")],
+    ["pages/reports/BatchReports.tsx", RAW_IN_HTML("company\\.name|batch\\.batchCode")],
     ["hooks/useDataManagement.ts", RAW_IN_HTML("company\\.name")],
-    ["pages/Finance.tsx", RAW_IN_HTML("account\\.customer\\?\\.(customerCode|fullName|mobileNumber)|account\\.accountNumber|company\\.name")],
-    ["pages/CustomerFinance.tsx", RAW_IN_HTML("customer\\?\\.(customerCode|fullName|mobileNumber)|company\\.name|txn\\.(transactionNumber|description)")],
+    ["pages/finance/Finance.tsx", RAW_IN_HTML("account\\.customer\\?\\.(customerCode|fullName|mobileNumber)|account\\.accountNumber|company\\.name")],
+    ["pages/finance/CustomerFinance.tsx", RAW_IN_HTML("customer\\?\\.(customerCode|fullName|mobileNumber)|company\\.name|txn\\.(transactionNumber|description)")],
   ];
 
   for (const [file, raw] of cases) {
@@ -107,7 +110,7 @@ describe("print windows print text, never markup", () => {
 
 describe("stored addresses open safely", () => {
   it("a supplier's website and a chat attachment go through openExternal", () => {
-    expect(read("pages/Suppliers.tsx")).toContain("openExternal((supplier as any).website)");
-    expect(read("pages/CustomerMessages.tsx")).toContain("openExternal(msg.attachmentUrl)");
+    expect(read("pages/admin/Suppliers.tsx")).toContain("openExternal((supplier as any).website)");
+    expect(read("pages/customers/CustomerMessages.tsx")).toContain("openExternal(msg.attachmentUrl)");
   });
 });

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The portal asks the app for its colours.
  *
@@ -28,8 +31,8 @@ import path from "path";
  */
 
 const DIRS = [
-  path.resolve(__dirname, "pages", "portal"),
-  path.resolve(__dirname, "components", "portal"),
+  path.resolve(ROOT_DIR, "pages", "portal"),
+  path.resolve(ROOT_DIR, "components", "portal"),
 ];
 
 const files = DIRS.flatMap((dir) =>
@@ -81,7 +84,7 @@ describe("one look, both modes", () => {
   it("brand colour is untouched — it is not a mode, it is the company", () => {
     // The banner still takes its blue from the mode's own palette, and a
     // figure in the red of debt stays red in both modes.
-    const modes = fs.readFileSync(path.resolve(__dirname, "lib", "portalModes.ts"), "utf8");
+    const modes = fs.readFileSync(path.resolve(ROOT_DIR, "lib", "portalModes.ts"), "utf8");
     expect(modes).toContain("export interface PortalPalette");
     expect(modes).toContain("Only brand colour goes through here");
   });

@@ -3,7 +3,10 @@ import fs from "fs";
 import path from "path";
 import { batchMissingCost } from "@shared/batchPricing";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8");
 
 /*
  * Owner, 2026-10-04: our weight is counted from the trackings themselves and
@@ -12,7 +15,7 @@ const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
  * waits.
  */
 describe("our weight, the carrier's, and a batch that waits", () => {
-  const page = read("pages/Batches.tsx");
+  const page = read("pages/batches/Batches.tsx");
 
   it("our weight is shown, not typed, in the edit form", () => {
     expect(page).not.toContain('<Input name="actualWeightKg"');
@@ -23,14 +26,14 @@ describe("our weight, the carrier's, and a batch that waits", () => {
 
   it("every place a batch's profit is shown says when it is waiting", () => {
     expect(page).toContain("<BatchWaitingFor waitingFor={financialSummary.waitingFor} />");
-    expect(read("pages/BatchFinancialReport.tsx")).toContain("<BatchWaitingFor waitingFor={financial.waitingFor} />");
-    expect(read("pages/BatchFinancialReportFull.tsx")).toContain("<BatchWaitingFor waitingFor={financial.waitingFor} />");
+    expect(read("pages/reports/BatchFinancialReport.tsx")).toContain("<BatchWaitingFor waitingFor={financial.waitingFor} />");
+    expect(read("pages/reports/BatchFinancialReportFull.tsx")).toContain("<BatchWaitingFor waitingFor={financial.waitingFor} />");
   });
 
   it("the list asks for a missing cost in red, beside the price", () => {
     // A red dot among the quiet ones since the list redesign (owner, 2026-10-27).
     expect(page).toContain('testId: "batch-missing-cost", red: true');
-    expect(read("pages/BatchAssignmentScanner.tsx")).toContain("batchMissingCost(batch)");
+    expect(read("pages/scanning/BatchAssignmentScanner.tsx")).toContain("batchMissingCost(batch)");
   });
 
   it("a cost is a rate or the carrier's total", () => {
@@ -41,9 +44,9 @@ describe("our weight, the carrier's, and a batch that waits", () => {
   });
 
   it("the server reports no profit and no loss while waiting", () => {
-    const db = fs.readFileSync(path.resolve(__dirname, "..", "..", "server/db/batches.db.ts"), "utf8");
+    const db = fs.readFileSync(path.resolve(ROOT_DIR, "..", "..", "server/db/batches.db.ts"), "utf8");
     expect(db).toContain("profit: waitingFor ? 0 : totalRevenue - totalCost,");
-    const reports = fs.readFileSync(path.resolve(__dirname, "..", "..", "server/db/reports.db.ts"), "utf8");
+    const reports = fs.readFileSync(path.resolve(ROOT_DIR, "..", "..", "server/db/reports.db.ts"), "utf8");
     expect(reports).toContain("const waiting = waitingForCost.has(batchId) || totalBatchRevenue <= 0;");
     expect(reports).toContain("rows.filter((r) => !r.waiting)");
   });

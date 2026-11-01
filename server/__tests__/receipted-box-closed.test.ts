@@ -10,7 +10,10 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("a receipt closes its box", () => {
   const settle = read("server/db/boxSettlement.db.ts");

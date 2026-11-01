@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Every report, every PDF, carries the mark — the owner's request.
  *
@@ -10,23 +13,23 @@ import path from "path";
  * there is no shared header to fix once; these tests hold each one to it.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 /** Reports written into a window of their own. */
 const PRINT_WINDOWS = [
-  "pages/BatchFinancialReport.tsx",
-  "pages/CustomerFinance.tsx",
+  "pages/reports/BatchFinancialReport.tsx",
+  "pages/finance/CustomerFinance.tsx",
   "pages/portal/PortalFinancial.tsx",
   "pages/portal/PortalInvoiceReports.tsx",
-  "pages/Finance.tsx",
-  "pages/BatchReports.tsx",
-  "pages/CommissionDashboard.tsx",
-  "pages/FullPackageDashboard.tsx",
-  "pages/InvoiceReports.tsx",
-  "pages/ServicesManagement.tsx",
-  "pages/ServicesReport.tsx",
-  "pages/AuditLogs.tsx",
+  "pages/finance/Finance.tsx",
+  "pages/reports/BatchReports.tsx",
+  "pages/orders/CommissionDashboard.tsx",
+  "pages/orders/FullPackageDashboard.tsx",
+  "pages/reports/InvoiceReports.tsx",
+  "pages/settings/ServicesManagement.tsx",
+  "pages/reports/ServicesReport.tsx",
+  "pages/admin/AuditLogs.tsx",
   "hooks/useDataManagement.ts",
   "lib/labelPrintUtils.ts",
   "lib/batchLabelPrintUtils.ts",
@@ -35,8 +38,8 @@ const PRINT_WINDOWS = [
 /** Pages printed in place with window.print(), where the sidebar logo is hidden. */
 const IN_PAGE = [
   "components/DailyBrief.tsx",
-  "pages/ProfitReports.tsx",
-  "pages/ProfitDashboardByType.tsx",
+  "pages/reports/ProfitReports.tsx",
+  "pages/reports/ProfitDashboardByType.tsx",
   "components/BoxInvoiceView.tsx",
   "components/BatchInvoiceView.tsx",
 ];
@@ -73,17 +76,17 @@ describe("the mark on every printed report", () => {
 
   it("the invoice page gives its print window an address it can load", () => {
     // The print window is about:blank: a relative "/brand/…" resolves to nothing.
-    expect(read("pages/InvoiceView.tsx")).toContain("absoluteLogoUrl(company.logoUrl)");
+    expect(read("pages/finance/InvoiceView.tsx")).toContain("absoluteLogoUrl(company.logoUrl)");
   });
 });
 
 describe("a report prints after its logo has loaded", () => {
   it("the reports that printed at once now wait for their images", () => {
     for (const rel of [
-      "pages/BatchFinancialReport.tsx",
-      "pages/BatchReports.tsx",
-      "pages/ServicesManagement.tsx",
-      "pages/ServicesReport.tsx",
+      "pages/reports/BatchFinancialReport.tsx",
+      "pages/reports/BatchReports.tsx",
+      "pages/settings/ServicesManagement.tsx",
+      "pages/reports/ServicesReport.tsx",
     ]) {
       const src = read(rel);
       expect(src, rel).toContain("printWhenReady(printWindow)");

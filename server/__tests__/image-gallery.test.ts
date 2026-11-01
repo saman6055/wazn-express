@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
-import { appRouter } from "./routers";
-import type { TrpcContext } from "./_core/context";
+import { appRouter } from "../routers";
+import type { TrpcContext } from "../_core/context";
 
 function createAuthContext(): TrpcContext {
   return {

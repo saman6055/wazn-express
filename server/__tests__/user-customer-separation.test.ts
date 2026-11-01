@@ -1,5 +1,5 @@
 import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
-import { users, customers } from '../drizzle/schema';
+import { users, customers } from '../../drizzle/schema';
 
 describe('User/Customer Separation', () => {
   describe('Schema Validation', () => {

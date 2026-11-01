@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const ROOT = path.resolve(__dirname);
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const ROOT = path.resolve(ROOT_DIR);
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 /**
@@ -37,7 +40,7 @@ describe("the phone is woken in the customer's own language", () => {
    */
   it("stores Chinese alongside Kurdish and Arabic", () => {
     const schema = fs.readFileSync(
-      path.resolve(__dirname, "../drizzle/schema/notifications.schema.ts"), "utf8");
+      path.resolve(ROOT_DIR, "../drizzle/schema/notifications.schema.ts"), "utf8");
     expect(schema).toContain('titleZh: varchar("titleZh"');
     expect(schema).toContain('messageZh: text("messageZh")');
 
@@ -70,7 +73,7 @@ describe("the phone is woken in the customer's own language", () => {
 
   it("subscribes with the language the customer chose, not the handset's", () => {
     const hook = fs.readFileSync(
-      path.resolve(__dirname, "../client/src/hooks/usePushSubscription.ts"), "utf8");
+      path.resolve(ROOT_DIR, "../client/src/hooks/usePushSubscription.ts"), "utf8");
     // navigator.language is the phone's setting. A Kurdish customer on an
     // English handset was being woken in English.
     expect(hook).toMatch(/language:\s*language \|\| navigator\.language/);
@@ -84,14 +87,14 @@ describe("the phone is woken in the customer's own language", () => {
    */
   it("renders the Chinese title wherever a notification is shown", () => {
     const lib = fs.readFileSync(
-      path.resolve(__dirname, "../client/src/lib/portalNotificationText.ts"), "utf8");
+      path.resolve(ROOT_DIR, "../client/src/lib/portalNotificationText.ts"), "utf8");
     expect(lib, "must pick a Chinese translation").toMatch(/language === "zh" \? "Zh"/);
     // An empty translation is not a translation; it must fall back, not blank.
     expect(lib).toMatch(/translated\.trim\(\)/);
 
     for (const screen of ["PortalNotifications.tsx", "PortalMessages.tsx"]) {
       const src = fs.readFileSync(
-        path.resolve(__dirname, "../client/src/pages/portal", screen), "utf8");
+        path.resolve(ROOT_DIR, "../client/src/pages/portal", screen), "utf8");
       expect(src, `${screen} must use the shared reader`).toContain("notificationText");
       expect(src, `${screen} must not pick a language itself`)
         .not.toMatch(/\bn\.title(?:Ku|Ar|Zh)\b/);

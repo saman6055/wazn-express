@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8");
 
 /*
  * 10 September 2026: some boxes receipted again and again (BOX-20260705-004

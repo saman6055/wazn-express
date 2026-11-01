@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The system's bell (owner, 2026-09-16): today's risks by size, there every
  * day, flashing until looked at — and nobody told about a page they may not
@@ -9,7 +12,7 @@ import path from "path";
  * wiring that makes them reach a screen.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readServer = (p: string) => fs.readFileSync(path.resolve(SRC, "../../server", p), "utf8").replace(/\r\n/g, "\n");
 const readShared = (p: string) => fs.readFileSync(path.resolve(SRC, "../../shared", p), "utf8").replace(/\r\n/g, "\n");
@@ -84,7 +87,7 @@ describe("each item opens exactly what it counted", () => {
 
   it("debts: the debtors past their own limit, by the rule that counted them", () => {
     expect(riskBell).toContain('"debt-over-limit": debtorsHref({ over: "limit" })');
-    const page = read("pages/DebtorsReport.tsx");
+    const page = read("pages/finance/DebtorsReport.tsx");
     expect(page).toContain("readDebtorsLink(urlSearch).over === \"limit\"");
     expect(page).toContain("isOverCreditLimit(acc.currentBalanceUsd, acc.creditLimitUsd)");
     expect(page).toContain("filters={overLimitOnly ? [FILTER_LABEL.over_limit] : []}");
@@ -98,7 +101,7 @@ describe("each item opens exactly what it counted", () => {
   it("orders: the tracking-alerts page at 7+ days, where the tracking is added", () => {
     expect(riskBell).toContain('"orders-no-tracking": trackingAlertsHref({ days: "7+" })');
     expect(riskBell).toContain('"orders-no-tracking": "/tracking-alerts"');
-    const page = read("pages/TrackingAlerts.tsx");
+    const page = read("pages/packages/TrackingAlerts.tsx");
     expect(page).toContain("readTrackingAlertsLink(urlSearch).days");
     expect(page).toContain("useState<string>(linkDays ?? \"all\")");
     expect(page).toMatch(/value: "7\+",[^\n]*min: 7,/);
@@ -158,7 +161,7 @@ describe("the system's sensor (owner, 2026-09-17)", () => {
   });
 
   it("a finding opens the auditor's page at that check", () => {
-    const page = read("pages/AuditSweep.tsx");
+    const page = read("pages/admin/AuditSweep.tsx");
     expect(page).toContain('new URLSearchParams(useSearch()).get("check")');
     expect(page).toContain("data-check={result.id}");
   });

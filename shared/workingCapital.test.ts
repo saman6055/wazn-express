@@ -106,7 +106,7 @@ describe("a count is a test", () => {
 describe("nothing is typed into the sum", () => {
   const facts = root("server/db/workingCapital.db.ts");
   const router = root("server/routers/finance.router.ts");
-  const page = root("client/src/pages/WorkingCapital.tsx");
+  const page = root("client/src/pages/finance/WorkingCapital.tsx");
 
   it("the facts never read the stored count", () => {
     const fn = facts.slice(facts.indexOf("export async function getWorkingCapitalFacts"), facts.indexOf("export async function getWorkingCapital()"));
@@ -172,7 +172,7 @@ describe("money received is counted on the office's clock", () => {
   it("is net of what was undone, and is shown with a way to every receipt", () => {
     const db = root("server/db/workingCapital.db.ts");
     expect(db).toContain("reversedAmountUsd");
-    const page = root("client/src/pages/WorkingCapital.tsx");
+    const page = root("client/src/pages/finance/WorkingCapital.tsx");
     expect(page).toContain('data-testid="money-received"');
     expect(page).toContain('href="/payments"');
     expect(root("client/src/components/DashboardLayout.tsx")).toContain('path: "/payments"');

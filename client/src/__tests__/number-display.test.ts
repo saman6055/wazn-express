@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { fmtKg, fmtNumber, fmtUsd, NO_VALUE, unsignedZero } from "./lib/portalFormat";
-import { formatCurrency, formatNumber, formatPercent } from "./lib/format";
-import { formatMoney } from "./components/ui/money";
+import { fmtKg, fmtNumber, fmtUsd, NO_VALUE, unsignedZero } from "../lib/portalFormat";
+import { formatCurrency, formatNumber, formatPercent } from "../lib/format";
+import { formatMoney } from "../components/ui/money";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 describe("nothing that rounds to zero carries a minus sign", () => {
   it("in the portal's formatters", () => {
@@ -62,7 +65,7 @@ describe("an amount reads the same way everywhere", () => {
   });
 
   it("a dashboard card never counts up to NaN", () => {
-    const src = fs.readFileSync(path.resolve(__dirname, "components/CountUp.tsx"), "utf8");
+    const src = fs.readFileSync(path.resolve(ROOT_DIR, "components/CountUp.tsx"), "utf8");
     expect(src).toContain('!Number.isFinite(display)');
   });
 });

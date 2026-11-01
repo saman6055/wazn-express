@@ -94,7 +94,7 @@ describe("the blacklist stops buying, and only buying", () => {
     for (const file of ["server/db/boxSettlement.db.ts", "server/db/finance.db.ts", "server/db/packages.db.ts"]) {
       expect(root(file), file).not.toContain("assertMayOrderFor");
     }
-    expect(root("client/src/pages/QuickRegister.tsx")).toContain("<RefusalWarning customerId={customerId} buying={false} />");
+    expect(root("client/src/pages/packages/QuickRegister.tsx")).toContain("<RefusalWarning customerId={customerId} buying={false} />");
   });
 });
 
@@ -116,7 +116,7 @@ describe("written down, never rewritten", () => {
 
   it("every member of staff can read it, where the next order is typed", () => {
     expect(router).toContain("customerStanding: staffProcedure");
-    for (const form of ["client/src/pages/CommissionForm.tsx", "client/src/pages/FullPackageForm.tsx"]) {
+    for (const form of ["client/src/pages/orders/CommissionForm.tsx", "client/src/pages/orders/FullPackageForm.tsx"]) {
       expect(root(form), form).toContain("<RefusalWarning customerId={Number(formData.customerId) || null} />");
     }
     expect(root("client/src/App.tsx")).toContain('path="/customers/standing"');

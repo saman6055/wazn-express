@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("the page on a phone", () => {
   it("can be pinch-zoomed, and reports the iPhone's safe areas", () => {
@@ -79,7 +82,7 @@ describe("things that float", () => {
   });
 
   it("the message screens measure the screen that is actually visible", () => {
-    for (const file of ["pages/CustomerMessages.tsx", "pages/portal/PortalMessages.tsx", "pages/PermissionsManagement.tsx"]) {
+    for (const file of ["pages/customers/CustomerMessages.tsx", "pages/portal/PortalMessages.tsx", "pages/admin/PermissionsManagement.tsx"]) {
       expect(read(file), file).toMatch(/supports-\[height:100dvh\]:h-\[calc\(100dvh-\d+px\)\]/);
     }
   });

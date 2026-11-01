@@ -2,6 +2,9 @@ import { describe, it, expect } from 'vitest';
 import fs from 'fs';
 import path from 'path';
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Every hardcoded colour must work in both themes.
  *
@@ -28,7 +31,7 @@ function tsxFiles(dir: string): string[] {
   return out;
 }
 
-const ROOT = path.resolve(__dirname);
+const ROOT = path.resolve(ROOT_DIR);
 const FILES = tsxFiles(ROOT);
 
 /**

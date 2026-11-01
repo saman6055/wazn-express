@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { MOBILE_TABS, TAB_ROOTS, currentItem } from "./components/mobile/MobileAppShell";
+import { MOBILE_TABS, TAB_ROOTS, currentItem } from "../components/mobile/MobileAppShell";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The owner, 2026-09-27: «کردنەوەی سیستەم لە مۆبایل هێشتا وەکو دیسک تۆپە…
@@ -9,7 +12,7 @@ import { MOBILE_TABS, TAB_ROOTS, currentItem } from "./components/mobile/MobileA
  * a tab bar, a scan sheet and a «زیاتر» grid instead of the desktop chrome.
  */
 
-const read = (rel: string) => fs.readFileSync(path.join(__dirname, rel), "utf8").replace(/\r\n/g, "\n");
+const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("the office on a phone", () => {
   const layout = read("components/DashboardLayout.tsx");
@@ -72,7 +75,7 @@ describe("the office on a phone", () => {
 
 describe("lists on a phone are cards (phase 2)", () => {
   it("the parcels list draws one card per parcel, with the row's own pieces", () => {
-    const page = read("pages/Packages.tsx");
+    const page = read("pages/packages/Packages.tsx");
     expect(page).toContain("{isMobile ? (");
     expect(page).toContain("<PackageMobileCard");
     // One status menu, one weight rule, one age badge for table and card.
@@ -88,7 +91,7 @@ describe("lists on a phone are cards (phase 2)", () => {
     const css = read("index.css");
     expect(css).toContain("table[data-mobile-cards] > thead {");
     expect(css).toContain("content: attr(data-label);");
-    for (const f of ["pages/Batches.tsx", "pages/Customers.tsx", "components/delivery/BoxTable.tsx", "pages/CommissionOrders.tsx", "pages/Invoices.tsx"]) {
+    for (const f of ["pages/batches/Batches.tsx", "pages/customers/Customers.tsx", "components/delivery/BoxTable.tsx", "pages/orders/CommissionOrders.tsx", "pages/finance/Invoices.tsx"]) {
       expect(read(f), f).toContain("<Table ");
       expect(read(f), f).toMatch(/<Table[^>]*mobileCards/);
     }
@@ -103,7 +106,7 @@ describe("lists on a phone are cards (phase 2)", () => {
   });
 
   it("the dashboard starts with the day's jobs on a phone", () => {
-    expect(read("pages/Dashboard.tsx")).toContain("<MobileQuickActions");
+    expect(read("pages/dashboard/Dashboard.tsx")).toContain("<MobileQuickActions");
   });
 });
 
@@ -123,7 +126,7 @@ describe("tested against a real database, 2026-09-28 (phase 4)", () => {
   });
 
   it("the batch-number buttons on the dashboard and batches page wrap, touch screens too", () => {
-    for (const f of ["pages/Dashboard.tsx", "pages/Batches.tsx"]) {
+    for (const f of ["pages/dashboard/Dashboard.tsx", "pages/batches/Batches.tsx"]) {
       expect(read(f), f).toContain('className={cn("h-auto pointer-coarse:h-auto min-h-8 pointer-coarse:min-h-10 max-w-full flex-wrap');
     }
   });
@@ -144,13 +147,13 @@ describe("tested against a real database, 2026-09-28 (phase 4)", () => {
   });
 
   it("business analytics survives weights that arrive as text", () => {
-    expect(read("pages/BusinessAnalytics.tsx")).toContain("Number(stat.totalWeight ?? 0).toFixed(1)");
+    expect(read("pages/reports/BusinessAnalytics.tsx")).toContain("Number(stat.totalWeight ?? 0).toFixed(1)");
   });
 });
 
 describe("Chrome offers to install it (2026-09-28)", () => {
   it("the service worker answers page loads, so Chrome counts it as an app — and caches nothing", () => {
-    const sw = fs.readFileSync(path.join(__dirname, "..", "public", "sw.js"), "utf8");
+    const sw = fs.readFileSync(path.join(ROOT_DIR, "..", "public", "sw.js"), "utf8");
     expect(sw).toContain('self.addEventListener("fetch"');
     expect(sw).toContain('if (event.request.mode !== "navigate") return;');
     expect(sw).not.toMatch(/caches\.(open|match)/);

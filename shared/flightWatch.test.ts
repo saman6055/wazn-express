@@ -319,6 +319,6 @@ describe("switched off (owner, 2026-10-28)", () => {
     const svc = read("server/services/flightWatch.service.ts");
     expect(svc).toContain("const watching = AIRPORT_WATCH_ON ? batches.filter((batch) => watchDecision(batch, now).watch) : [];");
     expect(svc).toContain("await reportOverdueBatches(batches, now);");
-    expect(read("client/src/pages/Batches.tsx")).toContain("if (!AIRPORT_WATCH_ON) return null;");
+    expect(read("client/src/pages/batches/Batches.tsx")).toContain("if (!AIRPORT_WATCH_ON) return null;");
   });
 });

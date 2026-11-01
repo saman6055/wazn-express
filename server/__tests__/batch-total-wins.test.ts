@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import nodePath from "node:path";
 
-const read = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = nodePath.resolve(__dirname, "..");
+
+const read = (p: string) => readFileSync(resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * The carrier's invoice decides a batch's cost (owner, 2026-10-05).
@@ -97,7 +101,7 @@ describe("every screen shows the real cost of a kilo, and how it was reached", (
   });
 
   it("the batch screen uses it, and previews the total while it is typed", () => {
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     expect(page).toContain("<BatchCostWorkingLine working={financialSummary.costWorking}");
     expect(page).toContain("<BatchRealCostPreview");
     // With carrier loads the total is their sum (CarrierPartsCard); else what is typed.
@@ -107,7 +111,7 @@ describe("every screen shows the real cost of a kilo, and how it was reached", (
   });
 
   it("the financial pages and the printed report show the real rate, not the typed one", () => {
-    for (const file of ["client/src/pages/BatchFinancialReport.tsx", "client/src/pages/BatchFinancialReportFull.tsx"]) {
+    for (const file of ["client/src/pages/reports/BatchFinancialReport.tsx", "client/src/pages/reports/BatchFinancialReportFull.tsx"]) {
       const page = read(file);
       expect(page, file).toContain("${Number(financial.effectiveCostRate || 0).toFixed(2)}/{unit}");
       expect(page, file).toContain("<BatchCostWorkingLine working={financial.costWorking}");
@@ -117,7 +121,7 @@ describe("every screen shows the real cost of a kilo, and how it was reached", (
   });
 
   it("the old profit dashboard costs a batch by the same rule", () => {
-    const page = read("client/src/pages/ProfitDashboard.tsx");
+    const page = read("client/src/pages/reports/ProfitDashboard.tsx");
     expect(page).toContain("const cost = resolveBatchCost({");
     expect(page).not.toContain("const cost = chargedVolume * costPerUnit;");
   });

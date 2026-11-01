@@ -127,7 +127,7 @@ describe("the list shows it", () => {
   });
 
   it("under the departure date in the list, and in full in the edit dialog", () => {
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     expect(page).toContain("<BatchDurationChip batch={batch as never} />");
     expect(page).toContain("<BatchDurationChip batch={editingBatch as never} detailed />");
     const chip = read("client/src/components/batches/BatchDuration.tsx");

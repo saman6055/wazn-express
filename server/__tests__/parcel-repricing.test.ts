@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A weight corrected, and $0.00 still sitting there afterwards.
  *
@@ -23,7 +26,7 @@ import path from "path";
  * so a parcel's stored price depended on which screen had last touched it.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 const router = read("server/routers/packages.router.ts");
@@ -157,7 +160,7 @@ describe("the figure quoted on the register screen", () => {
   });
 
   it("the screen asks the server instead of multiplying the list rate", () => {
-    const screen = read("client/src/pages/QuickRegister.tsx");
+    const screen = read("client/src/pages/packages/QuickRegister.tsx");
     expect(screen).toContain("estimateCost.useQuery");
     expect(screen, "the batch list rate must not be multiplied on the screen")
       .not.toContain("parseFloat(selectedBatch.pricePerKg)");

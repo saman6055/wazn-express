@@ -2,11 +2,14 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * What the production server says about caching, content and missing things.
  * prod-entry.ts is what customers hit; the dev server is not.
  */
-const PROD = fs.readFileSync(path.resolve(__dirname, "_core/prod-entry.ts"), "utf8");
+const PROD = fs.readFileSync(path.resolve(ROOT_DIR, "_core/prod-entry.ts"), "utf8");
 
 const at = (token: string) => {
   const i = PROD.indexOf(token);
@@ -30,7 +33,7 @@ describe("production caching", () => {
     // A customer's passport or ID card (marked by the document guard) is not
     // kept at all; every other upload is kept a week by that browser alone.
     // The headers live in uploadsServe.ts, shared with the dev entry.
-    const serve = fs.readFileSync(path.resolve(__dirname, "_core/uploadsServe.ts"), "utf8");
+    const serve = fs.readFileSync(path.resolve(ROOT_DIR, "_core/uploadsServe.ts"), "utf8");
     expect(serve).toContain('res.setHeader("Cache-Control", res.locals?.customerDocument ? "private, no-store" : "private, max-age=604800")');
     at("express.static(uploadsDir, uploadsStaticOptions)");
     expect(PROD).not.toContain('express.static(uploadsDir, { maxAge: "7d" })');

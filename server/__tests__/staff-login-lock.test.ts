@@ -2,16 +2,16 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // The sign-in signs a session token; the server loads its settings at start-up,
 // which a test never does, so it gets a key of its own.
-vi.mock("./config", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./config")>();
+vi.mock("../config", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../config")>();
   return {
     ...actual,
     getConfig: () => ({ jwtSecret: "staff-login-lock-test-secret-0123456789" }) as ReturnType<typeof actual.getConfig>,
   };
 });
 
-vi.mock("./db", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("./db")>();
+vi.mock("../db", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("../db")>();
   return {
     ...actual,
     getUserByUsername: vi.fn(),
@@ -23,9 +23,9 @@ vi.mock("./db", async (importOriginal) => {
 
 import bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
-import * as db from "./db";
-import { appRouter } from "./routers";
-import type { TrpcContext } from "./_core/context";
+import * as db from "../db";
+import { appRouter } from "../routers";
+import type { TrpcContext } from "../_core/context";
 import {
   clearStaffFailures,
   lockedStaff,
@@ -35,7 +35,7 @@ import {
   staffLockState,
   unknownLockKey,
   unlockStaff,
-} from "./lib/staffLoginLocks";
+} from "../lib/staffLoginLocks";
 
 /**
  * The owner's decision (2026-09-11): five wrong passwords on a staff account

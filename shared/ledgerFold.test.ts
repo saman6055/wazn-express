@@ -48,7 +48,7 @@ describe("what stays in view", () => {
 });
 
 describe("the profile folds them and can show them", () => {
-  const page = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/CustomerFinance.tsx"), "utf8").replace(/\r\n/g, "\n");
+  const page = fs.readFileSync(path.resolve(__dirname, "..", "client/src/pages/finance/CustomerFinance.tsx"), "utf8").replace(/\r\n/g, "\n");
 
   it("by the shared rule, never one of its own", () => {
     expect(page).toContain('import { foldedCorrectionIds } from "@shared/ledgerFold";');

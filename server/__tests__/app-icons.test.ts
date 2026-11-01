@@ -6,10 +6,10 @@ import path from "path";
 import { createServer, type Server } from "http";
 import Jimp from "jimp";
 
-vi.mock("./db", () => ({ getSetting: vi.fn() }));
+vi.mock("../db", () => ({ getSetting: vi.fn() }));
 
-import * as db from "./db";
-import { registerAppIconRoutes } from "./services/appIcons.service";
+import * as db from "../db";
+import { registerAppIconRoutes } from "../services/appIcons.service";
 
 /**
  * The home-screen icon — and whether the browser offers to install the app.

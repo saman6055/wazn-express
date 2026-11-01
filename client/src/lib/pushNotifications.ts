@@ -11,26 +11,6 @@ export const isNotificationEnabled = (): boolean => {
   return isNotificationSupported() && Notification.permission === 'granted';
 };
 
-// Request notification permission
-export const requestNotificationPermission = async (): Promise<boolean> => {
-  if (!isNotificationSupported()) {
-    console.warn('This browser does not support notifications');
-    return false;
-  }
-  
-  if (Notification.permission === 'granted') {
-    return true;
-  }
-  
-  if (Notification.permission === 'denied') {
-    console.warn('Notifications are blocked by the user');
-    return false;
-  }
-  
-  const permission = await Notification.requestPermission();
-  return permission === 'granted';
-};
-
 // Notification types
 export type NotificationType = 
   | 'request_quoted'
@@ -173,16 +153,6 @@ export const getNotificationPreferences = (): NotificationPreferences => {
   return defaultPreferences;
 };
 
-export const setNotificationPreferences = (prefs: Partial<NotificationPreferences>): void => {
-  try {
-    const current = getNotificationPreferences();
-    const updated = { ...current, ...prefs };
-    localStorage.setItem(NOTIFICATION_PREFS_KEY, JSON.stringify(updated));
-  } catch (e) {
-    console.error('Error saving notification preferences:', e);
-  }
-};
-
 // Play notification sound
 export const playNotificationSound = (): void => {
   const prefs = getNotificationPreferences();
@@ -197,39 +167,4 @@ export const playNotificationSound = (): void => {
   } catch (e) {
     // Ignore errors
   }
-};
-
-// Check for status changes and show notifications
-export const checkAndNotifyStatusChange = (
-  previousStatus: string | null,
-  currentStatus: string,
-  productName: string,
-  options?: { isKurdish?: boolean; onClick?: () => void }
-): void => {
-  if (!previousStatus || previousStatus === currentStatus) return;
-  
-  const prefs = getNotificationPreferences();
-  if (!prefs.enabled || !prefs.requestUpdates) return;
-  
-  const statusToNotificationType: Record<string, NotificationType> = {
-    quoted: 'request_quoted',
-    accepted: 'request_accepted',
-    rejected: 'request_rejected',
-    paid: 'request_paid',
-    shipped: 'request_shipped',
-    in_transit: 'request_shipped',
-    arrived: 'request_arrived',
-    delivered: 'request_delivered',
-    completed: 'request_delivered'
-  };
-  
-  const notificationType = statusToNotificationType[currentStatus];
-  if (!notificationType) return;
-  
-  const bodyKu = `${productName} - دۆخی نوێ: ${currentStatus}`;
-  const bodyEn = `${productName} - New status: ${currentStatus}`;
-  const body = options?.isKurdish ? bodyKu : bodyEn;
-  
-  showNotification(notificationType, body, options);
-  playNotificationSound();
 };

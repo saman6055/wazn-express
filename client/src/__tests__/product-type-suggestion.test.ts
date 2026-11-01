@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's ask (Sep 2026): «کاتێ من وێنەم دانا سیستەم بە خۆی بزانێ
  * جۆرەکەی چیە و هەڵیبژێرێت» — put a photo in, and the product type fills
@@ -13,12 +16,12 @@ import path from "path";
  * when unsure, or make any noise when there is no AI configured at all.
  */
 
-const SRC = path.resolve(__dirname);
-const ROOT = path.resolve(__dirname, "../..");
+const SRC = path.resolve(ROOT_DIR);
+const ROOT = path.resolve(ROOT_DIR, "../..");
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
 
-const FORMS = ["pages/CommissionForm.tsx", "pages/FullPackageForm.tsx"];
+const FORMS = ["pages/orders/CommissionForm.tsx", "pages/orders/FullPackageForm.tsx"];
 
 describe("it never overwrites a person", () => {
   const hook = read("hooks/useProductTypeSuggestion.ts");

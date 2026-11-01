@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * No portal screen prints a parcel price of its own accord.
  *
@@ -17,8 +20,8 @@ import path from "path";
  */
 
 const PORTAL_DIRS = [
-  path.resolve(__dirname, "pages/portal"),
-  path.resolve(__dirname, "components/portal"),
+  path.resolve(ROOT_DIR, "pages/portal"),
+  path.resolve(ROOT_DIR, "components/portal"),
 ];
 
 function tsxFiles(dir: string): string[] {
@@ -133,7 +136,7 @@ describe("the shipment's rate reaches the screens that need it", () => {
     // Normalised: the markers span lines, and a CRLF working copy would make
     // every "\n}" miss — a slice that finds nothing asserts nothing.
     const src = fs.readFileSync(
-      path.resolve(__dirname, "../../server/db/portal.db.ts"),
+      path.resolve(ROOT_DIR, "../../server/db/portal.db.ts"),
       "utf8",
     ).replace(/\r\n/g, "\n");
     const start = src.indexOf("export async function getSelfOrderPackages");

@@ -15,7 +15,7 @@ const ROOT = path.join(__dirname, "..", "..", "..", "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 const card = read("client/src/components/delivery/CustomerBoxCodes.tsx");
-const page = read("client/src/pages/CustomerDeliveryScanner.tsx");
+const page = read("client/src/pages/scanning/CustomerDeliveryScanner.tsx");
 const boxesDb = read("server/db/deliveryBoxes.db.ts");
 const router = read("server/routers/scanning.router.ts");
 

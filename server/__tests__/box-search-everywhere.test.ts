@@ -72,7 +72,7 @@ describe("what a search actually looks at", () => {
 });
 
 describe("the screen explains why a paid box turned up", () => {
-  const page = read("client/src/pages/CustomerDeliveryScanner.tsx");
+  const page = read("client/src/pages/scanning/CustomerDeliveryScanner.tsx");
 
   it("it says the search spans everything", () => {
     expect(page).toContain("const isSearching = Boolean(filters.search && filters.search.trim());");

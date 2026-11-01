@@ -159,7 +159,7 @@ export function hrefForValue(value: string, here: string): string {
    * خودی شتەکە — ئەو لینکە خۆش بوو یەکسەر بچووبایە ناو خودی
    * بۆکسەکە.» It used to keep the page the task was written on,
    * because a box has no row in the parcels table. The delivery screen
-   * takes the code and opens it (pages/CustomerDeliveryScanner).
+   * takes the code and opens it (pages/scanning/CustomerDeliveryScanner).
    */
   if (/^BOX-/i.test(code)) return `/customer-delivery-scanner?boxCode=${encodeURIComponent(code)}`;
 

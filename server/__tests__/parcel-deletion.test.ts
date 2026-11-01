@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import nodePath from "node:path";
 
-const read = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = nodePath.resolve(__dirname, "..");
+
+const read = (p: string) => readFileSync(resolve(ROOT_DIR, "..", p), "utf8");
 
 /**
  * Deleting a parcel takes its charge off the account with it (2026-10-02).

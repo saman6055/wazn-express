@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The expenses report has to be a report, not a total.
  *
@@ -15,7 +18,7 @@ import path from "path";
  * answer. See client/src/components/FilteredByLinkBanner.tsx.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 function slice(src: string, startMarker: string, endMarker: string, label: string): string {
@@ -30,7 +33,7 @@ function slice(src: string, startMarker: string, endMarker: string, label: strin
 
 const router = read("server/routers/finance.router.ts");
 const financeDb = read("server/db/finance.db.ts");
-const screen = read("client/src/pages/Expenses.tsx");
+const screen = read("client/src/pages/finance/Expenses.tsx");
 const dashboard = read("client/src/components/expenses/ExpensesDashboard.tsx");
 
 /** A function's closing brace at column 0, spelled once. */

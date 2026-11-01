@@ -113,7 +113,7 @@ describe("a look lives in one tab", () => {
     const router = read("server/routers/portalCenter.router.ts");
     const proc = router.slice(router.indexOf("viewAsCustomer: adminProcedure"));
     expect(proc.slice(0, 3000)).toContain("token,");
-    expect(read("client/src/pages/PortalCenter.tsx"))
+    expect(read("client/src/pages/admin/PortalCenter.tsx"))
       .toContain('const href = "/portal?viewas=" + encodeURIComponent(result.token);');
   });
 

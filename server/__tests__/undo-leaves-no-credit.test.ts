@@ -1,11 +1,15 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
-import { CreditWouldBeMadeError } from "./db/finance.db";
-import { undoCreditRefusal } from "./lib/creditGuard";
+import { CreditWouldBeMadeError } from "../db/finance.db";
+import { undoCreditRefusal } from "../lib/creditGuard";
 import { ASK_ADMIN_MARK } from "@shared/creditGuard";
+import nodePath from "node:path";
 
-const read = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = nodePath.resolve(__dirname, "..");
+
+const read = (p: string) => readFileSync(resolve(ROOT_DIR, "..", p), "utf8");
 const body = (src: string, name: string) => {
   const start = src.indexOf(`export async function ${name}(`);
   expect(start, `${name} not found`).toBeGreaterThan(-1);

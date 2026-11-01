@@ -1,8 +1,11 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { PACKAGE_STAGE_GROUPS, PACKAGE_STATUS_LABEL } from "./lib/packageStatus";
-import { stageOf, STATUS_LABEL } from "./lib/shipmentFilters";
+import { PACKAGE_STAGE_GROUPS, PACKAGE_STATUS_LABEL } from "../lib/packageStatus";
+import { stageOf, STATUS_LABEL } from "../lib/shipmentFilters";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The customer portal is the shop window — the one part of this system that
@@ -15,7 +18,7 @@ import { stageOf, STATUS_LABEL } from "./lib/shipmentFilters";
  * Each test holds one fact to one copy.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const PORTAL_DIRS = [
   path.join(SRC, "pages/portal"),
   path.join(SRC, "components/portal"),
@@ -314,7 +317,7 @@ describe("status wording has one home", () => {
  * while the counter reads "owes" is an argument nobody can win.
  */
 describe("paid, part paid and unpaid are one rule", () => {
-  const office = fs.readFileSync(path.join(SRC, "pages", "CustomerFinance.tsx"), "utf8");
+  const office = fs.readFileSync(path.join(SRC, "pages", "finance", "CustomerFinance.tsx"), "utf8");
   const portal = fs.readFileSync(path.join(SRC, "pages", "portal", "PortalFinancial.tsx"), "utf8");
 
   it("both screens ask the shared rule rather than comparing to zero", () => {

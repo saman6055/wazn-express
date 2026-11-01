@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { PERMISSION_GROUPS, PATH_TO_MODULE } from "../../shared/permissions";
+import { PERMISSION_GROUPS, PATH_TO_MODULE } from "../../../shared/permissions";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The permission list has to keep up with the sidebar, and nothing was making
@@ -18,7 +21,7 @@ import { PERMISSION_GROUPS, PATH_TO_MODULE } from "../../shared/permissions";
  * is checked here rather than left to review.
  */
 
-const REPO = path.resolve(__dirname, "../..");
+const REPO = path.resolve(ROOT_DIR, "../..");
 const read = (p: string) => fs.readFileSync(path.join(REPO, p), "utf8");
 
 /** Every `path:` on a sidebar entry in DashboardLayout. */

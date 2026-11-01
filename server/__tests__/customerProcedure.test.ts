@@ -2,8 +2,11 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const ROUTER = fs.readFileSync(path.resolve(__dirname, "routers/portal.router.ts"), "utf8");
-const AUTH = fs.readFileSync(path.resolve(__dirname, "middleware/auth.ts"), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const ROUTER = fs.readFileSync(path.resolve(ROOT_DIR, "routers/portal.router.ts"), "utf8");
+const AUTH = fs.readFileSync(path.resolve(ROOT_DIR, "middleware/auth.ts"), "utf8");
 
 /**
  * One question, asked once.

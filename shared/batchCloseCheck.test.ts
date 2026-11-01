@@ -109,6 +109,6 @@ describe("every card at closing leads to where it is put right", () => {
     const ui = read("client/src/components/batches/BatchCloseCheck.tsx");
     expect(ui).toContain("/customer-delivery-scanner?box=${b.boxId}");
     expect(ui.split("<FixBatchButton onFixBatch={onFixBatch} />").length - 1).toBe(2);
-    expect(read("client/src/pages/Batches.tsx")).toContain("onFixBatch={() => {");
+    expect(read("client/src/pages/batches/Batches.tsx")).toContain("onFixBatch={() => {");
   });
 });

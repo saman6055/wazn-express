@@ -4,10 +4,10 @@ import {
   getFullPackageOrderByTracking,
   updatePackageStatus,
   updateFullPackageOrder,
-} from "./db";
+} from "../db";
 
 // Mock the database connection
-vi.mock("./_core/db", () => ({
+vi.mock("../_core/db", () => ({
   db: {
     select: vi.fn().mockReturnThis(),
     from: vi.fn().mockReturnThis(),

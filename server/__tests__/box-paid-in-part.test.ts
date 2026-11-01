@@ -39,7 +39,7 @@ describe("a box paid in part", () => {
 
 describe("the finance profile and the box are one body", () => {
   it("a payment asks for which box first, and opens that box", () => {
-    const page = read("client/src/pages/CustomerFinance.tsx");
+    const page = read("client/src/pages/finance/CustomerFinance.tsx");
     expect(page).toContain("function PayForWhichBox(");
     expect(page).toContain("href={`/customer-delivery-scanner?box=${b.id}`}");
     expect(page).toContain('data-testid="pay-without-box"');
@@ -65,7 +65,7 @@ describe("the rest stays on the box (real-MySQL proved 2026-10-25)", () => {
 
 describe("the paper reads the till's prices (AZ004, 2026-10-25)", () => {
   it("a line boxed at an older freight takes the till's price, and its breakdown follows", async () => {
-    const { alignItemsToTill, tillBoxTotalUsd } = await import("../client/src/lib/deliveryBoxPrintUtils");
+    const { alignItemsToTill, tillBoxTotalUsd } = await import("../../client/src/lib/deliveryBoxPrintUtils");
     const items = [
       { id: 1, calculatedCostUsd: "12.38", description: "Bag | نرخی بەرهەم: $4.24 + نرخی گواستنەوە: $8.14" },
       { id: 2, calculatedCostUsd: "2.03", description: "x" },

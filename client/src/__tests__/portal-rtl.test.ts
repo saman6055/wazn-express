@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Half of this portal's customers read right to left.
  *
@@ -19,8 +22,8 @@ import path from "path";
  */
 
 const DIRS = [
-  path.resolve(__dirname, "pages/portal"),
-  path.resolve(__dirname, "components/portal"),
+  path.resolve(ROOT_DIR, "pages/portal"),
+  path.resolve(ROOT_DIR, "components/portal"),
 ];
 
 function walk(dir: string, out: string[] = []): string[] {

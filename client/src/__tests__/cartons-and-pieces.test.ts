@@ -3,7 +3,10 @@ import path from "path";
 import { describe, expect, it } from "vitest";
 import { cartonsMultiplyWeight, cartonWeightTotal } from "@shared/parcelCost";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Owner, 2026-10-21: an air tracking of several cartons is all of them - «ئەبێ
@@ -30,7 +33,7 @@ describe("air cartons multiply the weight and the volume, and so the price", () 
   });
 
   it("Quick Register has the field for air and shows the total kilos", () => {
-    const page = read("client/src/pages/QuickRegister.tsx");
+    const page = read("client/src/pages/packages/QuickRegister.tsx");
     expect(page).toContain('data-testid="qr-carton-count-air"');
     expect(page).toContain('data-testid="qr-air-carton-sum"');
   });
@@ -39,7 +42,7 @@ describe("air cartons multiply the weight and the volume, and so the price", () 
 describe("cartons and pieces show where a parcel is counted out", () => {
   it("the parcel list and the box say «2 کارتۆن» and «×3 پارچە»", () => {
     expect(read("server/db/packages.db.ts")).toContain("orderQuantity: fullPackageOrders.quantity,");
-    expect(read("client/src/pages/Packages.tsx").split("<CountBadges cartons={(pkg as any).cartonCount} pieces={(pkg as any).orderQuantity}").length - 1).toBe(2);
+    expect(read("client/src/pages/packages/Packages.tsx").split("<CountBadges cartons={(pkg as any).cartonCount} pieces={(pkg as any).orderQuantity}").length - 1).toBe(2);
     const panel = read("client/src/components/delivery/BoxDetailPanel.tsx");
     expect(panel).toContain("<CountBadges cartons={item.cartonCount} pieces={item.pieceCount}");
     expect(panel).toContain('data-testid="box-carton-total"');

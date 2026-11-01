@@ -37,11 +37,11 @@ describe("wired", () => {
   it("the status menu cannot name an order refunded or returned", () => {
     const router = root("server/routers/fullPackage.router.ts");
     expect(router).toContain('if ((input.status === "refunded" || input.status === "returned") && existing.status !== input.status)');
-    expect(root("client/src/pages/CommissionOrders.tsx")).toContain("{withoutMoneyStatuses(statusOptions).map((option) => (");
+    expect(root("client/src/pages/orders/CommissionOrders.tsx")).toContain("{withoutMoneyStatuses(statusOptions).map((option) => (");
   });
 
   it("both order lists offer the two doors and show the mark", () => {
-    for (const f of ["client/src/pages/CommissionOrders.tsx", "client/src/pages/FullPackageDashboard.tsx"]) {
+    for (const f of ["client/src/pages/orders/CommissionOrders.tsx", "client/src/pages/orders/FullPackageDashboard.tsx"]) {
       const src = root(f);
       expect(src, f).toContain("<OrderOutcomeMenuItems");
       expect(src, f).toContain("<OrderStockMark mark={stockMarks.get(order.id)}");

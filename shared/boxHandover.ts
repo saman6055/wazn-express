@@ -14,8 +14,6 @@
 export type HandoverMode = "pickup" | "driver" | "courier";
 export type CarrierKind = "driver" | "courier";
 
-export const HANDOVER_MODES: readonly HandoverMode[] = ["pickup", "driver", "courier"] as const;
-
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 export const HANDOVER_LABELS: Record<HandoverMode, Words> = {

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The Portal Center's yuan tab, phase 4 of the owner's brief (2026-09-18): a
  * card of how much yuan customers have asked for, and a live profit figure
@@ -10,8 +13,8 @@ import path from "path";
  * the buying rate never leaves the office's computer.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
-const page = read("client/src/pages/PortalCenter.tsx");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const page = read("client/src/pages/admin/PortalCenter.tsx");
 
 const slice = (start: string, end: string) => {
   const a = page.indexOf(start);

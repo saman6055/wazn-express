@@ -63,7 +63,7 @@ describe("a failed action can be reported", () => {
     // `const { data: expenses = [] }` turns a broken query into "no expenses
     // found", which reads as an answer rather than a failure.
     const src = fs.readFileSync(
-      path.join(__dirname, "..", "pages", "Expenses.tsx"),
+      path.join(__dirname, "..", "pages", "finance", "Expenses.tsx"),
       "utf8",
     );
     expect(src, "the list query's error is not captured").toContain("expensesError");
@@ -76,7 +76,7 @@ describe("a failed action can be reported", () => {
     // The screen used to print `toast.error(error.message)` straight out,
     // which is the clamped, uncopyable form this module exists to replace.
     const src = fs.readFileSync(
-      path.join(__dirname, "..", "pages", "Expenses.tsx"),
+      path.join(__dirname, "..", "pages", "finance", "Expenses.tsx"),
       "utf8",
     );
     expect(src).toContain("showErrorToast");

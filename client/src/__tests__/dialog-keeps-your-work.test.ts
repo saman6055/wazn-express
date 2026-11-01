@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A window that has been typed in does not close because you clicked past it.
  *
@@ -15,7 +18,7 @@ import path from "path";
  */
 
 const read = (p: string) =>
-  fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+  fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 const FORM_SURFACES = ["src/components/ui/dialog.tsx", "src/components/ui/sheet.tsx"];
 

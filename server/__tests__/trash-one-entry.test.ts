@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Restoring or purging touches the one entry in front of the reader.
  *
@@ -12,10 +15,10 @@ import path from "path";
  * entry the box had, parcels and all.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 const db = read("server/db/trash.db.ts");
 const router = read("server/routers/trash.router.ts");
-const page = read("client/src/pages/Trash.tsx");
+const page = read("client/src/pages/admin/Trash.tsx");
 
 describe("an entry of the bin has its own identity", () => {
   it("the list gives each entry its own key and id", () => {

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * On a customer's page, a figure that stands for records opens them.
  *
@@ -17,7 +20,7 @@ import path from "path";
  * looks clickable, or a figure that stands for nothing being given a link.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
@@ -59,7 +62,7 @@ describe("the figures at the top", () => {
     const links = readRoot("shared/listLinks.ts");
     expect(links).toContain('shippingType?: "air_regular" | "air_irregular" | "sea";');
     expect(links).toContain('shippingType: oneOf(p.get("shippingType"), ["air_regular", "air_irregular", "sea"] as const),');
-    expect(readRoot("client/src/pages/Packages.tsx")).toContain(
+    expect(readRoot("client/src/pages/packages/Packages.tsx")).toContain(
       "if (linkFilters.shippingType) setShippingTypeFilter(linkFilters.shippingType);",
     );
   });

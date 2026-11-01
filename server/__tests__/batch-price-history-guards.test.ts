@@ -69,7 +69,7 @@ describe("an overwritten price stays on the record", () => {
   });
 
   it("the edit form sends an erased cost as null, not as untouched", () => {
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     const handleEdit = slice(page, "const handleEdit", "const openEditDialog");
     expect(handleEdit).toContain('costPerKg: clearable("costPerKg")');
     expect(handleEdit).toContain('costPerCbm: clearable("costPerCbm")');
@@ -97,7 +97,7 @@ describe("a delivered batch is settled", () => {
   });
 
   it("the form goes read-only instead of trusting the toast", () => {
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     expect(page).toContain("<fieldset disabled={editLocked}");
     // Belt to the server's suspenders: a locked batch never even sends.
     const handleEdit = slice(page, "const handleEdit", "const openEditDialog");
@@ -112,7 +112,7 @@ describe("a delivered batch is settled", () => {
     // …but never the selling side the customers were charged from.
     expect(update).toContain("sellingSideChanged({ ...data, pricingTiers, customerPricing }, existing)");
     expect(update.indexOf("sellingSideChanged(")).toBeLessThan(update.indexOf("updateBatch("));
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     expect(page).toContain("<fieldset disabled={sellingLocked}");
     expect(page).toContain("useTieredPricing: sellingLocked ? undefined : useTieredPricing,");
   });

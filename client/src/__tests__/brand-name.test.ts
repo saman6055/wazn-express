@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * One company name per language — the owner's decision, September 2026:
  *
@@ -37,7 +40,7 @@ const ARABIC_NAME_PLACEHOLDER = "auto.text_e85527";
 type Lang = "ku" | "en" | "ar" | "zh";
 
 function loadLocale(lang: Lang): Record<string, string> {
-  const raw = fs.readFileSync(path.resolve(__dirname, "locales", `${lang}.json`), "utf8");
+  const raw = fs.readFileSync(path.resolve(ROOT_DIR, "locales", `${lang}.json`), "utf8");
   const data = JSON.parse(raw.charCodeAt(0) === 0xfeff ? raw.slice(1) : raw);
   const out: Record<string, string> = {};
   const walk = (obj: Record<string, unknown>, prefix = "") => {
@@ -110,8 +113,8 @@ describe("the company name in the four locale files", () => {
 });
 
 describe("the company name written in the source", () => {
-  const REPO = path.resolve(__dirname, "../..");
-  const ROOTS = [path.resolve(__dirname), path.join(REPO, "server"), path.join(REPO, "shared")];
+  const REPO = path.resolve(ROOT_DIR, "../..");
+  const ROOTS = [path.resolve(ROOT_DIR), path.join(REPO, "server"), path.join(REPO, "shared")];
 
   function sourceFiles(dir: string, out: string[] = []): string[] {
     for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

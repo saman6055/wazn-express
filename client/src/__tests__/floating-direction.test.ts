@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A floating element must pick its corner by reading direction, not by a
  * hardcoded left or right.
@@ -21,7 +24,7 @@ import path from "path";
  * no side to get wrong.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir)) {

@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock the database module
-vi.mock("./db", () => ({
+vi.mock("../db", () => ({
   getExpenseAlerts: vi.fn(),
   createExpenseAlert: vi.fn(),
   updateExpenseAlert: vi.fn(),
@@ -19,7 +19,7 @@ import {
   toggleExpenseAlert,
   getExpenseAlertLogs,
   checkExpenseAlerts,
-} from "./db";
+} from "../db";
 
 describe("Expense Alerts - DB Functions", () => {
   beforeEach(() => {

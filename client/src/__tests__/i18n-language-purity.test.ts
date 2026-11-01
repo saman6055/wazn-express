@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Each language says what it says in its own script.
  *
@@ -15,7 +18,7 @@ import path from "path";
  * the four-language objects written inline in the source.
  */
 
-const LOCALES = path.resolve(__dirname, "locales");
+const LOCALES = path.resolve(ROOT_DIR, "locales");
 
 /** Arabic script — used by Kurdish and Arabic, never by English or Chinese. */
 const ARABIC = /[؀-ۿݐ-ݿﭐ-﷿ﹰ-﻿]/;
@@ -123,9 +126,9 @@ describe("every locale file speaks its own language", () => {
 
 describe("the four-language objects written in the source", () => {
   const ROOTS = [
-    path.resolve(__dirname),
-    path.resolve(__dirname, "../../server"),
-    path.resolve(__dirname, "../../shared"),
+    path.resolve(ROOT_DIR),
+    path.resolve(ROOT_DIR, "../../server"),
+    path.resolve(ROOT_DIR, "../../shared"),
   ];
 
   function sourceFiles(dir: string, out: string[] = []): string[] {
@@ -158,7 +161,7 @@ describe("the four-language objects written in the source", () => {
         while ((m = ENTRY.exec(line))) {
           const why = wrongScript(m[1] as Lang, m[2]);
           if (why) {
-            const rel = path.relative(path.resolve(__dirname, "../.."), file).replace(/\\/g, "/");
+            const rel = path.relative(path.resolve(ROOT_DIR, "../.."), file).replace(/\\/g, "/");
             offenders.push(`${rel}:${i + 1} — ${why}: ${m[2].slice(0, 50)}`);
           }
         }

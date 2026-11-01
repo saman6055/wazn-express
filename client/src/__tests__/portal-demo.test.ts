@@ -12,7 +12,10 @@ import {
   type PortalDemoData,
 } from "@/lib/portalDemo";
 
-const ROOT = path.resolve(__dirname);
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const ROOT = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
 const data = recording as unknown as PortalDemoData;
 
@@ -194,7 +197,7 @@ describe("where it is wired", () => {
   });
 
   it("the door is on the login page, and standing at that door ends a demo", () => {
-    const login = read("pages/CustomerLogin.tsx");
+    const login = read("pages/public/CustomerLogin.tsx");
     expect(login).toContain("onClick={enterPortalDemo}");
     expect(login).toContain('data-testid="portal-demo-open"');
     expect(login).toContain("useEffect(() => forgetPortalDemo(), []);");
@@ -213,7 +216,7 @@ describe("where it is wired", () => {
     const lib = read("lib/portalDemo.ts");
     expect(lib).toContain('import("@/demo/portalDemoData.json")');
     expect(lib).not.toMatch(/^import .*portalDemoData/m);
-    for (const file of ["main.tsx", "App.tsx", "pages/CustomerLogin.tsx", "components/portal/PortalDemoBanner.tsx"]) {
+    for (const file of ["main.tsx", "App.tsx", "pages/public/CustomerLogin.tsx", "components/portal/PortalDemoBanner.tsx"]) {
       expect(read(file), file).not.toContain("portalDemoData");
     }
   });

@@ -2,7 +2,7 @@ import { describe, it, expect, beforeAll, afterAll } from "vitest";
 import fs from "fs";
 import os from "os";
 import path from "path";
-import { localUploadIsMissing } from "./services/localUpload";
+import { localUploadIsMissing } from "../services/localUpload";
 
 /**
  * The company logo pointed at /uploads/P6kwp1Fivzn4.PNG after a redeploy had

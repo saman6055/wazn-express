@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * What the pre-delivery check says before a batch is closed or marked
  * delivered (owner, 2026-09-18): the cartons with no box and the ones never
@@ -14,11 +17,11 @@ import path from "path";
  * this pins the wiring from the server to the dialog.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
 const router = read("server/routers/batches.router.ts");
 const facts = read("server/db/batchCloseCheck.db.ts");
 const component = read("client/src/components/batches/BatchCloseCheck.tsx");
-const page = read("client/src/pages/Batches.tsx");
+const page = read("client/src/pages/batches/Batches.tsx");
 
 const audit = (() => {
   const start = router.indexOf("getPreDeliveryAudit: staffProcedure");
@@ -52,7 +55,7 @@ describe("the server gathers it", () => {
 
   it("checked in on arrival means the arrival scanner's scan", () => {
     expect(facts).toContain('eq(packageScans.scanType, "received_local"),');
-    expect(read("client/src/pages/ArrivalVerificationScanner.tsx")).toContain('scanType: "received_local",');
+    expect(read("client/src/pages/scanning/ArrivalVerificationScanner.tsx")).toContain('scanType: "received_local",');
   });
 
   it("what a box still owes is what its payment screen says", () => {

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * No hook after an early return.
  *
@@ -17,7 +20,7 @@ import path from "path";
  * statement calling `useX(` or `trpc.….useX(` after it is the bug.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 
 function sourceFiles(dir: string): string[] {
   return fs.readdirSync(dir, { withFileTypes: true }).flatMap((entry) => {

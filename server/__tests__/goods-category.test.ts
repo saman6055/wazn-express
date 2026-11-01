@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { resolveGoodsCategory, mustAskForCategory } from "./lib/goodsCategory";
+import { resolveGoodsCategory, mustAskForCategory } from "../lib/goodsCategory";
 
 /**
  * The category is what makes the registration data worth analysing, and there

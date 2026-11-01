@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { toCustomerVisibleBatch, FORBIDDEN_BATCH_FIELDS, VISIBLE_BATCH_KEYS } from "./lib/customerVisibleBatch";
-import { toCustomerVisibleOrder } from "./lib/customerVisibleOrder";
+import { toCustomerVisibleBatch, FORBIDDEN_BATCH_FIELDS, VISIBLE_BATCH_KEYS } from "../lib/customerVisibleBatch";
+import { toCustomerVisibleOrder } from "../lib/customerVisibleOrder";
 import { concealOrderSize } from "@shared/fullPackagePrivacy";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * What the portal sends is what a customer can read — rendered or not.
@@ -15,7 +18,7 @@ import { concealOrderSize } from "@shared/fullPackagePrivacy";
  * fix is an allow-list or a stripped field, and each is pinned here.
  */
 
-const ROOT = __dirname;
+const ROOT = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 /** Slice between two markers, failing loudly if either has moved. */

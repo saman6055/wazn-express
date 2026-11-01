@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The batches waiting for their number: each one copies its code, and a click
  * shows it in the batches list, wherever it is (owner, 2026-09-18: "I want to
@@ -12,9 +15,9 @@ import path from "path";
  * rule in shared/batchReminders.test.ts.
  */
 
-const read = (p: string) => fs.readFileSync(path.join(__dirname, p), "utf8").replace(/\r\n/g, "\n");
-const batches = read("pages/Batches.tsx");
-const dashboard = read("pages/Dashboard.tsx");
+const read = (p: string) => fs.readFileSync(path.join(ROOT_DIR, p), "utf8").replace(/\r\n/g, "\n");
+const batches = read("pages/batches/Batches.tsx");
+const dashboard = read("pages/dashboard/Dashboard.tsx");
 
 describe("on the batches page", () => {
   it("each batch in the reminder copies its code and shows it in the list", () => {
@@ -60,7 +63,7 @@ describe("on the dashboard", () => {
 
 describe("the words under the title", () => {
   it("say what a click does now, in every language", () => {
-    const locales = path.join(__dirname, "locales");
+    const locales = path.join(ROOT_DIR, "locales");
     const desc = (lang: string) =>
       JSON.parse(fs.readFileSync(path.join(locales, `${lang}.json`), "utf8").replace(/^﻿/, "")).batches.awaitingNumberDesc as string;
     expect(desc("ku")).toContain("لە لیستەکەدا نیشانت بدات");

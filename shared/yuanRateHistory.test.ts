@@ -35,16 +35,16 @@ describe("yuan rate history (owner, 2026-10-22)", () => {
   });
 
   it("the three order forms send the yuan with a new order", () => {
-    expect(readFileSync("client/src/pages/CommissionForm.tsx", "utf8")).toContain("itemPriceCny: parseFloat(rmbPerUnit) > 0");
-    expect(readFileSync("client/src/pages/FullPackageForm.tsx", "utf8")).toContain("purchasePriceCny: parseFloat(rmbPerUnit) > 0");
-    expect(readFileSync("client/src/pages/BulkOrderForm.tsx", "utf8")).toContain("itemPriceCny: isCommission && parseFloat(item.itemPriceCny) > 0");
+    expect(readFileSync("client/src/pages/orders/CommissionForm.tsx", "utf8")).toContain("itemPriceCny: parseFloat(rmbPerUnit) > 0");
+    expect(readFileSync("client/src/pages/orders/FullPackageForm.tsx", "utf8")).toContain("purchasePriceCny: parseFloat(rmbPerUnit) > 0");
+    expect(readFileSync("client/src/pages/orders/BulkOrderForm.tsx", "utf8")).toContain("itemPriceCny: isCommission && parseFloat(item.itemPriceCny) > 0");
   });
 
   it("the page is registered, gated and linked from Settings", () => {
     expect(readFileSync("client/src/App.tsx", "utf8")).toContain('<Route path="/finance/yuan-rates" component={YuanRateHistory} />');
     expect(readFileSync("shared/permissions.ts", "utf8")).toContain('"/finance/yuan-rates": "balance_sheet"');
     expect(readFileSync("shared/financeAccess.ts", "utf8")).toContain('"/finance/yuan-rates"');
-    expect(readFileSync("client/src/pages/Settings.tsx", "utf8")).toContain('href="/finance/yuan-rates"');
+    expect(readFileSync("client/src/pages/settings/Settings.tsx", "utf8")).toContain('href="/finance/yuan-rates"');
   });
 
   it("the history only reads: it never writes an order", () => {

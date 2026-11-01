@@ -3,6 +3,9 @@ import fs from "fs";
 import path from "path";
 import { DASHBOARD_FIGURE_IDS, figureMeta } from "@shared/dashboardExplain";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * No headline figure on the dashboard is a dead number.
  *
@@ -15,11 +18,11 @@ import { DASHBOARD_FIGURE_IDS, figureMeta } from "@shared/dashboardExplain";
  * and a figure whose explanation was written but never reached the card.
  */
 
-const ROOT = path.resolve(__dirname, "..", "..");
+const ROOT = path.resolve(ROOT_DIR, "..", "..");
 const read = (rel: string) =>
   fs.readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
 
-const DASHBOARD = read("client/src/pages/Dashboard.tsx");
+const DASHBOARD = read("client/src/pages/dashboard/Dashboard.tsx");
 
 describe("the file this is checking", () => {
   it("is the admin dashboard", () => {
@@ -80,7 +83,7 @@ describe("nothing on the page is a dead end", () => {
   it("the parcels table honours the day it is given", () => {
     // Otherwise the link lands on an unfiltered list, which looks like an
     // answer and is not one.
-    const packages = read("client/src/pages/Packages.tsx");
+    const packages = read("client/src/pages/packages/Packages.tsx");
     expect(packages).toContain("dayFilter");
     expect(packages).toContain("readPackagesLink");
     expect(packages).toContain("FilteredByLinkBanner");
@@ -108,7 +111,7 @@ describe("the panel is one panel", () => {
     for (const file of [
       "client/src/components/dashboard/FinancialCard.tsx",
       "client/src/components/dashboard/StatsCard.tsx",
-      "client/src/pages/Dashboard.tsx",
+      "client/src/pages/dashboard/Dashboard.tsx",
     ]) {
       expect(read(file), file).toContain("ExplainableStat");
     }

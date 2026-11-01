@@ -1,6 +1,6 @@
-import { statusForScan, isPackageStatus } from "./lib/scanStatus";
+import { statusForScan, isPackageStatus } from "../lib/scanStatus";
 import { describe, it, expect, beforeAll } from "vitest";
-import * as db from "./db";
+import * as db from "../db";
 
 describe("Barcode Scanning System", () => {
   describe("Database Functions", () => {

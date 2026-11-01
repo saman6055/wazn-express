@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
-import { csvCell, csvRow, downloadText, toCsv } from "./lib/csv";
+import { csvCell, csvRow, downloadText, toCsv } from "../lib/csv";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("a CSV cell is text, never a formula", () => {
   it("defuses anything a spreadsheet would run", () => {
@@ -54,18 +57,18 @@ describe("a download lets go of its file", () => {
 describe("every export goes through it", () => {
   const EXPORTS = [
     "components/ExportUtils.tsx",
-    "pages/AuditLogs.tsx",
-    "pages/Packages.tsx",
-    "pages/BatchReports.tsx",
-    "pages/ServicesManagement.tsx",
-    "pages/ServicesReport.tsx",
-    "pages/ProfitDashboardByType.tsx",
-    "pages/InvoiceReports.tsx",
-    "pages/BusinessAnalytics.tsx",
-    "pages/BatchFinancialReport.tsx",
+    "pages/admin/AuditLogs.tsx",
+    "pages/packages/Packages.tsx",
+    "pages/reports/BatchReports.tsx",
+    "pages/settings/ServicesManagement.tsx",
+    "pages/reports/ServicesReport.tsx",
+    "pages/reports/ProfitDashboardByType.tsx",
+    "pages/reports/InvoiceReports.tsx",
+    "pages/reports/BusinessAnalytics.tsx",
+    "pages/reports/BatchFinancialReport.tsx",
     "pages/portal/PortalInvoiceReports.tsx",
-    "pages/Finance.tsx",
-    "pages/CustomerFinance.tsx",
+    "pages/finance/Finance.tsx",
+    "pages/finance/CustomerFinance.tsx",
   ];
 
   for (const file of EXPORTS) {

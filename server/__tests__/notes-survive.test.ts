@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A note is written once and needed later, by somebody else.
  *
@@ -18,7 +21,7 @@ import path from "path";
  *   a note was the person who wrote it.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 describe("a note written on a batch comes back", () => {
@@ -86,7 +89,7 @@ describe("and it is drawn on every screen that meets the parcel", () => {
   const NOTE = "@/components/scanner/OrderNote";
 
   it("quick register", () => {
-    const src = read("client/src/pages/QuickRegister.tsx");
+    const src = read("client/src/pages/packages/QuickRegister.tsx");
     expect(src).toContain(NOTE);
     expect(src).toContain("<OrderNote note={(foundOrder as any)?.order?.notes}");
   });
@@ -100,13 +103,13 @@ describe("and it is drawn on every screen that meets the parcel", () => {
   it("arrival verification, where the missing parcels are listed", () => {
     // These are the boxes somebody has to go and find; a note matters more
     // here than anywhere else.
-    const src = read("client/src/pages/ArrivalVerificationScanner.tsx");
+    const src = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
     expect(src).toContain(NOTE);
     expect(src).toContain("<OrderNote note={(pkg as any).note}");
   });
 
   it("carries it through the scan session, not only the manifest", () => {
-    const src = read("client/src/pages/ArrivalVerificationScanner.tsx");
+    const src = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
     expect(src).toContain("note: (pkg as any).note ?? null,");
   });
 });

@@ -3,6 +3,9 @@ import fs from "fs";
 import path from "path";
 import { chargeableWeight } from "@shared/chargeableWeight";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The price the portal quotes must be the price the invoice charges.
  *
@@ -21,7 +24,7 @@ import { chargeableWeight } from "@shared/chargeableWeight";
  * the calculator is approximate.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const CALC = fs.readFileSync(path.join(SRC, "components/portal/PriceListSection.tsx"), "utf8");
 
 describe("the quote is the invoice", () => {

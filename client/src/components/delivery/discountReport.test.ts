@@ -15,7 +15,7 @@ import { DISCOUNT_REASONS } from "@shared/boxSettlement";
 const HERE = __dirname;
 const report = fs.readFileSync(path.join(HERE, "DiscountReport.tsx"), "utf8").replace(/\r\n/g, "\n");
 const page = fs.readFileSync(
-  path.join(HERE, "..", "..", "pages", "CustomerDeliveryScanner.tsx"), "utf8",
+  path.join(HERE, "..", "..", "pages", "scanning", "CustomerDeliveryScanner.tsx"), "utf8",
 ).replace(/\r\n/g, "\n");
 
 describe("every cut the owner named is on the screen", () => {

@@ -1,9 +1,12 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
-import { clearSignedInData, USER_DATA_KEYS } from "./lib/signOut";
+import { clearSignedInData, USER_DATA_KEYS } from "../lib/signOut";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("sign-out leaves nothing of the person behind", () => {
   afterEach(() => vi.unstubAllGlobals());

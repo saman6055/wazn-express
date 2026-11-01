@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 const SCHEMA = fs.readFileSync(
-  path.resolve(__dirname, "../drizzle/schema/batches.schema.ts"), "utf8");
+  path.resolve(ROOT_DIR, "../drizzle/schema/batches.schema.ts"), "utf8");
 const MIGRATIONS = fs.readFileSync(
-  path.resolve(__dirname, "_core/migrations.ts"), "utf8");
+  path.resolve(ROOT_DIR, "_core/migrations.ts"), "utf8");
 
 /**
  * A batch carries three timestamps of its own — created, departed, arrived —
@@ -77,8 +80,8 @@ describe("a batch records when it moved", () => {
 });
 
 describe("the move is recorded where the move happens", () => {
-  const DB = fs.readFileSync(path.resolve(__dirname, "db/batches.db.ts"), "utf8");
-  const ROUTER = fs.readFileSync(path.resolve(__dirname, "routers/batches.router.ts"), "utf8");
+  const DB = fs.readFileSync(path.resolve(ROOT_DIR, "db/batches.db.ts"), "utf8");
+  const ROUTER = fs.readFileSync(path.resolve(ROOT_DIR, "routers/batches.router.ts"), "utf8");
   const fn = DB.slice(DB.indexOf("export async function updateBatch"), DB.indexOf("export async function getActiveBatches"));
 
   /**

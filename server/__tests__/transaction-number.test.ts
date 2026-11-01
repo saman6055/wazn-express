@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { generateTransactionNumber, generatePaymentNumber } from "./db/utils.db";
+import { generateTransactionNumber, generatePaymentNumber } from "../db/utils.db";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * 2026-09-10: box payments failed with "Duplicate entry 'TXN-20260910-6269'
@@ -34,7 +37,7 @@ describe("ledger and payment numbers do not repeat", () => {
   it("no ledger insert makes its own number any more", () => {
     const offenders: string[] = [];
     for (const sub of ["db", "routers"]) {
-      const dir = path.join(__dirname, sub);
+      const dir = path.join(ROOT_DIR, sub);
       for (const file of fs.readdirSync(dir).filter((f) => f.endsWith(".ts") && !f.endsWith(".test.ts"))) {
         if (sub === "db" && file === "utils.db.ts") continue;
         const src = fs.readFileSync(path.join(dir, file), "utf8");

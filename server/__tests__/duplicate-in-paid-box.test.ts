@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A tracking that is already in a paid box is never taken again.
  *
@@ -17,7 +20,7 @@ import path from "path";
  * double-scan and let it fade in three seconds.
  */
 
-const readRoot = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+const readRoot = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 const db = readRoot("server/db/boxSettlement.db.ts");
 const router = readRoot("server/routers/scanning.router.ts");

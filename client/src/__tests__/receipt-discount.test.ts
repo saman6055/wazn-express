@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A discount given on a receipt is the same discount everywhere.
  *
@@ -17,7 +20,7 @@ import path from "path";
  * (shared/pledgedDiscount) rather than against each other.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 const dialog = read("client/src/components/delivery/ReceiptDinarDialog.tsx");
 const boxPanel = read("client/src/components/delivery/BoxDetailPanel.tsx");
@@ -254,8 +257,8 @@ describe("and the server does not take the screen's word for it", () => {
  * the field was shown but what was typed in it was neither recorded nor printed.
  */
 describe("the discount is there whenever it can be kept", () => {
-  const panel = fs.readFileSync(path.resolve(__dirname, "components/delivery/BoxDetailPanel.tsx"), "utf8");
-  const table = fs.readFileSync(path.resolve(__dirname, "components/delivery/BoxTable.tsx"), "utf8");
+  const panel = fs.readFileSync(path.resolve(ROOT_DIR, "components/delivery/BoxDetailPanel.tsx"), "utf8");
+  const table = fs.readFileSync(path.resolve(ROOT_DIR, "components/delivery/BoxTable.tsx"), "utf8");
 
   it("a print asked for before the box's money loaded waits for it", () => {
     expect(panel).toContain("if (!settlementView && !settlementViewFailed) {\n      setPendingPrint({ lang, output, action });");

@@ -4,7 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { createServer, type Server } from 'http';
-import { localUpload, getUploadsDir, UPLOADS_ROUTE } from './services/localUpload';
+import { localUpload, getUploadsDir, UPLOADS_ROUTE } from '../services/localUpload';
 
 /**
  * The contract that broke: whatever URL localUpload hands back must actually

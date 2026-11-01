@@ -2,7 +2,10 @@ import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Owner, 2026-10-19: «لە هەموو پاکەتەکان وێنەش نیشان بدات». A picture on each
@@ -10,7 +13,7 @@ const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", r
  * screen heavy): one thumbnails request for the page.
  */
 describe("the parcels list shows a picture on each row", () => {
-  const page = read("client/src/pages/Packages.tsx");
+  const page = read("client/src/pages/packages/Packages.tsx");
 
   it("one request for the page, a square on the row and on the phone card", () => {
     expect(page).toContain("<ParcelThumbs ids={routedPackages.map((p) => p.id)}>");

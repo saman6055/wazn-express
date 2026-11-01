@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The staff top bar, laid out like the Windows 11 taskbar (owner, 2026-09-17).
  *
@@ -17,7 +20,7 @@ import path from "path";
  * compact mode shrinking back to a few pixels nobody sees.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 const layout = read("components/DashboardLayout.tsx");

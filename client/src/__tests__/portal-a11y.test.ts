@@ -2,10 +2,13 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 const DIRS = [
-  path.resolve(__dirname, "pages/portal"),
-  path.resolve(__dirname, "components/portal"),
-  path.resolve(__dirname, "components"),
+  path.resolve(ROOT_DIR, "pages/portal"),
+  path.resolve(ROOT_DIR, "components/portal"),
+  path.resolve(ROOT_DIR, "components"),
 ];
 
 function walk(dir: string, out: string[] = []): string[] {
@@ -56,7 +59,7 @@ describe("one control, announced once", () => {
     // The raised centre button is now the search. It still announces itself
     // on the search page, and says whether the search it opens is open.
     const layout = fs.readFileSync(
-      path.resolve(__dirname, "components/CustomerPortalLayout.tsx"), "utf8");
+      path.resolve(ROOT_DIR, "components/CustomerPortalLayout.tsx"), "utf8");
     expect(layout).toMatch(/aria-current=\{isActive \? "page" : undefined\}/);
     expect(layout).toMatch(/aria-current=\{isSearchActive \? "page" : undefined\}/);
     expect(layout).toMatch(/aria-expanded=\{searchOpen\}/);

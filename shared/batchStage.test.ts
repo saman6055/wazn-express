@@ -109,7 +109,7 @@ describe("the portal reads the same stage", () => {
 
 describe("wired", () => {
   it("the dropdown is gone; customs and close are the only buttons", () => {
-    const page = root("client/src/pages/Batches.tsx");
+    const page = root("client/src/pages/batches/Batches.tsx");
     expect(page).not.toContain('<SelectItem value="at_depot">');
     expect(page).toContain('data-testid="batch-customs-button"');
     expect(page).toContain('data-testid="batch-close-button"');
@@ -140,7 +140,7 @@ describe("an Erbil batch takes goods until it is closed (owner, 2026-10-28)", ()
   });
 
   it("every picker reads it, and the list says where each batch was made", () => {
-    for (const f of ["client/src/pages/QuickRegister.tsx", "client/src/pages/BatchAssignmentScanner.tsx", "client/src/pages/BulkRegister.tsx", "client/src/pages/Packages.tsx"]) {
+    for (const f of ["client/src/pages/packages/QuickRegister.tsx", "client/src/pages/scanning/BatchAssignmentScanner.tsx", "client/src/pages/packages/BulkRegister.tsx", "client/src/pages/packages/Packages.tsx"]) {
       expect(root(f), f).toContain("batchOpenForRegistration(");
     }
     expect(root("server/db/batches.db.ts").match(/madeInChina: china\.get\(batch\.id\) \?\? true,/g)?.length).toBe(2);

@@ -16,16 +16,6 @@ import { looksLikeOrderNumber } from "./orderNumberPlatform";
 /** Anything shorter than this is suspicious for either box. */
 export const SHORT_ID_MIN = 8;
 
-/**
- * A pure-digit run at least this long smells like a shop order number.
- *
- * Kept exported for the screens that still name it, but the judgement itself
- * moved to orderNumberPlatform on 2026-09-30: Pinduoduo writes its order
- * numbers with a dash in the middle (260930-434834019861958), which a
- * digits-only rule could not see at all.
- */
-export const ORDER_LIKE_DIGITS = 16;
-
 export type OrderTrackingWarning =
   /** Both filled and the tracking is the longer one — likely swapped. */
   | "swapped"

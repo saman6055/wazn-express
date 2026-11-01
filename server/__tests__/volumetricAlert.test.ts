@@ -4,7 +4,7 @@ import {
   buildVolumetricMessage,
   buildWhatsAppLink,
   DEFAULT_VOLUMETRIC_THRESHOLDS,
-} from '../shared/volumetricAlert';
+} from '../../shared/volumetricAlert';
 
 /**
  * These decide who gets a message about their bill, and what it says. The

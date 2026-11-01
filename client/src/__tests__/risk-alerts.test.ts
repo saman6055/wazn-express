@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The warehouse's standing risks — parcels stuck in the China warehouse and
  * volumetric parcels nobody has explained — are seen where the day starts,
@@ -13,7 +16,7 @@ import path from "path";
  * (which charges shipping on a priced batch).
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 const stale = read("components/registrations/StaleDepotCard.tsx");
@@ -21,7 +24,7 @@ const volumetric = read("components/registrations/VolumetricWatchCard.tsx");
 const sheet = read("components/registrations/AlertParcelSheet.tsx");
 
 describe("the risks are on the dashboards", () => {
-  for (const file of ["pages/Dashboard.tsx", "pages/StaffDashboard.tsx"]) {
+  for (const file of ["pages/dashboard/Dashboard.tsx", "pages/dashboard/StaffDashboard.tsx"]) {
     it(`${path.basename(file)} shows both cards, for whoever may open the list`, () => {
       const src = read(file);
       expect(src).toContain('<StaleDepotCard variant="dashboard" />');
@@ -33,7 +36,7 @@ describe("the risks are on the dashboards", () => {
   }
 
   it("the owner's dashboard puts them right under the morning brief", () => {
-    const src = read("pages/Dashboard.tsx");
+    const src = read("pages/dashboard/Dashboard.tsx");
     const brief = src.indexOf("<DailyBrief language={language} />");
     const cards = src.indexOf('<StaleDepotCard variant="dashboard" />');
     expect(brief).toBeGreaterThan(-1);
@@ -42,7 +45,7 @@ describe("the risks are on the dashboards", () => {
   });
 
   it("the registrations page keeps them too", () => {
-    const src = read("pages/Registrations.tsx");
+    const src = read("pages/packages/Registrations.tsx");
     expect(src).toContain("<VolumetricWatchCard />");
     expect(src).toContain("<StaleDepotCard />");
   });
@@ -50,7 +53,7 @@ describe("the risks are on the dashboards", () => {
   it("arriving from the bell, the registrations page opens on that problem, first under the title", () => {
     // Owner, 2026-09-17: a click goes to the problem itself — not to a page
     // that has it somewhere below today's intake.
-    const src = read("pages/Registrations.tsx");
+    const src = read("pages/packages/Registrations.tsx");
     const focused = src.indexOf('{alertFocus === "stale" && <StaleDepotCard />}');
     const intake = src.indexOf("{/* Everything that still needs work, in one row.");
     expect(focused).toBeGreaterThan(-1);

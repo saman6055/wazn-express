@@ -40,7 +40,7 @@ describe("totals by age", () => {
 describe("closing an order asks whether it was paid", () => {
   const db = root("server/db/goodsOnRoad.db.ts");
   const close = db.slice(db.indexOf("export async function closeOrderOnRoad"));
-  const page = root("client/src/pages/GoodsOnRoad.tsx");
+  const page = root("client/src/pages/batches/GoodsOnRoad.tsx");
 
   it("charges through the one door, so nothing is billed twice", () => {
     expect(close).toContain("chargeOrderAtCreation(order, userId)");
@@ -80,7 +80,7 @@ describe("goods still on the road are put on the account, not closed", () => {
   // charged at entry and not arrived. "Arrived and with the customer" was the
   // only door, and it would have called them delivered.
   const db = root("server/db/goodsOnRoad.db.ts");
-  const page = root("client/src/pages/GoodsOnRoad.tsx");
+  const page = root("client/src/pages/batches/GoodsOnRoad.tsx");
 
   it("only an answer that says the goods are with the customer closes the order", () => {
     expect(withCustomer("before")).toBe(true);
@@ -115,7 +115,7 @@ describe("the list is the working-capital figure's own", () => {
       expect(src).toContain("LIVE_SALE_SQL");
       expect(src).toContain("isCharged}, 0) = 0");
     }
-    expect(root("client/src/pages/WorkingCapital.tsx")).toContain('href="/finance/goods-on-road"');
+    expect(root("client/src/pages/finance/WorkingCapital.tsx")).toContain('href="/finance/goods-on-road"');
     expect(root("client/src/App.tsx")).toContain('path="/finance/goods-on-road"');
   });
 });

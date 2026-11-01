@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Nothing in the office is painted pure white any more.
  *
@@ -18,7 +21,7 @@ import path from "path";
  * are lighter than the page, so a panel meant to look recessed looks raised.
  */
 
-const SRC = path.join(__dirname);
+const SRC = path.join(ROOT_DIR);
 
 function sources(): string[] {
   const out: string[] = [];

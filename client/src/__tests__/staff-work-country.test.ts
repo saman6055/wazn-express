@@ -2,7 +2,10 @@ import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /** Owner, 2026-10-24: an existing member of staff's country can be set (Ako, in China). */
 describe("a member of staff's country, after they were created", () => {
@@ -15,6 +18,6 @@ describe("a member of staff's country, after they were created", () => {
 
   it("the staff list shows and changes it", () => {
     expect(read("server/db/admin.db.ts")).toContain("workCountryId: users.workCountryId,");
-    expect(read("client/src/pages/StaffManagement.tsx")).toContain("setCountryMutation.mutate({ userId: staff.id, countryId: v === \"none\" ? null : Number(v) })");
+    expect(read("client/src/pages/admin/StaffManagement.tsx")).toContain("setCountryMutation.mutate({ userId: staff.id, countryId: v === \"none\" ? null : Number(v) })");
   });
 });

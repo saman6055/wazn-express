@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "./lib/portalQuery";
+import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "../lib/portalQuery";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The portal shows data somebody else changes.
@@ -13,7 +16,7 @@ import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "./lib/portalQuery";
  * These pin the fixes.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 
 describe("every skin has the live channel", () => {

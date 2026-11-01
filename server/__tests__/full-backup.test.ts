@@ -13,8 +13,11 @@ import {
   tableEntries,
   uploadEntryName,
   BACKUP_FORMAT,
-} from "./lib/backupFormat";
-import { erbilTime, statementLines } from "./services/fullBackup.service";
+} from "../lib/backupFormat";
+import { erbilTime, statementLines } from "../services/fullBackup.service";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * A complete backup brings the system back to the moment it was taken.
@@ -26,7 +29,7 @@ import { erbilTime, statementLines } from "./services/fullBackup.service";
  * over HTTP in pieces — was proved against real MySQL on 2026-10-25. These
  * tests hold the rules that made it true.
  */
-const read = (rel: string) => fs.readFileSync(path.join(__dirname, rel), "utf8").replace(/\r\n/g, "\n");
+const read = (rel: string) => fs.readFileSync(path.join(ROOT_DIR, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("what goes into a backup", () => {
   const engine = read("services/fullBackup.service.ts");

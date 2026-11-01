@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Two ways a box gets handed over, and they must agree.
  *
@@ -15,7 +18,7 @@ import path from "path";
  * said afterwards. Goods in their hands, order reading "لە ڕێگادا".
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 const boxesDb = read("server/db/deliveryBoxes.db.ts");

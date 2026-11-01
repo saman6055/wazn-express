@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A parcel already registered says so at the tracking box, with its figures.
  *
@@ -14,7 +17,7 @@ import path from "path";
  */
 
 const page = fs
-  .readFileSync(path.join(__dirname, "pages", "QuickRegister.tsx"), "utf8")
+  .readFileSync(path.join(ROOT_DIR, "pages", "packages", "QuickRegister.tsx"), "utf8")
   .replace(/\r\n/g, "\n");
 
 describe("the tracking box", () => {
@@ -78,7 +81,7 @@ describe("the tracking box", () => {
  */
 describe("the scan asks what the save asks, and asks it first", () => {
   const lookup = fs
-    .readFileSync(path.join(__dirname, "..", "..", "server", "db", "fullPackage.db.ts"), "utf8")
+    .readFileSync(path.join(ROOT_DIR, "..", "..", "server", "db", "fullPackage.db.ts"), "utf8")
     .replace(/\r\n/g, "\n");
   const start = lookup.indexOf("export async function searchTrackingInAllOrderTypes");
   const body = lookup.slice(start, lookup.indexOf("\nexport ", start + 20));
@@ -99,7 +102,7 @@ describe("the scan asks what the save asks, and asks it first", () => {
 
   it("is the same question the register refuses on", () => {
     const router = fs
-      .readFileSync(path.join(__dirname, "..", "..", "server", "routers", "packages.router.ts"), "utf8");
+      .readFileSync(path.join(ROOT_DIR, "..", "..", "server", "routers", "packages.router.ts"), "utf8");
     expect(router).toContain("const existing = await db.getPackageByTrackingNumber(input.trackingNumber.trim());");
     expect(body).toContain("eq(packages.trackingNumber, trackingNumber)");
   });

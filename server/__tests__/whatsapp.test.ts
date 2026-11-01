@@ -6,7 +6,10 @@ import {
   sendWhatsAppTemplate,
   whatsappLanguageCode,
   WHATSAPP_EVENTS,
-} from "./services/whatsapp.service";
+} from "../services/whatsapp.service";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * Every message here costs money and lands on somebody's personal phone.
@@ -141,7 +144,7 @@ describe("a failure is never anybody else's problem", () => {
   it("never lets a refusal's wording reach a screen", () => {
     // The reply is written by Meta. Error text from outside has no business
     // being shown to a customer or an operator.
-    const src = fs.readFileSync(path.join(__dirname, "services", "whatsapp.service.ts"), "utf8");
+    const src = fs.readFileSync(path.join(ROOT_DIR, "services", "whatsapp.service.ts"), "utf8");
     const fn = src.slice(src.indexOf("export async function sendWhatsAppTemplate"));
     expect(fn).toContain('return { sent: false, reason: "rejected" };');
     expect(fn, "the reply text may be logged, never returned").not.toContain("reason: detail");
@@ -168,7 +171,7 @@ describe("the events chosen, and the languages", () => {
 describe("consent is the default position", () => {
   it("a customer is off until they say otherwise", () => {
     const schema = fs.readFileSync(
-      path.join(__dirname, "..", "drizzle", "schema", "notifications.schema.ts"), "utf8",
+      path.join(ROOT_DIR, "..", "drizzle", "schema", "notifications.schema.ts"), "utf8",
     );
     expect(schema).toContain('whatsappEnabled: boolean("whatsappEnabled").default(false)');
   });
@@ -178,7 +181,7 @@ describe("consent is the default position", () => {
  * Where it is wired, and how carefully.
  */
 describe("the sending layer checks consent itself", () => {
-  const ROOT = path.join(__dirname, "..");
+  const ROOT = path.join(ROOT_DIR, "..");
   const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
   const layer = read("server/services/customerWhatsApp.service.ts");
   const scanner = read("server/routers/scanning.router.ts");
@@ -215,7 +218,7 @@ describe("the sending layer checks consent itself", () => {
 
 describe("the depot scan tells the customer without waiting for Meta", () => {
   const scanner = fs.readFileSync(
-    path.join(__dirname, "routers", "scanning.router.ts"), "utf8",
+    path.join(ROOT_DIR, "routers", "scanning.router.ts"), "utf8",
   ).replace(/\r\n/g, "\n");
 
   it("fires when goods reach the Erbil depot", () => {

@@ -2,13 +2,16 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The chips above the box list (owner, 2026-09-10): unpaid, new, old,
  * handed over unpaid, and paid. Each is a server-side slice with its count
  * from the same query, and "old" is the red badge's own five days.
  */
 
-const ROOT = path.join(__dirname, "..", "..");
+const ROOT = path.join(ROOT_DIR, "..", "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 function between(src: string, start: string, end: string): string {
@@ -20,7 +23,7 @@ function between(src: string, start: string, end: string): string {
 }
 
 describe("the page", () => {
-  const page = read("client/src/pages/CustomerDeliveryScanner.tsx");
+  const page = read("client/src/pages/scanning/CustomerDeliveryScanner.tsx");
 
   it("asks the server for the slice, so a page is a full page", () => {
     expect(page).toContain('params.archive = view === "paid" ? "only" : "exclude";');

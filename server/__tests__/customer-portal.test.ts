@@ -4,7 +4,7 @@ import {
   getCustomerPackagesInBatch,
   getCustomerFinancialSummary,
   searchPackageByTracking,
-} from "./db";
+} from "../db";
 
 describe("Customer Portal API", () => {
   describe("getCustomerBatches", () => {

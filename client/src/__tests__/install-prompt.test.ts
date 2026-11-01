@@ -2,12 +2,15 @@ import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's rule (2026-09-12): the portal must not ask a customer to
  * install the app by hand. The browser's own offer arrives once, early — so
  * it is caught before the first paint and spent by one button.
  */
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("the browser's install offer", () => {
   it("is caught before React draws anything", () => {
@@ -45,7 +48,7 @@ describe("keeping and spending the offer", () => {
       removeEventListener: () => {},
     });
     vi.resetModules();
-    const { captureInstallOffer, getInstallOffer, installApp } = await import("./lib/installPrompt");
+    const { captureInstallOffer, getInstallOffer, installApp } = await import("../lib/installPrompt");
     captureInstallOffer();
 
     const preventDefault = vi.fn();

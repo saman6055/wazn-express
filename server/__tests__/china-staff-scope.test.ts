@@ -3,7 +3,10 @@ import path from "path";
 import { describe, expect, it } from "vitest";
 import { CHINA_STAFF_PRESET } from "@shared/permissions";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Owner, 2026-10-25: staff working in China see the parcels registered in
@@ -41,7 +44,7 @@ describe("staff working in China", () => {
   });
 
   it("the permissions page fills it in with one click or a link, and Save stays a click", () => {
-    const page = read("client/src/pages/PermissionsManagement.tsx");
+    const page = read("client/src/pages/admin/PermissionsManagement.tsx");
     expect(page).toContain('data-testid="china-staff-preset"');
     expect(page).toContain('const pendingPreset = React.useRef(linkParams.get("preset") === "china");');
   });

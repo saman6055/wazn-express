@@ -19,7 +19,7 @@ import { createServer, type Server } from "http";
  *      be on disk, because nothing imports them. A renamed asset is a broken
  *      page that no build step complains about.
  */
-const BOOK = path.resolve(import.meta.dirname, "..", "client", "public", "book");
+const BOOK = path.resolve(import.meta.dirname, "..", "..", "client", "public", "book");
 const html = fs.readFileSync(path.join(BOOK, "index.html"), "utf8");
 
 describe("the book page", () => {
@@ -103,7 +103,7 @@ describe("the book page", () => {
  * the customer would land in the portal login with no idea why.
  */
 describe("the /book address", () => {
-  const PUBLIC = path.resolve(import.meta.dirname, "..", "client", "public");
+  const PUBLIC = path.resolve(import.meta.dirname, "..", "..", "client", "public");
   const SPA = "<!doctype html><title>spa fallback</title>";
   let server: Server;
   let base: string;

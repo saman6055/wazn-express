@@ -5,7 +5,7 @@ import {
   dbErrorCode,
   dbErrorNumber,
   dbErrorReason,
-} from './lib/dbErrors';
+} from '../lib/dbErrors';
 
 /**
  * These tests are written around the shape Drizzle actually throws, because

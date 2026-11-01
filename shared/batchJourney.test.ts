@@ -23,7 +23,7 @@ describe("the journey line", () => {
 });
 
 describe("the page", () => {
-  const page = root("client/src/pages/Batches.tsx");
+  const page = root("client/src/pages/batches/Batches.tsx");
   it("each row: type icon, CN / IQ, journey, quiet missing dots", () => {
     expect(page).toContain("<BatchTypeIcon shippingType={batch.shippingType} language={language} />");
     expect(page).toContain("<BatchOriginChip china={isChinaBatch(batch as never)} language={language} />");

@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest";
-import { youTubeVideoId } from "./db/tutorials.db";
+import { youTubeVideoId } from "../db/tutorials.db";
 
 /**
  * Tutorials store only the YouTube link the admin pasted. The video id is

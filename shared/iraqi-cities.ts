@@ -149,25 +149,3 @@ export const IRAQI_CITIES = [
   { governorateId: "saladin", nameEn: "Balad", nameAr: "بلد", nameKu: "بەلەد" },
   { governorateId: "saladin", nameEn: "Tuz Khurmatu", nameAr: "طوز خورماتو", nameKu: "تووزخورماتوو" },
 ] as const;
-
-// Helper function to get cities by governorate
-export function getCitiesByGovernorate(governorateId: string) {
-  return IRAQI_CITIES.filter(city => city.governorateId === governorateId);
-}
-
-// Get all cities as flat list for dropdown
-export function getAllCitiesForDropdown(language: 'en' | 'ar' | 'ku' = 'ku') {
-  return IRAQI_CITIES.map(city => ({
-    value: city.nameEn,
-    label: language === 'ku' ? city.nameKu : language === 'ar' ? city.nameAr : city.nameEn,
-    governorate: IRAQI_GOVERNORATES.find(g => g.id === city.governorateId),
-  }));
-}
-
-// Get governorates for dropdown
-export function getGovernoratesForDropdown(language: 'en' | 'ar' | 'ku' = 'ku') {
-  return IRAQI_GOVERNORATES.map(gov => ({
-    value: gov.id,
-    label: language === 'ku' ? gov.nameKu : language === 'ar' ? gov.nameAr : gov.nameEn,
-  }));
-}

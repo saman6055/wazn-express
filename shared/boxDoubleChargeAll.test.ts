@@ -55,7 +55,7 @@ describe("one yes is as careful as thirty-three", () => {
 });
 
 describe("the page shows the whole list before the yes", () => {
-  const page = root("client/src/pages/BoxDoubleCharges.tsx");
+  const page = root("client/src/pages/finance/BoxDoubleCharges.tsx");
 
   it("who, what comes off, and what stays - then one button", () => {
     expect(page).toContain('data-testid="double-charge-all-list"');

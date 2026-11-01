@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "./lib/customerVisibleOrder";
+import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The portal's two standing promises: a customer sees their own data and
@@ -13,7 +16,7 @@ import { toCustomerVisibleOrder, toCustomerVisibleOrders } from "./lib/customerV
  * mistake looks wrong on the line where it is made.
  */
 
-const ROOT = __dirname;
+const ROOT = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 const routerSrc = read("routers/portal.router.ts");
 

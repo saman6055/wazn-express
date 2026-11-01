@@ -3,7 +3,7 @@ import {
   getPackageWithCustomerByTracking,
   getFullPackageOrderByTracking,
   updatePackageStatus,
-} from "./db";
+} from "../db";
 
 describe("Smart Scanner Functions", () => {
   describe("getPackageWithCustomerByTracking", () => {

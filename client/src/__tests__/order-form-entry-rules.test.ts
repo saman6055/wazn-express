@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Two owner rules for the order entry desk (Sep 2026):
  *
@@ -15,9 +18,9 @@ import path from "path";
  * desk, and a rule that reached only one of them is worse than no rule.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
-const FORMS = ["pages/CommissionForm.tsx", "pages/FullPackageForm.tsx"];
+const FORMS = ["pages/orders/CommissionForm.tsx", "pages/orders/FullPackageForm.tsx"];
 
 describe("the picture is asked for before it is waived", () => {
   it("the first empty save stops instead of warning and carrying on", () => {

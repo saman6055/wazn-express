@@ -1,8 +1,12 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import nodePath from "node:path";
 
-const read = (p: string) => readFileSync(resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = nodePath.resolve(__dirname, "..");
+
+const read = (p: string) => readFileSync(resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * A registered parcel put right, and its money with it (owner, 2026-10-05).

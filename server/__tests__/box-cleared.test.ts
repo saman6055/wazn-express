@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A box is paid when the payment screen says so — and then it leaves the list.
  *
@@ -22,7 +25,7 @@ import path from "path";
  * payment screen shows.
  */
 
-const read = (p: string) => fs.readFileSync(path.join(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.join(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 
 function between(src: string, start: string, end: string): string {
   const a = src.indexOf(start);
@@ -95,6 +98,6 @@ describe("everything that says paid or owed reads it", () => {
   it("the customer's and the office's box rows, for the paid label", () => {
     expect(between(dbSrc, "export async function getCustomerVisibleBoxes(", "\nexport async function")).toContain("settlementCleared:");
     expect(read("client/src/pages/portal/PortalFinancial.tsx")).toContain("boxPaidState(b.settledUsd, b.totalValueUsd, b.settlementCleared)");
-    expect(read("client/src/pages/CustomerFinance.tsx")).toContain("boxPaidState(b.settledUsd, b.totalValueUsd, b.settlementCleared)");
+    expect(read("client/src/pages/finance/CustomerFinance.tsx")).toContain("boxPaidState(b.settledUsd, b.totalValueUsd, b.settlementCleared)");
   });
 });

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * One payment window, not two.
  *
@@ -17,7 +20,7 @@ import path from "path";
  * columns down to one word per line.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 const quick = read("client/src/components/delivery/QuickSettleDialog.tsx");
 const panel = read("client/src/components/delivery/BoxSettlementPanel.tsx");

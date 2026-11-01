@@ -4,9 +4,12 @@
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
-import { findPhoto, linkOrderPhotos, linkParcelPhotos, photoHash } from "./lib/portalImages";
+import { findPhoto, linkOrderPhotos, linkParcelPhotos, photoHash } from "../lib/portalImages";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8").replace(/\r\n/g, "\n");
 const JPEG = "data:image/jpeg;base64,/9j/4AAQSkZJRgABAQ==";
 const PNG = "data:image/png;base64,iVBORw0KGgo=";
 

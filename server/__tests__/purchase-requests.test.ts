@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the database module
-vi.mock('./db', () => ({
+vi.mock('../db', () => ({
   createPurchaseRequest: vi.fn(),
   getPurchaseRequestById: vi.fn(),
   getPurchaseRequestsByCustomer: vi.fn(),
@@ -23,7 +23,7 @@ import {
   updatePurchaseRequestStatus,
   rejectPurchaseRequest,
   getPurchaseRequestStats,
-} from './db';
+} from '../db';
 
 describe('Purchase Request System', () => {
   beforeEach(() => {

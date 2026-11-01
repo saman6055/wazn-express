@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Linking a declared tracking to its parcel from the Portal Center (owner,
  * 2026-09-18, phase 2) does what approving an ownership claim does, no more:
@@ -11,14 +14,14 @@ import path from "path";
  * shared/declaredLink.test.ts.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
 const lib = read("server/lib/linkDeclaredParcel.ts");
 const declared = read("server/db/declaredPackages.db.ts");
 const portal = read("server/db/portal.db.ts");
 const packagesRouter = read("server/routers/packages.router.ts");
 const router = read("server/routers/portalCenter.router.ts");
 const center = read("server/db/portalCenter.db.ts");
-const page = read("client/src/pages/PortalCenter.tsx");
+const page = read("client/src/pages/admin/PortalCenter.tsx");
 
 const slice = (source: string, start: string, end: string) => {
   const a = source.indexOf(start);

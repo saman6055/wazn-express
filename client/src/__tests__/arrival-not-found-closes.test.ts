@@ -2,11 +2,14 @@ import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /** Owner, 2026-10-22: the arrival check's «پاکێج نەدۆزرایەوە!» stopped the scanning. */
 describe("a parcel not found on the arrival check does not stop the work", () => {
-  const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+  const page = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
   const alert = read("client/src/components/SystemAlert.tsx");
 
   it("closes itself after 2 seconds, 3 when the same code is scanned again", () => {
@@ -27,7 +30,7 @@ describe("a parcel not found on the arrival check does not stop the work", () =>
  * The window says whose it is and which batch it belongs to.
  */
 describe("a parcel from another batch, on the arrival check", () => {
-  const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+  const page = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
 
   it("says its batch and its customer", () => {
     expect(page).toContain('data-testid="extra-package-whose"');

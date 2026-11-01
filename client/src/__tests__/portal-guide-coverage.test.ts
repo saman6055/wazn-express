@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { guideSections } from "./constants/portalGuide";
+import { guideSections } from "../constants/portalGuide";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The guide explains the portal. When the portal grows and the guide does
@@ -14,7 +17,7 @@ import { guideSections } from "./constants/portalGuide";
  * announcements. Every one of them a page a customer can already open.
  */
 
-const APP = fs.readFileSync(path.resolve(__dirname, "App.tsx"), "utf8");
+const APP = fs.readFileSync(path.resolve(ROOT_DIR, "App.tsx"), "utf8");
 
 /**
  * Every /portal route the app actually serves.

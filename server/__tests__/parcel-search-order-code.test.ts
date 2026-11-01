@@ -2,9 +2,12 @@ import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /** Owner, 2026-10-21: «CM-MTVGC8UN» found nothing in All Packages. */
 describe("the parcel list finds a parcel by its order's system number", () => {
-  const src = fs.readFileSync(path.resolve(__dirname, "db/packages.db.ts"), "utf8").replace(/\r\n/g, "\n");
+  const src = fs.readFileSync(path.resolve(ROOT_DIR, "db/packages.db.ts"), "utf8").replace(/\r\n/g, "\n");
   const fn = src.slice(src.indexOf("export async function getAllPackages"), src.indexOf("if (status && status !== 'all')"));
 
   it("by the shop's number, the system's and the supplier's", () => {

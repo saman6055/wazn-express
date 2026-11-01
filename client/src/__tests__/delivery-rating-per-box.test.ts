@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A delivery is rated once per box, not once per tracking (owner,
  * 2026-09-17). Six parcels handed over in one box are one delivery; asking
@@ -13,12 +16,12 @@ import path from "path";
  * table stays as it is, and a box's rating is held against its first parcel.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 const card = read("components/portal/DeliveryRatingCard.tsx");
-const center = read("pages/PortalCenter.tsx");
+const center = read("pages/admin/PortalCenter.tsx");
 const router = readRoot("server/routers/portal.router.ts");
 const store = readRoot("server/db/portalCenter.db.ts");
 

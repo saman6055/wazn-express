@@ -109,8 +109,3 @@ export const SCANNER_MODULES: ScannerModule[] = [
 export function getModuleByType(scanType: string): ScannerModule | undefined {
   return SCANNER_MODULES.find(m => m.scanType === scanType);
 }
-
-/** Get module info by ID */
-export function getModuleById(id: string): ScannerModule | undefined {
-  return SCANNER_MODULES.find(m => m.id === id);
-}

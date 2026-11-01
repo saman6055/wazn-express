@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A box can hold an air carton sold per kilo and a sea carton sold per cubic
  * metre. The rows always printed each in its own unit; the total below them
@@ -12,7 +15,7 @@ import path from "path";
  * CBM and what it costs, and only then the grand total.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("two units are never added together", () => {

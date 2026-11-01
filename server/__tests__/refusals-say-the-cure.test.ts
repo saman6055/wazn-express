@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { hasFix } from "../shared/fixAdvice";
+import { hasFix } from "../../shared/fixAdvice";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The owner's standing rule, 2026-09-24, unprompted: «کاتێ شتێکێ هەڵە هەیە لە
@@ -15,7 +18,7 @@ import { hasFix } from "../shared/fixAdvice";
  * the screens a refusal has to pass through must keep being able to show one.
  */
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 const KURDISH = /[؀-ۿ]/;

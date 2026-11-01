@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, describe, expect, it } from "vitest";
 import express from "express";
 import type { Server } from "http";
-import { authLimiterMiddleware, requestPath, writeLimiterMiddleware } from "./middleware/rateLimiter";
+import { authLimiterMiddleware, requestPath, writeLimiterMiddleware } from "../middleware/rateLimiter";
 
 /**
  * The login limiter has to fire where it is mounted.

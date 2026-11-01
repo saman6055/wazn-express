@@ -1,7 +1,7 @@
 import { describe, it, expect, beforeAll } from "vitest";
-import { appRouter } from "./routers";
-import type { TrpcContext } from "./_core/context";
-import { hasDb } from "./testEnv";
+import { appRouter } from "../routers";
+import type { TrpcContext } from "../_core/context";
+import { hasDb } from "../testEnv";
 
 function createAdminContext(): TrpcContext {
   return {

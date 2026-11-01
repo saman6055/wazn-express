@@ -3,8 +3,11 @@ import fs from "fs";
 import path from "path";
 import { CHECK_SHEET_SECTIONS } from "@shared/batchCloseCheck";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 const read = (rel: string) =>
-  fs.readFileSync(path.resolve(__dirname, "..", rel), "utf8").replace(/\r\n/g, "\n");
+  fs.readFileSync(path.resolve(ROOT_DIR, "..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * The owner, 2026-09-26, on the print dialog: «خۆش نیە». «سیستەمی خۆم بیکات

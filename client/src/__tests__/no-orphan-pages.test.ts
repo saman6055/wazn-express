@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Every page can be reached.
  *
@@ -20,7 +23,7 @@ import path from "path";
  * of those appears in App.tsx.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const PAGES = path.join(SRC, "pages");
 
 function sourceFiles(dir: string, out: string[] = []): string[] {
@@ -48,7 +51,7 @@ const PAGE_NAMES = pageNames(PAGES);
 describe("the pages this is checking", () => {
   it("found them", () => {
     expect(PAGE_NAMES.length).toBeGreaterThan(80);
-    expect(PAGE_NAMES).toContain("Dashboard");
+    expect(PAGE_NAMES).toContain("dashboard/Dashboard");
   });
 });
 

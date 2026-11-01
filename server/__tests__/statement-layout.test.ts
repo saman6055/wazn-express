@@ -2,9 +2,12 @@ import { describe, it, expect, vi } from "vitest";
 import fs from "fs";
 import path from "path";
 
-vi.mock("./db", () => ({ getDb: vi.fn(async () => null) }));
+vi.mock("../db", () => ({ getDb: vi.fn(async () => null) }));
 
-import { generateCustomerPDF } from "./services/pdfReports";
+import { generateCustomerPDF } from "../services/pdfReports";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The customer statement: one slim header, one summary strip, and Kurdish
@@ -16,7 +19,7 @@ import { generateCustomerPDF } from "./services/pdfReports";
  * words left to right, printed every Kurdish phrase back to front.
  */
 
-const SRC = fs.readFileSync(path.resolve(__dirname, "services/pdfReports.ts"), "utf8").replace(/\r\n/g, "\n");
+const SRC = fs.readFileSync(path.resolve(ROOT_DIR, "services/pdfReports.ts"), "utf8").replace(/\r\n/g, "\n");
 const START = SRC.indexOf("export async function generateCustomerPDF");
 const END = SRC.indexOf("\nexport ", START + 10);
 const BODY = SRC.slice(START, END);

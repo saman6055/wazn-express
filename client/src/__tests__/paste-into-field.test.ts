@@ -3,7 +3,10 @@ import path from "path";
 import { describe, expect, it } from "vitest";
 import { pastedIdKind } from "@shared/orderNumberPlatform";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Owner, 2026-10-22: Ctrl+V with no field chosen - an order number goes to
@@ -35,19 +38,19 @@ describe("the screens", () => {
   });
 
   it("both order forms route both numbers; Quick Register the tracking only", () => {
-    for (const f of ["client/src/pages/CommissionForm.tsx", "client/src/pages/FullPackageForm.tsx"]) {
+    for (const f of ["client/src/pages/orders/CommissionForm.tsx", "client/src/pages/orders/FullPackageForm.tsx"]) {
       const src = read(f);
       expect(src, f).toContain("ref={orderNumberRef}");
       expect(src, f).toContain("ref={trackingNumberRef}");
       expect(src, f).toContain("tracking: { ref: trackingNumberRef, set: (trackingNumber) => setFormData((p) => ({ ...p, trackingNumber })) },");
     }
-    expect(read("client/src/pages/QuickRegister.tsx")).toContain("usePasteIntoField({ tracking: { ref: trackingRef, set: handleTrackingChange } });");
+    expect(read("client/src/pages/packages/QuickRegister.tsx")).toContain("usePasteIntoField({ tracking: { ref: trackingRef, set: handleTrackingChange } });");
   });
 });
 
 describe("the forms ask for the platform on a Taobao-or-1688 number", () => {
   it("both forms, typed or pasted, with two buttons to choose", () => {
-    for (const f of ["client/src/pages/CommissionForm.tsx", "client/src/pages/FullPackageForm.tsx"]) {
+    for (const f of ["client/src/pages/orders/CommissionForm.tsx", "client/src/pages/orders/FullPackageForm.tsx"]) {
       const src = read(f);
       expect(src.split("platformForOrderNumber(orderNumber, p.platform, platformByHand.current)").length - 1, f).toBe(2);
       expect(src, f).not.toContain("guess.platform ?? p.platform");

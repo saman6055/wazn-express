@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-const read = (...p: string[]) => fs.readFileSync(path.join(__dirname, ...p), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (...p: string[]) => fs.readFileSync(path.join(ROOT_DIR, ...p), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * "The last thing I entered", handed back to be put right (owner, 2026-10-05).
@@ -13,7 +16,7 @@ const read = (...p: string[]) => fs.readFileSync(path.join(__dirname, ...p), "ut
  * مەکە» — so the way back lives in the strip that already named the parcel.
  */
 describe("Quick Register hands the last registration back", () => {
-  const page = read("pages", "QuickRegister.tsx");
+  const page = read("pages", "packages", "QuickRegister.tsx");
   const at = (marker: string): number => {
     const i = page.indexOf(marker);
     expect(i, `marker not found: ${marker}`).toBeGreaterThan(-1);
@@ -117,8 +120,8 @@ describe("buy-at-cost and full package offer the last order back", () => {
   const strip = read("components", "forms", "LastOrderStrip.tsx");
 
   it("one strip, used by both forms, only on the entry form", () => {
-    const commission = read("pages", "CommissionForm.tsx");
-    const fullPackage = read("pages", "FullPackageForm.tsx");
+    const commission = read("pages", "orders", "CommissionForm.tsx");
+    const fullPackage = read("pages", "orders", "FullPackageForm.tsx");
     expect(commission).toContain('{!isEditMode && <LastOrderStrip orderType="commission" />}');
     expect(fullPackage).toContain('{!isEditMode && <LastOrderStrip orderType="full_package" />}');
   });
@@ -134,7 +137,7 @@ describe("buy-at-cost and full package offer the last order back", () => {
     ["CommissionForm.tsx", "CommissionFormScreen", 'setLocation("/commission")', "setLocation(exitPath)"],
     ["FullPackageForm.tsx", "FullPackageFormScreen", 'navigate("/full-package")', "navigate(exitPath)"],
   ])("%s starts clean for every order and leaves by one rule", (file, screen, oldExit, newExit) => {
-    const form = read("pages", file);
+    const form = read("pages", "orders", file);
     // The router reuses one instance for "new" and ":id/edit"; without the
     // key an edit's fields would sit in the form for the next NEW order.
     expect(form).toContain(`return <${screen} key={id ?? "new"} />;`);

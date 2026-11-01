@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 
 // Mock the database module
-vi.mock("./db", () => ({
+vi.mock("../db", () => ({
   getCustomerByUserId: vi.fn(),
   getCustomerAccountByCustomerId: vi.fn(),
   getLedgerTransactionById: vi.fn(),
@@ -11,7 +11,7 @@ vi.mock("./db", () => ({
   getCustomerPackagesInBatch: vi.fn(),
 }));
 
-import * as db from "./db";
+import * as db from "../db";
 
 describe("Customer Portal Enhancements", () => {
   beforeEach(() => {

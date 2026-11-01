@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Every file that reaches the server comes through one door.
  *
@@ -12,7 +15,7 @@ import path from "path";
  * this test holds every procedure that takes a file to it — including the
  * one written next year.
  */
-const ROUTERS = path.join(__dirname, "routers");
+const ROUTERS = path.join(ROOT_DIR, "routers");
 
 /** A file arrives as one of these input fields. */
 const FILE_FIELDS = /\b(base64Data|fileData|base64)\s*:\s*z\.string\(\)/g;
@@ -63,14 +66,14 @@ describe("every file comes through the one door", () => {
 
 describe("the disk never keeps the sender's extension", () => {
   it("localUpload derives it from the shared rule", () => {
-    const src = fs.readFileSync(path.join(__dirname, "services/localUpload.ts"), "utf8");
+    const src = fs.readFileSync(path.join(ROOT_DIR, "services/localUpload.ts"), "utf8");
     expect(src).toContain("safeUploadExtension(fileName)");
     expect(src).not.toContain("path.extname(fileName) ||");
   });
 });
 
 describe("a stored file is handed back inert, from both entries", () => {
-  const serve = fs.readFileSync(path.join(__dirname, "_core/uploadsServe.ts"), "utf8");
+  const serve = fs.readFileSync(path.join(ROOT_DIR, "_core/uploadsServe.ts"), "utf8");
 
   it("a page or an SVG may run nothing", () => {
     expect(serve).toContain("default-src 'none'");
@@ -81,7 +84,7 @@ describe("a stored file is handed back inert, from both entries", () => {
 
   it("both servers serve /uploads with the same options", () => {
     for (const entry of ["_core/prod-entry.ts", "_core/index.ts"]) {
-      const src = fs.readFileSync(path.join(__dirname, entry), "utf8");
+      const src = fs.readFileSync(path.join(ROOT_DIR, entry), "utf8");
       expect(src, entry).toContain("express.static(uploadsDir, uploadsStaticOptions)");
     }
   });

@@ -3,6 +3,9 @@ import fs from "fs";
 import path from "path";
 import { paymentWhatsAppMessage } from "@shared/paymentWhatsApp";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * «Your payment arrived» on WhatsApp is a choice, not a chore (owner,
  * 2026-10-25). Paying a box no longer pops a send prompt, the bell no longer
@@ -17,7 +20,7 @@ import { paymentWhatsAppMessage } from "@shared/paymentWhatsApp";
  * tied to WhatsApp.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
@@ -29,7 +32,7 @@ describe("paying a box does not ask to send WhatsApp", () => {
   });
 
   it("no unsent list on the boxes page, no bell count", () => {
-    expect(read("pages/CustomerDeliveryScanner.tsx")).not.toContain("<UnsentPaymentWhatsAppAlert");
+    expect(read("pages/scanning/CustomerDeliveryScanner.tsx")).not.toContain("<UnsentPaymentWhatsAppAlert");
     const reports = readRoot("server/db/reports.db.ts");
     expect(reports).not.toContain("listUnsentPaymentWhatsApp()");
   });

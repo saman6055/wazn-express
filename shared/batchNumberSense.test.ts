@@ -124,7 +124,7 @@ describe("the question", () => {
 
 describe("both batch doors ask it, and the form answers it", () => {
   const router = read("server/routers/batches.router.ts");
-  const page = read("client/src/pages/Batches.tsx");
+  const page = read("client/src/pages/batches/Batches.tsx");
 
   it("create and update ask before saving", () => {
     expect(router.match(/await guardOddNumbers\(/g)?.length).toBe(2);

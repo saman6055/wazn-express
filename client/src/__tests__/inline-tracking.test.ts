@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 const read = (rel: string) =>
-  fs.readFileSync(path.resolve(__dirname, "..", "..", "client", "src", rel), "utf8").replace(/\r\n/g, "\n");
+  fs.readFileSync(path.resolve(ROOT_DIR, "..", "..", "client", "src", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * The owner, 2026-09-27: «لێرەش بە دوو کلیک لە شوێنی تراک بتوانی تراک زیاد
@@ -20,7 +23,7 @@ describe("a tracking typed into the row it belongs to", () => {
    * screens, /commission and /commission-orders, and the one in the top bar
    * is the one he uses. A third would now be noticed here.
    */
-  const LISTS = ["pages/CommissionDashboard.tsx", "pages/CommissionOrders.tsx"];
+  const LISTS = ["pages/orders/CommissionDashboard.tsx", "pages/orders/CommissionOrders.tsx"];
   const box = read("components/orders/InlineTracking.tsx");
 
   it("opens on a double-click, and says so before it is tried", () => {

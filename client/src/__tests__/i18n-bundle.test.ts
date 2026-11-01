@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Nothing may statically import a locale file.
  *
@@ -19,7 +22,7 @@ import path from "path";
  * reader's own locale adding ~64 KB. Roughly 180 KB off every first load.
  */
 
-const SRC = path.resolve(__dirname);
+const SRC = path.resolve(ROOT_DIR);
 const ALLOWED = new Set(["lib/i18nRegistry.ts"]);
 
 function sourceFiles(dir: string): string[] {

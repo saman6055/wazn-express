@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A list never carries what a list cannot show.
  *
@@ -20,7 +23,7 @@ import path from "path";
  *     was a round trip and a table scan.
  */
 
-const ROOT = path.resolve(__dirname, "..");
+const ROOT = path.resolve(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 function slice(source: string, from: string, to: string, what: string): string {
@@ -112,9 +115,9 @@ describe("the thumbnails the tables draw instead", () => {
 
   it("are what the three order tables use", () => {
     for (const screen of [
-      "client/src/pages/CommissionOrders.tsx",
-      "client/src/pages/FullPackageDashboard.tsx",
-      "client/src/pages/CommissionDashboard.tsx",
+      "client/src/pages/orders/CommissionOrders.tsx",
+      "client/src/pages/orders/FullPackageDashboard.tsx",
+      "client/src/pages/orders/CommissionDashboard.tsx",
     ]) {
       const src = read(screen);
       expect(src, screen).toContain("<OrderThumbs orders={");
@@ -140,7 +143,7 @@ describe("the parcels list", () => {
   it("hands them over one parcel at a time instead", () => {
     expect(db).toContain("export async function getPackagePhotos(");
     expect(read("server/routers/packages.router.ts")).toContain("return db.getPackagePhotos(input.id);");
-    const screen = read("client/src/pages/Packages.tsx");
+    const screen = read("client/src/pages/packages/Packages.tsx");
     expect(screen).toContain("utils.packages.photos");
     expect(screen).toContain("if (pkg.hasPhotos)");
   });
@@ -170,10 +173,10 @@ describe("the delivery box list", () => {
 describe("the search boxes", () => {
   it("wait for the typing to stop", () => {
     for (const screen of [
-      "client/src/pages/CommissionOrders.tsx",
-      "client/src/pages/FullPackageDashboard.tsx",
-      "client/src/pages/AuditLogs.tsx",
-      "client/src/pages/PortalCenter.tsx",
+      "client/src/pages/orders/CommissionOrders.tsx",
+      "client/src/pages/orders/FullPackageDashboard.tsx",
+      "client/src/pages/admin/AuditLogs.tsx",
+      "client/src/pages/admin/PortalCenter.tsx",
       "client/src/pages/portal/PortalUnclaimedPackages.tsx",
     ]) {
       const src = read(screen);

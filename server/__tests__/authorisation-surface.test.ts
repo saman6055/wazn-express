@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Who can call what.
  *
@@ -14,7 +17,7 @@ import path from "path";
  * accepts the next thing that matches it; a list has to be argued with.
  */
 
-const ROUTERS = path.join(__dirname, "routers");
+const ROUTERS = path.join(ROOT_DIR, "routers");
 
 interface Procedure {
   router: string;
@@ -122,10 +125,10 @@ describe("who can call what", () => {
 });
 
 describe("the rate limiters that exist are the ones that run", () => {
-  const limiterSrc = fs.readFileSync(path.join(__dirname, "middleware/rateLimiter.ts"), "utf8");
+  const limiterSrc = fs.readFileSync(path.join(ROOT_DIR, "middleware/rateLimiter.ts"), "utf8");
   const wiring = [
-    fs.readFileSync(path.join(__dirname, "_core/index.ts"), "utf8"),
-    fs.readFileSync(path.join(__dirname, "_core/prod-entry.ts"), "utf8"),
+    fs.readFileSync(path.join(ROOT_DIR, "_core/index.ts"), "utf8"),
+    fs.readFileSync(path.join(ROOT_DIR, "_core/prod-entry.ts"), "utf8"),
   ].join("\n");
 
   it("records which limiters are actually mounted", () => {

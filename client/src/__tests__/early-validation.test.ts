@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's note (Sep 2026): «ئەگەر هەر لە سەرتاوە بێت کاتێکێ زۆرت بۆ
  * دەگەرێنێتەوە» — say it at the start, not at the save.
@@ -15,12 +18,12 @@ import path from "path";
  * everything at the beginning of it.
  */
 
-const SRC = path.resolve(__dirname);
-const ROOT = path.resolve(__dirname, "../..");
+const SRC = path.resolve(ROOT_DIR);
+const ROOT = path.resolve(ROOT_DIR, "../..");
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
 
-const FORMS = ["pages/CommissionForm.tsx", "pages/FullPackageForm.tsx"];
+const FORMS = ["pages/orders/CommissionForm.tsx", "pages/orders/FullPackageForm.tsx"];
 
 describe("the duplicate is found while the number is typed", () => {
   it("both forms ask as the field changes", () => {

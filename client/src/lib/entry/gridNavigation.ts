@@ -5,9 +5,6 @@ export interface Cell {
   col: number;
 }
 
-/** The `data-cell` value a field in a table of fields carries: "row:col". */
-export const cellAttr = (row: number, col: number): string => `${row}:${col}`;
-
 export function parseCell(attr: string | null | undefined): Cell | null {
   const m = /^(\d+):(\d+)$/.exec(attr ?? "");
   return m ? { row: Number(m[1]), col: Number(m[2]) } : null;

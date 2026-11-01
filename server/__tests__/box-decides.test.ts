@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { isOrderFreightText } from "./db/boxSettlement.db";
+import { isOrderFreightText } from "../db/boxSettlement.db";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8");
 
 /*
  * The owner, 2026-10-19: "money is counted when it is put in a box and the

@@ -1,7 +1,10 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { looksLikeTracking } from "./components/packages/TrackingOnAnOrder";
+import { looksLikeTracking } from "../components/packages/TrackingOnAnOrder";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * A tracking the parcels list cannot find leads to its order (owner,
@@ -10,10 +13,10 @@ import { looksLikeTracking } from "./components/packages/TrackingOnAnOrder";
  * either empty state, the lookup matching by case or by a fragment, or the
  * order's price worked out by a second rule.
  */
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", "..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", "..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the parcels list asks the orders when it finds nothing", () => {
-  const page = read("client/src/pages/Packages.tsx");
+  const page = read("client/src/pages/packages/Packages.tsx");
 
   it("on the phone and on the desktop alike", () => {
     expect(page.split("<TrackingOnAnOrder search={searchInput} />").length - 1).toBe(2);

@@ -2,8 +2,11 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 const read = (rel: string) =>
-  fs.readFileSync(path.resolve(__dirname, "..", rel), "utf8").replace(/\r\n/g, "\n");
+  fs.readFileSync(path.resolve(ROOT_DIR, "..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * The owner, 2026-09-26, opening AIR-2026-055 a second time: 0 of 84 checked
@@ -36,7 +39,7 @@ describe("an arrival check is not lost when the tab closes", () => {
     const router = read("server/routers/scanning.router.ts");
     expect(router).toContain("arrivalChecks: staffProcedure");
     expect(router).toContain("db.getArrivalChecksForBatches(input.batchIds)");
-    const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+    const page = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
     expect(page).toContain("trpc.scanning.arrivalChecks.useQuery");
     expect(page).toContain("enabled: selectedBatchIds.length > 0");
   });
@@ -44,7 +47,7 @@ describe("an arrival check is not lost when the tab closes", () => {
   it("never overwrites what the bench just scanned", () => {
     // A parcel scanned at this bench keeps the scan in front of the person:
     // theirs is the newer fact.
-    const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+    const page = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
     expect(page).toContain("const known = new Set(current.map((p) => p.id));");
     expect(page).toContain("if (!id || known.has(id)) continue;");
   });
@@ -75,7 +78,7 @@ describe("a finished check can be gone back to", () => {
   });
 
   it("the screen shows them, and one press opens what arrived and what did not", () => {
-    const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+    const page = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
     expect(page).toContain("<ArrivalCheckHistory onContinue={continueCheck} />");
     const history = read("client/src/components/scanner/ArrivalCheckHistory.tsx");
     expect(history).toContain("trpc.scanning.arrivalCheckedBatches.useQuery(");
@@ -97,7 +100,7 @@ describe("a finished check can be gone back to", () => {
   });
 
   it("a batch opened again can be scanned into, even once it has arrived", () => {
-    const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+    const page = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
     const start = page.indexOf("const continueCheck = (batch: CheckedBatch) => {");
     expect(start).toBeGreaterThan(-1);
     const fn = page.slice(start, page.indexOf("const toggleBatchSelection"));
@@ -116,7 +119,7 @@ describe("a batch checked earlier does not come up as missing", () => {
     // back before the manifest, the manifest was marked from the render that
     // had started its load — an empty list — and all three parcels of a
     // batch with two checked in read "missing (3)". Nothing re-marked them.
-    const page = read("client/src/pages/ArrivalVerificationScanner.tsx");
+    const page = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
     expect(page).toContain("verifiedRef.current = verifiedPackages;");
     const start = page.indexOf("const loadBatchPackages = async () => {");
     expect(start).toBeGreaterThan(-1);

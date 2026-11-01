@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 import PDFDocument from "pdfkit";
-import { brandLogoBytes, brandLogoDataUri, brandLogoWidth, drawBrandLogo } from "./lib/brandLogo";
+import { brandLogoBytes, brandLogoDataUri, brandLogoWidth, drawBrandLogo } from "../lib/brandLogo";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * Every PDF the server draws carries the mark — the owner's request.
@@ -49,7 +52,7 @@ describe("the mark, for server-drawn documents", () => {
 });
 
 describe("every server PDF draws it", () => {
-  const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "services", rel), "utf8");
+  const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "services", rel), "utf8");
   const calls = (src: string) => src.split("drawBrandLogo(doc").length - 1;
 
   it("the customer statement, the batch report and the filtered dashboard", () => {

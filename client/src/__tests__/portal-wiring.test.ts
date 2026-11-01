@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Nothing built and left unconnected.
  *
@@ -16,7 +19,7 @@ import path from "path";
  * procedure with nobody calling it.
  */
 
-const ROOT = path.join(__dirname, "..", "..");
+const ROOT = path.join(ROOT_DIR, "..", "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 
 /** Every .tsx under client/src, which is where a caller would live. */
@@ -84,7 +87,7 @@ describe("a share link can be closed as well as opened", () => {
 });
 
 describe("the WhatsApp setup can be proved rather than hoped", () => {
-  const settings = read("client/src/pages/NotificationSettings.tsx");
+  const settings = read("client/src/pages/settings/NotificationSettings.tsx");
 
   it("has the button, not only the endpoint", () => {
     expect(settings).toContain('data-testid="whatsapp-test-send"');

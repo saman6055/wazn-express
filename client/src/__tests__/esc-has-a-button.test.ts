@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "node:fs";
 import path from "node:path";
 
-const SRC = __dirname;
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const SRC = ROOT_DIR;
 const read = (...p: string[]) => fs.readFileSync(path.join(SRC, ...p), "utf8").replace(/\r\n/g, "\n");
 
 /** Every .tsx file under client/src, as [relative path, contents]. */
@@ -119,7 +122,7 @@ describe("the ones that already had it keep it", () => {
   });
 
   it("Quick Register's Esc has its Clear button, and a correction its Cancel", () => {
-    const page = read("pages", "QuickRegister.tsx");
+    const page = read("pages", "packages", "QuickRegister.tsx");
     expect(page).toContain("onClick={clearAllForm}");
     expect(page).toContain('data-testid="qr-correction-cancel"');
   });

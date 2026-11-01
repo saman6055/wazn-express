@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { batchChargesOnPricing, SHIPPING_CHARGE_ON_PRICING_FROM } from "./lib/chargePolicy";
+import { batchChargesOnPricing, SHIPPING_CHARGE_ON_PRICING_FROM } from "../lib/chargePolicy";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The owner's 2026-09-09 decision: shipping debt is born when a batch gets
@@ -12,7 +15,7 @@ import { batchChargesOnPricing, SHIPPING_CHARGE_ON_PRICING_FROM } from "./lib/ch
  * else. These tests hold each of those to one copy.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8").replace(/\r\n/g, "\n");
 
 function slice(src: string, start: string, end: string, what: string): string {
   const a = src.indexOf(start);

@@ -1,9 +1,12 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { SCHEMA_PATCHES } from "./_core/migrations";
+import { SCHEMA_PATCHES } from "../_core/migrations";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8");
 
 /*
  * May–July 2026: multi-unit commission orders charged as goods × quantity +
@@ -38,6 +41,6 @@ describe("a commission fee written for the whole order", () => {
   });
 
   it("the bulk form says the fee is for one unit", () => {
-    expect(read("../client/src/pages/BulkOrderForm.tsx")).toContain("عمولە بۆ یەک دانە ($)");
+    expect(read("../client/src/pages/orders/BulkOrderForm.tsx")).toContain("عمولە بۆ یەک دانە ($)");
   });
 });

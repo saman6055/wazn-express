@@ -19,7 +19,7 @@ describe("each batch's part in its carrier group", () => {
 
   it("said on the group card, at the top of the edit form, and on the list rows", () => {
     expect(read("client/src/components/batches/CarrierGroupCard.tsx")).toContain('data-testid="carrier-group-role"');
-    const page = read("client/src/pages/Batches.tsx");
+    const page = read("client/src/pages/batches/Batches.tsx");
     expect(page).toContain('data-testid="batch-edit-role"');
     expect(page).toContain("BATCH_ROLE_TONE.original)} data-testid=\"batch-original-chip\"");
   });

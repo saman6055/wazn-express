@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Which shipments were handled in China, and which in Erbil.
  *
@@ -23,7 +26,7 @@ import path from "path";
  * so this one has to be written down.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 function slice(src: string, startMarker: string, endMarker: string, label: string): string {
@@ -127,7 +130,7 @@ describe("the location is stamped, not looked up later", () => {
       "getAllBatches"
     );
     expect(listQuery, "the list must select the shared column set").toContain("db.select(BATCH_LIST_COLUMNS)");
-    expect(read("client/src/pages/Batches.tsx")).toContain("batch.createdInCity");
+    expect(read("client/src/pages/batches/Batches.tsx")).toContain("batch.createdInCity");
   });
 });
 

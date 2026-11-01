@@ -80,7 +80,7 @@ describe("whose side, and the money that follows", () => {
   });
 
   it("is only ever a suggestion: the form makes the main admin answer", () => {
-    const page = root("client/src/pages/CompanyStock.tsx");
+    const page = root("client/src/pages/finance/CompanyStock.tsx");
     expect(page).toContain("useState<boolean | null>(null)");
     expect(page).toContain("p.plan.keepableUsd > 0 && keep === null");
     expect(page).toContain('data-testid="keep-question"');
@@ -157,7 +157,7 @@ describe("the books still close", () => {
 
 describe("found by its tracking, both times", () => {
   const db = root("server/db/refusedGoods.db.ts");
-  const page = root("client/src/pages/CompanyStock.tsx");
+  const page = root("client/src/pages/finance/CompanyStock.tsx");
 
   it("the search reads the order's code, its own trackings, its list of trackings and its parcel", () => {
     const fn = db.slice(db.indexOf("export async function searchOrdersForRefusal"), db.indexOf("export async function refuseOrderGoods"));
@@ -219,15 +219,15 @@ describe("told where it matters", () => {
   });
 
   it("a customer who refused before is flagged where their next order is typed", () => {
-    for (const form of ["client/src/pages/CommissionForm.tsx", "client/src/pages/FullPackageForm.tsx"]) {
+    for (const form of ["client/src/pages/orders/CommissionForm.tsx", "client/src/pages/orders/FullPackageForm.tsx"]) {
       expect(root(form), form).toContain("<RefusalWarning customerId={Number(formData.customerId) || null} />");
     }
   });
 
   it("the page is on the menu and both finance pages link to it", () => {
     expect(root("client/src/App.tsx")).toContain('path="/company-stock"');
-    expect(root("client/src/pages/WorkingCapital.tsx")).toContain('href="/company-stock"');
-    expect(root("client/src/pages/CompanyFinanceDashboard.tsx")).toContain('href="/company-stock"');
+    expect(root("client/src/pages/finance/WorkingCapital.tsx")).toContain('href="/company-stock"');
+    expect(root("client/src/pages/finance/CompanyFinanceDashboard.tsx")).toContain('href="/company-stock"');
   });
 });
 
@@ -240,7 +240,7 @@ describe("a parcel the company only carried", () => {
     for (const r of PARCEL_REASONS) expect(ORDER_REFUSAL_REASONS as readonly string[]).not.toContain(r);
     expect(REFUSAL_FAULT.abandoned).toBe("customer");
     expect(REFUSAL_FAULT.ownerless).toBe("nobody");
-    expect(root("client/src/pages/CompanyStock.tsx")).toContain("{ORDER_REFUSAL_REASONS.map((r) => (");
+    expect(root("client/src/pages/finance/CompanyStock.tsx")).toContain("{ORDER_REFUSAL_REASONS.map((r) => (");
   });
 
   it("what carrying it cost is the batch's rate on its own weight or volume", () => {
@@ -278,7 +278,7 @@ describe("a parcel the company only carried", () => {
 
   it("ownerless parcels still waiting are counted with what carrying them cost", () => {
     expect(db).toContain("export async function getOwnerlessFreight");
-    expect(root("client/src/pages/CompanyStock.tsx")).toContain('data-testid="ownerless-freight"');
+    expect(root("client/src/pages/finance/CompanyStock.tsx")).toContain('data-testid="ownerless-freight"');
     expect(root("server/routers/finance.router.ts")).toContain("abandonParcel: superAdminProcedure");
   });
 });

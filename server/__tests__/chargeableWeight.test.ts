@@ -6,7 +6,7 @@ import {
   exceedsVolumetricThreshold,
   isAirShipping,
   DEFAULT_VOLUMETRIC_DIVISOR,
-} from '../shared/chargeableWeight';
+} from '../../shared/chargeableWeight';
 
 /**
  * This decides what a customer pays, so the tests are written around the case

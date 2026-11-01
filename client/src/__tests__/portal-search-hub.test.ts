@@ -1,8 +1,11 @@
 import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
-import { cleanSearchPaste } from "./lib/entry/cleanPaste";
-import { SEARCH_TABS, STAGE_JOURNEY } from "./lib/portalSearch";
+import { cleanSearchPaste } from "../lib/entry/cleanPaste";
+import { SEARCH_TABS, STAGE_JOURNEY } from "../lib/portalSearch";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The search is the portal's hub: the centre button opens it, and the home's
@@ -14,7 +17,7 @@ import { SEARCH_TABS, STAGE_JOURNEY } from "./lib/portalSearch";
  * search counted parcels — a card could say 2 and open a list of 14.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (rel: string) => fs.readFileSync(path.join(SRC, rel), "utf8").replace(/\r\n/g, "\n");
 
 describe("the home's stage cards", () => {

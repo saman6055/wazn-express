@@ -2,7 +2,10 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Sea cartons and the small-parcel extra (owner, 2026-10-17/18) - where each
@@ -19,7 +22,7 @@ const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", r
  * batch edit form showing the saved 20.
  */
 describe("Quick Register keeps its shape and gains one box", () => {
-  const qr = read("client/src/pages/QuickRegister.tsx");
+  const qr = read("client/src/pages/packages/QuickRegister.tsx");
 
   it("the sea row is five across, the fifth is the count", () => {
     expect(qr).toContain('<div className="grid grid-cols-2 md:grid-cols-5 gap-3">');
@@ -75,7 +78,7 @@ describe("the server multiplies, and prices with the extra, in one place each", 
 
   it("the batch form has one box, ticked on a new batch, and the list carries it to the edit form", () => {
     expect(read("server/db/batches.db.ts")).toContain("smallParcelRule: batches.smallParcelRule,");
-    const form = read("client/src/pages/Batches.tsx");
+    const form = read("client/src/pages/batches/Batches.tsx");
     expect(form).toContain("<SmallParcelRuleField defaultChecked />");
     expect(form).toContain("<SmallParcelRuleField defaultChecked={Boolean(editingBatch.smallParcelRule)} />");
     expect(form.split('smallParcelRule: formData.has("smallParcelRuleShown") ? formData.get("smallParcelRule") === "on" : undefined').length - 1).toBe(2);
@@ -99,7 +102,7 @@ describe("the box and the receipt say how many cartons", () => {
  * small-parcel box on Quick Register itself, and the bar saying why.
  */
 describe("Quick Register shows and switches the small-parcel rule", () => {
-  const page = read("client/src/pages/QuickRegister.tsx");
+  const page = read("client/src/pages/packages/QuickRegister.tsx");
   it("the batch's own box, under the batch, asked before it changes", () => {
     expect(page).toContain('data-testid="qr-small-parcel-rule-box"');
     expect(page).toContain("smallRuleMutation.mutate({ id: selectedSeaBatch.id, smallParcelRule: next })");

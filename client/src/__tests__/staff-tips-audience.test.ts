@@ -1,10 +1,13 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { STAFF_TIPS, tipsFor, type TipLang } from "./constants/staffTips";
+import { STAFF_TIPS, tipsFor, type TipLang } from "../constants/staffTips";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 const LANGS: TipLang[] = ["ku", "en", "ar", "zh"];
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, p), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Owner, 2026-10-06, about Ako in the China warehouse: the tips card should
@@ -117,7 +120,7 @@ describe("what the owner asked the warehouse to be told", () => {
   });
 
   it("the example matches the divisor the system charges by", () => {
-    const rule = fs.readFileSync(path.resolve(__dirname, "../../shared/chargeableWeight.ts"), "utf8");
+    const rule = fs.readFileSync(path.resolve(ROOT_DIR, "../../shared/chargeableWeight.ts"), "utf8");
     expect(rule).toContain("export const DEFAULT_VOLUMETRIC_DIVISOR = 6000;");
     expect(((40 * 40 * 40) / 6000).toFixed(1)).toBe("10.7");
     expect(((30 * 30 * 30) / 6000).toFixed(1)).toBe("4.5");

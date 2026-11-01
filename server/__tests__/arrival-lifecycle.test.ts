@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * What the first real batch from China exposed.
  *
@@ -20,7 +23,7 @@ import path from "path";
  *      put the gun down and click between every parcel.
  */
 
-const ROOT = path.join(__dirname, "..");
+const ROOT = path.join(ROOT_DIR, "..");
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8").replace(/\r\n/g, "\n");
 const END_OF_FN = ["", "}", ""].join("\n");
 
@@ -133,7 +136,7 @@ describe("the scan box stays ready for the next parcel", () => {
 describe("the scanner shows what identifies the box to a person", () => {
   const manifest = () =>
     slice(packagesDb, "export async function getBatchManifest", END_OF_FN, "getBatchManifest");
-  const scanner = read("client/src/pages/ArrivalVerificationScanner.tsx");
+  const scanner = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
 
   it("resolves the order by both routes a parcel can be linked", () => {
     // The link table and the legacy tracking column. Reading only one leaves
@@ -183,7 +186,7 @@ describe("the scanner shows what identifies the box to a person", () => {
  * into the wrong list.
  */
 describe("a finished batch says so and steps aside", () => {
-  const scanner = read("client/src/pages/ArrivalVerificationScanner.tsx");
+  const scanner = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
 
   it("announces a batch only when every parcel on its manifest is in", () => {
     const body = slice(scanner, "for (const batchId of selectedBatchIds)", "}, [batchPackages", "completion watch");
@@ -215,7 +218,7 @@ describe("a finished batch says so and steps aside", () => {
 });
 
 describe("the session can be read back two ways", () => {
-  const scanner = read("client/src/pages/ArrivalVerificationScanner.tsx");
+  const scanner = read("client/src/pages/scanning/ArrivalVerificationScanner.tsx");
 
   it("by scan order and by customer code", () => {
     expect(scanner).toContain("scan.arrangeByScan");

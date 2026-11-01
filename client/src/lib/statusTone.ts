@@ -57,15 +57,6 @@ export const TONE_DOT: Record<Tone, string> = {
   neutral: "bg-slate-400",
 };
 
-/** The same colours, for charts that take hex values. */
-export const TONE_HEX: Record<Tone, string> = {
-  success: "#10b981",
-  progress: "#0ea5e9",
-  waiting: "#f59e0b",
-  problem: "#ef4444",
-  neutral: "#94a3b8",
-};
-
 export type StatusKind = "order" | "package" | "batch" | "payment" | "box" | "claim";
 
 const STATUS_TONE: Record<string, Tone> = {

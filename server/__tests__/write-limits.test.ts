@@ -1,6 +1,6 @@
 import { describe, expect, it, vi } from "vitest";
 import type { Request, Response, NextFunction } from "express";
-import { writeLimiterMiddleware } from "./middleware/rateLimiter";
+import { writeLimiterMiddleware } from "../middleware/rateLimiter";
 
 /**
  * The write limiters were written and never mounted, for a good reason: keyed

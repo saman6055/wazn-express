@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The bin says whose each box and order was (owner, 2026-09-17, with a
  * screenshot of the bin: "the customer code isn't with the box, I don't know
@@ -10,7 +13,7 @@ import path from "path";
  * shared/trash.test.ts; this pins the wiring from the database to the card.
  */
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "../..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("the bin's list carries the owner", () => {
   const db = read("server/db/trash.db.ts");
@@ -31,7 +34,7 @@ describe("the bin's list carries the owner", () => {
 });
 
 describe("the card shows it", () => {
-  const page = read("client/src/pages/Trash.tsx");
+  const page = read("client/src/pages/admin/Trash.tsx");
 
   it("the customer's code and name, and what the box held", () => {
     expect(page).toContain('<bdi dir="ltr" className="font-mono font-semibold">{item.customerCode}</bdi>');

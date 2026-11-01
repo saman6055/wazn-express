@@ -1,6 +1,10 @@
 import { describe, it, expect } from "vitest";
 import { readFileSync } from "node:fs";
 import { resolve } from "node:path";
+import nodePath from "node:path";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = nodePath.resolve(__dirname, "..");
 
 /**
  * The payments page reads payments, not "the last rows of everything".
@@ -9,7 +13,7 @@ import { resolve } from "node:path";
  * guessed from the description's words; a payment record carries its own.
  */
 describe("the payments page", () => {
-  const page = readFileSync(resolve(__dirname, "pages/Payments.tsx"), "utf8");
+  const page = readFileSync(resolve(ROOT_DIR, "pages/finance/Payments.tsx"), "utf8");
 
   it("asks for payment records", () => {
     expect(page).toContain("trpc.ledger.getRecentPayments.useQuery(");

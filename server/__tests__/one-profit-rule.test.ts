@@ -2,7 +2,10 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", p), "utf8");
 
 /*
  * 2026-10-03: five pages, five profits for the same month. Proved on a real
@@ -32,9 +35,9 @@ describe("one profit rule for every page", () => {
 
   it("the expenses page and the two report pages in the browser use it too", () => {
     expect(read("server/routers/finance.router.ts")).toContain("db.getProfitForPeriod(startDate, endDate),");
-    expect(read("client/src/pages/MonthlyProfitReport.tsx")).toContain("trpc.fullPackage.getMonthlyProfitReport.useQuery({ year: selectedYear })");
-    expect(read("client/src/pages/MonthlyProfitReport.tsx")).not.toContain("trpc.fullPackage.list.useQuery");
-    const batchReports = read("client/src/pages/BatchReports.tsx");
+    expect(read("client/src/pages/reports/MonthlyProfitReport.tsx")).toContain("trpc.fullPackage.getMonthlyProfitReport.useQuery({ year: selectedYear })");
+    expect(read("client/src/pages/reports/MonthlyProfitReport.tsx")).not.toContain("trpc.fullPackage.list.useQuery");
+    const batchReports = read("client/src/pages/reports/BatchReports.tsx");
     expect(batchReports).toContain("carrierCostBase(batch.shippingType, batch, ours)");
     expect(batchReports).not.toContain("totalCost = totalChargeableWeight * costPerKg;");
   });

@@ -1,9 +1,12 @@
 import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
-import { buildBoxReceiptHtml, volumeDiscountOf } from "./lib/deliveryBoxPrintUtils";
+import { buildBoxReceiptHtml, volumeDiscountOf } from "../lib/deliveryBoxPrintUtils";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, "../..", rel), "utf8").replace(/\r\n/g, "\n");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, "../..", rel), "utf8").replace(/\r\n/g, "\n");
 
 /**
  * Owner, 2026-10-24: the volumetric discount is on the customer's receipt -

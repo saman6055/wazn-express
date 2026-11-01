@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The one place that searches every order, full package and buy-at-cost
  * (owner, 2026-10-16). It looked only at the newest orders the page had
@@ -9,10 +12,10 @@ import path from "path";
  * found. What would undo it: the search going back to filtering what is on
  * the page, or the server's search losing a place an order keeps a tracking.
  */
-const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", "..", p), "utf8").replace(/\r\n/g, "\n");
+const read = (p: string) => fs.readFileSync(path.resolve(ROOT_DIR, "..", "..", p), "utf8").replace(/\r\n/g, "\n");
 
 describe("searching all orders", () => {
-  const page = read("client/src/pages/UnifiedOrdersDashboard.tsx");
+  const page = read("client/src/pages/orders/UnifiedOrdersDashboard.tsx");
 
   it("asks the server, over every order, once three letters are typed", () => {
     expect(page).toContain("trpc.fullPackage.list.useQuery(\n    { search: searchTerm },");

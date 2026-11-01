@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The debtors report, read rather than displayed.
  *
@@ -16,8 +19,8 @@ import path from "path";
  * their account was opened, so somebody who paid last week sat in "90+".
  */
 
-const SRC = __dirname;
-const page = fs.readFileSync(path.join(SRC, "pages", "DebtorsReport.tsx"), "utf8").replace(/\r\n/g, "\n");
+const SRC = ROOT_DIR;
+const page = fs.readFileSync(path.join(SRC, "pages", "finance", "DebtorsReport.tsx"), "utf8").replace(/\r\n/g, "\n");
 
 describe("the figures are real", () => {
   it("ages a debtor by their last movement, not by when the account was opened", () => {

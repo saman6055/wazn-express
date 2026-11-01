@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The owner's rule: every number in every language — money, weight, dates,
  * phones, codes, counts — is written with 0-9. Never ٠-٩, never ۰-۹.
@@ -13,11 +16,11 @@ import path from "path";
  *   3. a locale that writes Eastern digits (ar-IQ, ckb) asked for by name —
  *      the staff header clock on every page was one.
  */
-const ROOT = path.resolve(__dirname, "../..");
+const ROOT = path.resolve(ROOT_DIR, "../..");
 const EASTERN = /[٠-٩۰-۹]/;
 
 // They accept Eastern digits on purpose: a customer typing ٠٧٥٠ becomes 0750.
-const CONVERTERS = new Set(["shared/phone.ts", "server/routers/schemas.ts", "client/src/pages/CustomerLogin.tsx"]);
+const CONVERTERS = new Set(["shared/phone.ts", "server/routers/schemas.ts", "client/src/pages/public/CustomerLogin.tsx"]);
 
 function walk(dir: string, out: string[] = []): string[] {
   for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {

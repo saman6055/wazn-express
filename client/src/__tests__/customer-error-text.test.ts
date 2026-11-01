@@ -1,10 +1,13 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import fs from "fs";
 import path from "path";
-import { isNetworkFault, networkFault, NetworkFault } from "./lib/networkFault";
+import { isNetworkFault, networkFault, NetworkFault } from "../lib/networkFault";
 import { NETWORK_FAULT_TEXT } from "@shared/errorMessages";
 
-const read = (rel: string) => fs.readFileSync(path.resolve(__dirname, rel), "utf8");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const read = (rel: string) => fs.readFileSync(path.resolve(ROOT_DIR, rel), "utf8");
 
 describe("a dropped connection is described in the reader's language", () => {
   afterEach(() => vi.unstubAllGlobals());

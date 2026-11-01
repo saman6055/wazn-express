@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { FORBIDDEN_ORDER_FIELDS, toCustomerVisibleOrder, toCustomerVisibleOrders } from "./lib/customerVisibleOrder";
+import { FORBIDDEN_ORDER_FIELDS, toCustomerVisibleOrder, toCustomerVisibleOrders } from "../lib/customerVisibleOrder";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * The portal is the one surface a stranger can reach. These tests hold the
@@ -9,7 +12,7 @@ import { FORBIDDEN_ORDER_FIELDS, toCustomerVisibleOrder, toCustomerVisibleOrders
  * shown up as a customer reading somebody else's data or our own numbers.
  */
 
-const ROOT = path.resolve(__dirname);
+const ROOT = path.resolve(ROOT_DIR);
 const read = (p: string) => fs.readFileSync(path.join(ROOT, p), "utf8");
 
 describe("what an order tells the customer", () => {

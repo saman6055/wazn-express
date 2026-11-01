@@ -5,7 +5,10 @@ import * as corner from "@/lib/floatingCorner";
 import { CORNER_PANEL } from "@/lib/floatingCorner";
 import { askForTip, onTipAsked, TIP_WORD } from "@/lib/tipsLamp";
 
-const ROOT = path.resolve(__dirname, "..", "..", "client", "src");
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
+const ROOT = path.resolve(ROOT_DIR, "..", "..", "client", "src");
 const read = (rel: string) => fs.readFileSync(path.join(ROOT, rel), "utf8").replace(/\r\n/g, "\n");
 
 function slice(src: string, start: string, end: string, label: string): string {

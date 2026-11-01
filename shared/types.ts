@@ -49,9 +49,6 @@ export type NotificationStatus = "pending" | "sent" | "failed" | "delivered";
 // Supported languages
 export type Language = "en" | "ar" | "ku" | "zh" | "tr" | "fa";
 
-// RTL languages
-export const RTL_LANGUAGES: Language[] = ["ar", "ku", "fa"];
-
 // Currency codes
 export type Currency = "USD" | "IQD" | "RMB" | "CNY";
 
@@ -69,38 +66,6 @@ export const CUSTOMER_CODE_PREFIXES = [
 
 export type CustomerCodePrefix = typeof CUSTOMER_CODE_PREFIXES[number]["value"];
 
-// Status display mapping
-export const PACKAGE_STATUS_LABELS: Record<PackageStatus, string> = {
-  registered: "Registered",
-  in_batch: "In Batch",
-  in_transit: "In Transit",
-  customs_processing: "Customs Processing",
-  ready_for_delivery: "Ready for Delivery",
-  out_for_delivery: "Out for Delivery",
-  delivered: "Delivered",
-  returned: "Returned",
-  cancelled: "Cancelled",
-};
-
-export const SHIPPING_TYPE_LABELS: Record<ShippingType, string> = {
-  air_regular: "Air Regular",
-  air_irregular: "Air Irregular",
-  sea: "Sea",
-};
-
-export const WAREHOUSE_TYPE_LABELS: Record<WarehouseType, string> = {
-  air: "Air",
-  sea: "Sea",
-  custom: "Custom",
-};
-
-export const LEDGER_ENTRY_TYPE_LABELS: Record<LedgerEntryType, string> = {
-  charge: "Charge",
-  payment: "Payment",
-  refund: "Refund",
-  adjustment: "Adjustment",
-};
-
 // Generate customer code in format {PREFIX}{number}({Name})
 // Uses 3-digit padding: AZ001, QI002, etc.
 export function generateCustomerCode(sequenceNumber: number, name: string, prefix: string = "AZ"): string {
@@ -117,9 +82,4 @@ export function formatCurrency(amount: number, currency: Currency = "USD"): stri
     CNY: new Intl.NumberFormat("zh-CN", { style: "currency", currency: "CNY" }),
   };
   return formatters[currency].format(amount);
-}
-
-// Calculate volume in CBM
-export function calculateVolumeCbm(lengthCm: number, widthCm: number, heightCm: number): number {
-  return (lengthCm * widthCm * heightCm) / 1000000;
 }

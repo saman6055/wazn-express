@@ -2,6 +2,9 @@ import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A failed request must never read as "you have nothing".
  *
@@ -15,7 +18,7 @@ import path from "path";
  * the rest are converted; it must never shrink.
  */
 
-const PORTAL = path.resolve(__dirname, "pages/portal");
+const PORTAL = path.resolve(ROOT_DIR, "pages/portal");
 
 /**
  * Every portal screen that fetches data. The list is derived rather than
@@ -44,7 +47,7 @@ describe("a dropped request is not an empty account", () => {
 
   it("the error state itself offers a way out", () => {
     const src = fs.readFileSync(
-      path.resolve(__dirname, "components/portal/PortalErrorState.tsx"),
+      path.resolve(ROOT_DIR, "components/portal/PortalErrorState.tsx"),
       "utf8",
     );
     // Offline is something the customer can act on; a server error is not.

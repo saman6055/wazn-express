@@ -2,12 +2,15 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * A sign-in must not tell a stranger which phone numbers are accounts.
  * The login procedures need a database to run, so these read the source:
  * which answer each kind of miss gets, and in what order the checks happen.
  */
-const SRC = fs.readFileSync(path.resolve(__dirname, "routers/auth.router.ts"), "utf8");
+const SRC = fs.readFileSync(path.resolve(ROOT_DIR, "routers/auth.router.ts"), "utf8");
 
 function body(name: string): string {
   const start = SRC.indexOf(`${name}: publicProcedure`);
@@ -72,8 +75,8 @@ describe("the wait", () => {
  * password was refused too and the reset looked like it had done nothing.
  */
 describe("a shut-out customer can be seen and let back in", () => {
-  const CENTER = fs.readFileSync(path.resolve(__dirname, "routers/portalCenter.router.ts"), "utf8");
-  const CUSTOMERS_DB = fs.readFileSync(path.resolve(__dirname, "db/customers.db.ts"), "utf8");
+  const CENTER = fs.readFileSync(path.resolve(ROOT_DIR, "routers/portalCenter.router.ts"), "utf8");
+  const CUSTOMERS_DB = fs.readFileSync(path.resolve(ROOT_DIR, "db/customers.db.ts"), "utf8");
 
   function slice(src: string, from: string, to: string): string {
     const a = src.indexOf(from);

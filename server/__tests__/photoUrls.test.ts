@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { classifyPhotoUrl, localUploadFileName, prunePhotoList } from './lib/photoUrls';
+import { classifyPhotoUrl, localUploadFileName, prunePhotoList } from '../lib/photoUrls';
 
 /**
  * These rules decide what gets deleted, so the tests are written from the

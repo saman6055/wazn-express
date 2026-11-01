@@ -1,7 +1,10 @@
 import { describe, it, expect } from "vitest";
 import fs from "fs";
 import path from "path";
-import { isSelfOrder, SELF_ORDER_FROM } from "./lib/selfOrder";
+import { isSelfOrder, SELF_ORDER_FROM } from "../lib/selfOrder";
+
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
 
 /**
  * A self order is a parcel we ship but never bought. Two very different parts
@@ -51,7 +54,7 @@ describe("only one copy of the rule exists", () => {
   // the report and the portal would drift apart, and it would show up as a
   // customer seeing a parcel in the wrong tab long before anyone noticed the
   // revenue was double-counted.
-  const ROOT = path.resolve(__dirname);
+  const ROOT = path.resolve(ROOT_DIR);
 
   function serverFiles(dir: string): string[] {
     const out: string[] = [];
@@ -89,8 +92,8 @@ describe("only one copy of the rule exists", () => {
 });
 
 describe("a parcel finds its order however the order records the tracking", () => {
-  const pkgDb = fs.readFileSync(path.resolve(__dirname, "db/packages.db.ts"), "utf8");
-  const fpDb = fs.readFileSync(path.resolve(__dirname, "db/fullPackage.db.ts"), "utf8");
+  const pkgDb = fs.readFileSync(path.resolve(ROOT_DIR, "db/packages.db.ts"), "utf8");
+  const fpDb = fs.readFileSync(path.resolve(ROOT_DIR, "db/fullPackage.db.ts"), "utf8");
 
   /**
    * The bug this exists to stop coming back.
@@ -142,8 +145,8 @@ describe("a parcel finds its order however the order records the tracking", () =
 });
 
 describe("an order that missed its parcel can be told to look again", () => {
-  const router = fs.readFileSync(path.resolve(__dirname, "routers/fullPackage.router.ts"), "utf8");
-  const pkgDb = fs.readFileSync(path.resolve(__dirname, "db/packages.db.ts"), "utf8");
+  const router = fs.readFileSync(path.resolve(ROOT_DIR, "routers/fullPackage.router.ts"), "utf8");
+  const pkgDb = fs.readFileSync(path.resolve(ROOT_DIR, "db/packages.db.ts"), "utf8");
 
   /**
    * The link was written on order create, order edit, and add-tracking — and
@@ -235,7 +238,7 @@ describe("self orders start on the day the feature did", () => {
   it("the SQL rule draws the same line", () => {
     // Both readers must use the one constant, or the money report and the
     // portal disagree about which parcels are whose.
-    const filter = fs.readFileSync(path.resolve(__dirname, "db/selfOrder.filter.ts"), "utf8");
+    const filter = fs.readFileSync(path.resolve(ROOT_DIR, "db/selfOrder.filter.ts"), "utf8");
     expect(filter).toContain("gte(packages.registeredAt, SELF_ORDER_FROM)");
     expect(filter, "and import it rather than restate the date")
       .toContain('import { SELF_ORDER_FROM } from "../lib/selfOrder"');
@@ -276,7 +279,7 @@ describe("an order number in the system settles it", () => {
   });
 
   it("the SQL rule asks the same question", () => {
-    const filter = fs.readFileSync(path.resolve(__dirname, "db/selfOrder.filter.ts"), "utf8");
+    const filter = fs.readFileSync(path.resolve(ROOT_DIR, "db/selfOrder.filter.ts"), "utf8");
     // Both places an order can record a tracking number.
     expect(filter).toContain("NOT EXISTS");
     expect(filter).toContain("fullPackageOrders");

@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * The window before a box receipt is printed (owner, 2026-09-17).
  *
@@ -14,7 +17,7 @@ import path from "path";
  * window previewing a figure the receipt does not print.
  */
 
-const SRC = __dirname;
+const SRC = ROOT_DIR;
 const read = (p: string) => fs.readFileSync(path.join(SRC, p), "utf8").replace(/\r\n/g, "\n");
 const readRoot = (p: string) => fs.readFileSync(path.resolve(SRC, "../..", p), "utf8").replace(/\r\n/g, "\n");
 
@@ -123,7 +126,7 @@ describe("the last payment's rate", () => {
  */
 describe("the window says what is in the box", () => {
   it("one sum of what the parcels physically are, shared by both ways in", async () => {
-    const { boxPhysicalTotals } = await import("./lib/deliveryBoxPrintUtils");
+    const { boxPhysicalTotals } = await import("../lib/deliveryBoxPrintUtils");
     // An air box: the kilos.
     expect(boxPhysicalTotals({ totalWeightKg: "0" }, [{ weightKg: "2.500" }, { weightKg: "1.5" }])).toEqual({ kg: 4, cbm: 0 });
     // A sea box that was also weighed: both, because both are recorded.

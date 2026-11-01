@@ -2,6 +2,9 @@ import { describe, expect, it } from "vitest";
 import fs from "fs";
 import path from "path";
 
+/** This test's old home: paths below are read from here. */
+const ROOT_DIR = path.resolve(__dirname, "..");
+
 /**
  * Quick Register, arranged the way the work actually goes (owner, 2026-09-23).
  *
@@ -18,7 +21,7 @@ import path from "path";
  */
 
 const page = fs
-  .readFileSync(path.join(__dirname, "pages", "QuickRegister.tsx"), "utf8")
+  .readFileSync(path.join(ROOT_DIR, "pages", "packages", "QuickRegister.tsx"), "utf8")
   .replace(/\r\n/g, "\n");
 
 const at = (needle: string) => {
@@ -257,7 +260,7 @@ describe("the scanned order, at a glance", () => {
     // as one blurred stripe of itself.
     const card = page.slice(at("وێنەی داواکاری"), at("وێنەی گەیشتن"));
     expect(card).toContain('fit="contain"');
-    const stack = fs.readFileSync(path.join(__dirname, "components", "PhotoStack.tsx"), "utf8");
+    const stack = fs.readFileSync(path.join(ROOT_DIR, "components", "PhotoStack.tsx"), "utf8");
     expect(stack).toContain('fit === "contain" ? "object-contain" : "object-cover"');
     // The default stays a cropped square: every row thumbnail relies on it.
     expect(stack).toContain('fit = "cover"');

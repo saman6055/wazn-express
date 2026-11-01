@@ -56,19 +56,6 @@ export function useCustomers() {
   };
 }
 
-export function useCustomerById(customerId: number | null) {
-  const query = trpc.customers.getById.useQuery(
-    { id: customerId! },
-    { enabled: customerId != null }
-  );
-  return {
-    customer: query.data,
-    isLoading: query.isLoading,
-    error: query.error,
-    refetch: query.refetch,
-  };
-}
-
 export function useFilteredCustomers(
   customers: Array<{ id: number; fullName?: string; customerCode?: string; mobileNumber?: string; isActive?: boolean; city?: string; serviceTypes?: string[] | null; createdAt?: string | Date | null }>,
   vipCustomerIds: number[] | undefined,
