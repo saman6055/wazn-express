@@ -1,3 +1,5 @@
+import fs from "node:fs";
+import path from "node:path";
 import fs from "fs";
 import path from "path";
 import { describe, expect, it } from "vitest";
@@ -97,5 +99,16 @@ describe("whether the check has anything to say", () => {
     expect(closeCheckWarns({ ...quiet, money: money({ priceMissing: true }) })).toBe(true);
     expect(closeCheckWarns({ ...quiet, money: money({ costMissing: true }) })).toBe(true);
     expect(closeCheckWarns({ ...quiet, money: money({ profitUsd: -1 }) })).toBe(true);
+  });
+});
+
+describe("every card at closing leads to where it is put right", () => {
+  const read = (p: string) => fs.readFileSync(path.resolve(__dirname, "..", p), "utf8");
+  it("a carton knows its order, a box and the batch details are one click away", () => {
+    expect(read("server/db/batchCloseCheck.db.ts")).toContain("orders: sources.get(r.pkg.id) ?? [],");
+    const ui = read("client/src/components/batches/BatchCloseCheck.tsx");
+    expect(ui).toContain("/customer-delivery-scanner?box=${b.boxId}");
+    expect(ui.split("<FixBatchButton onFixBatch={onFixBatch} />").length - 1).toBe(2);
+    expect(read("client/src/pages/Batches.tsx")).toContain("onFixBatch={() => {");
   });
 });

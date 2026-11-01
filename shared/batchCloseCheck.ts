@@ -1,4 +1,5 @@
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "./chargeableWeight";
+import type { ParcelOrderRef } from "./parcelSource";
 
 /**
  * What to know before a batch is closed or marked delivered.
@@ -37,6 +38,8 @@ export interface CloseCheckParcel {
   /** The carton's first photograph, for the row. */
   photo: string | null;
   orderNumbers: string[];
+  /** The orders it belongs to: where the card sends you to deal with it. */
+  orders?: ParcelOrderRef[];
 }
 
 /** A box holding this batch's cartons that still owes money. */

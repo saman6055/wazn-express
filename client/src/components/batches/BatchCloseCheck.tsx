@@ -1,5 +1,6 @@
 import { useRef, useState, type ReactNode } from "react";
-import { AlertTriangle, Banknote, Box, FileDown, Hash, ImageOff, Loader2, PackageX, ScanLine, Scale, Share2, UserX } from "lucide-react";
+import { Link } from "wouter";
+import { AlertTriangle, ArrowLeftRight, Banknote, Box, FileDown, Hash, ImageOff, Loader2, PackageX, ScanLine, Scale, Share2, UserX } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
@@ -178,7 +179,7 @@ function CheckSheetPdfButton({
 }
 
 /** Every new section, in the order a person should read them. */
-export function BatchCloseCheckSections({ audit, batchCode, batchId }: { audit: CloseCheckAudit; batchCode?: string; batchId?: number }) {
+export function BatchCloseCheckSections({ audit, batchCode, batchId, onFixBatch }: { audit: CloseCheckAudit; batchCode?: string; batchId?: number; onFixBatch?: () => void }) {
   const { language } = useLanguage();
   const L = (w: Words) => pickLang(language, w);
   const [open, setOpen] = useState<{ parcel: CloseCheckParcel; reason: Words } | null>(null);
@@ -194,7 +195,7 @@ export function BatchCloseCheckSections({ audit, batchCode, batchId }: { audit: 
 
   return (
     <>
-      <MoneySection money={audit.money ?? null} />
+      <MoneySection money={audit.money ?? null} onFixBatch={onFixBatch} />
 
       <ParcelSection
         icon={<PackageX className="h-4 w-4" />}
@@ -237,7 +238,7 @@ export function BatchCloseCheckSections({ audit, batchCode, batchId }: { audit: 
         batchId={batchId}
       />
 
-      <OtherSection boxes={f.unpaidBoxes ?? []} capped={!!f.unpaidBoxesCapped} missingNumber={f.missingNumber ?? []} />
+      <OtherSection boxes={f.unpaidBoxes ?? []} capped={!!f.unpaidBoxesCapped} missingNumber={f.missingNumber ?? []} onFixBatch={onFixBatch} />
 
       <AlertParcelSheet
         parcel={open ? { ...open.parcel } : null}
@@ -250,7 +251,19 @@ export function BatchCloseCheckSections({ audit, batchCode, batchId }: { audit: 
   );
 }
 
-function MoneySection({ money }: { money: CloseCheckMoney | null }) {
+/** Every warning has a way to where it is put right (owner, 2026-11-01). */
+function FixBatchButton({ onFixBatch }: { onFixBatch?: () => void }) {
+  const { language } = useLanguage();
+  if (!onFixBatch) return null;
+  return (
+    <button type="button" onClick={onFixBatch} className="mt-2 inline-flex items-center gap-1 text-xs font-medium underline underline-offset-2" data-testid="close-check-fix-batch">
+      <ArrowLeftRight className="h-3.5 w-3.5" />
+      {pickLang(language, { ku: "چاککردن لە زانیاری باچ", en: "Fix in the batch details", ar: "الإصلاح في بيانات الدفعة", zh: "在批次资料中修改" })}
+    </button>
+  );
+}
+
+function MoneySection({ money, onFixBatch }: { money: CloseCheckMoney | null; onFixBatch?: () => void }) {
   const { language } = useLanguage();
   const L = (w: Words) => pickLang(language, w);
   if (!money) return null;
@@ -293,6 +306,7 @@ function MoneySection({ money }: { money: CloseCheckMoney | null }) {
           </li>
         )}
       </ul>
+      {(money.costMissing || money.priceMissing) && <FixBatchButton onFixBatch={onFixBatch} />}
     </div>
   );
 }
@@ -421,7 +435,7 @@ function Measure({ parcel }: { parcel: CloseCheckParcel }) {
   return kg > 0 ? <bdi dir="ltr" className="font-mono">{Number(kg.toFixed(2))} kg</bdi> : null;
 }
 
-function OtherSection({ boxes, capped, missingNumber }: { boxes: CloseCheckBox[]; capped: boolean; missingNumber: string[] }) {
+function OtherSection({ boxes, capped, missingNumber, onFixBatch }: { boxes: CloseCheckBox[]; capped: boolean; missingNumber: string[]; onFixBatch?: () => void }) {
   const { language } = useLanguage();
   const L = (w: Words) => pickLang(language, w);
   if (boxes.length === 0 && missingNumber.length === 0) return null;
@@ -449,7 +463,9 @@ function OtherSection({ boxes, capped, missingNumber }: { boxes: CloseCheckBox[]
             {boxes.map((b) => (
               <div key={b.boxId} className="flex flex-wrap items-center gap-2 rounded bg-white/60 dark:bg-black/30 px-2 py-1 text-xs" data-close-check-box={b.boxCode}>
                 <span className="inline-flex items-center gap-1">
-                  <bdi dir="ltr" className="font-mono font-medium">{b.boxCode}</bdi>
+                  <Link href={`/customer-delivery-scanner?box=${b.boxId}`} className="font-mono font-medium underline underline-offset-2" data-testid="close-check-box-link">
+                    <bdi dir="ltr">{b.boxCode}</bdi>
+                  </Link>
                   <CopyButton value={b.boxCode} label={L({ ku: "کۆپی کۆدی بۆکس", en: "Copy box code", ar: "نسخ رمز الصندوق", zh: "复制箱号" })} />
                 </span>
                 {b.customerCode && (
@@ -469,6 +485,7 @@ function OtherSection({ boxes, capped, missingNumber }: { boxes: CloseCheckBox[]
           {L(MISSING_NUMBER[piece] ?? MISSING_NUMBER.awb)}
         </div>
       ))}
+      {missingNumber.length > 0 && <FixBatchButton onFixBatch={onFixBatch} />}
     </div>
   );
 }

@@ -2,7 +2,7 @@ import { and, eq, inArray, ne, or } from "drizzle-orm";
 import { getDb } from "./connection";
 import { batches, countries, customers, deliveryBoxItems, deliveryBoxes, fullPackageOrders, packageScans, packages } from "../../drizzle/schema";
 import { getVolumetricDivisor } from "./settings.db";
-import { orderNumbersForPackages } from "./orderNumbers.db";
+import { orderNumbersForPackages, orderSourcesForPackages } from "./orderNumbers.db";
 import { getBoxesPaidInFull, getBoxSettlementView } from "./boxSettlement.db";
 import {
   lacksBillingMeasure,
@@ -113,7 +113,7 @@ export async function getBatchCloseFacts(batchId: number): Promise<BatchCloseFac
   );
 
   const divisor = await getVolumetricDivisor();
-  const numbers = await orderNumbersForPackages(ids);
+  const [numbers, sources] = await Promise.all([orderNumbersForPackages(ids), orderSourcesForPackages(ids)]);
 
   const carton = (r: (typeof live)[number]): CloseCheckParcel => ({
     id: r.pkg.id,
@@ -133,6 +133,7 @@ export async function getBatchCloseFacts(batchId: number): Promise<BatchCloseFac
     batchId,
     photo: firstPhoto(r.pkg.photos),
     orderNumbers: numbers.get(r.pkg.id) ?? [],
+    orders: sources.get(r.pkg.id) ?? [],
   });
   const has = (idSet: Set<number>, trackingSet: Set<string>, r: (typeof live)[number]) =>
     idSet.has(r.pkg.id) || (!!r.pkg.trackingNumber && trackingSet.has(r.pkg.trackingNumber));
