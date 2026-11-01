@@ -35,7 +35,12 @@ export function printWhenReady(
     } catch {
       // A last touch that fails must never cost the print itself.
     }
+    const asked = Date.now();
     w.print();
+    // Chrome holds here until the dialog is shut, and afterprint does not
+    // always follow, which left the window standing (owner, 2026-11-01). A
+    // browser that does not wait returns at once and closes it by afterprint.
+    if (Date.now() - asked > 200) w.setTimeout(() => w.close(), 300);
   };
 
   const images = Array.from(w.document.images)
@@ -55,6 +60,8 @@ export function printWhenReady(
     // An old engine without the font API: images are enough.
   }
 
-  Promise.all([...images, fonts.catch(() => undefined)]).then(() => setTimeout(print, 50));
-  setTimeout(print, maxWaitMs);
+  // The new window's own timers: the page behind it is in the background
+  // now, and a background page's timers run late.
+  Promise.all([...images, fonts.catch(() => undefined)]).then(() => w.setTimeout(print, 50));
+  w.setTimeout(print, maxWaitMs);
 }

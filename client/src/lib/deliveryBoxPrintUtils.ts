@@ -1369,6 +1369,8 @@ export function buildBoxReceiptHtml(
  * the WhatsApp copy is drawn from — one receipt, whether it is printed at the
  * counter or sent to a phone.
  */
+let receiptWindow: Window | null = null;
+
 export function printBoxReceipt(
   box: BoxForPrint,
   items: BoxItemForPrint[],
@@ -1376,8 +1378,15 @@ export function printBoxReceipt(
   t: TFunc,
   options?: Parameters<typeof buildBoxReceiptHtml>[4],
 ): void {
+  // A second press while the first is printing: a browser ignores the second
+  // print and that window never closes, so go back to the one that is open.
+  if (receiptWindow && !receiptWindow.closed) {
+    receiptWindow.focus();
+    return;
+  }
   const html = buildBoxReceiptHtml(box, items, customer, t, options);
   const w = window.open("", "_blank");
+  receiptWindow = w;
   if (w) {
     w.document.write(html);
     w.document.close();
