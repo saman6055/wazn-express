@@ -1786,3 +1786,45 @@ body {
     transition: none;
   }
 }
+
+/*
+ * Nothing the eye has to narrow for.
+ *
+ * The owner, 2026-11-01: «تێکست و ژمارەش هەتا زەق و دیاربن ئەوەندە چاو
+ * کەمتر ماندوو دەبێ … کامترین نێوان چاوگرژکردن پێویست بێت».
+ *
+ * Two different answers, because they are two different problems.
+ *
+ * The small print is raised for good. 213 places were set at 9, 9.5, 10 or
+ * 10.5 pixels — a size that is read by leaning in. Making it grow only
+ * under the pointer would mean the figure is unreadable until someone
+ * hunts for it, so instead the floor is 11px everywhere, always, and the
+ * line height goes with it so the rows do not crowd.
+ *
+ * The stickers do answer the pointer. A badge is a small coloured thing
+ * a person checks at a glance — paid, owed, how many days — and it grows
+ * when pointed at. It grows by transform rather than by font size, so
+ * nothing on the row moves while it does.
+ */
+@layer utilities {
+  .text-\[9px\], .text-\[9\.5px\], .text-\[10px\], .text-\[10\.5px\] {
+    font-size: 11px;
+    line-height: 1.45;
+  }
+}
+
+@media (hover: hover) and (pointer: fine) {
+  [data-slot="badge"] {
+    transition: transform 140ms ease, box-shadow 140ms ease;
+  }
+  [data-slot="badge"]:hover {
+    transform: scale(1.14);
+    box-shadow: 0 2px 10px -3px rgb(0 0 0 / 0.28);
+    position: relative;
+    z-index: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="badge"] { transition: none; }
+  [data-slot="badge"]:hover { transform: none; }
+}
