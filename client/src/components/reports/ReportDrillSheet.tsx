@@ -40,6 +40,67 @@ export interface DrillColumn<T> {
   className?: string;
 }
 
+/** One line of a figure that is itself a sum of other figures. */
+export interface DrillPart {
+  label: string;
+  amount: number;
+  /** Set when this line has records of its own to open. */
+  open?: () => void;
+  href?: string;
+}
+
+export interface PartsDrillState {
+  title: string;
+  rows: DrillPart[];
+  manage?: { href: string; label: string };
+}
+
+/**
+ * A figure the server added up from other figures: the lines of it, from the
+ * same object the card reads, each opening its records where they exist.
+ */
+export function PartsDrill({
+  drill,
+  format,
+  testId,
+  onClose,
+}: {
+  drill: PartsDrillState | null;
+  format: (n: number) => string;
+  testId: string;
+  onClose: () => void;
+}) {
+  const { language } = useTranslation();
+  const columns: DrillColumn<DrillPart>[] = [
+    {
+      header: pickLang(language, { ku: "بەش", en: "Line", ar: "البند", zh: "项目" }),
+      cell: (p) => {
+        if (p.open) return <button type="button" className="text-start text-sky-700 underline dark:text-sky-300" onClick={p.open}>{p.label}</button>;
+        if (p.href) return <RecordLink href={p.href}>{p.label}</RecordLink>;
+        return p.label;
+      },
+    },
+    {
+      header: pickLang(language, { ku: "بڕ", en: "Amount", ar: "المبلغ", zh: "金额" }),
+      ltr: true,
+      cell: (p) => format(p.amount),
+      total: (rows) => format(rows.reduce((n, p) => n + p.amount, 0)),
+    },
+  ];
+  return (
+    <ReportDrillSheet
+      open={!!drill}
+      title={drill?.title ?? ""}
+      rows={drill?.rows ?? []}
+      columns={columns}
+      rowKey={(_, i) => i}
+      testId={testId}
+      onClose={onClose}
+      manage={drill?.manage}
+    />
+  );
+}
+
 export function ReportDrillSheet<T>({
   open,
   title,

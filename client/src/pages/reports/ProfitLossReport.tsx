@@ -19,6 +19,8 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { toast } from "sonner";
+import { DRILL_CARD, PartsDrill, type DrillPart, type PartsDrillState } from "@/components/reports/ReportDrillSheet";
+import { ExpensesDrill, type ExpenseDrill } from "@/components/reports/ExpensesDrill";
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip,
   ResponsiveContainer, Cell, PieChart, Pie, Legend,
@@ -154,6 +156,41 @@ export default function ProfitLossReport() {
   const fmt = (v: number) => `$${v.toLocaleString("en-GB")}`;
   const pct = (v: number, total: number) => total > 0 ? `${((v / total) * 100).toFixed(1)}%` : "0%";
 
+  // Every figure opens what it was added up from (owner, 2026-11-02).
+  const [parts, setParts] = useState<PartsDrillState | null>(null);
+  const [partsAreCounts, setPartsAreCounts] = useState(false);
+  const [expenseDrill, setExpenseDrill] = useState<ExpenseDrill | null>(null);
+
+  const openExpenses = (title: string, expected: number, categoryId?: number) => {
+    setParts(null);
+    setExpenseDrill({ title, startDate, endDate, categoryId, expected });
+  };
+  const revenueLines: DrillPart[] = [
+    { label: t("profitLoss.packageShipping"), amount: pnl?.revenue.packageShipping ?? 0 },
+    { label: t("profitLoss.fullPackageProfit"), amount: pnl?.revenue.fullPackageProfit ?? 0 },
+    { label: t("profitLoss.commissionProfit"), amount: pnl?.revenue.commissionProfit ?? 0 },
+    { label: t("profitLoss.serviceRevenue"), amount: pnl?.revenue.serviceRevenue ?? 0 },
+  ];
+  const grossLines: DrillPart[] = [
+    ...revenueLines,
+    { label: t("profitLoss.fullPackageCost"), amount: -(pnl?.costOfRevenue.fullPackageCost ?? 0) },
+    { label: t("profitLoss.commissionCost"), amount: -(pnl?.costOfRevenue.commissionCost ?? 0) },
+    { label: t("profitLoss.serviceCost"), amount: -(pnl?.costOfRevenue.serviceCost ?? 0) },
+  ];
+  const netLines: DrillPart[] = [
+    ...grossLines,
+    { label: t("profitLoss.totalExpenses"), amount: -(pnl?.expenses.totalExpenses ?? 0), open: () => openExpenses(t("profitLoss.totalExpenses"), pnl?.expenses.totalExpenses ?? 0) },
+  ];
+  const openLines = (title: string, rows: DrillPart[], counts = false) => {
+    setPartsAreCounts(counts);
+    setParts({ title, rows });
+  };
+  const openRevenue = () => openLines(t("profitLoss.totalRevenue"), revenueLines);
+  const openGross = () => openLines(t("profitLoss.grossProfit"), grossLines);
+  const openNet = () => openLines(t("profitLoss.netProfit"), netLines);
+  const openAllExpenses = () => openExpenses(t("profitLoss.totalExpenses"), pnl?.expenses.totalExpenses ?? 0);
+  const categoryName = (c: { categoryName: string; categoryNameKu: string }) => (language === "ku" || language === "ar" ? c.categoryNameKu : c.categoryName);
+
   return (
     <DashboardLayout>
       <div className="space-y-8">
@@ -200,43 +237,53 @@ export default function ProfitLossReport() {
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
-          <FinancialCard
-            title={t("profitLoss.totalRevenue")}
-            value={pnl?.revenue.totalRevenue ?? 0}
-            icon={<TrendingUp className="h-6 w-6" />}
-            color="green"
-            prefix="$"
-          />
-          <FinancialCard
-            title={t("profitLoss.grossProfit")}
-            value={pnl?.grossProfit ?? 0}
-            icon={<DollarSign className="h-6 w-6" />}
-            color="blue"
-            prefix="$"
-          />
-          <FinancialCard
-            title={t("profitLoss.totalExpenses")}
-            value={pnl?.expenses.totalExpenses ?? 0}
-            icon={<TrendingDown className="h-6 w-6" />}
-            color="red"
-            prefix="$"
-            isDebt
-          />
-          <FinancialCard
-            title={t("profitLoss.netProfit")}
-            value={pnl?.netProfit ?? 0}
-            icon={<Receipt className="h-6 w-6" />}
-            color={(pnl?.netProfit ?? 0) >= 0 ? "green" : "red"}
-            prefix="$"
-            isDebt={(pnl?.netProfit ?? 0) < 0}
-          />
-          <FinancialCard
-            title={t("profitLoss.profitMargin")}
-            value={pnl?.profitMargin ?? 0}
-            icon={<Percent className="h-6 w-6" />}
-            color="purple"
-            prefix=""
-          />
+          <div className={`rounded-xl ${DRILL_CARD}`} data-testid="profit-loss-card" onClick={openRevenue}>
+            <FinancialCard
+              title={t("profitLoss.totalRevenue")}
+              value={pnl?.revenue.totalRevenue ?? 0}
+              icon={<TrendingUp className="h-6 w-6" />}
+              color="green"
+              prefix="$"
+            />
+          </div>
+          <div className={`rounded-xl ${DRILL_CARD}`} data-testid="profit-loss-card" onClick={openGross}>
+            <FinancialCard
+              title={t("profitLoss.grossProfit")}
+              value={pnl?.grossProfit ?? 0}
+              icon={<DollarSign className="h-6 w-6" />}
+              color="blue"
+              prefix="$"
+            />
+          </div>
+          <div className={`rounded-xl ${DRILL_CARD}`} data-testid="profit-loss-card" onClick={openAllExpenses}>
+            <FinancialCard
+              title={t("profitLoss.totalExpenses")}
+              value={pnl?.expenses.totalExpenses ?? 0}
+              icon={<TrendingDown className="h-6 w-6" />}
+              color="red"
+              prefix="$"
+              isDebt
+            />
+          </div>
+          <div className={`rounded-xl ${DRILL_CARD}`} data-testid="profit-loss-card" onClick={openNet}>
+            <FinancialCard
+              title={t("profitLoss.netProfit")}
+              value={pnl?.netProfit ?? 0}
+              icon={<Receipt className="h-6 w-6" />}
+              color={(pnl?.netProfit ?? 0) >= 0 ? "green" : "red"}
+              prefix="$"
+              isDebt={(pnl?.netProfit ?? 0) < 0}
+            />
+          </div>
+          <div className={`rounded-xl ${DRILL_CARD}`} data-testid="profit-loss-card" onClick={openNet}>
+            <FinancialCard
+              title={t("profitLoss.profitMargin")}
+              value={pnl?.profitMargin ?? 0}
+              icon={<Percent className="h-6 w-6" />}
+              color="purple"
+              prefix=""
+            />
+          </div>
         </div>
 
         {/* Revenue Breakdown */}
@@ -366,7 +413,7 @@ export default function ProfitLossReport() {
                       <td className="px-6 py-2 text-end font-medium text-green-600 dark:text-green-300">{fmt(pnl?.revenue.serviceRevenue ?? 0)}</td>
                       <td className="px-6 py-2 text-end text-muted-foreground">{pct(pnl?.revenue.serviceRevenue ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
                     </tr>
-                    <tr className="border-y-2 border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-950/30">
+                    <tr className="cursor-pointer border-y-2 border-green-300 dark:border-green-800 bg-green-50 dark:bg-green-950/30" data-testid="profit-loss-row" onClick={openRevenue}>
                       <td className="px-6 py-2.5 font-bold">{t("profitLoss.totalRevenue")}</td>
                       <td className="px-6 py-2.5 text-end font-bold text-green-700 dark:text-green-400">{fmt(pnl?.revenue.totalRevenue ?? 0)}</td>
                       <td className="px-6 py-2.5 text-end font-bold">100%</td>
@@ -398,7 +445,7 @@ export default function ProfitLossReport() {
                     </tr>
 
                     {/* Gross Profit */}
-                    <tr className="border-y-2 border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30">
+                    <tr className="cursor-pointer border-y-2 border-blue-300 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/30" data-testid="profit-loss-row" onClick={openGross}>
                       <td className="px-6 py-2.5 font-bold">{t("profitLoss.grossProfit")}</td>
                       <td className="px-6 py-2.5 text-end font-bold text-blue-700 dark:text-blue-400">{fmt(pnl?.grossProfit ?? 0)}</td>
                       <td className="px-6 py-2.5 text-end font-bold">{pct(pnl?.grossProfit ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
@@ -414,7 +461,7 @@ export default function ProfitLossReport() {
                       </td>
                     </tr>
                     {pnl?.expenses.byCategory.map((cat) => (
-                      <tr key={cat.categoryId} className="border-b border-muted/30 hover:bg-muted/20">
+                      <tr key={cat.categoryId} className="cursor-pointer border-b border-muted/30 hover:bg-muted/20" data-testid="profit-loss-row" onClick={() => openExpenses(categoryName(cat), cat.total, cat.categoryId)}>
                         <td className="px-6 py-2 ps-10">
                           {language === "ku" || language === "ar" ? cat.categoryNameKu : cat.categoryName}
                         </td>
@@ -422,7 +469,7 @@ export default function ProfitLossReport() {
                         <td className="px-6 py-2 text-end text-muted-foreground">{pct(cat.total, pnl?.revenue.totalRevenue ?? 0)}</td>
                       </tr>
                     ))}
-                    <tr className="border-y-2 border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30">
+                    <tr className="cursor-pointer border-y-2 border-red-300 dark:border-red-800 bg-red-50 dark:bg-red-950/30" data-testid="profit-loss-row" onClick={openAllExpenses}>
                       <td className="px-6 py-2.5 font-bold">{t("profitLoss.totalExpenses")}</td>
                       <td className="px-6 py-2.5 text-end font-bold text-red-700 dark:text-red-400">({fmt(pnl?.expenses.totalExpenses ?? 0)})</td>
                       <td className="px-6 py-2.5 text-end font-bold">{pct(pnl?.expenses.totalExpenses ?? 0, pnl?.revenue.totalRevenue ?? 0)}</td>
@@ -432,7 +479,7 @@ export default function ProfitLossReport() {
                     <tr><td className="py-2" colSpan={3} /></tr>
 
                     {/* Net Profit */}
-                    <tr className={`border-y-4 ${(pnl?.netProfit ?? 0) >= 0 ? "border-emerald-400 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30" : "border-red-400 dark:border-red-700 bg-red-50 dark:bg-red-950/30"}`}>
+                    <tr className={`cursor-pointer border-y-4 ${(pnl?.netProfit ?? 0) >= 0 ? "border-emerald-400 dark:border-emerald-700 bg-emerald-50 dark:bg-emerald-950/30" : "border-red-400 dark:border-red-700 bg-red-50 dark:bg-red-950/30"}`} data-testid="profit-loss-row" onClick={openNet}>
                       <td className="px-6 py-3 text-base font-extrabold">{t("profitLoss.netProfit")}</td>
                       <td className={`px-6 py-3 text-end text-base font-extrabold ${(pnl?.netProfit ?? 0) >= 0 ? "text-emerald-700 dark:text-emerald-400" : "text-red-700 dark:text-red-400"}`}>
                         {(pnl?.netProfit ?? 0) >= 0 ? fmt(pnl?.netProfit ?? 0) : `(${fmt(Math.abs(pnl?.netProfit ?? 0))})`}
@@ -577,7 +624,7 @@ export default function ProfitLossReport() {
           <DashboardSection title={t("profitLoss.ordersSummary")}>
             <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
               {/* Best Revenue Source */}
-              <Card className="border-0 shadow-lg overflow-hidden">
+              <Card className={`border-0 shadow-lg overflow-hidden ${DRILL_CARD}`} data-testid="profit-loss-card" onClick={openRevenue}>
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-amber-500 to-amber-600 text-white">
@@ -591,7 +638,11 @@ export default function ProfitLossReport() {
               </Card>
 
               {/* Biggest Expense */}
-              <Card className="border-0 shadow-lg overflow-hidden">
+              <Card
+                className={`border-0 shadow-lg overflow-hidden ${metrics.biggestExpense ? DRILL_CARD : ""}`}
+                data-testid="profit-loss-card"
+                onClick={() => { if (metrics.biggestExpense) openExpenses(categoryName(metrics.biggestExpense), metrics.biggestExpense.total, metrics.biggestExpense.categoryId); }}
+              >
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-red-500 to-red-600 text-white">
@@ -611,7 +662,16 @@ export default function ProfitLossReport() {
               </Card>
 
               {/* Orders Summary */}
-              <Card className="border-0 shadow-lg overflow-hidden">
+              <Card
+                className={`border-0 shadow-lg overflow-hidden ${DRILL_CARD}`}
+                data-testid="profit-loss-card"
+                onClick={() => openLines(t("profitLoss.ordersSummary"), [
+                  { label: t("profitLoss.packageShipping"), amount: pnl.orderCounts.packages },
+                  { label: "FP", amount: pnl.orderCounts.fullPackage },
+                  { label: t("profitLoss.commission"), amount: pnl.orderCounts.commission },
+                  { label: t("profitLoss.services"), amount: pnl.orderCounts.services },
+                ], true)}
+              >
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-blue-600 text-white">
@@ -630,7 +690,7 @@ export default function ProfitLossReport() {
               </Card>
 
               {/* Profit Health */}
-              <Card className="border-0 shadow-lg overflow-hidden">
+              <Card className={`border-0 shadow-lg overflow-hidden ${DRILL_CARD}`} data-testid="profit-loss-card" onClick={openNet}>
                 <CardContent className="p-5">
                   <div className="flex items-center gap-3 mb-3">
                     <div className={`flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br text-white ${
@@ -657,6 +717,9 @@ export default function ProfitLossReport() {
           </DashboardSection>
         )}
       </div>
+
+      <PartsDrill drill={parts} format={partsAreCounts ? String : fmt} testId="profit-loss-drill" onClose={() => setParts(null)} />
+      <ExpensesDrill drill={expenseDrill} onClose={() => setExpenseDrill(null)} />
     </DashboardLayout>
   );
 }
