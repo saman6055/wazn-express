@@ -47,7 +47,7 @@ function staffPage(load: () => Promise<{ default: ComponentType }>) {
 // ---------------------------------------------------------------------------
 // Core & Home
 // ---------------------------------------------------------------------------
-const Home = lazy(() => import("./pages/Home"));
+const Home = lazy(() => import("./pages/home/Home"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 
 // ---------------------------------------------------------------------------

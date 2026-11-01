@@ -35,7 +35,7 @@ describe("the company mark without its white tile", () => {
   });
 
   it("the public site passes its own theme, since it is not the app theme", () => {
-    for (const rel of ["pages/Home.tsx", "pages/HomeClassic.tsx", "pages/HomeMinimal.tsx"]) {
+    for (const rel of ["pages/home/Home.tsx", "pages/home/HomeClassic.tsx", "pages/home/HomeMinimal.tsx"]) {
       const src = read(rel);
       const tags = src.match(/<CompanyLogo\b/g) ?? [];
       const themed = src.match(/<CompanyLogo surface=\{landingTheme === "light" \? "light" : "dark"\}/g) ?? [];

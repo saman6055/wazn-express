@@ -31,10 +31,7 @@ const CUSTOMER_FACING = [
   ...walk(path.join(SRC, "pages/portal")),
   ...walk(path.join(SRC, "components/portal")),
   ...walk(path.join(SRC, "pages/store")),
-  ...fs
-    .readdirSync(path.join(SRC, "pages"))
-    .filter((f) => /^Home[A-Za-z]*\.tsx$/.test(f))
-    .map((f) => path.join(SRC, "pages", f)),
+  ...walk(path.join(SRC, "pages/home")),
 ];
 
 /**
@@ -48,7 +45,7 @@ const rel = (file: string) => path.relative(SRC, file).replace(/\\/g, "/");
 describe("a customer's WhatsApp button opens Wazn's chat directly", () => {
   it("covers the portal, the store and the website", () => {
     expect(CUSTOMER_FACING.length).toBeGreaterThan(60);
-    expect(CUSTOMER_FACING.map(rel)).toContain("pages/HomeModern.tsx");
+    expect(CUSTOMER_FACING.map(rel)).toContain("pages/home/HomeModern.tsx");
   });
 
   it("every chat link is built by lib/waznChat — no hand-made wa.me link", () => {
@@ -72,7 +69,7 @@ describe("a customer's WhatsApp button opens Wazn's chat directly", () => {
   });
 
   it("the website's buttons use Wazn's WhatsApp, not a phone line from settings", () => {
-    for (const file of ["pages/HomeModern.tsx", "pages/HomeLogistick.tsx", "pages/HomeProfessional.tsx", "pages/HomeMinimal.tsx"]) {
+    for (const file of ["pages/home/HomeModern.tsx", "pages/home/HomeLogistick.tsx", "pages/home/HomeProfessional.tsx", "pages/home/HomeMinimal.tsx"]) {
       const src = read(file);
       expect(src, file).toMatch(/waznChat(Url|Message)|openWaznChat/);
       expect(src, file).not.toMatch(/company\.phone \|\| ""\)\.replace/);
