@@ -11,6 +11,9 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useState, useMemo } from "react";
+import { packagesHref } from "@shared/listLinks";
+import { DRILL_CARD, PartsDrill, RecordLink, type PartsDrillState } from "@/components/reports/ReportDrillSheet";
+import { BatchCustomersSheet } from "@/components/reports/BatchCustomersSheet";
 import { 
   ArrowLeft, 
   DollarSign, 
@@ -99,6 +102,9 @@ export default function BatchFinancialReportFull() {
   // State for customer modal
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<{ id: number; name: string; code: string } | null>(null);
+  // Every figure opens what it was added up from (owner, 2026-11-02).
+  const [customersDrill, setCustomersDrill] = useState<string | null>(null);
+  const [parts, setParts] = useState<PartsDrillState | null>(null);
   
   // Fetch batch data
   const { data: batch, isLoading: batchLoading } = trpc.batches.getById.useQuery(
@@ -156,6 +162,20 @@ export default function BatchFinancialReportFull() {
   const statusLabels: Record<string, string> = Object.fromEntries(
     (Object.keys(STATUS_LABEL) as BatchStatus[]).map(s => [s, pickLang(language, STATUS_LABEL[s])])
   );
+
+  const costLine = () => ({ label: batch?.batchCode ?? "", amount: financial?.totalCost ?? 0, href: `/batches?find=${encodeURIComponent(batch?.batchCode ?? "")}` });
+  const openCost = () => setParts({ title: pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" }), rows: [costLine()] });
+  // A batch still waiting for its cost or price has no profit to break down.
+  const openProfit = () => {
+    if (financial?.waitingFor) return;
+    setParts({
+      title: pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" }),
+      rows: [
+        { label: pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" }), amount: financial?.totalRevenue ?? 0, open: () => { setParts(null); setCustomersDrill(pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })); } },
+        { ...costLine(), label: pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" }), amount: -(financial?.totalCost ?? 0) },
+      ],
+    });
+  };
 
   const shippingTypeLabel = batch?.shippingType === 'sea'
     ? pickLang(language, { ku: 'دەریایی', en: 'Sea', ar: 'بحري', zh: '海运' })
@@ -269,7 +289,7 @@ export default function BatchFinancialReportFull() {
         {/* Executive Summary - 4 Main Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
           {/* Total Cost */}
-          <Card className="border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 shadow-lg">
+          <Card className={`border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 shadow-lg ${DRILL_CARD}`} data-testid="batch-financial-card" onClick={openCost}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
               <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-xl">
@@ -287,7 +307,7 @@ export default function BatchFinancialReportFull() {
           </Card>
           
           {/* Total Revenue */}
-          <Card className="border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 shadow-lg">
+          <Card className={`border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 shadow-lg ${DRILL_CARD}`} data-testid="batch-financial-card" onClick={() => setCustomersDrill(pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" }))}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
               <div className="p-3 bg-green-100 dark:bg-green-950/40 rounded-xl">
@@ -304,7 +324,7 @@ export default function BatchFinancialReportFull() {
           </Card>
           
           {/* Net Profit */}
-          <Card className={`border-2 shadow-lg ${isProfitable 
+          <Card data-testid="batch-financial-card" onClick={openProfit} className={`border-2 shadow-lg ${financial.waitingFor ? "" : DRILL_CARD} ${isProfitable 
             ? 'border-emerald-300 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40' 
             : 'border-red-300 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40'
           }`}>
@@ -343,7 +363,7 @@ export default function BatchFinancialReportFull() {
           </Card>
           
           {/* Profit Margin */}
-          <Card className="border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-indigo-50 dark:to-indigo-950/40 shadow-lg">
+          <Card className={`border-2 border-blue-200 dark:border-blue-800/60 bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-indigo-50 dark:to-indigo-950/40 shadow-lg ${financial.waitingFor ? "" : DRILL_CARD}`} data-testid="batch-financial-card" onClick={openProfit}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-blue-700 dark:text-blue-300">{pickLang(language, { ku: "ڕێژەی قازانج", en: "Profit margin", ar: "هامش الربح", zh: "利润率" })}</CardTitle>
               <div className="p-3 bg-blue-100 dark:bg-blue-950/40 rounded-xl">
@@ -381,7 +401,12 @@ export default function BatchFinancialReportFull() {
               </CardTitle>
             </CardHeader>
             <CardContent className="p-6 space-y-4">
-              <div className="flex justify-between items-center p-5 bg-gradient-to-r from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60">
+              {/* Sea shows the carrier's charged CBM, which is not the customers' sum, so only air opens. */}
+              <div
+                className={`flex justify-between items-center p-5 bg-gradient-to-r from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 rounded-xl border border-amber-200 dark:border-amber-800/60 ${batch.shippingType === 'sea' ? "" : DRILL_CARD}`}
+                data-testid="batch-financial-card"
+                onClick={() => { if (batch.shippingType !== 'sea') setCustomersDrill(pickLang(language, { ku: `${unit} حسابکراو`, en: `Chargeable ${unit}`, ar: `${unit} المحتسب`, zh: `计费 ${unit}` })); }}
+              >
                 <div className="flex items-center gap-4">
                   <div className="p-3 bg-amber-200 dark:bg-amber-900/50 rounded-xl">
                     <Calculator className="h-5 w-5 text-amber-700 dark:text-amber-300" />
@@ -400,11 +425,11 @@ export default function BatchFinancialReportFull() {
               </div>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className="p-4 bg-muted dark:bg-slate-950/40 rounded-xl text-center">
+                <a href={packagesHref({ batch: String(batchId) })} target="_blank" rel="noopener noreferrer" className={`block p-4 bg-muted dark:bg-slate-950/40 rounded-xl text-center ${DRILL_CARD}`} data-testid="batch-financial-card-link">
                   <p className="text-slate-600 dark:text-slate-300 text-sm mb-1">{pickLang(language, { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "包裹总数" })}</p>
                   <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{financial.totalPackages}</p>
-                </div>
-                <div className="p-4 bg-muted dark:bg-slate-950/40 rounded-xl text-center">
+                </a>
+                <div className={`p-4 bg-muted dark:bg-slate-950/40 rounded-xl text-center ${DRILL_CARD}`} data-testid="batch-financial-card" onClick={() => setCustomersDrill(pickLang(language, { ku: "کۆی کڕیار", en: "Total customers", ar: "إجمالي الزبائن", zh: "客户总数" }))}>
                   <p className="text-slate-600 dark:text-slate-300 text-sm mb-1">{pickLang(language, { ku: "کۆی کڕیار", en: "Total customers", ar: "إجمالي الزبائن", zh: "客户总数" })}</p>
                   <p className="text-2xl font-bold text-slate-800 dark:text-slate-200">{financial.customerBreakdown?.length || 0}</p>
                 </div>
@@ -543,15 +568,17 @@ export default function BatchFinancialReportFull() {
                                 {index + 1}
                               </div>
                               <div>
-                                <p className="font-medium text-slate-800 dark:text-slate-200">{getCustomerName(item.customerId)}</p>
+                                <p className="font-medium text-slate-800 dark:text-slate-200"><RecordLink href={`/customers/${item.customerId}`}>{getCustomerName(item.customerId)}</RecordLink></p>
                                 <Badge variant="outline" className="text-xs mt-1">{getCustomerCode(item.customerId)}</Badge>
                               </div>
                             </div>
                           </td>
                           <td className="text-center py-4 px-4">
-                            <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-3 py-1">
-                              {item.packages}
-                            </Badge>
+                            <a href={packagesHref({ batch: String(batchId), search: getCustomerCode(item.customerId) })} target="_blank" rel="noopener noreferrer">
+                              <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300 px-3 py-1">
+                                {item.packages}
+                              </Badge>
+                            </a>
                           </td>
                           <td className="text-center py-4 px-4 font-mono">
                             {batch.shippingType === 'sea' 
@@ -625,7 +652,7 @@ export default function BatchFinancialReportFull() {
         </Card>
 
         {/* Status Summary Card */}
-        <Card className={`border-2 shadow-lg ${isProfitable 
+        <Card data-testid="batch-financial-card" onClick={openProfit} className={`border-2 shadow-lg ${financial.waitingFor ? "" : DRILL_CARD} ${isProfitable 
           ? 'border-green-300 dark:border-green-800/60 bg-gradient-to-r from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40' 
           : 'border-red-300 dark:border-red-800/60 bg-gradient-to-r from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40'
         }`}>
@@ -672,6 +699,17 @@ export default function BatchFinancialReportFull() {
           </CardContent>
         </Card>
       </div>
+
+      <BatchCustomersSheet
+        title={customersDrill}
+        rows={financial.customerBreakdown ?? []}
+        batchId={batchId}
+        sea={batch.shippingType === 'sea'}
+        codeOf={getCustomerCode}
+        nameOf={getCustomerName}
+        onClose={() => setCustomersDrill(null)}
+      />
+      <PartsDrill drill={parts} format={formatCurrency} testId="batch-financial-drill" onClose={() => setParts(null)} />
 
       {/* Customer Packages Modal */}
       <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
