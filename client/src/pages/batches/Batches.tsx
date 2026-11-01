@@ -1660,7 +1660,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       // instead of hanging from the top, and every figure
                       // lines up digit under digit.
                       "[&>td]:align-middle [&>td]:tabular-nums",
-                      "hover:bg-accent hover:shadow-[inset_3px_0_0_0_var(--ring)] rtl:hover:shadow-[inset_-3px_0_0_0_var(--ring)]",
+                      "hover:bg-accent",
+                      // A wash alone was too quiet to find: he looked for it
+                      // and could not say whether anything had changed. So
+                      // the bar is 4px and there is a real glow around the
+                      // row as well - «گلۆ» was the word he used.
+                      "hover:shadow-[inset_4px_0_0_0_var(--ring),0_1px_14px_-4px_var(--ring)]",
+                      "rtl:hover:shadow-[inset_-4px_0_0_0_var(--ring),0_1px_14px_-4px_var(--ring)]",
                       "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1",
                       focusCode === batch.batchCode && "bg-amber-50 ring-2 ring-inset ring-amber-500 dark:bg-amber-950/30",
                     )}

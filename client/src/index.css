@@ -121,35 +121,45 @@
      The owner, 2026-10-31: «باکگراوندەکان تەواو سپی بن … تەرکیز کەم دەکەن،
      هێزی چاو زۆر دەبەن». Cards were oklch(1 0 0) — the brightest a screen
      can paint — and the page behind them 0.985, so the two barely parted
-     and every surface was glare. Now the page drops to 0.955 and cards to
-     0.985, which both calms the screen and TRIPLES the step between them:
-     a card lifts off the page instead of melting into it. The tint is the
-     brand's own hue, kept faint, so the screen reads as one material.
+     and every surface was glare.
+
+     Now the page is 0.902 and the cards 0.962, which calms the screen and
+     puts a sixfold step between them: a card lifts off the page instead of
+     melting into it.
+
+     The two are not the same colour. The owner chose it, 2026-11-01, from
+     three blends: the PAGE is warm (hue 80, a paper tint) and the CARDS
+     stay cool (hue 234, the brand's own), so the screen reads as cool sheets
+     laid on a warm desk. Sidebar, borders and the recessed panels belong to
+     the desk and are warm with it; a card and a popover belong to the paper.
+     Ink is 0.17, darker than the 0.20 it was, because letters the eye has to
+     resolve tire it more than a bright background does.
+
      Printing is unaffected — the print block below pins paper to white. */
-  --background: oklch(0.905 0.005 234);
-  --foreground: oklch(0.20 0.02 234);
-  --card: oklch(0.958 0.004 234);
-  --card-foreground: oklch(0.20 0.02 234);
-  --popover: oklch(0.958 0.004 234);
-  --popover-foreground: oklch(0.20 0.02 234);
-  --secondary: oklch(0.888 0.006 234);
-  --secondary-foreground: oklch(0.35 0.02 234);
-  --muted: oklch(0.872 0.006 234);
-  --muted-foreground: oklch(0.50 0.02 234);
+  --background: oklch(0.902 0.013 80);
+  --foreground: oklch(0.17 0.012 220);
+  --card: oklch(0.962 0.004 234);
+  --card-foreground: oklch(0.17 0.012 220);
+  --popover: oklch(0.962 0.004 234);
+  --popover-foreground: oklch(0.17 0.012 220);
+  --secondary: oklch(0.885 0.014 80);
+  --secondary-foreground: oklch(0.30 0.014 220);
+  --muted: oklch(0.868 0.015 80);
+  --muted-foreground: oklch(0.43 0.013 220);
   --accent: oklch(0.905 0.028 234);
   --accent-foreground: oklch(0.32 0.075 234);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
   /* Edges darken with the surfaces, or a hairline drawn for white paper
      disappears against a page that is no longer white. */
-  --border: oklch(0.830 0.008 234);
-  --input: oklch(0.830 0.008 234);
+  --border: oklch(0.828 0.016 80);
+  --input: oklch(0.828 0.016 80);
   --ring: oklch(0.52 0.145 234);
-  --sidebar: oklch(0.895 0.006 234);
-  --sidebar-foreground: oklch(0.20 0.02 234);
+  --sidebar: oklch(0.892 0.013 80);
+  --sidebar-foreground: oklch(0.17 0.012 220);
   --sidebar-accent: oklch(0.905 0.028 234);
   --sidebar-accent-foreground: oklch(0.32 0.075 234);
-  --sidebar-border: oklch(0.830 0.008 234);
+  --sidebar-border: oklch(0.828 0.016 80);
   --sidebar-ring: oklch(0.52 0.145 234);
   
   /* Status colors */
