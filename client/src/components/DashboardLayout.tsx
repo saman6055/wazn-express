@@ -813,16 +813,28 @@ function DashboardLayoutContent({
                     setFlyoutGroup((prev) => (prev === group.id ? null : group.id));
                   }}
                   className={cn(
-                    "w-11 h-11 rounded-xl flex items-center justify-center transition-colors",
-                    isFlyoutOpen && "ring-2 ring-orange-400 dark:ring-orange-500",
+                    /*
+                     * The owner, 2026-11-01: the rail's icons should light up
+                     * under the pointer. A tile that only swaps its fill is
+                     * easy to miss at 44px; the glow is a ring plus a soft
+                     * halo in the brand's own colour, so the thing under the
+                     * cursor is unmistakable without moving the layout.
+                     * Motion is dropped for anyone who asked for less of it.
+                     */
+                    "group w-11 h-11 rounded-xl flex items-center justify-center",
+                    "transition-[background-color,box-shadow,transform] duration-150",
+                    "hover:ring-2 hover:ring-[var(--ring)] hover:shadow-[0_0_14px_-2px_var(--ring)]",
+                    "motion-safe:hover:-translate-y-px motion-reduce:transition-none",
+                    "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ring)]",
+                    isFlyoutOpen && "ring-2 ring-[var(--ring)] shadow-[0_0_14px_-2px_var(--ring)]",
                     hasActiveItem
-                      ? colorClasses.activeBg
-                      : "bg-gray-100 dark:bg-gray-700 hover:bg-orange-100 dark:hover:bg-orange-900/40"
+                      ? cn(colorClasses.activeBg, "shadow-[0_0_12px_-3px_var(--ring)]")
+                      : "bg-muted hover:bg-accent"
                   )}
                 >
                   <group.icon className={cn(
                     "h-5 w-5 transition-colors",
-                    hasActiveItem ? colorClasses.icon : "text-gray-500 dark:text-gray-400"
+                    hasActiveItem ? colorClasses.icon : "text-muted-foreground group-hover:text-accent-foreground"
                   )} />
                 </button>
               );
