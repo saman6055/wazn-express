@@ -1682,6 +1682,7 @@ export async function getFullPackageProfitReport(filters?: {
     status: string;
     deliveredDate: Date | null;
     createdAt: Date;
+    deletedAt: Date | null;
   }>;
   summary: {
     totalOrders: number;
@@ -1732,6 +1733,7 @@ export async function getFullPackageProfitReport(filters?: {
     status: fullPackageOrders.status,
     deliveredDate: fullPackageOrders.deliveredDate,
     createdAt: fullPackageOrders.createdAt,
+    deletedAt: fullPackageOrders.deletedAt,
     customerName: customers.fullName,
   })
     .from(fullPackageOrders)
@@ -1762,6 +1764,7 @@ export async function getFullPackageProfitReport(filters?: {
       status: order.status || 'pending',
       deliveredDate: order.deliveredDate,
       createdAt: order.createdAt!,
+      deletedAt: order.deletedAt,
     };
   });
   
