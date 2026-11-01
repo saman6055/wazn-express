@@ -1895,6 +1895,25 @@ export const packagesRouter = router({
         });
         return { success: true };
       }),
+    /** Proven lost. A record only: any compensation is entered by hand (client: UncheckedParcelActions). */
+    markLost: adminProcedure
+      .input(z.object({ packageId: z.number().int().positive(), side: z.enum(["us", "carrier"]), compensationUsd: z.number().min(0).max(1_000_000).nullable().optional() }))
+      .mutation(async ({ input, ctx }) => {
+        const pkg = await db.getPackageById(input.packageId);
+        if (!pkg) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("پاکەت", { bin: true }) });
+        // Only a self order is compensated; a bought parcel falls on the company.
+        const compensation = pkg.fullPackageOrderId == null && input.compensationUsd ? input.compensationUsd.toFixed(2) : null;
+        await db.updatePackage(input.packageId, { lostAt: new Date(), lostById: ctx.user.id, lostSide: input.side, lostCompensationUsd: compensation, lostSettledAt: null } as never);
+        await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "mark_parcel_lost", entityType: "package", entityId: input.packageId, newValues: { packageCode: pkg.packageCode, side: input.side, compensationUsd: compensation } });
+        return { success: true };
+      }),
+    settleLost: adminProcedure
+      .input(z.object({ packageId: z.number().int().positive() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.updatePackage(input.packageId, { lostSettledAt: new Date() } as never);
+        await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "settle_parcel_lost", entityType: "package", entityId: input.packageId, newValues: {} });
+        return { success: true };
+      }),
     update: staffProcedure
       .input(z.object({
         id: z.number(),

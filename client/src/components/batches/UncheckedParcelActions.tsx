@@ -1,12 +1,13 @@
 import { useState } from "react";
 import { Link } from "wouter";
 import { toast } from "sonner";
-import { ArrowLeftRight, CheckCircle2, MessageCircle, Truck } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, CheckCircle2, MessageCircle, Truck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { whatsappChatUrl, whatsappNumber } from "@shared/receiptWhatsApp";
 import { CARRIER_CONTACTS_KEY, carrierAskMessage, customerAskMessage, parseCarrierContacts } from "@shared/carrierContacts";
@@ -47,6 +48,21 @@ export function UncheckedParcelActions({
     onError: (e) => toast.error(e.message),
   });
 
+  // Proven lost: whose hands, and for a self order what it cost to buy.
+  const detail = trpc.packages.getById.useQuery({ id: parcel.id }, { enabled: isAdmin, staleTime: 60_000 });
+  const selfOrder = !(detail.data as { fullPackageOrderId?: number | null } | null | undefined)?.fullPackageOrderId;
+  const [losing, setLosing] = useState(false);
+  const [side, setSide] = useState<"us" | "carrier">("us");
+  const [paid, setPaid] = useState("");
+  const lost = trpc.packages.markLost.useMutation({
+    onSuccess: () => {
+      toast.success(L({ ku: "وەک ون تۆمار کرا و چووە کێشەکانی ئێستا", en: "Recorded as lost, now in Problems", ar: "سُجل مفقوداً", zh: "已记录为丢失" }));
+      void utils.batches.invalidate();
+      onDone();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+
   const number = whatsappNumber(mobile);
   const setting = trpc.settings.get.useQuery({ key: CARRIER_CONTACTS_KEY }, { enabled: isAdmin, retry: false });
   const raw = setting.data ?? "";
@@ -75,6 +91,32 @@ export function UncheckedParcelActions({
         <ArrowLeftRight className="h-3.5 w-3.5" />
         {L({ ku: "گواستنەوە بۆ باچی تر", en: "Move to another batch", ar: "انقل إلى دفعة أخرى", zh: "移到其他批次" })}
       </Link>
+
+      {isAdmin && (
+        <button type="button" onClick={() => setLosing(!losing)} className={action} data-testid="unchecked-lost">
+          <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />
+          {L({ ku: "ون بووە", en: "Lost", ar: "مفقود", zh: "丢失" })}
+        </button>
+      )}
+      {losing && (
+        <div className="col-span-2 grid gap-2 rounded-lg border p-2" data-testid="unchecked-lost-form">
+          <div className="flex gap-2">
+            <Button type="button" size="sm" variant={side === "us" ? "default" : "outline"} onClick={() => setSide("us")}>{L({ ku: "لای ئێمە", en: "With us", ar: "عندنا", zh: "我方" })}</Button>
+            <Button type="button" size="sm" variant={side === "carrier" ? "default" : "outline"} onClick={() => setSide("carrier")}>{L({ ku: "لای کۆمپانیا", en: "With the carrier", ar: "عند الشركة", zh: "承运商" })}</Button>
+          </div>
+          {selfOrder ? (
+            <label className="grid gap-1 text-xs">
+              {L({ ku: "نرخی کڕینی خۆی ($)", en: "Its purchase price ($)", ar: "سعر شرائه ($)", zh: "购买价 ($)" })}
+              <Input type="number" step="0.01" dir="ltr" value={paid} onChange={(e) => setPaid(e.target.value)} className="h-8 w-32" data-testid="unchecked-lost-price" />
+            </label>
+          ) : (
+            <p className="text-xs text-muted-foreground">{L({ ku: "ئەمە کاڵای کڕدراوە: لەسەر کۆمپانیا دەکەوێت و بۆ کڕیار هیچ نانووسرێت.", en: "Bought goods: it falls on the company, nothing is written for the customer.", ar: "بضاعة مشتراة: تقع على الشركة.", zh: "代购商品：由公司承担。" })}</p>
+          )}
+          <Button type="button" size="sm" className="justify-self-start" disabled={lost.isPending} onClick={() => lost.mutate({ packageId: parcel.id, side, compensationUsd: selfOrder ? Number(paid) || 0 : null })} data-testid="unchecked-lost-save">
+            {L({ ku: "وەک ون تۆماری بکە", en: "Record as lost", ar: "سجّله مفقوداً", zh: "记录为丢失" })}
+          </Button>
+        </div>
+      )}
 
       {isAdmin && (
         <div className="col-span-2 grid gap-2 rounded-lg border p-2" data-testid="unchecked-carrier">

@@ -2,7 +2,7 @@ import { z } from "zod";
 import { router } from "../_core/trpc";
 import { auditorProcedure, staffProcedure } from "../middleware/auth";
 import { buildDailyBrief } from "../services/dailyBrief.service";
-import { parcelsLeftOutOfBoxes } from "../db/boxMissing.db";
+import { lostParcelsOpen, parcelsLeftOutOfBoxes } from "../db/boxMissing.db";
 import { CHECKS, headline, rankResults, summarise } from "@shared/auditSweep";
 import { movementsSince, runSweep } from "../services/auditSweep.service";
 
@@ -37,6 +37,7 @@ export const auditRouter = router({
    */
   /** What the box desk has left behind (client/src/pages/admin/Problems). */
   leftOutOfBoxes: staffProcedure.query(() => parcelsLeftOutOfBoxes()),
+  lostParcels: staffProcedure.query(() => lostParcelsOpen()),
 
   sweep: auditorProcedure.query(async () => {
     const results = rankResults(await runSweep());

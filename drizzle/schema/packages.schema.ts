@@ -27,6 +27,16 @@ export const packages = mysqlTable("packages", {
   // than the volume says - never below the scale, never above the volume.
   // The sides above stay as measured. Null: charged as measured.
   billedWeightKg: decimal("billedWeightKg", { precision: 10, scale: 3 }),
+  /**
+   * Proven lost (owner, 2026-11-01). The customer deals only with us: a self
+   * order is compensated its purchase price, a bought parcel falls on the
+   * company. Lost by the carrier, we claim it back. Nothing here moves money.
+   */
+  lostAt: timestamp("lostAt"),
+  lostById: int("lostById"),
+  lostSide: varchar("lostSide", { length: 10 }),
+  lostCompensationUsd: decimal("lostCompensationUsd", { precision: 10, scale: 2 }),
+  lostSettledAt: timestamp("lostSettledAt"),
   shippingType: mysqlEnum("shippingType", ["air_regular", "air_irregular", "sea"]).notNull(),
   description: text("description"),
   photos: json("photos").$type<string[]>(),

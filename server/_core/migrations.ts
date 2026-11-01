@@ -3422,6 +3422,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // (12 kg by size, 7 kg charged) - the sides stay true, the kilos charged
   // are written here (shared/chargeableWeight). Null: billed as measured.
   { name: "packages.billedWeightKg", sql: "ALTER TABLE packages ADD COLUMN billedWeightKg DECIMAL(10,3) NULL" },
+  { name: "packages.lostAt", sql: "ALTER TABLE packages ADD COLUMN lostAt TIMESTAMP NULL" },
+  { name: "packages.lostById", sql: "ALTER TABLE packages ADD COLUMN lostById INT NULL" },
+  { name: "packages.lostSide", sql: "ALTER TABLE packages ADD COLUMN lostSide VARCHAR(10) NULL" },
+  { name: "packages.lostCompensationUsd", sql: "ALTER TABLE packages ADD COLUMN lostCompensationUsd DECIMAL(10,2) NULL" },
+  { name: "packages.lostSettledAt", sql: "ALTER TABLE packages ADD COLUMN lostSettledAt TIMESTAMP NULL" },
 
   // The dispatch check in China (owner, 2026-10-24): when the batch's cartons
   // were checked, by whom, and why it went with parcels left out.

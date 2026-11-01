@@ -62,7 +62,8 @@ export async function getBatchCloseFacts(batchId: number): Promise<BatchCloseFac
     .from(packages)
     .leftJoin(customers, eq(customers.id, packages.customerId))
     .where(eq(packages.batchId, batchId));
-  const live = rows.filter((r) => !parcelEnded(r.pkg.status));
+  // A parcel proven lost has left the batch's work: it waits on the problems page.
+  const live = rows.filter((r) => !parcelEnded(r.pkg.status) && !r.pkg.lostAt);
   if (live.length === 0) return none();
 
   const ids = live.map((r) => r.pkg.id);

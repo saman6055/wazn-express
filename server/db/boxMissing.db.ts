@@ -317,3 +317,26 @@ export async function parcelsLeftOutOfBoxes(): Promise<LeftOutCustomer[]> {
   }
   return Array.from(byCustomer.values()).sort((a, b) => b.parcels.length - a.parcels.length);
 }
+
+/** Parcels proven lost and not yet settled with the customer or the carrier. */
+export async function lostParcelsOpen() {
+  const db = await getDb();
+  if (!db) return [];
+  return db
+    .select({
+      id: packages.id,
+      packageCode: packages.packageCode,
+      trackingNumber: packages.trackingNumber,
+      customerId: packages.customerId,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+      batchCode: batches.batchCode,
+      side: packages.lostSide,
+      compensationUsd: packages.lostCompensationUsd,
+      selfOrder: sql<number>`${packages.fullPackageOrderId} IS NULL`,
+    })
+    .from(packages)
+    .leftJoin(customers, eq(customers.id, packages.customerId))
+    .leftJoin(batches, eq(batches.id, packages.batchId))
+    .where(and(isNotNull(packages.lostAt), sql`${packages.lostSettledAt} IS NULL`));
+}

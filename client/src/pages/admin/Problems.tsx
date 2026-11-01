@@ -68,11 +68,14 @@ export default function Problems() {
   const mayAudit = canViewPath("/audit-sweep");
   const sweep = trpc.audit.sweep.useQuery(undefined, { enabled: mayAudit, refetchOnWindowFocus: false, staleTime: 5 * 60 * 1000 });
 
+  const lost = trpc.audit.lostParcels.useQuery(undefined, { refetchOnWindowFocus: false });
+  const settle = trpc.packages.settleLost.useMutation({ onSuccess: () => void lost.refetch() });
+  const lostRows = lost.data ?? [];
   const customers = leftOut.data ?? [];
   const parcels = customers.reduce((n, c) => n + c.parcels.length, 0);
   const found = (sweep.data?.results ?? []).filter((r) => r.status === "found");
   const loading = leftOut.isLoading || (mayAudit && sweep.isLoading);
-  const none = !loading && parcels === 0 && found.length === 0;
+  const none = !loading && parcels === 0 && found.length === 0 && lostRows.length === 0;
 
   return (
     <DashboardLayout>
@@ -92,6 +95,31 @@ export default function Problems() {
             <CheckCircle2 className="h-5 w-5 text-emerald-600 dark:text-emerald-400" />
             {L({ ku: "ئێستا هیچ کێشەیەک نییە", en: "Nothing is wrong right now", ar: "لا توجد مشاكل الآن", zh: "目前没有问题" })}
           </div>
+        )}
+
+        {lostRows.length > 0 && (
+          <Row
+            severity="critical"
+            open={openId === "lost"}
+            onToggle={() => toggle("lost")}
+            title={L({ ku: `${lostRows.length} پاکێج ون بووە و هێشتا چارەسەر نەکراوە`, en: `${lostRows.length} lost parcels not yet settled`, ar: `${lostRows.length} طرد مفقود`, zh: `${lostRows.length} 个丢失包裹待处理` })}
+          >
+            <p><span className="text-muted-foreground">{L({ ku: "چارەسەر:", en: "Fix:", ar: "الحل:", zh: "解决：" })} </span>
+              {L({ ku: "1. قەرەبووی کڕیاری سێلف ئۆردەر بە دەست لە حیسابەکەی بنووسە · 2. ئەگەر لای کۆمپانیا ون بووە، پارەکە لێیان وەربگرەوە · 3. «چارەسەر کرا» لێبدە", en: "1. Enter a self order's compensation on its account by hand · 2. If the carrier lost it, claim it back · 3. Press settled", ar: "1. سجّل التعويض يدوياً · 2. استرد المبلغ من الشركة · 3. اضغط تمت التسوية", zh: "1. 手动录入赔偿 · 2. 向承运商索赔 · 3. 点击已处理" })}</p>
+            <div className="divide-y">
+              {lostRows.map((p) => (
+                <div key={p.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2" data-testid="lost-parcel">
+                  <span className="font-mono text-xs" dir="ltr">{p.trackingNumber || p.packageCode}</span>
+                  <span>{p.customerCode}</span>
+                  <span className="text-muted-foreground">{p.side === "carrier" ? L({ ku: "لای کۆمپانیا", en: "With the carrier", ar: "عند الشركة", zh: "承运商" }) : L({ ku: "لای ئێمە", en: "With us", ar: "عندنا", zh: "我方" })}</span>
+                  <span className="tabular-nums">{p.selfOrder ? `$${Number(p.compensationUsd ?? 0).toFixed(2)}` : L({ ku: "لەسەر کۆمپانیا", en: "On the company", ar: "على الشركة", zh: "公司承担" })}</span>
+                  <Button size="sm" variant="outline" className="ms-auto h-8" disabled={settle.isPending} onClick={() => settle.mutate({ packageId: p.id })}>
+                    {L({ ku: "چارەسەر کرا", en: "Settled", ar: "تمت التسوية", zh: "已处理" })}
+                  </Button>
+                </div>
+              ))}
+            </div>
+          </Row>
         )}
 
         {parcels > 0 && (
