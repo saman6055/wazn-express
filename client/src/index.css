@@ -123,9 +123,11 @@
      can paint — and the page behind them 0.985, so the two barely parted
      and every surface was glare.
 
-     Now the page is 0.902 and the cards 0.962, which calms the screen and
-     puts a sixfold step between them: a card lifts off the page instead of
-     melting into it.
+     Now the page is 0.885 and the cards 0.935, which calms the screen and
+     puts a fivefold step between them: a card lifts off the page instead of
+     melting into it. He brought the whole ladder down twice — 2026-10-31 to
+     0.955/0.985, then 2026-11-02 to this — each time by looking at it, so
+     do not raise a rung without asking him.
 
      The two are not the same colour. The owner chose it, 2026-11-01, from
      three blends: the PAGE is warm (hue 80, a paper tint) and the CARDS
@@ -136,30 +138,30 @@
      resolve tire it more than a bright background does.
 
      Printing is unaffected — the print block below pins paper to white. */
-  --background: oklch(0.902 0.013 80);
+  --background: oklch(0.885 0.014 80);
   --foreground: oklch(0.17 0.012 220);
-  --card: oklch(0.962 0.004 234);
+  --card: oklch(0.935 0.005 234);
   --card-foreground: oklch(0.17 0.012 220);
-  --popover: oklch(0.962 0.004 234);
+  --popover: oklch(0.935 0.005 234);
   --popover-foreground: oklch(0.17 0.012 220);
-  --secondary: oklch(0.885 0.014 80);
+  --secondary: oklch(0.866 0.015 80);
   --secondary-foreground: oklch(0.30 0.014 220);
-  --muted: oklch(0.868 0.015 80);
+  --muted: oklch(0.848 0.016 80);
   --muted-foreground: oklch(0.43 0.013 220);
-  --accent: oklch(0.905 0.028 234);
+  --accent: oklch(0.882 0.032 234);
   --accent-foreground: oklch(0.32 0.075 234);
   --destructive: oklch(0.55 0.22 25);
   --destructive-foreground: oklch(0.98 0 0);
   /* Edges darken with the surfaces, or a hairline drawn for white paper
      disappears against a page that is no longer white. */
-  --border: oklch(0.828 0.016 80);
-  --input: oklch(0.828 0.016 80);
+  --border: oklch(0.806 0.017 80);
+  --input: oklch(0.806 0.017 80);
   --ring: oklch(0.52 0.145 234);
-  --sidebar: oklch(0.892 0.013 80);
+  --sidebar: oklch(0.874 0.014 80);
   --sidebar-foreground: oklch(0.17 0.012 220);
-  --sidebar-accent: oklch(0.905 0.028 234);
+  --sidebar-accent: oklch(0.882 0.032 234);
   --sidebar-accent-foreground: oklch(0.32 0.075 234);
-  --sidebar-border: oklch(0.828 0.016 80);
+  --sidebar-border: oklch(0.806 0.017 80);
   --sidebar-ring: oklch(0.52 0.145 234);
   
   /* Status colors */
