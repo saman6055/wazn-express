@@ -12,6 +12,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import {
   Table,
   TableBody,
@@ -100,16 +101,20 @@ export default function ServicesReport() {
     return { total, totalRevenue, totalCost, totalProfit, profitMargin };
   }, [filteredServices]);
   
+  // Every figure opens the services it was added up from (owner, 2026-11-02).
+  const [drill, setDrill] = useState<{ title: string; rows: any[] } | null>(null);
+  const customerOf = (id: number | null) => (customers as any[] | undefined)?.find((c) => c.id === id);
+
   // Calculate by service type
   const byServiceType = useMemo(() => {
-    const typeMap = new Map<number, { name: string; count: number; revenue: number; cost: number; profit: number }>();
+    const typeMap = new Map<number, { id: number; name: string; count: number; revenue: number; cost: number; profit: number }>();
     
     filteredServices.forEach((service: any) => {
       const typeId = service.serviceTypeId;
       const typeName = service.serviceType?.nameKu || service.serviceType?.nameEn || pickLang(language, { ku: "نادیار", en: "Unknown", ar: "غير معروف", zh: "未知" });
       
       if (!typeMap.has(typeId)) {
-        typeMap.set(typeId, { name: typeName, count: 0, revenue: 0, cost: 0, profit: 0 });
+        typeMap.set(typeId, { id: typeId, name: typeName, count: 0, revenue: 0, cost: 0, profit: 0 });
       }
       
       const entry = typeMap.get(typeId)!;
@@ -124,7 +129,7 @@ export default function ServicesReport() {
   
   // Calculate by customer (top 10)
   const byCustomer = useMemo(() => {
-    const customerMap = new Map<number, { name: string; count: number; revenue: number; profit: number }>();
+    const customerMap = new Map<number, { id: number; name: string; count: number; revenue: number; profit: number }>();
     
     filteredServices.forEach((service: any) => {
       const customerId = service.customerId;
@@ -134,7 +139,7 @@ export default function ServicesReport() {
       const customerName = customer?.fullName || `${pickLang(language, { ku: "کڕیار", en: "Customer", ar: "عميل", zh: "客户" })} #${customerId}`;
       
       if (!customerMap.has(customerId)) {
-        customerMap.set(customerId, { name: customerName, count: 0, revenue: 0, profit: 0 });
+        customerMap.set(customerId, { id: customerId, name: customerName, count: 0, revenue: 0, profit: 0 });
       }
       
       const entry = customerMap.get(customerId)!;
@@ -462,7 +467,7 @@ export default function ServicesReport() {
         
         {/* Overview Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-blue-100 dark:from-blue-900/20 dark:to-blue-800/20 cursor-pointer transition hover:ring-2 hover:ring-primary/40" data-testid="services-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی خزمەتگوزاری", en: "Total services", ar: "إجمالي الخدمات", zh: "服务总数" }), rows: filteredServices })}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -476,7 +481,7 @@ export default function ServicesReport() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-green-50 to-green-100 dark:from-green-900/20 dark:to-green-800/20 cursor-pointer transition hover:ring-2 hover:ring-primary/40" data-testid="services-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" }), rows: filteredServices })}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -490,7 +495,7 @@ export default function ServicesReport() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-red-50 to-red-100 dark:from-red-900/20 dark:to-red-800/20 cursor-pointer transition hover:ring-2 hover:ring-primary/40" data-testid="services-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" }), rows: filteredServices })}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -504,7 +509,7 @@ export default function ServicesReport() {
             </CardContent>
           </Card>
           
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20">
+          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 to-emerald-100 dark:from-emerald-900/20 dark:to-emerald-800/20 cursor-pointer transition hover:ring-2 hover:ring-primary/40" data-testid="services-card" onClick={() => setDrill({ title: pickLang(language, { ku: "قازانجی خاوێن", en: "Net profit", ar: "صافي الربح", zh: "净利润" }), rows: filteredServices })}>
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <div>
@@ -725,7 +730,7 @@ export default function ServicesReport() {
                     byServiceType.map((type, index) => {
                       const margin = type.revenue > 0 ? (type.profit / type.revenue) * 100 : 0;
                       return (
-                        <TableRow key={index}>
+                        <TableRow key={index} className="cursor-pointer" onClick={() => setDrill({ title: type.name, rows: filteredServices.filter((s: any) => s.serviceTypeId === type.id) })}>
                           <TableCell className="font-medium">{type.name}</TableCell>
                           <TableCell>{type.count}</TableCell>
                           <TableCell className="text-red-600 dark:text-red-300">${type.cost.toFixed(2)}</TableCell>
@@ -776,7 +781,7 @@ export default function ServicesReport() {
                     </TableRow>
                   ) : (
                     byCustomer.map((customer, index) => (
-                      <TableRow key={index}>
+                      <TableRow key={index} className="cursor-pointer" onClick={() => setDrill({ title: customer.name, rows: filteredServices.filter((s: any) => s.customerId === customer.id) })}>
                         <TableCell>
                           <Badge variant="outline" className="w-6 h-6 p-0 flex items-center justify-center">
                             {index + 1}
@@ -797,6 +802,54 @@ export default function ServicesReport() {
           </Card>
         </div>
       </div>
+
+      <Sheet open={!!drill} onOpenChange={(o) => { if (!o) setDrill(null); }}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-3xl" data-testid="services-drill">
+          <SheetHeader>
+            <SheetTitle>{drill?.title} ({drill?.rows.length ?? 0})</SheetTitle>
+          </SheetHeader>
+          <div className="px-4 pb-4">
+            <a href="/services" target="_blank" rel="noopener noreferrer" className="text-sm text-sky-700 underline dark:text-sky-300">
+              {pickLang(language, { ku: "بەڕێوەبردنی خزمەتگوزاری", en: "Manage services", ar: "إدارة الخدمات", zh: "管理服务" })}
+            </a>
+            <Table className="mt-3">
+              <TableHeader>
+                <TableRow>
+                  <TableHead>{pickLang(language, { ku: "ژمارە", en: "Number", ar: "الرقم", zh: "编号" })}</TableHead>
+                  <TableHead>{pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" })}</TableHead>
+                  <TableHead>{pickLang(language, { ku: "وردەکاری", en: "Detail", ar: "التفاصيل", zh: "详情" })}</TableHead>
+                  <TableHead>{pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableHead>
+                  <TableHead>{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيراد", zh: "收入" })}</TableHead>
+                  <TableHead>{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(drill?.rows ?? []).map((s: any) => {
+                  const c = customerOf(s.customerId);
+                  const cost = Number(s.costAmount || 0);
+                  const price = Number(s.priceAmount || 0);
+                  return (
+                    <TableRow key={s.id} data-testid="services-drill-row">
+                      <TableCell className="font-mono text-xs" dir="ltr">{s.serviceNumber}</TableCell>
+                      <TableCell>{c ? <a href={`/customers/${c.id}`} target="_blank" rel="noopener noreferrer" className="text-sky-700 underline dark:text-sky-300">{c.customerCode || c.fullName}</a> : "—"}</TableCell>
+                      <TableCell className="max-w-[16rem] whitespace-normal text-xs">{s.description}</TableCell>
+                      <TableCell dir="ltr">${cost.toFixed(2)}</TableCell>
+                      <TableCell dir="ltr">${price.toFixed(2)}</TableCell>
+                      <TableCell dir="ltr" className={price - cost >= 0 ? "text-emerald-600 dark:text-emerald-300" : "text-red-600 dark:text-red-300"}>${(price - cost).toFixed(2)}</TableCell>
+                    </TableRow>
+                  );
+                })}
+                <TableRow className="font-semibold">
+                  <TableCell colSpan={3}>{pickLang(language, { ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}</TableCell>
+                  <TableCell dir="ltr">${(drill?.rows ?? []).reduce((n: number, s: any) => n + Number(s.costAmount || 0), 0).toFixed(2)}</TableCell>
+                  <TableCell dir="ltr">${(drill?.rows ?? []).reduce((n: number, s: any) => n + Number(s.priceAmount || 0), 0).toFixed(2)}</TableCell>
+                  <TableCell dir="ltr">${(drill?.rows ?? []).reduce((n: number, s: any) => n + Number(s.priceAmount || 0) - Number(s.costAmount || 0), 0).toFixed(2)}</TableCell>
+                </TableRow>
+              </TableBody>
+            </Table>
+          </div>
+        </SheetContent>
+      </Sheet>
     </DashboardLayout>
   );
 }
