@@ -1508,3 +1508,74 @@ body {
   [data-slot="badge"] { transition: none; }
   [data-slot="badge"]:hover { transform: none; }
 }
+
+/* small-data zoom */
+/*
+ * Every small fact grows under the pointer, not only the badges.
+ *
+ * The owner, 2026-11-02, on a batch row: «داتا بچووکەکانی ئێرەش، کاتێ ماوس
+ * چووە سەری کەمێک گەورە بێت بۆ چاو واضحتر بێت. لە هەر کوێی تر داتای هامش
+ * هەبوو بەم شێوەیە».
+ *
+ * `transform`, never `font-size`: growing the type reflows the row, the
+ * pointer lands somewhere else, the row shrinks back — a flicker loop. A
+ * transform is painted, not laid out, so nothing around it moves.
+ *
+ * `:not(:has(*))` keeps it to the leaves that hold the text. Without it a
+ * small-type wrapper and the span inside it both match and the scales
+ * multiply.
+ *
+ * Written as a plain comma list on purpose. Inside `:is(...)` the build
+ * re-escapes `.text-\[9px\]` into `.text-\\[9px\\]`, which matches
+ * nothing — the rule reads perfectly in this file and is dead on the
+ * screen. Check a selector with a bracket in it against dist/, not here.
+ *
+ * Not applied at 13px and up: that is ordinary type, not a side fact.
+ */
+@media (hover: hover) and (pointer: fine) {
+  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
+  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *) {
+    transition: transform 140ms ease, color 140ms ease;
+    transform-origin: center;
+  }
+  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover {
+    /* An inline span cannot be transformed; as a flex or grid child it is
+       blockified and can. Most of these sit in flex rows, so they grow,
+       and the few that do not are left alone rather than forced to
+       inline-block, which would move the line. */
+    transform: scale(1.22);
+    position: relative;
+    z-index: 2;
+    color: var(--foreground);
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
+  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover {
+    transition: none;
+    transform: none;
+  }
+}
+
