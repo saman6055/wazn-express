@@ -54,7 +54,7 @@ describe("the parcel's own sheet", () => {
 
   it("leads with the record the parcel lives in, and asks the shared rule where that is", () => {
     expect(sheet).toContain("const source = parcelSourceTarget(parcel?.orders, tracking);");
-    expect(sheet).toContain("<Link\n                    href={source.href}");
+    expect(sheet).toContain("href={source.href}");
     expect(sheet).toContain("{L(source.label)}");
     // Across the row and first: it is the way onward, not one of five.
     expect(sheet).toContain('"col-span-2 justify-center border-sky-300');

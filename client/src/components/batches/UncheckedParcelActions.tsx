@@ -1,12 +1,12 @@
 import { useState } from "react";
-import { Link } from "wouter";
 import { toast } from "sonner";
-import { AlertTriangle, ArrowLeftRight, CheckCircle2, MessageCircle, Truck } from "lucide-react";
+import { AlertTriangle, ArrowLeftRight, CheckCircle2, MessageCircle, PackageMinus, Truck } from "lucide-react";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { pickLang } from "@/lib/lang";
 import { Button } from "@/components/ui/button";
+import { confirmAction } from "@/components/ConfirmDialog";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { whatsappChatUrl, whatsappNumber } from "@shared/receiptWhatsApp";
@@ -48,6 +48,23 @@ export function UncheckedParcelActions({
     onError: (e) => toast.error(e.message),
   });
 
+  // Out of this batch, to go into one made for it later (owner, 2026-11-02).
+  const unbatch = trpc.packages.update.useMutation({
+    onSuccess: () => {
+      toast.success(L({ ku: "لە باچەکە دەرهێنرا", en: "Taken out of the batch", ar: "أُخرج من الدفعة", zh: "已移出批次" }));
+      void utils.batches.invalidate();
+      onDone();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const takeOut = async () => {
+    const yes = await confirmAction({
+      message: L({ ku: "ئەم پاکێجە لە باچەکە دەربهێنرێت؟ دواتر دەتوانیت بیخەیتە باچێکی تر.", en: "Take this parcel out of the batch? You can put it in another later.", ar: "إخراج الطرد من الدفعة؟", zh: "将此包裹移出批次？" }),
+      confirmLabel: L({ ku: "بەڵێ، دەریبهێنە", en: "Yes, take it out", ar: "نعم", zh: "确定" }),
+    });
+    if (yes) unbatch.mutate({ id: parcel.id, batchId: null });
+  };
+
   // Proven lost: whose hands, and for a self order what it cost to buy.
   const detail = trpc.packages.getById.useQuery({ id: parcel.id }, { enabled: isAdmin, staleTime: 60_000 });
   const selfOrder = !(detail.data as { fullPackageOrderId?: number | null } | null | undefined)?.fullPackageOrderId;
@@ -87,11 +104,15 @@ export function UncheckedParcelActions({
           {L({ ku: "پرسیار لە کڕیار", en: "Ask the customer", ar: "اسأل العميل", zh: "询问客户" })}
         </a>
       )}
-      <Link href="/batch-assignment-scanner" className={action} data-testid="unchecked-move">
+      <a target="_blank" rel="noopener noreferrer" href="/batch-assignment-scanner" className={action} data-testid="unchecked-move">
         <ArrowLeftRight className="h-3.5 w-3.5" />
         {L({ ku: "گواستنەوە بۆ باچی تر", en: "Move to another batch", ar: "انقل إلى دفعة أخرى", zh: "移到其他批次" })}
-      </Link>
+      </a>
 
+      <button type="button" disabled={unbatch.isPending} onClick={() => void takeOut()} className={action} data-testid="unchecked-unbatch">
+        <PackageMinus className="h-3.5 w-3.5" />
+        {L({ ku: "بێ باچی بکە", en: "Take out of the batch", ar: "أخرجه من الدفعة", zh: "移出批次" })}
+      </button>
       {isAdmin && (
         <button type="button" onClick={() => setLosing(!losing)} className={action} data-testid="unchecked-lost">
           <AlertTriangle className="h-3.5 w-3.5 text-red-600 dark:text-red-400" />

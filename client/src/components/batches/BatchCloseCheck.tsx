@@ -1,5 +1,4 @@
 import { useRef, useState, type ReactNode } from "react";
-import { Link } from "wouter";
 import { AlertTriangle, ArrowLeftRight, Banknote, Box, FileDown, Hash, ImageOff, Loader2, PackageX, ScanLine, Scale, Share2, UserX } from "lucide-react";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
@@ -467,9 +466,9 @@ function OtherSection({ boxes, capped, missingNumber, onFixBatch }: { boxes: Clo
             {boxes.map((b) => (
               <div key={b.boxId} className="flex flex-wrap items-center gap-2 rounded bg-white/60 dark:bg-black/30 px-2 py-1 text-xs" data-close-check-box={b.boxCode}>
                 <span className="inline-flex items-center gap-1">
-                  <Link href={`/customer-delivery-scanner?box=${b.boxId}`} className="font-mono font-medium underline underline-offset-2" data-testid="close-check-box-link">
+                  <a target="_blank" rel="noopener noreferrer" href={`/customer-delivery-scanner?box=${b.boxId}`} className="font-mono font-medium underline underline-offset-2" data-testid="close-check-box-link">
                     <bdi dir="ltr">{b.boxCode}</bdi>
-                  </Link>
+                  </a>
                   <CopyButton value={b.boxCode} label={L({ ku: "کۆپی کۆدی بۆکس", en: "Copy box code", ar: "نسخ رمز الصندوق", zh: "复制箱号" })} />
                 </span>
                 {b.customerCode && (

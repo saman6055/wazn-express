@@ -113,7 +113,7 @@ describe("every part of a card leads somewhere", () => {
 
 describe("the parcel's details", () => {
   it("lead to the customer, their parcels, the parcel in the list and its batch", () => {
-    expect(sheet).toContain("<Link href={`/customers/${parcel.customerId}`}");
+    expect(sheet).toContain('href={`/customers/${parcel.customerId}`}');
     expect(sheet).toContain("packagesHref({ search: code })");
     expect(sheet).toContain("packagesHref({ search: tracking })");
     expect(sheet).toContain("`/batches?edit=${parcel.batchId}`");

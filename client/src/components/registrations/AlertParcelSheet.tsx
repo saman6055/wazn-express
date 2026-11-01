@@ -1,5 +1,4 @@
 import type { ReactNode } from "react";
-import { Link } from "wouter";
 import { toast } from "sonner";
 import {
   ArrowLeftRight,
@@ -165,9 +164,9 @@ export function AlertParcelSheet({
       value: (
         <span className="inline-flex flex-wrap items-center gap-1">
           {canCustomers ? (
-            <Link href={`/customers/${parcel.customerId}`} className="text-sky-700 underline-offset-2 hover:underline dark:text-sky-300">
+            <a target="_blank" rel="noopener noreferrer" href={`/customers/${parcel.customerId}`} className="text-sky-700 underline-offset-2 hover:underline dark:text-sky-300">
               {parcel.customerName ?? "—"} <bdi dir="ltr" className="font-mono text-xs">{code}</bdi>
-            </Link>
+            </a>
           ) : (
             <span>
               {parcel.customerName ?? "—"} <bdi dir="ltr" className="font-mono text-xs">{code}</bdi>
@@ -297,9 +296,9 @@ export function AlertParcelSheet({
         icon: Boxes,
         label: { ku: "بار", en: "Batch", ar: "الدفعة", zh: "批次" },
         value: canBatches ? (
-          <Link href={`/batches?edit=${parcel.batchId}`} className="text-sky-700 hover:underline dark:text-sky-300">
+          <a target="_blank" rel="noopener noreferrer" href={`/batches?edit=${parcel.batchId}`} className="text-sky-700 hover:underline dark:text-sky-300">
             #{parcel.batchId}
-          </Link>
+          </a>
         ) : (
           <span>#{parcel.batchId}</span>
         ),
@@ -368,38 +367,38 @@ export function AlertParcelSheet({
                     A stuck buy-at-cost parcel is a question about that
                     purchase, and the purchase is where the answer is. */}
                 {canSource && (
-                  <Link
+                  <a target="_blank" rel="noopener noreferrer"
                     href={source.href}
                     className={cn(action, "col-span-2 justify-center border-sky-300 bg-sky-50/60 font-semibold text-sky-800 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200")}
                   >
                     <ArrowLeftRight className="h-3.5 w-3.5" />
                     {L(source.label)}
                     {source.code && <bdi dir="ltr" className="font-mono text-[11px] opacity-80">{source.code}</bdi>}
-                  </Link>
+                  </a>
                 )}
                 {canCustomers && (
-                  <Link href={`/customers/${parcel.customerId}`} className={action}>
+                  <a target="_blank" rel="noopener noreferrer" href={`/customers/${parcel.customerId}`} className={action}>
                     <User className="h-3.5 w-3.5" />
                     {L({ ku: "پەڕەی کڕیار", en: "Customer page", ar: "صفحة العميل", zh: "客户页面" })}
-                  </Link>
+                  </a>
                 )}
                 {canParcels && code && (
-                  <Link href={packagesHref({ search: code })} className={action}>
+                  <a target="_blank" rel="noopener noreferrer" href={packagesHref({ search: code })} className={action}>
                     <ListFilter className="h-3.5 w-3.5" />
                     {L({ ku: "هەموو پاکەتەکانی ئەم کڕیارە", en: "All this customer's parcels", ar: "كل طرود هذا العميل", zh: "该客户的全部包裹" })}
-                  </Link>
+                  </a>
                 )}
                 {canParcels && tracking && (
-                  <Link href={packagesHref({ search: tracking })} className={action}>
+                  <a target="_blank" rel="noopener noreferrer" href={packagesHref({ search: tracking })} className={action}>
                     <Package className="h-3.5 w-3.5" />
                     {L({ ku: "لە لیستی پاکەتەکان", en: "In the parcels list", ar: "في قائمة الطرود", zh: "在包裹列表中" })}
-                  </Link>
+                  </a>
                 )}
                 {kind === "stale" && canScanner && (
-                  <Link href="/batch-assignment-scanner" className={action}>
+                  <a target="_blank" rel="noopener noreferrer" href="/batch-assignment-scanner" className={action}>
                     <ScanLine className="h-3.5 w-3.5" />
                     {L({ ku: "بیخەرە ناو بار", en: "Put into a batch", ar: "أضِفه إلى دفعة", zh: "加入批次" })}
-                  </Link>
+                  </a>
                 )}
                 {whatsappHref && (
                   <a
