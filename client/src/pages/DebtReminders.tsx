@@ -37,10 +37,11 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
     minBalanceUsd: minDebt ? parseFloat(minDebt) : 0,
   });
 
-  // One portal notification (with push) per chosen debtor. This button used
-  // to wait a second and a half and say "sent" having sent nothing.
-  const [isSending, setIsSending] = useState(false);
-  const notify = trpc.portalCenter.sendNotificationToCustomer.useMutation();
+  // One portal notification (with push) per chosen debtor, the amount read by
+  // the server. This button used to wait a second and a half and say "sent"
+  // having sent nothing.
+  const send = trpc.ledger.sendDebtReminders.useMutation();
+  const isSending = send.isPending;
 
   const handleSelectAll = () => {
     if (selectedCustomers.length === debtors?.length) {
@@ -64,37 +65,18 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
       return;
     }
 
-    setIsSending(true);
-    const chosen = (debtors ?? []).filter((d) => selectedCustomers.includes(d.customerId));
-    let sent = 0;
-    const failed: string[] = [];
-    for (const d of chosen) {
-      const owed = `$${(d.balanceUsd || 0).toFixed(2)}`;
-      const body = customMessage.trim()
-        ? `${customMessage.trim()}\n(${owed})`
-        : `بڕی ${owed} لەسەر حیسابەکەتە. تکایە بۆ یەکلاکردنەوەی پەیوەندیمان پێوە بکە.`;
-      try {
-        await notify.mutateAsync({
-          customerId: d.customerId,
-          withPush: true,
-          title: "Debt reminder — Wazn Express",
-          titleKu: "یادکردنەوەی قەرز — وەزن ئێکسپرێس",
-          titleAr: "تذكير بالدين — وزن اكسبريس",
-          message: customMessage.trim() ? `${customMessage.trim()}\n(${owed})` : `You have an outstanding balance of ${owed}. Please contact us to settle it.`,
-          messageKu: body,
-          messageAr: customMessage.trim() ? `${customMessage.trim()}\n(${owed})` : `لديك رصيد مستحق بقيمة ${owed}. يرجى التواصل معنا لتسويته.`,
-        });
-        sent++;
-      } catch (error) {
-        failed.push(d.customer?.fullName || String(d.customerId));
-        showErrorToast(error, t("auto.text_112d62"));
+    try {
+      const r = await send.mutateAsync({ customerIds: selectedCustomers, note: customMessage.trim() || undefined });
+      const left = r.failed.length + r.skipped;
+      if (r.sent > 0) toast.success(`یادکردنەوە نێردرا بۆ ${r.sent} کڕیار${left ? ` — ${left} نەنێردرا` : ""}`);
+      else toast.error(`هیچ یادکردنەوەیەک نەنێردرا — ${left} کڕیار`);
+      if (r.failed.length === 0) {
+        setSelectedCustomers([]);
+        setIsSendDialogOpen(false);
       }
-    }
-    setIsSending(false);
-    if (sent > 0) toast.success(`یادکردنەوە نێردرا بۆ ${sent} کڕیار${failed.length ? ` — ${failed.length} نەنێردرا` : ""}`);
-    if (failed.length === 0) {
-      setSelectedCustomers([]);
-      setIsSendDialogOpen(false);
+      refetch();
+    } catch (error) {
+      showErrorToast(error, t("auto.text_112d62"));
     }
   };
 

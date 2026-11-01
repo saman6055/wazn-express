@@ -92,6 +92,19 @@ if ('serviceWorker' in navigator) {
   });
 }
 
+// Paper is always the light theme. Dark mode's tokens AND every `dark:` class
+// are written for a dark page: printed, they are pale text on white paper. Off
+// for the print, back straight after (Ctrl+P and window.print() alike).
+let printedFromDark = false;
+window.addEventListener("beforeprint", () => {
+  printedFromDark = document.documentElement.classList.contains("dark");
+  if (printedFromDark) document.documentElement.classList.remove("dark");
+});
+window.addEventListener("afterprint", () => {
+  if (printedFromDark) document.documentElement.classList.add("dark");
+  printedFromDark = false;
+});
+
 // A page restored from the back-forward cache is a snapshot from before any
 // sign-out that happened since: reload it, so Back after signing out never
 // shows the account again.

@@ -93,7 +93,7 @@ describe("light mode is not glare", () => {
     const css = fs.readFileSync(path.join(SRC, "index.css"), "utf8").replace(/\r\n/g, "\n");
     // The pin is a :root inside a print block; the file has several print
     // blocks, so find the pin itself and check it is inside one of them.
-    const pin = css.indexOf("  :root {\n    --background: oklch(1 0 0);");
+    const pin = css.indexOf("  :root[data-theme] {\n    --background: oklch(1 0 0);");
     expect(pin, "no :root pinning white inside @media print").toBeGreaterThan(-1);
     const print = css.lastIndexOf("@media print {", pin);
     expect(print, "the pin is not inside a print block").toBeGreaterThan(-1);

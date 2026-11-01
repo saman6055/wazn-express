@@ -19,6 +19,7 @@ import { formatClockTime, formatClockDate, msUntilNextMinute, CLOCK_HOUR12_KEY }
 import { Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { useBackCloses } from "@/hooks/useBackCloses";
+import { VIEW_AS_TOKEN_KEY } from "@/lib/viewAsToken";
 
 /**
  * The colour mode currently in force, kept in sync with the theme context.
@@ -34,25 +35,23 @@ export function usePortalMode(): [PortalMode, (m: PortalMode) => void] {
   // when the theme had been changed elsewhere.
   const [mode, setModeState] = useState<PortalMode>(() => modeFromTheme(theme, accent));
 
-  // Apply the saved mode once, on a browser that has no theme choice yet,
-  // so a first visit lands in the portal's own colours rather than the app
-  // default. Not on every page: the toggle on the Profile page writes the
-  // theme, and this used to put the saved mode straight back over it on the
-  // next screen — and, in the office's browser, over the office's own theme
-  // whenever a portal was opened to look at.
+  // The portal's own colours on a first visit, once. The test is the portal's
+  // key, not `theme`: ThemeContext writes `theme` by itself the moment any page
+  // opens, so that key says nothing about anybody having chosen. After this the
+  // theme stays what the customer last made it, the Profile toggle included.
+  // An admin looking through "view as customer" shares this browser's storage
+  // with the office, so a look changes nothing.
   useEffect(() => {
-    let chosen: string | null = null;
-    let stored: PortalMode | null = null;
     try {
-      chosen = localStorage.getItem("theme");
-      stored = localStorage.getItem(PORTAL_MODE_KEY) as PortalMode | null;
+      if (localStorage.getItem(PORTAL_MODE_KEY)) return;
+      if (sessionStorage.getItem(VIEW_AS_TOKEN_KEY)) return;
+      const def = modeDef(DEFAULT_PORTAL_MODE);
+      setTheme(def.theme);
+      setAccent(def.accent);
+      localStorage.setItem(PORTAL_MODE_KEY, DEFAULT_PORTAL_MODE);
     } catch {
       // Storage refused: the context's defaults stand.
     }
-    if (chosen) return;
-    const def = modeDef(stored ?? DEFAULT_PORTAL_MODE);
-    setTheme(def.theme);
-    setAccent(def.accent);
     // Deliberately mount-only: later changes go through setMode below.
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);

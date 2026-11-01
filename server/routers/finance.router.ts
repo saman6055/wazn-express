@@ -21,7 +21,10 @@ export const exchangeRatesRouter = router({
     getCurrent: staffProcedure
       .input(z.object({ currency: z.string() }))
       .query(async ({ input }) => {
-        return cacheGetOrSet(`exchangeRate:${input.currency}`, CACHE_TTL.EXCHANGE_RATES_MS, () => db.getCurrentExchangeRate(input.currency));
+        // null, not undefined: no rate yet is an answer, and React Query treats
+        // undefined as a failed query.
+        const rate = await cacheGetOrSet(`exchangeRate:${input.currency}`, CACHE_TTL.EXCHANGE_RATES_MS, () => db.getCurrentExchangeRate(input.currency));
+        return rate ?? null;
       }),
     create: accountantProcedure
       .input(z.object({
@@ -495,6 +498,58 @@ export const ledgerRouter = router({
         return db.getDebtors(input.minBalanceUsd);
       }),
     
+    /**
+     * Remind the chosen debtors, on their portal and by push.
+     *
+     * The door matches the list's: whoever can read the debtors can remind
+     * them. The amount is read here, from the account, never taken from the
+     * browser, so a list left open since yesterday cannot tell a customer
+     * yesterday's figure. A customer who owes nothing now is skipped.
+     */
+    sendDebtReminders: accountantProcedure
+      .input(z.object({
+        customerIds: z.array(idSchema).min(1).max(500),
+        note: z.string().trim().max(500).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const wanted = new Set(input.customerIds);
+        const debtors = (await db.getDebtors(0)).filter((d) => wanted.has(d.customerId));
+        const note = input.note?.trim() || null;
+        const failed: number[] = [];
+        let sent = 0;
+        for (const debtor of debtors) {
+          const owed = `$${debtor.balanceUsd.toFixed(2)}`;
+          const line = (plain: string) => (note ? `${note}\n(${owed})` : plain);
+          try {
+            await db.createCustomerNotification({
+              customerId: debtor.customerId,
+              type: "payment",
+              relatedType: "payment",
+              actionUrl: "/portal/financial",
+              title: "Debt reminder — Wazn Express",
+              titleKu: "یادکردنەوەی قەرز — وەزن ئێکسپرێس",
+              titleAr: "تذكير بالدين — وزن اكسبريس",
+              message: line(`You have an outstanding balance of ${owed}. Please contact us to settle it.`),
+              messageKu: line(`بڕی ${owed} لەسەر حیسابەکەتە. تکایە بۆ یەکلاکردنەوەی پەیوەندیمان پێوە بکە.`),
+              messageAr: line(`لديك رصيد مستحق بقيمة ${owed}. يرجى التواصل معنا لتسويته.`),
+            } as any);
+            sent++;
+          } catch (err) {
+            failed.push(debtor.customerId);
+            appLogger.warn("[Debt reminders] not sent", { customerId: debtor.customerId, error: err instanceof Error ? err.message : String(err) });
+          }
+        }
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "send_debt_reminders",
+          entityType: "customer",
+          entityId: debtors[0]?.customerId ?? 0,
+          newValues: { sent, failed, skipped: input.customerIds.length - debtors.length },
+        });
+        return { sent, failed, skipped: input.customerIds.length - debtors.length };
+      }),
+
     // Get total debt
     getTotalDebt: accountantProcedure
       .query(async () => {

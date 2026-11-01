@@ -1575,8 +1575,11 @@ a:focus-visible,
   /* Paper is white, whatever the screen is set to.
      The screen's surfaces are tinted so they can be looked at all day; a
      receipt is read once, on paper, and a tinted card there is either a
-     grey wash of ink or a border with nothing inside it. */
-  :root {
+     grey wash of ink or a border with nothing inside it.
+     `:root[data-theme]`: an accent's light skin outranks a bare :root, and
+     would tint the paper. Dark mode is taken off before printing (main.tsx). */
+  :root,
+  :root[data-theme] {
     --background: oklch(1 0 0);
     --card: oklch(1 0 0);
     --popover: oklch(1 0 0);
@@ -1588,25 +1591,6 @@ a:focus-visible,
     --sidebar-border: oklch(0.90 0.005 234);
   }
 
-  /* Dark mode prints on white paper: the light theme's tokens, or the text
-     came out near-white on a background the printer dropped. */
-  html.dark {
-    color-scheme: light;
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.20 0.02 234);
-    --card: oklch(1 0 0);
-    --card-foreground: oklch(0.20 0.02 234);
-    --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.20 0.02 234);
-    --secondary: oklch(0.96 0.005 234);
-    --secondary-foreground: oklch(0.35 0.02 234);
-    --muted: oklch(0.95 0.005 234);
-    --muted-foreground: oklch(0.50 0.02 234);
-    --accent: oklch(0.94 0.01 220);
-    --accent-foreground: oklch(0.25 0.02 220);
-    --border: oklch(0.90 0.005 234);
-    --input: oklch(0.90 0.005 234);
-  }
   aside#sidebar,
   .fixed {
     display: none !important;
@@ -1617,6 +1601,15 @@ a:focus-visible,
   body,
   main {
     background: #fff !important;
+  }
+  /* A browser drops backgrounds on paper by default, and a page title in white
+     on a gradient goes with it: a white heading on white. */
+  main [class*="bg-gradient"] {
+    background: none !important;
+  }
+  main [class*="bg-gradient"],
+  main [class*="bg-gradient"] * {
+    color: #111 !important;
   }
   * {
     box-shadow: none !important;

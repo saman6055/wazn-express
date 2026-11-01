@@ -198,7 +198,7 @@ export default function UnifiedOrdersDashboard() {
 
   return (
     <DashboardLayout>
-      <div className="space-y-6 p-6">
+      <div className="space-y-6 md:p-6">
         {/* Premium Header */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-violet-600 via-purple-600 to-indigo-700 p-8 text-white shadow-2xl">
           <div className="absolute inset-0 bg-gradient-to-br from-white/5 to-transparent opacity-30"></div>
@@ -256,7 +256,7 @@ export default function UnifiedOrdersDashboard() {
                 {pickLang(language, { ku: 'ڕەوتی هەفتانە', en: 'Weekly Trend', ar: 'الاتجاه الأسبوعي', zh: '每周趋势' })}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <ResponsiveContainer width="100%" height={250}>
                 <LineChart data={weeklyData}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#e5e7eb" />
@@ -299,7 +299,7 @@ export default function UnifiedOrdersDashboard() {
                 {pickLang(language, { ku: 'دابەشبوونی جۆرەکان', en: 'Type Distribution', ar: 'توزيع الأنواع', zh: '类型分布' })}
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               <ResponsiveContainer width="100%" height={200}>
                 <PieChart>
                   <Pie
@@ -373,7 +373,7 @@ export default function UnifiedOrdersDashboard() {
                 <Badge className="bg-green-100 dark:bg-green-950/40 text-green-700 dark:text-green-300 text-xs">{pickLang(language, { ku: 'زیندوو', en: 'Live', ar: 'مباشر', zh: '实时' })}</Badge>
               </CardTitle>
             </CardHeader>
-            <CardContent className="p-6">
+            <CardContent className="p-3 md:p-6">
               {filteredOrders.slice(0, 5).length > 0 ? (
                 <div className="space-y-4">
                   {filteredOrders.slice(0, 5).map((order, i) => (
@@ -423,7 +423,7 @@ export default function UnifiedOrdersDashboard() {
               </div>
             </div>
           </CardHeader>
-          <CardContent className="p-6">
+          <CardContent className="p-3 md:p-6">
             {/* Filter Tabs */}
             <div className="mb-6 flex flex-wrap items-center gap-4">
               <Tabs value={activeTab} onValueChange={setActiveTab}>
