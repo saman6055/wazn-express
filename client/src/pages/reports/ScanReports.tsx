@@ -19,6 +19,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { SCANNER_MODULES, getModuleByType } from "@/constants/scannerModules";
+import { packagesHref } from "@shared/listLinks";
+import { DRILL_CARD, PartsDrill, RecordLink, ReportDrillSheet, type DrillColumn, type PartsDrillState } from "@/components/reports/ReportDrillSheet";
 
 // Locale code for date/number formatting based on active UI language
 function localeCode(lang: string | undefined) {
@@ -114,6 +116,33 @@ export default function ScanReports() {
   const totalScans = scansByDateRange?.length || 0;
   const todayTotal = todayStats?.reduce((sum: number, s: any) => sum + s.count, 0) || 0;
   
+  // Every figure opens the scans it counted (owner, 2026-11-02).
+  const [drill, setDrill] = useState<{ title: string; rows: any[] } | null>(null);
+  const [daysDrill, setDaysDrill] = useState<string | null>(null);
+  const [parts, setParts] = useState<PartsDrillState | null>(null);
+  const moduleName = (module: (typeof SCANNER_MODULES)[number]) =>
+    pickLang(language, { ku: module.labelKu, en: module.labelEn, ar: module.labelAr, zh: module.labelZh });
+  const openDay = (day: any) => setDrill({
+    title: day.date,
+    rows: filteredScans.filter((s: any) => new Date(s.scannedAt).toLocaleDateString('en-CA') === day.date),
+  });
+  const scanColumns: DrillColumn<any>[] = [
+    {
+      header: pickLang(language, { ku: 'تراکینگ', en: 'Tracking', ar: 'رقم التتبع', zh: '运单号' }),
+      cell: (s) => {
+        const code = s.trackingNumber || s.packageCode;
+        return code ? <RecordLink href={packagesHref({ search: code })}><span className="font-mono text-xs" dir="ltr">{code}</span></RecordLink> : "N/A";
+      },
+    },
+    { header: pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' }), cell: (s) => { const m = getModuleByType(s.scanType); return m ? moduleName(m) : s.scanType; } },
+    { header: pickLang(language, { ku: 'بەکارهێنەر', en: 'User', ar: 'المستخدم', zh: '用户' }), cell: (s) => s.scannedBy || "System" },
+    { header: pickLang(language, { ku: 'کات', en: 'Time', ar: 'الوقت', zh: '时间' }), cell: (s) => new Date(s.scannedAt).toLocaleString("en-GB"), ltr: true, className: "text-xs" },
+  ];
+  const dayColumns: DrillColumn<any>[] = [
+    { header: pickLang(language, { ku: 'بەروار', en: 'Date', ar: 'التاريخ', zh: '日期' }), cell: (d) => <button type="button" className="text-sky-700 underline dark:text-sky-300" onClick={() => { setDaysDrill(null); openDay(d); }}>{d.date}</button>, ltr: true },
+    { header: pickLang(language, { ku: 'سکان', en: 'Scans', ar: 'عمليات المسح', zh: '扫描' }), cell: (d) => d.total, total: (rows) => rows.reduce((n, d) => n + d.total, 0) },
+  ];
+
   // Export to Excel
   const exportToExcel = async () => {
     const moduleLabels: Record<string, string> = {
@@ -302,19 +331,29 @@ export default function ScanReports() {
                   </CardHeader>
                   <CardContent>
                     <div className="grid grid-cols-2 gap-4">
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-indigo-50 dark:from-indigo-950/40 to-purple-50 dark:to-purple-950/40 border border-indigo-100 dark:border-indigo-800/60">
+                      <div className={`p-4 rounded-xl bg-gradient-to-br from-indigo-50 dark:from-indigo-950/40 to-purple-50 dark:to-purple-950/40 border border-indigo-100 dark:border-indigo-800/60 ${DRILL_CARD}`} data-testid="scan-report-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی سکان", en: "Total Scans", ar: "إجمالي عمليات المسح", zh: "扫描总数" }), rows: scansByDateRange ?? [] })}>
                         <p className="text-sm text-indigo-600 dark:text-indigo-300 font-medium">
                           {pickLang(language, { ku: "کۆی سکان", en: "Total Scans", ar: "إجمالي عمليات المسح", zh: "扫描总数" })}
                         </p>
                         <p className="text-3xl font-bold text-indigo-700 dark:text-indigo-300">{totalScans}</p>
                       </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40 border border-emerald-100 dark:border-emerald-800/60">
+                      <div
+                        className={`p-4 rounded-xl bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40 border border-emerald-100 dark:border-emerald-800/60 ${DRILL_CARD}`}
+                        data-testid="scan-report-card"
+                        onClick={() => setParts({
+                          title: pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" }),
+                          rows: (todayStats ?? []).map((s: any) => {
+                            const m = getModuleByType(s.scanType);
+                            return { label: m ? moduleName(m) : s.scanType, amount: Number(s.count) };
+                          }),
+                        })}
+                      >
                         <p className="text-sm text-emerald-600 dark:text-emerald-300 font-medium">
                           {pickLang(language, { ku: "ئەمڕۆ", en: "Today", ar: "اليوم", zh: "今天" })}
                         </p>
                         <p className="text-3xl font-bold text-emerald-700 dark:text-emerald-300">{todayTotal}</p>
                       </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 border border-amber-100 dark:border-amber-800/60">
+                      <div className={`p-4 rounded-xl bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 border border-amber-100 dark:border-amber-800/60 ${DRILL_CARD}`} data-testid="scan-report-card" onClick={() => setDaysDrill(pickLang(language, { ku: "ڕۆژانە بە تێکڕا", en: "Daily Average", ar: "المعدل اليومي", zh: "日均" }))}>
                         <p className="text-sm text-amber-600 dark:text-amber-300 font-medium">
                           {pickLang(language, { ku: "ڕۆژانە بە تێکڕا", en: "Daily Average", ar: "المعدل اليومي", zh: "日均" })}
                         </p>
@@ -322,7 +361,7 @@ export default function ScanReports() {
                           {dailyReport.length > 0 ? Math.round(totalScans / dailyReport.length) : 0}
                         </p>
                       </div>
-                      <div className="p-4 rounded-xl bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-cyan-50 dark:to-cyan-950/40 border border-blue-100 dark:border-blue-800/60">
+                      <div className={`p-4 rounded-xl bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-cyan-50 dark:to-cyan-950/40 border border-blue-100 dark:border-blue-800/60 ${DRILL_CARD}`} data-testid="scan-report-card" onClick={() => setDaysDrill(pickLang(language, { ku: "ژمارەی ڕۆژ", en: "Days", ar: "الأيام", zh: "天数" }))}>
                         <p className="text-sm text-blue-600 dark:text-blue-300 font-medium">
                           {pickLang(language, { ku: "ژمارەی ڕۆژ", en: "Days", ar: "الأيام", zh: "天数" })}
                         </p>
@@ -345,7 +384,7 @@ export default function ScanReports() {
                       {moduleStats.map((module) => {
                         const Icon = module.icon;
                         return (
-                          <div key={module.id} className="flex items-center gap-4">
+                          <div key={module.id} className="flex cursor-pointer items-center gap-4" data-testid="scan-report-row" onClick={() => setDrill({ title: moduleName(module), rows: (scansByDateRange ?? []).filter((s: any) => s.scanType === module.scanType) })}>
                             <div className={`p-2 ${module.color} rounded-lg`}>
                               <Icon className="h-4 w-4 text-white" />
                             </div>
@@ -406,7 +445,7 @@ export default function ScanReports() {
                     </TableHeader>
                     <TableBody>
                       {dailyReport.slice(0, 15).map((day: any) => (
-                        <TableRow key={day.date}>
+                        <TableRow key={day.date} className="cursor-pointer" data-testid="scan-report-row" onClick={() => openDay(day)}>
                           <TableCell className="font-medium">
                             {new Date(day.date).toLocaleDateString(localeCode(language), {
                               weekday: 'short',
@@ -475,7 +514,9 @@ export default function ScanReports() {
                         return (
                           <TableRow key={scan.id || index}>
                             <TableCell className="font-mono text-sm">
-                              {scan.trackingNumber || scan.packageCode || "N/A"}
+                              {(scan.trackingNumber || scan.packageCode)
+                                ? <RecordLink href={packagesHref({ search: scan.trackingNumber || scan.packageCode })}>{scan.trackingNumber || scan.packageCode}</RecordLink>
+                                : "N/A"}
                             </TableCell>
                             <TableCell>
                               <Badge className={`${module.lightColor} ${module.textColor}`}>
@@ -526,6 +567,26 @@ export default function ScanReports() {
           </Tabs>
         </div>
       </div>
+
+      <ReportDrillSheet
+        open={!!drill}
+        title={drill?.title ?? ""}
+        rows={drill?.rows ?? []}
+        columns={scanColumns}
+        rowKey={(s, i) => s.id ?? i}
+        testId="scan-report-drill"
+        onClose={() => setDrill(null)}
+      />
+      <ReportDrillSheet
+        open={!!daysDrill}
+        title={daysDrill ?? ""}
+        rows={dailyReport as any[]}
+        columns={dayColumns}
+        rowKey={(d) => d.date}
+        testId="scan-report-days"
+        onClose={() => setDaysDrill(null)}
+      />
+      <PartsDrill drill={parts} format={String} testId="scan-report-today" onClose={() => setParts(null)} />
     </DashboardLayout>
   );
 }
