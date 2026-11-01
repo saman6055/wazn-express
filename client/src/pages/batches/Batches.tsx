@@ -1644,12 +1644,41 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     key={batch.id}
                     data-batch-code={batch.batchCode}
                     className={cn(
-                      "group transition-colors duration-300 hover:bg-sky-50/50 dark:hover:bg-sky-950/20 motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1",
+                      /*
+                       * The row under the pointer has to be unmistakable.
+                       * The owner, 2026-11-01: «کە دەچێتە سەر هێڵەکان گلۆ و
+                       * ئیتاری نیە». It did have a hover — sky-50, which was
+                       * a shade off white and read clearly while the page
+                       * was white. Against the warm page and cool cards it
+                       * disappeared. This is the brand wash, which is a real
+                       * step away from the card, with a bar down the leading
+                       * edge so the eye catches the whole line at once.
+                       */
+                      "group transition-colors duration-150",
+                      // The rows are not the same height — some cells stack
+                      // two chips — so every cell sits on its row's middle
+                      // instead of hanging from the top, and every figure
+                      // lines up digit under digit.
+                      "[&>td]:align-middle [&>td]:tabular-nums",
+                      "hover:bg-accent hover:shadow-[inset_3px_0_0_0_var(--ring)] rtl:hover:shadow-[inset_-3px_0_0_0_var(--ring)]",
+                      "motion-safe:animate-in motion-safe:fade-in-0 motion-safe:slide-in-from-bottom-1",
                       focusCode === batch.batchCode && "bg-amber-50 ring-2 ring-inset ring-amber-500 dark:bg-amber-950/30",
                     )}
                   >
                     <TableCell>
                       <div className="flex items-center gap-2">
+                        {/*
+                         * The code leads the row.
+                         *
+                         * The owner, 2026-11-01: «زۆر تێکەڵن، واضح و دیار
+                         * نین». It is the one thing anybody looks for, and it
+                         * stood sixth in a line of chips, so it landed at a
+                         * different place on every row and the eye could not
+                         * run down the column. Now it is first and a size
+                         * larger than the chips beside it.
+                         */}
+                        <span className="font-mono text-sm font-semibold whitespace-nowrap">{batch.batchCode}</span>
+                        <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                         {/* Ship, plane, or the red plane of an irregular flight; CN / IQ for where it was made (owner, 2026-10-27). */}
                         <BatchTypeIcon shippingType={batch.shippingType} language={language} />
                         <BatchOriginChip china={isChinaBatch(batch as never)} language={language} />
@@ -1660,8 +1689,6 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             {(batch as any).carrierBatchNo ? <bdi dir="ltr">{(batch as any).carrierBatchNo}</bdi> : null}
                           </span>
                         )}
-                        <span className="font-mono font-medium whitespace-nowrap">{batch.batchCode}</span>
-                        <CopyButton value={batch.batchCode} label={pickLang(language, { ku: "کۆپی کۆدی باچ", en: "Copy batch code", ar: "نسخ رمز الدفعة", zh: "复制批次代码" })} />
                         {/* Which is the twin and which the original, said on both rows. */}
                         {(batch as any).twinOfBatchId ? (
                           <span className={cn("inline-flex shrink-0 items-center rounded px-1.5 py-px text-[10px] font-medium", BATCH_ROLE_TONE.twin)} data-testid="batch-twin-chip">
