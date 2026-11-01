@@ -11,6 +11,7 @@ import type { CheckSheetSection } from "@shared/batchCloseCheck";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { AlertParcelSheet } from "@/components/registrations/AlertParcelSheet";
 import { UncheckedParcelActions } from "./UncheckedParcelActions";
+import { confirmAction } from "@/components/ConfirmDialog";
 import { customerCodeOnly } from "@shared/customerCode";
 import {
   batchAtLoss,
@@ -206,6 +207,7 @@ export function BatchCloseCheckSections({ audit, batchCode, batchId, onFixBatch 
         testId="close-check-unboxed"
         section="unboxed"
         batchId={batchId}
+        extra={batchId ? <PutAllInBoxes batchId={batchId} parcels={(f.unboxed ?? []).length} priceMissing={!!audit.money?.priceMissing} /> : undefined}
       />
       <ParcelSection
         icon={<ScanLine className="h-4 w-4" />}
@@ -251,6 +253,51 @@ export function BatchCloseCheckSections({ audit, batchCode, batchId, onFixBatch 
         ) : undefined}
       />
     </>
+  );
+}
+
+/** All of them into their customers' boxes at one press (owner, 2026-11-02). */
+function PutAllInBoxes({ batchId, parcels, priceMissing }: { batchId: number; parcels: number; priceMissing: boolean }) {
+  const { language } = useLanguage();
+  const L = (w: Words) => pickLang(language, w);
+  const utils = trpc.useUtils();
+  const put = trpc.deliveryBox.putUnboxedInBoxes.useMutation({
+    onSuccess: (r) => {
+      toast.success(L({
+        ku: `${r.parcelsIn} پاکێج چوونە بۆکسی ${r.customers} کڕیار · ${r.boxesMade} بۆکسی نوێ${r.leftOut.length ? ` · ${r.leftOut.length} مانەوە` : ""}`,
+        en: `${r.parcelsIn} parcels boxed for ${r.customers} customers · ${r.boxesMade} new boxes${r.leftOut.length ? ` · ${r.leftOut.length} left out` : ""}`,
+        ar: `${r.parcelsIn} طرد إلى صناديق ${r.customers} عميل`,
+        zh: `${r.parcelsIn} 个包裹已装箱`,
+      }), { duration: 10_000 });
+      void utils.batches.invalidate();
+      void utils.deliveryBox.invalidate();
+    },
+    onError: (e) => toast.error(e.message),
+  });
+  const go = async () => {
+    const yes = await confirmAction({
+      message: L({
+        ku: `${parcels} پاکێج بخرێنە بۆکسی خاوەنەکانیان؟ ئەوانەی نەگەیشتوون یان خاوەنیان نییە دەمێننەوە.`,
+        en: `Put ${parcels} parcels in their owners' boxes? Those not arrived or with no owner stay out.`,
+        ar: `وضع ${parcels} طرد في صناديق أصحابها؟`,
+        zh: `将 ${parcels} 个包裹装入客户的箱子？`,
+      }),
+      confirmLabel: L({ ku: "بەڵێ، بیانخەرە بۆکس", en: "Yes, box them", ar: "نعم", zh: "确定" }),
+    });
+    if (yes) put.mutate({ batchId });
+  };
+  return (
+    <button
+      type="button"
+      disabled={put.isPending || priceMissing}
+      onClick={() => void go()}
+      title={priceMissing ? L({ ku: "سەرەتا نرخی فرۆشتنی باچەکە دابنێ", en: "Set the batch's selling price first", ar: "حدّد سعر البيع أولاً", zh: "请先设置售价" }) : undefined}
+      className="inline-flex items-center gap-1 rounded-md bg-primary px-2 py-1 text-xs font-medium text-primary-foreground disabled:opacity-50"
+      data-testid="close-check-box-all"
+    >
+      {put.isPending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Box className="h-3.5 w-3.5" />}
+      {L({ ku: "هەمووی بخەرە بۆکس", en: "Box them all", ar: "ضعها كلها في صناديق", zh: "全部装箱" })}
+    </button>
   );
 }
 
@@ -325,6 +372,7 @@ function ParcelSection({
   testId,
   section,
   batchId,
+  extra,
 }: {
   icon: ReactNode;
   title: string;
@@ -334,6 +382,8 @@ function ParcelSection({
   testId: string;
   /** Which list the server should gather for the file. */
   section?: CheckSheetSection;
+  /** A button of the section's own, beside the PDF. */
+  extra?: ReactNode;
   batchId?: number;
 }) {
   const { language } = useLanguage();
@@ -366,6 +416,7 @@ function ParcelSection({
             testId={testId}
           />
         ) : null}
+        {extra}
       </div>
       <div className="text-[11px] text-amber-800/80 dark:text-amber-300/80 mb-2">{hint}</div>
       <div className="space-y-1.5">

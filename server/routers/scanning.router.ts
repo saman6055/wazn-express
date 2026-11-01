@@ -2288,6 +2288,15 @@ export const deliveryBoxRouter = router({
     }),
 
   // Auto-create per-customer boxes for a batch
+  /** The close check's unboxed cartons into their customers' boxes, at one press. */
+  putUnboxedInBoxes: staffProcedure
+    .input(z.object({ batchId: z.number().int().positive() }))
+    .mutation(async ({ input, ctx }) => {
+      const result = await db.putUnboxedInBoxes(input.batchId, ctx.user.id);
+      await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "put_unboxed_in_boxes", entityType: "batch", entityId: input.batchId, newValues: result });
+      return result;
+    }),
+
   createBoxesForBatch: staffProcedure
     .input(z.object({
       batchId: z.number(),

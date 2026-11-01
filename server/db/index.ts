@@ -16,6 +16,7 @@ export * from './store.db';
 export * from './prohibited.db';
 export * from './deliveryBoxes.db';
 export * from './boxMissing.db';
+export * from './boxUnboxed.db';
 export * from './orderNumbers.db';
 export * from './trash.db';
 export * from './declaredPackages.db';

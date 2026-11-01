@@ -1345,7 +1345,7 @@ export async function createDeliveryBoxesForBatch(
  *  - Commission cartons: `calculatedCostUsd = goods + shippingCost`.
  *    Full-package cartons: selling price already covers shipping → just goods.
  */
-async function buildBoxItemValuesFromPackage(
+export async function buildBoxItemValuesFromPackage(
   pkg: typeof packages.$inferSelect,
   batchRow: typeof batches.$inferSelect,
   userId: number,
