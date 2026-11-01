@@ -98,6 +98,7 @@ export function AlertParcelSheet({
   onClose,
   onAcknowledge,
   acknowledging,
+  actions,
 }: {
   parcel: AlertParcel | null;
   /** "check": a carton the batch's close check names, with its reason. */
@@ -111,6 +112,8 @@ export function AlertParcelSheet({
   /** Volumetric only: record that the customer has been told. */
   onAcknowledge?: () => void;
   acknowledging?: boolean;
+  /** What can be done about it here, drawn with the sheet's own buttons. */
+  actions?: (ctx: { mobile: string | null | undefined; action: string }) => ReactNode;
 }) {
   const { language } = useLanguage();
   const isRTL = language === "ku" || language === "ar";
@@ -360,6 +363,7 @@ export function AlertParcelSheet({
 
               {/* The way onward from here — each to where that job is done. */}
               <div className="grid grid-cols-2 gap-2">
+                {actions?.({ mobile: parcel.customerMobile, action })}
                 {/* First, and across the row: the record this parcel lives in.
                     A stuck buy-at-cost parcel is a question about that
                     purchase, and the purchase is where the answer is. */}

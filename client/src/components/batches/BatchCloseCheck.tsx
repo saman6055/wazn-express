@@ -11,6 +11,7 @@ import { trpc } from "@/lib/trpc";
 import type { CheckSheetSection } from "@shared/batchCloseCheck";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { AlertParcelSheet } from "@/components/registrations/AlertParcelSheet";
+import { UncheckedParcelActions } from "./UncheckedParcelActions";
 import { customerCodeOnly } from "@shared/customerCode";
 import {
   batchAtLoss,
@@ -246,6 +247,9 @@ export function BatchCloseCheckSections({ audit, batchCode, batchId, onFixBatch 
         level="high"
         reason={open?.reason}
         onClose={() => setOpen(null)}
+        actions={open?.reason.en === REASON.unchecked.en ? ({ mobile, action }) => (
+          <UncheckedParcelActions parcel={open.parcel} mobile={mobile} action={action} onDone={() => setOpen(null)} />
+        ) : undefined}
       />
     </>
   );
