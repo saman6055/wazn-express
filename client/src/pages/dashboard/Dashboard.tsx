@@ -55,6 +55,8 @@ import { VolumetricWatchCard } from "@/components/registrations/VolumetricWatchC
 import { usePermissions } from "@/hooks/usePermissions";
 import { Button } from "@/components/ui/button";
 import { useState, useMemo, memo, useEffect } from "react";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { fmtDate } from "@/lib/numericDate";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
 import { MobileQuickActions } from "@/components/mobile/MobileAppShell";
@@ -192,6 +194,9 @@ export default function Dashboard() {
   const { data: recentActivity } = trpc.dashboard.recentActivity.useQuery({ limit: 8 });
   const { data: alerts } = trpc.dashboard.alerts.useQuery();
   const { data: highlights } = trpc.dashboard.weeklyHighlights.useQuery();
+  // Which figure's records are open: the week's days, the week's orders, the 30 days.
+  const [drill, setDrill] = useState<null | "week" | "orders" | "month">(null);
+  const weekOrdersQ = trpc.dashboard.weekOrders.useQuery(undefined, { enabled: drill === "orders" });
   const { data: selfOrders } = trpc.reports.selfOrderReport.useQuery({ days: 30 });
   const { data: newCustomersCount } = trpc.dashboard.newCustomers.useQuery({ days: 7 });
 
@@ -595,6 +600,7 @@ export default function Dashboard() {
           description={t("dashboard.revenueProfitLossDesc")}
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <div className="contents" onClick={() => setDrill("month")} data-testid="dash-period-cards">
             <FinancialCard
               title={t("dashboard.totalRevenueInPeriod")}
               value={periodTotals.revenue}
@@ -619,6 +625,7 @@ export default function Dashboard() {
               prefix={periodTotals.profit >= 0 ? "$" : "-$"}
               isDebt={periodTotals.profit < 0}
             />
+            </div>
           </div>
           <Card className="pro-card overflow-hidden">
             <CardContent className="pro-card-body">
@@ -716,8 +723,8 @@ export default function Dashboard() {
             description={t("dashboard.winsDesc") || pickLang(language, { ku: "ریکۆرد و خاڵە ئەرێنییەکانی ئەم هەفتەیە", en: "Records and positive highlights this week", ar: "الأرقام القياسية والنقاط الإيجابية لهذا الأسبوع", zh: "本周的纪录与亮点" })}
           >
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
-              {/* Weekly profit */}
-              <div className="relative rounded-xl border bg-card p-4 flex items-center gap-3">
+              {/* Weekly profit: its seven days */}
+              <div role="button" tabIndex={0} onClick={() => setDrill("week")} onKeyDown={(e) => { if (e.key === "Enter") setDrill("week"); }} className="relative cursor-pointer rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors" data-testid="dash-week-profit">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                   <TrendingUp className="h-5 w-5" />
                 </span>
@@ -738,7 +745,7 @@ export default function Dashboard() {
               </div>
 
               {/* New customers */}
-              <Link href={customersHref({ createdWithin: 7 })} className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
+              <a target="_blank" rel="noopener noreferrer" href={customersHref({ createdWithin: 7 })} className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400">
                   <Users className="h-5 w-5" />
                 </span>
@@ -747,10 +754,10 @@ export default function Dashboard() {
                   <p className="text-xl font-bold">{highlights.newCustomers.thisWeek}</p>
                   <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "هەفتەی ڕابردوو", en: "Last week", ar: "الأسبوع الماضي", zh: "上周" })}: {highlights.newCustomers.lastWeek}</p>
                 </div>
-              </Link>
+              </a>
 
-              {/* Orders */}
-              <div className="rounded-xl border bg-card p-4 flex items-center gap-3">
+              {/* Orders: the orders themselves */}
+              <div role="button" tabIndex={0} onClick={() => setDrill("orders")} onKeyDown={(e) => { if (e.key === "Enter") setDrill("orders"); }} className="cursor-pointer rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors" data-testid="dash-week-orders">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400">
                   <Package className="h-5 w-5" />
                 </span>
@@ -763,8 +770,8 @@ export default function Dashboard() {
 
               {/* Most active customer */}
               {highlights.topCustomer && (
-                <Link
-                  href={customersHref({ search: highlights.topCustomer.code || highlights.topCustomer.name || "" })}
+                <a target="_blank" rel="noopener noreferrer"
+                  href={`/customers/${highlights.topCustomer.id}`}
                   className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors"
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">
@@ -775,13 +782,13 @@ export default function Dashboard() {
                     <p className="text-base font-bold truncate">{highlights.topCustomer.name || highlights.topCustomer.code}</p>
                     <p className="text-xs text-muted-foreground">{highlights.topCustomer.orders} {pickLang(language, { ku: "ئۆردەر", en: "orders", ar: "طلبات", zh: "订单" })} · ${highlights.topCustomer.spentUsd.toFixed(0)}</p>
                   </div>
-                </Link>
+                </a>
               )}
 
               {/* Fastest batch */}
               {highlights.fastestBatch && (
-                <Link
-                  href={batchesHref({ status: "all" })}
+                <a target="_blank" rel="noopener noreferrer"
+                  href={`/batches?find=${encodeURIComponent(highlights.fastestBatch.code)}`}
                   className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors"
                 >
                   <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-400">
@@ -792,7 +799,7 @@ export default function Dashboard() {
                     <p className="text-base font-bold truncate font-mono">{highlights.fastestBatch.code}</p>
                     <p className="text-xs text-muted-foreground">{highlights.fastestBatch.days} {pickLang(language, { ku: "ڕۆژ لە ڕێگادا", en: "days in transit", ar: "أيام في الطريق", zh: "天在途" })}</p>
                   </div>
-                </Link>
+                </a>
               )}
             </div>
           </DashboardSection>
@@ -1271,13 +1278,81 @@ export default function Dashboard() {
             <CardContent className="p-4">
               <div className="space-y-3">
                 {packageStats?.map((stat: { status: string; count: number | string }) => (
-                  <StatusBar key={stat.status} status={stat.status} count={Number(stat.count)} total={totalPackages} language={language} />
+                  // A status the parcels list has a tab for opens it; the others have no list of their own.
+                  stat.status === "delivered" ? (
+                    <a key={stat.status} target="_blank" rel="noopener noreferrer" href={packagesHref({ tab: "delivered" })} className="block rounded-md hover:bg-accent" data-testid="dash-status-link">
+                      <StatusBar status={stat.status} count={Number(stat.count)} total={totalPackages} language={language} />
+                    </a>
+                  ) : (
+                    <StatusBar key={stat.status} status={stat.status} count={Number(stat.count)} total={totalPackages} language={language} />
+                  )
                 ))}
               </div>
             </CardContent>
           </Card>
         </div>
       </div>
+      <Sheet open={drill !== null} onOpenChange={(o) => { if (!o) setDrill(null); }}>
+        <SheetContent className="w-full overflow-y-auto sm:max-w-xl" data-testid="dash-drill">
+          <SheetHeader>
+            <SheetTitle>
+              {drill === "orders"
+                ? pickLang(language, { ku: "ئۆردەرەکانی ئەم هەفتەیە", en: "This week's orders", ar: "طلبات هذا الأسبوع", zh: "本周订单" })
+                : drill === "week"
+                  ? pickLang(language, { ku: "قازانجی ئەم هەفتەیە، ڕۆژ بە ڕۆژ", en: "This week's profit, day by day", ar: "ربح هذا الأسبوع يوماً بيوم", zh: "本周利润（按日）" })
+                  : pickLang(language, { ku: "داهات و خەرجی 30 ڕۆژ، ڕۆژ بە ڕۆژ", en: "30 days of revenue and expenses, day by day", ar: "30 يوماً يوماً بيوم", zh: "30 天（按日）" })}
+            </SheetTitle>
+          </SheetHeader>
+          <div className="px-4 pb-4">
+            {drill === "orders" ? (
+              <div className="divide-y text-sm">
+                {(weekOrdersQ.data ?? []).map((o) => (
+                  <div key={o.id} className="flex flex-wrap items-center gap-x-3 gap-y-1 py-2" data-testid="dash-drill-order">
+                    <a target="_blank" rel="noopener noreferrer" href={o.orderType === "commission" ? `/commission/${o.id}` : `/full-package/${o.id}`} className="font-mono text-xs text-sky-700 underline dark:text-sky-300" dir="ltr">{o.orderCode}</a>
+                    {o.customerId ? <a target="_blank" rel="noopener noreferrer" href={`/customers/${o.customerId}`} className="text-sky-700 underline dark:text-sky-300">{o.customerCode} {o.customerName}</a> : null}
+                    <span className="ms-auto text-xs text-muted-foreground">{fmtDate(o.createdAt)}</span>
+                  </div>
+                ))}
+                <p className="pt-2 font-semibold">{pickLang(language, { ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}: {weekOrdersQ.data?.length ?? 0}</p>
+              </div>
+            ) : (() => {
+              const days = [...(profitLossChart ?? [])].sort((a, b) => (a.date < b.date ? 1 : -1)).slice(0, drill === "week" ? 7 : undefined);
+              const sum = (k: "revenue" | "expenses" | "profit") => days.reduce((s, d) => s + (Number(d[k]) || 0), 0);
+              return (
+                <>
+                  <a target="_blank" rel="noopener noreferrer" href="/finance" className="text-sm text-sky-700 underline dark:text-sky-300">{pickLang(language, { ku: "بەشی دارایی", en: "Finance", ar: "المالية", zh: "财务" })}</a>
+                  <table className="mt-3 w-full text-sm tabular-nums">
+                    <thead className="text-xs text-muted-foreground">
+                      <tr>
+                        <th className="py-1 text-start">{pickLang(language, { ku: "ڕۆژ", en: "Day", ar: "اليوم", zh: "日期" })}</th>
+                        <th className="py-1 text-start">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيراد", zh: "收入" })}</th>
+                        <th className="py-1 text-start">{pickLang(language, { ku: "خەرجی", en: "Expenses", ar: "المصروفات", zh: "支出" })}</th>
+                        <th className="py-1 text-start">{pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" })}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {days.map((d) => (
+                        <tr key={d.date} className="border-t" data-testid="dash-drill-day">
+                          <td className="py-1" dir="ltr">{d.date}</td>
+                          <td className="py-1" dir="ltr">${(Number(d.revenue) || 0).toFixed(2)}</td>
+                          <td className="py-1" dir="ltr">${(Number(d.expenses) || 0).toFixed(2)}</td>
+                          <td className="py-1" dir="ltr">${(Number(d.profit) || 0).toFixed(2)}</td>
+                        </tr>
+                      ))}
+                      <tr className="border-t-2 font-semibold">
+                        <td className="py-1">{pickLang(language, { ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}</td>
+                        <td className="py-1" dir="ltr">${sum("revenue").toFixed(2)}</td>
+                        <td className="py-1" dir="ltr">${sum("expenses").toFixed(2)}</td>
+                        <td className="py-1" dir="ltr">${sum("profit").toFixed(2)}</td>
+                      </tr>
+                    </tbody>
+                  </table>
+                </>
+              );
+            })()}
+          </div>
+        </SheetContent>
+      </Sheet>
     </DashboardLayout>
   );
 }
@@ -1341,7 +1416,7 @@ const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type
 });
 
 // Activity Item Component
-function ActivityItem({ activity, isLast }: { activity: { id: string; type: string; title: string; description: string; timestamp: Date; icon: string; color: string }; isLast: boolean }) {
+function ActivityItem({ activity, isLast }: { activity: { id: string; type: string; title: string; description: string; timestamp: Date; icon: string; color: string; href?: string }; isLast: boolean }) {
   const iconMap: Record<string, React.ReactNode> = {
     Package: <Package className="h-4 w-4" />,
     DollarSign: <DollarSign className="h-4 w-4" />,
@@ -1357,7 +1432,7 @@ function ActivityItem({ activity, isLast }: { activity: { id: string; type: stri
   };
 
   return (
-    <div className="flex gap-4 p-4 hover:bg-muted/50 transition-colors">
+    <a {...(activity.href ? { href: activity.href, target: "_blank", rel: "noopener noreferrer" } : {})} className="flex gap-4 p-4 hover:bg-muted/50 transition-colors" data-testid="dash-activity">
       <div className="flex flex-col items-center">
         <div className={`h-9 w-9 rounded-full flex items-center justify-center ${colorStyles[activity.color] || colorStyles.blue}`}>
           {iconMap[activity.icon] || <Activity className="h-4 w-4" />}
@@ -1376,7 +1451,7 @@ function ActivityItem({ activity, isLast }: { activity: { id: string; type: stri
           })}
         </p>
       </div>
-    </div>
+    </a>
   );
 }
 

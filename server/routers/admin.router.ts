@@ -464,6 +464,7 @@ export const dashboardRouter = router({
       }),
 
     // Weekly wins / records to celebrate (cached 30s)
+    weekOrders: accountantProcedure.query(() => db.getWeekOrders()),
     weeklyHighlights: accountantProcedure.query(async () => {
       return cacheGetOrSet("dashboard:weeklyHighlights", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getWeeklyHighlights());
     }),
