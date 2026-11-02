@@ -1510,6 +1510,7 @@ body {
 }
 
 /* small-data zoom */
+[dir="rtl"] { --fact-zoom-origin: right; }
 /*
  * Every small fact grows under the pointer, not only the badges.
  *
@@ -1533,27 +1534,30 @@ body {
  * Not applied at 13px and up: that is ordinary type, not a side fact.
  */
 @media (hover: hover) and (pointer: fine) {
-  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *),
-  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *) {
+  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate),
+  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate) {
     transition: transform 140ms ease, color 140ms ease;
-    transform-origin: center;
+    /* Grown from its own start edge, not its middle, so it never spreads
+       over the fact beside it; and never a cut-off name, which would grow
+       over its neighbour and still be cut (owner, 2026-11-02: «دەڕێ سەرخۆشن»). */
+    transform-origin: var(--fact-zoom-origin, left);
   }
-  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover {
+  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover {
     /* An inline span cannot be transformed; as a flex or grid child it is
        blockified and can. Most of these sit in flex rows, so they grow,
        and the few that do not are left alone rather than forced to
@@ -1565,15 +1569,15 @@ body {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover,
-  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):hover {
+  .text-xs:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[9px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[9\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[10px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[10\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[11px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[11\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[12px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover,
+  .text-\[12\.5px\]:not(:has(*)):not([data-slot="badge"]):not([data-slot="badge"] *):not(.truncate):hover {
     transition: none;
     transform: none;
   }
