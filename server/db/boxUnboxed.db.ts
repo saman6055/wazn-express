@@ -17,16 +17,16 @@ export interface UnboxedResult {
  * one press (owner, 2026-11-02). The customer's box still being filled if
  * there is one; else a new box made the way their newest one went out.
  *
- * A carton still to be checked in stays out: it has not reached us. So does a
- * carton with no owner. A parcel that fails stays out and is reported; the
- * rest are not held back by it.
+ * Code by code, every tracking the code has (owner, 2026-11-02: «هەر کۆدەی
+ * چەند تراکی هەیە ئەوان بخەرە بۆکس») - a carton not yet arrival-checked goes
+ * in too. Only a carton with no owner stays out. A parcel that fails stays out
+ * and is reported; the rest are not held back by it.
  */
 export async function putUnboxedInBoxes(batchId: number, userId: number): Promise<UnboxedResult> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
   const facts = await getBatchCloseFacts(batchId);
-  const notHere = new Set((facts.notArrivalChecked ?? []).map((p) => p.id));
-  const ids = (facts.unboxed ?? []).map((p) => p.id).filter((id) => !notHere.has(id));
+  const ids = (facts.unboxed ?? []).map((p) => p.id);
   const result: UnboxedResult = { customers: 0, boxesMade: 0, parcelsIn: 0, leftOut: [] };
   if (ids.length === 0) return result;
 

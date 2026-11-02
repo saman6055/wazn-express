@@ -277,8 +277,8 @@ function PutAllInBoxes({ batchId, parcels, priceMissing }: { batchId: number; pa
   const go = async () => {
     const yes = await confirmAction({
       message: L({
-        ku: `${parcels} پاکێج بخرێنە بۆکسی خاوەنەکانیان؟ ئەوانەی نەگەیشتوون یان خاوەنیان نییە دەمێننەوە.`,
-        en: `Put ${parcels} parcels in their owners' boxes? Those not arrived or with no owner stay out.`,
+        ku: `${parcels} پاکێج بخرێنە بۆکس؟ کۆد بە کۆد: هەموو تراکەکانی هەر کۆدێک دەچنە یەک بۆکسی ئەو کۆدە. تەنها پاکێجی بێ خاوەن دەمێنێتەوە.`,
+        en: `Box ${parcels} parcels? Code by code: every tracking of a code goes into that code's one box. Only parcels with no owner stay out.`,
         ar: `وضع ${parcels} طرد في صناديق أصحابها؟`,
         zh: `将 ${parcels} 个包裹装入客户的箱子？`,
       }),
