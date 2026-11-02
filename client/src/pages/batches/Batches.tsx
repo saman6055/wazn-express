@@ -1960,6 +1960,27 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                 {t("batches.scanIntoThisBatch")}
                               </DropdownMenuItem>
                             )}
+                            {/* The close check's card, at any time - before the close
+                                and long after it (owner, 2026-11-02). Look only. */}
+                            <DropdownMenuItem
+                              data-testid="batch-problems-item"
+                              onClick={async () => {
+                                setPendingDeliveryConfirm({ batchId: batch.id, targetStatus: "view" });
+                                setAuditLoading(true);
+                                setAuditData(null);
+                                try {
+                                  setAuditData(await trpcUtilsForAudit.batches.getPreDeliveryAudit.fetch({ batchId: batch.id }));
+                                } catch (e: any) {
+                                  toast.error(e?.message || pickLang(language, { ku: "هەڵە لە پشکنین", en: "Check error", ar: "خطأ في الفحص", zh: "检查错误" }));
+                                  setPendingDeliveryConfirm(null);
+                                } finally {
+                                  setAuditLoading(false);
+                                }
+                              }}
+                            >
+                              <AlertTriangle className="h-4 w-4 me-2" />
+                              {pickLang(language, { ku: "کێشەکانی ئەم باچە", en: "This batch's problems", ar: "مشاكل هذه الدفعة", zh: "该批次的问题" })}
+                            </DropdownMenuItem>
                             <DropdownMenuItem onClick={() => setLocation(`/batches/${batch.id}/financial`)}>
                               <BarChart3 className="h-4 w-4 me-2" />
                               {t("batches.financialReport")}
@@ -3034,11 +3055,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 ) : (
                   <ShieldCheck className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
                 )}
-                {pickLang(language, { ku: "پێش-پشکنینی گەیاندن", en: "Pre-delivery audit", ar: "تدقيق ما قبل التسليم", zh: "交付前审核" })}
+                {pendingDeliveryConfirm?.targetStatus === "view"
+                  ? pickLang(language, { ku: "کێشەکانی ئەم باچە", en: "This batch's problems", ar: "مشاكل هذه الدفعة", zh: "该批次的问题" })
+                  : pickLang(language, { ku: "پێش-پشکنینی گەیاندن", en: "Pre-delivery audit", ar: "تدقيق ما قبل التسليم", zh: "交付前审核" })}
                 {auditData && <Badge variant="outline" className="font-mono">{auditData.batchCode}</Badge>}
               </DialogTitle>
               <DialogDescription>
-                {pendingDeliveryConfirm?.targetStatus === "delivered"
+                {pendingDeliveryConfirm?.targetStatus === "view"
+                  ? pickLang(language, { ku: "تەنها بۆ بینین. لێرەوە هیچ دۆخێک ناگۆڕێت.", en: "Look only. Nothing changes from here.", ar: "للعرض فقط. لا يتغير شيء من هنا.", zh: "仅供查看，这里不会更改任何状态。" })
+                  : pendingDeliveryConfirm?.targetStatus === "delivered"
                   ? pickLang(language, { ku: "پێش گۆڕینی دۆخی کۆمەڵە بۆ Delivered، تکایە ئەم پشکنینە سەیر بکە.", en: "Before changing the batch status to Delivered, please review this audit.", ar: "قبل تغيير حالة الدفعة إلى تم التسليم، يرجى مراجعة هذا التدقيق.", zh: "在将批次状态更改为“已交付”之前，请查看此审核。" })
                   : pickLang(language, { ku: "پێش داخستنی کۆمەڵە، تکایە ئەم پشکنینە سەیر بکە.", en: "Before closing the batch, please review this audit.", ar: "قبل إغلاق الدفعة، يرجى مراجعة هذا التدقيق.", zh: "在关闭批次之前，请查看此审核。" })}
               </DialogDescription>
@@ -3188,8 +3213,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   setAuditData(null);
                 }}
               >
-                {pickLang(language, { ku: "وازهێنان", en: "Cancel", ar: "إلغاء", zh: "取消" })}
+                {pendingDeliveryConfirm?.targetStatus === "view"
+                  ? pickLang(language, { ku: "داخستنی پەنجەرە", en: "Close window", ar: "إغلاق النافذة", zh: "关闭窗口" })
+                  : pickLang(language, { ku: "وازهێنان", en: "Cancel", ar: "إلغاء", zh: "取消" })}
               </Button>
+              {pendingDeliveryConfirm?.targetStatus !== "view" && (
               <Button
                 disabled={auditLoading || !auditData || auditData.summary?.blocking || updateStatusMutation.isPending}
                 onClick={() => {
@@ -3222,6 +3250,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     ? pickLang(language, { ku: "بەردەوام بە، دەزانم", en: "Continue, I understand", ar: "متابعة، أنا أدرك ذلك", zh: "继续，我知道了" })
                     : pickLang(language, { ku: "بەردەوام بە بۆ گەیاندن", en: "Continue to delivery", ar: "متابعة إلى التسليم", zh: "继续交付" })}
               </Button>
+              )}
             </DialogFooter>
           </DialogContent>
         </Dialog>
