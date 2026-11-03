@@ -1272,18 +1272,21 @@ export const batchesRouter = router({
             ),
           });
         }
-        // Where the work was done, copied in now rather than looked up later.
-        // If this person changes office next year, this batch must still say
-        // where it was actually made.
+        // Where the batch is made, copied in now rather than looked up later.
+        // The warehouse on the form decides, not the desk of whoever typed it
+        // (owner, 2026-11-03: a batch he made in Erbil for Guangzhou cartons
+        // read «لە کۆگای هەولێر» on its first parcel). The creator's office
+        // only when the warehouse is not found.
         const workLocation = await db.getUserWorkLocation(ctx.user.id);
+        const originWarehouse = await db.getWarehouseById(input.originWarehouseId);
 
         const batch = await db.createBatch({
           ...batchData,
           // "" (or undefined) → createBatch mints a code for us.
           batchCode: input.batchCode ?? "",
           createdById: ctx.user.id,
-          createdInCountryId: workLocation.countryId,
-          createdInCity: workLocation.city,
+          createdInCountryId: originWarehouse?.countryId ?? workLocation.countryId,
+          createdInCity: originWarehouse?.city ?? workLocation.city,
         });
         
         // Create pricing tiers if provided
