@@ -13,6 +13,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { usePasteIntoField } from "@/hooks/usePasteIntoField";
 import { VolumetricDiscountIfDue } from "@/components/packages/VolumetricDiscount";
 import { ChinaBatchBanner, confirmBatchToday, confirmedBatchToday } from "@/components/packages/ChinaBatchBanner";
+import { readQuickRegisterDay, saveQuickRegisterDay } from "@/lib/quickRegisterDay";
 import { toast } from "sonner";
 import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers, PencilLine } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -107,20 +108,22 @@ export default function QuickRegister() {
   // Form state
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
-  const [shippingType, setShippingType] = useState<"air_regular" | "air_irregular" | "sea">("air_regular");
+  // Warehouse, transport and batch hold for the day (lib/quickRegisterDay).
+  const [today] = useState(() => readQuickRegisterDay());
+  const [shippingType, setShippingType] = useState<"air_regular" | "air_irregular" | "sea">(today?.shippingType ?? "air_regular");
   const [weightKg, setWeightKg] = useState("");
   const [lengthCm, setLengthCm] = useState("");
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
   // Sea: how many cartons of the size above (owner, 2026-10-17). One means one.
   const [cartonCount, setCartonCount] = useState("1");
-  const [batchId, setBatchId] = useState<string>("");
+  const [batchId, setBatchId] = useState<string>(today?.batchId ?? "");
   // China (owner, 2026-10-24): the batch big at the top, confirmed once a day.
   const { data: dispatchMe } = trpc.dispatch.me.useQuery(undefined, { staleTime: 5 * 60_000 });
   const inChina = !!dispatchMe?.inChina;
   const [confirmedBatch, setConfirmedBatch] = useState<string | null>(() => confirmedBatchToday());
   const batchSelectRef = useRef<HTMLButtonElement>(null);
-  const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
+  const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(today?.originWarehouseId ?? null);
   const [isUnclaimed, setIsUnclaimed] = useState(false);
   /** A moment's ring on the weight box, so the handover is seen, not guessed. */
   const [weightGlow, setWeightGlow] = useState(false);
@@ -535,6 +538,13 @@ export default function QuickRegister() {
     }
   }, [warehouses, originWarehouseId]);
 
+  // A remembered warehouse that is gone falls back to the first.
+  useEffect(() => {
+    if (warehouses?.length && originWarehouseId !== null && !warehouses.some((w) => w.id === originWarehouseId)) {
+      setOriginWarehouseId(warehouses[0].id);
+    }
+  }, [warehouses, originWarehouseId]);
+
   const selectedWarehouse = useMemo(
     () => (warehouses?.find((w) => w.id === originWarehouseId) ?? warehouses?.[0]) ?? null,
     [warehouses, originWarehouseId]
@@ -550,6 +560,16 @@ export default function QuickRegister() {
       return batchType === "sea";
     }).filter((b: any) => batchOpenForRegistration(b) && batchMatchesDesk(b.madeInChina, desk?.inChina));
   }, [batches, shippingType, desk?.inChina]);
+
+  // A remembered batch that has since closed is let go, not shown blank.
+  useEffect(() => {
+    if (!batches || !batchId || batchId === "none") return;
+    if (!filteredBatches.some((b: any) => String(b.id) === batchId)) setBatchId("");
+  }, [batches, filteredBatches, batchId]);
+
+  useEffect(() => {
+    saveQuickRegisterDay({ originWarehouseId, shippingType, batchId });
+  }, [originWarehouseId, shippingType, batchId]);
   
   const filteredCustomers = useMemo(() => {
     if (!customers || !customerSearch) return [];
@@ -1380,9 +1400,7 @@ export default function QuickRegister() {
     setWidthCm("");
     setHeightCm("");
     setCartonCount("1");
-    setBatchId("");
-    setOriginWarehouseId(warehouses?.[0]?.id ?? null);
-    setShippingType("air_regular");
+    // Warehouse, transport and batch stay: they are the day's, not the parcel's.
     setCategoryId("");
     setDescription("");
     setDirectCbm("");
