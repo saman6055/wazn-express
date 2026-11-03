@@ -223,8 +223,9 @@ export default function BulkRegister() {
   // Queries
   const { data: customers } = trpc.customers.list.useQuery();
   const { data: batchesResponse } = trpc.batches.list.useQuery();
-  // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
-  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
+  // Only batches made where the parcels are: the chosen warehouse decides, the
+  // desk only when none is chosen (shared/batchTwin, owner 2026-11-03).
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery(originWarehouseId ? { warehouseId: originWarehouseId } : undefined);
   const batches = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
   const { data: warehouses } = trpc.warehouses.list.useQuery();
   const { data: categories } = trpc.productCategories.list.useQuery();

@@ -325,9 +325,10 @@ export const scanningRouter = router({
         // moved to Erbil.
         const registrationLocation = await db.getUserWorkLocation(ctx.user.id);
 
-        // Only into a batch made where this person works (shared/batchTwin).
+        // Only into a batch made where the parcel is: its warehouse decides,
+        // the desk only when that is unknown (shared/batchTwin, owner 2026-11-03).
         try {
-          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);
+          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id, input.warehouseId);
         } catch (e) {
           throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
         }
@@ -381,6 +382,7 @@ export const scanningRouter = router({
         }
         
         // Create the package
+        const scanWarehouse = input.warehouseId ? await db.getWarehouseById(input.warehouseId) : undefined;
         const pkg = await db.createPackage({
           packageCode,
           trackingNumber: input.trackingNumber,
@@ -398,9 +400,10 @@ export const scanningRouter = router({
           status: 'registered',
           batchId: input.batchId,
           registeredById: ctx.user.id,
-          // Where this parcel was registered — Guangzhou or Erbil.
-          registeredInCountryId: registrationLocation.countryId,
-          registeredInCity: registrationLocation.city,
+          // Where this parcel was registered — Guangzhou or Erbil. Its
+          // warehouse decides when one was given (owner, 2026-11-03).
+          registeredInCountryId: scanWarehouse?.countryId ?? registrationLocation.countryId,
+          registeredInCity: scanWarehouse?.city ?? registrationLocation.city,
           notes: input.notes,
           /**
            * The photo taken at the counter, on the parcel itself.

@@ -196,8 +196,9 @@ export default function QuickRegister() {
   // Queries — handle errors so one failed API doesn't block the form
   const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
   const { data: batchesRaw, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
-  // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
-  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
+  // Only batches made where the parcel is: the chosen warehouse decides, the
+  // desk only when none is chosen (shared/batchTwin, owner 2026-11-03).
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery(originWarehouseId ? { warehouseId: originWarehouseId } : undefined);
   const recordArrival = trpc.scanning.registerScan.useMutation();
   const recordArrivalHere = (packageId: number, tracking: string) => {
     recordArrival.mutate(

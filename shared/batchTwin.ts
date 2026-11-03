@@ -58,6 +58,16 @@ export function batchMatchesDesk(batchMadeInChina: boolean | null | undefined, d
 }
 
 /**
+ * Where a parcel counts as being: its warehouse decides, the desk of whoever
+ * types it only when the warehouse is not known (owner, 2026-11-03: a
+ * Guangzhou carton registered from the Erbil office is China's, and goes into
+ * a China batch). Unknown on both sides stays unknown.
+ */
+export function parcelPlaceInChina(warehouseInChina: boolean | null | undefined, deskInChina: boolean | null | undefined): boolean | null {
+  return warehouseInChina ?? deskInChina ?? null;
+}
+
+/**
  * The batches the arrival check offers: made in China (an Erbil batch never
  * travelled), and not yet finished - including one already in the Erbil
  * depot, whose later parcels are still being checked in (AIR-2026-069 and

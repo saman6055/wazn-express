@@ -2846,7 +2846,11 @@ export const batchesRouter = router({
        * register screens offer only batches made in the same place
        * (shared/batchTwin batchMatchesDesk).
        */
-      myDesk: staffProcedure.query(async ({ ctx }) => ({ inChina: await db.deskInChina(ctx.user.id) })),
+      // With a warehouse, the place of a parcel in it: the warehouse decides,
+      // the desk only when it is unknown (owner, 2026-11-03).
+      myDesk: staffProcedure
+        .input(z.object({ warehouseId: z.number().int().positive().optional() }).optional())
+        .query(async ({ ctx, input }) => ({ inChina: await db.placeInChina(ctx.user.id, input?.warehouseId) })),
       /** Our kilos against the carrier's, for the scan screens (any batch). */
       kgCheck: staffProcedure
         .input(z.object({ batchId: z.number().int().positive() }))

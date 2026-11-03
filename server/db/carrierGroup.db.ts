@@ -7,13 +7,13 @@
  */
 import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { batchCarrierParts, batches, carrierGroupInvoices, countries, packageScans, packages, users } from "../../drizzle/schema";
+import { batchCarrierParts, batches, carrierGroupInvoices, countries, packageScans, packages, users, warehouses } from "../../drizzle/schema";
 import { chargeableWeight } from "@shared/chargeableWeight";
 import { parcelHasArrived } from "@shared/dispatchStage";
 import { groupDifferenceUsd, groupVerdict, normalizeCarrierBatchNo, splitGroupInvoice, splitInvoiceByHand, twinBatchCode } from "@shared/carrierGroup";
 import { isBatchEditLocked, mayEditLockedBatch } from "@shared/batchPriceHistory";
 import { batchMadeInChina } from "@shared/batchStage";
-import { batchMatchesDesk, twinCodeFor } from "@shared/batchTwin";
+import { batchMatchesDesk, parcelPlaceInChina, twinCodeFor } from "@shared/batchTwin";
 import { withFix } from "@shared/fixAdvice";
 import { getVolumetricDivisor } from "./settings.db";
 import { createBatch, getBatchById, updateBatch } from "./batches.db";
@@ -58,15 +58,34 @@ export async function deskInChina(userId: number): Promise<boolean | null> {
   return (await chinaIds()).has(Number(u.countryId));
 }
 
+/** Is this warehouse in China? Null when it is not found. */
+export async function warehouseInChina(warehouseId: number | null | undefined): Promise<boolean | null> {
+  if (!warehouseId) return null;
+  const db = await need();
+  const [w] = await db.select({ countryId: warehouses.countryId }).from(warehouses).where(eq(warehouses.id, warehouseId)).limit(1);
+  if (w?.countryId == null) return null;
+  return (await chinaIds()).has(Number(w.countryId));
+}
+
+/**
+ * Where a parcel counts as being: its warehouse, else the desk of whoever
+ * handles it (shared/batchTwin parcelPlaceInChina, owner 2026-11-03).
+ */
+export async function placeInChina(userId: number, warehouseId?: number | null): Promise<boolean | null> {
+  return parcelPlaceInChina(await warehouseInChina(warehouseId), await deskInChina(userId));
+}
+
 /**
  * Refuse a parcel going into a batch made in the other place (owner,
- * 2026-10-29). Unknown on either side lets it through.
+ * 2026-10-29). The parcel's warehouse says which place it is in; the desk
+ * only when the warehouse is not known (owner, 2026-11-03). Unknown on either
+ * side lets it through.
  */
-export async function assertBatchMatchesDesk(batchId: number | null | undefined, userId: number): Promise<void> {
+export async function assertBatchMatchesDesk(batchId: number | null | undefined, userId: number, warehouseId?: number | null): Promise<void> {
   if (!batchId) return;
   const batch = await getBatchById(batchId);
   if (!batch) return;
-  const desk = await deskInChina(userId);
+  const desk = await placeInChina(userId, warehouseId);
   const made = batchMadeInChina(batch.createdInCountryId, await chinaIds());
   if (batchMatchesDesk(made, desk)) return;
   const twins = made ? await (await need()).select({ code: batches.batchCode }).from(batches).where(eq(batches.twinOfBatchId, batch.id)).limit(1) : [];
