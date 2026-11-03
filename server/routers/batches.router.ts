@@ -1553,6 +1553,54 @@ export const batchesRouter = router({
         return { success: true, batchCode: batch.batchCode, done, effects: plan.effects };
       }),
 
+    /**
+     * A closed batch back to the Erbil depot (owner, 2026-11-03: «باچی داخراو
+     * بۆچی ئادمینی سەرەکی ناتوانێ بیکاتەوە» - late cartons came after the
+     * close). The main admin's alone, with a reason. Nothing else moves: no
+     * money, no parcel; the close runs again when he closes it.
+     */
+    reopen: staffProcedure
+      .input(z.object({ batchId: idSchema, reason: z.string().max(500) }))
+      .mutation(async ({ input, ctx }) => {
+        const batch = await db.getBatchById(input.batchId);
+        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
+        if (ctx.user.role !== "super_admin") {
+          throw new TRPCError({
+            code: "FORBIDDEN",
+            message: withFix(`کردنەوەی باچی داخراوی ${batch.batchCode} تەنها کاری ئادمینی سەرەکییە.`, [
+              "ئادمینی سەرەکی ئاگادار بکەرەوە، بە هۆکارەوە",
+            ]),
+          });
+        }
+        if (batch.status !== "closed") {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix(`باچی ${batch.batchCode} داخراو نییە، کردنەوەی ناوێت.`, ["لاپەڕەکە نوێ بکەرەوە"]),
+          });
+        }
+        const why = input.reason.trim();
+        if (why.length < 3) {
+          throw new TRPCError({
+            code: "BAD_REQUEST",
+            message: withFix("کردنەوەی باچ بەبێ هۆکار ناکرێت.", [
+              "لە خانەی هۆکار بنووسە بۆچی (نموونە: «چەند پارچەیەک دوای داخستن گەیشتن»)",
+              "دووبارە «بیکەرەوە» لێبدە",
+            ]),
+          });
+        }
+        await db.updateBatch(batch.id, { status: "at_depot" }, ctx.user.id);
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "reopen_batch",
+          entityType: "batch",
+          entityId: batch.id,
+          oldValues: { status: "closed" },
+          newValues: { status: "at_depot", reason: why },
+        });
+        return { batchId: batch.id, status: "at_depot" as const };
+      }),
+
     updateStatus: staffProcedure
       .input(z.object({
         id: idSchema,

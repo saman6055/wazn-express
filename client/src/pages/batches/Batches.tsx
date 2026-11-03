@@ -9,6 +9,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { CopyButton } from "@/components/CopyButton";
 import { BatchCloseCheckSections, CloseCheckTiles } from "@/components/batches/BatchCloseCheck";
+import { ReopenBatchDialog } from "@/components/batches/ReopenBatchDialog";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { ZoomImage } from "@/components/ZoomImage";
 import { Badge } from "@/components/ui/badge";
@@ -141,6 +142,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [auditLoading, setAuditLoading] = useState(false);
   const trpcUtilsForAudit = trpc.useUtils();
   const [auditData, setAuditData] = useState<any>(null);
+  const [reopenTarget, setReopenTarget] = useState<{ id: number; batchCode: string } | null>(null);
 
   // PDF Export mutation
   const exportBatchPDF = trpc.dashboard.exportBatchPDF.useMutation({
@@ -1981,6 +1983,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                               <AlertTriangle className="h-4 w-4 me-2" />
                               {pickLang(language, { ku: "کێشەکانی ئەم باچە", en: "This batch's problems", ar: "مشاكل هذه الدفعة", zh: "该批次的问题" })}
                             </DropdownMenuItem>
+                            {batch.status === "closed" && isSuperAdmin(userRole) && (
+                              <DropdownMenuItem data-testid="batch-reopen-item" onClick={() => setReopenTarget({ id: batch.id, batchCode: batch.batchCode })}>
+                                <Lock className="h-4 w-4 me-2" />
+                                {pickLang(language, { ku: "کردنەوەی باچ", en: "Reopen batch", ar: "إعادة فتح الدفعة", zh: "重新打开批次" })}
+                              </DropdownMenuItem>
+                            )}
                             <DropdownMenuItem onClick={() => setLocation(`/batches/${batch.id}/financial`)}>
                               <BarChart3 className="h-4 w-4 me-2" />
                               {t("batches.financialReport")}
@@ -3031,6 +3039,12 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             )}
           </DialogContent>
         </Dialog>
+
+        <ReopenBatchDialog
+          batch={reopenTarget}
+          onClose={() => setReopenTarget(null)}
+          onDone={() => { setReopenTarget(null); refreshBatchLists(); }}
+        />
 
         {/* Pre-delivery audit dialog (Phase 7).
             Surfaces shared-tracking siblings outside this batch, multi-carton
