@@ -195,10 +195,13 @@ export const scanningRouter = router({
         notes: z.string().optional(),
         photoUrl: z.string().optional(),
         deviceIdentifier: z.string().optional(),
+        /** The batch on the register when a carton of another batch arrived in its load. */
+        arrivedWithBatchId: z.number().int().positive().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Create the scan record
         const scan = await db.createPackageScan({
+          arrivedWithBatchId: input.scanType === "received_local" ? input.arrivedWithBatchId : undefined,
           trackingNumber: input.trackingNumber,
           packageId: input.packageId,
           scanType: input.scanType,

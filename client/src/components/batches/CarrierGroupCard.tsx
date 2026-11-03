@@ -181,6 +181,21 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
   const g = q.data;
   if (!batchId || !g) return null;
   const inGroup = g.members.length > 1;
+  // Our other batches' late cartons that came in this load (owner, 2026-11-03).
+  const others = g.others ?? [];
+  const othersKg = others.reduce((s, o) => s + o.kg, 0);
+  const totalKg = g.oursKg + othersKg;
+  const fromOthers = others.length > 0 ? (
+    <>
+      <span className="text-sky-700 dark:text-sky-300" data-testid="carrier-strip-others">
+        {L({ ku: "باچی تری ئێمە", en: "Our other batches", ar: "دفعاتنا الأخرى", zh: "我方其他批次" })} <b dir="ltr">{othersKg.toFixed(2)}</b>
+        {" · "}{L({ ku: "کۆی ئێمە", en: "All ours", ar: "مجموعنا", zh: "我方合计" })} <b dir="ltr">{totalKg.toFixed(2)}</b>
+      </span>
+      <span className="basis-full text-xs text-muted-foreground" data-testid="carrier-strip-others-list">
+        {others.map((o) => <span key={o.batchCode} className="me-3"><bdi dir="ltr">{o.batchCode}</bdi>: <b dir="ltr">{o.kg.toFixed(2)}</b></span>)}
+      </span>
+    </>
+  ) : null;
   const ours = (
     <span className="text-sky-700 dark:text-sky-300" data-testid="carrier-strip-ours">
       {inGroup && <>{L({ ku: "ئەم باچە", en: "This batch", ar: "هذه الدفعة", zh: "本批次" })} <b dir="ltr">{g.thisKg.toFixed(2)}</b> · </>}
@@ -202,6 +217,7 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
       <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-dashed px-3 py-2 text-sm tabular-nums text-muted-foreground" data-testid="carrier-group-strip" data-state="no-carrier-kg">
         {g.key && <span className="flex items-center gap-1 font-medium"><Link2 className="h-4 w-4" /><bdi dir="ltr">{g.key}</bdi></span>}
         {ours}
+        {fromOthers}
         <span>{g.key
           ? L({ ku: "وەسڵی کۆمپانیا لە کارتی گرووپ هێشتا نەنووسراوە", en: "The carrier's invoice is not on the group card yet", ar: "فاتورة الشركة لم تُكتب في بطاقة المجموعة بعد", zh: "承运商发票尚未录入组卡片" })
           : L({ ku: "کێشی کۆمپانیای گواستنەوە هێشتا نەنووسراوە", en: "The carrier's kilos are not entered yet", ar: "وزن شركة الشحن لم يُدخل بعد", zh: "承运商重量尚未录入" })}</span>
@@ -209,8 +225,8 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
       </div>
     );
   }
-  const verdict = groupVerdict({ billedKg: g.carrierKg, oursKg: g.oursKg, stillComing: g.stillComing });
-  const left = g.carrierKg - g.oursKg;
+  const verdict = groupVerdict({ billedKg: g.carrierKg, oursKg: totalKg, stillComing: g.stillComing });
+  const left = g.carrierKg - totalKg;
   return (
     <div className={cn("flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border px-3 py-2 text-sm tabular-nums",
       verdict === "short" ? "border-rose-400 bg-rose-50 text-rose-800 dark:border-rose-800 dark:bg-rose-950/40 dark:text-rose-200" : "bg-card")}
@@ -218,6 +234,7 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
       {g.key && <span className="flex items-center gap-1 font-medium"><Link2 className="h-4 w-4" /><bdi dir="ltr">{g.key}</bdi></span>}
       <span>{L({ ku: "کۆمپانیا", en: "Carrier", ar: "الشركة", zh: "承运商" })} <b dir="ltr">{g.carrierKg.toFixed(2)}</b></span>
       {ours}
+      {fromOthers}
       <span className={left > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}>
         {left > 0 ? L({ ku: "ماوە", en: "To come", ar: "يتبقى", zh: "尚余" }) : L({ ku: "زیاتر", en: "Over", ar: "زيادة", zh: "超出" })} <b dir="ltr">{Math.abs(left).toFixed(2)} kg</b>
       </span>

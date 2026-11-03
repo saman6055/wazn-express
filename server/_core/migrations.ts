@@ -3452,6 +3452,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // out, not erased — see the schema note beside these columns.
   { name: "staffMessages.deletedAt", sql: "ALTER TABLE staffMessages ADD COLUMN deletedAt TIMESTAMP NULL" },
   { name: "staffMessages.deletedById", sql: "ALTER TABLE staffMessages ADD COLUMN deletedById INT NULL" },
+  // A late carton checked in with another batch's load (server/db/carrierGroup).
+  { name: "packageScans.arrivedWithBatchId", sql: "ALTER TABLE packageScans ADD COLUMN arrivedWithBatchId INT NULL" },
 ];
 
 /**

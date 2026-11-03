@@ -201,7 +201,8 @@ export default function QuickRegister() {
   const recordArrival = trpc.scanning.registerScan.useMutation();
   const recordArrivalHere = (packageId: number, tracking: string) => {
     recordArrival.mutate(
-      { trackingNumber: tracking, packageId, scanType: "received_local" },
+      // The batch chosen here is the load it came in (the carrier strip counts it).
+      { trackingNumber: tracking, packageId, scanType: "received_local", arrivedWithBatchId: parseInt(batchId) || undefined },
       {
         onSuccess: () => {
           soundManager.playSuccess();

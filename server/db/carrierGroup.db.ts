@@ -332,14 +332,51 @@ export async function countShortCarrierGroups(): Promise<Array<{ batchId: number
  * carrier loads also write); with neither, carrierKg is null and the strip
  * says it is missing.
  */
+/**
+ * Cartons of our other batches that came in this batch's load: checked in on
+ * the register while this batch was chosen (owner, 2026-11-03: «کۆمپانیا 99
+ * کیلۆ، 15 کیلۆ باچی 69، 18 کیلۆ باچی 79»). The carrier weighed them with
+ * this load, so they come off what is still to come. Per batch, by kilos.
+ */
+async function arrivedWithLoad(batchIds: number[]): Promise<Array<{ batchCode: string; kg: number }>> {
+  const db = await need();
+  if (batchIds.length === 0) return [];
+  const rows = await db
+    .select({
+      id: packages.id, batchCode: batches.batchCode,
+      weightKg: packages.weightKg, billedWeightKg: packages.billedWeightKg,
+      lengthCm: packages.lengthCm, widthCm: packages.widthCm, heightCm: packages.heightCm,
+    })
+    .from(packageScans)
+    .innerJoin(packages, eq(packages.id, packageScans.packageId))
+    .innerJoin(batches, eq(batches.id, packages.batchId))
+    .where(and(
+      eq(packageScans.scanType, "received_local"),
+      inArray(packageScans.arrivedWithBatchId, batchIds),
+      notInArray(packages.batchId, batchIds),
+      notInArray(packages.status, ["cancelled", "returned"]),
+    ));
+  const divisor = await getVolumetricDivisor();
+  const seen = new Set<number>();
+  const byBatch = new Map<string, number>();
+  for (const p of rows) {
+    if (seen.has(p.id)) continue;
+    seen.add(p.id);
+    byBatch.set(p.batchCode, (byBatch.get(p.batchCode) ?? 0) + chargeableWeight(p, divisor).chargeableKg);
+  }
+  return Array.from(byBatch.entries()).map(([batchCode, kg]) => ({ batchCode, kg: r2(kg) })).sort((a, b) => a.batchCode.localeCompare(b.batchCode));
+}
+
 export async function getBatchKgCheck(batchId: number) {
   const g = await getCarrierGroup(batchId);
   if (g) {
+    const others = await arrivedWithLoad(g.members.map((m) => m.batchId));
     return {
       key: g.key, carrierKg: g.invoice?.billedKg ?? null, oursKg: g.oursKg, allKg: g.allKg, stillComing: g.stillComing,
       // Each batch said apart, so a group figure is never read as this batch's.
       thisKg: g.members.find((m) => m.batchId === batchId)?.liveKg ?? 0,
       members: g.members.map((m) => ({ batchCode: m.batchCode, kg: m.liveKg })),
+      others,
     };
   }
   const batch = await getBatchById(batchId);
@@ -354,5 +391,6 @@ export async function getBatchKgCheck(batchId: number) {
     stillComing: m?.stillComing ?? 0,
     thisKg: m?.liveKg ?? 0,
     members: [] as Array<{ batchCode: string; kg: number }>,
+    others: await arrivedWithLoad([batchId]),
   };
 }
