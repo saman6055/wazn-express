@@ -1237,6 +1237,17 @@ export async function getDashboardNewCustomers(days: number = 7): Promise<number
 // the dashboard. Each block is isolated in its own try/catch so one failing
 // metric never blanks the whole section.
 /** The orders the week's order count counted, by the same rule (dashboard, owner 2026-11-02). */
+/**
+ * An order the week's wins may count: not deleted, not cancelled, rejected or
+ * refunded, and not a purchase request - a quote is not an order (audit
+ * 2026-11-05: the count and the busiest customer's total took them in).
+ */
+const LIVE_WEEK_ORDER = () => [
+  isNull(fullPackageOrders.deletedAt),
+  notInArray(fullPackageOrders.status, ['cancelled', 'rejected', 'refunded'] as any),
+  ne(fullPackageOrders.orderType, 'purchase_request' as any),
+];
+
 export async function getWeekOrders() {
   const db = await getDb();
   if (!db) return [];
@@ -1251,7 +1262,7 @@ export async function getWeekOrders() {
     createdAt: fullPackageOrders.createdAt,
   }).from(fullPackageOrders)
     .leftJoin(customers, eq(customers.id, fullPackageOrders.customerId))
-    .where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, weekAgo)))
+    .where(and(...LIVE_WEEK_ORDER(), gte(fullPackageOrders.createdAt, weekAgo)))
     .orderBy(desc(fullPackageOrders.createdAt));
 }
 
@@ -1315,8 +1326,8 @@ export async function getWeeklyHighlights(): Promise<{
     // Orders — this week vs the week before
     const orders = { thisWeek: 0, lastWeek: 0 };
     try {
-      const [tw] = await db.select({ c: count() }).from(fullPackageOrders).where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, weekAgo)));
-      const [lw] = await db.select({ c: count() }).from(fullPackageOrders).where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, twoWeeksAgo), lt(fullPackageOrders.createdAt, weekAgo)));
+      const [tw] = await db.select({ c: count() }).from(fullPackageOrders).where(and(...LIVE_WEEK_ORDER(), gte(fullPackageOrders.createdAt, weekAgo)));
+      const [lw] = await db.select({ c: count() }).from(fullPackageOrders).where(and(...LIVE_WEEK_ORDER(), gte(fullPackageOrders.createdAt, twoWeeksAgo), lt(fullPackageOrders.createdAt, weekAgo)));
       orders.thisWeek = tw?.c || 0;
       orders.lastWeek = lw?.c || 0;
     } catch { /* ignore */ }
@@ -1329,7 +1340,7 @@ export async function getWeeklyHighlights(): Promise<{
         orders: sql<number>`COUNT(*)`,
         spent: sql<string>`COALESCE(SUM(CAST(COALESCE(${fullPackageOrders.sellingPriceUsd}, ${fullPackageOrders.itemPriceUsd}, '0') AS DECIMAL(12,2)) * COALESCE(${fullPackageOrders.quantity}, 1)), 0)`,
       }).from(fullPackageOrders)
-        .where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, weekAgo)))
+        .where(and(...LIVE_WEEK_ORDER(), gte(fullPackageOrders.createdAt, weekAgo)))
         .groupBy(fullPackageOrders.customerId)
         .orderBy(sql`COUNT(*) DESC`)
         .limit(1);
