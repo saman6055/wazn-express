@@ -87,8 +87,14 @@ export async function markBoxContentsDelivered(
   deliveryPhoto?: string,
 ): Promise<void> {
   const items = await db.getBoxItems(boxId);
+  // A carton put in the box while still on the road from China is not
+  // delivered by the box's payment; it is when it arrives (audit 2026-11-05,
+  // scanning.router parcelInFinishedBox).
+  const onRoad = await db.parcelsStillOnTheRoad(items.map((i) => Number(i.packageId)).filter((id) => id > 0));
   for (const item of items) {
-    if (item.packageId) {
+    if (item.packageId && onRoad.has(Number(item.packageId))) {
+      appLogger.info("[DeliveryBox] parcel still on the road - delivered on arrival", { boxId, packageId: item.packageId });
+    } else if (item.packageId) {
       try {
         await db.updatePackage(item.packageId, {
           status: 'delivered',

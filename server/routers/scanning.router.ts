@@ -258,6 +258,15 @@ export const scanningRouter = router({
             // China. Forward only, and never onto a delivered batch.
             if (newStatus === "ready_for_delivery") {
               try {
+                // Its box was paid and finished while it was on the road:
+                // it is delivered with the box now (lib/boxLifecycle).
+                if (await db.parcelInFinishedBox(input.packageId)) {
+                  await db.updatePackage(input.packageId, { status: "delivered", deliveredAt: new Date(), deliveredById: ctx.user.id });
+                }
+              } catch (e) {
+                appLogger.error("[Scan] finished-box parcel not delivered", { packageId: input.packageId, error: e instanceof Error ? e.message : String(e) });
+              }
+              try {
                 const pkg = await db.getPackageById(input.packageId);
                 if (pkg?.batchId) await db.advanceBatchToDepot(pkg.batchId, ctx.user.id);
 
