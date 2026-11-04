@@ -8,7 +8,7 @@
  * every staff role, the read-only auditor included, and the staff list sent
  * every colleague's. Nothing on any screen used a single one of these fields.
  */
-const SECRET_FIELDS = ["passwordHash", "failedLoginAttempts", "lastFailedLoginAt", "lockedUntil"] as const;
+const SECRET_FIELDS = ["passwordHash", "failedLoginAttempts", "lastFailedLoginAt", "lockedUntil", "securityBlockReport"] as const;
 
 /** The office's file on a customer — not part of anyone's own session. */
 const OFFICE_FILE_FIELDS = ["passportUrl", "nationalIdUrl", "contractUrl", "notes"] as const;

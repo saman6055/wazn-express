@@ -1027,6 +1027,38 @@ export async function getRiskItems(): Promise<RiskItem[]> {
   });
 }
 
+/**
+ * The main admin's two security items, counted fresh on every ring of the
+ * bell - never from the minute-long cache the other risks share, because a
+ * device waiting at the door, or a customer just held, should not wait a
+ * minute to be told (owner, 2026-11-05).
+ */
+export async function getSecurityRiskItems(): Promise<RiskItem[]> {
+  const holds = await countSecurityHolds().catch(() => 0);
+  let requests = 0;
+  try {
+    const { loadOfficeDevices } = await import('../lib/officeDevicesStore');
+    const { pendingLive } = await import('@shared/officeDevices');
+    const state = await loadOfficeDevices();
+    const approved = new Set(state.approved.map((d) => d.id));
+    requests = state.seen.filter((d) => pendingLive(d, new Date()) && !approved.has(d.id)).length;
+  } catch {
+    requests = 0;
+  }
+  const items: RiskItem[] = [];
+  if (holds > 0) items.push({ id: "security-holds", level: "critical", count: holds });
+  if (requests > 0) items.push({ id: "device-requests", level: "high", count: requests });
+  return items;
+}
+
+/** Customers held for security, still waiting for the main admin. */
+async function countSecurityHolds(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db.select({ n: sql<number>`COUNT(*)` }).from(customers).where(sql`${customers.securityBlockedAt} IS NOT NULL`);
+  return Number(row?.n ?? 0);
+}
+
 export async function getDashboardAlerts(): Promise<{
   id: string;
   type: 'warning' | 'info' | 'error' | 'success';

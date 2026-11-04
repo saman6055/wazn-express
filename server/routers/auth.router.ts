@@ -15,6 +15,9 @@ import {
   lockState,
 } from "@shared/loginLockout";
 import { parse as parseCookieHeader } from "cookie";
+import { deviceAllowed, noteSeen, requestApproval } from "@shared/officeDevices";
+import { ensureDeviceMark, loadOfficeDevices, officeDevicesKillSwitch, saveOfficeDevices } from "../lib/officeDevicesStore";
+import { newPairCode } from "../lib/autoBackupKey";
 import { runMigration } from "../services/migration.service";
 import { getConfig } from "../config";
 import { phoneSchema, emailSchema, idSchema } from "./schemas";
@@ -195,6 +198,17 @@ export const authRouter = router({
         });
       }
 
+      // Held for security (shared/securityWatch): the main admin asks first.
+      if (customer.securityBlockedAt) {
+        throw new TRPCError({
+          code: "UNAUTHORIZED",
+          message: withFix("هەژمارەکەت بۆ پاراستن ڕاگیراوە.", [
+            "پەیوەندی بە وەزن ئێکسپرێس بکە بە ژمارە 07709183535",
+            "دوای قسەکردن لەگەڵت، هەژمارەکەت دەکرێتەوە",
+          ]),
+        });
+      }
+
       // A good password ends the run. Otherwise four old mistakes would sit
       // there waiting to lock the account on the next single typo.
       if (customer.failedLoginAttempts > 0 || customer.lockedUntil) {
@@ -299,6 +313,40 @@ export const authRouter = router({
               ],
             ),
           });
+        }
+
+        // The office opens on known devices only (shared/officeDevices). Every
+        // sign-in is noted, so the owner can approve the devices he knows; while
+        // the rule is on, any other device waits for his yes, with a code he
+        // matches on his page.
+        {
+          const now2 = new Date();
+          const deviceId = ensureDeviceMark(ctx.req, ctx.res);
+          let devices = noteSeen(
+            await loadOfficeDevices(),
+            {
+              id: deviceId,
+              user: user.name || user.username || `#${user.id}`,
+              userId: user.id,
+              ip: String(ctx.req.ip ?? ""),
+              agent: String(ctx.req.headers["user-agent"] ?? ""),
+            },
+            now2,
+          );
+          const allowed = deviceAllowed(devices, deviceId, officeDevicesKillSwitch());
+          if (!allowed) devices = requestApproval(devices, deviceId, newPairCode(), now2);
+          await saveOfficeDevices(devices);
+          if (!allowed) {
+            const code = devices.seen.find((d) => d.id === deviceId)?.code ?? "";
+            appLogger.warn("Office sign-in from an unknown device", { userId: user.id, ip: ctx.req.ip });
+            throw new TRPCError({
+              code: "UNAUTHORIZED",
+              message: withFix(`ئەم ئامێرە هێشتا بۆ سیستەمی ئۆفیس نەناسێنراوە. کۆدی ئامێر: ${code.slice(0, 3)} ${code.slice(3)}`, [
+                "بە ئادمینی سەرەکی بڵێ ڕێگە بدات — هەمان کۆد لە لاپەڕەی «پاراستنی سیستەم» دەبینێت",
+                "دوای ڕێگەدان، دووبارە بچۆرەوە ژوورەوە",
+              ]),
+            });
+          }
         }
         const { SignJWT } = await import("jose");
         const secret = new TextEncoder().encode(getConfig().jwtSecret);

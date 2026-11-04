@@ -72,7 +72,8 @@ describe("the three pieces are in place", () => {
     const migrations = read("server/_core/migrations.ts");
     expect(migrations).toContain('{ name: "customers.sessionsValidFrom"');
     expect(migrations).toContain('{ name: "users.sessionsValidFrom"');
-    expect(migrations.split("sessionsValidFrom TIMESTAMP NULL\n    ) ENGINE").length - 1).toBe(2);
+    // In both CREATEs (customers now goes on past it - securityWatch's columns).
+    expect(migrations.split("\n      sessionsValidFrom TIMESTAMP NULL").length - 1).toBe(2);
     const schema = read("drizzle/schema/users.schema.ts");
     expect(schema.split('timestamp("sessionsValidFrom")').length - 1).toBe(2);
   });

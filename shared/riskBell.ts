@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting" | "carrier-short";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting" | "carrier-short" | "security-holds" | "device-requests";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -81,6 +81,10 @@ export interface RiskFacts {
   carrierShort?: number;
   /** Customers whose advance waits on a box left unreceipted more than 5 days (owner, 2026-10-24/25). */
   advanceWaiting?: number;
+  /** Customers held for what their sessions did (shared/securityWatch). */
+  securityHolds?: number;
+  /** Devices waiting for the main admin's yes to open the office (shared/officeDevices). */
+  deviceRequests?: number;
 }
 
 /**
@@ -106,7 +110,12 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "batch-dispatched": "/dispatch-check/latest/report",
   "advance-waiting": "/customer-delivery-scanner?unpaid=1",
   "carrier-short": "/batches",
+  "security-holds": "/office-security",
+  "device-requests": "/office-security",
 };
+
+/** Only the main admin is told of these, whatever anyone's page permissions say. */
+const MAIN_ADMIN_ONLY: ReadonlySet<string> = new Set(["security-holds", "device-requests"]);
 
 /** The page whose permission decides who is told. */
 export const RISK_GATE: Record<OperationalRiskId, string> = {
@@ -129,6 +138,8 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "advance-waiting": "/customer-delivery-scanner",
   // Money: the carrier's cost against ours - the finance people.
   "carrier-short": "/finance/company-dashboard",
+  "security-holds": "/office-security",
+  "device-requests": "/office-security",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -264,6 +275,13 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
   if ((facts.carrierShort ?? 0) > 0) {
     items.push({ id: "carrier-short", level: "high", count: facts.carrierShort ?? 0 });
   }
+  // Security first: a customer held, a device asking to open the office (owner, 2026-11-05).
+  if ((facts.securityHolds ?? 0) > 0) {
+    items.push({ id: "security-holds", level: "critical", count: facts.securityHolds ?? 0 });
+  }
+  if ((facts.deviceRequests ?? 0) > 0) {
+    items.push({ id: "device-requests", level: "high", count: facts.deviceRequests ?? 0 });
+  }
   // A batch packed and checked in China: Erbil knows before the goods arrive.
   if ((facts.batchesDispatched ?? 0) > 0) {
     items.push({ id: "batch-dispatched", level: "notice", count: facts.batchesDispatched ?? 0 });
@@ -299,6 +317,7 @@ export function pathVisibleTo(role: string | null | undefined, viewableModules: 
 
 /** May this person be told about this risk? Its page, and for a finding the auditor's roles too. */
 export function riskVisibleTo(role: string | null | undefined, viewableModules: ReadonlySet<string>, id: RiskId): boolean {
+  if (MAIN_ADMIN_ONLY.has(id) && role !== "super_admin") return false;
   if (isAuditRisk(id) && !AUDIT_ROLES.includes(String(role))) return false;
   return pathVisibleTo(role, viewableModules, riskGate(id));
 }
@@ -398,6 +417,26 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "the same goods were written on their account twice — see the proof and put it right",
           ar: "قُيّدت البضاعة نفسها مرتين — اعرض الدليل وصحّح",
           zh: "同一货物被记账两次 — 查看依据并更正",
+        },
+      };
+    case "security-holds":
+      return {
+        title: { ku: `${n} کڕیار بۆ پاراستن ڕاگیرا`, en: `${n} customer(s) held for security`, ar: `${n} عميل أُوقف للحماية`, zh: `${n} 位客户因安全原因被暂停` },
+        detail: {
+          ku: "هەوڵی کردنەوەی شوێنی قەدەغە — ڕاپۆرتەکە ببینە، پرسیار لە کەسەکە بکە، پاشان بیکەرەوە یان ڕایبگرە",
+          en: "tried closed doors — read the report, ask them, then reopen or keep held",
+          ar: "حاول فتح أبواب مغلقة — اقرأ التقرير واسأله ثم افتح أو أبقِ الإيقاف",
+          zh: "尝试访问受限部分 — 查看报告、询问本人，再决定解除或保持",
+        },
+      };
+    case "device-requests":
+      return {
+        title: { ku: `${n} ئامێر داوای کردنەوەی سیستەمی ئۆفیس دەکات`, en: `${n} device(s) asking to open the office system`, ar: `${n} جهاز يطلب فتح نظام المكتب`, zh: `${n} 台设备请求访问办公系统` },
+        detail: {
+          ku: "کێ، لە کوێ، لەسەر چ ئامێرێک — کۆدەکە بەراورد بکە و ڕێگە بدە یان ڕەتی بکەرەوە",
+          en: "who, from where, on what — match the code, then approve or refuse",
+          ar: "من، ومن أين، وعلى أي جهاز — طابق الرمز ثم وافق أو ارفض",
+          zh: "谁、从哪里、用什么设备 — 核对代码后批准或拒绝",
         },
       };
     case "carrier-short":

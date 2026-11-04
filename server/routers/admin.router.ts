@@ -459,8 +459,11 @@ export const dashboardRouter = router({
         cacheGetOrSet("dashboard:risks", 60_000, () => db.getRiskItems()),
         auditRisks(),
       ]);
+      // The main admin's security items are his alone, and always fresh.
+      if (ctx.user.role === "super_admin") {
+        return sortRiskItems([...operational, ...audit, ...(await db.getSecurityRiskItems())]);
+      }
       const items = sortRiskItems([...operational, ...audit]);
-      if (ctx.user.role === "super_admin") return items;
       const granted = await db.getUserPermissions(ctx.user.id);
       const viewable = new Set(granted.filter((p) => p.canView).map((p) => p.module));
       return items.filter((item) => riskVisibleTo(ctx.user.role, viewable, item.id));

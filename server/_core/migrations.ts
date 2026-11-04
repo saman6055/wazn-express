@@ -478,7 +478,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
       lastSignedIn TIMESTAMP,
-      sessionsValidFrom TIMESTAMP NULL
+      sessionsValidFrom TIMESTAMP NULL,
+      securityBlockedAt TIMESTAMP NULL,
+      securityBlockReport TEXT NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -3231,6 +3233,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // A password change ends every session minted before it (shared/sessionEnds).
   { name: "customers.sessionsValidFrom", sql: "ALTER TABLE customers ADD COLUMN sessionsValidFrom TIMESTAMP NULL" },
   { name: "users.sessionsValidFrom", sql: "ALTER TABLE users ADD COLUMN sessionsValidFrom TIMESTAMP NULL" },
+  // A customer held for security, and what was seen (shared/securityWatch).
+  { name: "customers.securityBlockedAt", sql: "ALTER TABLE customers ADD COLUMN securityBlockedAt TIMESTAMP NULL" },
+  { name: "customers.securityBlockReport", sql: "ALTER TABLE customers ADD COLUMN securityBlockReport TEXT NULL" },
   { name: "batches.flightStatus", sql: "ALTER TABLE batches ADD COLUMN flightStatus VARCHAR(40) NULL" },
   { name: "batches.flightArrivedAt", sql: "ALTER TABLE batches ADD COLUMN flightArrivedAt TIMESTAMP NULL" },
 

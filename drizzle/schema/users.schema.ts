@@ -91,6 +91,10 @@ export const customers = mysqlTable("customers", {
   lockedUntil: timestamp("lockedUntil"),
   // A session minted before this moment is over (shared/sessionEnds).
   sessionsValidFrom: timestamp("sessionsValidFrom"),
+  // Held for security (shared/securityWatch): set the moment a session does what
+  // the portal never does; the report says what was seen. Main admin clears it.
+  securityBlockedAt: timestamp("securityBlockedAt"),
+  securityBlockReport: text("securityBlockReport"),
   email: varchar("email", { length: 320 }),
   country: varchar("country", { length: 100 }),
   city: varchar("city", { length: 100 }),

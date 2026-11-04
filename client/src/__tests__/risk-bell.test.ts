@@ -173,7 +173,8 @@ describe("the server's side", () => {
 
   it("tells each person only about the pages they may open", () => {
     const risks = router.slice(router.indexOf("risks: staffProcedure"), router.indexOf("risks: staffProcedure") + 900);
-    expect(risks).toContain('if (ctx.user.role === "super_admin") return items;');
+    expect(risks).toContain('if (ctx.user.role === "super_admin") {');
+    expect(risks).toContain("...(await db.getSecurityRiskItems())");
     expect(risks).toContain("db.getUserPermissions(ctx.user.id)");
     expect(risks).toContain("riskVisibleTo(ctx.user.role, viewable, item.id)");
   });

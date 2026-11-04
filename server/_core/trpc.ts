@@ -7,6 +7,8 @@ import { LANG_HEADER } from "@shared/errorMessages";
 import { appLogger } from "../utils/logger";
 import { clientErrorMessage, isValidationError, newErrorRef } from "./clientError";
 import type { TrpcContext } from "./context";
+import { STAFF_DOOR_MESSAGES, type SuspiciousKind } from "@shared/securityWatch";
+import { noteSuspicious } from "../lib/securityWatch";
 
 /**
  * The reason an error happened travels with it. It has to arrive.
@@ -54,6 +56,7 @@ const t = initTRPC.context<TrpcContext>().create({
     const isStaff = Boolean(ctx?.user && !ctx.user.isCustomer);
     const validation = isValidationError(error.code, error.cause);
     const lang = ctx?.req?.headers?.[LANG_HEADER];
+    watchCustomerSession(ctx, error, path, validation);
 
     if (error.code !== "INTERNAL_SERVER_ERROR") {
       return {
@@ -76,6 +79,26 @@ const t = initTRPC.context<TrpcContext>().create({
     };
   },
 });
+
+/**
+ * A customer's session doing what the portal never does is noted here - the
+ * one place every refusal passes (shared/securityWatch). An admin looking at a
+ * customer's portal is never counted.
+ */
+function watchCustomerSession(
+  ctx: TrpcContext | undefined,
+  error: { code: string; message: string },
+  path: string | undefined,
+  validation: boolean,
+): void {
+  const user = ctx?.user;
+  if (!user?.isCustomer || ctx?.viewAs) return;
+  let kind: SuspiciousKind | null = null;
+  if (error.code === "FORBIDDEN" && STAFF_DOOR_MESSAGES.has(error.message)) kind = "staff_door";
+  else if (error.code === "NOT_FOUND" && error.message.startsWith("No procedure found on path")) kind = "unknown_procedure";
+  else if (validation) kind = "malformed_input";
+  if (kind) noteSuspicious(user.id, kind, path ?? "?", ctx?.req as { ip?: string; headers?: Record<string, unknown> });
+}
 
 export const router = t.router;
 export const publicProcedure = t.procedure;

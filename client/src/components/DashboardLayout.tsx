@@ -579,6 +579,8 @@ function DashboardLayoutContent({
           { icon: Shield, label: t("nav.permissionsManagement") || "بەڕێوەبردنی مۆڵەتەکان", path: "/permissions-management" },
           { icon: FileText, label: t("nav.auditLogs") || "لۆگی چاودێری", path: "/audit-logs" },
           { icon: ShieldQuestion, label: t("nav.auditSweep") || "پشکنینی سیستەم", path: "/audit-sweep" },
+          // The main admin's own: known office devices, held customers (2026-11-05).
+          ...(isSuperAdmin ? [{ icon: ShieldAlert, label: "پاراستنی سیستەم", path: "/office-security" }] : []),
           { icon: Trash2, label: t("nav.trash") || "سەبەتەی سڕاوەکان", path: "/trash" },
         ]
       });

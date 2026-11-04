@@ -1,6 +1,8 @@
 import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import { sessionEnded, SESSION_ENDED_MESSAGE } from "@shared/sessionEnds";
+import { deviceAllowed } from "@shared/officeDevices";
+import { deviceIdFrom, loadOfficeDevices, officeDevicesKillSwitch } from "../lib/officeDevicesStore";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
 import type { Request } from "express";
@@ -377,6 +379,11 @@ class SDKServer {
       if (sessionEnded(session.issuedAt, customer.sessionsValidFrom)) {
         throw ForbiddenError(SESSION_ENDED_MESSAGE);
       }
+      // Held for security: what this account's sessions did is not what the
+      // portal does (shared/securityWatch). Every session ends here at once.
+      if (customer.securityBlockedAt) {
+        throw ForbiddenError("Customer account is held for security");
+      }
       // Return customer data with isCustomer flag for type checking
       return {
         ...customer,
@@ -402,6 +409,12 @@ class SDKServer {
       // The same rule for the office (shared/sessionEnds).
       if (sessionEnded(session.issuedAt, user.sessionsValidFrom)) {
         throw ForbiddenError(SESSION_ENDED_MESSAGE);
+      }
+      // The office opens on known devices only, once the owner has switched
+      // that on (shared/officeDevices). Checked on every request, so a
+      // session already open on another device ends too.
+      if (!deviceAllowed(await loadOfficeDevices(), deviceIdFrom(req), officeDevicesKillSwitch())) {
+        throw ForbiddenError("This device is not approved for the office system");
       }
       return {
         ...user,

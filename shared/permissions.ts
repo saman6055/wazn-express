@@ -787,6 +787,8 @@ export const PATH_TO_MODULE: Record<string, string> = {
   "/settings/code-prefixes": "customer_code_prefixes",
   "/users": "users_list",
   "/staff-management": "staff_management",
+  // The main admin's own (server: superAdminProcedure on every call).
+  "/office-security": "staff_management",
   "/permissions-management": "permissions_management",
   "/audit-logs": "audit_logs",
   "/audit-sweep": "audit_sweep",

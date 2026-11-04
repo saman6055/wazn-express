@@ -28,6 +28,14 @@ const IMAGE_EXTENSIONS = ["png", "jpg", "jpeg", "gif", "webp", "bmp", "heic", "h
 /** Never, under any name or type: a browser runs these. */
 const RUNNABLE_EXTENSIONS = ["html", "htm", "xhtml", "svg", "xml", "js", "mjs", "cjs", "php", "shtml"];
 
+/** Does this name or type say "a page or a script"? No picker in the portal offers one. */
+export function namesRunnableFile(fileName: unknown, contentType?: unknown): boolean {
+  const name = typeof fileName === "string" ? fileName.trim().toLowerCase() : "";
+  const ext = name.includes(".") ? name.slice(name.lastIndexOf(".") + 1) : "";
+  const type = typeof contentType === "string" ? contentType.toLowerCase() : "";
+  return RUNNABLE_EXTENSIONS.includes(ext) || type.includes("html") || type.includes("javascript") || type === "image/svg+xml";
+}
+
 /**
  * The extension a stored file gets: lower case, letters and digits, short.
  *

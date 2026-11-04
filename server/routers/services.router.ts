@@ -6,6 +6,8 @@ import { staffProcedure, adminProcedure, accountantProcedure } from "../middlewa
 import * as db from "../db";
 import { acceptUpload } from "../lib/uploadGate";
 import { CUSTOMER_UPLOADS_PER_DAY, takeCustomerUpload } from "../lib/customerUploadQuota";
+import { namesRunnableFile } from "@shared/uploadRule";
+import { noteSuspicious } from "../lib/securityWatch";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { withFix } from "../../shared/fixAdvice";
 
@@ -783,6 +785,9 @@ export const storageRouter = router({
         // run. Customers reach this door from the portal's messenger, so the
         // check is the whole of what stands between a stranger's file and
         // the office's own address (shared/uploadRule).
+        if (ctx.user.isCustomer && !ctx.viewAs && namesRunnableFile(input.fileName, input.contentType)) {
+          noteSuspicious(ctx.user.id, "runnable_upload", "storage.upload", ctx.req);
+        }
         const { buffer, ext } = acceptUpload({
           fileName: input.fileName,
           contentType: input.contentType,

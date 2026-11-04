@@ -28,6 +28,7 @@ import { auditRouter } from "./audit.router";
 import { tasksRouter } from "./tasks.router";
 import { staffChatRouter } from "./staffChat.router";
 import { dispatchRouter } from "./dispatch.router";
+import { officeSecurityRouter } from "./officeSecurity.router";
 
 export const appRouter = router({
   /**
@@ -74,6 +75,8 @@ export const appRouter = router({
   audit: auditRouter,
   tasks: tasksRouter,
   staffChat: staffChatRouter,
+  // The main admin's own: known office devices and held customers.
+  officeSecurity: officeSecurityRouter,
   dispatch: dispatchRouter,
 });
 
