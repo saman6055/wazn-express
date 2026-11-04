@@ -598,10 +598,10 @@ export async function setVolumetricDiscount(
   }
 
   // A parcel that travels for an order: its shipping belongs to the order.
-  // A full package's is in its agreed price; a commission order's, once
-  // charged, sits on the order - a discount here would leave the two
-  // disagreeing. Only a commission order not yet charged its shipping takes it
-  // (the till charges that from the parcel's price).
+  // A full package's is in its agreed price and is never discounted here. A
+  // commission order's, once charged, is discounted on the order itself, in
+  // the same act (db.discountOrderFreight, owner 2026-11-04); one not yet
+  // charged takes it from the parcel's price at the till.
   const orders = await db.ordersBehindParcel(pkg);
   const fullPackage = orders.find((o) => o.orderType !== "commission");
   if (fullPackage) {
@@ -609,12 +609,7 @@ export async function setVolumetricDiscount(
       "ئەگەر داشکان دەکەیت، نرخی فرۆشتنی ئۆردەرەکە کەم بکەرەوە",
     ]);
   }
-  const freightCharged = orders.find((o) => o.isShippingCharged);
-  if (freightCharged) {
-    throw refuse("BAD_REQUEST", `کرێی گواستنەوەی ئەم پاکەتە پێشتر لەسەر ئۆردەری ${freightCharged.orderCode} حیساب کراوە - داشکانی لێرە ئەو حیسابە ناگۆڕێت.`, [
-      `ئۆردەری ${freightCharged.orderCode} بکەرەوە و کرێی گواستنەوەکەی لەوێ ڕاست بکەرەوە`,
-    ]);
-  }
+  const freightOrders = orders.filter((o) => o.isShippingCharged);
 
   let billed: string | null = null;
   if (input.billedWeightKg !== null) {
@@ -630,6 +625,37 @@ export async function setVolumetricDiscount(
     }
     // The full volume is no discount at all.
     billed = kg >= high - 0.0005 ? null : kg.toFixed(3);
+  }
+
+  if (freightOrders.length > 0) {
+    const carrying = await db.ordersCarryingFreight(freightOrders.map((o) => o.id));
+    if (carrying.length !== 1) {
+      throw refuse("BAD_REQUEST", `کرێی گواستنەوەی ئەم پاکەتە لەسەر ${carrying.length || "هیچ"} ئۆردەر نووسراوە - داشکان نازانێت لە کامیان کەم بکاتەوە.`, [
+        "ئۆردەرەکانی ئەم پاکەتە بکەرەوە و کرێی گواستنەوەکەیان بپشکنە",
+      ]);
+    }
+    const was = chargeableWeight(pkg, divisor).chargeableKg;
+    const now = chargeableWeight({ ...pkg, billedWeightKg: billed }, divisor).chargeableKg;
+    const name = pkg.trackingNumber || pkg.packageCode || String(pkg.id);
+    let moved: Awaited<ReturnType<typeof db.discountOrderFreight>>;
+    try {
+      moved = await db.discountOrderFreight(pkg.id, carrying[0], { billedWeightKg: billed, wasKg: was, nowKg: now, name }, actor.id, {
+        allowCredit: mayApproveCredit(actor.role) && input.approveCredit === true,
+        actorRole: actor.role ?? null,
+      });
+    } catch (err) {
+      const credit = undoCreditRefusal(err, actor.role);
+      if (credit) throw credit;
+      throw new TRPCError({ code: "CONFLICT", message: err instanceof Error ? err.message : String(err) });
+    }
+    const outcome = { money: moved.money, wasUsd: moved.wasUsd, nowUsd: moved.nowUsd, chargedUsd: 0, priceUsd: moved.nowUsd };
+    return {
+      billedWeightKg: billed,
+      wasUsd: moved.wasUsd,
+      nowUsd: moved.nowUsd,
+      priceUsd: moved.nowUsd,
+      words: correctionWords(outcome as never),
+    };
   }
 
   const after: PricedFacts = {
