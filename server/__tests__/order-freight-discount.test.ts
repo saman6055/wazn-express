@@ -24,7 +24,7 @@ describe("discount on freight already on the order", () => {
     expect(door).toContain("await db.transaction(async (tx) => {");
     expect(door).toContain("await restateCharge(charge.id, nowUsd,");
     expect(door).toContain(".set({ shippingChargedUsd: nowUsd.toFixed(2), shippingCostUsd: nowUsd.toFixed(2) })");
-    expect(door).toContain(".set({ billedWeightKg: input.billedWeightKg, calculatedCostUsd: nowUsd.toFixed(2) })");
+    expect(door).toContain(".set({ billedWeightKg: input.billedWeightKg, calculatedCostUsd: parcelNowUsd.toFixed(2) })");
     expect(door).toContain("Number(line.cost ?? 0) - wasUsd + nowUsd");
   });
 
