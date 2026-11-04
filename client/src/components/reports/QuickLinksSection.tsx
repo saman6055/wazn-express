@@ -2,7 +2,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { Link } from "wouter";
 import {
   Layers, DollarSign, FileText, QrCode, Wrench, TrendingUp,
-  Calendar, BarChart3, ExternalLink,
+  Calendar, BarChart3, ExternalLink, Sigma,
 } from "lucide-react";
 
 
@@ -88,6 +88,22 @@ const QUICK_LINKS: QuickLink[] = [
     hoverBorder: "hover:border-cyan-300 dark:hover:border-cyan-700",
     hoverBg: "hover:bg-cyan-50/50 dark:hover:bg-cyan-950/30",
     hoverText: "group-hover:text-cyan-600",
+  },
+  {
+    /*
+     * Built, routed, and until now unreachable: no menu, button or link in
+     * the system opened /reports/unified-profit, so nobody had seen it.
+     * The owner, 2026-11-05, asked for a way in after being told what it
+     * shows - total profit split into full-package and commission, over a
+     * week, a month, a quarter or a year.
+     */
+    route: "/reports/unified-profit",
+    titleKey: "reports.unifiedProfitReport",
+    icon: <Sigma className="h-5 w-5" />,
+    iconBg: "from-sky-500 to-sky-600",
+    hoverBorder: "hover:border-sky-300 dark:hover:border-sky-700",
+    hoverBg: "hover:bg-sky-50/50 dark:hover:bg-sky-950/30",
+    hoverText: "group-hover:text-sky-600",
   },
   {
     route: "/reports/profit-loss",
