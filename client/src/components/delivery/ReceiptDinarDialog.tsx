@@ -787,7 +787,13 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                 <PledgeWithdraw
                   boxId={Number(request!.boxId)}
                   lineId={chosen ? chosen.lineId : null}
-                  onWithdrawn={(lineId) => setDropped((d) => new Set(d).add(lineId === null ? "box" : String(lineId)))}
+                  onWithdrawn={(lineId) => {
+                    setDropped((d) => new Set(d).add(lineId === null ? "box" : String(lineId)));
+                    // Taken back means gone from this receipt too, not just unlocked.
+                    setDiscount("");
+                    setDiscountReason("");
+                    setDiscountNote("");
+                  }}
                 />
               )}
               {(reasonMissing || noteMissing) && (

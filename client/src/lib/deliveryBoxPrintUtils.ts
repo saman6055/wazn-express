@@ -60,7 +60,7 @@ export interface BoxItemForPrint {
    * must say it): its weight by volume and the kilos charged. `weightKg`
    * above is already the kilos charged. Null when there is none.
    */
-  volumetric?: { volumetricKg: number; billedKg: number | null } | null;
+  volumetric?: { volumetricKg: number; billedKg: number | null; rateUsd?: number | null } | null;
 }
 
 /**
@@ -74,8 +74,10 @@ export function volumeDiscountOf(item: BoxItemForPrint): { fullKg: number; offKg
   const charged = Number(item.weightKg || 0) || 0;
   if (!v?.billedKg || !(v.volumetricKg > charged + 0.004) || !(charged > 0)) return null;
   const offKg = v.volumetricKg - charged;
-  const price = Number(item.calculatedCostUsd || 0) || 0;
-  return { fullKg: v.volumetricKg, offKg, offUsd: Math.round((offKg * price / charged) * 100) / 100 };
+  // At the freight's own rate: a buy-at-cost row's price also holds the goods,
+  // and $105.30 was once printed for $64 of kilos that way (2026-11-04).
+  const rate = Number(v.rateUsd) > 0 ? Number(v.rateUsd) : (Number(item.calculatedCostUsd || 0) || 0) / charged;
+  return { fullKg: v.volumetricKg, offKg, offUsd: Math.round(offKg * rate * 100) / 100 };
 }
 
 /** The receipt's line for the discounts, when any row has one. */

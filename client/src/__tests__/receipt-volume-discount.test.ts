@@ -25,6 +25,12 @@ describe("the receipt says the volumetric discount", () => {
     expect(volumeDiscountOf({ ...row, shippingType: "sea" })).toBeNull();
   });
 
+  it("a buy-at-cost row is let off at its freight rate, not goods + freight (2026-11-04)", () => {
+    // 3.67 kg by volume charged as 2.2: goods $15.69 + freight $24.20 on the row.
+    const cm = { ...row, itemType: "commission", weightKg: "2.20", calculatedCostUsd: "39.89", volumetric: { volumetricKg: 3.6667, billedKg: 2.2, rateUsd: 11 } };
+    expect(volumeDiscountOf(cm)?.offUsd).toBe(16.13);
+  });
+
   it("struck on the row, said in the totals", () => {
     const t = (k: string) => k;
     const html = buildBoxReceiptHtml(

@@ -764,7 +764,7 @@ export type BoxItemWithAdvance = DeliveryBoxItem & {
    * so the box can offer a volumetric discount before its receipt (owner,
    * 2026-10-23). Null for anything else.
    */
-  volumetric?: { actualKg: number; volumetricKg: number; chargeableKg: number; billedKg: number | null } | null;
+  volumetric?: { actualKg: number; volumetricKg: number; chargeableKg: number; billedKg: number | null; rateUsd?: number | null } | null;
 };
 
 /**
@@ -964,7 +964,11 @@ export async function getBoxItems(boxId: number): Promise<BoxItemWithAdvance[]> 
     const w = chargeableWeight(p, divisor);
     if (!(w.volumetricKg > w.actualKg)) return null;
     const billed = Number(p.billedWeightKg ?? 0);
-    return { actualKg: w.actualKg, volumetricKg: w.volumetricKg, chargeableKg: w.chargeableKg, billedKg: billed > 0 ? billed : null };
+    // Dollars a kilo of freight: the parcel's own price is its freight (a
+    // buy-at-cost line also carries the goods, which no kilo discount touches).
+    const freight = Number(p.calculatedCostUsd ?? 0);
+    const rateUsd = freight > 0 && w.chargeableKg > 0 ? freight / w.chargeableKg : null;
+    return { actualKg: w.actualKg, volumetricKg: w.volumetricKg, chargeableKg: w.chargeableKg, billedKg: billed > 0 ? billed : null, rateUsd };
   };
 
   const built = items.map((item): BoxItemWithAdvance => {
