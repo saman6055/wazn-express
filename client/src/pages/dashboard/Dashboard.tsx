@@ -78,6 +78,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
+import { customerCodeOnly } from "@shared/customerCode";
 import "./dashboardLive.css";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
@@ -1112,9 +1113,12 @@ export default function Dashboard() {
                 <div>
                   <CardTitle className="text-lg flex items-center gap-2">
                     <AlertTriangle className="h-5 w-5 text-red-500 dark:text-red-400" />
-                    {t('dashboard.overdueDebtAlerts') ?? 'Overdue debt alerts'}
+                    {/* The biggest balances, not "overdue": nothing here measured
+                        lateness until the days since the last payment came in
+                        (audit 2026-11-05). */}
+                    {pickLang(language, { ku: "گەورەترین قەرزەکان", en: "Biggest debts", ar: "أكبر الديون", zh: "最大欠款" })}
                   </CardTitle>
-                  <CardDescription>{t('dashboard.customersWithHighDebt')}</CardDescription>
+                  <CardDescription>{pickLang(language, { ku: "بە بڕی قەرز، و چەند ڕۆژە پارەی نەداوە", en: "By amount, and how long since they last paid", ar: "حسب المبلغ ومنذ متى لم يدفعوا", zh: "按金额排列，及距上次付款的天数" })}</CardDescription>
                 </div>
                 <Link href="/finance/debtors">
                   <Badge variant="outline" className="cursor-pointer hover:bg-accent transition-colors">
@@ -1129,9 +1133,9 @@ export default function Dashboard() {
                   <Link
                     key={debtor.customerId}
                     href={`/finance/customer/${debtor.customerId}`}
-                    className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                    className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors"
                   >
-                    <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm
+                    <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-sm
                       ${index === 0 ? 'bg-gradient-to-br from-red-500 to-red-600 text-white' : 
                         index === 1 ? 'bg-gradient-to-br from-orange-400 to-orange-500 text-white' :
                         'bg-muted text-muted-foreground'}`}>
@@ -1139,17 +1143,38 @@ export default function Dashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="font-medium truncate">{debtor.customerName}</p>
-                      <p className="text-sm text-muted-foreground">{debtor.customerCode}</p>
+                      <p className="text-sm text-muted-foreground" dir="ltr">{customerCodeOnly(debtor.customerCode)}</p>
+                      {/* Its share of the biggest debt on the list, as a bar. */}
+                      <div className="mt-1.5 h-1.5 w-full max-w-48 overflow-hidden rounded-full bg-muted">
+                        <div
+                          className="h-full rounded-full bg-gradient-to-r from-rose-500 to-violet-500 transition-[width] duration-700"
+                          style={{ width: `${Math.max(4, Math.round((debtor.debtUsd / Math.max(1, topDebtors[0]?.debtUsd ?? 1)) * 100))}%` }}
+                        />
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-semibold text-red-600 dark:text-red-400">
+                    <div className="text-end">
+                      <p className="font-semibold tabular-nums text-red-600 dark:text-red-400" dir="ltr">
                         ${debtor.debtUsd.toFixed(2)}
                       </p>
-                      <p className="text-xs text-muted-foreground">
-                        {debtor.lastPaymentDate 
-                          ? new Date(debtor.lastPaymentDate).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-                          : t('dashboard.noPayment')}
-                      </p>
+                      {(() => {
+                        const days = debtor.lastPaymentDate
+                          ? Math.floor((Date.now() - new Date(debtor.lastPaymentDate).getTime()) / 86_400_000)
+                          : null;
+                        const tone = days == null || days > 30
+                          ? "bg-red-100 text-red-700 dark:bg-red-950/50 dark:text-red-300"
+                          : days > 7
+                            ? "bg-amber-100 text-amber-700 dark:bg-amber-950/50 dark:text-amber-300"
+                            : "bg-emerald-100 text-emerald-700 dark:bg-emerald-950/50 dark:text-emerald-300";
+                        return (
+                          <span className={`mt-1 inline-block rounded-full px-2 py-0.5 text-[11px] font-medium ${tone}`}>
+                            {days == null
+                              ? pickLang(language, { ku: "هەرگیز پارەی نەداوە", en: "Never paid", ar: "لم يدفع قط", zh: "从未付款" })
+                              : days === 0
+                                ? pickLang(language, { ku: "ئەمڕۆ پارەی دا", en: "Paid today", ar: "دفع اليوم", zh: "今天已付款" })
+                                : pickLang(language, { ku: `${days} ڕۆژە پارەی نەداوە`, en: `${days} days since paying`, ar: `${days} يوماً دون دفع`, zh: `${days} 天未付款` })}
+                          </span>
+                        );
+                      })()}
                     </div>
                   </Link>
                 ))}
@@ -1234,7 +1259,9 @@ export default function Dashboard() {
                     <Crown className="h-5 w-5 text-amber-500 dark:text-amber-400" />
                     {t('dashboard.topCustomers')}
                   </CardTitle>
-                  <CardDescription>{t('dashboard.byRevenue')}</CardDescription>
+                  {/* Ranked by what they were billed over all time (gross charges),
+                      not cash received - said so (audit 2026-11-05). */}
+                  <CardDescription>{pickLang(language, { ku: "بە پێی کۆی حیسابکراو، هەموو کات", en: "By total billed, all time", ar: "حسب إجمالي الفواتير، كل الأوقات", zh: "按累计开单金额" })}</CardDescription>
                 </div>
                 <Link href="/customers">
                   <Badge variant="outline" className="cursor-pointer hover:bg-accent transition-colors">
@@ -1251,9 +1278,9 @@ export default function Dashboard() {
                     <Link
                       key={customer.customerId}
                       href={`/finance/customer/${customer.customerId}`}
-                      className="flex items-center gap-4 p-4 hover:bg-muted/50 transition-colors"
+                      className="flex items-center gap-4 px-4 py-3 hover:bg-muted/50 transition-colors"
                     >
-                      <div className={`h-10 w-10 rounded-full flex items-center justify-center font-bold text-sm
+                      <div className={`h-10 w-10 shrink-0 rounded-full flex items-center justify-center font-bold text-sm
                         ${index === 0 ? 'bg-gradient-to-br from-amber-400 to-orange-500 text-white shadow-lg shadow-amber-200 dark:shadow-amber-900/30' : 
                           index === 1 ? 'bg-gradient-to-br from-slate-300 to-slate-400 text-slate-700 dark:from-slate-600 dark:to-slate-700 dark:text-slate-200' :
                           index === 2 ? 'bg-gradient-to-br from-orange-300 to-orange-400 text-orange-800 dark:text-orange-200' :
@@ -1267,13 +1294,20 @@ export default function Dashboard() {
                             <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs border-0">{t("customers.stats.vip")}</Badge>
                           )}
                         </div>
-                        <p className="text-sm text-muted-foreground">{customer.packageCount} {t('common.package')}</p>
+                        {/* The count is of billed records (parcels, orders, services), not parcels. */}
+                        <p className="text-sm text-muted-foreground">{customer.packageCount} {pickLang(language, { ku: "حیساب", en: "charges", ar: "قيود", zh: "笔" })}</p>
+                        <div className="mt-1.5 h-1.5 w-full max-w-48 overflow-hidden rounded-full bg-muted">
+                          <div
+                            className="h-full rounded-full bg-gradient-to-r from-sky-500 via-blue-500 to-violet-500 transition-[width] duration-700"
+                            style={{ width: `${Math.max(4, Math.round((Number(customer.totalCharges || 0) / Math.max(1, Number(topCustomers?.[0]?.totalCharges || 1))) * 100))}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="text-right">
-                        <p className="font-semibold text-green-600 dark:text-green-400">
+                      <div className="text-end">
+                        <p className="font-semibold tabular-nums text-green-600 dark:text-green-400" dir="ltr">
                           ${Number(customer.totalCharges || 0).toFixed(2)}
                         </p>
-                        <p className="text-xs text-muted-foreground">{t('common.revenue')}</p>
+                        <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "حیسابکراو", en: "billed", ar: "مُفوتر", zh: "已开单" })}</p>
                       </div>
                     </Link>
                   );
