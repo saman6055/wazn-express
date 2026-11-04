@@ -854,7 +854,8 @@ export default function Dashboard() {
               </Link>
               <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-emerald-100 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"><DollarSign className="h-5 w-5" /></span>
-                <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" })}</p><p className="text-xl font-bold">${selfOrders.summary.revenueUsd.toFixed(0)}</p></div>
+                {/* The parcels' price as billed, not cash collected (audit 2026-11-05). */}
+                <div><p className="text-xs text-muted-foreground">{pickLang(language, { ku: "حیسابکراو", en: "Billed", ar: "مُفوتر", zh: "已开单" })}</p><p className="text-xl font-bold">${selfOrders.summary.revenueUsd.toFixed(0)}</p></div>
               </Link>
               <Link href="/self-orders" className="rounded-xl border bg-card p-4 flex items-center gap-3 hover:bg-accent transition-colors">
                 <span className="flex h-10 w-10 items-center justify-center rounded-lg bg-teal-100 text-teal-700 dark:bg-teal-900/30 dark:text-teal-400"><TrendingUp className="h-5 w-5" /></span>
@@ -867,6 +868,44 @@ export default function Dashboard() {
                 </div>
                 <Badge variant="secondary">{pickLang(language, { ku: "بینینی هەموو", en: "View all", ar: "عرض الكل", zh: "查看全部" })}</Badge>
               </Link>
+            </div>
+            {/* More than four tiles (owner, 2026-11-05: «زانیاری وردتری تێدابێت»):
+                the split by transport and the busiest customers, each a link. */}
+            <div className="grid gap-3 lg:grid-cols-2">
+              <div className="rounded-xl border bg-card p-4" data-testid="self-by-type">
+                <p className="mb-2 text-sm font-semibold">{pickLang(language, { ku: "بە پێی جۆری گواستنەوە", en: "By transport", ar: "حسب نوع الشحن", zh: "按运输方式" })}</p>
+                <div className="space-y-2">
+                  {(["air_regular", "air_irregular", "sea"] as const).map((type) => {
+                    const row = selfOrders.summary.byType[type];
+                    if (!row || row.count === 0) return null;
+                    const share = Math.round((row.count / Math.max(1, selfOrders.summary.count)) * 100);
+                    return (
+                      <Link key={type} href={packagesHref({ shippingType: type })} className="block rounded-lg px-2 py-1 transition-colors hover:bg-muted/60">
+                        <div className="flex items-center justify-between text-xs">
+                          <span>{SHIPPING_TYPE_LABEL[type] ? pickLang(language, SHIPPING_TYPE_LABEL[type]!) : type}</span>
+                          <span className="font-semibold tabular-nums" dir="ltr">{row.count} · ${row.revenueUsd.toFixed(0)} · {share}%</span>
+                        </div>
+                        <div className="mt-1 h-1.5 overflow-hidden rounded-full bg-muted">
+                          <div className="h-full rounded-full bg-gradient-to-r from-sky-500 to-violet-500 transition-[width] duration-700" style={{ width: `${Math.max(3, share)}%` }} />
+                        </div>
+                      </Link>
+                    );
+                  })}
+                </div>
+              </div>
+              <div className="rounded-xl border bg-card p-4" data-testid="self-top-customers">
+                <p className="mb-2 text-sm font-semibold">{pickLang(language, { ku: "کڕیارە چالاکەکان", en: "Busiest customers", ar: "أنشط العملاء", zh: "最活跃客户" })}</p>
+                <div className="divide-y">
+                  {selfOrders.summary.topCustomers.slice(0, 5).map((c, i) => (
+                    <Link key={c.customerId} href={`/customers/${c.customerId}`} className="flex items-center gap-3 py-1.5 text-xs transition-colors hover:text-sky-700 dark:hover:text-sky-300">
+                      <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-violet-100 text-[11px] font-bold text-violet-700 dark:bg-violet-950/50 dark:text-violet-300">{i + 1}</span>
+                      <span className="min-w-0 flex-1 truncate">{c.name || c.code}</span>
+                      <span className="font-mono text-muted-foreground" dir="ltr">{customerCodeOnly(c.code)}</span>
+                      <span className="w-24 text-end font-semibold tabular-nums" dir="ltr">{c.count} · ${c.revenueUsd.toFixed(0)}</span>
+                    </Link>
+                  ))}
+                </div>
+              </div>
             </div>
           </DashboardSection>
         )}
