@@ -192,6 +192,8 @@ export default function Dashboard() {
   const { data: revenueChart } = trpc.dashboard.revenueChart.useQuery({ days: 30 });
   const { data: profitLossChart } = trpc.dashboard.profitLossChart.useQuery({ days: 30 });
   const { data: activeBatches } = trpc.dashboard.activeBatches.useQuery();
+  // All of them, not the length of the five-row list (audit 2026-11-05).
+  const { data: activeBatchCount } = trpc.dashboard.activeBatchCount.useQuery();
   const { data: topDebtors } = trpc.dashboard.topDebtors.useQuery({ limit: 10 });
   const { data: recentActivity } = trpc.dashboard.recentActivity.useQuery({ limit: 8 });
   const { data: alerts } = trpc.dashboard.alerts.useQuery();
@@ -507,8 +509,8 @@ export default function Dashboard() {
               icon: <Layers />,
               label: t("dashboard.activeBatches") || pickLang(language, { ku: "باچە چالاکەکان", en: "Active batches", ar: "الدفعات النشطة", zh: "活跃批次" }),
               value: (
-                <ExplainableStat figure="activeBatches" value={activeBatches?.length || 0}>
-                  {activeBatches?.length || 0}
+                <ExplainableStat figure="activeBatches" value={activeBatchCount ?? 0}>
+                  {activeBatchCount ?? 0}
                 </ExplainableStat>
               ),
             },
@@ -570,7 +572,7 @@ export default function Dashboard() {
             title={t("dashboard.totalCustomers") ?? "Total Customers"}
             value={customerCounts?.total ?? 0}
             figure="totalCustomers"
-            description={t("dashboard.activeCustomers") ?? "Active customers"}
+            description={pickLang(language, { ku: "هەموو کڕیارە تۆمارکراوەکان", en: "Every registered customer", ar: "كل العملاء المسجلين", zh: "全部登记客户" })}
             icon={<Users className="h-5 w-5" />}
             color="emerald"
           />
@@ -578,16 +580,16 @@ export default function Dashboard() {
             title={t("dashboard.totalPackages") ?? "Total Packages"}
             value={totalPackages}
             figure="totalPackages"
-            description={t("dashboard.registeredToday")}
+            description={pickLang(language, { ku: "هەموو پاکەتەکان، لە سەرەتاوە", en: "Every parcel, since the start", ar: "كل الطرود منذ البداية", zh: "自开始以来的全部包裹" })}
             icon={<Package className="h-5 w-5" />}
             color="blue"
             trend={chartData.map(d => d.packages)}
           />
           <StatsCard
             title={t("dashboard.activeBatches")}
-            value={activeBatches?.length || 0}
+            value={activeBatchCount ?? 0}
             figure="activeBatches"
-            description={t("dashboard.onRouteOrPreparing")}
+            description={pickLang(language, { ku: "ئامادەکردن، لە ڕێگا یان لە کۆگا", en: "Preparing, on the road or at the depot", ar: "قيد التجهيز أو في الطريق أو في المستودع", zh: "准备中、在途或在仓库" })}
             icon={<Layers className="h-5 w-5" />}
             color="amber"
           />

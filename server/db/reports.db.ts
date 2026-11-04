@@ -694,6 +694,18 @@ export async function getDashboardProfitLossChart(days: number = 30): Promise<{ 
   }
 }
 
+/**
+ * How many shipments are active - all of them. The figure on the dashboard
+ * read the length of the five-row list beside it, so it never passed 5
+ * (audit 2026-11-05). Same status set as the list and its link.
+ */
+export async function countDashboardActiveBatches(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db.select({ n: count() }).from(batches).where(inArray(batches.status, ACTIVE_BATCH_STATUSES));
+  return Number(row?.n ?? 0);
+}
+
 export async function getDashboardActiveBatches(): Promise<{
   id: number;
   batchCode: string;

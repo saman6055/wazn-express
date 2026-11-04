@@ -422,6 +422,10 @@ export const dashboardRouter = router({
     activeBatches: staffProcedure.query(async () => {
       return cacheGetOrSet("dashboard:activeBatches", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardActiveBatches());
     }),
+
+    /** Every active shipment counted - the list above shows only the newest five. */
+    activeBatchCount: staffProcedure.query(() =>
+      cacheGetOrSet("dashboard:activeBatchCount", CACHE_TTL.DASHBOARD_STATS_MS, () => db.countDashboardActiveBatches())),
     
     // Top debtors (cached 30s)
     topDebtors: accountantProcedure
