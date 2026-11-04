@@ -8,6 +8,7 @@ import { backups } from "../../drizzle/schema.js";
 import { eq } from "drizzle-orm";
 import * as dbHelpers from "../db";
 import { Readable } from "stream";
+import { boundedFetch } from "../lib/boundedFetch";
 
 /** Prefix for backup fileUrl when stored locally (no S3/Forge). Download via GET /api/backup-file/:id */
 export const LOCAL_BACKUP_PREFIX = "local:";
@@ -140,14 +141,15 @@ export async function createZipBackup(options: ZipBackupOptions): Promise<{
       for (const file of s3Files) {
         try {
           // Download file content
-          const response = await fetch(file.url);
-          if (!response.ok) {
+          // Bounded: some of these links were typed by a customer.
+          let fileContent: Buffer;
+          try {
+            fileContent = await boundedFetch(file.url);
+          } catch {
             appLogger.warn(`[ZIP Backup] Failed to download ${file.path}`);
             failedFiles++;
             continue;
           }
-
-          const fileContent = Buffer.from(await response.arrayBuffer());
 
           // Add file to archive under "files/" directory
           archive.append(fileContent, { name: `files/${file.path}` });

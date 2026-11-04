@@ -19,6 +19,7 @@ import {
 } from "../../drizzle/schema.js";
 import { isNotNull } from "drizzle-orm";
 import { isStoredFileUrl } from "@shared/uploadRule";
+import { boundedFetch } from "../lib/boundedFetch";
 import archiver from "archiver";
 import fs from "fs/promises";
 import { createWriteStream } from "fs";
@@ -69,13 +70,14 @@ export async function backupS3Files(backupId?: number): Promise<S3BackupResult> 
     for (const fileInfo of fileUrls) {
       try {
         // Download file from S3
-        const response = await fetch(fileInfo.url);
-        if (!response.ok) {
+        // Bounded: some of these links were typed by a customer.
+        let buffer: Buffer;
+        try {
+          buffer = await boundedFetch(fileInfo.url);
+        } catch {
           appLogger.warn("[S3 Backup] Failed to download", { path: fileInfo.path });
           continue;
         }
-
-        const buffer = Buffer.from(await response.arrayBuffer());
         
         // Add to ZIP archive with organized folder structure
         archive.append(buffer, { name: fileInfo.path });

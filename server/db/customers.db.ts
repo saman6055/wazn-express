@@ -278,6 +278,53 @@ export async function updateCustomerPhoto(id: number, photoUrl: string | null) {
  * loses races is a counter an attacker can outrun by sending their guesses
  * in parallel.
  */
+/**
+ * One more wrong password, counted by the database itself.
+ *
+ * The count used to be read, added to in the server, and written back whole -
+ * so ten wrong passwords sent at the same moment each wrote "1" and the
+ * account never locked (security audit, 2026-11-05). Here MySQL adds one to
+ * whatever is stored, starts again after a quiet hour, and the lock is set by
+ * the one failure that reaches the limit. The rule is shared/loginLockout.
+ */
+export async function countFailedCustomerLogin(
+  id: number,
+  now: Date,
+  rule: { maxAttempts: number; lockMinutes: number },
+  windowMinutes: number,
+): Promise<{ failedAttempts: number; justLocked: boolean }> {
+  const db = await getDb();
+  if (!db) return { failedAttempts: 0, justLocked: false };
+  const windowStart = new Date(now.getTime() - windowMinutes * 60_000);
+  // failedLoginAttempts first: MySQL assigns left to right, so the IF reads
+  // the lastFailedLoginAt from before this failure.
+  await db
+    .update(customers)
+    .set({
+      // lt() binds windowStart the way the column stores it (UTC); a Date
+      // passed raw into sql`` is written in the server's local time instead,
+      // and every failure then looked an hour old (found against real MySQL).
+      failedLoginAttempts: sql`IF(${customers.lastFailedLoginAt} IS NULL OR ${lt(customers.lastFailedLoginAt, windowStart)}, 1, ${customers.failedLoginAttempts} + 1)`,
+      lastFailedLoginAt: now,
+    })
+    .where(eq(customers.id, id));
+  const [locked] = await db
+    .update(customers)
+    .set({ lockedUntil: new Date(now.getTime() + rule.lockMinutes * 60_000) })
+    .where(
+      and(
+        eq(customers.id, id),
+        sql`${customers.failedLoginAttempts} >= ${rule.maxAttempts}`,
+        or(sql`${customers.lockedUntil} IS NULL`, lt(customers.lockedUntil, now)),
+      ),
+    );
+  const [row] = await db.select({ n: customers.failedLoginAttempts }).from(customers).where(eq(customers.id, id)).limit(1);
+  return {
+    failedAttempts: Number(row?.n ?? 0),
+    justLocked: Number((locked as { affectedRows?: number })?.affectedRows ?? 0) > 0,
+  };
+}
+
 export async function recordFailedCustomerLogin(
   id: number,
   failedAttempts: number,

@@ -131,7 +131,9 @@ describe("a customer's door forgives a bad evening", () => {
     const b = router.indexOf("staffLogin:");
     expect(a).toBeGreaterThan(-1);
     expect(b).toBeGreaterThan(a);
-    expect(router.slice(a, b)).toContain("CUSTOMER_LOCK,\n        );");
+    // The rule is applied by the database itself now, so failures sent at
+    // the same moment all count (security audit, 2026-11-05).
+    expect(router.slice(a, b)).toContain("countFailedCustomerLogin(customer.id, now, CUSTOMER_LOCK, ATTEMPT_WINDOW_MINUTES)");
     expect(router.slice(b)).not.toContain("CUSTOMER_LOCK");
   });
 });

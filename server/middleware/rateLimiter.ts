@@ -195,12 +195,25 @@ const AUTH_LOGIN_PROCEDURES = [
 /** Mutations open to anyone, held to publicWriteLimiter. */
 const PUBLIC_WRITE_PROCEDURES = ["store.createOrder"];
 
-function trpcProcedures(req: Request): string[] {
+/**
+ * The procedures a request will run - read exactly the way tRPC reads them.
+ *
+ * tRPC's express adapter takes only the LAST segment of the address and
+ * decodes it. Reading the raw path instead let `/api/trpc/auth%2EstaffLogin`
+ * or `/api/trpc/x/auth.staffLogin` reach the login with no login limit at
+ * all (security audit, 2026-11-05). Whatever tRPC will act on, this sees.
+ */
+export function trpcProcedures(req: Request): string[] {
   const path = requestPath(req);
   if (!path.startsWith("/api/trpc")) return [];
-  // tRPC sends procedure name in path: /api/trpc/auth.customerLogin or batch: /api/trpc/auth.customerLogin,other.procedure
-  const segment = path.replace(/^\/api\/trpc\/?/, "").trim();
-  return segment ? segment.split(",").map((p) => p.trim()) : [];
+  const last = path.slice(path.lastIndexOf("/") + 1);
+  let decoded = last;
+  try {
+    decoded = decodeURIComponent(last);
+  } catch {
+    // Malformed: tRPC refuses it too.
+  }
+  return decoded ? decoded.split(",").map((p) => p.trim()) : [];
 }
 
 function isAuthLoginRequest(req: Request): boolean {
@@ -213,10 +226,28 @@ function isAuthLoginRequest(req: Request): boolean {
  * Mount this before the global limiter on the /api/trpc route so login attempts are limited per IP.
  */
 export function authLimiterMiddleware(req: Request, res: Response, next: NextFunction): void {
+  const procedures = trpcProcedures(req);
+  // A door open to anyone answers one call per request. A batch let one
+  // request carry many password guesses at once, run them side by side past
+  // the account's lock, and - answering 207 - be counted by the limiter as a
+  // success (security audit, 2026-11-05). The app never batches these.
+  if (req.method === "POST" && procedures.length > 1 && procedures.some((p) => ONE_CALL_ONLY.includes(p))) {
+    res.status(400).json(buildRefusalBody(procedures.length, "Send this request on its own, not in a batch."));
+    return;
+  }
   if (isAuthLoginRequest(req)) {
     return authLimiter(req, res, next);
   }
   next();
+}
+
+/** Procedures anyone may call: one per request. */
+const ONE_CALL_ONLY = [...AUTH_LOGIN_PROCEDURES, ...PUBLIC_WRITE_PROCEDURES];
+
+/** tRPC's own error envelope, one per call in the batch, so the client can read it. */
+function buildRefusalBody(count: number, message: string): unknown {
+  const envelope = { error: { json: { message, code: -32600, data: { code: "BAD_REQUEST", httpStatus: 400 } } } };
+  return Array.from({ length: Math.max(1, count) }, () => envelope);
 }
 
 /**

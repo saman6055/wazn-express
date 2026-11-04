@@ -44,7 +44,9 @@ describe("production body limits", () => {
   it("takes a large body only where a file can arrive", () => {
     // A base64 photo rides inside a tRPC call; an error report or a form
     // from a stranger has no business being fifty megabytes.
-    const large = at('app.use("/api/trpc", express.json({ limit: "50mb" }))');
+    // Large only for a session this server signed (middleware/bodyLimits,
+    // security audit 2026-11-05); a stranger's body stops at 100 KB.
+    const large = at('app.use("/api/trpc", trpcBodyParser);');
     const small = at('app.use(express.json({ limit: "100kb" }))');
     expect(large).toBeLessThan(small);
     expect(PROD).not.toContain('app.use(express.json({ limit: "50mb" }))');
