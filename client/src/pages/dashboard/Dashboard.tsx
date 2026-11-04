@@ -1595,136 +1595,19 @@ const StatusBar = memo(function StatusBar({ status, count, total, language }: { 
 
 // Alert Summary Section Component
 function AlertSummarySection() {
-  const { t } = useTranslation();
-  const { data: batchesResponse } = trpc.batches.list.useQuery();
-  const batchList = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
-
-  // Counted on the server: this used to fetch 500 parcels to add three numbers.
-  const { data: alertCounts } = trpc.dashboard.packageAlertCounts.useQuery();
-  const packageAlerts = alertCounts ?? { normal: 0, warning: 0, highRisk: 0 };
-
-  // Calculate batch alerts
-  const batchAlerts = useMemo(() => batchList?.reduce((acc, batch) => {
-    const isCompleted = batch.status === "arrived" || batch.status === "delivered" || batch.status === "closed";
-    if (isCompleted) {
-      acc.normal++;
-      return acc;
-    }
-    
-    if (batch.estimatedArrival) {
-      const eta = new Date(batch.estimatedArrival);
-      const now = new Date();
-      const daysOverdue = Math.floor((now.getTime() - eta.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysOverdue > 5) {
-        acc.highRisk++;
-      } else if (daysOverdue > 0) {
-        acc.warning++;
-      } else {
-        acc.normal++;
-      }
-    } else if (batch.departureDate) {
-      const departure = new Date(batch.departureDate);
-      const now = new Date();
-      const daysSince = Math.floor((now.getTime() - departure.getTime()) / (1000 * 60 * 60 * 24));
-      
-      if (daysSince > 30) {
-        acc.highRisk++;
-      } else if (daysSince > 15) {
-        acc.warning++;
-      } else {
-        acc.normal++;
-      }
-    } else {
-      acc.normal++;
-    }
-    return acc;
-  }, { normal: 0, warning: 0, highRisk: 0 }) || { normal: 0, warning: 0, highRisk: 0 }, [batchList]);
-
-  const totalHighRisk = packageAlerts.highRisk + batchAlerts.highRisk;
-  const totalWarning = packageAlerts.warning + batchAlerts.warning;
-
-  if (totalHighRisk === 0 && totalWarning === 0) {
-    return null;
-  }
-
+  /*
+   * Late parcels and batches, counted on the server over all of them, each
+   * card opening to its records (audit 2026-11-05: the old tiles read the
+   * newest 500 parcels and 50 batches, counted parcels already in Erbil, and
+   * called «1–5 days past the ETA» «near the ETA»).
+   */
+  const { data: late } = trpc.dashboard.lateAlerts.useQuery();
+  if (!late || late.length === 0) return null;
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      {packageAlerts.highRisk > 0 && (
-        <Link href="/packages/all">
-          <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
-                  <AlertTriangle className="h-6 w-6 text-red-600 dark:text-red-400 animate-pulse" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-red-700 dark:text-red-400">{packageAlerts.highRisk}</p>
-                  <p className="text-sm text-red-600 dark:text-red-400">{t('dashboard.highRiskPackages')} 🔴</p>
-                  <p className="text-xs text-red-500 dark:text-red-400">{t('dashboard.moreThan20Days')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      )}
-      
-      {packageAlerts.warning > 0 && (
-        <Link href="/packages/all">
-          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                  <AlertCircle className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{packageAlerts.warning}</p>
-                  <p className="text-sm text-amber-600 dark:text-amber-400">{t('dashboard.warningPackages')} ⚠️</p>
-                  <p className="text-xs text-amber-500 dark:text-amber-400">{t('dashboard.10to20Days')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      )}
-      
-      {batchAlerts.highRisk > 0 && (
-        <Link href="/batches">
-          <Card className="border-red-200 bg-red-50 dark:bg-red-950/20 dark:border-red-900 hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-red-100 dark:bg-red-900/50 flex items-center justify-center">
-                  <Ship className="h-6 w-6 text-red-600 dark:text-red-400 animate-pulse" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-red-700 dark:text-red-400">{batchAlerts.highRisk}</p>
-                  <p className="text-sm text-red-600 dark:text-red-400">{t('dashboard.highRiskBatches')} 🔴</p>
-                  <p className="text-xs text-red-500 dark:text-red-400">{t('dashboard.veryOverdue')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      )}
-      
-      {batchAlerts.warning > 0 && (
-        <Link href="/batches">
-          <Card className="border-amber-200 bg-amber-50 dark:bg-amber-950/20 dark:border-amber-900 hover:shadow-lg transition-shadow cursor-pointer">
-            <CardContent className="pt-6">
-              <div className="flex items-center gap-4">
-                <div className="h-12 w-12 rounded-full bg-amber-100 dark:bg-amber-900/50 flex items-center justify-center">
-                  <Plane className="h-6 w-6 text-amber-600 dark:text-amber-400" />
-                </div>
-                <div>
-                  <p className="text-2xl font-bold text-amber-700 dark:text-amber-400">{batchAlerts.warning}</p>
-                  <p className="text-sm text-amber-600 dark:text-amber-400">{t('dashboard.warningBatches')} ⚠️</p>
-                  <p className="text-xs text-amber-500 dark:text-amber-400">{t('dashboard.nearETA')}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        </Link>
-      )}
+    <div className="grid gap-3 md:grid-cols-2 lg:grid-cols-4" data-testid="late-alerts">
+      {late.map((alert) => (
+        <AlertCard key={alert.id} alert={alert} />
+      ))}
     </div>
   );
 }

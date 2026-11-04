@@ -119,6 +119,78 @@ export async function getBoxProblems(): Promise<BoxProblem[]> {
   ];
 }
 
+/**
+ * Parcels and batches running late, counted on the server over all of them,
+ * each with its records (audit 2026-11-05). The tiles they replace read the
+ * 500 newest parcels and the 50 newest batches, counted parcels already in
+ * Erbil as late, and called «1–5 days past the ETA» «near the ETA».
+ *
+ * A parcel is late by days since it was registered, while it has not reached
+ * Erbil (registered, in a batch or on the road), is not unclaimed and not
+ * written off as lost. A batch is late by its ETA, or by its departure when it
+ * has none, until it reaches the depot.
+ */
+export interface LateAlert {
+  id: "parcels-late-high" | "parcels-late-warn" | "batches-late-high" | "batches-late-warn";
+  type: "error" | "warning";
+  title: string;
+  description: string;
+  count: number;
+  link: string;
+  records: ProblemRecord[];
+}
+
+export async function getLateAlerts(): Promise<LateAlert[]> {
+  const parcelSql = (min: number, max: number | null) => sql`
+    SELECT p.packageCode, p.trackingNumber, c.customerCode, bt.batchCode,
+           FLOOR(TIMESTAMPDIFF(SECOND, p.createdAt, UTC_TIMESTAMP()) / 86400) AS days,
+           COUNT(*) OVER () AS total
+    FROM packages p
+    LEFT JOIN customers c ON c.id = p.customerId
+    LEFT JOIN batches bt ON bt.id = p.batchId
+    WHERE p.status IN ('registered','in_batch','in_transit')
+      AND COALESCE(p.isUnclaimed, 0) = 0
+      AND p.lostAt IS NULL
+      AND TIMESTAMPDIFF(SECOND, p.createdAt, UTC_TIMESTAMP()) > ${min * 86400}
+      ${max == null ? sql`` : sql`AND TIMESTAMPDIFF(SECOND, p.createdAt, UTC_TIMESTAMP()) <= ${max * 86400}`}
+    ORDER BY p.createdAt ASC LIMIT ${LIMIT}`;
+  const batchSql = sql`
+    SELECT batchCode, status,
+           CASE WHEN estimatedArrival IS NOT NULL THEN DATEDIFF(UTC_TIMESTAMP(), estimatedArrival) END AS pastEta,
+           CASE WHEN estimatedArrival IS NULL AND departureDate IS NOT NULL THEN DATEDIFF(UTC_TIMESTAMP(), departureDate) END AS sinceDeparture
+    FROM batches
+    WHERE status NOT IN ('arrived','at_depot','delivered','closed')
+      AND (estimatedArrival IS NOT NULL OR departureDate IS NOT NULL)`;
+  const [high, warn, batchRows] = await Promise.all([
+    rows("late-parcels-high", parcelSql(20, null)),
+    rows("late-parcels-warn", parcelSql(10, 20)),
+    rows("late-batches", batchSql),
+  ]);
+
+  const level = (r: Row): "high" | "warn" | null => {
+    const eta = r.pastEta == null ? null : Number(r.pastEta);
+    const dep = r.sinceDeparture == null ? null : Number(r.sinceDeparture);
+    if (eta != null) return eta > 5 ? "high" : eta > 0 ? "warn" : null;
+    if (dep != null) return dep > 30 ? "high" : dep > 15 ? "warn" : null;
+    return null;
+  };
+  const batchRecord = (r: Row): ProblemRecord => ({
+    text: join(r.batchCode, r.pastEta != null ? `${Number(r.pastEta)} ڕۆژ دوای ETA` : `${Number(r.sinceDeparture)} ڕۆژ لە ڕێگا`),
+    href: `/batches?find=${encodeURIComponent(str(r.batchCode))}`,
+  });
+  const highBatches = batchRows.filter((r) => level(r) === "high");
+  const warnBatches = batchRows.filter((r) => level(r) === "warn");
+  const parcelRecord = (r: Row): ProblemRecord => ({ text: join(r.packageCode, r.customerCode, r.batchCode, `${Number(r.days)} ڕۆژ`), href: parcelHref(r.trackingNumber || r.packageCode) });
+  const total = (r: Row[]) => Number(r[0]?.total ?? 0);
+
+  const out: LateAlert[] = [];
+  if (total(high) > 0) out.push({ id: "parcels-late-high", type: "error", title: "پاکەتی زۆر دواکەوتوو", description: "زیاتر لە 20 ڕۆژە تۆمار کراوە و هێشتا نەگەیشتووەتە هەولێر", count: total(high), link: "/packages/all", records: high.map(parcelRecord) });
+  if (total(warn) > 0) out.push({ id: "parcels-late-warn", type: "warning", title: "پاکەتی ئاگاداری", description: "10–20 ڕۆژە تۆمار کراوە و هێشتا نەگەیشتووەتە هەولێر", count: total(warn), link: "/packages/all", records: warn.map(parcelRecord) });
+  if (highBatches.length > 0) out.push({ id: "batches-late-high", type: "error", title: "باچی زۆر دواکەوتوو", description: "زیاتر لە 5 ڕۆژ لە ETA تێپەڕیوە (یان بێ ETA زیاتر لە 30 ڕۆژ لە ڕێگایە)", count: highBatches.length, link: "/batches?status=in_transit", records: highBatches.slice(0, LIMIT).map(batchRecord) });
+  if (warnBatches.length > 0) out.push({ id: "batches-late-warn", type: "warning", title: "باچی دواکەوتوو", description: "1–5 ڕۆژ لە ETA تێپەڕیوە (یان بێ ETA 15–30 ڕۆژ لە ڕێگایە)", count: warnBatches.length, link: "/batches?status=in_transit", records: warnBatches.slice(0, LIMIT).map(batchRecord) });
+  return out;
+}
+
 /** The records behind the existing problem cards. */
 export async function getAlertRecords(): Promise<Record<string, ProblemRecord[]>> {
   const [large, customs, pendingFp, delivered, payments] = await Promise.all([

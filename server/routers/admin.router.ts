@@ -424,6 +424,10 @@ export const dashboardRouter = router({
     }),
 
     /** Every active shipment counted - the list above shows only the newest five. */
+    /** Parcels and batches running late, over all of them, each with its records. */
+    lateAlerts: staffProcedure.query(() =>
+      cacheGetOrSet("dashboard:lateAlerts", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getLateAlerts())),
+
     activeBatchCount: staffProcedure.query(() =>
       cacheGetOrSet("dashboard:activeBatchCount", CACHE_TTL.DASHBOARD_STATS_MS, () => db.countDashboardActiveBatches())),
     
