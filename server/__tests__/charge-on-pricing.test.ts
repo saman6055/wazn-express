@@ -51,7 +51,9 @@ describe("the charging engine keeps to the shared rules", () => {
 
   it("never charges a parcel twice", () => {
     expect(engine).toContain("eq(packages.isCharged, false)");
-    expect(engine).toContain("updatePackage(p.pkg.id, { isCharged: true })");
+    // Both branches set the flag; the second also writes the charged price.
+    expect(engine).toContain("? { isCharged: true }");
+    expect(engine).toContain(": { isCharged: true, calculatedCostUsd: p.amount.toFixed(2) }");
   });
 
   it("resolves the rate and the weight where everyone else does", () => {
