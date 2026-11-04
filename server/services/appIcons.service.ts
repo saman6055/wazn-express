@@ -89,6 +89,26 @@ async function getLogoBytes(url: string): Promise<Buffer | null> {
   }
 }
 
+/**
+ * Each size drawn once per logo, then served from memory.
+ *
+ * The icon was redrawn - the whole logo decoded and scaled - on every
+ * request, and the address answers anyone: a loop asking for it kept the
+ * server busy for nothing (security audit, 2026-11-05). A new logo has a new
+ * address, so the drawings of the old one are simply dropped.
+ */
+const rendered = new Map<string, Buffer>();
+
+async function renderedIcon(url: string, bytes: Buffer, size: number): Promise<Buffer> {
+  const key = `${url}|${size}`;
+  const hit = rendered.get(key);
+  if (hit) return hit;
+  const png = await renderIcon(bytes, size);
+  for (const k of Array.from(rendered.keys())) if (!k.startsWith(`${url}|`)) rendered.delete(k);
+  rendered.set(key, png);
+  return png;
+}
+
 async function renderIcon(bytes: Buffer, size: number): Promise<Buffer> {
   // The logo inside the middle 72% of a white square: clear of the maskable
   // safe circle, and the same shape as the bundled brand icons. White rather
@@ -184,7 +204,7 @@ export function registerAppIconRoutes(app: Express): void {
       return;
     }
     try {
-      const png = await renderIcon(bytes, size);
+      const png = await renderedIcon(url as string, bytes, size);
       res.setHeader("Content-Type", "image/png");
       res.setHeader("Cache-Control", "public, max-age=300");
       res.end(png);

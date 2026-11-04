@@ -1,4 +1,4 @@
-import { and, desc, eq, inArray, like, ne } from "drizzle-orm";
+import { and, desc, eq, inArray, like, ne, or } from "drizzle-orm";
 import { getDb } from "./connection";
 import {
   packages, customerAccounts, ledgerTransactions, invoices, revenueRecords, deliveryBoxes, deliveryBoxItems,
@@ -622,6 +622,28 @@ export async function applyParcelCorrection(
 
 
 /**
+ * Every carton whose kilos a commission order's freight was charged for: by
+ * its link, its order id, or a tracking the order names. Read only; the
+ * caller weighs them (shared/chargeableWeight), this file decides no price.
+ */
+export async function parcelsOfOrder(orderId: number): Promise<Package[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const [order] = await db.select({ trackingNumber: fullPackageOrders.trackingNumber }).from(fullPackageOrders).where(eq(fullPackageOrders.id, orderId)).limit(1);
+  if (!order) return [];
+  const linked = await db.select({ id: packageOrderLinks.packageId }).from(packageOrderLinks)
+    .where(eq(packageOrderLinks.fullPackageOrderId, orderId));
+  const listed = await db.select({ t: fullPackageOrderTrackings.trackingNumber }).from(fullPackageOrderTrackings)
+    .where(eq(fullPackageOrderTrackings.fullPackageOrderId, orderId));
+  const trackings = Array.from(new Set([order.trackingNumber, ...listed.map((r) => r.t)].map((t) => String(t ?? "").trim()).filter(Boolean)));
+  const ids = linked.map((r) => Number(r.id));
+  const conds = [eq(packages.fullPackageOrderId, orderId)];
+  if (ids.length > 0) conds.push(inArray(packages.id, ids));
+  if (trackings.length > 0) conds.push(inArray(packages.trackingNumber, trackings));
+  return db.select().from(packages).where(and(or(...conds), ne(packages.status, "cancelled")));
+}
+
+/**
  * A volumetric discount on a parcel whose freight is already on its commission
  * order (owner, 2026-11-04): «داشکانەکە لەسەر پاکێجەکە بکرێت، و هەمان کات کرێی
  * گواستنەوەی سەر ئۆردەرەکە و حیسابی کڕیار بە هەمان بڕ کەم ببنەوە، بە یەک هێڵی
@@ -637,7 +659,7 @@ export async function applyParcelCorrection(
 export async function discountOrderFreight(
   packageId: number,
   orderId: number,
-  input: { billedWeightKg: string | null; wasKg: number; nowKg: number; name: string },
+  input: { billedWeightKg: string | null; wasKg: number; nowKg: number; orderKg?: number; name: string },
   userId: number,
   opts?: UndoOptions & { actorRole?: string | null },
 ): Promise<{ wasUsd: number; nowUsd: number; money: "restated" | "adjusted" | "untouched" }> {
@@ -683,7 +705,18 @@ export async function discountOrderFreight(
       ));
     }
 
-    const nowUsd = Math.round((wasUsd * input.nowKg / input.wasKg) * 100) / 100;
+    /*
+     * Only this carton's share moves (2026-11-05). The order's freight is
+     * every carton's kilos at one rate, so the rate is the freight over all
+     * of them and the discount is that rate times the kilos let off. With one
+     * carton this is the old ratio; with two, a $50 order whose 20% carton is
+     * discounted becomes $45, not $40.
+     */
+    const orderKg = input.orderKg && input.orderKg >= input.wasKg ? input.orderKg : input.wasKg;
+    const ratePerKg = wasUsd / orderKg;
+    const offUsd = Math.round(ratePerKg * (input.wasKg - input.nowKg) * 100) / 100;
+    const nowUsd = Math.round((wasUsd - offUsd) * 100) / 100;
+    const parcelNowUsd = Math.round(ratePerKg * input.nowKg * 100) / 100;
     const reason = `داشکانی قەبارەی پاکەتی ${input.name}: ${input.wasKg.toFixed(2)} → ${input.nowKg.toFixed(2)} kg، کرێی ئۆردەری ${order.orderCode}`;
     let money: "restated" | "adjusted" | "untouched" = "untouched";
     if (Math.abs(nowUsd - wasUsd) > 0.005) {
@@ -697,7 +730,7 @@ export async function discountOrderFreight(
         money = "restated";
       }
       await invoiceFollows(tx, charge, input.name, {
-        due: true, amount: nowUsd, rate: nowUsd / input.nowKg, quantity: input.nowKg, unit: "kg", batchCode: null,
+        due: true, amount: nowUsd, rate: ratePerKg, quantity: Math.round((orderKg - input.wasKg + input.nowKg) * 1000) / 1000, unit: "kg", batchCode: null,
       });
     }
 
@@ -705,7 +738,7 @@ export async function discountOrderFreight(
       .set({ shippingChargedUsd: nowUsd.toFixed(2), shippingCostUsd: nowUsd.toFixed(2) })
       .where(eq(fullPackageOrders.id, orderId));
     await tx.update(packages)
-      .set({ billedWeightKg: input.billedWeightKg, calculatedCostUsd: nowUsd.toFixed(2) })
+      .set({ billedWeightKg: input.billedWeightKg, calculatedCostUsd: parcelNowUsd.toFixed(2) })
       .where(eq(packages.id, packageId));
 
     // An open box's line is goods + freight: the freight part moves, the goods stay.

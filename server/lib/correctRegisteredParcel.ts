@@ -637,9 +637,14 @@ export async function setVolumetricDiscount(
     const was = chargeableWeight(pkg, divisor).chargeableKg;
     const now = chargeableWeight({ ...pkg, billedWeightKg: billed }, divisor).chargeableKg;
     const name = pkg.trackingNumber || pkg.packageCode || String(pkg.id);
+    // Every carton the order's freight was charged for, this one at its kilos
+    // before the discount: only this carton's share moves (2026-11-05).
+    const orderKg = (await db.parcelsOfOrder(carrying[0]))
+      .filter((p) => Number(p.id) !== Number(pkg.id))
+      .reduce((sum, p) => sum + chargeableWeight(p, divisor).chargeableKg, was);
     let moved: Awaited<ReturnType<typeof db.discountOrderFreight>>;
     try {
-      moved = await db.discountOrderFreight(pkg.id, carrying[0], { billedWeightKg: billed, wasKg: was, nowKg: now, name }, actor.id, {
+      moved = await db.discountOrderFreight(pkg.id, carrying[0], { billedWeightKg: billed, wasKg: was, nowKg: now, orderKg, name }, actor.id, {
         allowCredit: mayApproveCredit(actor.role) && input.approveCredit === true,
         actorRole: actor.role ?? null,
       });
