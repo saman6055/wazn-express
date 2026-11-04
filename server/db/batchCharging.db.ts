@@ -242,7 +242,13 @@ export async function chargeBatchShippingIfDue(
           actorId,
           invoice.id,
         );
-        await updatePackage(p.pkg.id, { isCharged: true });
+        // A parcel weighed with no batch has no price of its own yet: it takes
+        // the one just charged, or the portal shows $0 and the batch's revenue
+        // report is short by it (2026-11-05). A price already there is kept.
+        const hasPrice = Number(p.pkg.calculatedCostUsd ?? 0) > 0;
+        await updatePackage(p.pkg.id, hasPrice
+          ? { isCharged: true }
+          : { isCharged: true, calculatedCostUsd: p.amount.toFixed(2) });
         try {
           await createRevenueRecord({
             recordDate: new Date(),
