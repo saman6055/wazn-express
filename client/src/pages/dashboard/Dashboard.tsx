@@ -424,14 +424,17 @@ export default function Dashboard() {
             answers both, ranked, before the reader has to choose where to
             look — which is the whole difference between a dashboard and a
             briefing. */}
-        <DailyBrief language={language} />
+        {/* Order on the page, by urgency (owner, 2026-11-05): needs-you 1-3,
+            today 4-6, road and warehouse 7-8, customers 9-10, the rest after,
+            charts last. Set with flex `order`, so no block moves in the file. */}
+        <div className="order-[1]"><DailyBrief language={language} /></div>
         {/* The warehouse's standing risks, where they are seen first thing.
             They lived only on the registrations page, which nobody opens to
             look for problems (owner, 2026-09-16). Each row leads to its
             customer and its parcel, the title to the whole list. Silent — and
             the grid gone — when there is nothing waiting. */}
         {canViewPath("/packages/registrations") && (
-          <div className="mb-6 grid gap-3 empty:hidden xl:grid-cols-2">
+          <div className="order-[8] grid gap-3 empty:hidden xl:grid-cols-2">
             <StaleDepotCard variant="dashboard" />
             <VolumetricWatchCard variant="dashboard" />
           </div>
@@ -441,7 +444,7 @@ export default function Dashboard() {
             first thing seen in the morning, which is when there is still time
             to go and ask for the number. Clicking one opens that batch. */}
         {awaitingNumber.length > 0 && (
-          <Card className="border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
+          <Card className="order-[7] border-amber-200 dark:border-amber-800/60 bg-amber-50/50 dark:bg-amber-950/40">
             <CardContent className="pt-6">
               <div className="flex items-start gap-3">
                 <AlertTriangle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
@@ -492,6 +495,7 @@ export default function Dashboard() {
 
         {/* Today at a glance — uses only data already on the page */}
         <TodayGlance
+          className="order-[4]"
           items={[
             {
               icon: <DollarSign />,
@@ -534,10 +538,10 @@ export default function Dashboard() {
 
         {/* Today's intake at the scanner — sums and the busiest customers;
             the Registrations tab on /packages is where the rows get worked. */}
-            <RegistrationsSummaryCard className="mb-4" />
+            <RegistrationsSummaryCard className="order-[6]" />
 
         {/* Financial overview */}
-        <DashboardSection className="pro-section" title={t("dashboard.financialOverview") || "Financial overview"}>
+        <DashboardSection className="pro-section order-[5]" title={t("dashboard.financialOverview") || "Financial overview"}>
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           <FinancialCard
             title={t('dashboard.todayIncome')}
@@ -580,8 +584,8 @@ export default function Dashboard() {
         </div>
         </DashboardSection>
 
-        {/* Operational stats */}
-        <DashboardSection className="pro-section">
+        {/* Operational stats - the long-run totals, below the day's work */}
+        <DashboardSection className="pro-section order-[15]">
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title={t("dashboard.totalCustomers") ?? "Total Customers"}
@@ -724,12 +728,12 @@ export default function Dashboard() {
         )}
 
         {/* Alert Summary Section */}
-        <AlertSummarySection />
+        <div className="order-[3] empty:hidden"><AlertSummarySection /></div>
 
         {/* Problems / action-needed alerts */}
         {alerts && alerts.length > 0 && (
           <DashboardSection
-            className="pro-section"
+            className="pro-section order-[2]"
             title={t("dashboard.problemsTitle") || pickLang(language, { ku: "مەشاکل و کارە پێویستەکان", en: "Problems & required actions", ar: "المشاكل والإجراءات المطلوبة", zh: "问题与待办事项" })}
             description={t("dashboard.problemsDesc") || pickLang(language, { ku: "ئەو شتانەی پێویستیان بە چاودێری یان کردارە", en: "Items that need attention or action", ar: "العناصر التي تحتاج إلى متابعة أو إجراء", zh: "需要关注或处理的事项" })}
           >
@@ -744,7 +748,7 @@ export default function Dashboard() {
         {/* Wins / records this week */}
         {highlights && (
           <DashboardSection
-            className="pro-section"
+            className="pro-section order-[12]"
             title={t("dashboard.winsTitle") || pickLang(language, { ku: "سەرکەوتنەکانی ئەم هەفتەیە", en: "This week's wins", ar: "إنجازات هذا الأسبوع", zh: "本周成果" })}
             description={t("dashboard.winsDesc") || pickLang(language, { ku: "ریکۆرد و خاڵە ئەرێنییەکانی ئەم هەفتەیە", en: "Records and positive highlights this week", ar: "الأرقام القياسية والنقاط الإيجابية لهذا الأسبوع", zh: "本周的纪录与亮点" })}
           >
@@ -834,7 +838,7 @@ export default function Dashboard() {
         {/* Self orders (shipping-only, customer-bought) — last 30 days */}
         {selfOrders && selfOrders.summary.count > 0 && (
           <DashboardSection
-            className="pro-section"
+            className="pro-section order-[13]"
             title={t("nav.selfOrders") || "سێلف ئۆردەر"}
             description={pickLang(language, { ku: "پاکێجی خۆکڕاو (تەنها گواستنەوە) — 30 ڕۆژی ڕابردوو", en: "Self-bought packages (shipping only) — last 30 days", ar: "طرود اشتراها العميل (شحن فقط) — آخر 30 يوماً", zh: "客户自购包裹（仅运输）— 最近 30 天" })}
           >
@@ -1006,7 +1010,7 @@ export default function Dashboard() {
         )}
 
         {/* Activity & Lists Row */}
-        <div className="pro-section grid gap-6 lg:grid-cols-3">
+        <div className="pro-section order-[14] grid gap-6 lg:grid-cols-3">
           {/* Recent Activity Timeline */}
           <Card className="pro-card lg:col-span-2 overflow-hidden">
             <CardHeader className="border-b bg-muted/30 pro-card-body py-4">
@@ -1100,7 +1104,7 @@ export default function Dashboard() {
         </div>
 
         {/* Bottom Row - Overdue debt alerts & Active Batches */}
-        <div className="pro-section grid gap-6 lg:grid-cols-2">
+        <div className="pro-section order-[9] grid gap-6 lg:grid-cols-2">
           {/* Overdue debt alerts - customers with balance due */}
           <Card className="pro-card overflow-hidden ring-1 ring-red-200/50 dark:ring-red-800/30">
             <CardHeader className="border-b bg-red-50/50 dark:bg-red-950/20 pro-card-body py-4">
@@ -1220,7 +1224,7 @@ export default function Dashboard() {
         </div>
 
         {/* Top Customers & VIP Section */}
-        <div className="pro-section grid gap-6 lg:grid-cols-2">
+        <div className="pro-section order-[10] grid gap-6 lg:grid-cols-2">
           {/* Top Customers */}
           <Card className="pro-card overflow-hidden">
             <CardHeader className="border-b bg-amber-50/50 dark:bg-amber-950/20 pro-card-body py-4">
