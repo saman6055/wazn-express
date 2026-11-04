@@ -1636,9 +1636,14 @@ export async function getVolumetricParcels(options: {
   })
     .from(packages)
     .leftJoin(customers, eq(packages.customerId, customers.id))
+    .leftJoin(batches, eq(batches.id, packages.batchId))
     .where(and(
-      // Once handed over or written off there is nothing left to explain.
-      notInArray(packages.status, ['delivered', 'returned', 'cancelled']),
+      // Once it is in Erbil, with the customer, or written off, the talk is
+      // over: the list is of the loads still coming (owner, 2026-11-05: «ئەگەر
+      // بارەکە گەیشتە هەولێر و دەستی موشتەری ... پێویستە نوێ ببێتەوە»).
+      notInArray(packages.status, ['ready_for_delivery', 'out_for_delivery', 'delivered', 'returned', 'cancelled']),
+      or(isNull(batches.status), notInArray(batches.status, ['arrived', 'at_depot', 'delivered', 'closed'])),
+      sql`NOT EXISTS (SELECT 1 FROM packageScans ps WHERE ps.packageId = ${packages.id} AND ps.scanType = 'received_local')`,
       inArray(packages.shippingType, ['air_regular', 'air_irregular']),
     ))
     .orderBy(desc(packages.registeredAt))
