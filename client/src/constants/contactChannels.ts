@@ -173,3 +173,18 @@ export const CONTACT_PAGE_SUBTITLE: L10n = {
   ar: "كل طرق الوصول إلينا",
   zh: "联系我们的所有方式",
 };
+
+/**
+ * The public accounts by name, for a page that wants one link and not the
+ * whole row of channels.
+ *
+ * The three landing pages each wrote their own Facebook and Instagram
+ * anchors with href="#", so the icons were there, the pointer changed, the
+ * click did nothing - and nobody noticed, because the real addresses were
+ * sitting in this file the whole time. Taking them from SOCIAL_CHANNELS
+ * means a page cannot drift from the account again: change the handle once,
+ * above, and every link follows.
+ */
+export const SOCIAL_HREF: Record<string, string> = Object.fromEntries(
+  SOCIAL_CHANNELS.map((c) => [c.id, c.href]),
+);

@@ -2,6 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Input } from "@/components/ui/input";
 import { ArrowUpLeft } from "lucide-react";
 import { Link, useLocation } from "wouter";
+import { SOCIAL_HREF } from "@/constants/contactChannels";
 import { useEffect, useState } from "react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
@@ -267,8 +268,8 @@ export default function HomeProfessional() {
             {company.phone && <span dir="ltr">{company.phone}</span>}
             {company.email && <span>{company.email}</span>}
             <div className="flex gap-5 mt-3">
-              <a href="#" className="font-bold uppercase tracking-widest hover:opacity-60" style={{ color: INK }}>Facebook</a>
-              <a href="#" className="font-bold uppercase tracking-widest hover:opacity-60" style={{ color: INK }}>Instagram</a>
+              <a href={SOCIAL_HREF.facebook} target="_blank" rel="noopener noreferrer" className="font-bold uppercase tracking-widest hover:opacity-60" style={{ color: INK }}>Facebook</a>
+              <a href={SOCIAL_HREF.instagram} target="_blank" rel="noopener noreferrer" className="font-bold uppercase tracking-widest hover:opacity-60" style={{ color: INK }}>Instagram</a>
             </div>
           </div>
         </div>

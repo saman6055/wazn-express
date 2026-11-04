@@ -7,6 +7,7 @@ import {
   Truck, Zap, HeadphonesIcon, Award, ChevronRight, Search, FileText, UserCircle
 } from "lucide-react";
 import { Link } from "wouter";
+import { SOCIAL_HREF } from "@/constants/contactChannels";
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { cn } from "@/lib/utils";
@@ -294,8 +295,8 @@ export default function HomeClassic() {
               </div>
               <p className="text-[var(--landing-text-muted)] mb-6 max-w-md">{t("auto.text_318460")}.</p>
               <div className="flex gap-4">
-                <a href="#" className="w-10 h-10 bg-[var(--landing-card)] rounded-lg flex items-center justify-center text-[var(--landing-text-muted)] hover:bg-[var(--landing-accent)] hover:text-white transition-all"><Facebook className="w-5 h-5" /></a>
-                <a href="#" className="w-10 h-10 bg-[var(--landing-card)] rounded-lg flex items-center justify-center text-[var(--landing-text-muted)] hover:bg-[var(--landing-accent)] hover:text-white transition-all"><Instagram className="w-5 h-5" /></a>
+                <a href={SOCIAL_HREF.facebook} target="_blank" rel="noopener noreferrer" aria-label="Facebook" className="w-10 h-10 bg-[var(--landing-card)] rounded-lg flex items-center justify-center text-[var(--landing-text-muted)] hover:bg-[var(--landing-accent)] hover:text-white transition-all"><Facebook className="w-5 h-5" /></a>
+                <a href={SOCIAL_HREF.instagram} target="_blank" rel="noopener noreferrer" aria-label="Instagram" className="w-10 h-10 bg-[var(--landing-card)] rounded-lg flex items-center justify-center text-[var(--landing-text-muted)] hover:bg-[var(--landing-accent)] hover:text-white transition-all"><Instagram className="w-5 h-5" /></a>
               </div>
             </div>
             <div>
@@ -344,8 +345,8 @@ export default function HomeClassic() {
           <div className="flex flex-col md:flex-row justify-between items-center gap-4">
             <p className="text-sm text-[var(--landing-text-muted)]">© {new Date().getFullYear()} {company.name}. {t("home.allRightsReserved")}</p>
             <div className="flex items-center gap-6 text-sm text-[var(--landing-text-muted)]">
-              <a href="#" className="hover:text-[var(--landing-accent)] transition-colors">{t("home.terms")}</a>
-              <a href="#" className="hover:text-[var(--landing-accent)] transition-colors">{t("home.privacy")}</a>
+              <Link href="/portal/terms" className="hover:text-[var(--landing-accent)] transition-colors">{t("home.terms")}</Link>
+              <Link href="/portal/terms#privacy-legal" className="hover:text-[var(--landing-accent)] transition-colors">{t("home.privacy")}</Link>
             </div>
           </div>
         </div>

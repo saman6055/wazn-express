@@ -82,7 +82,12 @@ export default function PortalTerms() {
           {termsSections.map((section, index) => (
             <section
               key={section.id}
-              className="bg-card dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden"
+              /* The id is on the element too, not only the React key, so a
+                 link can point at one section. The public footer's privacy
+                 link goes to #privacy-legal; without this it landed at the
+                 top of a long document and the reader had to hunt. */
+              id={section.id}
+              className="bg-card dark:bg-slate-900 rounded-3xl shadow-sm ring-1 ring-slate-100 dark:ring-white/5 overflow-hidden scroll-mt-20"
             >
               {/* Section header */}
               <div className={`bg-gradient-to-r ${section.gradient} px-4 py-3.5 flex items-center gap-3`}>

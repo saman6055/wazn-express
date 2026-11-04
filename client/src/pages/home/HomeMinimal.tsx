@@ -481,8 +481,8 @@ export default function HomeMinimal() {
             </p>
             <p className="text-xs text-[var(--landing-text-muted)]">{t("home.poweredBy")}</p>
             <div className="flex gap-4 text-sm">
-              <a href="#" className="hover:text-[var(--landing-accent)]">{t("home.terms")}</a>
-              <a href="#" className="hover:text-[var(--landing-accent)]">{t("home.privacy")}</a>
+              <Link href="/portal/terms" className="hover:text-[var(--landing-accent)]">{t("home.terms")}</Link>
+              <Link href="/portal/terms#privacy-legal" className="hover:text-[var(--landing-accent)]">{t("home.privacy")}</Link>
             </div>
           </div>
         </div>
