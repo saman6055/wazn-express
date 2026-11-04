@@ -1255,6 +1255,26 @@ export const deliveryBoxRouter = router({
       return db.pledgeBoxDiscount(input, ctx.user.id);
     }),
 
+  /** Take a receipt's promised discount back, with the reason - the main admin's alone (2026-11-04). */
+  withdrawPledge: superAdminProcedure
+    .input(z.object({
+      boxId: z.number(),
+      lineId: z.number().nullable(),
+      reason: z.string().min(3).max(500),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const done = await db.withdrawBoxPledge(input, ctx.user.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "withdraw_receipt_discount",
+        entityType: "delivery_box",
+        entityId: input.boxId,
+        newValues: { lineId: input.lineId, reason: input.reason, withdrawn: done.withdrawn },
+      });
+      return done;
+    }),
+
   /**
    * Take the money.
    *

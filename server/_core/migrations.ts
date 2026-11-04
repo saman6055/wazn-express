@@ -1444,6 +1444,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       note TEXT,
       settlementId INT NULL,
       honouredAt TIMESTAMP NULL,
+      withdrawnAt TIMESTAMP NULL,
+      withdrawnById INT NULL,
+      withdrawReason TEXT NULL,
       createdById INT NOT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_box_discount_pledges_box (boxId)
@@ -3454,6 +3457,10 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "staffMessages.deletedById", sql: "ALTER TABLE staffMessages ADD COLUMN deletedById INT NULL" },
   // A late carton checked in with another batch's load (server/db/carrierGroup).
   { name: "packageScans.arrivedWithBatchId", sql: "ALTER TABLE packageScans ADD COLUMN arrivedWithBatchId INT NULL" },
+  // A receipt's promised discount taken back by the main admin, with the reason (2026-11-04).
+  { name: "boxDiscountPledges.withdrawnAt", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawnAt TIMESTAMP NULL" },
+  { name: "boxDiscountPledges.withdrawnById", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawnById INT NULL" },
+  { name: "boxDiscountPledges.withdrawReason", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawReason TEXT NULL" },
 ];
 
 /**

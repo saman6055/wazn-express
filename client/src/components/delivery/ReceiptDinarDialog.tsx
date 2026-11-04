@@ -6,6 +6,7 @@ import { ReceiptSendMenu } from "@/components/delivery/ReceiptSendMenu";
 import type { ReceiptLanguage } from "@shared/receiptWhatsApp";
 import type { ReceiptShareDestination, ReceiptShareFormat } from "@/lib/receiptShare";
 import { trpc } from "@/lib/trpc";
+import { PledgeWithdraw } from "@/components/delivery/PledgeWithdraw";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
@@ -318,6 +319,10 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const [sendLang, setSendLang] = useState<ReceiptLanguage>("ku");
   useEffect(() => { if (request?.send) setSendLang(request.send.language); }, [request]);
 
+  // Promises the main admin took back while this window is open (by target).
+  const [dropped, setDropped] = useState<Set<string>>(() => new Set());
+  useEffect(() => { setDropped(new Set()); }, [request]);
+
   const lastPayment = trpc.deliveryBox.lastExchangeRate.useQuery(undefined, {
     enabled: open,
     staleTime: 5 * 60_000,
@@ -461,8 +466,8 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   const parcels = request?.parcels ?? [];
   const chosen = target === "box" ? null : parcels.find((p) => String(p.lineId) === target) ?? null;
   // The floor this receipt may not go under: what an earlier printing of it
-  // already promised on the same target.
-  const floors = pledgeFloors(request?.pledges ?? []);
+  // already promised on the same target - unless the main admin took it back.
+  const floors = pledgeFloors((request?.pledges ?? []).filter((p) => !dropped.has(p.lineId === null ? "box" : String(p.lineId))));
   const floorUsd = chosen ? (floors.byLine.get(chosen.lineId) ?? 0) : floors.boxUsd;
   const belowPledge = floorUsd > 0 && cutUsd + 0.004 < floorUsd;
   // "Other" with nothing written beside it is a discount nobody can explain
@@ -777,6 +782,13 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
                   {L(belowPledge ? TXT.belowPledge : TXT.pledged)} —{" "}
                   <bdi dir="ltr" className="font-mono">${floorUsd.toFixed(2)}</bdi>
                 </p>
+              )}
+              {floorUsd > 0 && Number(request?.boxId ?? 0) > 0 && (
+                <PledgeWithdraw
+                  boxId={Number(request!.boxId)}
+                  lineId={chosen ? chosen.lineId : null}
+                  onWithdrawn={(lineId) => setDropped((d) => new Set(d).add(lineId === null ? "box" : String(lineId)))}
+                />
               )}
               {(reasonMissing || noteMissing) && (
                 <p className="text-xs font-medium text-red-600 dark:text-red-400">
