@@ -2,8 +2,9 @@
  * Quick Register's warehouse, transport and batch hold for the whole day
  * (owner, 2026-11-03: «بە ڕۆیشتن و دەرچوونەکانی هەمان ڕۆژ نەڕوات، تەنها لە
  * ڕۆژێکی نوێ بەتاڵ ببێتەوە»). Leaving the page, a reload or a cleared form
- * keeps them; the next day starts empty. One device, one browser - a
- * convenience, so a failed read is simply an empty day.
+ * keeps them; the next day starts empty. Per person on a shared computer
+ * (audit 2026-11-05: one office PC, two staff, one's batch came up for the
+ * other) - a convenience, so a failed read is simply an empty day.
  */
 export type QuickRegisterShipping = "air_regular" | "air_irregular" | "sea";
 
@@ -15,16 +16,18 @@ export interface QuickRegisterDay {
 
 const PREFIX = "wazn-qr-day-";
 
-export function quickRegisterDayKey(now: Date = new Date()): string {
-  return `${PREFIX}${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+const dayPart = (now: Date) => `${now.getFullYear()}-${now.getMonth() + 1}-${now.getDate()}`;
+
+export function quickRegisterDayKey(now: Date = new Date(), userId?: number | null): string {
+  return `${PREFIX}${userId ? `u${userId}-` : ""}${dayPart(now)}`;
 }
 
 const SHIPPING: readonly string[] = ["air_regular", "air_irregular", "sea"];
 
 /** Today's choices on this device, or null on a new day. */
-export function readQuickRegisterDay(now: Date = new Date()): QuickRegisterDay | null {
+export function readQuickRegisterDay(now: Date = new Date(), userId?: number | null): QuickRegisterDay | null {
   try {
-    const raw = localStorage.getItem(quickRegisterDayKey(now));
+    const raw = localStorage.getItem(quickRegisterDayKey(now, userId));
     if (!raw) return null;
     const v = JSON.parse(raw) as Partial<QuickRegisterDay>;
     return {
@@ -38,12 +41,14 @@ export function readQuickRegisterDay(now: Date = new Date()): QuickRegisterDay |
 }
 
 /** Keep today's choices; yesterday's are dropped so storage does not grow. */
-export function saveQuickRegisterDay(day: QuickRegisterDay, now: Date = new Date()): void {
+export function saveQuickRegisterDay(day: QuickRegisterDay, now: Date = new Date(), userId?: number | null): void {
   try {
-    const key = quickRegisterDayKey(now);
+    const key = quickRegisterDayKey(now, userId);
+    // Other days go; today's choices of the others on this computer stay.
+    const today = dayPart(now);
     for (let i = localStorage.length - 1; i >= 0; i--) {
       const k = localStorage.key(i);
-      if (k && k.startsWith(PREFIX) && k !== key) localStorage.removeItem(k);
+      if (k && k.startsWith(PREFIX) && !k.endsWith(`-${today}`) && k !== `${PREFIX}${today}`) localStorage.removeItem(k);
     }
     localStorage.setItem(key, JSON.stringify(day));
   } catch {

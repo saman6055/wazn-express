@@ -31,9 +31,18 @@ describe("Quick Register keeps the day's choices", () => {
     expect(store.has(quickRegisterDayKey(mon))).toBe(false);
   });
 
+  it("two people on one computer each keep their own day", () => {
+    saveQuickRegisterDay({ originWarehouseId: 2, shippingType: "sea", batchId: "82" }, mon, 5);
+    saveQuickRegisterDay({ originWarehouseId: 1, shippingType: "air_regular", batchId: "90" }, mon, 7);
+    expect(readQuickRegisterDay(monEve, 5)?.batchId).toBe("82");
+    expect(readQuickRegisterDay(monEve, 7)?.batchId).toBe("90");
+    saveQuickRegisterDay({ originWarehouseId: 1, shippingType: "air_regular", batchId: "" }, tue, 7);
+    expect(store.has(quickRegisterDayKey(mon, 5))).toBe(false);
+  });
+
   it("the clear button keeps them", () => {
     const src = fs.readFileSync(path.resolve(__dirname, "../pages/packages/QuickRegister.tsx"), "utf8");
-    expect(src).toContain("saveQuickRegisterDay({ originWarehouseId, shippingType, batchId })");
+    expect(src).toContain("saveQuickRegisterDay({ originWarehouseId, shippingType, batchId }, new Date(), user.id)");
     expect(src).not.toContain('setShippingType("air_regular");');
   });
 });

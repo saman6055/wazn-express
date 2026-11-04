@@ -109,7 +109,7 @@ export default function QuickRegister() {
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
   // Warehouse, transport and batch hold for the day (lib/quickRegisterDay).
-  const [today] = useState(() => readQuickRegisterDay());
+  const [today] = useState(() => readQuickRegisterDay(new Date(), user?.id));
   const [shippingType, setShippingType] = useState<"air_regular" | "air_irregular" | "sea">(today?.shippingType ?? "air_regular");
   const [weightKg, setWeightKg] = useState("");
   const [lengthCm, setLengthCm] = useState("");
@@ -581,9 +581,11 @@ export default function QuickRegister() {
     if (!filteredBatches.some((b: any) => String(b.id) === batchId)) setBatchId("");
   }, [batches, filteredBatches, batchId]);
 
+  // Per person (lib/quickRegisterDay): saved only once we know who it is.
   useEffect(() => {
-    saveQuickRegisterDay({ originWarehouseId, shippingType, batchId });
-  }, [originWarehouseId, shippingType, batchId]);
+    if (!user?.id) return;
+    saveQuickRegisterDay({ originWarehouseId, shippingType, batchId }, new Date(), user.id);
+  }, [originWarehouseId, shippingType, batchId, user?.id]);
   
   const filteredCustomers = useMemo(() => {
     if (!customers || !customerSearch) return [];
