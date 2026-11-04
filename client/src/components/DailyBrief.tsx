@@ -134,7 +134,7 @@ function SignalRow({ signal, language, onOpen }: { signal: Signal; language: str
                   <a
                     href={r.href}
                     onClick={(e) => { e.preventDefault(); onOpen(r.href!); }}
-                    className="truncate py-1 font-mono font-medium text-blue-700 hover:underline dark:text-sky-300"
+                    className="truncate py-1 font-mono font-medium text-blue-700 hover:underline dark:text-blue-300"
                     dir="ltr"
                   >
                     {r.text}
