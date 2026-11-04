@@ -5,8 +5,16 @@ import { cn } from "@/lib/utils";
 import { Link } from "wouter";
 import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { PackagePlus, ChevronLeft } from "lucide-react";
+import { PackagePlus, ChevronLeft, UserRound, ExternalLink } from "lucide-react";
 import { SHIPPING_TYPE_LABEL } from "@/lib/shipmentFilters";
+import { packagesHref } from "@shared/listLinks";
+import { customerCodeOnly } from "@shared/customerCode";
+
+/** Today as the parcels list reads it (YYYY-MM-DD, this computer's day). */
+function todayKey(): string {
+  const d = new Date();
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+}
 
 type L = { ku: string; en: string; ar: string; zh: string };
 
@@ -51,13 +59,16 @@ export function RegistrationsSummaryCard({ className }: { className?: string }) 
     );
   }
 
-  const stat = (value: string, caption: string, tone?: "warn") => (
-    <div className="rounded-xl border bg-muted/30 px-3 py-2">
+  // Every tile opens the parcels behind it (owner, 2026-11-05: «لینکی لە
+  // هەموو پاکەتەکانیش هەبێ»).
+  const day = todayKey();
+  const stat = (value: string, caption: string, href: string, tone?: "warn") => (
+    <Link href={href} className="group/stat rounded-xl border bg-muted/30 px-3 py-2 transition-colors hover:border-sky-400 hover:bg-sky-50/60 dark:hover:bg-sky-950/30">
       <p className={cn("text-lg font-bold tabular-nums", tone === "warn" && "text-amber-600 dark:text-amber-400")}>
         {value}
       </p>
-      <p className="text-[10.5px] text-muted-foreground">{caption}</p>
-    </div>
+      <p className="text-[10.5px] text-muted-foreground group-hover/stat:text-sky-700 dark:group-hover/stat:text-sky-300">{caption}</p>
+    </Link>
   );
 
   return (
@@ -83,28 +94,41 @@ export function RegistrationsSummaryCard({ className }: { className?: string }) 
         </div>
 
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-6">
-          {stat(String(totals.pieces), label({ ku: "پارچە", en: "pieces", ar: "قطعة", zh: "件" }))}
-          {stat(String(totals.customers), label({ ku: "کڕیار", en: "customers", ar: "عميل", zh: "客户" }))}
-          {stat(totals.airWeightKg.toFixed(1), label({ ku: "kg · ئاسمانی", en: "kg · air", ar: "kg · جوي", zh: "kg · 空运" }))}
-          {stat(totals.seaCbm.toFixed(2), label({ ku: "CBM · دەریایی", en: "CBM · sea", ar: "م³ · بحري", zh: "立方米 · 海运" }))}
+          {stat(String(totals.pieces), label({ ku: "پارچە", en: "pieces", ar: "قطعة", zh: "件" }), packagesHref({ day }))}
+          {stat(String(totals.customers), label({ ku: "کڕیار", en: "customers", ar: "عميل", zh: "客户" }), "/packages/registrations")}
+          {stat(totals.airWeightKg.toFixed(1), label({ ku: "kg · ئاسمانی", en: "kg · air", ar: "kg · جوي", zh: "kg · 空运" }), packagesHref({ day, shippingType: "air_regular" }))}
+          {stat(totals.seaCbm.toFixed(2), label({ ku: "CBM · دەریایی", en: "CBM · sea", ar: "م³ · بحري", zh: "立方米 · 海运" }), packagesHref({ day, shippingType: "sea" }))}
           {/* Estimated, not billed: derived from the active pricing rules, the
               same ones the scanner uses. */}
-          {stat(`$${Math.round(totals.estimatedValueUsd)}`, label({ ku: "نرخی خەمڵێنراو", en: "est. value", ar: "قيمة تقديرية", zh: "估值" }))}
+          {stat(`$${Math.round(totals.estimatedValueUsd)}`, label({ ku: "نرخی خەمڵێنراو", en: "est. value", ar: "قيمة تقديرية", zh: "估值" }), packagesHref({ day }))}
           {stat(
             String(totals.missingWeight + totals.unclaimed),
             label({ ku: "کەموکوڕی", en: "incomplete", ar: "ناقص", zh: "不完整" }),
+            "/packages/registrations",
             totals.missingWeight + totals.unclaimed > 0 ? "warn" : undefined,
           )}
         </div>
 
         <div className="mt-3 space-y-1.5">
           {(data?.byCustomer ?? []).slice(0, 3).map((c) => (
-            <div key={c.customerId ?? "unclaimed"} className="rounded-xl border px-3 py-2">
+            <div key={c.customerId ?? "unclaimed"} className="rounded-xl border px-3 py-2 transition-colors hover:border-sky-300 hover:bg-sky-50/40 dark:hover:bg-sky-950/20">
               <div className="flex items-center gap-2">
-                <span className="shrink-0 rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[11px] text-sky-700 dark:bg-sky-950/40 dark:text-sky-300">
-                  {c.customerCode ?? label({ ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" })}
-                </span>
+                {/* The code opens today's parcels of this customer; the person
+                    icon their page (owner, 2026-11-05). */}
+                <Link
+                  href={c.customerCode ? packagesHref({ search: customerCodeOnly(c.customerCode), day }) : "/packages/unclaimed"}
+                  className="inline-flex shrink-0 items-center gap-1 rounded-md bg-sky-50 px-1.5 py-0.5 font-mono text-[11px] text-sky-700 hover:underline dark:bg-sky-950/40 dark:text-sky-300"
+                  dir="ltr"
+                >
+                  {c.customerCode ? customerCodeOnly(c.customerCode) : label({ ku: "بێ خاوەن", en: "Unclaimed", ar: "بلا مالك", zh: "无主" })}
+                  <ExternalLink className="h-3 w-3" />
+                </Link>
                 <span className="min-w-0 flex-1 truncate text-xs">{c.customerName ?? "—"}</span>
+                {c.customerId != null && (
+                  <Link href={`/customers/${c.customerId}`} aria-label={label({ ku: "پەڕەی کڕیار", en: "Customer page", ar: "صفحة العميل", zh: "客户页面" })} className="shrink-0 rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
+                    <UserRound className="h-3.5 w-3.5" />
+                  </Link>
+                )}
                 <span className="shrink-0 font-mono text-[11px] text-muted-foreground" dir="ltr">
                   {c.pieces} · {c.cbm > 0 ? `${c.cbm.toFixed(2)} CBM` : `${c.weightKg.toFixed(2)} kg`}
                 </span>
