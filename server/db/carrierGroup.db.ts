@@ -5,7 +5,7 @@
  * history records it and every cost rule reads the batch as before) and
  * makes the Erbil twin of a China batch.
  */
-import { and, eq, inArray, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
 import { batchCarrierParts, batches, carrierGroupInvoices, countries, packageScans, packages, users, warehouses } from "../../drizzle/schema";
 import { chargeableWeight } from "@shared/chargeableWeight";
@@ -383,11 +383,27 @@ async function arrivedWithLoad(batchIds: number[]): Promise<Array<{ batchCode: s
       notInArray(packages.status, ["cancelled", "returned"]),
     ));
   const divisor = await getVolumetricDivisor();
+  // A carton came in one load only: the load of its FIRST arrival check. A
+  // re-scan later with another batch chosen must not count it again there
+  // (audit 2026-11-05: one carton in two strips).
+  const ids = Array.from(new Set(rows.map((p) => Number(p.id))));
+  const firstLoad = new Map<number, number | null>();
+  if (ids.length > 0) {
+    const scans = await db
+      .select({ id: packageScans.packageId, withBatch: packageScans.arrivedWithBatchId })
+      .from(packageScans)
+      .where(and(inArray(packageScans.packageId, ids), eq(packageScans.scanType, "received_local")))
+      .orderBy(asc(packageScans.scannedAt), asc(packageScans.id));
+    for (const sc of scans) if (!firstLoad.has(Number(sc.id))) firstLoad.set(Number(sc.id), sc.withBatch == null ? null : Number(sc.withBatch));
+  }
+  const wanted = new Set(batchIds.map(Number));
   const seen = new Set<number>();
   const byBatch = new Map<string, number>();
   for (const p of rows) {
     if (seen.has(p.id)) continue;
     seen.add(p.id);
+    const first = firstLoad.get(Number(p.id));
+    if (first == null || !wanted.has(first)) continue;
     byBatch.set(p.batchCode, (byBatch.get(p.batchCode) ?? 0) + chargeableWeight(p, divisor).chargeableKg);
   }
   return Array.from(byBatch.entries()).map(([batchCode, kg]) => ({ batchCode, kg: r2(kg) })).sort((a, b) => a.batchCode.localeCompare(b.batchCode));

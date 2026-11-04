@@ -20,3 +20,10 @@ describe("carrier group verdict counts the other batches' cartons", () => {
     expect(src).toContain("(g.invoice?.billedKg ?? 0) - g.withOthersKg");
   });
 });
+
+describe("a late carton counts in one load only", () => {
+  it("takes the load of its first arrival check", () => {
+    expect(src).toContain("const firstLoad = new Map<number, number | null>();");
+    expect(src).toContain("if (first == null || !wanted.has(first)) continue;");
+  });
+});
