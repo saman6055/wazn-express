@@ -6,12 +6,14 @@ import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Skeleton } from "@/components/ui/skeleton";
 import { PrintOnlyLogo } from "@/components/PrintOnlyLogo";
+import { CopyButton } from "@/components/CopyButton";
 import {
   AlertTriangle,
   ArrowDownRight,
   ArrowUpRight,
   CheckCircle2,
   ChevronRight,
+  ExternalLink,
   FileDown,
   RefreshCw,
   Sunrise,
@@ -57,42 +59,102 @@ function SignalRow({ signal, language, onOpen }: { signal: Signal; language: str
           : ArrowUpRight
         : CheckCircle2;
 
-  const clickable = !!signal.path;
+  /*
+   * A row with records opens in place: which records, what the cure is, each
+   * record a door to where it is put right (owner, 2026-11-05: «ناچێتە سەر
+   * خودی کێشەکان و پێشنیاری چارەسەر بۆیان»). A row without records still
+   * goes to its page.
+   */
+  const records = signal.records ?? [];
+  const expandable = records.length > 0;
+  const [open, setOpen] = useState(false);
+  const clickable = expandable || !!signal.path;
+  const urgent = signal.kind === "risk" && signal.weight === "urgent";
+  const L = (w: { ku: string; en: string; ar: string; zh: string }) => pickLang(language, w);
 
   return (
-    <button
-      type="button"
-      disabled={!clickable}
-      onClick={() => signal.path && onOpen(signal.path)}
-      className={cn(
-        "flex w-full items-center gap-3 rounded-xl border p-3 text-start transition-colors",
-        toneFor(signal),
-        clickable && "hover:brightness-95 dark:hover:brightness-110",
-      )}
-    >
-      <Icon
+    <div className={cn("rounded-xl border transition-shadow", toneFor(signal), open && "shadow-md")} data-testid="brief-row">
+      <button
+        type="button"
+        disabled={!clickable}
+        aria-expanded={expandable ? open : undefined}
+        onClick={() => (expandable ? setOpen((o) => !o) : signal.path && onOpen(signal.path))}
         className={cn(
-          "h-5 w-5 shrink-0",
-          signal.kind === "risk"
-            ? signal.weight === "urgent"
-              ? "text-red-600 dark:text-red-300"
-              : "text-amber-600 dark:text-amber-300"
-            : signal.kind === "win"
-              ? "text-emerald-600 dark:text-emerald-300"
-              : "text-muted-foreground",
+          "flex w-full items-center gap-3 rounded-xl p-3 text-start transition-colors",
+          clickable && "hover:brightness-95 dark:hover:brightness-110",
         )}
-      />
+      >
+        <span className="relative shrink-0">
+          <Icon
+            className={cn(
+              "h-5 w-5",
+              signal.kind === "risk"
+                ? urgent
+                  ? "text-red-600 dark:text-red-300"
+                  : "text-amber-600 dark:text-amber-300"
+                : signal.kind === "win"
+                  ? "text-emerald-600 dark:text-emerald-300"
+                  : "text-muted-foreground",
+            )}
+          />
+          {urgent && <span aria-hidden className="absolute -end-1 -top-1 h-2.5 w-2.5 animate-ping rounded-full bg-red-500/70 motion-reduce:hidden" />}
+        </span>
 
-      <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-semibold">{pickLang(language, signal.title)}</p>
-        {signal.detail && (
-          <p className="truncate text-xs text-muted-foreground">{pickLang(language, signal.detail)}</p>
+        <div className="min-w-0 flex-1">
+          <p className="text-sm font-semibold">{pickLang(language, signal.title)}</p>
+          {signal.detail && (
+            <p className={cn("text-xs text-muted-foreground", !open && "truncate")}>{pickLang(language, signal.detail)}</p>
+          )}
+        </div>
+
+        {signal.value && (
+          <span className="shrink-0 rounded-full bg-background/70 px-2.5 py-0.5 font-mono text-sm font-bold" dir="ltr">
+            {signal.value}
+            {signal.more ? "+" : ""}
+          </span>
         )}
-      </div>
+        {clickable && (
+          <ChevronRight
+            className={cn("h-4 w-4 shrink-0 text-muted-foreground transition-transform rtl:rotate-180", expandable && open && "rotate-90 rtl:rotate-90")}
+          />
+        )}
+      </button>
 
-      {signal.value && <span className="shrink-0 font-mono text-sm font-bold">{signal.value}</span>}
-      {clickable && <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground rtl:rotate-180" />}
-    </button>
+      {expandable && open && (
+        <div className="space-y-2 border-t border-current/10 px-3 pb-3 pt-2" data-testid="brief-records">
+          <p className="text-xs font-medium text-muted-foreground">
+            {signal.more
+              ? L({ ku: `یەکەم ${records.length} — هی تر هەیە`, en: `First ${records.length} — there are more`, ar: `أول ${records.length} — يوجد المزيد`, zh: `前 ${records.length} 条——还有更多` })
+              : L({ ku: "ئەمانەن:", en: "These ones:", ar: "هذه هي:", zh: "具体如下：" })}
+          </p>
+          <ul className="flex flex-wrap gap-2">
+            {records.map((r, i) => (
+              <li key={i} className="inline-flex max-w-full items-center gap-1 rounded-lg border bg-background/80 ps-2.5 text-xs">
+                {r.href ? (
+                  <a
+                    href={r.href}
+                    onClick={(e) => { e.preventDefault(); onOpen(r.href!); }}
+                    className="truncate py-1 font-mono font-medium text-blue-700 hover:underline dark:text-sky-300"
+                    dir="ltr"
+                  >
+                    {r.text}
+                  </a>
+                ) : (
+                  <span className="truncate py-1 font-mono" dir="ltr">{r.text}</span>
+                )}
+                <CopyButton value={r.text.split(" · ")[0]} label={L({ ku: "کۆپی", en: "Copy", ar: "نسخ", zh: "复制" })} />
+              </li>
+            ))}
+          </ul>
+          {signal.path && (
+            <Button size="sm" variant="outline" onClick={() => onOpen(signal.path!)} className="gap-1.5">
+              <ExternalLink className="h-3.5 w-3.5" />
+              {L({ ku: "بڕۆ بۆ شوێنی چارەسەر", en: "Go to where it is fixed", ar: "اذهب إلى مكان الإصلاح", zh: "前往处理页面" })}
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
   );
 }
 

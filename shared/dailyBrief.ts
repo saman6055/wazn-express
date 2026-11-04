@@ -61,6 +61,10 @@ export interface Signal {
   delta?: Delta;
   /** Where to go and look. A figure that cannot be traced is a figure nobody trusts. */
   path?: string;
+  /** The records behind it, each opening where it is put right (owner, 2026-11-05). */
+  records?: Array<{ text: string; href?: string }>;
+  /** True when the count stopped at the sample size: «10» means «10 or more». */
+  more?: boolean;
 }
 
 /** Under this, a movement is weather rather than news. */

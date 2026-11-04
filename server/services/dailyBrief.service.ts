@@ -2,8 +2,8 @@ import { sql } from "drizzle-orm";
 import { getDb } from "../db/connection";
 import { appLogger } from "../utils/logger";
 import { EMPTY_DAY, movementSignals, rankSignals, summarise, headline, type DaySnapshot, type Signal } from "@shared/dailyBrief";
-import { CHECKS, checkDefinition, type CheckResult } from "@shared/auditSweep";
-import { runSweep } from "./auditSweep.service";
+import { CHECKS, checkDefinition, sweepRecord, type CheckResult } from "@shared/auditSweep";
+import { runSweep, SWEEP_SAMPLE_LIMIT } from "./auditSweep.service";
 
 /**
  * The morning brief, assembled.
@@ -209,6 +209,8 @@ function sweepSignals(results: readonly CheckResult[]): Signal[] {
       value: String(result.count),
       detail: def.meaning,
       path: def.path ?? "/audit-sweep",
+      records: (result.sample ?? []).map(sweepRecord).filter((x): x is NonNullable<typeof x> => x !== null),
+      more: result.count >= SWEEP_SAMPLE_LIMIT,
     });
   }
 

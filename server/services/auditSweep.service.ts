@@ -25,7 +25,8 @@ import { AMBER_AFTER_DAYS, RED_AFTER_DAYS } from "@shared/batchAge";
  * go and look, not to move the database into a report.
  */
 
-const SAMPLE_LIMIT = 10;
+export const SWEEP_SAMPLE_LIMIT = 10;
+const SAMPLE_LIMIT = SWEEP_SAMPLE_LIMIT;
 
 type Row = Record<string, unknown>;
 
@@ -68,7 +69,7 @@ const QUERIES: Record<CheckId, string> = {
     LIMIT ${SAMPLE_LIMIT}`,
 
   account_balance_drift: `
-    SELECT a.id, a.accountNumber, a.currentBalanceUsd,
+    SELECT a.id, a.accountNumber, a.customerId, a.currentBalanceUsd,
            ROUND(COALESCE(SUM(
              CASE WHEN t.transactionType LIKE 'DEBIT_%'
                      OR t.transactionType = 'ADJUSTMENT_DEBIT'  THEN  CAST(t.amountUsd AS DECIMAL(14,2))
@@ -77,7 +78,7 @@ const QUERIES: Record<CheckId, string> = {
                   ELSE 0 END), 0), 2) AS fromHistory
     FROM customerAccounts a
     LEFT JOIN ledgerTransactions t ON t.accountId = a.id
-    GROUP BY a.id, a.accountNumber, a.currentBalanceUsd
+    GROUP BY a.id, a.accountNumber, a.customerId, a.currentBalanceUsd
     HAVING ABS(CAST(a.currentBalanceUsd AS DECIMAL(14,2)) - COALESCE(SUM(
              CASE WHEN t.transactionType LIKE 'DEBIT_%'
                      OR t.transactionType = 'ADJUSTMENT_DEBIT'  THEN  CAST(t.amountUsd AS DECIMAL(14,2))
@@ -413,7 +414,7 @@ const QUERIES: Record<CheckId, string> = {
    * ER_CANT_AGGREGATE_2COLLATIONS until 2026-11-05).
    */
   order_charged_to_other: `
-    SELECT o.orderCode, oc.customerCode AS chargedTo, pc.customerCode AS parcelWith, p.packageCode,
+    SELECT o.id AS orderId, o.orderType, o.orderCode, oc.customerCode AS chargedTo, pc.customerCode AS parcelWith, p.packageCode,
            (SELECT ROUND(COALESCE(SUM(CASE WHEN t.transactionType LIKE 'DEBIT_%' OR t.transactionType = 'ADJUSTMENT_DEBIT'
                                            THEN CAST(t.amountUsd AS DECIMAL(14,2))
                                            ELSE -CAST(t.amountUsd AS DECIMAL(14,2)) END), 0), 2)

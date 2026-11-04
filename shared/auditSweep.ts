@@ -684,3 +684,54 @@ export function headline(summary: SweepSummary): Localised {
     zh: "无需处理的事项",
   };
 }
+
+/**
+ * One offending row as a line a person can act on: what it is and where it
+ * opens (owner, 2026-11-05: a brief row that only says "10" and opens a
+ * general page tells nobody which record is wrong). Read from the columns
+ * the row carries, most specific first: an order, a parcel, a batch, a
+ * customer.
+ */
+export interface SweepRecord {
+  text: string;
+  href?: string;
+}
+
+export function sweepRecord(row: unknown): SweepRecord | null {
+  if (!row || typeof row !== "object") return null;
+  const r = row as Record<string, unknown>;
+  const s = (k: string) => (r[k] == null || r[k] === "" ? null : String(r[k]));
+  const money = (k: string) => {
+    const n = Number(r[k]);
+    return r[k] != null && Number.isFinite(n) && n !== 0 ? `$${n.toFixed(2)}` : null;
+  };
+  const parts = (...xs: Array<string | null>) => xs.filter(Boolean).join(" · ");
+  const between = (from: string | null, to: string | null) => (from && to ? `${from} → ${to}` : from || to);
+
+  const orderCode = s("orderCode");
+  if (orderCode) {
+    const id = s("orderId") ?? (s("packageCode") ? null : s("id"));
+    const type = s("orderType");
+    const href = id ? (type && type !== "commission" ? `/full-package/${id}` : `/commission/${id}`) : undefined;
+    return { text: parts(orderCode, s("packageCode"), between(s("chargedTo"), s("parcelWith")), money("standingUsd")), href };
+  }
+  const packageCode = s("packageCode");
+  if (packageCode) {
+    return {
+      text: parts(packageCode, s("trackingNumber"), between(s("chargedTo"), s("ownedBy")), money("standingUsd")),
+      href: `/packages/all?search=${encodeURIComponent(s("trackingNumber") ?? packageCode)}`,
+    };
+  }
+  const batchCode = s("batchCode");
+  if (batchCode) return { text: parts(batchCode, s("status")), href: `/batches?find=${encodeURIComponent(batchCode)}` };
+  const customerId = s("customerId");
+  const label = s("customerCode") ?? s("accountNumber") ?? s("settlementNumber") ?? s("paymentNumber") ?? s("number");
+  if (customerId) {
+    const drift = r.fromHistory != null && r.currentBalanceUsd != null
+      ? `$${Number(r.currentBalanceUsd).toFixed(2)} ≠ $${Number(r.fromHistory).toFixed(2)}`
+      : null;
+    return { text: parts(label ?? `#${customerId}`, drift ?? money("creditUsd") ?? money("differenceUsd") ?? money("amountUsd")), href: `/finance/customer/${customerId}` };
+  }
+  if (label) return { text: parts(label, money("amountUsd")) };
+  return null;
+}
