@@ -1482,7 +1482,9 @@
     "shippingTypes": "Shipping Types",
     "quickActions": "Quick Actions",
     "recentPackages": "Recent Packages",
-    "viewAll": "View All"
+    "viewAll": "View All",
+    "deleteWarning": "Delete package {{code}}? This cannot be undone.",
+    "exportSuccess": "Exported {{count}} packages."
   },
   "batches": {
     "title": "Batches",

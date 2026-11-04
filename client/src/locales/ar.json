@@ -1482,7 +1482,9 @@
     "shippingTypes": "أنواع الشحن",
     "quickActions": "إجراءات سريعة",
     "recentPackages": "أحدث الطرود",
-    "viewAll": "عرض الكل"
+    "viewAll": "عرض الكل",
+    "deleteWarning": "هل تريد حذف الطرد {{code}}؟ لا يمكن التراجع عن هذا الإجراء.",
+    "exportSuccess": "تم تصدير {{count}} طرد."
   },
   "batches": {
     "title": "الدفعات",

@@ -1503,7 +1503,9 @@
     "shippingTypes": "جۆرەکانی ناردن",
     "quickActions": "کارە خێراکان",
     "recentPackages": "دوایین پاکەتەکان",
-    "viewAll": "بینینی هەمووی"
+    "viewAll": "بینینی هەمووی",
+    "deleteWarning": "دڵنیایت لە سڕینەوەی پاکەتی {{code}}؟ ئەم کردارە ناگەڕێتەوە.",
+    "exportSuccess": "{{count}} پاکەت هەناردە کران."
   },
   "batches": {
     "title": "باچەکان",
