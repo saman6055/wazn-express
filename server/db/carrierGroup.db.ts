@@ -76,7 +76,7 @@ export async function placeInChina(userId: number, warehouseId?: number | null):
 }
 
 /**
- * Refuse a parcel going into a batch made in the other place (owner,
+ * Refuse a parcel going into a closed batch, or a batch made in the other place (owner,
  * 2026-10-29). The parcel's warehouse says which place it is in; the desk
  * only when the warehouse is not known (owner, 2026-11-03). Unknown on either
  * side lets it through.
@@ -85,6 +85,15 @@ export async function assertBatchMatchesDesk(batchId: number | null | undefined,
   if (!batchId) return;
   const batch = await getBatchById(batchId);
   if (!batch) return;
+  // A closed batch takes nothing more: the screens hid it, the server did not
+  // (audit 2026-11-05). Closing settled its money; a parcel added after it
+  // would never be charged by the close.
+  if (batch.status === "closed") {
+    throw new Error(withFix(`باچی ${batch.batchCode} داخراوە — پاکێجی نوێ ناچێتە ناوی.`, [
+      "باچێکی کراوە هەڵبژێرە",
+      "ئەگەر دەبێت لەم باچەدا بێت، بەڕێوەبەری سەرەکی باچەکە بکاتەوە (کردنەوەی باچ)، ئینجا دووبارە تۆماری بکە",
+    ]));
+  }
   const desk = await placeInChina(userId, warehouseId);
   const made = batchMadeInChina(batch.createdInCountryId, await chinaIds());
   if (batchMatchesDesk(made, desk)) return;

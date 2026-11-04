@@ -1981,6 +1981,15 @@ export const packagesRouter = router({
             updateData.status = 'registered';
           } else {
             const pkg = await db.getPackageById(id);
+            // Moved to another batch on the edit form: the same check as
+            // every other way in (closed batch, other place; audit 2026-11-05).
+            if (pkg && pkg.batchId !== data.batchId) {
+              try {
+                await db.assertBatchMatchesDesk(data.batchId, ctx.user.id, pkg.originWarehouseId);
+              } catch (e) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
+              }
+            }
             if (pkg && pkg.status === 'registered') {
               updateData.status = 'in_batch';
             }
