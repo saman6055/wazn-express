@@ -33,6 +33,12 @@ describe("editing a batch's warehouse", () => {
     expect(updateBlock()).toContain('existing.status === "at_depot" && !batchHasShipmentNumber(existing)');
   });
 
+  it("never turns a batch that left China into an Erbil batch", () => {
+    const update = updateBlock();
+    expect(update).toContain("fromChina && !toChina && leftChina");
+    expect(update).toContain("لە چینەوە بەڕێ کراوە");
+  });
+
   it("offers the warehouses on the edit form", () => {
     expect(page).toContain('data-testid="batch-edit-warehouse"');
     expect(page).toContain('originWarehouseId: parseInt(String(formData.get("originWarehouseId") ?? ""), 10) || undefined');

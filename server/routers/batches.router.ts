@@ -2615,9 +2615,25 @@ export const batchesRouter = router({
               message: withFix("ئەو کۆگایەی هەڵتبژارد نەدۆزرایەوە.", ["لاپەڕەکە نوێ بکەرەوە و کۆگاکە دووبارە هەڵبژێرە"]),
             });
           }
+          const toChina = (await db.warehouseInChina(warehouse.id)) === true;
+          const fromChina = (await db.warehouseInChina(existing.originWarehouseId)) !== false;
+          /*
+           * A batch that has left China (a shipment number, or on the road)
+           * cannot be turned into an Erbil batch: the stage sweep would put
+           * goods still in the air into the Erbil depot (audit 2026-11-05).
+           */
+          const leftChina = batchHasShipmentNumber(existing) || ["in_transit", "customs", "at_depot"].includes(String(existing.status));
+          if (fromChina && !toChina && leftChina) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: withFix(`کۆگای باچی ${existing.batchCode} ناکرێت بە کۆگای هەولێر، چونکە باچەکە لە چینەوە بەڕێ کراوە.`, [
+                "کۆگاکە وەک خۆی بهێڵەرەوە و پاشەکەوت بکە",
+                "ئەگەر بە هەڵە دروست کراوە، باچێکی نوێ لە کۆگای هەولێر دروست بکە",
+              ]),
+            });
+          }
           placeChange.createdInCountryId = warehouse.countryId;
           placeChange.createdInCity = warehouse.city;
-          const toChina = (await db.warehouseInChina(warehouse.id)) === true;
           if (toChina && existing.status === "at_depot" && !batchHasShipmentNumber(existing)) placeChange.status = "preparing";
         }
 
