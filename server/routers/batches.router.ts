@@ -1801,7 +1801,11 @@ export const batchesRouter = router({
           //
           // Legacy orders that were already charged at creation (isCharged=true)
           // are skipped — their old invoices stay untouched.
-          const packages = await db.getPackagesByBatch(id);
+          // A parcel proven lost never arrived: it is not stamped delivered
+          // and its freight is not charged (owner, 2026-11-01 — lost is
+          // compensated, never billed). It waits on the problems page, the
+          // same way the close check leaves it out (batchCloseCheck.db).
+          const packages = (await db.getPackagesByBatch(id)).filter((p) => !p.lostAt);
           const batch = await db.getBatchById(id);
 
           // Batch-level pricing (used for per-package shipping calculation)
