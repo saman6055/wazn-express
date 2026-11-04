@@ -42,20 +42,6 @@ describe("the receipt says the volumetric discount", () => {
     expect(html).toContain("2.32 kg — $25.52");
   });
 
-  it("explains volume weight under the receipt, with each number named, only when a parcel has it (2026-11-04)", () => {
-    const t = (k: string, p?: Record<string, unknown>) => (p ? `${k}:${JSON.stringify(p)}` : k);
-    const box = { boxCode: "B", status: "open", deliveryMethod: "warehouse_pickup", totalPackages: 1, totalValueUsd: "77.00", shippingType: "air_regular" } as any;
-    const html = buildBoxReceiptHtml(box, [row] as any, null, t as any, { direction: "rtl" } as any);
-    expect(html).toContain('data-volume-note="1"');
-    expect(html).toContain('delivery.volNoteCount:{"n":1}');
-    expect(html).toContain('delivery.volNoteGift:{"kg":"2.32","usd":"$25.52"}');
-    const plain = buildBoxReceiptHtml(box, [{ ...row, volumetric: null }] as any, null, t as any, { direction: "rtl" } as any);
-    expect(plain).not.toContain("data-volume-note");
-    const ku = JSON.parse(read("client/src/locales/ku.json").replace(/^﻿/, "")).delivery;
-    expect(ku.volNoteHow).toContain("درێژییەکەی 40 سم، پانییەکەی 30 سم، بەرزییەکەی 20 سم");
-    expect(html).toContain('40 × 30 × 20 ÷ 6000 = 4 kg</bdi>');
-  });
-
   it("every door that prints the box's receipt carries the rows' discount", () => {
     expect(read("client/src/components/delivery/BoxDetailPanel.tsx")).toContain("volumetric: i.volumetric ?? null,");
     expect(read("client/src/components/delivery/BoxTable.tsx")).toContain("(await trpcUtils.deliveryBox.getItems.fetch({ boxId: box.id }).catch(() => null)) ?? box.items ?? []) as any[], tillView?.parcels);");

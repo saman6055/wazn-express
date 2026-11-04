@@ -80,37 +80,6 @@ export function volumeDiscountOf(item: BoxItemForPrint): { fullKg: number; offKg
   return { fullKg: v.volumetricKg, offKg, offUsd: Math.round(offKg * rate * 100) / 100 };
 }
 
-/**
- * Why some parcels were charged by their size, under the receipt (owner,
- * 2026-11-04): only when the box holds an air parcel whose volume weighs more
- * than its scale. Plain words, each number of the example named - «خەلک
- * نازانن لە کوێ هاتووە ئەو ژمارانە» - and the kilos let off for this
- * customer, at the freight rate (volumeDiscountOf).
- */
-export function volumeNoteHtml(box: BoxForPrint, items: BoxItemForPrint[], t: TFunc): string {
-  if (isSeaBox(box)) return "";
-  const charged = items.filter((i) => i.itemType !== "full_package" && i.shippingType !== "sea" && i.volumetric);
-  if (charged.length === 0) return "";
-  let kg = 0;
-  let usd = 0;
-  for (const item of charged) {
-    const d = volumeDiscountOf(item);
-    if (d) { kg += d.offKg; usd += d.offUsd; }
-  }
-  const gift = kg > 0
-    ? `<div style="margin-top:3px; font-weight:700; color:#047857;">${t("delivery.volNoteGift", { kg: kg.toFixed(2), usd: `$${usd.toFixed(2)}` })}</div>`
-    : "";
-  return `
-      <div data-volume-note="1" style="border:1px solid #fcd34d; background:#fffbeb; border-radius:6px; padding:8px 12px; margin:8px 0 12px; font-size:11px; line-height:1.6; color:#78350f;">
-        <div style="font-weight:700; font-size:12px; margin-bottom:2px;">${t("delivery.volNoteTitle")}</div>
-        <div>${t("delivery.volNoteWhy")}</div>
-        <div style="margin-top:3px;">${t("delivery.volNoteHow", { eq: '<bdi dir="ltr" style="font-weight:700;">40 × 30 × 20 ÷ 6000 = 4 kg</bdi>' })}</div>
-        <div style="margin-top:3px;">${t("delivery.volNoteCount", { n: charged.length })}</div>
-        ${gift}
-        <div style="margin-top:3px; color:#92400e;">${t("delivery.volNoteTip")}</div>
-      </div>`;
-}
-
 /** The receipt's line for the discounts, when any row has one. */
 function volumeDiscountLine(items: BoxItemForPrint[], t: TFunc): { label: string; value: string } | null {
   let kg = 0;
@@ -1358,7 +1327,6 @@ export function buildBoxReceiptHtml(
         <div style="margin-top:6px; font-size:12px; color:#92400e;">${t("delivery.politeRest")}</div>` : ""}
         ${dinar ? dinarRowsHtml(dinar, t) : ""}
       </div>
-      ${volumeNoteHtml(box, items, t)}
 
       ${box.notes ? `
       <div style="background:#fffbeb; border:1px solid #fde68a; border-radius:6px; padding:10px 14px; margin-bottom:16px; font-size:12px;">
