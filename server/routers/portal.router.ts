@@ -3,6 +3,7 @@ import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { parcelStage } from "@shared/parcelStage";
+import { isPushServiceEndpoint } from "@shared/pushEndpoint";
 import * as bcrypt from "bcryptjs";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, adminProcedure, accountantProcedure, customerProcedure } from "../middleware/auth";
@@ -1270,7 +1271,8 @@ export const customerPortalRouter = router({
 
     subscribePush: protectedProcedure
       .input(z.object({
-        endpoint: z.string().url().max(500),
+        // Only the browsers' own push services: the server POSTs to this.
+        endpoint: z.string().url().max(500).refine(isPushServiceEndpoint, "Not a push service"),
         p256dh: z.string().min(1).max(255),
         auth: z.string().min(1).max(255),
         userAgent: z.string().max(500).optional(),

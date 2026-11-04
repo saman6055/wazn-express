@@ -15,6 +15,7 @@ import { registerOAuthRoutes } from "./oauth";
 import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { registerDocumentGuard } from "./documentGuard";
 import { uploadsStaticOptions } from "./uploadsServe";
+import { trpcBodyParser } from "../middleware/bodyLimits";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
@@ -186,7 +187,7 @@ async function startServer() {
   // a large one. Nothing else does — an error report or a form has no
   // business being fifty megabytes, and parsing one from a stranger costs
   // the server memory and time for nothing.
-  app.use("/api/trpc", express.json({ limit: "50mb" }));
+  app.use("/api/trpc", trpcBodyParser);
   app.use(express.json({ limit: "100kb" }));
   app.use(express.urlencoded({ limit: "100kb", extended: true }));
 

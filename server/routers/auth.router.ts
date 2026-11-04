@@ -11,9 +11,10 @@ import {
   CUSTOMER_LOCK,
   LOCKED_MESSAGE,
   LOCK_MINUTES,
+  ATTEMPT_WINDOW_MINUTES,
   lockState,
-  registerFailure,
 } from "@shared/loginLockout";
+import { parse as parseCookieHeader } from "cookie";
 import { runMigration } from "../services/migration.service";
 import { getConfig } from "../config";
 import { phoneSchema, emailSchema, idSchema } from "./schemas";
@@ -90,27 +91,15 @@ export const authRouter = router({
         ]),
       });
     }
-    const staff = await db.getUserById(ctx.viewAs.by);
-    if (!staff || staff.isActive === false) {
-      ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
-      return { restored: false } as const;
-    }
-    const { SignJWT } = await import("jose");
-    const secret = new TextEncoder().encode(getConfig().jwtSecret);
-    // The same claims and the same lifetime a staff sign-in mints, so what
-    // comes back is an ordinary session and not a second kind of one.
-    const token = await new SignJWT({
-      userId: staff.id,
-      openId: staff.openId || `staff_${staff.id}`,
-      role: staff.role,
-      isStaff: true,
-    })
-      .setProtectedHeader({ alg: "HS256" })
-        .setIssuedAt()
-      .setExpirationTime("24h")
-      .sign(secret);
-    ctx.res.cookie(COOKIE_NAME, token, { ...cookieOptions, maxAge: 24 * 60 * 60 * 1000 });
-    return { restored: true } as const;
+    // Ending a look hands nothing out. It used to sign a fresh 24-hour staff
+    // session for whoever held the two-hour look token - even after that
+    // admin had changed their password (security audit, 2026-11-05). A look
+    // lives in its own tab and never touched the admin's session, so there
+    // is nothing to give back: a look that came in the cookie is cleared, and
+    // the admin's own sign-in is where it always was - or one sign-in away.
+    const cameAsCookie = parseCookieHeader(ctx.req.headers.cookie ?? "")[COOKIE_NAME] !== undefined && !String(ctx.req.headers.authorization ?? "").trim();
+    if (cameAsCookie) ctx.res.clearCookie(COOKIE_NAME, { ...cookieOptions, maxAge: -1 });
+    return { restored: false } as const;
   }),
   logout: publicProcedure.mutation(({ ctx }) => {
     const cookieOptions = getSessionCookieOptions(ctx.req);
@@ -172,13 +161,10 @@ export const authRouter = router({
 
       const isValid = await bcrypt.compare(input.password, customer.passwordHash);
       if (!isValid) {
-        const after = registerFailure(
-          { failedAttempts: customer.failedLoginAttempts, lastFailedAt: customer.lastFailedLoginAt, now },
-          CUSTOMER_LOCK,
-        );
-        // Awaited, not fired and forgotten: a counter that loses races is a
-        // counter an attacker can outrun.
-        await db.recordFailedCustomerLogin(customer.id, after.failedAttempts, now, after.lockedUntil);
+        // Counted by the database itself, so failures sent at the same
+        // moment all count (countFailedCustomerLogin). Awaited: a counter
+        // that loses races is a counter an attacker can outrun.
+        const after = await db.countFailedCustomerLogin(customer.id, now, CUSTOMER_LOCK, ATTEMPT_WINDOW_MINUTES);
         void db.logCustomerActivity({
           customerId: customer.id,
           action: after.justLocked ? "login_locked" : "login_failed",
@@ -466,7 +452,9 @@ export const authRouter = router({
    * list, so his own place had nowhere to be set (owner, 2026-10-29) - the
    * batches he made carried no place and read as China.
    */
-  myWorkPlace: protectedProcedure.query(async ({ ctx }) => db.getUserWorkLocation(ctx.user.id)),
+  // A customer's id is not a staff id: asking with it showed the place of the
+  // member of staff who happens to share the number (security audit, 2026-11-05).
+  myWorkPlace: protectedProcedure.query(async ({ ctx }) => (ctx.user.isCustomer ? null : db.getUserWorkLocation(ctx.user.id))),
   /**
    * Where a member of staff works, changed after they were created (owner,
    * 2026-10-24: an admin in China closes a batch's dispatch check). Stamped

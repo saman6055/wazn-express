@@ -15,6 +15,7 @@ import { getLocalBackupFilePath, LOCAL_BACKUP_PREFIX } from "./zipBackup.service
 import { appLogger } from "../utils/logger";
 import { retryFix, withFix } from "@shared/fixAdvice";
 import { cacheClear } from "../db/cache";
+import { boundedFetch } from "../lib/boundedFetch";
 import {
   BACKUP_FORMAT,
   BACKUP_VERSION,
@@ -367,9 +368,7 @@ async function writeBackup(backupId: number, filename: string, opts: FullBackupO
     let remoteFailed = 0;
     for (const f of remote) {
       try {
-        const res = await fetch(f.url);
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        await add(Buffer.from(await res.arrayBuffer()), `remote-files/${f.path}`);
+        await add(await boundedFetch(f.url), `remote-files/${f.path}`);
         remoteManifest.push({ key: f.path, url: f.url });
       } catch {
         remoteFailed++;

@@ -1419,13 +1419,12 @@ export async function buildBoxItemValuesFromPackage(
   let sourceInfo = `باچ ${batchRow.batchCode}`;
   let description = pkg.description || pkg.trackingNumber || '';
 
-  // Chargeable weight = max(actual, volumetric).
-  const actualKg = parseFloat(pkg.weightKg?.toString() || '0') || 0;
-  const lN = parseFloat((pkg as any).lengthCm?.toString() || '0') || 0;
-  const wN = parseFloat((pkg as any).widthCm?.toString() || '0') || 0;
-  const hN = parseFloat((pkg as any).heightCm?.toString() || '0') || 0;
-  const volumetricKg = (lN * wN * hN) / 6000;
-  const chargeableKgNum = Math.max(actualKg, volumetricKg);
+  // Chargeable weight by the one rule (shared/chargeableWeight): the
+  // configured divisor and any volumetric discount (billedWeightKg). A
+  // hand-written max(actual, L×W×H/6000) here put the undiscounted kilos on
+  // the line beside the discounted price (2026-11-05).
+  const divisor = (await getVolumetricDivisor()) || DEFAULT_VOLUMETRIC_DIVISOR;
+  const chargeableKgNum = chargeableWeight(pkg, divisor).chargeableKg;
   const chargeableKg = chargeableKgNum.toFixed(2);
 
   // Recompute shipping cost FRESH from current pkg measurements × batch rate.

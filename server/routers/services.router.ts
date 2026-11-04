@@ -5,6 +5,7 @@ import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure } from "../middleware/auth";
 import * as db from "../db";
 import { acceptUpload } from "../lib/uploadGate";
+import { CUSTOMER_UPLOADS_PER_DAY, takeCustomerUpload } from "../lib/customerUploadQuota";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { withFix } from "../../shared/fixAdvice";
 
@@ -768,7 +769,16 @@ export const storageRouter = router({
         contentType: z.string(),
         base64Data: z.string(),
       }))
-      .mutation(async ({ input }) => {
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.isCustomer && !takeCustomerUpload(ctx.user.id)) {
+          throw new TRPCError({
+            code: "TOO_MANY_REQUESTS",
+            message: withFix(`ئەمڕۆ ${CUSTOMER_UPLOADS_PER_DAY} فایلت ناردووە، کە زۆرترینە بۆ ڕۆژێک.`, [
+              "سبەی دووبارە بینێرە",
+              "ئەگەر پەلەیە، لە واتسئاپ بۆ وەزن ئێکسپرێس بنێرە",
+            ]),
+          });
+        }
         // Pictures, PDFs, office files and archives; nothing a browser would
         // run. Customers reach this door from the portal's messenger, so the
         // check is the whole of what stands between a stranger's file and
