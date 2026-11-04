@@ -5,6 +5,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { showErrorToast, copyErrorReport } from "@/lib/errorToast";
 import { ExpensesDashboard } from "@/components/expenses/ExpensesDashboard";
+import { ExpenseTipsCard } from "@/components/finance/ExpenseTipsCard";
 import { BudgetDialog } from "@/components/expenses/BudgetDialog";
 import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
 import { CATEGORY_ICON_KEYS, categoryIcon } from "@/components/expenses/categoryIcons";
@@ -1105,6 +1106,20 @@ const [activeTab, setActiveTab] = useState("expenses");
           onOpenChange={setShowBudgets}
           categories={categories}
           onSaved={refetchAll}
+        />
+
+        {/* Where the money could be saved, from this period's own figures. */}
+        <ExpenseTipsCard
+          current={dashboard?.current}
+          previous={dashboard?.previous}
+          byVendor={dashboard?.byVendor}
+          onSelectCategory={(categoryId) => {
+            setSelectedCategory(categoryId.toString());
+            setSearchQuery("");
+            setShowOnlyUnassigned(false);
+            setActiveTab("expenses");
+            document.getElementById("expenses-list")?.scrollIntoView({ behavior: "smooth", block: "start" });
+          }}
         />
 
         {/* Everything the screen reports, above the list it reports on. */}
