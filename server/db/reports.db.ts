@@ -12,6 +12,7 @@ import { daysWaitingForTracking, isOverCreditLimit, isTrackingOverdue } from '@s
 import { getOrdersPendingTracking } from './fullPackage.db';
 import { buildRiskItems, type RiskItem } from '@shared/riskBell';
 import { getStaleDepotPackages, getVolumetricParcels } from './packages.db';
+import { getAlertRecords, getBoxProblems, type ProblemRecord } from './dashboardProblems.db';
 import type { DashboardFigureId } from '@shared/dashboardExplain';
 import {
   InsertUser, users,
@@ -1078,6 +1079,9 @@ export async function getDashboardAlerts(): Promise<{
   description: string;
   count?: number;
   link?: string;
+  records?: ProblemRecord[];
+  /** Rings the bell's distinct chime: a box or batch fault to register now. */
+  urgent?: boolean;
 }[]> {
   const db = await getDb();
   if (!db) return [];
@@ -1089,7 +1093,27 @@ export async function getDashboardAlerts(): Promise<{
       description: string;
       count?: number;
       link?: string;
+      records?: ProblemRecord[];
+      urgent?: boolean;
     }[] = [];
+
+    /*
+     * The box and batch faults the owner asked for (2026-11-05), first:
+     * each says what to do, and its records open where it is put right.
+     */
+    try {
+      const words: Record<string, { title: string; description: string; type: 'error' | 'warning' }> = {
+        'box-unregistered': { type: 'error', title: 'کارتۆنی ناو بۆکس کە تۆمار نەکراوە', description: 'لە بۆکسی کڕیاردایە بەڵام وەک پاکەت تۆمار نەکراوە — لە تۆماری خێرا تۆماری بکە' },
+        'box-no-weight': { type: 'error', title: 'پاکەتی بێ کێش لە ناو بۆکس', description: 'نرخەکەی لەسەر هیچ نییە — کێش یان قەبارەکەی بنووسە پێش پارە وەرگرتن' },
+        'box-no-price': { type: 'error', title: 'پاکەتی بە کێش بەڵام بێ نرخ لە بۆکس', description: 'کێشی هەیە بەڵام کرێی لەسەر حیساب نەکراوە و هی ئۆردەرێکیش نییە — باچ و نرخەکەی ڕاست بکەرەوە' },
+        'left-behind': { type: 'warning', title: 'پاکەتی جێماو', description: 'باچەکەی گەیشتووەتە هەولێر بەڵام ئەم کارتۆنە سکانی گەیشتنی بۆ نەکراوە — بیدۆزەرەوە یان وەک ون تۆماری بکە' },
+      };
+      for (const p of await getBoxProblems()) {
+        if (p.count <= 0) continue;
+        const w = words[p.id];
+        alerts.push({ id: p.id, type: w.type, title: w.title, description: `${p.count} — ${w.description}`, count: p.count, records: p.records, urgent: p.id !== 'left-behind' });
+      }
+    } catch { /* ignore */ }
 
     // High debt customers — those whose debt has passed THEIR OWN credit
     // limit (currentBalanceUsd > 0 means they owe; compare against creditLimit).
@@ -1142,7 +1166,7 @@ export async function getDashboardAlerts(): Promise<{
     try {
       const customsBatches = await db.select({ count: count() }).from(batches).where(eq(batches.status, 'customs'));
       if (customsBatches[0]?.count > 0) {
-        alerts.push({ id: 'customs', type: 'info', title: 'باچ لە گومرگ', description: `${customsBatches[0].count} باچ لە گومرگدا`, count: customsBatches[0].count, link: '/batches' });
+        alerts.push({ id: 'customs', type: 'info', title: 'باچ لە گومرگ', description: `${customsBatches[0].count} باچ لە گومرگدا`, count: customsBatches[0].count, link: '/batches?status=customs' });
       }
     } catch { /* ignore */ }
 
@@ -1166,9 +1190,11 @@ export async function getDashboardAlerts(): Promise<{
     const todayStart = new Date();
     todayStart.setHours(0, 0, 0, 0);
     try {
-      const todayDeliveries = await db.select({ count: count() }).from(packages).where(and(eq(packages.status, 'delivered'), gte(packages.updatedAt, todayStart)));
+      // By the day it was delivered - not the last time the row was touched
+      // (an old parcel edited today was counted; audit 2026-11-05).
+      const todayDeliveries = await db.select({ count: count() }).from(packages).where(and(eq(packages.status, 'delivered'), gte(packages.deliveredAt, todayStart)));
       if (todayDeliveries[0]?.count > 0) {
-        alerts.push({ id: 'today-deliveries', type: 'success', title: 'گەیاندنی ئەمڕۆ', description: `${todayDeliveries[0].count} پاکەت گەیاندرا ئەمڕۆ`, count: todayDeliveries[0].count });
+        alerts.push({ id: 'today-deliveries', type: 'success', title: 'گەیاندنی ئەمڕۆ', description: `${todayDeliveries[0].count} پاکەت گەیاندرا ئەمڕۆ`, count: todayDeliveries[0].count, link: packagesHref({ tab: 'delivered' }) });
       }
     } catch { /* ignore */ }
 
@@ -1178,6 +1204,12 @@ export async function getDashboardAlerts(): Promise<{
       if (todayPayments[0]?.count > 0) {
         alerts.push({ id: 'today-payments', type: 'success', title: 'پارەدانی ئەمڕۆ', description: `${todayPayments[0].count} پارەدان وەرگیرا`, count: todayPayments[0].count, link: '/finance' });
       }
+    } catch { /* ignore */ }
+
+    // Each card carries the records it counts (owner, 2026-11-05).
+    try {
+      const recordsById = await getAlertRecords();
+      for (const a of alerts) if (!a.records && recordsById[a.id]?.length) a.records = recordsById[a.id];
     } catch { /* ignore */ }
 
     return alerts;

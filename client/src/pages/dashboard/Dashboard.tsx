@@ -23,6 +23,7 @@ import {
   TrendingDown,
   CheckCircle,
   AlertCircle,
+  ExternalLink,
   LayoutDashboard,
   Crown,
   CreditCard,
@@ -197,6 +198,20 @@ export default function Dashboard() {
   const { data: topDebtors } = trpc.dashboard.topDebtors.useQuery({ limit: 10 });
   const { data: recentActivity } = trpc.dashboard.recentActivity.useQuery({ limit: 8 });
   const { data: alerts } = trpc.dashboard.alerts.useQuery();
+  /*
+   * A box fault to register now rings its own chime, once a visit (owner,
+   * 2026-11-05: «زەنگێکی جیاوازی هەبێ … ئادمین وشیار بێتەوە بچێت تۆماری
+   * بکات»). The bell's usual sound is for everything else.
+   */
+  const urgentBox = (alerts ?? []).filter((a) => a.urgent).map((a) => `${a.id}:${a.count}`).join("|");
+  useEffect(() => {
+    if (!urgentBox) return;
+    try {
+      if (sessionStorage.getItem("wazn-dash-box-chime") === urgentBox) return;
+      sessionStorage.setItem("wazn-dash-box-chime", urgentBox);
+    } catch { /* storage blocked: ring anyway */ }
+    soundManager.playRiskChime();
+  }, [urgentBox]);
   const { data: highlights } = trpc.dashboard.weeklyHighlights.useQuery();
   // Which figure's records are open: the week's days, the week's orders, the 30 days.
   const [drill, setDrill] = useState<null | "week" | "orders" | "month">(null);
@@ -1368,7 +1383,11 @@ export default function Dashboard() {
 }
 
 // Alert Card Component
-const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type: string; title: string; description: string; count?: number; link?: string } }) {
+const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type: string; title: string; description: string; count?: number; link?: string; records?: Array<{ text: string; href?: string }>; urgent?: boolean } }) {
+  const [open, setOpen] = useState(false);
+  const [, go] = useLocation();
+  const { language } = useTranslation();
+  const records = alert.records ?? [];
   const typeStyles = {
     warning: {
       card: "from-amber-50 to-orange-50/50 dark:from-amber-950/30 dark:to-orange-950/20 border-amber-200/70 dark:border-amber-800/50",
@@ -1399,15 +1418,28 @@ const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type
   const style = typeStyles[alert.type as keyof typeof typeStyles] || typeStyles.info;
   const Icon = style.Icon;
 
+  /*
+   * A card with records opens in place to them, each a door to where it is
+   * put right, and a button to the page (owner, 2026-11-05). One without
+   * records still goes to its page.
+   */
+  const expandable = records.length > 0;
   const content = (
     <div
-      className={`group p-4 rounded-2xl border bg-gradient-to-br ${style.card} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer`}
+      role="button"
+      tabIndex={0}
+      aria-expanded={expandable ? open : undefined}
+      onClick={() => (expandable ? setOpen((o) => !o) : alert.link && go(alert.link))}
+      onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); expandable ? setOpen((o) => !o) : alert.link && go(alert.link); } }}
+      className={`group p-4 rounded-2xl border bg-gradient-to-br ${style.card} hover:shadow-lg hover:-translate-y-0.5 transition-all duration-200 cursor-pointer ${open ? "md:col-span-2 lg:col-span-3" : ""}`}
+      data-testid={`problem-${alert.id}`}
     >
       <div className="flex items-start gap-3">
         <span
-          className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${style.chip} text-white shadow-sm transition-transform duration-200 group-hover:scale-105`}
+          className={`relative flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br ${style.chip} text-white shadow-sm transition-transform duration-200 group-hover:scale-105`}
         >
           <Icon className="h-5 w-5" />
+          {alert.urgent && <span aria-hidden className="absolute -end-1 -top-1 h-3 w-3 animate-ping rounded-full bg-rose-500/80 motion-reduce:hidden" />}
         </span>
         <div className="flex-1 min-w-0">
           <p className="font-semibold text-sm text-foreground">{alert.title}</p>
@@ -1419,10 +1451,37 @@ const AlertCard = memo(function AlertCard({ alert }: { alert: { id: string; type
           </span>
         )}
       </div>
+      {expandable && open && (
+        <div className="mt-3 space-y-2 border-t border-current/10 pt-3" onClick={(e) => e.stopPropagation()} data-testid="problem-records">
+          <ul className="flex flex-wrap gap-2">
+            {records.map((r, i) => (
+              <li key={i} className="inline-flex max-w-full items-center gap-1 rounded-lg border bg-background/80 ps-2.5 text-xs">
+                {r.href ? (
+                  <Link href={r.href} className="truncate py-1 font-mono font-medium text-blue-700 hover:underline dark:text-blue-300" dir="ltr">{r.text}</Link>
+                ) : (
+                  <span className="truncate py-1 font-mono" dir="ltr">{r.text}</span>
+                )}
+                <CopyButton value={r.text.split(" · ")[0]} label={pickLang(language, { ku: "کۆپی", en: "Copy", ar: "نسخ", zh: "复制" })} />
+              </li>
+            ))}
+          </ul>
+          {alert.count != null && alert.count > records.length && (
+            <p className="text-xs text-muted-foreground">
+              {pickLang(language, { ku: `${records.length} لە ${alert.count} پیشان دراوە`, en: `${records.length} of ${alert.count} shown`, ar: `عُرض ${records.length} من ${alert.count}`, zh: `显示 ${alert.count} 中的 ${records.length}` })}
+            </p>
+          )}
+          {alert.link && (
+            <Button size="sm" variant="outline" className="gap-1.5" onClick={() => go(alert.link!)}>
+              <ExternalLink className="h-3.5 w-3.5" />
+              {pickLang(language, { ku: "بڕۆ بۆ لیستەکە", en: "Open the list", ar: "افتح القائمة", zh: "打开列表" })}
+            </Button>
+          )}
+        </div>
+      )}
     </div>
   );
 
-  return alert.link ? <Link href={alert.link}>{content}</Link> : content;
+  return content;
 });
 
 // Activity Item Component
