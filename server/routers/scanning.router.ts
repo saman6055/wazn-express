@@ -1064,6 +1064,8 @@ export const deliveryBoxRouter = router({
   getById: staffProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
+      // An open box heals a line that drifted from its payment screen, once.
+      if (await db.syncBoxLinesToTill(input.id)) await db.recalculateBoxTotals(input.id);
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) return null;
       const items = await db.getBoxItems(input.id);

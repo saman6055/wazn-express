@@ -1096,10 +1096,64 @@ export async function isFPOrderBoxedNonCancelled(fpOrderId: number): Promise<boo
 
 // ============ RECALCULATE BOX TOTALS ============
 
+/**
+ * An open box's lines read what its payment screen asks (owner, 2026-11-04:
+ * «دەبێ سیستەمی دارایی یەکگرتوو بێت یەک داتا و نەتیجە»).
+ *
+ * A line keeps its own copy of the price, and every door that moved a price
+ * (a volumetric discount, a weight correction, freight written on the order)
+ * had to remember to move that copy too - and one wrote the freight alone over
+ * a buy-at-cost line, so the box showed $306.79 while its payment screen asked
+ * $334.32. Now the payment screen's figure for each parcel (parcelsForItems:
+ * the account's charges, plus freight still to be written) is written onto the
+ * line, with the freight in its words. Only while the box is open and nothing
+ * is receipted: a receipted line is the paper in the customer's hand.
+ * Returns whether anything changed.
+ */
+export async function syncBoxLinesToTill(boxId: number): Promise<boolean> {
+  const db = await getDb();
+  if (!db) return false;
+  const [box] = await db.select({ status: deliveryBoxes.status }).from(deliveryBoxes).where(eq(deliveryBoxes.id, boxId)).limit(1);
+  if (!box || box.status === "delivered" || box.status === "cancelled") return false;
+  const [receipted] = await db.select({ id: boxSettlements.id }).from(boxSettlements)
+    .where(and(eq(boxSettlements.boxId, boxId), eq(boxSettlements.status, "confirmed"))).limit(1);
+  if (receipted) return false;
+
+  const { getBoxSettlementView } = await import("./boxSettlement.db");
+  const view = await getBoxSettlementView(boxId);
+  const rows = await db
+    .select({ id: deliveryBoxItems.id, cost: deliveryBoxItems.calculatedCostUsd, description: deliveryBoxItems.description })
+    .from(deliveryBoxItems)
+    .where(eq(deliveryBoxItems.boxId, boxId));
+  const byId = new Map(rows.map((r) => [Number(r.id), r]));
+  let changed = false;
+  for (const parcel of view.parcels) {
+    const row = byId.get(Number(parcel.lineId));
+    const target = Math.round(Number(parcel.chargedUsd || 0) * 100) / 100;
+    if (!row || !(target > 0) || Math.abs(target - Number(row.cost || 0)) <= 0.005) continue;
+    await db.update(deliveryBoxItems)
+      .set({ calculatedCostUsd: target.toFixed(2), description: freightInWords(row.description, target) })
+      .where(eq(deliveryBoxItems.id, row.id));
+    changed = true;
+  }
+  return changed;
+}
+
+/** "نرخی بەرهەم: $X + نرخی گواستنەوە: $Y" with Y made to add up to the line. */
+function freightInWords(description: string | null, totalUsd: number): string | null {
+  if (!description) return description;
+  const goods = /نرخی بەرهەم:\s*\$([\d.]+)/.exec(description);
+  if (!goods) return description;
+  const freight = Math.round((totalUsd - Number(goods[1])) * 100) / 100;
+  if (!(freight > 0)) return description;
+  return description.replace(/نرخی گواستنەوە:\s*\$[\d.]+/, `نرخی گواستنەوە: $${freight.toFixed(2)}`);
+}
+
 export async function recalculateBoxTotals(boxId: number): Promise<void> {
   const db = await getDb();
   if (!db) return;
 
+  await syncBoxLinesToTill(boxId);
   const items = await getBoxItems(boxId);
   const totalPackages = items.length;
   const totalWeightKg = items.reduce((sum, i) => sum + Number(i.weightKg || 0), 0);
