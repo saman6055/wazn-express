@@ -300,6 +300,32 @@ export async function buildDailyBrief(): Promise<DailyBrief> {
     }
   }
 
+  /*
+   * The expenses row says which expenses (owner, 2026-11-05: «بەشی خەرجیەکان
+   * زۆر بە دیتێل … هەموو شتێ لێنکی هەبێت»): today's, biggest first, each with
+   * its category - so a jump is explained before anyone opens the page.
+   */
+  const expenseRow = signals.find((s) => s.id === "movement:expenses" || s.id === "movement:expenses:week");
+  if (expenseRow) {
+    const db = await getDb();
+    if (db) {
+      try {
+        const [rows] = (await db.execute(sql`
+          SELECT e.description, CAST(e.amountUsd AS DECIMAL(14,2)) AS usd,
+                 COALESCE(NULLIF(c.nameKu, ''), c.nameEn) AS category
+          FROM expenses e LEFT JOIN expenseCategories c ON c.id = e.categoryId
+          WHERE DATE(e.expenseDate) = ${todayKey}
+          ORDER BY CAST(e.amountUsd AS DECIMAL(14,2)) DESC LIMIT 10`)) as unknown as [Row[]];
+        expenseRow.records = (rows ?? []).map((r) => ({
+          text: [r.category, r.description, `$${num(r.usd).toFixed(2)}`].filter((x) => x != null && String(x).trim() !== "").map(String).join(" · "),
+          href: "/company/expenses",
+        }));
+      } catch (error) {
+        appLogger.warn("Daily brief could not list today's expenses", { error: error instanceof Error ? error.message : String(error) });
+      }
+    }
+  }
+
   const ranked = rankSignals(signals);
   const summary = summarise(ranked);
 

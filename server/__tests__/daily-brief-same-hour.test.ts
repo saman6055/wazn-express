@@ -27,3 +27,10 @@ describe("the brief compares like with like", () => {
     expect(brief).not.toContain("کیلۆی گواسترا");
   });
 });
+
+describe("the expenses row lists today's expenses", () => {
+  it("biggest first, with the category, opening the expenses page", () => {
+    expect(svc).toContain('signals.find((s) => s.id === "movement:expenses" || s.id === "movement:expenses:week")');
+    expect(svc).toContain("ORDER BY CAST(e.amountUsd AS DECIMAL(14,2)) DESC LIMIT 10");
+  });
+});
