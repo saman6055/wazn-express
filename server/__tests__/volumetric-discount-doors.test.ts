@@ -62,9 +62,9 @@ describe("no door works a parcel's kilos out around the discount", () => {
     expect(src).toContain("ourBilledKg: totalSpaceWeight,");
   });
 
-  it("an order's parcel: a full package refuses, a commission order whose freight is charged refuses", () => {
+  it("an order's parcel: a full package refuses, a commission order whose freight is charged takes it on the order (2026-11-04)", () => {
     const src = read("server/lib/correctRegisteredParcel.ts");
     expect(src).toContain('const fullPackage = orders.find((o) => o.orderType !== "commission");');
-    expect(src).toContain("const freightCharged = orders.find((o) => o.isShippingCharged);");
+    expect(src).toContain("const freightOrders = orders.filter((o) => o.isShippingCharged);");
   });
 });

@@ -205,6 +205,17 @@ export async function ordersBehindParcel(
   }));
 }
 
+/** Of these orders, the ones the freight is written under (its siblings carry 0.00). */
+export async function ordersCarryingFreight(orderIds: number[]): Promise<number[]> {
+  const db = await getDb();
+  if (!db || orderIds.length === 0) return [];
+  const rows = await db
+    .select({ id: fullPackageOrders.id, usd: fullPackageOrders.shippingChargedUsd, type: fullPackageOrders.orderType })
+    .from(fullPackageOrders)
+    .where(inArray(fullPackageOrders.id, orderIds));
+  return rows.filter((r) => r.type === "commission" && Number(r.usd ?? 0) > 0).map((r) => Number(r.id));
+}
+
 /**
  * The receipt, the box, or nothing: where a parcel's money is once it has
  * left the parcel's own hands.
@@ -607,4 +618,112 @@ export async function applyParcelCorrection(
     packageId, money: result.money, wasUsd: result.wasUsd, nowUsd: result.nowUsd, chargeAfter: result.chargeAfter,
   });
   return { money: result.money, wasUsd: result.wasUsd, nowUsd: result.nowUsd, chargeAfter: result.chargeAfter };
+}
+
+
+/**
+ * A volumetric discount on a parcel whose freight is already on its commission
+ * order (owner, 2026-11-04): «داشکانەکە لەسەر پاکێجەکە بکرێت، و هەمان کات کرێی
+ * گواستنەوەی سەر ئۆردەرەکە و حیسابی کڕیار بە هەمان بڕ کەم ببنەوە، بە یەک هێڵی
+ * دەفتەر».
+ *
+ * One figure everywhere: the order's freight row on the account is put right
+ * in place (restateCharge - or one correction line if it already carries one),
+ * and the order, the parcel and an open box's line read the same amount. The
+ * freight moves at the rate it was charged at, by the kilos now charged. A
+ * receipt already taken stops it, as any correction; so do figures that do
+ * not agree with each other, rather than guess which one is right.
+ */
+export async function discountOrderFreight(
+  packageId: number,
+  orderId: number,
+  input: { billedWeightKg: string | null; wasKg: number; nowKg: number; name: string },
+  userId: number,
+  opts?: UndoOptions & { actorRole?: string | null },
+): Promise<{ wasUsd: number; nowUsd: number; money: "restated" | "adjusted" | "untouched" }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+
+  const hold = await parcelMoneyHold(packageId);
+  if (hold?.kind === "receipt") {
+    throw new Error(withFix(
+      `پارەی پاکەتی ${input.name} لە وەسڵی ${hold.settlementNumber}ـی بۆکسی ${hold.boxCode ?? ""} وەرگیراوە - داشکان ئێستا پارەی وەرگیراو و حیساب لێک جیا دەکاتەوە.`,
+      [`بۆکسی ${hold.boxCode ?? ""} بکەرەوە و وەسڵەکە هەڵبوەشێنەوە`, "ئینجا داشکانەکە بکە", "دواتر دووبارە واصڵی بکەرەوە"],
+    ));
+  }
+  if (!(input.wasKg > 0) || !(input.nowKg > 0)) throw new Error("discountOrderFreight: kilos must be more than zero");
+
+  const result = await db.transaction(async (tx) => {
+    const [order] = await tx.select().from(fullPackageOrders).where(eq(fullPackageOrders.id, orderId)).for("update").limit(1);
+    if (!order) throw new Error(withFix("ئۆردەرەکە نەدۆزرایەوە.", ["لاپەڕەکە نوێ بکەرەوە"]));
+    const wasUsd = Number(order.shippingChargedUsd ?? 0);
+    if (!(wasUsd > 0) || !order.customerId) {
+      throw new Error(withFix(`کرێی گواستنەوەی ئۆردەری ${order.orderCode} لەسەر ئۆردەرەکە نییە - داشکان لێرە ناکرێت.`, ["ئۆردەرەکە بکەرەوە و کرێکەی بپشکنە"]));
+    }
+
+    // The freight's own row: under the order, saying it is the order's freight.
+    const [account] = await tx.select({ id: customerAccounts.id }).from(customerAccounts)
+      .where(eq(customerAccounts.customerId, order.customerId)).limit(1);
+    const rows: LedgerTransaction[] = account
+      ? await tx.select().from(ledgerTransactions).where(and(
+          eq(ledgerTransactions.accountId, account.id),
+          eq(ledgerTransactions.transactionType, "DEBIT_PACKAGE"),
+          eq(ledgerTransactions.referenceType, "package"),
+          eq(ledgerTransactions.referenceId, orderId),
+          like(ledgerTransactions.description, `%${order.orderCode}%`),
+          like(ledgerTransactions.description, "%کرێی گواستنەوە%"),
+        ))
+      : [];
+    const charge = rows.length === 1 ? rows[0] : null;
+    const standing = charge ? await effectiveChargeUsd(tx, charge) : 0;
+    if (!charge || Math.abs(standing - wasUsd) > 0.005) {
+      throw new Error(withFix(
+        `کرێی گواستنەوەی ئۆردەری ${order.orderCode} ($${wasUsd.toFixed(2)}) لەگەڵ حیسابی کڕیار یەک ناگرێتەوە${charge ? ` ($${standing.toFixed(2)})` : " (نووسینەکەی نەدۆزرایەوە)"} - داشکان دەست لێ نادات تا ڕوون نەبێتەوە کامیان ڕاستە.`,
+        [`ئۆردەری ${order.orderCode} و حیسابی کڕیار بەراورد بکە`, "ئینجا داشکانەکە دووبارە بکە"],
+      ));
+    }
+
+    const nowUsd = Math.round((wasUsd * input.nowKg / input.wasKg) * 100) / 100;
+    const reason = `داشکانی قەبارەی پاکەتی ${input.name}: ${input.wasKg.toFixed(2)} → ${input.nowKg.toFixed(2)} kg، کرێی ئۆردەری ${order.orderCode}`;
+    let money: "restated" | "adjusted" | "untouched" = "untouched";
+    if (Math.abs(nowUsd - wasUsd) > 0.005) {
+      if (!(nowUsd > 0)) throw new Error("discountOrderFreight: freight would reach zero");
+      const lined = await chargeHasCorrections(tx, charge);
+      if (lined) {
+        await adjustCharge(charge.id, nowUsd, reason, userId, tx, opts);
+        money = "adjusted";
+      } else {
+        await restateCharge(charge.id, nowUsd, { reason, actorId: userId, actorRole: opts?.actorRole ?? null, subject: input.name }, tx, opts);
+        money = "restated";
+      }
+      await invoiceFollows(tx, charge, input.name, {
+        due: true, amount: nowUsd, rate: nowUsd / input.nowKg, quantity: input.nowKg, unit: "kg", batchCode: null,
+      });
+    }
+
+    await tx.update(fullPackageOrders)
+      .set({ shippingChargedUsd: nowUsd.toFixed(2), shippingCostUsd: nowUsd.toFixed(2) })
+      .where(eq(fullPackageOrders.id, orderId));
+    await tx.update(packages)
+      .set({ billedWeightKg: input.billedWeightKg, calculatedCostUsd: nowUsd.toFixed(2) })
+      .where(eq(packages.id, packageId));
+
+    // An open box's line is goods + freight: the freight part moves, the goods stay.
+    const lines = await tx
+      .select({ id: deliveryBoxItems.id, boxId: deliveryBoxItems.boxId, cost: deliveryBoxItems.calculatedCostUsd })
+      .from(deliveryBoxItems)
+      .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, deliveryBoxItems.boxId))
+      .where(and(eq(deliveryBoxItems.packageId, packageId), ne(deliveryBoxes.status, "cancelled")));
+    for (const line of lines) {
+      const cost = Math.max(0, Math.round((Number(line.cost ?? 0) - wasUsd + nowUsd) * 100) / 100);
+      await tx.update(deliveryBoxItems)
+        .set({ calculatedCostUsd: cost.toFixed(2), weightKg: input.nowKg.toFixed(2) })
+        .where(eq(deliveryBoxItems.id, line.id));
+    }
+    return { wasUsd, nowUsd, money, boxIds: Array.from(new Set(lines.map((l) => Number(l.boxId)))) };
+  });
+
+  for (const boxId of result.boxIds) await recalculateBoxTotals(boxId);
+  appLogger.info("[ParcelCorrection] order freight discounted", { packageId, orderId, wasUsd: result.wasUsd, nowUsd: result.nowUsd, money: result.money });
+  return { wasUsd: result.wasUsd, nowUsd: result.nowUsd, money: result.money };
 }
