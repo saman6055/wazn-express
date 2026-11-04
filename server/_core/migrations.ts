@@ -3279,6 +3279,16 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
           SET b.createdInCountryId = u.workCountryId, b.createdInCity = u.workCity
           WHERE b.createdInCountryId IS NULL AND u.workCountryId IS NOT NULL`,
   },
+  // What is still unstamped takes its origin warehouse's country - the rule
+  // for every batch since a1bb6bf2. A null was read as China by the stages and
+  // as Erbil by the close check and the dispatch page (audit 2026-11-05);
+  // stamped, every reading agrees. Only rows with no place; never overwrites.
+  {
+    name: "backfill.batches.placeFromWarehouse",
+    sql: `UPDATE batches b JOIN warehouses w ON w.id = b.originWarehouseId
+          SET b.createdInCountryId = w.countryId, b.createdInCity = COALESCE(b.createdInCity, w.city)
+          WHERE b.createdInCountryId IS NULL AND w.countryId IS NOT NULL`,
+  },
   {
     name: "backfill.packages.registeredInLocation",
     sql: `UPDATE packages p JOIN users u ON u.id = p.registeredById
