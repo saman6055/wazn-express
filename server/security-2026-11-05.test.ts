@@ -205,3 +205,25 @@ describe("customers' uploads and push addresses", () => {
     expect(read("server/routers/auth.router.ts")).toContain("(ctx.user.isCustomer ? null : db.getUserWorkLocation(ctx.user.id))");
   });
 });
+
+describe("the small doors, closed", () => {
+  it("both server entries send a Permissions-Policy", async () => {
+    const { PERMISSIONS_POLICY } = await import("./_core/permissionsPolicy");
+    expect(PERMISSIONS_POLICY).toContain("camera=(self)");
+    expect(PERMISSIONS_POLICY).toContain("microphone=(self)");
+    expect(PERMISSIONS_POLICY).toContain("payment=()");
+    for (const f of ["server/_core/prod-entry.ts", "server/_core/index.ts"]) {
+      expect(read(f), f).toContain("app.use(permissionsPolicy);");
+    }
+  });
+
+  it("an app icon is drawn once per logo and size, not on every request", () => {
+    const src = read("server/services/appIcons.service.ts");
+    expect(src).toContain("const png = await renderedIcon(url as string, bytes, size);");
+    expect(src).toContain("const hit = rendered.get(key);");
+  });
+
+  it("which addresses are trusted is the admins' question alone", () => {
+    expect(read("server/routers/settings.router.ts")).toContain("isIpWhitelisted: adminProcedure");
+  });
+});

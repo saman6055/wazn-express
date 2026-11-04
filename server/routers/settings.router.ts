@@ -875,7 +875,9 @@ export const advancedSettingsRouter = router({
       return await db.getActiveIpWhitelist();
     }),
 
-    isIpWhitelisted: protectedProcedure
+    // No screen asks this; anyone signed in could probe which addresses are
+    // trusted (security audit, 2026-11-05). The admins who keep the list.
+    isIpWhitelisted: adminProcedure
       .input(z.object({ ip: z.string() }))
       .query(async ({ input }) => {
         return await db.isIpWhitelisted(input.ip);

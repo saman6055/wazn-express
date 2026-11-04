@@ -16,6 +16,7 @@ import { getUploadsDir, UPLOADS_ROUTE } from "../services/localUpload";
 import { registerDocumentGuard } from "./documentGuard";
 import { uploadsStaticOptions } from "./uploadsServe";
 import { trpcBodyParser } from "../middleware/bodyLimits";
+import { permissionsPolicy } from "./permissionsPolicy";
 import { appRouter } from "../routers";
 import { createContext } from "./context";
 import { registerPortalEventsRoute } from "./portalEventsRoute";
@@ -171,6 +172,9 @@ async function startServer() {
       },
     })
   );
+
+  // Camera, microphone and location for this site alone (permissionsPolicy.ts).
+  app.use(permissionsPolicy);
 
   // CORS: only allow origins from ALLOWED_ORIGINS (comma-separated)
   const allowedOrigins = process.env.ALLOWED_ORIGINS
