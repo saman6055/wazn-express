@@ -131,6 +131,67 @@ export const {
   ...CUSTOMER_LIST_COLUMNS
 } = getTableColumns(customers);
 
+/**
+ * What it takes to choose a customer, and nothing else.
+ *
+ * Thirty-five screens load every customer to fill a picker. With all the
+ * list columns that was 700 bytes a person, dates and all: two megabytes for
+ * three thousand customers, parsed by a phone on every screen that has a
+ * customer box in it.
+ */
+const CUSTOMER_PICKER_COLUMNS = {
+  id: customers.id,
+  customerCode: customers.customerCode,
+  fullName: customers.fullName,
+  fullNameKurdish: customers.fullNameKurdish,
+  fullNameArabic: customers.fullNameArabic,
+  mobileNumber: customers.mobileNumber,
+  city: customers.city,
+  address: customers.address,
+  // The receipt's language comes from it (receiptLanguageFor): read through a
+  // cast in the box panel, so the compiler would not have said it was gone.
+  nationality: customers.nationality,
+  isActive: customers.isActive,
+  serviceTypes: customers.serviceTypes,
+};
+
+/** The customer beside a balance: the finance lists print these and no more. */
+export const ACCOUNT_CUSTOMER_COLUMNS = {
+  id: customers.id,
+  customerCode: customers.customerCode,
+  fullName: customers.fullName,
+  fullNameKurdish: customers.fullNameKurdish,
+  mobileNumber: customers.mobileNumber,
+  email: customers.email,
+  city: customers.city,
+};
+
+export type AccountCustomer = {
+  id: number;
+  customerCode: string;
+  fullName: string;
+  fullNameKurdish: string | null;
+  mobileNumber: string;
+  email: string | null;
+  city: string | null;
+};
+
+/** Everyone, and those switched on. */
+export async function getCustomerCounts(): Promise<{ total: number; active: number }> {
+  const db = await getDb();
+  if (!db) return { total: 0, active: 0 };
+  const [row] = await db
+    .select({ total: count(), active: sql<number>`COALESCE(SUM(${customers.isActive} = 1), 0)` })
+    .from(customers);
+  return { total: Number(row?.total ?? 0), active: Number(row?.active ?? 0) };
+}
+
+export async function getCustomersForPicker() {
+  const db = await getDb();
+  if (!db) return [];
+  return db.select(CUSTOMER_PICKER_COLUMNS).from(customers).orderBy(desc(customers.createdAt));
+}
+
 /** A customer row as every list carries it: without the four document columns. */
 export type CustomerListRow = Omit<Customer, "photoUrl" | "passportUrl" | "nationalIdUrl" | "contractUrl">;
 

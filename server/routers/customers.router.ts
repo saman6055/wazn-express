@@ -17,6 +17,8 @@ export const customersRouter = router({
     list: staffProcedure.query(async () => {
       return (await db.getAllCustomers()).map((c) => withoutSecrets(c));
     }),
+    // Every customer, in the few columns a picker reads (customers.db.ts).
+    picker: staffProcedure.query(() => db.getCustomersForPicker()),
     getById: staffProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input }) => {

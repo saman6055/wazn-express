@@ -54,8 +54,10 @@ describe("a parcel goes only into a batch made where its desk is", () => {
     for (const f of ["client/src/pages/packages/QuickRegister.tsx", "client/src/pages/scanning/BatchAssignmentScanner.tsx", "client/src/pages/packages/BulkRegister.tsx", "client/src/pages/packages/Packages.tsx"]) {
       expect(read(f), f).toContain("batchMatchesDesk(");
     }
-    expect(read("server/routers/packages.router.ts").match(/await db\.assertBatchMatchesDesk\(input\.batchId, ctx\.user\.id\);/g)?.length).toBe(2);
-    expect(read("server/routers/scanning.router.ts")).toContain("await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);");
+    const pk = read("server/routers/packages.router.ts");
+    expect(pk).toContain("await db.assertBatchMatchesDesk(input.batchId, ctx.user.id, input.originWarehouseId);");
+    expect(pk).toContain("await db.assertBatchMatchesDesk(input.batchId, ctx.user.id, parcel?.originWarehouseId);");
+    expect(read("server/routers/scanning.router.ts")).toContain("await db.assertBatchMatchesDesk(input.batchId, ctx.user.id, input.warehouseId);");
   });
 });
 
@@ -105,5 +107,37 @@ describe("a batch that came partly on this load (owner, 2026-10-29, AIR-2026-069
     expect(read("server/db/carrierParts.db.ts")).toContain("costUsd: decimalOrNull(batch.shippingCost) ?? decimalOrNull(firstLoadCost(batch)),");
     expect(read("client/src/components/batches/CarrierGroupCard.tsx")).toContain('data-testid="carrier-group-hand"');
     expect(read("server/_core/migrations.ts")).toContain('"carrierGroupInvoices.arrivedOn"');
+  });
+});
+
+describe("the parcel's warehouse says where it is (owner, 2026-11-03)", () => {
+  it("the warehouse decides, the desk only when the warehouse is unknown", async () => {
+    const { parcelPlaceInChina, batchMatchesDesk } = await import("./batchTwin");
+    // A Guangzhou carton typed in from the Erbil office is China's.
+    expect(parcelPlaceInChina(true, false)).toBe(true);
+    expect(batchMatchesDesk(true, parcelPlaceInChina(true, false))).toBe(true);
+    // An Erbil carton typed in from China is Erbil's.
+    expect(parcelPlaceInChina(false, true)).toBe(false);
+    expect(batchMatchesDesk(true, parcelPlaceInChina(false, true))).toBe(false);
+    // No warehouse known: the desk, as before.
+    expect(parcelPlaceInChina(null, false)).toBe(false);
+    expect(parcelPlaceInChina(undefined, true)).toBe(true);
+    expect(parcelPlaceInChina(null, null)).toBe(null);
+  });
+
+  it("the server guard and the register pickers ask with the parcel's warehouse", () => {
+    const guard = read("server/db/carrierGroup.db.ts");
+    expect(guard).toContain("export async function warehouseInChina(warehouseId: number | null | undefined)");
+    expect(guard).toContain("return parcelPlaceInChina(await warehouseInChina(warehouseId), await deskInChina(userId));");
+    expect(guard).toContain("const desk = await placeInChina(userId, warehouseId);");
+    expect(read("server/routers/batches.router.ts")).toContain("inChina: await db.placeInChina(ctx.user.id, input?.warehouseId)");
+    for (const f of ["client/src/pages/packages/QuickRegister.tsx", "client/src/pages/packages/BulkRegister.tsx"]) {
+      expect(read(f), f).toContain("myDesk.useQuery(originWarehouseId ? { warehouseId: originWarehouseId } : undefined)");
+    }
+  });
+
+  it("a parcel is recorded as registered where its warehouse is", () => {
+    expect(read("server/routers/packages.router.ts")).toContain("registeredInCountryId: warehouse.countryId ?? registrationLocation.countryId,");
+    expect(read("server/routers/scanning.router.ts")).toContain("registeredInCountryId: scanWarehouse?.countryId ?? registrationLocation.countryId,");
   });
 });

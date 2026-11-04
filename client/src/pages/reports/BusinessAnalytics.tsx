@@ -10,6 +10,9 @@ import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { PACKAGE_STATUS_LABEL } from "@/lib/packageStatus";
 import { useState, useMemo } from "react";
+import { debtorsHref } from "@shared/listLinks";
+import { DRILL_CARD, RecordLink, ReportDrillSheet, type DrillColumn } from "@/components/reports/ReportDrillSheet";
+import { OrderProfitDrill, type OrderDrill } from "@/components/reports/OrderProfitDrill";
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -64,6 +67,9 @@ const getMonthName = (language: string, month: number) => {
 
 export default function BusinessAnalytics() {
   const { language } = useLanguage();
+  // Every figure opens what it was added up from (owner, 2026-11-02).
+  const [orders, setOrders] = useState<OrderDrill | null>(null);
+  const [parts, setParts] = useState<string | null>(null);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear().toString());
   const [selectedMonth, setSelectedMonth] = useState((new Date().getMonth() + 1).toString());
   
@@ -73,7 +79,7 @@ export default function BusinessAnalytics() {
   const { data: financialSummary } = trpc.ledger.getSummary.useQuery();
   const { data: debtors } = trpc.ledger.getDebtors.useQuery({ minBalanceUsd: 0 });
   const { data: packageStats } = trpc.reports.packageStats.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: monthlyPnl } = trpc.financialReports.getMonthlyTrend.useQuery({ 
     year: parseInt(selectedYear)
   });
@@ -111,6 +117,45 @@ export default function BusinessAnalytics() {
       .sort((a, b) => b.balanceUsd - a.balanceUsd)
       .slice(0, 10);
   }, [debtors]);
+
+  const fullPackageLabel = pickLang(language, { ku: 'پاکێجی تەواو', en: 'Full Package', ar: 'الباقة الكاملة', zh: '全套服务' });
+  const commissionLabel = pickLang(language, { ku: 'کڕین بە تێچوو', en: 'Cost-based Purchase', ar: 'الشراء بالتكلفة', zh: '按成本采购' });
+  const packagesLabel = pickLang(language, { ku: 'پاکەتی ئاسایی', en: 'Regular Package', ar: 'الطرد العادي', zh: '普通包裹' });
+  const openFullPackage = () => setOrders({
+    title: fullPackageLabel,
+    orderType: 'full_package',
+    expected: { count: profitByType?.fullPackage?.count || 0, profit: profitByType?.fullPackage?.totalProfit || 0 },
+  });
+  const openCommission = () => setOrders({
+    title: commissionLabel,
+    orderType: 'commission',
+    expected: { count: profitByType?.commission?.count || 0, profit: profitByType?.commission?.totalProfit || 0 },
+  });
+  // The same three figures the two top cards add up.
+  const partRows: { label: string; count: number; amount: number; open?: () => void }[] = [
+    { label: fullPackageLabel, count: profitByType?.fullPackage?.count || 0, amount: profitByType?.fullPackage?.totalProfit || 0, open: openFullPackage },
+    { label: commissionLabel, count: profitByType?.commission?.count || 0, amount: profitByType?.commission?.totalProfit || 0, open: openCommission },
+    { label: packagesLabel, count: profitByType?.packages?.count || 0, amount: profitByType?.packages?.totalRevenue || 0 },
+  ];
+  const partColumns: DrillColumn<(typeof partRows)[number]>[] = [
+    {
+      header: pickLang(language, { ku: 'جۆر', en: 'Type', ar: 'النوع', zh: '类型' }),
+      cell: (r) => (r.open
+        ? <button type="button" className="text-sky-700 underline dark:text-sky-300" onClick={() => { setParts(null); r.open?.(); }}>{r.label}</button>
+        : r.label),
+    },
+    {
+      header: pickLang(language, { ku: 'ژمارە', en: 'Count', ar: 'العدد', zh: '数量' }),
+      cell: (r) => r.count,
+      total: (rows) => rows.reduce((n, r) => n + r.count, 0),
+    },
+    {
+      header: pickLang(language, { ku: 'بڕ', en: 'Amount', ar: 'المبلغ', zh: '金额' }),
+      ltr: true,
+      cell: (r) => formatCurrency(r.amount),
+      total: (rows) => formatCurrency(rows.reduce((n, r) => n + r.amount, 0)),
+    },
+  ];
 
   // Export to CSV
   const exportToCSV = () => {
@@ -173,7 +218,7 @@ export default function BusinessAnalytics() {
 
         {/* Summary Stats */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40">
+          <Card className={`border-0 shadow-lg bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40 ${DRILL_CARD}`} data-testid="analytics-card" onClick={() => setParts(pickLang(language, { ku: 'کۆی قازانج', en: 'Total Profit', ar: 'إجمالي الربح', zh: '总利润' }))}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -187,7 +232,7 @@ export default function BusinessAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-cyan-50 dark:to-cyan-950/40">
+          <Card className={`border-0 shadow-lg bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-cyan-50 dark:to-cyan-950/40 ${DRILL_CARD}`} data-testid="analytics-card" onClick={() => setParts(pickLang(language, { ku: 'کۆی ئۆردەرەکان', en: 'Total Orders', ar: 'إجمالي الطلبات', zh: '订单总数' }))}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -201,7 +246,8 @@ export default function BusinessAnalytics() {
             </CardContent>
           </Card>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40">
+          <a href={debtorsHref()} target="_blank" rel="noopener noreferrer" className="block" data-testid="analytics-card-link">
+          <Card className={`h-full border-0 shadow-lg bg-gradient-to-br from-amber-50 dark:from-amber-950/40 to-orange-50 dark:to-orange-950/40 ${DRILL_CARD}`}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -214,8 +260,10 @@ export default function BusinessAnalytics() {
               </div>
             </CardContent>
           </Card>
+          </a>
 
-          <Card className="border-0 shadow-lg bg-gradient-to-br from-rose-50 dark:from-rose-950/40 to-pink-50 dark:to-pink-950/40">
+          <a href={debtorsHref()} target="_blank" rel="noopener noreferrer" className="block" data-testid="analytics-card-link">
+          <Card className={`h-full border-0 shadow-lg bg-gradient-to-br from-rose-50 dark:from-rose-950/40 to-pink-50 dark:to-pink-950/40 ${DRILL_CARD}`}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -228,6 +276,7 @@ export default function BusinessAnalytics() {
               </div>
             </CardContent>
           </Card>
+          </a>
         </div>
 
         {/* Profit by Type */}
@@ -243,7 +292,7 @@ export default function BusinessAnalytics() {
             <CardContent>
               <div className="space-y-4">
                 {/* Full Package */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-800/60">
+                <div className={`flex items-center justify-between p-4 rounded-xl bg-purple-50 dark:bg-purple-950/40 border border-purple-100 dark:border-purple-800/60 ${DRILL_CARD}`} data-testid="analytics-type" onClick={openFullPackage}>
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-purple-100 dark:bg-purple-950/40 p-2">
                       <Boxes className="h-5 w-5 text-purple-600 dark:text-purple-300" />
@@ -260,7 +309,7 @@ export default function BusinessAnalytics() {
                 </div>
 
                 {/* Commission */}
-                <div className="flex items-center justify-between p-4 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-800/60">
+                <div className={`flex items-center justify-between p-4 rounded-xl bg-orange-50 dark:bg-orange-950/40 border border-orange-100 dark:border-orange-800/60 ${DRILL_CARD}`} data-testid="analytics-type" onClick={openCommission}>
                   <div className="flex items-center gap-3">
                     <div className="rounded-lg bg-orange-100 dark:bg-orange-950/40 p-2">
                       <Percent className="h-5 w-5 text-orange-600 dark:text-orange-300" />
@@ -392,7 +441,7 @@ export default function BusinessAnalytics() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{getCustomerName(customer.customerId)}</p>
+                          <p className="font-medium"><RecordLink href={`/customers/${customer.customerId}`}>{getCustomerName(customer.customerId)}</RecordLink></p>
                           <p className="text-xs text-muted-foreground font-mono">{getCustomerCode(customer.customerId)}</p>
                         </div>
                       </TableCell>
@@ -441,7 +490,7 @@ export default function BusinessAnalytics() {
                       </TableCell>
                       <TableCell>
                         <div>
-                          <p className="font-medium">{debtor.customer?.fullNameKurdish || debtor.customer?.fullName || pickLang(language, { ku: 'نەناسراو', en: 'Unknown', ar: 'غير معروف', zh: '未知' })}</p>
+                          <p className="font-medium"><RecordLink href={`/finance/customer/${debtor.customerId}`}>{debtor.customer?.fullNameKurdish || debtor.customer?.fullName || pickLang(language, { ku: 'نەناسراو', en: 'Unknown', ar: 'غير معروف', zh: '未知' })}</RecordLink></p>
                           <p className="text-xs text-muted-foreground font-mono">{debtor.customer?.customerCode || ''}</p>
                         </div>
                       </TableCell>
@@ -525,6 +574,17 @@ export default function BusinessAnalytics() {
           </CardContent>
         </Card>
       </div>
+
+      <ReportDrillSheet
+        open={!!parts}
+        title={parts ?? ""}
+        rows={partRows}
+        columns={partColumns}
+        rowKey={(r) => r.label}
+        testId="analytics-drill"
+        onClose={() => setParts(null)}
+      />
+      <OrderProfitDrill drill={orders} onClose={() => setOrders(null)} />
     </DashboardLayout>
   );
 }

@@ -193,7 +193,7 @@ function FullPackageFormScreen() {
   const { data: rmbRateData } = trpc.exchangeRates.getCurrent.useQuery({ currency: "RMB" });
   const rmbRate = parseFloat(rmbRateData?.rate?.toString() || "0");
 
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
   const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
   const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;

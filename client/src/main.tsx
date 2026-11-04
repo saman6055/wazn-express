@@ -17,7 +17,7 @@ if (analyticsEndpoint && analyticsWebsiteId) {
   document.body.appendChild(script);
 }
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { httpBatchLink, TRPCClientError } from "@trpc/client";
+import { httpBatchLink, httpLink, splitLink, TRPCClientError } from "@trpc/client";
 import { LANG_HEADER } from "@shared/errorMessages";
 import { networkFault, storedLanguage } from "./lib/networkFault";
 import { demoFetch, isPortalDemo, readPortalDemoLink } from "./lib/portalDemo";
@@ -180,6 +180,10 @@ const redirectToLoginIfUnauthorized = (error: unknown) => {
   window.location.href = getLoginUrl();
 };
 
+// Who the customers are changes a few times a day. Every picker shares this one
+// answer; a mutation that adds someone refreshes it through its own invalidate.
+queryClient.setQueryDefaults([["customers", "picker"]], { staleTime: 10 * 60 * 1000, gcTime: 30 * 60 * 1000 });
+
 queryClient.getQueryCache().subscribe(event => {
   if (event.type === "updated" && event.action.type === "error") {
     const error = event.query.state.error;
@@ -220,63 +224,88 @@ try {
 // A demo link (`/portal?demo=1`) starts the portal's demo for this tab.
 readPortalDemoLink();
 
+const transport = {
+  url: "/api/trpc",
+  transformer: superjson,
+  // Only job here: make sure cookies ride along with every request for
+  // auth. Previously this fetch wrapper also tried to parse non-OK
+  // responses and re-throw as a plain Error — but that logic was written
+  // against tRPC v10's error shape, and with v11 + superjson the actual
+  // response body is `[{error: {json: {message, data: {code, httpStatus}}}}]`.
+  // The old parser always fell through to `res.statusText` (empty under
+  // HTTP/2) and the plain Error had no `.data.code` — so every mutation
+  // error surfaced as `{ message: "", data: undefined }` and the toast
+  // code had to fall back to "UNKNOWN". Letting tRPC parse the response
+  // natively gives us the real TRPCClientError with code, httpStatus,
+  // and message populated correctly.
+  //
+  // The reader's language rides along too, so a server fault can be
+  // described to a customer in their own words (shared/errorMessages).
+  headers() {
+    /*
+     * A look at a customer's portal, carried by this tab alone.
+     *
+     * sessionStorage is per tab, so the admin's other tabs keep their
+     * own session and this one asks as the customer. The server only
+     * prefers a bearer over the cookie when the token says it is a
+     * look, and a look can write nothing (shared/viewAsCustomer).
+     */
+    let viewAs: string | null = null;
+    try {
+      viewAs = sessionStorage.getItem(VIEW_AS_TOKEN_KEY);
+    } catch {
+      /* private mode: the tab simply has no look */
+    }
+    return {
+      [LANG_HEADER]: storedLanguage(),
+      ...(viewAs ? { authorization: `Bearer ${viewAs}` } : {}),
+    };
+  },
+  async fetch(input: RequestInfo | URL, init?: RequestInit) {
+    const real = (i: RequestInfo | URL, o?: RequestInit) => globalThis.fetch(i, { ...(o ?? {}), credentials: "include" });
+    try {
+      // The portal's demo is answered from a recording, not from the
+      // server: a visitor has no session to ask with (lib/portalDemo).
+      if (isPortalDemo()) return await demoFetch(input as RequestInfo | URL, init as RequestInit | undefined, real);
+      return await globalThis.fetch(input, {
+        ...(init ?? {}),
+        credentials: "include",
+      });
+    } catch (err) {
+      // An abort is react-query cancelling a request; it must stay one.
+      if ((err as { name?: string } | null)?.name === "AbortError") throw err;
+      throw networkFault(err);
+    }
+  },
+};
+
+/**
+ * Queries that take a moment, sent on their own.
+ *
+ * A batch answers when its slowest member does: one report that takes most
+ * of a second used to hold back the twenty cheap answers beside it, and every
+ * screen looked as slow as the slowest thing on it. Measured against a full
+ * database (2026-11-02); anything here still works, only separately.
+ */
+const SENT_ALONE = new Set([
+  "audit.brief",
+  "customers.list",
+  "customers.picker",
+  "deliveryBox.awaitingPayment",
+  "deliveryBox.overview",
+  "ledger.getAllAccounts",
+  "ledger.moneyFeed",
+  "reports.selfOrderReport",
+]);
+
 const trpcClient = trpc.createClient({
   links: [
     // Before the request leaves: an admin's yes to a credit (creditApprovalLink).
     creditApprovalLink,
-    httpBatchLink({
-      url: "/api/trpc",
-      transformer: superjson,
-      // Only job here: make sure cookies ride along with every request for
-      // auth. Previously this fetch wrapper also tried to parse non-OK
-      // responses and re-throw as a plain Error — but that logic was written
-      // against tRPC v10's error shape, and with v11 + superjson the actual
-      // response body is `[{error: {json: {message, data: {code, httpStatus}}}}]`.
-      // The old parser always fell through to `res.statusText` (empty under
-      // HTTP/2) and the plain Error had no `.data.code` — so every mutation
-      // error surfaced as `{ message: "", data: undefined }` and the toast
-      // code had to fall back to "UNKNOWN". Letting tRPC parse the response
-      // natively gives us the real TRPCClientError with code, httpStatus,
-      // and message populated correctly.
-      //
-      // The reader's language rides along too, so a server fault can be
-      // described to a customer in their own words (shared/errorMessages).
-      headers() {
-        /*
-         * A look at a customer's portal, carried by this tab alone.
-         *
-         * sessionStorage is per tab, so the admin's other tabs keep their
-         * own session and this one asks as the customer. The server only
-         * prefers a bearer over the cookie when the token says it is a
-         * look, and a look can write nothing (shared/viewAsCustomer).
-         */
-        let viewAs: string | null = null;
-        try {
-          viewAs = sessionStorage.getItem(VIEW_AS_TOKEN_KEY);
-        } catch {
-          /* private mode: the tab simply has no look */
-        }
-        return {
-          [LANG_HEADER]: storedLanguage(),
-          ...(viewAs ? { authorization: `Bearer ${viewAs}` } : {}),
-        };
-      },
-      async fetch(input, init) {
-        const real = (i: RequestInfo | URL, o?: RequestInit) => globalThis.fetch(i, { ...(o ?? {}), credentials: "include" });
-        try {
-          // The portal's demo is answered from a recording, not from the
-          // server: a visitor has no session to ask with (lib/portalDemo).
-          if (isPortalDemo()) return await demoFetch(input as RequestInfo | URL, init as RequestInit | undefined, real);
-          return await globalThis.fetch(input, {
-            ...(init ?? {}),
-            credentials: "include",
-          });
-        } catch (err) {
-          // An abort is react-query cancelling a request; it must stay one.
-          if ((err as { name?: string } | null)?.name === "AbortError") throw err;
-          throw networkFault(err);
-        }
-      },
+    splitLink({
+      condition: (op) => op.type === "query" && SENT_ALONE.has(op.path),
+      true: httpLink(transport),
+      false: httpBatchLink(transport),
     }),
   ],
 });
@@ -327,7 +356,7 @@ async function mount() {
   await loadLocale(initial);
 
   createRoot(document.getElementById("root")!).render(
-    <trpc.Provider client={trpcClient} queryClient={queryClient}>
+    <trpc.Provider client={trpcClient} queryClient={queryClient} abortOnUnmount>
       <QueryClientProvider client={queryClient}>
         <App />
       </QueryClientProvider>

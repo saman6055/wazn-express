@@ -3,6 +3,9 @@ import { toCsv, downloadText } from "@/lib/csv";
 import { escapeHtml } from "@/lib/html";
 import { fmtDate, fmtTime } from "@/lib/numericDate";
 import { useState, useEffect } from "react";
+import { packagesHref } from "@shared/listLinks";
+import { DRILL_CARD, RecordLink } from "@/components/reports/ReportDrillSheet";
+import { BatchCustomersSheet } from "@/components/reports/BatchCustomersSheet";
 import { useParams, Link } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { BatchCostWorkingLine } from "@/components/batches/BatchCostNotes";
@@ -817,6 +820,8 @@ export default function BatchFinancialReport() {
   // Customer modal state
   const [selectedCustomer, setSelectedCustomer] = useState<{ id: number; name: string; code: string } | null>(null);
   const [isCustomerModalOpen, setIsCustomerModalOpen] = useState(false);
+  // Every figure opens what it was added up from (owner, 2026-11-02).
+  const [customersDrill, setCustomersDrill] = useState<string | null>(null);
   const [selectedLabelTemplateId, setSelectedLabelTemplateId] = useState<number | null>(null);
   const [selectedBatchLabelTemplateId, setSelectedBatchLabelTemplateId] = useState<number | null>(null);
 
@@ -833,7 +838,7 @@ export default function BatchFinancialReport() {
     enabled: batchId > 0
   });
 
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
   const { data: labelTemplatesList } = trpc.labelTemplates.list.useQuery(undefined, { enabled: isCustomerModalOpen });
   const defaultLabelTemplate = labelTemplatesList?.find((t) => t.isDefault) ?? labelTemplatesList?.[0] ?? null;
@@ -998,11 +1003,11 @@ export default function BatchFinancialReport() {
           
           {/* Quick Stats in Header */}
           <div className="relative mt-6 grid grid-cols-3 gap-4">
-            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+            <a href={packagesHref({ batch: String(batchId) })} target="_blank" rel="noopener noreferrer" className={`block bg-white/10 backdrop-blur rounded-xl p-4 ${DRILL_CARD}`} data-testid="batch-financial-card-link">
               <p className="text-white/70 text-sm">{pickLang(language, { ku: "کۆی پاکەت", en: "Total packages", ar: "إجمالي الطرود", zh: "包裹总数" })}</p>
               <p className="text-2xl font-bold">{financial.totalPackages}</p>
-            </div>
-            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+            </a>
+            <div className={`bg-white/10 backdrop-blur rounded-xl p-4 ${DRILL_CARD}`} data-testid="batch-financial-card" onClick={() => setCustomersDrill(batch.shippingType === 'sea' ? pickLang(language, { ku: "کۆی CBM", en: "Total CBM", ar: "إجمالي CBM", zh: "总 CBM" }) : pickLang(language, { ku: "کۆی کێش", en: "Total weight", ar: "إجمالي الوزن", zh: "总重量" }))}>
               <p className="text-white/70 text-sm">{batch.shippingType === 'sea' ? pickLang(language, { ku: "کۆی CBM", en: "Total CBM", ar: "إجمالي CBM", zh: "总 CBM" }) : pickLang(language, { ku: "کۆی کێش", en: "Total weight", ar: "إجمالي الوزن", zh: "总重量" })}</p>
               <p className="text-2xl font-bold">
                 {batch.shippingType === 'sea' 
@@ -1011,7 +1016,7 @@ export default function BatchFinancialReport() {
                 }
               </p>
             </div>
-            <div className="bg-white/10 backdrop-blur rounded-xl p-4">
+            <div className={`bg-white/10 backdrop-blur rounded-xl p-4 ${DRILL_CARD}`} data-testid="batch-financial-card" onClick={() => setCustomersDrill(pickLang(language, { ku: "کۆی کڕیار", en: "Total customers", ar: "إجمالي العملاء", zh: "客户总数" }))}>
               <p className="text-white/70 text-sm">{pickLang(language, { ku: "کۆی کڕیار", en: "Total customers", ar: "إجمالي العملاء", zh: "客户总数" })}</p>
               <p className="text-2xl font-bold">{financial.customerBreakdown?.length || 0}</p>
             </div>
@@ -1031,7 +1036,12 @@ export default function BatchFinancialReport() {
               </CardTitle>
             </CardHeader>
             <CardContent className="pt-5">
-              <div className="flex justify-between items-center p-4 bg-amber-50/80 dark:bg-amber-950/80 border border-amber-200/60 dark:border-amber-800/60 rounded-xl transition-colors">
+              {/* Sea shows the carrier's charged CBM, which is not the customers' sum, so only air opens. */}
+              <div
+                className={`flex justify-between items-center p-4 bg-amber-50/80 dark:bg-amber-950/80 border border-amber-200/60 dark:border-amber-800/60 rounded-xl transition-colors ${batch.shippingType === 'sea' ? "" : DRILL_CARD}`}
+                data-testid="batch-financial-card"
+                onClick={() => { if (batch.shippingType !== 'sea') setCustomersDrill(`${unit} ${pickLang(language, { ku: "حسابکراو", en: "chargeable", ar: "المحتسب", zh: "计费" })}`); }}
+              >
                 <div className="flex items-center gap-3">
                   <div className="p-2.5 bg-amber-200/80 dark:bg-amber-900/80 rounded-xl">
                     <Calculator className="h-5 w-5 text-amber-700 dark:text-amber-300" />
@@ -1167,15 +1177,17 @@ export default function BatchFinancialReport() {
                                 {index + 1}
                               </div>
                               <div>
-                                <p className="font-semibold">{getCustomerName(item.customerId)}</p>
+                                <p className="font-semibold" onClick={(e) => e.stopPropagation()}><RecordLink href={`/customers/${item.customerId}`}>{getCustomerName(item.customerId)}</RecordLink></p>
                                 <p className="text-xs text-muted-foreground">{getCustomerCode(item.customerId)}</p>
                               </div>
                             </div>
                           </td>
                           <td className="text-center py-4 px-4">
-                            <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
-                              {item.packages}
-                            </Badge>
+                            <a href={packagesHref({ batch: String(batchId), search: getCustomerCode(item.customerId) })} target="_blank" rel="noopener noreferrer" onClick={(e) => e.stopPropagation()}>
+                              <Badge variant="secondary" className="bg-blue-100 dark:bg-blue-950/40 text-blue-700 dark:text-blue-300">
+                                {item.packages}
+                              </Badge>
+                            </a>
                           </td>
                           <td className="text-center py-4 px-4 font-mono">
                             {batch.shippingType === 'sea' 
@@ -1328,6 +1340,16 @@ export default function BatchFinancialReport() {
 
       </div>
       
+      <BatchCustomersSheet
+        title={customersDrill}
+        rows={financial.customerBreakdown ?? []}
+        batchId={batchId}
+        sea={batch.shippingType === 'sea'}
+        codeOf={getCustomerCode}
+        nameOf={getCustomerName}
+        onClose={() => setCustomersDrill(null)}
+      />
+
       {/* Customer Packages Modal */}
       <Dialog open={isCustomerModalOpen} onOpenChange={setIsCustomerModalOpen}>
         <DialogContent className="max-w-4xl max-h-[85vh] overflow-y-auto">

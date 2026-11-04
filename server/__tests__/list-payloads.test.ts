@@ -75,7 +75,8 @@ describe("the order lists", () => {
 
   it("stop at a page", () => {
     expect(db).toContain("export const ORDER_LIST_LIMIT = 300;");
-    expect(fn).toContain("await rows.limit(limit).offset(filters?.offset ?? 0)");
+    expect(fn).toContain(".limit(limit)");
+    expect(fn).toContain(".offset(filters?.offset ?? 0)");
     // Reports still need everything, and say so.
     expect(fn).toContain("filters?.limit === 0 ? 0");
   });
@@ -180,7 +181,7 @@ describe("the search boxes", () => {
       "client/src/pages/portal/PortalUnclaimedPackages.tsx",
     ]) {
       const src = read(screen);
-      expect(src, screen).toContain("useDebouncedValue(");
+      expect(/useDebouncedValue\(|<DebouncedSearchInput/.test(src), screen).toBe(true);
       // The raw box value never reaches a server query again.
       expect(src, screen).not.toMatch(/search: search \|\| undefined/);
       expect(src, screen).not.toMatch(/search: searchTerm \|\| undefined/);

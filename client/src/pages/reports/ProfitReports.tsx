@@ -43,6 +43,11 @@ import {
 } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { formatCurrency, formatPercent } from "@/lib/format";
+import { pickLang } from "@/lib/lang";
+import { fmtDate } from "@/lib/numericDate";
+import { DRILL_CARD, RecordLink, ReportDrillSheet, type DrillColumn } from "@/components/reports/ReportDrillSheet";
+import { OrderProfitDrill, monthWindow, orderHref, yearWindow, type OrderDrill } from "@/components/reports/OrderProfitDrill";
+import { ExpensesDrill, type ExpenseDrill } from "@/components/reports/ExpensesDrill";
 import {
   BarChart,
   Bar,
@@ -136,6 +141,116 @@ export default function ProfitReports() {
     return formatPercent(pct);
   };
 
+  // Every figure opens what it was added up from (owner, 2026-11-02).
+  type Month = NonNullable<typeof monthlyReport>["months"][number];
+  type Part = { label: string; amount: number; open?: () => void };
+  const [monthsDrill, setMonthsDrill] = useState<{ title: string; rows: Month[] } | null>(null);
+  const [ordersDrill, setOrdersDrill] = useState<OrderDrill | null>(null);
+  const [detailDrill, setDetailDrill] = useState<string | null>(null);
+  const [expenseDrill, setExpenseDrill] = useState<ExpenseDrill | null>(null);
+  const [partsDrill, setPartsDrill] = useState<string | null>(null);
+  const [servicesOpen, setServicesOpen] = useState(false);
+
+  const yearSpan = useMemo(() => yearWindow(selectedYear), [selectedYear]);
+  // The figure's own window: the server's year, in the same instants.
+  const { data: yearServices, isLoading: servicesLoading } = trpc.extraServices.list.useQuery(
+    { startDate: yearSpan.startDate.toISOString(), endDate: yearSpan.endDate.toISOString() },
+    { enabled: servicesOpen },
+  );
+
+  const openMonths = (title: string, rows?: Month[]) => setMonthsDrill({ title, rows: rows ?? monthlyReport?.months ?? [] });
+  const openMonthOrders = (m: Month, type: "full_package" | "commission") => {
+    const d = type === "full_package" ? m.fullPackage : m.commission;
+    setMonthsDrill(null);
+    setOrdersDrill({
+      title: `${monthNames[m.month - 1]} ${selectedYear} - ${t(type === "full_package" ? "profitReport.fullPackage" : "profitReport.commission")}`,
+      orderType: type,
+      ...monthWindow(selectedYear, m.month),
+      expected: { count: d.count, profit: d.profit },
+    });
+  };
+  const yearCount = (key: "fullPackage" | "commission") => (monthlyReport?.months ?? []).reduce((n, m) => n + m[key].count, 0);
+  const openYearOrders = (type: "full_package" | "commission") => {
+    const fp = type === "full_package";
+    setPartsDrill(null);
+    setOrdersDrill({
+      title: `${selectedYear} - ${t(fp ? "profitReport.fullPackage" : "profitReport.commission")}`,
+      orderType: type,
+      ...yearSpan,
+      expected: {
+        count: yearCount(fp ? "fullPackage" : "commission"),
+        profit: fp ? aggregatedData?.fullPackageProfit ?? 0 : aggregatedData?.commissionProfit ?? 0,
+      },
+    });
+  };
+  const openAllTimeOrders = (type: "full_package" | "commission") => {
+    const fp = type === "full_package";
+    const d = fp ? profitByType?.fullPackage : profitByType?.commission;
+    setOrdersDrill({
+      title: t(fp ? "profitReport.fullPackage" : "profitReport.commission"),
+      orderType: type,
+      expected: { count: d?.count ?? 0, profit: d?.totalProfit ?? 0 },
+    });
+  };
+  const openExpenses = (title: string, expected: number, categoryId?: number) => {
+    setPartsDrill(null);
+    setExpenseDrill({ title, ...yearSpan, categoryId, expected });
+  };
+  const openServices = () => {
+    setPartsDrill(null);
+    setServicesOpen(true);
+  };
+
+  const monthColumns: DrillColumn<Month>[] = [
+    { header: t("profitReport.month"), cell: (m) => monthNames[m.month - 1] },
+    {
+      header: t("profitReport.fullPackage"),
+      cell: (m) => <button type="button" className="text-sky-700 underline dark:text-sky-300" onClick={() => openMonthOrders(m, "full_package")}>{m.fullPackage.count}</button>,
+    },
+    {
+      header: t("profitReport.commission"),
+      cell: (m) => <button type="button" className="text-sky-700 underline dark:text-sky-300" onClick={() => openMonthOrders(m, "commission")}>{m.commission.count}</button>,
+    },
+    { header: t("profitReport.totalRevenue"), ltr: true, cell: (m) => formatCurrency(m.total.revenue), total: (rows) => formatCurrency(rows.reduce((n, m) => n + m.total.revenue, 0)) },
+    { header: t("profitReport.totalShipping"), ltr: true, cell: (m) => formatCurrency(m.total.shipping), total: (rows) => formatCurrency(rows.reduce((n, m) => n + m.total.shipping, 0)) },
+    { header: t("profitReport.totalProfit"), ltr: true, cell: (m) => formatCurrency(m.total.profit), total: (rows) => formatCurrency(rows.reduce((n, m) => n + m.total.profit, 0)) },
+  ];
+
+  const detailColumns: DrillColumn<any>[] = [
+    { header: t("profitReport.orderCode"), cell: (o) => <RecordLink href={orderHref(o)}><span dir="ltr">{o.orderCode}</span></RecordLink> },
+    { header: pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" }), cell: (o) => (o.customerId ? <RecordLink href={`/customers/${o.customerId}`}>{o.customerName || `#${o.customerId}`}</RecordLink> : "—") },
+    { header: t("profitReport.totalRevenue"), ltr: true, cell: (o) => formatCurrency(o.sellingPriceUsd * o.quantity), total: (rows) => formatCurrency(rows.reduce((n, o) => n + o.sellingPriceUsd * o.quantity, 0)) },
+    { header: t("profitReport.totalCost"), ltr: true, cell: (o) => formatCurrency(o.purchasePriceUsd * o.quantity), total: (rows) => formatCurrency(rows.reduce((n, o) => n + o.purchasePriceUsd * o.quantity, 0)) },
+    { header: t("profitReport.totalProfit"), ltr: true, cell: (o) => formatCurrency(o.profitUsd), total: (rows) => formatCurrency(rows.reduce((n, o) => n + o.profitUsd, 0)) },
+  ];
+
+  const serviceRows: any[] = yearServices?.services ?? [];
+  const serviceColumns: DrillColumn<any>[] = [
+    { header: pickLang(language, { ku: "ژمارە", en: "Number", ar: "الرقم", zh: "编号" }), cell: (s) => s.serviceNumber, ltr: true, className: "font-mono text-xs" },
+    { header: pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" }), cell: (s) => fmtDate(s.createdAt), ltr: true },
+    { header: pickLang(language, { ku: "وردەکاری", en: "Detail", ar: "التفاصيل", zh: "详情" }), cell: (s) => s.description, className: "max-w-[16rem] whitespace-normal text-xs" },
+    { header: t("profitReport.profit"), ltr: true, cell: (s) => formatCurrency(Number(s.profitAmount || 0)), total: (rows) => formatCurrency(rows.reduce((n, s) => n + Number(s.profitAmount || 0), 0)) },
+  ];
+
+  const partRows: Part[] = aggregatedData
+    ? [
+        { label: t("profitReport.fullPackage"), amount: aggregatedData.fullPackageProfit, open: () => openYearOrders("full_package") },
+        { label: t("profitReport.commission"), amount: aggregatedData.commissionProfit, open: () => openYearOrders("commission") },
+        { label: t("profitReport.packageNetProfitFromBatch"), amount: aggregatedData.packageNetProfitFromBatch ?? 0 },
+        { label: t("profitReport.serviceProfit"), amount: aggregatedData.serviceProfit, open: openServices },
+      ]
+    : [];
+  const netRows: Part[] = aggregatedData
+    ? [...partRows, { label: t("profitReport.totalExpenses"), amount: -aggregatedData.totalExpenses, open: () => openExpenses(t("profitReport.totalExpenses"), aggregatedData.totalExpenses) }]
+    : [];
+  const partColumns: DrillColumn<Part>[] = [
+    {
+      header: t("profitReport.type"),
+      cell: (p) => (p.open ? <button type="button" className="text-sky-700 underline dark:text-sky-300" onClick={p.open}>{p.label}</button> : p.label),
+    },
+    { header: t("profitReport.amount"), ltr: true, cell: (p) => formatCurrency(p.amount), total: (rows) => formatCurrency(rows.reduce((n, p) => n + p.amount, 0)) },
+  ];
+
   const summary = monthlyReport?.yearSummary;
   const hasData = monthlyReport?.months?.some((m) => m.total.profit !== 0 || m.total.revenue !== 0);
 
@@ -208,7 +323,7 @@ export default function ProfitReports() {
         ) : (
           monthlyReport && (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <Card className="border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl">
+              <Card className={`border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openMonths(t("profitReport.totalProfit"))}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -221,7 +336,7 @@ export default function ProfitReports() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl">
+              <Card className={`border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openMonths(t("profitReport.totalRevenue"))}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -234,7 +349,7 @@ export default function ProfitReports() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl">
+              <Card className={`border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openMonths(t("profitReport.totalShipping"))}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -247,7 +362,7 @@ export default function ProfitReports() {
                   </div>
                 </CardContent>
               </Card>
-              <Card className="border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl">
+              <Card className={`border-0 shadow-lg overflow-hidden transition-shadow hover:shadow-xl ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openMonths(t("profitReport.avgMonthly"))}>
                 <CardContent className="pt-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -336,7 +451,7 @@ export default function ProfitReports() {
                             <TableRow key={month.month} className="hover:bg-muted/30">
                               <TableCell className="font-medium">{monthNames[month.month - 1]}</TableCell>
                               <TableCell>
-                                <div className="text-sm">
+                                <div className="cursor-pointer text-sm" data-testid="profit-report-cell" onClick={() => openMonthOrders(month, "full_package")}>
                                   <span className={`font-mono tabular-nums ${month.fullPackage.profit >= 0 ? "text-foreground" : "text-red-600 dark:text-red-300"}`}>
                                     {formatCurrency(month.fullPackage.profit)}
                                   </span>
@@ -344,7 +459,7 @@ export default function ProfitReports() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <div className="text-sm">
+                                <div className="cursor-pointer text-sm" data-testid="profit-report-cell" onClick={() => openMonthOrders(month, "commission")}>
                                   <span className="font-mono tabular-nums">{formatCurrency(month.commission.profit)}</span>
                                   <span className="text-muted-foreground text-xs ms-2">({month.commission.count})</span>
                                 </div>
@@ -356,7 +471,7 @@ export default function ProfitReports() {
                                 </div>
                               </TableCell>
                               <TableCell>
-                                <span className={`font-mono font-bold tabular-nums ${month.total.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`}>
+                                <span className={`cursor-pointer font-mono font-bold tabular-nums ${month.total.profit >= 0 ? "text-green-600 dark:text-green-300" : "text-red-600 dark:text-red-300"}`} data-testid="profit-report-cell" onClick={() => openMonths(monthNames[month.month - 1], [month])}>
                                   {formatCurrency(month.total.profit)}
                                 </span>
                               </TableCell>
@@ -388,7 +503,7 @@ export default function ProfitReports() {
             
             {summary?.bestMonth && summary?.worstMonth && (
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card className="border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20">
+                <Card className={`border-green-200 dark:border-green-800 bg-green-50/50 dark:bg-green-950/20 ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openMonths(t("profitReport.bestMonth"), monthlyReport?.months.filter((m) => m.month === summary.bestMonth?.month))}>
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-green-200 dark:bg-green-800/50 rounded-xl">
@@ -402,7 +517,7 @@ export default function ProfitReports() {
                     </div>
                   </CardContent>
                 </Card>
-                <Card className="border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20">
+                <Card className={`border-red-200 dark:border-red-800 bg-red-50/50 dark:bg-red-950/20 ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openMonths(t("profitReport.worstMonth"), monthlyReport?.months.filter((m) => m.month === summary.worstMonth?.month))}>
                   <CardContent className="pt-6">
                     <div className="flex items-center gap-4">
                       <div className="p-3 bg-red-200 dark:bg-red-800/50 rounded-xl">
@@ -447,7 +562,7 @@ export default function ProfitReports() {
                 [1,2,3,4].map(i => <Skeleton key={i} className="h-32" />)
               ) : (
                 <>
-                  <Card>
+                  <Card className={DRILL_CARD} data-testid="profit-report-card" onClick={() => openAllTimeOrders("full_package")}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2">
                         <ShoppingBag className="h-5 w-5 text-emerald-600 dark:text-emerald-300" />
@@ -477,7 +592,7 @@ export default function ProfitReports() {
                   </Card>
                   
                   
-                  <Card>
+                  <Card className={DRILL_CARD} data-testid="profit-report-card" onClick={() => openAllTimeOrders("commission")}>
                     <CardHeader className="pb-2">
                       <div className="flex items-center gap-2">
                         <Percent className="h-5 w-5 text-purple-600 dark:text-purple-300" />
@@ -564,7 +679,7 @@ export default function ProfitReports() {
                   </div>
                 ) : (
                   <>
-                    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-xl">
+                    <div className={`grid grid-cols-2 md:grid-cols-5 gap-4 mb-6 p-4 bg-muted/30 rounded-xl ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => setDetailDrill(t("profitReport.detailedTab"))}>
                       <div className="text-center">
                         <p className="text-sm text-muted-foreground">{t("profitReport.totalOrders")}</p>
                         <p className="text-xl font-bold tabular-nums">{detailedReport?.summary.totalOrders ?? 0}</p>
@@ -603,7 +718,7 @@ export default function ProfitReports() {
                         <TableBody>
                           {detailedReport?.orders.slice(0, 50).map((order) => (
                             <TableRow key={order.id} className="hover:bg-muted/20">
-                              <TableCell className="font-mono text-sm">{order.orderCode}</TableCell>
+                              <TableCell className="font-mono text-sm"><RecordLink href={orderHref(order)}>{order.orderCode}</RecordLink></TableCell>
                               <TableCell className="max-w-[200px] truncate">{order.productName}</TableCell>
                               <TableCell>
                                 <Badge variant="outline" className="text-xs">
@@ -644,7 +759,7 @@ export default function ProfitReports() {
             ) : (
               <>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+                  <Card className={`border-0 shadow-md hover:shadow-lg transition-shadow ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openYearOrders("full_package")}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <ShoppingBag className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
@@ -655,7 +770,7 @@ export default function ProfitReports() {
                       <p className="text-xl font-bold tabular-nums text-emerald-600 dark:text-emerald-300">{formatCurrency(aggregatedData?.fullPackageProfit ?? 0)}</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+                  <Card className={`border-0 shadow-md hover:shadow-lg transition-shadow ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openYearOrders("commission")}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <Percent className="h-4 w-4 text-purple-600 dark:text-purple-300" />
@@ -677,7 +792,7 @@ export default function ProfitReports() {
                       <p className="text-xl font-bold tabular-nums text-orange-600 dark:text-orange-300">{formatCurrency(aggregatedData?.packageNetProfitFromBatch ?? 0)}</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 shadow-md hover:shadow-lg transition-shadow">
+                  <Card className={`border-0 shadow-md hover:shadow-lg transition-shadow ${DRILL_CARD}`} data-testid="profit-report-card" onClick={openServices}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground flex items-center gap-2">
                         <DollarSign className="h-4 w-4 text-blue-600 dark:text-blue-300" />
@@ -690,7 +805,7 @@ export default function ProfitReports() {
                   </Card>
                 </div>
 
-                <Card className="border-0 shadow-lg bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20">
+                <Card className={`border-0 shadow-lg bg-gradient-to-br from-violet-50 to-indigo-50 dark:from-violet-950/20 dark:to-indigo-950/20 ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => setPartsDrill("profit")}>
                   <CardHeader className="pb-2">
                     <CardTitle className="text-base flex items-center gap-2">
                       <Wallet className="h-5 w-5" />
@@ -703,7 +818,7 @@ export default function ProfitReports() {
                 </Card>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <Card className="border-0 shadow-md">
+                  <Card className={`border-0 shadow-md ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => openExpenses(t("profitReport.totalExpenses"), aggregatedData?.totalExpenses ?? 0)}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">{t("profitReport.totalExpenses")}</CardTitle>
                     </CardHeader>
@@ -711,7 +826,7 @@ export default function ProfitReports() {
                       <p className="text-2xl font-bold tabular-nums text-red-600 dark:text-red-300">{formatCurrency(aggregatedData?.totalExpenses ?? 0)}</p>
                     </CardContent>
                   </Card>
-                  <Card className="border-0 shadow-md">
+                  <Card className={`border-0 shadow-md ${DRILL_CARD}`} data-testid="profit-report-card" onClick={() => setPartsDrill("net")}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm font-medium text-muted-foreground">{t("profitReport.netSurplus")}</CardTitle>
                     </CardHeader>
@@ -766,7 +881,7 @@ export default function ProfitReports() {
                           </TableHeader>
                           <TableBody>
                             {aggregatedData.expensesByCategory.map((row) => (
-                              <TableRow key={row.categoryId} className="hover:bg-muted/20">
+                              <TableRow key={row.categoryId} className="cursor-pointer hover:bg-muted/20" data-testid="profit-report-row" onClick={() => openExpenses(row.categoryName, row.amountUsd, row.categoryId)}>
                                 <TableCell className="font-medium">{row.categoryName}</TableCell>
                                 <TableCell className="font-mono tabular-nums text-red-600 dark:text-red-300">{formatCurrency(row.amountUsd)}</TableCell>
                               </TableRow>
@@ -822,6 +937,46 @@ export default function ProfitReports() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <ReportDrillSheet
+        open={!!monthsDrill}
+        title={monthsDrill?.title ?? ""}
+        rows={monthsDrill?.rows ?? []}
+        columns={monthColumns}
+        rowKey={(m) => m.month}
+        testId="profit-report-drill"
+        onClose={() => setMonthsDrill(null)}
+      />
+      <ReportDrillSheet
+        open={!!detailDrill}
+        title={detailDrill ?? ""}
+        rows={detailedReport?.orders ?? []}
+        columns={detailColumns}
+        rowKey={(o) => o.id}
+        testId="profit-report-orders"
+        onClose={() => setDetailDrill(null)}
+      />
+      <ReportDrillSheet
+        open={!!partsDrill}
+        title={partsDrill === "net" ? t("profitReport.netSurplus") : t("profitReport.aggregatedProfit")}
+        rows={partsDrill === "net" ? netRows : partRows}
+        columns={partColumns}
+        rowKey={(p) => p.label}
+        testId="profit-report-parts"
+        onClose={() => setPartsDrill(null)}
+      />
+      <ReportDrillSheet
+        open={servicesOpen}
+        title={t("profitReport.serviceProfit")}
+        rows={serviceRows}
+        columns={serviceColumns}
+        rowKey={(s) => s.id}
+        testId="profit-report-services"
+        onClose={() => setServicesOpen(false)}
+        loading={servicesLoading}
+      />
+      <OrderProfitDrill drill={ordersDrill} onClose={() => setOrdersDrill(null)} />
+      <ExpensesDrill drill={expenseDrill} onClose={() => setExpenseDrill(null)} />
     </DashboardLayout>
   );
 }

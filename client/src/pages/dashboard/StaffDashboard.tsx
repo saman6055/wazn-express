@@ -10,6 +10,8 @@ import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { useState } from "react";
 import { Link, useLocation } from "wouter";
+import { batchesHref, packagesHref } from "@shared/listLinks";
+import { DRILL_CARD, PartsDrill, RecordLink, type PartsDrillState } from "@/components/reports/ReportDrillSheet";
 import {
   Package,
   Layers,
@@ -38,6 +40,11 @@ export default function StaffDashboard() {
 
   const scansToday = todayStats?.reduce((sum: number, s: { count: number }) => sum + (s.count ?? 0), 0) ?? 0;
   const packagesRegisteredToday = todayFigures?.todayPackages ?? 0;
+
+  // A figure opens what it counted (owner, 2026-11-02).
+  const [parts, setParts] = useState<PartsDrillState | null>(null);
+  const now = new Date();
+  const today = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}-${String(now.getDate()).padStart(2, "0")}`;
 
   const [customerSearch, setCustomerSearch] = useState("");
   const handleCustomerLookup = (e: React.FormEvent) => {
@@ -138,7 +145,14 @@ export default function StaffDashboard() {
 
         {/* Stats */}
         <div className="grid gap-4 md:grid-cols-2">
-          <Card>
+          <Card
+            className={DRILL_CARD}
+            data-testid="staff-card"
+            onClick={() => setParts({
+              title: t("staffDashboard.scansToday"),
+              rows: (todayStats ?? []).map((s: { scanType: string; count: number }) => ({ label: s.scanType?.replace(/_/g, " "), amount: Number(s.count ?? 0) })),
+            })}
+          >
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -151,7 +165,8 @@ export default function StaffDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <a href={packagesHref({ day: today })} target="_blank" rel="noopener noreferrer" className="block" data-testid="staff-card-link">
+          <Card className={`h-full ${DRILL_CARD}`}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -164,6 +179,7 @@ export default function StaffDashboard() {
               </div>
             </CardContent>
           </Card>
+          </a>
         </div>
 
         {/* Today's tasks */}
@@ -189,7 +205,7 @@ export default function StaffDashboard() {
                   <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 </div>
               </Link>
-              <Link href="/batches">
+              <a href={batchesHref({ status: "active" })} target="_blank" rel="noopener noreferrer" data-testid="staff-card-link">
                 <div className="flex items-center gap-4 p-4 rounded-xl border bg-card hover:bg-accent/30 transition-colors">
                   <div className="h-12 w-12 rounded-xl bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center text-purple-600 dark:text-purple-400">
                     <Layers className="h-6 w-6" />
@@ -202,7 +218,7 @@ export default function StaffDashboard() {
                   </div>
                   <ChevronRight className="h-5 w-5 text-muted-foreground shrink-0" />
                 </div>
-              </Link>
+              </a>
             </div>
           </CardContent>
         </Card>
@@ -218,9 +234,9 @@ export default function StaffDashboard() {
                 </CardTitle>
                 <CardDescription>{t("staffDashboard.assignedBatchesDesc")}</CardDescription>
               </div>
-              <Link href="/batches">
-                <Button variant="outline" size="sm">{t("common.all")}</Button>
-              </Link>
+              <Button variant="outline" size="sm" asChild>
+                <a href={batchesHref({ status: "active" })} target="_blank" rel="noopener noreferrer">{t("common.all")}</a>
+              </Button>
             </div>
           </CardHeader>
           <CardContent>
@@ -229,7 +245,7 @@ export default function StaffDashboard() {
             ) : (
               <div className="space-y-2">
                 {activeBatches.slice(0, 5).map((batch: { id: number; batchCode: string; status: string; packageCount: number }) => (
-                  <Link key={batch.id} href={`/batches?find=${encodeURIComponent(batch.batchCode)}`}>
+                  <a key={batch.id} href={`/batches?find=${encodeURIComponent(batch.batchCode)}`} target="_blank" rel="noopener noreferrer" className="block">
                     <div className="flex items-center justify-between p-3 rounded-lg border hover:bg-accent/30 transition-colors">
                       <div className="flex items-center gap-3">
                         <Layers className="h-4 w-4 text-muted-foreground" />
@@ -238,7 +254,7 @@ export default function StaffDashboard() {
                       </div>
                       <span className="text-sm text-muted-foreground">{batch.packageCount} {t("common.package")}</span>
                     </div>
-                  </Link>
+                  </a>
                 ))}
               </div>
             )}
@@ -272,7 +288,9 @@ export default function StaffDashboard() {
                   >
                     <div className="flex items-center gap-3 min-w-0">
                       <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400 shrink-0" />
-                      <span className="font-mono text-sm truncate">{scan.trackingNumber}</span>
+                      <span className="font-mono text-sm truncate">
+                        <RecordLink href={packagesHref({ search: scan.trackingNumber })}>{scan.trackingNumber}</RecordLink>
+                      </span>
                       <span className="text-xs text-muted-foreground capitalize shrink-0">{scan.scanType?.replace(/_/g, " ")}</span>
                     </div>
                     <span className="text-xs text-muted-foreground shrink-0">
@@ -290,6 +308,8 @@ export default function StaffDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <PartsDrill drill={parts} format={String} testId="staff-drill" onClose={() => setParts(null)} />
     </DashboardLayout>
   );
 }

@@ -17,6 +17,8 @@ import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import { pickLang } from "@/lib/lang";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { DRILL_CARD, RecordLink } from "@/components/reports/ReportDrillSheet";
+import { InvoiceDrill, type InvoiceDrillState } from "@/components/reports/InvoiceDrill";
 import { toast } from "sonner";
 import { 
   FileText, 
@@ -108,6 +110,23 @@ export default function InvoiceReports() {
   const { data: recentInvoices, isLoading: recentLoading } = trpc.invoices.getRecent.useQuery({
     page: 1,
     pageSize: 10
+  });
+
+  // Every figure opens the invoices it was added up from (owner, 2026-11-02).
+  const [drill, setDrill] = useState<InvoiceDrillState | null>(null);
+  const inWindow = (invoice: any) => {
+    const at = new Date(invoice.createdAt).getTime();
+    if (startDate && at < new Date(startDate).getTime()) return false;
+    if (endDate && at > new Date(endDate).getTime()) return false;
+    return true;
+  };
+  const openMonth = (title: string, monthNumber: number, count: number, amount: number) => setDrill({
+    title: `${title} ${selectedYear}`,
+    match: (invoice) => {
+      const at = new Date(invoice.createdAt);
+      return at.getUTCFullYear() === selectedYear && at.getUTCMonth() + 1 === monthNumber;
+    },
+    expected: { count, amount },
   });
 
   // Calculate totals for charts
@@ -492,7 +511,7 @@ export default function InvoiceReports() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card>
+          <Card className={DRILL_CARD} data-testid="invoice-report-card" onClick={() => setDrill({ title: pickLang(language, {ku:"کۆی پسوڵە", en:"Total invoices", ar:"إجمالي الفواتير", zh:"发票总数"}), match: inWindow, expected: { count: Number(summary?.totalInvoices ?? 0), amount: summary?.totalAmountUsd ?? 0 } })}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{pickLang(language, {ku:"کۆی پسوڵە", en:"Total invoices", ar:"إجمالي الفواتير", zh:"发票总数"})}</CardTitle>
               <FileText className="h-4 w-4 text-muted-foreground" />
@@ -511,7 +530,7 @@ export default function InvoiceReports() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={DRILL_CARD} data-testid="invoice-report-card" onClick={() => setDrill({ title: pickLang(language, {ku:"پارەدراو", en:"Paid", ar:"مدفوع", zh:"已付"}), match: (i) => inWindow(i) && i.status === "paid", expected: { count: Number(summary?.paidInvoices ?? 0), amount: summary?.paidAmountUsd ?? 0 } })}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{pickLang(language, {ku:"پارەدراو", en:"Paid", ar:"مدفوع", zh:"已付"})}</CardTitle>
               <CheckCircle className="h-4 w-4 text-green-500 dark:text-green-400" />
@@ -530,7 +549,7 @@ export default function InvoiceReports() {
             </CardContent>
           </Card>
 
-          <Card>
+          <Card className={DRILL_CARD} data-testid="invoice-report-card" onClick={() => setDrill({ title: pickLang(language, {ku:"ناوەندی پسوڵە", en:"Average invoice", ar:"متوسط الفاتورة", zh:"平均发票额"}), match: inWindow, expected: { count: Number(summary?.totalInvoices ?? 0), amount: summary?.totalAmountUsd ?? 0 } })}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{pickLang(language, {ku:"ناوەندی پسوڵە", en:"Average invoice", ar:"متوسط الفاتورة", zh:"平均发票额"})}</CardTitle>
               <TrendingUp className="h-4 w-4 text-blue-500 dark:text-blue-400" />
@@ -640,7 +659,7 @@ export default function InvoiceReports() {
                       </TableHeader>
                       <TableBody>
                         {monthlyTotals.map((m, i) => (
-                          <TableRow key={i}>
+                          <TableRow key={i} className="cursor-pointer" data-testid="invoice-report-row" onClick={() => openMonth(m.month, monthlyReport?.[i]?.monthNumber ?? i + 1, m.count, m.total)}>
                             <TableCell className="font-medium">{m.month}</TableCell>
                             <TableCell>{m.count}</TableCell>
                             <TableCell>{formatCurrency(m.total)}</TableCell>
@@ -703,7 +722,7 @@ export default function InvoiceReports() {
                     </TableHeader>
                     <TableBody>
                       {customerReport?.map((c, i) => (
-                        <TableRow key={i}>
+                        <TableRow key={i} className="cursor-pointer" data-testid="invoice-report-row" onClick={() => setDrill({ title: c.customerName, match: (inv) => inWindow(inv) && inv.customerId === c.customerId, expected: { count: Number(c.totalInvoices), amount: c.totalAmountUsd } })}>
                           <TableCell className="font-medium">{c.customerName}</TableCell>
                           <TableCell>
                             <Badge variant="outline">{c.customerCode}</Badge>
@@ -824,7 +843,7 @@ export default function InvoiceReports() {
                     <TableBody>
                       {recentInvoices?.invoices.map((inv: any) => (
                         <TableRow key={inv.id}>
-                          <TableCell className="font-medium font-mono">{inv.invoiceNumber}</TableCell>
+                          <TableCell className="font-medium font-mono"><RecordLink href={`/invoices/${inv.id}`}>{inv.invoiceNumber}</RecordLink></TableCell>
                           <TableCell>
                             {fmtDate(new Date(inv.createdAt))}
                           </TableCell>
@@ -847,6 +866,8 @@ export default function InvoiceReports() {
           </TabsContent>
         </Tabs>
       </div>
+
+      <InvoiceDrill drill={drill} onClose={() => setDrill(null)} />
     </DashboardLayout>
   );
 }

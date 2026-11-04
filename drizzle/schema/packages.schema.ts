@@ -190,6 +190,9 @@ export const packageScans = mysqlTable("packageScans", {
   // Additional data
   notes: text("notes"),
   photoUrl: varchar("photoUrl", { length: 500 }),
+  // The batch chosen on the register when a carton of another batch was
+  // checked in: it came in that batch's load (owner, 2026-11-03).
+  arrivedWithBatchId: int("arrivedWithBatchId"),
   
   // Device info
   deviceId: int("deviceId"),

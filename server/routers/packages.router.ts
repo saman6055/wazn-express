@@ -603,9 +603,10 @@ export const packagesRouter = router({
         // have moved to Erbil.
         const registrationLocation = await db.getUserWorkLocation(ctx.user.id);
 
-        // Only into a batch made where this person works (shared/batchTwin).
+        // Only into a batch made where the parcel is: its warehouse decides,
+        // the desk only when that is unknown (shared/batchTwin, owner 2026-11-03).
         try {
-          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);
+          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id, input.originWarehouseId);
         } catch (e) {
           throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
         }
@@ -878,9 +879,11 @@ export const packagesRouter = router({
               calculatedCostUsd: input.isUnclaimed ? undefined : calculatedCostUsd,
               appliedPricingRuleId: input.isUnclaimed ? undefined : appliedPricingRuleId,
               registeredById: ctx.user.id,
-              // Where this parcel was registered — Guangzhou or Erbil.
-              registeredInCountryId: registrationLocation.countryId,
-              registeredInCity: registrationLocation.city,
+              // Where this parcel was registered — Guangzhou or Erbil. Its
+              // warehouse decides, not the desk of whoever typed it (owner,
+              // 2026-11-03: a Guangzhou carton entered from Erbil is China's).
+              registeredInCountryId: warehouse.countryId ?? registrationLocation.countryId,
+              registeredInCity: warehouse.city ?? registrationLocation.city,
               batchId: input.batchId,
               categoryId: input.categoryId,
               isUnclaimed: input.isUnclaimed || false,
@@ -1591,9 +1594,11 @@ export const packagesRouter = router({
         batchId: z.number(),
       }))
       .mutation(async ({ input, ctx }) => {
-        // Only into a batch made where this person works (shared/batchTwin).
+        // Only into a batch made where the parcel is: its warehouse decides,
+        // the desk only when that is unknown (shared/batchTwin, owner 2026-11-03).
+        const parcel = await db.getPackageById(input.packageId);
         try {
-          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);
+          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id, parcel?.originWarehouseId);
         } catch (e) {
           throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
         }
@@ -1976,6 +1981,15 @@ export const packagesRouter = router({
             updateData.status = 'registered';
           } else {
             const pkg = await db.getPackageById(id);
+            // Moved to another batch on the edit form: the same check as
+            // every other way in (closed batch, other place; audit 2026-11-05).
+            if (pkg && pkg.batchId !== data.batchId) {
+              try {
+                await db.assertBatchMatchesDesk(data.batchId, ctx.user.id, pkg.originWarehouseId);
+              } catch (e) {
+                throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
+              }
+            }
             if (pkg && pkg.status === 'registered') {
               updateData.status = 'in_batch';
             }

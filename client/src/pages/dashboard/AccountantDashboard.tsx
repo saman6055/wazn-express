@@ -5,6 +5,10 @@ import { Badge } from "@/components/ui/badge";
 import { trpc } from "@/lib/trpc";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { Link } from "wouter";
+import { ExplainableStat } from "@/components/dashboard/ExplainableStat";
+import { DRILL_CARD, PartsDrill, RecordLink, type PartsDrillState } from "@/components/reports/ReportDrillSheet";
+import { InvoiceDrill, type InvoiceDrillState } from "@/components/reports/InvoiceDrill";
+import { debtorsHref, financeHref } from "@shared/listLinks";
 import {
   DollarSign,
   TrendingUp,
@@ -36,13 +40,15 @@ import {
   Pie,
   Cell,
 } from "recharts";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 
 const REVENUE_COLOR = "#10b981";
 const DEBT_COLOR = "#ef4444";
 
 export default function AccountantDashboard() {
   const { t, language } = useLanguage();
+  const [parts, setParts] = useState<PartsDrillState | null>(null);
+  const [invoices, setInvoices] = useState<InvoiceDrillState | null>(null);
 
   const { data: financialStats } = trpc.dashboard.financialStats.useQuery();
   const { data: revenueChart } = trpc.dashboard.revenueChart.useQuery({ days: 30 });
@@ -97,7 +103,9 @@ export default function AccountantDashboard() {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">{t("accountantDashboard.totalRevenue")}</p>
                   <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-                    ${(financialStats?.monthRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    <ExplainableStat figure="monthIncome" value={financialStats?.monthRevenue ?? 0}>
+                      ${(financialStats?.monthRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                    </ExplainableStat>
                   </p>
                   <p className="text-xs text-muted-foreground">{t("dashboard.thisMonth") ?? "This month"}</p>
                 </div>
@@ -107,7 +115,8 @@ export default function AccountantDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <a href={debtorsHref()} target="_blank" rel="noopener noreferrer" className="block" data-testid="accountant-card-link">
+          <Card className={`h-full ${DRILL_CARD}`}>
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
                 <div>
@@ -122,7 +131,17 @@ export default function AccountantDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          </a>
+          <Card
+            className={DRILL_CARD}
+            data-testid="accountant-card"
+            onClick={() => setInvoices({
+              title: t("accountantDashboard.unpaidInvoices"),
+              // What the summary counts as unpaid (getInvoiceSummary).
+              match: (i) => i.status === "issued" || i.status === "draft",
+              expected: { count: Number(unpaidSummary?.unpaidInvoices ?? 0), amount: unpaidSummary?.unpaidAmountUsd ?? 0 },
+            })}
+          >
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
                 <div>
@@ -138,7 +157,17 @@ export default function AccountantDashboard() {
               </div>
             </CardContent>
           </Card>
-          <Card>
+          <Card
+            className={DRILL_CARD}
+            data-testid="accountant-card"
+            onClick={() => setParts({
+              title: t("accountantDashboard.netProfit"),
+              rows: [
+                { label: t("accountantDashboard.totalRevenue"), amount: financialStats?.monthRevenue ?? 0, href: financeHref({ tab: "payments" }) },
+                { label: t("accountantDashboard.totalDebt"), amount: -(financialStats?.totalDebt ?? 0), href: debtorsHref() },
+              ],
+            })}
+          >
             <CardContent className="pt-6">
               <div className="flex items-start justify-between">
                 <div>
@@ -284,9 +313,9 @@ export default function AccountantDashboard() {
                   </CardTitle>
                   <CardDescription>{t("accountantDashboard.top20Debtors")}</CardDescription>
                 </div>
-                <Link href="/finance/debtors">
-                  <Button variant="outline" size="sm">{t("common.all")}</Button>
-                </Link>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={debtorsHref()} target="_blank" rel="noopener noreferrer">{t("common.all")}</a>
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -296,7 +325,7 @@ export default function AccountantDashboard() {
                     <div className="flex items-center gap-3 min-w-0">
                       <span className="text-sm font-medium text-muted-foreground w-6">#{i + 1}</span>
                       <div className="min-w-0">
-                        <p className="font-medium truncate">{d.customerName}</p>
+                        <p className="font-medium truncate"><RecordLink href={`/finance/customer/${d.customerId}`}>{d.customerName}</RecordLink></p>
                         <p className="text-xs text-muted-foreground">{d.customerCode}</p>
                       </div>
                     </div>
@@ -328,9 +357,9 @@ export default function AccountantDashboard() {
                   </CardTitle>
                   <CardDescription>{t("accountantDashboard.last20Payments")}</CardDescription>
                 </div>
-                <Link href="/finance">
-                  <Button variant="outline" size="sm">{t("common.all")}</Button>
-                </Link>
+                <Button variant="outline" size="sm" asChild>
+                  <a href={financeHref({ tab: "payments" })} target="_blank" rel="noopener noreferrer">{t("common.all")}</a>
+                </Button>
               </div>
             </CardHeader>
             <CardContent className="p-0">
@@ -338,7 +367,11 @@ export default function AccountantDashboard() {
                 {recentPayments?.map((p: any) => (
                   <div key={p.id} className="flex items-center justify-between p-4 hover:bg-muted/50">
                     <div className="min-w-0">
-                      <p className="font-medium truncate">{p.customerName ?? t("common.unknown")}</p>
+                      <p className="font-medium truncate">
+                        {p.customerId
+                          ? <RecordLink href={`/finance/customer/${p.customerId}`}>{p.customerName ?? t("common.unknown")}</RecordLink>
+                          : (p.customerName ?? t("common.unknown"))}
+                      </p>
                       <p className="text-xs text-muted-foreground">{p.customerCode}</p>
                     </div>
                     <div className="text-right shrink-0">
@@ -379,7 +412,11 @@ export default function AccountantDashboard() {
             <div className="grid gap-4 sm:grid-cols-3">
               <div className="p-4 rounded-xl border bg-muted/30">
                 <p className="text-sm font-medium text-muted-foreground">{t("common.revenue")}</p>
-                <p className="text-xl font-bold">${(financialStats?.monthRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-bold">
+                  <ExplainableStat figure="monthIncome" value={financialStats?.monthRevenue ?? 0}>
+                    ${(financialStats?.monthRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </ExplainableStat>
+                </p>
                 <p className="text-xs flex items-center gap-1">
                   {(financialStats?.monthChange ?? 0) >= 0 ? (
                     <TrendingUp className="h-3 w-3 text-green-500 dark:text-green-400" />
@@ -391,16 +428,32 @@ export default function AccountantDashboard() {
               </div>
               <div className="p-4 rounded-xl border bg-muted/30">
                 <p className="text-sm font-medium text-muted-foreground">{t("dashboard.weeklyIncome")}</p>
-                <p className="text-xl font-bold">${(financialStats?.weekRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-bold">
+                  <ExplainableStat figure="weekIncome" value={financialStats?.weekRevenue ?? 0}>
+                    ${(financialStats?.weekRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </ExplainableStat>
+                </p>
               </div>
               <div className="p-4 rounded-xl border bg-muted/30">
                 <p className="text-sm font-medium text-muted-foreground">{t("dashboard.todayIncome")}</p>
-                <p className="text-xl font-bold">${(financialStats?.todayRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}</p>
+                <p className="text-xl font-bold">
+                  <ExplainableStat figure="todayIncome" value={financialStats?.todayRevenue ?? 0}>
+                    ${(financialStats?.todayRevenue ?? 0).toLocaleString("en-US", { minimumFractionDigits: 2 })}
+                  </ExplainableStat>
+                </p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
+
+      <PartsDrill
+        drill={parts}
+        format={(n) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2 })}`}
+        testId="accountant-drill"
+        onClose={() => setParts(null)}
+      />
+      <InvoiceDrill drill={invoices} onClose={() => setInvoices(null)} />
     </DashboardLayout>
   );
 }

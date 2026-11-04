@@ -37,6 +37,8 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { DRILL_CARD } from "@/components/reports/ReportDrillSheet";
+import { OrderProfitDrill, monthWindow, yearWindow, type OrderDrill } from "@/components/reports/OrderProfitDrill";
 
 // Month names
 const monthNames = {
@@ -178,6 +180,31 @@ export default function MonthlyProfitReport() {
     , monthsWithData[0]);
   }, [monthlyData]);
 
+  // Every figure opens the orders it was added up from (owner, 2026-11-02).
+  const [orders, setOrders] = useState<OrderDrill | null>(null);
+  const typeLabel = (type: "full_package" | "commission") => {
+    const c = orderTypeConfig[type];
+    return pickLang(language, { ku: c.labelKu, en: c.label, ar: c.labelAr, zh: c.labelZh });
+  };
+  const openYear = (type?: "full_package" | "commission") => {
+    const d = type ? yearlyTotals[type] : yearlyTotals.total;
+    setOrders({
+      title: `${selectedYear}${type ? ` - ${typeLabel(type)}` : ""}`,
+      orderType: type,
+      ...yearWindow(selectedYear),
+      expected: { count: d.count, profit: d.profit },
+    });
+  };
+  const openMonth = (row: (typeof monthlyData)[number], type?: "full_package" | "commission") => {
+    const d = type ? row[type] : row.total;
+    setOrders({
+      title: `${row.monthName} ${selectedYear}${type ? ` - ${typeLabel(type)}` : ""}`,
+      orderType: type,
+      ...monthWindow(selectedYear, row.month + 1),
+      expected: { count: d.count, profit: d.profit },
+    });
+  };
+
   return (
     <DashboardLayout>
       <div className="space-y-6" dir={isRTL ? "rtl" : "ltr"}>
@@ -228,7 +255,7 @@ export default function MonthlyProfitReport() {
         {/* Yearly Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Total Yearly Profit */}
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <Card className={`bg-gradient-to-br from-blue-500 to-blue-600 text-white ${DRILL_CARD}`} data-testid="monthly-profit-card" onClick={() => openYear()}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -252,7 +279,7 @@ export default function MonthlyProfitReport() {
           </Card>
           
           {/* Best Month */}
-          <Card className="border-l-4 border-l-green-500">
+          <Card className={`border-l-4 border-l-green-500 ${DRILL_CARD}`} data-testid="monthly-profit-card" onClick={() => openMonth(bestMonth)}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -278,7 +305,7 @@ export default function MonthlyProfitReport() {
           </Card>
           
           {/* Worst Month */}
-          <Card className="border-l-4 border-l-red-500">
+          <Card className={`border-l-4 border-l-red-500 ${DRILL_CARD}`} data-testid="monthly-profit-card" onClick={() => openMonth(worstMonth)}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -304,7 +331,7 @@ export default function MonthlyProfitReport() {
           </Card>
           
           {/* Average Monthly */}
-          <Card className="border-l-4 border-l-purple-500">
+          <Card className={`border-l-4 border-l-purple-500 ${DRILL_CARD}`} data-testid="monthly-profit-card" onClick={() => openYear()}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -339,7 +366,7 @@ export default function MonthlyProfitReport() {
             const Icon = config.icon;
             
             return (
-              <Card key={type} className={cn("border-t-4", `border-t-[${config.color}]`)} style={{ borderTopColor: config.color }}>
+              <Card key={type} className={cn("border-t-4", `border-t-[${config.color}]`, DRILL_CARD)} style={{ borderTopColor: config.color }} data-testid="monthly-profit-card" onClick={() => openYear(type as "full_package" | "commission")}>
                 <CardContent className="p-6">
                   <div className="flex items-center gap-3 mb-4">
                     <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center", config.bgColor)}>
@@ -405,19 +432,19 @@ export default function MonthlyProfitReport() {
                   </TableHeader>
                   <TableBody>
                     {monthlyData.map((row) => (
-                      <TableRow key={row.month} className={row.total.count === 0 ? "opacity-50" : ""}>
+                      <TableRow key={row.month} className={row.total.count === 0 ? "opacity-50" : "cursor-pointer"} data-testid="monthly-profit-row" onClick={() => { if (row.total.count > 0) openMonth(row); }}>
                         <TableCell className="font-medium">{row.monthName}</TableCell>
                         <TableCell className="text-center">
                           <Badge variant="secondary">{row.total.count}</Badge>
                         </TableCell>
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => { e.stopPropagation(); if (row.full_package.count > 0) openMonth(row, "full_package"); }}>
                           <span className="text-emerald-600 dark:text-emerald-300">${row.full_package.profit.toLocaleString("en-GB")}</span>
                           {row.full_package.count > 0 && (
                             <span className="text-xs text-muted-foreground ms-1">({row.full_package.count})</span>
                           )}
                         </TableCell>
 
-                        <TableCell className="text-right">
+                        <TableCell className="text-right" onClick={(e) => { e.stopPropagation(); if (row.commission.count > 0) openMonth(row, "commission"); }}>
                           <span className="text-amber-600 dark:text-amber-300">${row.commission.profit.toLocaleString("en-GB")}</span>
                           {row.commission.count > 0 && (
                             <span className="text-xs text-muted-foreground ms-1">({row.commission.count})</span>
@@ -436,7 +463,7 @@ export default function MonthlyProfitReport() {
                     ))}
                     
                     {/* Totals Row */}
-                    <TableRow className="bg-muted/50 font-bold">
+                    <TableRow className="cursor-pointer bg-muted/50 font-bold" data-testid="monthly-profit-row" onClick={() => openYear()}>
                       <TableCell>{pickLang(language, { ku: "کۆی گشتی", en: "Total", ar: "الإجمالي", zh: "合计" })}</TableCell>
                       <TableCell className="text-center">
                         <Badge>{yearlyTotals.total.count}</Badge>
@@ -478,6 +505,8 @@ export default function MonthlyProfitReport() {
           </div>
         </div>
       </div>
+
+      <OrderProfitDrill drill={orders} onClose={() => setOrders(null)} />
     </DashboardLayout>
   );
 }

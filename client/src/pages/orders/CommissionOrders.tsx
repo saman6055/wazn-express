@@ -142,7 +142,7 @@ export default function CommissionOrders() {
    * trip and a table scan; "AZ295" was five searches, of which four were
    * thrown away, and the answer to the last one queued behind them.
    */
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [shippingFilter, setShippingFilter] = useState<string>("all");
   // New client-side filters + sort
@@ -163,7 +163,7 @@ export default function CommissionOrders() {
   });
 
   const { data: batches } = trpc.batches.list.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
 
   // batches.list may return a plain array or a paginated { data } shape
   const batchList: any[] = Array.isArray(batches)

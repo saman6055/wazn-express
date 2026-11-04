@@ -13,9 +13,11 @@ import {
 } from "lucide-react";
 import { useState, useMemo } from "react";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
+import { DRILL_CARD, RecordLink, ReportDrillSheet, type DrillColumn } from "@/components/reports/ReportDrillSheet";
 
 export default function ServiceProfitReport() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [startDate, setStartDate] = useState<string>("");
   const [endDate, setEndDate] = useState<string>("");
   const [serviceTypeFilter, setServiceTypeFilter] = useState<string>("all");
@@ -26,7 +28,7 @@ const [startDate, setStartDate] = useState<string>("");
     endDate: endDate || undefined,
     serviceTypeId: serviceTypeFilter !== "all" ? parseInt(serviceTypeFilter) : undefined,
   });
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   
   // Calculate statistics
   const stats = useMemo(() => {
@@ -103,6 +105,36 @@ const [startDate, setStartDate] = useState<string>("");
     return type?.icon || "⚙️";
   };
 
+  // Every figure opens the services it was added up from (owner, 2026-11-02).
+  const [drill, setDrill] = useState<{ title: string; rows: any[] } | null>(null);
+  const allServices: any[] = services?.services ?? [];
+  const costOf = (s: any) => Number(s.costAmount || 0);
+  const priceOf = (s: any) => Number(s.priceAmount || 0);
+  const customerCell = (id: number | null) => {
+    const c = customers?.find((x) => x.id === id);
+    return c ? <RecordLink href={`/customers/${c.id}`}>{c.customerCode || c.fullName}</RecordLink> : "—";
+  };
+  const drillColumns: DrillColumn<any>[] = [
+    { header: pickLang(language, { ku: "ژمارە", en: "Number", ar: "الرقم", zh: "编号" }), cell: (s) => s.serviceNumber, ltr: true, className: "font-mono text-xs" },
+    { header: t("customers.title"), cell: (s) => customerCell(s.customerId) },
+    { header: t("common.description"), cell: (s) => s.description, className: "max-w-[16rem] whitespace-normal text-xs" },
+    {
+      header: t("auto.text_080d04"), ltr: true,
+      cell: (s) => `$${costOf(s).toFixed(2)}`,
+      total: (rows) => `$${rows.reduce((n, s) => n + costOf(s), 0).toFixed(2)}`,
+    },
+    {
+      header: t("common.price"), ltr: true,
+      cell: (s) => `$${priceOf(s).toFixed(2)}`,
+      total: (rows) => `$${rows.reduce((n, s) => n + priceOf(s), 0).toFixed(2)}`,
+    },
+    {
+      header: t("finance.profit"), ltr: true,
+      cell: (s) => `$${(priceOf(s) - costOf(s)).toFixed(2)}`,
+      total: (rows) => `$${rows.reduce((n, s) => n + priceOf(s) - costOf(s), 0).toFixed(2)}`,
+    },
+  ];
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -176,7 +208,7 @@ const [startDate, setStartDate] = useState<string>("");
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40 border-blue-200 dark:border-blue-800/60">
+          <Card className={`bg-gradient-to-br from-blue-50 dark:from-blue-950/40 to-blue-100 dark:to-blue-900/40 border-blue-200 dark:border-blue-800/60 ${DRILL_CARD}`} data-testid="service-profit-card" onClick={() => setDrill({ title: t("auto.text_3a3774"), rows: allServices })}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -191,7 +223,7 @@ const [startDate, setStartDate] = useState<string>("");
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-red-50 dark:from-red-950/40 to-red-100 dark:to-red-900/40 border-red-200 dark:border-red-800/60">
+          <Card className={`bg-gradient-to-br from-red-50 dark:from-red-950/40 to-red-100 dark:to-red-900/40 border-red-200 dark:border-red-800/60 ${DRILL_CARD}`} data-testid="service-profit-card" onClick={() => setDrill({ title: t("auto.text_d9ab72"), rows: allServices })}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -205,7 +237,7 @@ const [startDate, setStartDate] = useState<string>("");
             </CardContent>
           </Card>
           
-          <Card className="bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100 dark:to-green-900/40 border-green-200 dark:border-green-800/60">
+          <Card className={`bg-gradient-to-br from-green-50 dark:from-green-950/40 to-green-100 dark:to-green-900/40 border-green-200 dark:border-green-800/60 ${DRILL_CARD}`} data-testid="service-profit-card" onClick={() => setDrill({ title: t("auto.text_aa03aa"), rows: allServices })}>
             <CardContent className="pt-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -225,8 +257,8 @@ const [startDate, setStartDate] = useState<string>("");
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-300">{t("auto.text_e2a2cc")} </p>
-                  <p className="text-lg font-bold text-green-700 dark:text-green-300">{stats.paidCount} {t("auto.text_40d446")}</p>
-                  <p className="text-lg font-bold text-red-700 dark:text-red-300">{stats.unpaidCount} {t("auto.text_040176")}</p>
+                  <button type="button" className="block text-lg font-bold text-green-700 hover:underline dark:text-green-300" data-testid="service-profit-card" onClick={() => setDrill({ title: `${stats.paidCount} ${t("auto.text_40d446")}`, rows: allServices.filter((s) => s.isPaid) })}>{stats.paidCount} {t("auto.text_40d446")}</button>
+                  <button type="button" className="block text-lg font-bold text-red-700 hover:underline dark:text-red-300" data-testid="service-profit-card" onClick={() => setDrill({ title: `${stats.unpaidCount} ${t("auto.text_040176")}`, rows: allServices.filter((s) => !s.isPaid) })}>{stats.unpaidCount} {t("auto.text_040176")}</button>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-amber-200 dark:bg-amber-900/50 flex items-center justify-center">
                   <Receipt className="h-6 w-6 text-amber-700 dark:text-amber-300" />
@@ -251,7 +283,7 @@ const [startDate, setStartDate] = useState<string>("");
                 {stats.byType.map((item) => {
                   const profitPercent = stats.totalProfit > 0 ? (item.profit / stats.totalProfit) * 100 : 0;
                   return (
-                    <div key={item.typeId} className="space-y-2">
+                    <div key={item.typeId} className="cursor-pointer space-y-2" data-testid="service-profit-type" onClick={() => setDrill({ title: item.typeName, rows: allServices.filter((s) => s.serviceTypeId === item.typeId) })}>
                       <div className="flex items-center justify-between">
                         <div className="flex items-center gap-3">
                           <div 
@@ -332,7 +364,11 @@ const [startDate, setStartDate] = useState<string>("");
                           <span className="text-sm">{getServiceTypeName(service.serviceTypeId)}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{getCustomerName(service.customerId)}</TableCell>
+                      <TableCell>
+                        {service.customerId
+                          ? <RecordLink href={`/customers/${service.customerId}`}>{getCustomerName(service.customerId)}</RecordLink>
+                          : getCustomerName(service.customerId)}
+                      </TableCell>
                       <TableCell className="max-w-[200px] truncate">{service.description}</TableCell>
                       <TableCell className="text-right font-mono text-red-600 dark:text-red-300">
                         ${Number(service.costAmount || 0).toFixed(2)}
@@ -366,6 +402,17 @@ const [startDate, setStartDate] = useState<string>("");
           </CardContent>
         </Card>
       </div>
+
+      <ReportDrillSheet
+        open={!!drill}
+        title={drill?.title ?? ""}
+        rows={drill?.rows ?? []}
+        columns={drillColumns}
+        rowKey={(s) => s.id}
+        testId="service-profit-drill"
+        onClose={() => setDrill(null)}
+        manage={{ href: "/services", label: pickLang(language, { ku: "بەڕێوەبردنی خزمەتگوزاری", en: "Manage services", ar: "إدارة الخدمات", zh: "管理服务" }) }}
+      />
     </DashboardLayout>
   );
 }

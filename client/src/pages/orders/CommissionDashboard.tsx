@@ -71,6 +71,7 @@ import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { PrepaidFixMenuItem } from "@/components/orders/OrderOutcome";
+import { DebouncedSearchInput } from "@/components/DebouncedSearchInput";
 
 const statusColors: Record<string, string> = {
   pending: statusChip("pending", "order"),
@@ -141,7 +142,7 @@ export default function CommissionDashboard() {
 
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
   const { user: me } = useAuth();
   const isMainAdmin = me?.role === "super_admin";
@@ -630,10 +631,10 @@ export default function CommissionDashboard() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <DebouncedSearchInput
                     placeholder={t("commission.searchPlaceholder")}
                     value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onValueChange={setSearchQuery}
                     className="pr-10"
                   />
                 </div>

@@ -28,8 +28,9 @@ import {
   CheckCircle, Clock, Truck, Building2, Archive, ChevronRight, Wallet,
   Calculator, Scale, Boxes, Calendar, X, GitCompare, PieChart, FileDown
 } from "lucide-react";
-import { Link } from "wouter";
+import { packagesHref } from "@shared/listLinks";
 import { useState, useMemo, useRef } from "react";
+import { DRILL_CARD, RecordLink, ReportDrillSheet, type DrillColumn } from "@/components/reports/ReportDrillSheet";
 import { toast } from "sonner";
 
 // Helper functions
@@ -261,6 +262,20 @@ export default function BatchReports() {
       totalProfit: 0
     });
   }, [filteredBatches]);
+
+  // Every figure opens the batches it was added up from (owner, 2026-11-02).
+  const [drill, setDrill] = useState<{ title: string; rows: typeof filteredBatches } | null>(null);
+  const openType = (type: string) => setDrill({
+    title: pickLang(language, (shippingTypeConfig[type] ?? shippingTypeConfig.air_regular).label),
+    rows: filteredBatches.filter((b) => b.shippingType === type),
+  });
+  const drillColumns: DrillColumn<(typeof filteredBatches)[number]>[] = [
+    { header: pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" }), cell: (b) => <RecordLink href={`/reports/batch-financial/${b.id}`}><span dir="ltr">{b.batchCode}</span></RecordLink> },
+    { header: pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" }), cell: (b) => <RecordLink href={packagesHref({ batch: String(b.id) })}>{b.packageCount}</RecordLink>, total: (rows) => rows.reduce((n, b) => n + b.packageCount, 0) },
+    { header: pickLang(language, { ku: "تێچوون", en: "Cost", ar: "التكلفة", zh: "成本" }), ltr: true, cell: (b) => formatCurrency(b.totalCost), total: (rows) => formatCurrency(rows.reduce((n, b) => n + b.totalCost, 0)) },
+    { header: pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيرادات", zh: "收入" }), ltr: true, cell: (b) => formatCurrency(b.totalRevenue), total: (rows) => formatCurrency(rows.reduce((n, b) => n + b.totalRevenue, 0)) },
+    { header: pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" }), ltr: true, cell: (b) => formatCurrency(b.profit), total: (rows) => formatCurrency(rows.reduce((n, b) => n + b.profit, 0)) },
+  ];
 
   const overallProfitMargin = totals.totalRevenue > 0 
     ? (totals.totalProfit / totals.totalRevenue) * 100 
@@ -524,7 +539,7 @@ export default function BatchReports() {
         {/* Overview Cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
           {/* Total Batches */}
-          <Card className="border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50 dark:from-indigo-950/40 to-violet-50 dark:to-violet-950/40">
+          <Card className={`border-2 border-indigo-200 dark:border-indigo-800/60 bg-gradient-to-br from-indigo-50 dark:from-indigo-950/40 to-violet-50 dark:to-violet-950/40 ${DRILL_CARD}`} data-testid="batch-report-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" }), rows: filteredBatches })}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-indigo-700 dark:text-indigo-300">{pickLang(language, { ku: "کۆی باچەکان", en: "Total batches", ar: "إجمالي الدفعات", zh: "批次总数" })}</CardTitle>
               <div className="p-2 bg-indigo-100 dark:bg-indigo-950/40 rounded-lg">
@@ -540,7 +555,7 @@ export default function BatchReports() {
           </Card>
 
           {/* Total Cost */}
-          <Card className="border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40">
+          <Card className={`border-2 border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40 ${DRILL_CARD}`} data-testid="batch-report-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" }), rows: filteredBatches })}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-red-700 dark:text-red-300">{pickLang(language, { ku: "کۆی تێچوون", en: "Total cost", ar: "إجمالي التكلفة", zh: "总成本" })}</CardTitle>
               <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-lg">
@@ -557,7 +572,7 @@ export default function BatchReports() {
           </Card>
 
           {/* Total Revenue */}
-          <Card className="border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40">
+          <Card className={`border-2 border-green-200 dark:border-green-800/60 bg-gradient-to-br from-green-50 dark:from-green-950/40 to-emerald-50 dark:to-emerald-950/40 ${DRILL_CARD}`} data-testid="batch-report-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" }), rows: filteredBatches })}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-green-700 dark:text-green-300">{pickLang(language, { ku: "کۆی داهات", en: "Total revenue", ar: "إجمالي الإيرادات", zh: "总收入" })}</CardTitle>
               <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-lg">
@@ -573,7 +588,7 @@ export default function BatchReports() {
           </Card>
 
           {/* Total Profit */}
-          <Card className={`border-2 ${totals.totalProfit >= 0 
+          <Card data-testid="batch-report-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی قازانج", en: "Total profit", ar: "إجمالي الربح", zh: "总利润" }), rows: filteredBatches })} className={`border-2 ${DRILL_CARD} ${totals.totalProfit >= 0 
             ? 'border-emerald-200 dark:border-emerald-800/60 bg-gradient-to-br from-emerald-50 dark:from-emerald-950/40 to-teal-50 dark:to-teal-950/40' 
             : 'border-red-200 dark:border-red-800/60 bg-gradient-to-br from-red-50 dark:from-red-950/40 to-rose-50 dark:to-rose-950/40'}`}>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -755,7 +770,7 @@ export default function BatchReports() {
                   const config = shippingTypeConfig[type];
                   const maxValue = Math.max(data.cost, data.revenue, 1);
                   return (
-                    <div key={type} className="space-y-2">
+                    <div key={type} className="cursor-pointer space-y-2" data-testid="batch-report-type" onClick={() => openType(type)}>
                       <div className="flex items-center gap-2">
                         <div className={`p-1.5 rounded ${config.bgColor}`}>
                           {config.icon}
@@ -958,7 +973,7 @@ export default function BatchReports() {
                               <div className={`p-1.5 rounded ${typeConfig.bgColor}`}>
                                 {typeConfig.icon}
                               </div>
-                              {batch.batchCode}
+                              <RecordLink href={`/reports/batch-financial/${batch.id}`}>{batch.batchCode}</RecordLink>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -975,7 +990,7 @@ export default function BatchReports() {
                           <TableCell>
                             <div className="flex items-center gap-1">
                               <Package className="h-4 w-4 text-muted-foreground" />
-                              {batch.packageCount}
+                              <RecordLink href={packagesHref({ batch: String(batch.id) })}>{batch.packageCount}</RecordLink>
                             </div>
                           </TableCell>
                           <TableCell>
@@ -1015,13 +1030,13 @@ export default function BatchReports() {
                             </Badge>
                           </TableCell>
                           <TableCell className="text-center">
-                            <Link href={`/reports/batch-financial/${batch.id}`}>
-                              <Button variant="ghost" size="sm" className="hover:bg-primary/10">
+                            <Button variant="ghost" size="sm" className="hover:bg-primary/10" asChild>
+                              <a href={`/reports/batch-financial/${batch.id}`} target="_blank" rel="noopener noreferrer">
                                 <Eye className="h-4 w-4 ms-1" />
                                 {pickLang(language, { ku: "بینین", en: "View", ar: "عرض", zh: "查看" })}
                                 <ChevronRight className="h-4 w-4 me-1" />
-                              </Button>
-                            </Link>
+                              </a>
+                            </Button>
                           </TableCell>
                         </TableRow>
                       );
@@ -1036,7 +1051,7 @@ export default function BatchReports() {
         {/* Summary by Type */}
         <div className="grid gap-4 md:grid-cols-3">
           {/* Air Regular */}
-          <Card className="border-2 border-blue-200 dark:border-blue-800/60">
+          <Card className={`border-2 border-blue-200 dark:border-blue-800/60 ${DRILL_CARD}`} data-testid="batch-report-card" onClick={() => openType("air_regular")}>
             <CardHeader className="bg-gradient-to-r from-blue-50 dark:from-blue-950/40 to-sky-50 dark:to-sky-950/40 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-blue-700 dark:text-blue-300">
                 <Plane className="h-5 w-5" />
@@ -1068,7 +1083,7 @@ export default function BatchReports() {
           </Card>
 
           {/* Air Irregular */}
-          <Card className="border-2 border-orange-200 dark:border-orange-800/60">
+          <Card className={`border-2 border-orange-200 dark:border-orange-800/60 ${DRILL_CARD}`} data-testid="batch-report-card" onClick={() => openType("air_irregular")}>
             <CardHeader className="bg-gradient-to-r from-orange-50 dark:from-orange-950/40 to-amber-50 dark:to-amber-950/40 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-orange-700 dark:text-orange-300">
                 <AlertTriangle className="h-5 w-5" />
@@ -1100,7 +1115,7 @@ export default function BatchReports() {
           </Card>
 
           {/* Sea */}
-          <Card className="border-2 border-cyan-200 dark:border-cyan-800/60">
+          <Card className={`border-2 border-cyan-200 dark:border-cyan-800/60 ${DRILL_CARD}`} data-testid="batch-report-card" onClick={() => openType("sea")}>
             <CardHeader className="bg-gradient-to-r from-cyan-50 dark:from-cyan-950/40 to-teal-50 dark:to-teal-950/40 rounded-t-lg">
               <CardTitle className="flex items-center gap-2 text-cyan-700 dark:text-cyan-300">
                 <Ship className="h-5 w-5" />
@@ -1272,6 +1287,16 @@ export default function BatchReports() {
           </DialogContent>
         </Dialog>
       </div>
+
+      <ReportDrillSheet
+        open={!!drill}
+        title={drill?.title ?? ""}
+        rows={drill?.rows ?? []}
+        columns={drillColumns}
+        rowKey={(b) => b.id}
+        testId="batch-report-drill"
+        onClose={() => setDrill(null)}
+      />
     </DashboardLayout>
   );
 }

@@ -195,10 +195,13 @@ export const scanningRouter = router({
         notes: z.string().optional(),
         photoUrl: z.string().optional(),
         deviceIdentifier: z.string().optional(),
+        /** The batch on the register when a carton of another batch arrived in its load. */
+        arrivedWithBatchId: z.number().int().positive().optional(),
       }))
       .mutation(async ({ input, ctx }) => {
         // Create the scan record
         const scan = await db.createPackageScan({
+          arrivedWithBatchId: input.scanType === "received_local" ? input.arrivedWithBatchId : undefined,
           trackingNumber: input.trackingNumber,
           packageId: input.packageId,
           scanType: input.scanType,
@@ -254,6 +257,15 @@ export const scanningRouter = router({
             // portal went on telling the customer their goods were still in
             // China. Forward only, and never onto a delivered batch.
             if (newStatus === "ready_for_delivery") {
+              try {
+                // Its box was paid and finished while it was on the road:
+                // it is delivered with the box now (lib/boxLifecycle).
+                if (await db.parcelInFinishedBox(input.packageId)) {
+                  await db.updatePackage(input.packageId, { status: "delivered", deliveredAt: new Date(), deliveredById: ctx.user.id });
+                }
+              } catch (e) {
+                appLogger.error("[Scan] finished-box parcel not delivered", { packageId: input.packageId, error: e instanceof Error ? e.message : String(e) });
+              }
               try {
                 const pkg = await db.getPackageById(input.packageId);
                 if (pkg?.batchId) await db.advanceBatchToDepot(pkg.batchId, ctx.user.id);
@@ -322,9 +334,10 @@ export const scanningRouter = router({
         // moved to Erbil.
         const registrationLocation = await db.getUserWorkLocation(ctx.user.id);
 
-        // Only into a batch made where this person works (shared/batchTwin).
+        // Only into a batch made where the parcel is: its warehouse decides,
+        // the desk only when that is unknown (shared/batchTwin, owner 2026-11-03).
         try {
-          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id);
+          await db.assertBatchMatchesDesk(input.batchId, ctx.user.id, input.warehouseId);
         } catch (e) {
           throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
         }
@@ -378,6 +391,7 @@ export const scanningRouter = router({
         }
         
         // Create the package
+        const scanWarehouse = input.warehouseId ? await db.getWarehouseById(input.warehouseId) : undefined;
         const pkg = await db.createPackage({
           packageCode,
           trackingNumber: input.trackingNumber,
@@ -395,9 +409,10 @@ export const scanningRouter = router({
           status: 'registered',
           batchId: input.batchId,
           registeredById: ctx.user.id,
-          // Where this parcel was registered — Guangzhou or Erbil.
-          registeredInCountryId: registrationLocation.countryId,
-          registeredInCity: registrationLocation.city,
+          // Where this parcel was registered — Guangzhou or Erbil. Its
+          // warehouse decides when one was given (owner, 2026-11-03).
+          registeredInCountryId: scanWarehouse?.countryId ?? registrationLocation.countryId,
+          registeredInCity: scanWarehouse?.city ?? registrationLocation.city,
           notes: input.notes,
           /**
            * The photo taken at the counter, on the parcel itself.
@@ -1058,6 +1073,8 @@ export const deliveryBoxRouter = router({
   getById: staffProcedure
     .input(z.object({ id: z.number() }))
     .query(async ({ input }) => {
+      // An open box heals a line that drifted from its payment screen, once.
+      if (await db.syncBoxLinesToTill(input.id)) await db.recalculateBoxTotals(input.id);
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) return null;
       const items = await db.getBoxItems(input.id);
@@ -1245,6 +1262,26 @@ export const deliveryBoxRouter = router({
     }))
     .mutation(async ({ input, ctx }) => {
       return db.pledgeBoxDiscount(input, ctx.user.id);
+    }),
+
+  /** Take a receipt's promised discount back, with the reason - the main admin's alone (2026-11-04). */
+  withdrawPledge: superAdminProcedure
+    .input(z.object({
+      boxId: z.number(),
+      lineId: z.number().nullable(),
+      reason: z.string().min(3).max(500),
+    }))
+    .mutation(async ({ input, ctx }) => {
+      const done = await db.withdrawBoxPledge(input, ctx.user.id);
+      await db.createAuditLog({
+        userId: ctx.user.id,
+        userRole: ctx.user.role,
+        action: "withdraw_receipt_discount",
+        entityType: "delivery_box",
+        entityId: input.boxId,
+        newValues: { lineId: input.lineId, reason: input.reason, withdrawn: done.withdrawn },
+      });
+      return done;
     }),
 
   /**

@@ -1444,6 +1444,9 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       note TEXT,
       settlementId INT NULL,
       honouredAt TIMESTAMP NULL,
+      withdrawnAt TIMESTAMP NULL,
+      withdrawnById INT NULL,
+      withdrawReason TEXT NULL,
       createdById INT NOT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       INDEX idx_box_discount_pledges_box (boxId)
@@ -3276,6 +3279,16 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
           SET b.createdInCountryId = u.workCountryId, b.createdInCity = u.workCity
           WHERE b.createdInCountryId IS NULL AND u.workCountryId IS NOT NULL`,
   },
+  // What is still unstamped takes its origin warehouse's country - the rule
+  // for every batch since a1bb6bf2. A null was read as China by the stages and
+  // as Erbil by the close check and the dispatch page (audit 2026-11-05);
+  // stamped, every reading agrees. Only rows with no place; never overwrites.
+  {
+    name: "backfill.batches.placeFromWarehouse",
+    sql: `UPDATE batches b JOIN warehouses w ON w.id = b.originWarehouseId
+          SET b.createdInCountryId = w.countryId, b.createdInCity = COALESCE(b.createdInCity, w.city)
+          WHERE b.createdInCountryId IS NULL AND w.countryId IS NOT NULL`,
+  },
   {
     name: "backfill.packages.registeredInLocation",
     sql: `UPDATE packages p JOIN users u ON u.id = p.registeredById
@@ -3452,6 +3465,12 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // out, not erased — see the schema note beside these columns.
   { name: "staffMessages.deletedAt", sql: "ALTER TABLE staffMessages ADD COLUMN deletedAt TIMESTAMP NULL" },
   { name: "staffMessages.deletedById", sql: "ALTER TABLE staffMessages ADD COLUMN deletedById INT NULL" },
+  // A late carton checked in with another batch's load (server/db/carrierGroup).
+  { name: "packageScans.arrivedWithBatchId", sql: "ALTER TABLE packageScans ADD COLUMN arrivedWithBatchId INT NULL" },
+  // A receipt's promised discount taken back by the main admin, with the reason (2026-11-04).
+  { name: "boxDiscountPledges.withdrawnAt", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawnAt TIMESTAMP NULL" },
+  { name: "boxDiscountPledges.withdrawnById", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawnById INT NULL" },
+  { name: "boxDiscountPledges.withdrawReason", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawReason TEXT NULL" },
 ];
 
 /**

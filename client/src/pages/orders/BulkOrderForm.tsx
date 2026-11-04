@@ -134,7 +134,7 @@ export default function BulkOrderForm() {
   const [showResult, setShowResult] = useState(false);
   const [resultData, setResultData] = useState<{ created: number; errors: number } | null>(null);
 
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
   const { data: colorAttrs } = trpc.productAttributes.list.useQuery({ type: "color" });
   const { data: sizeAttrs } = trpc.productAttributes.list.useQuery({ type: "size" });

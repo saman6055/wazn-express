@@ -7,7 +7,6 @@ import { pickLang } from "@/lib/lang";
 import { orderStageOf } from "@/lib/shipmentFilters";
 import { fmtDate } from "@/lib/numericDate";
 import { useClientPagination } from "@/hooks/useClientPagination";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { ListPager } from "@/components/ListPager";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -24,6 +23,7 @@ import {
 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar } from "recharts";
 import { useLocation } from "wouter";
+import { DebouncedSearchInput } from "@/components/DebouncedSearchInput";
 
 const COLORS = ['#10b981', '#6366f1', '#f59e0b', '#ef4444', '#8b5cf6'];
 
@@ -63,7 +63,7 @@ export default function UnifiedOrdersDashboard() {
    * order code, every tracking an order keeps, the platform order number,
    * the product and the customer's name, code and phone, over all orders.
    */
-  const searchTerm = useDebouncedValue(searchQuery.trim(), 300);
+  const searchTerm = searchQuery.trim(); // the box waits for the pause itself
   const searching = searchTerm.length >= 3;
   const { data: foundOrders } = trpc.fullPackage.list.useQuery(
     { search: searchTerm },
@@ -445,11 +445,11 @@ export default function UnifiedOrdersDashboard() {
 
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
-                <Input
+                <DebouncedSearchInput
                   placeholder={pickLang(language, { ku: 'تراکینگ، کۆد، ئۆردەر نەمبەر، کڕیار...', en: 'Tracking, code, order no., customer...', ar: 'التتبع، الرمز، رقم الطلب، العميل...', zh: '运单、编码、订单号、客户...' })}
                   data-testid="unified-orders-search"
                   value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onValueChange={setSearchQuery}
                   className="w-64 pl-10"
                 />
               </div>

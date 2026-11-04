@@ -26,6 +26,9 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { showErrorToast } from "@/lib/errorToast";
+import { pickLang } from "@/lib/lang";
+import { DRILL_CARD, PartsDrill, type DrillPart, type PartsDrillState } from "@/components/reports/ReportDrillSheet";
+import { ExpensesDrill, type ExpenseDrill } from "@/components/reports/ExpensesDrill";
 import { 
   TrendingUp,
   TrendingDown,
@@ -46,7 +49,7 @@ import {
 } from "lucide-react";
 
 export default function FinancialReports() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [activeTab, setActiveTab] = useState("pnl");
   const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth() + 1);
   const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
@@ -142,6 +145,57 @@ const [activeTab, setActiveTab] = useState("pnl");
     t("auto.text_7afb29")
   ];
 
+  // Every figure opens what it was added up from (owner, 2026-11-02).
+  const [parts, setParts] = useState<PartsDrillState | null>(null);
+  const [expenses, setExpenses] = useState<ExpenseDrill | null>(null);
+
+  const openExpenses = (title: string, expected: number, categoryId?: number) => {
+    setParts(null);
+    setExpenses({ title, startDate: dateRange.start, endDate: dateRange.end, categoryId, expected });
+  };
+  const incomeLines: DrillPart[] = [
+    { label: t("auto.text_42db23"), amount: profitLoss?.revenue.packageRevenue ?? 0 },
+    { label: t("auto.text_256a1c"), amount: profitLoss?.revenue.fullPackageRevenue ?? 0 },
+    { label: t("auto.text_32facb"), amount: profitLoss?.revenue.otherRevenue ?? 0 },
+  ];
+  const openIncome = () => setParts({ title: t("finance.income"), rows: incomeLines });
+  const openNet = () => setParts({
+    title: t("auto.text_723f22"),
+    rows: [
+      ...incomeLines,
+      { label: t("auto.text_481d09"), amount: -(profitLoss?.expenses.totalExpenses ?? 0), open: () => openExpenses(t("auto.text_481d09"), profitLoss?.expenses.totalExpenses ?? 0) },
+    ],
+  });
+  const treasury = { href: "/company/treasury", label: pickLang(language, { ku: "لاپەڕەی خەزێنە", en: "Treasury page", ar: "صفحة الخزينة", zh: "资金页面" }) };
+  const debtsPage = { href: "/company/debts", label: pickLang(language, { ku: "لاپەڕەی قەرزەکان", en: "Debts page", ar: "صفحة الديون", zh: "债务页面" }) };
+  const partnersPage = { href: "/company/partners", label: pickLang(language, { ku: "لاپەڕەی شەریکەکان", en: "Partners page", ar: "صفحة الشركاء", zh: "合伙人页面" }) };
+  const openCash = () => setParts({
+    title: t("auto.text_3ec9b2"),
+    rows: accounts.map((a) => ({ label: a.accountName, amount: Number(a.currentBalance) })),
+    manage: treasury,
+  });
+  const openDebt = () => setParts({
+    title: t("finance.totalDebt"),
+    rows: debts.filter(d => d.status === "active" || d.status === "overdue").map((d) => ({ label: d.creditorName, amount: Number(d.remainingAmount) })),
+    manage: debtsPage,
+  });
+  const partnerName = (p: (typeof partners)[number]) => p.nameKu || p.name;
+  const openCapital = () => setParts({
+    title: t("auto.text_444ee9"),
+    rows: partners.map((p) => ({ label: partnerName(p), amount: Number(p.initialCapital) })),
+    manage: partnersPage,
+  });
+  const openRetained = () => setParts({
+    title: t("auto.text_6a31c2"),
+    rows: partners.map((p) => ({ label: partnerName(p), amount: Number(p.currentBalance) })),
+    manage: partnersPage,
+  });
+  const openEquity = () => setParts({
+    title: t("auto.text_66dedb"),
+    rows: partners.map((p) => ({ label: partnerName(p), amount: Number(p.initialCapital) + Number(p.currentBalance) })),
+    manage: partnersPage,
+  });
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -189,7 +243,7 @@ const [activeTab, setActiveTab] = useState("pnl");
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 border-green-200 dark:border-green-800/60">
+          <Card className={`bg-gradient-to-br from-green-50 to-emerald-100 dark:from-green-950 dark:to-emerald-900 border-green-200 dark:border-green-800/60 ${DRILL_CARD}`} data-testid="financial-card" onClick={openIncome}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("finance.income")}</CardTitle>
               <TrendingUp className="h-5 w-5 text-green-600 dark:text-green-300" />
@@ -203,7 +257,7 @@ const [activeTab, setActiveTab] = useState("pnl");
               </p>
             </CardContent>
           </Card>
-          <Card className="bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-950 dark:to-rose-900 border-red-200 dark:border-red-800/60">
+          <Card className={`bg-gradient-to-br from-red-50 to-rose-100 dark:from-red-950 dark:to-rose-900 border-red-200 dark:border-red-800/60 ${DRILL_CARD}`} data-testid="financial-card" onClick={() => openExpenses(t("auto.text_481d09"), profitLoss?.expenses.totalExpenses ?? 0)}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("auto.text_481d09")} </CardTitle>
               <TrendingDown className="h-5 w-5 text-red-600 dark:text-red-300" />
@@ -217,7 +271,7 @@ const [activeTab, setActiveTab] = useState("pnl");
               </p>
             </CardContent>
           </Card>
-          <Card className={`bg-gradient-to-br ${
+          <Card data-testid="financial-card" onClick={openNet} className={`bg-gradient-to-br ${DRILL_CARD} ${
             (profitLoss?.netProfit || 0) >= 0 
               ? 'from-blue-50 to-indigo-100 dark:from-blue-950 dark:to-indigo-900 border-blue-200 dark:border-blue-800/60'
               : 'from-orange-50 to-amber-100 dark:from-orange-950 dark:to-amber-900 border-orange-200 dark:border-orange-800/60'
@@ -239,7 +293,7 @@ const [activeTab, setActiveTab] = useState("pnl");
               </p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={DRILL_CARD} data-testid="financial-card" onClick={openCash}>
             <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
               <CardTitle className="text-sm font-medium">{t("auto.text_3ec9b2")} </CardTitle>
               <PiggyBank className="h-5 w-5 text-purple-600 dark:text-purple-300" />
@@ -317,7 +371,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                         <span className="font-medium">{formatCurrency(profitLoss?.revenue.otherRevenue)}</span>
                       </div>
                     </div>
-                    <div className="flex justify-between py-2 border-t font-semibold text-green-700 dark:text-green-400">
+                    <div className="flex cursor-pointer justify-between py-2 border-t font-semibold text-green-700 dark:text-green-400" data-testid="financial-row" onClick={openIncome}>
                       <span>{t("auto.text_3a3774")} </span>
                       <span>{formatCurrency(profitLoss?.revenue.totalRevenue)}</span>
                     </div>
@@ -330,7 +384,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                     </h3>
                     <div className="space-y-2 pl-4">
                       {profitLoss?.expenses.byCategory.map((cat, index) => (
-                        <div key={index} className="flex justify-between py-1">
+                        <div key={index} className="flex cursor-pointer justify-between py-1" data-testid="financial-row" onClick={() => openExpenses(cat.categoryName, cat.total, cat.categoryId)}>
                           <span className="text-muted-foreground">{cat.categoryName}</span>
                           <span className="font-medium text-red-600 dark:text-red-300">-{formatCurrency(cat.total)}</span>
                         </div>
@@ -341,14 +395,14 @@ const [activeTab, setActiveTab] = useState("pnl");
                         </div>
                       )}
                     </div>
-                    <div className="flex justify-between py-2 border-t font-semibold text-red-700 dark:text-red-400">
+                    <div className="flex cursor-pointer justify-between py-2 border-t font-semibold text-red-700 dark:text-red-400" data-testid="financial-row" onClick={() => openExpenses(t("auto.text_5c09dc"), profitLoss?.expenses.totalExpenses ?? 0)}>
                       <span>{t("auto.text_5c09dc")} </span>
                       <span>-{formatCurrency(profitLoss?.expenses.totalExpenses)}</span>
                     </div>
                   </div>
 
                   {/* Net Profit */}
-                  <div className={`rounded-xl p-4 ${
+                  <div data-testid="financial-row" onClick={openNet} className={`rounded-xl p-4 ${DRILL_CARD} ${
                     (profitLoss?.netProfit || 0) >= 0 
                       ? 'bg-green-100 dark:bg-green-950' 
                       : 'bg-red-100 dark:bg-red-950'
@@ -416,7 +470,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                       ))}
                     </div>
 
-                    <div className="flex justify-between py-2 border-t font-semibold text-blue-700 dark:text-blue-400">
+                    <div className="flex cursor-pointer justify-between py-2 border-t font-semibold text-blue-700 dark:text-blue-400" data-testid="financial-row" onClick={openCash}>
                       <span>{t("auto.text_398805")} </span>
                       <span>{formatCurrency(totalCash)}</span>
                     </div>
@@ -444,7 +498,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                       )}
                     </div>
 
-                    <div className="flex justify-between py-2 border-t font-semibold text-red-700 dark:text-red-400">
+                    <div className="flex cursor-pointer justify-between py-2 border-t font-semibold text-red-700 dark:text-red-400" data-testid="financial-row" onClick={openDebt}>
                       <span>{t("finance.totalDebt")}</span>
                       <span>{formatCurrency(totalDebt)}</span>
                     </div>
@@ -452,11 +506,11 @@ const [activeTab, setActiveTab] = useState("pnl");
                     {/* Equity */}
                     <div className="space-y-2 mt-4">
                       <h4 className="font-medium text-muted-foreground">{t("auto.text_b35f1a")} </h4>
-                      <div className="flex justify-between py-1 pl-4">
+                      <div className="flex cursor-pointer justify-between py-1 pl-4" data-testid="financial-row" onClick={openCapital}>
                         <span className="text-sm">{t("auto.text_444ee9")} </span>
                         <span className="font-medium">{formatCurrency(totalPartnerCapital)}</span>
                       </div>
-                      <div className="flex justify-between py-1 pl-4">
+                      <div className="flex cursor-pointer justify-between py-1 pl-4" data-testid="financial-row" onClick={openRetained}>
                         <span className="text-sm">{t("auto.text_6a31c2")} </span>
                         <span className={`font-medium ${totalRetainedEarnings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
                           {formatCurrency(totalRetainedEarnings)}
@@ -464,7 +518,7 @@ const [activeTab, setActiveTab] = useState("pnl");
                       </div>
                     </div>
 
-                    <div className="flex justify-between py-2 border-t font-semibold text-purple-700 dark:text-purple-400">
+                    <div className="flex cursor-pointer justify-between py-2 border-t font-semibold text-purple-700 dark:text-purple-400" data-testid="financial-row" onClick={openEquity}>
                       <span>{t("auto.text_66dedb")} </span>
                       <span>{formatCurrency(totalEquity)}</span>
                     </div>
@@ -561,19 +615,19 @@ const [activeTab, setActiveTab] = useState("pnl");
                 {/* Partner Summary */}
                 {partners.length > 0 && (
                   <div className="mt-6 grid md:grid-cols-3 gap-4">
-                    <div className="rounded-xl bg-blue-50 dark:bg-blue-950 p-4">
+                    <div className={`rounded-xl bg-blue-50 dark:bg-blue-950 p-4 ${DRILL_CARD}`} data-testid="financial-card" onClick={openCapital}>
                       <p className="text-sm text-muted-foreground">{t("auto.text_341d85")} </p>
                       <p className="text-2xl font-bold text-blue-700 dark:text-blue-400">
                         {formatCurrency(totalPartnerCapital)}
                       </p>
                     </div>
-                    <div className={`rounded-xl p-4 ${totalRetainedEarnings >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}`}>
+                    <div className={`rounded-xl p-4 ${DRILL_CARD} ${totalRetainedEarnings >= 0 ? 'bg-green-50 dark:bg-green-950' : 'bg-red-50 dark:bg-red-950'}`} data-testid="financial-card" onClick={openRetained}>
                       <p className="text-sm text-muted-foreground">{t("auto.text_86655b")} </p>
                       <p className={`text-2xl font-bold ${totalRetainedEarnings >= 0 ? 'text-green-700 dark:text-green-400' : 'text-red-700 dark:text-red-400'}`}>
                         {formatCurrency(totalRetainedEarnings)}
                       </p>
                     </div>
-                    <div className="rounded-xl bg-purple-50 dark:bg-purple-950 p-4">
+                    <div className={`rounded-xl bg-purple-50 dark:bg-purple-950 p-4 ${DRILL_CARD}`} data-testid="financial-card" onClick={openEquity}>
                       <p className="text-sm text-muted-foreground">{t("auto.text_dd27c5")} </p>
                       <p className="text-2xl font-bold text-purple-700 dark:text-purple-400">
                         {formatCurrency(totalEquity)}
@@ -586,6 +640,9 @@ const [activeTab, setActiveTab] = useState("pnl");
           </TabsContent>
         </Tabs>
       </div>
+
+      <PartsDrill drill={parts} format={formatCurrency} testId="financial-drill" onClose={() => setParts(null)} />
+      <ExpensesDrill drill={expenses} onClose={() => setExpenses(null)} />
     </DashboardLayout>
   );
 }

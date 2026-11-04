@@ -503,14 +503,37 @@ export async function getAllFullPackageOrders(filters?: {
   }
 
   const limit = filters?.limit === 0 ? 0 : (filters?.limit ?? ORDER_LIST_LIMIT);
-  const rows = db
-    .select({ ...ORDER_LIST_COLUMNS, hasImage: HAS_IMAGE })
-    .from(fullPackageOrders)
-    .where(and(...conditions))
-    .orderBy(desc(fullPackageOrders.createdAt));
-  const ordersResult = limit > 0
-    ? await rows.limit(limit).offset(filters?.offset ?? 0)
-    : await rows;
+  /*
+   * The page's ids first, then its rows.
+   *
+   * hasImage has to open the photo column to answer. In one query MySQL
+   * works it out for every match before sorting and cutting to the page: a
+   * search matching a few thousand orders read a few thousand photos to show
+   * three hundred lines (half a second). Sorted on the ids alone, it opens
+   * only the photos of the rows that are shown.
+   */
+  let ordersResult;
+  if (limit > 0) {
+    const page = await db
+      .select({ id: fullPackageOrders.id })
+      .from(fullPackageOrders)
+      .where(and(...conditions))
+      .orderBy(desc(fullPackageOrders.createdAt))
+      .limit(limit)
+      .offset(filters?.offset ?? 0);
+    const position = new Map(page.map((row, i) => [row.id, i]));
+    const found = page.length === 0 ? [] : await db
+      .select({ ...ORDER_LIST_COLUMNS, hasImage: HAS_IMAGE })
+      .from(fullPackageOrders)
+      .where(inArray(fullPackageOrders.id, page.map((row) => row.id)));
+    ordersResult = found.sort((a, b) => (position.get(a.id) ?? 0) - (position.get(b.id) ?? 0));
+  } else {
+    ordersResult = await db
+      .select({ ...ORDER_LIST_COLUMNS, hasImage: HAS_IMAGE })
+      .from(fullPackageOrders)
+      .where(and(...conditions))
+      .orderBy(desc(fullPackageOrders.createdAt));
+  }
 
   // The batch and the customer each order belongs to — the few columns the
   // lists actually print, not the whole row.

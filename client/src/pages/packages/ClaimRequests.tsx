@@ -40,7 +40,7 @@ const [statusFilter, setStatusFilter] = useState<StatusFilter>("pending");
   
   // Get customer data for each request
   const customerIds = data?.requests.map(r => r.customerId) || [];
-  const { data: customers } = trpc.customers.list.useQuery(undefined, {
+  const { data: customers } = trpc.customers.picker.useQuery(undefined, {
     enabled: customerIds.length > 0,
   });
   

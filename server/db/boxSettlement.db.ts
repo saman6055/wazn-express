@@ -1176,7 +1176,7 @@ export async function getOpenPledges(boxId: number): Promise<OpenPledge[]> {
   const rows = await db
     .select()
     .from(boxDiscountPledges)
-    .where(and(eq(boxDiscountPledges.boxId, boxId), isNull(boxDiscountPledges.settlementId)))
+    .where(and(eq(boxDiscountPledges.boxId, boxId), isNull(boxDiscountPledges.settlementId), isNull(boxDiscountPledges.withdrawnAt)))
     .orderBy(boxDiscountPledges.createdAt);
   return rows.map((r) => ({
     id: r.id,
@@ -1188,6 +1188,47 @@ export async function getOpenPledges(boxId: number): Promise<OpenPledge[]> {
     createdAt: (r.createdAt as Date | null) ?? null,
     createdById: r.createdById,
   }));
+}
+
+/**
+ * Take back what a printed receipt promised on one target - the box, or one
+ * parcel in it (owner, 2026-11-04: «با قفل نەبێ لابردنی بە هۆکارەوە بێت و لە
+ * سیستەمی خۆمان لە شوێنێ خەزن بێت لەلای کڕیار نا»).
+ *
+ * The main admin's alone, with a reason. Nothing is deleted: the promise is
+ * marked withdrawn with who, when and why, and the audit log keeps it too.
+ * No money moves - a promise was never money until a settlement kept it.
+ */
+export async function withdrawBoxPledge(
+  input: { boxId: number; lineId: number | null; reason: string },
+  userId: number,
+): Promise<{ withdrawn: number; pledges: OpenPledge[] }> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  const reason = (input.reason ?? "").trim();
+  if (reason.length < 3) {
+    throw new Error(withFix("لابردنی داشکانی سەر وەسڵ بەبێ هۆکار تۆمار ناکرێت.", [
+      "بنووسە بۆچی لادەبرێت (بەلایەنی کەم سێ پیت)",
+      "دووبارە «لابردن» لێبدە",
+    ]));
+  }
+  const target = input.lineId === null
+    ? isNull(boxDiscountPledges.lineId)
+    : eq(boxDiscountPledges.lineId, input.lineId);
+  const [done] = await db.update(boxDiscountPledges)
+    .set({ withdrawnAt: new Date(), withdrawnById: userId, withdrawReason: reason })
+    .where(and(
+      eq(boxDiscountPledges.boxId, input.boxId),
+      target,
+      isNull(boxDiscountPledges.settlementId),
+      isNull(boxDiscountPledges.withdrawnAt),
+    ));
+  const withdrawn = Number((done as { affectedRows?: number }).affectedRows ?? 0);
+  if (withdrawn === 0) {
+    throw new Error(withFix("هیچ داشکانێکی کراوە لەسەر ئەمە نییە بۆ لابردن.", ["پەنجەرەکە دابخە و دووبارە بیکەرەوە"]));
+  }
+  appLogger.info("[BoxSettlement] receipt discount promise withdrawn", { boxId: input.boxId, lineId: input.lineId, withdrawn, userId });
+  return { withdrawn, pledges: await getOpenPledges(input.boxId) };
 }
 
 export interface PledgeDiscountInput {
@@ -1902,6 +1943,7 @@ export async function createBoxSettlement(
         .where(and(
           eq(boxDiscountPledges.boxId, input.boxId),
           isNull(boxDiscountPledges.settlementId),
+          isNull(boxDiscountPledges.withdrawnAt),
         ));
     }
 

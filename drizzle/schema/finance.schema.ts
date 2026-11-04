@@ -976,6 +976,14 @@ export const boxDiscountPledges = mysqlTable("boxDiscountPledges", {
   settlementId: int("settlementId"),
   honouredAt: timestamp("honouredAt"),
 
+  /**
+   * Taken back by the main admin, with the reason (owner, 2026-11-04). Kept
+   * here for the office only - the customer is never shown it.
+   */
+  withdrawnAt: timestamp("withdrawnAt"),
+  withdrawnById: int("withdrawnById"),
+  withdrawReason: text("withdrawReason"),
+
   createdById: int("createdById").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 }, (table) => ({

@@ -147,7 +147,7 @@ export default function CommissionDetail() {
     status: "pending",
   });
 
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: suppliers } = trpc.suppliers.list.useQuery();
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;

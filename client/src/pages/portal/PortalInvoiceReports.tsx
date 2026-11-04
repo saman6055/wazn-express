@@ -31,6 +31,7 @@ import { formatPortalDate, monthName } from "@/lib/portalClock";
 import { PortalErrorState } from "@/components/portal/PortalErrorState";
 import { PortalEmptyState } from "@/components/portal/PortalEmptyState";
 import { fmtUsd } from "@/lib/portalFormat";
+import { escapeHtml } from "@/lib/html";
 
 // The two month-name lists that used to live here — one Kurdish, one English,
 // with no Arabic or Chinese anywhere — are now monthName() in lib/portalClock,
@@ -209,7 +210,7 @@ function ClassicPortalInvoiceReports() {
       <!DOCTYPE html>
       <html lang="${language}" dir="${language === "ku" || language === "ar" ? "rtl" : "ltr"}">
       <head>
-        <title>Invoice Report - ${selectedYear}</title>
+        <title>Invoice Report - ${escapeHtml(selectedYear)}</title>
         <style>
           body { font-family: Arial, sans-serif; padding: 20px; }
           h1 { text-align: center; color: #333; }
@@ -226,7 +227,7 @@ function ClassicPortalInvoiceReports() {
       </head>
       <body>
         ${reportLogoHtml()}
-        <h1>${pickLang(language, { ku: "ڕاپۆرتی پسووڵەکانم", en: "My Invoice Report", ar: "تقرير فواتيري", zh: "我的发票报告" })} - ${selectedYear}</h1>
+        <h1>${pickLang(language, { ku: "ڕاپۆرتی پسووڵەکانم", en: "My Invoice Report", ar: "تقرير فواتيري", zh: "我的发票报告" })} - ${escapeHtml(selectedYear)}</h1>
         <div class="summary">
           <div class="summary-card">
             <h3>${pickLang(language, { ku: "کۆی پسووڵەکان", en: "Total Invoices", ar: "إجمالي الفواتير", zh: "发票总数" })}</h3>
@@ -258,7 +259,7 @@ function ClassicPortalInvoiceReports() {
           <tbody>
             ${monthlyReport.map(m => `
               <tr>
-                <td>${m.monthEn}</td>
+                <td>${escapeHtml(m.monthEn)}</td>
                 <td>${m.count}</td>
                 <td>${fmtUsd(m.total)}</td>
                 <td style="color: green;">${fmtUsd(m.paid)}</td>

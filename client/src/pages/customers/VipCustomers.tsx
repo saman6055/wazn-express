@@ -29,7 +29,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [customerSearch, setCustomerSearch] = useState("");
 
   const { data: vipCustomers, refetch } = trpc.vip.list.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   
   const createMutation = trpc.vip.create.useMutation({
     onSuccess: () => {

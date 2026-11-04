@@ -49,7 +49,7 @@ export default function PortalUnclaimedPackages() {
    * trip and a table scan; "AZ295" was five searches, of which four were
    * thrown away, and the answer to the last one queued behind them.
    */
-  const debouncedSearchTerm = useDebouncedValue(searchTerm, 300);
+  const debouncedSearchTerm = useDebouncedValue(searchTerm, 150);
   const [selectedPackage, setSelectedPackage] = useState<any>(null);
   const [claimNote, setClaimNote] = useState("");
   const [proofImages, setProofImages] = useState<string[]>([]);

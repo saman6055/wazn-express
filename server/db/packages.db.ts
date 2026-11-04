@@ -980,6 +980,28 @@ export async function deletePackage(id: number) {
   await db.delete(packages).where(eq(packages.id, id));
 }
 
+/**
+ * The dashboard's alert tiles, counted here rather than in the browser.
+ * Delivered, cancelled and returned parcels are normal; the rest by how long
+ * since they were registered: over 20 days high, over 10 a warning.
+ */
+export async function getPackageAlertCounts(): Promise<{ normal: number; warning: number; highRisk: number }> {
+  const db = await getDb();
+  if (!db) return { normal: 0, warning: 0, highRisk: 0 };
+  const result = await db.execute(sql`
+    SELECT
+      COALESCE(SUM(open = 1 AND days > 20), 0) AS highRisk,
+      COALESCE(SUM(open = 1 AND days > 10 AND days <= 20), 0) AS warning,
+      COALESCE(SUM(open = 0 OR days <= 10), 0) AS normal
+    FROM (
+      SELECT status NOT IN ('delivered', 'cancelled', 'returned') AS open,
+             FLOOR(TIMESTAMPDIFF(SECOND, createdAt, UTC_TIMESTAMP()) / 86400) AS days
+      FROM packages ORDER BY createdAt DESC LIMIT 500
+    ) AS newest`);
+  const row = ((result as unknown as [Array<Record<string, unknown>>])[0] ?? [])[0] ?? {};
+  return { normal: Number(row.normal ?? 0), warning: Number(row.warning ?? 0), highRisk: Number(row.highRisk ?? 0) };
+}
+
 export async function getPackagesByStatus(status: string) {
   const db = await getDb();
   if (!db) return [];

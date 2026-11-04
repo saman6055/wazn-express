@@ -37,8 +37,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { Link } from "wouter";
 import { resolveBatchCost } from "@shared/batchCost";
+import { batchesHref, type BatchTypeFilter } from "@shared/listLinks";
+import { pickLang } from "@/lib/lang";
+import { DRILL_CARD, RecordLink, ReportDrillSheet, type DrillColumn } from "@/components/reports/ReportDrillSheet";
 import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 
@@ -128,7 +130,8 @@ function StatCard({
   changeLabel,
   icon: Icon, 
   trend,
-  color = "text-primary"
+  color = "text-primary",
+  onClick,
 }: { 
   title: string; 
   value: string; 
@@ -137,9 +140,10 @@ function StatCard({
   icon: any; 
   trend?: "up" | "down" | "neutral";
   color?: string;
+  onClick?: () => void;
 }) {
   return (
-    <Card>
+    <Card className={onClick ? DRILL_CARD : undefined} data-testid="profit-dashboard-card" onClick={onClick}>
       <CardContent className="p-6">
         <div className="flex items-start justify-between">
           <div className="space-y-2">
@@ -171,9 +175,11 @@ function StatCard({
 }
 
 export default function ProfitDashboard() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [timeRange, setTimeRange] = useState("all");
   const [shippingType, setShippingType] = useState("all");
+  // Every figure opens the batches it was added up from (owner, 2026-11-02).
+  const [drill, setDrill] = useState<{ title: string; rows: any[] } | null>(null);
 
   // Fetch all batches with financial data
   const { data: batchesResponse, isLoading: batchesLoading } = trpc.batches.list.useQuery();
@@ -335,6 +341,14 @@ const [timeRange, setTimeRange] = useState("all");
     batchDetails: [],
   };
 
+  const drillColumns: DrillColumn<any>[] = [
+    { header: pickLang(language, { ku: "باچ", en: "Batch", ar: "الدفعة", zh: "批次" }), cell: (b) => <RecordLink href={`/batches/${b.id}/financial`}><span dir="ltr">{b.name}</span></RecordLink> },
+    { header: pickLang(language, { ku: "پاکەت", en: "Packages", ar: "الطرود", zh: "包裹" }), cell: (b) => b.packageCount, total: (rows) => rows.reduce((n, b) => n + b.packageCount, 0) },
+    { header: pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" }), ltr: true, cell: (b) => formatCurrency(b.cost), total: (rows) => formatCurrency(rows.reduce((n, b) => n + b.cost, 0)) },
+    { header: pickLang(language, { ku: "داهات", en: "Revenue", ar: "الإيراد", zh: "收入" }), ltr: true, cell: (b) => formatCurrency(b.revenue), total: (rows) => formatCurrency(rows.reduce((n, b) => n + b.revenue, 0)) },
+    { header: pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" }), ltr: true, cell: (b) => formatCurrency(b.profit), total: (rows) => formatCurrency(rows.reduce((n, b) => n + b.profit, 0)) },
+  ];
+
   return (
     <div className="p-6 space-y-6">
       {/* Header */}
@@ -383,18 +397,21 @@ const [timeRange, setTimeRange] = useState("all");
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title="Total Revenue"
+          onClick={() => setDrill({ title: "Total Revenue", rows: data.batchDetails })}
           value={formatCurrency(data.totalRevenue)}
           icon={DollarSign}
           color="text-green-600"
         />
         <StatCard
           title="Total Cost"
+          onClick={() => setDrill({ title: "Total Cost", rows: data.batchDetails })}
           value={formatCurrency(data.totalCost)}
           icon={TrendingDown}
           color="text-red-600"
         />
         <StatCard
           title="Net Profit"
+          onClick={() => setDrill({ title: "Net Profit", rows: data.batchDetails })}
           value={formatCurrency(data.totalProfit)}
           icon={data.totalProfit >= 0 ? TrendingUp : TrendingDown}
           trend={data.totalProfit >= 0 ? "up" : "down"}
@@ -402,6 +419,7 @@ const [timeRange, setTimeRange] = useState("all");
         />
         <StatCard
           title="Profit Margin"
+          onClick={() => setDrill({ title: "Profit Margin", rows: data.batchDetails })}
           value={`${data.profitMargin.toFixed(1)}%`}
           icon={PieChart}
           trend={data.profitMargin >= 20 ? "up" : data.profitMargin >= 10 ? "neutral" : "down"}
@@ -411,7 +429,7 @@ const [timeRange, setTimeRange] = useState("all");
 
       {/* Secondary Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
+        <Card className={DRILL_CARD} data-testid="profit-dashboard-card" onClick={() => setDrill({ title: "Total Packages", rows: data.batchDetails })}>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-blue-100 dark:bg-blue-950/40 text-blue-600 dark:text-blue-300">
@@ -424,7 +442,7 @@ const [timeRange, setTimeRange] = useState("all");
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={DRILL_CARD} data-testid="profit-dashboard-card" onClick={() => setDrill({ title: "Total Batches", rows: data.batchDetails })}>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-purple-100 dark:bg-purple-950/40 text-purple-600 dark:text-purple-300">
@@ -437,7 +455,7 @@ const [timeRange, setTimeRange] = useState("all");
             </div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className={DRILL_CARD} data-testid="profit-dashboard-card" onClick={() => setDrill({ title: "Avg. Profit/Package", rows: data.batchDetails })}>
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
               <div className="p-3 rounded-lg bg-orange-100 dark:bg-orange-950/40 text-orange-600 dark:text-orange-300">
@@ -505,7 +523,7 @@ const [timeRange, setTimeRange] = useState("all");
 
       {/* Profit by Type Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="border-l-4 border-l-blue-500">
+        <Card className={`border-l-4 border-l-blue-500 ${DRILL_CARD}`} data-testid="profit-dashboard-card" onClick={() => setDrill({ title: "Air Regular", rows: data.batchDetails.filter((b: any) => b.shippingType === "air_regular") })}>
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <Plane className="h-5 w-5 text-blue-500 dark:text-blue-400" />
@@ -530,7 +548,7 @@ const [timeRange, setTimeRange] = useState("all");
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-purple-500">
+        <Card className={`border-l-4 border-l-purple-500 ${DRILL_CARD}`} data-testid="profit-dashboard-card" onClick={() => setDrill({ title: "Air Irregular", rows: data.batchDetails.filter((b: any) => b.shippingType === "air_irregular") })}>
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <Plane className="h-5 w-5 text-purple-500 dark:text-purple-400" />
@@ -555,7 +573,7 @@ const [timeRange, setTimeRange] = useState("all");
           </CardContent>
         </Card>
 
-        <Card className="border-l-4 border-l-green-500">
+        <Card className={`border-l-4 border-l-green-500 ${DRILL_CARD}`} data-testid="profit-dashboard-card" onClick={() => setDrill({ title: "Sea", rows: data.batchDetails.filter((b: any) => b.shippingType === "sea") })}>
           <CardContent className="p-6">
             <div className="flex items-center gap-3 mb-4">
               <Ship className="h-5 w-5 text-green-500 dark:text-green-400" />
@@ -605,9 +623,7 @@ const [timeRange, setTimeRange] = useState("all");
               {data.batchDetails.slice(0, 10).map((batch: any) => (
                 <TableRow key={batch.id}>
                   <TableCell>
-                    <Link href={`/batches/${batch.id}/financial`} className="font-medium text-primary hover:underline">
-                      {batch.name}
-                    </Link>
+                    <RecordLink href={`/batches/${batch.id}/financial`}>{batch.name}</RecordLink>
                   </TableCell>
                   <TableCell>
                     <Badge variant="outline" className="capitalize">
@@ -647,12 +663,22 @@ const [timeRange, setTimeRange] = useState("all");
           {data.batchDetails.length > 10 && (
             <div className="mt-4 text-center">
               <Button variant="outline" asChild>
-                <Link href="/batches">View All Batches</Link>
+                <a href={batchesHref({ type: shippingType as BatchTypeFilter })} target="_blank" rel="noopener noreferrer">View All Batches</a>
               </Button>
             </div>
           )}
         </CardContent>
       </Card>
+
+      <ReportDrillSheet
+        open={!!drill}
+        title={drill?.title ?? ""}
+        rows={drill?.rows ?? []}
+        columns={drillColumns}
+        rowKey={(b) => b.id}
+        testId="profit-dashboard-drill"
+        onClose={() => setDrill(null)}
+      />
     </div>
   );
 }

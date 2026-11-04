@@ -55,7 +55,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useState, useMemo, useEffect, useCallback, memo, useRef } from "react";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useIsMobile } from "@/hooks/useMobile";
 import { useLocation } from "wouter";
 import { ShippingRouteFilter, useShippingRouteFilter } from "@/components/ShippingRouteFilter";
@@ -76,6 +75,7 @@ import { CustomerJourneyPanel } from "@/components/packages/CustomerJourneyPanel
 import { StatusBadge } from "@/components/ui/status-badge";
 import { FilterChips, type FilterChip } from "@/components/ui/filter-chips";
 import { showErrorToast } from "@/lib/errorToast";
+import { DebouncedSearchInput } from "@/components/DebouncedSearchInput";
 
 const statusColors: Record<string, string> = {
   registered: statusChip("registered", "package"),
@@ -126,6 +126,8 @@ type Package = {
   heightCm: string | null;
   volumeCbm: string | null;
   batchId: number | null;
+  /** The parcel's warehouse - decides which batches it may go into. */
+  originWarehouseId?: number | null;
   categoryId: number | null;
   isUnclaimed: boolean | null;
   /*
@@ -587,7 +589,7 @@ const [, setLocation] = useLocation();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const debouncedSearch = useDebouncedValue(searchInput, 300);
+  const debouncedSearch = searchInput; // the box waits for the pause itself
   useEffect(() => {
     setSearch(debouncedSearch);
     setCurrentPage(1);
@@ -635,7 +637,7 @@ const [, setLocation] = useLocation();
 
   const packages = packagesFromHook;
   const utils = trpc.useUtils();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();
   const volumetricDivisor = divisorData?.divisor || DEFAULT_VOLUMETRIC_DIVISOR;
 
@@ -726,7 +728,11 @@ const [, setLocation] = useLocation();
 
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
-  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
+  // The parcel being edited decides by its warehouse, as the server does
+  // (assertBatchMatchesDesk); the desk only for a parcel with none.
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery(
+    selectedPackage?.originWarehouseId ? { warehouseId: selectedPackage.originWarehouseId } : undefined,
+  );
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: categories } = trpc.productCategories.list.useQuery();
 
@@ -1465,10 +1471,10 @@ const [, setLocation] = useLocation();
               <div className="flex flex-col gap-4 lg:flex-row lg:flex-wrap">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <DebouncedSearchInput
                     placeholder={t("packages.searchPlaceholder")}
                     value={searchInput}
-                    onChange={(e) => setSearchInput(e.target.value)}
+                    onValueChange={setSearchInput}
                     className="pl-9"
                   />
                 </div>

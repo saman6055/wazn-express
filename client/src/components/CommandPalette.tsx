@@ -290,7 +290,7 @@ export function CommandPalette({ open, onOpenChange, destinations = [] }: Comman
   const allowedKey = HUB_ACTIONS.filter((a) => canViewPath(a.requires)).map((a) => a.id).join(",");
   const allowed = useMemo(() => new Set(allowedKey.split(",")), [allowedKey]);
 
-  const { data: customers } = trpc.customers.list.useQuery(undefined, {
+  const { data: customers } = trpc.customers.picker.useQuery(undefined, {
     enabled: open && canCustomers,
     staleTime: 5 * 60_000,
   });

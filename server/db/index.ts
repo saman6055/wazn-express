@@ -65,3 +65,5 @@ export * from './dispatch.db';
 export * from './dispatchInsight.db';
 export * from './carrierParts.db';
 export * from './carrierGroup.db';
+export * from './batchReopen.db';
+export * from './parcelOnRoad.db';

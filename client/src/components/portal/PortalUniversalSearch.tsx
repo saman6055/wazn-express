@@ -114,7 +114,7 @@ export default function PortalUniversalSearch({ view }: PortalUniversalSearchPro
   // nobody has claimed. Asked once the typing pauses.
   const loaded = parcelsQ.isSuccess;
   const wanted = loaded && shouldAskServer(parsed, matches.length) ? cleanTrackingPaste(deferredQuery).slice(0, 100) : "";
-  const asked = useDebouncedValue(wanted, 400);
+  const asked = useDebouncedValue(wanted, 150);
   const askServer = asked.length >= 5 && asked === wanted;
   const serverOptions = { enabled: askServer, retry: false, staleTime: 30_000 } as const;
   const serverParcelQ = trpc.customerPortal.searchPackage.useQuery({ trackingNumber: asked || "-" }, serverOptions);

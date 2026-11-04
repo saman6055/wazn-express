@@ -13,6 +13,7 @@ import { useState, useRef, useEffect, useMemo, useCallback } from "react";
 import { usePasteIntoField } from "@/hooks/usePasteIntoField";
 import { VolumetricDiscountIfDue } from "@/components/packages/VolumetricDiscount";
 import { ChinaBatchBanner, confirmBatchToday, confirmedBatchToday } from "@/components/packages/ChinaBatchBanner";
+import { readQuickRegisterDay, saveQuickRegisterDay } from "@/lib/quickRegisterDay";
 import { toast } from "sonner";
 import { Package, Plane, Ship, Search, User, Loader2, CheckCircle2, Plus, Calculator, Zap, AlertTriangle, ExternalLink, Tags, ChevronDown, ImagePlus, X, Camera, PackageSearch, Clipboard, Scale, Ruler, Info, RotateCcw, Calendar, TrendingUp, Warehouse, Palette, Layers, PencilLine } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -107,20 +108,22 @@ export default function QuickRegister() {
   // Form state
   const [customerId, setCustomerId] = useState<number | null>(null);
   const [customerSearch, setCustomerSearch] = useState("");
-  const [shippingType, setShippingType] = useState<"air_regular" | "air_irregular" | "sea">("air_regular");
+  // Warehouse, transport and batch hold for the day (lib/quickRegisterDay).
+  const [today] = useState(() => readQuickRegisterDay(new Date(), user?.id));
+  const [shippingType, setShippingType] = useState<"air_regular" | "air_irregular" | "sea">(today?.shippingType ?? "air_regular");
   const [weightKg, setWeightKg] = useState("");
   const [lengthCm, setLengthCm] = useState("");
   const [widthCm, setWidthCm] = useState("");
   const [heightCm, setHeightCm] = useState("");
   // Sea: how many cartons of the size above (owner, 2026-10-17). One means one.
   const [cartonCount, setCartonCount] = useState("1");
-  const [batchId, setBatchId] = useState<string>("");
+  const [batchId, setBatchId] = useState<string>(today?.batchId ?? "");
   // China (owner, 2026-10-24): the batch big at the top, confirmed once a day.
   const { data: dispatchMe } = trpc.dispatch.me.useQuery(undefined, { staleTime: 5 * 60_000 });
   const inChina = !!dispatchMe?.inChina;
   const [confirmedBatch, setConfirmedBatch] = useState<string | null>(() => confirmedBatchToday());
   const batchSelectRef = useRef<HTMLButtonElement>(null);
-  const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(null);
+  const [originWarehouseId, setOriginWarehouseId] = useState<number | null>(today?.originWarehouseId ?? null);
   const [isUnclaimed, setIsUnclaimed] = useState(false);
   /** A moment's ring on the weight box, so the handover is seen, not guessed. */
   const [weightGlow, setWeightGlow] = useState(false);
@@ -191,14 +194,23 @@ export default function QuickRegister() {
   } | null>(null);
 
   // Queries — handle errors so one failed API doesn't block the form
-  const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
+  const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.picker.useQuery();
   const { data: batchesRaw, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
-  // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
-  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
+  // Only batches made where the parcel is: the chosen warehouse decides, the
+  // desk only when none is chosen (shared/batchTwin, owner 2026-11-03).
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery(originWarehouseId ? { warehouseId: originWarehouseId } : undefined);
+  /*
+   * Where this person stands, whatever warehouse is chosen. A carton of
+   * another batch scanned here is an arrival only in Erbil - and the chosen
+   * warehouse (Guangzhou, for the batch it came with) used to answer that
+   * instead, so the «گەیشتنی تۆمار بکە» button went (owner, 2026-11-04).
+   */
+  const { data: ownDesk } = trpc.batches.carrierGroup.myDesk.useQuery();
   const recordArrival = trpc.scanning.registerScan.useMutation();
   const recordArrivalHere = (packageId: number, tracking: string) => {
     recordArrival.mutate(
-      { trackingNumber: tracking, packageId, scanType: "received_local" },
+      // The batch chosen here is the load it came in (the carrier strip counts it).
+      { trackingNumber: tracking, packageId, scanType: "received_local", arrivedWithBatchId: parseInt(batchId) || undefined },
       {
         onSuccess: () => {
           soundManager.playSuccess();
@@ -396,7 +408,12 @@ export default function QuickRegister() {
               // Registered in China and scanned here: what is wanted is its
               // arrival, on the batch it belongs to - one press, no second
               // registration and no second charge (owner, 2026-10-31).
-              ...(arrivalDue(already, desk?.inChina)
+              // In Erbil, with a batch that has left China chosen (or none):
+              // typing a China list into a batch still being packed is a
+              // real duplicate, not an arrival.
+              ...(arrivalDue(already, ownDesk?.inChina)
+                && !(desk?.inChina && (batchesRaw as Array<{ id: number; status?: string | null }> | undefined)
+                  ?.find((b) => String(b.id) === batchId)?.status === "preparing")
                 ? {
                     title: pickLang(language, {
                       ku: `ئەم پاکێجە هی باچی ${(result as { batchCode?: string | null }).batchCode ?? ""}ـە`,
@@ -535,6 +552,13 @@ export default function QuickRegister() {
     }
   }, [warehouses, originWarehouseId]);
 
+  // A remembered warehouse that is gone falls back to the first.
+  useEffect(() => {
+    if (warehouses?.length && originWarehouseId !== null && !warehouses.some((w) => w.id === originWarehouseId)) {
+      setOriginWarehouseId(warehouses[0].id);
+    }
+  }, [warehouses, originWarehouseId]);
+
   const selectedWarehouse = useMemo(
     () => (warehouses?.find((w) => w.id === originWarehouseId) ?? warehouses?.[0]) ?? null,
     [warehouses, originWarehouseId]
@@ -550,6 +574,18 @@ export default function QuickRegister() {
       return batchType === "sea";
     }).filter((b: any) => batchOpenForRegistration(b) && batchMatchesDesk(b.madeInChina, desk?.inChina));
   }, [batches, shippingType, desk?.inChina]);
+
+  // A remembered batch that has since closed is let go, not shown blank.
+  useEffect(() => {
+    if (!batches || !batchId || batchId === "none") return;
+    if (!filteredBatches.some((b: any) => String(b.id) === batchId)) setBatchId("");
+  }, [batches, filteredBatches, batchId]);
+
+  // Per person (lib/quickRegisterDay): saved only once we know who it is.
+  useEffect(() => {
+    if (!user?.id) return;
+    saveQuickRegisterDay({ originWarehouseId, shippingType, batchId }, new Date(), user.id);
+  }, [originWarehouseId, shippingType, batchId, user?.id]);
   
   const filteredCustomers = useMemo(() => {
     if (!customers || !customerSearch) return [];
@@ -1380,9 +1416,7 @@ export default function QuickRegister() {
     setWidthCm("");
     setHeightCm("");
     setCartonCount("1");
-    setBatchId("");
-    setOriginWarehouseId(warehouses?.[0]?.id ?? null);
-    setShippingType("air_regular");
+    // Warehouse, transport and batch stay: they are the day's, not the parcel's.
     setCategoryId("");
     setDescription("");
     setDirectCbm("");

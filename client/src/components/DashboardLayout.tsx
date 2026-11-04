@@ -119,6 +119,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { cn } from "@/lib/utils";
 import { pickLang } from "@/lib/lang";
 import { usePermissions } from "@/hooks/usePermissions";
+import { prefetchDailyPages } from "@/lib/prefetchPages";
 
 interface MenuItem {
   icon: LucideIcon;
@@ -193,6 +194,13 @@ function DashboardLayoutContent({
   children: React.ReactNode;
 }) {
   const { user, logout } = useAuth();
+  const prefetchUtils = trpc.useUtils();
+  // The office's first screen is up: fetch what the next clicks will want.
+  useEffect(() => {
+    if (!user || user.isCustomer) return;
+    prefetchDailyPages();
+    void prefetchUtils.customers.picker.prefetch(undefined, { staleTime: 10 * 60 * 1000 });
+  }, [user?.id]);
   const [location, setLocation] = useLocation();
   const isMobile = useIsMobile();
   const { language, setLanguage, t, isRTL } = useLanguage();

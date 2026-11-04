@@ -67,7 +67,7 @@ const [, setLocation] = useLocation();
   
   const { data: stats, isLoading: statsLoading } = trpc.packages.stats.useQuery();
   const { data: recentPackages, isLoading: recentLoading } = trpc.packages.recentPackages.useQuery({ limit: 8 });
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
 
   const getCustomerName = (customerId: number | null) => {
     if (!customerId) return t("packages.unclaimedShortName");

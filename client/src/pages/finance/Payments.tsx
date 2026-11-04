@@ -44,7 +44,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     { limit: PAYMENTS_SHOWN },
     { enabled: seesHistory },
   );
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   
   // What was really received: the payment less anything handed back.
   const netOf = (p: { amountUsd?: unknown; reversedAmountUsd?: unknown }) =>

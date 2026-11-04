@@ -19,7 +19,7 @@ export default function InvoiceView() {
   const invoiceId = parseInt(params.id || "0");
 
   const { data: invoice, isLoading } = trpc.invoices.getById.useQuery({ id: invoiceId }, { enabled: invoiceId > 0 });
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: template } = trpc.invoiceTemplates.getDefault.useQuery();
   const generatePdfMutation = trpc.invoices.generatePDF.useMutation();
   const customer = customers?.find(c => c.id === invoice?.customerId);

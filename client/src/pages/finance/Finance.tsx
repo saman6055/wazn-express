@@ -90,6 +90,9 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { normalizePhone } from "@shared/phone";
 import { TransactionDetailDialog, type TransactionLike } from "@/components/finance/TransactionDetailDialog";
+import { DebouncedSearchInput } from "@/components/DebouncedSearchInput";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { ListPager } from "@/components/ListPager";
 
 type SortField = 'balance' | 'name' | 'date' | 'code';
 type SortDirection = 'asc' | 'desc';
@@ -165,7 +168,7 @@ export default function Finance() {
   const { data: accounts, isLoading: accountsLoading } = trpc.ledger.getAllAccounts.useQuery();
   const { data: recentTransactions, refetch: refetchTransactions } = trpc.ledger.getRecentTransactions.useQuery({ limit: 50 });
   const { data: debtors } = trpc.ledger.getDebtors.useQuery({ minBalanceUsd: 0 });
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: activeCashAccounts } = trpc.cashAccounts.listActive.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
   
@@ -255,6 +258,15 @@ export default function Finance() {
     
     return filtered;
   }, [accounts, searchQuery, accountFilter, sortField, sortDirection]);
+
+  // Fifty rows at a time: every account drawn at once was tens of thousands of
+  // elements, redrawn on each letter. The count, the totals and the exports
+  // above still read the whole filtered list.
+  const accountPage = useClientPagination(
+    filteredAndSortedAccounts,
+    50,
+    [searchQuery, accountFilter, sortField, sortDirection].join("|"),
+  );
   
   // Credit customers - filtered and sorted
   const creditCustomers = useMemo(() => {
@@ -1069,11 +1081,11 @@ export default function Finance() {
             being shown five of the matches would be worse than no search. */}
         <div ref={tabsRef} className="relative max-w-md scroll-mt-24">
           <Search className="pointer-events-none absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
+          <DebouncedSearchInput
             value={searchQuery}
-            onChange={(e) => {
-              setSearchQuery(e.target.value);
-              if (e.target.value.trim() && activeTab !== "accounts") setActiveTab("accounts");
+            onValueChange={(next) => {
+              setSearchQuery(next);
+              if (next.trim() && activeTab !== "accounts") setActiveTab("accounts");
             }}
             className="h-11 ps-9"
             placeholder={pickLang(language, { ku: "گەڕان بە کۆد، ناو، یان مۆبایل...", en: "Search by code, name, or mobile...", ar: "ابحث بالرمز أو الاسم أو الهاتف...", zh: "按编号、姓名或手机搜索..." })}
@@ -1381,7 +1393,7 @@ export default function Finance() {
                         </TableRow>
                       </TableHeader>
                       <TableBody>
-                        {filteredAndSortedAccounts.map((account) => {
+                        {accountPage.pageRows.map((account) => {
                           const balanceUsd = parseFloat(account.currentBalanceUsd || '0');
                           return (
                             <TableRow key={account.id} {...clickable(() => openCustomer(account.customerId))} className="hover:bg-muted/50 transition-colors cursor-pointer">
@@ -1419,6 +1431,7 @@ export default function Finance() {
                         })}
                       </TableBody>
                     </Table>
+                    <ListPager {...accountPage} />
                   </div>
                 )}
               </CardContent>

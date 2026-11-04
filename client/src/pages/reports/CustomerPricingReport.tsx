@@ -8,9 +8,11 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Users, Plane, Ship, Search, DollarSign, Package } from "lucide-react";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
+import { DRILL_CARD, RecordLink, ReportDrillSheet, type DrillColumn } from "@/components/reports/ReportDrillSheet";
 
 export default function CustomerPricingReport() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [selectedBatch, setSelectedBatch] = useState<string>("all");
   const [selectedCustomer, setSelectedCustomer] = useState<string>("all");
   const [selectedShippingType, setSelectedShippingType] = useState<string>("all");
@@ -18,7 +20,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
 
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: allCustomerPricingRaw } = trpc.batches.listAllCustomerPricing.useQuery();
   const allCustomerPricing = Array.isArray(allCustomerPricingRaw) ? allCustomerPricingRaw : (allCustomerPricingRaw as any)?.data;
 
@@ -62,6 +64,42 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
     avgDiscount: 0, // Could calculate if we had default prices
   };
 
+  // Every figure opens the prices it counted (owner, 2026-11-02).
+  const [drill, setDrill] = useState<{ title: string; rows: any[]; by: "price" | "customer" | "batch" } | null>(null);
+  const customerCell = (id: number) => {
+    const c = getCustomerInfo(id);
+    return c ? <RecordLink href={`/customers/${c.id}`}>{c.customerCode || c.fullName}</RecordLink> : "—";
+  };
+  const batchCell = (id: number) => {
+    const b = getBatchInfo(id);
+    return b ? <RecordLink href={`/batches/${b.id}/financial`}><span dir="ltr">{b.batchCode}</span></RecordLink> : "—";
+  };
+  const unitPrice = (cp: any) => {
+    const isSea = getBatchInfo(cp.batchId)?.shippingType === "sea";
+    return `$${Number(isSea ? cp.pricePerCbm : cp.pricePerKg).toFixed(2)}/${isSea ? "CBM" : "kg"}`;
+  };
+  const distinctBy = (key: "customerId" | "batchId") => {
+    const counts = new Map<number, number>();
+    for (const cp of filteredPricing as any[]) counts.set(cp[key], (counts.get(cp[key]) ?? 0) + 1);
+    return Array.from(counts, ([id, count]) => ({ id, count }));
+  };
+  const countHeader = pickLang(language, { ku: "ژمارەی نرخ", en: "Prices", ar: "عدد الأسعار", zh: "价格数" });
+  const drillColumns: DrillColumn<any>[] = drill?.by === "customer"
+    ? [
+        { header: t("customers.title"), cell: (r) => customerCell(r.id) },
+        { header: countHeader, cell: (r) => r.count, total: (rows) => rows.reduce((n, r) => n + r.count, 0) },
+      ]
+    : drill?.by === "batch"
+      ? [
+          { header: t("batches.title"), cell: (r) => batchCell(r.id) },
+          { header: countHeader, cell: (r) => r.count, total: (rows) => rows.reduce((n, r) => n + r.count, 0) },
+        ]
+      : [
+          { header: t("customers.title"), cell: (cp) => customerCell(cp.customerId) },
+          { header: t("batches.title"), cell: (cp) => batchCell(cp.batchId) },
+          { header: t("pricing.customPricing"), cell: unitPrice, ltr: true },
+        ];
+
   return (
     <DashboardLayout>
       <div className="space-y-6">
@@ -76,7 +114,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
 
         {/* Statistics Cards */}
         <div className="grid gap-4 md:grid-cols-4">
-          <Card>
+          <Card className={DRILL_CARD} data-testid="customer-pricing-card" onClick={() => setDrill({ title: t("auto.text_f6924e"), rows: filteredPricing, by: "price" })}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{t("auto.text_f6924e")} </CardTitle>
             </CardHeader>
@@ -84,7 +122,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
               <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">{stats.totalCustomerPricing}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={DRILL_CARD} data-testid="customer-pricing-card" onClick={() => setDrill({ title: t("auto.text_959b1f"), rows: distinctBy("customerId"), by: "customer" })}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{t("auto.text_959b1f")} </CardTitle>
             </CardHeader>
@@ -92,7 +130,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
               <p className="text-2xl font-bold">{stats.uniqueCustomers}</p>
             </CardContent>
           </Card>
-          <Card>
+          <Card className={DRILL_CARD} data-testid="customer-pricing-card" onClick={() => setDrill({ title: t("auto.text_15b23a"), rows: distinctBy("batchId"), by: "batch" })}>
             <CardHeader className="pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">{t("auto.text_15b23a")} </CardTitle>
             </CardHeader>
@@ -106,14 +144,32 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
             </CardHeader>
             <CardContent>
               <div className="flex gap-2">
-                <Badge variant="outline" className="text-amber-600 dark:text-amber-300">
+                <Badge
+                  variant="outline"
+                  className={`text-amber-600 dark:text-amber-300 ${DRILL_CARD}`}
+                  data-testid="customer-pricing-card"
+                  onClick={() => setDrill({
+                    title: pickLang(language, { ku: "ئاسمانی", en: "Air", ar: "جوي", zh: "空运" }),
+                    rows: filteredPricing.filter((cp: any) => getBatchInfo(cp.batchId)?.shippingType !== "sea"),
+                    by: "price",
+                  })}
+                >
                   <Plane className="h-3 w-3 me-1" />
                   {filteredPricing.filter((cp: any) => {
                     const batch = getBatchInfo(cp.batchId);
                     return batch?.shippingType !== 'sea';
                   }).length}
                 </Badge>
-                <Badge variant="outline" className="text-blue-600 dark:text-blue-300">
+                <Badge
+                  variant="outline"
+                  className={`text-blue-600 dark:text-blue-300 ${DRILL_CARD}`}
+                  data-testid="customer-pricing-card"
+                  onClick={() => setDrill({
+                    title: pickLang(language, { ku: "دەریایی", en: "Sea", ar: "بحري", zh: "海运" }),
+                    rows: filteredPricing.filter((cp: any) => getBatchInfo(cp.batchId)?.shippingType === "sea"),
+                    by: "price",
+                  })}
+                >
                   <Ship className="h-3 w-3 me-1" />
                   {filteredPricing.filter((cp: any) => {
                     const batch = getBatchInfo(cp.batchId);
@@ -220,7 +276,11 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
                     <TableRow key={`${cp.batchId}-${cp.customerId}`}>
                       <TableCell>
                         <div>
-                          <div className="font-medium">{customer?.fullName || 'Unknown'}</div>
+                          <div className="font-medium">
+                            {customer
+                              ? <RecordLink href={`/customers/${customer.id}`}>{customer.fullName || 'Unknown'}</RecordLink>
+                              : 'Unknown'}
+                          </div>
                           <div className="text-sm text-muted-foreground">{customer?.customerCode}</div>
                         </div>
                       </TableCell>
@@ -231,7 +291,9 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
                           ) : (
                             <Plane className="h-4 w-4 text-amber-600 dark:text-amber-300" />
                           )}
-                          <span className="font-mono">{batch?.batchCode || 'Unknown'}</span>
+                          {batch
+                            ? <RecordLink href={`/batches/${batch.id}/financial`}><span className="font-mono">{batch.batchCode || 'Unknown'}</span></RecordLink>
+                            : <span className="font-mono">Unknown</span>}
                         </div>
                       </TableCell>
                       <TableCell>
@@ -276,6 +338,16 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
           </CardContent>
         </Card>
       </div>
+
+      <ReportDrillSheet
+        open={!!drill}
+        title={drill?.title ?? ""}
+        rows={drill?.rows ?? []}
+        columns={drillColumns}
+        rowKey={(r, i) => (drill?.by === "price" ? `${r.batchId}-${r.customerId}` : r.id ?? i)}
+        testId="customer-pricing-drill"
+        onClose={() => setDrill(null)}
+      />
     </DashboardLayout>
   );
 }

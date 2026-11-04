@@ -7,7 +7,7 @@ import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotN
 import { getTotalDebtAmount } from './finance.db';
 import { countEmptyBoxes, getDeliveryBoxProfitBreakdown } from './deliveryBoxes.db';
 import { selfOrderConditions } from './selfOrder.filter';
-import { ACTIVE_BATCH_STATUSES, debtorsHref, trackingAlertsHref } from '@shared/listLinks';
+import { ACTIVE_BATCH_STATUSES, debtorsHref, packagesHref, trackingAlertsHref } from '@shared/listLinks';
 import { daysWaitingForTracking, isOverCreditLimit, isTrackingOverdue } from '@shared/riskRules';
 import { getOrdersPendingTracking } from './fullPackage.db';
 import { buildRiskItems, type RiskItem } from '@shared/riskBell';
@@ -295,7 +295,8 @@ export async function getTopCustomersByRevenue(limit = 10) {
   if (!db) return [];
   
   // Join ledgerTransactions with customerAccounts to get customerId
-  return db.select({
+  // (the name is read after, so the dashboard need not load every customer)
+  const rows = await db.select({
     customerId: customerAccounts.customerId,
     totalCharges: sql<number>`SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END)`,
     totalPayments: sql<number>`SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'CREDIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END)`,
@@ -305,6 +306,10 @@ export async function getTopCustomersByRevenue(limit = 10) {
     .groupBy(customerAccounts.customerId)
     .orderBy(desc(sql`SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END)`))
     .limit(limit);
+  const ids = rows.map((r) => r.customerId).filter((id): id is number => id != null);
+  const named = ids.length ? await db.select({ id: customers.id, fullName: customers.fullName }).from(customers).where(inArray(customers.id, ids)) : [];
+  const nameOf = new Map(named.map((c) => [c.id, c.fullName]));
+  return rows.map((r) => ({ ...r, fullName: nameOf.get(r.customerId as number) ?? null }));
 }
 
 // Get customers with outstanding debt - uses unified customerAccounts
@@ -788,10 +793,12 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
   timestamp: Date;
   icon: string;
   color: string;
+  href?: string;
 }[]> {
   const db = await getDb();
   if (!db) return [];
   try {
+  // Each line leads to the record it names (owner, 2026-11-02).
   const activities: {
     id: string;
     type: 'package' | 'payment' | 'customer' | 'batch' | 'delivery';
@@ -800,6 +807,7 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
     timestamp: Date;
     icon: string;
     color: string;
+    href?: string;
   }[] = [];
 
   // Recent packages
@@ -817,7 +825,8 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
       description: pkg.trackingNumber || `PKG-${pkg.id}`,
       timestamp: pkg.createdAt,
       icon: 'Package',
-      color: 'blue'
+      color: 'blue',
+      href: pkg.trackingNumber ? packagesHref({ search: pkg.trackingNumber }) : undefined
     });
   });
 
@@ -847,7 +856,8 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
       description: payment.customerId ? (customerMap.get(payment.customerId) ?? 'Unknown') : 'Unknown',
       timestamp: payment.paymentDate,
       icon: 'DollarSign',
-      color: 'green'
+      color: 'green',
+      href: payment.customerId ? `/finance/customer/${payment.customerId}` : undefined
     });
   }
 
@@ -869,7 +879,8 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
       description: cust.fullName || cust.customerCode || '',
       timestamp: cust.createdAt!,
       icon: 'User',
-      color: 'purple'
+      color: 'purple',
+      href: `/customers/${cust.id}`
     });
   });
 
@@ -891,7 +902,8 @@ export async function getDashboardRecentActivity(limit: number = 10): Promise<{
       description: del.trackingNumber || `PKG-${del.id}`,
       timestamp: del.updatedAt,
       icon: 'CheckCircle',
-      color: 'emerald'
+      color: 'emerald',
+      href: del.trackingNumber ? packagesHref({ search: del.trackingNumber }) : undefined
     });
   });
 
@@ -1130,18 +1142,37 @@ export async function getDashboardNewCustomers(days: number = 7): Promise<number
 // Positive counterpart to the alerts: this-week wins / records to celebrate on
 // the dashboard. Each block is isolated in its own try/catch so one failing
 // metric never blanks the whole section.
+/** The orders the week's order count counted, by the same rule (dashboard, owner 2026-11-02). */
+export async function getWeekOrders() {
+  const db = await getDb();
+  if (!db) return [];
+  const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7);
+  return db.select({
+    id: fullPackageOrders.id,
+    orderCode: fullPackageOrders.orderCode,
+    orderType: fullPackageOrders.orderType,
+    customerId: fullPackageOrders.customerId,
+    customerCode: customers.customerCode,
+    customerName: customers.fullName,
+    createdAt: fullPackageOrders.createdAt,
+  }).from(fullPackageOrders)
+    .leftJoin(customers, eq(customers.id, fullPackageOrders.customerId))
+    .where(and(isNull(fullPackageOrders.deletedAt), gte(fullPackageOrders.createdAt, weekAgo)))
+    .orderBy(desc(fullPackageOrders.createdAt));
+}
+
 export async function getWeeklyHighlights(): Promise<{
   profit: { thisWeekUsd: number; lastWeekUsd: number; deltaPct: number | null; isRecord: boolean };
   newCustomers: { thisWeek: number; lastWeek: number };
   orders: { thisWeek: number; lastWeek: number };
-  topCustomer: { name: string; code: string; orders: number; spentUsd: number } | null;
+  topCustomer: { id: number; name: string; code: string; orders: number; spentUsd: number } | null;
   fastestBatch: { code: string; days: number } | null;
 }> {
   const empty = {
     profit: { thisWeekUsd: 0, lastWeekUsd: 0, deltaPct: null as number | null, isRecord: false },
     newCustomers: { thisWeek: 0, lastWeek: 0 },
     orders: { thisWeek: 0, lastWeek: 0 },
-    topCustomer: null as { name: string; code: string; orders: number; spentUsd: number } | null,
+    topCustomer: null as { id: number; name: string; code: string; orders: number; spentUsd: number } | null,
     fastestBatch: null as { code: string; days: number } | null,
   };
   const db = await getDb();
@@ -1189,7 +1220,7 @@ export async function getWeeklyHighlights(): Promise<{
     } catch { /* ignore */ }
 
     // Most active customer this week (by order count)
-    let topCustomer: { name: string; code: string; orders: number; spentUsd: number } | null = null;
+    let topCustomer: { id: number; name: string; code: string; orders: number; spentUsd: number } | null = null;
     try {
       const rows = await db.select({
         customerId: fullPackageOrders.customerId,
@@ -1204,6 +1235,7 @@ export async function getWeeklyHighlights(): Promise<{
         const [cust] = await db.select().from(customers).where(eq(customers.id, rows[0].customerId)).limit(1);
         if (cust) {
           topCustomer = {
+            id: Number(cust.id),
             name: (cust as any).fullName || (cust as any).fullNameKurdish || (cust as any).name || "",
             code: (cust as any).customerCode || "",
             orders: Number(rows[0].orders) || 0,
@@ -1682,6 +1714,7 @@ export async function getFullPackageProfitReport(filters?: {
     status: string;
     deliveredDate: Date | null;
     createdAt: Date;
+    deletedAt: Date | null;
   }>;
   summary: {
     totalOrders: number;
@@ -1732,6 +1765,7 @@ export async function getFullPackageProfitReport(filters?: {
     status: fullPackageOrders.status,
     deliveredDate: fullPackageOrders.deliveredDate,
     createdAt: fullPackageOrders.createdAt,
+    deletedAt: fullPackageOrders.deletedAt,
     customerName: customers.fullName,
   })
     .from(fullPackageOrders)
@@ -1762,6 +1796,7 @@ export async function getFullPackageProfitReport(filters?: {
       status: order.status || 'pending',
       deliveredDate: order.deliveredDate,
       createdAt: order.createdAt!,
+      deletedAt: order.deletedAt,
     };
   });
   

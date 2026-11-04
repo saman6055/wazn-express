@@ -75,7 +75,7 @@ export function BatchPrintBoxesSection({ batchId, batchCode }: BatchPrintBoxesSe
     return params;
   }, [filters, currentPage, batchId]);
 
-  const { data: customersData } = trpc.customers.list.useQuery();
+  const { data: customersData } = trpc.customers.picker.useQuery();
   const {
     data: boxesData,
     isLoading: boxesLoading,

@@ -64,7 +64,7 @@ export default function ServicesReport() {
   // Queries
   const { data: services, isLoading } = trpc.extraServices.list.useQuery({});
   const { data: serviceTypes } = trpc.extraServices.getServiceTypes.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   
   // Filter services by date
   const filteredServices = useMemo(() => {

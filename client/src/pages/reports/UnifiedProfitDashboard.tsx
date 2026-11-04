@@ -40,6 +40,9 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
+import { fmtDate } from "@/lib/numericDate";
+import { DRILL_CARD, RecordLink, ReportDrillSheet, type DrillColumn } from "@/components/reports/ReportDrillSheet";
+import { orderHref } from "@/components/reports/OrderProfitDrill";
 
 // Order type configuration
 const orderTypeConfig = {
@@ -258,6 +261,29 @@ export default function UnifiedProfitDashboard() {
   }, [fpOrders]);
   
   const isLoading = fpLoading || ordersLoading;
+
+  // Every figure opens the orders it was added up from (owner, 2026-11-02).
+  const [drill, setDrill] = useState<{ title: string; rows: any[] } | null>(null);
+  const typedOrders = useMemo(() => ((fpOrders ?? []) as any[]).filter((o) => o.orderType === "full_package" || o.orderType === "commission"), [fpOrders]);
+  const monthOf = (order: any) => {
+    const date = new Date(order.createdAt);
+    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}`;
+  };
+  const profitOf = (order: any) => parseFloat(order.profitUsd || "0");
+  const drillColumns: DrillColumn<any>[] = [
+    { header: pickLang(language, { ku: "ئۆردەر", en: "Order", ar: "الطلب", zh: "订单" }), cell: (o) => <RecordLink href={orderHref(o)}><span dir="ltr">{o.orderCode}</span></RecordLink> },
+    {
+      header: pickLang(language, { ku: "کڕیار", en: "Customer", ar: "العميل", zh: "客户" }),
+      cell: (o) => (o.customer ? <RecordLink href={`/customers/${o.customer.id}`}>{o.customer.customerCode || o.customer.fullName}</RecordLink> : "—"),
+    },
+    { header: pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" }), cell: (o) => fmtDate(o.createdAt), ltr: true },
+    {
+      header: pickLang(language, { ku: "قازانج", en: "Profit", ar: "الربح", zh: "利润" }),
+      ltr: true,
+      cell: (o) => formatCurrency(profitOf(o)),
+      total: (rows) => formatCurrency(rows.reduce((n, o) => n + profitOf(o), 0)),
+    },
+  ];
   
   // Chart data
   const chartData = [
@@ -303,7 +329,7 @@ export default function UnifiedProfitDashboard() {
         {/* Summary Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           {/* Total Profit */}
-          <Card className="bg-gradient-to-br from-blue-500 to-blue-600 text-white">
+          <Card className={`bg-gradient-to-br from-blue-500 to-blue-600 text-white ${DRILL_CARD}`} data-testid="unified-profit-card" onClick={() => setDrill({ title: pickLang(language, { ku: "کۆی قازانج", en: "Total Profit", ar: "إجمالي الربح", zh: "总利润" }), rows: typedOrders })}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -324,7 +350,7 @@ export default function UnifiedProfitDashboard() {
           </Card>
           
           {/* Full Package Profit */}
-          <Card className={cn("border-l-4 border-l-emerald-500")}>
+          <Card className={cn("border-l-4 border-l-emerald-500", DRILL_CARD)} data-testid="unified-profit-card" onClick={() => setDrill({ title: pickLang(language, { ku: "پاکێجی تەواو", en: "Full Package", ar: "الحزمة الكاملة", zh: "全包服务" }), rows: typedOrders.filter((o) => o.orderType === "full_package") })}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -351,7 +377,7 @@ export default function UnifiedProfitDashboard() {
           
           
           {/* Commission Profit */}
-          <Card className={cn("border-l-4 border-l-amber-500")}>
+          <Card className={cn("border-l-4 border-l-amber-500", DRILL_CARD)} data-testid="unified-profit-card" onClick={() => setDrill({ title: pickLang(language, { ku: "عمولە", en: "Commission", ar: "العمولة", zh: "佣金" }), rows: typedOrders.filter((o) => o.orderType === "commission") })}>
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
@@ -470,7 +496,7 @@ export default function UnifiedProfitDashboard() {
                   </TableHeader>
                   <TableBody>
                     {monthlyBreakdown.map((row) => (
-                      <TableRow key={row.month}>
+                      <TableRow key={row.month} className="cursor-pointer" data-testid="unified-profit-row" onClick={() => setDrill({ title: row.monthLabel, rows: typedOrders.filter((o) => monthOf(o) === row.month) })}>
                         <TableCell className="font-medium">{row.monthLabel}</TableCell>
                         <TableCell className="text-right">
                           <span className="text-emerald-600 dark:text-emerald-300">{formatCurrency(row.full_package)}</span>
@@ -491,6 +517,16 @@ export default function UnifiedProfitDashboard() {
           </CardContent>
         </Card>
       </div>
+
+      <ReportDrillSheet
+        open={!!drill}
+        title={drill?.title ?? ""}
+        rows={drill?.rows ?? []}
+        columns={drillColumns}
+        rowKey={(o) => o.id}
+        testId="unified-profit-drill"
+        onClose={() => setDrill(null)}
+      />
     </DashboardLayout>
   );
 }
