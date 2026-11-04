@@ -199,6 +199,13 @@ export default function QuickRegister() {
   // Only batches made where the parcel is: the chosen warehouse decides, the
   // desk only when none is chosen (shared/batchTwin, owner 2026-11-03).
   const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery(originWarehouseId ? { warehouseId: originWarehouseId } : undefined);
+  /*
+   * Where this person stands, whatever warehouse is chosen. A carton of
+   * another batch scanned here is an arrival only in Erbil - and the chosen
+   * warehouse (Guangzhou, for the batch it came with) used to answer that
+   * instead, so the «گەیشتنی تۆمار بکە» button went (owner, 2026-11-04).
+   */
+  const { data: ownDesk } = trpc.batches.carrierGroup.myDesk.useQuery();
   const recordArrival = trpc.scanning.registerScan.useMutation();
   const recordArrivalHere = (packageId: number, tracking: string) => {
     recordArrival.mutate(
@@ -401,7 +408,12 @@ export default function QuickRegister() {
               // Registered in China and scanned here: what is wanted is its
               // arrival, on the batch it belongs to - one press, no second
               // registration and no second charge (owner, 2026-10-31).
-              ...(arrivalDue(already, desk?.inChina)
+              // In Erbil, with a batch that has left China chosen (or none):
+              // typing a China list into a batch still being packed is a
+              // real duplicate, not an arrival.
+              ...(arrivalDue(already, ownDesk?.inChina)
+                && !(desk?.inChina && (batchesRaw as Array<{ id: number; status?: string | null }> | undefined)
+                  ?.find((b) => String(b.id) === batchId)?.status === "preparing")
                 ? {
                     title: pickLang(language, {
                       ku: `ئەم پاکێجە هی باچی ${(result as { batchCode?: string | null }).batchCode ?? ""}ـە`,
