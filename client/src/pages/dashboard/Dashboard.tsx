@@ -304,10 +304,11 @@ export default function Dashboard() {
    * was already coming back from packages.stats and nothing read it.
    */
   const shippingTypeData = useMemo(() => {
+    // The dashboard's own blues and violets (owner, 2026-11-05).
     const colors: Record<string, string> = {
       air_regular: '#3b82f6',
-      air_irregular: '#f59e0b',
-      sea: '#10b981',
+      air_irregular: '#8b5cf6',
+      sea: '#0ea5e9',
     };
     return (parcelStats?.byShippingType || [])
       .filter(row => Number(row.count) > 0)
@@ -316,7 +317,8 @@ export default function Dashboard() {
           ? pickLang(language, SHIPPING_TYPE_LABEL[row.shippingType]!)
           : row.shippingType,
         value: Number(row.count),
-        color: colors[row.shippingType] || '#8b5cf6',
+        color: colors[row.shippingType] || '#a855f7',
+        type: row.shippingType as "air_regular" | "air_irregular" | "sea",
       }));
   }, [parcelStats, language]);
 
@@ -975,10 +977,15 @@ export default function Dashboard() {
                 <Truck className="h-5 w-5 text-primary" />
                 {t('dashboard.shippingType')}
               </CardTitle>
-              <CardDescription>{t('dashboard.packageDistribution')}</CardDescription>
+              <CardDescription>{pickLang(language, { ku: "هەموو پاکەتەکان، لە سەرەتاوە — کلیک لە هەر جۆرێک بکە بۆ پاکەتەکانی", en: "Every parcel, since the start — click a kind for its parcels", ar: "كل الطرود منذ البداية — انقر على نوع لعرض طروده", zh: "自开始以来的全部包裹——点击类型查看包裹" })}</CardDescription>
             </CardHeader>
             <CardContent className="p-4">
-              <div className="h-[250px]">
+              <div className="relative h-[250px]">
+                {/* The total in the hole of the ring. */}
+                <div className="pointer-events-none absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold tabular-nums">{shippingTypeData.reduce((n, d) => n + d.value, 0).toLocaleString("en-US")}</span>
+                  <span className="text-[11px] text-muted-foreground">{pickLang(language, { ku: "پاکەت", en: "parcels", ar: "طرد", zh: "包裹" })}</span>
+                </div>
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
                     <Pie
@@ -989,6 +996,8 @@ export default function Dashboard() {
                       outerRadius={90}
                       paddingAngle={5}
                       dataKey="value"
+                      className="cursor-pointer"
+                      onClick={(d: { type?: string }) => d?.type && setLocation(packagesHref({ shippingType: d.type as "air_regular" | "air_irregular" | "sea" }))}
                     >
                       {shippingTypeData.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={entry.color} />
@@ -998,13 +1007,17 @@ export default function Dashboard() {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <div className="flex justify-center gap-4 mt-2">
-                {shippingTypeData.map((item, index) => (
-                  <div key={index} className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }} />
-                    <span className="text-xs text-muted-foreground">{item.name}</span>
-                  </div>
-                ))}
+              <div className="mt-2 flex flex-wrap justify-center gap-2">
+                {shippingTypeData.map((item) => {
+                  const total = shippingTypeData.reduce((n, d) => n + d.value, 0) || 1;
+                  return (
+                    <Link key={item.type} href={packagesHref({ shippingType: item.type })} className="flex items-center gap-2 rounded-lg border px-2.5 py-1 text-xs transition-colors hover:border-sky-400 hover:bg-sky-50/60 dark:hover:bg-sky-950/30">
+                      <span className="h-3 w-3 rounded-full" style={{ backgroundColor: item.color }} />
+                      <span className="text-muted-foreground">{item.name}</span>
+                      <span className="font-semibold tabular-nums" dir="ltr">{item.value.toLocaleString("en-US")} · {Math.round((item.value / total) * 100)}%</span>
+                    </Link>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
