@@ -175,6 +175,11 @@ export async function getCarrierGroup(batchId: number) {
   const costUsd = invoice ? Number(invoice.costUsd) : null;
   const oursKg = r2(members.reduce((s, m) => s + m.liveKg, 0));
   const stillComing = members.reduce((s, m) => s + m.stillComing, 0);
+  // Our other batches' late cartons the carrier weighed with this load: the
+  // strip has subtracted them since 2026-11-03; the verdict and the bell must
+  // say the same, or the bell reads "short" where nothing is (audit 2026-11-05).
+  const others = await arrivedWithLoad(members.map((m) => m.batchId));
+  const withOthersKg = r2(oursKg + others.reduce((s, o) => s + o.kg, 0));
   const allocations = (invoice?.allocations ?? null) as Record<string, number> | null;
   const shares = !invoice ? []
     : allocations ? splitInvoiceByHand(members.map((m) => m.batchId), allocations, billedKg!, costUsd!)
@@ -199,8 +204,10 @@ export async function getCarrierGroup(batchId: number) {
     oursKg,
     allKg: r2(members.reduce((s, m) => s + m.kg, 0)),
     stillComing,
-    verdict: groupVerdict({ billedKg, oursKg, stillComing }),
-    differenceUsd: invoice ? groupDifferenceUsd({ billedKg: billedKg!, costUsd: costUsd!, oursKg }) : 0,
+    others,
+    withOthersKg,
+    verdict: groupVerdict({ billedKg, oursKg: withOthersKg, stillComing }),
+    differenceUsd: invoice ? groupDifferenceUsd({ billedKg: billedKg!, costUsd: costUsd!, oursKg: withOthersKg }) : 0,
     shares,
   };
 }
@@ -338,7 +345,7 @@ export async function countShortCarrierGroups(): Promise<Array<{ batchId: number
       .where(and(eq(batches.carrierBatchNo, inv.key), notInArray(batches.status, ["closed"]))).limit(1);
     if (!b) continue;
     const g = await getCarrierGroup(Number(b.id));
-    if (g?.verdict === "short") out.push({ batchId: Number(b.id), key: inv.key, kg: r2((g.invoice?.billedKg ?? 0) - g.oursKg), usd: -g.differenceUsd });
+    if (g?.verdict === "short") out.push({ batchId: Number(b.id), key: inv.key, kg: r2((g.invoice?.billedKg ?? 0) - g.withOthersKg), usd: -g.differenceUsd });
   }
   return out;
 }
@@ -389,7 +396,7 @@ async function arrivedWithLoad(batchIds: number[]): Promise<Array<{ batchCode: s
 export async function getBatchKgCheck(batchId: number) {
   const g = await getCarrierGroup(batchId);
   if (g) {
-    const others = await arrivedWithLoad(g.members.map((m) => m.batchId));
+    const others = g.others;
     return {
       key: g.key, carrierKg: g.invoice?.billedKg ?? null, oursKg: g.oursKg, allKg: g.allKg, stillComing: g.stillComing,
       // Each batch said apart, so a group figure is never read as this batch's.
