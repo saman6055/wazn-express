@@ -593,8 +593,25 @@ export async function getDashboardRevenueChart(days: number = 30): Promise<{ dat
   }
 }
 
-/** Daily revenue, expenses, and profit for dashboard chart (داهات، خەرجی، قازانج) */
-export async function getDashboardProfitLossChart(days: number = 30): Promise<{ date: string; revenue: number; expenses: number; profit: number }[]> {
+/**
+ * The clean profit of one stretch of days (owner, 2026-11-05): the work's
+ * profit by the one rule — commission, batches after the carrier, full
+ * packages, box extras, refused goods, extra services (getProfitForPeriod) —
+ * less the expenses. Money received is not profit: a customer paying $500
+ * for goods is $500 that goes back out to the seller.
+ */
+async function workProfitByWindows(windows: Array<{ start: Date; end: Date }>): Promise<number[]> {
+  const out: number[] = new Array(windows.length).fill(0);
+  // A few at a time: each one is several reads.
+  for (let i = 0; i < windows.length; i += 6) {
+    const part = await Promise.all(windows.slice(i, i + 6).map((w) => getProfitForPeriod(w.start, w.end)));
+    part.forEach((p, k) => { out[i + k] = Number(p.total.profit) || 0; });
+  }
+  return out;
+}
+
+/** Daily money received, expenses, and clean profit for the dashboard chart (داهات، خەرجی، قازانج). */
+export async function getDashboardProfitLossChart(days: number = 30): Promise<{ date: string; revenue: number; expenses: number; workProfit: number; profit: number }[]> {
   const db = await getDb();
   if (!db) return [];
 
@@ -651,25 +668,26 @@ export async function getDashboardProfitLossChart(days: number = 30): Promise<{ 
       expenseMap.set(dateKey, parseFloat(e.expenses) || 0);
     }
 
-    const result: { date: string; revenue: number; expenses: number; profit: number }[] = [];
+    const dates: string[] = [];
     const currentDate = new Date(startDate);
     const today = new Date();
     today.setHours(23, 59, 59, 999);
-
     while (currentDate <= today) {
-      const dateStr = currentDate.toISOString().split('T')[0];
-      const revenue = revenueMap.get(dateStr) || 0;
-      const expenses = expenseMap.get(dateStr) || 0;
-      result.push({
-        date: dateStr,
-        revenue,
-        expenses,
-        profit: revenue - expenses,
-      });
+      dates.push(currentDate.toISOString().split('T')[0]);
       currentDate.setDate(currentDate.getDate() + 1);
     }
+    // The same day the expenses are grouped by (DATE()), start to end.
+    const work = await workProfitByWindows(dates.map((d) => ({
+      start: new Date(`${d}T00:00:00.000Z`),
+      end: new Date(`${d}T23:59:59.999Z`),
+    })));
 
-    return result;
+    return dates.map((date, i) => {
+      const revenue = revenueMap.get(date) || 0;
+      const expenses = expenseMap.get(date) || 0;
+      const workProfit = Math.round(work[i] * 100) / 100;
+      return { date, revenue, expenses, workProfit, profit: Math.round((workProfit - expenses) * 100) / 100 };
+    });
   } catch (error) {
     appLogger.error('Error in getDashboardProfitLossChart', { error: error instanceof Error ? error.message : String(error) });
     return [];
@@ -1186,12 +1204,20 @@ export async function getWeeklyHighlights(): Promise<{
     // record if it's the highest of the last ~13 weeks (and positive).
     const profit = { thisWeekUsd: 0, lastWeekUsd: 0, deltaPct: null as number | null, isRecord: false };
     try {
-      const daily = await getDashboardProfitLossChart(91);
-      const desc7 = [...daily].sort((a, b) => (a.date < b.date ? 1 : -1));
-      const weeks: number[] = [];
-      for (let i = 0; i < desc7.length; i += 7) {
-        weeks.push(desc7.slice(i, i + 7).reduce((s, d) => s + (d.profit || 0), 0));
-      }
+      // Thirteen trailing weeks, newest first, each the clean profit:
+      // the work's profit by the one rule less that week's expenses.
+      const now = new Date();
+      const windows = Array.from({ length: 13 }, (_, i) => ({
+        start: new Date(now.getTime() - (i + 1) * 7 * 86_400_000),
+        end: new Date(now.getTime() - i * 7 * 86_400_000),
+      }));
+      const work = await workProfitByWindows(windows);
+      const spent = await Promise.all(windows.map(async (w) => {
+        const [r] = await db.select({ usd: sql<string>`COALESCE(SUM(CAST(${expenses.amountUsd} AS DECIMAL(14,2))), 0)` })
+          .from(expenses).where(and(gte(expenses.expenseDate, w.start), lt(expenses.expenseDate, w.end)));
+        return Number(r?.usd || 0);
+      }));
+      const weeks = work.map((w, i) => Math.round((w - spent[i]) * 100) / 100);
       const thisWeek = weeks[0] ?? 0;
       const lastWeek = weeks[1] ?? 0;
       const maxWeek = weeks.length ? Math.max(...weeks) : 0;
