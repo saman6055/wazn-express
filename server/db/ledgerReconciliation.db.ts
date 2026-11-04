@@ -38,6 +38,19 @@ const NET_CHARGE = (alias: string) =>
       `WHEN ${alias}.transactionType = 'ADJUSTMENT_CREDIT' THEN -CAST(${alias}.amountUsd AS DECIMAL(14,2)) ELSE 0 END`,
   );
 
+/**
+ * A commission order's freight row: written under referenceType 'package'
+ * but with the ORDER's id, naming the order's code. It is not the parcel with
+ * that number, so the parcel checks below leave it out — counted as the
+ * parcel's charge it raised price alarms that were not real (2026-11-05).
+ */
+const NOT_ORDER_FREIGHT = (alias: string) =>
+  sql.raw(
+    `NOT EXISTS (SELECT 1 FROM fullPackageOrders fo JOIN customerAccounts fa ON fa.customerId = fo.customerId ` +
+      `WHERE fa.id = ${alias}.accountId AND fo.id = ${alias}.referenceId ` +
+      `AND ${alias}.description COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', fo.orderCode COLLATE utf8mb4_unicode_ci, '%'))`,
+  );
+
 /** The prefix reverseBoxSettlement writes on the row that undoes a receipt. */
 const RECEIPT_REVERSAL_PREFIX = "هەڵوەشاندنەوەی واصڵی ";
 
@@ -266,6 +279,7 @@ export async function getLedgerReconciliation(): Promise<LedgerReconciliation> {
          SELECT 1 FROM ledgerTransactions t
           WHERE t.accountId = a.id AND t.referenceType = 'package' AND t.referenceId = i.packageId
             AND t.transactionType IN (${CHARGE_IN})
+            AND ${NOT_ORDER_FREIGHT("t")}
        )
        AND NOT EXISTS (
          SELECT 1 FROM boxSettlementLines l
@@ -297,6 +311,7 @@ export async function getLedgerReconciliation(): Promise<LedgerReconciliation> {
         SELECT t.accountId AS accountId, t.referenceId AS referenceId, SUM(${NET_CHARGE("t")}) AS net
           FROM ledgerTransactions t
          WHERE t.referenceType = 'package'
+           AND ${NOT_ORDER_FREIGHT("t")}
          GROUP BY t.accountId, t.referenceId
       ) x ON x.accountId = a.id AND x.referenceId = i.packageId
      WHERE i.itemType = 'regular' AND i.packageId IS NOT NULL

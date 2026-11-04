@@ -87,7 +87,7 @@ describe("the report opens on the live database", () => {
     const path = await import("path");
     const src = fs.readFileSync(path.resolve(__dirname, "..", "db", "ledgerReconciliation.db.ts"), "utf8");
     const likes = src.split("\n").filter((line) => line.includes("LIKE CONCAT("));
-    expect(likes.length).toBe(3);
+    expect(likes.length).toBe(4);
     for (const line of likes) expect(line.match(/COLLATE utf8mb4_unicode_ci/g)?.length, line.trim()).toBe(2);
   });
 });
