@@ -1593,6 +1593,9 @@ export const batchesRouter = router({
           });
         }
         await db.updateBatch(batch.id, { status: "at_depot" }, ctx.user.id);
+        // The close stamped cartons that never came «delivered»: back on the
+        // road, so the batch can show them missing (audit 2026-11-05).
+        const undone = await db.undoCloseStampsOnReopen(batch.id);
         await db.createAuditLog({
           userId: ctx.user.id,
           userRole: ctx.user.role,
@@ -1600,9 +1603,9 @@ export const batchesRouter = router({
           entityType: "batch",
           entityId: batch.id,
           oldValues: { status: "closed" },
-          newValues: { status: "at_depot", reason: why },
+          newValues: { status: "at_depot", reason: why, notArrivedBack: undone.codes },
         });
-        return { batchId: batch.id, status: "at_depot" as const };
+        return { batchId: batch.id, status: "at_depot" as const, notArrivedBack: undone.restored };
       }),
 
     updateStatus: staffProcedure
