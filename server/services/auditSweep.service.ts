@@ -407,6 +407,10 @@ const QUERIES: Record<CheckId, string> = {
    * An order whose parcel is registered to someone else while the order's
    * money still stands on the order's customer (CM-MTVGC8UN: Helin charged
    * $28.63, the bag in Zainab's box and paid there).
+   *
+   * The ledger and the order tables carry different collations in
+   * production; the LIKE names one (it failed every run with
+   * ER_CANT_AGGREGATE_2COLLATIONS until 2026-11-05).
    */
   order_charged_to_other: `
     SELECT o.orderCode, oc.customerCode AS chargedTo, pc.customerCode AS parcelWith, p.packageCode,
@@ -419,7 +423,8 @@ const QUERIES: Record<CheckId, string> = {
                AND t.referenceId = o.id
                AND (t.referenceType IN ('commission', 'full_package')
                     OR (t.referenceType = 'package'
-                        AND (t.description LIKE CONCAT('%', o.orderCode, '%') OR t.description LIKE '%[REV:%' OR t.description LIKE '%[ADJ:%')))) AS standingUsd
+                        AND (t.description COLLATE utf8mb4_unicode_ci LIKE CONCAT('%', o.orderCode COLLATE utf8mb4_unicode_ci, '%')
+                             OR t.description LIKE '%[REV:%' OR t.description LIKE '%[ADJ:%')))) AS standingUsd
     FROM fullPackageOrders o
     JOIN packages p ON p.fullPackageOrderId = o.id
     JOIN customers oc ON oc.id = o.customerId
