@@ -136,7 +136,14 @@ export default function BatchAssignmentScanner() {
   // Get open batches
   const openBatches = useMemo(() => {
     if (!batches) return [];
-    return batches.filter((b: any) => batchOpenForRegistration(b) && batchMatchesDesk(b.madeInChina, desk?.inChina));
+    // Every open batch: the parcels scanned here may be Guangzhou's while the
+    // person stands in Erbil, and the server checks each parcel's own
+    // warehouse (assertBatchMatchesDesk). Batches of this desk come first and
+    // each says its place (audit 2026-11-05: Erbil staff saw only Erbil
+    // batches and every Guangzhou parcel was refused).
+    return batches
+      .filter((b: any) => batchOpenForRegistration(b))
+      .sort((a: any, b: any) => Number(batchMatchesDesk(b.madeInChina, desk?.inChina)) - Number(batchMatchesDesk(a.madeInChina, desk?.inChina)));
   }, [batches, desk?.inChina]);
   
   // A batch id handed to us in the URL is not to be trusted: it may be closed,
@@ -493,6 +500,11 @@ export default function BatchAssignmentScanner() {
                             <Badge variant="outline" className="text-xs">
                               {batch.shippingType.includes("air") ? "هەوایی" : "دەریایی"}
                             </Badge>
+                            {batch.madeInChina != null && (
+                              <Badge variant="secondary" className="text-xs" data-testid="batch-place">
+                                {batch.madeInChina ? "چین" : "هەولێر"}
+                              </Badge>
+                            )}
                             <span className="text-muted-foreground text-xs">
                               ({batch.status})
                             </span>

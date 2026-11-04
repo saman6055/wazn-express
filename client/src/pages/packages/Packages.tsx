@@ -126,6 +126,8 @@ type Package = {
   heightCm: string | null;
   volumeCbm: string | null;
   batchId: number | null;
+  /** The parcel's warehouse - decides which batches it may go into. */
+  originWarehouseId?: number | null;
   categoryId: number | null;
   isUnclaimed: boolean | null;
   /*
@@ -726,7 +728,11 @@ const [, setLocation] = useLocation();
 
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   // Only batches made where this person works (shared/batchTwin, owner 2026-10-29).
-  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery();
+  // The parcel being edited decides by its warehouse, as the server does
+  // (assertBatchMatchesDesk); the desk only for a parcel with none.
+  const { data: desk } = trpc.batches.carrierGroup.myDesk.useQuery(
+    selectedPackage?.originWarehouseId ? { warehouseId: selectedPackage.originWarehouseId } : undefined,
+  );
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   const { data: categories } = trpc.productCategories.list.useQuery();
 
