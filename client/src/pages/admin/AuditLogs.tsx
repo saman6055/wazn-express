@@ -102,7 +102,7 @@ export default function AuditLogs() {
    * trip and a table scan; "AZ295" was five searches, of which four were
    * thrown away, and the answer to the last one queued behind them.
    */
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [categoryFilter, setCategoryFilter] = useState<string>("all");
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [selectedLog, setSelectedLog] = useState<any>(null);

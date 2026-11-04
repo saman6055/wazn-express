@@ -4,7 +4,6 @@ import { fmtDate } from "@/lib/numericDate";
 import { useState, useMemo } from "react";
 import { Link, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -78,6 +77,7 @@ import { RefundOrderDialog } from "@/components/orders/RefundOrderDialog";
 import { pickLang } from "@/lib/lang";
 import { PlatformChip } from "@/components/PlatformChip";
 import { ShippingWayChip } from "@/components/ShippingWayChip";
+import { DebouncedSearchInput } from "@/components/DebouncedSearchInput";
 
 const statusColors: Record<string, string> = {
   pending: statusChip("pending", "order"),
@@ -109,7 +109,7 @@ export default function FullPackageDashboard() {
    * trip and a table scan; "AZ295" was five searches, of which four were
    * thrown away, and the answer to the last one queued behind them.
    */
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = search; // the box waits for the pause itself
   const [statusFilter, setStatusFilter] = useState<string>("all");
   const [customerFilter, setCustomerFilter] = useState<string>("all");
   const [batchFilter, setBatchFilter] = useState<string>("all");
@@ -161,7 +161,7 @@ export default function FullPackageDashboard() {
 
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
 
   const updateStatusMutation = trpc.fullPackage.updateStatus.useMutation({
@@ -644,10 +644,10 @@ export default function FullPackageDashboard() {
               <div className="flex flex-col sm:flex-row gap-4">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute right-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <DebouncedSearchInput
                     placeholder={t("fullPackage.searchPlaceholder")}
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onValueChange={setSearch}
                     className="pr-10"
                   />
                 </div>

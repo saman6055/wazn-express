@@ -119,7 +119,7 @@ export default function BatchFinancialReportFull() {
   );
   
   // Fetch customers list
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   // The configured volumetric divisor, so the kg column and the $ column
   // beside it are computed from the same rule.
   const { data: divisorData } = trpc.packages.getCbmDivisor.useQuery();

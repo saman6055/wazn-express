@@ -20,7 +20,7 @@ const [selectedBatch, setSelectedBatch] = useState<string>("all");
 
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: allCustomerPricingRaw } = trpc.batches.listAllCustomerPricing.useQuery();
   const allCustomerPricing = Array.isArray(allCustomerPricingRaw) ? allCustomerPricingRaw : (allCustomerPricingRaw as any)?.data;
 

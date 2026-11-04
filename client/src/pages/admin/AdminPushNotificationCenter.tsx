@@ -138,7 +138,7 @@ function ComposeTab() {
   const [url, setUrl] = useState("");
   const [scheduledAt, setScheduledAt] = useState("");
 
-  const customers = trpc.customers.list.useQuery();
+  const customers = trpc.customers.picker.useQuery();
   const batchesQuery = trpc.batches.list.useQuery({ page: 1, pageSize: 200 });
   const batchList = useMemo(() => {
     const d = batchesQuery.data;

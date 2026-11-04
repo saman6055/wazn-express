@@ -100,7 +100,7 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated, customer }: 
   const searchInputRef = useRef<HTMLInputElement>(null);
 
   // Customers query
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
 
   // Filtered customers for autocomplete
   const filteredCustomers = useMemo(() => {

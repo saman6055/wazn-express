@@ -28,7 +28,7 @@ const [startDate, setStartDate] = useState<string>("");
     endDate: endDate || undefined,
     serviceTypeId: serviceTypeFilter !== "all" ? parseInt(serviceTypeFilter) : undefined,
   });
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   
   // Calculate statistics
   const stats = useMemo(() => {

@@ -194,7 +194,7 @@ export default function QuickRegister() {
   } | null>(null);
 
   // Queries — handle errors so one failed API doesn't block the form
-  const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.list.useQuery();
+  const { data: customers, isError: customersError, refetch: refetchCustomers } = trpc.customers.picker.useQuery();
   const { data: batchesRaw, isError: batchesError, refetch: refetchBatches } = trpc.batches.list.useQuery();
   // Only batches made where the parcel is: the chosen warehouse decides, the
   // desk only when none is chosen (shared/batchTwin, owner 2026-11-03).

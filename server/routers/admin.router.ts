@@ -408,6 +408,17 @@ export const dashboardRouter = router({
       }),
 
     // Active batches (cached 30s)
+    /**
+     * Two numbers the dashboard used to load every customer to work out.
+     * Asked on the first screen of the day, on a phone.
+     */
+    customerCounts: staffProcedure.query(() =>
+      cacheGetOrSet("dashboard:customerCounts", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getCustomerCounts())),
+
+    /** The alert tiles' sums, over the same 500 newest parcels they always read. */
+    packageAlertCounts: staffProcedure.query(() =>
+      cacheGetOrSet("dashboard:packageAlertCounts", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getPackageAlertCounts())),
+
     activeBatches: staffProcedure.query(async () => {
       return cacheGetOrSet("dashboard:activeBatches", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getDashboardActiveBatches());
     }),

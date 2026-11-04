@@ -838,7 +838,7 @@ export default function BatchFinancialReport() {
     enabled: batchId > 0
   });
 
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
   const { data: labelTemplatesList } = trpc.labelTemplates.list.useQuery(undefined, { enabled: isCustomerModalOpen });
   const defaultLabelTemplate = labelTemplatesList?.find((t) => t.isDefault) ?? labelTemplatesList?.[0] ?? null;

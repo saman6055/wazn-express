@@ -13,7 +13,6 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { trpc } from "@/lib/trpc";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
 import { useCustomers, useFilteredCustomers } from "@/hooks/useCustomers";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { ListPager } from "@/components/ListPager";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -36,6 +35,7 @@ import { StatusBadge } from "@/components/ui/status-badge";
 import { RelativeTime } from "@/components/ui/relative-time";
 import { FilterChips } from "@/components/ui/filter-chips";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
+import { DebouncedSearchInput } from "@/components/DebouncedSearchInput";
 import {
   FILTER_LABEL,
   readCustomersLink,
@@ -276,7 +276,7 @@ const [, setLocation] = useLocation();
 
   // The box shows every keystroke; the list is filtered after a 250 ms pause.
   // Filtering thousands of customers on each key made the typing itself lag.
-  const debouncedSearch = useDebouncedValue(search, 250);
+  const debouncedSearch = search; // the box waits for the pause itself
   const filteredCustomers = useFilteredCustomers(
     customers as any,
     vipCustomers?.map((v: any) => v.customerId),
@@ -1028,10 +1028,10 @@ const [, setLocation] = useLocation();
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                 <div className="relative flex-1 max-w-sm">
                   <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                  <Input
+                  <DebouncedSearchInput
                     placeholder={t("customers.searchPlaceholder")}
                     value={search}
-                    onChange={(e) => setSearch(e.target.value)}
+                    onValueChange={setSearch}
                     className="pl-9 h-10"
                   />
                 </div>

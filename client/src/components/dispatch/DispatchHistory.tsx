@@ -213,7 +213,7 @@ function WhereIsMyParcel() {
   const { language } = useTranslation();
   const L = (w: Words) => pickLang(language, w);
   const [q, setQ] = useState("");
-  const query = useDebouncedValue(q.trim(), 300);
+  const query = useDebouncedValue(q.trim(), 150);
   const { data, isFetching } = trpc.dispatch.find.useQuery({ query }, { enabled: query.length >= 3 });
   const rows = query.length >= 3 ? data ?? [] : [];
 

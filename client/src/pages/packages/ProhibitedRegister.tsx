@@ -29,7 +29,7 @@ export default function ProhibitedRegister() {
   const [showCustomerDropdown, setShowCustomerDropdown] = useState(false);
 
   // Customer autocomplete — same live suggestions as Quick Register.
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const filteredCustomers = useMemo(() => {
     if (!customers || !customerCode.trim()) return [];
     const s = customerCode.toLowerCase();

@@ -295,7 +295,8 @@ export async function getTopCustomersByRevenue(limit = 10) {
   if (!db) return [];
   
   // Join ledgerTransactions with customerAccounts to get customerId
-  return db.select({
+  // (the name is read after, so the dashboard need not load every customer)
+  const rows = await db.select({
     customerId: customerAccounts.customerId,
     totalCharges: sql<number>`SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END)`,
     totalPayments: sql<number>`SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'CREDIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END)`,
@@ -305,6 +306,10 @@ export async function getTopCustomersByRevenue(limit = 10) {
     .groupBy(customerAccounts.customerId)
     .orderBy(desc(sql`SUM(CASE WHEN ${ledgerTransactions.transactionType} LIKE 'DEBIT_%' THEN CAST(${ledgerTransactions.amountUsd} AS DECIMAL(12,2)) ELSE 0 END)`))
     .limit(limit);
+  const ids = rows.map((r) => r.customerId).filter((id): id is number => id != null);
+  const named = ids.length ? await db.select({ id: customers.id, fullName: customers.fullName }).from(customers).where(inArray(customers.id, ids)) : [];
+  const nameOf = new Map(named.map((c) => [c.id, c.fullName]));
+  return rows.map((r) => ({ ...r, fullName: nameOf.get(r.customerId as number) ?? null }));
 }
 
 // Get customers with outstanding debt - uses unified customerAccounts

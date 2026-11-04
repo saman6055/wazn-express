@@ -392,7 +392,7 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
    * trip and a table scan; "AZ295" was five searches, of which four were
    * thrown away, and the answer to the last one queued behind them.
    */
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [page, setPage] = useState(1);
   const pageSize = 25;
   const { data, isLoading } = trpc.portalCenter.listCustomers.useQuery({ search: debouncedSearch || undefined, page, pageSize });
@@ -597,7 +597,7 @@ function ActivityTab({ p, initialSinceDays }: { p: (v: L) => string; initialSinc
 function DeclaredTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?: string }) {
   const [search, setSearch] = useState("");
   // A moment after typing stops, not on every keystroke.
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [status, setStatus] = useState<string>(initialStatus ?? "all");
   const [page, setPage] = useState(1);
   const pageSize = 25;
@@ -717,7 +717,7 @@ function DeclaredTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?
 function ProhibitedTab({ p }: { p: (v: L) => string }) {
   const [search, setSearch] = useState("");
   // A moment after typing stops, not on every keystroke.
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [status, setStatus] = useState<string>("all");
   const [page, setPage] = useState(1);
   const [fees, setFees] = useState<Record<number, string>>({});
@@ -839,7 +839,7 @@ function ProhibitedTab({ p }: { p: (v: L) => string }) {
 function ClaimsTab({ p, initialStatus }: { p: (v: L) => string; initialStatus?: string }) {
   const [search, setSearch] = useState("");
   // A moment after typing stops, not on every keystroke.
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [status, setStatus] = useState<string>(initialStatus ?? "all");
   const [page, setPage] = useState(1);
   const pageSize = 25;
@@ -1348,7 +1348,7 @@ function HomeAnnouncementsCard({ p }: { p: (v: L) => string }) {
 function PersonalNotificationCard({ p }: { p: (v: L) => string }) {
   const [search, setSearch] = useState("");
   // A moment after typing stops, not on every keystroke.
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [focused, setFocused] = useState(false);
   const [customer, setCustomer] = useState<{ id: number; name: string; code: string; mobile: string } | null>(null);
   const [draft, setDraft] = useState<NotifDraft>(emptyNotifDraft);
@@ -2769,7 +2769,7 @@ function FeaturesTab({ p }: { p: (v: L) => string }) {
   const [feature, setFeature] = useState<string>("finance_detail");
   const [search, setSearch] = useState("");
   // A moment after typing stops, not on every keystroke.
-  const debouncedSearch = useDebouncedValue(search, 300);
+  const debouncedSearch = useDebouncedValue(search, 150);
   const [note, setNote] = useState("");
 
   const { data: features = [] } = trpc.portalCenter.listFeatures.useQuery();

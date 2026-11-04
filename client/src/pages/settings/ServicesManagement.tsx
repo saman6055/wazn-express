@@ -109,7 +109,7 @@ export default function ServicesManagement() {
   // Queries
   const { data: services, isLoading: servicesLoading, refetch: refetchServices } = trpc.extraServices.list.useQuery({});
   const { data: serviceTypes } = trpc.extraServices.getActiveServiceTypes.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: settings } = trpc.settings.list.useQuery();
   
   // Mutation

@@ -154,7 +154,7 @@ export default function CustomerDeliveryScanner() {
   }, [filters, currentPage, drilledCustomerId, view, paidWindow]);
 
   // Queries
-  const { data: customersData } = trpc.customers.list.useQuery();
+  const { data: customersData } = trpc.customers.picker.useQuery();
   const { data: customerBoxRows, isLoading: customerBoxRowsLoading } =
     trpc.deliveryBox.customerSummary.useQuery();
   const {

@@ -13,7 +13,7 @@ export function CustomerAnalyticsSection() {
 
   const { data: topCustomers } = trpc.reports.topCustomers.useQuery({ limit: 5 });
   const { data: customersWithDebt } = trpc.reports.customersWithDebt.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
 
   const getCustName = (id: number) => {
     const c = customers?.find((c) => c.id === id);

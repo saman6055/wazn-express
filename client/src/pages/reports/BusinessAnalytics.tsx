@@ -79,7 +79,7 @@ export default function BusinessAnalytics() {
   const { data: financialSummary } = trpc.ledger.getSummary.useQuery();
   const { data: debtors } = trpc.ledger.getDebtors.useQuery({ minBalanceUsd: 0 });
   const { data: packageStats } = trpc.reports.packageStats.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: monthlyPnl } = trpc.financialReports.getMonthlyTrend.useQuery({ 
     year: parseInt(selectedYear)
   });

@@ -41,8 +41,8 @@ describe("the long lists", () => {
 
   it("the customer search filters after a pause, while the box shows every keystroke", () => {
     const src = read("pages/customers/Customers.tsx");
-    expect(src).toContain("useDebouncedValue(search, 250)");
+    expect(src).toContain("<DebouncedSearchInput");
     expect(src).toContain("search: debouncedSearch,");
-    expect(src).toContain("value={search}");
+    expect(src).toContain("onValueChange={setSearch}");
   });
 });

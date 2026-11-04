@@ -181,7 +181,7 @@ export default function Dashboard() {
   const { data: packageStats } = trpc.reports.packagesByStatus.useQuery();
   // Carries the real by-shipping-type breakdown the pie below needs.
   const { data: parcelStats } = trpc.packages.stats.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customerCounts } = trpc.dashboard.customerCounts.useQuery();
   const { data: topCustomers } = trpc.reports.topCustomers.useQuery({ limit: 10 });
   const { data: vipCustomers } = trpc.vip.list.useQuery();
   
@@ -216,7 +216,7 @@ export default function Dashboard() {
      * always smaller than the number of parcels actually on the road.
      */
     const inTransit = countOf([...PACKAGE_STAGE_GROUPS.inTransit, ...PACKAGE_STAGE_GROUPS.arrived]);
-    const active = customers?.filter(c => c.isActive).length || 0;
+    const active = customerCounts?.active ?? 0;
     /**
      * Cancelled and returned parcels are not failed deliveries, and counting
      * them in the denominator dragged the rate down for parcels that were
@@ -226,7 +226,7 @@ export default function Dashboard() {
     const deliverable = total - closedOut;
     const rate = deliverable > 0 ? Math.round((delivered / deliverable) * 100) : 0;
     return { totalPackages: total, deliveredPackages: delivered, inTransitPackages: inTransit, activeCustomers: active, deliveryRate: rate };
-  }, [packageStats, customers]);
+  }, [packageStats, customerCounts]);
 
   const chartData = useMemo(
     () =>
@@ -489,8 +489,8 @@ export default function Dashboard() {
               icon: <Users />,
               label: t("dashboard.totalCustomers") || pickLang(language, { ku: "کۆی کڕیاران", en: "Total customers", ar: "إجمالي العملاء", zh: "客户总数" }),
               value: (
-                <ExplainableStat figure="totalCustomers" value={customers?.length ?? 0}>
-                  {customers?.length ?? 0}
+                <ExplainableStat figure="totalCustomers" value={customerCounts?.total ?? 0}>
+                  {customerCounts?.total ?? 0}
                 </ExplainableStat>
               ),
             },
@@ -559,7 +559,7 @@ export default function Dashboard() {
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <StatsCard
             title={t("dashboard.totalCustomers") ?? "Total Customers"}
-            value={customers?.length ?? 0}
+            value={customerCounts?.total ?? 0}
             figure="totalCustomers"
             description={t("dashboard.activeCustomers") ?? "Active customers"}
             icon={<Users className="h-5 w-5" />}
@@ -1216,7 +1216,6 @@ export default function Dashboard() {
             <CardContent className="p-0">
               <div className="divide-y">
                 {topCustomers?.slice(0, 10).map((customer: { customerId: number; totalCharges: string | number; packageCount: number }, index: number) => {
-                  const customerData = customers?.find(c => c.id === customer.customerId);
                   const isVip = vipCustomers?.some(v => v.customerId === customer.customerId);
                   return (
                     <Link
@@ -1233,7 +1232,7 @@ export default function Dashboard() {
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className="font-medium truncate">{customerData?.fullName || `Customer #${customer.customerId}`}</p>
+                          <p className="font-medium truncate">{(customer as { fullName?: string | null }).fullName || `Customer #${customer.customerId}`}</p>
                           {isVip && (
                             <Badge className="bg-gradient-to-r from-amber-500 to-orange-500 text-white text-xs border-0">{t("customers.stats.vip")}</Badge>
                           )}
@@ -1527,30 +1526,12 @@ const StatusBar = memo(function StatusBar({ status, count, total, language }: { 
 // Alert Summary Section Component
 function AlertSummarySection() {
   const { t } = useTranslation();
-  const { data: packagesResponse } = trpc.packages.list.useQuery({ pageSize: 500 });
-  const packages = packagesResponse?.data;
   const { data: batchesResponse } = trpc.batches.list.useQuery();
   const batchList = Array.isArray(batchesResponse) ? batchesResponse : batchesResponse?.data;
 
-  // Calculate package alerts
-  // Once per list, not on every render of the dashboard (500 parcels).
-  const packageAlerts = useMemo(() => packages?.reduce((acc, pkg) => {
-    const registeredAt = new Date(pkg.createdAt);
-    const now = new Date();
-    const daysSince = Math.floor((now.getTime() - registeredAt.getTime()) / (1000 * 60 * 60 * 24));
-    const isDelivered = pkg.status === "delivered" || pkg.status === "cancelled" || pkg.status === "returned";
-    
-    if (isDelivered) {
-      acc.normal++;
-    } else if (daysSince > 20) {
-      acc.highRisk++;
-    } else if (daysSince > 10) {
-      acc.warning++;
-    } else {
-      acc.normal++;
-    }
-    return acc;
-  }, { normal: 0, warning: 0, highRisk: 0 }) || { normal: 0, warning: 0, highRisk: 0 }, [packages]);
+  // Counted on the server: this used to fetch 500 parcels to add three numbers.
+  const { data: alertCounts } = trpc.dashboard.packageAlertCounts.useQuery();
+  const packageAlerts = alertCounts ?? { normal: 0, warning: 0, highRisk: 0 };
 
   // Calculate batch alerts
   const batchAlerts = useMemo(() => batchList?.reduce((acc, batch) => {

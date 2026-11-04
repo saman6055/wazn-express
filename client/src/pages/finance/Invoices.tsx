@@ -25,7 +25,7 @@ export default function Invoices() {
 
   // FIX: API returns { data, total, page, pageSize, totalPages } not a direct array
   const { data: invoicesResult, isLoading } = trpc.invoices.list.useQuery({ limit: 20, page: currentPage });
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
 
   const allInvoices = invoicesResult?.data || [];
   const totalPages = invoicesResult?.totalPages || 0;

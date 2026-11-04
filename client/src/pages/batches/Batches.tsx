@@ -197,7 +197,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { tiers: existingTiers, isSuccess: tiersLoaded } = useBatchPricingTiers(editingBatch?.id ?? null);
   const { customerPricing: existingCustomerPricing, isSuccess: customerPricingLoaded } = useBatchCustomerPricing(editingBatch?.id ?? null);
   const { financialSummary } = useBatchFinancialSummary(financialBatchId);
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   // Who can still be given a price: sorted once per list, not on every
   // keystroke inside the dialog (the whole customer list, re-sorted per render).
   const pricingCandidates = useMemo(

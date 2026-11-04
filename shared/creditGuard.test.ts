@@ -133,7 +133,7 @@ describe("every door that takes money asks", () => {
   });
 
   it("the client asks once, for every screen, and says when the extra was held", () => {
-    expect(read("client/src/main.tsx")).toMatch(/links: \[\s*\/\/[^\n]*\n\s*creditApprovalLink,\s*httpBatchLink/);
+    expect(read("client/src/main.tsx")).toMatch(/links: \[\s*\/\/[^\n]*\n\s*creditApprovalLink,\s*splitLink/);
     const link = read("client/src/lib/creditApprovalLink.ts");
     expect(link).toContain("message.startsWith(ASK_ADMIN_MARK)");
     expect(link).toContain("approveCredit: true");

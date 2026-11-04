@@ -26,7 +26,7 @@ const [search, setSearch] = useState("");
   
   // Queries
   const { data: unclaimedPackages, refetch } = trpc.packages.getUnclaimed.useQuery();
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: batchesRaw } = trpc.batches.list.useQuery();
   const batches = Array.isArray(batchesRaw) ? batchesRaw : batchesRaw?.data;
   

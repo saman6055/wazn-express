@@ -1,4 +1,5 @@
 import { useState, useCallback } from "react";
+import { keepPreviousData } from "@tanstack/react-query";
 import { trpc } from "@/lib/trpc";
 
 export interface PackageFilters {
@@ -34,7 +35,8 @@ export function usePackages(initialFilters?: PackageFilters) {
       dateFrom,
       dateTo,
     },
-    { staleTime: 30 * 1000, refetchOnWindowFocus: false }
+    // The last page stays on screen until the next arrives, instead of a blank.
+    { staleTime: 30 * 1000, refetchOnWindowFocus: false, placeholderData: keepPreviousData }
   );
 
   const updateStatusMutation = trpc.packages.updateStatus.useMutation();

@@ -221,7 +221,7 @@ export default function BulkRegister() {
   const lookupTimers = useRef<Record<string, NodeJS.Timeout>>({});
 
   // Queries
-  const { data: customers } = trpc.customers.list.useQuery();
+  const { data: customers } = trpc.customers.picker.useQuery();
   const { data: batchesResponse } = trpc.batches.list.useQuery();
   // Only batches made where the parcels are: the chosen warehouse decides, the
   // desk only when none is chosen (shared/batchTwin, owner 2026-11-03).
