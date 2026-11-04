@@ -30,7 +30,8 @@ describe("the dashboard", () => {
   it("asks for numbers, not for lists to count", () => {
     const page = read("pages/dashboard/Dashboard.tsx");
     expect(page).toContain("trpc.dashboard.customerCounts.useQuery");
-    expect(page).toContain("trpc.dashboard.packageAlertCounts.useQuery");
+    // The late tiles are counted on the server too (dashboard.lateAlerts, 2026-11-05).
+    expect(page).toContain("trpc.dashboard.lateAlerts.useQuery");
     expect(page).not.toContain("pageSize: 500");
     expect(page).not.toContain("trpc.customers.picker");
   });
