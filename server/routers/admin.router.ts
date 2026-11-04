@@ -424,6 +424,10 @@ export const dashboardRouter = router({
     }),
 
     /** Every active shipment counted - the list above shows only the newest five. */
+    /** Each carrier's kilos, days on the road and price per kilo (owner, 2026-11-05). */
+    carrierSummary: staffProcedure.query(() =>
+      cacheGetOrSet("dashboard:carrierSummary", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getCarrierSummary())),
+
     /** Parcels and batches running late, over all of them, each with its records. */
     lateAlerts: staffProcedure.query(() =>
       cacheGetOrSet("dashboard:lateAlerts", CACHE_TTL.DASHBOARD_STATS_MS, () => db.getLateAlerts())),

@@ -68,3 +68,4 @@ export * from './carrierGroup.db';
 export * from './batchReopen.db';
 export * from './parcelOnRoad.db';
 export * from './dashboardProblems.db';
+export * from './carrierSummary.db';

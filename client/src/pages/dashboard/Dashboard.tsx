@@ -78,6 +78,7 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { soundManager } from "@/lib/soundManager";
+import { CarrierSummaryCard } from "@/components/dashboard/CarrierSummaryCard";
 import { customerCodeOnly } from "@shared/customerCode";
 import "./dashboardLive.css";
 import { useTranslation } from "@/contexts/LanguageContext";
@@ -436,6 +437,7 @@ export default function Dashboard() {
             the grid gone — when there is nothing waiting. */}
         {canViewPath("/packages/registrations") && (
           <div className="order-[8] grid gap-3 empty:hidden xl:grid-cols-2">
+            <CarrierSummaryCard className="xl:col-span-2" />
             <StaleDepotCard variant="dashboard" />
             <VolumetricWatchCard variant="dashboard" />
           </div>
