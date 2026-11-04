@@ -1,0 +1,122 @@
+/*
+ * The dashboard, alive (owner, 2026-11-05: «یوئایەکی زۆر تازە و مۆدێرن و پڕ
+ * لە موشن و جوولە … شین و شینی ئاسمانی و وەنەوشەیی و مۆر … سەردێرەکان گلۆیان
+ * هەبێ بە چوونە ماوس بۆ سەریان جوولەیان هەبێ»).
+ *
+ * Scoped to `.dash-live`, the dashboard's root, so no other page changes.
+ * Every card keeps its own colours; this layer adds the arrival, the lift,
+ * the blue-to-violet accents and the glow. Nothing here hides content at
+ * rest: animations end at the visible state, and reduced motion turns them
+ * all off.
+ */
+
+.dash-live {
+  --dash-sky: 199 89% 56%;
+  --dash-blue: 221 83% 58%;
+  --dash-violet: 262 83% 64%;
+  --dash-purple: 285 70% 58%;
+}
+
+/* Arrival: each block rises in, one after another. */
+@keyframes dash-rise {
+  from { opacity: 0; transform: translateY(16px) scale(0.985); }
+  to { opacity: 1; transform: none; }
+}
+.dash-live > * { animation: dash-rise 0.6s cubic-bezier(0.2, 0.8, 0.2, 1) both; }
+.dash-live > *:nth-child(2) { animation-delay: 0.05s; }
+.dash-live > *:nth-child(3) { animation-delay: 0.1s; }
+.dash-live > *:nth-child(4) { animation-delay: 0.15s; }
+.dash-live > *:nth-child(5) { animation-delay: 0.2s; }
+.dash-live > *:nth-child(6) { animation-delay: 0.25s; }
+.dash-live > *:nth-child(7) { animation-delay: 0.3s; }
+.dash-live > *:nth-child(8) { animation-delay: 0.35s; }
+.dash-live > *:nth-child(9) { animation-delay: 0.4s; }
+.dash-live > *:nth-child(n + 10) { animation-delay: 0.45s; }
+
+/* Cards: a sky-to-violet line along the top, and a lift under the pointer. */
+.dash-live [data-slot="card"] {
+  position: relative;
+  transition: transform 0.25s cubic-bezier(0.2, 0.8, 0.2, 1), box-shadow 0.25s, border-color 0.25s;
+}
+.dash-live [data-slot="card"]::before {
+  content: "";
+  position: absolute;
+  inset-inline: 0;
+  top: 0;
+  height: 3px;
+  border-top-left-radius: inherit;
+  border-top-right-radius: inherit;
+  background: linear-gradient(90deg, hsl(var(--dash-sky)), hsl(var(--dash-blue)), hsl(var(--dash-violet)), hsl(var(--dash-purple)), hsl(var(--dash-sky)));
+  background-size: 300% 100%;
+  opacity: 0.55;
+  pointer-events: none;
+  animation: dash-flow 8s linear infinite;
+  transition: opacity 0.25s;
+}
+@keyframes dash-flow { to { background-position: 300% 0; } }
+.dash-live [data-slot="card"]:hover {
+  transform: translateY(-3px);
+  border-color: hsl(var(--dash-blue) / 0.45);
+  box-shadow: 0 14px 30px -16px hsl(var(--dash-blue) / 0.55), 0 4px 10px -6px hsl(var(--dash-violet) / 0.35);
+}
+.dash-live [data-slot="card"]:hover::before { opacity: 1; }
+
+/* Icons: a small turn and grow when their card is under the pointer. */
+.dash-live [data-slot="card"] svg.lucide {
+  transition: transform 0.35s cubic-bezier(0.34, 1.56, 0.64, 1), filter 0.3s;
+}
+.dash-live [data-slot="card"]:hover svg.lucide {
+  transform: scale(1.14) rotate(-7deg);
+  filter: drop-shadow(0 0 6px hsl(var(--dash-blue) / 0.45));
+}
+.dash-live button:active svg.lucide,
+.dash-live a:active svg.lucide { transform: scale(0.9); }
+
+/* Headings: bright, and they glow and step forward under the pointer. */
+.dash-live h2,
+.dash-live h3,
+.dash-live [data-slot="card-title"] {
+  color: hsl(var(--foreground));
+  transition: text-shadow 0.3s, transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), color 0.3s;
+}
+.dash-live h2:hover,
+.dash-live h3:hover,
+.dash-live [data-slot="card-title"]:hover,
+.dash-live [data-slot="card"]:hover [data-slot="card-title"] {
+  color: hsl(var(--dash-blue));
+  text-shadow: 0 0 14px hsl(var(--dash-blue) / 0.45), 0 0 28px hsl(var(--dash-violet) / 0.3);
+  transform: translateX(-3px);
+}
+[dir="ltr"] .dash-live h2:hover,
+[dir="ltr"] .dash-live [data-slot="card-title"]:hover { transform: translateX(3px); }
+.dark .dash-live h2:hover,
+.dark .dash-live [data-slot="card-title"]:hover,
+.dark .dash-live [data-slot="card"]:hover [data-slot="card-title"] { color: hsl(199 95% 72%); }
+
+/* The coloured bar beside each section title flows sky → violet. */
+.dash-live .dash-bar {
+  background: linear-gradient(180deg, hsl(var(--dash-sky)), hsl(var(--dash-blue)), hsl(var(--dash-violet)), hsl(var(--dash-purple)), hsl(var(--dash-sky)));
+  background-size: 100% 300%;
+  animation: dash-flow-v 5s linear infinite;
+  box-shadow: 0 0 10px hsl(var(--dash-violet) / 0.45);
+}
+@keyframes dash-flow-v { to { background-position: 0 300%; } }
+
+/* Big figures are crisp and tabular. */
+.dash-live .tabular-nums,
+.dash-live [data-slot="card"] .text-2xl,
+.dash-live [data-slot="card"] .text-3xl { font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
+
+@media (prefers-reduced-motion: reduce) {
+  .dash-live > *,
+  .dash-live [data-slot="card"]::before,
+  .dash-live .dash-bar { animation: none !important; }
+  .dash-live [data-slot="card"],
+  .dash-live [data-slot="card"] svg.lucide,
+  .dash-live h2,
+  .dash-live [data-slot="card-title"] { transition: none !important; }
+  .dash-live [data-slot="card"]:hover,
+  .dash-live [data-slot="card"]:hover svg.lucide,
+  .dash-live h2:hover,
+  .dash-live [data-slot="card-title"]:hover { transform: none !important; }
+}

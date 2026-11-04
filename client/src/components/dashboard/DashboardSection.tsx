@@ -30,7 +30,7 @@ export function DashboardSection({
             {title && (
               <span
                 aria-hidden
-                className="h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-sky-400 via-blue-500 to-violet-500"
+                className="dash-bar h-8 w-1.5 shrink-0 rounded-full bg-gradient-to-b from-sky-400 via-blue-500 to-violet-500"
               />
             )}
             <div>

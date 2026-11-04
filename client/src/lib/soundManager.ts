@@ -172,6 +172,12 @@ class ScanSoundManager {
   /** Not found — lower single tone */
   playNotFound() { this.playTone(330, 0.25, 'triangle'); }
 
+  /**
+   * A soft tap for a click on the dashboard (owner, 2026-11-05: «کلیک کردن لە
+   * ئایکۆنەکان جۆرێک دەنگیان هەبێ»). Short and quiet: heard, never noticed.
+   */
+  playTap() { this.playSequence([1046, 1318], 0.035, 0.06, 'sine', 0.05); }
+
   /** Victory — ascending four notes (batch complete, all verified, etc.) */
   playComplete() { this.playSequence([523, 659, 784, 1047], 0.12, 0.2); }
 

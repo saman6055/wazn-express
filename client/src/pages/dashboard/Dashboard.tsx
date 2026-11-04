@@ -76,6 +76,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { soundManager } from "@/lib/soundManager";
+import "./dashboardLive.css";
 import { useTranslation } from "@/contexts/LanguageContext";
 import {
   LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
@@ -323,7 +325,14 @@ export default function Dashboard() {
       {/* Flex column + `order-last` on the chart sections pushes ALL charts to
           the very bottom while keeping the dense stat/alert/list cards on top
           for the most info-per-screen on a laptop — without relocating JSX. */}
-      <div className="pro-page flex flex-col gap-5">
+      {/* `dash-live`: the moving, glowing layer (dashboardLive.css). A soft tap
+          sounds for every click on something clickable (owner, 2026-11-05). */}
+      <div
+        className="pro-page dash-live flex flex-col gap-5"
+        onClickCapture={(e) => {
+          if ((e.target as HTMLElement).closest("button, a, [role='button']")) soundManager.playTap();
+        }}
+      >
         {/* On a phone the day's jobs come first, one tap each. */}
         <MobileQuickActions language={language} canViewPath={canViewPath} onNavigate={setLocation} />
         <PageHeader
