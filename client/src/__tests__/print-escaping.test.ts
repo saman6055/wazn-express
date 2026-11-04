@@ -86,6 +86,10 @@ describe("print windows print text, never markup", () => {
     ["hooks/useDataManagement.ts", RAW_IN_HTML("company\\.name")],
     ["pages/finance/Finance.tsx", RAW_IN_HTML("account\\.customer\\?\\.(customerCode|fullName|mobileNumber)|account\\.accountNumber|company\\.name")],
     ["pages/finance/CustomerFinance.tsx", RAW_IN_HTML("customer\\?\\.(customerCode|fullName|mobileNumber)|company\\.name|txn\\.(transactionNumber|description)")],
+    // The customer's own invoice report (security sweep 2026-11-05).
+    ["pages/portal/PortalInvoiceReports.tsx", RAW_IN_HTML("selectedYear|m\\.monthEn")],
+    // The generic print helper: its title is the caller's text.
+    ["components/ExportUtils.tsx", RAW_IN_HTML("filename")],
   ];
 
   for (const [file, raw] of cases) {
@@ -105,6 +109,30 @@ describe("print windows print text, never markup", () => {
     const src = read("lib/deliveryBoxPrintUtils.ts");
     expect(src).toContain('import { escapeHtml } from "./html"');
     expect(src).not.toContain("function escapeHtml");
+  });
+});
+
+describe("HTML somebody typed is shown, never run", () => {
+  it("the email template preview is a sandboxed frame", () => {
+    const src = read("pages/settings/EmailTemplatesManagement.tsx");
+    expect(src).not.toContain("dangerouslySetInnerHTML");
+    expect(src).toContain('sandbox=""');
+    expect(src).toContain("srcDoc={selectedTemplate?.body");
+  });
+
+  it("no screen writes raw HTML into the page", () => {
+    const hits: string[] = [];
+    const walk = (dir: string) => {
+      for (const e of fs.readdirSync(dir, { withFileTypes: true })) {
+        const full = path.join(dir, e.name);
+        if (e.isDirectory()) walk(full);
+        else if (/\.tsx$/.test(e.name) && fs.readFileSync(full, "utf8").includes("dangerouslySetInnerHTML")) {
+          hits.push(path.relative(SRC, full).replace(/\\/g, "/"));
+        }
+      }
+    };
+    walk(SRC);
+    expect(hits).toEqual([]);
   });
 });
 

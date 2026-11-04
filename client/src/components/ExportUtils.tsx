@@ -1,4 +1,5 @@
 import { csvCell, toCsv, downloadText } from "@/lib/csv";
+import { escapeHtml } from "@/lib/html";
 
 
 
@@ -67,7 +68,7 @@ export function exportToPDF(elementId: string, filename: string) {
     <!DOCTYPE html>
     <html dir="rtl">
     <head>
-      <title>${filename}</title>
+      <title>${escapeHtml(filename)}</title>
       <style>
         body {
           font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;

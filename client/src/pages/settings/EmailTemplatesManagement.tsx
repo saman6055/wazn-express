@@ -415,9 +415,18 @@ export default function EmailTemplatesManagement() {
             </div>
             <div>
               <Label className="text-sm font-semibold">{pickLang(language, { ku: "ناوەڕۆک:", en: "Content:", ar: "المحتوى:", zh: "内容：" })}</Label>
-              <div
-                className="mt-1 p-4 bg-muted rounded-md prose prose-sm max-w-none"
-                dangerouslySetInnerHTML={{ __html: selectedTemplate?.body || "" }}
+              {/*
+                The body is HTML somebody typed. Shown in a sandboxed frame it
+                keeps its look but runs nothing and reaches nothing on this
+                page - a script inside it cannot act with the session of the
+                admin looking at it. White in both modes: it shows the email as
+                the customer will receive it.
+              */}
+              <iframe
+                title="email-preview"
+                sandbox=""
+                srcDoc={selectedTemplate?.body || ""}
+                className="mt-1 w-full h-72 rounded-md border bg-white dark:bg-white"
               />
             </div>
             {selectedTemplate?.variables && (
