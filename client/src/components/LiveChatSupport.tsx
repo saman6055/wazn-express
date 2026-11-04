@@ -6,7 +6,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
@@ -64,7 +64,6 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
   
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputValue, setInputValue] = useState("");
-  const [isTyping, setIsTyping] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [chatId, setChatId] = useState<number | null>(null);
   const [isInitializing, setIsInitializing] = useState(false);
@@ -218,26 +217,20 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
       messageType: 'text',
     });
     
-    // Simulate bot typing
-    setTimeout(() => {
-      setIsTyping(true);
-    }, 1000);
-    
-    // Simulate bot response
-    setTimeout(() => {
-      setIsTyping(false);
-      // Auto-reply will be handled by backend in production
-      // For now, add a placeholder response
-      const autoReply = pickLang(language, {
-        ku: "سوپاس بۆ نامەکەت! یەکێک لە تیمی پشتگیریمان بەم زووانە وەڵامت دەداتەوە. کاتی کارکردن: 9 بەیانی - 9 ئێوارە",
-        en: "Thank you for your message! One of our support team members will respond shortly. Working hours: 9 AM - 9 PM",
-        ar: "شكراً لرسالتك! سيرد عليك أحد أعضاء فريق الدعم لدينا قريباً. ساعات العمل: 9 صباحاً - 9 مساءً",
-        zh: "感谢您的留言！我们的支持团队成员将很快回复您。工作时间：上午9点 - 晚上9点"
-      });
-      
-      // This would be replaced by actual staff response in production
-      // For demo, we'll add a bot message
-    }, 3000);
+    /*
+     * Nothing is simulated here any more.
+     *
+     * This used to switch on a typing indicator a second after the customer
+     * pressed send and switch it off three seconds later, with a reply that
+     * was written into a variable and never shown. So the customer watched
+     * somebody start to type, saw them stop, and waited for an answer that
+     * was never coming.
+     *
+     * The chat itself is real: the message goes to supportChat.sendMessage
+     * and the office reads it on /customer-messages and answers from there.
+     * It just does not answer in three seconds, and the screen should not
+     * say that it will.
+     */
   };
   
   const handleQuickReply = (text: string) => {
@@ -300,21 +293,31 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-3">
                 <div className="relative">
+                  {/* No src: /support-avatar.png has never existed, so every
+                      customer's browser fetched a 404 and fell back to this
+                      icon anyway. Asking for the fallback directly. */}
                   <Avatar className="w-10 h-10 border-2 border-white/30">
-                    <AvatarImage src="/support-avatar.png" />
                     <AvatarFallback className="bg-white/20 text-white">
                       <MessageCircle className="w-5 h-5" />
                     </AvatarFallback>
                   </Avatar>
-                  <span className="absolute -bottom-0.5 -right-0.5 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full" />
                 </div>
                 <div>
                   <h3 className="font-bold text-white text-sm">
                     {pickLang(language, { ku: "پشتگیری Wazn", en: "Wazn Support", ar: "دعم Wazn", zh: "Wazn 支持" })}
                   </h3>
-                  <p className="text-white/70 text-xs flex items-center gap-1">
-                    <span className="w-1.5 h-1.5 bg-emerald-400 rounded-full animate-pulse" />
-                    {pickLang(language, { ku: "ئۆنلاین", en: "Online", ar: "متصل", zh: "在线" })}
+                  {/* It said "Online", in green, pulsing, always — at three
+                      in the morning with nobody in the office. Nothing in
+                      this system knows whether anyone is at a desk, so it
+                      says the one thing that is true: the message arrives
+                      and is answered by a person, not at once. */}
+                  <p className="text-white/70 text-xs">
+                    {pickLang(language, {
+                      ku: "نامەکەت دەگاتە تیمەکەمان و کەسێک وەڵامت دەداتەوە",
+                      en: "Your message reaches our team and a person will reply",
+                      ar: "رسالتك تصل إلى فريقنا وسيرد عليك شخص",
+                      zh: "您的留言会送达我们的团队，会有专人回复",
+                    })}
                   </p>
                 </div>
               </div>
@@ -457,34 +460,6 @@ export function LiveChatSupport({ isOpen, onClose, onMinimize }: LiveChatSupport
                     )}
                   </motion.div>
                 ))}
-                
-                {/* Typing indicator */}
-                {isTyping && (
-                  <motion.div
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="flex justify-start"
-                  >
-                    <Avatar className="w-8 h-8 me-2 flex-shrink-0">
-                      <AvatarFallback className={cn(
-                        "text-xs",
-                        isDark ? "bg-purple-500/20 text-purple-400" : "bg-purple-100 dark:bg-purple-950/40 text-purple-600"
-                      )}>
-                        <Bot className="w-4 h-4" />
-                      </AvatarFallback>
-                    </Avatar>
-                    <div className={cn(
-                      "rounded-2xl px-4 py-3",
-                      isDark ? "bg-slate-800" : "bg-card shadow-sm"
-                    )}>
-                      <div className="flex gap-1">
-                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }} />
-                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }} />
-                        <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }} />
-                      </div>
-                    </div>
-                  </motion.div>
-                )}
                 
                 <div ref={messagesEndRef} />
               </div>
