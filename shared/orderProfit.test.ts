@@ -66,8 +66,8 @@ describe("every profit report uses the one rule", () => {
   });
 
   it("parcel freight is profit only after the batch's cost, total or per unit", () => {
-    // Refused goods are the last term (shared/refusedGoods): what was kept and how each piece ended.
-    expect(reports).toContain("profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit + stock.profitUsd + extra.profitUsd,");
+    // Refused goods (shared/refusedGoods), box extras, then extra services (owner, 2026-11-05).
+    expect(reports).toContain("profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit + stock.profitUsd + extra.profitUsd + services.profitUsd,");
     expect(reports).not.toContain("commission.profit + pkgs.revenue,");
     // The batch's cost used to be worked out here in SQL, with the total as
     // the fallback. It is asked of the one rule now (shared/batchCost through

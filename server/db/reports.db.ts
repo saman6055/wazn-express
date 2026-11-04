@@ -1839,7 +1839,7 @@ export async function getProfitForPeriod(startDate: Date, endDate: Date) {
   const db = await getDb();
   if (!db) {
     const zero = { count: 0, revenue: 0, cost: 0, shipping: 0, profit: 0 };
-    return { fullPackage: zero, purchaseRequest: zero, commission: zero, pkgs: { count: 0, revenue: 0, profit: 0 }, stock: { lostUsd: 0, keptUsd: 0, recoveredUsd: 0, profitUsd: 0 }, extra: { count: 0, priceUsd: 0, costUsd: 0, profitUsd: 0 }, total: { revenue: 0, cost: 0, shipping: 0, profit: 0 } };
+    return { fullPackage: zero, purchaseRequest: zero, commission: zero, pkgs: { count: 0, revenue: 0, profit: 0 }, stock: { lostUsd: 0, keptUsd: 0, recoveredUsd: 0, profitUsd: 0 }, extra: { count: 0, priceUsd: 0, costUsd: 0, profitUsd: 0 }, services: { count: 0, priceUsd: 0, costUsd: 0, profitUsd: 0 }, total: { revenue: 0, cost: 0, shipping: 0, profit: 0 } };
   }
   // Full Package orders
   const fpOrders = await db.select({
@@ -1940,15 +1940,31 @@ export async function getProfitForPeriod(startDate: Date, endDate: Date) {
   // Other costs on boxes (shared/extraCosts): the price taken less the cost
   // paid - nothing when passed on at cost, a loss when kept by the company.
   const extra = await (await import('./extraCosts.db')).getExtraCostProfitBetween(startDate, endDate);
+  // Extra services (owner, 2026-11-05: part of the clean profit): price less
+  // cost, counted the way the services report counts them — paid at the
+  // counter, or written onto an account (finance.db, extraServices).
+  const [svc] = await db.select({
+    count: sql<number>`COUNT(*)`,
+    price: sql<string>`COALESCE(SUM(CAST(${extraServices.priceAmount} AS DECIMAL(14,2))), 0)`,
+    cost: sql<string>`COALESCE(SUM(CAST(${extraServices.costAmount} AS DECIMAL(14,2))), 0)`,
+  }).from(extraServices)
+    .where(and(
+      gte(extraServices.createdAt, startDate),
+      lte(extraServices.createdAt, endDate),
+      or(eq(extraServices.isPaid, true), eq(extraServices.addedToBalance, true)),
+    ));
+  const svcPrice = Number(svc?.price || 0);
+  const svcCost = Number(svc?.cost || 0);
+  const services = { count: Number(svc?.count || 0), priceUsd: svcPrice, costUsd: svcCost, profitUsd: Math.round((svcPrice - svcCost) * 100) / 100 };
 
   const total = {
     revenue: fullPackage.revenue + purchaseRequest.revenue + commission.revenue + pkgs.revenue,
     cost: fullPackage.cost + purchaseRequest.cost + commission.cost,
     shipping: fullPackage.shipping + purchaseRequest.shipping + commission.shipping,
-    profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit + stock.profitUsd + extra.profitUsd,
+    profit: fullPackage.profit + purchaseRequest.profit + commission.profit + pkgs.profit + stock.profitUsd + extra.profitUsd + services.profitUsd,
   };
   
-  return { fullPackage, purchaseRequest, commission, pkgs, stock, extra, total };
+  return { fullPackage, purchaseRequest, commission, pkgs, stock, extra, services, total };
 }
 
 export async function getMonthlyProfitReport(year: number, month?: number): Promise<{
