@@ -39,7 +39,7 @@ function dayKey(offsetDays = 0): string {
  * should not lose all eight because one table was renamed — a missing figure
  * reads as zero and the brief simply has less to say, which is recoverable.
  */
-async function measureDay(dateKey: string): Promise<DaySnapshot> {
+async function measureDay(dateKey: string, untilClock?: string): Promise<DaySnapshot> {
   const db = await getDb();
   if (!db) return { ...EMPTY_DAY };
 
@@ -56,6 +56,14 @@ async function measureDay(dateKey: string): Promise<DaySnapshot> {
   };
 
   const d = `'${dateKey}'`;
+  /*
+   * The day so far, or to a given clock time. Today is always partial, so
+   * the day it is compared with is cut at the same hour (owner, 2026-11-05:
+   * «خەرجی 54% زیادی کردووە» compared this morning with the whole of
+   * yesterday).
+   */
+  const end = untilClock ? `'${dateKey} ${untilClock}'` : null;
+  const on = (col: string) => (end ? `${col} >= ${d} AND ${col} < ${end}` : `DATE(${col}) = ${d}`);
 
   const [
     revenueUsd,
@@ -67,12 +75,12 @@ async function measureDay(dateKey: string): Promise<DaySnapshot> {
     outstandingDebtUsd,
     openBatches,
   ] = await Promise.all([
-    one("revenue", `SELECT COALESCE(SUM(CAST(amountUsd AS DECIMAL(14,2))),0) FROM paymentRecords WHERE DATE(createdAt) = ${d}`),
-    one("expenses", `SELECT COALESCE(SUM(CAST(amountUsd AS DECIMAL(14,2))),0) FROM expenses WHERE DATE(expenseDate) = ${d}`),
-    one("registered", `SELECT COUNT(*) FROM packages WHERE DATE(createdAt) = ${d}`),
-    one("delivered", `SELECT COUNT(*) FROM packages WHERE DATE(deliveredAt) = ${d}`),
-    one("customers", `SELECT COUNT(*) FROM customers WHERE DATE(createdAt) = ${d}`),
-    one("kilos", `SELECT COALESCE(SUM(CAST(weightKg AS DECIMAL(14,3))),0) FROM packages WHERE DATE(createdAt) = ${d}`),
+    one("revenue", `SELECT COALESCE(SUM(CAST(amountUsd AS DECIMAL(14,2))),0) FROM paymentRecords WHERE ${on("createdAt")}`),
+    one("expenses", `SELECT COALESCE(SUM(CAST(amountUsd AS DECIMAL(14,2))),0) FROM expenses WHERE ${on("expenseDate")}`),
+    one("registered", `SELECT COUNT(*) FROM packages WHERE ${on("createdAt")}`),
+    one("delivered", `SELECT COUNT(*) FROM packages WHERE ${on("deliveredAt")}`),
+    one("customers", `SELECT COUNT(*) FROM customers WHERE ${on("createdAt")}`),
+    one("kilos", `SELECT COALESCE(SUM(CAST(weightKg AS DECIMAL(14,3))),0) FROM packages WHERE ${on("createdAt")}`),
     // Debt is a standing total rather than a daily one: what is owed right
     // now, which is the figure that matters and the one worth watching move.
     one("debt", `SELECT COALESCE(SUM(CAST(currentBalanceUsd AS DECIMAL(14,2))),0) FROM customerAccounts WHERE CAST(currentBalanceUsd AS DECIMAL(14,2)) > 0`),
@@ -238,20 +246,40 @@ export interface DailyBrief {
  */
 export async function buildDailyBrief(): Promise<DailyBrief> {
   const todayKey = dayKey(0);
+  const now = new Date();
+  const clock = `${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}:${String(now.getSeconds()).padStart(2, "0")}`;
 
-  const [today, yesterday, lastWeek, sweep] = await Promise.all([
+  const [today, storedYesterday, storedLastWeek, yesterdaySoFar, lastWeekSoFar, sweep] = await Promise.all([
     measureDay(todayKey),
     storedDay(dayKey(-1)),
     storedDay(dayKey(-7)),
+    measureDay(dayKey(-1), clock),
+    measureDay(dayKey(-7), clock),
     runSweep(),
   ]);
+  // Like with like: the day's flows up to this same hour; the standing
+  // figures (debt, open batches) as they were written down that day.
+  const sameHour = (stored: DaySnapshot | null, soFar: DaySnapshot): DaySnapshot | null =>
+    stored ? { ...soFar, outstandingDebtUsd: stored.outstandingDebtUsd, openBatches: stored.openBatches } : null;
+  const yesterday = sameHour(storedYesterday, yesterdaySoFar);
+  const lastWeek = sameHour(storedLastWeek, lastWeekSoFar);
 
   const signals: Signal[] = [...sweepSignals(sweep)];
 
   // Against yesterday, and — where there is one — against the same weekday a
   // week ago. A Friday compared with a Thursday says more about the week than
   // about the business.
-  if (yesterday) signals.push(...movementSignals(today, yesterday));
+  if (yesterday) {
+    signals.push(...movementSignals(today, yesterday).map((s) => ({
+      ...s,
+      detail: {
+        ku: `${s.detail?.ku ?? ""} — بەراورد بە دوێنێ تا هەمان کاتژمێر`,
+        en: `${s.detail?.en ?? ""} — against yesterday up to this hour`,
+        ar: `${s.detail?.ar ?? ""} — مقارنة بالأمس حتى هذه الساعة`,
+        zh: `${s.detail?.zh ?? ""}——与昨天同一时刻相比`,
+      },
+    })));
+  }
 
   if (lastWeek) {
     for (const s of movementSignals(today, lastWeek)) {

@@ -324,7 +324,8 @@ export const METRICS: readonly MetricSpec[] = [
     higherIsBetter: true,
     unit: "kg",
     path: "/batches",
-    title: { ku: "کیلۆی گواسترا", en: "Kilos shipped", ar: "الكيلوات المشحونة", zh: "已发运公斤" },
+    // The weight of parcels registered that day - not shipped (audit 2026-11-05).
+    title: { ku: "کیلۆی تۆمارکراو", en: "Kilos registered", ar: "الكيلوات المسجّلة", zh: "已登记公斤" },
   },
   {
     id: "outstanding_debt",
