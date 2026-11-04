@@ -654,6 +654,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
 
     const updatePayload = {
       id: editingBatch.id,
+      originWarehouseId: parseInt(String(formData.get("originWarehouseId") ?? ""), 10) || undefined,
       batchCode: formData.get("batchCode") as string || undefined,
       carrierInfo: formData.get("carrierInfo") as string || undefined,
       // Detailed shipping info
@@ -2609,12 +2610,29 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <Input name="batchCode" defaultValue={editingBatch.batchCode} readOnly={!!editingBatch.twinOfBatchId} className={editingBatch.twinOfBatchId ? "bg-muted" : undefined} title={editingBatch.twinOfBatchId ? pickLang(language, { ku: "ناوی توین لەگەڵ باچە ئەسڵییەکەی دەگۆڕێت", en: "A twin's name follows its original", ar: "اسم التوأم يتبع الأصل", zh: "孪生批次名称随原批次" }) : undefined} />
                     </div>
                     <div className="p-3 bg-muted rounded-lg">
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-wrap items-center gap-2">
                         <Badge variant="outline" className="capitalize">
                           {editingBatch.shippingType.replace(/_/g, " ")}
                         </Badge>
+                        {/* The warehouse is put right here, not by deleting the
+                            batch (owner, 2026-11-04); the batch's place follows it. */}
+                        <select
+                          name="originWarehouseId"
+                          defaultValue={String(editingBatch.originWarehouseId)}
+                          disabled={editLocked}
+                          aria-label={pickLang(language, { ku: "کۆگا", en: "Warehouse", ar: "المستودع", zh: "仓库" })}
+                          className="h-8 rounded-md border bg-background px-2 text-sm"
+                          data-testid="batch-edit-warehouse"
+                        >
+                          {(warehouses ?? []).some((w) => w.id === editingBatch.originWarehouseId) ? null : (
+                            <option value={String(editingBatch.originWarehouseId)}>{getWarehouseName(editingBatch.originWarehouseId)}</option>
+                          )}
+                          {warehouses?.map((w) => (
+                            <option key={w.id} value={String(w.id)}>{w.codePrefix} - {w.nameEn}</option>
+                          ))}
+                        </select>
                         <span className="text-sm text-muted-foreground">
-                          {getWarehouseName(editingBatch.originWarehouseId)} → {getCountryName(editingBatch.destinationCountryId)}
+                          → {getCountryName(editingBatch.destinationCountryId)}
                         </span>
                       </div>
                     </div>

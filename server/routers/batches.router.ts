@@ -27,6 +27,7 @@ import * as db from "../db";
 import { notifyBatchStatusChange } from "../services/notification.service";
 import { syncBatchStageQuietly } from "../services/batchStage.service";
 import { manualMoveAllowed } from "@shared/batchStage";
+import { batchHasShipmentNumber } from "@shared/parcelStage";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema } from "./schemas";
 
 /**
@@ -2490,6 +2491,8 @@ export const batchesRouter = router({
         containerNumber: z.string().optional(),
         vesselName: z.string().optional(),
         awbNumber: z.string().optional(),
+        // The warehouse, put right without deleting the batch (owner, 2026-11-04).
+        originWarehouseId: z.number().int().positive().optional(),
         // The carrier's own batch number - office only (owner, 2026-10-28).
         carrierBatchNo: z.string().max(64).nullable().optional(),
         shipmentTrackings: shipmentTrackingsSchema,
@@ -2588,6 +2591,36 @@ export const batchesRouter = router({
             ),
           });
         }
+        /*
+         * The warehouse put right (owner, 2026-11-04: «ناتوانی کۆگا بگۆڕیت،
+         * ناچار بە سڕینەوەی باچ دەبیت»). The batch's place follows it, as on
+         * create: a China warehouse makes it China's. A batch read as Erbil's
+         * went to the Erbil depot on its first parcel; with no shipment number
+         * it has not left China, so it goes back to being prepared there.
+         */
+        const placeChange: Partial<{ createdInCountryId: number | null; createdInCity: string | null; status: "preparing" }> = {};
+        if (data.originWarehouseId !== undefined && data.originWarehouseId !== existing.originWarehouseId) {
+          if (isBatchEditLocked(existing.status)) {
+            throw new TRPCError({
+              code: "BAD_REQUEST",
+              message: withFix(`کۆگای باچی ${existing.batchCode} ناگۆڕدرێت، چونکە باچەکە گەیشتووە یان داخراوە.`, [
+                "کۆگاکە وەک خۆی بهێڵەرەوە و پاشەکەوت بکە",
+              ]),
+            });
+          }
+          const warehouse = await db.getWarehouseById(data.originWarehouseId);
+          if (!warehouse) {
+            throw new TRPCError({
+              code: "NOT_FOUND",
+              message: withFix("ئەو کۆگایەی هەڵتبژارد نەدۆزرایەوە.", ["لاپەڕەکە نوێ بکەرەوە و کۆگاکە دووبارە هەڵبژێرە"]),
+            });
+          }
+          placeChange.createdInCountryId = warehouse.countryId;
+          placeChange.createdInCity = warehouse.city;
+          const toChina = (await db.warehouseInChina(warehouse.id)) === true;
+          if (toChina && existing.status === "at_depot" && !batchHasShipmentNumber(existing)) placeChange.status = "preparing";
+        }
+
         if (isBatchEditLocked(existing.status)) {
           appLogger.info("[Batch] main admin corrected a delivered batch", {
             batchId: id, batchCode: existing.batchCode, userId: ctx.user.id,
@@ -2632,7 +2665,7 @@ export const batchesRouter = router({
 
         // Only the carrier number changed: nothing else to write (an empty
         // update is refused by the driver).
-        if (Object.values(data).some((v) => v !== undefined)) await db.updateBatch(id, data, ctx.user.id);
+        if (Object.values(data).some((v) => v !== undefined)) await db.updateBatch(id, { ...data, ...placeChange }, ctx.user.id);
         // The original renamed: its twin's name follows (shared/batchTwin).
         if (data.batchCode !== undefined && data.batchCode.trim() !== existing.batchCode) {
           await db.renameTwinsOf(id, data.batchCode.trim(), ctx.user.id);
