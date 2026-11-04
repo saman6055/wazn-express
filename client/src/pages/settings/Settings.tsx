@@ -536,63 +536,27 @@ const [companyData, setCompanyData] = useState({
                     onCheckedChange={setEmailNotifications}
                   />
                 </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.welcomeEmail") || "New Customer Welcome Email"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.welcomeEmailDesc") || "Send welcome email with login credentials"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.packageStatusUpdates") || "Package Status Updates"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.packageStatusUpdatesDesc") || "Notify customers of status changes"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.invoicePaymentNotifications") || "Invoice & Payment Notifications"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.invoicePaymentNotificationsDesc") || "Send invoices and payment confirmations"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
+                {/* These three were switches with nothing behind them - no
+                    state, no save, no reader. The one switch above is the
+                    whole setting; this says what it covers. */}
+                <p className="text-sm text-muted-foreground">
+                  {pickLang(language, {
+                    ku: "ئەمە هەموو ئیمەیڵەکان دەگرێتەوە: بەخێرهاتنی کڕیاری نوێ، گۆڕانی دۆخی پاکەت، پسووڵە و پشتڕاستکردنەوەی پارەدان.",
+                    en: "This covers every email: new customer welcome, package status changes, invoices and payment confirmations.",
+                    ar: "يشمل هذا كل الرسائل: ترحيب العميل الجديد، تغيّر حالة الطرد، الفواتير وتأكيدات الدفع.",
+                    zh: "这涵盖所有邮件：新客户欢迎、包裹状态变更、发票与付款确认。",
+                  })}
+                </p>
               </CardContent>
             </Card>
 
-            <Card>
-              <CardHeader>
-                <CardTitle>{t("settings.smsNotifications")}</CardTitle>
-                <CardDescription>{t("settings.smsNotificationsDesc") || "Configure SMS notifications for customers"}</CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.enableSmsNotifications") || "Enable SMS Notifications"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.enableSmsNotificationsDesc") || "Send SMS for package updates and alerts"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.packageStatusSms") || "Package Status SMS"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.packageStatusSmsDesc") || "Notify customers via SMS when status changes"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.deliveryAlertSms") || "Delivery Alert SMS"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.deliveryAlertSmsDesc") || "Send SMS when package is out for delivery"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="p-4 bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 rounded-lg text-sm text-blue-800 dark:text-blue-200">
-                  <p className="font-medium">SMS Provider Configuration</p>
-                  <p className="mt-1">SMS notifications are sent to customer mobile numbers. Configure SMS provider in system settings for production use.</p>
-                </div>
-              </CardContent>
-            </Card>
+            {/* The SMS card is gone. It offered three switches and said the
+                messages "are sent to customer mobile numbers", while
+                sendSms() in server/services/notification.service.ts writes a
+                line to the log and returns - there is no provider, and never
+                has been. Three switches that could be turned on, a paragraph
+                saying it worked, and not one message ever sent. WhatsApp, the
+                channel this office actually uses, is the card below. */}
 
             <Card>
               <CardHeader>
@@ -631,66 +595,31 @@ const [companyData, setCompanyData] = useState({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <LanguageFlag code="en" className="h-5 w-[30px]" />
-                      <div>
-                        <p className="font-medium">English</p>
-                        <p className="text-xs text-muted-foreground">LTR</p>
+                  {/*
+                   * Each language was a switch that saved nothing, and two
+                   * of them - Turkish and Persian - are not languages this
+                   * system has: there are four files in client/src/locales.
+                   * Turning the Turkish switch off changed nothing because
+                   * Turkish was never on.
+                   *
+                   * The four are listed as what they are, a fact, and the
+                   * language a person reads the system in is their own
+                   * choice in the top bar, not an administrator's switch.
+                   */}
+                  {(["ku", "ar", "en", "zh"] as const).map((code) => (
+                    <div key={code} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center gap-3">
+                        <LanguageFlag code={code} className="h-5 w-[30px]" />
+                        <div>
+                          <p className="font-medium">
+                            {pickLang(code, { ku: "کوردی سۆرانی", ar: "العربية", en: "English", zh: "中文" })}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{code === "en" || code === "zh" ? "LTR" : "RTL"}</p>
+                        </div>
                       </div>
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-300" />
                     </div>
-                    <Switch defaultChecked disabled />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <LanguageFlag code="ku" className="h-5 w-[30px]" />
-                      <div>
-                        <p className="font-medium">Kurdish Sorani</p>
-                        <p className="text-xs text-muted-foreground">RTL</p>
-                      </div>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <LanguageFlag code="ar" className="h-5 w-[30px]" />
-                      <div>
-                        <p className="font-medium">Arabic</p>
-                        <p className="text-xs text-muted-foreground">RTL</p>
-                      </div>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <LanguageFlag code="zh" className="h-5 w-[30px]" />
-                      <div>
-                        <p className="font-medium">Chinese</p>
-                        <p className="text-xs text-muted-foreground">LTR</p>
-                      </div>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">🇹🇷</span>
-                      <div>
-                        <p className="font-medium">Turkish</p>
-                        <p className="text-xs text-muted-foreground">LTR</p>
-                      </div>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center gap-3">
-                      <span className="text-lg">🇮🇷</span>
-                      <div>
-                        <p className="font-medium">Persian (Farsi)</p>
-                        <p className="text-xs text-muted-foreground">RTL</p>
-                      </div>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -702,27 +631,26 @@ const [companyData, setCompanyData] = useState({
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid gap-4">
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">USD - US Dollar</p>
-                      <p className="text-xs text-muted-foreground">Primary currency</p>
+                  {/* Switching a currency off here did nothing - the three
+                      are built into how money is held and converted. The
+                      rates, which do change, have their own page. */}
+                  {[
+                    { code: "USD - US Dollar", note: { ku: "دراوی سەرەکی", en: "Primary currency", ar: "العملة الأساسية", zh: "主要货币" } },
+                    { code: "IQD - Iraqi Dinar", note: { ku: "دراوی ناوخۆ", en: "Local currency", ar: "العملة المحلية", zh: "本地货币" } },
+                    { code: "RMB - Chinese Yuan", note: { ku: "کارەکانی چین", en: "China operations", ar: "عمليات الصين", zh: "中国业务" } },
+                  ].map((c) => (
+                    <div key={c.code} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{c.code}</p>
+                        <p className="text-xs text-muted-foreground">{pickLang(language, c.note)}</p>
+                      </div>
+                      <Check className="h-4 w-4 text-green-600 dark:text-green-300" />
                     </div>
-                    <Switch defaultChecked disabled />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">IQD - Iraqi Dinar</p>
-                      <p className="text-xs text-muted-foreground">Local currency</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">RMB - Chinese Yuan</p>
-                      <p className="text-xs text-muted-foreground">China operations</p>
-                    </div>
-                    <Switch defaultChecked />
-                  </div>
+                  ))}
+                  <Link href="/settings/currencies" className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent">
+                    <p className="font-medium">{t("settings.exchangeRates") || "Exchange Rates"}</p>
+                    <DollarSign className="h-4 w-4 text-muted-foreground" />
+                  </Link>
                 </div>
               </CardContent>
             </Card>
@@ -735,27 +663,27 @@ const [companyData, setCompanyData] = useState({
                 <CardDescription>{t("settings.securitySettingsDesc") || "Configure security and access controls"}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.twoFactorAuth") || "Two-Factor Authentication"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.twoFactorAuthDesc") || "Require 2FA for admin accounts"}</p>
-                  </div>
-                  <Switch />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.sessionTimeout") || "Session Timeout"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.sessionTimeoutDesc") || "Auto-logout after inactivity"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
+                {/*
+                 * Two-factor authentication: removed. There is no second
+                 * factor anywhere in this system, so the switch offered a
+                 * protection that turning it on could not give.
+                 *
+                 * Session timeout: removed, and it was contradicted twice
+                 * over - it was on by default while nothing logs anyone out,
+                 * and the owner's rule is that a customer session never
+                 * expires (365-day sliding).
+                 *
+                 * IP whitelisting is real, but it is a list of addresses,
+                 * not a switch, and it already has its own page. The switch
+                 * did nothing; the link goes where the work is done.
+                 */}
+                <Link href="/settings/ip-whitelist" className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent">
                   <div>
                     <p className="font-medium">{t("settings.ipWhitelisting") || "IP Whitelisting"}</p>
                     <p className="text-sm text-muted-foreground">{t("settings.ipWhitelistingDesc") || "Restrict access to specific IPs"}</p>
                   </div>
-                  <Switch />
-                </div>
+                  <Shield className="h-4 w-4 text-muted-foreground" />
+                </Link>
               </CardContent>
             </Card>
 
@@ -765,24 +693,23 @@ const [companyData, setCompanyData] = useState({
                 <CardDescription>{t("settings.auditSettingsDesc") || "Configure audit logging behavior"}</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.logAllActions") || "Log All Actions"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.logAllActionsDesc") || "Record all user actions in audit log"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="font-medium">{t("settings.logFinancialActions") || "Log Financial Actions"}</p>
-                    <p className="text-sm text-muted-foreground">{t("settings.logFinancialActionsDesc") || "Detailed logging for payments and invoices"}</p>
-                  </div>
-                  <Switch defaultChecked />
-                </div>
-                <div className="grid gap-2">
-                  <Label htmlFor="retentionDays">{t("settings.logRetention") || "Log Retention (days)"}</Label>
-                  <Input id="retentionDays" type="number" defaultValue="365" />
-                </div>
+                {/* Logging is not optional and never was: the switches could
+                    be turned off and everything carried on being recorded.
+                    A retention box that saves nothing is the same promise in
+                    a different shape - it is said here instead, and the link
+                    goes to the log itself. */}
+                <p className="text-sm text-muted-foreground">
+                  {pickLang(language, {
+                    ku: "هەموو کردارێک تۆمار دەکرێت، بەتایبەت پارەدان و پسووڵەکان. ناکرێت بکوژێنرێتەوە، و هیچ تۆمارێک بە خۆکاری ناسڕدرێتەوە.",
+                    en: "Every action is recorded, payments and invoices in particular. It cannot be turned off, and no entry is deleted automatically.",
+                    ar: "كل إجراء يُسجَّل، وخاصة المدفوعات والفواتير. لا يمكن إيقافه، ولا يُحذف أي سجل تلقائياً.",
+                    zh: "每一项操作都会被记录，尤其是付款与发票。无法关闭，任何记录都不会被自动删除。",
+                  })}
+                </p>
+                <Link href="/audit-logs" className="flex items-center justify-between rounded-lg border p-3 transition-colors hover:bg-accent">
+                  <p className="font-medium">{t("nav.auditLogs") || "Audit Logs"}</p>
+                  <FileText className="h-4 w-4 text-muted-foreground" />
+                </Link>
               </CardContent>
             </Card>
           </TabsContent>
