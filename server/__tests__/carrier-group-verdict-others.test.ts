@@ -27,3 +27,9 @@ describe("a late carton counts in one load only", () => {
     expect(src).toContain("if (first == null || !wanted.has(first)) continue;");
   });
 });
+
+describe("a lost parcel is not still coming", () => {
+  it("memberFacts leaves out parcels written off as lost", () => {
+    expect(src).toContain('notInArray(packages.status, ["cancelled", "returned"]), isNull(packages.lostAt)));');
+  });
+});

@@ -5,7 +5,7 @@
  * history records it and every cost rule reads the batch as before) and
  * makes the Erbil twin of a China batch.
  */
-import { and, asc, eq, inArray, notInArray, or, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, isNull, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
 import { batchCarrierParts, batches, carrierGroupInvoices, countries, packageScans, packages, users, warehouses } from "../../drizzle/schema";
 import { chargeableWeight } from "@shared/chargeableWeight";
@@ -126,7 +126,7 @@ async function memberFacts(ids: number[], arrivedOn: string | null = null) {
       lengthCm: packages.lengthCm, widthCm: packages.widthCm, heightCm: packages.heightCm,
     })
     .from(packages)
-    .where(and(inArray(packages.batchId, ids), notInArray(packages.status, ["cancelled", "returned"])));
+    .where(and(inArray(packages.batchId, ids), notInArray(packages.status, ["cancelled", "returned"]), isNull(packages.lostAt)));
   const pIds = parcels.map((p) => p.id);
   // The first arrival check of each parcel, as a day.
   const firstScan = new Map<number, string>();
