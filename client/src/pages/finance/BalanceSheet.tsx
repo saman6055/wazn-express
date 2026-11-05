@@ -43,6 +43,15 @@ const [selectedDate, setSelectedDate] = useState(() => {
   // company debts register for what we owe.
   const { data: ledgerSummary } = trpc.ledger.getSummary.useQuery();
   const { data: companyDebts } = trpc.companyDebts.list.useQuery();
+  // The same facts as the working-capital page (owner, 2026-11-05: one figure
+  // on every screen): cash is derived from the records, never typed, and goods
+  // bought for customers stand at what they cost.
+  const { data: wc, error: wcError } = trpc.ledger.workingCapital.useQuery(undefined, { retry: false });
+  const wcFacts = wc?.facts;
+  const netCash = Number(wc?.netCashUsd ?? 0);
+  const cashHeld = Math.max(0, netCash);
+  const cashOwed = Math.max(0, -netCash);
+  const goodsAtCost = Number(wcFacts?.goodsOnRoadCostUsd ?? 0);
 
   // Calculate totals
   // `acc.balance` is not a column. The account row carries `currentBalance`,
@@ -97,11 +106,16 @@ const [selectedDate, setSelectedDate] = useState(() => {
     0,
   );
 
-  const totalPayables = totalCompanyDebt + customerCredit;
-  
-  const totalAssets = totalCash + totalReceivables;
-  const totalLiabilities = totalPayables;
-  const equity = totalAssets - totalLiabilities;
+  const totalPayables = totalCompanyDebt + customerCredit + cashOwed;
+
+  // Cash accounts are not added: net cash already holds every dollar the
+  // records place, and a typed balance beside it would count them twice.
+  void totalCash;
+  const round = (n: number) => Math.round(n * 100) / 100;
+  const totalAssets = round(totalReceivables + goodsAtCost + cashHeld);
+  const totalLiabilities = round(totalPayables);
+  const equity = round(totalAssets - totalLiabilities);
+  const withdrawn = round((wcFacts?.withdrawals ?? []).reduce((s: number, w: { usd: number }) => s + Number(w.usd || 0), 0));
 
   // Generate dates for selector
   const dates = [];
@@ -169,6 +183,17 @@ const [selectedDate, setSelectedDate] = useState(() => {
         </div>
       </div>
 
+      {wcError && (
+        <div className="rounded-lg border border-amber-300 bg-amber-50 p-3 text-sm text-amber-900 dark:border-amber-500/40 dark:bg-amber-500/10 dark:text-amber-200" data-testid="balance-sheet-main-admin-only">
+          {pickLang(language, {
+            ku: "نەقد، کاڵای ڕێگا و سەرمایە تەنها بۆ ئەدمینی سەرەکی دەردەکەون، بۆیە ئەم تەرازووە لێرە تەواو نییە.",
+            en: "Cash, goods on the road and capital are shown to the main admin only, so this sheet is incomplete here.",
+            ar: "النقد وبضائع الطريق ورأس المال تظهر للمدير الرئيسي فقط، لذا هذه الميزانية غير مكتملة هنا.",
+            zh: "现金、在途货物和资本仅对主管理员显示，因此此表在此不完整。",
+          })}
+        </div>
+      )}
+
       {/* Balance Equation */}
       <Card className="bg-gradient-to-r from-blue-50 dark:from-blue-950/40 via-white dark:via-slate-950/40 to-purple-50 dark:to-purple-950/40 border-2 border-blue-200 dark:border-blue-800/60">
         <CardContent className="p-6">
@@ -211,51 +236,43 @@ const [selectedDate, setSelectedDate] = useState(() => {
                   "bank" as 40% — a split nobody chose, printed on a financial
                   statement as though it had been counted. */}
               <div className="space-y-3">
-                {usdAccounts.map((acc: any) => (
-                  <SheetRow
-                    key={acc.id}
-                    icon={<Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
-                    tint="bg-emerald-100 dark:bg-emerald-950/40"
-                    label={acc.name || acc.accountName || t("finance.cashAccount") || "Cash account"}
-                    amount={parseFloat(acc.currentBalance ?? "0")}
-                    href="/company/treasury"
-                  />
-                ))}
+                <SheetRow
+                  icon={<Banknote className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
+                  tint="bg-emerald-100 dark:bg-emerald-950/40"
+                  label={pickLang(language, {
+                    ku: "نەقدی پاک (لە تۆمارەکانەوە)",
+                    en: "Net cash (from the records)",
+                    ar: "صافي النقد (من السجلات)",
+                    zh: "净现金（来自记录）",
+                  })}
+                  note={pickLang(language, {
+                    ku: "پارەی دەست، کەم قەرزی کۆمپانیای گواستنەوە",
+                    en: "Cash in hand less what carriers are owed",
+                    ar: "النقد ناقص المستحق لشركات الشحن",
+                    zh: "现金减去欠承运商款",
+                  })}
+                  amount={cashHeld}
+                  href="/finance/working-capital"
+                />
 
-                {usdAccounts.length === 0 && (
-                  <p className="px-3 py-2 text-sm text-muted-foreground">
-                    {pickLang(language, {
-                      ku: "هیچ حسابێکی پارە تۆمار نەکراوە",
-                      en: "No cash accounts recorded",
-                      ar: "لا توجد حسابات نقدية مسجلة",
-                      zh: "未记录任何现金账户",
-                    })}
-                  </p>
-                )}
-
-                {iqdAccounts.length > 0 && (
-                  <div className="rounded-lg border border-dashed border-amber-300 dark:border-amber-800/60 bg-amber-50 dark:bg-amber-950/30 p-3 text-xs">
-                    <p className="font-semibold text-amber-900 dark:text-amber-200">
-                      {pickLang(language, {
-                        ku: `${iqdAccounts.length} حسابی دیناری — لەم کۆکردنەوەیەدا نییە`,
-                        en: `${iqdAccounts.length} dinar account(s) — not in this total`,
-                        ar: `${iqdAccounts.length} حساب بالدينار — غير مشمول في هذا المجموع`,
-                        zh: `${iqdAccounts.length} 个第纳尔账户——未计入此合计`,
-                      })}
-                    </p>
-                    <p className="mt-1 text-amber-800 dark:text-amber-300" dir="ltr">
-                      {totalIqd.toLocaleString("en-GB")} IQD
-                    </p>
-                    <p className="mt-1 text-amber-700 dark:text-amber-400">
-                      {pickLang(language, {
-                        ku: "بۆ دۆلار نەگۆڕدراوە — نرخی ئاڵوگۆڕ هێشتا دیاری نەکراوە",
-                        en: "Not converted to dollars — no exchange rate has been agreed for this",
-                        ar: "لم يُحوّل إلى الدولار — لم يُعتمد سعر صرف لذلك",
-                        zh: "未折算为美元——尚未确定折算汇率",
-                      })}
-                    </p>
-                  </div>
-                )}
+                <SheetRow
+                  icon={<Landmark className="h-4 w-4 text-sky-600 dark:text-sky-300" />}
+                  tint="bg-sky-100 dark:bg-sky-950/40"
+                  label={pickLang(language, {
+                    ku: "کاڵای ڕێگا — بە تێچووی کڕین",
+                    en: "Goods on the road — at cost",
+                    ar: "بضائع في الطريق — بسعر الشراء",
+                    zh: "在途货物 — 按成本",
+                  })}
+                  note={pickLang(language, {
+                    ku: `${wcFacts?.goodsOnRoadCount ?? 0} داواکاری، هێشتا لەسەر کڕیار نەنووسراوە`,
+                    en: `${wcFacts?.goodsOnRoadCount ?? 0} orders, not yet on the customer`,
+                    ar: `${wcFacts?.goodsOnRoadCount ?? 0} طلب، لم تُقيَّد بعد`,
+                    zh: `${wcFacts?.goodsOnRoadCount ?? 0} 个订单，尚未记账`,
+                  })}
+                  amount={goodsAtCost}
+                  href="/finance/goods-on-road"
+                />
 
                 <SheetRow
                   icon={<Users className="h-4 w-4 text-amber-600 dark:text-amber-300" />}
@@ -344,6 +361,21 @@ const [selectedDate, setSelectedDate] = useState(() => {
                   amount={customerCredit}
                   href="/finance?tab=credit-customers"
                 />
+
+                {cashOwed > 0 && (
+                  <SheetRow
+                    icon={<Banknote className="h-4 w-4 text-red-600 dark:text-red-300" />}
+                    tint="bg-red-100 dark:bg-red-950/40"
+                    label={pickLang(language, {
+                      ku: "نەقدی پاک بە کەمی — قەرزار بۆ کۆمپانیای گواستنەوە",
+                      en: "Net cash short — owed to carriers",
+                      ar: "عجز صافي النقد — مستحق لشركات الشحن",
+                      zh: "净现金不足 — 欠承运商",
+                    })}
+                    amount={cashOwed}
+                    href="/finance/working-capital"
+                  />
+                )}
               </div>
             </div>
 
@@ -377,15 +409,40 @@ const [selectedDate, setSelectedDate] = useState(() => {
                 <SheetRow
                   icon={<PiggyBank className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
                   tint="bg-emerald-100 dark:bg-emerald-950/40"
-                  label={pickLang(language, {
-                    ku: "سامان − قەرز",
-                    en: "Assets − liabilities",
-                    ar: "الأصول − الالتزامات",
-                    zh: "资产 − 负债",
-                  })}
-                  note={`$${totalAssets.toLocaleString("en-GB")} − $${totalLiabilities.toLocaleString("en-GB")}`}
-                  amount={equity}
+                  label={pickLang(language, { ku: "سەرمایەی هێنراو", en: "Capital brought in", ar: "رأس المال", zh: "投入资本" })}
+                  amount={Number(wcFacts?.capitalUsd ?? 0)}
+                  href="/company/partners"
                 />
+                <SheetRow
+                  icon={<TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />}
+                  tint="bg-emerald-100 dark:bg-emerald-950/40"
+                  label={pickLang(language, { ku: "قازانجی کار (هاتوو)", en: "Work profit (earned)", ar: "ربح العمل (المتحقق)", zh: "经营利润（已实现）" })}
+                  amount={round(Number(wcFacts?.profitUsd ?? 0) - Number(wc?.unearnedUsd ?? 0))}
+                  href="/finance/working-capital"
+                />
+                <SheetRow
+                  icon={<TrendingDown className="h-4 w-4 text-red-600 dark:text-red-300" />}
+                  tint="bg-red-100 dark:bg-red-950/40"
+                  label={pickLang(language, { ku: "مەسارف (کەم دەکرێت)", en: "Expenses (less)", ar: "المصاريف (تُطرح)", zh: "费用（减）" })}
+                  amount={-Number(wcFacts?.expensesUsd ?? 0)}
+                  href="/company/expenses"
+                />
+                <SheetRow
+                  icon={<TrendingDown className="h-4 w-4 text-red-600 dark:text-red-300" />}
+                  tint="bg-red-100 dark:bg-red-950/40"
+                  label={pickLang(language, { ku: "بردنی شەریکەکان (کەم دەکرێت)", en: "Partners' withdrawals (less)", ar: "سحوبات الشركاء (تُطرح)", zh: "合伙人提款（减）" })}
+                  amount={-withdrawn}
+                  href="/company/partners"
+                />
+                {totalCompanyDebt > 0 && (
+                  <SheetRow
+                    icon={<Landmark className="h-4 w-4 text-red-600 dark:text-red-300" />}
+                    tint="bg-red-100 dark:bg-red-950/40"
+                    label={pickLang(language, { ku: "قەرزی تۆمارکراوی کۆمپانیا (کەم دەکرێت)", en: "Company debts recorded (less)", ar: "ديون الشركة المسجلة (تُطرح)", zh: "公司登记债务（减）" })}
+                    amount={-totalCompanyDebt}
+                    href="/company/debts"
+                  />
+                )}
               </div>
             </div>
 
