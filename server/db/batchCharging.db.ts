@@ -1,6 +1,7 @@
 import { and, eq } from "drizzle-orm";
 import { getDb } from "./connection";
-import { packages, fullPackageOrders, fullPackageOrderTrackings, type Package } from "../../drizzle/schema";
+import { packages, fullPackageOrders, fullPackageOrderTrackings, customerAccounts, type Package } from "../../drizzle/schema";
+import { parcelOwnCharges } from "./parcelDeletion.db";
 import { getBatchById, getBatchRateForCustomer } from "./batches.db";
 import { getCustomerById } from "./customers.db";
 import { updatePackage } from "./packages.db";
@@ -292,3 +293,21 @@ export async function chargeBatchShippingIfDue(
 
 /** For guards and callers that only need the question, not the action. */
 export { batchChargesOnPricing };
+
+/**
+ * Whether this parcel's own freight is already on its owner's account (a
+ * «پاکەت … - باچ …» row, not an order's). A parcel weighed with no order
+ * linked is charged as the customer's own when its batch is priced; if an
+ * order claims its tracking later, closing the batch must not write the
+ * order's freight for the same kilos again (2026-11-05: 28 cartons, two
+ * customers, charged twice at the 2 Nov close).
+ */
+export async function parcelFreightAlreadyCharged(packageId: number, customerId: number | null | undefined): Promise<boolean> {
+  if (!customerId) return false;
+  const db = await getDb();
+  if (!db) return false;
+  const [account] = await db.select({ id: customerAccounts.id }).from(customerAccounts).where(eq(customerAccounts.customerId, customerId)).limit(1);
+  if (!account) return false;
+  const own = await parcelOwnCharges(db, account, packageId);
+  return own.length > 0;
+}

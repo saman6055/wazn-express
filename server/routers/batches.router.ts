@@ -1945,6 +1945,14 @@ export const batchesRouter = router({
                   shippingCost = chargeableKg * pkgRateKg;
                 }
 
+                // Its freight already charged as the customer's own parcel
+                // (weighed before an order claimed its tracking): the order
+                // takes no second freight for the same kilos (2026-11-05).
+                if (shippingCost > 0 && await db.parcelFreightAlreadyCharged(pkg.id, pkg.customerId)) {
+                  appLogger.info("[BatchDelivered] parcel freight already charged - no order freight", { packageCode: pkg.packageCode });
+                  shippingCost = 0;
+                }
+
                 // 2. Save calculated shipping to package (for reference)
                 if (shippingCost > 0) {
                   await db.updatePackage(pkg.id, { calculatedCostUsd: shippingCost.toFixed(2) });
