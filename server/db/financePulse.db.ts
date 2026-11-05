@@ -321,7 +321,10 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
   const ordersProfitUsd = num(profit.fullPackage.profit) + num(profit.purchaseRequest.profit) + num(profit.commission.profit);
   // Refused goods: money kept and how each piece ended (shared/refusedGoods).
   const stockProfitUsd = num(profit.stock.profitUsd);
-  const workProfitUsd = cents(freightProfitUsd + ordersProfitUsd + stockProfitUsd);
+  // Box extras and extra services: the rest of the one rule (owner,
+  // 2026-11-05) - the work's profit is the rule's own total, never a re-add.
+  const extrasProfitUsd = num(profit.extra.profitUsd) + num(profit.services?.profitUsd);
+  const workProfitUsd = cents(num(profit.total.profit));
 
   return {
     period,
@@ -334,6 +337,7 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
       ordersUsd: cents(ordersProfitUsd),
       orders: (Number(profit.fullPackage.count) || 0) + (Number(profit.purchaseRequest.count) || 0) + (Number(profit.commission.count) || 0),
       stockUsd: cents(stockProfitUsd),
+      extrasUsd: cents(extrasProfitUsd),
       workUsd: workProfitUsd,
       expensesUsd: spent.usd,
       expenseCount: spent.count,
@@ -365,9 +369,19 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
 async function receivedBetween(db: Db, start: Date, end: Date) {
   const { paymentRecords } = await import("../../drizzle/schema");
   const net = sql`GREATEST(COALESCE(${paymentRecords.amountUsd}, 0) - COALESCE(${paymentRecords.reversedAmountUsd}, 0), 0)`;
-  const [row] = await db
-    .select({ usd: sql<string>`COALESCE(SUM(${net}), 0)`, count: sql<number>`COALESCE(SUM(CASE WHEN ${net} > 0 THEN 1 ELSE 0 END), 0)` })
+  // By where the money went too - cash, FIB, Qi Card (CARD) - for the centre's
+  // drawer (owner, 2026-11-05). The column keeps lower case.
+  const rows = await db
+    .select({ method: paymentRecords.paymentMethod, usd: sql<string>`COALESCE(SUM(${net}), 0)`, count: sql<number>`COALESCE(SUM(CASE WHEN ${net} > 0 THEN 1 ELSE 0 END), 0)` })
     .from(paymentRecords)
-    .where(and(gte(paymentRecords.createdAt, start), lte(paymentRecords.createdAt, end)));
-  return { usd: num(row?.usd), count: Number(row?.count) || 0 };
+    .where(and(gte(paymentRecords.createdAt, start), lte(paymentRecords.createdAt, end)))
+    .groupBy(paymentRecords.paymentMethod);
+  const byMethod = new Map<string, { method: string; usd: number; count: number }>();
+  for (const r of rows) {
+    const method = String(r.method ?? "").toUpperCase() || "OTHER";
+    const was = byMethod.get(method) ?? { method, usd: 0, count: 0 };
+    byMethod.set(method, { method, usd: cents(was.usd + num(r.usd)), count: was.count + (Number(r.count) || 0) });
+  }
+  const list = Array.from(byMethod.values()).filter((m) => m.usd > 0).sort((a, b) => b.usd - a.usd);
+  return { usd: cents(list.reduce((t, m) => t + m.usd, 0)), count: list.reduce((t, m) => t + m.count, 0), byMethod: list };
 }

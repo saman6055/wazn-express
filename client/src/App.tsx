@@ -87,6 +87,7 @@ const ScanReports = lazy(() => import("./pages/reports/ScanReports"));
 // ---------------------------------------------------------------------------
 const Finance = lazy(() => import("./pages/finance/Finance"));
 const CompanyFinanceDashboard = lazy(() => import("./pages/finance/CompanyFinanceDashboard"));
+const FinanceCenter = lazy(() => import("./pages/finance/FinanceCenter"));
 const CustomerFinance = lazy(() => import("./pages/finance/CustomerFinance"));
 const DebtorsReport = lazy(() => import("./pages/finance/DebtorsReport"));
 const WorkingCapital = lazy(() => import("./pages/finance/WorkingCapital"));
@@ -294,6 +295,7 @@ function Router() {
         <Route path="/scan-reports" component={ScanReports} />
         <Route path="/finance" component={Finance} />
         <Route path="/finance/company-dashboard" component={CompanyFinanceDashboard} />
+        <Route path="/finance/center" component={FinanceCenter} />
         <Route path="/finance/customer/:id" component={CustomerFinance} />
         <Route path="/finance/debtors" component={DebtorsReport} />
         <Route path="/finance/balance-sheet" component={BalanceSheet} />

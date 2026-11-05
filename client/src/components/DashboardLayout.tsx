@@ -504,6 +504,7 @@ function DashboardLayoutContent({
         icon: Landmark,
         color: "rose",
         items: [
+          { icon: Wallet, label: pickLang(language, { ku: "ناوەندی دارایی", en: "Finance centre", ar: "المركز المالي", zh: "财务中心" }), path: "/finance/center" },
           { icon: BarChart3, label: t("nav.companyDashboard") || "داشبۆردی کۆمپانیا", path: "/finance/company-dashboard" },
           // The main admin's alone: the server refuses anyone else (ledger.workingCapital).
           ...(isSuperAdmin ? [{ icon: Coins, label: pickLang(language, { ku: "سەرمایەی کار", en: "Working capital", ar: "رأس المال العامل", zh: "营运资金" }), path: "/finance/working-capital" }] : []),

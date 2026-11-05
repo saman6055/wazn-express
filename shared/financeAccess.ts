@@ -38,6 +38,7 @@ export const ALL_ACCOUNTS_PATHS: readonly string[] = [
   "/finance/yuan-rates",
   "/finance/box-double-charges",
   "/finance/company-dashboard",
+  "/finance/center",
   "/finance/bank-accounts",
   "/business-analytics",
 ];

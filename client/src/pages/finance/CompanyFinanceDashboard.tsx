@@ -383,6 +383,16 @@ export default function CompanyFinanceDashboard() {
                     <Money value={data.profit.stockUsd} signed />
                   </Row>
                 )}
+                {(data.profit.extrasUsd ?? 0) !== 0 && (
+                  <Row
+                    tone={(data.profit.extrasUsd ?? 0) < 0 ? "bad" : "good"}
+                    label={L({ ku: "تێچووی زیادەی بۆکس و خزمەتگوزاری", en: "Box extras and services", ar: "إضافات الصناديق والخدمات", zh: "箱子附加与服务" })}
+                    href="/finance/extra-costs"
+                    linkWords={L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}
+                  >
+                    <Money value={data.profit.extrasUsd ?? 0} signed />
+                  </Row>
+                )}
                 <Row
                   tone="bad"
                   label={L({ ku: "مەسارف", en: "Expenses", ar: "المصاريف", zh: "费用" })}
