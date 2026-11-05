@@ -76,7 +76,7 @@ export default function WorkingCapital() {
   };
 
   const f = data?.facts;
-  const holding = f && data ? f.debtUsd + f.goodsOnRoadUsd + data.netCashUsd - f.creditUsd : 0;
+  const holding = f && data ? f.debtUsd + f.goodsOnRoadCostUsd + data.netCashUsd - f.creditUsd : 0;
   const preview = data && have.trim() !== "" && Number.isFinite(Number(have))
     ? cashCheck(data.netCashUsd, Number(have), Number(owe) || 0)
     : null;
@@ -157,13 +157,13 @@ export default function WorkingCapital() {
                       {L({ ku: `کاڵای ڕێگا — ${f.goodsOnRoadCount} داواکاری`, en: `Goods on the road — ${f.goodsOnRoadCount} orders`, ar: `بضائع في الطريق — ${f.goodsOnRoadCount}`, zh: `在途货物 — ${f.goodsOnRoadCount}` })}
                       <Link href="/finance/goods-on-road" className="text-xs text-primary underline">{L({ ku: "بیانبینە", en: "See them", ar: "اعرض", zh: "查看" })}</Link>
                       <span className="text-xs text-muted-foreground">
-                        {L({ ku: "کڕدراوە، هێشتا لەسەر کڕیار نەنووسراوە · تێچووی کڕین", en: "bought, not yet on the customer · cost", ar: "مشتراة، لم تُقيَّد بعد · التكلفة", zh: "已购，未记账 · 成本" })}{" "}
-                        <Money value={f.goodsOnRoadCostUsd} />
+                        {L({ ku: "بە تێچووی کڕین · کاتێک لەسەر کڕیار دەنووسرێت دەبێت بە", en: "at cost · when written on the customer it becomes", ar: "بسعر الشراء · عند قيدها على العميل تصبح", zh: "按成本 · 记入客户后为" })}{" "}
+                        <Money value={f.goodsOnRoadUsd} />
                       </span>
                     </span>
                   }
                 >
-                  <Money value={f.goodsOnRoadUsd} />
+                  <Money value={f.goodsOnRoadCostUsd} />
                 </Line>
                 {f.creditUsd > 0 && (
                   <Line tone="bad" label={L({ ku: "پارەی کڕیاران لای ئێمە", en: "Customers' money with us", ar: "أموال العملاء عندنا", zh: "客户预存款" })}>
@@ -236,6 +236,11 @@ export default function WorkingCapital() {
               <CardContent className="text-sm">
                 <Line label={L({ ku: "سەرمایەی هێنراو", en: "Capital brought in", ar: "رأس المال", zh: "投入资本" })}><Money value={f.capitalUsd} /></Line>
                 <Line tone="good" label={L({ ku: "قازانجی کار", en: "Work profit", ar: "ربح العمل", zh: "经营利润" })}><Money value={f.profitUsd} signed /></Line>
+                {data.unearnedUsd > 0 && (
+                  <Line tone="quiet" label={L({ ku: "قازانجی کاڵای ڕێگا — هێشتا نەهاتووە", en: "Margin on goods on the road — not earned yet", ar: "ربح بضائع الطريق — لم يتحقق بعد", zh: "在途货物利润 — 尚未实现" })}>
+                    <Money value={-data.unearnedUsd} />
+                  </Line>
+                )}
                 <Line
                   tone="bad"
                   label={

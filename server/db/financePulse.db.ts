@@ -349,7 +349,8 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
       ? {
           shouldHoldUsd: capital.shouldHoldUsd,
           debtUsd: capital.facts.debtUsd,
-          goodsOnRoadUsd: capital.facts.goodsOnRoadUsd,
+          // At cost (owner, 2026-11-05), as the working-capital page.
+          goodsOnRoadUsd: capital.facts.goodsOnRoadCostUsd,
           stockUsd: capital.facts.stockUsd,
           stockCount: capital.facts.stockCount,
           netCashUsd: capital.netCashUsd,

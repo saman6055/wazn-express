@@ -35,13 +35,15 @@ describe("the picture", () => {
   it("is what the company should hold, less what the records can already place", () => {
     const w = workingCapital(OCT5);
     expect(w.withdrawalsUsd).toBe(3839.36);
-    expect(w.shouldHoldUsd).toBe(32106.11);
+    // Goods on the road at cost: their 875.76 margin waits (2026-11-05); the cash is the same.
+    expect(w.unearnedUsd).toBe(875.76);
+    expect(w.shouldHoldUsd).toBe(31230.35);
     expect(w.netCashUsd).toBe(447.1);
   });
 
   it("always adds back up to what the company should hold", () => {
     const w = workingCapital(OCT5);
-    const placed = OCT5.debtUsd + OCT5.goodsOnRoadUsd + w.netCashUsd - OCT5.creditUsd;
+    const placed = OCT5.debtUsd + OCT5.goodsOnRoadCostUsd + w.netCashUsd - OCT5.creditUsd;
     expect(Math.round(placed * 100) / 100).toBe(w.shouldHoldUsd);
   });
 
@@ -52,11 +54,12 @@ describe("the picture", () => {
     expect(after.netCashUsd).toBe(before.netCashUsd + 374);
   });
 
-  it("goods bought for a customer move cash to the road and change no total", () => {
+  it("goods bought for a customer move their cost from cash to the road; the margin waits", () => {
     const before = workingCapital(OCT5);
-    const after = workingCapital({ ...OCT5, goodsOnRoadUsd: OCT5.goodsOnRoadUsd + 200 });
+    // Bought for $150, to be sold for $200: profit already counts the $50.
+    const after = workingCapital({ ...OCT5, profitUsd: OCT5.profitUsd + 50, goodsOnRoadUsd: OCT5.goodsOnRoadUsd + 200, goodsOnRoadCostUsd: OCT5.goodsOnRoadCostUsd + 150 });
     expect(after.shouldHoldUsd).toBe(before.shouldHoldUsd);
-    expect(after.netCashUsd).toBe(Math.round((before.netCashUsd - 200) * 100) / 100);
+    expect(after.netCashUsd).toBe(Math.round((before.netCashUsd - 150) * 100) / 100);
   });
 
   it("an expense or a withdrawal comes out of both", () => {
@@ -80,7 +83,7 @@ describe("the picture", () => {
   it("money a customer left with us is cash in hand that is not ours", () => {
     const w = workingCapital({ ...OCT5, creditUsd: 100 });
     expect(w.netCashUsd).toBe(547.1);
-    expect(w.shouldHoldUsd).toBe(32106.11);
+    expect(w.shouldHoldUsd).toBe(31230.35);
   });
 });
 
@@ -176,5 +179,19 @@ describe("money received is counted on the office's clock", () => {
     expect(page).toContain('data-testid="money-received"');
     expect(page).toContain('href="/payments"');
     expect(root("client/src/components/DashboardLayout.tsx")).toContain('path: "/payments"');
+  });
+});
+
+describe("goods on the road stand at cost (owner, 2026-11-05)", () => {
+  it("the margin not yet earned leaves what should be held; the cash does not move", () => {
+    const facts = {
+      capitalUsd: 32000, profitUsd: 16842.46, expensesUsd: 15643.47, withdrawals: [{ name: "x", usd: 4215.55 }],
+      debtUsd: 26616.69, debtors: 68, creditUsd: 0,
+      goodsOnRoadUsd: 1716.36, goodsOnRoadCostUsd: 1498, goodsOnRoadCount: 65, stockUsd: 0, stockCount: 0,
+    };
+    const w = workingCapital(facts);
+    expect(w.unearnedUsd).toBe(218.36);
+    expect(w.shouldHoldUsd).toBe(28765.08);
+    expect(w.netCashUsd).toBe(650.39);
   });
 });

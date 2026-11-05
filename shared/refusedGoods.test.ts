@@ -150,7 +150,7 @@ describe("the books still close", () => {
   });
 
   it("stock is shown and not summed, so nothing is counted twice", () => {
-    expect(root("shared/workingCapital.ts")).toContain("cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadUsd + f.creditUsd)");
+    expect(root("shared/workingCapital.ts")).toContain("cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadCostUsd + f.creditUsd)");
     expect(root("server/db/workingCapital.db.ts")).toContain("getStockHeld()");
   });
 });

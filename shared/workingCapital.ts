@@ -61,15 +61,24 @@ export interface WorkingCapital {
   shouldHoldUsd: number;
   /** Cash less what is owed to carriers; negative means the company owes. */
   netCashUsd: number;
+  /**
+   * The margin on goods bought and not yet written on a customer. The profit
+   * rule counts an order from the day it is entered; until the customer owes
+   * it, that margin is not money anywhere, so the goods stand at what they
+   * cost (owner, 2026-11-05) and the margin waits on its own line.
+   */
+  unearnedUsd: number;
 }
 
 const cents = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 100;
 
 export function workingCapital(f: WorkingCapitalFacts): WorkingCapital {
   const withdrawalsUsd = cents(f.withdrawals.reduce((sum, w) => sum + (Number(w.usd) || 0), 0));
-  const shouldHoldUsd = cents(f.capitalUsd + f.profitUsd - f.expensesUsd - withdrawalsUsd);
-  const netCashUsd = cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadUsd + f.creditUsd);
-  return { withdrawalsUsd, shouldHoldUsd, netCashUsd };
+  const unearnedUsd = cents(Math.max(0, f.goodsOnRoadUsd - f.goodsOnRoadCostUsd));
+  const shouldHoldUsd = cents(f.capitalUsd + f.profitUsd - unearnedUsd - f.expensesUsd - withdrawalsUsd);
+  // Goods on the road at cost: the same cash as before, nothing counted twice.
+  const netCashUsd = cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadCostUsd + f.creditUsd);
+  return { withdrawalsUsd, shouldHoldUsd, netCashUsd, unearnedUsd };
 }
 
 export interface CashCheck {
