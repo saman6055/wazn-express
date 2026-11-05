@@ -1,5 +1,6 @@
-import { useState } from "react";
-import { ShieldAlert, Laptop, Check, X, Trash2, LockOpen, Loader2, Power } from "lucide-react";
+import { useState, type ReactNode } from "react";
+import { useLocation } from "wouter";
+import { ShieldAlert, Laptop, Check, X, Trash2, LockOpen, Loader2, Power, ArrowRight, ChevronLeft, AlertTriangle, Globe } from "lucide-react";
 import { toast } from "sonner";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -9,6 +10,64 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { confirmDanger } from "@/components/ConfirmDialog";
 import { fmtWhen } from "@/lib/numericDate";
 import { KIND_WORDS } from "@shared/securityWatch";
+import { fullTraits } from "@/lib/deviceTraits";
+
+type DeviceView = {
+  id: string;
+  plate: string;
+  details: string[];
+  ip: string | null;
+  kind: string;
+  lastSeenAt?: string | null;
+  lastUser?: string | null;
+  firstSeenAt?: string | null;
+  isThis?: boolean;
+  mismatch: { at: string; ip: string; user?: string } | null;
+  mismatchKind: string | null;
+};
+
+/**
+ * One device as the owner asked to see it: a plate like a car's, and what is
+ * known of the machine under it (shared/devicePlate).
+ */
+function DeviceCard({ d, title, children, onSameDevice }: { d: DeviceView; title: string; children?: ReactNode; onSameDevice?: () => void }) {
+  return (
+    <div className={`rounded-lg border p-3 space-y-2 text-sm ${d.mismatch ? "border-red-500" : ""}`}>
+      <div className="flex flex-wrap items-center gap-2">
+        <span dir="ltr" className="rounded-md border-2 border-foreground bg-muted px-2 py-0.5 font-mono text-base font-bold tracking-widest">
+          {d.plate}
+        </span>
+        <span className="font-semibold">{title}</span>
+        {d.isThis && <span className="text-xs text-muted-foreground">— ئێستا لەسەر ئەم ئامێرەیت</span>}
+        <div className="ms-auto flex flex-wrap items-center gap-2">{children}</div>
+      </div>
+      <div className="grid gap-x-4 gap-y-1 text-muted-foreground sm:grid-cols-2">
+        {d.details.length > 0 ? d.details.map((line, i) => <span key={i}>{line}</span>) : <span>{d.kind}</span>}
+        {d.ip && (
+          <span className="flex items-center gap-1">
+            <Globe className="w-3.5 h-3.5" /> IP: <span dir="ltr">{d.ip}</span>
+          </span>
+        )}
+        {d.firstSeenAt && <span>یەکەم جار: {fmtWhen(d.firstSeenAt, true)}</span>}
+        {d.lastSeenAt && <span>دوایین جار: {fmtWhen(d.lastSeenAt, true)}{d.lastUser ? ` — ${d.lastUser}` : ""}</span>}
+      </div>
+      {d.mismatch && (
+        <div className="flex flex-wrap items-center gap-2 rounded-md bg-red-50 p-2 text-red-700 dark:bg-red-950 dark:text-red-300">
+          <AlertTriangle className="w-4 h-4" />
+          <span>
+            ئەم پلێتە لە ئامێرێکی جیاوازەوە بەکارهات — {d.mismatchKind} — IP <span dir="ltr">{d.mismatch.ip}</span> — {fmtWhen(d.mismatch.at, true)}
+            {d.mismatch.user ? ` — ${d.mismatch.user}` : ""}
+          </span>
+          {onSameDevice && (
+            <Button size="sm" variant="outline" className="ms-auto" onClick={onSameDevice}>
+              <Check className="w-4 h-4 me-1" /> ئەمە هەمان ئامێرە
+            </Button>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
 
 /**
  * The main admin's security page (owner, 2026-11-05):
@@ -28,6 +87,12 @@ export default function OfficeSecurity() {
   const [thisLabel, setThisLabel] = useState("");
   const refuse = trpc.officeSecurity.refuse.useMutation({ onSuccess: refresh, onError });
   const remove = trpc.officeSecurity.remove.useMutation({ onSuccess: refresh, onError });
+  const acceptPrint = trpc.officeSecurity.acceptPrint.useMutation({ onSuccess: () => { toast.success("پلێتەکە نوێ کرایەوە."); refresh(); }, onError });
+  const [, navigate] = useLocation();
+  const goBack = () => {
+    if (window.history.length > 1) window.history.back();
+    else navigate("/staff-management");
+  };
   const clearHold = trpc.officeSecurity.clearHold.useMutation({ onSuccess: () => { toast.success("هەژمارەکە کرایەوە."); refresh(); }, onError });
   const [labels, setLabels] = useState<Record<string, string>>({});
 
@@ -44,6 +109,14 @@ export default function OfficeSecurity() {
   return (
     <div className="container mx-auto p-4 md:p-6 space-y-5" dir="rtl">
       <div>
+        <div className="mb-2 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <Button size="sm" variant="outline" onClick={goBack}>
+            <ArrowRight className="w-4 h-4 me-1" /> گەڕانەوە
+          </Button>
+          <button type="button" className="hover:underline" onClick={() => navigate("/staff-management")}>بەکارهێنەران</button>
+          <ChevronLeft className="w-4 h-4" />
+          <span className="text-foreground">پاراستنی سیستەم</span>
+        </div>
         <h1 className="text-2xl md:text-3xl font-bold flex items-center gap-2">
           <ShieldAlert className="w-7 h-7" />
           پاراستنی سیستەم
@@ -111,9 +184,7 @@ export default function OfficeSecurity() {
             {data.waiting.map((d) => (
               <div key={d.id} className="rounded-lg border p-3 space-y-2">
                 <p dir="ltr" className="text-center text-2xl font-bold tracking-[0.3em]">{d.code?.slice(0, 3)} {d.code?.slice(3)}</p>
-                <p className="text-sm">
-                  <span className="font-semibold">{d.lastUser}</span> — {d.kind} — <span dir="ltr">{d.ip}</span> — {fmtWhen(d.lastSeenAt, true)}
-                </p>
+                <DeviceCard d={d} title={d.lastUser} />
                 <div className="flex flex-wrap items-center gap-2">
                   <Input
                     className="max-w-xs"
@@ -176,7 +247,7 @@ export default function OfficeSecurity() {
               <Button
                 size="sm"
                 disabled={approveThis.isPending}
-                onClick={() => approveThis.mutate({ label: thisLabel.trim() || "ئەم ئامێرە" })}
+                onClick={() => void fullTraits().then((device) => approveThis.mutate({ label: thisLabel.trim() || "ئەم ئامێرە", device: { ...device } }))}
               >
                 <Check className="w-4 h-4 me-1" /> ئەم ئامێرە بناسێنە
               </Button>
@@ -187,15 +258,11 @@ export default function OfficeSecurity() {
             <p className="font-semibold text-sm">ناسراو ({data.approved.length})</p>
             {data.approved.length === 0 && <p className="text-sm text-muted-foreground">هێشتا هیچ ئامێرێک نەناسێنراوە.</p>}
             {data.approved.map((d) => (
-              <div key={d.id} className="flex flex-wrap items-center gap-2 rounded border p-2 text-sm">
-                <span className="font-semibold">{d.label}</span>
-                {d.isThis && <Badge className="bg-blue-600">ئەم ئامێرە</Badge>}
-                <span className="text-muted-foreground">{d.kind}</span>
-                {d.lastSeenAt && <span className="text-muted-foreground">دوایین جار: {fmtWhen(d.lastSeenAt, true)} {d.lastUser ? `— ${d.lastUser}` : ""}</span>}
+              <DeviceCard key={d.id} d={d} title={d.label} onSameDevice={() => acceptPrint.mutate({ id: d.id })}>
                 <Button
                   size="sm"
                   variant="ghost"
-                  className="ms-auto"
+                  aria-label="لابردن"
                   disabled={remove.isPending}
                   onClick={async () => {
                     if (await confirmDanger(`«${d.label}» لە لیستی ناسراو لابدرێت؟`)) remove.mutate({ id: d.id });
@@ -203,7 +270,7 @@ export default function OfficeSecurity() {
                 >
                   <Trash2 className="w-4 h-4 text-red-600 dark:text-red-300" />
                 </Button>
-              </div>
+              </DeviceCard>
             ))}
           </div>
 
@@ -211,10 +278,7 @@ export default function OfficeSecurity() {
             <p className="font-semibold text-sm">ئامێرە نەناسراوەکان کە چوونەتە ژوورەوە ({data.seen.length})</p>
             {data.seen.length === 0 && <p className="text-sm text-muted-foreground">هیچ.</p>}
             {data.seen.map((d) => (
-              <div key={d.id} className="flex flex-wrap items-center gap-2 rounded border p-2 text-sm">
-                <span className="font-semibold">{d.lastUser}</span>
-                {d.isThis && <Badge className="bg-blue-600">ئەم ئامێرە</Badge>}
-                <span className="text-muted-foreground">{d.kind} — <span dir="ltr">{d.ip}</span> — {fmtWhen(d.lastSeenAt, true)}</span>
+              <DeviceCard key={d.id} d={d} title={d.lastUser} onSameDevice={() => acceptPrint.mutate({ id: d.id })}>
                 <Input
                   className="max-w-[14rem] h-8"
                   value={labelFor(d.id, `${d.lastUser} — ${d.kind}`)}
@@ -223,7 +287,7 @@ export default function OfficeSecurity() {
                 <Button size="sm" disabled={approve.isPending} onClick={() => approve.mutate({ id: d.id, label: labelFor(d.id, `${d.lastUser} — ${d.kind}`) })}>
                   <Check className="w-4 h-4 me-1" /> بناسێنە
                 </Button>
-              </div>
+              </DeviceCard>
             ))}
           </div>
         </CardContent>

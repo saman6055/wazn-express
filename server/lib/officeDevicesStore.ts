@@ -47,6 +47,27 @@ export async function saveOfficeDevices(state: OfficeDevices, byId?: number): Pr
   cache = { state, at: Date.now() };
 }
 
+/**
+ * Change the list one writer at a time. Every office request may now add a
+ * detail to it, and two read-change-write runs side by side would each save
+ * a list without the other's change - an approval among them.
+ */
+let queue: Promise<unknown> = Promise.resolve();
+export function updateOfficeDevices(
+  change: (state: OfficeDevices) => OfficeDevices | null,
+  byId?: number,
+): Promise<OfficeDevices> {
+  const run = queue.then(async () => {
+    const before = await loadOfficeDevices();
+    const after = change(before);
+    if (!after || after === before) return before;
+    await saveOfficeDevices(after, byId);
+    return after;
+  });
+  queue = run.catch(() => undefined);
+  return run;
+}
+
 const fingerprint = (mark: string) => createHash("sha256").update(mark, "utf8").digest("hex");
 
 /** This browser's device id (the fingerprint of its mark), or null if it has none. */

@@ -5,7 +5,7 @@ import { z } from "zod";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { getSessionCookieOptions } from "../_core/cookies";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
-import { adminProcedure } from "../middleware/auth";
+import { adminProcedure, staffProcedure } from "../middleware/auth";
 import * as db from "../db";
 import {
   CUSTOMER_LOCK,
@@ -15,7 +15,9 @@ import {
   lockState,
 } from "@shared/loginLockout";
 import { parse as parseCookieHeader } from "cookie";
-import { deviceAllowed, noteSeen, requestApproval } from "@shared/officeDevices";
+import { deviceAllowed, noteMismatch, noteSeen, printMismatch, recordDetails, requestApproval } from "@shared/officeDevices";
+import { cleanTraits } from "@shared/devicePlate";
+import { printFrom, reportDetails } from "../lib/officeDeviceStep";
 import { ensureDeviceMark, loadOfficeDevices, officeDevicesKillSwitch, saveOfficeDevices } from "../lib/officeDevicesStore";
 import { newPairCode } from "../lib/autoBackupKey";
 import { runMigration } from "../services/migration.service";
@@ -250,10 +252,27 @@ export const authRouter = router({
         ...(input.issueToken ? { token } : {}),
       };
     }),
+  /**
+   * The office page says what machine it runs on, once per load: its plate's
+   * details on the owner's page (shared/devicePlate). Says nothing back.
+   */
+  reportDevice: staffProcedure
+    .input(z.object({ device: z.record(z.string(), z.unknown()) }))
+    .mutation(async ({ ctx, input }) => {
+      try {
+        await reportDetails(ctx.req, ctx.res, ctx.user, cleanTraits(input.device));
+      } catch (err) {
+        appLogger.warn("[devices] report failed", { error: err instanceof Error ? err.message : String(err) });
+      }
+      return { ok: true };
+    }),
+
   staffLogin: publicProcedure
     .input(z.object({
       identifier: z.string().min(1).max(255),
       password: z.string().min(1).max(500),
+      /** What the browser says about its machine (shared/devicePlate); optional, never a decision. */
+      device: z.record(z.string(), z.unknown()).optional(),
     }))
     .mutation(async ({ input, ctx }) => {
       try {
@@ -322,8 +341,12 @@ export const authRouter = router({
         {
           const now2 = new Date();
           const deviceId = ensureDeviceMark(ctx.req, ctx.res);
+          const print = printFrom(ctx.req);
+          const before = await loadOfficeDevices();
+          // The mark from a machine with another print: the main admin decides.
+          const moved = printMismatch(before, deviceId, print);
           let devices = noteSeen(
-            await loadOfficeDevices(),
+            before,
             {
               id: deviceId,
               user: user.name || user.username || `#${user.id}`,
@@ -333,7 +356,12 @@ export const authRouter = router({
             },
             now2,
           );
-          const allowed = deviceAllowed(devices, deviceId, officeDevicesKillSwitch());
+          if (moved && print) {
+            devices = noteMismatch(devices, deviceId, { at: now2.toISOString(), print, ip: String(ctx.req.ip ?? ""), agent: String(ctx.req.headers["user-agent"] ?? ""), user: user.name || user.username || `#${user.id}` });
+          } else {
+            devices = recordDetails(devices, deviceId, { traits: cleanTraits(input.device), print, ip: String(ctx.req.ip ?? "") });
+          }
+          const allowed = deviceAllowed(devices, deviceId, officeDevicesKillSwitch()) && !(moved && devices.enforced && !officeDevicesKillSwitch());
           if (!allowed) devices = requestApproval(devices, deviceId, newPairCode(), now2);
           await saveOfficeDevices(devices);
           if (!allowed) {

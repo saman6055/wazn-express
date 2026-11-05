@@ -169,7 +169,7 @@ describe("the office opens on known devices", () => {
   it("checked at sign-in and on every staff request; customers never", () => {
     const sdk = read("server/_core/sdk.ts");
     const staff = sdk.slice(sdk.indexOf("Handle staff login sessions"));
-    expect(staff).toContain("deviceAllowed(await loadOfficeDevices(), deviceIdFrom(req), officeDevicesKillSwitch(), session.issuedAt)");
+    expect(staff).toContain("deviceAllowed(devices, deviceId, officeDevicesKillSwitch(), session.issuedAt)");
     const customer = sdk.slice(sdk.indexOf("session.customerId && session.isCustomer"), sdk.indexOf("Handle staff login sessions"));
     expect(customer).not.toContain("deviceAllowed");
     expect(read("server/routers/auth.router.ts")).toContain("requestApproval(devices, deviceId, newPairCode(), now2)");

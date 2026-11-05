@@ -7,19 +7,24 @@ import * as db from "../db";
 import { customers } from "../../drizzle/schema";
 import { withFix } from "@shared/fixAdvice";
 import {
+  acceptPrint,
   approveDevice,
   describeAgent,
+  recordDetails,
   pendingLive,
   removeDevice,
   type OfficeDevices,
 } from "@shared/officeDevices";
 import type { SecurityHoldReport } from "@shared/securityWatch";
+import { cleanTraits, describeTraits, plateOf } from "@shared/devicePlate";
+import { printFrom } from "../lib/officeDeviceStep";
 import {
   deviceIdFrom,
   ensureDeviceMark,
   loadOfficeDevices,
   officeDevicesKillSwitch,
   saveOfficeDevices,
+  updateOfficeDevices,
 } from "../lib/officeDevicesStore";
 import { clearCustomerHold } from "../lib/securityWatch";
 
@@ -52,20 +57,29 @@ export const officeSecurityRouter = router({
           .limit(100)
       : [];
     const approvedIds = new Set(state.approved.map((d) => d.id));
+    const seenOf = (id: string) => state.seen.find((s) => s.id === id);
+    const card = (d: { id: string; agent?: string; ip?: string; traits?: import("@shared/devicePlate").DeviceTraits; mismatch?: import("@shared/officeDevices").PrintMismatch }) => ({
+      plate: plateOf(d.id),
+      details: describeTraits(d.traits ?? seenOf(d.id)?.traits),
+      ip: d.ip ?? seenOf(d.id)?.ip ?? null,
+      firstSeenAt: seenOf(d.id)?.firstSeenAt ?? null,
+      mismatch: d.mismatch ?? seenOf(d.id)?.mismatch ?? null,
+      mismatchKind: (d.mismatch ?? seenOf(d.id)?.mismatch) ? describeAgent((d.mismatch ?? seenOf(d.id)?.mismatch)!.agent) : null,
+    });
     return {
       enforced: state.enforced,
       enforcedAt: state.enforcedAt ?? null,
       killSwitch: officeDevicesKillSwitch(),
       thisDevice,
       thisDeviceApproved: !!thisDevice && approvedIds.has(thisDevice),
-      approved: state.approved.map((d) => ({ ...d, kind: describeAgent(d.agent ?? ""), isThis: d.id === thisDevice })),
+      approved: state.approved.map((d) => ({ ...d, ...card(d), kind: describeAgent(d.agent ?? ""), isThis: d.id === thisDevice })),
       waiting: state.seen
         .filter((d) => pendingLive(d, now) && !approvedIds.has(d.id))
-        .map((d) => ({ ...d, kind: describeAgent(d.agent) })),
+        .map((d) => ({ ...d, ...card(d), kind: describeAgent(d.agent) })),
       seen: state.seen
         .filter((d) => !approvedIds.has(d.id) && !pendingLive(d, now))
         .slice(0, 20)
-        .map((d) => ({ ...d, kind: describeAgent(d.agent), isThis: d.id === thisDevice })),
+        .map((d) => ({ ...d, ...card(d), kind: describeAgent(d.agent), isThis: d.id === thisDevice })),
       held: held.map((h) => {
         let report: SecurityHoldReport | null = null;
         try {
@@ -110,10 +124,11 @@ export const officeSecurityRouter = router({
    * this gives it one and approves it in the same write.
    */
   approveThisDevice: superAdminProcedure
-    .input(z.object({ label: z.string().trim().min(1).max(80) }))
+    .input(z.object({ label: z.string().trim().min(1).max(80), device: z.record(z.string(), z.unknown()).optional() }))
     .mutation(async ({ ctx, input }) => {
       const id = ensureDeviceMark(ctx.req, ctx.res);
       let state: OfficeDevices = approveDevice(await loadOfficeDevices(), id, input.label, ctx.user.id, new Date());
+      state = recordDetails(state, id, { traits: cleanTraits(input.device), print: printFrom(ctx.req), ip: String(ctx.req.ip ?? "") });
       state = {
         ...state,
         approved: state.approved.map((d) => (d.id === id ? { ...d, agent: String(ctx.req.headers["user-agent"] ?? "").slice(0, 300) } : d)),
@@ -136,6 +151,19 @@ export const officeSecurityRouter = router({
       await saveOfficeDevices(approveDevice(state, input.id, input.label, ctx.user.id, new Date()), ctx.user.id);
       await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "office_device_approved", entityType: "setting", newValues: { label: input.label } });
       return { approved: true };
+    }),
+
+  /**
+   * "That is the same device": its mark came from a machine whose print the
+   * page had not seen - a new graphics driver, a repaired laptop. The new
+   * print is kept and the warning goes.
+   */
+  acceptPrint: superAdminProcedure
+    .input(z.object({ id: deviceIdSchema }))
+    .mutation(async ({ ctx, input }) => {
+      await updateOfficeDevices((s) => acceptPrint(s, input.id), ctx.user.id);
+      await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "office_device_print_accepted", entityType: "setting" });
+      return { accepted: true };
     }),
 
   /** Say no to a waiting device: its request goes; it can ask again. */

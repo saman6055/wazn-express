@@ -1,7 +1,8 @@
 import { AXIOS_TIMEOUT_MS, COOKIE_NAME, ONE_YEAR_MS } from "@shared/const";
 import { ForbiddenError } from "@shared/_core/errors";
 import { sessionEnded, SESSION_ENDED_MESSAGE } from "@shared/sessionEnds";
-import { deviceAllowed } from "@shared/officeDevices";
+import { deviceAllowed, printMismatch } from "@shared/officeDevices";
+import { printFrom, reportPrintMismatch } from "../lib/officeDeviceStep";
 import { deviceIdFrom, loadOfficeDevices, officeDevicesKillSwitch } from "../lib/officeDevicesStore";
 import axios, { type AxiosInstance } from "axios";
 import { parse as parseCookieHeader } from "cookie";
@@ -414,8 +415,20 @@ class SDKServer {
       // that on (shared/officeDevices). A session signed in before he switched
       // it on stays open, as he asked; one signed in after it, on a device he
       // has not approved, is stopped here on every request.
-      if (!deviceAllowed(await loadOfficeDevices(), deviceIdFrom(req), officeDevicesKillSwitch(), session.issuedAt)) {
+      const devices = await loadOfficeDevices();
+      const deviceId = deviceIdFrom(req);
+      if (!deviceAllowed(devices, deviceId, officeDevicesKillSwitch(), session.issuedAt)) {
         throw ForbiddenError("This device is not approved for the office system");
+      }
+      // The device's mark, arriving from a machine with another print, is the
+      // mark copied off it (shared/devicePlate). The owner is told; while the
+      // rule is on, that machine is stopped - the real one goes on working.
+      const print = printFrom(req);
+      if (deviceId && print && printMismatch(devices, deviceId, print)) {
+        void reportPrintMismatch(req, deviceId, print, user);
+        if (devices.enforced && !officeDevicesKillSwitch()) {
+          throw ForbiddenError("This device's mark came from another machine");
+        }
       }
       return {
         ...user,

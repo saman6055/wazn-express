@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting" | "carrier-short" | "security-holds" | "device-requests";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting" | "carrier-short" | "security-holds" | "device-requests" | "device-mismatch";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -112,10 +112,11 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "carrier-short": "/batches",
   "security-holds": "/office-security",
   "device-requests": "/office-security",
+  "device-mismatch": "/office-security",
 };
 
 /** Only the main admin is told of these, whatever anyone's page permissions say. */
-const MAIN_ADMIN_ONLY: ReadonlySet<string> = new Set(["security-holds", "device-requests"]);
+const MAIN_ADMIN_ONLY: ReadonlySet<string> = new Set(["security-holds", "device-requests", "device-mismatch"]);
 
 /** The page whose permission decides who is told. */
 export const RISK_GATE: Record<OperationalRiskId, string> = {
@@ -140,6 +141,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "carrier-short": "/finance/company-dashboard",
   "security-holds": "/office-security",
   "device-requests": "/office-security",
+  "device-mismatch": "/office-security",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -427,6 +429,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "tried closed doors — read the report, ask them, then reopen or keep held",
           ar: "حاول فتح أبواب مغلقة — اقرأ التقرير واسأله ثم افتح أو أبقِ الإيقاف",
           zh: "尝试访问受限部分 — 查看报告、询问本人，再决定解除或保持",
+        },
+      };
+    case "device-mismatch":
+      return {
+        title: { ku: `${n} پلێتی ئامێر لەسەر ئامێرێکی تر دەرکەوت`, en: `${n} device plate(s) seen on another machine`, ar: `${n} لوحة جهاز ظهرت على جهاز آخر`, zh: `${n} 个设备标识出现在另一台机器上` },
+        detail: {
+          ku: "نیشانەی ئامێرێک لە ئامێرێکی جیاوازەوە بەکارهات — ئەگەر ئامێرەکەی خۆتانە بیناسێنە، ئەگەر نا لای ببە",
+          en: "a device's mark was used from a different machine — confirm it if it is yours, otherwise remove it",
+          ar: "استُخدمت علامة جهاز من جهاز مختلف — أكّدها إن كانت لكم، وإلا فاحذفها",
+          zh: "某设备的标识在另一台机器上被使用 — 若是自己的设备请确认，否则请移除",
         },
       };
     case "device-requests":

@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { fullTraits } from "@/lib/deviceTraits";
 import { useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,10 @@ export default function StaffLogin() {
       return;
     }
     
-    loginMutation.mutate({ identifier: identifier.trim(), password });
+    // What machine this is, for the owner's list of devices (shared/devicePlate).
+    void fullTraits()
+      .catch(() => undefined)
+      .then((device) => loginMutation.mutate({ identifier: identifier.trim(), password, ...(device ? { device: { ...device } } : {}) }));
   };
 
   return (

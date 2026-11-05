@@ -1049,17 +1049,21 @@ export async function getRiskItems(): Promise<RiskItem[]> {
 export async function getSecurityRiskItems(): Promise<RiskItem[]> {
   const holds = await countSecurityHolds().catch(() => 0);
   let requests = 0;
+  let mismatches = 0;
   try {
     const { loadOfficeDevices } = await import('../lib/officeDevicesStore');
     const { pendingLive } = await import('@shared/officeDevices');
     const state = await loadOfficeDevices();
     const approved = new Set(state.approved.map((d) => d.id));
     requests = state.seen.filter((d) => pendingLive(d, new Date()) && !approved.has(d.id)).length;
+    const { liveMismatches } = await import('@shared/officeDevices');
+    mismatches = liveMismatches(state);
   } catch {
     requests = 0;
   }
   const items: RiskItem[] = [];
   if (holds > 0) items.push({ id: "security-holds", level: "critical", count: holds });
+  if (mismatches > 0) items.push({ id: "device-mismatch", level: "critical", count: mismatches });
   if (requests > 0) items.push({ id: "device-requests", level: "high", count: requests });
   return items;
 }

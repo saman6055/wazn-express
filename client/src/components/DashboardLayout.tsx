@@ -96,6 +96,7 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
+import { fullTraits } from "@/lib/deviceTraits";
 import { Link, useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
 import { Button } from "./ui/button";
@@ -196,6 +197,18 @@ function DashboardLayoutContent({
   const { user, logout } = useAuth();
   const prefetchUtils = trpc.useUtils();
   // The office's first screen is up: fetch what the next clicks will want.
+  // The plate's details on the owner's page (shared/devicePlate): once a tab.
+  const reportDevice = trpc.auth.reportDevice.useMutation();
+  useEffect(() => {
+    if (!user || user.isCustomer || user.role === "auditor") return;
+    try {
+      if (sessionStorage.getItem("wazn.deviceReported") === String(user.id)) return;
+      sessionStorage.setItem("wazn.deviceReported", String(user.id));
+    } catch {
+      /* private mode: report anyway */
+    }
+    void fullTraits().then((device) => reportDevice.mutate({ device: { ...device } }, { onError: () => undefined }));
+  }, [user?.id]);
   useEffect(() => {
     if (!user || user.isCustomer) return;
     prefetchDailyPages();

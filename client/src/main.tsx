@@ -18,6 +18,8 @@ if (analyticsEndpoint && analyticsWebsiteId) {
 }
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { httpBatchLink, httpLink, splitLink, TRPCClientError } from "@trpc/client";
+import { DEVICE_PRINT_HEADER } from "@shared/devicePlate";
+import { devicePrint } from "@/lib/deviceTraits";
 import { LANG_HEADER } from "@shared/errorMessages";
 import { networkFault, storedLanguage } from "./lib/networkFault";
 import { demoFetch, isPortalDemo, readPortalDemoLink } from "./lib/portalDemo";
@@ -256,8 +258,19 @@ const transport = {
     } catch {
       /* private mode: the tab simply has no look */
     }
+    // The machine's print (shared/devicePlate): a mark copied to another
+    // machine arrives with another one.
+    // Not on the customer portal: it has no devices to check, and a phone
+    // there should not spend a moment drawing a test canvas.
+    let print: string | null = null;
+    try {
+      if (!window.location.pathname.startsWith("/portal")) print = devicePrint();
+    } catch {
+      /* no print: nothing is compared */
+    }
     return {
       [LANG_HEADER]: storedLanguage(),
+      ...(print ? { [DEVICE_PRINT_HEADER]: print } : {}),
       ...(viewAs ? { authorization: `Bearer ${viewAs}` } : {}),
     };
   },

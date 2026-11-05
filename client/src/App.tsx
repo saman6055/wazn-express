@@ -149,7 +149,8 @@ const PermissionsManagement = lazy(() => import("./pages/admin/PermissionsManage
 const Trash = lazy(() => import("./pages/admin/Trash"));
 const AuditLogs = lazy(() => import("./pages/admin/AuditLogs"));
 const AuditSweep = lazy(() => import("./pages/admin/AuditSweep"));
-const OfficeSecurity = lazy(() => import("./pages/admin/OfficeSecurity"));
+// Drawn inside the staff frame: the menu, the bar, the way back (owner, 2026-11-05).
+const OfficeSecurity = staffPage(() => import("./pages/admin/OfficeSecurity"));
 const Problems = lazy(() => import("./pages/admin/Problems"));
 
 // ---------------------------------------------------------------------------

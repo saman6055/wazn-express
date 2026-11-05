@@ -25,6 +25,8 @@
  * if every approved device is lost.
  */
 
+import type { DeviceTraits } from "./devicePlate";
+
 export const OFFICE_DEVICES_SETTING = "office_devices";
 export const DEVICE_COOKIE = "wazn_device";
 /** A pending request waits half an hour; a device not seen for a year is forgotten from "seen". */
@@ -41,6 +43,23 @@ export interface ApprovedDevice {
   lastSeenAt?: string;
   lastUser?: string;
   agent?: string;
+  ip?: string;
+  /** What the browser says about the machine (shared/devicePlate). */
+  traits?: DeviceTraits;
+  /** The machine's print, first seen; a different one later is a copied mark. */
+  print?: string;
+  /** Prints the main admin said are this same device (a new driver, a repair). */
+  alsoPrints?: string[];
+  mismatch?: PrintMismatch;
+}
+
+/** The device's mark arrived from a machine with another print. */
+export interface PrintMismatch {
+  at: string;
+  print: string;
+  ip: string;
+  agent: string;
+  user?: string;
 }
 
 /** A device that signed in, approved or not: what the owner chooses from. */
@@ -55,6 +74,10 @@ export interface SeenDevice {
   /** Set while a request to approve it is waiting. */
   code?: string;
   requestedAt?: string;
+  traits?: DeviceTraits;
+  print?: string;
+  alsoPrints?: string[];
+  mismatch?: PrintMismatch;
 }
 
 export interface OfficeDevices {
@@ -134,6 +157,10 @@ export function noteSeen(
     agent: device.agent.slice(0, 300),
     code: before?.code,
     requestedAt: before?.requestedAt,
+    traits: before?.traits,
+    print: before?.print,
+    alsoPrints: before?.alsoPrints,
+    mismatch: before?.mismatch,
   };
   const approved = state.approved.map((d) =>
     d.id === device.id ? { ...d, lastSeenAt: at, lastUser: seen.lastUser } : d,
@@ -166,20 +193,98 @@ export function approveDevice(
   now: Date,
 ): OfficeDevices {
   const seen = state.seen.find((d) => d.id === deviceId);
+  const before = state.approved.find((d) => d.id === deviceId);
   const entry: ApprovedDevice = {
     id: deviceId,
     label: label.trim().slice(0, 80) || "ئامێر",
     approvedAt: now.toISOString(),
     approvedBy: by,
-    lastSeenAt: seen?.lastSeenAt,
-    lastUser: seen?.lastUser,
-    agent: seen?.agent,
+    lastSeenAt: seen?.lastSeenAt ?? before?.lastSeenAt,
+    lastUser: seen?.lastUser ?? before?.lastUser,
+    agent: seen?.agent ?? before?.agent,
+    ip: seen?.ip ?? before?.ip,
+    traits: seen?.traits ?? before?.traits,
+    // Saying yes to a device whose mark came from another machine is saying
+    // that machine is this device too: its print joins the first one, which
+    // stays - a wrong yes can never shut the real machine out.
+    print: seen?.print ?? before?.print ?? (seen?.mismatch ?? before?.mismatch)?.print,
+    alsoPrints: withPrint(seen?.alsoPrints ?? before?.alsoPrints, (seen?.print ?? before?.print) ? (seen?.mismatch ?? before?.mismatch)?.print : undefined),
   };
   return {
     ...state,
     approved: [entry, ...state.approved.filter((d) => d.id !== deviceId)],
-    seen: state.seen.map((d) => (d.id === deviceId ? { ...d, code: undefined, requestedAt: undefined } : d)),
+    seen: state.seen.map((d) => (d.id === deviceId ? { ...d, code: undefined, requestedAt: undefined, mismatch: undefined } : d)),
   };
+}
+
+/** The device's entries, approved and seen, changed alike. */
+/** A print added to the device's others, three at most, newest kept. */
+function withPrint(list: string[] | undefined, print: string | undefined): string[] | undefined {
+  if (!print) return list;
+  const next = [...(list ?? []).filter((p) => p !== print), print].slice(-3);
+  return next.length ? next : undefined;
+}
+
+function touchDevice(
+  state: OfficeDevices,
+  deviceId: string,
+  change: (d: { print?: string; alsoPrints?: string[]; mismatch?: PrintMismatch }) => Partial<ApprovedDevice & SeenDevice>,
+): OfficeDevices {
+  return {
+    ...state,
+    approved: state.approved.map((d) => (d.id === deviceId ? ({ ...d, ...change(d) } as ApprovedDevice) : d)),
+    seen: state.seen.map((d) => (d.id === deviceId ? ({ ...d, ...change(d) } as SeenDevice) : d)),
+  };
+}
+
+/** The prints this device is known by: its first, and any the main admin said are the same. */
+export function knownPrints(state: OfficeDevices, deviceId: string | null): string[] {
+  if (!deviceId) return [];
+  const d = state.approved.find((x) => x.id === deviceId && x.print) ?? state.seen.find((x) => x.id === deviceId && x.print);
+  return d?.print ? [d.print, ...(d.alsoPrints ?? [])] : [];
+}
+
+/** Is this request's machine another one than the device's mark was seen on? */
+export function printMismatch(state: OfficeDevices, deviceId: string | null, print: string | null | undefined): boolean {
+  const known = knownPrints(state, deviceId);
+  return known.length > 0 && !!print && !known.includes(print);
+}
+
+/**
+ * Note what the browser says about the machine, and its print the first time.
+ * A known print is never overwritten here - only the main admin's yes does that.
+ */
+export function recordDetails(
+  state: OfficeDevices,
+  deviceId: string,
+  d: { traits?: DeviceTraits; print?: string | null; ip?: string },
+): OfficeDevices {
+  return touchDevice(state, deviceId, (cur) => ({
+    ...(d.traits ? { traits: d.traits } : {}),
+    ...(d.ip ? { ip: d.ip.slice(0, 64) } : {}),
+    ...(!cur.print && d.print ? { print: d.print } : {}),
+  }));
+}
+
+export function noteMismatch(state: OfficeDevices, deviceId: string, m: PrintMismatch): OfficeDevices {
+  return touchDevice(state, deviceId, () => ({
+    mismatch: { ...m, ip: m.ip.slice(0, 64), agent: m.agent.slice(0, 300), user: m.user?.slice(0, 80) },
+  }));
+}
+
+/** The main admin: "that is the same device" - the new print joins the first, which stays. */
+export function acceptPrint(state: OfficeDevices, deviceId: string): OfficeDevices {
+  return touchDevice(state, deviceId, (cur) => ({
+    alsoPrints: cur.print ? withPrint(cur.alsoPrints, cur.mismatch?.print) : cur.alsoPrints,
+    print: cur.print ?? cur.mismatch?.print,
+    mismatch: undefined,
+  }));
+}
+
+/** Devices whose mark was seen on another machine, not yet looked at. */
+export function liveMismatches(state: OfficeDevices): number {
+  const ids = new Set([...state.approved, ...state.seen].filter((d) => d.mismatch).map((d) => d.id));
+  return ids.size;
 }
 
 export function removeDevice(state: OfficeDevices, deviceId: string): OfficeDevices {

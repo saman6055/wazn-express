@@ -8,6 +8,7 @@ import { getConfig } from "../config";
 import { getSessionCookieOptions } from "./cookies";
 import type { AppLogger } from "../utils/logger";
 import { appLogger } from "../utils/logger";
+import { officeDeviceStep } from "../lib/officeDeviceStep";
 
 // Common properties for both staff and customer
 type CommonUserProps = {
@@ -88,6 +89,18 @@ function readViewAs(req: CreateExpressContextOptions["req"]): { by: number; name
   }
 }
 
+/** When the staff session in use was signed - verified a moment ago by authenticateRequest. */
+function staffSessionIssuedAt(req: CreateExpressContextOptions["req"]): number | undefined {
+  try {
+    const token = sdk.sessionTokenFrom(req) ?? parseCookieHeader(req.headers.cookie ?? "")[COOKIE_NAME];
+    if (!token) return undefined;
+    const { iat } = decodeJwt(token);
+    return typeof iat === "number" ? iat : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 async function renewCustomerSession(
   req: CreateExpressContextOptions["req"],
   res: CreateExpressContextOptions["res"],
@@ -133,6 +146,10 @@ export async function createContext(
   const viewAs = user?.isCustomer ? readViewAs(opts.req) : null;
   if (user?.isCustomer && !viewAs) {
     await renewCustomerSession(opts.req, opts.res, user);
+  }
+  // An office request: its device joins the owner's list (lib/officeDeviceStep).
+  if (user && !user.isCustomer) {
+    await officeDeviceStep(opts.req, opts.res, user, staffSessionIssuedAt(opts.req));
   }
 
   return {
