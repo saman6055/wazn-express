@@ -15,6 +15,8 @@ describe("the hand advance in dinars", () => {
     expect(receiptAdvanceIqd({ advanceIqd: "50000", advanceUsd: 0, dueUsd: 100, rate: 1500, dueIqd: 100000 })).toBe(50000);
     expect(receiptAdvanceIqd({ advanceIqd: null, advanceUsd: 10, dueUsd: 100, rate: 1500, dueIqd: 135000 })).toBe(0);
     expect(receiptAdvanceIqd({ advanceIqd: null, advanceUsd: 0, dueUsd: 100, rate: 1500, dueIqd: 150000 })).toBe(0);
+    // Rounding is not an advance: $896.70 at 1,680 printed as 1,506,000.
+    expect(receiptAdvanceIqd({ advanceIqd: null, advanceUsd: 0, dueUsd: 896.7, rate: 1680, dueIqd: 1506000 })).toBe(0);
   });
 
   it("both paper writers keep it, the window refills it in dinars, both tills show it", () => {

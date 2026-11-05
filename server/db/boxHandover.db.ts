@@ -189,7 +189,9 @@ export function receiptAdvanceIqd(e: { advanceIqd?: unknown; advanceUsd?: unknow
   if (!(rate > 0) || !(dueUsd > 0) || e.dueIqd == null) return 0;
   const before = Math.round((dueUsd * rate) / 250) * 250;
   const off = before - dueIqd;
-  return off >= 250 ? off : 0;
+  // Rounding alone moves a paper by up to 500 (nearest 1,000): never an advance
+  // (BOX-20261031-005 read a false 500).
+  return off > 1000 ? off : 0;
 }
 
 export async function lastReceiptEventOfBox(boxId: number): Promise<{
