@@ -130,6 +130,15 @@ describe("the office opens on known devices", () => {
     expect(set.indexOf("approveDevice(")).toBeLessThan(set.indexOf("saveOfficeDevices("));
   });
 
+  it("the device he is on can be named without switching the rule on", () => {
+    const r = read("server/routers/officeSecurity.router.ts");
+    const one = r.slice(r.indexOf("approveThisDevice: superAdminProcedure"), r.indexOf("approve: superAdminProcedure"));
+    expect(one).toContain("const id = ensureDeviceMark(ctx.req, ctx.res);");
+    expect(one.indexOf("approveDevice(")).toBeLessThan(one.indexOf("saveOfficeDevices("));
+    expect(one).not.toContain("enforced:");
+    expect(read("client/src/pages/admin/OfficeSecurity.tsx")).toContain("{!data.thisDeviceApproved && (");
+  });
+
   it("the owner cannot remove the device he is on while the rule is on", () => {
     expect(read("server/routers/officeSecurity.router.ts")).toContain("if (state.enforced && input.id === deviceIdFrom(ctx.req)) {");
   });

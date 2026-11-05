@@ -24,6 +24,8 @@ export default function OfficeSecurity() {
 
   const setEnforced = trpc.officeSecurity.setEnforced.useMutation({ onSuccess: refresh, onError });
   const approve = trpc.officeSecurity.approve.useMutation({ onSuccess: () => { toast.success("ئامێرەکە ناسێنرا."); refresh(); }, onError });
+  const approveThis = trpc.officeSecurity.approveThisDevice.useMutation({ onSuccess: () => { toast.success("ئەم ئامێرە ناسێنرا."); refresh(); }, onError });
+  const [thisLabel, setThisLabel] = useState("");
   const refuse = trpc.officeSecurity.refuse.useMutation({ onSuccess: refresh, onError });
   const remove = trpc.officeSecurity.remove.useMutation({ onSuccess: refresh, onError });
   const clearHold = trpc.officeSecurity.clearHold.useMutation({ onSuccess: () => { toast.success("هەژمارەکە کرایەوە."); refresh(); }, onError });
@@ -160,6 +162,25 @@ export default function OfficeSecurity() {
             </Button>
             {!data.enforced && <span className="text-sm text-muted-foreground">پێشنیار: سەرەتا ئامێرەکانی خۆت لە خوارەوە بناسێنە، پاشان ڕێساکە بکەرەوە.</span>}
           </div>
+
+          {!data.thisDeviceApproved && (
+            <div className="flex flex-wrap items-center gap-2 rounded-lg border border-blue-500 p-3">
+              <span className="text-sm font-semibold">ئەم ئامێرەی ئێستا لەسەرییت هێشتا نەناسراوە.</span>
+              <Input
+                className="max-w-xs"
+                value={thisLabel}
+                onChange={(e) => setThisLabel(e.target.value)}
+                placeholder="ناوی ئامێر، بۆ نموونە: لاپتۆپی خاوەن"
+              />
+              <Button
+                size="sm"
+                disabled={approveThis.isPending}
+                onClick={() => approveThis.mutate({ label: thisLabel.trim() || "ئەم ئامێرە" })}
+              >
+                <Check className="w-4 h-4 me-1" /> ئەم ئامێرە بناسێنە
+              </Button>
+            </div>
+          )}
 
           <div className="space-y-2">
             <p className="font-semibold text-sm">ناسراو ({data.approved.length})</p>

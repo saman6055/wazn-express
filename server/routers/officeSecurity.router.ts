@@ -101,6 +101,25 @@ export const officeSecurityRouter = router({
       return { enforced: state.enforced };
     }),
 
+  /**
+   * Name the device the main admin is on now, whether the rule is on or off.
+   * A device signed in before the guard existed has no mark and is in no list;
+   * this gives it one and approves it in the same write.
+   */
+  approveThisDevice: superAdminProcedure
+    .input(z.object({ label: z.string().trim().min(1).max(80) }))
+    .mutation(async ({ ctx, input }) => {
+      const id = ensureDeviceMark(ctx.req, ctx.res);
+      let state: OfficeDevices = approveDevice(await loadOfficeDevices(), id, input.label, ctx.user.id, new Date());
+      state = {
+        ...state,
+        approved: state.approved.map((d) => (d.id === id ? { ...d, agent: String(ctx.req.headers["user-agent"] ?? "").slice(0, 300) } : d)),
+      };
+      await saveOfficeDevices(state, ctx.user.id);
+      await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: "office_device_approved", entityType: "setting", newValues: { label: input.label, thisDevice: true } });
+      return { approved: true };
+    }),
+
   approve: superAdminProcedure
     .input(z.object({ id: deviceIdSchema, label: z.string().trim().min(1).max(80) }))
     .mutation(async ({ ctx, input }) => {
