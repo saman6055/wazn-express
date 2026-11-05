@@ -84,8 +84,10 @@ export async function getBoxOverview(now: Date = new Date()): Promise<BoxOvervie
       top = { ...summary.top, customerCode: owners[0]?.code ?? null, customerName: owners[0]?.name ?? null };
     }
 
+    // The three windows asked at once, not one after the other.
+    const sums = await Promise.all(PAID_WINDOWS.map((window) => receivedSince(paidWindowStart(window, now))));
     const received = {} as Record<PaidWindow, ReceivedSummary>;
-    for (const window of PAID_WINDOWS) received[window] = await receivedSince(paidWindowStart(window, now));
+    PAID_WINDOWS.forEach((window, i) => { received[window] = sums[i]; });
 
     return { unpaid: { ...summary, top }, received };
   } catch (err) {

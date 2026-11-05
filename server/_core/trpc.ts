@@ -9,6 +9,7 @@ import { clientErrorMessage, isValidationError, newErrorRef } from "./clientErro
 import type { TrpcContext } from "./context";
 import { STAFF_DOOR_MESSAGES, type SuspiciousKind } from "@shared/securityWatch";
 import { noteSuspicious } from "../lib/securityWatch";
+import { dropFreshFigures } from "../db/cache";
 
 /**
  * The reason an error happened travels with it. It has to arrive.
@@ -101,7 +102,21 @@ function watchCustomerSession(
 }
 
 export const router = t.router;
-export const publicProcedure = t.procedure;
+
+/**
+ * Any save that succeeds drops the remembered finance figures
+ * (server/db/cache.ts, freshGetOrSet): a payment, a box, an order, an expense,
+ * a switch on an account — whatever it touched, the next card worked out
+ * after it reads the records again. Every procedure is built on this one, so
+ * a mutation written next year is covered before it is written.
+ */
+const dropFreshAfterSave = t.middleware(async ({ type, next }) => {
+  const result = await next();
+  if (type === "mutation" && result.ok) dropFreshFigures();
+  return result;
+});
+
+export const publicProcedure = t.procedure.use(dropFreshAfterSave);
 
 const requireUser = t.middleware(async opts => {
   const { ctx, next, type, path } = opts;
@@ -147,7 +162,7 @@ const requireUser = t.middleware(async opts => {
   });
 });
 
-export const protectedProcedure = t.procedure.use(requireUser);
+export const protectedProcedure = publicProcedure.use(requireUser);
 
 /**
  * The admin procedures live in server/middleware/auth.ts.

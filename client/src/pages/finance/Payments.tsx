@@ -19,6 +19,9 @@ import { pickLang } from "@/lib/lang";
 import { fmtUsd } from "@/lib/portalFormat";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { canSeeAllAccounts } from "@shared/financeAccess";
+import { Skeleton } from "@/components/ui/skeleton";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { ListPager } from "@/components/ListPager";
 
 export default function Payments() {
     const { t, language } = useTranslation();
@@ -40,7 +43,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   // a payment record carries its own method, its customer, and what of it was
   // handed back.
   const PAYMENTS_SHOWN = 300;
-  const { data: recentPayments, refetch } = trpc.ledger.getRecentPayments.useQuery(
+  const { data: recentPayments, refetch, isLoading: paymentsLoading } = trpc.ledger.getRecentPayments.useQuery(
     { limit: PAYMENTS_SHOWN },
     { enabled: seesHistory },
   );
@@ -71,6 +74,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
         .some((v) => String(v || "").toLowerCase().includes(search.toLowerCase()));
     return matchesSearch;
   });
+
+  // Thirty rows drawn at a time; the totals above still add up all of them.
+  const pager = useClientPagination(filteredPayments, 30, search);
 
   const sumOf = (rows: typeof payments) => rows.reduce((sum, p) => sum + netOf(p), 0);
   const totalPayments = sumOf(payments);
@@ -220,7 +226,17 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
           </div>
         </div>
 
-        {seesHistory ? (<>
+        {seesHistory && paymentsLoading ? (
+          // The page's outline while the payments come: never "$0" and
+          // "no payments" for the moment before they arrive.
+          <div className="space-y-6" aria-busy="true">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+              {[0, 1, 2, 3].map((i) => <Skeleton key={i} className="h-24 rounded-xl" />)}
+            </div>
+            <Skeleton className="h-12 rounded-xl" />
+            {[0, 1, 2, 3, 4, 5].map((i) => <Skeleton key={i} className="h-10 rounded-lg" />)}
+          </div>
+        ) : seesHistory ? (<>
         {/* Stats Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card className="border-0 shadow-md bg-gradient-to-br from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20">
@@ -319,7 +335,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredPayments?.map((payment) => (
+                  pager.pageRows.map((payment) => (
                     <TableRow key={payment.id} className="hover:bg-muted/30">
                       <TableCell>
                         <div className="flex items-center gap-2">
@@ -359,6 +375,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                 )}
               </TableBody>
             </Table>
+            <div className="px-4 pb-3"><ListPager {...pager} /></div>
           </CardContent>
         </Card>
         </>) : (

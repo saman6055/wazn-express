@@ -1,3 +1,4 @@
+import { freshGetOrSet } from "../db/cache";
 import { statusForScan, advanceStatus } from "../lib/scanStatus";
 import { chargeableWeight, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { chargeBoxDeliveryFee, markBoxContentsDelivered, finishPaidBox, reopenDeliveredBox } from "../lib/boxLifecycle";
@@ -1148,7 +1149,8 @@ export const deliveryBoxRouter = router({
   // money is for the people who answer for the books (shared/financeAccess);
   // anybody else gets the counts and the links, and no dollars.
   overview: staffProcedure.query(async ({ ctx }) => {
-    const overview = await db.getBoxOverview();
+    // Kept between looks, dropped on any save (db/cache freshGetOrSet).
+    const overview = await freshGetOrSet("deliveryBox.overview", () => db.getBoxOverview());
     return canSeeAllAccounts(ctx.user.role) ? overview : withoutMoney(overview);
   }),
 

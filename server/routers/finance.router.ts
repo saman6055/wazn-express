@@ -11,7 +11,7 @@ import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { appLogger } from "../utils/logger";
 import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
 import * as db from "../db";
-import { cacheGetOrSet, cacheInvalidate, CACHE_TTL } from "../db/cache";
+import { cacheGetOrSet, cacheInvalidate, CACHE_TTL, freshGetOrSet } from "../db/cache";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 
 export const exchangeRatesRouter = router({
@@ -69,15 +69,17 @@ export const exchangeRatesRouter = router({
  */
 export const ledgerRouter = router({
     // Get financial summary
+    // The finance cards below are kept between looks and dropped on any save
+    // (freshGetOrSet): the same sums, not worked out twice in a row for nothing.
     getSummary: accountantProcedure
       .query(async () => {
-        return db.getFinancialSummary();
+        return freshGetOrSet("ledger.getSummary", () => db.getFinancialSummary());
       }),
     
     // Get all customer accounts with info
     getAllAccounts: accountantProcedure
       .query(async () => {
-        return db.getAllCustomerAccountsWithInfo();
+        return freshGetOrSet("ledger.getAllAccounts", () => db.getAllCustomerAccountsWithInfo());
       }),
 
     /**
@@ -85,7 +87,7 @@ export const ledgerRouter = router({
      * of the last movement (shared/debtAge, 2026-10-04). Read only.
      */
     debtAges: accountantProcedure.query(async () => {
-      return db.getDebtAges();
+      return freshGetOrSet("ledger.debtAges", () => db.getDebtAges());
     }),
 
     /**
@@ -96,7 +98,9 @@ export const ledgerRouter = router({
     financeDashboard: accountantProcedure
       .input(z.object({ period: z.enum(["month", "lastMonth", "year"]).default("month") }).optional())
       .query(async ({ input, ctx }) => {
-        return db.getFinanceDashboard(input?.period ?? "month", ctx.user.role === "super_admin");
+        const period = input?.period ?? "month";
+        const mainAdmin = ctx.user.role === "super_admin";
+        return freshGetOrSet(`ledger.financeDashboard:${period}:${mainAdmin}`, () => db.getFinanceDashboard(period, mainAdmin));
       }),
     /** The running costs the loss warning is measured against — the main admin's list. */
     /**
@@ -130,7 +134,7 @@ export const ledgerRouter = router({
 
     /** Every order not yet finished — the list behind "goods on the road" (shared/goodsOnRoad). */
     goodsOnRoad: accountantProcedure.query(async () => {
-      return db.listGoodsOnRoad();
+      return freshGetOrSet("ledger.goodsOnRoad", () => db.listGoodsOnRoad());
     }),
     /**
      * The goods are with the customer: put them on the account, and — when
@@ -469,7 +473,7 @@ export const ledgerRouter = router({
 
     /** Where the company's money is, read from the records (shared/workingCapital). */
     workingCapital: superAdminProcedure.query(async () => {
-      return db.getWorkingCapital();
+      return freshGetOrSet("ledger.workingCapital", () => db.getWorkingCapital());
     }),
     /** A count of the money against the books — kept as "last check", added to nothing. */
     /** The weekly FIB and Qi Card balances, in dinars (shared/channelCheck). */
@@ -521,7 +525,7 @@ export const ledgerRouter = router({
     getDebtors: accountantProcedure
       .input(z.object({ minBalanceUsd: z.number().default(0) }))
       .query(async ({ input }) => {
-        return db.getDebtors(input.minBalanceUsd);
+        return freshGetOrSet(`ledger.getDebtors:${input.minBalanceUsd}`, () => db.getDebtors(input.minBalanceUsd));
       }),
     
     /**

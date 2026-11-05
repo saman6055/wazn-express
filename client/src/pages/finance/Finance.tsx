@@ -259,12 +259,12 @@ export default function Finance() {
     return filtered;
   }, [accounts, searchQuery, accountFilter, sortField, sortDirection]);
 
-  // Fifty rows at a time: every account drawn at once was tens of thousands of
+  // Thirty rows at a time: every account drawn at once was tens of thousands of
   // elements, redrawn on each letter. The count, the totals and the exports
   // above still read the whole filtered list.
   const accountPage = useClientPagination(
     filteredAndSortedAccounts,
-    50,
+    30,
     [searchQuery, accountFilter, sortField, sortDirection].join("|"),
   );
   
@@ -983,7 +983,7 @@ export default function Finance() {
                 <div>
                   <p className="text-sm font-medium text-red-600 dark:text-red-400">{pickLang(language, { ku: "کۆی قەرز", en: "Total debt", ar: "إجمالي الدين", zh: "欠款总额" })}</p>
                   <p className="text-3xl font-bold text-red-700 dark:text-red-300">
-                    {formatCurrency(summary?.totalDebtUsd || 0)}
+                    {summaryLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : formatCurrency(summary?.totalDebtUsd || 0)}
                   </p>
                   <p className="text-xs text-red-500 dark:text-red-400 mt-1">{debtors?.length || 0} {pickLang(language, { ku: "کڕیاری قەرزدار", en: "debtor customers", ar: "عميل مدين", zh: "欠款客户" })}</p>
                 </div>
@@ -1000,7 +1000,7 @@ export default function Finance() {
                 <div>
                   <p className="text-sm font-medium text-green-600 dark:text-green-400">{pickLang(language, { ku: "کۆی کریدیت", en: "Total credit", ar: "إجمالي الرصيد الدائن", zh: "贷方总额" })}</p>
                   <p className="text-3xl font-bold text-green-700 dark:text-green-300">
-                    {formatCurrency(summary?.totalCreditUsd || 0)}
+                    {summaryLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : formatCurrency(summary?.totalCreditUsd || 0)}
                   </p>
                   <p className="text-xs text-green-500 dark:text-green-400 mt-1">{summary?.creditorsCount || 0} {pickLang(language, { ku: "کڕیاری کریدیتدار", en: "customers holding credit", ar: "عميل لديه رصيد", zh: "有贷方余额的客户" })}</p>
                 </div>
@@ -1017,7 +1017,7 @@ export default function Finance() {
                 <div>
                   <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{pickLang(language, { ku: "کۆی حسابەکان", en: "Total accounts", ar: "إجمالي الحسابات", zh: "账户总数" })}</p>
                   <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
-                    {accounts?.length || 0}
+                    {accountsLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : (accounts?.length || 0)}
                   </p>
                   <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">{accounts?.filter(a => a.accountStatus === 'active').length ?? 0} {pickLang(language, { ku: "چالاک", en: "active", ar: "نشط", zh: "活跃" })}</p>
                 </div>
@@ -1038,7 +1038,7 @@ export default function Finance() {
                 <div>
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">{pickLang(language, { ku: "باڵانسی نێت", en: "Net balance", ar: "الرصيد الصافي", zh: "净余额" })}</p>
                   <p className={`text-3xl font-bold ${((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0)) > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                    {formatCurrency((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0))}
+                    {summaryLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : formatCurrency((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0))}
                   </p>
                   <p className="text-xs text-amber-500 dark:text-amber-400 mt-1">{pickLang(language, { ku: "قەرز - کریدیت", en: "Debt - Credit", ar: "الدين - الرصيد", zh: "欠款 - 贷方" })}</p>
                 </div>

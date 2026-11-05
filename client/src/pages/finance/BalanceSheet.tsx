@@ -23,6 +23,7 @@ import {
   ArrowRight
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useTranslation, useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { Link } from "wouter";
@@ -41,12 +42,15 @@ const [selectedDate, setSelectedDate] = useState(() => {
   // The two sides of the sheet, each read from the screen that owns it: the
   // customer ledger for what is owed to us and held for customers, and the
   // company debts register for what we owe.
-  const { data: ledgerSummary } = trpc.ledger.getSummary.useQuery();
+  const { data: ledgerSummary, isLoading: summaryLoading } = trpc.ledger.getSummary.useQuery();
   const { data: companyDebts } = trpc.companyDebts.list.useQuery();
   // The same facts as the working-capital page (owner, 2026-11-05: one figure
   // on every screen): cash is derived from the records, never typed, and goods
   // bought for customers stand at what they cost.
-  const { data: wc, error: wcError } = trpc.ledger.workingCapital.useQuery(undefined, { retry: false });
+  const { data: wc, error: wcError, isLoading: wcLoading } = trpc.ledger.workingCapital.useQuery(undefined, { retry: false });
+  // The sheet's outline while its two main sources come; never a page of
+  // zeros for the moment before. An error is not loading: the notice shows.
+  const figuresLoading = summaryLoading || (wcLoading && !wcError);
   const wcFacts = wc?.facts;
   const netCash = Number(wc?.netCashUsd ?? 0);
   const cashHeld = Math.max(0, netCash);
@@ -194,6 +198,15 @@ const [selectedDate, setSelectedDate] = useState(() => {
         </div>
       )}
 
+      {figuresLoading ? (
+        <div className="space-y-4" aria-busy="true">
+          <Skeleton className="h-28 rounded-xl" />
+          <div className="grid gap-4 md:grid-cols-2">
+            <Skeleton className="h-72 rounded-xl" />
+            <Skeleton className="h-72 rounded-xl" />
+          </div>
+        </div>
+      ) : (<>
       {/* Balance Equation */}
       <Card className="bg-gradient-to-r from-blue-50 dark:from-blue-950/40 via-white dark:via-slate-950/40 to-purple-50 dark:to-purple-950/40 border-2 border-blue-200 dark:border-blue-800/60">
         <CardContent className="p-6">
@@ -514,6 +527,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
           </div>
         </CardContent>
       </Card>
+      </>)}
     </div>
     </DashboardLayout>
   );

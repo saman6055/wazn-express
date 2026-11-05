@@ -77,9 +77,17 @@ export async function listBoxesAwaitingPayment(now: Date = new Date()): Promise<
     .orderBy(desc(handed))
     .limit(LOOKUP_CAP);
 
+  // Each box's own payment screen, eight at a time instead of one after the
+  // other: up to eighty boxes were eighty round trips in a row. Read only, and
+  // the list comes out in the same order.
+  const views: Awaited<ReturnType<typeof getBoxSettlementView>>[] = [];
+  for (let i = 0; i < rows.length; i += 8) {
+    views.push(...(await Promise.all(rows.slice(i, i + 8).map((r) => getBoxSettlementView(Number(r.boxId))))));
+  }
   const out: BoxAwaitingPayment[] = [];
-  for (const r of rows) {
-    const view = await getBoxSettlementView(Number(r.boxId));
+  for (let index = 0; index < rows.length; index++) {
+    const r = rows[index];
+    const view = views[index];
     const owedOnBox = view.parcels.reduce((sum, p) => sum + Math.max(0, Number(p.outstandingUsd) || 0), 0);
     const outstandingUsd = Math.round(Math.min(owedOnBox, Number(r.balanceUsd) || 0) * 100) / 100;
     if (outstandingUsd <= 0.005) continue;

@@ -3530,6 +3530,14 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "boxDiscountPledges.withdrawnAt", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawnAt TIMESTAMP NULL" },
   { name: "boxDiscountPledges.withdrawnById", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawnById INT NULL" },
   { name: "boxDiscountPledges.withdrawReason", sql: "ALTER TABLE boxDiscountPledges ADD COLUMN withdrawReason TEXT NULL" },
+  // Finance pages, 2026-11-05: the newest payments first (the payments page,
+  // money received today/this week), boxes by their state and last change
+  // (the delivery list's archive rule), accounts by balance (the debtors and
+  // the accounts list), and a box's standing receipts.
+  { name: "idx.payment_records_created", sql: "CREATE INDEX idx_payment_records_created ON paymentRecords (createdAt)" },
+  { name: "idx.delivery_boxes_status_updated", sql: "CREATE INDEX idx_delivery_boxes_status_updated ON deliveryBoxes (status, updatedAt)" },
+  { name: "idx.customer_accounts_balance", sql: "CREATE INDEX idx_customer_accounts_balance ON customerAccounts (currentBalanceUsd)" },
+  { name: "idx.box_settlements_box_status", sql: "CREATE INDEX idx_box_settlements_box_status ON boxSettlements (boxId, status)" },
 ];
 
 /**
