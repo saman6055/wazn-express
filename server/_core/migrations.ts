@@ -2267,7 +2267,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       amountUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       amountIqd DECIMAL(15, 0) NOT NULL DEFAULT 0,
       exchangeRate DECIMAL(12, 2),
-      paymentMethod ENUM('cash', 'bank_transfer', 'mobile_money', 'card', 'check', 'other') NOT NULL DEFAULT 'cash',
+      paymentMethod ENUM('cash', 'bank_transfer', 'mobile_money', 'card', 'check', 'other', 'fib', 'fastpay', 'zaincash', 'asiahawala') NOT NULL DEFAULT 'cash',
       paymentStatus ENUM('pending', 'confirmed', 'cancelled') NOT NULL DEFAULT 'confirmed',
       paymentCurrency ENUM('USD', 'IQD') NOT NULL DEFAULT 'USD',
       bankName VARCHAR(100),
@@ -2975,6 +2975,9 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   // reversed. Without this ALTER, existing deployments hit MySQL strict-mode
   // error 1265 (Data truncated for column 'paymentStatus') and every delete
   // that fires reverseAdvancePayment blows up on the paymentRecords update.
+  // The methods the code sends were never in the column: FIB and the wallets
+  // were stored blank (2026-11-05). MySQL matches enum values without case.
+  { name: "paymentRecords.paymentMethod.wallets", sql: "ALTER TABLE paymentRecords MODIFY COLUMN paymentMethod ENUM('cash','bank_transfer','mobile_money','card','check','other','fib','fastpay','zaincash','asiahawala') NOT NULL DEFAULT 'cash'" },
   { name: "paymentRecords.paymentStatus.refunded", sql: "ALTER TABLE paymentRecords MODIFY COLUMN paymentStatus ENUM('pending','confirmed','cancelled','refunded') NOT NULL DEFAULT 'confirmed'" },
 
   // ============ Plan v3, Phase 1: Safe edit/delete infrastructure ============
