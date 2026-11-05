@@ -472,6 +472,17 @@ export const ledgerRouter = router({
       return db.getWorkingCapital();
     }),
     /** A count of the money against the books — kept as "last check", added to nothing. */
+    /** The weekly FIB and Qi Card balances, in dinars (shared/channelCheck). */
+    checkChannels: superAdminProcedure
+      .input(z.object({ fibIqd: z.number().min(0).max(100_000_000_000), qiIqd: z.number().min(0).max(100_000_000_000) }))
+      .mutation(async ({ input, ctx }) => {
+        try {
+          return await db.recordChannelCheck(input.fibIqd, input.qiIqd, ctx.user.id);
+        } catch (e) {
+          throw new TRPCError({ code: "BAD_REQUEST", message: e instanceof Error ? e.message : String(e) });
+        }
+      }),
+
     checkWorkingCapital: superAdminProcedure
       .input(z.object({ haveUsd: z.number().min(0).max(10_000_000), oweUsd: z.number().min(0).max(10_000_000) }))
       .mutation(async ({ input, ctx }) => {

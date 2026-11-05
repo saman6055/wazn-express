@@ -16,6 +16,9 @@ import { getFinancialSummary, getHouseAccountSpendUsd } from "./finance.db";
 import { getProfitForPeriod } from "./reports.db";
 import { getStockHeld } from "./refusedGoods.db";
 import { getSetting, setSetting } from "./settings.db";
+import { withFix } from "@shared/fixAdvice";
+import { CHANNEL_CHECKS_KEEP, CHANNEL_CHECKS_KEY, makeChannelCheck, parseChannelChecks, type ChannelCheck } from "@shared/channelCheck";
+import { getLastSettlementRate } from "./boxSettlement.db";
 
 const num = (v: unknown) => Number(v ?? 0) || 0;
 
@@ -141,8 +144,8 @@ export async function getMoneyReceivedByMethod(now: Date = new Date()): Promise<
 }
 
 export async function getWorkingCapital() {
-  const [facts, received, byMethod, check] = await Promise.all([getWorkingCapitalFacts(), getMoneyReceived(), getMoneyReceivedByMethod(), getSetting(WORKING_CAPITAL_CHECK_KEY)]);
-  return { facts, ...workingCapital(facts), received, receivedByMethod: byMethod, lastCheck: parseStoredCashCheck(check) };
+  const [facts, received, byMethod, check, channelRaw, rate] = await Promise.all([getWorkingCapitalFacts(), getMoneyReceived(), getMoneyReceivedByMethod(), getSetting(WORKING_CAPITAL_CHECK_KEY), getSetting(CHANNEL_CHECKS_KEY), getLastSettlementRate()]);
+  return { facts, ...workingCapital(facts), received, receivedByMethod: byMethod, lastCheck: parseStoredCashCheck(check), channelChecks: parseChannelChecks(channelRaw), lastBoxRate: Number(rate?.rate ?? 0) };
 }
 
 /**
@@ -155,4 +158,38 @@ export async function recordWorkingCapitalCheck(haveUsd: number, oweUsd: number,
   const stored: StoredCashCheck = { haveUsd, oweUsd, netCashUsd, unwrittenUsd, at: new Date().toISOString() };
   await setSetting(WORKING_CAPITAL_CHECK_KEY, JSON.stringify(stored), userId);
   return stored;
+}
+
+/** Box payments marked FIB and Qi Card (CARD) between two moments, net of what was undone. */
+async function receivedOnApps(from: Date, to: Date): Promise<{ fibUsd: number; qiUsd: number }> {
+  const db = await getDb();
+  if (!db) return { fibUsd: 0, qiUsd: 0 };
+  const net = sql`GREATEST(COALESCE(${paymentRecords.amountUsd}, 0) - COALESCE(${paymentRecords.reversedAmountUsd}, 0), 0)`;
+  const [row] = await db
+    .select({
+      fib: sql<string>`COALESCE(SUM(CASE WHEN LOWER(${paymentRecords.paymentMethod}) = 'fib' THEN ${net} ELSE 0 END), 0)`,
+      qi: sql<string>`COALESCE(SUM(CASE WHEN LOWER(${paymentRecords.paymentMethod}) = 'card' THEN ${net} ELSE 0 END), 0)`,
+    })
+    .from(paymentRecords)
+    .where(sql`${paymentRecords.createdAt} > ${from} AND ${paymentRecords.createdAt} <= ${to}`);
+  return { fibUsd: num(row?.fib), qiUsd: num(row?.qi) };
+}
+
+/**
+ * The two app balances, typed in dinars, kept with what went out since the
+ * check before (shared/channelCheck). Turned into dollars at the last box
+ * receipt's rate (owner, 2026-11-05).
+ */
+export async function recordChannelCheck(fibIqd: number, qiIqd: number, userId: number): Promise<ChannelCheck[]> {
+  const last = await getLastSettlementRate();
+  const rate = Number(last?.rate ?? 0);
+  if (!(rate > 0)) throw new Error(withFix("هیچ نرخێکی دۆلار لە وەسڵی بۆکسەکاندا نییە بۆ گۆڕینی دینار.", ["یەکەمجار وەسڵێکی بۆکس بە نرخی دۆلار تۆمار بکە", "ئینجا دووبارە هەوڵ بدەرەوە"]));
+  const history = parseChannelChecks(await getSetting(CHANNEL_CHECKS_KEY));
+  const before = history[0] ?? null;
+  const now = new Date();
+  const received = before ? await receivedOnApps(new Date(before.at), now) : null;
+  const check = makeChannelCheck({ at: now.toISOString(), rate, fibIqd, qiIqd }, before, received);
+  const next = [check, ...history].slice(0, CHANNEL_CHECKS_KEEP);
+  await setSetting(CHANNEL_CHECKS_KEY, JSON.stringify(next), userId);
+  return next;
 }
