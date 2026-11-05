@@ -548,21 +548,40 @@ export async function getScansByDateRange(startDate: Date, endDate: Date, scanTy
   const db = await getDb();
   if (!db) return [];
   
+  // The end date is a whole day: everything before the next midnight. Read
+  // as a bare moment it was that day's midnight, so the last day - today, by
+  // default - was never counted.
+  const endExclusive = new Date(endDate);
+  endExclusive.setDate(endExclusive.getDate() + 1);
   const conditions = [
     gte(packageScans.scannedAt, startDate),
-    lte(packageScans.scannedAt, endDate)
+    lt(packageScans.scannedAt, endExclusive)
   ];
-  
+
   if (scanType && scanType !== 'all') {
     conditions.push(eq(packageScans.scanType, scanType as any));
   }
-  
+
+  /*
+   * One flat row per scan, the shape the scan report reads (owner,
+   * 2026-11-05: the report showed 0 on every station). It used to come back
+   * as { scan, scannedBy: <the whole user row> }, so s.scanType and
+   * s.scannedAt were undefined on the page: every station counted 0, every
+   * scan fell on one "Invalid Date" day, and the user column could not print.
+   */
   return db.select({
-    scan: packageScans,
-    scannedBy: users
+    id: packageScans.id,
+    packageId: packageScans.packageId,
+    trackingNumber: packageScans.trackingNumber,
+    packageCode: packages.packageCode,
+    scanType: packageScans.scanType,
+    scannedAt: packageScans.scannedAt,
+    scannedById: packageScans.scannedById,
+    scannedBy: users.name,
   })
     .from(packageScans)
     .leftJoin(users, eq(packageScans.scannedById, users.id))
+    .leftJoin(packages, eq(packageScans.packageId, packages.id))
     .where(and(...conditions))
     .orderBy(desc(packageScans.scannedAt));
 }
