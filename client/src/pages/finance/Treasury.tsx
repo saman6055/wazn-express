@@ -3,6 +3,7 @@ import { fmtDate } from "@/lib/numericDate";
 import { useState } from "react";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
+import { DerivedMoneyCard } from "@/components/finance/DerivedMoneyCard";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -501,6 +502,8 @@ const [activeTab, setActiveTab] = useState("accounts");
             </Dialog>
           </div>
         </div>
+
+        <DerivedMoneyCard />
 
         {/* Summary Cards */}
         <div className="grid gap-4 md:grid-cols-4">
