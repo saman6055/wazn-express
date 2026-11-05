@@ -221,12 +221,15 @@ export function ownershipCheck(
  */
 export function partnershipTotals(
   rows: readonly { accounts: PartnerAccounts }[],
-): { equity: number; liability: number; contributed: number; drawings: number; profitShare: number } {
+): { equity: number; liability: number; contributed: number; drawings: number; profitShare: number; adjustments: number } {
   let equity = 0;
   let liability = 0;
   let contributed = 0;
   let drawings = 0;
   let profitShare = 0;
+  // Corrections, so a contribution put under the wrong partner and taken back
+  // by an adjustment nets out of «paid in» (owner's books, 2026-11-05).
+  let adjustments = 0;
 
   for (const row of rows) {
     equity += cents(row.accounts.capital.closing);
@@ -234,6 +237,7 @@ export function partnershipTotals(
     contributed += cents(row.accounts.capital.contributed) + cents(row.accounts.capital.opening);
     drawings += cents(row.accounts.capital.drawings);
     profitShare += cents(row.accounts.capital.profitShare);
+    adjustments += cents(row.accounts.capital.adjustments);
   }
 
   return {
@@ -242,6 +246,7 @@ export function partnershipTotals(
     contributed: toMoney(contributed),
     drawings: toMoney(drawings),
     profitShare: toMoney(profitShare),
+    adjustments: toMoney(adjustments),
   };
 }
 

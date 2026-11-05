@@ -58,10 +58,11 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 import { showErrorToast } from "@/lib/errorToast";
 
 export default function Partners() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [activeTab, setActiveTab] = useState("partners");
   const [showAddPartner, setShowAddPartner] = useState(false);
   const [showAddTransaction, setShowAddTransaction] = useState(false);
@@ -575,9 +576,14 @@ const [activeTab, setActiveTab] = useState("partners");
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold font-mono text-blue-700 dark:text-blue-200">
-                {formatCurrency(totals?.contributed ?? 0)}
+                {formatCurrency((totals?.contributed ?? 0) + (totals?.adjustments ?? 0))}
               </div>
-              <p className="text-xs text-blue-600/80 dark:text-blue-300/80">{t("partners.contributedCapital")}</p>
+              <p className="text-xs text-blue-600/80 dark:text-blue-300/80">
+                {t("partners.contributedCapital")}
+                {(totals?.adjustments ?? 0) !== 0 && (
+                  <> · {formatCurrency(totals?.contributed ?? 0)} {pickLang(language, { ku: "دانراو", en: "paid in", ar: "مدفوع", zh: "投入" })}, {formatCurrency(totals?.adjustments ?? 0)} {pickLang(language, { ku: "ڕاستکردنەوە", en: "corrections", ar: "تصحيحات", zh: "更正" })}</>
+                )}
+              </p>
             </CardContent>
           </Card>
 

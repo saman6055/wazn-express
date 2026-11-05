@@ -226,6 +226,13 @@ describe("the company's side", () => {
     expect(totals.drawings).toBe(1000);
   });
 
+  it("carries the corrections, so a contribution taken back nets out of what was paid in", () => {
+    const a = { capital: { opening: 0, contributed: 16000, profitShare: 0, adjustments: -16000, drawings: 0, closing: 0 }, loan: { outstanding: 0 } } as never;
+    const b = { capital: { opening: 0, contributed: 32000, profitShare: 0, adjustments: 0, drawings: 0, closing: 32000 }, loan: { outstanding: 0 } } as never;
+    const t = partnershipTotals([{ accounts: a }, { accounts: b }]);
+    expect(t.contributed + t.adjustments).toBe(32000);
+  });
+
   it("is zero for a company with no partners yet", () => {
     const totals = partnershipTotals([]);
     expect(totals.equity).toBe(0);
