@@ -27,6 +27,7 @@ import { showErrorToast } from "@/lib/errorToast";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { AdvanceSplitNote } from "./AdvanceSplitNote";
+import { MoneyChannelPicker, useMoneyChannel } from "./MoneyChannelPicker";
 import { cn } from "@/lib/utils";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { fmtAmount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -118,6 +119,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
   const [discountNote, setDiscountNote] = useState("");
 
   const [iqd, setIqd] = useState("");
+  const [channel, setChannel] = useMoneyChannel();
   const [rate, setRate] = useState("");
   const [usd, setUsd] = useState("");
   const [treatShortAs, setTreatShortAs] = useState<"debt" | "discount">("debt");
@@ -396,6 +398,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
     }
     settle.mutate({
       boxId,
+      paymentMethod: channel,
       confirmCustomerCode,
       lines: parcels.map((p) => ({
         lineId: p.lineId,
@@ -788,6 +791,7 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
                 <span className="text-xs text-muted-foreground">{t({ ku: "بە دۆلار", en: "In dollars", ar: "بالدولار", zh: "美元" })}</span>
                 <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-9" data-testid="settle-usd" />
               </label>
+              <MoneyChannelPicker value={channel} onChange={setChannel} />
               <div className="flex items-baseline justify-between border-t pt-1.5 text-sm">
                 <span className="text-muted-foreground">{t({ ku: "یەکسانە بە", en: "Comes to", ar: "يعادل", zh: "折合" })}</span>
                 <span className="font-mono tabular-nums font-semibold">{money(effectivePaid)}</span>

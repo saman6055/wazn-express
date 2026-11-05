@@ -115,9 +115,34 @@ export async function getMoneyReceived(now: Date = new Date()): Promise<{ today:
   };
 }
 
+/**
+ * This month's money received by where it went - cash, FIB, Qi Card (the
+ * CARD method), anything else - net of what was undone (owner, 2026-11-05:
+ * so each app's statement can be checked against the system).
+ */
+export async function getMoneyReceivedByMethod(now: Date = new Date()): Promise<Array<{ method: string; count: number; usd: number }>> {
+  const db = await getDb();
+  if (!db) return [];
+  const { month } = receivedWindows(now);
+  const net = sql`GREATEST(COALESCE(${paymentRecords.amountUsd}, 0) - COALESCE(${paymentRecords.reversedAmountUsd}, 0), 0)`;
+  const rows = await db
+    .select({ method: paymentRecords.paymentMethod, count: sql<number>`SUM(CASE WHEN ${net} > 0 THEN 1 ELSE 0 END)`, usd: sql<string>`COALESCE(SUM(${net}), 0)` })
+    .from(paymentRecords)
+    .where(sql`${paymentRecords.createdAt} >= ${month}`)
+    .groupBy(paymentRecords.paymentMethod);
+  // The column keeps lower case; a blank is a method the column refused.
+  const merged = new Map<string, { method: string; count: number; usd: number }>();
+  for (const r of rows) {
+    const method = String(r.method ?? "").toUpperCase() || "OTHER";
+    const was = merged.get(method) ?? { method, count: 0, usd: 0 };
+    merged.set(method, { method, count: was.count + (Number(r.count) || 0), usd: Math.round((was.usd + num(r.usd)) * 100) / 100 });
+  }
+  return Array.from(merged.values()).filter((r) => r.usd > 0).sort((a, b) => b.usd - a.usd);
+}
+
 export async function getWorkingCapital() {
-  const [facts, received, check] = await Promise.all([getWorkingCapitalFacts(), getMoneyReceived(), getSetting(WORKING_CAPITAL_CHECK_KEY)]);
-  return { facts, ...workingCapital(facts), received, lastCheck: parseStoredCashCheck(check) };
+  const [facts, received, byMethod, check] = await Promise.all([getWorkingCapitalFacts(), getMoneyReceived(), getMoneyReceivedByMethod(), getSetting(WORKING_CAPITAL_CHECK_KEY)]);
+  return { facts, ...workingCapital(facts), received, receivedByMethod: byMethod, lastCheck: parseStoredCashCheck(check) };
 }
 
 /**

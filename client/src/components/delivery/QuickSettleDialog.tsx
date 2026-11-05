@@ -20,6 +20,7 @@ import { useSystemAlert, unpricedBatchLink } from "@/components/SystemAlert";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { AdvanceSplitNote } from "./AdvanceSplitNote";
+import { MoneyChannelPicker, useMoneyChannel } from "./MoneyChannelPicker";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
 import { PayeeConfirm, payeeButtonLabel } from "@/components/delivery/PayeeConfirm";
@@ -60,6 +61,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
   const utils = trpc.useUtils();
 
   const [iqd, setIqd] = useState("");
+  const [channel, setChannel] = useMoneyChannel();
   // The digits of the customer's code, typed before the money is taken
   // (owner, 2026-10-21; shared/payeeCheck). A new box starts empty.
   const [rate, setRate] = useState("");
@@ -248,6 +250,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
     }
     settle.mutate({
       boxId,
+      paymentMethod: channel,
       /**
        * The promised discounts go with the payment — each on the thing it
        * was promised on, and with the reason it was given for.
@@ -481,6 +484,7 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                 <GroupedNumberInput value={usd} onValueChange={setUsd} className="h-10"
                                 data-testid="quick-usd" />
               </label>
+              <MoneyChannelPicker value={channel} onChange={setChannel} />
 
               {/* Only when the money is not the money. */}
               {difference.roundingUsd !== undefined ? (

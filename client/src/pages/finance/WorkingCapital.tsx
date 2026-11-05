@@ -226,6 +226,23 @@ export default function WorkingCapital() {
                     <Money value={data.received[key].usd} />
                   </Line>
                 ))}
+                {(data.receivedByMethod ?? []).length > 0 && (
+                  <div className="mt-2 rounded-md bg-muted/40 p-2" data-testid="money-received-by-method">
+                    <div className="mb-1 text-xs text-muted-foreground">
+                      {L({ ku: "ئەم مانگە بەپێی شوێن — بەراوردی بکە لەگەڵ ئەپی FIB و Qi", en: "This month by place — check against the FIB and Qi apps", ar: "هذا الشهر حسب الجهة — قارنه بتطبيقي FIB و Qi", zh: "本月按渠道 — 与 FIB 和 Qi 应用核对" })}
+                    </div>
+                    {(data.receivedByMethod ?? []).map((m) => (
+                      <Line key={m.method} label={
+                        <span className="flex items-center gap-2">
+                          {m.method === "CASH" ? L({ ku: "کاش", en: "Cash", ar: "نقد", zh: "现金" }) : m.method === "CARD" ? "Qi Card" : m.method === "FIB" ? "FIB" : L({ ku: "شێوازی تر", en: "Other", ar: "أخرى", zh: "其他" }) + ` (${m.method})`}
+                          <span className="text-xs text-muted-foreground">{L({ ku: `${m.count} وەسڵ`, en: `${m.count} receipts`, ar: `${m.count} إيصال`, zh: `${m.count} 张` })}</span>
+                        </span>
+                      }>
+                        <Money value={m.usd} />
+                      </Line>
+                    ))}
+                  </div>
+                )}
               </CardContent>
             </Card>
 
