@@ -411,9 +411,10 @@ class SDKServer {
         throw ForbiddenError(SESSION_ENDED_MESSAGE);
       }
       // The office opens on known devices only, once the owner has switched
-      // that on (shared/officeDevices). Checked on every request, so a
-      // session already open on another device ends too.
-      if (!deviceAllowed(await loadOfficeDevices(), deviceIdFrom(req), officeDevicesKillSwitch())) {
+      // that on (shared/officeDevices). A session signed in before he switched
+      // it on stays open, as he asked; one signed in after it, on a device he
+      // has not approved, is stopped here on every request.
+      if (!deviceAllowed(await loadOfficeDevices(), deviceIdFrom(req), officeDevicesKillSwitch(), session.issuedAt)) {
         throw ForbiddenError("This device is not approved for the office system");
       }
       return {

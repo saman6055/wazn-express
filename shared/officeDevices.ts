@@ -15,7 +15,13 @@
  * It starts OFF. Until it is switched on it only records which devices sign
  * in, so the owner can approve the ones he knows first; and switching it on
  * approves the device he does it from, so he can never lock himself out by
- * turning it on. OFFICE_DEVICES_OFF=1 in the deployment is the way back in
+ * turning it on.
+ *
+ * What is already open stays open (owner, 2026-11-05: «ئەوەی ئێستا کراوەیە
+ * و هەیە هەمووی وەکو خۆی بمێنێت؛ بۆ کردنەوە و داخڵبوونی نوێ ئەو ڕێسایە
+ * جێبەجێ بێت»). A session signed in before the moment the rule was switched
+ * on goes on working on whatever device it is; only a sign-in after that
+ * moment, on a device he has not approved, needs his yes. OFFICE_DEVICES_OFF=1 in the deployment is the way back in
  * if every approved device is lost.
  */
 
@@ -53,6 +59,8 @@ export interface SeenDevice {
 
 export interface OfficeDevices {
   enforced: boolean;
+  /** When the rule was last switched on: sessions signed in before it stay open. */
+  enforcedAt?: string;
   approved: ApprovedDevice[];
   seen: SeenDevice[];
 }
@@ -67,6 +75,7 @@ export function parseOfficeDevices(raw: string | null | undefined): OfficeDevice
     const v = JSON.parse(raw) as Partial<OfficeDevices>;
     return {
       enforced: v.enforced === true,
+      enforcedAt: typeof v.enforcedAt === "string" && Number.isFinite(Date.parse(v.enforcedAt)) ? v.enforcedAt : undefined,
       approved: Array.isArray(v.approved) ? v.approved.filter((d) => d && /^[0-9a-f]{64}$/.test(String(d.id))) : [],
       seen: Array.isArray(v.seen) ? v.seen.filter((d) => d && /^[0-9a-f]{64}$/.test(String(d.id))) : [],
     };
@@ -79,10 +88,31 @@ export function isApproved(state: OfficeDevices, deviceId: string | null): boole
   return !!deviceId && state.approved.some((d) => d.id === deviceId);
 }
 
-/** May this staff session go on? Customers never reach this question. */
-export function deviceAllowed(state: OfficeDevices, deviceId: string | null, killSwitch: boolean): boolean {
+/**
+ * Was this session signed in before the rule was switched on? Then it stays
+ * open. Both to the second, strictly before: a sign-in in the same second as
+ * the switch is a new one.
+ */
+export function openBeforeRule(state: OfficeDevices, sessionIssuedAtSeconds: number | null | undefined): boolean {
+  if (!sessionIssuedAtSeconds || !state.enforcedAt) return false;
+  const from = Date.parse(state.enforcedAt);
+  if (!Number.isFinite(from)) return false;
+  return sessionIssuedAtSeconds < Math.floor(from / 1000);
+}
+
+/**
+ * May this staff session go on? Customers never reach this question.
+ * The sign-in asks without a session time - a sign-in is always new.
+ */
+export function deviceAllowed(
+  state: OfficeDevices,
+  deviceId: string | null,
+  killSwitch: boolean,
+  sessionIssuedAtSeconds?: number | null,
+): boolean {
   if (killSwitch || !state.enforced) return true;
-  return isApproved(state, deviceId);
+  if (isApproved(state, deviceId)) return true;
+  return openBeforeRule(state, sessionIssuedAtSeconds);
 }
 
 /** Note a sign-in from a device; returns the new state. */

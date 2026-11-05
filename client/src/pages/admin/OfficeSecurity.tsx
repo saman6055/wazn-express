@@ -139,12 +139,13 @@ export default function OfficeSecurity() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2"><Laptop className="w-5 h-5" /> ئامێرە ناسراوەکانی ئۆفیس</CardTitle>
           <CardDescription>
-            کاتێک ئەم ڕێسایە کراوەیە، سیستەمی ئۆفیس تەنها لەسەر ئەم ئامێرانە دەکرێتەوە. هەر ئامێرێکی تر دەبێت تۆ ڕێگەی پێ بدەیت. پۆرتاڵی کڕیار دەستی لێنادرێت.
+            کاتێک ئەم ڕێسایە کراوەیە، هەر چوونەژوورەوەیەکی نوێ لە ئامێرێکی نەناسراو ڕێگەی تۆی دەوێت. ئەوەی پێش کردنەوەی ڕێساکە کراوە بووە وەک خۆی دەمێنێتەوە. پۆرتاڵی کڕیار دەستی لێنادرێت.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="flex flex-wrap items-center gap-3 rounded-lg bg-muted p-3">
             <Badge className={data.enforced ? "bg-green-600" : "bg-gray-500"}>{data.enforced ? "کراوەیە" : "کوژاوەیە"}</Badge>
+            {data.enforced && data.enforcedAt && <span className="text-sm text-muted-foreground">کراوەتەوە: {fmtWhen(data.enforcedAt, true)}</span>}
             {data.killSwitch && <Badge variant="destructive">OFFICE_DEVICES_OFF لە Coolify کوژاندوویەتی</Badge>}
             <Button
               size="sm"
@@ -152,7 +153,7 @@ export default function OfficeSecurity() {
               disabled={setEnforced.isPending}
               onClick={async () => {
                 if (!data.enforced) {
-                  if (await confirmDanger("ڕێسا بکرێتەوە؟ ئەم ئامێرەی ئێستا لەسەرییت خۆکار دەناسێنرێت. ئامێرەکانی تر تا ڕێگەیان پێ دەدەیت ناتوانن بچنە ژوورەوە.")) setEnforced.mutate({ on: true });
+                  if (await confirmDanger("ڕێسا بکرێتەوە؟ ئەم ئامێرەی ئێستا لەسەرییت خۆکار دەناسێنرێت. ئەوانەی ئێستا کراوەن وەک خۆیان دەمێننەوە؛ تەنها چوونەژوورەوەی نوێ لە ئامێری نەناسراو ڕێگەی تۆی دەوێت.")) setEnforced.mutate({ on: true });
                 } else if (await confirmDanger("ڕێسا بکوژێنرێتەوە؟ هەر ئامێرێک دەتوانێت دیسان بچێتە ژوورەوە.")) {
                   setEnforced.mutate({ on: false });
                 }

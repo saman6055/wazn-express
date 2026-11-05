@@ -112,6 +112,29 @@ describe("the office opens on known devices", () => {
     expect(deviceAllowed(s, B, true)).toBe(true);
   });
 
+  it("what was open before the rule went on stays open; a new sign-in needs the yes", () => {
+    const on = new Date("2026-11-05T10:00:00.000Z");
+    const s = { ...approveDevice(emptyOfficeDevices(), A, "لاپتۆپی من", 1, on), enforced: true, enforcedAt: on.toISOString() };
+    const sec = (d: string) => Math.floor(new Date(d).getTime() / 1000);
+    // Signed in yesterday on an unknown phone: goes on.
+    expect(deviceAllowed(s, B, false, sec("2026-11-04T09:00:00Z"))).toBe(true);
+    expect(deviceAllowed(s, null, false, sec("2026-11-05T09:59:59Z"))).toBe(true);
+    // Signed in at or after the switch on an unknown device: stopped.
+    expect(deviceAllowed(s, B, false, sec("2026-11-05T10:00:00Z"))).toBe(false);
+    expect(deviceAllowed(s, B, false, sec("2026-11-05T11:00:00Z"))).toBe(false);
+    // The sign-in itself asks without a session time: always new.
+    expect(deviceAllowed(s, B, false)).toBe(false);
+    // A rule switched on before this change (no moment recorded) keeps nothing open.
+    expect(deviceAllowed({ ...s, enforcedAt: undefined }, B, false, sec("2026-11-04T09:00:00Z"))).toBe(false);
+    // The moment survives the round trip through the setting.
+    expect(parseOfficeDevices(JSON.stringify(s)).enforcedAt).toBe(on.toISOString());
+  });
+
+  it("switching on records the moment once; switching off forgets it", () => {
+    const r = read("server/routers/officeSecurity.router.ts");
+    expect(r).toContain("const enforcedAt = input.on ? (state.enforced && state.enforcedAt ? state.enforcedAt : new Date().toISOString()) : undefined;");
+  });
+
   it("an unknown device waits with a code for half an hour", () => {
     let s = noteSeen(emptyOfficeDevices(), { id: B, user: "x", userId: 2, ip: "1.2.3.4", agent: "Chrome" }, now);
     s = requestApproval(s, B, "123456", now);
@@ -146,7 +169,7 @@ describe("the office opens on known devices", () => {
   it("checked at sign-in and on every staff request; customers never", () => {
     const sdk = read("server/_core/sdk.ts");
     const staff = sdk.slice(sdk.indexOf("Handle staff login sessions"));
-    expect(staff).toContain("deviceAllowed(await loadOfficeDevices(), deviceIdFrom(req), officeDevicesKillSwitch())");
+    expect(staff).toContain("deviceAllowed(await loadOfficeDevices(), deviceIdFrom(req), officeDevicesKillSwitch(), session.issuedAt)");
     const customer = sdk.slice(sdk.indexOf("session.customerId && session.isCustomer"), sdk.indexOf("Handle staff login sessions"));
     expect(customer).not.toContain("deviceAllowed");
     expect(read("server/routers/auth.router.ts")).toContain("requestApproval(devices, deviceId, newPairCode(), now2)");

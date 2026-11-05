@@ -54,6 +54,7 @@ export const officeSecurityRouter = router({
     const approvedIds = new Set(state.approved.map((d) => d.id));
     return {
       enforced: state.enforced,
+      enforcedAt: state.enforcedAt ?? null,
       killSwitch: officeDevicesKillSwitch(),
       thisDevice,
       thisDeviceApproved: !!thisDevice && approvedIds.has(thisDevice),
@@ -95,7 +96,9 @@ export const officeSecurityRouter = router({
           };
         }
       }
-      state = { ...state, enforced: input.on };
+      // The moment it goes on: every session signed in before it stays open.
+      const enforcedAt = input.on ? (state.enforced && state.enforcedAt ? state.enforcedAt : new Date().toISOString()) : undefined;
+      state = { ...state, enforced: input.on, enforcedAt };
       await saveOfficeDevices(state, ctx.user.id);
       await db.createAuditLog({ userId: ctx.user.id, userRole: ctx.user.role, action: input.on ? "office_devices_on" : "office_devices_off", entityType: "setting" });
       return { enforced: state.enforced };
