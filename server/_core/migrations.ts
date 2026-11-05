@@ -3138,6 +3138,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.delivery_carriers_kind", sql: "CREATE INDEX idx_delivery_carriers_kind ON deliveryCarriers (kind)" },
   { name: "idx.box_receipt_events_box", sql: "CREATE INDEX idx_box_receipt_events_box ON boxReceiptEvents (boxId)" },
   { name: "idx.box_receipt_events_customer", sql: "CREATE INDEX idx_box_receipt_events_customer ON boxReceiptEvents (customerId)" },
+  { name: "idx.expense_alert_logs_alert", sql: "CREATE INDEX idx_expense_alert_logs_alert ON expenseAlertLogs (alertId)" },
   { name: "companyStock.packageId", sql: "ALTER TABLE companyStock ADD COLUMN packageId INT NULL" },
   { name: "companyStock.freightCostUsd", sql: "ALTER TABLE companyStock ADD COLUMN freightCostUsd DECIMAL(12, 2) NOT NULL DEFAULT 0" },
   { name: "companyStock.trackingNumber", sql: "ALTER TABLE companyStock ADD COLUMN trackingNumber VARCHAR(100) NULL" },
