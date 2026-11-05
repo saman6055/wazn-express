@@ -99,6 +99,21 @@ export const ledgerRouter = router({
         return db.getFinanceDashboard(input?.period ?? "month", ctx.user.role === "super_admin");
       }),
     /** The running costs the loss warning is measured against — the main admin's list. */
+    /**
+     * The company's own code (owner, 2026-11-05): what is written on it is
+     * the office's spending, left out of customer debt. Main admin only.
+     */
+    setHouseAccount: superAdminProcedure
+      .input(z.object({ customerId: idSchema, on: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        await db.setCustomerHouseAccount(input.customerId, input.on);
+        await db.createAuditLog({
+          userId: ctx.user.id, userRole: ctx.user.role, action: "set_house_account",
+          entityType: "customer", entityId: input.customerId, newValues: { isHouseAccount: input.on },
+        });
+        return { ok: true };
+      }),
+
     saveFixedCosts: superAdminProcedure
       .input(z.object({
         costs: z.array(z.object({

@@ -1,4 +1,5 @@
 import { and, gt, inArray } from "drizzle-orm";
+import { NOT_HOUSE_ACCOUNT } from "./houseAccount.filter";
 import { getDb } from "./connection";
 import { customerAccounts, ledgerTransactions } from "../../drizzle/schema";
 import { oldestUnpaidSince } from "@shared/debtAge";
@@ -13,7 +14,7 @@ export async function getDebtAges(): Promise<Array<{ accountId: number; oldestUn
   const owing = await db
     .select({ id: customerAccounts.id })
     .from(customerAccounts)
-    .where(gt(customerAccounts.currentBalanceUsd, "0"));
+    .where(and(gt(customerAccounts.currentBalanceUsd, "0"), NOT_HOUSE_ACCOUNT));
   const ids = owing.map((a) => a.id);
   if (ids.length === 0) return [];
   const rows = await db

@@ -424,7 +424,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
                   icon={<TrendingDown className="h-4 w-4 text-red-600 dark:text-red-300" />}
                   tint="bg-red-100 dark:bg-red-950/40"
                   label={pickLang(language, { ku: "مەسارف (کەم دەکرێت)", en: "Expenses (less)", ar: "المصاريف (تُطرح)", zh: "费用（减）" })}
-                  amount={-Number(wcFacts?.expensesUsd ?? 0)}
+                  amount={-(Number(wcFacts?.expensesUsd ?? 0) + Number(wcFacts?.houseUsd ?? 0))}
                   href="/company/expenses"
                 />
                 <SheetRow

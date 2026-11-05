@@ -252,6 +252,11 @@ export default function WorkingCapital() {
                 >
                   <Money value={-f.expensesUsd} />
                 </Line>
+                {(f.houseUsd ?? 0) > 0 && (
+                  <Line tone="bad" label={L({ ku: "کڕینی کۆمپانیا بۆ خۆی (حیسابی ناوخۆ)", en: "Company's own purchases (house account)", ar: "مشتريات الشركة لنفسها", zh: "公司自购（内部账户）" })}>
+                    <Money value={-(f.houseUsd ?? 0)} />
+                  </Line>
+                )}
                 {f.withdrawals.length === 0 ? (
                   <Line tone="quiet" label={L({ ku: "بردنی شەریکەکان", en: "Partners' withdrawals", ar: "سحوبات الشركاء", zh: "合伙人提款" })}><Money value={0} /></Line>
                 ) : (

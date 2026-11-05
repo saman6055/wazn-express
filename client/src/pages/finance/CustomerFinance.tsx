@@ -5,6 +5,7 @@ import { AccountRowList } from "@/components/AccountRowList";
 import { BoxInvoiceView } from "@/components/BoxInvoiceView";
 import { rowMeta } from "@shared/batchInvoice";
 import { trpc } from "@/lib/trpc";
+import { HouseAccountSwitch } from "@/components/finance/HouseAccountSwitch";
 import { getCompanyInfoFromSettings } from "@/hooks/useCompanyInfo";
 import { reportLogoHtml } from "@/lib/brand";
 import { escapeHtml } from "@/lib/html";
@@ -1476,6 +1477,7 @@ export default function CustomerFinance() {
                   <div>
                     <p className="text-xs text-emerald-100">{pickLang(language, { ku: "کڕیارەکان", en: "Customer", ar: "العميل", zh: "客户" })}</p>
                     <p className="font-bold text-white">{customer.customerCode} - {customer.fullName}</p>
+                    <HouseAccountSwitch customerId={customerId} on={Boolean((customer as { isHouseAccount?: boolean | number }).isHouseAccount)} />
                   </div>
                 </div>
               </div>

@@ -95,6 +95,13 @@ export const customers = mysqlTable("customers", {
   // the portal never does; the report says what was seen. Main admin clears it.
   securityBlockedAt: timestamp("securityBlockedAt"),
   securityBlockReport: text("securityBlockReport"),
+  /**
+   * The company's own code, used to buy things for the office (owner,
+   * 2026-11-05). What is written on it is the company's spending, not a
+   * customer's debt: it is left out of every debt figure and counted as
+   * an expense in working capital.
+   */
+  isHouseAccount: boolean("isHouseAccount").default(false).notNull(),
   email: varchar("email", { length: 320 }),
   country: varchar("country", { length: 100 }),
   city: varchar("city", { length: 100 }),

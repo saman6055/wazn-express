@@ -12,7 +12,7 @@ import {
   type StoredCashCheck,
   type WorkingCapitalFacts,
 } from "@shared/workingCapital";
-import { getFinancialSummary } from "./finance.db";
+import { getFinancialSummary, getHouseAccountSpendUsd } from "./finance.db";
 import { getProfitForPeriod } from "./reports.db";
 import { getStockHeld } from "./refusedGoods.db";
 import { getSetting, setSetting } from "./settings.db";
@@ -33,7 +33,7 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
   const db = await getDb();
   if (!db) return empty;
 
-  const [partnerRows, moves, [spent], [goods], ledger, profit, stock] = await Promise.all([
+  const [partnerRows, moves, [spent], [goods], ledger, profit, stock, houseUsd] = await Promise.all([
     db.select({ id: partners.id, name: partners.name, nameKu: partners.nameKu, initialCapital: partners.initialCapital }).from(partners),
     db
       .select({
@@ -59,6 +59,7 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
     // fall outside "all time".
     getProfitForPeriod(new Date("2000-01-01T00:00:00Z"), new Date(Date.now() + 86_400_000)),
     getStockHeld(),
+    getHouseAccountSpendUsd(),
   ]);
 
   const sumOf = (partnerId: number, type: string) =>
@@ -81,6 +82,7 @@ export async function getWorkingCapitalFacts(): Promise<WorkingCapitalFacts> {
     goodsOnRoadCount: Number(goods?.count) || 0,
     stockUsd: stock.usd,
     stockCount: stock.count,
+    houseUsd,
   };
 }
 

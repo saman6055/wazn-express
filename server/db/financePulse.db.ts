@@ -1,4 +1,5 @@
 import { and, desc, eq, gt, gte, inArray, lte, sql } from "drizzle-orm";
+import { NOT_HOUSE_ACCOUNT } from "./houseAccount.filter";
 import { getDb } from "./connection";
 import { appLogger } from "../utils/logger";
 import {
@@ -219,7 +220,7 @@ async function oldDebt(db: Db, now: Date) {
   const [row] = await db
     .select({ usd: sql<string>`COALESCE(SUM(${customerAccounts.currentBalanceUsd}), 0)`, count: sql<number>`COUNT(*)` })
     .from(customerAccounts)
-    .where(and(inArray(customerAccounts.id, oldIds), gt(customerAccounts.currentBalanceUsd, "0")));
+    .where(and(inArray(customerAccounts.id, oldIds), gt(customerAccounts.currentBalanceUsd, "0"), NOT_HOUSE_ACCOUNT));
   return { usd: num(row?.usd), count: Number(row?.count) || 0 };
 }
 
@@ -228,7 +229,7 @@ async function topDebtors(db: Db, totalDebtUsd: number) {
     .select({ customerId: customerAccounts.customerId, usd: customerAccounts.currentBalanceUsd, code: customers.customerCode, name: customers.fullName })
     .from(customerAccounts)
     .leftJoin(customers, eq(customers.id, customerAccounts.customerId))
-    .where(gt(customerAccounts.currentBalanceUsd, "0"))
+    .where(and(gt(customerAccounts.currentBalanceUsd, "0"), NOT_HOUSE_ACCOUNT))
     .orderBy(desc(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2))`))
     .limit(3);
   return rows.map((r) => ({

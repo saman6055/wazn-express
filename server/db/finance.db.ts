@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { NOT_HOUSE_ACCOUNT } from "./houseAccount.filter";
 import { withFix } from "@shared/fixAdvice";
 import { eq, ne, desc, asc, and, gte, lte, lt, gt, sql, or, like, isNull, isNotNull, count, inArray, notInArray, SQL } from "drizzle-orm";
 import { ACCOUNT_CUSTOMER_COLUMNS, type AccountCustomer } from "./customers.db";
@@ -498,7 +499,7 @@ export async function getDebtors(minBalanceUsd = 0): Promise<{ customerId: numbe
     balanceUsd: customerAccounts.currentBalanceUsd,
     balanceIqd: customerAccounts.currentBalanceIqd,
   }).from(customerAccounts)
-    .where(gt(customerAccounts.currentBalanceUsd, sql`${minBalanceUsd}`))
+    .where(and(gt(customerAccounts.currentBalanceUsd, sql`${minBalanceUsd}`), NOT_HOUSE_ACCOUNT))
     .orderBy(desc(customerAccounts.currentBalanceUsd));
   
   // Get customer details for each debtor
@@ -526,7 +527,7 @@ export async function getTotalDebtAmount(): Promise<{ totalUsd: number; totalIqd
     totalUsd: sql<string>`COALESCE(SUM(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) > 0 THEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
     totalIqd: sql<string>`COALESCE(SUM(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) > 0 THEN CAST(${customerAccounts.currentBalanceIqd} AS DECIMAL(15,0)) ELSE 0 END), 0)`,
     count: sql<number>`COUNT(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) > 0 THEN 1 END)`,
-  }).from(customerAccounts);
+  }).from(customerAccounts).where(NOT_HOUSE_ACCOUNT);
 
   return {
     totalUsd: Number(result?.totalUsd ?? 0),
@@ -557,7 +558,7 @@ export async function getFinancialSummary(): Promise<{
     debtorsCount: sql<number>`COUNT(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0 THEN 1 END)`,
     creditorsCount: sql<number>`COUNT(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) < 0 THEN 1 END)`,
     totalAccounts: sql<number>`COUNT(*)`
-  }).from(customerAccounts);
+  }).from(customerAccounts).where(NOT_HOUSE_ACCOUNT);
   
   return {
     totalDebtUsd: parseFloat(result[0]?.totalDebtUsd || '0'),
@@ -4400,4 +4401,24 @@ export async function reverseExpenseCashMovement(params: {
       { allowOverdraft: true }
     );
   }
+}
+
+/**
+ * What the company's own account stands at (customers.isHouseAccount): the
+ * office's purchases, which working capital counts as spending (owner,
+ * 2026-11-05). Positive balances only - money paid onto it is not a debt.
+ */
+export async function getHouseAccountSpendUsd(): Promise<number> {
+  const db = await getDb();
+  if (!db) return 0;
+  const [row] = await db.select({
+    usd: sql<string>`COALESCE(SUM(CASE WHEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) > 0 THEN CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
+  }).from(customerAccounts).where(sql`${customerAccounts.customerId} IN (SELECT id FROM customers WHERE isHouseAccount = 1)`);
+  return Number(row?.usd ?? 0);
+}
+
+export async function setCustomerHouseAccount(customerId: number, on: boolean): Promise<void> {
+  const db = await getDb();
+  if (!db) throw new Error("Database not available");
+  await db.execute(sql`UPDATE customers SET isHouseAccount = ${on ? 1 : 0} WHERE id = ${customerId}`);
 }

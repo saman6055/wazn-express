@@ -45,6 +45,8 @@ export interface WorkingCapitalFacts {
   goodsOnRoadUsd: number;
   goodsOnRoadCostUsd: number;
   goodsOnRoadCount: number;
+  /** The company's own account (customers.isHouseAccount): office purchases, spent. */
+  houseUsd?: number;
   /**
    * Refused goods still on our hands, at what they cost (shared/refusedGoods).
    * Shown, never summed: the owner counts them as a loss from the day they are
@@ -75,7 +77,7 @@ const cents = (n: number) => Math.round((Number.isFinite(n) ? n : 0) * 100) / 10
 export function workingCapital(f: WorkingCapitalFacts): WorkingCapital {
   const withdrawalsUsd = cents(f.withdrawals.reduce((sum, w) => sum + (Number(w.usd) || 0), 0));
   const unearnedUsd = cents(Math.max(0, f.goodsOnRoadUsd - f.goodsOnRoadCostUsd));
-  const shouldHoldUsd = cents(f.capitalUsd + f.profitUsd - unearnedUsd - f.expensesUsd - withdrawalsUsd);
+  const shouldHoldUsd = cents(f.capitalUsd + f.profitUsd - unearnedUsd - f.expensesUsd - (f.houseUsd ?? 0) - withdrawalsUsd);
   // Goods on the road at cost: the same cash as before, nothing counted twice.
   const netCashUsd = cents(shouldHoldUsd - f.debtUsd - f.goodsOnRoadCostUsd + f.creditUsd);
   return { withdrawalsUsd, shouldHoldUsd, netCashUsd, unearnedUsd };

@@ -1,4 +1,5 @@
 import { and, desc, eq, gt, gte, lte, sql } from "drizzle-orm";
+import { NOT_HOUSE_ACCOUNT } from "./houseAccount.filter";
 import { getDb } from "./connection";
 import { customerAccounts, deliveryBoxes } from "../../drizzle/schema";
 import { customers } from "../../drizzle/schema/users.schema";
@@ -69,6 +70,7 @@ export async function listBoxesAwaitingPayment(now: Date = new Date()): Promise<
     .where(and(
       eq(deliveryBoxes.status, "delivered"),
       gt(customerAccounts.currentBalanceUsd, "0"),
+      NOT_HOUSE_ACCOUNT,
       lte(handed, new Date(now.getTime() - REMIND_AFTER_DAYS * DAY_MS)),
       gte(handed, new Date(now.getTime() - LOOK_BACK_DAYS * DAY_MS)),
     ))

@@ -1,4 +1,5 @@
 import { getDb } from './connection';
+import { NOT_HOUSE_ACCOUNT } from "./houseAccount.filter";
 import { ORDER_PROFIT_SQL, LIVE_SALE_SQL, orderProfitUsd, isLiveSale } from "@shared/orderProfit";
 import { getBatchCostsByRule } from "./batches.db";
 import { DELIVERY_FEE_IN_OUR_ACCOUNTS } from "@shared/deliveryFee";
@@ -325,7 +326,7 @@ export async function getCustomersWithDebt() {
     customerId: customerAccounts.customerId,
     latestBalance: customerAccounts.currentBalanceUsd,
   }).from(customerAccounts)
-    .where(gt(customerAccounts.currentBalanceUsd, sql`0`));
+    .where(and(gt(customerAccounts.currentBalanceUsd, sql`0`), NOT_HOUSE_ACCOUNT));
 }
 
 // Get package statistics by status
@@ -961,7 +962,7 @@ export async function countDebtorsOverLimit(): Promise<number> {
   // is the shared rule's to say — the one the debtors list filters with.
   const rows = await db.select({ balance: customerAccounts.currentBalanceUsd, limit: customerAccounts.creditLimitUsd })
     .from(customerAccounts)
-    .where(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0`);
+    .where(and(sql`CAST(${customerAccounts.currentBalanceUsd} AS DECIMAL(12,2)) > 0`, NOT_HOUSE_ACCOUNT));
   return rows.filter((r) => isOverCreditLimit(r.balance, r.limit)).length;
 }
 
