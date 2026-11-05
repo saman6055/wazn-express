@@ -2133,18 +2133,25 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   {
     name: "packageClaimRequests",
     dependencies: ["packages", "customers", "users"],
+    // The shape drizzle/schema/packages.schema.ts reads. The old CREATE had
+    // other columns (requestedById, notes, processedById...), so the claims
+    // page died on "Unknown column 'requestNumber'" (owner, 2026-11-05).
+    // Existing tables are brought up by REQUIRED_COLUMNS below.
     sql: `CREATE TABLE IF NOT EXISTS packageClaimRequests (
       id INT AUTO_INCREMENT PRIMARY KEY,
+      requestNumber VARCHAR(50) NOT NULL,
       packageId INT NOT NULL,
-      requestedById INT NOT NULL,
-      requestedCustomerId INT NOT NULL,
+      trackingNumber VARCHAR(100) NOT NULL,
+      customerId INT NOT NULL,
       status ENUM('pending', 'approved', 'rejected') NOT NULL DEFAULT 'pending',
-      notes TEXT,
-      processedById INT,
-      processedAt TIMESTAMP,
-      rejectionReason TEXT,
+      customerNote TEXT,
+      proofImages JSON,
+      reviewedById INT,
+      reviewedAt TIMESTAMP NULL,
+      adminNote TEXT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+      UNIQUE KEY packageClaimRequests_requestNumber_unique (requestNumber)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -3632,6 +3639,29 @@ export const REQUIRED_COLUMNS: Record<string, { name: string; ddl: string }[]> =
     { name: "deletedById", ddl: "INT NULL" },
   ],
 
+  /**
+   * Every column the claims code reads and writes (drizzle packageClaimRequests).
+   *
+   * The live table came from an older CREATE with a different set, so the
+   * claims page failed on `Unknown column 'requestNumber'` (owner,
+   * 2026-11-05). Added columns are NULL-able because rows may already exist;
+   * the old NOT NULL columns nothing writes (requestedById,
+   * requestedCustomerId) are relaxed by reconcileColumns.
+   */
+  packageClaimRequests: [
+    { name: "requestNumber", ddl: "VARCHAR(50) NULL" },
+    { name: "packageId", ddl: "INT NULL" },
+    { name: "trackingNumber", ddl: "VARCHAR(100) NULL" },
+    { name: "customerId", ddl: "INT NULL" },
+    { name: "status", ddl: "ENUM('pending','approved','rejected') NOT NULL DEFAULT 'pending'" },
+    { name: "customerNote", ddl: "TEXT NULL" },
+    { name: "proofImages", ddl: "JSON NULL" },
+    { name: "reviewedById", ddl: "INT NULL" },
+    { name: "reviewedAt", ddl: "TIMESTAMP NULL" },
+    { name: "adminNote", ddl: "TEXT NULL" },
+    { name: "createdAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+    { name: "updatedAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP" },
+  ],
   expenses: [
     { name: "categoryId", ddl: "INT NULL" },
     { name: "amount", ddl: "DECIMAL(12,2) NULL" },
