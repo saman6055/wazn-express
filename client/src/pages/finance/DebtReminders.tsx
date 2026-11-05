@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { DebtWhatsAppButton } from "@/components/finance/DebtWhatsAppButton";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -281,7 +282,13 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-1">
+                    <div className="flex items-center gap-1">
+                      {debtor.customer && (
+                        <DebtWhatsAppButton
+                          customer={{ id: debtor.customerId, fullName: debtor.customer.fullName, customerCode: debtor.customer.customerCode, mobileNumber: debtor.customer.mobileNumber, nationality: (debtor.customer as { nationality?: string | null }).nationality ?? null }}
+                          owedUsd={debtor.balanceUsd || 0}
+                        />
+                      )}
                       {debtor.customer?.mobileNumber && (
                         <Badge variant="outline" className="text-green-600 dark:text-green-300">
                           <Phone className="h-3 w-3" />

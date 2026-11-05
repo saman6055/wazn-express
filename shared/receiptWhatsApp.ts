@@ -228,3 +228,36 @@ export function whatsappNumber(mobile?: string | null, countryCode = "964"): str
 export function whatsappChatUrl(number: string, message: string): string {
   return `https://wa.me/${number}?text=${encodeURIComponent(message)}`;
 }
+
+/**
+ * The reminder sent to a customer who owes (owner, 2026-11-05: «بە یەک کلیک
+ * کورتەنامەی یادخستنەوە و فایلی وەسڵی قەرزەکەی بۆ بچێت»). Polite, the amount
+ * once, no threat and no date promised; the sheet travels with it.
+ */
+export function debtReminderWhatsAppMessage(lang: ReceiptLanguage, facts: { customerName?: string | null; customerCode?: string | null; owedUsd: number }): string {
+  const name = String(facts.customerName ?? "").trim().split(/\s+/)[0] ?? "";
+  const usd = `$${(Math.round(Number(facts.owedUsd) * 100) / 100).toFixed(2)}`;
+  const code = facts.customerCode ? ` (${String(facts.customerCode).replace(/\(.*/, "").trim()})` : "";
+  if (lang === "ar") {
+    return [
+      `مرحباً${name ? ` حضرة ${name}` : ""}${code}،`,
+      `نذكّرك بلطف بأن المبلغ المتبقي على حسابك هو ${usd}.`,
+      "التفاصيل في الكشف المرفق. نرجو التسديد في أقرب وقت مناسب.",
+      "شكراً لثقتك — وزن اكسبريس",
+    ].join("\n");
+  }
+  if (lang === "en") {
+    return [
+      `Hello${name ? ` ${name}` : ""}${code},`,
+      `A friendly reminder: the balance on your account is ${usd}.`,
+      "The details are in the attached statement. Please settle it at your earliest convenience.",
+      "Thank you for your trust — Wazn Express",
+    ].join("\n");
+  }
+  return [
+    `سڵاو${name ? ` بەڕێز ${name}` : ""}${code}،`,
+    `بە ڕێزەوە بیرت دەخەینەوە کە بڕی ${usd} لەسەر حیسابەکەت ماوە.`,
+    "وردەکارییەکەی لە پەڕەی هاوپێچدایە. تکایە لە گونجاوترین کاتدا بیدە.",
+    "سوپاس بۆ متمانەت — وەزن ئێکسپرێس",
+  ].join("\n");
+}
