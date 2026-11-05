@@ -889,6 +889,7 @@ export default function Finance() {
                               <SelectItem value="ASIAHAWALA">Asia Hawala</SelectItem>
                               <SelectItem value="CARD">{pickLang(language, { ku: "کارت", en: "Card", ar: "بطاقة", zh: "卡" })}</SelectItem>
                               <SelectItem value="OTHER">{pickLang(language, { ku: "شێوازی تر", en: "Other", ar: "أخرى", zh: "其他" })}</SelectItem>
+                              <SelectItem value="COMPENSATION">{pickLang(language, { ku: "قەرەبوو / لێخۆشبوون — پارە نییە", en: "Compensation / waiver — not money", ar: "تعويض / إعفاء — ليس مالاً", zh: "补偿/减免 — 非收款" })}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>

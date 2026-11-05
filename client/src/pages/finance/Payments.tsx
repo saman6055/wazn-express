@@ -87,12 +87,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
       return;
     }
     // Map payment method to ledger format
-    const methodMap: Record<string, 'CASH' | 'BANK_TRANSFER' | 'FIB' | 'FASTPAY' | 'ZAINCASH' | 'ASIAHAWALA' | 'CARD' | 'OTHER'> = {
+    const methodMap: Record<string, 'CASH' | 'BANK_TRANSFER' | 'FIB' | 'FASTPAY' | 'ZAINCASH' | 'ASIAHAWALA' | 'CARD' | 'OTHER' | 'COMPENSATION'> = {
       'cash': 'CASH',
       'bank_transfer': 'BANK_TRANSFER',
       'card': 'CARD',
       'mobile_money': 'FASTPAY',
-      'other': 'OTHER'
+      'other': 'OTHER',
+      'compensation': 'COMPENSATION'
     };
     createMutation.mutate({
       customerId: parseInt(selectedCustomerId),
@@ -191,6 +192,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                             <SelectItem value="card">💳 {pickLang(language, { ku: "کارت", en: "Card", ar: "بطاقة", zh: "卡" })}</SelectItem>
                             <SelectItem value="mobile_money">📱 {pickLang(language, { ku: "پارەی مۆبایل", en: "Mobile Money", ar: "محفظة الهاتف", zh: "移动支付" })}</SelectItem>
                             <SelectItem value="other">📋 {pickLang(language, { ku: "هیتر", en: "Other", ar: "أخرى", zh: "其他" })}</SelectItem>
+                            <SelectItem value="compensation">🎁 {pickLang(language, { ku: "قەرەبوو / لێخۆشبوون — پارە نییە", en: "Compensation / waiver — not money", ar: "تعويض / إعفاء — ليس مالاً", zh: "补偿/减免 — 非收款" })}</SelectItem>
                           </SelectContent>
                         </Select>
                       </div>

@@ -1199,6 +1199,12 @@ export async function adjustCustomerBalance(
   direction: 'debit' | 'credit',
   reason: string,
   createdById: number,
+  /**
+   * A compensation or waiver (owner, 2026-11-05: Malak's $8 for CBM was
+   * entered as a cash payment and showed as money received). It lowers the
+   * debt as a discount: never cash, never a payment record.
+   */
+  kind: 'adjustment' | 'compensation' = 'adjustment',
 ): Promise<{ transaction: LedgerTransaction; newBalanceUsd: number }> {
   if (amountUsd <= 0) throw new Error("Amount must be greater than zero");
   if (!reason || reason.trim().length < 5) {
@@ -1234,7 +1240,8 @@ export async function adjustCustomerBalance(
     const currentBalanceIqd = parseFloat(account.currentBalanceIqd || '0');
     const delta = direction === 'debit' ? amountUsd : -amountUsd;
     const newBalanceUsd = currentBalanceUsd + delta;
-    const transactionType = direction === 'debit' ? 'ADJUSTMENT_DEBIT' : 'ADJUSTMENT_CREDIT';
+    const compensation = kind === 'compensation' && direction === 'credit';
+    const transactionType = direction === 'debit' ? 'ADJUSTMENT_DEBIT' : compensation ? 'CREDIT_DISCOUNT' : 'ADJUSTMENT_CREDIT';
 
     const txnResult = await tx.insert(ledgerTransactions).values({
       accountId: account.id,
@@ -1247,7 +1254,7 @@ export async function adjustCustomerBalance(
       balanceBeforeIqd: currentBalanceIqd.toFixed(0),
       balanceAfterIqd: currentBalanceIqd.toFixed(0),
       referenceType: 'adjustment',
-      description: `[ڕێکخستنی دەستی] ${reason.trim()}`,
+      description: compensation ? `[قەرەبوو — پارە نییە] ${reason.trim()}` : `[ڕێکخستنی دەستی] ${reason.trim()}`,
       createdById,
     });
     const txnInsertId = Number(txnResult[0].insertId);

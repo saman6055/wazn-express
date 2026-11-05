@@ -588,7 +588,7 @@ export const ledgerRouter = router({
         customerCode: z.string().max(50),
         amountUsd: amountSchema.default(0),
         amountIqd: amountSchema.default(0),
-        paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'FIB', 'FASTPAY', 'ZAINCASH', 'ASIAHAWALA', 'CARD', 'OTHER']),
+        paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'FIB', 'FASTPAY', 'ZAINCASH', 'ASIAHAWALA', 'CARD', 'OTHER', 'COMPENSATION']),
         notes: z.string().max(1000).optional(),
         receiptNumber: z.string().max(100).optional(),
         cashAccountId: idSchema.optional(),
@@ -601,6 +601,33 @@ export const ledgerRouter = router({
             code: "BAD_REQUEST",
             message: "Payment amount must be greater than zero",
           });
+        }
+        /*
+         * Compensation or a waiver is not money received (owner, 2026-11-05).
+         * It lowers the debt as a discount and never as a payment: no cash
+         * record, no "money received" figure, nothing for the cash count.
+         * Never below zero: a compensation larger than the debt is refused.
+         */
+        if (input.paymentMethod === 'COMPENSATION') {
+          const reason = (input.notes ?? "").trim();
+          if (reason.length < 5) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: withFix("قەرەبوو هۆکاری دەوێت.", ["لە خانەی تێبینی بنووسە بۆچی، بۆ نموونە «قەرەبووی CBM»"]) });
+          }
+          if ((input.amountIqd ?? 0) > 0) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: withFix("قەرەبوو بە دۆلار دەنووسرێت.", ["بڕەکە بە دۆلار بنووسە"]) });
+          }
+          const account = await db.getOrCreateCustomerAccount(input.customerId, input.customerCode);
+          const owed = Math.max(0, Number(account.currentBalanceUsd ?? 0));
+          if ((input.amountUsd ?? 0) > owed + 0.005) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: withFix(`قەرەبوو لە قەرزەکە زیاترە ($${owed.toFixed(2)}).`, ["بڕێک بنووسە کە لە قەرزەکە زیاتر نەبێت", "ئەگەر پارەی بۆ دەگەڕێنیتەوە، «گەڕاندنەوەی پارە» بەکاربهێنە"]) });
+          }
+          const result = await db.adjustCustomerBalance(input.customerId, input.customerCode, input.amountUsd, 'credit', reason, ctx.user.id, 'compensation');
+          await db.createAuditLog({
+            userId: ctx.user.id, userRole: ctx.user.role, action: "record_compensation",
+            entityType: "customer_account", entityId: input.customerId,
+            newValues: { amountUsd: input.amountUsd, reason, transactionId: result.transaction.id },
+          });
+          return { transaction: result.transaction, payment: null, heldCreditUsd: 0 };
         }
         // No account goes below zero unasked (shared/creditGuard).
         const paidInto = await db.getOrCreateCustomerAccount(input.customerId, input.customerCode);
