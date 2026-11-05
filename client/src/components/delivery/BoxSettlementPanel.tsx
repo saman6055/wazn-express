@@ -27,7 +27,6 @@ import { showErrorToast } from "@/lib/errorToast";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { AdvanceSplitNote } from "./AdvanceSplitNote";
-import { HandAdvanceNote } from "./HandAdvanceNote";
 import { cn } from "@/lib/utils";
 import { OrderNumbers } from "@/components/OrderNumbers";
 import { fmtAmount, fmtNumber, fmtUsd } from "@/lib/portalFormat";
@@ -769,7 +768,6 @@ export function BoxSettlementPanel({ boxId, onSettled, embedded, confirmCustomer
                 <span className="font-mono tabular-nums" data-testid="settle-due">{money(cashDue)}</span>
               </div>
               <AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} earlierUsd={data?.advanceForEarlierBoxesUsd} />
-              <HandAdvanceNote boxId={boxId} iqd={iqd} onAddIqd={setIqd} />
             </div>
 
             <div className="rounded-lg border p-3 space-y-2">

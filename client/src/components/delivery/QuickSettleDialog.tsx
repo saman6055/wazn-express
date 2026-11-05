@@ -20,7 +20,6 @@ import { useSystemAlert, unpricedBatchLink } from "@/components/SystemAlert";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { AdvanceSplitNote } from "./AdvanceSplitNote";
-import { HandAdvanceNote } from "./HandAdvanceNote";
 import { fmtNumber, fmtUsd } from "@/lib/portalFormat";
 import { splitCustomerCode } from "@shared/customerCode";
 import { PayeeConfirm, payeeButtonLabel } from "@/components/delivery/PayeeConfirm";
@@ -422,7 +421,6 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
                   </p>
                 )}
                 <AdvanceSplitNote openUsd={data?.openChargesUsd} balanceUsd={data?.accountBalanceUsd} coveredUsd={cover.coveredUsd} earlierUsd={data?.advanceForEarlierBoxesUsd} />
-                <HandAdvanceNote boxId={(boxId ?? 0)} iqd={iqd} onAddIqd={setIqd} />
                 {promised.length > 0 && (
                   <div
                     className="mt-3 space-y-1 border-t pt-2 text-start"

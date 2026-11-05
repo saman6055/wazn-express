@@ -1,6 +1,6 @@
 /**
  * A hand advance typed in dinars is kept with the receipt, given back to the
- * receipt window in dinars, and shown at the till (owner, 2026-11-05).
+ * receipt window in dinars, and given back to the receipt window in dinars (owner, 2026-11-05).
  */
 import { describe, it, expect } from "vitest";
 import fs from "node:fs";
@@ -24,8 +24,9 @@ describe("the hand advance in dinars", () => {
     const win = read("client/src/components/delivery/ReceiptDinarDialog.tsx");
     expect(win).toContain("const beforeIqd = lastSent.data?.advanceIqd ?? 0;");
     expect(win).toContain('setCurrency("IQD");');
-    expect(read("client/src/components/delivery/BoxSettlementPanel.tsx")).toContain("<HandAdvanceNote ");
-    expect(read("client/src/components/delivery/QuickSettleDialog.tsx")).toContain("<HandAdvanceNote ");
+    // The payment windows stay as they were (owner, 2026-11-05: «پەنجەری جاران بکەوە»).
+    expect(read("client/src/components/delivery/BoxSettlementPanel.tsx")).not.toContain("HandAdvanceNote");
+    expect(read("client/src/components/delivery/QuickSettleDialog.tsx")).not.toContain("HandAdvanceNote");
     expect(read("server/_core/migrations.ts")).toContain('"boxReceiptEvents.advanceIqd"');
   });
 });
