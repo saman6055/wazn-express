@@ -42,6 +42,7 @@ import {
   type BoxDiscount,
 } from "@shared/boxSettlement";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
+import { unpricedBatchRefusal } from "@shared/unpricedBatchRefusal";
 import { chargeOrdersInBox } from "./orderCharging.db";
 import {
   pledgeFloors,
@@ -1473,18 +1474,13 @@ export async function createBoxSettlement(
       : [];
     const waiting = batchRows.filter((b) => batchMissingSellingPrice(b, { hasTiers: !!b.useTieredPricing }));
     if (waiting.length > 0) {
-      const codes = waiting.map((b) => b.code).join("، ");
       const trackings = unpriced
         .filter((p) => waiting.some((b) => b.id === pkgRows.find((r) => r.id === p.packageId)?.batchId))
         .map((p) => p.trackingNumber ?? p.packageCode ?? `#${p.lineId}`);
       if (trackings.length > 0) {
-        throw new Error(withFix(
-          `ئەم پاکەتانە نرخیان نییە، چونکە باچی ${codes} هێشتا نرخی فرۆشتنی نییە: ${trackings.join("، ")} — بەم شێوەیە بە خۆڕایی دەدرێن.`,
-          [
-            `نرخی فرۆشتن بۆ باچی ${codes} بنووسە، ئینجا دووبارە واصڵ بکە`,
-            "یان ئەم پاکەتانە «تەحدید» بکە (بمێننەوە) و پاکەتەکانی تر واصڵ بکە",
-          ],
-        ));
+        // Written by shared/unpricedBatchRefusal, which the payment window
+        // reads back to put an "open batch" button on the refusal.
+        throw new Error(unpricedBatchRefusal(waiting.map((b) => b.code), trackings));
       }
     }
   }

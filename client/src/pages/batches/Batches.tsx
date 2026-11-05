@@ -738,9 +738,13 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
     if (!batches?.length) return;
     const asked = new URLSearchParams(window.location.search).get("edit");
     if (!asked) return;
-    const batch = batches.find((b: any) => String(b.id) === asked);
-    if (batch) openEditDialog(batch);
+    // By id from the dashboard, by code from a refusal that names the batch
+    // (shared/unpricedBatchRefusal). A code not in the list is still shown,
+    // searched for, rather than dropped.
+    const batch = batches.find((b: any) => String(b.id) === asked || b.batchCode === asked);
     window.history.replaceState({}, "", window.location.pathname);
+    if (batch) openEditDialog(batch);
+    else if (!/^\d+$/.test(asked)) showInList(asked);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [batches]);
 

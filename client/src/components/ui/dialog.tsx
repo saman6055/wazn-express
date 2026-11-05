@@ -132,6 +132,12 @@ function DialogContent({
   const handleInteractOutside = React.useCallback(
     (e: Parameters<NonNullable<typeof onInteractOutside>>[0]) => {
       onInteractOutside?.(e);
+      // A click on the alert raised above this window is not a click
+      // outside it: pressing OK must not close the work underneath.
+      if ((e.target as Element | null)?.closest?.("[data-system-alert]")) {
+        e.preventDefault();
+        return;
+      }
       if (e.defaultPrevented || !typedIn) return;
       e.preventDefault();
       /*

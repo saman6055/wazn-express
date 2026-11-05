@@ -61,6 +61,8 @@ describe("a parcel waiting for its batch's price is not handed over for nothing"
   it("the receipt refuses it, naming the cure", () => {
     const settle = read("db/boxSettlement.db.ts");
     expect(settle).toContain("batchMissingSellingPrice(b, { hasTiers: !!b.useTieredPricing })");
-    expect(settle).toContain("یان ئەم پاکەتانە «تەحدید» بکە (بمێننەوە) و پاکەتەکانی تر واصڵ بکە");
+    // The sentence lives in shared/unpricedBatchRefusal, read back for its link.
+    expect(settle).toContain("throw new Error(unpricedBatchRefusal(");
+    expect(read("../shared/unpricedBatchRefusal.ts")).toContain("یان ئەم پاکەتانە «تەحدید» بکە (بمێننەوە) و پاکەتەکانی تر واصڵ بکە");
   });
 });

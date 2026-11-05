@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { getErrorBoundaryStrings } from "@/components/ErrorBoundary";
 import { cn } from "@/lib/utils";
 import { soundManager } from "@/lib/soundManager";
+import { batchCodesInRefusal, batchEditHref } from "@shared/unpricedBatchRefusal";
 
 /**
  * A failure the operator has to acknowledge.
@@ -98,6 +99,22 @@ function DrainBar({ ms }: { ms: number }) {
   );
 }
 
+/**
+ * The "open batch" button for a refusal that names a batch with no selling
+ * price (shared/unpricedBatchRefusal). Nothing for any other message.
+ */
+export function unpricedBatchLink(
+  message: string,
+  t: (k: { ku: string; en: string; ar: string; zh: string }) => string,
+): Pick<SystemAlertRequest, "openHref" | "openLabel"> {
+  const code = batchCodesInRefusal(message)[0];
+  if (!code) return {};
+  return {
+    openHref: batchEditHref(code),
+    openLabel: `${t({ ku: "کردنەوەی باچ", en: "Open batch", ar: "فتح الدفعة", zh: "打开批次" })} ${code}`,
+  };
+}
+
 type Ctx = (request: SystemAlertRequest) => void;
 
 const SystemAlertContext = createContext<Ctx | null>(null);
@@ -173,6 +190,9 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === "Enter" || e.key === "Escape") {
         e.preventDefault();
+        // Ours alone: Esc must not also close the window underneath, which
+        // listens on the document and would hear it next.
+        e.stopPropagation();
         dismiss();
       }
     };
@@ -192,6 +212,7 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
           aria-live={current.autoDismissMs ? "assertive" : undefined}
           aria-labelledby="system-alert-title"
           data-testid="system-alert"
+          data-system-alert=""
           data-transient={current.autoDismissMs ? "true" : undefined}
           className={cn(
             "fixed z-[100] flex p-4",
@@ -211,6 +232,11 @@ export function SystemAlertProvider({ children }: { children: ReactNode }) {
                 // scan box and the gun keeps firing underneath it.
                 "bottom-0 left-0 pointer-events-none"
               : "inset-0 items-center justify-center bg-black/60",
+            !current.autoDismissMs && "pointer-events-auto",
+            // pointer-events-auto: raised over an open dialog (the box's
+            // payment window), Radix has set pointer-events:none on the body
+            // and the window inherited it - OK could not be clicked (owner,
+            // 2026-11-05: «ئەو ئۆکەیە کار ناکات»).
           )}
           onMouseDown={(e) => {
             if (current.autoDismissMs) return;

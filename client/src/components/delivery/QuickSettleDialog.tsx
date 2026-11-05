@@ -16,7 +16,7 @@ import {
 import { GroupedNumberInput } from "@/components/expenses/GroupedNumberInput";
 import { BoxSettlementPanel } from "@/components/delivery/BoxSettlementPanel";
 import { SettlementLoadError, NothingToTake } from "@/components/delivery/SettlementStates";
-import { useSystemAlert } from "@/components/SystemAlert";
+import { useSystemAlert, unpricedBatchLink } from "@/components/SystemAlert";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { AdvanceSplitNote } from "./AdvanceSplitNote";
@@ -226,6 +226,9 @@ export function QuickSettleDialog({ boxId, onOpenChange, onSettled }: Props) {
         kind: "error",
         title: t({ ku: "واصڵ نەکرا", en: "Not settled", ar: "لم يتم الاستلام", zh: "未结清" }),
         message: err.message,
+        // A batch with no selling price: the cure is on the batch, so the
+        // refusal opens it (owner, 2026-11-05).
+        ...unpricedBatchLink(err.message, t),
       });
     },
   });
