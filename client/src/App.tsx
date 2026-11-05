@@ -266,6 +266,10 @@ function Router() {
         <Route path="/store-management" component={StoreManagement} />
         <Route path="/dashboard" component={DashboardWrapper} />
         <Route path="/customers" component={Customers} />
+        {/* Before /customers/:id - wouter matches in order, and ":id" took
+            "standing" for a customer id: the blacklist page never opened
+            (owner, 2026-11-05: «لیستی ڕەش ئیش ناکات»). */}
+        <Route path="/customers/standing" component={CustomerStanding} />
         <Route path="/customers/:id" component={CustomerDetail} />
         <Route path="/countries" component={Countries} />
         <Route path="/warehouses" component={Warehouses} />
@@ -301,7 +305,6 @@ function Router() {
         <Route path="/finance/extra-costs" component={ExtraCosts} />
         <Route path="/finance/yuan-rates" component={YuanRateHistory} />
         <Route path="/finance/box-double-charges" component={BoxDoubleCharges} />
-        <Route path="/customers/standing" component={CustomerStanding} />
         <Route path="/finance/bank-accounts" component={BankAccounts} />
         <Route path="/finance/debt-reminders" component={DebtReminders} />
         <Route path="/batches" component={Batches} />
