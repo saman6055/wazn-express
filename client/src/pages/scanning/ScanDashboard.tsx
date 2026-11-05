@@ -1,5 +1,5 @@
 import { fmtTime } from "@/lib/numericDate";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { trpc } from "@/lib/trpc";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -50,6 +50,31 @@ export default function ScanDashboard() {
     }
     return fallback;
   })();
+
+  /*
+   * The last seven days, from the scans themselves (scanAnalytics.dailyScans).
+   * The chart used to draw random numbers for six of the seven days - a
+   * different made-up week on every visit (owner, 2026-11-05: «داتاکانی سەتا
+   * سەت دروست ببێت»). A day with no scans is a real 0, not a gap.
+   */
+  const weekDays = useMemo(() => {
+    const byDate = new Map<string, number>((analytics?.dailyScans ?? []).map((d: { date: string; count: number }) => [String(d.date).slice(0, 10), Number(d.count) || 0]));
+    const names = [
+      { ku: 'یەکشەممە', en: 'Sun', ar: 'الأحد', zh: '周日' },
+      { ku: 'دووشەممە', en: 'Mon', ar: 'الإثنين', zh: '周一' },
+      { ku: 'سێشەممە', en: 'Tue', ar: 'الثلاثاء', zh: '周二' },
+      { ku: 'چوارشەممە', en: 'Wed', ar: 'الأربعاء', zh: '周三' },
+      { ku: 'پێنجشەممە', en: 'Thu', ar: 'الخميس', zh: '周四' },
+      { ku: 'هەینی', en: 'Fri', ar: 'الجمعة', zh: '周五' },
+      { ku: 'شەممە', en: 'Sat', ar: 'السبت', zh: '周六' },
+    ];
+    return Array.from({ length: 7 }, (_, i) => {
+      const d = new Date();
+      d.setDate(d.getDate() - (6 - i));
+      const key = d.toLocaleDateString('en-CA');
+      return { day: pickLang(language, names[d.getDay()]!), scans: byDate.get(key) ?? 0 };
+    });
+  }, [analytics, language]);
 
   const totalScans = recentScans?.length || 0;
   const todayTotal = todayStats?.reduce((sum: number, s: any) => sum + s.count, 0) || 0;
@@ -213,15 +238,7 @@ export default function ScanDashboard() {
                 <div className="h-64">
                   <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
-                      data={[
-                        { day: pickLang(language, { ku: 'شەممە', en: 'Sat', ar: 'السبت', zh: '周六' }), scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: pickLang(language, { ku: 'یەکشەممە', en: 'Sun', ar: 'الأحد', zh: '周日' }), scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: pickLang(language, { ku: 'دووشەممە', en: 'Mon', ar: 'الإثنين', zh: '周一' }), scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: pickLang(language, { ku: 'سێشەممە', en: 'Tue', ar: 'الثلاثاء', zh: '周二' }), scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: pickLang(language, { ku: 'چوارشەممە', en: 'Wed', ar: 'الأربعاء', zh: '周三' }), scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: pickLang(language, { ku: 'پێنجشەممە', en: 'Thu', ar: 'الخميس', zh: '周四' }), scans: Math.floor(Math.random() * 50) + 10 },
-                        { day: pickLang(language, { ku: 'هەینی', en: 'Fri', ar: 'الجمعة', zh: '周五' }), scans: todayTotal },
-                      ]}
+                      data={weekDays}
                       margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
                     >
                       <defs>
