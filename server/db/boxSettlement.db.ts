@@ -2419,3 +2419,39 @@ export async function standingReceiptForOrder(
     .limit(1);
   return rows[0] ?? null;
 }
+
+/**
+ * The box receipts, newest first (owner, 2026-11-05: the work runs on boxes,
+ * so the invoices page should hold the box's own receipts). Read only; a
+ * search matches the receipt number, the box, or the customer.
+ */
+export async function listBoxReceipts(input: { search?: string; limit?: number }): Promise<Array<{
+  id: number; settlementNumber: string; status: string; boxId: number; boxCode: string | null;
+  customerId: number; customerCode: string | null; customerName: string | null;
+  dueUsd: number; paidUsd: number; discountUsd: number; amountIqd: number; paymentMethod: string | null; createdAt: Date;
+}>> {
+  const db = await getDb();
+  if (!db) return [];
+  const q = String(input.search ?? "").trim();
+  const like = `%${q.replace(/[%_\\]/g, (m) => "\\" + m)}%`;
+  const rows = await db
+    .select({
+      id: boxSettlements.id, settlementNumber: boxSettlements.settlementNumber, status: boxSettlements.status,
+      boxId: boxSettlements.boxId, boxCode: deliveryBoxes.boxCode,
+      customerId: boxSettlements.customerId, customerCode: customers.customerCode, customerName: customers.fullName,
+      dueUsd: boxSettlements.dueUsd, paidUsd: boxSettlements.paidUsd, discountUsd: boxSettlements.discountUsd,
+      amountIqd: boxSettlements.amountIqd, paymentMethod: boxSettlements.paymentMethod, createdAt: boxSettlements.createdAt,
+    })
+    .from(boxSettlements)
+    .leftJoin(deliveryBoxes, eq(deliveryBoxes.id, boxSettlements.boxId))
+    .leftJoin(customers, eq(customers.id, boxSettlements.customerId))
+    .where(q ? sql`(${boxSettlements.settlementNumber} LIKE ${like} OR ${deliveryBoxes.boxCode} LIKE ${like} OR ${customers.customerCode} LIKE ${like} OR ${customers.fullName} LIKE ${like})` : sql`1=1`)
+    .orderBy(desc(boxSettlements.createdAt))
+    .limit(Math.min(Math.max(Number(input.limit) || 100, 1), 300));
+  return rows.map((r) => ({
+    ...r,
+    id: Number(r.id), boxId: Number(r.boxId), customerId: Number(r.customerId),
+    status: String(r.status), dueUsd: Number(r.dueUsd ?? 0), paidUsd: Number(r.paidUsd ?? 0),
+    discountUsd: Number(r.discountUsd ?? 0), amountIqd: Number(r.amountIqd ?? 0), paymentMethod: r.paymentMethod ?? null,
+  }));
+}

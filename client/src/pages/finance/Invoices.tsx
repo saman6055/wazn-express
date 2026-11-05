@@ -1,4 +1,5 @@
 import DashboardLayout from "@/components/DashboardLayout";
+import { BoxReceiptsCard } from "@/components/finance/BoxReceiptsCard";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -90,6 +91,8 @@ export default function Invoices() {
             </div>
           </div>
         </div>
+
+        <BoxReceiptsCard />
 
         {/* Stats */}
         <div className="grid gap-4 grid-cols-2 lg:grid-cols-4">
