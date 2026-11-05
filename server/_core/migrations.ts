@@ -1708,6 +1708,45 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   },
 
   {
+    name: "expenseAlerts",
+    dependencies: ["expenseCategories", "users"],
+    // In drizzle since the expense-alert page was built, never created: the
+    // page read «Table expenseAlerts doesn't exist» (owner, 2026-11-05).
+    sql: `CREATE TABLE IF NOT EXISTS expenseAlerts (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      alertType ENUM('daily','weekly','monthly','per_transaction') NOT NULL,
+      thresholdAmount DECIMAL(12, 2) NOT NULL,
+      currency ENUM('USD','IQD') NOT NULL DEFAULT 'USD',
+      categoryId INT NULL,
+      isEnabled BOOLEAN NOT NULL DEFAULT TRUE,
+      notifyMethod ENUM('system','email','both') NOT NULL DEFAULT 'system',
+      description TEXT,
+      createdById INT NOT NULL,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      updatedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
+    name: "expenseAlertLogs",
+    dependencies: ["expenseAlerts"],
+    sql: `CREATE TABLE IF NOT EXISTS expenseAlertLogs (
+      id INT AUTO_INCREMENT PRIMARY KEY,
+      alertId INT NOT NULL,
+      triggeredAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      totalExpenses DECIMAL(12, 2) NOT NULL,
+      thresholdAmount DECIMAL(12, 2) NOT NULL,
+      periodStart TIMESTAMP NOT NULL,
+      periodEnd TIMESTAMP NOT NULL,
+      expenseCount INT NOT NULL DEFAULT 0,
+      notificationSent BOOLEAN NOT NULL DEFAULT FALSE,
+      details TEXT,
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      INDEX idx_expense_alert_logs_alert (alertId)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
+  },
+
+  {
     name: "expenses",
     dependencies: ["expenseCategories", "cashAccounts", "users"],
     sql: `CREATE TABLE IF NOT EXISTS expenses (

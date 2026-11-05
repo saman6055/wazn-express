@@ -37,7 +37,7 @@ describe("Migration System", () => {
       // 105 since customerStanding — cautions and the blacklist.
       // 106 since boxExtraCosts — customs and other costs on a box.
       // 108 since deliveryCarriers and boxReceiptEvents (owner, 2026-10-19).
-      expect(TABLE_DEFINITIONS.length).toBe(112);
+      expect(TABLE_DEFINITIONS.length).toBe(114);
     });
     
     it("should have unique table names", () => {
