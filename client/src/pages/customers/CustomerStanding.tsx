@@ -89,8 +89,8 @@ export default function CustomerStanding() {
     save.mutate({ customerId: data.customerId, event, reason: event === "cleared" ? undefined : reason || undefined, text: text.trim() || undefined });
   };
 
-  const name = byCode.data?.customer.fullName ?? flagged.data?.find((f) => f.customerId === customerId)?.customerName ?? null;
-  const shownCode = byCode.data?.customer.customerCode ?? flagged.data?.find((f) => f.customerId === customerId)?.customerCode ?? null;
+  const name = byCode.data?.customer.fullName ?? data?.customerName ?? flagged.data?.find((f) => f.customerId === customerId)?.customerName ?? null;
+  const shownCode = byCode.data?.customer.customerCode ?? data?.customerCode ?? flagged.data?.find((f) => f.customerId === customerId)?.customerCode ?? null;
 
   return (
     <DashboardLayout>
@@ -108,7 +108,7 @@ export default function CustomerStanding() {
         </div>
 
         <div className="grid grid-cols-1 gap-2 sm:grid-cols-[1fr_auto]">
-          <Input dir="ltr" value={code} onChange={(e) => setCode(e.target.value)} placeholder="AZ018" onKeyDown={(e) => { if (e.key === "Enter") { setPickedId(0); setAsked(code.trim()); } }} data-testid="standing-search" />
+          <Input dir="auto" value={code} onChange={(e) => setCode(e.target.value)} placeholder={L({ ku: "کۆد، ناو یان ژمارەی مۆبایل — AZ018", en: "Code, name or phone — AZ018", ar: "الرمز أو الاسم أو الهاتف — AZ018", zh: "编号、姓名或电话 — AZ018" })} onKeyDown={(e) => { if (e.key === "Enter") { setPickedId(0); setAsked(code.trim()); } }} data-testid="standing-search" />
           <Button variant="outline" onClick={() => { setPickedId(0); setAsked(code.trim()); }}>{L({ ku: "کڕیارەکە بدۆزەوە", en: "Find the customer", ar: "ابحث عن العميل", zh: "查找客户" })}</Button>
         </div>
         {asked && !byCode.isFetching && byCode.data === null && (

@@ -37,7 +37,17 @@ export async function getCustomerStanding(customerId: number) {
   const db = await getDb();
   const rows = await rowsFor(customerId);
   let refusals = 0;
+  // Named, so a page opened from a link says whose standing it is.
+  let customerCode: string | null = null;
+  let customerName: string | null = null;
   if (db) {
+    const [c] = await db
+      .select({ customerCode: customers.customerCode, fullName: customers.fullName })
+      .from(customers)
+      .where(eq(customers.id, customerId))
+      .limit(1);
+    customerCode = c?.customerCode ?? null;
+    customerName = c?.fullName ?? null;
     const [r] = await db
       .select({ n: sql<number>`COUNT(*)` })
       .from(companyStock)
@@ -49,6 +59,8 @@ export async function getCustomerStanding(customerId: number) {
   const current = standing === "ok" ? null : rows.find((r) => r.event === standing) ?? null;
   return {
     customerId,
+    customerCode,
+    customerName,
     standing,
     current,
     cautions: rows.filter((r) => r.event === "caution").length,
@@ -61,11 +73,18 @@ export async function getCustomerStandingByCode(code: string) {
   const db = await getDb();
   const q = code.trim();
   if (!db || !q) return null;
-  // The code as typed, or the short form before the name in "AZ018(Kara)".
+  // The code as typed, or the short form before the name in "AZ018(Kara)";
+  // then the phone, then the name (owner, 2026-11-05: finding the customer
+  // must be easy). A code wins over a phone, a phone over a name.
+  const digits = q.replace(/\D/g, "");
   const [customer] = await db
     .select({ id: customers.id, customerCode: customers.customerCode, fullName: customers.fullName, mobileNumber: customers.mobileNumber })
     .from(customers)
-    .where(sql`${customers.customerCode} = ${q} OR ${customers.customerCode} LIKE ${`${q}(%`}`)
+    .where(sql`${customers.customerCode} = ${q} OR ${customers.customerCode} LIKE ${`${q}(%`}
+      OR (${digits.length >= 7} AND ${customers.mobileNumber} LIKE ${`%${digits.slice(-9)}`})
+      OR (${q.length >= 3} AND ${customers.fullName} LIKE ${`%${q}%`})`)
+    .orderBy(sql`CASE WHEN ${customers.customerCode} = ${q} OR ${customers.customerCode} LIKE ${`${q}(%`} THEN 0
+      WHEN ${customers.mobileNumber} LIKE ${`%${digits.slice(-9) || "-"}`} THEN 1 ELSE 2 END`, customers.id)
     .limit(1);
   if (!customer) return null;
   return { customer, ...(await getCustomerStanding(Number(customer.id))) };

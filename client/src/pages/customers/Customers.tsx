@@ -26,6 +26,7 @@ import { toast } from "sonner";
 import { useLocation } from "wouter";
 import { usePermissions } from "@/hooks/usePermissions";
 import { ViewAsCustomerButton } from "@/components/portal/ViewAsCustomerButton";
+import { CustomerStandingButton, useStandingById } from "@/components/customers/CustomerStandingButton";
 import { mayViewAsCustomer, VIEW_PORTAL_PERMISSION } from "@shared/viewAsCustomer";
 import { IRAQI_GOVERNORATES, IRAQI_CITIES } from "../../../../shared/iraqi-cities";
 import { CUSTOMER_CODE_PREFIXES } from "../../../../shared/types";
@@ -132,6 +133,7 @@ const [, setLocation] = useLocation();
   const { user } = useAuth();
   // The account, for whoever may open the finance pages; the profile otherwise.
   const { canViewPath, hasSubPermission } = usePermissions();
+  const standingById = useStandingById();
   // Admins always; an employee once «بینینی پۆرتاڵی کڕیار» is ticked for them.
   const mayViewPortal = mayViewAsCustomer(user?.role, hasSubPermission("customers", VIEW_PORTAL_PERMISSION));
   const accountPath = (id: number) => (canViewPath(`/finance/customer/${id}`) ? `/finance/customer/${id}` : `/customers/${id}`);
@@ -1366,6 +1368,8 @@ const [, setLocation] = useLocation();
                         </Button>
                         {/* Their portal, look-only, in a new tab (owner, 2026-11-05). */}
                         {mayViewPortal && <ViewAsCustomerButton customerId={customer.id} name={customer.fullName} />}
+                        {/* Note / blacklist, this customer already chosen (owner, 2026-11-05). */}
+                        <CustomerStandingButton customerId={customer.id} standing={standingById.get(customer.id)} />
                         <Button
                           variant="ghost"
                           size="icon"

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { CustomerAwaitingCard } from "@/components/customers/CustomerAwaitingCard";
+import { CustomerStandingButton, useStandingById } from "@/components/customers/CustomerStandingButton";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -97,6 +98,7 @@ export default function CustomerDetail() {
   const [, setLocation] = useLocation();
   const customerId = parseInt(params.id ?? "0", 10);
   const cd = useCustomerDetail(customerId);
+  const standingById = useStandingById();
   const {
     customer,
     t,
@@ -289,6 +291,9 @@ export default function CustomerDetail() {
                 <><FileDown className="h-4 w-4 me-2" /> {pickLang(language, { ku: "هەناردەی PDF", en: "Export PDF", ar: "تصدير PDF", zh: "导出 PDF" })}</>
               )}
             </Button>
+            {customerId > 0 && (
+              <CustomerStandingButton customerId={customerId} standing={standingById.get(customerId)} withLabel />
+            )}
             <Button variant="outline" size="sm" onClick={cd.handleOpenEdit}>
               <Edit className="h-4 w-4 me-2" />
               {pickLang(language, { ku: "دەستکاری", en: "Edit", ar: "تعديل", zh: "编辑" })}
