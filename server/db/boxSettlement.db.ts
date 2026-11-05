@@ -589,6 +589,7 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[], op
           referenceType: ledgerTransactions.referenceType,
           referenceId: ledgerTransactions.referenceId,
           transactionType: ledgerTransactions.transactionType,
+          transactionNumber: ledgerTransactions.transactionNumber,
           amountUsd: ledgerTransactions.amountUsd,
           description: ledgerTransactions.description,
         })
@@ -605,12 +606,27 @@ async function parcelsForItems(db: SettlementDb, items: BoxItemWithPackage[], op
   // pays goods, so it counts only against goods the account holds.
   const orderGoods = new Map<string, number>();
   const orderSeen = new Set<string>();
+  // The order's own freight rows, by number: a reversal names the row it
+  // undoes ([REV:<number>]), not the order (2026-11-05: Vian's double freight
+  // taken back on the account, still asked for at the till).
+  const orderFreightNumbers = new Set<string>();
+  for (const row of orderRows) {
+    const order = orderById.get(Number(row.referenceId));
+    if (order && row.referenceType === "package" && String(row.description ?? "").includes(order.orderCode) && row.transactionNumber) {
+      orderFreightNumbers.add(`${row.accountId}|${row.transactionNumber}`);
+    }
+  }
+  const undoesOrderFreight = (row: { accountId: unknown; description: string | null }) => {
+    const m = /\[REV:([^\]]+)\]/.exec(String(row.description ?? ""));
+    return !!m && orderFreightNumbers.has(`${row.accountId}|${m[1]}`);
+  };
   for (const row of orderRows) {
     const order = orderById.get(Number(row.referenceId));
     if (!order) continue;
     // Freight sits under the order's id as a package charge; only a row that
-    // names the order is its freight — a parcel with the same number is not.
-    if (row.referenceType === "package" && !String(row.description ?? "").includes(order.orderCode)) continue;
+    // names the order is its freight — a parcel with the same number is not —
+    // or the reversal of such a row.
+    if (row.referenceType === "package" && !String(row.description ?? "").includes(order.orderCode) && !undoesOrderFreight(row)) continue;
     const type = String(row.transactionType);
     const sign = (CHARGE_TYPES as readonly string[]).includes(type) || type === "ADJUSTMENT_DEBIT"
       ? 1
