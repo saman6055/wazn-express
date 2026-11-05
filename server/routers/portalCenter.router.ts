@@ -1,13 +1,13 @@
 import { z } from "zod";
 import { getConfig } from "../config";
-import { VIEW_AS_MINUTES } from "@shared/viewAsCustomer";
+import { VIEW_AS_MINUTES, VIEW_PORTAL_PERMISSION, mayViewAsCustomer } from "@shared/viewAsCustomer";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
 import { normalizePhone, phoneVariants } from "@shared/phone";
 import { lockState } from "@shared/loginLockout";
 import * as bcrypt from "bcryptjs";
 import { TRPCError } from "@trpc/server";
 import { router } from "../_core/trpc";
-import { adminProcedure } from "../middleware/auth";
+import { adminProcedure, staffProcedure } from "../middleware/auth";
 import { phoneSchema, idSchema } from "./schemas";
 import { FEATURES, isKnownFeature } from "@shared/customerFeatures";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
@@ -89,9 +89,24 @@ export const portalCenterRouter = router({
    * look token, and the audit log holds who looked at whom, before the
    * cookie is even set.
    */
-  viewAsCustomer: adminProcedure
+  viewAsCustomer: staffProcedure
     .input(z.object({ customerId: idSchema }))
     .mutation(async ({ input, ctx }) => {
+      // Admins always; an employee or the accountant with the customers
+      // sub-permission «بینینی پۆرتاڵی کڕیار» (shared/viewAsCustomer).
+      const ticked = ctx.user.role === "super_admin" || ctx.user.role === "admin"
+        ? true
+        : (await db.getUserSubPermissions(ctx.user.id)).some(
+            (sp) => sp.module === "customers" && sp.permissionKey === VIEW_PORTAL_PERMISSION && sp.isAllowed,
+          );
+      if (!mayViewAsCustomer(ctx.user.role, ticked)) {
+        throw new TRPCError({
+          code: "FORBIDDEN",
+          message: withFix("مۆڵەتی بینینی پۆرتاڵی کڕیارت نییە.", [
+            "داوا لە ئەدمین بکە لە پەڕەی مۆڵەتەکان، لە بەشی کڕیارەکان، «بینینی پۆرتاڵی کڕیار» بۆت دابنێت",
+          ]),
+        });
+      }
       const customer = await db.getCustomerById(input.customerId);
       if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیار") });
 

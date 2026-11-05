@@ -84,9 +84,12 @@ describe("looking at a customer's portal", () => {
 
   it("is recorded, before the session is handed over", () => {
     const router = read("server/routers/portalCenter.router.ts");
-    const proc = router.slice(router.indexOf("viewAsCustomer: adminProcedure"), router.indexOf("exitViewAs") + 1 || undefined);
-    const block = proc.length > 200 ? proc : router.slice(router.indexOf("viewAsCustomer: adminProcedure"));
-    expect(block).toContain("adminProcedure");
+    const proc = router.slice(router.indexOf("viewAsCustomer: staffProcedure"), router.indexOf("exitViewAs") + 1 || undefined);
+    const block = proc.length > 200 ? proc : router.slice(router.indexOf("viewAsCustomer: staffProcedure"));
+    // Staff reach the door; only the ones mayViewAsCustomer allows get through,
+    // and that check comes before anything is written or minted (2026-11-05).
+    expect(block).toContain("if (!mayViewAsCustomer(ctx.user.role, ticked))");
+    expect(block.indexOf("mayViewAsCustomer(")).toBeLessThan(block.indexOf('action: "view_as_customer"'));
     expect(block.indexOf('action: "view_as_customer"')).toBeGreaterThan(-1);
     // The audit row is written before the token is minted, let alone handed
     // over. (It used to be compared against the cookie; the look now travels
@@ -111,10 +114,16 @@ describe("a look lives in one tab", () => {
     // The owner, 2026-09-26: opening one should not cost him the admin page
     // he was on. A cookie is the whole browser's; a token is this tab's.
     const router = read("server/routers/portalCenter.router.ts");
-    const proc = router.slice(router.indexOf("viewAsCustomer: adminProcedure"));
-    expect(proc.slice(0, 3000)).toContain("token,");
-    expect(read("client/src/pages/admin/PortalCenter.tsx"))
-      .toContain('const href = "/portal?viewas=" + encodeURIComponent(result.token);');
+    const proc = router.slice(router.indexOf("viewAsCustomer: staffProcedure"));
+    expect(proc.slice(0, 3600)).toContain("token,");
+    // One button, on Portal Center and on the customers list (2026-11-05).
+    const button = read("client/src/components/portal/ViewAsCustomerButton.tsx");
+    expect(button).toContain('tab.location.href = "/portal?viewas=" + encodeURIComponent(result.token);');
+    // Opened on the click itself, so it is never blocked as a pop-up.
+    expect(button.indexOf('window.open("about:blank", "_blank")')).toBeLessThan(button.indexOf("view.mutate("));
+    expect(button).toContain("tab.opener = null;");
+    expect(read("client/src/pages/admin/PortalCenter.tsx")).toContain("<ViewAsCustomerButton customerId={c.id}");
+    expect(read("client/src/pages/customers/Customers.tsx")).toContain("{mayViewPortal && <ViewAsCustomerButton customerId={customer.id}");
   });
 
   it("keeps the token to that tab, and off the address bar", () => {
@@ -136,5 +145,21 @@ describe("a look lives in one tab", () => {
     expect(sdk).toContain("JSON.parse(json)?.viewAs === true");
     // Everything else keeps the old order: the cookie the server set.
     expect(sdk).toContain("if (fromCookie) return fromCookie;");
+  });
+});
+
+describe("who may open a look (owner, 2026-11-05)", () => {
+  it("admins always, an employee or the accountant once ticked, the auditor never", async () => {
+    const { mayViewAsCustomer, VIEW_PORTAL_PERMISSION } = await import("./viewAsCustomer");
+    expect(mayViewAsCustomer("super_admin", false)).toBe(true);
+    expect(mayViewAsCustomer("admin", false)).toBe(true);
+    expect(mayViewAsCustomer("employee", false)).toBe(false);
+    expect(mayViewAsCustomer("employee", true)).toBe(true);
+    expect(mayViewAsCustomer("accountant", true)).toBe(true);
+    expect(mayViewAsCustomer("auditor", true)).toBe(false);
+    expect(mayViewAsCustomer(undefined, true)).toBe(false);
+    // The tick lives on the permissions page under the customers module.
+    const { isValidSubPermission } = await import("./permissions");
+    expect(isValidSubPermission("customers", VIEW_PORTAL_PERMISSION)).toBe(true);
   });
 });

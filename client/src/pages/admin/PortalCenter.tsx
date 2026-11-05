@@ -4,7 +4,7 @@ import DashboardLayout from "@/components/DashboardLayout";
 import { useLanguage } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { DEFAULT_RESET_PASSWORD } from "@shared/resetPassword";
-import { VIEW_AS_WORDS } from "@shared/viewAsCustomer";
+import { ViewAsCustomerButton } from "@/components/portal/ViewAsCustomerButton";
 import { trpc } from "@/lib/trpc";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { cn } from "@/lib/utils";
@@ -433,7 +433,7 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
                     <TableCell className="text-center tabular-nums">{c.activityCount || "—"}</TableCell>
                     <TableCell className="text-xs text-muted-foreground whitespace-nowrap">{fmtDateTime(c.lastSignedIn)}</TableCell>
                     <TableCell className="w-10" onClick={(e) => e.stopPropagation()}>
-                      <ViewAsButton customerId={c.id} name={c.fullName} p={p} />
+                      <ViewAsCustomerButton customerId={c.id} name={c.fullName} />
                     </TableCell>
                   </TableRow>
                 ))}
@@ -444,72 +444,6 @@ function CustomersTab({ p, onOpen }: { p: (v: L) => string; onOpen: (c: { id: nu
         )}
       </CardContent>
     </Card>
-  );
-}
-
-/**
- * Open a customer's portal, to look.
- *
- * The owner, 2026-09-26: he needs to see what a customer sees, because a
- * portal screen is built from one customer's own data and a fault in it is
- * invisible from the office.
- *
- * It replaces this browser's staff session for two hours — both live in the
- * same cookie — so it asks first, and the portal wears a bar the whole time
- * with the way back on it (components/portal/ViewAsBanner). Nothing can be
- * changed while looking: every write is refused on the server
- * (shared/viewAsCustomer).
- */
-function ViewAsButton({ customerId, name, p }: { customerId: number; name: string; p: (v: L) => string }) {
-  const view = trpc.portalCenter.viewAsCustomer.useMutation({
-    onSuccess: (result) => {
-      /*
-       * In a tab of its own, the owner' rule of 2026-09-26.
-       *
-       * The token travels in the address and the new tab keeps it to
-       * itself (main.tsx VIEW_AS_TOKEN_KEY), so this page stays signed in
-       * as the admin — which it could not while the look lived in the
-       * cookie the whole browser shares.
-       */
-      const href = "/portal?viewas=" + encodeURIComponent(result.token);
-      const tab = window.open(href, "_blank", "noopener,noreferrer");
-      if (!tab) {
-        toast.error(p({
-          ku: "وێبگەڕەکە پەنجەرەی نوێی ڕێگە نەدا — مۆڵەتی پەنجەرەی نوێ بدە و دووبارە هەوڵ بدە",
-          en: "The browser blocked the new tab — allow pop-ups and try again",
-          ar: "حجب المتصفح العلامة الجديدة — اسمح بالنوافذ المنبثقة وأعد المحاولة",
-          zh: "浏览器阻止了新标签页 — 请允许弹窗后重试",
-        }));
-      }
-    },
-    onError: (err) => toast.error(err.message),
-  });
-
-  return (
-    <Button
-      variant="ghost"
-      size="icon"
-      className="h-8 w-8"
-      title={p(VIEW_AS_WORDS.open)}
-      aria-label={p(VIEW_AS_WORDS.open)}
-      disabled={view.isPending}
-      data-testid={`view-as-${customerId}`}
-      onClick={async () => {
-        const ok = await confirmAction({
-          title: p(VIEW_AS_WORDS.open),
-          message: `${name} — ${p({
-            ku: "کۆتایی بە سێشنەکەی خۆت دێت لەم وێبگەڕەدا و پۆرتاڵی ئەم کڕیارە دەکرێتەوە بۆ ماوەی 2 کاتژمێر. تەنها بینینە — هیچ شتێک ناگۆڕدرێت.",
-            en: "Your own session in this browser ends and this customer's portal opens for 2 hours. Look only — nothing can be changed.",
-            ar: "تنتهي جلستك في هذا المتصفح ويُفتح بوابة هذا الزبون لمدة ساعتين. للعرض فقط.",
-            zh: "此浏览器中您的会话将结束，并打开该客户的门户 2 小时。仅可查看。",
-          })}`,
-          confirmLabel: p(VIEW_AS_WORDS.open),
-        });
-        if (ok) view.mutate({ customerId });
-      }}
-    >
-      {view.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Eye className="h-4 w-4" />}
-    </Button>
   );
 }
 

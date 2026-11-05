@@ -57,6 +57,8 @@ export const PERMISSION_GROUPS: PermissionGroup[] = [
           { key: "view_documents", label: "View Documents", labelKu: "بینینی بەڵگەنامەکان", description: "Can view customer documents", descriptionKu: "دەتوانێت بەڵگەنامەکانی کڕیار ببینێت" },
           { key: "edit_documents", label: "Edit Documents", labelKu: "دەستکاریکردنی بەڵگەنامەکان", description: "Can upload/modify customer documents", descriptionKu: "دەتوانێت بەڵگەنامەکانی کڕیار دەستکاری بکات" },
           { key: "deactivate_account", label: "Deactivate Account", labelKu: "ناچالاککردنی هەژمار", description: "Can deactivate customer accounts", descriptionKu: "دەتوانێت هەژماری کڕیار ناچالاک بکات" },
+          // shared/viewAsCustomer VIEW_PORTAL_PERMISSION - the key must stay the same.
+          { key: "view_portal", label: "View Customer Portal", labelKu: "بینینی پۆرتاڵی کڕیار", description: "Can open a customer's portal, look only, without their password", descriptionKu: "دەتوانێت پۆرتاڵی کڕیار بکاتەوە بەبێ وشەی نهێنی — تەنها بینین" },
         ],
       },
     ],

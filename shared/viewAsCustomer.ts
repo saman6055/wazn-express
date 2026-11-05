@@ -29,6 +29,22 @@ import { withFix } from "./fixAdvice";
  * under the name of whoever did it.
  */
 
+/**
+ * Who may open a look (owner, 2026-11-05: «شادانیش بتوانێت سەیریان بکات»).
+ *
+ * The main admin and admins always. An employee or the accountant only when
+ * the customers sub-permission below is ticked for them on the permissions
+ * page - a look shows a customer's balance and every parcel, so it is given
+ * by name, not by default. The auditor never: opening a look is a write.
+ */
+export const VIEW_PORTAL_PERMISSION = "view_portal";
+
+export function mayViewAsCustomer(role: string | null | undefined, hasViewPortal: boolean): boolean {
+  if (role === "super_admin" || role === "admin") return true;
+  if (role === "employee" || role === "accountant") return hasViewPortal;
+  return false;
+}
+
 /** Two hours: long enough to look through the portal, short enough to forget. */
 export const VIEW_AS_MINUTES = 120;
 
