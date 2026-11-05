@@ -412,6 +412,13 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
   useEffect(() => {
     if (!request || advanceTouched) return;
     // Sent before: the same advance as that paper, unless the person types another.
+    // In the currency it was taken in: a dinar advance stays dinars (2026-11-05).
+    const beforeIqd = lastSent.data?.advanceIqd ?? 0;
+    if (beforeIqd > 0) {
+      setAdvance(String(beforeIqd));
+      setCurrency("IQD");
+      return;
+    }
     const before = lastSent.data?.advanceUsd ?? 0;
     const use = before > 0 ? before : accountAdvanceUsd;
     if (!(use > 0)) return;
@@ -545,6 +552,7 @@ export function ReceiptDinarDialog({ request, onClose }: { request: ReceiptDinar
             {": "}<bdi dir="ltr">{new Date(lastSent.data.at).toLocaleDateString("en-GB")}</bdi>
             {lastSent.data.rate ? <> · {L({ ku: "نرخ", en: "rate", ar: "السعر", zh: "汇率" })} <bdi dir="ltr" className="font-mono">{lastSent.data.rate.toLocaleString("en-US")}</bdi></> : null}
             {lastSent.data.advanceUsd > 0 ? <> · {L({ ku: "پێشەکی", en: "advance", ar: "مقدمة", zh: "预付" })} <bdi dir="ltr" className="font-mono">${lastSent.data.advanceUsd.toFixed(2)}</bdi></> : null}
+            {lastSent.data.advanceIqd > 0 ? <> · {L({ ku: "پێشەکی", en: "advance", ar: "مقدمة", zh: "预付" })} <bdi dir="ltr" className="font-mono">{lastSent.data.advanceIqd.toLocaleString("en-US")} IQD</bdi></> : null}
             {lastSent.data.discountUsd > 0 ? <> · {L({ ku: "داشکان", en: "discount", ar: "خصم", zh: "折扣" })} <bdi dir="ltr" className="font-mono">${lastSent.data.discountUsd.toFixed(2)}</bdi></> : null}
             {lastSent.data.dueIqd ? <> · {L({ ku: "ماوە", en: "due", ar: "المتبقي", zh: "应付" })} <bdi dir="ltr" className="font-mono">{lastSent.data.dueIqd.toLocaleString("en-US")} IQD</bdi></> : null}
             {" — "}{L({ ku: "هەمان ژمارەکان دانراونەتەوە", en: "the same figures are filled in again", ar: "أُعيدت الأرقام نفسها", zh: "已填入相同数字" })}

@@ -1473,6 +1473,7 @@ export const deliveryBoxRouter = router({
       discountReason: z.string().max(500).nullable().optional(),
       paidBeforeUsd: z.number().min(0).max(10_000_000).optional(),
       advanceUsd: z.number().min(0).max(10_000_000).optional(),
+      advanceIqd: z.number().min(0).max(100_000_000_000).nullable().optional(),
       dueUsd: z.number().min(0).max(10_000_000).nullable().optional(),
       rate: z.number().min(0).max(1_000_000).nullable().optional(),
       dueIqd: z.number().min(0).max(100_000_000_000).nullable().optional(),

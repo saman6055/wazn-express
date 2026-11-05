@@ -135,6 +135,7 @@ export async function logReceiptEvent(
     discountReason?: string | null;
     paidBeforeUsd?: number;
     advanceUsd?: number;
+    advanceIqd?: number | null;
     dueUsd?: number | null;
     rate?: number | null;
     dueIqd?: number | null;
@@ -156,6 +157,7 @@ export async function logReceiptEvent(
     discountReason: input.discountReason ?? null,
     paidBeforeUsd: round2(input.paidBeforeUsd ?? 0).toFixed(2),
     advanceUsd: round2(input.advanceUsd ?? 0).toFixed(2),
+    advanceIqd: input.advanceIqd && input.advanceIqd > 0 ? Math.round(input.advanceIqd).toFixed(0) : null,
     dueUsd: input.dueUsd == null ? null : round2(input.dueUsd).toFixed(2),
     rate: input.rate == null ? null : String(input.rate),
     dueIqd: input.dueIqd == null ? null : String(Math.round(input.dueIqd)),
@@ -173,8 +175,25 @@ export async function logReceiptEvent(
  * sending a receipt again, the rate, the dinars and the advance of the first
  * one were gone, and he could not remember how he had worked it out).
  */
+/**
+ * The dinars a receipt took off as a hand advance. Kept since 2026-11-05;
+ * before that only a dollar advance was kept, so an older paper gives it back
+ * from its own figures: the dollars due at its rate, rounded to the nearest
+ * 250 as the paper rounds by default, less the dinars it said were left.
+ */
+export function receiptAdvanceIqd(e: { advanceIqd?: unknown; advanceUsd?: unknown; dueUsd?: unknown; rate?: unknown; dueIqd?: unknown }): number {
+  const kept = Number(e.advanceIqd ?? 0);
+  if (kept > 0) return kept;
+  if (Number(e.advanceUsd ?? 0) > 0) return 0;
+  const rate = Number(e.rate ?? 0), dueUsd = Number(e.dueUsd ?? 0), dueIqd = Number(e.dueIqd ?? 0);
+  if (!(rate > 0) || !(dueUsd > 0) || e.dueIqd == null) return 0;
+  const before = Math.round((dueUsd * rate) / 250) * 250;
+  const off = before - dueIqd;
+  return off >= 250 ? off : 0;
+}
+
 export async function lastReceiptEventOfBox(boxId: number): Promise<{
-  at: string; action: string; rate: number | null; advanceUsd: number; discountUsd: number; dueUsd: number | null; dueIqd: number | null; byName: string | null;
+  at: string; action: string; rate: number | null; advanceUsd: number; advanceIqd: number; discountUsd: number; dueUsd: number | null; dueIqd: number | null; byName: string | null;
 } | null> {
   const db = await need();
   const [row] = await db
@@ -191,6 +210,7 @@ export async function lastReceiptEventOfBox(boxId: number): Promise<{
     action: String(e.action),
     rate: e.rate == null ? null : Number(e.rate),
     advanceUsd: Number(e.advanceUsd ?? 0),
+    advanceIqd: receiptAdvanceIqd(e),
     discountUsd: Number(e.discountUsd ?? 0),
     dueUsd: e.dueUsd == null ? null : Number(e.dueUsd),
     dueIqd: e.dueIqd == null ? null : Number(e.dueIqd),

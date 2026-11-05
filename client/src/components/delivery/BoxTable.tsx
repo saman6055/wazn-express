@@ -326,6 +326,7 @@ export function BoxTable({
         totalUsd,
         paidBeforeUsd: Number(options.settlement?.paidBeforeUsd ?? 0),
         advanceUsd: dinar?.advanceCurrency === "USD" ? Number(dinar.advanceAmount || 0) : 0,
+        advanceIqd: dinar?.advanceCurrency === "IQD" ? Number(dinar.advanceAmount || 0) : null,
         rate: dinar?.rate ?? null,
         language: lang,
         html: buildBoxReceiptHtml(...receiptArgs),

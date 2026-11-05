@@ -822,6 +822,7 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         discountReason: discounted.discountReason ?? null,
         paidBeforeUsd: before,
         advanceUsd: dinar?.advanceCurrency === "USD" ? Number(dinar.advanceAmount || 0) : 0,
+        advanceIqd: dinar?.advanceCurrency === "IQD" ? Number(dinar.advanceAmount || 0) : null,
         dueUsd: figures?.dueUsd ?? left,
         rate: dinar?.rate ?? null,
         dueIqd: figures?.dueIqd ?? null,

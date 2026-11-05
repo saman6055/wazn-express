@@ -471,6 +471,8 @@ export const boxReceiptEvents = mysqlTable("boxReceiptEvents", {
   discountReason: text("discountReason"),
   paidBeforeUsd: decimal("paidBeforeUsd", { precision: 12, scale: 2 }).default("0").notNull(),
   advanceUsd: decimal("advanceUsd", { precision: 12, scale: 2 }).default("0").notNull(),
+  /** A hand advance typed in dinars (2026-11-05: it was dropped, only dollars were kept). */
+  advanceIqd: decimal("advanceIqd", { precision: 16, scale: 0 }),
   dueUsd: decimal("dueUsd", { precision: 12, scale: 2 }),
   rate: decimal("rate", { precision: 12, scale: 2 }),
   dueIqd: decimal("dueIqd", { precision: 16, scale: 0 }),

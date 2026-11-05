@@ -1611,6 +1611,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       discountReason TEXT,
       paidBeforeUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
       advanceUsd DECIMAL(12, 2) NOT NULL DEFAULT 0,
+      advanceIqd DECIMAL(16, 0) NULL,
       dueUsd DECIMAL(12, 2) NULL,
       rate DECIMAL(12, 2) NULL,
       dueIqd DECIMAL(16, 0) NULL,
@@ -3167,6 +3168,7 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "deliveryBoxes.heldById", sql: "ALTER TABLE deliveryBoxes ADD COLUMN heldById INT NULL" },
   { name: "deliveryBoxes.heldNote", sql: "ALTER TABLE deliveryBoxes ADD COLUMN heldNote VARCHAR(200) NULL" },
   { name: "boxReceiptEvents.html.mediumtext", sql: "ALTER TABLE boxReceiptEvents MODIFY COLUMN html MEDIUMTEXT" },
+  { name: "boxReceiptEvents.advanceIqd", sql: "ALTER TABLE boxReceiptEvents ADD COLUMN advanceIqd DECIMAL(16, 0) NULL" },
   // Greetings: the day and month a customer chooses to share, and the last
   // milestone they were congratulated for. All three are optional and all
   // three default to nothing being known.
