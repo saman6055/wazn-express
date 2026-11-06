@@ -66,13 +66,19 @@ const TERM_TONE: Record<Exclude<StatementTermKey, "balance">, string> = {
 /** The printed operator is ASCII in the data; on screen it gets a real minus. */
 const OPERATOR_GLYPH = { "": "", "+": "+", "-": "−", "=": "=" } as const;
 
+/** What a click on the summary asks the rows below to show. */
+export type StatementPick = { kind: ChargeKind } | { term: Exclude<StatementTermKey, "balance"> };
+
 export function AccountStatementSummary({
   statement,
   driftUsd,
+  onPick,
 }: {
   statement: AccountStatement;
   /** The account's running figure minus what the statement adds up to. */
   driftUsd: number;
+  /** Each figure opens the rows it was added up from (owner, point 3). */
+  onPick?: (pick: StatementPick) => void;
 }) {
   const { language } = useTranslation();
   const kinds = chargeKindsShown(statement);
@@ -86,13 +92,20 @@ export function AccountStatementSummary({
           const look = KIND_LOOK[kind];
           const Icon = look.icon;
           return (
-            <div key={kind} className={cn("text-center p-4 rounded-xl border", look.tile)}>
+            <button
+              type="button"
+              key={kind}
+              onClick={() => onPick?.({ kind })}
+              disabled={!onPick}
+              data-testid={`statement-kind-${kind}`}
+              className={cn("text-center p-4 rounded-xl border transition", look.tile, onPick && "cursor-pointer hover:-translate-y-0.5 hover:shadow-md")}
+            >
               <Icon className={cn("w-6 h-6 mx-auto mb-2", look.figure)} />
               <p className="text-xs text-muted-foreground mb-1">{pickLang(language, CHARGE_KIND_LABELS[kind])}</p>
-              <p className={cn("text-lg font-bold tabular-nums", look.figure)} dir="ltr">
+              <p className={cn("text-lg font-bold font-mono tabular-nums", look.figure)} dir="ltr">
                 {fmtUsd(statement.charges[kind])}
               </p>
-            </div>
+            </button>
           );
         })}
       </div>
@@ -106,16 +119,21 @@ export function AccountStatementSummary({
             {term.operator && (
               <span className="text-xl font-semibold text-muted-foreground">{OPERATOR_GLYPH[term.operator]}</span>
             )}
-            <div
+            <button
+              type="button"
+              disabled={!onPick || term.key === "balance"}
+              onClick={() => { if (term.key !== "balance") onPick?.({ term: term.key }); }}
+              data-testid={`statement-term-${term.key}`}
               className={cn(
-                "min-w-[6.5rem] rounded-lg px-3 py-2 text-center",
+                "min-w-[6.5rem] rounded-lg px-3 py-2 text-center transition",
                 term.key === "balance" && "border bg-background shadow-sm",
+                onPick && term.key !== "balance" && "cursor-pointer hover:bg-background hover:shadow-sm",
               )}
             >
               <p className="text-xs text-muted-foreground">{pickLang(language, STATEMENT_TERM_LABELS[term.key])}</p>
               <p
                 className={cn(
-                  "text-base font-bold tabular-nums",
+                  "text-base font-bold font-mono tabular-nums",
                   term.key === "balance"
                     ? term.amountUsd > 0
                       ? "text-red-600 dark:text-red-300"
@@ -128,10 +146,16 @@ export function AccountStatementSummary({
               >
                 {fmtUsd(term.amountUsd)}
               </p>
-            </div>
+            </button>
           </Fragment>
         ))}
       </div>
+
+      {onPick && (
+        <p className="text-center text-[11px] text-muted-foreground">
+          {pickLang(language, { ku: "کرتە لەسەر هەر ژمارەیەک بکە، ئەو جوڵانەی لێیەوە کۆکراونەتەوە لە خوارەوە دەردەکەون.", en: "Tap any figure to see, below, the rows it was added up from.", ar: "اضغط أي رقم لترى بالأسفل الحركات التي جُمع منها.", zh: "点击任一数字，下方显示其来源明细。" })}
+        </p>
+      )}
 
       {driftUsd !== 0 && (
         <p

@@ -40,6 +40,24 @@
 export const CHARGE_KINDS = ["package", "fullPackage", "purchaseRequest", "commission", "service"] as const;
 export type ChargeKind = (typeof CHARGE_KINDS)[number];
 
+/** Which statement kind a row's type is charged under (null: not a charge). */
+export function chargeKindOfType(type: string | null | undefined): ChargeKind | null {
+  return DEBIT_KIND[String(type ?? "").toUpperCase()] ?? null;
+}
+
+/**
+ * Which kind a row adds to or takes from in the statement: a charge, or a
+ * correction posted against a charge's reference. The rows a kind's figure
+ * was added up from, so a filter by kind sums to that figure.
+ */
+export function chargeKindOfRow(row: { transactionType: string | null; referenceType: string | null }): ChargeKind | null {
+  const direct = chargeKindOfType(row.transactionType);
+  if (direct) return direct;
+  const type = String(row.transactionType ?? "").toUpperCase();
+  if (type !== "ADJUSTMENT_DEBIT" && type !== "ADJUSTMENT_CREDIT") return null;
+  return row.referenceType ? REFERENCE_KIND[String(row.referenceType)] ?? null : null;
+}
+
 const DEBIT_KIND: Readonly<Record<string, ChargeKind>> = {
   DEBIT_PACKAGE: "package",
   DEBIT_FULL_PACKAGE: "fullPackage",

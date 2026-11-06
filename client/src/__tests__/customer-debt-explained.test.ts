@@ -25,7 +25,7 @@ describe("the profile opens with what the debt is for", () => {
     const card = page.indexOf("<CustomerDebtExplained customerId={customerId} />");
     expect(card).toBeGreaterThan(-1);
     // The ledger's tabs carry the address "see every row" leads to (DebtPeel).
-    const ledger = page.indexOf('<Tabs defaultValue="transactions" id={ACCOUNT_LINES_ANCHOR}');
+    const ledger = page.indexOf('<Tabs value={ledgerTab} onValueChange={setLedgerTab} id={ACCOUNT_LINES_ANCHOR}');
     expect(ledger).toBeGreaterThan(-1);
     expect(card).toBeLessThan(ledger);
   });

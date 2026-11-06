@@ -1,4 +1,5 @@
 import { fmtDate, fmtDateTime, fmtTime } from "@/lib/numericDate";
+import { chargeKindOfRow } from "@shared/accountStatement";
 import { useState, useMemo, Fragment } from "react";
 import { BatchInvoiceView } from "@/components/BatchInvoiceView";
 import { AccountRowList } from "@/components/AccountRowList";
@@ -138,6 +139,7 @@ export default function CustomerFinance() {
   const [receiptNumber, setReceiptNumber] = useState("");
   const [paymentCashAccountId, setPaymentCashAccountId] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
+  const [ledgerTab, setLedgerTab] = useState<string>("transactions");
   // A cancelled charge and its correction are kept, and folded out of the
   // everyday view (shared/ledgerFold) until asked for.
   const [showCorrections, setShowCorrections] = useState(false);
@@ -487,11 +489,26 @@ export default function CustomerFinance() {
     { value: 'CREDIT_PAYMENT', label: pickLang(language, { ku: 'پارەدان', en: 'Payment', ar: 'دفعة', zh: '付款' }) },
     { value: 'CREDIT_DEPOSIT', label: pickLang(language, { ku: 'پارە دانان', en: 'Deposit', ar: 'إيداع', zh: '存款' }) },
     { value: 'CREDIT_REFUND', label: pickLang(language, { ku: 'گەڕاندنەوە', en: 'Refund', ar: 'استرداد', zh: '退款' }) },
+    { value: 'CREDIT_DISCOUNT', label: pickLang(language, { ku: 'داشکان / قەرەبوو', en: 'Discount / compensation', ar: 'خصم / تعويض', zh: '折扣 / 补偿' }) },
+    { value: 'ADJUSTMENT', label: pickLang(language, { ku: 'ڕێکخستنی دەستی', en: 'Hand adjustments', ar: 'تعديلات يدوية', zh: '手动调整' }) },
+    { value: 'CHARGES', label: pickLang(language, { ku: 'هەموو فرۆشتنەکان', en: 'All charges', ar: 'كل الرسوم', zh: '全部费用' }) },
+    { value: 'kind:package', label: pickLang(language, { ku: 'فرۆشتن: پاکەت', en: 'Charges: parcels', ar: 'رسوم: طرود', zh: '费用：包裹' }) },
+    { value: 'kind:fullPackage', label: pickLang(language, { ku: 'فرۆشتن: فول پاکێج', en: 'Charges: full package', ar: 'رسوم: حزمة كاملة', zh: '费用：完整套餐' }) },
+    { value: 'kind:purchaseRequest', label: pickLang(language, { ku: 'فرۆشتن: داواکاریی کڕین', en: 'Charges: purchase requests', ar: 'رسوم: طلبات شراء', zh: '费用：代购' }) },
+    { value: 'kind:commission', label: pickLang(language, { ku: 'فرۆشتن: عمولە', en: 'Charges: commission', ar: 'رسوم: عمولة', zh: '费用：佣金' }) },
+    { value: 'kind:service', label: pickLang(language, { ku: 'فرۆشتن: خزمەتگوزاری', en: 'Charges: services', ar: 'رسوم: خدمات', zh: '费用：服务' }) },
   ];
 
   // Filter transactions by type
   const filteredTransactions = transactions?.filter(txn => {
     if (typeFilter === 'all') return true;
+    // A pick from the sales breakdown: every row of that charge kind.
+    // Charges and the corrections against them, so the rows add up to the figure clicked.
+    const kindOf = chargeKindOfRow({ transactionType: txn.transactionType ?? null, referenceType: (txn as { referenceType?: string | null }).referenceType ?? null });
+    if (typeFilter.startsWith('kind:')) return kindOf === typeFilter.slice(5);
+    // "Other adjustments": hand adjustments not tied to a charge.
+    if (typeFilter === 'ADJUSTMENT') return String(txn.transactionType ?? '').startsWith('ADJUSTMENT') && kindOf === null;
+    if (typeFilter === 'CHARGES') return kindOf !== null;
     return txn.transactionType === typeFilter;
   });
 
@@ -1623,7 +1640,21 @@ export default function CustomerFinance() {
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
-                    <AccountStatementSummary statement={breakdown.statement} driftUsd={breakdown.driftUsd} />
+                    <AccountStatementSummary
+                      statement={breakdown.statement}
+                      driftUsd={breakdown.driftUsd}
+                      onPick={(pick) => {
+                        const filter = "kind" in pick
+                          ? `kind:${pick.kind}`
+                          : pick.term === "payments" ? "CREDIT_PAYMENT"
+                          : pick.term === "discounts" ? "CREDIT_DISCOUNT"
+                          : pick.term === "otherAdjustments" ? "ADJUSTMENT"
+                          : "CHARGES";
+                        setTypeFilter(filter);
+                        setLedgerTab("transactions");
+                        document.getElementById(ACCOUNT_LINES_ANCHOR)?.scrollIntoView({ behavior: "smooth", block: "start" });
+                      }}
+                    />
                   </CardContent>
                 </Card>
               </motion.div>
@@ -1652,7 +1683,7 @@ export default function CustomerFinance() {
               transition={{ delay: 0.3 }}
             >
               {/* The rows themselves: where "see every row" on the debt card leads (DebtPeel). */}
-              <Tabs defaultValue="transactions" id={ACCOUNT_LINES_ANCHOR} className="scroll-mt-16">
+              <Tabs value={ledgerTab} onValueChange={setLedgerTab} id={ACCOUNT_LINES_ANCHOR} className="scroll-mt-16">
                 <TabsList className="bg-muted/50 p-1 rounded-xl">
                   <TabsTrigger value="transactions" className="rounded-lg data-[state=active]:bg-card data-[state=active]:shadow-sm">
                     {pickLang(language, { ku: "هەموو مامەڵەکان", en: "All transactions", ar: "جميع المعاملات", zh: "全部交易" })}
@@ -1869,6 +1900,17 @@ export default function CustomerFinance() {
                         </div>
                       ) : (
                         <div className="rounded-xl border overflow-hidden">
+                          {/* How to read a row, once, above the rows (owner, point 4). */}
+                          <div className="flex flex-wrap items-center gap-x-4 gap-y-1 border-b bg-muted/30 px-3 py-2 text-xs text-muted-foreground" data-testid="ledger-legend">
+                            <span><b className="font-mono text-red-600 dark:text-red-300">+</b> {pickLang(language, { ku: "قەرزەکەی زیاد کرد (فرۆشتن)", en: "added to what they owe (a sale)", ar: "زاد الدين (بيع)", zh: "增加欠款（销售）" })}</span>
+                            <span><b className="font-mono text-emerald-600 dark:text-emerald-300">−</b> {pickLang(language, { ku: "قەرزەکەی کەم کردەوە (پارەدان یان داشکان)", en: "took off what they owe (a payment or discount)", ar: "أنقص الدين (دفعة أو خصم)", zh: "减少欠款（付款或折扣）" })}</span>
+                            <span>{pickLang(language, { ku: "«باڵانس دوای» = قەرزەکە دوای ئەو جوڵەیە", en: "“Balance after” = what they owed after that row", ar: "«الرصيد بعد» = الدين بعد الحركة", zh: "“之后余额”=该笔后的欠款" })}</span>
+                            {typeFilter !== "all" && (
+                              <button type="button" onClick={() => setTypeFilter("all")} className="ms-auto rounded-full border px-2 py-0.5 text-[11px] hover:bg-muted">
+                                {pickLang(language, { ku: "هەموو جوڵەکان نیشان بدە", en: "Show every row", ar: "أظهر كل الحركات", zh: "显示全部" })} ✕
+                              </button>
+                            )}
+                          </div>
                           <Table mobileCards>
                             <TableHeader>
                               <TableRow className="bg-muted/50">
@@ -1915,10 +1957,10 @@ export default function CustomerFinance() {
                                         "font-semibold",
                                         isChargeTx(txn.transactionType) ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
-                                        {isChargeTx(txn.transactionType) ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
+                                        <bdi dir="ltr" className="font-mono tabular-nums">{isChargeTx(txn.transactionType) ? '+' : '−'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}</bdi>
                                       </TableCell>
                                       <TableCell className="font-semibold">
-                                        {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
+                                        <bdi dir="ltr" className="font-mono tabular-nums">{fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}</bdi>
                                       </TableCell>
                                       <TableCell className="max-w-[320px] text-muted-foreground text-sm">
                                         <div className="truncate" title={txn.description || ''}>{txn.description || '-'}</div>
@@ -1976,10 +2018,10 @@ export default function CustomerFinance() {
                                         "font-semibold",
                                         isChargeTx(txn.transactionType) ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                       )}>
-                                        {isChargeTx(txn.transactionType) ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
+                                        <bdi dir="ltr" className="font-mono tabular-nums">{isChargeTx(txn.transactionType) ? '+' : '−'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}</bdi>
                                       </TableCell>
                                       <TableCell className="font-semibold">
-                                        {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
+                                        <bdi dir="ltr" className="font-mono tabular-nums">{fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}</bdi>
                                       </TableCell>
                                       <TableCell className="max-w-[320px] text-muted-foreground text-sm">
                                         <div className="truncate" title={txn.description || ''}>{txn.description || '-'}</div>
@@ -2121,10 +2163,10 @@ export default function CustomerFinance() {
                                           "font-semibold text-sm",
                                           isChargeTx(txn.transactionType) ? "text-red-600 dark:text-red-300" : "text-emerald-600 dark:text-emerald-300"
                                         )}>
-                                          {isChargeTx(txn.transactionType) ? '+' : '-'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}
+                                          <bdi dir="ltr" className="font-mono tabular-nums">{isChargeTx(txn.transactionType) ? '+' : '−'}{fmtUsd(Math.abs(parseFloat(txn.amountUsd || '0')))}</bdi>
                                         </TableCell>
                                         <TableCell className="font-medium text-sm">
-                                          {fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}
+                                          <bdi dir="ltr" className="font-mono tabular-nums">{fmtUsd(parseFloat(txn.balanceAfterUsd || '0'))}</bdi>
                                         </TableCell>
                                         <TableCell className="max-w-[320px] text-muted-foreground text-xs">
                                           <div className="truncate" title={txn.description || ''}>{txn.description || '-'}</div>

@@ -39,7 +39,8 @@ describe("every screen reads the one statement", () => {
     const page = read("../client/src/pages/finance/CustomerFinance.tsx");
     expect(page).toContain("trpc.ledger.getAccountStatement.useQuery(");
     expect(page).not.toContain("trpc.ledger.getAccountBreakdown.useQuery(");
-    expect(page).toContain("<AccountStatementSummary statement={breakdown.statement}");
+    expect(page).toContain("statement={breakdown.statement}");
+    expect(page).toContain("<AccountStatementSummary");
     // print and spreadsheet print the same line as the screen
     expect(page.match(/statementTerms\(breakdown\.statement\)/g)?.length).toBe(2);
     // and no card re-adds the old "every credit is a payment" figure
