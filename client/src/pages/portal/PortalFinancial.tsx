@@ -758,6 +758,8 @@ const { t, language } = useLanguage();
                   key: b.id,
                   code: b.batchCode,
                   icon: b.shippingType === "sea" ? Ship : Plane,
+                  // The invoice's own total beside the weight (owner, 2026-11-07).
+                  highlight: Number(b.customerInvoiceUsd) > 0.005 ? { text: fmtUsd(Number(b.customerInvoiceUsd)) } : null,
                   meta: rowMeta(
                     b,
                     Number(b.customerPackageCount ?? 0),

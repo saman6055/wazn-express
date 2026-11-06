@@ -1,4 +1,5 @@
 import { toCustomerVisibleBatch } from "../lib/customerVisibleBatch";
+import { buildBatchInvoice } from "@shared/batchInvoice";
 import { getDb } from './connection';
 import { SQL, and, asc, count, desc, eq, getTableColumns, gt, gte, inArray, isNotNull, isNull, like, lt, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { afterVolumetricDiscount, chargeableWeight, isAirShipping } from '@shared/chargeableWeight';
@@ -216,6 +217,36 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
    * One query for the whole page, not one per card.
    */
   const statusDatesByBatch = await getBatchStatusTimestamps(batchIds);
+  /**
+   * Each batch's price for this customer: the total of the very invoice the
+   * row opens to (getMyBatchInvoice, customer edition), so the row and the
+   * document never disagree. One query for the whole list (owner, 2026-11-07:
+   * «پسووڵەی بارەکان بەبێ نرخە»).
+   */
+  const orderRows = await db.select({
+    batchId: fullPackageOrders.batchId,
+    id: fullPackageOrders.id,
+    orderCode: fullPackageOrders.orderCode,
+    orderType: fullPackageOrders.orderType,
+    productName: fullPackageOrders.productName,
+    productImage: sql<string | null>`NULL`,
+    trackingNumber: fullPackageOrders.trackingNumber,
+    weightKg: fullPackageOrders.weightKg,
+    shippingCostUsd: fullPackageOrders.shippingCostUsd,
+    itemPriceUsd: fullPackageOrders.itemPriceUsd,
+    commissionFeeUsd: fullPackageOrders.commissionFeeUsd,
+    sellingPriceUsd: fullPackageOrders.sellingPriceUsd,
+    advancePaidUsd: fullPackageOrders.advancePaidUsd,
+  }).from(fullPackageOrders)
+    .where(and(eq(fullPackageOrders.customerId, customerId), inArray(fullPackageOrders.batchId, batchIds)))
+    .orderBy(fullPackageOrders.id);
+  const ordersByBatch = new Map<number, typeof orderRows>();
+  for (const o of orderRows) {
+    if (o.batchId == null) continue;
+    const list = ordersByBatch.get(o.batchId) ?? [];
+    list.push(o);
+    ordersByBatch.set(o.batchId, list);
+  }
   // The stage the office list shows, so the two never disagree (shared/batchStage).
   const lastArrival = await lastArrivalPerBatch(db, batchRows as never);
   const chinaIds = new Set((await db.select({ id: countries.id }).from(countries).where(eq(countries.isoCode, "CN"))).map((r) => Number(r.id)));
@@ -262,6 +293,10 @@ export async function getCustomerBatches(customerId: number, limit = 100) {
         /** Registered in Erbil: the journey starts there, with no China steps. */
         journeyFromErbil: !batchMadeInChina(batch.createdInCountryId, chinaIds),
         customerPackageCount: countByBatch.get(batch.id) || 0,
+        /** The total of this customer's invoice for the batch (0 when it holds no order of theirs). */
+        customerInvoiceUsd: ordersByBatch.has(batch.id)
+          ? buildBatchInvoice(ordersByBatch.get(batch.id)!, 0, { concealAgreedPriceSize: true }).totals.grand
+          : 0,
         /** This customer's own total, in the unit this batch is billed by. */
         customerChargeable: Number((bySea ? size.cbm : size.kg).toFixed(bySea ? 3 : 2)),
         customerUnit: (bySea ? "cbm" : "kg") as "cbm" | "kg",
