@@ -1,4 +1,6 @@
-import { useEffect, useState, useMemo } from "react";
+import { Fragment, useEffect, useState, useMemo } from "react";
+import { DebtWhatsAppButton } from "@/components/finance/DebtWhatsAppButton";
+import { DebtWhyRow } from "@/components/finance/DebtWhyRow";
 import { PageHelp } from "@/components/finance/PageHelp";
 import { HELP } from "@/components/finance/pageHelpTexts";
 import { daysSince } from "@shared/debtAge";
@@ -75,6 +77,7 @@ export default function DebtorsReport() {
   }, [urlSearch]);
 const [searchTerm, setSearchTerm] = useState("");
   const [agingFilter, setAgingFilter] = useState<AgingCategory>("all");
+  const [whyOpen, setWhyOpen] = useState<number | null>(null);
   const [sortBy, setSortBy] = useState<'balance' | 'days'>('balance');
   
   const { data: accounts, isLoading, isError, error, refetch } = trpc.ledger.getAllAccounts.useQuery();
@@ -92,7 +95,8 @@ const [searchTerm, setSearchTerm] = useState("");
     if (!accounts) return [];
     
     return accounts
-      .filter((acc: any) => parseFloat(acc.currentBalanceUsd || '0') > 0)
+      // The company's own code is spending, not a debtor (owner, 2026-11-05).
+      .filter((acc: any) => parseFloat(acc.currentBalanceUsd || '0') > 0 && !acc.customer?.isHouseAccount)
       .map((acc: any) => {
         // The account's own column is `lastTransactionAt`. This read
         // `lastTransactionDate`, which no row has ever had, so every debtor
@@ -443,7 +447,8 @@ const [searchTerm, setSearchTerm] = useState("");
                 </TableHeader>
                 <TableBody>
                   {filteredDebtors.map((debtor: any) => (
-                    <TableRow key={debtor.id}>
+                    <Fragment key={debtor.id}>
+                    <TableRow>
                       <TableCell className="font-medium">
                         <span className="inline-flex items-center gap-1">
                           <Link
@@ -512,16 +517,23 @@ const [searchTerm, setSearchTerm] = useState("");
                               </Button>
                             </Link>
                           )}
-                          {debtor.customerMobile && whatsappNumber(debtor.customerMobile) && (
-                            <a href={`https://wa.me/${whatsappNumber(debtor.customerMobile)}`} target="_blank" rel="noopener noreferrer">
-                              <Button variant="outline" size="sm" title={pickLang(language, WHATSAPP_WORDS)}>
-                                <MessageCircle className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
-                              </Button>
-                            </a>
-                          )}
+                          <DebtWhatsAppButton
+                            customer={{ id: debtor.customerId, fullName: debtor.customerName, customerCode: debtor.customerCode, mobileNumber: debtor.customerMobile, nationality: debtor.customer?.nationality ?? null }}
+                            owedUsd={parseFloat(debtor.currentBalanceUsd || '0')}
+                            size="icon"
+                          />
+                          <Button variant="outline" size="sm" onClick={() => setWhyOpen(whyOpen === debtor.customerId ? null : debtor.customerId)} data-testid="debt-why-toggle">
+                            {pickLang(language, { ku: "بۆچی؟", en: "Why?", ar: "لماذا؟", zh: "为何？" })}
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
+                    {whyOpen === debtor.customerId && (
+                      <TableRow>
+                        <TableCell colSpan={7} className="bg-muted/30 p-0"><DebtWhyRow customerId={debtor.customerId} /></TableCell>
+                      </TableRow>
+                    )}
+                    </Fragment>
                   ))}
                 </TableBody>
               </Table>

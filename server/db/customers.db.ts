@@ -164,6 +164,9 @@ export const ACCOUNT_CUSTOMER_COLUMNS = {
   mobileNumber: customers.mobileNumber,
   email: customers.email,
   city: customers.city,
+  nationality: customers.nationality,
+  /** The company's own code: never a debtor (customers.isHouseAccount). */
+  isHouseAccount: customers.isHouseAccount,
 };
 
 export type AccountCustomer = {
@@ -174,6 +177,8 @@ export type AccountCustomer = {
   mobileNumber: string;
   email: string | null;
   city: string | null;
+  nationality?: string | null;
+  isHouseAccount?: boolean;
 };
 
 /** Everyone, and those switched on. */

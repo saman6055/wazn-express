@@ -54,9 +54,9 @@ describe("every cell that stands for something opens it", () => {
 
   it("and a row offers their parcels and a message to them", () => {
     expect(page).toContain("packagesHref({ search: customerCodeOnly(debtor.customerCode) })");
-    expect(page).toContain("`https://wa.me/${whatsappNumber(debtor.customerMobile)}`");
-    // Nothing is offered when there is nothing to offer.
-    expect(page).toContain("{debtor.customerMobile && whatsappNumber(debtor.customerMobile) && (");
+    // The message is the reminder with the debt sheet (2026-11-05), not an empty chat;
+    // the button itself offers nothing when nothing is owed.
+    expect(page).toContain("<DebtWhatsAppButton");
   });
 
   it("the buckets at the top still filter, as they did", () => {
