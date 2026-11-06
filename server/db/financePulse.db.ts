@@ -238,21 +238,31 @@ async function writeOffsBetween(db: Db, start: Date, end: Date) {
     .leftJoin(customers, eq(customers.id, customerAccounts.customerId))
     .leftJoin(users, eq(users.id, ledgerTransactions.createdById))
     .where(and(
+      // Only the two doors that give money away outside a box: compensation
+      // («[قەرەبوو — پارە نییە]») and the hand adjustment («[ڕێکخستنی دەستی]»).
+      // A box receipt writes its discount rows with the discount's own reason,
+      // and those are the box discounts already counted beside this.
       sql`${ledgerTransactions.transactionType} IN ('CREDIT_DISCOUNT', 'ADJUSTMENT_CREDIT')`,
+      sql`(${ledgerTransactions.description} LIKE '[قەرەبوو — پارە نییە]%' OR ${ledgerTransactions.description} LIKE '[ڕێکخستنی دەستی]%')`,
       sql`${ledgerTransactions.description} NOT LIKE '%[REV:%'`,
-      sql`${ledgerTransactions.description} NOT LIKE '%[ADJ:%'`,
-      sql`${ledgerTransactions.description} NOT LIKE 'داشکاندن لە کاتی واصڵکردنی بۆکس%'`,
       gte(ledgerTransactions.createdAt, start),
       lte(ledgerTransactions.createdAt, end),
     ))
     .orderBy(desc(ledgerTransactions.createdAt))
     .limit(300);
-  const list = rows.map((r) => ({ ...r, kind: r.type === "CREDIT_DISCOUNT" ? "compensation" as const : "manual" as const, usd: num(r.usd) }));
+  // Rounding cents at the till (owner's rule: written off by itself) are not
+  // a decision anyone made: one line for all of them, never a list of them.
+  const isRounding = (reason: string | null) => String(reason ?? "").includes("خڕکردنەوەی دراو");
+  const roundingRows = rows.filter((r) => isRounding(r.reason));
+  const roundingUsd = cents(roundingRows.reduce((t, r) => t + num(r.usd), 0));
+  const list = rows.filter((r) => !isRounding(r.reason)).map((r) => ({ ...r, kind: r.type === "CREDIT_DISCOUNT" ? "compensation" as const : "manual" as const, usd: num(r.usd) }));
   const byPerson = new Map<string, number>();
   for (const r of list) byPerson.set(r.by ?? "—", cents((byPerson.get(r.by ?? "—") ?? 0) + r.usd));
   return {
-    usd: cents(list.reduce((t, r) => t + r.usd, 0)),
+    usd: cents(list.reduce((t, r) => t + r.usd, 0) + roundingUsd),
     count: list.length,
+    roundingUsd,
+    roundingCount: roundingRows.length,
     compensationUsd: cents(list.filter((r) => r.kind === "compensation").reduce((t, r) => t + r.usd, 0)),
     manualUsd: cents(list.filter((r) => r.kind === "manual").reduce((t, r) => t + r.usd, 0)),
     byPerson: Array.from(byPerson.entries()).map(([name, usd]) => ({ name, usd })).sort((a, b) => b.usd - a.usd),
@@ -357,7 +367,7 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
     settle("batchesWithoutCost", () => arrivedBatchesWithoutCost(db), 0),
     settle("lossBatches", () => lossBatches(db, bounds.start, end), []),
   ]);
-  const writeOffs = await settle("writeOffs", () => writeOffsBetween(db, bounds.start, end), { usd: 0, count: 0, compensationUsd: 0, manualUsd: 0, byPerson: [] as Array<{ name: string; usd: number }>, list: [] as Awaited<ReturnType<typeof writeOffsBetween>>["list"] });
+  const writeOffs = await settle("writeOffs", () => writeOffsBetween(db, bounds.start, end), { usd: 0, count: 0, roundingUsd: 0, roundingCount: 0, compensationUsd: 0, manualUsd: 0, byPerson: [] as Array<{ name: string; usd: number }>, list: [] as Awaited<ReturnType<typeof writeOffsBetween>>["list"] });
   const [stuck, top, capital, boxesUnpaid, boxPaidOwed] = await Promise.all([
     settle("oldDebt", () => oldDebt(db, now), { usd: 0, count: 0 }),
     settle("topDebtors", () => topDebtors(db, ledger.totalDebtUsd), []),

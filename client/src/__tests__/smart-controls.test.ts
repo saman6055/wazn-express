@@ -17,6 +17,6 @@ describe("smart controls", () => {
     expect(read("client/src/pages/finance/FinanceCenter.tsx")).toContain('testId="fc-giveaways"');
     const pulse = read("server/db/financePulse.db.ts");
     expect(pulse).toContain("async function writeOffsBetween(");
-    expect(pulse).toContain("NOT LIKE '%[REV:%'");
+    expect(pulse).toContain("LIKE '[قەرەبوو — پارە نییە]%'");
   });
 });

@@ -90,6 +90,10 @@ export default function FinanceCenter() {
   const { data, isLoading } = trpc.ledger.financeDashboard.useQuery({ period });
   // Boxes asleep on the shelf (point 41.2): not sent, not paid.
   const { data: shelf } = trpc.deliveryBox.warehouseShelf.useQuery();
+  const { data: allDebtors } = trpc.ledger.getDebtors.useQuery({ minBalanceUsd: 0 }, { enabled: open === "debt" });
+  const debtorRows = (allDebtors ?? [])
+    .filter((d) => d.balanceUsd > 0.005 && !d.customer?.isHouseAccount)
+    .sort((a, b) => b.balanceUsd - a.balanceUsd);
   const shelfBoxes = shelf ?? [];
   const shelfUsd = shelfBoxes.reduce((t, b) => t + b.valueUsd, 0);
   const shelfOld = shelfBoxes.filter((b) => b.days > 14);
@@ -192,25 +196,29 @@ export default function FinanceCenter() {
       </div>
 
       <Sheet open={open !== null} onOpenChange={(o) => !o && setOpen(null)}>
-        <SheetContent side="left" className="w-full overflow-y-auto sm:max-w-md" data-testid="finance-center-drawer">
+        <SheetContent side="left" className="w-full overflow-y-auto overflow-x-hidden sm:max-w-md" data-testid="finance-center-drawer">
           {open && data && (
             <>
-              <SheetHeader>
-                <SheetTitle>{L(titles[open])}</SheetTitle>
+              <SheetHeader className="border-b px-5 pt-5">
+                <SheetTitle className="text-lg">{L(titles[open])}</SheetTitle>
                 <SheetDescription className="sr-only">{L(titles[open])}</SheetDescription>
               </SheetHeader>
-              <div className="mt-4">
+              <div className="px-5 pb-8">
                 {open === "debt" && (
                   <>
                     <Line label={L({ ku: "کۆی قەرز", en: "Total owed", ar: "المجموع", zh: "合计" })}><Num value={data.debt.usd} className="font-semibold" /></Line>
                     <Line tone="bad" label={L({ ku: `زیاتر لە 30 ڕۆژ — ${data.debt.old.count} کڕیار`, en: `Over 30 days — ${data.debt.old.count}`, ar: `أكثر من 30 يوماً — ${data.debt.old.count}`, zh: `超 30 天 — ${data.debt.old.count}` })} href="/finance/debtors"><Num value={data.debt.old.usd} /></Line>
-                    <div className="mt-4 mb-1 text-xs text-muted-foreground">{L({ ku: "گەورەترین قەرزداران", en: "Largest debtors", ar: "أكبر المدينين", zh: "最大欠款人" })}</div>
-                    {data.debt.top.map((t) => (
-                      <div key={t.customerId} className="flex items-center justify-between gap-2 border-b py-2 text-sm">
-                        <Link href={`/finance/customer/${t.customerId}`} className="min-w-0 truncate hover:underline">{t.name ?? t.code}</Link>
-                        <span className="flex items-center gap-2">
-                          <Num value={t.usd} />
-                          <DebtWhatsAppButton customer={{ id: t.customerId, fullName: t.name, customerCode: t.code }} owedUsd={t.usd} size="icon" />
+                    <div className="mt-4 mb-1 text-xs text-muted-foreground">{L({ ku: `هەموو قەرزداران — ${debtorRows.length}، گەورەترین لە سەرەوە`, en: `All debtors — ${debtorRows.length}, largest first`, ar: `كل المدينين — ${debtorRows.length}`, zh: `全部欠款人 — ${debtorRows.length}` })}</div>
+                    {debtorRows.length === 0 && <p className="py-2 text-xs text-muted-foreground">…</p>}
+                    {debtorRows.map((d) => (
+                      <div key={d.customerId} className="flex items-center justify-between gap-3 border-b py-2 text-sm">
+                        <Link href={`/finance/customer/${d.customerId}`} className="min-w-0 flex-1 hover:underline">
+                          <div className="truncate">{d.customer?.fullName ?? d.customer?.customerCode}</div>
+                          <div className="truncate font-mono text-xs text-muted-foreground" dir="ltr">{String(d.customer?.customerCode ?? "").replace(/\(.*/, "")}</div>
+                        </Link>
+                        <span className="flex shrink-0 items-center gap-2">
+                          <Num value={d.balanceUsd} className="font-semibold" />
+                          <DebtWhatsAppButton customer={{ id: d.customerId, fullName: d.customer?.fullName, customerCode: d.customer?.customerCode, mobileNumber: d.customer?.mobileNumber, nationality: d.customer?.nationality ?? null }} owedUsd={d.balanceUsd} size="icon" />
                         </span>
                       </div>
                     ))}
@@ -287,6 +295,9 @@ export default function FinanceCenter() {
                     <Line label={L({ ku: `داشکانی سەر وەسڵی بۆکس — ${data.discounts?.count ?? 0}`, en: `Box receipt discounts — ${data.discounts?.count ?? 0}`, ar: `خصومات الإيصالات — ${data.discounts?.count ?? 0}`, zh: `箱子收据折扣 — ${data.discounts?.count ?? 0}` })} href="/finance/company-dashboard?focus=discounts"><Num value={data.discounts?.usd ?? 0} /></Line>
                     <Line label={L({ ku: "قەرەبوو / لێخۆشبوون (پارە نییە)", en: "Compensation / waivers (not money)", ar: "تعويض / إعفاء", zh: "补偿/减免" })}><Num value={data.writeOffs?.compensationUsd ?? 0} /></Line>
                     <Line label={L({ ku: "کەمکردنەوەی دەستی", en: "Hand credits", ar: "تخفيضات يدوية", zh: "手动减免" })}><Num value={data.writeOffs?.manualUsd ?? 0} /></Line>
+                    {(data.writeOffs?.roundingUsd ?? 0) > 0 && (
+                      <Line tone="quiet" label={L({ ku: `خڕکردنەوەی سەنت لە کاتی پارەدان — ${data.writeOffs?.roundingCount ?? 0} جار`, en: `Rounding cents at the till — ${data.writeOffs?.roundingCount ?? 0}`, ar: `تقريب السنتات — ${data.writeOffs?.roundingCount ?? 0}`, zh: `收银取整 — ${data.writeOffs?.roundingCount ?? 0}` })}><Num value={data.writeOffs?.roundingUsd ?? 0} /></Line>
+                    )}
                     <div className="flex items-center justify-between border-t-2 py-2 font-semibold"><span>{L({ ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}</span><Num value={(data.discounts?.usd ?? 0) + (data.writeOffs?.usd ?? 0)} /></div>
                     {(data.writeOffs?.byPerson ?? []).length > 0 && (
                       <>
