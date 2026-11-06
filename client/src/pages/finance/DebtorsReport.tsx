@@ -33,7 +33,6 @@ import {
   Users,
   Download,
   Search,
-  TrendingUp,
   Phone,
   Eye,
   Package,
@@ -41,8 +40,6 @@ import {
 } from "lucide-react";
 import { Link, useLocation, useSearch } from "wouter";
 import { useTranslation } from "@/contexts/LanguageContext";
-import { Money } from "@/components/ui/money";
-import { MiniProgress } from "@/components/dashboard/MiniProgress";
 import { CopyButton } from "@/components/CopyButton";
 import { FilteredByLinkBanner } from "@/components/FilteredByLinkBanner";
 import { pickLang } from "@/lib/lang";
@@ -186,6 +183,9 @@ const [searchTerm, setSearchTerm] = useState("");
     };
   }, [debtorAccounts]);
   
+  // Each age's part of the whole debt, so the cards read as one picture.
+  const shareOf = (amount: number) => (stats.totalDebt > 0 ? Math.round((amount / stats.totalDebt) * 100) : 0);
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amount);
   };
@@ -210,8 +210,8 @@ const [searchTerm, setSearchTerm] = useState("");
       <div className="space-y-6">
         <PageHelp id="debtors" text={HELP.debtors} />
         {/* Header */}
-        <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-6 text-white">
-          <div className="flex items-center justify-between">
+        <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-2xl p-6 text-white shadow-xl">
+          <div className="flex flex-wrap items-center justify-between gap-3">
             <div className="flex items-center gap-4">
               <Link href="/finance">
                 <Button variant="ghost" size="icon" className="text-white hover:bg-white/20">
@@ -245,13 +245,13 @@ const [searchTerm, setSearchTerm] = useState("");
         />
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-          <Card className="border-l-4 border-l-red-500">
+        <div className="grid grid-cols-2 gap-3 md:grid-cols-5 md:gap-4">
+          <Card className="col-span-2 border-s-4 border-s-red-500 md:col-span-1">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("finance.totalDebt")}</p>
-                  <p className="text-2xl font-bold text-red-600 dark:text-red-300">{formatCurrency(stats.totalDebt)}</p>
+                  <p className="font-mono text-2xl font-bold tabular-nums text-red-600 dark:text-red-300" dir="ltr">{formatCurrency(stats.totalDebt)}</p>
                   <p className="text-xs text-muted-foreground">{stats.totalDebtors} {t("auto.text_cfa8e7")}</p>
                 </div>
                 <div className="p-3 bg-red-100 dark:bg-red-950/40 rounded-full">
@@ -261,14 +261,14 @@ const [searchTerm, setSearchTerm] = useState("");
             </CardContent>
           </Card>
           
-          <Card className={`border-l-4 border-l-green-500 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '0-30' ? 'ring-2 ring-green-500' : ''}`}
+          <Card className={`border-s-4 border-s-green-500 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '0-30' ? 'ring-2 ring-green-500' : ''}`}
                 onClick={() => setAgingFilter(agingFilter === '0-30' ? 'all' : '0-30')}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_9c94d3")} </p>
-                  <p className="text-xl font-bold text-green-600 dark:text-green-300">{formatCurrency(stats.aging0_30)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.count0_30} {t("common.customer")}</p>
+                  <p className="font-mono text-xl font-bold tabular-nums text-green-600 dark:text-green-300" dir="ltr">{formatCurrency(stats.aging0_30)}</p>
+                  <p className="text-xs text-muted-foreground">{stats.count0_30} {t("common.customer")} · <bdi dir="ltr" className="tabular-nums">{shareOf(stats.aging0_30)}%</bdi></p>
                 </div>
                 <div className="p-2 bg-green-100 dark:bg-green-950/40 rounded-full">
                   <Clock className="w-4 h-4 text-green-600 dark:text-green-300" />
@@ -277,14 +277,14 @@ const [searchTerm, setSearchTerm] = useState("");
             </CardContent>
           </Card>
           
-          <Card className={`border-l-4 border-l-yellow-500 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '30-60' ? 'ring-2 ring-yellow-500' : ''}`}
+          <Card className={`border-s-4 border-s-yellow-500 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '30-60' ? 'ring-2 ring-yellow-500' : ''}`}
                 onClick={() => setAgingFilter(agingFilter === '30-60' ? 'all' : '30-60')}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_89c656")} </p>
-                  <p className="text-xl font-bold text-yellow-600 dark:text-yellow-300">{formatCurrency(stats.aging30_60)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.count30_60} {t("common.customer")}</p>
+                  <p className="font-mono text-xl font-bold tabular-nums text-yellow-600 dark:text-yellow-300" dir="ltr">{formatCurrency(stats.aging30_60)}</p>
+                  <p className="text-xs text-muted-foreground">{stats.count30_60} {t("common.customer")} · <bdi dir="ltr" className="tabular-nums">{shareOf(stats.aging30_60)}%</bdi></p>
                 </div>
                 <div className="p-2 bg-yellow-100 dark:bg-yellow-950/40 rounded-full">
                   <Clock className="w-4 h-4 text-yellow-600 dark:text-yellow-300" />
@@ -293,14 +293,14 @@ const [searchTerm, setSearchTerm] = useState("");
             </CardContent>
           </Card>
           
-          <Card className={`border-l-4 border-l-orange-500 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '60-90' ? 'ring-2 ring-orange-500' : ''}`}
+          <Card className={`border-s-4 border-s-orange-500 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '60-90' ? 'ring-2 ring-orange-500' : ''}`}
                 onClick={() => setAgingFilter(agingFilter === '60-90' ? 'all' : '60-90')}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_aebd66")} </p>
-                  <p className="text-xl font-bold text-orange-600 dark:text-orange-300">{formatCurrency(stats.aging60_90)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.count60_90} {t("common.customer")}</p>
+                  <p className="font-mono text-xl font-bold tabular-nums text-orange-600 dark:text-orange-300" dir="ltr">{formatCurrency(stats.aging60_90)}</p>
+                  <p className="text-xs text-muted-foreground">{stats.count60_90} {t("common.customer")} · <bdi dir="ltr" className="tabular-nums">{shareOf(stats.aging60_90)}%</bdi></p>
                 </div>
                 <div className="p-2 bg-orange-100 dark:bg-orange-950/40 rounded-full">
                   <AlertTriangle className="w-4 h-4 text-orange-600 dark:text-orange-300" />
@@ -309,14 +309,14 @@ const [searchTerm, setSearchTerm] = useState("");
             </CardContent>
           </Card>
           
-          <Card className={`border-l-4 border-l-red-700 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '90+' ? 'ring-2 ring-red-700' : ''}`}
+          <Card className={`border-s-4 border-s-red-700 cursor-pointer hover:shadow-md transition-shadow ${agingFilter === '90+' ? 'ring-2 ring-red-700' : ''}`}
                 onClick={() => setAgingFilter(agingFilter === '90+' ? 'all' : '90+')}>
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("auto.text_3192e6")} </p>
-                  <p className="text-xl font-bold text-red-700 dark:text-red-300">{formatCurrency(stats.aging90Plus)}</p>
-                  <p className="text-xs text-muted-foreground">{stats.count90Plus} {t("common.customer")}</p>
+                  <p className="font-mono text-xl font-bold tabular-nums text-red-700 dark:text-red-300" dir="ltr">{formatCurrency(stats.aging90Plus)}</p>
+                  <p className="text-xs text-muted-foreground">{stats.count90Plus} {t("common.customer")} · <bdi dir="ltr" className="tabular-nums">{shareOf(stats.aging90Plus)}%</bdi></p>
                 </div>
                 <div className="p-2 bg-red-100 dark:bg-red-950/40 rounded-full">
                   <AlertTriangle className="w-4 h-4 text-red-700 dark:text-red-300" />
@@ -325,62 +325,6 @@ const [searchTerm, setSearchTerm] = useState("");
             </CardContent>
           </Card>
         </div>
-
-        {/* Debt Aging breakdown — display-only aggregation of already-computed stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-base">
-              <TrendingUp className="w-4 h-4" />
-              {t("finance.debtAging") || "تەمەنی قەرز"}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {(() => {
-              const sixtyPlusTotal = stats.aging60_90 + stats.aging90Plus;
-              const sixtyPlusCount = stats.count60_90 + stats.count90Plus;
-              const maxBucket = Math.max(
-                stats.aging0_30,
-                stats.aging30_60,
-                sixtyPlusTotal,
-                1,
-              );
-              const buckets = [
-                {
-                  label: t("finance.aging0_30") || "0–30 ڕۆژ",
-                  total: stats.aging0_30,
-                  count: stats.count0_30,
-                  color: "bg-emerald-500",
-                },
-                {
-                  label: t("finance.aging30_60") || "30–60 ڕۆژ",
-                  total: stats.aging30_60,
-                  count: stats.count30_60,
-                  color: "bg-amber-500",
-                },
-                {
-                  label: t("finance.aging60Plus") || "60+ ڕۆژ",
-                  total: sixtyPlusTotal,
-                  count: sixtyPlusCount,
-                  color: "bg-red-600",
-                },
-              ];
-              return buckets.map((b) => (
-                <div key={b.label} className="space-y-2">
-                  <div className="flex items-baseline justify-between">
-                    <span className="text-sm font-medium text-foreground">{b.label}</span>
-                    <span className="text-xs text-muted-foreground">
-                      {b.count} {t("common.customer")}
-                    </span>
-                  </div>
-                  <div className="text-lg font-bold text-foreground">
-                    <Money value={b.total} decimals={0} />
-                  </div>
-                  <MiniProgress value={Math.round(b.total)} max={Math.round(maxBucket)} color={b.color} />
-                </div>
-              ));
-            })()}
-          </CardContent>
-        </Card>
 
         {/* Filters */}
         <Card>
@@ -479,7 +423,7 @@ const [searchTerm, setSearchTerm] = useState("");
                       <TableCell className="p-0 text-right font-bold text-red-600 dark:text-red-300">
                         {/* The figure opens the statement it was counted from. */}
                         <Link href={`/finance/customer/${debtor.customerId}`} className="block w-full px-4 py-2 hover:underline">
-                        {formatCurrency(parseFloat(debtor.currentBalanceUsd || '0'))}
+                        <bdi dir="ltr" className="font-mono tabular-nums">{formatCurrency(parseFloat(debtor.currentBalanceUsd || '0'))}</bdi>
                         {overLimitOnly && (
                           <div className="text-[11px] font-normal text-muted-foreground">
                             {pickLang(language, LIMIT_WORDS)} {formatCurrency(parseFloat(debtor.creditLimitUsd || '0'))}
@@ -497,7 +441,7 @@ const [searchTerm, setSearchTerm] = useState("");
                           {getAgingBadge(debtor.agingCategory)}
                         </button>
                       </TableCell>
-                      <TableCell>{debtor.daysSinceActivity} {t("auto.text_05f45d")}</TableCell>
+                      <TableCell><bdi dir="ltr" className="tabular-nums">{debtor.daysSinceActivity}</bdi> {t("auto.text_05f45d")}</TableCell>
                       <TableCell>
                         {debtor.lastActivity
                           ? <bdi dir="ltr" className="tabular-nums">{new Date(debtor.lastActivity).toLocaleDateString("en-GB")}</bdi>
