@@ -107,15 +107,28 @@ export const ledgerRouter = router({
      * The company's own code (owner, 2026-11-05): what is written on it is
      * the office's spending, left out of customer debt. Main admin only.
      */
+    houseAccount: superAdminProcedure.query(async () => db.getHouseAccountCustomer()),
+    /** One code for the company, chosen by typing it; any other is cleared. */
     setHouseAccount: superAdminProcedure
-      .input(z.object({ customerId: idSchema, on: z.boolean() }))
+      .input(z.object({ customerCode: z.string().trim().max(60).nullable() }))
       .mutation(async ({ input, ctx }) => {
-        await db.setCustomerHouseAccount(input.customerId, input.on);
+        let customerId: number | null = null;
+        if (input.customerCode) {
+          const found = await db.findCustomerByTypedCode(input.customerCode);
+          if (found.length !== 1) {
+            throw new TRPCError({ code: "BAD_REQUEST", message: withFix(
+              found.length === 0 ? `کۆدی ${input.customerCode} نەدۆزرایەوە.` : `کۆدی ${input.customerCode} زیاتر لە یەک کڕیاری هەیە.`,
+              ["کۆدەکە وەک خۆی بنووسە، بۆ نموونە AZ341"],
+            ) });
+          }
+          customerId = found[0].id;
+        }
+        await db.setHouseAccountCustomer(customerId);
         await db.createAuditLog({
           userId: ctx.user.id, userRole: ctx.user.role, action: "set_house_account",
-          entityType: "customer", entityId: input.customerId, newValues: { isHouseAccount: input.on },
+          entityType: "customer", entityId: customerId ?? 0, newValues: { customerCode: input.customerCode },
         });
-        return { ok: true };
+        return db.getHouseAccountCustomer();
       }),
 
     saveFixedCosts: superAdminProcedure

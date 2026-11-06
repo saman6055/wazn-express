@@ -4417,8 +4417,32 @@ export async function getHouseAccountSpendUsd(): Promise<number> {
   return Number(row?.usd ?? 0);
 }
 
-export async function setCustomerHouseAccount(customerId: number, on: boolean): Promise<void> {
+/**
+ * The company has one code (owner, 2026-11-06: «کۆمپانیا یەک کۆدی هەیە»).
+ * Choosing it clears any other in the same statement; null clears it.
+ */
+export async function setHouseAccountCustomer(customerId: number | null): Promise<void> {
   const db = await getDb();
   if (!db) throw new Error("Database not available");
-  await db.execute(sql`UPDATE customers SET isHouseAccount = ${on ? 1 : 0} WHERE id = ${customerId}`);
+  await db.execute(sql`UPDATE customers SET isHouseAccount = (id = ${customerId ?? 0}) WHERE isHouseAccount = 1 OR id = ${customerId ?? 0}`);
+}
+
+/** The one house account, if one is chosen. */
+export async function getHouseAccountCustomer(): Promise<{ id: number; customerCode: string | null; fullName: string | null } | null> {
+  const db = await getDb();
+  if (!db) return null;
+  const [row] = await db.select({ id: customers.id, customerCode: customers.customerCode, fullName: customers.fullName })
+    .from(customers).where(sql`${customers.isHouseAccount} = 1`).limit(1);
+  return row ? { id: Number(row.id), customerCode: row.customerCode ?? null, fullName: row.fullName ?? null } : null;
+}
+
+/** A customer by the code typed - «AZ341», or the code as it is stored. One only. */
+export async function findCustomerByTypedCode(code: string): Promise<{ id: number; customerCode: string | null; fullName: string | null }[]> {
+  const db = await getDb();
+  if (!db) return [];
+  const c = code.trim();
+  if (!c) return [];
+  const rows = await db.select({ id: customers.id, customerCode: customers.customerCode, fullName: customers.fullName })
+    .from(customers).where(sql`${customers.customerCode} = ${c} OR ${customers.customerCode} LIKE ${c + "(%"}`).limit(3);
+  return rows.map((r) => ({ id: Number(r.id), customerCode: r.customerCode ?? null, fullName: r.fullName ?? null }));
 }

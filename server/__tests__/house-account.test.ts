@@ -15,6 +15,11 @@ describe("house account", () => {
       expect(read(f), f).toContain("NOT_HOUSE_ACCOUNT");
     }
   });
+  it("is one code, chosen on the working-capital page, never a box on every profile", () => {
+    expect(read("client/src/components/finance/HouseAccountSwitch.tsx")).not.toContain('type="checkbox"');
+    expect(read("client/src/pages/finance/WorkingCapital.tsx")).toContain("<HouseAccountSetting />");
+    expect(read("server/db/finance.db.ts")).toContain("SET isHouseAccount = (id = ${customerId ?? 0})");
+  });
   it("working capital counts it as spent", () => {
     const base = { capitalUsd: 1000, profitUsd: 0, expensesUsd: 0, withdrawals: [], debtUsd: 0, debtors: 0, creditUsd: 0, goodsOnRoadUsd: 0, goodsOnRoadCostUsd: 0, goodsOnRoadCount: 0, stockUsd: 0, stockCount: 0 };
     expect(workingCapital({ ...base, houseUsd: 48.71 }).shouldHoldUsd).toBe(951.29);

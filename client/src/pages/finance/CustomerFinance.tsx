@@ -1477,7 +1477,7 @@ export default function CustomerFinance() {
                   <div>
                     <p className="text-xs text-emerald-100">{pickLang(language, { ku: "کڕیارەکان", en: "Customer", ar: "العميل", zh: "客户" })}</p>
                     <p className="font-bold text-white">{customer.customerCode} - {customer.fullName}</p>
-                    <HouseAccountSwitch customerId={customerId} on={Boolean((customer as { isHouseAccount?: boolean | number }).isHouseAccount)} />
+                    <HouseAccountSwitch on={Boolean((customer as { isHouseAccount?: boolean | number }).isHouseAccount)} />
                   </div>
                 </div>
               </div>
