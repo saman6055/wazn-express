@@ -78,13 +78,17 @@ html[data-skin="fintech"].dark [data-slot="card"],
 html[data-skin="fintech"].dark .rounded-xl.border.bg-card,
 html[data-skin="fintech"].dark .rounded-2xl.border.bg-card {
   background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.88));
-  border-color: var(--fx-line);
   box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.25);
   transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
 }
 html[data-skin="fintech"].dark [data-slot="card"]:hover {
   border-color: rgba(34, 211, 238, 0.35);
   box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.12), 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* The hairline edge; a card's coloured side stripe (border-s-…) keeps its colour. */
+html[data-skin="fintech"].dark [data-slot="card"]:not([class*="border-s-"]):not([class*="border-l-"]):not([class*="border-t-"]) {
+  border-color: var(--fx-line);
 }
 
 /* Headings glow a little on hover (owner's taste: bright text, glowing headings). */
@@ -167,3 +171,56 @@ html[data-skin="fintech"].dark [data-slot="dialog-content"] {
 .fx-debt { color: var(--fx-debt, #DC2626); }
 .fx-road { color: var(--fx-road, #B45309); }
 .fx-discount { color: var(--fx-discount, #0E7490); }
+
+/* Page headers. The light look's loud gradient bands (red, orange, violet)
+   glare on the dark page; in the skin they become one glass panel with a
+   cyan-to-violet edge, the same for every page. The paper (.wazn-paper) and
+   anything small (badges, buttons) keep their own colours. */
+html[data-skin="fintech"].dark main :is(.rounded-2xl, .rounded-xl)[class*="bg-gradient-to-"][class*="text-white"]:is(.p-6, .p-5, .p-8):not(:where(.wazn-paper, .wazn-paper *)) {
+  background:
+    linear-gradient(135deg, rgba(34, 211, 238, 0.14), rgba(167, 139, 250, 0.10) 55%, rgba(16, 185, 129, 0.06)),
+    var(--fx-card) !important;
+  border: 1px solid rgba(34, 211, 238, 0.22);
+  box-shadow: 0 0 0 1px rgba(167, 139, 250, 0.06), 0 12px 32px rgba(0, 0, 0, 0.35), inset 0 1px 0 rgba(255, 255, 255, 0.04);
+  color: var(--fx-ink) !important;
+}
+html[data-skin="fintech"].dark main :is(.rounded-2xl, .rounded-xl)[class*="bg-gradient-to-"][class*="text-white"]:is(.p-6, .p-5, .p-8) :is(h1, h2) {
+  background: linear-gradient(90deg, #E5E9F0, #67E8F9);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+html[data-skin="fintech"].dark main :is(.rounded-2xl, .rounded-xl)[class*="bg-gradient-to-"][class*="text-white"]:is(.p-6, .p-5, .p-8) [class*="text-white/"],
+html[data-skin="fintech"].dark main :is(.rounded-2xl, .rounded-xl)[class*="bg-gradient-to-"][class*="text-white"]:is(.p-6, .p-5, .p-8) :is([class*="text-red-1"], [class*="text-emerald-1"], [class*="text-teal-1"], [class*="text-blue-1"], [class*="text-purple-1"], [class*="text-teal-2"]) {
+  color: var(--fx-ink-2) !important;
+}
+
+/* Tabs: a dark rail, the chosen tab lit. */
+html[data-skin="fintech"].dark [data-slot="tabs-list"] {
+  background: #0D1220;
+  border: 1px solid var(--fx-line);
+}
+html[data-skin="fintech"].dark [data-slot="tabs-trigger"][data-state="active"] {
+  background: linear-gradient(180deg, rgba(34, 211, 238, 0.18), rgba(34, 211, 238, 0.06));
+  color: #CFFAFE;
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.3);
+}
+
+/* Fields: dark wells, a cyan ring on focus. */
+html[data-skin="fintech"].dark :is(input, textarea, [data-slot="select-trigger"]):not([type="checkbox"]):not([type="radio"]) {
+  background-color: #0D1220;
+  border-color: var(--fx-line-2);
+}
+html[data-skin="fintech"].dark :is(input, textarea):focus-visible {
+  border-color: rgba(34, 211, 238, 0.6);
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.15);
+}
+
+/* Table heads sit on a band of their own. */
+html[data-skin="fintech"].dark table thead tr { background: rgba(13, 18, 32, 0.9); }
+
+/* Badges keep their meaning but lose the pastel. */
+html[data-skin="fintech"].dark [data-slot="badge"] { border-color: var(--fx-line-2); }
+
+/* Scrollbars that belong to the dark page. */
+html[data-skin="fintech"].dark * { scrollbar-color: #2A3646 transparent; }
