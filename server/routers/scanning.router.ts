@@ -1230,6 +1230,14 @@ export const deliveryBoxRouter = router({
    * Read-only. The figures come from the ledger, not from a column of their
    * own, so this can never disagree with what the customer's account says.
    */
+  /** Boxes asleep on the warehouse shelf: made, with goods, not sent, not paid (point 41.2). */
+  warehouseShelf: staffProcedure.query(async () => db.warehouseShelfBoxes()),
+
+  /** A customer's boxes with goods and no receipt - asked before a new box is made (point 41.1). */
+  unreceiptedOf: staffProcedure
+    .input(z.object({ customerId: z.number().int().positive() }))
+    .query(async ({ input }) => db.unreceiptedBoxesOf(input.customerId)),
+
   /** The box receipts, newest first, for the invoices page (owner, 2026-11-05). */
   listReceipts: staffProcedure
     .input(z.object({ search: z.string().max(100).optional(), limit: z.number().int().min(1).max(300).optional() }).optional())

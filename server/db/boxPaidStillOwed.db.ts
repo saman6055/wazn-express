@@ -464,6 +464,56 @@ export interface DoubleLine {
  * boxed, in a box not receipted, and the customer's own parcels waiting for
  * a box. The verdicts are the shared rule's; nothing is decided here.
  */
+/**
+ * Every box of a customer that holds goods and has no receipt yet (owner,
+ * 2026-11-06, point 41.1): asked when a new box is made, so debt is not
+ * piled on debt without the office seeing it.
+ */
+export async function unreceiptedBoxesOf(customerId: number): Promise<Array<{ boxId: number; boxCode: string; status: string; valueUsd: number; days: number }>> {
+  const db = await getDb();
+  if (!db) return [];
+  const rows = await db
+    .select({ id: deliveryBoxes.id, boxCode: deliveryBoxes.boxCode, status: deliveryBoxes.status, value: deliveryBoxes.totalValueUsd, n: deliveryBoxes.totalPackages, createdAt: deliveryBoxes.createdAt })
+    .from(deliveryBoxes)
+    .where(and(
+      eq(deliveryBoxes.customerId, customerId),
+      ne(deliveryBoxes.status, "cancelled"),
+      sql`COALESCE(${deliveryBoxes.totalPackages}, 0) > 0`,
+      sql`NOT EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`,
+    ))
+    .orderBy(deliveryBoxes.id);
+  return rows.map((r) => ({
+    boxId: Number(r.id), boxCode: String(r.boxCode), status: String(r.status), valueUsd: Number(r.value ?? 0),
+    days: r.createdAt ? Math.floor((Date.now() - new Date(r.createdAt).getTime()) / 86_400_000) : 0,
+  }));
+}
+
+/**
+ * Boxes on the warehouse shelf (owner, 2026-11-06, point 41.2): made, holding
+ * goods, not sent out and not paid - the company's money asleep in Erbil.
+ * Oldest first, with how long each has waited.
+ */
+export async function warehouseShelfBoxes(): Promise<Array<{ boxId: number; boxCode: string; customerId: number; customerCode: string | null; customerName: string | null; valueUsd: number; parcels: number; days: number }>> {
+  const db = await getDb();
+  if (!db) return [];
+  const { customers } = await import("../../drizzle/schema");
+  const rows = await db
+    .select({ id: deliveryBoxes.id, boxCode: deliveryBoxes.boxCode, customerId: deliveryBoxes.customerId, value: deliveryBoxes.totalValueUsd, n: deliveryBoxes.totalPackages, createdAt: deliveryBoxes.createdAt, code: customers.customerCode, name: customers.fullName })
+    .from(deliveryBoxes)
+    .leftJoin(customers, eq(customers.id, deliveryBoxes.customerId))
+    .where(and(
+      sql`${deliveryBoxes.status} IN ('open', 'ready')`,
+      sql`COALESCE(${deliveryBoxes.totalPackages}, 0) > 0`,
+      sql`NOT EXISTS (SELECT 1 FROM ${boxSettlements} s WHERE s.boxId = ${deliveryBoxes.id} AND s.status = 'confirmed')`,
+    ))
+    .orderBy(deliveryBoxes.createdAt);
+  return rows.map((r) => ({
+    boxId: Number(r.id), boxCode: String(r.boxCode), customerId: Number(r.customerId), customerCode: r.code ?? null, customerName: r.name ?? null,
+    valueUsd: Number(r.value ?? 0), parcels: Number(r.n ?? 0),
+    days: r.createdAt ? Math.floor((Date.now() - new Date(r.createdAt).getTime()) / 86_400_000) : 0,
+  }));
+}
+
 /** The customer's oldest box with no receipt: the one an advance waits on (oldest first). */
 export async function oldestUnreceiptedBox(customerId: number): Promise<{ boxCode: string; days: number } | null> {
   const db = await getDb();

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useMemo } from "react";
+import { UnpaidBoxesWarning } from "./UnpaidBoxesWarning";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { trpc } from "@/lib/trpc";
 import { toast } from "sonner";
@@ -286,6 +287,7 @@ export function CreateBoxDialog({ open, onOpenChange, onBoxCreated, customer }: 
                 <span className="text-xs text-muted-foreground">({selectedCustomer.customerCode})</span>
               </div>
             )}
+            {selectedCustomerId && <UnpaidBoxesWarning customerId={selectedCustomerId} />}
           </div>
 
           {/* Delivery Method */}

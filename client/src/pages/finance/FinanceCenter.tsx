@@ -1,7 +1,7 @@
 import { useState, type ReactNode } from "react";
 import { Link } from "wouter";
 import {
-  Banknote, Clock, Info, Landmark, MessageCircle, PiggyBank, Receipt, Ship, TrendingUp, TriangleAlert, Users, Wallet,
+  Banknote, Clock, Info, Landmark, MessageCircle, Package, PiggyBank, Receipt, Ship, TrendingUp, TriangleAlert, Users, Wallet,
 } from "lucide-react";
 import DashboardLayout from "@/components/DashboardLayout";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "@/components/ui/sheet";
@@ -22,7 +22,7 @@ import { DebtWhatsAppButton } from "@/components/finance/DebtWhatsAppButton";
  * working capital for the main admin): nothing here is computed twice.
  */
 type Words = { ku: string; en: string; ar: string; zh: string };
-type Drawer = "debt" | "received" | "profit" | "cash" | "road" | "waiting" | null;
+type Drawer = "debt" | "received" | "profit" | "cash" | "road" | "waiting" | "shelf" | null;
 
 const usd = (n: number, signed = false) => {
   const v = Math.round((Number(n) || 0) * 100) / 100;
@@ -88,6 +88,11 @@ export default function FinanceCenter() {
   const [period, setPeriod] = useState<"month" | "lastMonth" | "year">("month");
   const [open, setOpen] = useState<Drawer>(null);
   const { data, isLoading } = trpc.ledger.financeDashboard.useQuery({ period });
+  // Boxes asleep on the shelf (point 41.2): not sent, not paid.
+  const { data: shelf } = trpc.deliveryBox.warehouseShelf.useQuery();
+  const shelfBoxes = shelf ?? [];
+  const shelfUsd = shelfBoxes.reduce((t, b) => t + b.valueUsd, 0);
+  const shelfOld = shelfBoxes.filter((b) => b.days > 14);
 
   const cap = data?.capital ?? null;
   const received = (data?.received ?? { usd: 0, count: 0, byMethod: [] }) as { usd: number; count: number; byMethod?: Array<{ method: string; usd: number; count: number }> };
@@ -110,6 +115,7 @@ export default function FinanceCenter() {
     cash: { ku: "پارەی دەست", en: "Cash in hand", ar: "النقد", zh: "现金" },
     road: { ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" },
     waiting: { ku: "چاوەڕێی تۆن", en: "Waiting for you", ar: "بانتظارك", zh: "待处理" },
+    shelf: { ku: "بۆکسی کەڵەکەبوو لە کۆگا", en: "Boxes asleep in the warehouse", ar: "صناديق متراكمة في المخزن", zh: "仓库积压箱子" },
   };
 
   return (
@@ -154,6 +160,10 @@ export default function FinanceCenter() {
                   value={<Num value={cap.goodsOnRoadUsd} />} onOpen={() => setOpen("road")} />
               </>
             )}
+            <Tile testId="fc-shelf" tone={shelfOld.length > 0 ? "amber" : "slate"} icon={<Package className="h-4 w-4" />} label={L(titles.shelf)}
+              info={L({ ku: "ئەو بۆکسانەی لە کۆگای هەولێرن، کاڵایان تێدایە، نەنێردراون و پارەیان نەدراوە: پارەی کۆمپانیا کە لە ڕەفەکاندا خەوتووە.", en: "Boxes in the Erbil warehouse with goods, not sent and not paid: company money asleep on the shelves.", ar: "صناديق في مخزن أربيل بها بضائع، لم تُرسل ولم تُدفع.", zh: "埃尔比勒仓库中未发出未付款的箱子。" })}
+              value={<Num value={shelfUsd} />} sub={L({ ku: `${shelfBoxes.length} بۆکس · ${shelfOld.length} زیاتر لە 14 ڕۆژ`, en: `${shelfBoxes.length} boxes · ${shelfOld.length} over 14 days`, ar: `${shelfBoxes.length} صندوق · ${shelfOld.length} أكثر من 14 يوماً`, zh: `${shelfBoxes.length} 箱 · ${shelfOld.length} 超 14 天` })}
+              onOpen={() => setOpen("shelf")} />
             <Tile testId="fc-waiting" tone={waiting.length > 0 ? "amber" : "slate"} icon={<Clock className="h-4 w-4" />} label={L(titles.waiting)}
               info={L({ ku: "ئەو شتانەی پێویستیان بە تۆیە بۆ ئەوەی ژمارەکان ڕاست بمێننەوە.", en: "What needs you so the figures stay true.", ar: "ما يحتاجك لتبقى الأرقام صحيحة.", zh: "需要您处理以保持数字准确的事项。" })}
               value={<span className="font-mono">{waiting.reduce((t, w) => t + w.n, 0)}</span>} sub={waiting.length === 0 ? L({ ku: "هیچ شتێک نییە", en: "Nothing waiting", ar: "لا شيء", zh: "无" }) : undefined}
@@ -240,6 +250,29 @@ export default function FinanceCenter() {
                     <Line label={L({ ku: "بە نرخی کڕین", en: "At cost", ar: "بسعر الشراء", zh: "按成本" })}><Num value={cap.goodsOnRoadUsd} className="font-semibold" /></Line>
                     <p className="mt-2 text-xs text-muted-foreground">{L({ ku: "کاتێک دەگەن و دەچنە بۆکس، لەسەر کڕیار دەنووسرێن و لێرە دەردەچن.", en: "When they arrive and go into a box they are written on the customer and leave this figure.", ar: "عند وصولها ودخولها صندوقاً تُقيَّد على العميل.", zh: "到货入箱后记入客户并离开此数。" })}</p>
                     <Link href="/finance/goods-on-road" className="mt-2 block text-sm text-sky-700 underline dark:text-sky-300">{L({ ku: "لیستی کاڵای ڕێگا", en: "Goods on the road list", ar: "قائمة بضائع الطريق", zh: "在途货物列表" })}</Link>
+                  </>
+                )}
+                {open === "shelf" && (
+                  <>
+                    <Line label={L({ ku: "کۆی بەهای بۆکسەکان", en: "Value of the boxes", ar: "قيمة الصناديق", zh: "箱子总值" })}><Num value={shelfUsd} className="font-semibold" /></Line>
+                    {([[0, 7], [8, 14], [15, 30], [31, 100000]] as Array<[number, number]>).map(([a, b]) => {
+                      const part = shelfBoxes.filter((x) => x.days >= a && x.days <= b);
+                      if (part.length === 0) return null;
+                      return <Line key={a} tone={a >= 15 ? "bad" : "quiet"} label={b > 1000 ? L({ ku: `زیاتر لە 30 ڕۆژ — ${part.length}`, en: `Over 30 days — ${part.length}`, ar: `أكثر من 30 يوماً — ${part.length}`, zh: `超 30 天 — ${part.length}` }) : L({ ku: `${a}–${b} ڕۆژ — ${part.length}`, en: `${a}–${b} days — ${part.length}`, ar: `${a}–${b} يوماً — ${part.length}`, zh: `${a}–${b} 天 — ${part.length}` })}><Num value={part.reduce((t, x) => t + x.valueUsd, 0)} /></Line>;
+                    })}
+                    <div className="mt-4 mb-1 text-xs text-muted-foreground">{L({ ku: "کۆنترین لە سەرەوە", en: "Oldest first", ar: "الأقدم أولاً", zh: "最旧在前" })}</div>
+                    {shelfBoxes.slice(0, 40).map((b) => (
+                      <div key={b.boxId} className="flex items-center justify-between gap-2 border-b py-2 text-sm">
+                        <span className="min-w-0">
+                          <Link href={`/customer-delivery-scanner?box=${b.boxId}`} className="font-mono text-sky-700 hover:underline dark:text-sky-300">{b.boxCode}</Link>
+                          <div className="truncate text-xs text-muted-foreground">{b.customerName ?? b.customerCode} · {L({ ku: `${b.days} ڕۆژ`, en: `${b.days} days`, ar: `${b.days} يوم`, zh: `${b.days} 天` })}</div>
+                        </span>
+                        <span className="flex items-center gap-2">
+                          <Num value={b.valueUsd} />
+                          <DebtWhatsAppButton customer={{ id: b.customerId, fullName: b.customerName, customerCode: b.customerCode }} owedUsd={b.valueUsd} size="icon" />
+                        </span>
+                      </div>
+                    ))}
                   </>
                 )}
                 {open === "waiting" && (
