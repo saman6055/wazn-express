@@ -83,8 +83,10 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const sumOf = (rows: typeof payments) => rows.reduce((sum, p) => sum + netOf(p), 0);
   const totalPayments = sumOf(payments);
   const cashPayments = sumOf(payments.filter((p) => methodOf(p) === "CASH"));
-  const bankPayments = sumOf(payments.filter((p) => methodOf(p) === "BANK_TRANSFER"));
+  // The three places money arrives (owner, 2026-11-05): cash, FIB, Qi Card (the CARD method).
+  const fibPayments = sumOf(payments.filter((p) => methodOf(p) === "FIB"));
   const cardPayments = sumOf(payments.filter((p) => methodOf(p) === "CARD"));
+  const otherPayments = Math.max(0, Math.round((totalPayments - cashPayments - fibPayments - cardPayments) * 100) / 100);
 
   const handleCreate = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -247,7 +249,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: `کۆی دوایین ${PAYMENTS_SHOWN} پارەدان`, en: `Last ${PAYMENTS_SHOWN} payments`, ar: `آخر ${PAYMENTS_SHOWN} دفعة`, zh: `最近 ${PAYMENTS_SHOWN} 笔付款` })}</p>
-                  <p className="text-2xl font-bold text-green-600 dark:text-green-300">{fmtUsd(totalPayments)}</p>
+                  <p className="font-mono text-2xl font-bold tabular-nums text-green-600 dark:text-green-300" dir="ltr">{fmtUsd(totalPayments)}</p>
+                  <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "پارەی وەرگیراو، کەم ئەوەی هەڵوەشێنراوەتەوە", en: "Money received, less what was undone", ar: "المقبوض ناقص الملغى", zh: "实收减撤销" })}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <TrendingUp className="h-6 w-6 text-green-600 dark:text-green-300" />
@@ -260,7 +263,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "کاش", en: "Cash", ar: "نقدي", zh: "现金" })}</p>
-                  <p className="text-2xl font-bold">{fmtUsd(cashPayments)}</p>
+                  <p className="font-mono text-2xl font-bold tabular-nums" dir="ltr">{fmtUsd(cashPayments)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
                   <Banknote className="h-6 w-6 text-green-600 dark:text-green-300" />
@@ -272,8 +275,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">{pickLang(language, { ku: "گواستنەوەی بانکی", en: "Bank Transfer", ar: "تحويل بنكي", zh: "银行转账" })}</p>
-                  <p className="text-2xl font-bold">{fmtUsd(bankPayments)}</p>
+                  <p className="text-sm text-muted-foreground">FIB</p>
+                  <p className="font-mono text-2xl font-bold tabular-nums" dir="ltr">{fmtUsd(fibPayments)}</p>
                 </div>
                 <div className="h-12 w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
                   <Building className="h-6 w-6 text-blue-600 dark:text-blue-300" />
@@ -285,8 +288,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-muted-foreground">Card</p>
-                  <p className="text-2xl font-bold">{fmtUsd(cardPayments)}</p>
+                  <p className="text-sm text-muted-foreground">Qi Card</p>
+                  <p className="font-mono text-2xl font-bold tabular-nums" dir="ltr">{fmtUsd(cardPayments)}</p>
+                  {otherPayments > 0.005 && (
+                    <p className="text-xs text-muted-foreground">{pickLang(language, { ku: "شێوازی تر", en: "Other methods", ar: "طرق أخرى", zh: "其他方式" })}: <bdi dir="ltr" className="font-mono">{fmtUsd(otherPayments)}</bdi></p>
+                  )}
                 </div>
                 <div className="h-12 w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
                   <CreditCard className="h-6 w-6 text-purple-600 dark:text-purple-300" />
