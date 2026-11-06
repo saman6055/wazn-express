@@ -55,19 +55,24 @@ export default function Invoices() {
     });
   }, [allInvoices, search, statusFilter, customers]);
 
-  const stats = useMemo(() => {
-    const totalAmount = allInvoices.reduce((sum: number, inv: { totalUsd?: string }) => sum + parseFloat(inv.totalUsd || "0"), 0);
-    const now = new Date();
-    const thisMonthInvoices = allInvoices.filter((inv: { createdAt: Date | string }) => {
-      const d = new Date(inv.createdAt);
-      return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
-    });
-    const thisMonthAmount = thisMonthInvoices.reduce((sum: number, inv: { totalUsd?: string }) => sum + parseFloat(inv.totalUsd || "0"), 0);
-    const todayStr = now.toDateString();
-    const todayInvoices = allInvoices.filter((inv: { createdAt: Date | string }) => new Date(inv.createdAt).toDateString() === todayStr);
-    const todayAmount = todayInvoices.reduce((sum: number, inv: { totalUsd?: string }) => sum + parseFloat(inv.totalUsd || "0"), 0);
-    return { totalAmount, thisMonthAmount, thisMonthCount: thisMonthInvoices.length, todayAmount, todayCount: todayInvoices.length };
-  }, [allInvoices]);
+  // The figures at the top are every invoice's, summed by the server. They
+  // were the sum of the twenty rows on the open page, cancelled ones included,
+  // so the "total" changed when you turned the page (2026-11-07).
+  const dayStart = useMemo(() => { const d = new Date(); d.setHours(0, 0, 0, 0); return d.toISOString(); }, []);
+  const monthStart = useMemo(() => { const d = new Date(); d.setDate(1); d.setHours(0, 0, 0, 0); return d.toISOString(); }, []);
+  const { data: allSummary } = trpc.invoices.getSummary.useQuery();
+  const { data: monthSummary } = trpc.invoices.getSummary.useQuery({ startDate: monthStart });
+  const { data: daySummary } = trpc.invoices.getSummary.useQuery({ startDate: dayStart });
+  const stats = {
+    totalAmount: allSummary?.liveAmountUsd ?? 0,
+    liveCount: allSummary?.liveInvoices ?? 0,
+    cancelledCount: allSummary?.cancelledInvoices ?? 0,
+    thisMonthAmount: monthSummary?.liveAmountUsd ?? 0,
+    thisMonthCount: monthSummary?.liveInvoices ?? 0,
+    todayAmount: daySummary?.liveAmountUsd ?? 0,
+    todayCount: daySummary?.liveInvoices ?? 0,
+  };
+  const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 
   const PrevIcon = isRTL ? ChevronRight : ChevronLeft;
   const NextIcon = isRTL ? ChevronLeft : ChevronRight;
@@ -87,7 +92,7 @@ export default function Invoices() {
             </div>
             <div className="text-left">
               <p className="text-teal-200 text-xs">{t('invoicesList.totalAmount')}</p>
-              <p className="text-3xl font-bold font-mono">${stats.totalAmount.toFixed(2)}</p>
+              <p className="text-3xl font-bold font-mono tabular-nums" dir="ltr">{usd(stats.totalAmount)}</p>
             </div>
           </div>
         </div>
@@ -101,7 +106,8 @@ export default function Invoices() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-muted-foreground font-medium">{t('invoicesList.totalInvoices')}</p>
-                  <p className="text-2xl font-bold mt-1">{totalCount}</p>
+                  <p className="text-2xl font-bold font-mono tabular-nums mt-1" dir="ltr">{totalCount}</p>
+                  {stats.cancelledCount > 0 && <p className="text-xs text-muted-foreground">{t('invoicesList.cancelled')}: <bdi dir="ltr" className="tabular-nums">{stats.cancelledCount}</bdi></p>}
                 </div>
                 <div className="p-2.5 bg-slate-100 dark:bg-slate-950/40 rounded-xl"><Hash className="h-5 w-5 text-slate-600 dark:text-slate-300" /></div>
               </div>
@@ -112,7 +118,7 @@ export default function Invoices() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-teal-600 dark:text-teal-300 font-medium">{t('invoicesList.totalAmount')}</p>
-                  <p className="text-2xl font-bold text-teal-700 dark:text-teal-300 font-mono mt-1">${stats.totalAmount.toFixed(0)}</p>
+                  <p className="text-2xl font-bold text-teal-700 dark:text-teal-300 font-mono mt-1 tabular-nums" dir="ltr">{usd(stats.totalAmount)}</p>
                 </div>
                 <div className="p-2.5 bg-teal-100 dark:bg-teal-950/40 rounded-xl"><DollarSign className="h-5 w-5 text-teal-600 dark:text-teal-300" /></div>
               </div>
@@ -123,7 +129,7 @@ export default function Invoices() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-blue-600 dark:text-blue-300 font-medium">{t('invoicesList.thisMonth')} ({stats.thisMonthCount})</p>
-                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 font-mono mt-1">${stats.thisMonthAmount.toFixed(0)}</p>
+                  <p className="text-2xl font-bold text-blue-700 dark:text-blue-300 font-mono mt-1 tabular-nums" dir="ltr">{usd(stats.thisMonthAmount)}</p>
                 </div>
                 <div className="p-2.5 bg-blue-100 dark:bg-blue-950/40 rounded-xl"><CalendarDays className="h-5 w-5 text-blue-600 dark:text-blue-300" /></div>
               </div>
@@ -134,7 +140,7 @@ export default function Invoices() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-xs text-emerald-600 dark:text-emerald-300 font-medium">{t('invoicesList.today')} ({stats.todayCount})</p>
-                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 font-mono mt-1">${stats.todayAmount.toFixed(0)}</p>
+                  <p className="text-2xl font-bold text-emerald-700 dark:text-emerald-300 font-mono mt-1 tabular-nums" dir="ltr">{usd(stats.todayAmount)}</p>
                 </div>
                 <div className="p-2.5 bg-emerald-100 dark:bg-emerald-950/40 rounded-xl"><TrendingUp className="h-5 w-5 text-emerald-600 dark:text-emerald-300" /></div>
               </div>
@@ -218,12 +224,12 @@ export default function Invoices() {
                             <p className="text-xs text-muted-foreground font-mono">{customer?.customerCode || ""}</p>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm text-muted-foreground">
+                            <bdi dir="ltr" className="text-sm tabular-nums text-muted-foreground">
                               {new Date(invoice.issuedAt || invoice.createdAt).toLocaleDateString("en-GB")}
-                            </span>
+                            </bdi>
                           </TableCell>
                           <TableCell>
-                            <span className="font-mono font-semibold text-sm">${parseFloat(invoice.totalUsd || "0").toFixed(2)}</span>
+                            <bdi dir="ltr" className={`font-mono font-semibold text-sm tabular-nums ${invoice.status === "cancelled" || invoice.status === "refunded" ? "text-muted-foreground line-through" : ""}`}>{usd(parseFloat(invoice.totalUsd || "0"))}</bdi>
                           </TableCell>
                           <TableCell>
                             <Badge variant="outline" className={`${sc.color} text-xs px-2.5 py-1 gap-1.5 border`}>

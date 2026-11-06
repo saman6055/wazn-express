@@ -221,6 +221,9 @@ export interface InvoiceReportSummary {
   unpaidAmountUsd: number;
   cancelledInvoices: number;
   averageInvoiceUsd: number;
+  /** Invoices that still stand: everything but cancelled and refunded. */
+  liveInvoices: number;
+  liveAmountUsd: number;
 }
 
 export interface MonthlyInvoiceData {
@@ -267,6 +270,8 @@ export async function getInvoiceSummary(startDate?: Date, endDate?: Date): Promi
       unpaidAmountUsd: 0,
       cancelledInvoices: 0,
       averageInvoiceUsd: 0,
+      liveInvoices: 0,
+      liveAmountUsd: 0,
     };
   }
 
@@ -283,6 +288,8 @@ export async function getInvoiceSummary(startDate?: Date, endDate?: Date): Promi
     unpaidInvoices: sql<number>`COUNT(CASE WHEN ${invoices.status} IN ('issued', 'draft') THEN 1 END)`,
     unpaidAmountUsd: sql<string>`COALESCE(SUM(CASE WHEN ${invoices.status} IN ('issued', 'draft') THEN CAST(${invoices.totalUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
     cancelledInvoices: sql<number>`COUNT(CASE WHEN ${invoices.status} = 'cancelled' THEN 1 END)`,
+    liveInvoices: sql<number>`COUNT(CASE WHEN ${invoices.status} NOT IN ('cancelled', 'refunded') THEN 1 END)`,
+    liveAmountUsd: sql<string>`COALESCE(SUM(CASE WHEN ${invoices.status} NOT IN ('cancelled', 'refunded') THEN CAST(${invoices.totalUsd} AS DECIMAL(14,2)) ELSE 0 END), 0)`,
   }).from(invoices);
 
   if (conditions.length > 0) {
@@ -305,6 +312,8 @@ export async function getInvoiceSummary(startDate?: Date, endDate?: Date): Promi
     unpaidAmountUsd: Number(row?.unpaidAmountUsd ?? 0),
     cancelledInvoices: row?.cancelledInvoices ?? 0,
     averageInvoiceUsd,
+    liveInvoices: Number(row?.liveInvoices ?? 0),
+    liveAmountUsd: Number(row?.liveAmountUsd ?? 0),
   };
 }
 
