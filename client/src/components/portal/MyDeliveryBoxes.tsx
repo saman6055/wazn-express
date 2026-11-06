@@ -207,6 +207,7 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
                     <bdi dir="ltr" className="tabular-nums">{box.totalPackages}</bdi>{" "}
                     {label({ ku: "پاکەت", en: "packages", ar: "طرد", zh: "件" })}
                   </p>
+                  <BoxMoneyLine box={box} label={label} />
                 </div>
 
                 <span
@@ -290,6 +291,30 @@ export function MyDeliveryBoxes({ className }: { className?: string }) {
         })}
       </div>
       {boxSheet.sheet}
+    </div>
+  );
+}
+
+/**
+ * The box's price and whether it is paid, in one line on its card (owner,
+ * 2026-11-07): the customer sees at once which box a debt belongs to. Figures
+ * from the server (getCustomerVisibleBoxes: the payment screen's own sums).
+ */
+function BoxMoneyLine({ box, label }: { box: any; label: (v: L) => string }) {
+  const price = Number(box.boxPriceUsd ?? 0);
+  const owed = Number(box.owedUsd ?? 0);
+  const paid = Number(box.settledUsd ?? 0);
+  if (!(price > 0.005)) return null;
+  const usd = (n: number) => `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const state = owed <= 0.005
+    ? { text: label({ ku: "واسڵکراوە ✅", en: "Paid ✅", ar: "مدفوع ✅", zh: "已付 ✅" }), cls: "bg-emerald-100 text-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300" }
+    : paid > 0.005
+      ? { text: label({ ku: `بەشێکی دراوە — ماوە ${usd(owed)}`, en: `Part paid — ${usd(owed)} left`, ar: `مدفوع جزئيًا — باقٍ ${usd(owed)}`, zh: `部分已付 — 剩 ${usd(owed)}` }), cls: "bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300" }
+      : { text: label({ ku: "واسڵ نەکراوە — قەرز ❌", en: "Not paid — owed ❌", ar: "غير مدفوع — دين ❌", zh: "未付 — 欠款 ❌" }), cls: "bg-rose-100 text-rose-700 dark:bg-rose-900/40 dark:text-rose-300" };
+  return (
+    <div className="mt-1.5 flex flex-wrap items-center gap-2" data-testid="box-money-line">
+      <bdi dir="ltr" className="font-mono text-base font-bold tabular-nums text-foreground">{usd(price)}</bdi>
+      <span className={cn("rounded-full px-2 py-0.5 text-[11px] font-semibold", state.cls)}>{state.text}</span>
     </div>
   );
 }

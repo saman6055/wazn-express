@@ -1,4 +1,5 @@
 import { escapeHtml } from "@/lib/html";
+import { groupTransactionsByBox, type TxEntry } from "@/lib/portalTxGroups";
 import { usePortalPalette } from "@/components/portal/PortalHeaderControls";
 import { PORTAL_LIVE_QUERY, PORTAL_SETTINGS_QUERY } from "@/lib/portalQuery";
 import { CustomerPortalLayout } from "@/components/CustomerPortalLayout";
@@ -74,6 +75,48 @@ function txHref(tx: any): string | null {
     case "package": return rid ? `/portal/shipments?focus=${rid}` : "/portal/shipments";
     default: return null;
   }
+}
+
+/**
+ * One box on the money screen: its code, how many parcels, and the box total
+ * as one figure. Tapping it shows the parcel lines inside (owner, 2026-11-07).
+ */
+function BoxTxGroup({ entry, language, formatCurrency, compact = false }: {
+  entry: Extract<TxEntry<any>, { kind: "box" }>;
+  language: string;
+  formatCurrency: (n: number) => string;
+  compact?: boolean;
+}) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className={cn(compact ? "p-4" : "rounded-2xl bg-card p-4 shadow-sm")} data-testid="portal-box-tx">
+      <button type="button" onClick={() => setOpen((v) => !v)} className="flex w-full items-center gap-3 text-start">
+        <div className={cn("flex shrink-0 items-center justify-center rounded-xl bg-sky-100 text-sky-700 dark:bg-sky-900/40 dark:text-sky-300", compact ? "h-10 w-10" : "h-12 w-12")}>
+          <Boxes className="h-5 w-5" />
+        </div>
+        <div className="min-w-0 flex-1">
+          <p className="font-semibold text-foreground">
+            {pickLang(language, { ku: "بۆکس", en: "Box", ar: "صندوق", zh: "箱子" })} <bdi dir="ltr" className="font-mono text-sm">{entry.boxCode}</bdi>
+          </p>
+          <p className="text-xs text-muted-foreground">
+            <bdi dir="ltr" className="tabular-nums">{entry.rows.length}</bdi> {pickLang(language, { ku: "پاکەت — کرتە بکە بۆ وردەکاری", en: "parcels — tap for detail", ar: "طرود — اضغط للتفاصيل", zh: "件 — 点击查看明细" })}
+            {entry.createdAt ? <> · <bdi dir="ltr">{formatPortalDate(entry.createdAt as any, language)}</bdi></> : null}
+          </p>
+        </div>
+        <p className="font-mono text-lg font-bold tabular-nums text-rose-600 dark:text-rose-300" dir="ltr">-{formatCurrency(entry.totalUsd)}</p>
+      </button>
+      {open && (
+        <div className="mt-3 space-y-1 border-t border-border pt-2">
+          {entry.rows.map((r: any) => (
+            <div key={r.id} className="flex items-center justify-between gap-2 text-xs text-muted-foreground">
+              <bdi dir="ltr" className="min-w-0 truncate font-mono">{String(r.description ?? "").replace(/^BOX-[A-Za-z0-9-]+\s+—\s*/, "")}</bdi>
+              <bdi dir="ltr" className="shrink-0 font-mono tabular-nums">{formatCurrency(Number(r.amountUsd ?? 0))}</bdi>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
 }
 
 function ClassicPortalFinancial() {
@@ -666,7 +709,11 @@ const { t, language } = useLanguage();
                   <p className={cn("p-6 text-center text-sm", "text-muted-foreground")}>
                     {pickLang(language, { ku: "هێشتا هیچ مامەڵەیەک نییە", en: "No transactions yet", ar: "لا توجد معاملات بعد", zh: "暂无交易记录" })}
                   </p>
-                ) : transactions.slice(0, 3).map((tx) => {
+                ) : groupTransactionsByBox(transactions).slice(0, 3).map((entry) => {
+                  if (entry.kind === "box") {
+                    return <BoxTxGroup key={entry.key} entry={entry} language={language} formatCurrency={formatCurrency} compact />;
+                  }
+                  const tx = entry.tx;
                   const colors = getTransactionColor(tx.transactionType, isDark);
                   return (
                     <div key={tx.id} className="p-4 flex items-center gap-3">
@@ -864,7 +911,11 @@ const { t, language } = useLanguage();
               </div>
             ) : (
               <div className="space-y-3">
-                {shownTransactions.map((tx) => {
+                {groupTransactionsByBox(shownTransactions).map((entry) => {
+                  if (entry.kind === "box") {
+                    return <BoxTxGroup key={entry.key} entry={entry} language={language} formatCurrency={formatCurrency} />;
+                  }
+                  const tx = entry.tx;
                   const colors = getTransactionColor(tx.transactionType, isDark);
                   const href = txHref(tx);
                   return (

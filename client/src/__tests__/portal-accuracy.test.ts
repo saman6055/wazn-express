@@ -52,7 +52,7 @@ describe("the money page reads the fields the server sends", () => {
 
   it("the date chips filter the list they sit above", () => {
     expect(page).toContain("const shownTransactions = useMemo(");
-    expect(page).toContain("{shownTransactions.map((tx) => {");
+    expect(page).toContain("{groupTransactionsByBox(shownTransactions).map((entry) => {");
   });
 
   it("credit carries no sign; the words say which way it sits", () => {

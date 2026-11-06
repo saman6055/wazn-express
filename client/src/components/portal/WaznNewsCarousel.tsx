@@ -1,6 +1,6 @@
 import { pickLang } from "@/lib/lang";
 import { onImageError } from "@/lib/imageFallback";
-import { postText, filterPostsByLanguage } from "@/lib/blogLang";
+import { postText, postSummary, filterPostsByLanguage } from "@/lib/blogLang";
 import { trpc } from "@/lib/trpc";
 import { cn } from "@/lib/utils";
 import { BookOpen, ChevronRight, Gift, Megaphone, Newspaper, PlayCircle, RefreshCw } from "lucide-react";
@@ -58,7 +58,7 @@ export function WaznNewsCarousel({ language, isDark }: { language: string; isDar
   }, [slides.length, idx]);
 
   const title = (p: any) => postText(p, "title", language);
-  const summary = (p: any) => postText(p, "summary", language) || postText(p, "content", language).slice(0, 140);
+  const summary = (p: any) => postSummary(p, language);
 
   if (isLoading) {
     return (

@@ -15,7 +15,7 @@ import { PortalBackButton } from "@/components/portal/PortalBackButton";
 import { useState } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
-import { postText, filterPostsByLanguage } from "@/lib/blogLang";
+import { postText, filterPostsByLanguage, postSummary } from "@/lib/blogLang";
 import { SocialChannels, firstYouTubeId } from "@/components/portal/SocialChannels";
 import { formatPortalDate } from "@/lib/portalClock";
 
@@ -44,7 +44,7 @@ const { banner: portalBanner } = usePortalPalette();
   // Title/summary in the reader's language only (no cross-language fallback).
   const getTitle = (post: any) => postText(post, "title", language);
   const getSummary = (post: any) =>
-    postText(post, "summary", language) || (postText(post, "content", language).substring(0, 150) + "...");
+    postSummary(post, language, 150);
   
   // Get category icon
   const getCategoryIcon = (category: string) => {

@@ -1781,14 +1781,27 @@ export async function getCustomerVisibleBoxes(customerId: number, limit = 100) {
     .groupBy(boxSettlements.boxId);
   const settled = new Map(settleRows.map(r => [Number(r.boxId), r]));
   const clearedByBox = await getBoxesSettlementCleared(settleRows.map(r => Number(r.boxId)));
+  // What each box still asks for: the payment screen's own sums, for the whole
+  // list at once. The portal writes each box's price and paid state from this
+  // (owner, 2026-11-07: «هیچ نرخێک لەسەر بۆکسەکان نییە»).
+  const owedByBox = await getBoxesOutstanding(rows.map(r => r.id));
 
   return rows.map(r => {
     const paidRow = settled.get(r.id);
+    const settledUsd = Number(paidRow?.paid ?? 0);
+    const settledDiscountUsd = Number(paidRow?.discount ?? 0);
+    const cleared = paidRow ? (clearedByBox.get(r.id) ?? false) : null;
+    // A receipted box paid in full owes nothing, whatever a later line says
+    // (the box decides). Otherwise: what the payment screen still asks.
+    const owedUsd = cleared ? 0 : Math.round((owedByBox.get(r.id) ?? 0) * 100) / 100;
     const withMoney = {
       ...r,
-      settledUsd: Number(paidRow?.paid ?? 0),
-      settlementCleared: paidRow ? (clearedByBox.get(r.id) ?? false) : null,
-      settledDiscountUsd: Number(paidRow?.discount ?? 0),
+      settledUsd,
+      owedUsd,
+      // The box's price as the customer met it: paid + taken off + still owed.
+      boxPriceUsd: Math.round((settledUsd + settledDiscountUsd + owedUsd) * 100) / 100,
+      settlementCleared: cleared,
+      settledDiscountUsd,
       settlementNumber: paidRow?.lastNumber ?? null,
       settledAt: paidRow?.lastAt ?? null,
       packageIds: packageIdsByBox.get(r.id) ?? [],

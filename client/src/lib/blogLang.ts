@@ -51,3 +51,23 @@ export function isPostInLanguage(post: any, language: string): boolean {
 export function filterPostsByLanguage<T>(posts: T[] | undefined | null, language: string): T[] {
   return (posts ?? []).filter((p) => isPostInLanguage(p, language));
 }
+
+/**
+ * The line under a post's title. Posts are often written with the title as
+ * their first line, so the home page's news card printed the headline twice
+ * (owner, 2026-11-07). The title is taken off the front, markup is dropped,
+ * and a summary that only repeats the title is not used.
+ */
+export function postSummary(post: any, language: string, max = 140): string {
+  const title = postText(post, "title", language).trim();
+  const plain = (v: string) => v.replace(/<[^>]*>/g, " ").replace(/[#*_>`]+/g, " ").replace(/\s+/g, " ").trim();
+  const norm = (v: string) => plain(v).toLowerCase();
+  const strip = (v: string) => {
+    let text = plain(v);
+    if (title && norm(text).startsWith(norm(title))) text = text.slice(plain(title).length).replace(/^[\s:.\-–—|]+/, "");
+    return text;
+  };
+  const summary = strip(postText(post, "summary", language));
+  const text = summary || strip(postText(post, "content", language));
+  return text.length > max ? `${text.slice(0, max).trimEnd()}…` : text;
+}
