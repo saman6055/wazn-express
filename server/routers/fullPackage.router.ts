@@ -1953,22 +1953,39 @@ export const fullPackageRouter = router({
           throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
         }
         
+        /*
+         * One approval, one charge (2026-11-06). Two presses at once both saw
+         * "quoted" and both charged. The order is claimed first - only the
+         * call that flips it gets to charge; the other is told it is done.
+         */
+        if (!(await db.claimOrderForCharge(existing.id))) {
+          throw new TRPCError({ code: "CONFLICT", message: withFix(
+            `ئۆردەری ${existing.orderCode} پێشتر پەسەند کراوە و پارەکەی نووسراوە.`,
+            ["لاپەڕەکە نوێ بکەرەوە بۆ بینینی دۆخی ئێستای ئۆردەرەکە"],
+          ) });
+        }
         // applyCharge automatically creates ledger transaction and invoice
-        const approveChargeResult = await db.applyCharge(
-          existing.customerId,
-          customerForOrder.customerCode,
-          'FULL_PACKAGE',
-          existing.id,
-          totalSellingPrice,
-          `Full Package Order - ${existing.orderCode} (${existing.productName}) - ${quantity} pcs`,
-          ctx.user.id,
-          [{
-            description: `${existing.productName} (${existing.orderCode})`,
-            quantity: quantity,
-            unitPrice: sellingPricePerUnit,
-            total: totalSellingPrice,
-          }]
-        );
+        let approveChargeResult: Awaited<ReturnType<typeof db.applyCharge>>;
+        try {
+          approveChargeResult = await db.applyCharge(
+            existing.customerId,
+            customerForOrder.customerCode,
+            'FULL_PACKAGE',
+            existing.id,
+            totalSellingPrice,
+            `Full Package Order - ${existing.orderCode} (${existing.productName}) - ${quantity} pcs`,
+            ctx.user.id,
+            [{
+              description: `${existing.productName} (${existing.orderCode})`,
+              quantity: quantity,
+              unitPrice: sellingPricePerUnit,
+              total: totalSellingPrice,
+            }]
+          );
+        } catch (err) {
+          await db.releaseOrderClaim(existing.id);
+          throw err;
+        }
 
         // Update order status + persist chargeTransactionId (Plan v3)
         await db.updateFullPackageOrder(input.id, {
