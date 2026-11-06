@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { WORKING_CAPITAL_ALERT_USD, cashCheck } from "@shared/workingCapital";
 import { ChannelCheckCard } from "@/components/finance/ChannelCheckCard";
 import { HouseAccountSetting } from "@/components/finance/HouseAccountSetting";
+import { NightlyMailCard } from "@/components/finance/NightlyMailCard";
 
 type Words = { ku: string; en: string; ar: string; zh: string };
 
@@ -205,6 +206,8 @@ export default function WorkingCapital() {
             <ChannelCheckCard checks={data.channelChecks ?? []} rate={data.lastBoxRate ?? 0} />
 
             <HouseAccountSetting />
+
+            <NightlyMailCard />
 
             <Card data-testid="money-received">
               <CardHeader className="flex flex-row items-center justify-between gap-2 pb-2">

@@ -108,6 +108,21 @@ export const ledgerRouter = router({
      * the office's spending, left out of customer debt. Main admin only.
      */
     houseAccount: superAdminProcedure.query(async () => db.getHouseAccountCustomer()),
+    /** The nightly finance copy by email (point 41.4): where it goes, and how the last one went. */
+    nightlyMail: superAdminProcedure.query(async () => {
+      const { getNightlyMailSettings } = await import("../services/financeNightlyMail.service");
+      return { ...(await getNightlyMailSettings()), keySet: Boolean(process.env.RESEND_API_KEY?.trim()) };
+    }),
+    setNightlyMail: superAdminProcedure
+      .input(z.object({ to: z.string().trim().email().max(200).nullable() }))
+      .mutation(async ({ input, ctx }) => {
+        const { setNightlyMailTo } = await import("../services/financeNightlyMail.service");
+        return setNightlyMailTo(input.to, ctx.user.id);
+      }),
+    sendNightlyMailNow: superAdminProcedure.mutation(async ({ ctx }) => {
+      const { sendNightlyFinanceMail } = await import("../services/financeNightlyMail.service");
+      return sendNightlyFinanceMail(ctx.user.id);
+    }),
     /** One code for the company, chosen by typing it; any other is cleared. */
     setHouseAccount: superAdminProcedure
       .input(z.object({ customerCode: z.string().trim().max(60).nullable() }))

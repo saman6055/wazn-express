@@ -216,6 +216,14 @@ async function startServer() {
     appLogger.error("Failed to start daily snapshots", { error: error instanceof Error ? error.message : String(error) });
   }
 
+  // The nightly finance copy by email, off the server (point 41.4).
+  try {
+    const { startNightlyFinanceMail } = await import("../services/financeNightlyMail.service");
+    startNightlyFinanceMail();
+  } catch (error) {
+    appLogger.error("Failed to start the nightly finance mail", { error: error instanceof Error ? error.message : String(error) });
+  }
+
   // Start scheduled backups
   try {
     initializeScheduledBackups();
