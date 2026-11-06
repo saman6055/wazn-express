@@ -769,6 +769,12 @@ export default function Finance() {
               <p className="text-emerald-100 mt-1">{t("finance.subtitle")}</p>
             </div>
             <div className="flex gap-3 flex-wrap">
+              <Link href="/finance/center">
+                <Button variant="secondary" className="bg-white/20 hover:bg-white/30 text-white border-0" data-testid="finance-to-center">
+                  <Wallet className="w-4 h-4 me-2" />
+                  {pickLang(language, { ku: "ناوەندی دارایی", en: "Finance centre", ar: "المركز المالي", zh: "财务中心" })}
+                </Button>
+              </Link>
               <Link href="/finance/debtors">
                 <Button variant="secondary" className="bg-red-500/20 hover:bg-red-500/30 text-white border-0">
                   <AlertTriangle className="w-4 h-4 me-2" />
@@ -985,10 +991,10 @@ export default function Finance() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-red-600 dark:text-red-400">{pickLang(language, { ku: "کۆی قەرز", en: "Total debt", ar: "إجمالي الدين", zh: "欠款总额" })}</p>
-                  <p className="text-3xl font-bold text-red-700 dark:text-red-300">
+                  <p className="font-mono text-3xl font-bold tabular-nums text-red-700 dark:text-red-300" dir="ltr">
                     {summaryLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : formatCurrency(summary?.totalDebtUsd || 0)}
                   </p>
-                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">{debtors?.length || 0} {pickLang(language, { ku: "کڕیاری قەرزدار", en: "debtor customers", ar: "عميل مدين", zh: "欠款客户" })}</p>
+                  <p className="text-xs text-red-500 dark:text-red-400 mt-1">{debtors?.length || 0} {pickLang(language, { ku: "کڕیاری قەرزدار — ئەوەی لەسەریانە", en: "debtor customers — what they owe", ar: "عميل مدين — ما عليهم", zh: "欠款客户 — 所欠金额" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-red-500 to-rose-600 flex items-center justify-center text-white shadow-lg">
                   <TrendingUp className="h-7 w-7" />
@@ -1002,10 +1008,10 @@ export default function Finance() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-green-600 dark:text-green-400">{pickLang(language, { ku: "کۆی کریدیت", en: "Total credit", ar: "إجمالي الرصيد الدائن", zh: "贷方总额" })}</p>
-                  <p className="text-3xl font-bold text-green-700 dark:text-green-300">
+                  <p className="font-mono text-3xl font-bold tabular-nums text-green-700 dark:text-green-300" dir="ltr">
                     {summaryLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : formatCurrency(summary?.totalCreditUsd || 0)}
                   </p>
-                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">{summary?.creditorsCount || 0} {pickLang(language, { ku: "کڕیاری کریدیتدار", en: "customers holding credit", ar: "عميل لديه رصيد", zh: "有贷方余额的客户" })}</p>
+                  <p className="text-xs text-green-500 dark:text-green-400 mt-1">{summary?.creditorsCount || 0} {pickLang(language, { ku: "کڕیار پارەی پێشەکییان لای ئێمەیە", en: "customers with money left with us", ar: "عملاء لديهم رصيد لدينا", zh: "在我们处有预存的客户" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-green-500 to-emerald-600 flex items-center justify-center text-white shadow-lg">
                   <TrendingDown className="h-7 w-7" />
@@ -1019,10 +1025,14 @@ export default function Finance() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{pickLang(language, { ku: "کۆی حسابەکان", en: "Total accounts", ar: "إجمالي الحسابات", zh: "账户总数" })}</p>
-                  <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+                  <p className="font-mono text-3xl font-bold tabular-nums text-blue-700 dark:text-blue-300" dir="ltr">
                     {accountsLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : (accounts?.length || 0)}
                   </p>
-                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">{accounts?.filter(a => a.accountStatus === 'active').length ?? 0} {pickLang(language, { ku: "چالاک", en: "active", ar: "نشط", zh: "活跃" })}</p>
+                  <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">
+                    {/* Who actually trades (owner, 2026-11-05): an account moved in the last 90 days. */}
+                    {accounts?.filter(a => a.lastTransactionAt && Date.now() - new Date(a.lastTransactionAt as unknown as string).getTime() <= 90 * 86_400_000).length ?? 0}{" "}
+                    {pickLang(language, { ku: "جووڵەیان هەبووە لە 90 ڕۆژدا", en: "moved in the last 90 days", ar: "تحركوا خلال 90 يوماً", zh: "90 天内有交易" })}
+                  </p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 flex items-center justify-center text-white shadow-lg">
                   <Users className="h-7 w-7" />
@@ -1040,10 +1050,10 @@ export default function Finance() {
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm font-medium text-amber-600 dark:text-amber-400">{pickLang(language, { ku: "باڵانسی نێت", en: "Net balance", ar: "الرصيد الصافي", zh: "净余额" })}</p>
-                  <p className={`text-3xl font-bold ${((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0)) > 0 ? 'text-red-600' : 'text-green-600'}`}>
+                  <p dir="ltr" className={`font-mono text-3xl font-bold tabular-nums ${((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0)) > 0 ? 'text-red-600 dark:text-red-400' : 'text-green-600 dark:text-green-400'}`}>
                     {summaryLoading ? <span aria-busy="true" className="inline-block h-8 w-28 animate-pulse rounded-md bg-muted align-middle" /> : formatCurrency((summary?.totalDebtUsd || 0) - (summary?.totalCreditUsd || 0))}
                   </p>
-                  <p className="text-xs text-amber-500 dark:text-amber-400 mt-1">{pickLang(language, { ku: "قەرز - کریدیت", en: "Debt - Credit", ar: "الدين - الرصيد", zh: "欠款 - 贷方" })}</p>
+                  <p className="text-xs text-amber-500 dark:text-amber-400 mt-1">{pickLang(language, { ku: "قەرز کەم پێشەکی — ئەوەی بە ڕاستی بۆمان ماوە", en: "Debt less advances — what is really still due to us", ar: "الدين ناقص المقدمات — المستحق فعلاً", zh: "欠款减预存 — 实际应收" })}</p>
                 </div>
                 <div className="h-14 w-14 rounded-2xl bg-gradient-to-br from-amber-500 to-orange-600 flex items-center justify-center text-white shadow-lg">
                   <DollarSign className="h-7 w-7" />
@@ -1622,7 +1632,7 @@ export default function Finance() {
                   <div className="flex items-center justify-between">
                     <div>
                       <p className="text-sm font-medium text-blue-600 dark:text-blue-400">{pickLang(language, { ku: "ژمارەی کڕیاری کریدیتدار", en: "Number of credit holders", ar: "عدد العملاء أصحاب الرصيد", zh: "贷方客户数量" })}</p>
-                      <p className="text-3xl font-bold text-blue-700 dark:text-blue-300">
+                      <p className="font-mono text-3xl font-bold tabular-nums text-blue-700 dark:text-blue-300" dir="ltr">
                         {creditCustomers.length}
                       </p>
                     </div>
