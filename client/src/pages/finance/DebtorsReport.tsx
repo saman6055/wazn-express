@@ -1,4 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
+import { PageHelp } from "@/components/finance/PageHelp";
+import { HELP } from "@/components/finance/pageHelpTexts";
 import { daysSince } from "@shared/debtAge";
 import { trpc } from "@/lib/trpc";
 import DashboardLayout from "@/components/DashboardLayout";
@@ -202,6 +204,7 @@ const [searchTerm, setSearchTerm] = useState("");
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <PageHelp id="debtors" text={HELP.debtors} />
         {/* Header */}
         <div className="bg-gradient-to-r from-red-600 to-orange-600 rounded-xl p-6 text-white">
           <div className="flex items-center justify-between">

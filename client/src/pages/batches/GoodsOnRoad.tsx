@@ -1,4 +1,6 @@
 import { useMemo, useState } from "react";
+import { PageHelp } from "@/components/finance/PageHelp";
+import { HELP } from "@/components/finance/pageHelpTexts";
 import { Link } from "wouter";
 import { Ship } from "lucide-react";
 import { toast } from "sonner";
@@ -81,6 +83,7 @@ export default function GoodsOnRoad() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-4xl space-y-4 p-3 sm:p-6" data-testid="goods-on-road">
+        <PageHelp id="goods-on-road" text={HELP.goodsOnRoad} />
         <div className="flex flex-wrap items-start justify-between gap-2">
           <div>
             <h1 className="flex items-center gap-2 text-xl font-semibold">

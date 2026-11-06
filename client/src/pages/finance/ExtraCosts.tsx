@@ -6,6 +6,8 @@
  * "other costs" item opens here.
  */
 import { useMemo, useState } from "react";
+import { PageHelp } from "@/components/finance/PageHelp";
+import { HELP } from "@/components/finance/pageHelpTexts";
 import { Link } from "wouter";
 import { Receipt } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -40,6 +42,7 @@ export default function ExtraCosts() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-5xl space-y-4 p-3 sm:p-6" data-testid="extra-costs-page">
+        <PageHelp id="extra-costs" text={HELP.extraCosts} />
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold"><Receipt className="h-5 w-5" />{L({ ku: "تێچووی تر", en: "Other costs", ar: "تكاليف أخرى", zh: "其他费用" })}</h1>
           <p className="text-sm text-muted-foreground">

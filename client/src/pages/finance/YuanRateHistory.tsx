@@ -5,6 +5,8 @@
  * what it earned or lost on the rate. Read-only (shared/yuanRateHistory).
  */
 import { useState } from "react";
+import { PageHelp } from "@/components/finance/PageHelp";
+import { HELP } from "@/components/finance/pageHelpTexts";
 import { Link } from "wouter";
 import { TrendingUp } from "lucide-react";
 import { trpc } from "@/lib/trpc";
@@ -31,6 +33,7 @@ export default function YuanRateHistory() {
   return (
     <DashboardLayout>
       <div className="mx-auto max-w-5xl space-y-4 p-3 sm:p-6" data-testid="yuan-rate-history-page">
+        <PageHelp id="yuan-rates" text={HELP.yuanRates} />
         <div>
           <h1 className="flex items-center gap-2 text-xl font-semibold"><TrendingUp className="h-5 w-5" />{L({ ku: "مێژووی نرخی یوان", en: "Yuan rate history", ar: "سجل سعر اليوان", zh: "人民币汇率历史" })}</h1>
           <p className="text-sm text-muted-foreground">

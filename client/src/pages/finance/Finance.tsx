@@ -1,4 +1,6 @@
 import { fmtDate, fmtDateTime } from "@/lib/numericDate";
+import { PageHelp } from "@/components/finance/PageHelp";
+import { HELP } from "@/components/finance/pageHelpTexts";
 import { useState, useMemo, useRef, type KeyboardEvent } from "react";
 import { trpc } from "@/lib/trpc";
 import { readFinanceLink } from "@shared/listLinks";
@@ -753,6 +755,7 @@ export default function Finance() {
   return (
     <DashboardLayout>
       <div className="space-y-6">
+        <PageHelp id="finance" text={HELP.finance} />
         {/* Header */}
         <div className="bg-gradient-to-r from-emerald-600 via-teal-600 to-cyan-600 rounded-2xl p-6 text-white shadow-xl">
           <div className="flex items-center justify-between flex-wrap gap-4">

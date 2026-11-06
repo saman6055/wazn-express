@@ -271,8 +271,8 @@ export default function CompanyFinanceDashboard() {
                   </div>
                   <p className="text-sm opacity-90">
                     {L({
-                      ku: "بە تێکڕای ڕۆژان ژمێردراوە، نەک یەک ڕۆژ — بازاڕ هەموو ڕۆژێک وەک یەک نییە.",
-                      en: "Counted on averages, never one day — the market is not the same every day.",
+                      ku: "واتە: قازانجی ڕۆژانەی کار لە مەسارفی ڕۆژانەی کۆمپانیا (کرێ، مووچە…) زیاترە یان کەمترە. بە تێکڕای 7 و 30 ڕۆژ ژمێردراوە، نەک یەک ڕۆژ، چونکە بازاڕ هەموو ڕۆژێک وەک یەک نییە.",
+                      en: "Meaning: is the work's daily profit above or below the company's daily costs (rent, salaries…)? Counted on 7- and 30-day averages, never one day — the market is not the same every day.",
                       ar: "محسوب على المتوسط لا على يوم واحد.",
                       zh: "按平均值计算，而非单日。",
                     })}
