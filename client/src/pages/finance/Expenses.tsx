@@ -70,6 +70,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
+import { pickLang } from "@/lib/lang";
 
 
 /**
@@ -87,7 +88,7 @@ const IQD_PER_USD = 1480;
 const NO_ACCOUNT = "__none__";
 
 export default function Expenses() {
-    const { t } = useTranslation();
+    const { t, language } = useTranslation();
 const [activeTab, setActiveTab] = useState("expenses");
   const [showAddExpense, setShowAddExpense] = useState(false);
   const [showAddCategory, setShowAddCategory] = useState(false);
@@ -663,14 +664,17 @@ const [activeTab, setActiveTab] = useState("expenses");
         )}
 
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-violet-600 via-indigo-600 to-sky-600 p-6 text-white shadow-xl md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t("expenses.title")}</h1>
-            <p className="text-muted-foreground">
+            <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+              <span className="rounded-xl bg-white/20 p-2"><TrendingDown className="h-6 w-6" /></span>
+              {t("expenses.title")}
+            </h1>
+            <p className="mt-1 text-white/80">
               {t("expenses.description")}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 [&_button]:border-0 [&_button]:bg-white/20 [&_button]:text-white [&_button:hover]:bg-white/30">
             <Button
               variant="outline"
               onClick={() => {
@@ -1176,12 +1180,12 @@ const [activeTab, setActiveTab] = useState("expenses");
               <CardContent className="pt-6">
                 <div className="flex flex-col gap-4 md:flex-row md:items-center">
                   <div className="relative flex-1">
-                    <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                    <Search className="absolute start-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                     <Input
                       placeholder={t("tables.search")}
                       value={searchQuery}
                       onChange={(e) => setSearchQuery(e.target.value)}
-                      className="pl-10"
+                      className="ps-10"
                     />
                   </div>
                   <Select value={selectedCategory} onValueChange={setSelectedCategory}>
@@ -1215,6 +1219,16 @@ const [activeTab, setActiveTab] = useState("expenses");
               </CardContent>
             </Card>
 
+            {/* What the list below adds up to, as filtered. */}
+            <div className="flex flex-wrap items-baseline justify-between gap-2 rounded-xl border bg-card px-4 py-3" data-testid="expenses-list-total">
+              <span className="text-sm text-muted-foreground">
+                {pickLang(language, { ku: `${filteredExpenses.length} خەرجی لەم لیستەدا`, en: `${filteredExpenses.length} expenses in this list`, ar: `${filteredExpenses.length} مصروف في هذه القائمة`, zh: `本列表 ${filteredExpenses.length} 笔支出` })}
+              </span>
+              <span className="font-mono text-xl font-bold tabular-nums text-red-600 dark:text-red-300" dir="ltr">
+                {formatCurrency(filteredExpenses.reduce((sum, e) => sum + (parseFloat(String(e.amountUsd ?? 0)) || 0), 0))}
+              </span>
+            </div>
+
             {/* Expenses Table */}
             <Card>
               <CardContent className="p-0">
@@ -1243,7 +1257,7 @@ const [activeTab, setActiveTab] = useState("expenses");
                         return (
                           <TableRow key={expense.id}>
                             <TableCell className="font-medium">
-                              {formatDate(expense.expenseDate)}
+                              <bdi dir="ltr" className="tabular-nums">{formatDate(expense.expenseDate)}</bdi>
                             </TableCell>
                             <TableCell>
                               <Badge
@@ -1264,10 +1278,11 @@ const [activeTab, setActiveTab] = useState("expenses");
                                 {expense.paymentMethod === "bank_transfer" && t("finance.bank")}
                                 {expense.paymentMethod === "card" && t("finance.card")}
                                 {expense.paymentMethod === "other" && t("common.other")}
+                                {!["cash", "bank_transfer", "card", "other"].includes(String(expense.paymentMethod)) && String(expense.paymentMethod ?? "-")}
                               </Badge>
                             </TableCell>
                             <TableCell className="text-right font-medium text-red-600 dark:text-red-300">
-                              {formatCurrency(expense.amountUsd)}
+                              <bdi dir="ltr" className="font-mono tabular-nums">{formatCurrency(expense.amountUsd)}</bdi>
                             </TableCell>
                             <TableCell>
                               <Button
