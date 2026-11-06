@@ -648,8 +648,35 @@ export async function addItemToBox(data: InsertDeliveryBoxItem): Promise<Deliver
   const foreign = owner?.customerId ? await foreignOrderInBox(owner.customerId, data) : null;
   if (foreign) throw new Error(foreignOrderRefusal(owner!.boxCode, foreign.orderCode));
 
-  const result = await db.insert(deliveryBoxItems).values(data);
-  const insertId = Number(result[0].insertId);
+  /*
+   * One parcel, one box (2026-11-06). The scanner checked first and inserted
+   * after, so two scans at the same moment - or «box them all» working from
+   * a list read earlier - could put a parcel in twice and count it twice.
+   * The parcel's row is locked, the question asked again, and the line
+   * written, all in one transaction. A cancelled box does not hold it.
+   */
+  const insertId = await db.transaction(async (tx) => {
+    if (data.packageId) {
+      await tx.select({ id: packages.id }).from(packages).where(eq(packages.id, Number(data.packageId))).for("update").limit(1);
+      const [held] = await tx
+        .select({ boxId: deliveryBoxes.id, boxCode: deliveryBoxes.boxCode })
+        .from(deliveryBoxItems)
+        .innerJoin(deliveryBoxes, eq(deliveryBoxes.id, deliveryBoxItems.boxId))
+        .where(and(eq(deliveryBoxItems.packageId, Number(data.packageId)), ne(deliveryBoxes.status, "cancelled")))
+        .limit(1);
+      if (held) {
+        throw new Error(Number(held.boxId) === Number(data.boxId)
+          ? "ئەم پاکەتە پێشتر لەم بۆکسەدایە"
+          : withFix(`ئەم پاکەتە لە بۆکسی ${held.boxCode} دایە. یەک پاکەت لە دوو بۆکسدا نابێت.`, [
+              `بۆکسی ${held.boxCode} بکەرەوە`,
+              "پاکەتەکە لەو بۆکسە دەربهێنە",
+              "ئینجا لێرە دووبارە سکانی بکە",
+            ]));
+      }
+    }
+    const result = await tx.insert(deliveryBoxItems).values(data);
+    return Number(result[0].insertId);
+  });
   const [item] = await db.select().from(deliveryBoxItems).where(eq(deliveryBoxItems.id, insertId));
 
   // Update box totals
