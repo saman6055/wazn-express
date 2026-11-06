@@ -227,9 +227,11 @@ const [showAddDebt, setShowAddDebt] = useState(false);
     });
   };
 
-  const formatCurrency = (amount: string | number) => {
+  // In the row's own currency: a dinar amount never wears a dollar sign.
+  const formatCurrency = (amount: string | number, currency: string = "USD") => {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
-    return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (currency === "IQD") return `${Math.round(num || 0).toLocaleString("en-US")} IQD`;
+    return `$${(num || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (date: Date | string | null) => {
@@ -271,9 +273,13 @@ const [showAddDebt, setShowAddDebt] = useState(false);
   };
 
   // Calculate totals
-  const totalDebt = debts.reduce((sum, d) => sum + Number(d.totalAmount), 0);
-  const totalPaid = debts.reduce((sum, d) => sum + Number(d.paidAmount), 0);
-  const totalRemaining = debts.reduce((sum, d) => sum + Number(d.remainingAmount), 0);
+  // Each currency summed by itself: a dinar debt was added to the dollar total.
+  const sumIn = (cur: string, key: "totalAmount" | "paidAmount" | "remainingAmount") =>
+    debts.filter(d => (d.currency ?? "USD") === cur).reduce((sum, d) => sum + Number(d[key]), 0);
+  const totalDebt = sumIn("USD", "totalAmount");
+  const totalPaid = sumIn("USD", "paidAmount");
+  const totalRemaining = sumIn("USD", "remainingAmount");
+  const iqdTotals = { total: sumIn("IQD", "totalAmount"), paid: sumIn("IQD", "paidAmount"), remaining: sumIn("IQD", "remainingAmount") };
   const activeDebts = debts.filter(d => d.status === "active").length;
   const overdueDebts = debts.filter(d => d.status === "overdue").length;
 
@@ -290,14 +296,17 @@ const [showAddDebt, setShowAddDebt] = useState(false);
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-rose-600 via-fuchsia-600 to-violet-600 p-6 text-white shadow-xl md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t("debts.title")}</h1>
-            <p className="text-muted-foreground">
+            <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+              <span className="rounded-xl bg-white/20 p-2"><Landmark className="h-6 w-6" /></span>
+              {t("debts.title")}
+            </h1>
+            <p className="mt-1 text-white/80">
               {t("debts.description")}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 [&_button]:border-0 [&_button]:bg-white/20 [&_button]:text-white [&_button:hover]:bg-white/30">
             <Button
               variant="outline"
               onClick={() => generateDebtPDF.mutate()}
@@ -331,7 +340,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                       <SelectContent>
                         {debts.filter(d => d.status === "active" || d.status === "overdue").map((debt) => (
                           <SelectItem key={debt.id} value={debt.id.toString()}>
-                            {debt.creditorName} - {formatCurrency(debt.remainingAmount)} {t("debts.remaining")}
+                            {debt.creditorName} - {formatCurrency(debt.remainingAmount, debt.currency)} {t("debts.remaining")}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -601,9 +610,10 @@ const [showAddDebt, setShowAddDebt] = useState(false);
               <DollarSign className="h-4 w-4 text-red-500 dark:text-red-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-300">
+              <div className="text-2xl font-bold text-red-600 dark:text-red-300 font-mono tabular-nums" dir="ltr">
                 {formatCurrency(totalDebt)}
               </div>
+              {iqdTotals.total !== 0 && <p className="text-xs" dir="ltr">+ <span className="font-mono tabular-nums">{formatCurrency(iqdTotals.total, "IQD")}</span></p>}
               <p className="text-xs text-muted-foreground">{t("debts.totalPlusInterest")}</p>
             </CardContent>
           </Card>
@@ -613,9 +623,10 @@ const [showAddDebt, setShowAddDebt] = useState(false);
               <CheckCircle2 className="h-4 w-4 text-green-500 dark:text-green-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-green-600 dark:text-green-300">
+              <div className="text-2xl font-bold text-green-600 dark:text-green-300 font-mono tabular-nums" dir="ltr">
                 {formatCurrency(totalPaid)}
               </div>
+              {iqdTotals.paid !== 0 && <p className="text-xs" dir="ltr">+ <span className="font-mono tabular-nums">{formatCurrency(iqdTotals.paid, "IQD")}</span></p>}
               <p className="text-xs text-muted-foreground">{t("debts.totalPaid")}</p>
             </CardContent>
           </Card>
@@ -625,9 +636,10 @@ const [showAddDebt, setShowAddDebt] = useState(false);
               <Clock className="h-4 w-4 text-orange-500 dark:text-orange-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-orange-600 dark:text-orange-300">
+              <div className="text-2xl font-bold text-orange-600 dark:text-orange-300 font-mono tabular-nums" dir="ltr">
                 {formatCurrency(totalRemaining)}
               </div>
+              {iqdTotals.remaining !== 0 && <p className="text-xs" dir="ltr">+ <span className="font-mono tabular-nums">{formatCurrency(iqdTotals.remaining, "IQD")}</span></p>}
               <p className="text-xs text-muted-foreground">{t("debts.mustBePaid")}</p>
             </CardContent>
           </Card>
@@ -637,7 +649,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
               <Landmark className="h-4 w-4 text-blue-500 dark:text-blue-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{activeDebts}</div>
+              <div className="text-2xl font-bold font-mono tabular-nums" dir="ltr">{activeDebts}</div>
               <p className="text-xs text-muted-foreground">{t("debts.activeDebts")}</p>
             </CardContent>
           </Card>
@@ -647,7 +659,7 @@ const [showAddDebt, setShowAddDebt] = useState(false);
               <AlertTriangle className="h-4 w-4 text-red-500 dark:text-red-400" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold text-red-600 dark:text-red-300">{overdueDebts}</div>
+              <div className="text-2xl font-bold text-red-600 dark:text-red-300 font-mono tabular-nums" dir="ltr">{overdueDebts}</div>
               <p className="text-xs text-muted-foreground">{t("debts.needsToBePaid")}</p>
             </CardContent>
           </Card>
@@ -686,15 +698,15 @@ const [showAddDebt, setShowAddDebt] = useState(false);
                   <div className="space-y-2">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("debts.totalDebt")}:</span>
-                      <span className="font-medium">{formatCurrency(debt.totalAmount)}</span>
+                      <span className="font-mono font-medium tabular-nums" dir="ltr">{formatCurrency(debt.totalAmount, debt.currency)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("debts.paidBack")}:</span>
-                      <span className="font-medium text-green-600 dark:text-green-300">{formatCurrency(debt.paidAmount)}</span>
+                      <span className="font-mono font-medium tabular-nums text-green-600 dark:text-green-300" dir="ltr">{formatCurrency(debt.paidAmount, debt.currency)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">{t("debts.remaining")}:</span>
-                      <span className="font-medium text-red-600 dark:text-red-300">{formatCurrency(debt.remainingAmount)}</span>
+                      <span className="font-mono font-medium tabular-nums text-red-600 dark:text-red-300" dir="ltr">{formatCurrency(debt.remainingAmount, debt.currency)}</span>
                     </div>
                   </div>
 

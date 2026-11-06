@@ -2853,8 +2853,20 @@ export async function createDebtPayment(data: InsertDebtPayment): Promise<DebtPa
     const debt = debtRows[0];
     if (!debt) throw new Error("Debt not found");
 
+    // The debt is kept in its own currency, so the payment is counted in it.
+    // This added the dollar figure always: paying 150,000 IQD on a dinar
+    // debt took ~115 off it. A payment in the other currency would need a
+    // rate nobody has agreed, so it is refused with the way through.
+    const debtCurrency = debt.currency ?? "USD";
+    const payCurrency = data.currency ?? "USD";
+    if (debtCurrency === "IQD" && payCurrency !== "IQD") {
+      throw new Error(withFix("ئەم قەرزە بە دینارە، بەڵام پارەدانەکە بە دۆلار نووسراوە.", [
+        "پارەدانەکە بە دینار (IQD) بنووسە، هەمان بڕی کە خاوەن قەرز وەریگرت.",
+      ]));
+    }
+    const paidInDebtCurrency = payCurrency === debtCurrency ? Number(data.amount) : Number(data.amountUsd);
     const currentPaid = Number(debt.paidAmount);
-    const newPaid = currentPaid + Number(data.amountUsd);
+    const newPaid = currentPaid + paidInDebtCurrency;
     const newRemaining = Number(debt.totalAmount) - newPaid;
 
     const paymentData = {

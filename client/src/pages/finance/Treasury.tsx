@@ -192,9 +192,11 @@ const [activeTab, setActiveTab] = useState("accounts");
     });
   };
 
-  const formatCurrency = (amount: string | number) => {
+  // In the row's own currency: a dinar amount never wears a dollar sign.
+  const formatCurrency = (amount: string | number, currency: string = "USD") => {
     const num = typeof amount === "string" ? parseFloat(amount) : amount;
-    return `$${num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+    if (currency === "IQD") return `${Math.round(num || 0).toLocaleString("en-US")} IQD`;
+    return `$${(num || 0).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (date: Date | string) => {
@@ -241,22 +243,30 @@ const [activeTab, setActiveTab] = useState("accounts");
   };
 
   // Calculate totals
-  const totalBalance = accounts.reduce((sum, a) => sum + Number(a.currentBalance), 0);
-  const cashBalance = accounts.filter(a => a.accountType === "cash").reduce((sum, a) => sum + Number(a.currentBalance), 0);
-  const bankBalance = accounts.filter(a => a.accountType === "bank").reduce((sum, a) => sum + Number(a.currentBalance), 0);
+  // Dollars only, from the server's summary. These were summed here with
+  // every account's currency ignored, so a dinar account added its dinars to a
+  // figure printed in dollars. Dinar is shown apart, never converted.
+  const totalBalance = summary?.totalBalance ?? 0;
+  const cashBalance = summary?.totalCash ?? 0;
+  const bankBalance = summary?.totalBank ?? 0;
+  const iqdBalance = summary?.totalIqd ?? 0;
+  const selectedCurrency = accounts.find(a => a.id === selectedAccountId)?.currency ?? "USD";
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col gap-4 rounded-2xl bg-gradient-to-r from-emerald-600 via-teal-600 to-sky-600 p-6 text-white shadow-xl md:flex-row md:items-center md:justify-between">
           <div>
-            <h1 className="text-2xl font-bold tracking-tight">{t("treasury.title")}</h1>
-            <p className="text-muted-foreground">
+            <h1 className="flex items-center gap-3 text-2xl font-bold tracking-tight">
+              <span className="rounded-xl bg-white/20 p-2"><Wallet className="h-6 w-6" /></span>
+              {t("treasury.title")}
+            </h1>
+            <p className="mt-1 text-white/80">
               {t("treasury.description")}
             </p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2 [&_button]:border-0 [&_button]:bg-white/20 [&_button]:text-white [&_button:hover]:bg-white/30">
             <Dialog open={showAddTransaction} onOpenChange={setShowAddTransaction}>
               <DialogTrigger asChild>
                 <Button variant="outline">
@@ -284,7 +294,7 @@ const [activeTab, setActiveTab] = useState("accounts");
                       <SelectContent>
                         {accounts.filter(a => a.isActive).map((account) => (
                           <SelectItem key={account.id} value={account.id.toString()}>
-                            {account.accountName} - {formatCurrency(account.currentBalance)}
+                            {account.accountName} - {formatCurrency(account.currentBalance, account.currency)}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -513,10 +523,11 @@ const [activeTab, setActiveTab] = useState("accounts");
               <PiggyBank className="h-5 w-5 text-green-600 dark:text-green-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-3xl font-bold text-green-700 dark:text-green-400">
+              <div className="text-3xl font-bold text-green-700 dark:text-green-400 font-mono tabular-nums" dir="ltr">
                 {formatCurrency(totalBalance)}
               </div>
               <p className="text-xs text-green-600/70 dark:text-green-300">{t("finance.allAccounts")}</p>
+              {iqdBalance !== 0 && <p className="text-xs text-green-700 dark:text-green-300">+ <bdi dir="ltr" className="font-mono tabular-nums">{formatCurrency(iqdBalance, "IQD")}</bdi></p>}
             </CardContent>
           </Card>
           <Card>
@@ -525,7 +536,7 @@ const [activeTab, setActiveTab] = useState("accounts");
               <Banknote className="h-4 w-4 text-yellow-600 dark:text-yellow-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold font-mono tabular-nums" dir="ltr">
                 {formatCurrency(cashBalance)}
               </div>
               <p className="text-xs text-muted-foreground">{t("treasury.cashMoney")}</p>
@@ -537,7 +548,7 @@ const [activeTab, setActiveTab] = useState("accounts");
               <Landmark className="h-4 w-4 text-blue-600 dark:text-blue-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">
+              <div className="text-2xl font-bold font-mono tabular-nums" dir="ltr">
                 {formatCurrency(bankBalance)}
               </div>
               <p className="text-xs text-muted-foreground">{t("companyFinance.bankAccounts")}</p>
@@ -549,7 +560,7 @@ const [activeTab, setActiveTab] = useState("accounts");
               <CreditCard className="h-4 w-4 text-muted-foreground" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold">{accounts.filter(a => a.isActive).length}</div>
+              <div className="text-2xl font-bold font-mono tabular-nums" dir="ltr">{accounts.filter(a => a.isActive).length}</div>
               <p className="text-xs text-muted-foreground">{t("finance.activeAccounts")}</p>
             </CardContent>
           </Card>
@@ -585,8 +596,8 @@ const [activeTab, setActiveTab] = useState("accounts");
                 {/* Balance */}
                 <div className="rounded-xl bg-gradient-to-r from-primary/10 to-primary/5 p-4">
                   <p className="text-xs text-muted-foreground mb-1">{t("treasury.currentBalance")}</p>
-                  <p className="text-2xl font-bold text-primary">
-                    {formatCurrency(account.currentBalance)}
+                  <p className="font-mono text-2xl font-bold tabular-nums text-primary" dir="ltr">
+                    {formatCurrency(account.currentBalance, account.currency)}
                   </p>
                 </div>
 
@@ -601,7 +612,7 @@ const [activeTab, setActiveTab] = useState("accounts");
                 {/* Initial Balance */}
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-muted-foreground">{t("treasury.initialBalance")}:</span>
-                  <span>{formatCurrency(account.initialBalance)}</span>
+                  <bdi dir="ltr" className="font-mono tabular-nums">{formatCurrency(account.initialBalance, account.currency)}</bdi>
                 </div>
 
                 {/* Actions */}
@@ -691,10 +702,10 @@ const [activeTab, setActiveTab] = useState("accounts");
                             : "text-red-600 dark:text-red-300"
                         }`}>
                           {txn.transactionType === "deposit" || txn.transactionType === "transfer_in" ? "+" : "-"}
-                          {formatCurrency(txn.amount)}
+                          <bdi dir="ltr" className="font-mono tabular-nums">{formatCurrency(txn.amount, selectedCurrency)}</bdi>
                         </TableCell>
                         <TableCell className="text-right font-medium">
-                          {formatCurrency(txn.balanceAfter)}
+                          <bdi dir="ltr" className="font-mono tabular-nums">{formatCurrency(txn.balanceAfter, selectedCurrency)}</bdi>
                         </TableCell>
                       </TableRow>
                     ))
