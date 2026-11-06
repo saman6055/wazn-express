@@ -575,7 +575,7 @@ const [activeTab, setActiveTab] = useState("partners");
               <PiggyBank className="h-4 w-4 text-blue-600 dark:text-blue-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-mono text-blue-700 dark:text-blue-200">
+              <div className="text-2xl font-bold font-mono text-blue-700 dark:text-blue-200 tabular-nums" dir="ltr">
                 {formatCurrency((totals?.contributed ?? 0) + (totals?.adjustments ?? 0))}
               </div>
               <p className="text-xs text-blue-600/80 dark:text-blue-300/80">
@@ -593,7 +593,7 @@ const [activeTab, setActiveTab] = useState("partners");
               <TrendingUp className="h-4 w-4 text-emerald-600 dark:text-emerald-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-200">
+              <div className="text-2xl font-bold font-mono text-emerald-700 dark:text-emerald-200 tabular-nums" dir="ltr">
                 {formatCurrency(totals?.profitShare ?? 0)}
               </div>
               <p className="text-xs text-emerald-600/80 dark:text-emerald-300/80">{t("partners.capitalAccount")}</p>
@@ -606,7 +606,7 @@ const [activeTab, setActiveTab] = useState("partners");
               <ArrowDownRight className="h-4 w-4 text-orange-600 dark:text-orange-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-mono text-orange-700 dark:text-orange-200">
+              <div className="text-2xl font-bold font-mono text-orange-700 dark:text-orange-200 tabular-nums" dir="ltr">
                 {formatCurrency(totals?.drawings ?? 0)}
               </div>
               <p className="text-xs text-orange-600/80 dark:text-orange-300/80">{t("partners.drawings")}</p>
@@ -619,7 +619,7 @@ const [activeTab, setActiveTab] = useState("partners");
               <DollarSign className="h-4 w-4 text-violet-600 dark:text-violet-300" />
             </CardHeader>
             <CardContent>
-              <div className="text-2xl font-bold font-mono text-violet-700 dark:text-violet-200">
+              <div className="text-2xl font-bold font-mono text-violet-700 dark:text-violet-200 tabular-nums" dir="ltr">
                 {formatCurrency(totals?.equity ?? 0)}
               </div>
               <p className="text-xs text-violet-600/80 dark:text-violet-300/80">{t("partners.equityNote")}</p>
@@ -639,7 +639,7 @@ const [activeTab, setActiveTab] = useState("partners");
                   <p className="text-xs text-sky-600/80 dark:text-sky-300/80">{t("partners.liabilityNote")}</p>
                 </div>
               </div>
-              <p className="text-2xl font-bold font-mono text-sky-700 dark:text-sky-200">
+              <p className="text-2xl font-bold font-mono text-sky-700 dark:text-sky-200 tabular-nums" dir="ltr">
                 {formatCurrency(totals?.liability ?? 0)}
               </p>
             </CardContent>

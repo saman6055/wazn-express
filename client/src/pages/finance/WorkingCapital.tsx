@@ -108,11 +108,11 @@ export default function WorkingCapital() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-lg bg-muted/50 p-4">
                 <div className="text-xs text-muted-foreground">{L({ ku: "سەرمایەی هێنراو", en: "Capital brought in", ar: "رأس المال", zh: "投入资本" })}</div>
-                <div className="text-2xl font-semibold"><Money value={f.capitalUsd} /></div>
+                <div className="text-2xl font-semibold font-mono tabular-nums" dir="ltr"><Money value={f.capitalUsd} /></div>
               </div>
               <div className="rounded-lg bg-muted/50 p-4">
                 <div className="text-xs text-muted-foreground">{L({ ku: "ئێستا لە ناو ئیشە", en: "In the work now", ar: "في العمل الآن", zh: "现在在业务中" })}</div>
-                <div className="text-2xl font-semibold"><Money value={data.shouldHoldUsd} /></div>
+                <div className="text-2xl font-semibold font-mono tabular-nums" dir="ltr"><Money value={data.shouldHoldUsd} /></div>
               </div>
               <div className="rounded-lg bg-muted/50 p-4">
                 <div className="text-xs text-muted-foreground">{L({ ku: "لە سەرمایە زیاد / کەم", en: "Above / below capital", ar: "أعلى / أقل من رأس المال", zh: "高于/低于资本" })}</div>

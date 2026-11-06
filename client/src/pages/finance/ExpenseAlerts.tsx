@@ -219,48 +219,48 @@ export default function ExpenseAlerts() {
 
         {/* Summary Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Card className="border-l-4 border-l-emerald-500">
+          <Card className="border-s-4 border-s-emerald-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.totalAlerts") || "کۆی ئاگادارکردنەوەکان"}</p>
-                  <p className="text-2xl font-bold">{alerts.length}</p>
+                  <p className="text-2xl font-bold font-mono tabular-nums" dir="ltr">{alerts.length}</p>
                 </div>
                 <Shield className="h-8 w-8 text-emerald-500 dark:text-emerald-400 opacity-80" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-blue-500">
+          <Card className="border-s-4 border-s-blue-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.activeAlerts") || "چالاکەکان"}</p>
-                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">{activeAlerts.length}</p>
+                  <p className="text-2xl font-bold text-blue-600 dark:text-blue-300 font-mono tabular-nums" dir="ltr">{activeAlerts.length}</p>
                 </div>
                 <Bell className="h-8 w-8 text-blue-500 dark:text-blue-400 opacity-80" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-gray-400">
+          <Card className="border-s-4 border-s-gray-400">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.inactiveAlerts") || "ناچالاکەکان"}</p>
-                  <p className="text-2xl font-bold text-gray-500 dark:text-gray-400">{inactiveAlerts.length}</p>
+                  <p className="text-2xl font-bold text-gray-500 dark:text-gray-400 font-mono tabular-nums" dir="ltr">{inactiveAlerts.length}</p>
                 </div>
                 <BellOff className="h-8 w-8 text-gray-400 opacity-80" />
               </div>
             </CardContent>
           </Card>
 
-          <Card className="border-l-4 border-l-amber-500">
+          <Card className="border-s-4 border-s-amber-500">
             <CardContent className="p-4">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-muted-foreground">{t("expenseAlerts.triggeredCount") || "جار تریگەرکراو"}</p>
-                  <p className="text-2xl font-bold text-amber-600 dark:text-amber-300">{logs.length}</p>
+                  <p className="text-2xl font-bold text-amber-600 dark:text-amber-300 font-mono tabular-nums" dir="ltr">{logs.length}</p>
                 </div>
                 <History className="h-8 w-8 text-amber-500 dark:text-amber-400 opacity-80" />
               </div>

@@ -144,7 +144,9 @@ export default function BankAccounts() {
   const totalBalance = summary?.totalBalance || 0;
   const cashBalance = summary?.totalCash || 0;
   const bankBalance = summary?.totalBank || 0;
-  const walletBalance = useMemo(() => walletAccounts.reduce((sum, a) => sum + Number(a.currentBalance), 0), [walletAccounts]);
+  // Dollars only, like the three figures beside it: a dinar wallet's balance
+  // was added to a dollar figure.
+  const walletBalance = useMemo(() => walletAccounts.filter(a => (a.currency ?? 'USD') === 'USD').reduce((sum, a) => sum + Number(a.currentBalance), 0), [walletAccounts]);
 
   const getTypeIcon = (type: string) => {
     switch (type) {
@@ -208,9 +210,11 @@ export default function BankAccounts() {
 
   const isIncome = (type: string) => ['deposit', 'transfer_in', 'customer_payment', 'partner_deposit'].includes(type);
 
-  const formatCurrency = (amount: string | number) => {
+  // In the account's own currency: a dinar balance never wears a dollar sign.
+  const formatCurrency = (amount: string | number, currency: string = 'USD') => {
     const num = typeof amount === 'string' ? parseFloat(amount) : amount;
-    return `$${num.toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
+    if (currency === 'IQD') return `${Math.round(num || 0).toLocaleString('en-US')} IQD`;
+    return `$${(num || 0).toLocaleString('en-US', { minimumFractionDigits: 0, maximumFractionDigits: 2 })}`;
   };
 
   const formatDate = (date: string | Date) => {
@@ -364,7 +368,7 @@ export default function BankAccounts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.totalBalance") || "کۆی باڵانس"}</p>
-                <p className="text-xl md:text-2xl font-bold text-emerald-700 dark:text-emerald-400">{formatCurrency(totalBalance)}</p>
+                <p className="text-xl md:text-2xl font-bold text-emerald-700 dark:text-emerald-400 font-mono tabular-nums" dir="ltr">{formatCurrency(totalBalance)}</p>
                 <p className="text-xs text-emerald-500 dark:text-emerald-400 mt-1">{activeAccounts.length} {t("bankAccounts.activeAccounts") || "حسابی چالاک"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center">
@@ -379,7 +383,7 @@ export default function BankAccounts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.cashBox") || "سندوقی پارە"}</p>
-                <p className="text-xl md:text-2xl font-bold text-green-700 dark:text-green-400">{formatCurrency(cashBalance)}</p>
+                <p className="text-xl md:text-2xl font-bold text-green-700 dark:text-green-400 font-mono tabular-nums" dir="ltr">{formatCurrency(cashBalance)}</p>
                 <p className="text-xs text-green-500 dark:text-green-400 mt-1">{cashAccounts_.length} {t("bankAccounts.account") || "هەژمار"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
@@ -394,7 +398,7 @@ export default function BankAccounts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.bankAccount") || "بانک"}</p>
-                <p className="text-xl md:text-2xl font-bold text-blue-700 dark:text-blue-400">{formatCurrency(bankBalance)}</p>
+                <p className="text-xl md:text-2xl font-bold text-blue-700 dark:text-blue-400 font-mono tabular-nums" dir="ltr">{formatCurrency(bankBalance)}</p>
                 <p className="text-xs text-blue-500 dark:text-blue-400 mt-1">{bankAccountsList.length} {t("bankAccounts.account") || "هەژمار"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
@@ -409,7 +413,7 @@ export default function BankAccounts() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-xs md:text-sm text-muted-foreground">{t("bankAccounts.mobileWallet") || "جزدانی مۆبایل"}</p>
-                <p className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400">{formatCurrency(walletBalance)}</p>
+                <p className="text-xl md:text-2xl font-bold text-purple-700 dark:text-purple-400 font-mono tabular-nums" dir="ltr">{formatCurrency(walletBalance)}</p>
                 <p className="text-xs text-purple-500 dark:text-purple-400 mt-1">{walletAccounts.length} {t("bankAccounts.account") || "هەژمار"}</p>
               </div>
               <div className="h-10 w-10 md:h-12 md:w-12 rounded-full bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center">
@@ -523,7 +527,7 @@ export default function BankAccounts() {
                         <SelectItem key={acc.id} value={acc.id.toString()}>
                           <span className="flex items-center gap-2">
                             {getTypeIcon(acc.accountType)}
-                            {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance)})
+                            {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance, acc.currency)})
                           </span>
                         </SelectItem>
                       ))}
@@ -559,8 +563,8 @@ export default function BankAccounts() {
                   </div>
                   <div className="text-left">
                     <p className="text-sm text-muted-foreground">{t("bankAccounts.currentBalance") || "باڵانسی ئێستا"}</p>
-                    <p className={`text-2xl font-bold ${Number(viewingAccount.currentBalance) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
-                      {formatCurrency(viewingAccount.currentBalance)}
+                    <p dir="ltr" className={`font-mono tabular-nums text-2xl font-bold ${Number(viewingAccount.currentBalance) >= 0 ? 'text-emerald-600' : 'text-red-600'}`}>
+                      {formatCurrency(viewingAccount.currentBalance, viewingAccount.currency)}
                     </p>
                   </div>
                 </div>
@@ -599,10 +603,10 @@ export default function BankAccounts() {
                             isIncome(tx.transactionType) ? 'text-emerald-600' :
                             tx.transactionType === 'adjustment' ? 'text-blue-600' : 'text-red-600'
                           }`}>
-                            {isIncome(tx.transactionType) ? '+' : '-'}{formatCurrency(tx.amount)}
+                            {isIncome(tx.transactionType) ? '+' : '-'}{formatCurrency(tx.amount, viewingAccount?.currency)}
                           </span>
                           <p className="text-xs text-muted-foreground">
-                            {t("bankAccounts.balanceAfter") || "باڵانس:"} {formatCurrency(tx.balanceAfter)}
+                            {t("bankAccounts.balanceAfter") || "باڵانس:"} {formatCurrency(tx.balanceAfter, viewingAccount?.currency)}
                           </p>
                         </div>
                       </div>
@@ -798,7 +802,7 @@ export default function BankAccounts() {
                 <SelectContent>
                   {activeAccounts.map(acc => (
                     <SelectItem key={acc.id} value={acc.id.toString()}>
-                      {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance)})
+                      {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance, acc.currency)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -818,7 +822,7 @@ export default function BankAccounts() {
                 <SelectContent>
                   {activeAccounts.filter(a => a.id.toString() !== transfer.fromAccountId).map(acc => (
                     <SelectItem key={acc.id} value={acc.id.toString()}>
-                      {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance)})
+                      {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance, acc.currency)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -868,7 +872,7 @@ export default function BankAccounts() {
                 <SelectContent>
                   {activeAccounts.map(acc => (
                     <SelectItem key={acc.id} value={acc.id.toString()}>
-                      {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance)})
+                      {acc.accountNameKu || acc.accountName} ({formatCurrency(acc.currentBalance, acc.currency)})
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -1031,8 +1035,8 @@ function AccountCard({ account, getTypeIcon, getTypeColor, getTypeBorderColor, g
           <div className="flex items-end justify-between">
             <div>
               <p className="text-xs text-muted-foreground">{t("bankAccounts.currentBalance") || "باڵانسی ئێستا"}</p>
-              <p className={`text-2xl font-bold ${Number(account.currentBalance) >= 0 ? '' : 'text-red-600'}`}>
-                {formatCurrency(account.currentBalance)}
+              <p dir="ltr" className={`font-mono tabular-nums text-2xl font-bold ${Number(account.currentBalance) >= 0 ? '' : 'text-red-600'}`}>
+                {formatCurrency(account.currentBalance, account.currency)}
               </p>
             </div>
             <div className="flex flex-col items-end gap-1">

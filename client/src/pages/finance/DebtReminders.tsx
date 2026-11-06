@@ -168,7 +168,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_bb8925")} </p>
-                <p className="text-2xl font-bold">{debtors?.length || 0}</p>
+                <p className="text-2xl font-bold font-mono tabular-nums" dir="ltr">{debtors?.length || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -182,7 +182,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("finance.totalDebt")}</p>
-                <p className="text-2xl font-bold">${totalDebt.toLocaleString("en-GB")}</p>
+                <p className="text-2xl font-bold font-mono tabular-nums" dir="ltr">${totalDebt.toLocaleString("en-GB")}</p>
               </div>
             </div>
           </CardContent>
@@ -196,7 +196,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("tables.selected")}</p>
-                <p className="text-2xl font-bold">{selectedCustomers.length}</p>
+                <p className="text-2xl font-bold font-mono tabular-nums" dir="ltr">{selectedCustomers.length}</p>
               </div>
             </div>
           </CardContent>
@@ -210,7 +210,7 @@ const [selectedCustomers, setSelectedCustomers] = useState<number[]>([]);
               </div>
               <div>
                 <p className="text-sm text-muted-foreground">{t("auto.text_9d2075")} </p>
-                <p className="text-2xl font-bold">${selectedDebt.toLocaleString("en-GB")}</p>
+                <p className="text-2xl font-bold font-mono tabular-nums" dir="ltr">${selectedDebt.toLocaleString("en-GB")}</p>
               </div>
             </div>
           </CardContent>

@@ -367,7 +367,7 @@ export default function CompanyStock() {
             <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <div className="rounded-lg bg-muted/50 p-4">
                 <div className="text-xs text-muted-foreground">{L({ ku: "لە دەستماندایە", en: "On our hands", ar: "في حوزتنا", zh: "在手" })}</div>
-                <div className="text-2xl font-semibold"><bdi dir="ltr">{held.length}</bdi></div>
+                <div className="text-2xl font-semibold font-mono tabular-nums" dir="ltr"><bdi dir="ltr">{held.length}</bdi></div>
               </div>
               <div className="rounded-lg bg-muted/50 p-4">
                 <div className="text-xs text-muted-foreground">{L({ ku: "خەسارەی تا ئێستا", en: "Loss so far", ar: "الخسارة حتى الآن", zh: "迄今亏损" })}</div>

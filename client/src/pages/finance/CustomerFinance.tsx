@@ -2031,10 +2031,10 @@ export default function CustomerFinance() {
                                   <Fragment key={group.key}>
                                     <TableRow
                                       className={cn(
-                                        "cursor-pointer transition-colors border-l-4",
+                                        "cursor-pointer transition-colors border-s-4",
                                         isExpanded
-                                          ? "bg-emerald-50/40 dark:bg-emerald-950/40 hover:bg-emerald-50/60 border-l-emerald-500"
-                                          : "hover:bg-muted/30 border-l-transparent"
+                                          ? "bg-emerald-50/40 dark:bg-emerald-950/40 hover:bg-emerald-50/60 border-s-emerald-500"
+                                          : "hover:bg-muted/30 border-s-transparent"
                                       )}
                                       onClick={() => toggleInvoiceGroup(group.invoiceId)}
                                     >
@@ -2094,7 +2094,7 @@ export default function CustomerFinance() {
                                       <TableRow
                                         key={`${group.key}-${txn.id}`}
                                         className={cn(
-                                          "cursor-pointer transition-colors bg-muted/10 hover:bg-muted/40 border-l-4 border-l-emerald-200",
+                                          "cursor-pointer transition-colors bg-muted/10 hover:bg-muted/40 border-s-4 border-s-emerald-200",
                                           childIdx === group.rows.length - 1 && "border-b-2 border-b-emerald-100"
                                         )}
                                         onClick={() => openTransactionDetails(txn)}

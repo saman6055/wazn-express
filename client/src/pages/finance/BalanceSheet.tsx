@@ -213,17 +213,17 @@ const [selectedDate, setSelectedDate] = useState(() => {
           <div className="flex items-center justify-center gap-4 text-center">
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_ca725c")} </p>
-              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300">${totalAssets.toLocaleString("en-GB")}</p>
+              <p className="text-3xl font-bold text-blue-600 dark:text-blue-300 font-mono tabular-nums" dir="ltr">${totalAssets.toLocaleString("en-GB")}</p>
             </div>
             <div className="text-2xl text-muted-foreground">=</div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_439568")} </p>
-              <p className="text-3xl font-bold text-red-600 dark:text-red-300">${totalLiabilities.toLocaleString("en-GB")}</p>
+              <p className="text-3xl font-bold text-red-600 dark:text-red-300 font-mono tabular-nums" dir="ltr">${totalLiabilities.toLocaleString("en-GB")}</p>
             </div>
             <div className="text-2xl text-muted-foreground">+</div>
             <div className="flex-1">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_e4735e")} </p>
-              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-300">${equity.toLocaleString("en-GB")}</p>
+              <p className="text-3xl font-bold text-emerald-600 dark:text-emerald-300 font-mono tabular-nums" dir="ltr">${equity.toLocaleString("en-GB")}</p>
             </div>
           </div>
         </CardContent>
@@ -312,7 +312,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 bg-blue-50 dark:bg-blue-950/40">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-blue-700 dark:text-blue-300">{t("auto.text_6ca2b0")} </span>
-                <span className="text-xl font-bold text-blue-700 dark:text-blue-300">${totalAssets.toLocaleString("en-GB")}</span>
+                <span className="text-xl font-bold text-blue-700 dark:text-blue-300 font-mono tabular-nums" dir="ltr">${totalAssets.toLocaleString("en-GB")}</span>
               </div>
             </div>
           </CardContent>
@@ -396,7 +396,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 bg-red-50 dark:bg-red-950/40">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-red-700 dark:text-red-300">{t("finance.totalDebt")}</span>
-                <span className="text-xl font-bold text-red-700 dark:text-red-300">${totalLiabilities.toLocaleString("en-GB")}</span>
+                <span className="text-xl font-bold text-red-700 dark:text-red-300 font-mono tabular-nums" dir="ltr">${totalLiabilities.toLocaleString("en-GB")}</span>
               </div>
             </div>
           </CardContent>
@@ -463,7 +463,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
             <div className="p-4 bg-emerald-50 dark:bg-emerald-950/40">
               <div className="flex items-center justify-between">
                 <span className="font-bold text-emerald-700 dark:text-emerald-300">{t("auto.text_66dedb")} </span>
-                <span className="text-xl font-bold text-emerald-700 dark:text-emerald-300">${equity.toLocaleString("en-GB")}</span>
+                <span className="text-xl font-bold text-emerald-700 dark:text-emerald-300 font-mono tabular-nums" dir="ltr">${equity.toLocaleString("en-GB")}</span>
               </div>
             </div>
           </CardContent>
@@ -480,7 +480,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_1e7fbd")} </p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-300">
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-300 font-mono tabular-nums" dir="ltr">
                 {totalLiabilities > 0 ? (totalAssets / totalLiabilities).toFixed(2) : '∞'}
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_5d5ee4")} </p>
@@ -488,7 +488,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_6324b1")} </p>
-              <p className="text-2xl font-bold text-red-600 dark:text-red-300">
+              <p className="text-2xl font-bold text-red-600 dark:text-red-300 font-mono tabular-nums" dir="ltr">
                 {totalAssets > 0 ? ((totalLiabilities / totalAssets) * 100).toFixed(1) : '0'}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_777e54")} </p>
@@ -496,7 +496,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_efd50b")} </p>
-              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300">
+              <p className="text-2xl font-bold text-emerald-600 dark:text-emerald-300 font-mono tabular-nums" dir="ltr">
                 {totalAssets > 0 ? ((equity / totalAssets) * 100).toFixed(1) : '100'}%
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_d16b24")} </p>
@@ -504,7 +504,7 @@ const [selectedDate, setSelectedDate] = useState(() => {
 
             <div className="p-4 bg-muted/30 rounded-lg text-center">
               <p className="text-sm text-muted-foreground mb-1">{t("auto.text_14042d")} </p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-300">
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-300 font-mono tabular-nums" dir="ltr">
                 ${(totalAssets - totalLiabilities).toLocaleString("en-GB")}
               </p>
               <p className="text-xs text-muted-foreground mt-1">{t("auto.text_a2f5bf")} </p>

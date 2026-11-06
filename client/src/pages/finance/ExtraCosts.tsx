@@ -71,11 +71,11 @@ export default function ExtraCosts() {
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
           <div className="rounded-lg bg-muted/50 p-4">
             <div className="text-xs text-muted-foreground">{L({ ku: "کۆمپانیا دای", en: "The company paid", ar: "دفعت الشركة", zh: "公司支付" })}</div>
-            <div className="text-2xl font-semibold"><bdi dir="ltr">{fmtUsd(sums.cost)}</bdi></div>
+            <div className="text-2xl font-semibold font-mono tabular-nums" dir="ltr"><bdi dir="ltr">{fmtUsd(sums.cost)}</bdi></div>
           </div>
           <div className="rounded-lg bg-muted/50 p-4">
             <div className="text-xs text-muted-foreground">{L({ ku: "لە کڕیاران نووسرا", en: "Charged to customers", ar: "حُمّل على العملاء", zh: "向客户收取" })}</div>
-            <div className="text-2xl font-semibold"><bdi dir="ltr">{fmtUsd(sums.price)}</bdi></div>
+            <div className="text-2xl font-semibold font-mono tabular-nums" dir="ltr"><bdi dir="ltr">{fmtUsd(sums.price)}</bdi></div>
           </div>
           <div className="rounded-lg bg-muted/50 p-4">
             <div className="text-xs text-muted-foreground">{L({ ku: "کاریگەری لەسەر قازانج", en: "Effect on profit", ar: "الأثر على الربح", zh: "对利润的影响" })}</div>
