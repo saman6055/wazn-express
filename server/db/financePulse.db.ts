@@ -429,6 +429,46 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
   };
 }
 
+/**
+ * The last months side by side, for the finance centre's charts (owner,
+ * 2026-11-07: «ئینفۆگراف»). Every figure comes from the same functions the
+ * centre's cards use - money received, expenses, the one profit rule - so a
+ * bar can never disagree with a card. Oldest first; the current month runs
+ * to now, as its card does.
+ */
+export async function getFinanceTrend(months = 6, now: Date = new Date()) {
+  const db = await getDb();
+  if (!db) return [];
+  const n = Math.min(12, Math.max(2, Math.floor(months)));
+  const local = new Date(now.getTime() + 3 * 60 * 60 * 1000);
+  const y = local.getUTCFullYear();
+  const m = local.getUTCMonth();
+  const out = await Promise.all(Array.from({ length: n }, async (_, i) => {
+    const back = n - 1 - i;
+    const current = back === 0;
+    const bounds = current
+      ? periodBounds("month", now)
+      : periodBounds("lastMonth", new Date(Date.UTC(y, m - back + 1, 15)));
+    const end = current ? new Date(now.getTime() + DAY) : bounds.end;
+    const [received, spent, profit] = await Promise.all([
+      current ? getMoneyReceived(now).then((r) => r.month) : receivedBetween(db, bounds.start, end),
+      expensesBetween(db, bounds.start, end),
+      getProfitForPeriod(bounds.start, end),
+    ]);
+    const workUsd = cents(num(profit.total.profit));
+    const start = new Date(bounds.start.getTime() + 3 * 60 * 60 * 1000);
+    return {
+      month: `${start.getUTCFullYear()}-${String(start.getUTCMonth() + 1).padStart(2, "0")}`,
+      current,
+      receivedUsd: cents(num(received.usd)),
+      expensesUsd: cents(spent.usd),
+      workProfitUsd: workUsd,
+      netUsd: cents(workUsd - spent.usd),
+    };
+  }));
+  return out;
+}
+
 async function receivedBetween(db: Db, start: Date, end: Date) {
   const { paymentRecords } = await import("../../drizzle/schema");
   const net = sql`GREATEST(COALESCE(${paymentRecords.amountUsd}, 0) - COALESCE(${paymentRecords.reversedAmountUsd}, 0), 0)`;

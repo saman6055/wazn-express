@@ -102,6 +102,13 @@ export const ledgerRouter = router({
         const mainAdmin = ctx.user.role === "super_admin";
         return freshGetOrSet(`ledger.financeDashboard:${period}:${mainAdmin}`, () => db.getFinanceDashboard(period, mainAdmin));
       }),
+    /** Six months side by side for the centre's charts: the cards' own figures, month by month. */
+    financeTrend: accountantProcedure
+      .input(z.object({ months: z.number().int().min(2).max(12).default(6) }).optional())
+      .query(async ({ input }) => {
+        const months = input?.months ?? 6;
+        return freshGetOrSet(`ledger.financeTrend:${months}`, () => db.getFinanceTrend(months));
+      }),
     /** The running costs the loss warning is measured against — the main admin's list. */
     /**
      * The company's own code (owner, 2026-11-05): what is written on it is

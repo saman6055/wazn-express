@@ -13,6 +13,7 @@ import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
 import { cn } from "@/lib/utils";
 import { DebtWhatsAppButton } from "@/components/finance/DebtWhatsAppButton";
+import { FinanceTrendCard, Sparkline, type TrendRow } from "@/components/finance/FinanceTrendCard";
 
 /**
  * The finance centre (owner, 2026-11-05, point 36/39): one screen, the few
@@ -43,8 +44,10 @@ const TONES = {
   slate: "border-slate-200 bg-slate-50/70 text-slate-950 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100",
 } as const;
 
-function Tile({ tone, icon, label, info, value, sub, onOpen, testId }: {
+function Tile({ tone, icon, label, info, value, sub, onOpen, testId, spark, sparkColour }: {
   tone: keyof typeof TONES; icon: ReactNode; label: string; info: string; value: ReactNode; sub?: ReactNode; onOpen: () => void; testId: string;
+  /** The last months of this figure, drawn small under it. */
+  spark?: number[]; sparkColour?: string;
 }) {
   return (
     <button
@@ -65,6 +68,7 @@ function Tile({ tone, icon, label, info, value, sub, onOpen, testId }: {
         </Tooltip>
       </div>
       <div className="mt-2 text-2xl font-bold">{value}</div>
+      {spark && <Sparkline values={spark} colour={sparkColour} />}
       {sub && <div className="mt-1 text-xs opacity-80">{sub}</div>}
     </button>
   );
@@ -88,6 +92,9 @@ export default function FinanceCenter() {
   const [period, setPeriod] = useState<"month" | "lastMonth" | "year">("month");
   const [open, setOpen] = useState<Drawer>(null);
   const { data, isLoading } = trpc.ledger.financeDashboard.useQuery({ period });
+  // Six months of the cards' own figures, for the charts and the card lines.
+  const { data: trendData } = trpc.ledger.financeTrend.useQuery({ months: 6 });
+  const trend = (trendData ?? []) as TrendRow[];
   // Boxes asleep on the shelf (point 41.2): not sent, not paid.
   const { data: shelf } = trpc.deliveryBox.warehouseShelf.useQuery();
   const { data: allDebtors } = trpc.ledger.getDebtors.useQuery({ minBalanceUsd: 0 }, { enabled: open === "debt" });
@@ -149,11 +156,11 @@ export default function FinanceCenter() {
               onOpen={() => setOpen("debt")} />
             <Tile testId="fc-received" tone="emerald" icon={<Wallet className="h-4 w-4" />} label={L(titles.received)}
               info={L({ ku: "پارەی وەرگیراو لەم ماوەیەدا، کەم ئەوەی هەڵوەشێنراوەتەوە. قەرەبوو و داشکان تێیدا نین.", en: "Money taken in this period, less what was undone. Compensation and discounts are not in it.", ar: "المقبوض في الفترة ناقص الملغى، دون التعويضات والخصومات.", zh: "本期实收减撤销，不含补偿与折扣。" })}
-              value={<Num value={received.usd} />} sub={L({ ku: `${received.count} وەسڵ`, en: `${received.count} receipts`, ar: `${received.count} إيصال`, zh: `${received.count} 张` })}
+              value={<Num value={received.usd} />} spark={trend.map((t) => t.receivedUsd)} sparkColour="#10B981" sub={L({ ku: `${received.count} وەسڵ`, en: `${received.count} receipts`, ar: `${received.count} إيصال`, zh: `${received.count} 张` })}
               onOpen={() => setOpen("received")} />
             <Tile testId="fc-profit" tone={data.profit.netUsd < 0 ? "rose" : "violet"} icon={<TrendingUp className="h-4 w-4" />} label={L(titles.profit)}
               info={L({ ku: "قازانجی کار (عمولە + باچەکان دوای تێچووی گواستنەوە + فول پاکێج + زیادە و خزمەتگوزاری) کەم مەسارف. پارەی کاڵا قازانج نییە.", en: "Work profit (commission + batches after carrier cost + full package + extras and services) less expenses. Money for goods is not profit.", ar: "ربح العمل ناقص المصاريف. ثمن البضاعة ليس ربحاً.", zh: "经营利润减费用。货款不是利润。" })}
-              value={<Num value={data.profit.netUsd} signed />} sub={L({ ku: `کار ${usd(data.profit.workUsd)} · مەسارف ${usd(data.profit.expensesUsd)}`, en: `work ${usd(data.profit.workUsd)} · expenses ${usd(data.profit.expensesUsd)}`, ar: `العمل ${usd(data.profit.workUsd)} · المصاريف ${usd(data.profit.expensesUsd)}`, zh: `经营 ${usd(data.profit.workUsd)} · 费用 ${usd(data.profit.expensesUsd)}` })}
+              value={<Num value={data.profit.netUsd} signed />} spark={trend.map((t) => t.netUsd)} sparkColour="#06B6D4" sub={L({ ku: `کار ${usd(data.profit.workUsd)} · مەسارف ${usd(data.profit.expensesUsd)}`, en: `work ${usd(data.profit.workUsd)} · expenses ${usd(data.profit.expensesUsd)}`, ar: `العمل ${usd(data.profit.workUsd)} · المصاريف ${usd(data.profit.expensesUsd)}`, zh: `经营 ${usd(data.profit.workUsd)} · 费用 ${usd(data.profit.expensesUsd)}` })}
               onOpen={() => setOpen("profit")} />
             {isMainAdmin && cap && (
               <>
@@ -181,6 +188,8 @@ export default function FinanceCenter() {
               onOpen={() => setOpen("waiting")} />
           </div>
         )}
+
+        {trend.length > 1 && data && <FinanceTrendCard rows={trend} byMethod={received.byMethod ?? []} language={language} />}
 
         <div className="flex flex-wrap gap-2 text-xs">
           {[
