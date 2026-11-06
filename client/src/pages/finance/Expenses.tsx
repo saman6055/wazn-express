@@ -707,6 +707,15 @@ const [activeTab, setActiveTab] = useState("expenses");
                       : t("expenses.addCategoryDesc")}
                   </DialogDescription>
                 </DialogHeader>
+                {/* What a category is, said plainly (owner, point 31: «پۆلی نوێ» was not understood). */}
+                <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs leading-relaxed text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100" data-testid="category-help">
+                  {pickLang(language, {
+                    ku: "پۆل ناوێکە بۆ کۆکردنەوەی خەرجییە هاوشێوەکان، وەک «کرێی کۆگا»، «کارەبا» یان «مووچە». تەنها یەک جار دروستی دەکەیت. پاشان کاتێک خەرجییەک تۆمار دەکەیت هەڵیدەبژێریت، و لە سەرەوەی پەڕەکە دەبینیت مانگانە چەند لە هەر پۆلێک خەرج کراوە. ئەگەر خەرجییەکە هەموو مانگێک دووبارە دەبێتەوە، «دووبارەبوو» هەڵبژێرە.",
+                    en: "A category groups similar expenses, like “warehouse rent”, “electricity” or “salaries”. You create it once; then you pick it when recording an expense, and the top of the page shows how much went on each category every month. Mark it recurring if it comes every month.",
+                    ar: "الفئة تجمع المصاريف المتشابهة مثل «إيجار المخزن» أو «الكهرباء» أو «الرواتب». تُنشأ مرة واحدة ثم تختارها عند تسجيل أي مصروف، وأعلى الصفحة يبيّن كم صُرف على كل فئة شهرياً.",
+                    zh: "类别用于归类相似费用，如“仓库租金”“电费”“工资”。只需创建一次，记录费用时选择它，页面顶部会显示每月各类别的支出。",
+                  })}
+                </div>
                 <div className="grid gap-4 py-4">
                   <div className="grid gap-2">
                     <Label htmlFor="catNameEn">{t("common.nameEn")}</Label>
@@ -844,6 +853,16 @@ const [activeTab, setActiveTab] = useState("expenses");
                       : t("expenses.recordExpenseDesc")}
                   </DialogDescription>
                 </DialogHeader>
+                {editingExpenseId === null && (
+                  <div className="rounded-xl border border-sky-200 bg-sky-50/70 p-3 text-xs leading-relaxed text-sky-950 dark:border-sky-900/60 dark:bg-sky-950/30 dark:text-sky-100" data-testid="expense-help">
+                    {pickLang(language, {
+                      ku: "سێ شت بەسە: بڕەکە، پۆلەکە (بۆ چی خەرج کرا) و بەروار. وەسف و فرۆشیار ئارەزوومەندانەن. خەرجییەکە یەکسەر لە قازانجی خاوێن کەم دەبێتەوە.",
+                      en: "Three things are enough: the amount, the category (what it was for) and the date. Description and supplier are optional. It comes off the clean profit at once.",
+                      ar: "يكفي ثلاثة: المبلغ، الفئة، والتاريخ. الوصف والمورّد اختياريان. يُخصم فوراً من صافي الربح.",
+                      zh: "填写金额、类别和日期即可，描述和供应商可选。立即从净利润中扣除。",
+                    })}
+                  </div>
+                )}
                 <div className="grid gap-4 py-4 max-h-[60vh] overflow-y-auto">
                   <div className="grid gap-2">
                     <Label htmlFor="category">{t("common.category")}</Label>

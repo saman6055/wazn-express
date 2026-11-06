@@ -477,6 +477,15 @@ export default function CompanyFinanceDashboard() {
                   <CostsEditor costs={p.costs} onClose={() => setEditingCosts(false)} L={L} />
                 ) : (
                   <>
+                    {/* How it works, in one plain paragraph (owner, point 21). */}
+                    <p className="mb-2 rounded-lg bg-muted/50 p-2.5 text-xs leading-relaxed text-muted-foreground" data-testid="fixed-costs-help">
+                      {L({
+                        ku: "ئەمە لیستی ئەو مەسارفانەیە کە هەموو مانگێک دەبێت بدرێن، وەک کرێ و مووچە. سیستەم هەموو ڕۆژێک قازانجی کارەکە بەراورد دەکات لەگەڵ کۆی ئەم لیستە دابەش بە 30. ئەگەر قازانجی ڕۆژانە کەمتر بوو، ئاگادارکردنەوەی زەرەر دەچێتە زەنگەکەت. ئەم لیستە خۆی هیچ پارەیەک تۆمار ناکات؛ خەرجیی ڕاستەقینە لە پەڕەی خەرجییەکان دەنووسرێت، و تێکڕای ڕاستەقینەی سێ مانگ لە خوارەوە دیارە.",
+                        en: "These are the costs that must be paid every month, like rent and salaries. Each day the work's profit is compared with this total divided by 30; when the daily profit falls short, a loss warning goes to your bell. The list records no money itself: real spending is entered on the expenses page, and its three-month average is shown below.",
+                        ar: "هذه المصاريف التي تُدفع كل شهر كالإيجار والرواتب. يُقارن ربح العمل يومياً بمجموعها مقسوماً على 30، وإن قلّ الربح يصل تنبيه خسارة إلى الجرس. القائمة لا تسجّل مالاً؛ المصاريف الفعلية تُسجّل في صفحة المصاريف.",
+                        zh: "每月必须支付的费用，如房租和工资。系统每天将经营利润与该合计除以30比较，不足时向铃铛发送亏损提醒。此列表不记录任何款项，实际支出在费用页记录。",
+                      })}
+                    </p>
                     {p.costs.map((c, i) => (
                       <Row
                         key={i}
