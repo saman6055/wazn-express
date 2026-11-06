@@ -938,6 +938,8 @@ function DashboardLayoutContent({
                         <button
                           key={item.path}
                           onClick={() => setLocation(item.path)}
+                          data-nav-item=""
+                          data-active={isActive ? "true" : undefined}
                           className={cn(
                             "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
                             isActive
@@ -1026,6 +1028,8 @@ function DashboardLayoutContent({
                   <button
                     key={item.path}
                     onClick={() => { setLocation(item.path); setFlyoutGroup(null); }}
+                    data-nav-item=""
+                    data-active={isActive ? "true" : undefined}
                     className={cn(
                       "group w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-all duration-150",
                       isActive
