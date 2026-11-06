@@ -1,0 +1,169 @@
+/* ---------------------------------------------------------------------------
+   «فینتێک» — the admin's optional dark skin (owner, 2026-11-07).
+
+   Chosen per browser in Quick settings; the warm light look stays the
+   default for everyone else (eye-comfort rule, 2026-11-01). Applied only on
+   office pages: DashboardLayout puts data-skin="fintech" on <html> together
+   with .dark, so every dark: variant the app already has is reused and this
+   file only re-points the tokens and adds the finish. The portal never
+   carries the attribute.
+
+   Meaning of colour, the same on every screen:
+     cash / money in      emerald  #10B981
+     debt / expense       coral    #F43F5E
+     goods on the road    amber    #F59E0B
+     discount / waiver    cyan     #06B6D4
+--------------------------------------------------------------------------- */
+
+html[data-skin="fintech"].dark {
+  color-scheme: dark;
+  --fx-bg: #0B0F19;
+  --fx-card: #111827;
+  --fx-card-2: #0F172A;
+  --fx-line: #1F2937;
+  --fx-line-2: #2A3646;
+  --fx-ink: #E5E9F0;
+  --fx-ink-2: #94A3B8;
+  --fx-cash: #10B981;
+  --fx-debt: #F43F5E;
+  --fx-road: #F59E0B;
+  --fx-discount: #06B6D4;
+  --fx-glow: #22D3EE;
+
+  --background: var(--fx-bg);
+  --foreground: var(--fx-ink);
+  --card: var(--fx-card);
+  --card-foreground: var(--fx-ink);
+  --popover: var(--fx-card);
+  --popover-foreground: var(--fx-ink);
+  --secondary: #172033;
+  --secondary-foreground: #CBD5E1;
+  --muted: #151E2E;
+  --muted-foreground: var(--fx-ink-2);
+  --accent: #16213A;
+  --accent-foreground: var(--fx-ink);
+  --border: var(--fx-line);
+  --input: var(--fx-line-2);
+  --primary: var(--fx-glow);
+  --primary-foreground: #04131A;
+  --ring: var(--fx-glow);
+  --destructive: var(--fx-debt);
+  --success: var(--fx-cash);
+  --warning: var(--fx-road);
+  --chart-1: var(--fx-glow);
+  --chart-2: var(--fx-cash);
+  --chart-3: var(--fx-road);
+  --chart-4: #A78BFA;
+  --chart-5: var(--fx-debt);
+  --sidebar: #0D1220;
+  --sidebar-foreground: #CBD5E1;
+  --sidebar-primary: var(--fx-glow);
+  --sidebar-primary-foreground: #04131A;
+  --sidebar-accent: #16213A;
+  --sidebar-accent-foreground: var(--fx-ink);
+  --sidebar-border: var(--fx-line);
+  --sidebar-ring: var(--fx-glow);
+}
+
+html[data-skin="fintech"].dark body {
+  background:
+    radial-gradient(1200px 600px at 100% -10%, rgba(34, 211, 238, 0.07), transparent 60%),
+    radial-gradient(900px 500px at -10% 110%, rgba(167, 139, 250, 0.06), transparent 60%),
+    var(--fx-bg);
+  background-attachment: fixed;
+}
+
+/* Glass cards with a hairline edge; a soft glow follows the pointer's card. */
+html[data-skin="fintech"].dark [data-slot="card"],
+html[data-skin="fintech"].dark .rounded-xl.border.bg-card,
+html[data-skin="fintech"].dark .rounded-2xl.border.bg-card {
+  background: linear-gradient(180deg, rgba(17, 24, 39, 0.92), rgba(15, 23, 42, 0.88));
+  border-color: var(--fx-line);
+  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.03) inset, 0 8px 24px rgba(0, 0, 0, 0.25);
+  transition: border-color 160ms ease, box-shadow 160ms ease, transform 160ms ease;
+}
+html[data-skin="fintech"].dark [data-slot="card"]:hover {
+  border-color: rgba(34, 211, 238, 0.35);
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.12), 0 10px 30px rgba(0, 0, 0, 0.35);
+}
+
+/* Headings glow a little on hover (owner's taste: bright text, glowing headings). */
+html[data-skin="fintech"].dark h1,
+html[data-skin="fintech"].dark h2,
+html[data-skin="fintech"].dark [data-slot="card-title"] {
+  letter-spacing: 0.01em;
+  transition: text-shadow 200ms ease, color 200ms ease;
+}
+html[data-skin="fintech"].dark [data-slot="card"]:hover [data-slot="card-title"],
+html[data-skin="fintech"].dark h1:hover {
+  text-shadow: 0 0 14px rgba(34, 211, 238, 0.45);
+}
+
+/* Figures: even digits everywhere a number is set in mono or tabular. */
+html[data-skin="fintech"].dark .font-mono,
+html[data-skin="fintech"].dark .tabular-nums {
+  font-family: "JetBrains Mono", "Cascadia Mono", "SFMono-Regular", ui-monospace, Menlo, Consolas, monospace;
+  font-variant-numeric: tabular-nums slashed-zero;
+}
+
+/* The semantic colours replace the stock ones, so cash, debt, road and
+   discount read the same way on every page without touching each page. */
+html[data-skin="fintech"].dark :is(.text-emerald-600, .text-emerald-700, .text-green-600, .text-green-700, .dark\:text-emerald-300, .dark\:text-green-300, .dark\:text-emerald-400, .dark\:text-green-400) { color: var(--fx-cash); }
+html[data-skin="fintech"].dark :is(.text-red-600, .text-red-700, .text-rose-600, .dark\:text-red-300, .dark\:text-rose-300, .dark\:text-red-400) { color: var(--fx-debt); }
+html[data-skin="fintech"].dark :is(.text-amber-600, .text-amber-700, .text-orange-600, .dark\:text-amber-300, .dark\:text-orange-300) { color: var(--fx-road); }
+html[data-skin="fintech"].dark :is(.text-cyan-600, .text-cyan-700, .text-sky-600, .dark\:text-cyan-300, .dark\:text-sky-300) { color: var(--fx-discount); }
+
+/* Tables: tight rows, dotted separators, a row lights up under the pointer. */
+html[data-skin="fintech"].dark table tbody tr {
+  border-bottom: 1px dotted var(--fx-line-2);
+  transition: background-color 120ms ease;
+}
+html[data-skin="fintech"].dark table tbody tr:hover { background: rgba(34, 211, 238, 0.06); }
+html[data-skin="fintech"].dark table thead th {
+  color: var(--fx-ink-2);
+  font-weight: 600;
+  font-size: 0.78rem;
+  letter-spacing: 0.02em;
+}
+html[data-skin="fintech"].dark table td,
+html[data-skin="fintech"].dark table th { padding-block: 0.45rem; }
+
+/* Icons: a finer line, and the active menu item's icon glows. */
+html[data-skin="fintech"].dark svg.lucide { stroke-width: 1.7; }
+html[data-skin="fintech"].dark [data-sidebar="menu-button"][data-active="true"] svg.lucide,
+html[data-skin="fintech"].dark [data-sidebar="menu-button"]:hover svg.lucide {
+  color: var(--fx-glow);
+  filter: drop-shadow(0 0 6px rgba(34, 211, 238, 0.55));
+}
+html[data-skin="fintech"].dark [data-sidebar="menu-button"][data-active="true"] {
+  background: linear-gradient(90deg, rgba(34, 211, 238, 0.14), rgba(34, 211, 238, 0.02));
+  box-shadow: inset 0 0 0 1px rgba(34, 211, 238, 0.18);
+}
+
+/* Buttons press in; the primary one carries the cyan glow. */
+html[data-skin="fintech"].dark button { transition: transform 90ms ease, box-shadow 160ms ease, background-color 160ms ease; }
+html[data-skin="fintech"].dark button:active:not(:disabled) { transform: scale(0.97); }
+html[data-skin="fintech"].dark [data-slot="button"].bg-primary:hover {
+  box-shadow: 0 0 0 1px rgba(34, 211, 238, 0.4), 0 0 18px rgba(34, 211, 238, 0.35);
+}
+
+/* Drawers and dialogs: glass over a dimmed page. */
+html[data-skin="fintech"].dark [data-slot="sheet-content"],
+html[data-skin="fintech"].dark [data-slot="dialog-content"] {
+  background: rgba(13, 18, 32, 0.96);
+  border-color: var(--fx-line-2);
+  backdrop-filter: blur(10px);
+}
+
+/* Cards and rows arrive with a short rise. Off for anyone who asked the
+   system for less motion. */
+@media (prefers-reduced-motion: no-preference) {
+  html[data-skin="fintech"].dark [data-slot="card"] { animation: fx-rise 260ms ease both; }
+  @keyframes fx-rise { from { opacity: 0; transform: translateY(6px); } to { opacity: 1; transform: none; } }
+}
+
+/* The meaning colours as utilities, for figures that state their kind. */
+.fx-cash { color: var(--fx-cash, #059669); }
+.fx-debt { color: var(--fx-debt, #DC2626); }
+.fx-road { color: var(--fx-road, #B45309); }
+.fx-discount { color: var(--fx-discount, #0E7490); }

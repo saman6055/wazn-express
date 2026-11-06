@@ -96,6 +96,8 @@ import {
   type LucideIcon
 } from "lucide-react";
 import { useEffect, useLayoutEffect, useMemo, useState, useRef } from "react";
+import { soundManager } from "@/lib/soundManager";
+import "@/fintechSkin.css";
 import { fullTraits } from "@/lib/deviceTraits";
 import { Link, useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -145,6 +147,22 @@ export default function DashboardLayout({
   const { loading, user, error: authError, refresh } = useAuth();
   const [, setLocation] = useLocation();
   const { t } = useLanguage();
+  // The admin's own skin shows only here, on office pages (owner, 2026-11-07).
+  const { setSkinScope, fintech } = useTheme();
+  useEffect(() => {
+    setSkinScope(true);
+    return () => setSkinScope(false);
+  }, [setSkinScope]);
+  // In «فینتێک» every click on something clickable answers with a soft tap.
+  // The sound switch (soundManager) still silences it.
+  useEffect(() => {
+    if (!fintech) return;
+    const onClick = (e: MouseEvent) => {
+      if ((e.target as HTMLElement | null)?.closest?.("button, a, [role='button'], [role='tab'], [role='menuitem']")) soundManager.playTap();
+    };
+    document.addEventListener("click", onClick, true);
+    return () => document.removeEventListener("click", onClick, true);
+  }, [fintech]);
 
   // Redirect customers to portal
   useEffect(() => {

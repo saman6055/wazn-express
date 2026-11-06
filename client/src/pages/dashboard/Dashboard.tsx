@@ -351,6 +351,7 @@ export default function Dashboard() {
       <div
         className="pro-page dash-live flex flex-col gap-5"
         onClickCapture={(e) => {
+          if (document.documentElement.dataset.skin === "fintech") return; // the skin taps for every page
           if ((e.target as HTMLElement).closest("button, a, [role='button']")) soundManager.playTap();
         }}
       >

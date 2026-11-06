@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { LanguageFlag } from "@/components/LanguageFlag";
-import { ChevronLeft, ChevronRight, Maximize2, Moon, Rows3, SlidersHorizontal, Type, type LucideIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Maximize2, Moon, Rows3, SlidersHorizontal, Sparkles, Type, type LucideIcon } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { AppearanceDialog } from "@/components/AppearanceDialog";
 import { LANGUAGES, useTranslation, type Language } from "@/contexts/LanguageContext";
@@ -36,6 +36,7 @@ const TXT = {
   button: { ku: "ڕێکخستن", en: "Settings", ar: "الإعدادات", zh: "设置" },
   title: { ku: "ڕێکخستنی خێرا", en: "Quick settings", ar: "إعدادات سريعة", zh: "快速设置" },
   dark: { ku: "دۆخی تاریک", en: "Dark mode", ar: "الوضع الداكن", zh: "深色模式" },
+  fintech: { ku: "ڕووکاری فینتێک", en: "Fintech look", ar: "مظهر فينتك", zh: "金融科技外观" },
   compact: { ku: "دۆخی چڕ", en: "Compact rows", ar: "صفوف مضغوطة", zh: "紧凑行距" },
   fullScreen: { ku: "پڕ بە شاشە", en: "Full screen", ar: "ملء الشاشة", zh: "全屏" },
   colour: { ku: "ڕەنگی سیستەم", en: "Colour", ar: "اللون", zh: "颜色" },
@@ -76,7 +77,7 @@ function Tile({
 export function QuickSettings({ fullScreen, onToggleFullScreen }: { fullScreen: boolean; onToggleFullScreen: () => void }) {
   const { language, isRTL } = useTranslation();
   const { setLanguage } = useLanguage();
-  const { theme, toggleTheme, accent, setAccent } = useTheme();
+  const { theme, toggleTheme, accent, setAccent, skin, setSkin } = useTheme();
   const [compact, setCompact] = useDensity();
   const [open, setOpen] = useState(false);
   const [appearanceOpen, setAppearanceOpen] = useState(false);
@@ -101,8 +102,28 @@ export function QuickSettings({ fullScreen, onToggleFullScreen }: { fullScreen: 
         <PopoverContent align="end" className="w-80 p-3" dir={isRTL ? "rtl" : "ltr"}>
           <p className="mb-2 text-sm font-bold">{L(TXT.title)}</p>
 
+          {/* The admin's own skin: this browser only, office pages only. */}
+          <button
+            type="button"
+            onClick={() => setSkin(skin === "fintech" ? "classic" : "fintech")}
+            aria-pressed={skin === "fintech"}
+            data-testid="qs-fintech"
+            className={cn(
+              "mb-2 flex w-full items-center gap-3 rounded-xl border px-3 py-2.5 text-start text-sm font-semibold transition-colors",
+              skin === "fintech"
+                ? "border-cyan-400/40 bg-[#0B0F19] text-cyan-200 shadow-[0_0_18px_rgba(34,211,238,0.25)]"
+                : "border-border bg-muted/40 text-foreground hover:bg-muted",
+            )}
+          >
+            <Sparkles className="h-5 w-5" />
+            <span className="flex-1">{L(TXT.fintech)}</span>
+            <span className={cn("h-5 w-9 rounded-full p-0.5 transition-colors", skin === "fintech" ? "bg-cyan-400" : "bg-muted-foreground/30")}>
+              <span className={cn("block h-4 w-4 rounded-full bg-white dark:bg-slate-100 transition-transform", skin === "fintech" ? "translate-x-4 rtl:-translate-x-4" : "")} />
+            </span>
+          </button>
+
           <div className="grid grid-cols-3 gap-2">
-            <Tile on={theme === "dark"} icon={Moon} label={L(TXT.dark)} onClick={() => toggleTheme?.()} testId="qs-dark" />
+            <Tile on={theme === "dark"} icon={Moon} label={L(TXT.dark)} onClick={() => { if (skin !== "fintech") toggleTheme?.(); }} testId="qs-dark" />
             <Tile on={compact} icon={Rows3} label={L(TXT.compact)} onClick={() => setCompact(!compact)} testId="qs-compact" />
             <Tile
               on={fullScreen}

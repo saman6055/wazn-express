@@ -2,6 +2,9 @@ import React, { createContext, useCallback, useContext, useEffect, useMemo, useS
 
 type Theme = "light" | "dark";
 export type Accent = "default" | "rose" | "violet" | "ocean" | "amber";
+/** The admin's look: the warm light default, or the optional dark «فینتێک». */
+export type Skin = "classic" | "fintech";
+const SKIN_KEY = "wazn-admin-skin";
 
 interface ThemeContextType {
   theme: Theme;
@@ -15,6 +18,13 @@ interface ThemeContextType {
   switchable: boolean;
   accent: Accent;
   setAccent: (a: Accent) => void;
+  /** This browser's admin skin. Takes effect only on office pages. */
+  skin: Skin;
+  setSkin: (s: Skin) => void;
+  /** Office pages turn the skin on while they are on screen; the portal never does. */
+  setSkinScope: (on: boolean) => void;
+  /** True while the fintech skin is actually showing. */
+  fintech: boolean;
 }
 
 const ThemeContext = createContext<ThemeContextType | undefined>(undefined);
@@ -38,6 +48,18 @@ export function ThemeProvider({
     return defaultTheme;
   });
 
+  const [skin, setSkinState] = useState<Skin>(() => {
+    try { return localStorage.getItem(SKIN_KEY) === "fintech" ? "fintech" : "classic"; } catch { return "classic"; }
+  });
+  const [skinScope, setSkinScope] = useState(false);
+  const setSkin = useCallback((next: Skin) => {
+    setSkinState(next);
+    try { localStorage.setItem(SKIN_KEY, next); } catch { /* the choice still applies for this visit */ }
+  }, []);
+  const fintech = skin === "fintech" && skinScope;
+  // Fintech is a dark look: screens that ask "is it dark?" get yes while it shows.
+  const shownTheme: Theme = fintech ? "dark" : theme;
+
   const [accent, setAccent] = useState<Accent>(() => {
     const stored = localStorage.getItem("theme-accent") as Accent | null;
     return stored || "default";
@@ -45,16 +67,18 @@ export function ThemeProvider({
 
   useEffect(() => {
     const root = document.documentElement;
-    if (theme === "dark") {
+    if (shownTheme === "dark") {
       root.classList.add("dark");
     } else {
       root.classList.remove("dark");
     }
+    if (fintech) root.setAttribute("data-skin", "fintech");
+    else root.removeAttribute("data-skin");
 
     if (switchable) {
       localStorage.setItem("theme", theme);
     }
-  }, [theme, switchable]);
+  }, [theme, shownTheme, fintech, switchable]);
 
   // Accent skin is applied via a data-theme attribute on <html>; "default" keeps
   // the brand teal (no attribute). Independent of light/dark.
@@ -74,8 +98,8 @@ export function ThemeProvider({
   const toggleTheme = switchable ? doToggleTheme : undefined;
 
   const value = useMemo(
-    () => ({ theme, toggleTheme, setTheme, switchable, accent, setAccent }),
-    [theme, toggleTheme, switchable, accent]
+    () => ({ theme: shownTheme, toggleTheme, setTheme, switchable, accent, setAccent, skin, setSkin, setSkinScope, fintech }),
+    [shownTheme, toggleTheme, switchable, accent, skin, setSkin, fintech]
   );
 
   return (

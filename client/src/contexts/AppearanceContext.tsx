@@ -93,7 +93,7 @@ function readStored(): Partial<AppearancePrefs> | null {
 }
 
 export function AppearanceProvider({ children }: { children: React.ReactNode }) {
-  const { theme } = useTheme();
+  const { theme, fintech } = useTheme();
   const [local, setLocal] = useState<Partial<AppearancePrefs> | null>(() => readStored());
 
   // Public on purpose: the login screen and the landing page render with the
@@ -170,8 +170,10 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
       `"${fontFamilyName(prefs.fontFamily)}", "Rudaw", "Inter", system-ui, sans-serif`;
     root.style.setProperty("--font-sans", stack);
 
-    const text = theme === "dark" ? prefs.textDark : prefs.textLight;
-    const muted = theme === "dark" ? prefs.mutedDark : prefs.mutedLight;
+    // «فینتێک» carries its own ink: a chosen text colour (the company's dark
+    // one is orange) would paint every line of the skin with it.
+    const text = fintech ? null : theme === "dark" ? prefs.textDark : prefs.textLight;
+    const muted = fintech ? null : theme === "dark" ? prefs.mutedDark : prefs.mutedLight;
 
     // --wazn-fg is what index.css paints text with; the token vars keep the
     // rest of the design system (cards, popovers, sidebar) in step with it.
@@ -197,7 +199,7 @@ export function AppearanceProvider({ children }: { children: React.ReactNode }) 
       root.style.removeProperty("--wazn-fg-muted");
       root.style.removeProperty("--muted-foreground");
     }
-  }, [prefs, theme]);
+  }, [prefs, theme, fintech]);
 
   // react-query keeps refetch stable; depending on the whole query object
   // instead would rebuild this value on every render and re-render the app.
