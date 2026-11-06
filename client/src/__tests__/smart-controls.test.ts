@@ -13,4 +13,10 @@ describe("smart controls", () => {
     expect(fc).toContain('testId="fc-shelf"');
     expect(fc).toContain("trpc.deliveryBox.warehouseShelf.useQuery()");
   });
+  it("the finance centre shows what was let go, by whom and why", () => {
+    expect(read("client/src/pages/finance/FinanceCenter.tsx")).toContain('testId="fc-giveaways"');
+    const pulse = read("server/db/financePulse.db.ts");
+    expect(pulse).toContain("async function writeOffsBetween(");
+    expect(pulse).toContain("NOT LIKE '%[REV:%'");
+  });
 });

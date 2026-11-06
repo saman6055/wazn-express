@@ -212,6 +212,54 @@ async function discountsBetween(db: Db, start: Date, end: Date) {
   return { usd: cents(list.reduce((s, r) => s + r.usd, 0)), count: list.length, list };
 }
 
+/**
+ * Money let go outside a box receipt (owner, 2026-11-06, point 41.3): a
+ * compensation or waiver (CREDIT_DISCOUNT not written by a box receipt) and a
+ * hand credit (ADJUSTMENT_CREDIT). A reversal of a wrong charge ([REV:]) or a
+ * price correction ([ADJ:]) is putting a mistake right, not giving money
+ * away, and is left out. Who did it, for whom, why.
+ */
+async function writeOffsBetween(db: Db, start: Date, end: Date) {
+  const { ledgerTransactions } = await import("../../drizzle/schema");
+  const rows = await db
+    .select({
+      id: ledgerTransactions.id,
+      type: ledgerTransactions.transactionType,
+      usd: ledgerTransactions.amountUsd,
+      reason: ledgerTransactions.description,
+      at: ledgerTransactions.createdAt,
+      customerId: customerAccounts.customerId,
+      customerCode: customers.customerCode,
+      customerName: customers.fullName,
+      by: users.name,
+    })
+    .from(ledgerTransactions)
+    .innerJoin(customerAccounts, eq(customerAccounts.id, ledgerTransactions.accountId))
+    .leftJoin(customers, eq(customers.id, customerAccounts.customerId))
+    .leftJoin(users, eq(users.id, ledgerTransactions.createdById))
+    .where(and(
+      sql`${ledgerTransactions.transactionType} IN ('CREDIT_DISCOUNT', 'ADJUSTMENT_CREDIT')`,
+      sql`${ledgerTransactions.description} NOT LIKE '%[REV:%'`,
+      sql`${ledgerTransactions.description} NOT LIKE '%[ADJ:%'`,
+      sql`${ledgerTransactions.description} NOT LIKE 'داشکاندن لە کاتی واصڵکردنی بۆکس%'`,
+      gte(ledgerTransactions.createdAt, start),
+      lte(ledgerTransactions.createdAt, end),
+    ))
+    .orderBy(desc(ledgerTransactions.createdAt))
+    .limit(300);
+  const list = rows.map((r) => ({ ...r, kind: r.type === "CREDIT_DISCOUNT" ? "compensation" as const : "manual" as const, usd: num(r.usd) }));
+  const byPerson = new Map<string, number>();
+  for (const r of list) byPerson.set(r.by ?? "—", cents((byPerson.get(r.by ?? "—") ?? 0) + r.usd));
+  return {
+    usd: cents(list.reduce((t, r) => t + r.usd, 0)),
+    count: list.length,
+    compensationUsd: cents(list.filter((r) => r.kind === "compensation").reduce((t, r) => t + r.usd, 0)),
+    manualUsd: cents(list.filter((r) => r.kind === "manual").reduce((t, r) => t + r.usd, 0)),
+    byPerson: Array.from(byPerson.entries()).map(([name, usd]) => ({ name, usd })).sort((a, b) => b.usd - a.usd),
+    list,
+  };
+}
+
 async function oldDebt(db: Db, now: Date) {
   const ages = await getDebtAges();
   const cutoff = now.getTime() - OLD_DEBT_DAYS * DAY;
@@ -309,6 +357,7 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
     settle("batchesWithoutCost", () => arrivedBatchesWithoutCost(db), 0),
     settle("lossBatches", () => lossBatches(db, bounds.start, end), []),
   ]);
+  const writeOffs = await settle("writeOffs", () => writeOffsBetween(db, bounds.start, end), { usd: 0, count: 0, compensationUsd: 0, manualUsd: 0, byPerson: [] as Array<{ name: string; usd: number }>, list: [] as Awaited<ReturnType<typeof writeOffsBetween>>["list"] });
   const [stuck, top, capital, boxesUnpaid, boxPaidOwed] = await Promise.all([
     settle("oldDebt", () => oldDebt(db, now), { usd: 0, count: 0 }),
     settle("topDebtors", () => topDebtors(db, ledger.totalDebtUsd), []),
@@ -345,6 +394,8 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
     },
     // Information, never a cost line (owner, 2026-10-07: a discount is not an expense).
     discounts,
+    /** Compensation, waivers and hand credits outside a box receipt (point 41.3). */
+    writeOffs,
     partnersTookOutUsd: tookOut,
     debt: { usd: ledger.totalDebtUsd, debtors: Number(ledger.debtorsCount) || 0, old: stuck, top },
     pulse: pulseNow,

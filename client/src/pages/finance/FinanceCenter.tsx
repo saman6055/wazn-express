@@ -22,7 +22,7 @@ import { DebtWhatsAppButton } from "@/components/finance/DebtWhatsAppButton";
  * working capital for the main admin): nothing here is computed twice.
  */
 type Words = { ku: string; en: string; ar: string; zh: string };
-type Drawer = "debt" | "received" | "profit" | "cash" | "road" | "waiting" | "shelf" | null;
+type Drawer = "debt" | "received" | "profit" | "cash" | "road" | "waiting" | "shelf" | "giveaways" | null;
 
 const usd = (n: number, signed = false) => {
   const v = Math.round((Number(n) || 0) * 100) / 100;
@@ -116,6 +116,7 @@ export default function FinanceCenter() {
     road: { ku: "کاڵای ڕێگا", en: "Goods on the road", ar: "بضائع في الطريق", zh: "在途货物" },
     waiting: { ku: "چاوەڕێی تۆن", en: "Waiting for you", ar: "بانتظارك", zh: "待处理" },
     shelf: { ku: "بۆکسی کەڵەکەبوو لە کۆگا", en: "Boxes asleep in the warehouse", ar: "صناديق متراكمة في المخزن", zh: "仓库积压箱子" },
+    giveaways: { ku: "داشکان و لێخۆشبوون", en: "Discounts and write-offs", ar: "الخصومات والإعفاءات", zh: "折扣与减免" },
   };
 
   return (
@@ -164,6 +165,11 @@ export default function FinanceCenter() {
               info={L({ ku: "ئەو بۆکسانەی لە کۆگای هەولێرن، کاڵایان تێدایە، نەنێردراون و پارەیان نەدراوە: پارەی کۆمپانیا کە لە ڕەفەکاندا خەوتووە.", en: "Boxes in the Erbil warehouse with goods, not sent and not paid: company money asleep on the shelves.", ar: "صناديق في مخزن أربيل بها بضائع، لم تُرسل ولم تُدفع.", zh: "埃尔比勒仓库中未发出未付款的箱子。" })}
               value={<Num value={shelfUsd} />} sub={L({ ku: `${shelfBoxes.length} بۆکس · ${shelfOld.length} زیاتر لە 14 ڕۆژ`, en: `${shelfBoxes.length} boxes · ${shelfOld.length} over 14 days`, ar: `${shelfBoxes.length} صندوق · ${shelfOld.length} أكثر من 14 يوماً`, zh: `${shelfBoxes.length} 箱 · ${shelfOld.length} 超 14 天` })}
               onOpen={() => setOpen("shelf")} />
+            <Tile testId="fc-giveaways" tone="amber" icon={<Receipt className="h-4 w-4" />} label={L(titles.giveaways)}
+              info={L({ ku: "هەموو ئەو پارەیەی لێی خۆش بووین: داشکانی سەر وەسڵی بۆکس، قەرەبوو (CBM، کاڵای تێکچوو)، و کەمکردنەوەی دەستی. ڕاستکردنەوەی هەڵە تێیدا نییە. کێ، بۆ کێ، بۆچی.", en: "Everything let go: box receipt discounts, compensation (CBM, damaged goods) and hand credits. Corrections of mistakes are not in it. Who, for whom, why.", ar: "كل ما تم التنازل عنه: خصومات، تعويضات، تخفيضات يدوية.", zh: "所有让利：箱子折扣、补偿和手动减免。" })}
+              value={<Num value={(data.discounts?.usd ?? 0) + (data.writeOffs?.usd ?? 0)} />}
+              sub={L({ ku: `${(data.discounts?.count ?? 0) + (data.writeOffs?.count ?? 0)} جار`, en: `${(data.discounts?.count ?? 0) + (data.writeOffs?.count ?? 0)} times`, ar: `${(data.discounts?.count ?? 0) + (data.writeOffs?.count ?? 0)} مرة`, zh: `${(data.discounts?.count ?? 0) + (data.writeOffs?.count ?? 0)} 次` })}
+              onOpen={() => setOpen("giveaways")} />
             <Tile testId="fc-waiting" tone={waiting.length > 0 ? "amber" : "slate"} icon={<Clock className="h-4 w-4" />} label={L(titles.waiting)}
               info={L({ ku: "ئەو شتانەی پێویستیان بە تۆیە بۆ ئەوەی ژمارەکان ڕاست بمێننەوە.", en: "What needs you so the figures stay true.", ar: "ما يحتاجك لتبقى الأرقام صحيحة.", zh: "需要您处理以保持数字准确的事项。" })}
               value={<span className="font-mono">{waiting.reduce((t, w) => t + w.n, 0)}</span>} sub={waiting.length === 0 ? L({ ku: "هیچ شتێک نییە", en: "Nothing waiting", ar: "لا شيء", zh: "无" }) : undefined}
@@ -271,6 +277,33 @@ export default function FinanceCenter() {
                           <Num value={b.valueUsd} />
                           <DebtWhatsAppButton customer={{ id: b.customerId, fullName: b.customerName, customerCode: b.customerCode }} owedUsd={b.valueUsd} size="icon" />
                         </span>
+                      </div>
+                    ))}
+                  </>
+                )}
+                {open === "giveaways" && (
+                  <>
+                    <Line label={L({ ku: `داشکانی سەر وەسڵی بۆکس — ${data.discounts?.count ?? 0}`, en: `Box receipt discounts — ${data.discounts?.count ?? 0}`, ar: `خصومات الإيصالات — ${data.discounts?.count ?? 0}`, zh: `箱子收据折扣 — ${data.discounts?.count ?? 0}` })} href="/finance/company-dashboard?focus=discounts"><Num value={data.discounts?.usd ?? 0} /></Line>
+                    <Line label={L({ ku: "قەرەبوو / لێخۆشبوون (پارە نییە)", en: "Compensation / waivers (not money)", ar: "تعويض / إعفاء", zh: "补偿/减免" })}><Num value={data.writeOffs?.compensationUsd ?? 0} /></Line>
+                    <Line label={L({ ku: "کەمکردنەوەی دەستی", en: "Hand credits", ar: "تخفيضات يدوية", zh: "手动减免" })}><Num value={data.writeOffs?.manualUsd ?? 0} /></Line>
+                    <div className="flex items-center justify-between border-t-2 py-2 font-semibold"><span>{L({ ku: "کۆ", en: "Total", ar: "المجموع", zh: "合计" })}</span><Num value={(data.discounts?.usd ?? 0) + (data.writeOffs?.usd ?? 0)} /></div>
+                    {(data.writeOffs?.byPerson ?? []).length > 0 && (
+                      <>
+                        <div className="mt-3 mb-1 text-xs text-muted-foreground">{L({ ku: "کێ کردوویەتی (قەرەبوو و دەستی)", en: "Who did it (compensation and hand credits)", ar: "من قام بها", zh: "操作人" })}</div>
+                        {(data.writeOffs?.byPerson ?? []).map((p) => <Line key={p.name} tone="quiet" label={p.name}><Num value={p.usd} /></Line>)}
+                      </>
+                    )}
+                    <div className="mt-3 mb-1 text-xs text-muted-foreground">{L({ ku: "هەر یەکێک", en: "Each one", ar: "كل واحدة", zh: "明细" })}</div>
+                    {(data.writeOffs?.list ?? []).map((r) => (
+                      <div key={r.id} className="border-b py-2 text-xs">
+                        <div className="flex items-center justify-between gap-2">
+                          <Link href={`/finance/customer/${r.customerId}`} className="truncate text-sm hover:underline">{r.customerName ?? r.customerCode}</Link>
+                          <Num value={r.usd} className="font-semibold" />
+                        </div>
+                        <div className="text-muted-foreground">
+                          <bdi dir="ltr">{new Date(r.at).toLocaleDateString("en-GB")}</bdi> · {r.kind === "compensation" ? L({ ku: "قەرەبوو", en: "Compensation", ar: "تعويض", zh: "补偿" }) : L({ ku: "دەستی", en: "Hand credit", ar: "يدوي", zh: "手动" })} · {r.by ?? "—"}
+                        </div>
+                        <div className="truncate">{String(r.reason ?? "").replace(/^\[[^\]]*\]\s*/, "")}</div>
                       </div>
                     ))}
                   </>
