@@ -24,7 +24,7 @@ import { checkDefinition, type CheckId, type CheckResult, type CheckSeverity } f
 type Words = { ku: string; en: string; ar: string; zh: string };
 
 /** The warehouse's, the orders' and the accounts' own standing risks. */
-export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting" | "carrier-short" | "security-holds" | "device-requests" | "device-mismatch";
+export type OperationalRiskId = "stale-depot" | "volumetric" | "debt-over-limit" | "orders-no-tracking" | "unclaimed" | "empty-boxes" | "whatsapp-unsent" | "loss-forecast" | "orders-slow" | "partner-overdraw" | "boxes-unpaid" | "stock-old" | "box-paid-owed" | "extra-costs" | "batch-dispatched" | "advance-waiting" | "carrier-short" | "security-holds" | "device-requests" | "device-mismatch" | "finance-copy";
 
 /**
  * One of the auditor's checks that found something, or could not run — the
@@ -85,6 +85,8 @@ export interface RiskFacts {
   securityHolds?: number;
   /** Devices waiting for the main admin's yes to open the office (shared/officeDevices). */
   deviceRequests?: number;
+  /** Today's copy of the accounts not taken yet (point 41.4, owner 2026-11-06). */
+  financeCopyMissing?: number;
 }
 
 /**
@@ -113,10 +115,11 @@ export const RISK_PATH: Record<OperationalRiskId, string> = {
   "security-holds": "/office-security",
   "device-requests": "/office-security",
   "device-mismatch": "/office-security",
+  "finance-copy": "/finance/working-capital",
 };
 
 /** Only the main admin is told of these, whatever anyone's page permissions say. */
-const MAIN_ADMIN_ONLY: ReadonlySet<string> = new Set(["security-holds", "device-requests", "device-mismatch"]);
+const MAIN_ADMIN_ONLY: ReadonlySet<string> = new Set(["security-holds", "device-requests", "device-mismatch", "finance-copy"]);
 
 /** The page whose permission decides who is told. */
 export const RISK_GATE: Record<OperationalRiskId, string> = {
@@ -142,6 +145,7 @@ export const RISK_GATE: Record<OperationalRiskId, string> = {
   "security-holds": "/office-security",
   "device-requests": "/office-security",
   "device-mismatch": "/office-security",
+  "finance-copy": "/finance/working-capital",
 };
 
 export const AUDIT_RISK_PREFIX = "audit:";
@@ -274,6 +278,9 @@ export function buildRiskItems(facts: RiskFacts): RiskItem[] {
     items.push({ id: "extra-costs", level: "notice", count: facts.extraCostsToday ?? 0 });
   }
   // The carrier billed more kilos than our customers were charged on (owner, 2026-10-28).
+  if ((facts.financeCopyMissing ?? 0) > 0) {
+    items.push({ id: "finance-copy", level: "high", count: 1 });
+  }
   if ((facts.carrierShort ?? 0) > 0) {
     items.push({ id: "carrier-short", level: "high", count: facts.carrierShort ?? 0 });
   }
@@ -449,6 +456,16 @@ export function describeRisk(item: RiskItem): { title: Words; detail: Words | nu
           en: "who, from where, on what — match the code, then approve or refuse",
           ar: "من، ومن أين، وعلى أي جهاز — طابق الرمز ثم وافق أو ارفض",
           zh: "谁、从哪里、用什么设备 — 核对代码后批准或拒绝",
+        },
+      };
+    case "finance-copy":
+      return {
+        title: { ku: "کۆپیی ئەمڕۆی حیسابات دانەگیراوە", en: "Today's copy of the accounts has not been taken", ar: "لم تُحفظ نسخة اليوم من الحسابات", zh: "今日账目副本尚未下载" },
+        detail: {
+          ku: "سەرمایەی کار ← «داگرتنی کۆپیی ئەمڕۆ»: یەک کلیک، فایلێکی Excel",
+          en: "Working capital → «Download today's copy»: one press, an Excel file",
+          ar: "رأس المال العامل ← «تنزيل نسخة اليوم»",
+          zh: "营运资金 → “下载今日副本”",
         },
       };
     case "carrier-short":

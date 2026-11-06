@@ -119,6 +119,11 @@ export const ledgerRouter = router({
         const { setNightlyMailTo } = await import("../services/financeNightlyMail.service");
         return setNightlyMailTo(input.to, ctx.user.id);
       }),
+    /** Today's copy of the accounts, by hand: one press, no setup (point 41.4). */
+    takeFinanceCopy: superAdminProcedure.mutation(async ({ ctx }) => {
+      const { takeFinanceCopy } = await import("../services/financeNightlyMail.service");
+      return takeFinanceCopy(ctx.user.id);
+    }),
     sendNightlyMailNow: superAdminProcedure.mutation(async ({ ctx }) => {
       const { sendNightlyFinanceMail } = await import("../services/financeNightlyMail.service");
       return sendNightlyFinanceMail(ctx.user.id);

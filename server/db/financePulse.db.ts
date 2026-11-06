@@ -399,7 +399,9 @@ export async function getFinanceDashboard(period: DashboardPeriod, mainAdmin: bo
     partnersTookOutUsd: tookOut,
     debt: { usd: ledger.totalDebtUsd, debtors: Number(ledger.debtorsCount) || 0, old: stuck, top },
     pulse: pulseNow,
-    waiting: { boxPaidOwed, boxesUnpaid, batchesWithoutCost: noCost, unbilledArrived: unbilled, whatsappUnsent: unsent, oldDebtors: stuck.count },
+    waiting: { boxPaidOwed, boxesUnpaid, batchesWithoutCost: noCost, unbilledArrived: unbilled, whatsappUnsent: unsent, oldDebtors: stuck.count,
+      // Today's copy of the accounts not taken yet - the main admin's (point 41.4).
+      financeCopyMissing: mainAdmin ? (await settle("financeCopy", async () => !(await (await import("../services/financeNightlyMail.service")).financeCopyTakenToday()), false)) ? 1 : 0 : 0 },
     lossBatches: losers,
     capital: capital
       ? {

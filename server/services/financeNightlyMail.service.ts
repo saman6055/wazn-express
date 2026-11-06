@@ -14,13 +14,13 @@ import { getWorkingCapital } from "../db/workingCapital.db";
  */
 export const NIGHTLY_MAIL_KEY = "finance.nightlyMail";
 
-export interface NightlyMailSettings { to: string | null; lastSentAt: string | null; lastError: string | null }
+export interface NightlyMailSettings { to: string | null; lastSentAt: string | null; lastError: string | null; lastDownloadAt?: string | null }
 
 export async function getNightlyMailSettings(): Promise<NightlyMailSettings> {
   try {
     const raw = await getSetting(NIGHTLY_MAIL_KEY);
     const v = raw ? JSON.parse(raw) : {};
-    return { to: v.to ?? null, lastSentAt: v.lastSentAt ?? null, lastError: v.lastError ?? null };
+    return { to: v.to ?? null, lastSentAt: v.lastSentAt ?? null, lastError: v.lastError ?? null, lastDownloadAt: v.lastDownloadAt ?? null };
   } catch {
     return { to: null, lastSentAt: null, lastError: null };
   }
@@ -81,6 +81,26 @@ export async function buildFinanceCsv(now = new Date()): Promise<string> {
   }
   // A byte-order mark so Excel reads the Kurdish names as they are.
   return "﻿" + lines.join("\r\n");
+}
+
+/**
+ * The copy taken by hand (owner, 2026-11-06: «شتی قورس پشت گوێ بخە»): no
+ * account, no key - one press downloads it, and the day is remembered so the
+ * finance centre can say when today's has not been taken.
+ */
+export async function takeFinanceCopy(userId: number): Promise<{ csv: string; fileName: string }> {
+  const csv = await buildFinanceCsv();
+  const now = await getNightlyMailSettings();
+  await saveNightly({ ...now, lastDownloadAt: new Date().toISOString() }, userId);
+  return { csv, fileName: `wazn-finance-${new Date().toISOString().slice(0, 10)}.csv` };
+}
+
+/** Whether today's copy (Baghdad day) has been taken by hand or by mail. */
+export async function financeCopyTakenToday(now = new Date()): Promise<boolean> {
+  const s = await getNightlyMailSettings();
+  const day = (iso: string | null | undefined) => (iso ? new Date(new Date(iso).getTime() + 3 * 3_600_000).toISOString().slice(0, 10) : "");
+  const today = day(now.toISOString());
+  return day(s.lastDownloadAt) === today || day(s.lastSentAt) === today;
 }
 
 /** Send it now; the result is kept beside the address, for the page to show. */

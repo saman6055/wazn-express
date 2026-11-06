@@ -104,6 +104,7 @@ export default function FinanceCenter() {
         { n: data.waiting.unbilledArrived, href: "/settings/data-management", w: { ku: "کاڵای گەیشتوو لەسەر کڕیار نەنووسراوە", en: "arrived goods not on the account", ar: "بضائع لم تُقيَّد", zh: "未记账到货" } },
         { n: data.waiting.oldDebtors, href: "/finance/debtors", w: { ku: "کڕیار قەرزیان لە 30 ڕۆژ کۆنترە", en: "customers owing over 30 days", ar: "ديون أقدم من 30 يوماً", zh: "欠款超 30 天" } },
         { n: data.waiting.whatsappUnsent, href: "/customer-delivery-scanner?whatsapp=unsent", w: { ku: "وەسڵ بە واتسئەپ نەنێردراوە", en: "receipts not sent on WhatsApp", ar: "إيصالات لم تُرسل", zh: "未发送收据" } },
+        { n: (data.waiting as { financeCopyMissing?: number }).financeCopyMissing ?? 0, href: "/finance/working-capital", w: { ku: "کۆپیی ئەمڕۆی حیسابات دانەگیراوە", en: "today's copy of the accounts not taken", ar: "لم تُحفظ نسخة اليوم من الحسابات", zh: "今日账目副本未下载" } },
       ].filter((w) => w.n > 0)
     : [];
   const methodName = (m: string) => (m === "CASH" ? L({ ku: "کاش", en: "Cash", ar: "نقد", zh: "现金" }) : m === "CARD" ? "Qi Card" : m === "FIB" ? "FIB" : `${L({ ku: "تر", en: "Other", ar: "أخرى", zh: "其他" })} (${m})`);
