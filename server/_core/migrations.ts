@@ -2252,7 +2252,8 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       INDEX idx_ledger_created_at (createdAt),
       INDEX idx_ledger_transaction_type (transactionType),
       INDEX idx_ledger_account_created (accountId, createdAt),
-      INDEX idx_ledger_account_created_type (accountId, createdAt, transactionType)
+      INDEX idx_ledger_account_created_type (accountId, createdAt, transactionType),
+      INDEX idx_ledger_reference (referenceType, referenceId)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -3172,6 +3173,8 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.ledger_account_id", sql: "CREATE INDEX idx_ledger_account_id ON ledgerTransactions (accountId)" },
   { name: "idx.ledger_created_at", sql: "CREATE INDEX idx_ledger_created_at ON ledgerTransactions (createdAt)" },
   { name: "idx.ledger_transaction_type", sql: "CREATE INDEX idx_ledger_transaction_type ON ledgerTransactions (transactionType)" },
+  // Charge and box-payment checks look rows up by what they are for (2026-11-07).
+  { name: "idx.ledger_reference", sql: "CREATE INDEX idx_ledger_reference ON ledgerTransactions (referenceType, referenceId)" },
   { name: "idx.share_links_customer", sql: "CREATE INDEX idx_share_links_customer ON packageShareLinks (customerId)" },
   { name: "idx.share_links_package", sql: "CREATE INDEX idx_share_links_package ON packageShareLinks (packageId)" },
   { name: "idx.user_module", sql: "CREATE INDEX idx_user_module ON permissions (userId, module)" },
