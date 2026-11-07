@@ -1,4 +1,4 @@
-import { smallParcelPrice } from "@shared/parcelCost";
+import { smallParcelBreakdown } from "@shared/parcelCost";
 import { smallParcelRuleOn } from "./smallParcel.db";
 import { getDb } from './connection';
 import { vanishedFix, withFix } from "@shared/fixAdvice";
@@ -1304,7 +1304,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     : Number(batchData.pricePerKg) || 0;
   const isFinalized = batchData.status === 'delivered' || batchData.status === 'closed';
 
-  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; vols?: number[] }> = {};
+  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; vols?: Array<{ cbm: number; waived: boolean }> }> = {};
 
   for (const pkg of batchPackages) {
     if (!pkg.customerId) continue;
@@ -1328,13 +1328,23 @@ export async function getBatchFinancialSummary(batchId: number) {
     customerBreakdown[pkg.customerId].chargeableWeight += chargeableKg;
     customerBreakdown[pkg.customerId].cbm += Number(pkg.volumeCbm) || 0;
     // Each parcel's volume, for the small-parcel rule below (shared/parcelCost).
-    (customerBreakdown[pkg.customerId].vols ??= []).push(Number(pkg.volumeCbm) || 0);
+    (customerBreakdown[pkg.customerId].vols ??= []).push({ cbm: Number(pkg.volumeCbm) || 0, waived: Boolean(pkg.smallParcelWaived) });
     // Stored revenue accumulator — only consulted when the batch is finalized.
     customerBreakdown[pkg.customerId].revenue += Number(pkg.calculatedCostUsd) || 0;
   }
 
-  // Pass 2 — recompute revenue from current rates for in-flight batches.
-  if (!isFinalized) {
+  /**
+   * What the small-parcel rule collected on this batch (owner, 2026-11-07:
+   * the office sees it in the batch report; the customer never does). Each
+   * parcel is measured by itself (shared/parcelCost).
+   */
+  let smallParcelExtraUsd = 0;
+  let smallParcelCount = 0;
+  let smallParcelWaivedCount = 0;
+
+  // Pass 2 — recompute revenue from current rates for in-flight batches
+  // (and, on a finalised sea batch under the rule, read the extra only).
+  if (!isFinalized || (unit === 'cbm' && smallParcelRuleOn(batchData))) {
     // Pull customer overrides once, build a lookup map.
     const overrides = await db.select().from(batchCustomerPricing)
       .where(eq(batchCustomerPricing.batchId, batchId));
@@ -1361,11 +1371,17 @@ export async function getBatchFinancialSummary(batchId: number) {
         batchPricePerCbm: unit === 'cbm' ? batchDefaultRate : null,
       });
 
-      // A small sea customer: each parcel priced under the rule, on the customer's whole share.
+      // A small sea parcel: each one priced under the rule by its own volume.
       const ruleOn = unit === 'cbm' && smallParcelRuleOn(batchData);
-      customerEntry.revenue = ruleOn
-        ? (customerEntry.vols ?? []).reduce((sum, v) => sum + smallParcelPrice(rate * v, { on: true, customerTotalCbm: customerEntry.cbm }), 0)
-        : rate * customerTotal;
+      let priced = 0;
+      for (const v of customerEntry.vols ?? []) {
+        const b = smallParcelBreakdown(Math.round(rate * v.cbm * 100) / 100, ruleOn ? { on: true, parcelCbm: v.cbm, waived: v.waived } : null);
+        priced += b.eligible ? b.finalUsd : rate * v.cbm;
+        if (b.eligible && !b.waived) { smallParcelExtraUsd += b.extraUsd; smallParcelCount += 1; }
+        if (b.waived) smallParcelWaivedCount += 1;
+      }
+      // A finalised batch keeps its stored revenue; only the extra is read here.
+      if (!isFinalized) customerEntry.revenue = ruleOn ? priced : rate * customerTotal;
     }
   }
 
@@ -1413,6 +1429,12 @@ export async function getBatchFinancialSummary(batchId: number) {
     costWorking: batchCostWorking(resolvedCost, costBase),
     shippingCostTotal: Number(batchData.shippingCost) || 0,
     totalRevenue,
+    /** The office's view of the small-parcel rule on this batch. */
+    smallParcel: {
+      extraUsd: Math.round(smallParcelExtraUsd * 100) / 100,
+      parcels: smallParcelCount,
+      waived: smallParcelWaivedCount,
+    },
     // While it waits, no profit and no loss is reported — not the whole
     // freight as profit (owner, 2026-10-04).
     profit: waitingFor ? 0 : totalRevenue - totalCost,

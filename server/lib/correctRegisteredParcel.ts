@@ -276,13 +276,8 @@ async function moveParcelMoney(
     }
   }
 
-  // 6. The owner's other parcels in the batch, to their new total - and the
-  //    owner's before it, when it moved (server/db/smallParcelRebalance).
-  if (pkg.batchId) {
-    for (const owner of Array.from(new Set([after.customerId, pkg.customerId]))) {
-      if (owner) await db.rebalanceSmallParcels(pkg.batchId, owner, actor, pkg.id);
-    }
-  }
+  // 6. Nothing more: since 2026-11-07 each sea parcel is priced by itself
+  //    under the small-parcel rule, so correcting one moves no other.
 
   return { moved, calculatedCostUsd, chargedUsd };
 }

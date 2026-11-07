@@ -65,7 +65,7 @@ describe("one parcel's charge is worked out in one place", () => {
     const engineStart = charging.indexOf("export async function chargeBatchShippingIfDue(");
     expect(engineStart).toBeGreaterThan(-1);
     const engine = charging.slice(engineStart);
-    expect(engine).toContain("parcelShippingCharge(pkg, isSea, rate, divisor, smallParcel)");
+    expect(engine).toContain("parcelShippingCharge(pkg, isSea, rate, divisor, ruleFor(pkg))");
     // The arithmetic is not written out a second time in the engine.
     expect(engine).not.toContain("quantity * rate * 100");
   });

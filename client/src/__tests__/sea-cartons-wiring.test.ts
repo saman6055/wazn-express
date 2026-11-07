@@ -49,25 +49,31 @@ describe("the server multiplies, and prices with the extra, in one place each", 
     expect(read("server/lib/correctRegisteredParcel.ts")).toContain("const cartons = cartonVolume(input);");
   });
 
-  it("every path that prices a sea parcel asks the one rule, on the customer's whole share", () => {
-    expect(read("server/services/parcelPricing.service.ts")).toContain("await smallParcelRuleFor(batch, facts.customerId, { id: facts.packageId, volumeCbm: measure.volumeCbm })");
+  it("every path that prices a sea parcel asks the one rule, on the parcel itself (2026-11-07)", () => {
+    expect(read("server/services/parcelPricing.service.ts")).toContain("await smallParcelRuleFor(batch, facts.customerId, { id: facts.packageId, volumeCbm: measure.volumeCbm,");
     const charging = read("server/db/batchCharging.db.ts");
-    expect(charging).toContain("parcelShippingCharge(pkg, isSea, rate, divisor, smallParcel)");
-    expect(charging).toContain("customerTotalCbm: await customerSeaCbmInBatch(batchId, customerId)");
+    expect(charging).toContain("parcelShippingCharge(pkg, isSea, rate, divisor, ruleFor(pkg))");
+    expect(charging).toContain("ruleOn ? { on: true, parcelCbm: pkg.volumeCbm, waived:");
+    expect(charging).not.toContain("customerSeaCbmInBatch");
     expect(read("server/db/deliveryBoxes.db.ts")).toContain("smallParcelPrice(pkgCbm * batchPricePerCbm, await smallParcelRuleFor(batchRow, pkg.customerId, pkg))");
     expect(read("server/routers/packages.router.ts").split("smallParcelPrice(pricePerUnit * parseFloat(pkg.volumeCbm)").length - 1).toBe(2);
-    expect(read("server/db/batches.db.ts")).toContain("smallParcelPrice(rate * v, { on: true, customerTotalCbm: customerEntry.cbm })");
+    expect(read("server/db/batches.db.ts")).toContain("{ on: true, parcelCbm: v.cbm, waived: v.waived }");
+    expect(read("shared/portalQuote.ts")).toContain("{ on: true, parcelCbm: cbm }");
+    // The rule itself reads no customer total any more.
+    const rule = read("server/db/smallParcel.db.ts");
+    expect(rule).toContain("return { on: true, parcelCbm: parcel.volumeCbm ?? 0, waived: Boolean(waived) };");
   });
 
-  it("the earlier parcels are put right as the customer's total moves", () => {
-    // After a charge, after a correction, and when the batch's box changes.
-    expect(read("server/db/batchCharging.db.ts")).toContain("await rebalanceSmallParcels(batchId, customerId, { id: actorId });");
-    expect(read("server/lib/correctRegisteredParcel.ts")).toContain("await db.rebalanceSmallParcels(pkg.batchId, owner, actor, pkg.id);");
-    expect(read("server/routers/batches.router.ts")).toContain("await db.rebalanceSmallParcels(id, customerId, { id: ctx.user.id, role: ctx.user.role });");
-    // Through the one correction there is, never forcing a credit.
-    const rebalance = read("server/db/smallParcelRebalance.db.ts");
-    expect(rebalance).toContain("await applyParcelCorrection(");
-    expect(rebalance).toContain("{ allowCredit: false, actorRole: actor.role ?? null }");
+  it("a parcel no longer moves its owner's others; the master switch and the waiver re-price, receipts never", () => {
+    expect(read("server/db/batchCharging.db.ts")).not.toContain("rebalanceSmallParcels(batchId, customerId");
+    expect(read("server/lib/correctRegisteredParcel.ts")).not.toContain("rebalanceSmallParcels");
+    expect(read("server/routers/batches.router.ts")).toContain("await db.repriceSmallParcels(id, null, { id: ctx.user.id, role: ctx.user.role });");
+    // Through the one correction there is, never forcing a credit; the open box follows.
+    const reprice = read("server/db/smallParcelRebalance.db.ts");
+    expect(reprice).toContain("await applyParcelCorrection(");
+    expect(reprice).toContain("{ allowCredit: false, actorRole: actor.role ?? null, boxFollows: { weightKg: String(pkg.weightKg ?? \"0\") } }");
+    expect(reprice).toContain('if (hold?.kind === "receipt")');
+    expect(read("server/routers/packages.router.ts")).toContain("db.setSmallParcelWaiver(input.packageId, input.waived,");
   });
 
   it("both fields reach the database through the startup patches", () => {
@@ -108,8 +114,16 @@ describe("Quick Register shows and switches the small-parcel rule", () => {
     expect(page).toContain("smallRuleMutation.mutate({ id: selectedSeaBatch.id, smallParcelRule: next })");
     expect(page).toContain("const sure = await confirmAction({");
   });
-  it("the bar names the customer's whole share of the batch", () => {
-    expect(page).toContain("estimate.smallParcelCustomerCbm");
-    expect(read("server/routers/packages.router.ts")).toContain("smallParcelCustomerCbm: priced.smallParcelCustomerCbm ?? null,");
+  it("under the dimensions: the parcel's own extra and the box that takes it off (2026-11-07)", () => {
+    expect(page).toContain('data-testid="qr-small-parcel-line"');
+    expect(page).toContain("smallRuleOn && estimate?.smallParcelEligible && (");
+    expect(page).toContain('smallParcelWaived: shippingType === "sea" && smallWaived ? true : undefined,');
+    expect(read("server/routers/packages.router.ts")).toContain("smallParcelEligible: priced.smallParcelEligible ?? false,");
+  });
+
+  it("the customer sees the final price only: no extra, no percent, no base", () => {
+    const calc = read("client/src/components/portal/PriceListSection.tsx");
+    expect(calc).not.toContain("calc-small-parcel");
+    expect(calc).not.toContain("smallParcelAutoPercent");
   });
 });

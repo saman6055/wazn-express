@@ -2703,12 +2703,11 @@ export const batchesRouter = router({
         }
         // Written the same on the batch and its twin, however it was typed.
         if (carrierBatchNo !== undefined) await db.setCarrierBatchNo(id, carrierBatchNo);
-        // The small-parcel box changed: every customer's charged parcels in the
-        // batch are put to what the rule now says (server/db/smallParcelRebalance).
+        // The small-parcel box (the master switch) changed: every parcel of the
+        // batch is put to what the rule now says, each by itself; receipted
+        // boxes are left as they were (server/db/smallParcelRebalance).
         if (data.smallParcelRule !== undefined && Boolean(data.smallParcelRule) !== Boolean((existing as { smallParcelRule?: boolean | null }).smallParcelRule)) {
-          for (const customerId of await db.getBatchCustomerIds(id)) {
-            await db.rebalanceSmallParcels(id, customerId, { id: ctx.user.id, role: ctx.user.role });
-          }
+          await db.repriceSmallParcels(id, null, { id: ctx.user.id, role: ctx.user.role });
         }
 
         // Update pricing tiers if provided

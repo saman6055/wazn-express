@@ -127,26 +127,23 @@ export function affectsCost(changed: Record<string, unknown>): boolean {
 // ───────────────────────── small sea parcels, and cartons ─────────────────────────
 
 /**
- * A small sea customer pays more than their share of a cubic metre - worked
- * out by the system, not typed.
+ * A small sea parcel pays more than its share of a cubic metre - worked out by
+ * the system, not typed.
  *
- * The owner, 2026-10-18: «بەریدی بچووک کێشە و کولفەی زیاترە», and then: the
- * percent should follow the size - the smaller, the more; nearer the line,
- * the less - set by the system itself, with only a box he can untick to take
- * it off; a tiny parcel worth $1-2 pays at least $5. And, asked whether five
- * small cartons of one person are five small parcels: no - «زۆر بیرۆکەیەکی
- * دادپەروەرانەیە» - what is measured is everything that person has in the
- * batch, and the earlier cartons are put right as later ones arrive.
+ * The owner, 2026-10-18: «بەریدی بچووک کێشە و کولفەی زیاترە»; the percent
+ * follows the size - the smaller, the more; nearer the line, the less; a tiny
+ * parcel worth $1-2 pays at least $5. The line was drawn at 0.20 m³.
  *
- * So, for one customer in one sea batch whose rule is on:
+ * 2026-11-07 (owner approved: «زۆر دروست پێم وایە... هەمووی هەماهەنگ بێت»):
+ * what is measured is the PARCEL ITSELF - one tracking with all its cartons
+ * (volumeCbm already holds them all) - not everything its owner has in the
+ * batch. A parcel at or over the line never has the extra, whatever else the
+ * same person sent. The office can take it off one parcel («بێ زیادە»).
  *
- *   percent  = 100 × (0.20 − all their m³) / 0.20, under 0.20 m³; else 0
+ *   percent  = 100 × (0.20 − its m³) / 0.20, under 0.20 m³; else 0
  *   a parcel = its m³ × the rate × (1 + percent), and never under $5
  *
- * The line was first drawn at 0.25; the owner moved it to 0.20 the same day
- * («لە 0.20 باشترە»). It fades to nothing at the line and never tops 100%,
- * so a customer with more always pays more in all: total = rate × (2T − 5T²)
- * only rises up to T = 0.20. A straight line above 100% would not.
+ * It fades to nothing at the line and never tops 100%.
  */
 export const SMALL_PARCEL_CBM = 0.2;
 export const SMALL_PARCEL_MIN_USD = 5;
@@ -154,23 +151,64 @@ export const SMALL_PARCEL_MIN_USD = 5;
 export interface SmallParcelRule {
   /** The batch's box is ticked, and the batch is sea. */
   on: boolean;
-  /** Everything this customer has in the batch, this parcel included. */
-  customerTotalCbm: number;
+  /** This parcel's own volume: every carton under its one tracking. */
+  parcelCbm: number | string | null | undefined;
+  /** The office took the extra off this one parcel. */
+  waived?: boolean | null;
 }
 
-/** The percent for a customer with this much in the batch: 100 at nothing, 0 from the line (SMALL_PARCEL_CBM) up. */
-export function smallParcelAutoPercent(customerTotalCbm: number | string | null | undefined): number {
-  const t = num(customerTotalCbm);
+/** The percent for a parcel of this size: 100 at nothing, 0 from the line (SMALL_PARCEL_CBM) up. */
+export function smallParcelAutoPercent(parcelCbm: number | string | null | undefined): number {
+  const t = num(parcelCbm);
   return t > 0 && t < SMALL_PARCEL_CBM ? (100 * (SMALL_PARCEL_CBM - t)) / SMALL_PARCEL_CBM : 0;
 }
 
-/** A sea parcel's price under the rule, to the cent; the price as it was when the rule is off. */
+/**
+ * The parcel's price under the rule, and how it got there - the office's view
+ * (the customer is shown only finalUsd: no word "extra", no percent, no base).
+ */
+export interface SmallParcelBreakdown {
+  /** The plain price: m³ × rate. */
+  baseUsd: number;
+  /** What is charged. */
+  finalUsd: number;
+  /** The percent added, rounded for showing; 0 when none. */
+  percent: number;
+  /** finalUsd − baseUsd: what the rule collected on this parcel. */
+  extraUsd: number;
+  /** The $5 least decided the price. */
+  minimum: boolean;
+  /** The parcel is under the line in a batch with the rule on (charged or waived). */
+  eligible: boolean;
+  /** Eligible, and the office took the extra off. */
+  waived: boolean;
+}
+
+export function smallParcelBreakdown(baseUsd: number, rule: SmallParcelRule | null | undefined): SmallParcelBreakdown {
+  const base = baseUsd > 0 ? Math.round(baseUsd * 100) / 100 : 0;
+  const plain: SmallParcelBreakdown = { baseUsd: base, finalUsd: base, percent: 0, extraUsd: 0, minimum: false, eligible: false, waived: false };
+  if (!(baseUsd > 0) || !rule?.on) return plain;
+  const p = smallParcelAutoPercent(rule.parcelCbm);
+  if (!(p > 0)) return plain;
+  if (rule.waived) return { ...plain, eligible: true, waived: true };
+  const priced = Math.round(baseUsd * (100 + p)) / 100;
+  const finalUsd = Math.max(priced, SMALL_PARCEL_MIN_USD);
+  return {
+    baseUsd: base,
+    finalUsd,
+    percent: Math.round(p),
+    extraUsd: Math.round((finalUsd - base) * 100) / 100,
+    minimum: finalUsd === SMALL_PARCEL_MIN_USD && priced < SMALL_PARCEL_MIN_USD,
+    eligible: true,
+    waived: false,
+  };
+}
+
+/** A sea parcel's price under the rule, to the cent; the price as it was when the rule is off or waived. */
 export function smallParcelPrice(baseUsd: number, rule: SmallParcelRule | null | undefined): number {
   if (!(baseUsd > 0)) return 0;
-  if (!rule?.on) return baseUsd;
-  const p = smallParcelAutoPercent(rule.customerTotalCbm);
-  const priced = Math.round(baseUsd * (100 + p)) / 100;
-  return Math.max(priced, SMALL_PARCEL_MIN_USD);
+  const b = smallParcelBreakdown(baseUsd, rule);
+  return b.eligible ? b.finalUsd : baseUsd;
 }
 
 /**

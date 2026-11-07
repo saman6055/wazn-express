@@ -1078,7 +1078,10 @@ export const deliveryBoxRouter = router({
       if (await db.syncBoxLinesToTill(input.id)) await db.recalculateBoxTotals(input.id);
       const box = await db.getDeliveryBoxById(input.id);
       if (!box) return null;
-      const items = await db.getBoxItems(input.id);
+      const rawItems = await db.getBoxItems(input.id);
+      // The small-parcel extra on each sea line, for the office (2026-11-07).
+      const smallParcel = await db.smallParcelViewFor(rawItems.map((i) => Number(i.packageId ?? 0)));
+      const items = rawItems.map((i) => (i.packageId && smallParcel.has(Number(i.packageId)) ? { ...i, smallParcel: smallParcel.get(Number(i.packageId))! } : i));
       // Shipping type drives the receipt/label unit: sea (دەریایی) is billed
       // by CBM, air by weight (kg). Prefer the batch, but fall back to the
       // packages themselves so hand-made boxes (which carry no batchId) still

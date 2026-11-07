@@ -27,6 +27,8 @@ export const packages = mysqlTable("packages", {
   // than the volume says - never below the scale, never above the volume.
   // The sides above stay as measured. Null: charged as measured.
   billedWeightKg: decimal("billedWeightKg", { precision: 10, scale: 3 }),
+  /** The office took the small sea parcel extra off this one parcel («بێ زیادە بۆ ئەم پاکەتە», 2026-11-07). */
+  smallParcelWaived: boolean("smallParcelWaived"),
   /**
    * Proven lost (owner, 2026-11-01). The customer deals only with us: a self
    * order is compensated its purchase price, a bought parcel falls on the

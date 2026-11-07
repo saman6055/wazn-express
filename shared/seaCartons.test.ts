@@ -8,6 +8,7 @@ import {
   SMALL_PARCEL_MIN_USD,
   smallParcelAutoPercent,
   smallParcelPrice,
+  smallParcelBreakdown,
 } from "./parcelCost";
 
 /**
@@ -61,8 +62,8 @@ describe("cartons of one size", () => {
  * everything the customer has in the batch, with a $5 least per tracking;
  * the batch only says on or off.
  */
-describe("small sea customers: the system sets the percent", () => {
-  const on = (t: number) => ({ on: true, customerTotalCbm: t });
+describe("small sea parcels: each measured by itself (2026-11-07)", () => {
+  const on = (v: number, waived = false) => ({ on: true, parcelCbm: v, waived });
 
   it("follows the size: the smaller, the more; none from 0.20", () => {
     expect(SMALL_PARCEL_CBM).toBe(0.2);
@@ -85,7 +86,17 @@ describe("small sea customers: the system sets the percent", () => {
     expect(row(0.2)).toBe("70.00");
   });
 
-  it("a customer with more always pays more in all: no step at the line", () => {
+  it("the owner's example at $365: 0.50 has no extra, 0.048 has +76%", () => {
+    expect(smallParcelPrice(365 * 0.5, on(0.5)).toFixed(2)).toBe("182.50");
+    const small = smallParcelBreakdown(365 * 0.048, on(0.048));
+    expect(small.baseUsd.toFixed(2)).toBe("17.52");
+    expect(small.percent).toBe(76);
+    // 17.52 × 1.76 = 30.8352, to the cent 30.84 (the message said 30.83).
+    expect(small.finalUsd.toFixed(2)).toBe("30.84");
+    expect(small.extraUsd.toFixed(2)).toBe("13.32");
+  });
+
+  it("a bigger parcel always pays more: no step at the line", () => {
     let last = 0;
     for (let t = 0.001; t <= 0.4; t += 0.001) {
       const paid = smallParcelPrice(350 * t, on(t));
@@ -94,26 +105,34 @@ describe("small sea customers: the system sets the percent", () => {
     }
   });
 
-  it("five cartons of 0.06 are one customer with 0.30: no extra on any", () => {
-    const each = smallParcelPrice(350 * 0.06, on(0.3));
-    expect(each.toFixed(2)).toBe("21.00");
-    expect((each * 5).toFixed(2)).toBe("105.00");
-  });
-
-  it("while they arrive: 0.06, then 0.18, then 0.30 in the batch", () => {
+  it("one tracking of five 0.06 cartons is one 0.30 parcel: no extra; five trackings of 0.06 each carry it", () => {
+    expect(smallParcelPrice(350 * 0.3, on(0.3)).toFixed(2)).toBe("105.00");
     expect(smallParcelPrice(350 * 0.06, on(0.06)).toFixed(2)).toBe("35.70");
-    expect(smallParcelPrice(350 * 0.06, on(0.18)).toFixed(2)).toBe("23.10");
-    expect(smallParcelPrice(350 * 0.06, on(0.3)).toFixed(2)).toBe("21.00");
   });
 
-  it("a tiny tracking pays at least $5, even when its customer is big", () => {
+  it("a parcel's price does not move as its owner's other parcels arrive", () => {
+    // Nothing about the owner enters the rule any more: only the parcel.
+    expect(smallParcelPrice(350 * 0.06, on(0.06)).toFixed(2)).toBe("35.70");
+  });
+
+  it("a tiny tracking pays at least $5", () => {
     expect(SMALL_PARCEL_MIN_USD).toBe(5);
-    expect(smallParcelPrice(350 * 0.003, on(2))).toBe(5);
+    expect(smallParcelPrice(350 * 0.003, on(0.003))).toBe(5);
+    expect(smallParcelBreakdown(350 * 0.003, on(0.003)).minimum).toBe(true);
+  });
+
+  it("waived on one parcel: the plain price, and the office can see it was waived", () => {
+    const w = smallParcelBreakdown(365 * 0.048, on(0.048, true));
+    expect(w.finalUsd.toFixed(2)).toBe("17.52");
+    expect(w.eligible).toBe(true);
+    expect(w.waived).toBe(true);
+    expect(w.extraUsd).toBe(0);
+    expect(smallParcelPrice(365 * 0.048, on(0.048, true)).toFixed(2)).toBe("17.52");
   });
 
   it("off, or no rule, is the plain price - as every batch before it", () => {
     expect(smallParcelPrice(45.01, null)).toBe(45.01);
-    expect(smallParcelPrice(1.05, { on: false, customerTotalCbm: 0.003 })).toBe(1.05);
+    expect(smallParcelPrice(1.05, { on: false, parcelCbm: 0.003 })).toBe(1.05);
   });
 
   it("reaches the price through parcelCost, and never a weight", () => {

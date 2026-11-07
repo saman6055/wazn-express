@@ -41,8 +41,9 @@ describe("a quote, as the invoice charges it", () => {
     const portal = fs.readFileSync(path.resolve(__dirname, "../client/src/components/portal/PriceListSection.tsx"), "utf8");
     expect(portal).toContain("const air = chargeableWeight(");
     expect(portal).toContain("calc.volumetricDivisor,");
-    expect(portal).toContain("const seaTotal = smallParcelPrice(seaPlain, { on: true, customerTotalCbm: cbm });");
-    expect(portal).toContain('data-testid="calc-small-parcel"');
+    expect(portal).toContain("const seaTotal = smallParcelPrice(seaPlain, { on: true, parcelCbm: cbm });");
+    // The customer sees the final price only (2026-11-07): no extra line.
+    expect(portal).not.toContain('data-testid="calc-small-parcel"');
     expect(portal).toContain("const total = isSea ? seaTotal : airChargeable * price;");
   });
 });

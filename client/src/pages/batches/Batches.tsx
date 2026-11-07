@@ -2300,6 +2300,23 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <CardContent>
                       <p className="text-2xl font-bold text-green-700 dark:text-green-300">${financialSummary.totalRevenue.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground mt-1">{t('batches.fromPackages', { count: financialSummary.totalPackages })}</p>
+                      {/* What the small-parcel rule collected on this batch (office only, 2026-11-07). */}
+                      {(financialSummary as { smallParcel?: { extraUsd: number; parcels: number; waived: number } }).smallParcel?.parcels ? (
+                        <p className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-300" data-testid="batch-small-parcel-extra">
+                          {pickLang(language, {
+                            ku: `لەوە زیادەی بەریدی بچووک: `,
+                            en: `Of which small-parcel extra: `,
+                            ar: `منها إضافة الطرود الصغيرة: `,
+                            zh: `其中小件加收：`,
+                          })}
+                          <bdi dir="ltr" className="font-mono tabular-nums">${(financialSummary as { smallParcel: { extraUsd: number } }).smallParcel.extraUsd.toFixed(2)}</bdi>
+                          {` · ${(financialSummary as { smallParcel: { parcels: number } }).smallParcel.parcels} `}
+                          {pickLang(language, { ku: "پاکەت", en: "parcels", ar: "طرد", zh: "件" })}
+                          {(financialSummary as { smallParcel: { waived: number } }).smallParcel.waived > 0 && (
+                            <span className="font-normal text-muted-foreground">{` · ${(financialSummary as { smallParcel: { waived: number } }).smallParcel.waived} `}{pickLang(language, { ku: "بێ زیادە", en: "waived", ar: "بلا إضافة", zh: "免加收" })}</span>
+                          )}
+                        </p>
+                      ) : null}
                     </CardContent>
                   </Card>
                   <Card className={`border-2 ${financialSummary.profit >= 0 ? 'border-green-500 bg-gradient-to-br from-green-100 dark:from-green-900/40 to-emerald-100 dark:to-emerald-900/40' : 'border-red-500 bg-gradient-to-br from-red-100 dark:from-red-900/40 to-rose-100 dark:to-rose-900/40'}`}>

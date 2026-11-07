@@ -1,7 +1,7 @@
 import * as db from "../db";
 import { billingUnit } from "@shared/batchRate";
 import { parcelCost, type ParcelCostInput } from "@shared/parcelCost";
-import { smallParcelAutoPercent, SMALL_PARCEL_MIN_USD } from "@shared/parcelCost";
+import { smallParcelBreakdown } from "@shared/parcelCost";
 import { smallParcelRuleFor } from "../db/smallParcel.db";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 
@@ -40,8 +40,10 @@ export interface ParcelPricingFacts {
   volumeCbm?: string | number | null;
   /** A volumetric discount: the kilos charged (shared/chargeableWeight). */
   billedWeightKg?: string | number | null;
-  /** An existing parcel being repriced: its stored volume is not counted twice in its owner's total. */
+  /** An existing parcel being repriced: its stored waiver is read from it. */
   packageId?: number | null;
+  /** The office took the small-parcel extra off this parcel; undefined reads the stored flag. */
+  smallParcelWaived?: boolean | null;
 }
 
 export interface ResolvedParcelCost {
@@ -59,8 +61,12 @@ export interface ResolvedParcelCost {
   smallParcelPercent?: number;
   /** The $5 minimum set this price. */
   smallParcelMinimum?: boolean;
-  /** Under the rule: everything the customer has in the batch, this parcel counted (m³). */
-  smallParcelCustomerCbm?: number | null;
+  /** The parcel is under the line in a batch with the rule on: the waiver box is offered. */
+  smallParcelEligible?: boolean;
+  /** Eligible, and the extra was taken off. */
+  smallParcelWaived?: boolean;
+  /** The plain price before the extra, for the office's "base → final". */
+  smallParcelBaseUsd?: number;
 }
 
 /** The install's air divisor, or IATA's. Read once per call, not per parcel. */
@@ -110,14 +116,16 @@ export async function resolveParcelCost(
       const batchUnit = billingUnit(batch.shippingType);
       const resolved = await db.getBatchRateForCustomer(facts.batchId, facts.customerId, { unit: batchUnit });
       if (resolved.rate > 0) {
-        // A small sea customer pays the rule's extra (shared/parcelCost): what
-        // they have in the batch, this parcel counted at its figures now.
+        // A small sea parcel pays the rule's extra (shared/parcelCost),
+        // measured by itself, unless the office took it off.
         const smallParcel = batchUnit === "cbm"
-          ? await smallParcelRuleFor(batch, facts.customerId, { id: facts.packageId, volumeCbm: measure.volumeCbm })
+          ? await smallParcelRuleFor(batch, facts.customerId, { id: facts.packageId, volumeCbm: measure.volumeCbm, ...(facts.smallParcelWaived !== undefined ? { smallParcelWaived: facts.smallParcelWaived } : {}) })
           : null;
         const { amountUsd, billedOnVolume } = parcelCost({ ...measure, unit: batchUnit, rate: resolved.rate, smallParcel });
-        const smallParcelPercent = smallParcel ? Math.round(smallParcelAutoPercent(smallParcel.customerTotalCbm)) : 0;
-        const smallParcelMinimum = Boolean(smallParcel) && Math.abs(amountUsd - SMALL_PARCEL_MIN_USD) < 0.005;
+        const plainUsd = batchUnit === "cbm" ? parcelCost({ ...measure, unit: batchUnit, rate: resolved.rate }).amountUsd : amountUsd;
+        const sp = smallParcelBreakdown(plainUsd, smallParcel);
+        const smallParcelPercent = sp.eligible && !sp.waived ? sp.percent : 0;
+        const smallParcelMinimum = sp.minimum;
         if (amountUsd > 0) {
           return {
             amountUsd,
@@ -128,7 +136,9 @@ export async function resolveParcelCost(
             billedOnVolume,
             smallParcelPercent,
             smallParcelMinimum,
-            smallParcelCustomerCbm: smallParcel ? smallParcel.customerTotalCbm : null,
+            smallParcelEligible: sp.eligible,
+            smallParcelWaived: sp.waived,
+            smallParcelBaseUsd: sp.baseUsd,
           };
         }
       }

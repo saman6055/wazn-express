@@ -13,7 +13,7 @@ import { isSelfOrder } from "../lib/selfOrder";
 import { batchChargesOnPricing } from "../lib/chargePolicy";
 import { chargeableWeight } from "@shared/chargeableWeight";
 import { smallParcelPrice, type SmallParcelRule } from "@shared/parcelCost";
-import { customerSeaCbmInBatch, smallParcelRuleFor, smallParcelRuleOn } from "./smallParcel.db";
+import { smallParcelRuleFor, smallParcelRuleOn } from "./smallParcel.db";
 import { appLogger } from "../utils/logger";
 
 /**
@@ -154,7 +154,7 @@ export async function shippingChargeDueNow(
   if (!(rate > 0)) return facts;
 
   const divisor = await getVolumetricDivisor();
-  // The owner's whole share of the batch, this parcel at the figures it has now.
+  // This parcel by itself, at the figures it has now (and its waiver).
   const smallParcel = isSea ? await smallParcelRuleFor(batch, pkg.customerId, pkg as { id?: number; volumeCbm?: string | null }) : null;
   const { quantity, amount } = parcelShippingCharge(pkg, isSea, rate, divisor, smallParcel);
   return { ...facts, due: amount > 0, amount, rate, quantity };
@@ -199,12 +199,12 @@ export async function chargeBatchShippingIfDue(
       const { rate } = await getBatchRateForCustomer(batchId, customerId, { unit });
       if (!(rate > 0)) continue;
 
-      // Everything this customer has in the batch, charged or not (shared/parcelCost).
-      const smallParcel: SmallParcelRule | null = isSea && smallParcelRuleOn(batch)
-        ? { on: true, customerTotalCbm: await customerSeaCbmInBatch(batchId, customerId) }
-        : null;
+      // Each sea parcel measured by itself under the rule (shared/parcelCost).
+      const ruleOn = isSea && smallParcelRuleOn(batch);
+      const ruleFor = (pkg: (typeof parcels)[number]): SmallParcelRule | null =>
+        ruleOn ? { on: true, parcelCbm: pkg.volumeCbm, waived: Boolean((pkg as { smallParcelWaived?: boolean | null }).smallParcelWaived) } : null;
       const priced = parcels
-        .map(pkg => ({ pkg, ...parcelShippingCharge(pkg, isSea, rate, divisor, smallParcel) }))
+        .map(pkg => ({ pkg, ...parcelShippingCharge(pkg, isSea, rate, divisor, ruleFor(pkg)) }))
         .filter(p => p.amount > 0);
       if (priced.length === 0) continue;
 
@@ -270,12 +270,8 @@ export async function chargeBatchShippingIfDue(
         charged += 1;
       }
       customersBilled += 1;
-      // The customer's total grew: their earlier parcels in this batch are
-      // put right to it (server/db/smallParcelRebalance). Never stops the charge.
-      if (smallParcel) {
-        const { rebalanceSmallParcels } = await import("./smallParcelRebalance.db");
-        await rebalanceSmallParcels(batchId, customerId, { id: actorId });
-      }
+      // Each parcel is priced by itself now (2026-11-07): a new parcel no
+      // longer moves its owner's earlier ones.
     } catch (e) {
       appLogger.error("[ChargeOnPricing] failed for customer", {
         batchId,

@@ -1383,6 +1383,14 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                       {/* Whatever was written on the order when it was taken.
                           The person packing the box is the one who needs it. */}
                       <OrderNote note={(item as any).orderNote} compact className="mt-1.5" />
+                      {(item as any).smallParcel && (
+                        <SmallParcelLineTag
+                          view={(item as any).smallParcel}
+                          cbm={Number((item as any).smallParcel.cbm ?? 0)}
+                          language={language}
+                          onChanged={() => void refetchBox()}
+                        />
+                      )}
                     </TableCell>
                     {/* Source (batch code / order code). sourceInfo comes as
                         "CM-A + CM-B - باچ AIR-2026-028" (or just "باچ …") —
@@ -1957,5 +1965,61 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
       />
       <ReceiptDinarDialog request={receiptRequest} onClose={() => setReceiptRequest(null)} />
     </Card>
+  );
+}
+
+/**
+ * The small sea parcel extra on a box line, for the office (owner-approved
+ * mockup, 2026-11-07): «+76٪ بەریدی بچووک · $17.52 → $30.83», or «بێ زیادە —
+ * بە دەست», with the box that takes it off this one parcel. The customer's
+ * receipt shows the final price only.
+ */
+/** A volume to three places, as the box writes cubic metres. */
+const fmtCbm3 = (v: number) => (Math.round(v * 1000) / 1000).toLocaleString("en-US", { minimumFractionDigits: 3, maximumFractionDigits: 3 });
+
+function SmallParcelLineTag({ view, cbm, language, onChanged }: {
+  view: { packageId: number; baseUsd: number; finalUsd: number; percent: number; waived: boolean };
+  cbm: number;
+  language: string;
+  onChanged: () => void;
+}) {
+  const waiver = trpc.packages.setSmallParcelWaiver.useMutation({
+    onSuccess: (r) => {
+      toast.success(pickLang(language, {
+        ku: r.changed ? `نرخەکە بوو بە ${fmtUsd(r.nowUsd)}` : "پاشەکەوت کرا",
+        en: r.changed ? `The price is now ${fmtUsd(r.nowUsd)}` : "Saved",
+        ar: r.changed ? `السعر الآن ${fmtUsd(r.nowUsd)}` : "تم الحفظ",
+        zh: r.changed ? `价格现为 ${fmtUsd(r.nowUsd)}` : "已保存",
+      }));
+      onChanged();
+    },
+    onError: (e) => toast.error(e.message, { duration: 12000 }),
+  });
+  return (
+    <div
+      className="mt-1.5 flex flex-wrap items-center gap-1.5 rounded-lg border border-amber-300 bg-amber-50 px-2 py-1 text-[11px] text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+      data-testid="box-small-parcel-tag"
+    >
+      {cbm > 0 && <bdi dir="ltr" className="font-mono tabular-nums">{fmtCbm3(cbm)} m³</bdi>}
+      {view.waived ? (
+        <span className="font-semibold">{pickLang(language, { ku: "بێ زیادە — بە دەست", en: "No extra — by hand", ar: "بلا إضافة — يدوياً", zh: "不加收 — 手动" })}</span>
+      ) : (
+        <>
+          <span className="font-semibold">{pickLang(language, { ku: `+${view.percent}٪ بەریدی بچووک`, en: `+${view.percent}% small parcel`, ar: `+${view.percent}% طرد صغير`, zh: `小件 +${view.percent}%` })}</span>
+          <bdi dir="ltr" className="font-mono tabular-nums">{`${fmtUsd(view.baseUsd)} → ${fmtUsd(view.finalUsd)} (+${fmtUsd(view.finalUsd - view.baseUsd)})`}</bdi>
+        </>
+      )}
+      <label className="ms-auto flex cursor-pointer items-center gap-1 font-semibold">
+        <input
+          type="checkbox"
+          className="h-3.5 w-3.5 accent-amber-600"
+          checked={view.waived}
+          disabled={waiver.isPending}
+          onChange={(e) => waiver.mutate({ packageId: view.packageId, waived: e.target.checked })}
+          data-testid="box-small-parcel-waive"
+        />
+        {pickLang(language, { ku: "بێ زیادە", en: "No extra", ar: "بلا إضافة", zh: "不加收" })}
+      </label>
+    </div>
   );
 }

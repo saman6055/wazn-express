@@ -585,6 +585,8 @@ export const packagesRouter = router({
         // A volumetric discount given while registering (owner, 2026-10-24):
         // the kilos charged, between the scale and the volume.
         billedWeightKg: z.string().max(50).optional(),
+        // «بێ زیادە بۆ ئەم پاکەتە»: the small sea parcel extra taken off this parcel (2026-11-07).
+        smallParcelWaived: z.boolean().optional(),
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
         description: z.string().max(1000).optional(),
         photos: z.array(z.string().max(2048)).optional(),
@@ -837,6 +839,7 @@ export const packagesRouter = router({
           heightCm: input.heightCm,
           volumeCbm,
           billedWeightKg,
+          smallParcelWaived: input.shippingType === "sea" ? Boolean(input.smallParcelWaived) : false,
         });
         const calculatedCostUsd = priced.costUsd;
         const appliedPricingRuleId = priced.pricingRuleId;
@@ -873,6 +876,7 @@ export const packagesRouter = router({
               volumeCbm,
               cartonCount: cartons && cartons.count > 1 ? cartons.count : undefined,
               billedWeightKg: billedWeightKg ? Number(billedWeightKg).toFixed(3) : undefined,
+              smallParcelWaived: input.shippingType === "sea" && input.smallParcelWaived ? true : undefined,
               shippingType: input.shippingType,
               description: input.description,
               photos: input.photos,
@@ -1154,6 +1158,16 @@ export const packagesRouter = router({
      * invoice to charge, their own. Same resolver as the register, read-only:
      * it prices nothing and writes nothing.
      */
+    /**
+     * «بێ زیادە بۆ ئەم پاکەتە» on one sea parcel (owner-approved, 2026-11-07):
+     * the flag, and that parcel re-priced in place on its own ledger row. A
+     * receipted box refuses with the cause and the cure.
+     */
+    setSmallParcelWaiver: staffProcedure
+      .input(z.object({ packageId: idSchema, waived: z.boolean() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.setSmallParcelWaiver(input.packageId, input.waived, { id: ctx.user.id, role: ctx.user.role });
+      }),
     estimateCost: staffProcedure
       .input(z.object({
         customerId: idSchema.nullish(),
@@ -1167,6 +1181,8 @@ export const packagesRouter = router({
         volumeCbm: z.string().max(50).optional(),
         cartonCount: z.number().int().min(1).max(MAX_CARTONS).optional(),
         billedWeightKg: z.string().max(50).optional(),
+        /** «بێ زیادە بۆ ئەم پاکەتە» ticked at the counter. */
+        smallParcelWaived: z.boolean().optional(),
       }))
       .query(async ({ input }) => {
         // Sea with dimensions but no typed CBM: derive it exactly as the
@@ -1191,6 +1207,7 @@ export const packagesRouter = router({
           heightCm: input.heightCm,
           volumeCbm,
           billedWeightKg: input.shippingType !== "sea" ? input.billedWeightKg : undefined,
+          smallParcelWaived: input.smallParcelWaived ?? false,
         });
         return {
           amountUsd: priced.amountUsd,
@@ -1202,8 +1219,10 @@ export const packagesRouter = router({
           volumeCbm: volumeCbm ? Number(volumeCbm) : null,
           smallParcelPercent: priced.smallParcelPercent ?? 0,
           smallParcelMinimum: priced.smallParcelMinimum ?? false,
-          // Why: the customer's whole share of the batch the rule measured.
-          smallParcelCustomerCbm: priced.smallParcelCustomerCbm ?? null,
+          // The waiver box shows only when the parcel is under the line.
+          smallParcelEligible: priced.smallParcelEligible ?? false,
+          smallParcelWaived: priced.smallParcelWaived ?? false,
+          smallParcelBaseUsd: priced.smallParcelBaseUsd ?? null,
         };
       }),
     // Get unclaimed packages

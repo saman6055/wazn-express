@@ -765,6 +765,8 @@ export default function QuickRegister() {
    * the counter quote $11 while the invoice was going to say $9: the list
    * rate knows nothing about per-customer prices or tiers.
    */
+  // «بێ زیادە بۆ ئەم پاکەتە»: this one parcel without the small-parcel extra (2026-11-07).
+  const [smallWaived, setSmallWaived] = useState(false);
   const estimateFacts = useMemo(() => ({
     customerId: isUnclaimed ? null : customerId,
     batchId: batchId && batchId !== "none" ? parseInt(batchId) : null,
@@ -777,7 +779,8 @@ export default function QuickRegister() {
     volumeCbm: directCbm || undefined,
     cartonCount: cartonsSent,
     billedWeightKg: billedKg || undefined,
-  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm, cartonsSent, billedKg]);
+    smallParcelWaived: shippingType === "sea" ? smallWaived : undefined,
+  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm, cartonsSent, billedKg, smallWaived]);
 
   // A keystroke in the weight field should not fire a request per digit.
   const [debouncedFacts, setDebouncedFacts] = useState(estimateFacts);
@@ -967,12 +970,12 @@ export default function QuickRegister() {
   /** One short reason on the bar, only for a sea parcel in a batch. */
   const smallRuleReason = !selectedSeaBatch || !(estimatedPrice > 0)
     ? null
-    : smallRuleOn && estimate?.smallParcelCustomerCbm != null
+    : smallRuleOn && estimate?.smallParcelEligible && !estimate.smallParcelWaived
       ? pickLang(language, {
-          ku: `کۆی کڕیار لەم باچەدا: ${Number(estimate.smallParcelCustomerCbm).toFixed(3)} m³`,
-          en: `Customer's total in this batch: ${Number(estimate.smallParcelCustomerCbm).toFixed(3)} m³`,
-          ar: `مجموع العميل في الدفعة: ${Number(estimate.smallParcelCustomerCbm).toFixed(3)} م³`,
-          zh: `客户本批次合计：${Number(estimate.smallParcelCustomerCbm).toFixed(3)} m³`,
+          ku: `+${estimate.smallParcelPercent}٪ بەریدی بچووک`,
+          en: `+${estimate.smallParcelPercent}% small parcel`,
+          ar: `+${estimate.smallParcelPercent}% طرد صغير`,
+          zh: `小件 +${estimate.smallParcelPercent}%`,
         })
       : !smallRuleOn
         ? pickLang(language, { ku: "زیادەی بەریدی بچووک کوژاوەیە", en: "Small-parcel extra is off", ar: "إضافة الطرود الصغيرة متوقفة", zh: "小件加收已关闭" })
@@ -1383,6 +1386,7 @@ export default function QuickRegister() {
     setWidthCm("");
     setHeightCm("");
     setCartonCount("1");
+    setSmallWaived(false);
     setCategoryId("");
     setDescription("");
     setDirectCbm("");
@@ -1416,6 +1420,7 @@ export default function QuickRegister() {
     setWidthCm("");
     setHeightCm("");
     setCartonCount("1");
+    setSmallWaived(false);
     // Warehouse, transport and batch stay: they are the day's, not the parcel's.
     setCategoryId("");
     setDescription("");
@@ -1511,6 +1516,7 @@ export default function QuickRegister() {
       volumeCbm: directCbm || undefined,
       cartonCount: cartonsSent,
       billedWeightKg: billedKg && shippingType !== "sea" && volumetricWeight > (parseFloat(weightKg) || 0) ? billedKg : undefined,
+      smallParcelWaived: shippingType === "sea" && smallWaived ? true : undefined,
       shippingType,
       description: description || undefined,
       batchId: batchId && batchId !== "none" ? parseInt(batchId) : undefined,
@@ -2799,6 +2805,36 @@ export default function QuickRegister() {
                         </div>
                       </div>
                     </div>
+                    {/* The small-parcel extra on this one parcel, and the box that
+                        takes it off (owner-approved mockup, 2026-11-07). Shown only
+                        when the parcel is under 0.20 m³ in a batch with the rule on. */}
+                    {smallRuleOn && estimate?.smallParcelEligible && (
+                      <label
+                        className="mt-3 flex cursor-pointer flex-wrap items-center gap-2 rounded-xl border border-amber-300 bg-amber-50 px-3 py-2 text-sm text-amber-900 dark:border-amber-700/60 dark:bg-amber-950/40 dark:text-amber-200"
+                        data-testid="qr-small-parcel-line"
+                      >
+                        <span className="min-w-0 flex-1">
+                          {smallWaived
+                            ? pickLang(language, { ku: "بێ زیادە — بە دەست", en: "No extra — by hand", ar: "بلا إضافة — يدوياً", zh: "不加收 — 手动" })
+                            : pickLang(language, { ku: `بەریدی بچووک: +${estimate.smallParcelPercent}٪`, en: `Small parcel: +${estimate.smallParcelPercent}%`, ar: `طرد صغير: +${estimate.smallParcelPercent}%`, zh: `小件：+${estimate.smallParcelPercent}%` })}
+                          {estimate.smallParcelBaseUsd != null && (
+                            <bdi dir="ltr" className="ms-2 font-mono tabular-nums">
+                              {`$${Number(estimate.smallParcelBaseUsd).toFixed(2)} → $${Number(estimate.amountUsd).toFixed(2)}`}
+                            </bdi>
+                          )}
+                        </span>
+                        <span className="flex items-center gap-1.5 font-semibold">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 accent-amber-600"
+                            checked={smallWaived}
+                            onChange={(e) => setSmallWaived(e.target.checked)}
+                            data-testid="qr-small-parcel-waive"
+                          />
+                          {pickLang(language, { ku: "بێ زیادە بۆ ئەم پاکەتە", en: "No extra on this parcel", ar: "بلا إضافة لهذا الطرد", zh: "此件不加收" })}
+                        </span>
+                      </label>
+                    )}
                   </CardContent>
                 </Card>
               )}

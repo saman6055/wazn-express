@@ -56,7 +56,7 @@ export function quoteShipping(
 
   if (input.shippingType === "sea") {
     const cbm = n(input.cbm) > 0 ? n(input.cbm) : L > 0 && W > 0 && H > 0 ? (L * W * H) / 1_000_000 : 0;
-    return { unit: "cbm", actualKg: n(input.weightKg), volumetricKg: 0, chargeableKg: 0, billedOnVolume: false, cbm, total: smallParcelPrice(cbm * price, { on: true, customerTotalCbm: cbm }) };
+    return { unit: "cbm", actualKg: n(input.weightKg), volumetricKg: 0, chargeableKg: 0, billedOnVolume: false, cbm, total: smallParcelPrice(cbm * price, { on: true, parcelCbm: cbm }) };
   }
 
   const air = chargeableWeight({ weightKg: n(input.weightKg), lengthCm: L, widthCm: W, heightCm: H }, n(divisor) || DEFAULT_VOLUMETRIC_DIVISOR);
