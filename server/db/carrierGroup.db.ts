@@ -16,6 +16,8 @@ import { batchMadeInChina } from "@shared/batchStage";
 import { batchMatchesDesk, parcelPlaceInChina, twinCodeFor } from "@shared/batchTwin";
 import { withFix } from "@shared/fixAdvice";
 import { getVolumetricDivisor } from "./settings.db";
+import { storedVolumeCbm } from "@shared/parcelCorrection";
+import { billingUnit } from "@shared/batchRate";
 import { createBatch, getBatchById, updateBatch } from "./batches.db";
 import { addCarrierPart, listCarrierParts, updateCarrierPart } from "./carrierParts.db";
 
@@ -124,6 +126,7 @@ async function memberFacts(ids: number[], arrivedOn: string | null = null) {
       id: packages.id, batchId: packages.batchId, status: packages.status,
       weightKg: packages.weightKg, billedWeightKg: packages.billedWeightKg,
       lengthCm: packages.lengthCm, widthCm: packages.widthCm, heightCm: packages.heightCm,
+      volumeCbm: packages.volumeCbm,
     })
     .from(packages)
     .where(and(inArray(packages.batchId, ids), notInArray(packages.status, ["cancelled", "returned"]), isNull(packages.lostAt)));
@@ -146,18 +149,23 @@ async function memberFacts(ids: number[], arrivedOn: string | null = null) {
     const all = parcels.filter((p) => p.batchId === b.id);
     const partial = !!arrivedOn && all.some((p) => (firstScan.get(p.id) ?? "9999") < arrivedOn);
     const mine = partial ? all.filter((p) => (firstScan.get(p.id) ?? "") >= arrivedOn!) : all;
-    let kg = 0, liveKg = 0, coming = 0;
+    let kg = 0, liveKg = 0, coming = 0, cbm = 0, liveCbm = 0;
     for (const p of mine) {
       const w = chargeableWeight(p, divisor).chargeableKg;
+      // A sea carrier bills by volume (owner, 2026-11-07): the parcel's own
+      // CBM, typed or from its three sides - the rule registration stores by.
+      const v = Number(storedVolumeCbm(p.volumeCbm, p.lengthCm, p.widthCm, p.heightCm)) || 0;
       kg += w;
+      cbm += v;
       // A China parcel counts once it is in Erbil; an Erbil one is in Erbil when registered.
-      if (!china || parcelHasArrived({ scannedIn: scanned.has(p.id), status: p.status })) liveKg += w;
+      if (!china || parcelHasArrived({ scannedIn: scanned.has(p.id), status: p.status })) { liveKg += w; liveCbm += v; }
       else coming += 1;
     }
     return {
       batchId: b.id, batchCode: b.batchCode, status: b.status, shippingType: b.shippingType,
       madeInChina: china, twinOfBatchId: b.twinOfBatchId ?? null, carrierBatchNo: b.carrierBatchNo ?? null,
       parcels: mine.length, kg: r2(kg), liveKg: r2(liveKg), stillComing: coming,
+      cbm: Math.round(cbm * 1000) / 1000, liveCbm: Math.round(liveCbm * 1000) / 1000,
       partial, allParcels: all.length,
       // The scale's kilos, every parcel; and what a carrier already billed on it.
       realKg: r2(all.reduce((s, p) => s + (Number(p.weightKg) || 0), 0)),
@@ -423,6 +431,7 @@ export async function getBatchKgCheck(batchId: number) {
   if (g) {
     const others = g.others;
     return {
+      unit: "kg" as const,
       key: g.key, carrierKg: g.invoice?.billedKg ?? null, oursKg: g.oursKg, allKg: g.allKg, stillComing: g.stillComing,
       // Each batch said apart, so a group figure is never read as this batch's.
       thisKg: g.members.find((m) => m.batchId === batchId)?.liveKg ?? 0,
@@ -433,8 +442,28 @@ export async function getBatchKgCheck(batchId: number) {
   const batch = await getBatchById(batchId);
   if (!batch) return null;
   const [m] = await memberFacts([batchId]);
+  /*
+   * A sea batch is billed by CBM, so its strip compares CBM with CBM (owner,
+   * 2026-11-07: «باری بەحری بە سی بی ئێمە ئاگادار بە»). It used to say "the
+   * carrier's kilos are not entered" beside a kilo sum nobody bills a ship by.
+   */
+  if (billingUnit(batch.shippingType) === "cbm") {
+    const billedCbm = Number(batch.chargedCbm);
+    return {
+      unit: "cbm" as const,
+      key: null,
+      carrierKg: billedCbm > 0 ? billedCbm : null,
+      oursKg: m?.liveCbm ?? 0,
+      allKg: m?.cbm ?? 0,
+      stillComing: m?.stillComing ?? 0,
+      thisKg: m?.liveCbm ?? 0,
+      members: [] as Array<{ batchCode: string; kg: number }>,
+      others: [] as Awaited<ReturnType<typeof arrivedWithLoad>>,
+    };
+  }
   const billed = Number(batch.chargedWeightKg);
   return {
+    unit: "kg" as const,
     key: null,
     carrierKg: billed > 0 ? billed : null,
     oursKg: m?.liveKg ?? 0,

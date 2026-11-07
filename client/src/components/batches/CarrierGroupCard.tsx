@@ -171,6 +171,38 @@ export function CarrierGroupCard({ batchId, madeInChina, shippingType, onChanged
   );
 }
 
+/** The sea batch's line: the carrier's CBM against ours, nothing in kilos. */
+function CbmStrip({ carrier, ours, all, stillComing }: { carrier: number | null; ours: number; all: number; stillComing: number }) {
+  const { language } = useTranslation();
+  const L = (w: Words) => pickLang(language, w);
+  const n = (v: number) => v.toFixed(3);
+  const oursLine = (
+    <span className="text-sky-700 dark:text-sky-300" data-testid="carrier-strip-ours">
+      {L({ ku: "ئێمە", en: "Ours", ar: "لدينا", zh: "我方" })} <b dir="ltr">{n(ours)} CBM</b>
+      {all > ours && <span className="ms-1 text-xs text-muted-foreground">({L({ ku: "کۆی باچ", en: "whole batch", ar: "كل الدفعة", zh: "整批" })} <b dir="ltr">{n(all)}</b>)</span>}
+      {stillComing > 0 && <span className="ms-1 text-xs text-amber-700 dark:text-amber-300">· {stillComing} {L({ ku: "لە ڕێگا", en: "on the road", ar: "في الطريق", zh: "在途" })}</span>}
+    </span>
+  );
+  if (carrier == null) {
+    return (
+      <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border border-dashed px-3 py-2 text-sm tabular-nums text-muted-foreground" data-testid="carrier-group-strip" data-state="no-carrier-cbm">
+        {oursLine}
+        <span>{L({ ku: "CBMـی کۆمپانیای گواستنەوە هێشتا نەنووسراوە", en: "The carrier's CBM is not entered yet", ar: "حجم شركة الشحن (CBM) لم يُدخل بعد", zh: "承运商立方数尚未录入" })}</span>
+      </div>
+    );
+  }
+  const left = carrier - ours;
+  return (
+    <div className="flex flex-wrap items-center gap-x-4 gap-y-1 rounded-lg border bg-card px-3 py-2 text-sm tabular-nums" data-testid="carrier-group-strip" data-state="cbm">
+      <span>{L({ ku: "کۆمپانیا", en: "Carrier", ar: "الشركة", zh: "承运商" })} <b dir="ltr">{n(carrier)} CBM</b></span>
+      {oursLine}
+      <span className={left > 0 ? "text-amber-700 dark:text-amber-300" : "text-emerald-700 dark:text-emerald-300"}>
+        {left > 0 ? L({ ku: "ماوە", en: "To come", ar: "يتبقى", zh: "尚余" }) : L({ ku: "زیاتر", en: "Over", ar: "زيادة", zh: "超出" })} <b dir="ltr">{n(Math.abs(left))} CBM</b>
+      </span>
+    </div>
+  );
+}
+
 /** The live line on the scan screens: invoice, ours, to come (owner, 2026-10-28). */
 export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefined }) {
   const { language } = useTranslation();
@@ -180,6 +212,8 @@ export function CarrierGroupStrip({ batchId }: { batchId: number | null | undefi
   { enabled: !!batchId, refetchInterval: 60_000, refetchIntervalInBackground: false });
   const g = q.data;
   if (!batchId || !g) return null;
+  // A sea batch is measured in CBM end to end (owner, 2026-11-07).
+  if (g.unit === "cbm") return <CbmStrip carrier={g.carrierKg} ours={g.oursKg} all={g.allKg} stillComing={g.stillComing} />;
   const inGroup = g.members.length > 1;
   // Our other batches' late cartons that came in this load (owner, 2026-11-03).
   const others = g.others ?? [];
