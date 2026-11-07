@@ -3,6 +3,7 @@ import { z } from "zod";
 import { publicProcedure, protectedProcedure, router } from "../_core/trpc";
 import { staffProcedure, accountantProcedure } from "../middleware/auth";
 import { appLogger } from "../utils/logger";
+import { vanishedFix, withFix } from "@shared/fixAdvice";
 import * as db from "../db";
 
 // ---------------------------------------------------------------------------
@@ -115,10 +116,15 @@ export const prohibitedRouter = router({
     .input(z.object({ id: z.number(), feeUsd: z.number().positive() }))
     .mutation(async ({ input, ctx }) => {
       const record = await db.getProhibitedPackageById(input.id);
-      if (!record) throw new TRPCError({ code: "NOT_FOUND", message: "Record not found" });
-      if (record.chargedAt) throw new TRPCError({ code: "BAD_REQUEST", message: "Fee already charged" });
+      if (!record) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("تۆماری کەلوپەلی قەدەغە") });
+      if (record.chargedAt) {
+        throw new TRPCError({ code: "BAD_REQUEST", message: withFix("کرێی ئەم کەلوپەلە قەدەغەیە پێشتر خراوەتە سەر حیسابی کڕیار.", [
+          "حیسابی کڕیارەکە بکەرەوە و هێڵی کرێکە ببینە",
+          "ئەگەر بڕەکە هەڵەیە، یەکەم کرێکە هەڵبوەشێنەوە، ئینجا دووبارە بینووسە",
+        ]) });
+      }
       const customer = await db.getCustomerById(record.customerId);
-      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: "Customer not found" });
+      if (!customer) throw new TRPCError({ code: "NOT_FOUND", message: vanishedFix("کڕیاری ئەم تۆمارە", { bin: true }) });
 
       const desc = `کرێی خزمەتگوزاری کەل و پەلی قەدەغە - ${record.trackingNumber}${record.resolutionChoice ? ` (${record.resolutionChoice})` : ""}`;
       const { transaction } = await db.applyCharge(
