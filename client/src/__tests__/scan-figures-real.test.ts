@@ -21,10 +21,16 @@ describe("scan figures come from the scans", () => {
     expect(fn).toContain("lt(packageScans.scannedAt, endExclusive)");
   });
 
-  it("the dashboard's week is drawn from scanAnalytics, never made up", () => {
+  it("the dashboard counts every station from its own event, never made up", () => {
     const page = read("client/src/pages/scanning/ScanDashboard.tsx");
     expect(page).not.toContain("Math.random()");
-    expect(page).toContain("data={weekDays}");
-    expect(page).toContain("analytics?.dailyScans");
+    expect(page).toContain("trpc.scanning.stationActivity.useQuery");
+    // The waiting line opens the list with the same rows.
+    expect(page).toContain('packagesHref({ tab: "no_batch" })');
+    const db = read("server/db/stationActivity.db.ts");
+    expect(db).toContain('eq(auditLogs.action, "assign_package_to_batch")');
+    expect(db).toContain('eq(packageScans.scanType, "received_local")');
+    expect(db).toContain("packages.registeredAt");
+    expect(db).toContain("packages.deliveredAt");
   });
 });

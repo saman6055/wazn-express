@@ -11,6 +11,7 @@ import { appLogger } from "../utils/logger";
 import { notifyReadyForCollection } from "../services/customerWhatsApp.service";
 import { staffProcedure, adminProcedure, accountantProcedure, superAdminProcedure } from "../middleware/auth";
 import * as db from "../db";
+import { getStationActivity } from "../db/stationActivity.db";
 import { retryFix, vanishedFix, withFix } from "@shared/fixAdvice";
 import { boxMayBeHeld, HOLD_NOTE_MAX } from "@shared/boxHold";
 import { DISCOUNT_REASONS } from "@shared/boxSettlement";
@@ -493,6 +494,11 @@ export const scanningRouter = router({
         const stats = await db.getTodayScanStats(ctx.user.id);
         return stats;
       }),
+
+    // The four stations, each counted from its own event (shared/stationActivity).
+    stationActivity: staffProcedure
+      .input(z.object({ days: z.number().int().min(1).max(31).default(7) }).optional())
+      .query(async ({ input }) => getStationActivity(input?.days ?? 7)),
 
     // Scan analytics for dashboard
     scanAnalytics: staffProcedure
