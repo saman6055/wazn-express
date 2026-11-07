@@ -1,6 +1,6 @@
 import { and, eq, gte, inArray, isNotNull, lte, ne, notInArray, or, sql } from "drizzle-orm";
 import { getDb } from "./connection";
-import { batches, customers, deliveryBoxes, deliveryBoxItems, packages } from "../../drizzle/schema";
+import { batches, customers, deliveryBoxes, deliveryBoxItems, packageScans, packages } from "../../drizzle/schema";
 import { lastArrivalPerBatch } from "./batchArrival.db";
 
 /**
@@ -263,7 +263,9 @@ export interface LeftOutCustomer {
   customerId: number;
   customerCode: string | null;
   customerName: string | null;
-  parcels: Array<{ id: number; packageCode: string; trackingNumber: string | null; batchCode: string | null }>;
+  parcels: Array<{ id: number; packageCode: string; trackingNumber: string | null; batchCode: string | null; arrivedAt: string | null }>;
+  /** Whole days since the oldest of these parcels' batches last arrived. */
+  oldestDays: number;
 }
 
 /**
@@ -309,13 +311,34 @@ export async function parcelsLeftOutOfBoxes(): Promise<LeftOutCustomer[]> {
   });
 
   const byCustomer = new Map<number, LeftOutCustomer>();
-  for (const p of await notInAnyBox(settled)) {
+  const leftOut = await notInAnyBox(settled);
+  // Each parcel's own first arrival scan: a carton that came sixteen days ago
+  // has waited sixteen days, even if its batch's last carton came yesterday.
+  const ownArrival = new Map<number, Date>();
+  if (leftOut.length > 0) {
+    const scans = await db
+      .select({ id: packageScans.packageId, at: sql<Date>`MIN(${packageScans.scannedAt})` })
+      .from(packageScans)
+      .where(and(inArray(packageScans.packageId, leftOut.map((p) => p.id)), eq(packageScans.scanType, "received_local")))
+      .groupBy(packageScans.packageId);
+    for (const r of scans) {
+      const d = r.at instanceof Date ? r.at : new Date(String(r.at));
+      if (!Number.isNaN(d.getTime())) ownArrival.set(Number(r.id), d);
+    }
+  }
+  for (const p of leftOut) {
     const id = Number(p.customerId);
-    const row = byCustomer.get(id) ?? { customerId: id, customerCode: p.customerCode, customerName: p.customerName, parcels: [] };
-    row.parcels.push({ id: p.id, packageCode: p.packageCode, trackingNumber: p.trackingNumber, batchCode: p.batchCode });
+    const row = byCustomer.get(id) ?? { customerId: id, customerCode: p.customerCode, customerName: p.customerName, parcels: [], oldestDays: 0 };
+    // How long it has waited: from its batch's last arrival, the same moment
+    // the 3-day rule above is measured from (owner, 2026-11-07: the page
+    // should say which customer has waited longest).
+    const at = ownArrival.get(p.id) ?? lastArrival.get(Number(p.batchId)) ?? null;
+    row.parcels.push({ id: p.id, packageCode: p.packageCode, trackingNumber: p.trackingNumber, batchCode: p.batchCode, arrivedAt: at ? at.toISOString() : null });
+    if (at) row.oldestDays = Math.max(row.oldestDays, Math.floor((Date.now() - at.getTime()) / 86_400_000));
     byCustomer.set(id, row);
   }
-  return Array.from(byCustomer.values()).sort((a, b) => b.parcels.length - a.parcels.length);
+  // The longest wait first; then the most parcels.
+  return Array.from(byCustomer.values()).sort((a, b) => b.oldestDays - a.oldestDays || b.parcels.length - a.parcels.length);
 }
 
 /** Parcels proven lost and not yet settled with the customer or the carrier. */
