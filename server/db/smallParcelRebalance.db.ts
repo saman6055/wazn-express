@@ -31,7 +31,7 @@ import { withFix } from "@shared/fixAdvice";
 
 type Actor = { id: number; role?: string | null };
 
-async function repriceOne(pkg: Package, actor: Actor, reason: string): Promise<"changed" | "same"> {
+export async function repriceOne(pkg: Package, actor: Actor, reason: string): Promise<"changed" | "same"> {
   const due = await shippingChargeDueNow(pkg);
   if (!due.due) return "same";
   const stands = Number(pkg.calculatedCostUsd ?? 0) || 0;

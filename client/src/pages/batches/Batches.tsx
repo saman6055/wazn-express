@@ -2300,6 +2300,18 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                     <CardContent>
                       <p className="text-2xl font-bold text-green-700 dark:text-green-300">${financialSummary.totalRevenue.toFixed(2)}</p>
                       <p className="text-xs text-muted-foreground mt-1">{t('batches.fromPackages', { count: financialSummary.totalPackages })}</p>
+                      {/* «نرخی ڕێککەوتوو» on this batch: how many, and the net against the system's price (office only). */}
+                      {(financialSummary as { agreedPrice?: { parcels: number; differenceUsd: number } }).agreedPrice?.parcels ? (() => {
+                        const ap = (financialSummary as { agreedPrice: { parcels: number; differenceUsd: number } }).agreedPrice;
+                        const gain = ap.differenceUsd >= 0;
+                        return (
+                          <p className={`mt-1 text-xs font-semibold ${gain ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300"}`} data-testid="batch-agreed-price">
+                            {pickLang(language, { ku: `${ap.parcels} پاکەت بە نرخی ڕێککەوتوو · `, en: `${ap.parcels} parcels at an agreed price · `, ar: `${ap.parcels} طرد بسعر متفق · `, zh: `${ap.parcels} 件约定价格 · ` })}
+                            {gain ? pickLang(language, { ku: "قازانج", en: "profit", ar: "ربح", zh: "盈利" }) : pickLang(language, { ku: "زیان", en: "loss", ar: "خسارة", zh: "亏损" })}{" "}
+                            <bdi dir="ltr" className="font-mono tabular-nums">{gain ? "+" : "−"}${Math.abs(ap.differenceUsd).toFixed(2)}</bdi>
+                          </p>
+                        );
+                      })() : null}
                       {/* What the small-parcel rule collected on this batch (office only, 2026-11-07). */}
                       {(financialSummary as { smallParcel?: { extraUsd: number; parcels: number; waived: number } }).smallParcel?.parcels ? (
                         <p className="mt-1 text-xs font-semibold text-amber-700 dark:text-amber-300" data-testid="batch-small-parcel-extra">

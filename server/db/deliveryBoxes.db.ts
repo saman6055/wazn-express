@@ -1,4 +1,5 @@
 import { smallParcelPrice } from "@shared/parcelCost";
+import { withAgreedPrice } from "@shared/agreedShipping";
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { getVolumetricDivisor } from "./settings.db";
 import { smallParcelRuleFor } from "./smallParcel.db";
@@ -1463,6 +1464,8 @@ export async function buildBoxItemValuesFromPackage(
   } else if (batchPricePerKg > 0) {
     freshShippingCost = chargeableKgNum * batchPricePerKg;
   }
+  // «نرخی ڕێککەوتوو»: the agreed shipping is the shipping (shared/agreedShipping).
+  freshShippingCost = withAgreedPrice(freshShippingCost, (pkg as { agreedShippingUsd?: string | null }).agreedShippingUsd);
   const persistedCost = parseFloat(pkg.calculatedCostUsd?.toString() || '0') || 0;
   const shippingCost = freshShippingCost > 0 ? freshShippingCost : persistedCost;
 

@@ -2,6 +2,7 @@ import * as db from "../db";
 import { billingUnit } from "@shared/batchRate";
 import { parcelCost, type ParcelCostInput } from "@shared/parcelCost";
 import { smallParcelBreakdown } from "@shared/parcelCost";
+import { agreedUsd } from "@shared/agreedShipping";
 import { smallParcelRuleFor } from "../db/smallParcel.db";
 import { DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 
@@ -44,6 +45,8 @@ export interface ParcelPricingFacts {
   packageId?: number | null;
   /** The office took the small-parcel extra off this parcel; undefined reads the stored flag. */
   smallParcelWaived?: boolean | null;
+  /** «نرخی ڕێککەوتوو» for this parcel; undefined reads the stored one when packageId is given. */
+  agreedShippingUsd?: string | number | null;
 }
 
 export interface ResolvedParcelCost {
@@ -67,6 +70,9 @@ export interface ResolvedParcelCost {
   smallParcelWaived?: boolean;
   /** The plain price before the extra, for the office's "base → final". */
   smallParcelBaseUsd?: number;
+  /** An agreed price set the amount: what the system itself would have charged. */
+  computedUsd?: number;
+  agreedUsd?: number | null;
 }
 
 /** The install's air divisor, or IATA's. Read once per call, not per parcel. */
@@ -75,7 +81,33 @@ async function volumetricDivisor(): Promise<number> {
   return parseInt(setting ?? "", 10) || DEFAULT_VOLUMETRIC_DIVISOR;
 }
 
+/**
+ * The parcel's price: the computed one, with an agreed amount on top when the
+ * parcel carries one («نرخی ڕێککەوتوو», shared/agreedShipping) - it overrides
+ * the rate, the least and the small-parcel extra.
+ */
 export async function resolveParcelCost(
+  facts: ParcelPricingFacts,
+): Promise<ResolvedParcelCost> {
+  const computed = await resolveComputedParcelCost(facts);
+  let agreed = facts.agreedShippingUsd;
+  if (agreed === undefined && facts.packageId) {
+    const pkg = await db.getPackageById(facts.packageId);
+    agreed = (pkg as { agreedShippingUsd?: string | null } | undefined)?.agreedShippingUsd ?? null;
+  }
+  const a = agreedUsd(agreed);
+  if (a === null) return { ...computed, computedUsd: computed.amountUsd, agreedUsd: null };
+  return {
+    ...computed,
+    amountUsd: a,
+    costUsd: a.toFixed(2),
+    source: computed.source === "none" ? "batch" : computed.source,
+    computedUsd: computed.amountUsd,
+    agreedUsd: a,
+  };
+}
+
+async function resolveComputedParcelCost(
   facts: ParcelPricingFacts,
 ): Promise<ResolvedParcelCost> {
   const unit = billingUnit(facts.shippingType);

@@ -13,6 +13,7 @@ import { isSelfOrder } from "../lib/selfOrder";
 import { batchChargesOnPricing } from "../lib/chargePolicy";
 import { chargeableWeight } from "@shared/chargeableWeight";
 import { smallParcelPrice, type SmallParcelRule } from "@shared/parcelCost";
+import { withAgreedPrice } from "@shared/agreedShipping";
 import { smallParcelRuleFor, smallParcelRuleOn } from "./smallParcel.db";
 import { appLogger } from "../utils/logger";
 
@@ -48,7 +49,7 @@ import { appLogger } from "../utils/logger";
  * that could round a cent differently one day.
  */
 export function parcelShippingCharge(
-  pkg: Pick<Package, "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm"> & { billedWeightKg?: string | null },
+  pkg: Pick<Package, "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm"> & { billedWeightKg?: string | null; agreedShippingUsd?: string | number | null },
   isSea: boolean,
   rate: number,
   divisor: number,
@@ -59,7 +60,9 @@ export function parcelShippingCharge(
     ? Number(pkg.volumeCbm ?? 0) || 0
     : chargeableWeight(pkg, divisor).chargeableKg;
   const base = Math.round(quantity * rate * 100) / 100;
-  const amount = isSea ? smallParcelPrice(base, smallParcel) : base;
+  const computed = isSea ? smallParcelPrice(base, smallParcel) : base;
+  // «نرخی ڕێککەوتوو»: an agreed amount is the charge, whatever the computed one (shared/agreedShipping).
+  const amount = withAgreedPrice(computed, pkg.agreedShippingUsd);
   return { quantity, amount };
 }
 
@@ -126,7 +129,7 @@ export async function shippingChargeDueNow(
     Package,
     | "batchId" | "customerId" | "isUnclaimed" | "fullPackageOrderId" | "trackingNumber" | "registeredAt"
     | "weightKg" | "lengthCm" | "widthCm" | "heightCm" | "volumeCbm"
-  > & Partial<Pick<Package, "billedWeightKg">
+  > & Partial<Pick<Package, "billedWeightKg" | "agreedShippingUsd" | "smallParcelWaived">
   >,
 ): Promise<ShippingChargeDue> {
   const none: ShippingChargeDue = { due: false, amount: 0, rate: 0, quantity: 0, unit: "kg", batchCode: null };

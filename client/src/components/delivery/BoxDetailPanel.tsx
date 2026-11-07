@@ -1383,6 +1383,9 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
                       {/* Whatever was written on the order when it was taken.
                           The person packing the box is the one who needs it. */}
                       <OrderNote note={(item as any).orderNote} compact className="mt-1.5" />
+                      {(item as any).agreedPrice && (
+                        <AgreedPriceLineTag view={(item as any).agreedPrice} language={language} onChanged={() => void refetchBox()} />
+                      )}
                       {(item as any).smallParcel && (
                         <SmallParcelLineTag
                           view={(item as any).smallParcel}
@@ -2020,6 +2023,70 @@ function SmallParcelLineTag({ view, cbm, language, onChanged }: {
         />
         {pickLang(language, { ku: "بێ زیادە", en: "No extra", ar: "بلا إضافة", zh: "不加收" })}
       </label>
+    </div>
+  );
+}
+
+/**
+ * «نرخی ڕێککەوتوو» on a box line, for the office (owner-approved, 2026-11-07):
+ * agreed, the system's own and the difference, and a way to change or clear it
+ * while the box is not receipted (the server refuses a receipted one).
+ */
+function AgreedPriceLineTag({ view, language, onChanged }: {
+  view: { packageId: number; agreedUsd: number; computedUsd: number; differenceUsd: number };
+  language: string;
+  onChanged: () => void;
+}) {
+  const [editing, setEditing] = useState(false);
+  const [value, setValue] = useState(String(view.agreedUsd));
+  const save = trpc.packages.setAgreedShipping.useMutation({
+    onSuccess: (r) => {
+      toast.success(pickLang(language, { ku: `نرخەکە ${fmtUsd(r.nowUsd)}ـە`, en: `The price is ${fmtUsd(r.nowUsd)}`, ar: `السعر ${fmtUsd(r.nowUsd)}`, zh: `价格为 ${fmtUsd(r.nowUsd)}` }));
+      setEditing(false);
+      onChanged();
+    },
+    onError: (e) => toast.error(e.message, { duration: 12000 }),
+  });
+  const gain = view.differenceUsd >= 0;
+  return (
+    <div className="mt-1.5 rounded-lg border border-sky-300 bg-sky-50 px-2 py-1 text-[11px] text-sky-950 dark:border-sky-700/60 dark:bg-sky-950/40 dark:text-sky-100" data-testid="box-agreed-price-tag">
+      <div className="flex flex-wrap items-center gap-1.5">
+        <span className="font-semibold">{pickLang(language, { ku: "ڕێککەوتوو", en: "Agreed", ar: "متفق", zh: "约定" })} <bdi dir="ltr" className="font-mono tabular-nums">{fmtUsd(view.agreedUsd)}</bdi></span>
+        <span>· {pickLang(language, { ku: "حیسابی سیستەم", en: "system", ar: "النظام", zh: "系统" })} <bdi dir="ltr" className="font-mono tabular-nums">{view.computedUsd > 0 ? fmtUsd(view.computedUsd) : "—"}</bdi></span>
+        {view.computedUsd > 0 && (
+          <span className={gain ? "font-semibold text-emerald-700 dark:text-emerald-300" : "font-semibold text-rose-700 dark:text-rose-300"}>
+            · {gain ? pickLang(language, { ku: "قازانج", en: "profit", ar: "ربح", zh: "盈利" }) : pickLang(language, { ku: "زیان", en: "loss", ar: "خسارة", zh: "亏损" })}{" "}
+            <bdi dir="ltr" className="font-mono tabular-nums">{gain ? "+" : "−"}{fmtUsd(Math.abs(view.differenceUsd))}</bdi>
+          </span>
+        )}
+        {!editing && (
+          <button type="button" className="ms-auto underline" onClick={() => setEditing(true)} data-testid="box-agreed-price-edit">
+            {pickLang(language, { ku: "گۆڕین", en: "Change", ar: "تغيير", zh: "修改" })}
+          </button>
+        )}
+      </div>
+      {editing && (
+        <div className="mt-1 flex items-center gap-1.5">
+          <input
+            type="number"
+            min={0}
+            step="0.01"
+            value={value}
+            onChange={(e) => setValue(e.target.value)}
+            className="h-7 w-20 rounded border bg-background px-1 text-center font-mono"
+            dir="ltr"
+          />
+          <button type="button" className="rounded border px-2 py-0.5 font-semibold" disabled={save.isPending || !(Number(value) > 0)}
+            onClick={() => save.mutate({ packageId: view.packageId, agreedUsd: Math.round(Number(value) * 100) / 100 })}>
+            {pickLang(language, { ku: "پاشەکەوت", en: "Save", ar: "حفظ", zh: "保存" })}
+          </button>
+          <button type="button" className="rounded border px-2 py-0.5" disabled={save.isPending}
+            onClick={() => save.mutate({ packageId: view.packageId, agreedUsd: null })}>
+            {pickLang(language, { ku: "لابردن", en: "Clear", ar: "إزالة", zh: "清除" })}
+          </button>
+          <button type="button" className="px-1" onClick={() => setEditing(false)}>✕</button>
+        </div>
+      )}
     </div>
   );
 }

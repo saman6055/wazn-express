@@ -29,6 +29,8 @@ export const packages = mysqlTable("packages", {
   billedWeightKg: decimal("billedWeightKg", { precision: 10, scale: 3 }),
   /** The office took the small sea parcel extra off this one parcel («بێ زیادە بۆ ئەم پاکەتە», 2026-11-07). */
   smallParcelWaived: boolean("smallParcelWaived"),
+  /** «نرخی ڕێککەوتوو»: the shipping agreed with the customer for this parcel; it IS the charge (shared/agreedShipping). */
+  agreedShippingUsd: decimal("agreedShippingUsd", { precision: 10, scale: 2 }),
   /**
    * Proven lost (owner, 2026-11-01). The customer deals only with us: a self
    * order is compensated its purchase price, a bought parcel falls on the

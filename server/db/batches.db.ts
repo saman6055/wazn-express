@@ -1,4 +1,5 @@
 import { smallParcelBreakdown } from "@shared/parcelCost";
+import { agreedUsd, withAgreedPrice } from "@shared/agreedShipping";
 import { smallParcelRuleOn } from "./smallParcel.db";
 import { getDb } from './connection';
 import { vanishedFix, withFix } from "@shared/fixAdvice";
@@ -1304,7 +1305,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     : Number(batchData.pricePerKg) || 0;
   const isFinalized = batchData.status === 'delivered' || batchData.status === 'closed';
 
-  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; vols?: Array<{ cbm: number; waived: boolean }> }> = {};
+  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; vols?: Array<{ cbm: number; kg: number; waived: boolean; agreed: number | null }> }> = {};
 
   for (const pkg of batchPackages) {
     if (!pkg.customerId) continue;
@@ -1328,7 +1329,9 @@ export async function getBatchFinancialSummary(batchId: number) {
     customerBreakdown[pkg.customerId].chargeableWeight += chargeableKg;
     customerBreakdown[pkg.customerId].cbm += Number(pkg.volumeCbm) || 0;
     // Each parcel's volume, for the small-parcel rule below (shared/parcelCost).
-    (customerBreakdown[pkg.customerId].vols ??= []).push({ cbm: Number(pkg.volumeCbm) || 0, waived: Boolean(pkg.smallParcelWaived) });
+    // And each parcel's own figures, for the small-parcel rule and an agreed
+    // price (shared/parcelCost, shared/agreedShipping).
+    (customerBreakdown[pkg.customerId].vols ??= []).push({ cbm: Number(pkg.volumeCbm) || 0, kg: chargeableKg, waived: Boolean(pkg.smallParcelWaived), agreed: agreedUsd(pkg.agreedShippingUsd) });
     // Stored revenue accumulator — only consulted when the batch is finalized.
     customerBreakdown[pkg.customerId].revenue += Number(pkg.calculatedCostUsd) || 0;
   }
@@ -1341,10 +1344,14 @@ export async function getBatchFinancialSummary(batchId: number) {
   let smallParcelExtraUsd = 0;
   let smallParcelCount = 0;
   let smallParcelWaivedCount = 0;
+  /** «نرخی ڕێککەوتوو» on this batch: how many, and agreed − computed in all (office only). */
+  let agreedCount = 0;
+  let agreedDifferenceUsd = 0;
+  const hasAgreed = Object.values(customerBreakdown).some((cb) => (cb.vols ?? []).some((v) => v.agreed !== null));
 
   // Pass 2 — recompute revenue from current rates for in-flight batches
-  // (and, on a finalised sea batch under the rule, read the extra only).
-  if (!isFinalized || (unit === 'cbm' && smallParcelRuleOn(batchData))) {
+  // (and, on a finalised batch, read the extra and the agreed prices only).
+  if (!isFinalized || (unit === 'cbm' && smallParcelRuleOn(batchData)) || hasAgreed) {
     // Pull customer overrides once, build a lookup map.
     const overrides = await db.select().from(batchCustomerPricing)
       .where(eq(batchCustomerPricing.batchId, batchId));
@@ -1371,17 +1378,26 @@ export async function getBatchFinancialSummary(batchId: number) {
         batchPricePerCbm: unit === 'cbm' ? batchDefaultRate : null,
       });
 
-      // A small sea parcel: each one priced under the rule by its own volume.
+      // Each parcel by itself: a small sea parcel under the rule, and an
+      // agreed price over whatever was computed.
       const ruleOn = unit === 'cbm' && smallParcelRuleOn(batchData);
       let priced = 0;
       for (const v of customerEntry.vols ?? []) {
-        const b = smallParcelBreakdown(Math.round(rate * v.cbm * 100) / 100, ruleOn ? { on: true, parcelCbm: v.cbm, waived: v.waived } : null);
-        priced += b.eligible ? b.finalUsd : rate * v.cbm;
-        if (b.eligible && !b.waived) { smallParcelExtraUsd += b.extraUsd; smallParcelCount += 1; }
-        if (b.waived) smallParcelWaivedCount += 1;
+        let computed = unit === 'cbm' ? rate * v.cbm : rate * v.kg;
+        if (unit === 'cbm') {
+          const b = smallParcelBreakdown(Math.round(rate * v.cbm * 100) / 100, ruleOn ? { on: true, parcelCbm: v.cbm, waived: v.waived } : null);
+          if (b.eligible) computed = b.finalUsd;
+          if (v.agreed === null && b.eligible && !b.waived) { smallParcelExtraUsd += b.extraUsd; smallParcelCount += 1; }
+          if (v.agreed === null && b.waived) smallParcelWaivedCount += 1;
+        }
+        if (v.agreed !== null) {
+          agreedCount += 1;
+          agreedDifferenceUsd += v.agreed - Math.round(computed * 100) / 100;
+        }
+        priced += withAgreedPrice(computed, v.agreed);
       }
-      // A finalised batch keeps its stored revenue; only the extra is read here.
-      if (!isFinalized) customerEntry.revenue = ruleOn ? priced : rate * customerTotal;
+      // A finalised batch keeps its stored revenue; only the extra and the agreed prices are read here.
+      if (!isFinalized) customerEntry.revenue = priced;
     }
   }
 
@@ -1434,6 +1450,11 @@ export async function getBatchFinancialSummary(batchId: number) {
       extraUsd: Math.round(smallParcelExtraUsd * 100) / 100,
       parcels: smallParcelCount,
       waived: smallParcelWaivedCount,
+    },
+    /** «نرخی ڕێککەوتوو»: parcels at an agreed price, and agreed − computed in all (+ profit, − loss). */
+    agreedPrice: {
+      parcels: agreedCount,
+      differenceUsd: Math.round(agreedDifferenceUsd * 100) / 100,
     },
     // While it waits, no profit and no loss is reported — not the whole
     // freight as profit (owner, 2026-10-04).

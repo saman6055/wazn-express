@@ -15,6 +15,7 @@ import { signQrData, verifyQrSignature } from "../utils/qr";
 import { phoneSchema, emailSchema, idSchema, amountSchema, packageCodeSchema, batchCodeSchema } from "./schemas";
 import { chargeableWeight, isAirShipping, DEFAULT_VOLUMETRIC_DIVISOR } from "@shared/chargeableWeight";
 import { assessVolumetric } from "@shared/volumetricAlert";
+import { withAgreedPrice } from "@shared/agreedShipping";
 import { affectsCost, cartonCountOf, cartonVolume, cartonWeightTotal, MAX_CARTONS, smallParcelPrice } from "@shared/parcelCost";
 import { repriceReport, shouldStoreNewPrice, type RepriceReport } from "@shared/parcelReprice";
 import { resolveParcelCost } from "../services/parcelPricing.service";
@@ -587,6 +588,8 @@ export const packagesRouter = router({
         billedWeightKg: z.string().max(50).optional(),
         // «بێ زیادە بۆ ئەم پاکەتە»: the small sea parcel extra taken off this parcel (2026-11-07).
         smallParcelWaived: z.boolean().optional(),
+        // «نرخی ڕێککەوتوو»: the shipping agreed with the customer; it IS the charge (shared/agreedShipping).
+        agreedShippingUsd: z.number().positive().max(100000).optional(),
         shippingType: z.enum(["air_regular", "air_irregular", "sea"]),
         description: z.string().max(1000).optional(),
         photos: z.array(z.string().max(2048)).optional(),
@@ -840,6 +843,7 @@ export const packagesRouter = router({
           volumeCbm,
           billedWeightKg,
           smallParcelWaived: input.shippingType === "sea" ? Boolean(input.smallParcelWaived) : false,
+          agreedShippingUsd: input.agreedShippingUsd ?? null,
         });
         const calculatedCostUsd = priced.costUsd;
         const appliedPricingRuleId = priced.pricingRuleId;
@@ -877,6 +881,7 @@ export const packagesRouter = router({
               cartonCount: cartons && cartons.count > 1 ? cartons.count : undefined,
               billedWeightKg: billedWeightKg ? Number(billedWeightKg).toFixed(3) : undefined,
               smallParcelWaived: input.shippingType === "sea" && input.smallParcelWaived ? true : undefined,
+              agreedShippingUsd: input.agreedShippingUsd ? input.agreedShippingUsd.toFixed(2) : undefined,
               shippingType: input.shippingType,
               description: input.description,
               photos: input.photos,
@@ -976,6 +981,18 @@ export const packagesRouter = router({
 
         if (!pkg) {
           throw new TRPCError({ code: "INTERNAL_SERVER_ERROR", message: "Failed to create package" });
+        }
+
+        // «نرخی ڕێککەوتوو» given at registration: who set it, and when.
+        if (input.agreedShippingUsd) {
+          await db.recordAgreedChange(
+            { id: pkg.id, packageCode: pkg.packageCode, trackingNumber: pkg.trackingNumber ?? null, status: String(pkg.status ?? "registered") },
+            null,
+            Math.round(input.agreedShippingUsd * 100) / 100,
+            0,
+            Number(calculatedCostUsd ?? 0) || 0,
+            { id: ctx.user.id, role: ctx.user.role, name: ctx.user.name ?? null },
+          );
         }
 
         // Persist every package↔order link in the new join table. Index 0 is
@@ -1163,6 +1180,16 @@ export const packagesRouter = router({
      * the flag, and that parcel re-priced in place on its own ledger row. A
      * receipted box refuses with the cause and the cure.
      */
+    /**
+     * «نرخی ڕێککەوتوو» set, changed or cleared on one parcel (owner-approved,
+     * 2026-11-07): re-priced in place on its own ledger row; a receipted box
+     * refuses with the cause and the cure; logged with who and when.
+     */
+    setAgreedShipping: staffProcedure
+      .input(z.object({ packageId: idSchema, agreedUsd: z.number().positive().max(100000).nullable() }))
+      .mutation(async ({ input, ctx }) => {
+        return db.setAgreedShipping(input.packageId, input.agreedUsd, { id: ctx.user.id, role: ctx.user.role, name: ctx.user.name ?? null });
+      }),
     setSmallParcelWaiver: staffProcedure
       .input(z.object({ packageId: idSchema, waived: z.boolean() }))
       .mutation(async ({ input, ctx }) => {
@@ -1183,6 +1210,8 @@ export const packagesRouter = router({
         billedWeightKg: z.string().max(50).optional(),
         /** «بێ زیادە بۆ ئەم پاکەتە» ticked at the counter. */
         smallParcelWaived: z.boolean().optional(),
+        /** «نرخی ڕێککەوتوو» typed at the counter. */
+        agreedShippingUsd: z.number().positive().max(100000).optional(),
       }))
       .query(async ({ input }) => {
         // Sea with dimensions but no typed CBM: derive it exactly as the
@@ -1208,9 +1237,13 @@ export const packagesRouter = router({
           volumeCbm,
           billedWeightKg: input.shippingType !== "sea" ? input.billedWeightKg : undefined,
           smallParcelWaived: input.smallParcelWaived ?? false,
+          agreedShippingUsd: input.agreedShippingUsd ?? null,
         });
         return {
           amountUsd: priced.amountUsd,
+          // The office's comparison: what the system itself would charge.
+          computedUsd: priced.computedUsd ?? priced.amountUsd,
+          agreedUsd: priced.agreedUsd ?? null,
           rate: priced.rate,
           unit: priced.unit,
           source: priced.source,
@@ -1776,6 +1809,8 @@ export const packagesRouter = router({
               }
             }
             
+            // «نرخی ڕێککەوتوو»: an agreed amount is the price (shared/agreedShipping).
+            chargeAmount = withAgreedPrice(chargeAmount, pkg.agreedShippingUsd);
             if (chargeAmount > 0) {
               updateData.calculatedCostUsd = chargeAmount.toFixed(2);
               // Do NOT charge here — charge happens at batch delivery only.

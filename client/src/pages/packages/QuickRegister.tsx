@@ -767,6 +767,9 @@ export default function QuickRegister() {
    */
   // «بێ زیادە بۆ ئەم پاکەتە»: this one parcel without the small-parcel extra (2026-11-07).
   const [smallWaived, setSmallWaived] = useState(false);
+  // «نرخی ڕێککەوتوو ($)»: the shipping promised to the customer; empty = the computed price.
+  const [agreedPrice, setAgreedPrice] = useState("");
+  const agreedNum = Number(agreedPrice) > 0 ? Math.round(Number(agreedPrice) * 100) / 100 : undefined;
   const estimateFacts = useMemo(() => ({
     customerId: isUnclaimed ? null : customerId,
     batchId: batchId && batchId !== "none" ? parseInt(batchId) : null,
@@ -780,7 +783,8 @@ export default function QuickRegister() {
     cartonCount: cartonsSent,
     billedWeightKg: billedKg || undefined,
     smallParcelWaived: shippingType === "sea" ? smallWaived : undefined,
-  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm, cartonsSent, billedKg, smallWaived]);
+    agreedShippingUsd: agreedNum,
+  }), [isUnclaimed, customerId, batchId, selectedWarehouse, shippingType, weightKg, lengthCm, widthCm, heightCm, directCbm, cartonsSent, billedKg, smallWaived, agreedNum]);
 
   // A keystroke in the weight field should not fire a request per digit.
   const [debouncedFacts, setDebouncedFacts] = useState(estimateFacts);
@@ -1387,6 +1391,7 @@ export default function QuickRegister() {
     setHeightCm("");
     setCartonCount("1");
     setSmallWaived(false);
+    setAgreedPrice("");
     setCategoryId("");
     setDescription("");
     setDirectCbm("");
@@ -1421,6 +1426,7 @@ export default function QuickRegister() {
     setHeightCm("");
     setCartonCount("1");
     setSmallWaived(false);
+    setAgreedPrice("");
     // Warehouse, transport and batch stay: they are the day's, not the parcel's.
     setCategoryId("");
     setDescription("");
@@ -1517,6 +1523,7 @@ export default function QuickRegister() {
       cartonCount: cartonsSent,
       billedWeightKg: billedKg && shippingType !== "sea" && volumetricWeight > (parseFloat(weightKg) || 0) ? billedKg : undefined,
       smallParcelWaived: shippingType === "sea" && smallWaived ? true : undefined,
+      agreedShippingUsd: !isUnclaimed ? agreedNum : undefined,
       shippingType,
       description: description || undefined,
       batchId: batchId && batchId !== "none" ? parseInt(batchId) : undefined,
@@ -3205,6 +3212,35 @@ export default function QuickRegister() {
                       {smallRuleMutation.isPending && <Loader2 className="ms-auto h-3.5 w-3.5 animate-spin" />}
                     </label>
                   )}
+                  {/* «نرخی ڕێککەوتوو ($)» (owner-approved, 2026-11-07): the shipping
+                      promised to the customer. Empty = the computed price. Kept here,
+                      beside the batch, so the entry rows are not disturbed. */}
+                  {!isUnclaimed && (
+                    <div className="mt-2 rounded-lg border px-2.5 py-2 text-xs" data-testid="qr-agreed-price">
+                      <label className="flex items-center gap-2">
+                        <span className="min-w-0 flex-1 font-medium">
+                          {pickLang(language, { ku: "نرخی ڕێککەوتوو ($)", en: "Agreed price ($)", ar: "السعر المتفق عليه ($)", zh: "约定价格 ($)" })}
+                          <span className="ms-1 text-[10px] font-normal text-muted-foreground">
+                            {pickLang(language, { ku: "(بەتاڵ = حیسابی سیستەم)", en: "(empty = the system's price)", ar: "(فارغ = سعر النظام)", zh: "（空 = 系统价格）" })}
+                          </span>
+                        </span>
+                        <Input
+                          type="number"
+                          inputMode="decimal"
+                          min={0}
+                          step="0.01"
+                          value={agreedPrice}
+                          onChange={(e) => setAgreedPrice(e.target.value)}
+                          className="h-8 w-24 text-center font-mono"
+                          dir="ltr"
+                          data-testid="qr-agreed-price-input"
+                        />
+                      </label>
+                      {agreedNum && estimate?.agreedUsd != null && (
+                        <AgreedVsSystem agreedUsd={estimate.agreedUsd} computedUsd={Number(estimate.computedUsd ?? 0)} language={language} />
+                      )}
+                    </div>
+                  )}
                 </CardContent>
               </Card>
 
@@ -3466,5 +3502,32 @@ export default function QuickRegister() {
         </form>
       </div>
     </DashboardLayout>
+  );
+}
+
+/**
+ * The office's comparison for an agreed price (owner-approved, 2026-11-07):
+ * «ڕێککەوتوو $10 · حیسابی سیستەم $5 · قازانج +$5» in green, or «زیان −$5» in red.
+ * Never shown to a customer.
+ */
+export function AgreedVsSystem({ agreedUsd, computedUsd, language }: { agreedUsd: number; computedUsd: number; language: string }) {
+  const diff = Math.round((agreedUsd - computedUsd) * 100) / 100;
+  const money = (n: number) => `$${Math.abs(n).toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+  const gain = diff >= 0;
+  return (
+    <p className={cn("mt-1.5 font-semibold", gain ? "text-emerald-700 dark:text-emerald-300" : "text-rose-700 dark:text-rose-300")} data-testid="agreed-vs-system">
+      {pickLang(language, { ku: "ڕێککەوتوو", en: "Agreed", ar: "متفق", zh: "约定" })}{" "}
+      <bdi dir="ltr" className="font-mono tabular-nums">{money(agreedUsd)}</bdi>
+      {" · "}
+      {pickLang(language, { ku: "حیسابی سیستەم", en: "system", ar: "النظام", zh: "系统" })}{" "}
+      <bdi dir="ltr" className="font-mono tabular-nums">{computedUsd > 0 ? money(computedUsd) : "—"}</bdi>
+      {computedUsd > 0 && (
+        <>
+          {" · "}
+          {gain ? pickLang(language, { ku: "قازانج", en: "profit", ar: "ربح", zh: "盈利" }) : pickLang(language, { ku: "زیان", en: "loss", ar: "خسارة", zh: "亏损" })}{" "}
+          <bdi dir="ltr" className="font-mono tabular-nums">{gain ? "+" : "−"}{money(diff)}</bdi>
+        </>
+      )}
+    </p>
   );
 }
