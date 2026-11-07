@@ -448,7 +448,9 @@ function DashboardLayoutContent({
           // Refused / unwanted goods live with the orders they came from (owner, 2026-10-24).
           { icon: PackageX, label: pickLang(language, { ku: "کاڵای ماوە", en: "Company stock", ar: "مخزون الشركة", zh: "公司库存" }), path: "/company-stock" },
           { icon: Building2, label: t("nav.suppliers") || "فرۆشیارەکان", path: "/suppliers" },
-          { icon: LayoutDashboard, label: t("nav.unifiedOrders") || "داشبۆردی یەکگرتوو", path: "/unified-orders" },
+          // «داشبۆردی یەکگرتوو» left the menu (owner, 2026-11-07): it showed 0s and
+          // the commission and full-package pages do its job better. The
+          // address still opens for an old bookmark.
         ]
       });
     }
