@@ -294,8 +294,10 @@ export default function CustomerFinance() {
   const payBoxesFirst = trpc.ledger.payOpenBoxesFirst.useMutation();
 
   const recordPayment = trpc.ledger.recordPayment.useMutation({
-    onSuccess: () => {
-      toast.success(t("finance.paymentRecorded"));
+    onSuccess: (res) => {
+      // The receipt number is made by the system (owner, 2026-11-08): said here, never typed.
+      const number = (res as { payment?: { paymentNumber?: string | null } | null })?.payment?.paymentNumber;
+      toast.success(number ? `${t("finance.paymentRecorded")} — ${number}` : t("finance.paymentRecorded"), { duration: 8000 });
       setPaymentDialogOpen(false);
       setPaymentAmount("");
       setPaymentAmountIqd("");
@@ -1538,15 +1540,6 @@ export default function CustomerFinance() {
                           </PopoverContent>
                         </Popover>
                         <p className="text-xs text-muted-foreground mt-1">{pickLang(language, { ku: "حسابێک هەڵبژێرە بۆ تۆمارکردنی پارەدان لە حسابەکەدا", en: "Select an account to record the payment into it", ar: "اختر حسابًا لتسجيل الدفعة فيه", zh: "选择一个账户以将付款记入其中" })}</p>
-                      </div>
-                      <div>
-                        <Label>{pickLang(language, { ku: "ژمارەی پسوڵە (ئارەزوومەندانە)", en: "Receipt number (optional)", ar: "رقم الإيصال (اختياري)", zh: "收据编号（可选）" })}</Label>
-                        <Input
-                          value={receiptNumber}
-                          onChange={(e) => setReceiptNumber(e.target.value)}
-                          placeholder="RCP-001"
-                          className="mt-1"
-                        />
                       </div>
                       <div>
                         <Label>{pickLang(language, { ku: "تێبینی (ئارەزوومەندانە)", en: "Note (optional)", ar: "ملاحظة (اختياري)", zh: "备注（可选）" })}</Label>
@@ -2952,7 +2945,7 @@ function PayForWhichBox({ customerId, enabled, language, withoutBox, onWithoutBo
   if (boxes.isLoading) return <p className="mt-4 text-sm text-muted-foreground">…</p>;
   return (
     <div className="mt-4 space-y-3" data-testid="pay-which-box">
-      {owing.length > 0 && (
+      {owing.length > 0 && !withoutBox && (
         <>
           <p className="text-sm font-semibold">{L({ ku: "بۆ کام بۆکس؟", en: "For which box?", ar: "لأي صندوق؟", zh: "为哪个箱子？" })}</p>
           <div className="space-y-2">
