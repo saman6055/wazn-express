@@ -652,6 +652,23 @@ export const ledgerRouter = router({
     }),
 
     // Record payment (cash account deposit, when provided, is done inside the same transaction — no silent failure)
+    /**
+     * An advance whose owner said «give the box its remainder first» (owner,
+     * 2026-11-08): each chosen box's share is taken through the box itself
+     * (server/db/payBoxesFirst), oldest first; what is left is returned for
+     * recordPayment to write as the advance.
+     */
+    payOpenBoxesFirst: staffProcedure
+      .input(z.object({
+        customerId: idSchema,
+        amountUsd: amountSchema,
+        paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'FIB', 'FASTPAY', 'ZAINCASH', 'ASIAHAWALA', 'CARD', 'OTHER']),
+        boxIds: z.array(idSchema).min(1).max(20),
+        notes: z.string().max(1000).optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        return db.payBoxesFirst(input, { id: ctx.user.id, role: ctx.user.role });
+      }),
     recordPayment: staffProcedure
       .input(z.object({
         customerId: idSchema,

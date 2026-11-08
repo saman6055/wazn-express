@@ -132,6 +132,12 @@ export default function CustomerFinance() {
   // profile and the box are one body). Only with no box to pay does the
   // payment go on the account, as an advance for the next box.
   const [payWithoutBox, setPayWithoutBox] = useState(false);
+  /**
+   * In the plain advance form, each box still owing is asked about (owner,
+   * 2026-11-08): «yes» takes its remainder from this payment through the box
+   * itself; «no» leaves the whole amount an advance. No answer is assumed.
+   */
+  const [boxAnswers, setBoxAnswers] = useState<Record<number, "yes" | "no">>({});
   const [paymentAmount, setPaymentAmount] = useState("");
   const [paymentAmountIqd, setPaymentAmountIqd] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
@@ -279,6 +285,14 @@ export default function CustomerFinance() {
     }
   });
 
+  const owingBoxesQuery = trpc.deliveryBox.customerBoxes.useQuery({ customerId }, { enabled: paymentDialogOpen && customerId > 0 });
+  const owingBoxes = (owingBoxesQuery.data?.boxes ?? [])
+    .filter((b) => b.status !== "cancelled" && !b.paidInFull && Number(b.owedUsd) > 0.005)
+    .sort((a, b) => a.id - b.id);
+  const askBoxes = paymentMethod !== "COMPENSATION" ? owingBoxes : [];
+  const boxesUnanswered = askBoxes.some((b) => !boxAnswers[b.id]);
+  const payBoxesFirst = trpc.ledger.payOpenBoxesFirst.useMutation();
+
   const recordPayment = trpc.ledger.recordPayment.useMutation({
     onSuccess: () => {
       toast.success(t("finance.paymentRecorded"));
@@ -289,6 +303,7 @@ export default function CustomerFinance() {
       setPaymentNotes("");
       setReceiptNumber("");
       setPaymentCashAccountId("");
+      setBoxAnswers({});
       utils.ledger.getAccountByCustomer.invalidate({ customerId });
       utils.ledger.getTransactions.invalidate();
       utils.ledger.getPayments.invalidate();
@@ -308,16 +323,53 @@ export default function CustomerFinance() {
     }
   };
   
-  const handleRecordPayment = () => {
+  const handleRecordPayment = async () => {
     if (!customer || !paymentMethod) return;
+    const amountUsd = parseFloat(paymentAmount) || 0;
+    let advanceUsd = amountUsd;
+    let splitNote = "";
+
+    // The boxes the owner said yes to take their share first, through the box.
+    const yesBoxIds = askBoxes.filter((b) => boxAnswers[b.id] === "yes").map((b) => b.id);
+    if (yesBoxIds.length > 0 && amountUsd > 0) {
+      try {
+        const res = await payBoxesFirst.mutateAsync({
+          customerId: customer.id,
+          amountUsd,
+          paymentMethod: paymentMethod as "CASH",
+          boxIds: yesBoxIds,
+          notes: paymentNotes || undefined,
+        });
+        advanceUsd = res.leftUsd;
+        splitNote = res.boxes.map((b) => `${fmtUsd(b.paidUsd)} → ${b.boxCode} (${b.settlementNumber})`).join("، ");
+        void utils.deliveryBox.invalidate();
+        utils.ledger.getAccountByCustomer.invalidate({ customerId });
+        utils.ledger.getTransactions.invalidate();
+        utils.ledger.getAccountStatement.invalidate();
+        toast.success(pickLang(language, {
+          ku: `بۆ بۆکس: ${splitNote}${advanceUsd > 0.005 ? ` · پێشەکی: ${fmtUsd(advanceUsd)}` : ""}`,
+          en: `To boxes: ${splitNote}${advanceUsd > 0.005 ? ` · advance: ${fmtUsd(advanceUsd)}` : ""}`,
+          ar: `للصناديق: ${splitNote}${advanceUsd > 0.005 ? ` · مقدمة: ${fmtUsd(advanceUsd)}` : ""}`,
+          zh: `付给箱子：${splitNote}${advanceUsd > 0.005 ? ` · 预付：${fmtUsd(advanceUsd)}` : ""}`,
+        }), { duration: 10000 });
+      } catch (e) {
+        toast.error(e instanceof Error ? e.message : String(e), { duration: 12000 });
+        return;
+      }
+      if (advanceUsd <= 0.005) {
+        setPaymentDialogOpen(false);
+        setPaymentAmount(""); setPaymentMethod(""); setPaymentNotes(""); setReceiptNumber(""); setPaymentCashAccountId(""); setBoxAnswers({});
+        return;
+      }
+    }
 
     recordPayment.mutate({
       customerId: customer.id,
       customerCode: customer.customerCode || `C${customer.id}`,
-      amountUsd: parseFloat(paymentAmount) || 0,
+      amountUsd: Math.round(advanceUsd * 100) / 100,
       amountIqd: parseFloat(paymentAmountIqd) || 0,
       paymentMethod: paymentMethod as any,
-      notes: paymentNotes || undefined,
+      notes: [paymentNotes, splitNote ? `پێشەکی دوای دانی بۆکس: ${splitNote}` : ""].filter(Boolean).join(" — ") || undefined,
       receiptNumber: receiptNumber || undefined,
       cashAccountId: paymentCashAccountId && paymentCashAccountId !== 'none' ? parseInt(paymentCashAccountId) : undefined,
     });
@@ -1404,6 +1456,42 @@ export default function CustomerFinance() {
                           </SelectContent>
                         </Select>
                       </div>
+                      {/* A box still owing: asked, never assumed (owner, 2026-11-08). */}
+                      {askBoxes.length > 0 && (
+                        <div className="space-y-2 rounded-xl border border-amber-300 bg-amber-50 p-3 text-sm text-amber-950 dark:border-amber-800 dark:bg-amber-950/30 dark:text-amber-100" data-testid="advance-open-boxes">
+                          {askBoxes.map((b) => {
+                            const owed = Number(b.owedUsd);
+                            const ans = boxAnswers[b.id];
+                            const amt = parseFloat(paymentAmount) || 0;
+                            return (
+                              <div key={b.id} className="space-y-1.5" data-testid={`advance-box-${b.id}`}>
+                                <p className="font-semibold">
+                                  📦 <bdi dir="ltr" className="font-mono">{b.boxCode}</bdi> · <bdi dir="ltr" className="font-mono tabular-nums">{fmtUsd(owed)}</bdi> {pickLang(language, { ku: "ماوە — ئەم بڕە لەم پارەیە دەربچێت؟", en: "left — take it from this payment?", ar: "متبقٍ — يُخصم من هذه الدفعة؟", zh: "剩余 — 从这笔付款中扣除？" })}
+                                </p>
+                                <div className="grid grid-cols-2 gap-2">
+                                  <Button type="button" size="sm" variant={ans === "yes" ? "default" : "outline"} className={ans === "yes" ? "bg-emerald-600 hover:bg-emerald-700" : ""}
+                                    onClick={() => setBoxAnswers((a) => ({ ...a, [b.id]: "yes" }))} data-testid={`advance-box-yes-${b.id}`}>
+                                    {pickLang(language, { ku: `بەڵێ، ${fmtUsd(Math.min(owed, amt > 0 ? amt : owed))} بدە بە بۆکسەکە`, en: `Yes, give ${fmtUsd(Math.min(owed, amt > 0 ? amt : owed))} to the box`, ar: `نعم، ${fmtUsd(Math.min(owed, amt > 0 ? amt : owed))} للصندوق`, zh: `是，${fmtUsd(Math.min(owed, amt > 0 ? amt : owed))} 付给箱子` })}
+                                  </Button>
+                                  <Button type="button" size="sm" variant={ans === "no" ? "default" : "outline"}
+                                    onClick={() => setBoxAnswers((a) => ({ ...a, [b.id]: "no" }))} data-testid={`advance-box-no-${b.id}`}>
+                                    {pickLang(language, { ku: "نا، هەمووی پێشەکی بێت", en: "No, all of it an advance", ar: "لا، كلها مقدمة", zh: "否，全部作为预付" })}
+                                  </Button>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {askBoxes.length > 1 && (
+                            <Button type="button" size="sm" variant="ghost" className="w-full underline"
+                              onClick={() => setBoxAnswers(Object.fromEntries(askBoxes.map((b) => [b.id, "yes" as const])))}>
+                              {pickLang(language, { ku: "هەمووی بدە (کۆنترین بۆکس یەکەم)", en: "Pay them all (oldest box first)", ar: "ادفعها كلها (الأقدم أولاً)", zh: "全部支付（最早的箱子优先）" })}
+                            </Button>
+                          )}
+                          <p className="text-xs opacity-80">
+                            {pickLang(language, { ku: "بەشی بۆکس لە ناو بۆکسەکە خۆیدا وەردەگیرێت و وەسڵی خۆی دەنووسرێت؛ ئەوەی دەمێنێتەوە پێشەکییە.", en: "The box's share is taken inside the box with its own receipt; what is left is the advance.", ar: "حصة الصندوق تُستلم داخله بإيصاله؛ الباقي مقدمة.", zh: "箱子部分在箱内收取并开收据；其余为预付。" })}
+                          </p>
+                        </div>
+                      )}
                       {/* Cash Account Selection */}
                       <div>
                         <Label>{pickLang(language, { ku: "حسابی بانکی / سندوق", en: "Bank account / cashbox", ar: "حساب بنكي / صندوق", zh: "银行账户 / 现金箱" })}</Label>
@@ -1473,9 +1561,9 @@ export default function CustomerFinance() {
                       <Button
                         className="w-full bg-emerald-600 hover:bg-emerald-700"
                         onClick={handleRecordPayment}
-                        disabled={recordPayment.isPending || (!paymentAmount && !paymentAmountIqd) || !paymentMethod}
+                        disabled={recordPayment.isPending || payBoxesFirst.isPending || (!paymentAmount && !paymentAmountIqd) || !paymentMethod || boxesUnanswered}
                       >
-                        {recordPayment.isPending ? pickLang(language, { ku: 'چاوەڕوان بە...', en: 'Please wait...', ar: 'يرجى الانتظار...', zh: '请稍候...' }) : pickLang(language, { ku: 'تۆمارکردن', en: 'Record', ar: 'تسجيل', zh: '登记' })}
+                        {recordPayment.isPending || payBoxesFirst.isPending ? pickLang(language, { ku: 'چاوەڕوان بە...', en: 'Please wait...', ar: 'يرجى الانتظار...', zh: '请稍候...' }) : pickLang(language, { ku: 'تۆمارکردن', en: 'Record', ar: 'تسجيل', zh: '登记' })}
                       </Button>
                     </div>
                     </PayForWhichBox>
