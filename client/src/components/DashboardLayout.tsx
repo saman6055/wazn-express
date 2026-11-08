@@ -171,7 +171,10 @@ export default function DashboardLayout({
     }
   }, [loading, user, setLocation]);
 
-  if (loading) {
+  // A customer session draws nothing of the office while it is sent to the
+  // portal: the office's first calls are what the office guard reads as a
+  // customer probing (owner, 2026-11-08). App.tsx already stops it sooner.
+  if (loading || (user && (user as any).isCustomer)) {
     return <DashboardLayoutSkeleton />;
   }
 

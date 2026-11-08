@@ -21,7 +21,10 @@ export const getLoginUrl = () => {
     // /portal/* and /customer-login both belong to the customer surface;
     // anything else routes back to /staff-login.
     const isCustomerSurface = path.startsWith("/portal") || path.startsWith("/customer-login");
-    return `${origin}${isCustomerSurface ? "/customer-login" : "/staff-login"}`;
+    // On the customers' address there is no staff door at all (owner, 2026-11-08).
+    const host = typeof window !== "undefined" ? window.location.hostname : "";
+    const officeHost = host.startsWith("admin.") || host.startsWith("staff.") || host === "localhost" || host === "127.0.0.1";
+    return `${origin}${isCustomerSurface || !officeHost ? "/customer-login" : "/staff-login"}`;
   }
   const redirectUri = `${window.location.origin}/api/oauth/callback`;
   const state = btoa(redirectUri);

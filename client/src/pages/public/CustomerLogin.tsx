@@ -28,10 +28,10 @@ const [, setLocation] = useLocation();
 
   const invalidPhoneMsg = () =>
     pickLang(language, {
-      ku: "تکایە ژمارەی مۆبایلی دروست بنووسە (نموونە: 07701234567). ئەگەر ستافیت، بەشی «چوونەژوورەوەی ستاف» بەکاربهێنە.",
-      en: "Please enter a valid mobile number (e.g. 07701234567). If you are staff, use the staff login below.",
-      ar: "يرجى إدخال رقم هاتف صحيح (مثال: 07701234567). إذا كنت من الموظفين فاستخدم دخول الموظفين أدناه.",
-      zh: "请输入有效的手机号（例如 07701234567）。如果您是员工，请使用下方的员工登录。",
+      ku: "تکایە ژمارەی مۆبایلی دروست بنووسە (نموونە: 07701234567).",
+      en: "Please enter a valid mobile number (e.g. 07701234567).",
+      ar: "يرجى إدخال رقم هاتف صحيح (مثال: 07701234567).",
+      zh: "请输入有效的手机号（例如 07701234567）。",
     });
 
   const loginMutation = trpc.auth.customerLogin.useMutation({
@@ -184,13 +184,15 @@ const [, setLocation] = useLocation();
           </span>
         </button>
 
-        {/* Staff login link */}
+        {/* No staff door here (owner, 2026-11-08): a customer followed the old
+            «چوونەژوورەوەی ستاف» link and was held for probing the office. */}
         <div className="mt-6 text-center">
-          <a 
-            href="/" 
+          <a
+            href="https://waznexpress.com/"
             className="text-sm text-slate-400 hover:text-white transition-colors"
+            data-testid="customer-login-home"
           >
-            {t("auto.text_9b64a9")} →
+            {pickLang(language, { ku: "گەڕانەوە بۆ ماڵپەڕ", en: "Back to the website", ar: "العودة إلى الموقع", zh: "返回网站" })} →
           </a>
         </div>
       </div>

@@ -12,9 +12,11 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { useCompanyInfo } from "@/hooks/useCompanyInfo";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { LanguageSwitcher } from "@/components/LanguageSwitcher";
+import { pickLang } from "@/lib/lang";
+import { CUSTOMER_LOGIN_URL } from "@/lib/customerSurface";
 
 export default function StaffLogin() {
-  const { t } = useTranslation();
+  const { t, language } = useTranslation();
   const company = useCompanyInfo();
   const [, setLocation] = useLocation();
   const [identifier, setIdentifier] = useState(""); // Can be username, email or mobile number
@@ -144,14 +146,14 @@ export default function StaffLogin() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center">
-              <a
-                href="/"
-                className="text-sm text-gray-500 dark:text-gray-400 hover:text-emerald-600 transition-colors"
-              >
-                {t("common.goHome")}
-              </a>
-            </div>
+            {/* A customer who lands here is sent on to their own door. */}
+            <a
+              href={CUSTOMER_LOGIN_URL}
+              className="mt-6 block rounded-lg border border-sky-200 bg-sky-50 px-3 py-2 text-center text-sm font-medium text-sky-800 transition-colors hover:bg-sky-100 dark:border-sky-800 dark:bg-sky-950/40 dark:text-sky-200"
+              data-testid="staff-login-customer-door"
+            >
+              {pickLang(language, { ku: "کڕیاری بەڕێز؟ ئەمە دەرگای ئۆفیسە — چوونەژوورەوەی کڕیار لێرەیە", en: "A customer? This is the office's door — customers sign in here", ar: "عميلنا العزيز؟ هذا باب المكتب — دخول العملاء من هنا", zh: "您是客户？这是办公室入口 — 客户请在此登录" })} →
+            </a>
           </CardContent>
         </Card>
 

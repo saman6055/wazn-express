@@ -13,6 +13,8 @@ import { PortalThemeProvider } from "./contexts/PortalThemeContext";
 import { LandingThemeProvider } from "./contexts/LandingThemeContext";
 import { PWAInstallPrompt, OfflineIndicator } from "./components/PWAInstallPrompt";
 import { LoadingSkeleton } from "./components/LoadingSkeleton";
+import { useAuth } from "@/_core/hooks/useAuth";
+import { isCustomerSurface, onOfficeHost } from "@/lib/customerSurface";
 import QueryErrorBoundary from "./components/QueryErrorBoundary";
 import { MutationToastHandler } from "./components/MutationToastHandler";
 import { OfflineProvider } from "./contexts/OfflineContext";
@@ -257,6 +259,18 @@ const PortalProhibitedPackages = lazy(() => import("./pages/portal/PortalProhibi
 const ProhibitedRegister = lazy(() => import("./pages/packages/ProhibitedRegister"));
 
 function Router() {
+  const [location] = useLocation();
+  const { user, loading } = useAuth();
+  // The staff door is the office's (lib/customerSurface, owner 2026-11-08):
+  // on the customers' address it is the customer sign-in.
+  if (location === "/staff-login" && !onOfficeHost()) return <Redirect to="/customer-login" replace />;
+  // A customer never stands on an office page: sent to the portal before the
+  // page draws or asks the server anything - its first calls were what the
+  // office guard read as a customer probing the office.
+  const office = !isCustomerSurface(location);
+  const isCustomer = !!user && (Boolean((user as { isCustomer?: boolean }).isCustomer) || (user as { role?: string }).role === "customer");
+  if (office && isCustomer) return <Redirect to="/portal" replace />;
+  if (office && loading) return <LoadingSkeleton />;
   return (
     <Suspense fallback={<LoadingSkeleton />}>
       <Switch>
