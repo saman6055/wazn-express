@@ -1305,7 +1305,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     : Number(batchData.pricePerKg) || 0;
   const isFinalized = batchData.status === 'delivered' || batchData.status === 'closed';
 
-  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; vols?: Array<{ cbm: number; kg: number; waived: boolean; agreed: number | null }> }> = {};
+  const customerBreakdown: Record<number, { customerId: number; packages: number; weight: number; chargeableWeight: number; cbm: number; revenue: number; vols?: Array<{ id: number; cbm: number; kg: number; waived: boolean; agreed: number | null; stored: number }> }> = {};
 
   for (const pkg of batchPackages) {
     if (!pkg.customerId) continue;
@@ -1331,7 +1331,7 @@ export async function getBatchFinancialSummary(batchId: number) {
     // Each parcel's volume, for the small-parcel rule below (shared/parcelCost).
     // And each parcel's own figures, for the small-parcel rule and an agreed
     // price (shared/parcelCost, shared/agreedShipping).
-    (customerBreakdown[pkg.customerId].vols ??= []).push({ cbm: Number(pkg.volumeCbm) || 0, kg: chargeableKg, waived: Boolean(pkg.smallParcelWaived), agreed: agreedUsd(pkg.agreedShippingUsd) });
+    (customerBreakdown[pkg.customerId].vols ??= []).push({ id: pkg.id, cbm: Number(pkg.volumeCbm) || 0, kg: chargeableKg, waived: Boolean(pkg.smallParcelWaived), agreed: agreedUsd(pkg.agreedShippingUsd), stored: Number(pkg.calculatedCostUsd) || 0 });
     // Stored revenue accumulator — only consulted when the batch is finalized.
     customerBreakdown[pkg.customerId].revenue += Number(pkg.calculatedCostUsd) || 0;
   }
@@ -1347,6 +1347,14 @@ export async function getBatchFinancialSummary(batchId: number) {
   /** «نرخی ڕێککەوتوو» on this batch: how many, and agreed − computed in all (office only). */
   let agreedCount = 0;
   let agreedDifferenceUsd = 0;
+  /**
+   * Each parcel's share of the revenue, the same figure the totals add up:
+   * the stored price on a finalised batch, the price worked out here on one
+   * in flight. The detailed report (server/db/batchReport) reads it, so its
+   * per-kind and per-customer figures add up to the cards above them.
+   */
+  const parcelRevenue: Record<number, number> = {};
+  for (const cb of Object.values(customerBreakdown)) for (const v of cb.vols ?? []) parcelRevenue[v.id] = v.stored;
   const hasAgreed = Object.values(customerBreakdown).some((cb) => (cb.vols ?? []).some((v) => v.agreed !== null));
 
   // Pass 2 — recompute revenue from current rates for in-flight batches
@@ -1394,7 +1402,9 @@ export async function getBatchFinancialSummary(batchId: number) {
           agreedCount += 1;
           agreedDifferenceUsd += v.agreed - Math.round(computed * 100) / 100;
         }
-        priced += withAgreedPrice(computed, v.agreed);
+        const final = withAgreedPrice(computed, v.agreed);
+        priced += final;
+        if (!isFinalized) parcelRevenue[v.id] = Math.round(final * 100) / 100;
       }
       // A finalised batch keeps its stored revenue; only the extra and the agreed prices are read here.
       if (!isFinalized) customerEntry.revenue = priced;
@@ -1451,6 +1461,8 @@ export async function getBatchFinancialSummary(batchId: number) {
       parcels: smallParcelCount,
       waived: smallParcelWaivedCount,
     },
+    /** Each parcel's revenue, as the totals count it (read by server/db/batchReport). */
+    parcelRevenue,
     /** «نرخی ڕێککەوتوو»: parcels at an agreed price, and agreed − computed in all (+ profit, − loss). */
     agreedPrice: {
       parcels: agreedCount,

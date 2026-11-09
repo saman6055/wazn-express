@@ -2938,6 +2938,12 @@ export const batchesRouter = router({
       .query(async ({ input }) => {
         return db.getBatchFinancialSummary(input.batchId);
       }),
+    /** The batch report in detail: per customer, per kind, per category, weights, speed, problems (read only). */
+    getReportDetail: staffProcedure
+      .input(z.object({ batchId: z.number() }))
+      .query(async ({ input }) => {
+        return db.getBatchReportDetail(input.batchId);
+      }),
     
     // Get customer packages in a batch with Full Package detection
     getCustomerPackages: staffProcedure

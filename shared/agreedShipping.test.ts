@@ -21,7 +21,7 @@ describe("agreed shipping price", () => {
     expect(read("server/db/batchCharging.db.ts")).toContain("const amount = withAgreedPrice(computed, pkg.agreedShippingUsd);");
     expect(read("server/services/parcelPricing.service.ts")).toContain("const computed = await resolveComputedParcelCost(facts);");
     expect(read("server/db/deliveryBoxes.db.ts")).toContain("freshShippingCost = withAgreedPrice(freshShippingCost,");
-    expect(read("server/db/batches.db.ts")).toContain("priced += withAgreedPrice(computed, v.agreed);");
+    expect(read("server/db/batches.db.ts")).toContain("const final = withAgreedPrice(computed, v.agreed);");
     expect(read("server/routers/packages.router.ts")).toContain("chargeAmount = withAgreedPrice(chargeAmount, pkg.agreedShippingUsd);");
   });
   it("changes only while the box is not receipted, in place, logged", () => {

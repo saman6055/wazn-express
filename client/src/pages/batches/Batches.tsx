@@ -63,6 +63,7 @@ import { useState, useEffect, useMemo, useRef } from "react";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { BatchReportDetail, BatchReportDetailLoading, useBatchReportDetail } from "@/components/batches/BatchReportDetail";
 
 const statusColors: Record<string, string> = {
   preparing: "bg-blue-100 dark:bg-blue-950/40 text-blue-800 dark:text-blue-200",
@@ -197,6 +198,9 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
   const { tiers: existingTiers, isSuccess: tiersLoaded } = useBatchPricingTiers(editingBatch?.id ?? null);
   const { customerPricing: existingCustomerPricing, isSuccess: customerPricingLoaded } = useBatchCustomerPricing(editingBatch?.id ?? null);
   const { financialSummary } = useBatchFinancialSummary(financialBatchId);
+  // The report in detail (owner, 2026-11-09): read with the summary, adds up to it.
+  const { data: reportDetail, isLoading: reportDetailLoading } = useBatchReportDetail(financialBatchId);
+  const detailByCustomer = new Map((reportDetail?.perCustomer ?? []).map((c) => [c.customerId, c]));
   const { data: customers } = trpc.customers.picker.useQuery();
   // Who can still be given a price: sorted once per list, not on every
   // keystroke inside the dialog (the whole customer list, re-sorted per render).
@@ -2368,6 +2372,15 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                   </Card>
                 </div>
                 
+                {/* The report in detail: losses first, weights, kinds, categories, pictures, more. */}
+                {reportDetailLoading ? <BatchReportDetailLoading /> : reportDetail ? (
+                  <BatchReportDetail
+                    detail={reportDetail}
+                    batchCode={batches?.find(b => b.id === financialBatchId)?.batchCode ?? String(financialBatchId)}
+                    profit={Number(financialSummary.profit) || 0}
+                    language={language}
+                  />
+                ) : null}
                 {/* Customer Breakdown */}
                 <Card>
                   <CardHeader>
@@ -2384,6 +2397,8 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                           <TableHead>{t('batches.packages')}</TableHead>
                           <TableHead>{financialSummary.shippingType === 'sea' ? t('batches.cbm') : t('batches.weight')}</TableHead>
                           <TableHead>{t('batches.revenue')}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "تێچوو", en: "Cost", ar: "التكلفة", zh: "成本" })}</TableHead>
+                          <TableHead>{pickLang(language, { ku: "قازانج / زیان", en: "Profit / loss", ar: "ربح / خسارة", zh: "盈亏" })}</TableHead>
                           <TableHead className="text-right">{t('batches.profitMargin')}</TableHead>
                           <TableHead />
                         </TableRow>
@@ -2391,9 +2406,11 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       <TableBody>
                         {financialSummary.customerBreakdown.map((cb) => {
                           const customerRevenue = cb.revenue;
-                          const avgPricePerUnit = financialSummary.shippingType === 'sea'
-                            ? (cb.cbm > 0 ? customerRevenue / cb.cbm : 0)
-                            : (cb.weight > 0 ? customerRevenue / cb.weight : 0);
+                          const d = detailByCustomer.get(cb.customerId);
+                          // Per the weight charged (chargeable), not the scale: a light, bulky
+                          // parcel read as a dear one when divided by its actual kilos.
+                          const chargedQty = financialSummary.shippingType === 'sea' ? cb.cbm : (d?.chargeableKg ?? cb.weight);
+                          const avgPricePerUnit = chargedQty > 0 ? customerRevenue / chargedQty : 0;
                           return (
                             <TableRow key={cb.customerId}>
                               <TableCell className="font-medium">{getCustomerName(cb.customerId)}</TableCell>
@@ -2405,9 +2422,17 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   ? `${cb.cbm.toFixed(4)} CBM`
                                   : `${cb.weight.toFixed(2)} kg`
                                 }
+                                {d && financialSummary.shippingType !== 'sea' && d.chargeableKg !== d.actualKg && (
+                                  <div className="text-[11px] text-muted-foreground" dir="ltr">{pickLang(language, { ku: "حیسابکراو", en: "charged", ar: "محتسب", zh: "计费" })} {d.chargeableKg.toFixed(2)} kg</div>
+                                )}
+                                {d && <div className="text-[11px] text-muted-foreground" dir="ltr">{d.sharePercent}%{!d.returning ? ` · ${pickLang(language, { ku: "نوێ", en: "new", ar: "جديد", zh: "新" })}` : ""}</div>}
                               </TableCell>
                               <TableCell className="font-medium text-green-600 dark:text-green-300">
                                 ${cb.revenue.toFixed(2)}
+                              </TableCell>
+                              <TableCell className="font-mono text-xs text-muted-foreground" dir="ltr">{d ? `$${d.cost.toFixed(2)}` : "—"}</TableCell>
+                              <TableCell className={`font-mono text-sm font-semibold ${d?.profit != null && d.profit < 0 ? "text-rose-600 dark:text-rose-300" : "text-emerald-600 dark:text-emerald-300"}`} dir="ltr" data-testid="batch-customer-profit">
+                                {d?.profit != null ? `${d.profit >= 0 ? "+" : "−"}$${Math.abs(d.profit).toFixed(2)}` : "—"}
                               </TableCell>
                               <TableCell className="text-right text-muted-foreground">
                                 ${avgPricePerUnit.toFixed(2)}/{financialSummary.shippingType === 'sea' ? 'CBM' : 'kg'}
@@ -2435,7 +2460,7 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                         })}
                         {financialSummary.customerBreakdown.length === 0 && (
                           <TableRow>
-                            <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
+                            <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                               <Package className="h-8 w-8 mx-auto mb-2 opacity-50" />
                               {t('common.noData')}
                             </TableCell>
