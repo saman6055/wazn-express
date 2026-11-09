@@ -6,6 +6,9 @@ import { packages, users, customers, ledgerTransactions, customerAccounts, payme
 import { sql, count, eq, desc, asc, gte, lte, and, sum, inArray } from 'drizzle-orm';
 import { concealsSizeAndCarriage } from '@shared/fullPackagePrivacy';
 import { drawBrandLogo, brandLogoWidth } from '../lib/brandLogo';
+import { getBatchFinancialSummary } from '../db/batches.db';
+import { getBatchReportDetail } from '../db/batchReport.db';
+import { customerCodeOnly } from '@shared/customerCode';
 
 // Ledger transaction-type buckets for the statement's "type" filter.
 // These were written out here, correctly, while the classic money page split
@@ -685,6 +688,16 @@ export async function generateCustomerPDF(data: CustomerReportData, lang: Statem
 
 // ============ BATCH PDF REPORT ============
 
+/**
+ * The printed batch report (owner, 2026-11-09: «کۆنەکە زۆر ناتەواوە»).
+ *
+ * The old paper printed «Total Weight: 0.0 kg» beside a 32.5 kg card, called
+ * the revenue «Total Cost», ran the customer's name into the code column, cut
+ * the customers at twelve and the parcels at twenty, and printed the plane emoji
+ * as «þ». It now prints the batch report's own figures - the same ones as the
+ * screen (getBatchFinancialSummary + getBatchReportDetail, which add up) -
+ * with every customer, in plain Latin text the built-in font can draw.
+ */
 interface BatchReportData {
   batch: {
     id: number;
@@ -693,104 +706,22 @@ interface BatchReportData {
     status: string;
     departureDate: Date | null;
     arrivalDate: Date | null;
-    totalWeight: number;
     carrierInfo: string | null;
   };
-  summary: {
-    totalPackages: number;
-    totalWeight: number;
-    totalCost: number;
-    customerCount: number;
-  };
-  packages: Array<{
-    trackingNumber: string;
-    customerName: string;
-    customerCode: string;
-    weightKg: number;
-    costUsd: number;
-    status: string;
-  }>;
-  customerBreakdown: Array<{
-    customerName: string;
-    customerCode: string;
-    packageCount: number;
-    totalWeight: number;
-    totalCost: number;
-  }>;
+  money: { revenue: number; cost: number; profit: number | null; margin: number | null; waitingFor: string | null };
+  detail: NonNullable<Awaited<ReturnType<typeof getBatchReportDetail>>>;
   generatedAt: Date;
 }
 
 export async function getBatchReportData(batchId: number): Promise<BatchReportData | null> {
   const db = await getDb();
   if (!db) return null;
-
-  // Get batch info
   const [batch] = await db.select().from(batches).where(eq(batches.id, batchId));
   if (!batch) return null;
-
-  // Get packages in batch
-  const batchPackages = await db.select({
-    trackingNumber: packages.trackingNumber,
-    customerId: packages.customerId,
-    weightKg: packages.weightKg,
-    costUsd: packages.calculatedCostUsd,
-    status: packages.status
-  }).from(packages).where(eq(packages.batchId, batchId));
-
-  // Get customer info for each package (from customers table)
-  const packagesWithCustomer = await Promise.all(batchPackages.map(async (pkg) => {
-    const [customer] = await db.select({
-      fullName: customers.fullName,
-      customerCode: customers.customerCode
-    }).from(customers).where(eq(customers.id, pkg.customerId || 0));
-    
-    return {
-      trackingNumber: pkg.trackingNumber || '',
-      customerName: customer?.fullName || 'Unknown',
-      customerCode: customer?.customerCode || '',
-      weightKg: Number(pkg.weightKg) || 0,
-      costUsd: Number(pkg.costUsd) || 0,
-      status: pkg.status
-    };
-  }));
-
-  // Calculate customer breakdown
-  const customerMap = new Map<number, { name: string; code: string; packages: number; weight: number; cost: number }>();
-  
-  for (const pkg of batchPackages) {
-    const customerId = pkg.customerId || 0;
-    const existing = customerMap.get(customerId);
-    if (existing) {
-      existing.packages++;
-      existing.weight += Number(pkg.weightKg) || 0;
-      existing.cost += Number(pkg.costUsd) || 0;
-    } else {
-      const [customer] = await db.select({
-        fullName: customers.fullName,
-        customerCode: customers.customerCode
-      }).from(customers).where(eq(customers.id, customerId));
-      
-      customerMap.set(customerId, {
-        name: customer?.fullName || 'Unknown',
-        code: customer?.customerCode || '',
-        packages: 1,
-        weight: Number(pkg.weightKg) || 0,
-        cost: Number(pkg.costUsd) || 0
-      });
-    }
-  }
-
-  const customerBreakdown = Array.from(customerMap.values()).map(c => ({
-    customerName: c.name,
-    customerCode: c.code,
-    packageCount: c.packages,
-    totalWeight: c.weight,
-    totalCost: c.cost
-  })).sort((a, b) => b.packageCount - a.packageCount);
-
-  const totalWeight = packagesWithCustomer.reduce((sum, p) => sum + p.weightKg, 0);
-  const totalCost = packagesWithCustomer.reduce((sum, p) => sum + p.costUsd, 0);
-
+  const summary = await getBatchFinancialSummary(batchId);
+  const detail = await getBatchReportDetail(batchId);
+  if (!summary || !detail) return null;
+  const waitingFor = (summary.waitingFor as string | null) ?? null;
   return {
     batch: {
       id: batch.id,
@@ -799,20 +730,27 @@ export async function getBatchReportData(batchId: number): Promise<BatchReportDa
       status: batch.status,
       departureDate: batch.departureDate,
       arrivalDate: batch.actualArrival,
-      totalWeight: Number(batch.totalWeight) || 0,
-      carrierInfo: batch.carrierInfo
+      carrierInfo: batch.carrierInfo,
     },
-    summary: {
-      totalPackages: packagesWithCustomer.length,
-      totalWeight,
-      totalCost,
-      customerCount: customerMap.size
+    money: {
+      revenue: Number(summary.totalRevenue) || 0,
+      cost: Number(summary.totalCost) || 0,
+      profit: waitingFor ? null : Number(summary.profit) || 0,
+      margin: waitingFor ? null : Number(summary.profitMargin) || 0,
+      waitingFor,
     },
-    packages: packagesWithCustomer,
-    customerBreakdown,
-    generatedAt: new Date()
+    detail,
+    generatedAt: new Date(),
   };
 }
+
+const KIND_LABEL: Record<string, string> = {
+  self: 'Self order', commission: 'Commission', full_package: 'Full package', purchase_request: 'Purchase request',
+};
+/** Latin only: the built-in font cannot draw Arabic script, so such a name is left to its code. */
+const latin = (v: string | null | undefined) => (v && !/[؀-ۿ]/.test(v) ? v : '');
+const usdText = (n: number) => `$${(Math.round(n * 100) / 100).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+const signedUsd = (n: number) => `${n >= 0 ? '+' : '-'}${usdText(Math.abs(n))}`;
 
 export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
   return new Promise((resolve, reject) => {
@@ -821,165 +759,174 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
         size: 'A4',
         margin: 40,
         bufferPages: true,
-        info: {
-          Title: `Wazn Express - Batch Report: ${data.batch.batchCode}`,
-          Author: 'Wazn Express System',
-          Subject: 'Batch Report',
-          CreationDate: new Date()
-        }
+        info: { Title: `Wazn Express - Batch Report: ${data.batch.batchCode}`, Author: 'Wazn Express System', Subject: 'Batch Report', CreationDate: new Date() },
       });
-      
       const chunks: Buffer[] = [];
       doc.on('data', (chunk) => chunks.push(chunk));
       doc.on('end', () => resolve(Buffer.concat(chunks)));
       doc.on('error', reject);
 
+      const d = data.detail;
+      const sea = d.unit === 'cbm';
+      const qty = (n: number) => (sea ? `${n.toFixed(3)} m3` : `${n.toFixed(2)} kg`);
+      const GOOD = '#059669', BAD = '#e11d48', INK = '#1e293b', MUTED = '#64748b';
+      const headerColor = sea ? '#0d9488' : '#2563eb';
+      let y = 0;
+      const need = (h: number) => { if (y + h > 770) { doc.addPage(); y = 40; } };
+      const section = (title: string) => {
+        need(40);
+        doc.fontSize(11).font('Helvetica-Bold').fillColor('#1e3a8a').text(title, 40, y);
+        y += 18;
+      };
+      /** A table: columns as [title, x, width, align]; rows of cell texts and optional colours. */
+      const table = (cols: Array<[string, number, number, 'left' | 'right']>, rows: Array<Array<{ t: string; c?: string; b?: boolean }>>) => {
+        const head = () => {
+          doc.rect(40, y, 515, 18).fill('#e2e8f0');
+          doc.fontSize(8).font('Helvetica-Bold').fillColor('#334155');
+          for (const [t, x, w, al] of cols) doc.text(t, x, y + 5, { width: w, align: al, lineBreak: false });
+          y += 18;
+        };
+        head();
+        rows.forEach((r, i) => {
+          if (y + 16 > 770) { doc.addPage(); y = 40; head(); }
+          doc.rect(40, y, 515, 16).fill(i % 2 === 0 ? '#ffffff' : '#f8fafc');
+          r.forEach((cell, j) => {
+            const [, x, w, al] = cols[j];
+            doc.fontSize(8).font(cell.b ? 'Helvetica-Bold' : 'Helvetica').fillColor(cell.c ?? INK)
+              .text(cell.t, x, y + 4, { width: w, align: al, lineBreak: false, ellipsis: true });
+          });
+          y += 16;
+        });
+        y += 10;
+      };
+
       // Header
-      const headerColor = data.batch.shippingType === 'sea' ? '#0d9488' : '#3b82f6';
-      doc.rect(0, 0, 595, 110).fill(headerColor);
-      
-      if (!drawBrandLogo(doc, 40, 16, { height: 26, tile: true })) {
-        doc.fontSize(22).font('Helvetica-Bold').fillColor('#ffffff')
-           .text('WAZN EXPRESS', 40, 25);
+      doc.rect(0, 0, 595, 100).fill(headerColor);
+      if (!drawBrandLogo(doc, 40, 14, { height: 26, tile: true })) {
+        doc.fontSize(20).font('Helvetica-Bold').fillColor('#ffffff').text('WAZN EXPRESS', 40, 20);
       }
-      doc.fontSize(14).font('Helvetica').fillColor('#e0e7ff')
-         .text('Batch Shipment Report', 40, 50);
-      
-      // Batch code badge
-      doc.roundedRect(40, 70, 150, 28, 4).fill('#ffffff');
-      doc.fontSize(14).font('Helvetica-Bold').fillColor(headerColor)
-         .text(data.batch.batchCode, 50, 78);
-      
-      // Shipping type badge
-      const typeLabel = data.batch.shippingType === 'sea' ? '🚢 Sea Freight' : '✈️ Air Freight';
-      doc.fontSize(10).fillColor('#ffffff')
-         .text(typeLabel, 400, 78);
-      
-      // Generated date
-      doc.fontSize(9).fillColor('#e0e7ff')
-         .text(`Generated: ${data.generatedAt.toLocaleString("en-GB")}`, 400, 92);
+      doc.fontSize(13).font('Helvetica').fillColor('#e0e7ff').text('Batch Report', 40, 48);
+      doc.roundedRect(40, 66, 200, 24, 4).fill('#ffffff');
+      doc.fontSize(12).font('Helvetica-Bold').fillColor(headerColor).text(data.batch.batchCode, 48, 72, { width: 186, lineBreak: false, ellipsis: true });
+      doc.fontSize(10).font('Helvetica-Bold').fillColor('#ffffff').text(sea ? 'Sea freight' : 'Air freight', 360, 66, { width: 195, align: 'right' });
+      doc.fontSize(8).font('Helvetica').fillColor('#e0e7ff').text(`Generated: ${data.generatedAt.toLocaleString('en-GB')}`, 360, 82, { width: 195, align: 'right' });
+      y = 114;
 
-      let y = 130;
-
-      // Batch Info Card
-      doc.roundedRect(40, y, 515, 70, 8).fillColor('#f0f9ff').fill();
-      doc.roundedRect(40, y, 515, 70, 8).strokeColor('#bae6fd').stroke();
-      
-      doc.fontSize(10).font('Helvetica').fillColor('#4a5568');
-      doc.text(`Status: ${formatStatus(data.batch.status)}`, 55, y + 15);
-      doc.text(`Carrier: ${data.batch.carrierInfo || 'Not specified'}`, 55, y + 32);
-      
-      if (data.batch.departureDate) {
-        doc.text(`Departure: ${data.batch.departureDate.toLocaleDateString("en-GB")}`, 250, y + 15);
-      }
-      if (data.batch.arrivalDate) {
-        doc.text(`Arrival: ${data.batch.arrivalDate.toLocaleDateString("en-GB")}`, 250, y + 32);
-      }
-      
-      doc.text(`Total Weight: ${data.batch.totalWeight.toFixed(1)} kg`, 420, y + 15);
-      doc.text(`Packages: ${data.summary.totalPackages}`, 420, y + 32);
-
-      y += 90;
-
-      // Summary Cards
-      const cardWidth = 120;
-      const cardGap = 12;
-      
-      drawSummaryCard(doc, 40, y, cardWidth, 'Packages', String(data.summary.totalPackages), '#3182ce');
-      drawSummaryCard(doc, 40 + cardWidth + cardGap, y, cardWidth, 'Customers', String(data.summary.customerCount), '#805ad5');
-      drawSummaryCard(doc, 40 + (cardWidth + cardGap) * 2, y, cardWidth, 'Weight', `${data.summary.totalWeight.toFixed(1)} kg`, '#dd6b20');
-      drawSummaryCard(doc, 40 + (cardWidth + cardGap) * 3, y, cardWidth, 'Total Cost', `$${data.summary.totalCost.toFixed(0)}`, '#38a169');
-
-      y += 85;
-
-      // Customer Breakdown Table
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#1a365d')
-         .text('Customer Breakdown', 40, y);
+      // Batch facts
+      doc.fontSize(9).font('Helvetica').fillColor(MUTED);
+      const facts = [
+        `Status: ${formatStatus(data.batch.status)}`,
+        data.batch.departureDate ? `Departure: ${data.batch.departureDate.toLocaleDateString('en-GB')}` : null,
+        data.batch.arrivalDate ? `Arrival: ${data.batch.arrivalDate.toLocaleDateString('en-GB')}` : null,
+        data.batch.carrierInfo ? `Carrier: ${latin(data.batch.carrierInfo) || '-'}` : null,
+      ].filter(Boolean).join('   |   ');
+      doc.text(facts, 40, y, { width: 515 });
       y += 20;
 
-      // Table header
-      doc.rect(40, y, 515, 22).fill('#edf2f7');
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#4a5568');
-      doc.text('Customer', 45, y + 6);
-      doc.text('Code', 200, y + 6);
-      doc.text('Packages', 280, y + 6);
-      doc.text('Weight', 360, y + 6);
-      doc.text('Cost', 450, y + 6);
-      y += 22;
+      // Money cards
+      const cw = 122, gap = 9;
+      const profitColor = data.money.profit === null ? MUTED : data.money.profit >= 0 ? GOOD : BAD;
+      drawSummaryCard(doc, 40, y, cw, 'Revenue', usdText(data.money.revenue), '#2563eb');
+      drawSummaryCard(doc, 40 + (cw + gap), y, cw, 'Cost', data.money.waitingFor === 'cost' ? 'not set' : usdText(data.money.cost), '#d97706');
+      drawSummaryCard(doc, 40 + (cw + gap) * 2, y, cw, 'Profit', data.money.profit === null ? 'waiting' : signedUsd(data.money.profit), profitColor);
+      drawSummaryCard(doc, 40 + (cw + gap) * 3, y, cw, 'Margin', data.money.margin === null ? '-' : `${data.money.margin.toFixed(1)}%`, profitColor);
+      y += 75;
+      drawSummaryCard(doc, 40, y, cw, 'Parcels', String(d.perCustomer.reduce((t, c) => t + c.parcels, 0)), '#475569');
+      drawSummaryCard(doc, 40 + (cw + gap), y, cw, 'Customers', `${d.customers.total}`, '#7c3aed');
+      drawSummaryCard(doc, 40 + (cw + gap) * 2, y, cw, sea ? 'CBM' : 'Chargeable', sea ? d.weights.cbm.toFixed(3) : `${d.weights.chargeableKg.toFixed(1)} kg`, '#0891b2');
+      drawSummaryCard(doc, 40 + (cw + gap) * 3, y, cw, sea ? 'Profit per m3' : 'Profit per kg', d.averages.profitPerUnit === null ? '-' : signedUsd(d.averages.profitPerUnit), d.averages.profitPerUnit !== null && d.averages.profitPerUnit < 0 ? BAD : GOOD);
+      y += 78;
 
-      // Table rows
-      doc.font('Helvetica').fontSize(8);
-      for (const customer of data.customerBreakdown.slice(0, 12)) {
-        const rowColor = data.customerBreakdown.indexOf(customer) % 2 === 0 ? '#ffffff' : '#f7fafc';
-        doc.rect(40, y, 515, 18).fill(rowColor);
-        
-        doc.fillColor('#2d3748');
-        doc.text(customer.customerName.substring(0, 25), 45, y + 5);
-        doc.text(customer.customerCode, 200, y + 5);
-        doc.text(String(customer.packageCount), 280, y + 5);
-        doc.text(`${customer.totalWeight.toFixed(1)} kg`, 360, y + 5);
-        doc.fillColor('#38a169').text(`$${customer.totalCost.toFixed(2)}`, 450, y + 5);
-        y += 18;
+      // A loss is said in red.
+      if (data.money.profit !== null && (data.money.profit < 0 || d.lossCustomers > 0)) {
+        doc.roundedRect(40, y, 515, 22, 4).fill('#ffe4e6');
+        doc.fontSize(9).font('Helvetica-Bold').fillColor(BAD).text(
+          [data.money.profit < 0 ? `This batch ran at a loss: ${signedUsd(data.money.profit)}.` : '', d.lossCustomers > 0 ? `${d.lossCustomers} customer(s) at a loss - in red below.` : ''].filter(Boolean).join('  '),
+          48, y + 7, { width: 500 });
+        y += 32;
       }
 
-      y += 25;
+      // Weights and averages
+      section('Weights and averages');
+      doc.fontSize(9).font('Helvetica').fillColor(INK);
+      const lines = sea
+        ? [`Volume: ${d.weights.cbm.toFixed(3)} m3`, `Actual weight: ${d.weights.actualKg.toFixed(1)} kg`]
+        : [`Actual: ${d.weights.actualKg.toFixed(1)} kg`, `Volumetric: ${d.weights.volumetricKg.toFixed(1)} kg`, `Chargeable: ${d.weights.chargeableKg.toFixed(1)} kg`, `Volumetric discount: ${d.weights.volumetricDiscountKg.toFixed(1)} kg`];
+      lines.push(`Per parcel: ${qty(d.averages.perParcelQty)}`, `Sell per ${sea ? 'm3' : 'kg'}: ${usdText(d.averages.sellPerUnit)}`);
+      if (d.averages.costPerUnit !== null) lines.push(`Cost per ${sea ? 'm3' : 'kg'}: ${usdText(d.averages.costPerUnit)}`);
+      lines.push(`Revenue per customer: ${usdText(d.averages.revenuePerCustomer)}`, `Customers: ${d.customers.newcomers} new, ${d.customers.returning} returning`);
+      lines.forEach((t, i) => doc.text(t, 40 + (i % 3) * 172, y + Math.floor(i / 3) * 14, { width: 168 }));
+      y += Math.ceil(lines.length / 3) * 14 + 10;
 
-      // Package List Table
-      if (y > 550) {
-        doc.addPage();
-        y = 50;
+      // By kind
+      section('By kind of goods');
+      table(
+        [['Kind', 45, 150, 'left'], ['Parcels', 200, 60, 'right'], [sea ? 'm3' : 'kg', 270, 80, 'right'], ['Revenue', 360, 90, 'right'], ['Profit', 455, 95, 'right']],
+        d.byKind.map((k) => [
+          { t: KIND_LABEL[k.kind] ?? k.kind },
+          { t: String(k.parcels) },
+          { t: sea ? k.qty.toFixed(3) : k.qty.toFixed(2) },
+          { t: usdText(k.revenue) },
+          { t: k.profit === null ? '-' : signedUsd(k.profit), c: k.profit !== null && k.profit < 0 ? BAD : GOOD, b: true },
+        ]),
+      );
+
+      // Categories
+      if (d.byCategory.length > 0) {
+        section('What the goods were');
+        table(
+          [['Category', 45, 220, 'left'], ['Parcels', 270, 80, 'right'], [sea ? 'm3' : 'kg', 360, 90, 'right'], ['Share', 455, 95, 'right']],
+          d.byCategory.map((c) => [
+            { t: c.categoryId ? (latin(c.nameEn) || latin(c.nameKu) || `#${c.categoryId}`) : 'No category' },
+            { t: String(c.parcels) },
+            { t: sea ? c.qty.toFixed(3) : c.qty.toFixed(2) },
+            { t: `${c.sharePercent}%` },
+          ]),
+        );
       }
 
-      doc.fontSize(12).font('Helvetica-Bold').fillColor('#1a365d')
-         .text('Package List', 40, y);
-      y += 20;
+      // Every customer
+      section('Customers');
+      table(
+        sea
+          ? [['Code', 45, 60, 'left'], ['Name', 108, 130, 'left'], ['Parcels', 240, 40, 'right'], ['m3', 284, 55, 'right'], ['Share', 342, 40, 'right'], ['Revenue', 385, 55, 'right'], ['Cost', 443, 52, 'right'], ['Profit', 498, 55, 'right']]
+          : [['Code', 45, 52, 'left'], ['Name', 99, 105, 'left'], ['Pcs', 206, 26, 'right'], ['Actual', 234, 46, 'right'], ['Charged', 282, 48, 'right'], ['Share', 332, 36, 'right'], ['Revenue', 370, 58, 'right'], ['Cost', 430, 58, 'right'], ['Profit', 490, 63, 'right']],
+        d.perCustomer.map((c) => {
+          const code = customerCodeOnly(c.code) || `#${c.customerId}`;
+          const profitCell = { t: c.profit === null ? '-' : signedUsd(c.profit), c: c.profit !== null && c.profit < 0 ? BAD : GOOD, b: true };
+          return sea
+            ? [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.cbm.toFixed(3) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell]
+            : [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.actualKg.toFixed(1) }, { t: c.chargeableKg.toFixed(1) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell];
+        }),
+      );
 
-      // Table header
-      doc.rect(40, y, 515, 22).fill('#edf2f7');
-      doc.fontSize(9).font('Helvetica-Bold').fillColor('#4a5568');
-      doc.text('Tracking #', 45, y + 6);
-      doc.text('Customer', 180, y + 6);
-      doc.text('Weight', 320, y + 6);
-      doc.text('Cost', 390, y + 6);
-      doc.text('Status', 470, y + 6);
-      y += 22;
-
-      // Table rows
-      doc.font('Helvetica').fontSize(8);
-      for (const pkg of data.packages.slice(0, 20)) {
-        if (y > 750) {
-          doc.addPage();
-          y = 50;
-        }
-        
-        const rowColor = data.packages.indexOf(pkg) % 2 === 0 ? '#ffffff' : '#f7fafc';
-        doc.rect(40, y, 515, 18).fill(rowColor);
-        
-        doc.fillColor('#2d3748');
-        doc.text(pkg.trackingNumber.substring(0, 18), 45, y + 5);
-        doc.text(pkg.customerName.substring(0, 20), 180, y + 5);
-        doc.text(`${pkg.weightKg.toFixed(1)} kg`, 320, y + 5);
-        doc.text(`$${pkg.costUsd.toFixed(2)}`, 390, y + 5);
-        doc.fillColor(getStatusColor(pkg.status)).text(formatStatus(pkg.status), 470, y + 5);
-        y += 18;
+      // Heaviest parcels
+      if (d.heaviest.length > 0) {
+        section('Heaviest parcels');
+        table(
+          [['Tracking', 45, 200, 'left'], ['Customer', 250, 100, 'left'], [sea ? 'm3' : 'kg', 355, 90, 'right'], ['Revenue', 450, 100, 'right']],
+          d.heaviest.map((h) => [{ t: h.trackingNumber }, { t: customerCodeOnly(h.customerCode) || '-' }, { t: sea ? h.qty.toFixed(3) : h.qty.toFixed(2) }, { t: usdText(h.revenue) }]),
+        );
       }
 
-      if (data.packages.length > 20) {
-        doc.fontSize(8).fillColor('#718096').text(`... and ${data.packages.length - 20} more packages`, 45, y + 5);
-      }
+      // Speed, problems, sources, the last batch
+      section('More');
+      doc.fontSize(9).font('Helvetica').fillColor(INK);
+      const more: string[] = [];
+      if (d.speed) more.push(`Registration to arrival: ${d.speed.avgDays} days on average, slowest ${d.speed.maxDays}.`);
+      more.push(`Unclaimed: ${d.problems.unclaimed}   Returned/cancelled: ${d.problems.returnedOrCancelled}   No price: ${d.problems.noPrice}   No weight/size: ${d.problems.noMeasure}`);
+      if (d.receiptDiscountsUsd > 0) more.push(`Discounts on box receipts: ${usdText(d.receiptDiscountsUsd)}`);
+      if (d.bySource.length > 0) more.push(`Bought on: ${d.bySource.map((s) => `${s.platform} ${s.parcels}`).join(', ')}`);
+      if (d.previous) more.push(`Last batch ${d.previous.batchCode}: ${qty(d.previous.qty)}, revenue ${usdText(d.previous.revenue)}${d.previous.profit !== null ? `, profit ${signedUsd(d.previous.profit)}` : ''}`);
+      for (const t of more) { need(16); doc.text(t, 40, y, { width: 515 }); y += 15; }
 
-      // Footer — iterate the actual buffered range (start may be non-zero)
+      // Footer
       const range = doc.bufferedPageRange();
       const pageCount = range.start + range.count;
       for (let i = range.start; i < pageCount; i++) {
         doc.switchToPage(i);
-        doc.fontSize(8).fillColor('#a0aec0')
-           .text(
-             `Page ${i + 1} of ${pageCount} | Wazn Express Batch Report | ${data.batch.batchCode}`,
-             40, 780, { align: 'center', width: 515 }
-           );
+        doc.fontSize(8).fillColor('#94a3b8').text(`Page ${i + 1} of ${pageCount} | Wazn Express | ${data.batch.batchCode}`, 40, 790, { align: 'center', width: 515, lineBreak: false });
       }
-
       doc.end();
     } catch (error) {
       reject(error);

@@ -18,3 +18,15 @@ describe("batch report detail", () => {
     expect(page).toContain("const chargedQty = financialSummary.shippingType === 'sea' ? cb.cbm : (d?.chargeableKg ?? cb.weight);");
   });
 });
+
+describe("the printed batch report", () => {
+  const pdf = read("server/services/pdfReports.ts");
+  it("prints the report's own figures, every customer, the code alone, no emoji", () => {
+    expect(pdf).toContain("const detail = await getBatchReportDetail(batchId);");
+    expect(pdf).toContain("revenue: Number(summary.totalRevenue) || 0,");
+    expect(pdf).toContain("const code = customerCodeOnly(c.code)");
+    expect(pdf).toContain("d.perCustomer.map((c) => {");
+    expect(pdf).not.toContain("✈️");
+    expect(pdf).not.toContain("data.customerBreakdown.slice(0, 12)");
+  });
+});
