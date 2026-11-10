@@ -9,6 +9,26 @@ export interface PhotoSheetItem {
   productImage: string | null;
   weightKg?: string | number | null;
   volumeCbm?: string | number | null;
+  /** One tracking of several cartons, or an order of several pieces (CountBadges). */
+  cartonCount?: string | number | null;
+  pieceCount?: string | number | null;
+}
+
+/**
+ * «ئەم تراکە 2 پارچەیە» under a photo (owner, 2026-11-10): a tracking of
+ * several cartons or several pieces says so on the sheet the customer gets,
+ * so one photo is not read as one thing. Nothing for one carton, one piece.
+ */
+export function photoCountLine(lang: ReceiptLanguage, cartons: unknown, pieces: unknown): string {
+  const c = Math.floor(Number(cartons ?? 1) || 1);
+  const p = Math.floor(Number(pieces ?? 1) || 1);
+  const parts: string[] = [];
+  if (c > 1) parts.push(lang === "ku" ? `${c} کارتۆن` : lang === "ar" ? `${c} كراتين` : `${c} cartons`);
+  if (p > 1) parts.push(lang === "ku" ? `${p} پارچە` : lang === "ar" ? `${p} قطع` : `${p} pieces`);
+  if (parts.length === 0) return "";
+  const joined = parts.join(" · ");
+  // Sorani: «…کارتۆنە» but «…پارچەیە» - a word ending in ە takes یە.
+  return lang === "ku" ? `ئەم تراکە ${joined}${joined.endsWith("ە") ? "یە" : "ە"}` : lang === "ar" ? `هذا التتبع ${joined}` : `This tracking is ${joined}`;
 }
 
 const WORDS: Record<ReceiptLanguage, { title: string; box: string; parcels: string; noPhoto: string; dir: "rtl" | "ltr" }> = {
@@ -42,7 +62,8 @@ export function buildBoxPhotoSheetHtml(
     const measure = opts.isSea
       ? (num(item.volumeCbm) > 0 ? `${num(item.volumeCbm).toFixed(3)} CBM` : "")
       : (num(item.weightKg) > 0 ? `${Number(num(item.weightKg).toFixed(2))} kg` : "");
-    return `<div class="card">${photo}<div class="tr" dir="ltr">${escapeHtml(item.trackingNumber || item.packageCode || "")}</div>${measure ? `<div class="kg" dir="ltr">${escapeHtml(measure)}</div>` : ""}</div>`;
+    const count = photoCountLine(opts.lang, item.cartonCount, item.pieceCount);
+    return `<div class="card">${photo}<div class="tr" dir="ltr">${escapeHtml(item.trackingNumber || item.packageCode || "")}</div>${measure ? `<div class="kg" dir="ltr">${escapeHtml(measure)}</div>` : ""}${count ? `<div class="cnt">${escapeHtml(count)}</div>` : ""}</div>`;
   }).join("");
   const logo = absoluteLogoUrl(opts.logoUrl);
   return `<!doctype html><html dir="${w.dir}"><head><meta charset="utf-8" />
@@ -59,6 +80,7 @@ body{margin:0;padding:22px;font-family:"Noto Sans Arabic","Segoe UI",Tahoma,Aria
 .ph.none{display:flex;align-items:center;justify-content:center;color:#999;font-size:13px}
 .tr{font-family:Consolas,"Courier New",monospace;font-size:13px;font-weight:700;padding:7px 9px 2px;text-align:center}
 .kg{font-size:13px;color:#555;padding:0 9px 8px;text-align:center}
+.cnt{margin:0 9px 9px;padding:4px 6px;border-radius:6px;background:#ede9fe;color:#5b21b6;font-size:13px;font-weight:700;text-align:center}
 </style></head><body>
 <div class="head"><div><h1>${escapeHtml(w.title)}</h1><div class="sub">${opts.customerName ? `${escapeHtml(opts.customerName)} · ` : ""}${escapeHtml(w.box)} <span dir="ltr">${escapeHtml(opts.boxCode)}</span> · ${opts.page?.parcels ?? items.length} ${escapeHtml(w.parcels)}${opts.page ? ` · <span dir="ltr">${opts.page.at}/${opts.page.of}</span>` : ""}</div></div>${logo ? `<img src="${escapeHtml(logo)}" alt="" />` : `<b>${escapeHtml(opts.companyName ?? "")}</b>`}</div>
 <div class="grid">${cards}</div>

@@ -1075,6 +1075,8 @@ export function BoxDetailPanel({ boxId, onClose, customers }: BoxDetailPanelProp
         productImage: i.productImage ?? null,
         weightKg: i.weightKg,
         volumeCbm: i.volumeCbm,
+        cartonCount: i.cartonCount,
+        pieceCount: i.pieceCount,
       })),
       { lang, boxCode: box.boxCode, customerName: customer?.fullName ?? null, isSea, logoUrl: logoUrlOnDark(logoUrl), companyName: (company as any)?.companyName ?? null },
     );
