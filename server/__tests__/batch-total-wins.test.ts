@@ -117,7 +117,10 @@ describe("every screen shows the real cost of a kilo, and how it was reached", (
       expect(page, file).toContain("<BatchCostWorkingLine working={financial.costWorking}");
       expect(page, file).not.toContain("financial.costPerCbm : financial.costPerKg");
     }
-    expect(read("server/routers/batches.router.ts")).toContain("costPerUnit: Math.round(summary.effectiveCostRate * 100) / 100,");
+    // The printed report (one since 2026-11-10): the report's own total cost
+    // over what the batch sells by - the real rate, never the typed one.
+    expect(read("server/routers/batches.router.ts")).toContain("const fullPdf = await generateBatchPDF(full);");
+    expect(read("server/db/batchReport.db.ts")).toContain("costPerUnit: totalQty > 0 && !waiting ? round2(totalCost / totalQty) : null,");
   });
 
   it("the old profit dashboard costs a batch by the same rule", () => {

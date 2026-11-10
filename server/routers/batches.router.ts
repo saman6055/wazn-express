@@ -2956,44 +2956,19 @@ export const batchesRouter = router({
     generateFinancialPDF: staffProcedure
       .input(z.object({ batchId: z.number() }))
       .mutation(async ({ input }) => {
-        const { generateBatchFinancialPDF } = await import("../services/pdf.service");
-        const batch = await db.getBatchById(input.batchId);
-        if (!batch) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
-        
-        const summary = await db.getBatchFinancialSummary(input.batchId);
-        if (!summary) throw new TRPCError({ code: "NOT_FOUND", message: "Financial summary not found" });
-        
-        const customers = await db.getAllCustomers();
-        const customerMap = new Map(customers.map(c => [c.id, c]));
-        
-        const pdfUrl = await generateBatchFinancialPDF({
-          batchCode: batch.batchCode,
-          shippingType: batch.shippingType,
-          status: batch.status,
-          departureDate: batch.departureDate ? new Date(batch.departureDate).toLocaleDateString("en-GB") : undefined,
-          arrivalDate: batch.actualArrival ? new Date(batch.actualArrival).toLocaleDateString("en-GB") : undefined,
-          actualVolume: summary.shippingType === 'sea' ? summary.actualCbm : summary.actualWeight,
-          chargedVolume: summary.shippingType === 'sea' ? summary.chargedCbm : summary.chargedWeight,
-          // The real cost per unit by the one rule (shared/batchCost): the
-          // carrier's total over what it billed, else the typed rate.
-          costPerUnit: Math.round(summary.effectiveCostRate * 100) / 100,
-          totalCost: summary.totalCost,
-          totalRevenue: summary.totalRevenue,
-          profit: summary.profit,
-          profitMargin: summary.profitMargin,
-          customerBreakdown: summary.customerBreakdown.map(cb => {
-            const customer = customerMap.get(cb.customerId);
-            return {
-              customerName: customer?.fullName || 'Unknown',
-              customerCode: customer?.customerCode || 'N/A',
-              packages: cb.packages,
-              volume: summary.shippingType === 'sea' ? cb.cbm : cb.weight,
-              revenue: cb.revenue,
-            };
-          }),
-        });
-        
-        return { url: pdfUrl };
+        /*
+         * One printed batch report (owner, 2026-11-10, with the old paper):
+         * this button printed its own thinner page - the company name drawn
+         * in a font without its letters, the name and code columns swapped,
+         * no profit or weight per customer. It now prints the full report
+         * (services/pdfReports generateBatchPDF), sent back in the answer as
+         * before: it holds cost and profit, so never a public file.
+         */
+        const { getBatchReportData, generateBatchPDF } = await import("../services/pdfReports");
+        const full = await getBatchReportData(input.batchId);
+        if (!full) throw new TRPCError({ code: "NOT_FOUND", message: "Batch not found" });
+        const fullPdf = await generateBatchPDF(full);
+        return { url: `data:application/pdf;base64,${fullPdf.toString("base64")}` };
       }),
     
     // Calculate price for a customer in a batch
