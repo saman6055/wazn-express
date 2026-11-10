@@ -1074,24 +1074,6 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                       />
                     )}
 
-                    {/* Shipping Cost */}
-                    {shippingType && (
-                      <div className="grid gap-2">
-                        <Label>{t('batches.totalShippingCost')}</Label>
-                        <div className="relative">
-                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
-                          <Input name="shippingCost" type="number" step="0.01" className="pl-7" placeholder={t('batches.totalAmountToCompany')} />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                          {pickLang(language, {
-                            ku: "هەموو ئەو پارەیەی بە کۆمپانیای گواستنەوە دەدرێت — کرێ و خزمەتگوزاریی زیادە پێکەوە. کە نووسرا، تێچووی باچ هەر ئەمەیە؛ نرخی یەکە حیساب ناکرێت. دەتوانیت دواتریش بینووسیت، کە پسووڵەکە گەیشت.",
-                            en: "Everything paid to the carrier — freight and extra services together. Once filled in it IS the batch's cost; a per-unit rate is not counted. It can be entered later, when the invoice arrives.",
-                            ar: "كل ما يُدفع لشركة الشحن — الأجرة والخدمات الإضافية معاً. متى كُتب فهو تكلفة الدفعة؛ سعر الوحدة لا يُحتسب. يمكن إدخاله لاحقاً عند وصول الفاتورة.",
-                            zh: "付给承运商的全部款项 — 运费与附加服务合计。填写后它就是该批次的成本；单价不计入。可在账单到达后再填写。",
-                          })}
-                        </p>
-                      </div>
-                    )}
                     
                     <div className="grid grid-cols-2 gap-4">
                       <div className="grid gap-2">
@@ -1196,6 +1178,23 @@ const [isCreateOpen, setIsCreateOpen] = useState(false);
                                   </div>
                                 </>
                               )}
+                              {/* The carrier's one figure for the whole shipment, in the
+                                  cost card as on the edit form (owner, 2026-11-10: «کۆی
+                                  تێچوو هەندێ جار هەیە هەندێ جار نیە»). It used to sit on the
+                                  first tab, out of sight of the cost card. */}
+                              <Label className="mt-2">{t("batches.totalShippingCost")}</Label>
+                              <div className="relative">
+                                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">$</span>
+                                <Input name="shippingCost" type="number" step="0.01" className="pl-7" placeholder={t("batches.totalAmountToCompany")} data-testid="batch-create-total-cost" />
+                              </div>
+                              <p className="text-xs text-muted-foreground">
+                                {pickLang(language, {
+                                  ku: "هەموو ئەو پارەیەی بە کۆمپانیای گواستنەوە دەدرێت — کرێ و خزمەتگوزاریی زیادە پێکەوە. کە نووسرا، تێچووی باچ هەر ئەمەیە؛ نرخی یەکە حیساب ناکرێت. دەتوانیت دواتریش بینووسیت، کە پسووڵەکە گەیشت.",
+                                  en: "Everything paid to the carrier — freight and extra services together. Once filled in it IS the batch's cost; a per-unit rate is not counted. It can be entered later, when the invoice arrives.",
+                                  ar: "كل ما يُدفع لشركة الشحن — الأجرة والخدمات الإضافية معاً. متى كُتب فهو تكلفة الدفعة؛ سعر الوحدة لا يُحتسب. يمكن إدخاله لاحقاً عند وصول الفاتورة.",
+                                  zh: "付给承运商的全部款项 — 运费与附加服务合计。填写后它就是该批次的成本；单价不计入。可在账单到达后再填写。",
+                                })}
+                              </p>
                             </div>
                           </CardContent>
                         </Card>
