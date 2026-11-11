@@ -29,8 +29,9 @@ describe("a tracking typed into the row it belongs to", () => {
   it("opens on a double-click, and says so before it is tried", () => {
     for (const list of LISTS) {
       const page = read(list);
-      expect(page, list).toContain("onDoubleClick={() => { setTypingFor(order.id); setTyped(\"\"); }}");
-      expect(page, list).toContain('ku: "دوو جار کلیک بکە بۆ زیادکردنی تراکینگ"');
+      // Opens with the order's current tracking, so a wrong one can be corrected (2026-11-11).
+      expect(page, list).toContain('setTypingFor(order.id); setTyped(current); setTypedFrom(current);');
+      expect(page, list).toContain('ku: "دوو جار کلیک بکە بۆ زیادکردن یان ڕاستکردنەوەی تراکینگ"');
     }
   });
 

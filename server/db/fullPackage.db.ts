@@ -825,6 +825,54 @@ export async function removeOrderTracking(id: number): Promise<boolean> {
   return true;
 }
 
+/**
+ * Put one tracking in place of another on an order (owner, 2026-11-11, asked
+ * three times: «تراکی هەڵە دەتەوێت ئیدیتی بکەی»).
+ *
+ * The list's tracking box used to ADD what was typed, so a wrong tracking
+ * stayed - on the order's own field, on the list, and on its parcel - next to
+ * the right one. The order of steps matters:
+ *   1. the order's own fields first (trackingNumber, trackingNumbers JSON),
+ *      so nothing on the order still claims the old number;
+ *   2. the old rows go through removeOrderTracking, which then releases the
+ *      parcel linked because of them (the link runs both ways);
+ *   3. the new number goes in through addOrderTrackings.
+ * The caller adopts the new tracking's parcel (safeBacklink), as every other
+ * tracking change does.
+ */
+export async function replaceOrderTracking(
+  fullPackageOrderId: number,
+  from: string,
+  to: string,
+): Promise<{ changed: boolean }> {
+  const db = await getDb();
+  if (!db) return { changed: false };
+  const f = from.trim();
+  const t = to.trim();
+  if (!t || f === t) return { changed: false };
+  const order = await getFullPackageOrderById(fullPackageOrderId);
+  if (!order) return { changed: false };
+
+  const json = ((order as { trackingNumbers?: string[] | null }).trackingNumbers ?? []).map((x) => (x ?? "").trim()).filter(Boolean);
+  const set: Record<string, unknown> = {};
+  if ((order.trackingNumber ?? "").trim() === f) set.trackingNumber = t;
+  if (json.includes(f)) set.trackingNumbers = Array.from(new Set(json.map((x) => (x === f ? t : x))));
+  if (Object.keys(set).length > 0) {
+    await db.update(fullPackageOrders).set(set as any).where(eq(fullPackageOrders.id, fullPackageOrderId));
+  }
+
+  if (f) {
+    const old = await db
+      .select({ id: fullPackageOrderTrackings.id })
+      .from(fullPackageOrderTrackings)
+      .where(and(eq(fullPackageOrderTrackings.fullPackageOrderId, fullPackageOrderId), eq(fullPackageOrderTrackings.trackingNumber, f)));
+    for (const row of old) await removeOrderTracking(row.id);
+  }
+
+  await addOrderTrackings(fullPackageOrderId, [t]);
+  return { changed: true };
+}
+
 /** Order IDs that have at least one row in fullPackageOrderTrackings */
 async function getOrderIdsWithMultiTracking(): Promise<number[]> {
   const db = await getDb();

@@ -164,6 +164,24 @@ export default function CommissionDashboard() {
    */
   const [typingFor, setTypingFor] = useState<number | null>(null);
   const [typed, setTyped] = useState("");
+  // The tracking the box opened with: kept so a corrected one replaces it
+  // instead of sitting beside it (owner, 2026-11-11).
+  const [typedFrom, setTypedFrom] = useState("");
+  const replaceTracking = trpc.fullPackage.replaceOrderTracking.useMutation({
+    onSuccess: () => {
+      setTypingFor(null);
+      setTyped("");
+      setTypedFrom("");
+      void refetch();
+      toast.success(pickLang(language, {
+        ku: "تراکینگ گۆڕدرا",
+        en: "Tracking changed",
+        ar: "تم تغيير التتبع",
+        zh: "已更改运单号",
+      }));
+    },
+    onError: (e) => toast.error(e.message),
+  });
   const addTracking = trpc.fullPackage.addOrderTrackings.useMutation({
     onSuccess: () => {
       setTypingFor(null);
@@ -1010,12 +1028,12 @@ export default function CommissionDashboard() {
                           ${(parseFloat(order.commissionFeeUsd || "0") * (order.quantity || 1)).toFixed(2)}
                         </TableCell>
                         <TableCell
-                          onDoubleClick={() => { setTypingFor(order.id); setTyped(""); }}
+                          onDoubleClick={() => { const current = (order.trackingNumber ?? "").trim(); setTypingFor(order.id); setTyped(current); setTypedFrom(current); }}
                           title={pickLang(language, {
-                            ku: "دوو جار کلیک بکە بۆ زیادکردنی تراکینگ",
-                            en: "Double-click to add a tracking",
-                            ar: "انقر مرتين لإضافة تتبع",
-                            zh: "双击以添加运单号",
+                            ku: "دوو جار کلیک بکە بۆ زیادکردن یان ڕاستکردنەوەی تراکینگ",
+                            en: "Double-click to add or correct a tracking",
+                            ar: "انقر مرتين لإضافة التتبع أو تصحيحه",
+                            zh: "双击以添加或更正运单号",
                           })}
                           className="cursor-text"
                         >
@@ -1024,13 +1042,16 @@ export default function CommissionDashboard() {
                               value={typed}
                               onChange={setTyped}
                               orderNumber={(order as { orderNumber?: string | null }).orderNumber}
-                              saving={addTracking.isPending}
+                              saving={addTracking.isPending || replaceTracking.isPending}
                               language={language}
-                              onCancel={() => { setTypingFor(null); setTyped(""); }}
+                              onCancel={() => { setTypingFor(null); setTyped(""); setTypedFrom(""); }}
                               onSave={() => {
                                 const one = typed.trim();
                                 if (!one) return;
-                                addTracking.mutate({ fullPackageOrderId: order.id, trackingNumbers: [one] });
+                                // Unchanged: nothing to do. Had one: it is replaced. Had none: added.
+                                if (one === typedFrom) { setTypingFor(null); return; }
+                                if (typedFrom) replaceTracking.mutate({ fullPackageOrderId: order.id, from: typedFrom, to: one });
+                                else addTracking.mutate({ fullPackageOrderId: order.id, trackingNumbers: [one] });
                               }}
                             />
                           ) : order.trackingNumber ? (

@@ -1751,6 +1751,32 @@ export const fullPackageRouter = router({
     removeOrderTracking: staffProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ input }) => db.removeOrderTracking(input.id)),
+    /**
+     * Correct a tracking from the orders list: the old number out (and its
+     * parcel released), the new one in (and its parcel adopted). See
+     * db.replaceOrderTracking.
+     */
+    replaceOrderTracking: staffProcedure
+      .input(z.object({
+        fullPackageOrderId: z.number(),
+        from: z.string().max(100),
+        to: z.string().min(1).max(100),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        const result = await db.replaceOrderTracking(input.fullPackageOrderId, input.from, input.to);
+        if (!result.changed) return { ...result, backlink: null };
+        await db.createAuditLog({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: "replace_order_tracking",
+          entityType: "full_package_order",
+          entityId: input.fullPackageOrderId,
+          oldValues: { trackingNumber: input.from.trim() || null },
+          newValues: { trackingNumber: input.to.trim() },
+        });
+        const backlink = await safeBacklink(input.fullPackageOrderId);
+        return { ...result, backlink };
+      }),
 
     /**
      * Re-run the parcel↔order link for one order, by hand.
