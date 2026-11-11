@@ -2448,18 +2448,31 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
   {
     name: "scanHistory",
     dependencies: ["users", "warehouses"],
+    // The shape drizzle/schema/admin.schema.ts reads. The old CREATE had
+    // scanResult/deviceInfo and none of fullPackageOrderId, status, customer,
+    // batch or cost, so the scan history page died on "Unknown column
+    // 'fullPackageOrderId'" (2026-11-11). Existing tables are brought up by
+    // REQUIRED_COLUMNS below.
     sql: `CREATE TABLE IF NOT EXISTS scanHistory (
       id INT AUTO_INCREMENT PRIMARY KEY,
-      trackingNumber VARCHAR(100) NOT NULL,
-      scanResult ENUM('success', 'not_found', 'already_scanned', 'error') NOT NULL,
       packageId INT,
-      scannedById INT NOT NULL,
-      warehouseId INT,
-      scanType VARCHAR(50),
+      fullPackageOrderId INT,
+      trackingNumber VARCHAR(100) NOT NULL,
+      scanType ENUM('register','receive','ship','arrive','deliver','return','other') NOT NULL,
+      status ENUM('success','error','not_found') NOT NULL DEFAULT 'success',
       errorMessage TEXT,
-      deviceInfo JSON,
-      scannedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      customerName VARCHAR(255),
+      customerId INT,
+      weightKg DECIMAL(10,3),
+      shippingType VARCHAR(50),
+      batchId INT,
+      batchCode VARCHAR(50),
+      calculatedCost DECIMAL(10,2),
+      scannedById INT NOT NULL,
+      scannedByName VARCHAR(255),
+      deviceType VARCHAR(50),
+      warehouseId INT,
+      scannedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -3706,6 +3719,36 @@ export const REQUIRED_COLUMNS: Record<string, { name: string; ddl: string }[]> =
    * the old NOT NULL columns nothing writes (requestedById,
    * requestedCustomerId) are relaxed by reconcileColumns.
    */
+  /**
+   * Every column the scan history reads and writes (drizzle scanHistory).
+   *
+   * The live table came from an older CREATE (scanResult, deviceInfo) and
+   * the page failed on `Unknown column 'fullPackageOrderId'` (2026-11-11).
+   * Added columns are NULL-able or defaulted, since rows exist; the old
+   * NOT NULL scanResult that nothing writes is relaxed by reconcileColumns.
+   * scanType is listed as it stands on old tables (VARCHAR) so it is never
+   * re-added; drizzle reads it either way.
+   */
+  scanHistory: [
+    { name: "packageId", ddl: "INT NULL" },
+    { name: "fullPackageOrderId", ddl: "INT NULL" },
+    { name: "trackingNumber", ddl: "VARCHAR(100) NULL" },
+    { name: "scanType", ddl: "VARCHAR(50) NULL" },
+    { name: "status", ddl: "ENUM('success','error','not_found') NOT NULL DEFAULT 'success'" },
+    { name: "errorMessage", ddl: "TEXT NULL" },
+    { name: "customerName", ddl: "VARCHAR(255) NULL" },
+    { name: "customerId", ddl: "INT NULL" },
+    { name: "weightKg", ddl: "DECIMAL(10,3) NULL" },
+    { name: "shippingType", ddl: "VARCHAR(50) NULL" },
+    { name: "batchId", ddl: "INT NULL" },
+    { name: "batchCode", ddl: "VARCHAR(50) NULL" },
+    { name: "calculatedCost", ddl: "DECIMAL(10,2) NULL" },
+    { name: "scannedById", ddl: "INT NULL" },
+    { name: "scannedByName", ddl: "VARCHAR(255) NULL" },
+    { name: "deviceType", ddl: "VARCHAR(50) NULL" },
+    { name: "warehouseId", ddl: "INT NULL" },
+    { name: "scannedAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+  ],
   packageClaimRequests: [
     { name: "requestNumber", ddl: "VARCHAR(50) NULL" },
     { name: "packageId", ddl: "INT NULL" },
