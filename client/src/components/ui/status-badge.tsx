@@ -38,8 +38,16 @@ interface StatusBadgeProps {
 export function StatusBadge({ status, kind, className }: StatusBadgeProps) {
   const { t } = useTranslation();
   const meta = getStatusMeta(status, kind);
+  // t() hands back the key itself when a word is missing, so «|| fallback»
+  // never fired and the list printed «status.in_china_warehouse» (owner,
+  // 2026-11-11). Order statuses live under fullPackage.status; look there
+  // too, and show the readable fallback rather than a key.
+  const word = (key: string) => {
+    const v = t(key);
+    return v && v !== key ? v : null;
+  };
   const label = meta.value
-    ? t(`status.${meta.value}`) || meta.fallbackLabel
+    ? word(`status.${meta.value}`) ?? word(`fullPackage.status.${meta.value}`) ?? meta.fallbackLabel
     : meta.fallbackLabel;
 
   return (
