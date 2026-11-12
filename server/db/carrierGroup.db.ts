@@ -187,6 +187,7 @@ export async function getCarrierGroup(batchId: number) {
 
   const [invoice] = key ? await db.select().from(carrierGroupInvoices).where(eq(carrierGroupInvoices.carrierBatchNo, key)).limit(1) : [];
   const members = await memberFacts(ids, invoice?.arrivedOn ?? null);
+  const others = await arrivedWithLoad(members.map((m) => m.batchId));
 
   const billedKg = invoice ? Number(invoice.billedKg) : null;
   const costUsd = invoice ? Number(invoice.costUsd) : null;
@@ -195,12 +196,20 @@ export async function getCarrierGroup(batchId: number) {
   // Our other batches' late cartons the carrier weighed with this load: the
   // strip has subtracted them since 2026-11-03; the verdict and the bell must
   // say the same, or the bell reads "short" where nothing is (audit 2026-11-05).
-  const others = await arrivedWithLoad(members.map((m) => m.batchId));
   const withOthersKg = r2(oursKg + others.reduce((s, o) => s + o.kg, 0));
   const allocations = (invoice?.allocations ?? null) as Record<string, number> | null;
+  // The late cartons of our other batches that came in this load share its
+  // invoice by their kilos too (owner, 2026-11-12, ANC 171 172: «بە پێی کیلۆ
+  // دابەش بکە بەسەر 087 و کارتۆنەکانی 075GZ و 078GZ کە لەم بارەدا هاتوون»).
+  // Listed first, so a member stays last and takes what rounding leaves.
+  const memberIdSet = new Set(members.map((m) => m.batchId));
+  const sharers = [
+    ...others.filter((o) => o.kg > 0 && !memberIdSet.has(o.batchId)).map((o) => ({ batchId: o.batchId, kg: o.kg })),
+    ...members.map((m) => ({ batchId: m.batchId, kg: m.kg })),
+  ];
   const shares = !invoice ? []
-    : allocations ? splitInvoiceByHand(members.map((m) => m.batchId), allocations, billedKg!, costUsd!)
-    : splitGroupInvoice(members.map((m) => ({ batchId: m.batchId, kg: m.kg })), billedKg!, costUsd!);
+    : allocations ? splitInvoiceByHand(sharers.map((x) => x.batchId), allocations, billedKg!, costUsd!)
+    : splitGroupInvoice(sharers, billedKg!, costUsd!);
   // The invoice typed on one batch before the group card was used: offered
   // here so it is never typed twice, and not counted as that batch's own load.
   const holder = invoice ? null : members.reduce<(typeof members)[number] | null>((a, m) => (Number(m.shippingCost) > Number(a?.shippingCost ?? 0) ? m : a), null);
@@ -290,6 +299,21 @@ export async function applyCarrierGroupSplit(batchId: number, user: { id: number
     if (m.hasLoads) { skipped.push({ batchCode: m.batchCode, why: "loads" }); continue; }
     await updateBatch(m.batchId, { chargedWeightKg: share.billedKg.toFixed(2), shippingCost: share.costUsd.toFixed(2) } as never, user.id);
     applied.push(m.batchCode);
+  }
+  // The late cartons of other batches: their share is one more load on their
+  // own batch, named for this group, so it is written once and updated after.
+  for (const o of g.others) {
+    const share = g.shares.find((s) => s.batchId === o.batchId);
+    if (!share || g.members.some((m) => m.batchId === o.batchId)) continue;
+    const other = await getBatchById(o.batchId);
+    if (!other) continue;
+    if (isBatchEditLocked(other.status) && !mayEditLockedBatch(user.role)) { skipped.push({ batchCode: o.batchCode, why: "locked" }); continue; }
+    const parts = await listCarrierParts(o.batchId);
+    const mineLoad = parts.find((p) => p.note === g.key);
+    const values = { billedKg: share.billedKg.toFixed(2), costUsd: share.costUsd.toFixed(2), arrivedOn: g.invoice.arrivedOn, note: g.key };
+    if (mineLoad) await updateCarrierPart(mineLoad.id, values, user.id);
+    else await addCarrierPart(o.batchId, values, user.id);
+    applied.push(o.batchCode);
   }
   await db.update(carrierGroupInvoices).set({ splitAt: new Date() }).where(eq(carrierGroupInvoices.carrierBatchNo, g.key));
   return { applied, skipped };
@@ -381,12 +405,12 @@ export async function countShortCarrierGroups(): Promise<Array<{ batchId: number
  * کیلۆ، 15 کیلۆ باچی 69، 18 کیلۆ باچی 79»). The carrier weighed them with
  * this load, so they come off what is still to come. Per batch, by kilos.
  */
-async function arrivedWithLoad(batchIds: number[]): Promise<Array<{ batchCode: string; kg: number }>> {
+async function arrivedWithLoad(batchIds: number[]): Promise<Array<{ batchId: number; batchCode: string; kg: number }>> {
   const db = await need();
   if (batchIds.length === 0) return [];
   const rows = await db
     .select({
-      id: packages.id, batchCode: batches.batchCode,
+      id: packages.id, batchId: packages.batchId, batchCode: batches.batchCode,
       weightKg: packages.weightKg, billedWeightKg: packages.billedWeightKg,
       lengthCm: packages.lengthCm, widthCm: packages.widthCm, heightCm: packages.heightCm,
     })
@@ -415,15 +439,16 @@ async function arrivedWithLoad(batchIds: number[]): Promise<Array<{ batchCode: s
   }
   const wanted = new Set(batchIds.map(Number));
   const seen = new Set<number>();
-  const byBatch = new Map<string, number>();
+  const byBatch = new Map<string, { batchId: number; kg: number }>();
   for (const p of rows) {
     if (seen.has(p.id)) continue;
     seen.add(p.id);
     const first = firstLoad.get(Number(p.id));
     if (first == null || !wanted.has(first)) continue;
-    byBatch.set(p.batchCode, (byBatch.get(p.batchCode) ?? 0) + chargeableWeight(p, divisor).chargeableKg);
+    const was = byBatch.get(p.batchCode) ?? { batchId: Number(p.batchId), kg: 0 };
+    byBatch.set(p.batchCode, { batchId: was.batchId, kg: was.kg + chargeableWeight(p, divisor).chargeableKg });
   }
-  return Array.from(byBatch.entries()).map(([batchCode, kg]) => ({ batchCode, kg: r2(kg) })).sort((a, b) => a.batchCode.localeCompare(b.batchCode));
+  return Array.from(byBatch.entries()).map(([batchCode, v]) => ({ batchId: v.batchId, batchCode, kg: r2(v.kg) })).sort((a, b) => a.batchCode.localeCompare(b.batchCode));
 }
 
 export async function getBatchKgCheck(batchId: number) {
