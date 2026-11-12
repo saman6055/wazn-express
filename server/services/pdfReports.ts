@@ -906,19 +906,21 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
         );
       }
 
-      // Every customer
+      // Every customer: freight profit, the commission on their orders that
+      // came in this batch, and the two together (owner, 2026-11-13).
       section('Customers');
       table(
         sea
-          ? [['Code', 45, 60, 'left'], ['Name', 108, 130, 'left'], ['Parcels', 240, 40, 'right'], ['m3', 284, 55, 'right'], ['Share', 342, 40, 'right'], ['Revenue', 385, 55, 'right'], ['Cost', 443, 52, 'right'], ['Profit', 498, 55, 'right']]
-          : [['Code', 45, 52, 'left'], ['Name', 99, 105, 'left'], ['Pcs', 206, 26, 'right'], ['Actual', 234, 46, 'right'], ['Charged', 282, 48, 'right'], ['Share', 332, 36, 'right'], ['Revenue', 370, 58, 'right'], ['Cost', 430, 58, 'right'], ['Profit', 490, 63, 'right']],
+          ? [['Code', 45, 52, 'left'], ['Name', 99, 95, 'left'], ['Parcels', 196, 32, 'right'], ['m3', 230, 42, 'right'], ['Share', 274, 32, 'right'], ['Revenue', 308, 48, 'right'], ['Cost', 358, 48, 'right'], ['Freight', 408, 48, 'right'], ['Comm.', 458, 45, 'right'], ['Total', 505, 48, 'right']]
+          : [['Code', 45, 48, 'left'], ['Name', 95, 78, 'left'], ['Pcs', 175, 22, 'right'], ['Actual', 199, 36, 'right'], ['Charged', 237, 38, 'right'], ['Share', 277, 30, 'right'], ['Revenue', 309, 48, 'right'], ['Cost', 359, 48, 'right'], ['Freight', 409, 48, 'right'], ['Comm.', 459, 44, 'right'], ['Total', 505, 48, 'right']],
         [
           ...d.perCustomer.map((c) => {
             const code = customerCodeOnly(c.code) || `#${c.customerId}`;
-            const profitCell = { t: c.profit === null ? '-' : signedUsd(c.profit), c: c.profit !== null && c.profit < 0 ? BAD : GOOD, b: true };
+            const money = (v: number | null, bold = false) => ({ t: v === null ? '-' : signedUsd(v), c: v !== null && v < 0 ? BAD : GOOD, b: bold });
+            const tail = [{ t: usdText(c.revenue) }, { t: usdText(c.cost) }, money(c.profit), { t: c.commissionUsd > 0.005 ? usdText(c.commissionUsd) : '-', c: GOOD }, money(c.totalProfit, true)];
             return sea
-              ? [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.cbm.toFixed(3) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell]
-              : [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.actualKg.toFixed(1) }, { t: c.chargeableKg.toFixed(1) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell];
+              ? [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.cbm.toFixed(3) }, { t: `${c.sharePercent}%` }, ...tail]
+              : [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.actualKg.toFixed(1) }, { t: c.chargeableKg.toFixed(1) }, { t: `${c.sharePercent}%` }, ...tail];
           }),
           // The sum of every column under it (owner, 2026-11-13: «لە کۆتایی
           // مەجموع بنووسێت»). Added up from the rows above, so it can never
@@ -927,14 +929,21 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
             const rows = d.perCustomer;
             const sum = (f: (c: (typeof rows)[number]) => number) => rows.reduce((s, c) => s + (f(c) || 0), 0);
             const allProfit = rows.length > 0 && rows.every((c) => c.profit !== null);
-            const profit = sum((c) => c.profit ?? 0);
-            const profitCell = { t: allProfit ? signedUsd(profit) : '-', c: allProfit && profit < 0 ? BAD : GOOD, b: true };
+            const money = (v: number) => ({ t: allProfit ? signedUsd(v) : '-', c: allProfit && v < 0 ? BAD : GOOD, b: true });
+            const commissionSum = sum((c) => c.commissionUsd);
+            const tail = [{ t: usdText(sum((c) => c.revenue)), b: true }, { t: usdText(sum((c) => c.cost)), b: true }, money(sum((c) => c.profit ?? 0)), { t: commissionSum > 0.005 ? usdText(commissionSum) : '-', c: GOOD, b: true }, money(sum((c) => c.totalProfit ?? 0))];
             return sea
-              ? [{ t: 'Total', b: true }, { t: `${rows.length} customers`, b: true }, { t: String(sum((c) => c.parcels)), b: true }, { t: sum((c) => c.cbm).toFixed(3), b: true }, { t: '100%', b: true }, { t: usdText(sum((c) => c.revenue)), b: true }, { t: usdText(sum((c) => c.cost)), b: true }, profitCell]
-              : [{ t: 'Total', b: true }, { t: `${rows.length} customers`, b: true }, { t: String(sum((c) => c.parcels)), b: true }, { t: sum((c) => c.actualKg).toFixed(1), b: true }, { t: sum((c) => c.chargeableKg).toFixed(1), b: true }, { t: '100%', b: true }, { t: usdText(sum((c) => c.revenue)), b: true }, { t: usdText(sum((c) => c.cost)), b: true }, profitCell];
+              ? [{ t: 'Total', b: true }, { t: `${rows.length} customers`, b: true }, { t: String(sum((c) => c.parcels)), b: true }, { t: sum((c) => c.cbm).toFixed(3), b: true }, { t: '100%', b: true }, ...tail]
+              : [{ t: 'Total', b: true }, { t: `${rows.length} customers`, b: true }, { t: String(sum((c) => c.parcels)), b: true }, { t: sum((c) => c.actualKg).toFixed(1), b: true }, { t: sum((c) => c.chargeableKg).toFixed(1), b: true }, { t: '100%', b: true }, ...tail];
           })(),
         ],
       );
+      need(14);
+      doc.fontSize(7).font('Helvetica').fillColor('#64748b').text(
+        'Freight = revenue - cost.   Comm. = fee x quantity on their commission orders that came in this batch.   Total = Freight + Comm.',
+        40, y - 6, { width: 515, lineBreak: false },
+      );
+      y += 12;
 
       // Heaviest parcels
       if (d.heaviest.length > 0) {

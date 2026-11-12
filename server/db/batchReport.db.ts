@@ -5,6 +5,7 @@ import {
 } from "../../drizzle/schema";
 import { getBatchFinancialSummary } from "./batches.db";
 import { getVolumetricDivisor } from "./settings.db";
+import { commissionByCustomer } from "./batchCommission.db";
 import { chargeableWeight } from "@shared/chargeableWeight";
 
 /**
@@ -99,11 +100,15 @@ export async function getBatchReportDetail(batchId: number) {
       .where(and(inArray(packages.customerId, customerIds), lt(packages.batchId, batchId)));
     for (const r of earlier) if (r.c) returning.add(r.c);
   }
+  // The commission on this customer's orders that came in this batch
+  // (owner, 2026-11-13), by the one profit rule (db/batchCommission).
+  const commission = await commissionByCustomer(batchId, live);
   const perCustomer = customerIds.map((id) => {
     const mine = parcels.filter((r) => r.p.customerId === id);
     const qty = mine.reduce((t, r) => t + r.qty, 0);
     const revenue = mine.reduce((t, r) => t + r.revenue, 0);
     const cost = costShare(qty);
+    const commissionUsd = commission.get(id)?.commissionUsd ?? 0;
     return {
       customerId: id,
       code: nameOf.get(id)?.code ?? null,
@@ -117,6 +122,11 @@ export async function getBatchReportDetail(batchId: number) {
       revenue: round2(revenue),
       cost: round2(cost),
       profit: waiting ? null : round2(revenue - cost),
+      /** Commission on their orders that came in this batch; 0 when none. */
+      commissionUsd: round2(commissionUsd),
+      commissionOrders: commission.get(id)?.orders ?? 0,
+      /** Freight profit and commission together; null while the cost is not known. */
+      totalProfit: waiting ? null : round2(revenue - cost + commissionUsd),
       returning: returning.has(id),
     };
   }).sort((a, b) => b.revenue - a.revenue);
