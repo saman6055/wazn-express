@@ -1101,9 +1101,9 @@ export default function BatchFinancialReport() {
                   })()}/{unit}
                 </span>
               </div>
-              <div className={`flex justify-between items-center p-4 rounded-xl border ${isProfitable ? 'bg-blue-50/80 border-blue-200/50' : 'bg-red-50/80 border-red-200/50'}`}>
+              <div className={`flex justify-between items-center p-4 rounded-xl border ${isProfitable ? 'bg-blue-50/80 border-blue-200/50 dark:bg-blue-950/80 dark:border-blue-800/60' : 'bg-red-50/80 border-red-200/50 dark:bg-red-950/80 dark:border-red-800/60'}`} data-testid="batch-profit-per-unit">
                 <div className="flex items-center gap-3">
-                  <div className={`p-2.5 rounded-xl ${isProfitable ? 'bg-blue-200/80' : 'bg-red-200/80'}`}>
+                  <div className={`p-2.5 rounded-xl ${isProfitable ? 'bg-blue-200/80 dark:bg-blue-900/80' : 'bg-red-200/80 dark:bg-red-900/80'}`}>
                     <Wallet className={`h-5 w-5 ${isProfitable ? 'text-blue-700 dark:text-blue-300' : 'text-red-700 dark:text-red-300'}`} />
                   </div>
                   <span className={`font-medium ${isProfitable ? 'text-blue-800 dark:text-blue-200' : 'text-red-800 dark:text-red-200'}`}>{pickLang(language, { ku: "قازانج بۆ هەر", en: "Profit per", ar: "الربح لكل", zh: "每单位利润" })} {unit}</span>
@@ -1161,7 +1161,7 @@ export default function BatchFinancialReport() {
                       .map((item, index) => (
                         <tr
                           key={item.customerId}
-                          className="border-b border-slate-100 dark:border-slate-800/60 last:border-0 hover:bg-indigo-50/60 transition-colors duration-200 cursor-pointer"
+                          className="border-b border-slate-100 dark:border-slate-800/60 last:border-0 hover:bg-indigo-50/60 dark:hover:bg-indigo-950/40 transition-colors duration-200 cursor-pointer"
                           onClick={() => {
                             setSelectedCustomer({
                               id: item.customerId,
@@ -1215,7 +1215,7 @@ export default function BatchFinancialReport() {
                             <Button
                               variant="ghost"
                               size="sm"
-                              className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 hover:bg-indigo-50"
+                              className="text-indigo-600 dark:text-indigo-300 hover:text-indigo-800 hover:bg-indigo-50 dark:hover:text-indigo-200 dark:hover:bg-indigo-950/40"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 setSelectedCustomer({
