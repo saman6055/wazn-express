@@ -912,21 +912,36 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
         sea
           ? [['Code', 45, 60, 'left'], ['Name', 108, 130, 'left'], ['Parcels', 240, 40, 'right'], ['m3', 284, 55, 'right'], ['Share', 342, 40, 'right'], ['Revenue', 385, 55, 'right'], ['Cost', 443, 52, 'right'], ['Profit', 498, 55, 'right']]
           : [['Code', 45, 52, 'left'], ['Name', 99, 105, 'left'], ['Pcs', 206, 26, 'right'], ['Actual', 234, 46, 'right'], ['Charged', 282, 48, 'right'], ['Share', 332, 36, 'right'], ['Revenue', 370, 58, 'right'], ['Cost', 430, 58, 'right'], ['Profit', 490, 63, 'right']],
-        d.perCustomer.map((c) => {
-          const code = customerCodeOnly(c.code) || `#${c.customerId}`;
-          const profitCell = { t: c.profit === null ? '-' : signedUsd(c.profit), c: c.profit !== null && c.profit < 0 ? BAD : GOOD, b: true };
-          return sea
-            ? [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.cbm.toFixed(3) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell]
-            : [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.actualKg.toFixed(1) }, { t: c.chargeableKg.toFixed(1) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell];
-        }),
+        [
+          ...d.perCustomer.map((c) => {
+            const code = customerCodeOnly(c.code) || `#${c.customerId}`;
+            const profitCell = { t: c.profit === null ? '-' : signedUsd(c.profit), c: c.profit !== null && c.profit < 0 ? BAD : GOOD, b: true };
+            return sea
+              ? [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.cbm.toFixed(3) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell]
+              : [{ t: code, b: true }, { t: latin(c.name) }, { t: String(c.parcels) }, { t: c.actualKg.toFixed(1) }, { t: c.chargeableKg.toFixed(1) }, { t: `${c.sharePercent}%` }, { t: usdText(c.revenue) }, { t: usdText(c.cost) }, profitCell];
+          }),
+          // The sum of every column under it (owner, 2026-11-13: «لە کۆتایی
+          // مەجموع بنووسێت»). Added up from the rows above, so it can never
+          // disagree with them; profit only when every row has one.
+          (() => {
+            const rows = d.perCustomer;
+            const sum = (f: (c: (typeof rows)[number]) => number) => rows.reduce((s, c) => s + (f(c) || 0), 0);
+            const allProfit = rows.length > 0 && rows.every((c) => c.profit !== null);
+            const profit = sum((c) => c.profit ?? 0);
+            const profitCell = { t: allProfit ? signedUsd(profit) : '-', c: allProfit && profit < 0 ? BAD : GOOD, b: true };
+            return sea
+              ? [{ t: 'Total', b: true }, { t: `${rows.length} customers`, b: true }, { t: String(sum((c) => c.parcels)), b: true }, { t: sum((c) => c.cbm).toFixed(3), b: true }, { t: '100%', b: true }, { t: usdText(sum((c) => c.revenue)), b: true }, { t: usdText(sum((c) => c.cost)), b: true }, profitCell]
+              : [{ t: 'Total', b: true }, { t: `${rows.length} customers`, b: true }, { t: String(sum((c) => c.parcels)), b: true }, { t: sum((c) => c.actualKg).toFixed(1), b: true }, { t: sum((c) => c.chargeableKg).toFixed(1), b: true }, { t: '100%', b: true }, { t: usdText(sum((c) => c.revenue)), b: true }, { t: usdText(sum((c) => c.cost)), b: true }, profitCell];
+          })(),
+        ],
       );
 
       // Heaviest parcels
       if (d.heaviest.length > 0) {
         section('Heaviest parcels');
         table(
-          [['Tracking', 45, 200, 'left'], ['Customer', 250, 100, 'left'], [sea ? 'm3' : 'kg', 355, 90, 'right'], ['Revenue', 450, 100, 'right']],
-          d.heaviest.map((h) => [{ t: h.trackingNumber }, { t: customerCodeOnly(h.customerCode) || '-' }, { t: sea ? h.qty.toFixed(3) : h.qty.toFixed(2) }, { t: usdText(h.revenue) }]),
+          [['Tracking', 45, 145, 'left'], ['Code', 192, 55, 'left'], ['Name', 249, 150, 'left'], [sea ? 'm3' : 'kg', 401, 70, 'right'], ['Revenue', 473, 80, 'right']],
+          d.heaviest.map((h) => [{ t: h.trackingNumber }, { t: customerCodeOnly(h.customerCode) || '-', b: true }, { t: latin((h as { customerName?: string | null }).customerName ?? '') || '-' }, { t: sea ? h.qty.toFixed(3) : h.qty.toFixed(2) }, { t: usdText(h.revenue) }]),
         );
       }
 

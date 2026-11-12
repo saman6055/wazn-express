@@ -168,6 +168,8 @@ export async function getBatchReportDetail(batchId: number) {
     packageId: r.p.id,
     trackingNumber: r.p.trackingNumber ?? r.p.packageCode,
     customerCode: r.p.customerId ? nameOf.get(r.p.customerId)?.code ?? null : null,
+    // The name beside the code (owner, 2026-11-13).
+    customerName: r.p.customerId ? nameOf.get(r.p.customerId)?.name ?? null : null,
     qty: sea ? round3(r.qty) : round2(r.qty),
     revenue: round2(r.revenue),
   }));
