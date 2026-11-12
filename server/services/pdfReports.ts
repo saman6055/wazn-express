@@ -15,6 +15,7 @@ import { customerCodeOnly } from '@shared/customerCode';
 // the same enum by hand and lost ADJUSTMENT_DEBIT. Both now read the one list
 // so the statement and the screen cannot print different totals.
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from "@shared/ledgerTypes";
+import { balancesByDate } from "@shared/paidOn";
 
 export type StatementTxFilter = 'all' | 'charges' | 'payments';
 
@@ -195,13 +196,10 @@ export async function getCustomerReportData(
     txConditions.push(gte(ledgerTransactions.createdAt, startDate));
     txConditions.push(lte(ledgerTransactions.createdAt, endDate));
   }
-  if (options?.txType === 'charges') {
-    txConditions.push(inArray(ledgerTransactions.transactionType, [...CHARGE_TX_TYPES]));
-  } else if (options?.txType === 'payments') {
-    txConditions.push(inArray(ledgerTransactions.transactionType, [...PAYMENT_TX_TYPES]));
-  }
-
-  const transactions = await db.select({
+  // Every kind is read, so the balance column is the account's whatever the
+  // filter; the filter is applied after (below).
+  const datedRows = await db.select({
+    id: ledgerTransactions.id,
     type: ledgerTransactions.transactionType,
     amount: ledgerTransactions.amountUsd,
     description: ledgerTransactions.description,
@@ -209,8 +207,31 @@ export async function getCustomerReportData(
     balanceAfter: ledgerTransactions.balanceAfterUsd,
   }).from(ledgerTransactions)
     .where(and(...txConditions))
-    .orderBy(asc(ledgerTransactions.createdAt))
+    .orderBy(asc(ledgerTransactions.createdAt), asc(ledgerTransactions.id))
     .limit(1000);
+
+  // A payment dated earlier than it was typed in (owner, 2026-11-12): the
+  // stored balances follow the order of entry, so read by date they would
+  // jump. Then the column is worked back from the balance now (shared/paidOn).
+  const [backDated] = await db.select({ n: count() }).from(ledgerTransactions)
+    .where(and(eq(ledgerTransactions.accountId, accountId), sql`${ledgerTransactions.enteredAt} IS NOT NULL`));
+  if (Number(backDated?.n ?? 0) > 0 && datedRows.length > 0) {
+    const last = datedRows[datedRows.length - 1];
+    const [newest] = await db.select({ after: ledgerTransactions.balanceAfterUsd }).from(ledgerTransactions)
+      .where(eq(ledgerTransactions.accountId, accountId)).orderBy(desc(ledgerTransactions.id)).limit(1);
+    const [later] = await db.select({
+      sum: sql<string>`COALESCE(SUM(CASE WHEN LEFT(${ledgerTransactions.transactionType}, 6) = 'DEBIT_' OR ${ledgerTransactions.transactionType} = 'ADJUSTMENT_DEBIT' THEN ${ledgerTransactions.amountUsd} ELSE -${ledgerTransactions.amountUsd} END), 0)`,
+    }).from(ledgerTransactions).where(and(
+      eq(ledgerTransactions.accountId, accountId),
+      sql`(${ledgerTransactions.createdAt} > ${last.createdAt} OR (${ledgerTransactions.createdAt} = ${last.createdAt} AND ${ledgerTransactions.id} > ${last.id}))`,
+    ));
+    const endUsd = (Number(newest?.after) || 0) - (Number(later?.sum) || 0);
+    const after = balancesByDate(datedRows.map((r) => ({ type: r.type, amountUsd: r.amount })), endUsd);
+    datedRows.forEach((r, i) => { r.balanceAfter = after[i].toFixed(2); });
+  }
+  const wanted: readonly string[] | null = options?.txType === 'charges' ? CHARGE_TX_TYPES
+    : options?.txType === 'payments' ? PAYMENT_TX_TYPES : null;
+  const transactions = wanted ? datedRows.filter((r) => wanted.includes(String(r.type))) : datedRows;
 
   return {
     customer: {

@@ -225,7 +225,7 @@ describe("and the server does not take the screen's word for it", () => {
   const db = read("server/db/boxSettlement.db.ts");
 
   it("reads the open promises and refuses a settlement that breaks one", () => {
-    const check = slice(db, "const openPledges = await getOpenPledges(input.boxId);", "const now = new Date();", "the settlement guard");
+    const check = slice(db, "const openPledges = await getOpenPledges(input.boxId);", "const now = moneyMoment() ?? new Date();", "the settlement guard");
     expect(check).toContain("pledgeBreaches(floors,");
     expect(check).toContain("throw new Error(pledgeRefusal(breaches, \"ku\"));");
   });

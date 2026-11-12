@@ -19,6 +19,7 @@ import { batches } from "../../drizzle/schema/batches.schema";
 import type { BoxSettlement } from "../../drizzle/schema/finance.schema";
 import { appLogger } from "../utils/logger";
 import { clearExtraCostsSettlement, extraCostsForBoxes, markExtraCostsSettled, unpaidExtraCostsByBox, type ExtraCostRow } from "./extraCosts.db";
+import { moneyMoment } from "../../drizzle/moneyClock";
 import { recordPaymentReceived, adjustCharge, recordPackageChargeWithoutInvoice } from "./finance.db";
 import { createCustomerNotification } from "./portal.db";
 import { markLinkedOrdersCharged } from "./packages.db";
@@ -1690,7 +1691,8 @@ export async function createBoxSettlement(
     ));
   }
 
-  const now = new Date();
+  // Dated the day it was paid when entered later (drizzle/moneyClock).
+  const now = moneyMoment() ?? new Date();
 
   return await db.transaction(async (tx) => {
     /*

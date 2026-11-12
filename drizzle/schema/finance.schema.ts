@@ -1,4 +1,6 @@
 import { int, mysqlEnum, mysqlTable, text, timestamp, varchar, decimal, boolean, json, bigint, index } from "drizzle-orm/mysql-core";
+import { sql } from "drizzle-orm";
+import { moneyMoment } from "../moneyClock";
 
 export const exchangeRates = mysqlTable("exchangeRates", {
   id: int("id").autoincrement().primaryKey(),
@@ -137,7 +139,9 @@ export const ledgerTransactions = mysqlTable("ledgerTransactions", {
   createdById: int("createdById").notNull(),
   approvedById: int("approvedById"), // For large transactions
   
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull().$defaultFn(() => moneyMoment() ?? sql`default`),
+  /** The moment it was typed in, when that is later than its date (drizzle/moneyClock). Empty = entered when dated. */
+  enteredAt: timestamp("enteredAt").$defaultFn(() => (moneyMoment() ? new Date() : sql`NULL`)),
 }, (table) => ({
   accountIdIdx: index("idx_ledger_account_id").on(table.accountId),
   createdAtIdx: index("idx_ledger_created_at").on(table.createdAt),
@@ -203,7 +207,9 @@ export const paymentRecords = mysqlTable("paymentRecords", {
   cancelledById: int("cancelledById"),
   cancelReason: text("cancelReason"),
   
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull().$defaultFn(() => moneyMoment() ?? sql`default`),
+  /** The moment it was typed in, when that is later than its date (drizzle/moneyClock). Empty = entered when dated. */
+  enteredAt: timestamp("enteredAt").$defaultFn(() => (moneyMoment() ? new Date() : sql`NULL`)),
   confirmedAt: timestamp("confirmedAt"),
   cancelledAt: timestamp("cancelledAt"),
 }, (table) => ({
@@ -843,7 +849,9 @@ export const boxSettlements = mysqlTable("boxSettlements", {
 
   notes: text("notes"),
   createdById: int("createdById").notNull(),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull().$defaultFn(() => moneyMoment() ?? sql`default`),
+  /** The moment it was typed in, when that is later than its date (drizzle/moneyClock). Empty = entered when dated. */
+  enteredAt: timestamp("enteredAt").$defaultFn(() => (moneyMoment() ? new Date() : sql`NULL`)),
 }, (table) => ({
   boxIdIdx: index("idx_box_settlements_box").on(table.boxId),
   customerIdIdx: index("idx_box_settlements_customer").on(table.customerId),
@@ -927,7 +935,7 @@ export const boxSettlementLines = mysqlTable("boxSettlementLines", {
   isHeld: boolean("isHeld").default(false).notNull(),
   heldReason: text("heldReason"),
 
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull().$defaultFn(() => moneyMoment() ?? sql`default`),
 }, (table) => ({
   settlementIdIdx: index("idx_box_settlement_lines_settlement").on(table.settlementId),
   boxItemIdIdx: index("idx_box_settlement_lines_box_item").on(table.boxItemId),

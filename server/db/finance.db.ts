@@ -80,6 +80,7 @@ import {
 } from "../../drizzle/schema";
 import { boxSettlements } from "../../drizzle/schema";
 import { CHARGE_TX_TYPES, PAYMENT_TX_TYPES } from "@shared/ledgerTypes";
+import { moneyMoment } from "../../drizzle/moneyClock";
 import { buildAccountStatement, balanceDriftUsd, type AccountStatement } from "@shared/accountStatement";
 import { CHARGE_RESTATED_ACTION } from "@shared/moneyFeed";
 
@@ -343,7 +344,7 @@ const LEDGER_DEFAULT_LIMIT = 50;
 export async function getAccountLedgerTransactions(
   accountId: number,
   options: { limit?: number; cursor?: number } = {}
-): Promise<{ data: LedgerTransaction[]; nextCursor: number | null }> {
+): Promise<{ data: (LedgerTransaction & { enteredByName: string | null })[]; nextCursor: number | null }> {
   const db = await getDb();
   if (!db) return { data: [], nextCursor: null };
   const limit = Math.min(100, options.limit ?? LEDGER_DEFAULT_LIMIT);
@@ -367,6 +368,9 @@ export async function getAccountLedgerTransactions(
     description: ledgerTransactions.description,
     invoiceId: ledgerTransactions.invoiceId,
     createdAt: ledgerTransactions.createdAt,
+    // Paid on one day, typed in on another: both shown (owner, 2026-11-12).
+    enteredAt: ledgerTransactions.enteredAt,
+    enteredByName: sql<string | null>`(SELECT COALESCE(u.name, u.username) FROM users u WHERE u.id = ledgerTransactions.createdById)`,
   })
     .from(ledgerTransactions)
     .where(and(...conditions))
@@ -377,7 +381,7 @@ export async function getAccountLedgerTransactions(
   const hasMore = data.length > limit;
   const items = hasMore ? data.slice(0, limit) : data;
   const nextCursor = hasMore && items.length > 0 ? items[items.length - 1].id : null;
-  return { data: items as LedgerTransaction[], nextCursor };
+  return { data: items as unknown as (LedgerTransaction & { enteredByName: string | null })[], nextCursor };
 }
 
 // Create payment record
@@ -401,15 +405,22 @@ export async function getPaymentRecordById(id: number): Promise<PaymentRecord | 
 }
 
 // Get payment records for account
-export async function getAccountPaymentRecords(accountId: number, limit = 50): Promise<PaymentRecord[]> {
+export async function getAccountPaymentRecords(accountId: number, limit = 50): Promise<(PaymentRecord & { enteredByName: string | null })[]> {
   const db = await getDb();
   if (!db) return [];
   
-  return await db.select()
+  const rows = await db.select()
     .from(paymentRecords)
     .where(eq(paymentRecords.accountId, accountId))
-    .orderBy(desc(paymentRecords.createdAt))
+    .orderBy(desc(paymentRecords.createdAt), desc(paymentRecords.id))
     .limit(limit);
+  // Who typed it in, for «پارەدان: 08/11 · تۆمارکرا: 12/11 · ناو» (owner, 2026-11-12).
+  const ids = Array.from(new Set(rows.map((r) => r.receivedById)));
+  const staff = ids.length > 0
+    ? await db.select({ id: users.id, name: users.name, username: users.username }).from(users).where(inArray(users.id, ids))
+    : [];
+  const nameOf = new Map(staff.map((u) => [u.id, String(u.name ?? u.username ?? "")]));
+  return rows.map((r) => ({ ...r, enteredByName: nameOf.get(r.receivedById) || null }));
 }
 
 // Get recent payment records across all accounts (for accountant dashboard)
@@ -1049,7 +1060,8 @@ export async function recordPaymentReceived(
         relatedEntityType: 'customer',
         relatedEntityId: customerId,
         description: cashDescription ?? `پارەدانی کڕیار: ${customerCode}${notes ? ' - ' + notes : ''}`,
-        transactionDate: new Date(),
+        // The day it was paid, when entered later (drizzle/moneyClock).
+        transactionDate: moneyMoment() ?? new Date(),
         referenceNumber: receiptNumber,
         createdById: receivedById,
       });
@@ -4457,4 +4469,31 @@ export async function findCustomerByTypedCode(code: string): Promise<{ id: numbe
   const rows = await db.select({ id: customers.id, customerCode: customers.customerCode, fullName: customers.fullName })
     .from(customers).where(sql`${customers.customerCode} = ${c} OR ${customers.customerCode} LIKE ${c + "(%"}`).limit(3);
   return rows.map((r) => ({ id: Number(r.id), customerCode: r.customerCode ?? null, fullName: r.fullName ?? null }));
+}
+
+/**
+ * Whether the books are shut on the day a late payment is dated: a financial
+ * period closed or locked over it, or that day's summary finalized. A payment
+ * dated into shut books is refused - never written into them, never reopening
+ * them (owner, 2026-11-12).
+ */
+export async function booksShutOn(paidAt: Date): Promise<{ period: string | null; dayFinalized: boolean }> {
+  const db = await getDb();
+  if (!db) return { period: null, dayFinalized: false };
+  const [period] = await db
+    .select({ year: financialPeriods.year, month: financialPeriods.month })
+    .from(financialPeriods)
+    .where(and(
+      inArray(financialPeriods.status, ["closed", "locked"]),
+      lte(financialPeriods.startDate, paidAt),
+      gte(financialPeriods.endDate, paidAt),
+    ))
+    .limit(1);
+  const day = new Date(paidAt.getTime() + 3 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  const [summary] = await db
+    .select({ id: dailyFinancialSummary.id })
+    .from(dailyFinancialSummary)
+    .where(and(eq(dailyFinancialSummary.isFinalized, true), sql`DATE(${dailyFinancialSummary.summaryDate}) = ${day}`))
+    .limit(1);
+  return { period: period ? (period.month ? `${period.year}/${String(period.month).padStart(2, "0")}` : String(period.year)) : null, dayFinalized: !!summary };
 }

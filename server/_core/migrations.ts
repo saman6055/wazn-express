@@ -1352,6 +1352,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       whatsappSentById INT NULL,
       createdById INT NOT NULL,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      enteredAt TIMESTAMP NULL,
       INDEX idx_box_settlements_box (boxId),
       INDEX idx_box_settlements_customer (customerId),
       INDEX idx_box_settlements_created (createdAt)
@@ -2248,6 +2249,7 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       createdById INT NOT NULL,
       approvedById INT,
       createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      enteredAt TIMESTAMP NULL,
       INDEX idx_ledger_account_id (accountId),
       INDEX idx_ledger_created_at (createdAt),
       INDEX idx_ledger_transaction_type (transactionType),
@@ -2286,7 +2288,8 @@ export const TABLE_DEFINITIONS: { name: string; sql: string; dependencies: strin
       receivedAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
       confirmedAt TIMESTAMP,
       cancelledAt TIMESTAMP,
-      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+      createdAt TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+      enteredAt TIMESTAMP NULL
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci`
   },
 
@@ -3556,6 +3559,11 @@ export const SCHEMA_PATCHES: { name: string; sql: string }[] = [
   { name: "idx.delivery_boxes_status_updated", sql: "CREATE INDEX idx_delivery_boxes_status_updated ON deliveryBoxes (status, updatedAt)" },
   { name: "idx.customer_accounts_balance", sql: "CREATE INDEX idx_customer_accounts_balance ON customerAccounts (currentBalanceUsd)" },
   { name: "idx.box_settlements_box_status", sql: "CREATE INDEX idx_box_settlements_box_status ON boxSettlements (boxId, status)" },
+  // Paid on one day, entered on another (owner, 2026-11-12): the date is the
+  // day paid (createdAt), the moment it was typed in is kept beside it.
+  { name: "ledgerTransactions.enteredAt", sql: "ALTER TABLE ledgerTransactions ADD COLUMN enteredAt TIMESTAMP NULL" },
+  { name: "paymentRecords.enteredAt", sql: "ALTER TABLE paymentRecords ADD COLUMN enteredAt TIMESTAMP NULL" },
+  { name: "boxSettlements.enteredAt", sql: "ALTER TABLE boxSettlements ADD COLUMN enteredAt TIMESTAMP NULL" },
 ];
 
 /**
@@ -3659,6 +3667,7 @@ export const REQUIRED_COLUMNS: Record<string, { name: string; ddl: string }[]> =
     { name: "createdById", ddl: "INT NULL" },
     { name: "approvedById", ddl: "INT NULL" },
     { name: "createdAt", ddl: "TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP" },
+    { name: "enteredAt", ddl: "TIMESTAMP NULL" },
   ],
 
   customerAccounts: [

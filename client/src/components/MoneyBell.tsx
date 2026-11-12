@@ -12,6 +12,7 @@ import {
   MONEY_KIND_LABEL, moneyLineHref, unseenCredit, unseenMovements, unseenRestated, type MoneyKind,
 } from "@shared/moneyFeed";
 import { customerCodeOnly } from "@shared/customerCode";
+import { enteredLater, shortDay } from "@shared/paidOn";
 
 /**
  * The customer's first name beside the code (owner, 2026-10-21: «لە پاڵ کۆد
@@ -384,6 +385,14 @@ export function MoneyBellSection({
                       <span className="mt-0.5 block text-[11px] text-muted-foreground">
                         {line.byName} · <bdi dir="ltr">{fmtDateTime(new Date(line.at))}</bdi>
                       </span>
+                      {/* Paid on one day, typed in on another (owner, 2026-11-12). */}
+                      {enteredLater(line.at, line.enteredAt) && (
+                        <span className="mt-0.5 block text-[11px] font-medium text-amber-700 dark:text-amber-300">
+                          {L({ ku: "بەرواری پارەدان", en: "dated", ar: "بتاريخ", zh: "日期" })} <bdi dir="ltr">{shortDay(line.at)}</bdi>
+                          {" · "}
+                          {L({ ku: "تۆمارکرا", en: "entered", ar: "أُدخل", zh: "录入" })} <bdi dir="ltr">{shortDay(line.enteredAt!)}</bdi>
+                        </span>
+                      )}
                     </span>
                     {isNew && <span className="mt-1.5 h-2 w-2 shrink-0 rounded-full bg-sky-500" aria-label={L({ ku: "نوێ", en: "new", ar: "جديد", zh: "新" })} />}
                     <Arrow className="mt-1 h-4 w-4 shrink-0 text-muted-foreground" />

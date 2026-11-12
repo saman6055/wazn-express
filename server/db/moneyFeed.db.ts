@@ -122,6 +122,7 @@ export async function getMoneyFeed(): Promise<MoneyFeed> {
       description: ledgerTransactions.description,
       createdById: ledgerTransactions.createdById,
       createdAt: ledgerTransactions.createdAt,
+      enteredAt: ledgerTransactions.enteredAt,
     })
     .from(ledgerTransactions)
     .orderBy(desc(ledgerTransactions.id))

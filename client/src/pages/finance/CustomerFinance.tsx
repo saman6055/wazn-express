@@ -118,12 +118,16 @@ import { Link, useParams } from "wouter";
 import { toast } from "sonner";
 import { useTranslation } from "@/contexts/LanguageContext";
 import { pickLang } from "@/lib/lang";
+import { erbilToday, earliestPaidOn, shortDay } from "@shared/paidOn";
+import { EnteredLater } from "@/components/finance/EnteredLater";
+import { useAuth } from "@/_core/hooks/useAuth";
 import { boxPaidState } from "@shared/boxSettlement";
 import { motion, AnimatePresence } from "framer-motion";
 import { cn } from "@/lib/utils";
 
 export default function CustomerFinance() {
   const { t, language } = useTranslation();
+  const { user } = useAuth();
   const { id } = useParams<{ id: string }>();
   const customerId = parseInt(id || "0");
   
@@ -142,6 +146,8 @@ export default function CustomerFinance() {
   const [paymentAmountIqd, setPaymentAmountIqd] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<string>("");
   const [paymentNotes, setPaymentNotes] = useState("");
+  // «بەرواری پارەدان» - the day the customer paid; today unless changed (shared/paidOn).
+  const [paidOn, setPaidOn] = useState(() => erbilToday());
   const [receiptNumber, setReceiptNumber] = useState("");
   const [paymentCashAccountId, setPaymentCashAccountId] = useState<string>("");
   const [typeFilter, setTypeFilter] = useState<string>("all");
@@ -303,6 +309,7 @@ export default function CustomerFinance() {
       setPaymentAmountIqd("");
       setPaymentMethod("");
       setPaymentNotes("");
+      setPaidOn(erbilToday());
       setReceiptNumber("");
       setPaymentCashAccountId("");
       setBoxAnswers({});
@@ -341,6 +348,7 @@ export default function CustomerFinance() {
           paymentMethod: paymentMethod as "CASH",
           boxIds: yesBoxIds,
           notes: paymentNotes || undefined,
+          paidOn: paidOn !== erbilToday() ? paidOn : undefined,
         });
         advanceUsd = res.leftUsd;
         splitNote = res.boxes.map((b) => `${fmtUsd(b.paidUsd)} → ${b.boxCode} (${b.settlementNumber})`).join("، ");
@@ -360,7 +368,7 @@ export default function CustomerFinance() {
       }
       if (advanceUsd <= 0.005) {
         setPaymentDialogOpen(false);
-        setPaymentAmount(""); setPaymentMethod(""); setPaymentNotes(""); setReceiptNumber(""); setPaymentCashAccountId(""); setBoxAnswers({});
+        setPaymentAmount(""); setPaymentMethod(""); setPaymentNotes(""); setPaidOn(erbilToday()); setReceiptNumber(""); setPaymentCashAccountId(""); setBoxAnswers({});
         return;
       }
     }
@@ -374,6 +382,7 @@ export default function CustomerFinance() {
       notes: [paymentNotes, splitNote ? `پێشەکی دوای دانی بۆکس: ${splitNote}` : ""].filter(Boolean).join(" — ") || undefined,
       receiptNumber: receiptNumber || undefined,
       cashAccountId: paymentCashAccountId && paymentCashAccountId !== 'none' ? parseInt(paymentCashAccountId) : undefined,
+      paidOn: paidOn !== erbilToday() ? paidOn : undefined,
     });
   };
 
@@ -1542,6 +1551,29 @@ export default function CustomerFinance() {
                         <p className="text-xs text-muted-foreground mt-1">{pickLang(language, { ku: "حسابێک هەڵبژێرە بۆ تۆمارکردنی پارەدان لە حسابەکەدا", en: "Select an account to record the payment into it", ar: "اختر حسابًا لتسجيل الدفعة فيه", zh: "选择一个账户以将付款记入其中" })}</p>
                       </div>
                       <div>
+                        <Label htmlFor="paid-on">{pickLang(language, { ku: "بەرواری پارەدان", en: "Date paid", ar: "تاريخ الدفع", zh: "付款日期" })}</Label>
+                        <Input
+                          id="paid-on"
+                          type="date"
+                          dir="ltr"
+                          value={paidOn}
+                          min={earliestPaidOn(user?.role)}
+                          max={erbilToday()}
+                          onChange={(e) => setPaidOn(e.target.value || erbilToday())}
+                          className="mt-1 font-mono"
+                        />
+                        <p className={`text-xs mt-1 ${paidOn !== erbilToday() ? "text-amber-700 dark:text-amber-300 font-medium" : "text-muted-foreground"}`}>
+                          {paidOn !== erbilToday()
+                            ? pickLang(language, {
+                                ku: `پارەکە بە ڕۆژی ${shortDay(new Date(`${paidOn}T12:00:00+03:00`))} دەنووسرێت؛ ڕۆژی تۆمارکردن (ئەمڕۆ) و ناوی تۆش خۆکار لەگەڵی دەمێنێت.`,
+                                en: `The money is dated ${shortDay(new Date(`${paidOn}T12:00:00+03:00`))}; today's entry and your name are kept beside it.`,
+                                ar: `تُسجَّل الدفعة بتاريخ ${shortDay(new Date(`${paidOn}T12:00:00+03:00`))}؛ ويُحفظ تاريخ الإدخال (اليوم) واسمك معها.`,
+                                zh: `款项按 ${shortDay(new Date(`${paidOn}T12:00:00+03:00`))} 记账；今天的录入日期和您的名字会一并保留。`,
+                              })
+                            : pickLang(language, { ku: "ئەگەر کڕیار ڕۆژێکی پێشوو پارەی داوە، ئەو ڕۆژە هەڵبژێرە.", en: "If the customer paid on an earlier day, pick that day.", ar: "إذا دفع العميل في يوم سابق، اختر ذلك اليوم.", zh: "如果客户在更早的日期付款，请选择那一天。" })}
+                        </p>
+                      </div>
+                      <div>
                         <Label>{pickLang(language, { ku: "تێبینی (ئارەزوومەندانە)", en: "Note (optional)", ar: "ملاحظة (اختياري)", zh: "备注（可选）" })}</Label>
                         <Textarea
                           value={paymentNotes}
@@ -2049,6 +2081,7 @@ export default function CustomerFinance() {
                                       </TableCell>
                                       <TableCell className="text-muted-foreground text-sm">
                                         {fmtDate(new Date(txn.createdAt))}
+                                        <EnteredLater createdAt={txn.createdAt} enteredAt={txn.enteredAt} byName={txn.enteredByName} />
                                       </TableCell>
                                       <TableCell>
                                         <Button
@@ -2110,6 +2143,7 @@ export default function CustomerFinance() {
                                       </TableCell>
                                       <TableCell className="text-muted-foreground text-sm">
                                         {fmtDate(new Date(txn.createdAt))}
+                                        <EnteredLater createdAt={txn.createdAt} enteredAt={txn.enteredAt} byName={txn.enteredByName} />
                                       </TableCell>
                                       <TableCell>
                                         <div className="flex items-center gap-1">
@@ -2255,6 +2289,7 @@ export default function CustomerFinance() {
                                         </TableCell>
                                         <TableCell className="text-muted-foreground text-xs">
                                           {fmtDate(new Date(txn.createdAt))}
+                                          <EnteredLater createdAt={txn.createdAt} enteredAt={txn.enteredAt} byName={txn.enteredByName} />
                                         </TableCell>
                                         <TableCell>
                                           <Button
@@ -2375,6 +2410,7 @@ export default function CustomerFinance() {
                                     </TableCell>
                                     <TableCell className="text-muted-foreground text-sm">
                                       {fmtDate(new Date(payment.createdAt))}
+                                      <EnteredLater createdAt={payment.createdAt} enteredAt={payment.enteredAt} byName={payment.enteredByName} />
                                     </TableCell>
                                     <TableCell>
                                       {!isFullyReversed && (
@@ -2898,7 +2934,10 @@ export default function CustomerFinance() {
                 </div>
                 <div className="flex justify-between items-center py-2 border-b">
                   <span className="text-muted-foreground">{pickLang(language, { ku: "بەروار", en: "Date", ar: "التاريخ", zh: "日期" })}</span>
-                  <span className="font-semibold">{fmtDateTime(new Date(selectedTransaction.createdAt))}</span>
+                  <span className="font-semibold text-end">
+                    {fmtDateTime(new Date(selectedTransaction.createdAt))}
+                    <EnteredLater createdAt={selectedTransaction.createdAt} enteredAt={selectedTransaction.enteredAt} byName={selectedTransaction.enteredByName} />
+                  </span>
                 </div>
                 <LedgerSubjectCard subject={subjectOf(selectedTransaction)} />
                 {selectedTransaction.description && (

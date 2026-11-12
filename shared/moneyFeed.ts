@@ -60,6 +60,8 @@ export interface LedgerRowForFeed {
   description: string | null;
   createdById: number | null;
   createdAt: Date | string;
+  /** Typed in later than dated (drizzle/moneyClock); empty = entered when dated. */
+  enteredAt?: Date | string | null;
 }
 
 export interface MoneyMovement {
@@ -77,6 +79,8 @@ export interface MoneyMovement {
   creditCreatedUsd: number;
   createdById: number | null;
   at: string;
+  /** When it was typed in, if on a later day than `at` - the bell says both. */
+  enteredAt: string | null;
   /** The row's own words when it stands alone. */
   note: string | null;
   /** The box it names, when it names exactly one. */
@@ -171,6 +175,7 @@ export function groupMovements(rows: readonly LedgerRowForFeed[]): MoneyMovement
       creditCreatedUsd: creditMade(beforeCents, afterCents),
       createdById: row.createdById ?? null,
       at: iso(row.createdAt),
+      enteredAt: row.enteredAt ? iso(row.enteredAt) : null,
       note: row.description,
       boxCode: box,
     };

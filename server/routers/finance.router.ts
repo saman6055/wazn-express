@@ -1,5 +1,7 @@
 import { TRPCError } from "@trpc/server";
 import { guardAgainstCredit } from "../lib/creditGuard";
+import { checkPaidOn } from "@shared/paidOn";
+import { withPaidAt } from "../../drizzle/moneyClock";
 import { ourDeliveryFee } from "@shared/deliveryFee";
 import { z } from "zod";
 import { vanishedFix, withFix } from "@shared/fixAdvice";
@@ -665,9 +667,12 @@ export const ledgerRouter = router({
         paymentMethod: z.enum(['CASH', 'BANK_TRANSFER', 'FIB', 'FASTPAY', 'ZAINCASH', 'ASIAHAWALA', 'CARD', 'OTHER']),
         boxIds: z.array(idSchema).min(1).max(20),
         notes: z.string().max(1000).optional(),
+        /** «بەرواری پارەدان», YYYY-MM-DD; empty = today (shared/paidOn). */
+        paidOn: z.string().max(10).optional(),
       }))
       .mutation(async ({ input, ctx }) => {
-        return db.payBoxesFirst(input, { id: ctx.user.id, role: ctx.user.role });
+        const { paidOn, ...rest } = input;
+        return withPaidAt(await paidMoment(paidOn, ctx.user.role), () => db.payBoxesFirst(rest, { id: ctx.user.id, role: ctx.user.role }));
       }),
     recordPayment: staffProcedure
       .input(z.object({
@@ -681,8 +686,14 @@ export const ledgerRouter = router({
         cashAccountId: idSchema.optional(),
         /** The yes to an entry larger than the debt — see shared/creditGuard. */
         approveCredit: z.boolean().optional(),
+        /**
+         * «بەرواری پارەدان», YYYY-MM-DD (owner, 2026-11-12). Empty = today.
+         * The money is dated that day everywhere; the moment it was typed in
+         * is kept beside it (drizzle/moneyClock).
+         */
+        paidOn: z.string().max(10).optional(),
       }))
-      .mutation(async ({ input, ctx }) => {
+      .mutation(async ({ input, ctx }) => withPaidAt(await paidMoment(input.paidOn, ctx.user.role), async () => {
         if ((input.amountUsd ?? 0) <= 0 && (input.amountIqd ?? 0) <= 0) {
           throw new TRPCError({
             code: "BAD_REQUEST",
@@ -772,7 +783,7 @@ export const ledgerRouter = router({
           cashDescription
         );
         return { ...result, heldCreditUsd: 0 };
-      }),
+      })),
     
     /**
      * Reverse a previously-recorded customer payment because it was
@@ -2694,6 +2705,35 @@ export const financeIntegrationRouter = router({
         };
       }),
 });
+
+/**
+ * The paid day typed on a payment, checked (shared/paidOn): the moment to
+ * date the money by, or null for today. A future day, or one further back
+ * than the limit, is refused with its cure.
+ */
+async function paidMoment(paidOn: string | undefined, role: string | null | undefined): Promise<Date | null> {
+  const check = checkPaidOn(paidOn, role);
+  if (check.ok) {
+    if (!check.paidAt) return null;
+    // Never into shut books, and never reopening them.
+    const shut = await db.booksShutOn(check.paidAt);
+    if (shut.period || shut.dayFinalized) {
+      throw new TRPCError({ code: "BAD_REQUEST", message: withFix(
+        shut.period
+          ? `ئەو ڕۆژە لە ماوەیەکی داخراوی حسابدایە (${shut.period}) — پارەی تێدا نانووسرێت.`
+          : "حسابی ئەو ڕۆژە کۆتایی پێهاتووە (داخراوە) — پارەی تێدا نانووسرێت.",
+        ["ئەمڕۆ وەک بەرواری پارەدان هەڵبژێرە و لە تێبینی بنووسە کە کڕیار لە چ ڕۆژێک پارەی داوە", "یان ئادمینی سەرەکی با سەرەتا ئەو ماوەیە بکاتەوە"],
+      ) });
+    }
+    return check.paidAt;
+  }
+  const message = check.why === "future"
+    ? withFix("بەرواری پارەدان لە داهاتوودایە.", [`ڕۆژی ئەمڕۆ (${check.today}) یان ڕۆژێکی پێشوو هەڵبژێرە`])
+    : check.why === "too_old"
+      ? withFix(`بەرواری پارەدان زۆر کۆنە — کۆنترین ڕۆژ ${check.earliest}ە.`, ["ڕۆژێکی نوێتر هەڵبژێرە", "بۆ پارەدانێکی کۆنتر، ئادمینی سەرەکی دەتوانێت تا ساڵێک دواوە بینووسێت"])
+      : withFix("بەرواری پارەدان دروست نییە.", ["ڕۆژەکە لە ڕۆژژمێرەکە هەڵبژێرە"]);
+  throw new TRPCError({ code: "BAD_REQUEST", message });
+}
 
 export const financeRouters = {
   exchangeRates: exchangeRatesRouter,
