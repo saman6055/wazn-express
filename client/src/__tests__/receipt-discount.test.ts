@@ -225,7 +225,9 @@ describe("and the server does not take the screen's word for it", () => {
   const db = read("server/db/boxSettlement.db.ts");
 
   it("reads the open promises and refuses a settlement that breaks one", () => {
-    const check = slice(db, "const openPledges = await getOpenPledges(input.boxId);", "const now = moneyMoment() ?? new Date();", "the settlement guard");
+    const check = slice(db, "const openPledges = (await getOpenPledges(input.boxId))", "const now = moneyMoment() ?? new Date();", "the settlement guard");
+    // A promise on a parcel that left the box does not block it (AZ047, 2026-11-13).
+    expect(check).toContain(".filter((p) => p.lineId === null || linesHere.has(p.lineId));");
     expect(check).toContain("pledgeBreaches(floors,");
     expect(check).toContain("throw new Error(pledgeRefusal(breaches, \"ku\"));");
   });

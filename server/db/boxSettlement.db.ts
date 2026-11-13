@@ -1657,7 +1657,11 @@ export async function createBoxSettlement(
    * is the second reading of the same rule — for the day somebody settles
    * from an older tab, or from somewhere else entirely.
    */
-  const openPledges = await getOpenPledges(input.boxId);
+  // A promise on a parcel that has since left the box cannot be kept here:
+  // that parcel is not on this receipt (owner, 2026-11-13: AZ047's box was
+  // refused for a $0.86 promise on a parcel taken out of it).
+  const linesHere = new Set(view.parcels.map((p) => p.lineId));
+  const openPledges = (await getOpenPledges(input.boxId)).filter((p) => p.lineId === null || linesHere.has(p.lineId));
   if (openPledges.length > 0) {
     const floors = pledgeFloors(openPledges);
     const offeredByLine = new Map<number, number>(
@@ -1956,6 +1960,8 @@ export async function createBoxSettlement(
         .set({ settlementId, honouredAt: now })
         .where(and(
           eq(boxDiscountPledges.boxId, input.boxId),
+          // Only the promises on what is in the box now - not one on a parcel that left it.
+          inArray(boxDiscountPledges.id, openPledges.map((p) => p.id)),
           isNull(boxDiscountPledges.settlementId),
           isNull(boxDiscountPledges.withdrawnAt),
         ));
