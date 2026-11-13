@@ -814,7 +814,11 @@ export async function generateBatchPDF(data: BatchReportData): Promise<Buffer> {
           r.forEach((cell, j) => {
             const [, x, w, al] = cols[j];
             doc.fontSize(8).font(cell.b ? 'Helvetica-Bold' : 'Helvetica').fillColor(cell.c ?? INK)
-              .text(cell.t, x, y + 4, { width: w, align: al, lineBreak: false, ellipsis: true });
+              // One line per cell: pdfkit only cuts to «…» when it is given a
+              // height, so a long name wrapped onto a second line and ran into
+              // the row under it (owner's report, 2026-11-13). Trimmed too:
+              // some names are stored with a leading space.
+              .text(cell.t.trim(), x, y + 4, { width: w, height: 10, align: al, lineBreak: false, ellipsis: true });
           });
           y += 16;
         });
