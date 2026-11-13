@@ -30,4 +30,10 @@ describe("batch report commission", () => {
     expect(pdf).toContain("const commissionSum = sum((c) => c.commissionUsd);");
     expect(pdf).toContain("money(sum((c) => c.totalProfit ?? 0))");
   });
+
+  it("the batch revenue is the sum of its parcels' cents, so header and rows agree", () => {
+    const src = read("server/db/batches.db.ts");
+    expect(src).toContain("priced += cents;");
+    expect(src).not.toContain("priced += final;");
+  });
 });

@@ -1403,8 +1403,13 @@ export async function getBatchFinancialSummary(batchId: number) {
           agreedDifferenceUsd += v.agreed - Math.round(computed * 100) / 100;
         }
         const final = withAgreedPrice(computed, v.agreed);
-        priced += final;
-        if (!isFinalized) parcelRevenue[v.id] = Math.round(final * 100) / 100;
+        // In whole cents, parcel by parcel - what each parcel is charged - so
+        // the batch's revenue is the sum of its parcels' and the report's
+        // header and its customer rows tell one figure (AIR-087, 2026-11-13:
+        // the unrounded sum read 27¢ under the rows).
+        const cents = Math.round(final * 100) / 100;
+        priced += cents;
+        if (!isFinalized) parcelRevenue[v.id] = cents;
       }
       // A finalised batch keeps its stored revenue; only the extra and the agreed prices are read here.
       if (!isFinalized) customerEntry.revenue = priced;
